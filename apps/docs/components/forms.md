@@ -560,13 +560,14 @@ form(model, (s) => {
 });
 ```
 
-| Option        | On                | Default                                      | What it does                                                                                 |
-| ------------- | ----------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `valueFormat` | all four          | `DATE_FORMAT` token (`TIME_FORMAT` for time) | date-fns format of the wire strings - pass the control's `valueFormat` when it names another |
-| `strict`      | the orders        | `false`                                      | Also fail while both ends are equal                                                          |
-| `min` / `max` | the bounds        | -                                            | A `Date`, or a function of the field context returning one (or `null` for no bound)          |
-| `precision`   | `dateRangeBounds` | `'day'`                                      | The unit ends and bounds are compared in - match the control's `precision`                   |
-| `message`     | all four          | -                                            | Replaces the generated text                                                                  |
+| Option        | On                                      | Default                                      | What it does                                                                                                          |
+| ------------- | --------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `valueFormat` | all four                                | `DATE_FORMAT` token (`TIME_FORMAT` for time) | date-fns format of the wire strings - pass the control's `valueFormat` when it names another                          |
+| `strict`      | the orders                              | `false`                                      | Also fail while both ends are equal                                                                                   |
+| `min` / `max` | the bounds                              | -                                            | A `Date`, or a function of the field context returning one (or `null` for no bound)                                   |
+| `precision`   | `dateRangeBounds`                       | `'day'`                                      | The unit ends and bounds are compared in - match the control's `precision`                                            |
+| `timeZone`    | `dateRangeOrder`, `dateTimeRangeBounds` | `null`                                       | The date-time control's `timeZone` - offset-less wire values are read in its wall clock, and the bound is named in it |
+| `message`     | all four                                | -                                            | Replaces the generated text                                                                                           |
 
 They parse both ends and compare the dates, not the strings, so two ISO values with different
 offsets order correctly. An empty or unparseable end passes - `required()` on the child path and

@@ -41,7 +41,6 @@ export type DateTimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours'
           [locale]="localeObject()"
           [mask]="mask()"
           [minuteStep]="minuteStep()"
-          [secondStep]="secondStep()"
           [minTime]="minTimeDate()"
           [maxTime]="maxTimeDate()"
           [timeFilter]="filterFn()"
@@ -76,7 +75,6 @@ export class DateTimeRangeInputStorybookComponent {
   public displayFormat = input('Pp');
   public mask = input(false);
   public minuteStep = input(5);
-  public secondStep = input(1);
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
   public filter = input<DateTimeRangeFilterPreset>('none');

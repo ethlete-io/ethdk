@@ -81,8 +81,8 @@ export abstract class PickerInputBaseDirective extends AccessibleNameControlDire
    */
   public mixedLabel = input<string | null>(null);
 
-  /** date-fns format of the string value. Defaults to the control's format token. */
-  public valueFormat = input<string | undefined>(undefined);
+  /** date-fns format of the string value. `null` or unset uses the control's format token. */
+  public valueFormat = input<string | null | undefined>(undefined);
   public locale = input<Locale | null>(null);
 
   /**

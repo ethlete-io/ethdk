@@ -18,16 +18,15 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
-| Input        | Type                                | Default             | Description                                                                                                     |
-| ------------ | ----------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format of the ring's labels and readout (token default: `HH:mm`).                                 |
-| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                                               |
-| `minuteStep` | `number`                            | `5`                 | Minute granularity of the ring, clamped to a whole number of at least 1.                                        |
-| `secondStep` | `number`                            | `1`                 | Seconds granularity of typed entry and of the "now" anchor, clamped the same way. The ring never picks seconds. |
-| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.                               |
-| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                           |
-| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                              |
-| `day`        | `Date \| null`                      | `null`              | The day the time falls on, from a calendar next to the picker. Set, the ring centre shows it under the time.    |
+| Input        | Type                                | Default             | Description                                                                                                  |
+| ------------ | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `format`     | `string`                            | `TIME_FORMAT` token | date-fns time format of the ring's labels and readout (token default: `HH:mm`).                              |
+| `locale`     | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Expands localized format tokens (`p`, `pp`) and the AM/PM labels.                                            |
+| `minuteStep` | `number`                            | `5`                 | Minute granularity of the ring, clamped to a whole number of at least 1.                                     |
+| `min`        | `Date \| null`                      | `null`              | Earliest selectable time - only the time of day is read, so it applies every day.                            |
+| `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                        |
+| `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                           |
+| `day`        | `Date \| null`                      | `null`              | The day the time falls on, from a calendar next to the picker. Set, the ring centre shows it under the time. |
 
 | Model   | Type           | Default | Description                                                                |
 | ------- | -------------- | ------- | -------------------------------------------------------------------------- |
@@ -35,7 +34,7 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
 [`mode`, `rangeValue`, `activeSide`, `rangeDays`, `startLabel`/`endLabel`, and the `timeSelect` and `rangeHandOff` outputs](#range-picker) belong to range mode.
 
-**The ring picks hours and minutes only.** A drag, a press or a key writes a whole time with seconds at 0, on the current day. Seconds are typed in the [time input](/components/date-time-inputs#time-input); `secondStep` still applies to that typing and to the "now" anchor, which is where the keyboard starts on an empty ring - "now" snapped to the steps, and re-read whenever focus enters the picker.
+**The ring picks hours and minutes only.** A drag, a press or a key writes a whole time with seconds at 0, on the current day. Seconds are typed in the [time input](/components/date-time-inputs#time-input). The keyboard starts an empty ring at "now", snapped to `minuteStep` with seconds at 0, and re-read whenever focus enters the picker.
 
 The format decides the labels, not the granularity: a 24-hour format labels the ring `00 03 06 … 21`; a 12-hour one (`h:mm a`, or a localized `p` in en-US) keeps the 24-hour ring and labels it `12 AM / 3 / 6 / 9 / 12 PM / …`, with a moon under 12 AM and a sun over 12 PM. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
@@ -137,7 +136,7 @@ The ring directive exposes `spans()` (the open and blocked spans as minutes of t
 
 ¹ `null` falls through to [`TIME_PICKER_LABELS`](/components/localization) (`startTime` / `endTime`: `'Start time'` / `'End time'`).
 
-`format`, `locale`, `minuteStep`/`secondStep` and `min`/`max` mean the same as above and apply to both ends.
+`format`, `locale`, `minuteStep` and `min`/`max` mean the same as above and apply to both ends.
 
 ### Which handle moves
 

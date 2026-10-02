@@ -549,6 +549,16 @@ describe('CalendarDirective', () => {
       expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
     });
 
+    it('hands the strategy the first day of its rows', () => {
+      host.rangeStrategy.set(createWeekRangeStrategy());
+      fixture.detectChanges();
+
+      cell(fixture, 16)?.click();
+      fixture.detectChanges();
+
+      expect(host.rangeValue()).toEqual({ start: new Date(2026, 6, 13), end: null });
+    });
+
     it('drops the hover preview when the view changes under a resting pointer', () => {
       host.rangeStrategy.set(createWeekRangeStrategy({ weekStartsOn: 1 }));
       fixture.detectChanges();

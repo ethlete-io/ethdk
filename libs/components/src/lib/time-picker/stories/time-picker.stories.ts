@@ -9,7 +9,6 @@ export default {
     mode: { control: 'select', options: ['single', 'range'] },
     format: { control: 'text' },
     minuteStep: { control: 'number' },
-    secondStep: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
     minTime: { control: 'text' },
     maxTime: { control: 'text' },
@@ -27,7 +26,6 @@ export default {
     mode: 'single',
     format: 'HH:mm',
     minuteStep: 5,
-    secondStep: 1,
     locale: 'default',
     minTime: null,
     maxTime: null,
@@ -56,7 +54,7 @@ export const TwelveHour: Story = {
 };
 
 export const WithSeconds: Story = {
-  args: { format: 'HH:mm:ss', secondStep: 15 },
+  args: { format: 'HH:mm:ss' },
 };
 
 export const Bounded: Story = {

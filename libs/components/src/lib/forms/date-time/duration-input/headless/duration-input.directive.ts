@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, booleanAttribute, computed, inject, input, model, signal } from '@angular/core';
+import { DestroyRef, Directive, booleanAttribute, computed, effect, inject, input, model, signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import {
@@ -7,7 +7,12 @@ import {
   FORM_FIELD_TOKEN,
   FormFieldControl,
 } from '../../../form-field/headless';
-import { deriveDurationFormatSpec, formatDuration, parseDuration } from './internals/duration-format';
+import {
+  deriveDurationFormatSpec,
+  durationFormatProblem,
+  formatDuration,
+  parseDuration,
+} from './internals/duration-format';
 import { DurationInputFieldDirective } from './duration-input-field.directive';
 import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-labels';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
@@ -92,6 +97,19 @@ export class DurationInputDirective
     super();
 
     mountTextFieldShellStyles();
+
+    if (ngDevMode) {
+      effect(() => {
+        const format = this.durationFormat();
+        const problem = durationFormatProblem(format);
+
+        if (problem !== null) {
+          console.warn(
+            `[et-duration-input] durationFormat "${format}": ${problem}. Tokens are h, m, s and S - try "hh:mm:ss".`,
+          );
+        }
+      });
+    }
 
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));

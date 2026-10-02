@@ -12,8 +12,10 @@ import {
   CalendarPrecision,
   CalendarView,
   startOfCalendarUnit,
+  CalendarWeekStartsOn,
 } from '../../../../calendar/headless';
 import { displayFormatForPrecision } from '../../internals/precision-format';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 /**
  * A date form control with a `string | null` value (a date-fns `valueFormat`
@@ -65,6 +67,9 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /** The first day of the picker calendar's rows, `0` for Sunday. Defaults to the locale's. */
+  public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
+
   /** The format in effect: this instance's `displayFormat`, else the one `precision` implies. */
   public effectiveDisplayFormat = computed(
     () => this.displayFormat() ?? displayFormatForPrecision(this.precision(), this.effectiveLocale()),
@@ -99,6 +104,18 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
     return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
   });
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-date-input',
+      formatProvider: 'provideDateFormat',
+      readings: () => (this.mixed() ? [] : [{ value: this.value(), parsed: this.date() }]),
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** @internal A strict parse against `displayFormat`. */
   public parseCommitText(raw: string) {

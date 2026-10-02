@@ -25,7 +25,6 @@ const parseDay = (value: string | null) => {
         [format]="format()"
         [locale]="localeObject()"
         [minuteStep]="minuteStep()"
-        [secondStep]="secondStep()"
         [min]="minTimeDate()"
         [max]="maxTimeDate()"
         [timeFilter]="filterFn()"
@@ -54,7 +53,6 @@ export class TimePickerStorybookComponent {
   public mode = input<TimePickerMode>('single');
   public format = input('HH:mm');
   public minuteStep = input(5);
-  public secondStep = input(1);
   public locale = input<'default' | 'de'>('default');
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);

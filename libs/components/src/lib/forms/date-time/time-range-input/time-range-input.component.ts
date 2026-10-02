@@ -78,7 +78,6 @@ export class TimeRangeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** Accessible names of the time picker's two ring handles. */
   public startTimeLabel = input<string | null>(null);
   public endTimeLabel = input<string | null>(null);

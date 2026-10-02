@@ -10,6 +10,7 @@ import {
 } from '../../internals/date-range-picker-input.directive';
 import { parseTimeText, timeReferenceDay } from '../../internals/time-parse';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 export type { DateRangeSide as TimeRangeInputSide } from '../../internals/date-range-picker-input.directive';
 export type { DateRangeValue as TimeRangeValue } from '../../internals/date-range-picker-input.directive';
@@ -42,7 +43,7 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
   public parseErrorMessage = input<string | null>(null);
 
   /** date-fns format shown in (and parsed from) both fields. Locale-aware by default. */
-  public displayFormat = input('p');
+  public displayFormat = input<string | null>(null);
 
   /**
    * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.) Only the time
@@ -53,13 +54,32 @@ export class TimeRangeInputDirective extends DateRangePickerInputDirective imple
   public maxTime = input<Date | null>(null);
   public timeFilter = input<TimeRangeTimeFilterFn | null>(null);
 
-  public effectiveDisplayFormat = this.displayFormat;
+  /** The format in effect: this instance's `displayFormat`, else `'p'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'p');
 
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTimeRange);
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.TIME_RANGE_INPUT);
 
   private referenceDate = timeReferenceDay();
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-time-range-input',
+      formatProvider: 'provideTimeFormat',
+      readings: () =>
+        this.mixed()
+          ? []
+          : [
+              { value: this.value().start, parsed: this.startDate() },
+              { value: this.value().end, parsed: this.endDate() },
+            ],
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** Commits a picker-selected time onto one end. The picker stays open. */
   public selectTime(side: DateRangeSide, time: Date | null) {

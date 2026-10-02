@@ -33,10 +33,9 @@
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-time-picker
       [value]="timeInput.time()"
-      [format]="timeInput.displayFormat()"
+      [format]="timeInput.effectiveDisplayFormat()"
       [locale]="timeInput.effectiveLocale()"
       [minuteStep]="minuteStep()"
-      [secondStep]="secondStep()"
       [min]="timeInput.minTime()"
       [max]="timeInput.maxTime()"
       [timeFilter]="timeInput.timeFilter()"

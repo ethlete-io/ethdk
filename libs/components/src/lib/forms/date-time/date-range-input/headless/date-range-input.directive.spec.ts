@@ -22,6 +22,7 @@ import { CalendarPrecision } from '../../../../calendar/headless';
 @Component({
   template: `
     <div
+      #rangeInput="etDateRangeInput"
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
@@ -34,7 +35,7 @@ import { CalendarPrecision } from '../../../../calendar/headless';
       <input class="end" etDateRangeInputField side="end" />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
-      <ng-template etDatePickerSurface let-rangeInput>
+      <ng-template etDatePickerSurface>
         <button
           (click)="rangeInput.selectCalendarRange({ start: pickStart, end: null })"
           class="pick-start"

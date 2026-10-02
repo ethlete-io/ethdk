@@ -179,7 +179,7 @@ export class CalendarStorybookComponent {
   protected rangeStrategyFn = computed<CalendarRangeSelectionStrategy | null>(() => {
     switch (this.rangeStrategy()) {
       case 'week':
-        return createWeekRangeStrategy({ weekStartsOn: this.localeObject()?.options?.weekStartsOn ?? 1 });
+        return createWeekRangeStrategy();
       case 'fixed7':
         return createFixedLengthRangeStrategy({ days: 7 });
       default:

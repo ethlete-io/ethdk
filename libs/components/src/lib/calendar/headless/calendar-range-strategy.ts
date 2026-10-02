@@ -11,23 +11,31 @@ export type CalendarRange = {
  * later-or-equal second closes it, an earlier one starts over - is a strategy like any other; naming
  * one here replaces it.
  *
- * Both callbacks are pure: they get the pick and the range as it stands, and return the range that
- * should result.
+ * Both callbacks are pure: they get the pick, the range as it stands and the calendar's
+ * {@link CalendarRangeSelectionContext}, and return the range that should result.
  */
 export type CalendarRangeSelectionStrategy = {
   /** The range this pick produces. Returning an open end (`end: null`) leaves the range being built. */
-  select: (date: Date, current: CalendarRange) => CalendarRange;
+  // eslint-disable-next-line max-params -- the context argument extends the two-argument strategy contract without breaking it
+  select: (date: Date, current: CalendarRange, context: CalendarRangeSelectionContext) => CalendarRange;
   /**
    * The range to band while the reader is only hovering (or has moved keyboard focus) over `date`.
    * Defaults to whatever {@link select} would produce, which is usually what a reader wants to be
    * shown - return `null` to preview nothing.
    */
-  preview?: (date: Date, current: CalendarRange) => CalendarRange | null;
+  // eslint-disable-next-line max-params -- the context argument extends the two-argument strategy contract without breaking it
+  preview?: (date: Date, current: CalendarRange, context: CalendarRangeSelectionContext) => CalendarRange | null;
+};
+
+/** What the calendar tells a range strategy about itself on every pick and preview. */
+export type CalendarRangeSelectionContext = {
+  /** The first day of the calendar's rows: its `effectiveFirstDayOfWeek()`. */
+  weekStartsOn: CalendarWeekStartsOn;
 };
 
 export type CalendarWeekRangeStrategyOptions = {
-  /** Which day the snapped weeks start on. Pass the calendar's `effectiveFirstDayOfWeek()`. */
-  weekStartsOn: CalendarWeekStartsOn;
+  /** Which day the snapped weeks start on. Defaults to the first day of the calendar's rows. */
+  weekStartsOn?: CalendarWeekStartsOn;
 };
 
 /**
@@ -35,40 +43,48 @@ export type CalendarWeekRangeStrategyOptions = {
  * the week it lands in, the second closes it at the end of its own, and an earlier second pick starts
  * over. One week is picking the same week twice.
  */
-export const createWeekRangeStrategy = (options: CalendarWeekRangeStrategyOptions): CalendarRangeSelectionStrategy => {
-  const weekOptions = { weekStartsOn: options.weekStartsOn };
+export const createWeekRangeStrategy = (
+  options: CalendarWeekRangeStrategyOptions = {},
+): CalendarRangeSelectionStrategy => {
+  const weekOptionsOf = (context: CalendarRangeSelectionContext) => ({
+    weekStartsOn: options.weekStartsOn ?? context.weekStartsOn,
+  });
   // day-granular at both ends, like every other date this component produces - `endOfWeek` would
   // hand back a 23:59:59.999 timestamp
-  const weekStartOf = (date: Date) => startOfWeek(startOfDay(date), weekOptions);
-  const weekEndOf = (date: Date) => startOfDay(endOfWeek(startOfDay(date), weekOptions));
+  const weekStartOf = (date: Date, context: CalendarRangeSelectionContext) =>
+    startOfWeek(startOfDay(date), weekOptionsOf(context));
+  const weekEndOf = (date: Date, context: CalendarRangeSelectionContext) =>
+    startOfDay(endOfWeek(startOfDay(date), weekOptionsOf(context)));
 
-  const openStart = (current: CalendarRange) =>
-    current.start !== null && current.end === null ? weekStartOf(current.start) : null;
+  const openStart = (current: CalendarRange, context: CalendarRangeSelectionContext) =>
+    current.start !== null && current.end === null ? weekStartOf(current.start, context) : null;
 
-  const select = (date: Date, current: CalendarRange): CalendarRange => {
-    const from = openStart(current);
-    const week = weekStartOf(date);
+  // eslint-disable-next-line max-params -- the context argument extends the two-argument strategy contract without breaking it
+  const select = (date: Date, current: CalendarRange, context: CalendarRangeSelectionContext): CalendarRange => {
+    const from = openStart(current, context);
+    const week = weekStartOf(date, context);
 
     if (from === null || isBefore(week, from)) {
       return { start: week, end: null };
     }
 
-    return { start: from, end: weekEndOf(date) };
+    return { start: from, end: weekEndOf(date, context) };
   };
 
   return {
     select,
-    preview: (date, current) => {
-      const from = openStart(current);
-      const week = weekStartOf(date);
+    // eslint-disable-next-line max-params -- the context argument extends the two-argument strategy contract without breaking it
+    preview: (date, current, context) => {
+      const from = openStart(current, context);
+      const week = weekStartOf(date, context);
 
       if (current.end !== null) {
         return null;
       }
 
       return from === null || isBefore(week, from)
-        ? { start: week, end: weekEndOf(date) }
-        : { start: from, end: weekEndOf(date) };
+        ? { start: week, end: weekEndOf(date, context) }
+        : { start: from, end: weekEndOf(date, context) };
     },
   };
 };

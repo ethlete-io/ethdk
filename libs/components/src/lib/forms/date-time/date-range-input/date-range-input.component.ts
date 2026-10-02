@@ -59,6 +59,7 @@ import { mountRangeInputShellStyles } from '../range-input-shell-styles.componen
         'startView',
         'dateClass',
         'weekNumbers',
+        'firstDayOfWeek',
         'rangeSelectionStrategy',
         'comparisonStart',
         'comparisonEnd',

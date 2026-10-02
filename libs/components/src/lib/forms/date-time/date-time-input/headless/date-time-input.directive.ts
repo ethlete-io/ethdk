@@ -19,8 +19,9 @@ import { withTimeOfDay } from '../../internals/date-time-merge';
 import { parseDateTimeText } from '../../internals/date-time-parse';
 import { createPendingDateTime, renderPartialDateTime } from '../../internals/pending-date-time';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
-import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
+import { CalendarDateClassFn, CalendarView, CalendarWeekStartsOn } from '../../../../calendar/headless';
 import { effectiveTimeZoneOf, nextLocalReadingElementId, timeZoneLabelOf } from '../../internals/time-zone-state';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 /**
  * A combined date & time form control with a `string | null` value (a date-fns
@@ -47,7 +48,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public parseErrorMessage = input<string | null>(null);
 
   /** Combined date-fns format shown in (and parsed from) the field. Locale-aware by default. */
-  public displayFormat = input('Pp');
+  public displayFormat = input<string | null>(null);
 
   /**
    * IANA name of the zone the field's wall clock stands for - `'Asia/Tokyo'` makes the field, the
@@ -79,6 +80,9 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /** The first day of the picker calendar's rows, `0` for Sunday. Defaults to the locale's. */
+  public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
+
   /**
    * Forwarded to the picker's time picker. Only the time of day of `minTime`/`maxTime`
    * is read, so the bound applies on every day; `timeFilter` receives the full candidate
@@ -89,7 +93,8 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
-  public effectiveDisplayFormat = this.displayFormat;
+  /** The format in effect: this instance's `displayFormat`, else `'Pp'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'Pp');
 
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTime);
 
@@ -160,7 +165,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
    */
   public localReading = computed(() =>
     localReading(this.dateTime(), {
-      format: this.displayFormat(),
+      format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       timeZone: this.effectiveTimeZone(),
     }),
@@ -178,7 +183,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
     if (dateTime !== null) {
       return (
         formatInZone(dateTime, {
-          format: this.displayFormat(),
+          format: this.effectiveDisplayFormat(),
           locale: this.effectiveLocale(),
           timeZone: this.effectiveTimeZone(),
         }) ?? ''
@@ -193,11 +198,23 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
       renderPartialDateTime({
         day: this.halfPick.day(),
         time: this.halfPick.time(),
-        format: this.displayFormat(),
+        format: this.effectiveDisplayFormat(),
         locale: this.effectiveLocale(),
       }) ?? ''
     );
   });
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-date-time-input',
+      formatProvider: 'provideDateFormat',
+      readings: () => (this.mixed() ? [] : [{ value: this.value(), parsed: this.dateTime() }]),
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** An actual edit invalidates whatever half was held. */
   public override beforeCommit() {
@@ -207,7 +224,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /** @internal A strict parse against `displayFormat`, then a lenient one. */
   public parseCommitText(raw: string) {
     return parseDateTimeText(raw, {
-      format: this.displayFormat(),
+      format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       timeZone: this.effectiveTimeZone(),
     });

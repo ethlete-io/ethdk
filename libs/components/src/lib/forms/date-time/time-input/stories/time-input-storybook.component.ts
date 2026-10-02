@@ -24,9 +24,9 @@ import { TIME_INPUT_IMPORTS } from '../time-input.imports';
           [placeholder]="placeholder()"
           [valueFormat]="valueFormat()"
           [displayFormat]="displayFormat()"
+          [mask]="mask()"
           [locale]="localeObject()"
           [minuteStep]="minuteStep()"
-          [secondStep]="secondStep()"
           [minTime]="minTimeDate()"
           [maxTime]="maxTimeDate()"
           [timeFilter]="filterFn()"
@@ -55,8 +55,8 @@ export class TimeInputStorybookComponent {
   public showMixedState = input(false);
   public valueFormat = input<string | undefined>(undefined);
   public displayFormat = input('p');
+  public mask = input(false);
   public minuteStep = input(5);
-  public secondStep = input(1);
   public locale = input<'default' | 'de'>('default');
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);

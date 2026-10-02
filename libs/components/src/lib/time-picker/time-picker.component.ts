@@ -78,7 +78,6 @@ const sunRays = (sun: { x: number; y: number }) =>
         'format',
         'locale',
         'minuteStep',
-        'secondStep',
         'min',
         'max',
         'timeFilter',

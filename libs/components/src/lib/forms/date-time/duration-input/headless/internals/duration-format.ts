@@ -20,11 +20,11 @@ export const UNIT_MS: Record<DurationUnit, number> = {
   ms: 1,
 };
 
-const TOKEN_UNIT: Record<string, DurationUnit> = { h: 'h', m: 'm', s: 's', S: 'ms' };
+const TOKEN_UNIT: Record<string, DurationUnit> = { h: 'h', H: 'h', m: 'm', s: 's', S: 'ms' };
 
 /**
  * Compiles a duration format string into a segment spec. Recognized tokens are runs of
- * `h` (hours), `m` (minutes), `s` (seconds) and `S` (milliseconds); any other characters
+ * `h` or `H` (hours), `m` (minutes), `s` (seconds) and `S` (milliseconds); any other characters
  * are separators. E.g. `'hh:mm:ss.SSS'`, `'mm:ss'`, `'h m'`.
  */
 export const deriveDurationFormatSpec = (format: string): DurationFormatSpec => {
@@ -58,6 +58,26 @@ export const deriveDurationFormatSpec = (format: string): DurationFormatSpec => 
   }
 
   return { segments, separators };
+};
+
+/**
+ * Why a format would not render the way it reads, or `null` when it does: a letter that is no
+ * token, or text before the first segment - both are dropped or taken as a separator.
+ */
+export const durationFormatProblem = (format: string): string | null => {
+  const unknownLetters = [...new Set(format.match(/[a-z]/gi) ?? [])].filter((letter) => !TOKEN_UNIT[letter]);
+
+  if (unknownLetters.length) {
+    return `the letters ${unknownLetters.map((letter) => `"${letter}"`).join(', ')} are no duration tokens`;
+  }
+
+  const firstToken = [...format].findIndex((char) => !!TOKEN_UNIT[char]);
+
+  if (firstToken > 0) {
+    return `the text "${format.slice(0, firstToken)}" before the first segment is dropped`;
+  }
+
+  return null;
 };
 
 const splitUnits = (ms: number, spec: DurationFormatSpec): Record<DurationUnit, number> => {

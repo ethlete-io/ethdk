@@ -19,6 +19,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
 @Component({
   template: `
     <div
+      #timeInput="etTimeInput"
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
@@ -30,7 +31,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       <input etTimeInputField />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
-      <ng-template etDatePickerSurface let-timeInput>
+      <ng-template etDatePickerSurface>
         <div [value]="timeInput.time()" (valueChange)="timeInput.selectTime($event)" etTimePicker>
           <div etTimePickerRing>
             <span etTimePickerRingHandle></span>

@@ -7,6 +7,7 @@ import { formatDateValue, parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { parseTimeText, timeReferenceDay } from '../../internals/time-parse';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 /**
  * A time form control with a `string | null` value (a date-fns `valueFormat`
@@ -28,7 +29,7 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   public parseErrorMessage = input<string | null>(null);
 
   /** date-fns format shown in (and parsed from) the field. Locale-aware by default. */
-  public displayFormat = input('p');
+  public displayFormat = input<string | null>(null);
 
   /**
    * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.)
@@ -39,7 +40,8 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   public maxTime = input<Date | null>(null);
   public timeFilter = input<((date: Date) => boolean) | null>(null);
 
-  public effectiveDisplayFormat = this.displayFormat;
+  /** The format in effect: this instance's `displayFormat`, else `'p'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'p');
 
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidTime);
 
@@ -74,13 +76,25 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
       return '';
     }
 
-    return formatDateValue(time, { format: this.displayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return formatDateValue(time, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
   });
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-time-input',
+      formatProvider: 'provideTimeFormat',
+      readings: () => (this.mixed() ? [] : [{ value: this.value(), parsed: this.time() }]),
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** @internal A strict parse against `displayFormat`, then a lenient one. */
   public parseCommitText(raw: string) {
     return parseTimeText(raw, {
-      format: this.displayFormat(),
+      format: this.effectiveDisplayFormat(),
       locale: this.effectiveLocale(),
       referenceDate: this.referenceDate,
     });

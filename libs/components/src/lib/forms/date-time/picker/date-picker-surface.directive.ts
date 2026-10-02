@@ -25,4 +25,12 @@ export class DatePickerSurfaceDirective {
       );
     }
   }
+
+  /** @internal */
+  public static ngTemplateContextGuard(
+    _directive: DatePickerSurfaceDirective,
+    _context: unknown,
+  ): _context is DatePickerSurfaceContext {
+    return true;
+  }
 }

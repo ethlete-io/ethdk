@@ -69,6 +69,7 @@ import { mountRangeInputShellStyles } from '../range-input-shell-styles.componen
         'startView',
         'dateClass',
         'weekNumbers',
+        'firstDayOfWeek',
         'presets',
         'minTime',
         'maxTime',
@@ -98,7 +99,6 @@ export class DateTimeRangeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** The bottom sheet's two tab labels. */
   public datesTabLabel = input<string | null>(null);
   public timesTabLabel = input<string | null>(null);

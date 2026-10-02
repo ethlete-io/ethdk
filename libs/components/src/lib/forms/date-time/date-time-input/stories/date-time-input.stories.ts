@@ -15,8 +15,8 @@ export default {
     showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    mask: { control: 'boolean' },
     minuteStep: { control: 'number' },
-    secondStep: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
     minTime: { control: 'text' },
     maxTime: { control: 'text' },
@@ -36,8 +36,8 @@ export default {
     showMixedState: false,
     valueFormat: undefined,
     displayFormat: 'Pp',
+    mask: false,
     minuteStep: 5,
-    secondStep: 1,
     locale: 'default',
     minTime: null,
     maxTime: null,
@@ -95,5 +95,14 @@ export const TimeZone: Story = {
     timeZone: 'Asia/Tokyo',
     displayFormat: 'MM/dd/yyyy, HH:mm',
     hint: 'The field reads in the venue zone. The line under it is the same moment where you are.',
+  },
+};
+
+export const Masked: Story = {
+  args: {
+    displayFormat: 'dd.MM.yyyy HH:mm',
+    mask: true,
+    placeholder: '',
+    hint: 'A fixed-width display format drives a typing mask',
   },
 };

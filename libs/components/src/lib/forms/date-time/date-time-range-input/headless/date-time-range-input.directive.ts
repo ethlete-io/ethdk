@@ -1,6 +1,6 @@
 import { Directive, booleanAttribute, computed, input, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
-import { CalendarDateClassFn, CalendarView } from '../../../../calendar/headless';
+import { CalendarDateClassFn, CalendarView, CalendarWeekStartsOn } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
@@ -17,6 +17,7 @@ import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { DateRangePreset } from '../../date-range-presets';
 import { createDateRangePresets } from '../../internals/date-range-presets-state';
 import { effectiveTimeZoneOf, nextLocalReadingElementId, timeZoneLabelOf } from '../../internals/time-zone-state';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 export type { DateRangeValue as DateTimeRangeValue } from '../../internals/date-range-picker-input.directive';
 
@@ -54,7 +55,7 @@ export class DateTimeRangeInputDirective
   public parseErrorMessage = input<string | null>(null);
 
   /** Combined date-fns format shown in (and parsed from) both fields. Locale-aware by default. */
-  public displayFormat = input('Pp');
+  public displayFormat = input<string | null>(null);
 
   /**
    * IANA name of the zone both fields' wall clock stands for - `'Asia/Tokyo'` makes the fields, the
@@ -86,6 +87,9 @@ export class DateTimeRangeInputDirective
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /** The first day of the picker calendar's rows, `0` for Sunday. Defaults to the locale's. */
+  public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
+
   /**
    * Forwarded to both of the picker's time pickers. Only the time of day of `minTime`/`maxTime` is
    * read, so the bound applies on every day; `timeFilter` receives the full candidate timestamp and
@@ -102,7 +106,8 @@ export class DateTimeRangeInputDirective
    */
   public presets = input<readonly DateRangePreset[]>([]);
 
-  public effectiveDisplayFormat = this.displayFormat;
+  /** The format in effect: this instance's `displayFormat`, else `'Pp'`. */
+  public effectiveDisplayFormat = computed(() => this.displayFormat() ?? 'Pp');
 
   public resolvedParseErrorMessage = computed(
     () => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateTimeRange,
@@ -155,6 +160,24 @@ export class DateTimeRangeInputDirective
 
   /** {@link maxDate} on the calendar the picker shows. */
   public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-date-time-range-input',
+      formatProvider: 'provideDateFormat',
+      readings: () =>
+        this.mixed()
+          ? []
+          : [
+              { value: this.value().start, parsed: this.startDate() },
+              { value: this.value().end, parsed: this.endDate() },
+            ],
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** One side read in the runtime's own zone, or `null` when it is empty or the readings agree. */
   public localReading(side: DateRangeSide) {

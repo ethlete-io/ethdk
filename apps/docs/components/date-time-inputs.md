@@ -30,7 +30,10 @@ scalar - see below) shares one design:
 - **String wire value in a configurable format.** The form value is a `string`
   in `valueFormat`; string↔`Date` conversion happens only in the control - the
   [calendar](/components/calendar) and [time picker](/components/time-picker)
-  overlays operate on `Date` objects.
+  overlays operate on `Date` objects. An incoming value is read strictly against
+  `valueFormat`, so one that does not match it - `'2026-07-30'` on the ISO default,
+  `'09:30:00'` on `HH:mm` - renders as a blank field. Dev mode warns once per control
+  with the value, the format in effect and an example of a value that matches.
 - **Typed entry + anchored picker.** Typed text is parsed against `displayFormat`
   (strictly for dates, leniently for times). Unparseable text stays visible, the
   `parseError` signal turns on and the value clears to `null` - once touched,
@@ -112,7 +115,8 @@ per-control tables below list only what is specific to each:
 | `aria-label` / `aria-labelledby` | `string \| null`                          | `null`  | Name the control where no `et-label` is projected - see [accessibility](#accessibility).                                                             |
 
 Each model's change output comes with it: `valueChange`, `mixedChange`, `touchedChange`
-and - everywhere but the duration input - `pickerOpenChange`.
+and - everywhere but the duration input - `pickerOpenChange`. Every control also emits `touch`
+when the reader leaves it, the moment `touched` turns `true`.
 
 ## Date input - `et-date-input` {#date-input}
 
@@ -134,23 +138,24 @@ In a [query form](/query/query-forms#binding-a-date-control), bind it to
 The value is a `string | null`. On `et-date-input` (forwarded from the headless
 `[etDateInput]` directive), on top of the [shared contract set](#shared-contract):
 
-| Input                 | Type                                         | Default             | Description                                                                  |
-| --------------------- | -------------------------------------------- | ------------------- | ---------------------------------------------------------------------------- |
-| `valueFormat`         | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).   |
-| `displayFormat`       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from the field (locale-aware).           |
-| `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names - `'month'` makes this a month picker.            |
-| `weekNumbers`         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                            |
-| `locale`              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                        |
-| `minDate` / `maxDate` | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms). |
-| `dateFilter`          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                            |
-| `startAt`             | `Date \| null`                               | `null`              | Month the picker calendar opens at while the value is empty.                 |
-| `startView`           | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                     |
-| `dateClass`           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                    |
-| `pickerOpen`          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                             |
-| `pickerTriggerLabel`  | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                  |
-| `parseErrorMessage`   | `string \| null`                             | `null` ²            | Message shown below the field when typed text can't be parsed.               |
-| `clearable`           | `boolean`                                    | `true`              | Clear (×) button while the focused field has a value (label: `clearLabel`).  |
-| `mask`                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.       |
+| Input                 | Type                                         | Default             | Description                                                                                           |
+| --------------------- | -------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `valueFormat`         | `string \| null`                             | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset). `null` uses the token.     |
+| `displayFormat`       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from the field (locale-aware).                                    |
+| `precision`           | `'day' \| 'month' \| 'year'`                 | `'day'`             | Which unit the value names - `'month'` makes this a month picker.                                     |
+| `weekNumbers`         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                                     |
+| `firstDayOfWeek`      | `0–6`                                        | locale, else `1`    | The picker calendar's first weekday, `0` = Sunday - see [the calendar](/components/calendar#options). |
+| `locale`              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                                                 |
+| `minDate` / `maxDate` | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                          |
+| `dateFilter`          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                                     |
+| `startAt`             | `Date \| null`                               | `null`              | Month the picker calendar opens at while the value is empty.                                          |
+| `startView`           | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                              |
+| `dateClass`           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                             |
+| `pickerOpen`          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                                      |
+| `pickerTriggerLabel`  | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                                           |
+| `parseErrorMessage`   | `string \| null`                             | `null` ²            | Message shown below the field when typed text can't be parsed.                                        |
+| `clearable`           | `boolean`                                    | `true`              | Clear (×) button while the focused field has a value (label: `clearLabel`).                           |
+| `mask`                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                                |
 
 ¹ `null` falls through to [`DATE_TIME_LABELS`](/components/localization) (`'Open calendar'`, and the matching `openTimePicker` / `openDateTimePicker` for the other controls), which `provideDateTimeLabels({ … })` overrides for a whole subtree.
 ² `null` falls through to [`DATE_TIME_LABELS`](/components/localization) - `invalidDate` here, and the matching `invalidTime` / `invalidDateTime` / `invalidDateRange` / `invalidTimeRange` / `invalidDateTimeRange` / `invalidDuration` for the other controls.
@@ -237,6 +242,14 @@ Give the reader a friendlier name than the IANA one with `timeZoneLabel`:
 
 A name `Intl` does not know is ignored, and the control stays in the runtime's zone (dev mode warns).
 
+Give the [validators](/components/forms#range-validators) the same `timeZone` when the `valueFormat` has no
+offset token: `dateTimeBounds`, `dateTimeRangeBounds` and `dateRangeOrder` then read the wire value in
+the zone's wall clock, and the bounds messages name the bound in it.
+
+```ts
+dateTimeBounds(s.doorsOpen, { min: () => new Date(), valueFormat: "yyyy-MM-dd'T'HH:mm", timeZone: 'Asia/Tokyo' });
+```
+
 The same input is on the range control, where one second reading covers both ends:
 
 <StoryEmbed id="components-forms-date-time-range-input--time-zone" height="420px" />
@@ -269,28 +282,29 @@ commits exactly like the single date input.
 On `et-date-range-input` (forwarded from the headless `[etDateRangeInput]` directive), on
 top of the [shared contract set](#shared-contract):
 
-| Input                                 | Type                                         | Default             | Description                                                                             |
-| ------------------------------------- | -------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
-| `valueFormat`                         | `string`                                     | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).            |
-| `displayFormat`                       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from both fields (locale-aware).                    |
-| `precision`                           | `'day' \| 'month' \| 'year'`                 | `'day'`             | [Which unit](#precision) both ends name - `'month'` makes this a month-range picker.    |
-| `weekNumbers`                         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                       |
-| `locale`                              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                                   |
-| `minDate` / `maxDate`                 | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).            |
-| `dateFilter`                          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                       |
-| `startAt`                             | `Date \| null`                               | `null`              | Month the picker calendar opens at while the range is empty.                            |
-| `startView`                           | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                |
-| `dateClass`                           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                               |
-| `rangeSelectionStrategy`              | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means - [snapping picks](/components/calendar#range-selection-strategies).  |
-| `comparisonStart` / `comparisonEnd`   | `Date \| null`                               | `null`              | The picker's [comparison band](/components/calendar#comparison-ranges). Presentational. |
-| `presets`                             | `readonly DateRangePreset[]`                 | `[]`                | Ranges offered beside the picker calendar - see [presets](#range-presets).              |
-| `startPlaceholder` / `endPlaceholder` | `string`                                     | `''`                | Placeholders of the two fields.                                                         |
-| `startAriaLabel` / `endAriaLabel`     | `string \| null`                             | `null` ³            | `aria-label`s of the two fields (`'Start date'` / `'End date'`).                        |
-| `pickerOpen`                          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                        |
-| `pickerTriggerLabel`                  | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                             |
-| `parseErrorMessage`                   | `string \| null`                             | `null` ²            | Message shown below the field when either side's text can't be parsed.                  |
-| `clearable`                           | `boolean`                                    | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                       |
-| `mask`                                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                  |
+| Input                                 | Type                                         | Default             | Description                                                                                           |
+| ------------------------------------- | -------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `valueFormat`                         | `string \| null`                             | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset). `null` uses the token.   |
+| `displayFormat`                       | `string \| null`                             | `null` ⁴            | date-fns format shown in and parsed from both fields (locale-aware).                                  |
+| `precision`                           | `'day' \| 'month' \| 'year'`                 | `'day'`             | [Which unit](#precision) both ends name - `'month'` makes this a month-range picker.                  |
+| `weekNumbers`                         | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                                     |
+| `firstDayOfWeek`                      | `0–6`                                        | locale, else `1`    | The picker calendar's first weekday, `0` = Sunday - see [the calendar](/components/calendar#options). |
+| `locale`                              | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale.                                                                                 |
+| `minDate` / `maxDate`                 | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                          |
+| `dateFilter`                          | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                                     |
+| `startAt`                             | `Date \| null`                               | `null`              | Month the picker calendar opens at while the range is empty.                                          |
+| `startView`                           | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                              |
+| `dateClass`                           | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                             |
+| `rangeSelectionStrategy`              | `CalendarRangeSelectionStrategy \| null`     | `null`              | What a pick means - [snapping picks](/components/calendar#range-selection-strategies).                |
+| `comparisonStart` / `comparisonEnd`   | `Date \| null`                               | `null`              | The picker's [comparison band](/components/calendar#comparison-ranges). Presentational.               |
+| `presets`                             | `readonly DateRangePreset[]`                 | `[]`                | Ranges offered beside the picker calendar - see [presets](#range-presets).                            |
+| `startPlaceholder` / `endPlaceholder` | `string`                                     | `''`                | Placeholders of the two fields.                                                                       |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                             | `null` ³            | `aria-label`s of the two fields (`'Start date'` / `'End date'`).                                      |
+| `pickerOpen`                          | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                                      |
+| `pickerTriggerLabel`                  | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                                           |
+| `parseErrorMessage`                   | `string \| null`                             | `null` ²            | Message shown below the field when either side's text can't be parsed.                                |
+| `clearable`                           | `boolean`                                    | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                                     |
+| `mask`                                | `boolean`                                    | `false`             | Opt-in typing mask derived from a fixed-width numeric `displayFormat`.                                |
 
 The host is a `role="group"` labelled by the field label. The opt-in typing mask applies
 to both fields - each side is its own mask host, so the guide only shows on the focused
@@ -388,19 +402,19 @@ with an anchored [time picker](/components/time-picker) overlay.
 The value is a `string | null`. On `et-time-input` (forwarded from the headless
 `[etTimeInput]` directive), on top of the [shared contract set](#shared-contract):
 
-| Input                       | Type                                | Default             | Description                                                                                 |
-| --------------------------- | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| `valueFormat`               | `string`                            | `TIME_FORMAT` token | date-fns format of the string value (token default: `HH:mm`).                               |
-| `displayFormat`             | `string`                            | `'p'`               | date-fns format shown in and parsed from the field (locale-aware).                          |
-| `locale`                    | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).                         |
-| `minuteStep` / `secondStep` | `number`                            | `5` / `1`           | Forwarded to the picker, clamped to at least 1.                                             |
-| `minTime` / `maxTime`       | `Date \| null`                      | `null`              | Bound the picker's time of day (`min`/`max` are reserved by signal forms).                  |
-| `timeFilter`                | `((date: Date) => boolean) \| null` | `null`              | Rejects individual times in the picker.                                                     |
-| `pickerOpen`                | `boolean` (model)                   | `false`             | The picker overlay's open state.                                                            |
-| `pickerTriggerLabel`        | `string \| null`                    | `null` ¹            | `aria-label` of the suffix clock button.                                                    |
-| `parseErrorMessage`         | `string \| null`                    | `null` ²            | Message shown below the field when typed text can't be parsed.                              |
-| `clearable`                 | `boolean`                           | `true`              | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
-| `mask`                      | `boolean`                           | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.                      |
+| Input                 | Type                                | Default             | Description                                                                                 |
+| --------------------- | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
+| `valueFormat`         | `string \| null`                    | `TIME_FORMAT` token | date-fns format of the string value (token default: `HH:mm`). `null` uses the token.        |
+| `displayFormat`       | `string \| null`                    | `'p'`               | date-fns format shown in and parsed from the field (locale-aware). `null` uses the default. |
+| `locale`              | `Locale \| null` (date-fns)         | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).                         |
+| `minuteStep`          | `number`                            | `5`                 | Forwarded to the picker, clamped to at least 1.                                             |
+| `minTime` / `maxTime` | `Date \| null`                      | `null`              | Bound the picker's time of day (`min`/`max` are reserved by signal forms).                  |
+| `timeFilter`          | `((date: Date) => boolean) \| null` | `null`              | Rejects individual times in the picker.                                                     |
+| `pickerOpen`          | `boolean` (model)                   | `false`             | The picker overlay's open state.                                                            |
+| `pickerTriggerLabel`  | `string \| null`                    | `null` ¹            | `aria-label` of the suffix clock button.                                                    |
+| `parseErrorMessage`   | `string \| null`                    | `null` ²            | Message shown below the field when typed text can't be parsed.                              |
+| `clearable`           | `boolean`                           | `true`              | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
+| `mask`                | `boolean`                           | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.                      |
 
 Typed text is parsed against `displayFormat` first, then **leniently**: bare
 digit runs (`930` → 09:30, `0930`, `93015`), loose separators (`9.30`, `9 30`)
@@ -441,22 +455,22 @@ daily window - instead of pairing two `et-time-input`s.
 On `et-time-range-input` (forwarded from the headless `[etTimeRangeInput]` directive), on
 top of the [shared contract set](#shared-contract):
 
-| Input                                 | Type                                                        | Default             | Description                                                            |
-| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------- |
-| `valueFormat`                         | `string`                                                    | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`).        |
-| `displayFormat`                       | `string`                                                    | `'p'`               | date-fns format shown in and parsed from both fields (locale-aware).   |
-| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).    |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the picker, clamped to at least 1.                        |
-| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the picker's time of day, for both ends.                         |
-| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.               |
-| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                        |
-| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start time'` / `'End time'`).       |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                         |
-| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                       |
-| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                               |
-| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed. |
-| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).      |
-| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`. |
+| Input                                 | Type                                                        | Default             | Description                                                                                   |
+| ------------------------------------- | ----------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------- |
+| `valueFormat`                         | `string \| null`                                            | `TIME_FORMAT` token | date-fns format of both string values (token default: `HH:mm`). `null` uses the token.        |
+| `displayFormat`                       | `string \| null`                                            | `'p'`               | date-fns format shown in and parsed from both fields (locale-aware). `null` uses the default. |
+| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the picker's 12/24-hour layout).                           |
+| `minuteStep`                          | `number`                                                    | `5`                 | Forwarded to the picker, clamped to at least 1.                                               |
+| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the picker's time of day, for both ends.                                                |
+| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the end being filled.                                      |
+| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                               |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start time'` / `'End time'`).                              |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                                                |
+| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                              |
+| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix clock button.                                                      |
+| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                        |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                             |
+| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `HH:mm`.                        |
 
 Each side parses **leniently**, with the single time input's rules (`930` → 09:30,
 `930pm` → 21:30). The picker **never closes on its own**: filling one end still leaves
@@ -509,28 +523,29 @@ correct the day is never interrupted.
 The value is a `string | null`. On `et-date-time-input` (forwarded from the headless
 `[etDateTimeInput]` directive), on top of the [shared contract set](#shared-contract):
 
-| Input                           | Type                                         | Default             | Description                                                                                 |
-| ------------------------------- | -------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| `valueFormat`                   | `string`                                     | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset).                  |
-| `displayFormat`                 | `string`                                     | `'Pp'`              | Combined date-fns format shown in and parsed from the field (locale-aware).                 |
-| `timeZone`                      | `string \| null`                             | `null`              | IANA zone the field's wall clock stands for - see [time zones](#value-time-zone).           |
-| `timeZoneLabel`                 | `string \| null`                             | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                        |
-| `locale`                        | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).                    |
-| `minDate` / `maxDate`           | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                |
-| `dateFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                           |
-| `startAt`                       | `Date \| null`                               | `null`              | Month the picker calendar opens at while the value is empty.                                |
-| `startView`                     | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                    |
-| `dateClass`                     | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                   |
-| `weekNumbers`                   | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                           |
-| `minuteStep` / `secondStep`     | `number`                                     | `5` / `1`           | Forwarded to the time picker, clamped to at least 1.                                        |
-| `minTime` / `maxTime`           | `Date \| null`                               | `null`              | Bound the time pane's time of day (see the time input).                                     |
-| `timeFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Rejects individual times; receives the full candidate timestamp.                            |
-| `pickerOpen`                    | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                            |
-| `pickerTriggerLabel`            | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                                 |
-| `dateTabLabel` / `timeTabLabel` | `string \| null`                             | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                |
-| `parseErrorMessage`             | `string \| null`                             | `null` ²            | Message shown below the field when typed text can't be parsed.                              |
-| `clearable`                     | `boolean`                                    | `true`              | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
-| `mask`                          | `boolean`                                    | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.           |
+| Input                           | Type                                         | Default             | Description                                                                                           |
+| ------------------------------- | -------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------- |
+| `valueFormat`                   | `string \| null`                             | `DATE_FORMAT` token | date-fns format of the string value (token default: ISO 8601 with offset). `null` uses the token.     |
+| `displayFormat`                 | `string \| null`                             | `'Pp'`              | Combined date-fns format shown in and parsed from the field (locale-aware). `null` uses the default.  |
+| `timeZone`                      | `string \| null`                             | `null`              | IANA zone the field's wall clock stands for - see [time zones](#value-time-zone).                     |
+| `timeZoneLabel`                 | `string \| null`                             | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                                  |
+| `locale`                        | `Locale \| null` (date-fns)                  | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).                              |
+| `minDate` / `maxDate`           | `Date \| null`                               | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                          |
+| `dateFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Forwarded to the picker calendar.                                                                     |
+| `startAt`                       | `Date \| null`                               | `null`              | Month the picker calendar opens at while the value is empty.                                          |
+| `startView`                     | `'month' \| 'year' \| 'multiYear'`           | `'month'`           | Which grid the picker calendar opens on.                                                              |
+| `dateClass`                     | `(date, view) => string \| string[] \| null` | `null`              | Per-cell classes for the picker calendar.                                                             |
+| `weekNumbers`                   | `boolean`                                    | `false`             | Renders the picker calendar's week-number column.                                                     |
+| `firstDayOfWeek`                | `0–6`                                        | locale, else `1`    | The picker calendar's first weekday, `0` = Sunday - see [the calendar](/components/calendar#options). |
+| `minuteStep`                    | `number`                                     | `5`                 | Forwarded to the time picker, clamped to at least 1.                                                  |
+| `minTime` / `maxTime`           | `Date \| null`                               | `null`              | Bound the time pane's time of day (see the time input).                                               |
+| `timeFilter`                    | `((date: Date) => boolean) \| null`          | `null`              | Rejects individual times; receives the full candidate timestamp.                                      |
+| `pickerOpen`                    | `boolean` (model)                            | `false`             | The picker overlay's open state.                                                                      |
+| `pickerTriggerLabel`            | `string \| null`                             | `null` ¹            | `aria-label` of the suffix calendar button.                                                           |
+| `dateTabLabel` / `timeTabLabel` | `string \| null`                             | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                          |
+| `parseErrorMessage`             | `string \| null`                             | `null` ²            | Message shown below the field when typed text can't be parsed.                                        |
+| `clearable`                     | `boolean`                                    | `true`              | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`).           |
+| `mask`                          | `boolean`                                    | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                     |
 
 Typed text is parsed **strictly** against `displayFormat` first, then leniently:
 the entry is split into a date and a time at any separator (the date against the
@@ -594,32 +609,33 @@ appointment - instead of pairing two `et-date-time-input`s.
 On `et-date-time-range-input` (forwarded from the headless `[etDateTimeRangeInput]`
 directive), on top of the [shared contract set](#shared-contract):
 
-| Input                                 | Type                                                        | Default             | Description                                                                                          |
-| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `valueFormat`                         | `string`                                                    | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset).                         |
-| `displayFormat`                       | `string`                                                    | `'Pp'`              | Combined date-fns format shown in and parsed from both fields (locale-aware).                        |
-| `timeZone`                            | `string \| null`                                            | `null`              | IANA zone both fields' wall clock stands for - see [time zones](#value-time-zone).                   |
-| `timeZoneLabel`                       | `string \| null`                                            | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                                 |
-| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).                             |
-| `minDate` / `maxDate`                 | `Date \| null`                                              | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                         |
-| `dateFilter`                          | `((date: Date) => boolean) \| null`                         | `null`              | Forwarded to the picker calendar.                                                                    |
-| `startAt`                             | `Date \| null`                                              | `null`              | Month the picker calendar opens at while the range is empty.                                         |
-| `startView`                           | `'month' \| 'year' \| 'multiYear'`                          | `'month'`           | Which grid the picker calendar opens on.                                                             |
-| `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                                            |
-| `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                                    |
-| `presets`                             | `readonly DateRangePreset[]`                                | `[]`                | Ranges offered beside the picker - see [presets](#range-presets). 00:00 to 23:59 from the factories. |
-| `minuteStep` / `secondStep`           | `number`                                                    | `5` / `1`           | Forwarded to the time picker, clamped to at least 1.                                                 |
-| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                                   |
-| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills.                |
-| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                                      |
-| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).                   |
-| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                                                       |
-| `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                         |
-| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                                     |
-| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                                          |
-| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                               |
-| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                                    |
-| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                    |
+| Input                                 | Type                                                        | Default             | Description                                                                                            |
+| ------------------------------------- | ----------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| `valueFormat`                         | `string \| null`                                            | `DATE_FORMAT` token | date-fns format of both string values (token default: ISO 8601 with offset). `null` uses the token.    |
+| `displayFormat`                       | `string \| null`                                            | `'Pp'`              | Combined date-fns format shown in and parsed from both fields (locale-aware). `null` uses the default. |
+| `timeZone`                            | `string \| null`                                            | `null`              | IANA zone both fields' wall clock stands for - see [time zones](#value-time-zone).                     |
+| `timeZoneLabel`                       | `string \| null`                                            | `null`              | Name shown for `timeZone`. Defaults to the IANA name's last segment.                                   |
+| `locale`                              | `Locale \| null` (date-fns)                                 | `DATE_LOCALE` token | Display/parse locale (also decides the time picker's 12/24-hour layout).                               |
+| `minDate` / `maxDate`                 | `Date \| null`                                              | `null`              | Forwarded to the picker calendar (`min`/`max` are reserved by signal forms).                           |
+| `dateFilter`                          | `((date: Date) => boolean) \| null`                         | `null`              | Forwarded to the picker calendar.                                                                      |
+| `startAt`                             | `Date \| null`                                              | `null`              | Month the picker calendar opens at while the range is empty.                                           |
+| `startView`                           | `'month' \| 'year' \| 'multiYear'`                          | `'month'`           | Which grid the picker calendar opens on.                                                               |
+| `dateClass`                           | `(date, view) => string \| string[] \| null`                | `null`              | Per-cell classes for the picker calendar.                                                              |
+| `weekNumbers`                         | `boolean`                                                   | `false`             | Renders the picker calendar's week-number column.                                                      |
+| `firstDayOfWeek`                      | `0–6`                                                       | locale, else `1`    | The picker calendar's first weekday, `0` = Sunday - see [the calendar](/components/calendar#options).  |
+| `presets`                             | `readonly DateRangePreset[]`                                | `[]`                | Ranges offered beside the picker - see [presets](#range-presets). 00:00 to 23:59 from the factories.   |
+| `minuteStep`                          | `number`                                                    | `5`                 | Forwarded to the time picker, clamped to at least 1.                                                   |
+| `minTime` / `maxTime`                 | `Date \| null`                                              | `null`              | Bound the times pane's time of day, for both ends.                                                     |
+| `timeFilter`                          | `((date: Date, side: 'start' \| 'end') => boolean) \| null` | `null`              | Rejects individual times; receives the full candidate timestamp and the end it fills.                  |
+| `startPlaceholder` / `endPlaceholder` | `string`                                                    | `''`                | Placeholders of the two fields.                                                                        |
+| `startAriaLabel` / `endAriaLabel`     | `string \| null`                                            | `null` ³            | `aria-label`s of the two fields (`'Start date and time'` / `'End date and time'`).                     |
+| `startTimeLabel` / `endTimeLabel`     | `string \| null`                                            | `null` ⁵            | Names of the two ring handles.                                                                         |
+| `datesTabLabel` / `timesTabLabel`     | `string \| null`                                            | `null` ³            | Labels of the pane tabs in the bottom sheet.                                                           |
+| `pickerOpen`                          | `boolean` (model)                                           | `false`             | The picker overlay's open state.                                                                       |
+| `pickerTriggerLabel`                  | `string \| null`                                            | `null` ¹            | `aria-label` of the suffix calendar button.                                                            |
+| `parseErrorMessage`                   | `string \| null`                                            | `null` ²            | Message shown below the field when either side's text can't be parsed.                                 |
+| `clearable`                           | `boolean`                                                   | `true`              | Clear (×) button while the field is in use (label: `clearLabel`).                                      |
+| `mask`                                | `boolean`                                                   | `false`             | Opt-in typing mask - needs a fixed-width `displayFormat` like `dd.MM.yyyy HH:mm`.                      |
 
 The host is a `role="group"` labelled by the field label. `precision` is absent, as on the
 single date-time input - both ends carry a time. It does **not** take the date range input's
@@ -690,11 +706,11 @@ times, race durations, effort windows), so it stays out of the calendar/time
 On `et-duration-input` (forwarded from the headless `[etDurationInput]` directive), on top
 of the [shared contract set](#shared-contract), minus the `dialogLabel` a picker would need:
 
-| Input               | Type             | Default   | Description                                                                                 |
-| ------------------- | ---------------- | --------- | ------------------------------------------------------------------------------------------- |
-| `durationFormat`    | `string`         | `'mm:ss'` | Segment layout - runs of `h`/`m`/`s`/`S` (millis) plus separators.                          |
-| `parseErrorMessage` | `string \| null` | `null` ²  | Message shown below the field when typed text can't be parsed.                              |
-| `clearable`         | `boolean`        | `true`    | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`). |
+| Input               | Type             | Default   | Description                                                                                                     |
+| ------------------- | ---------------- | --------- | --------------------------------------------------------------------------------------------------------------- |
+| `durationFormat`    | `string`         | `'mm:ss'` | Segment layout - runs of `h` (or `H`)/`m`/`s`/`S` (millis) plus separators. Dev mode warns on any other letter. |
+| `parseErrorMessage` | `string \| null` | `null` ²  | Message shown below the field when typed text can't be parsed.                                                  |
+| `clearable`         | `boolean`        | `true`    | Clear (×) button while the focused field has a value or pending text (label: `clearLabel`).                     |
 
 The format is any arrangement of unit-token runs and separators: `mm:ss`,
 `hh:mm:ss`, `hh:mm:ss.SSS`, `h m`. Typed text commits on blur/Enter with a
@@ -736,6 +752,23 @@ no inputs, and so do the four single-value field directives (`input[etDateInputF
 | -------------------------------------------------------------------------------------------------- | ------------- | ------------------ | --------------------------------------------------------------------------------------------- |
 | `input[etDateRangeInputField]`, `input[etTimeRangeInputField]`, `input[etDateTimeRangeInputField]` | `side`        | `'start' \| 'end'` | Required. Which end of the range this field edits.                                            |
 | `et-date-picker-panel`                                                                             | `dialogLabel` | `string \| null`   | Accessible name of the `role="dialog"` panel; falls through to `DATE_TIME_LABELS.chooseDate`. |
+
+A headless control puts them together around its own markup. Read the control through its
+`exportAs` reference: the surface's typed `let-` context is the narrow picker host (open and close),
+not the control with its `date()` and `selectDate()`, which commits and closes the picker.
+
+```html
+<div #dateInput="etDateInput" [formField]="demoForm.birthday" etDateInput valueFormat="yyyy-MM-dd">
+  <input etDateInputField />
+  <button etDatePickerTrigger type="button">Open calendar</button>
+
+  <ng-template etDatePickerSurface>
+    <et-date-picker-panel>
+      <et-calendar [value]="dateInput.date()" (valueChange)="dateInput.selectDate($event)" />
+    </et-date-picker-panel>
+  </ng-template>
+</div>
+```
 
 ## Bulk editing
 

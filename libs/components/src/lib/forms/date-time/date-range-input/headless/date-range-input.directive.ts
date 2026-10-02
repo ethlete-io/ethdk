@@ -7,6 +7,7 @@ import {
   CalendarRangeSelectionStrategy,
   CalendarView,
   startOfCalendarUnit,
+  CalendarWeekStartsOn,
 } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
@@ -17,6 +18,7 @@ import { displayFormatForPrecision } from '../../internals/precision-format';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { DateRangePreset } from '../../date-range-presets';
 import { createDateRangePresets } from '../../internals/date-range-presets-state';
+import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 export type { DateRangeSide, DateRangeValue } from '../../internals/date-range-picker-input.directive';
 
@@ -81,6 +83,9 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   /** Renders the picker calendar's week-number column. */
   public weekNumbers = input(false, { transform: booleanAttribute });
 
+  /** The first day of the picker calendar's rows, `0` for Sunday. Defaults to the locale's. */
+  public firstDayOfWeek = input<CalendarWeekStartsOn | undefined>(undefined);
+
   /**
    * Ranges offered beside the picker calendar - build them with the preset factories
    * (`lastDaysPreset(7)`, `thisMonthPreset()`, …) or write your own. Picking one commits it and
@@ -104,6 +109,24 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   );
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_RANGE_INPUT);
+
+  constructor() {
+    super();
+
+    warnOnUnparsedValue({
+      selector: 'et-date-range-input',
+      formatProvider: 'provideDateFormat',
+      readings: () =>
+        this.mixed()
+          ? []
+          : [
+              { value: this.value().start, parsed: this.startDate() },
+              { value: this.value().end, parsed: this.endDate() },
+            ],
+      format: this.effectiveValueFormat,
+      locale: this.effectiveLocale,
+    });
+  }
 
   /** Commits a picker range; a completed range closes the picker. */
   public selectCalendarRange(range: { start: Date | null; end: Date | null }) {

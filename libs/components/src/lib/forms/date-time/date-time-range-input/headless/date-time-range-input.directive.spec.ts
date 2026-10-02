@@ -16,6 +16,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
 @Component({
   template: `
     <div
+      #rangeInput="etDateTimeRangeInput"
       [(value)]="value"
       [(mixed)]="mixed"
       [disabled]="disabled()"
@@ -28,7 +29,7 @@ import { pressKey, tick } from '../../../../testing/driver-core';
       <input class="end" etDateTimeRangeInputField side="end" />
       <button class="open-picker" etDatePickerTrigger>open</button>
 
-      <ng-template etDatePickerSurface let-rangeInput>
+      <ng-template etDatePickerSurface>
         <button
           (click)="rangeInput.selectCalendarRange({ start: pickStartDay, end: null })"
           class="pick-start-day"

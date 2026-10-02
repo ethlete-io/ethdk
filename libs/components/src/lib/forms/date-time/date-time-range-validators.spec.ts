@@ -250,4 +250,23 @@ describe('dateBounds and dateTimeBounds', () => {
       ),
     ).toEqual([]);
   });
+
+  it('reads an offset-less value in the given timeZone and names the bound in it', () => {
+    const noonInTokyo = new Date('2026-03-05T03:00:00Z');
+    const apply = (path: Parameters<typeof dateBounds>[0]) =>
+      dateTimeBounds(path, { min: noonInTokyo, valueFormat: "yyyy-MM-dd'T'HH:mm", timeZone: 'Asia/Tokyo' });
+
+    expect(singleErrors('2026-03-05T11:59', apply)).toEqual([
+      { kind: 'rangeMin', message: 'Choose dates on or after 03/05/2026, 12:00 PM' },
+    ]);
+    expect(singleErrors('2026-03-05T12:00', apply)).toEqual([]);
+  });
+
+  it('orders a range in the given timeZone', () => {
+    const errors = errorsFor(range('2026-03-05T12:00', '2026-03-05T11:00'), (path) =>
+      dateRangeOrder(path, { valueFormat: "yyyy-MM-dd'T'HH:mm", timeZone: 'Asia/Tokyo' }),
+    );
+
+    expect(errors).toMatchObject([{ kind: 'rangeOrder' }]);
+  });
 });

@@ -55,6 +55,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'startView',
         'dateClass',
         'weekNumbers',
+        'firstDayOfWeek',
         'pickerOpen',
         ...ACCESSIBLE_NAME_INPUTS,
       ],

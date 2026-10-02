@@ -32,7 +32,6 @@ export type TimeRangeFilterPreset = 'none' | 'noLunchBreak' | 'weekdayHours' | '
           [locale]="localeObject()"
           [mask]="mask()"
           [minuteStep]="minuteStep()"
-          [secondStep]="secondStep()"
           [minTime]="minTimeDate()"
           [maxTime]="maxTimeDate()"
           [timeFilter]="filterFn()"
@@ -65,7 +64,6 @@ export class TimeRangeInputStorybookComponent {
   public displayFormat = input('p');
   public mask = input(false);
   public minuteStep = input(5);
-  public secondStep = input(1);
   public minTime = input<string | null>(null);
   public maxTime = input<string | null>(null);
   public filter = input<TimeRangeFilterPreset>('none');

@@ -1,4 +1,4 @@
-import { deriveDurationFormatSpec, formatDuration, parseDuration } from './duration-format';
+import { deriveDurationFormatSpec, durationFormatProblem, formatDuration, parseDuration } from './duration-format';
 
 describe('duration-format', () => {
   describe('deriveDurationFormatSpec', () => {
@@ -32,6 +32,31 @@ describe('duration-format', () => {
         { unit: 'm', width: 1 },
       ]);
       expect(spec.separators).toEqual([' ']);
+    });
+  });
+
+  describe('the date-fns hour habit', () => {
+    it('reads HH:mm:ss as hours, minutes and seconds', () => {
+      const spec = deriveDurationFormatSpec('HH:mm:ss');
+
+      expect(spec.segments.map((segment) => segment.unit)).toEqual(['h', 'm', 's']);
+      expect(formatDuration(3_723_000, spec)).toBe('01:02:03');
+    });
+  });
+
+  describe('durationFormatProblem', () => {
+    it('accepts the token letters', () => {
+      expect(durationFormatProblem('hh:mm:ss.SSS')).toBeNull();
+      expect(durationFormatProblem('HH:mm')).toBeNull();
+      expect(durationFormatProblem('h m')).toBeNull();
+    });
+
+    it('names letters that are no tokens', () => {
+      expect(durationFormatProblem('dd:hh:mm')).toContain('"d"');
+    });
+
+    it('names text before the first segment', () => {
+      expect(durationFormatProblem('~mm:ss')).toContain('"~"');
     });
   });
 

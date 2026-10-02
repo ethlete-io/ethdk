@@ -14,7 +14,6 @@ import { TimePickerDirective } from './time-picker.directive';
       [(value)]="value"
       [format]="format()"
       [minuteStep]="minuteStep()"
-      [secondStep]="secondStep()"
       [min]="min()"
       [max]="max()"
       [timeFilter]="timeFilter()"
@@ -31,7 +30,6 @@ class TimePickerTestHost {
   value = signal<Date | null>(null);
   format = signal('HH:mm');
   minuteStep = signal(5);
-  secondStep = signal(1);
   min = signal<Date | null>(null);
   max = signal<Date | null>(null);
   timeFilter = signal<((date: Date) => boolean) | null>(null);
@@ -113,14 +111,13 @@ describe('TimePickerDirective', () => {
     expect(handle().getAttribute('aria-valuetext')).toBe('2:05:30 PM');
   });
 
-  it('anchors an empty ring to now, snapped to the minute and second steps', () => {
+  it('anchors an empty ring to now, snapped to the minute step with seconds at 0', () => {
     expect(timeOf(picker().anchorTime())).toBe('10:05:00');
 
     host.format.set('HH:mm:ss');
-    host.secondStep.set(15);
     tick();
 
-    expect(timeOf(picker().anchorTime())).toBe('10:05:30');
+    expect(timeOf(picker().anchorTime())).toBe('10:05:00');
 
     host.value.set(at(8, 12, 3));
     tick();

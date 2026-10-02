@@ -59,7 +59,6 @@ export class TimePickerDirective {
   public format = input<string | undefined>(undefined);
   public locale = input<Locale | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  public secondStep = input(1, { transform: positiveIntegerAttribute });
 
   /** Earliest selectable time. Only the time of day is read, so the bound applies to every day. */
   public min = input<Date | null>(null);
@@ -148,7 +147,7 @@ export class TimePickerDirective {
     end: this.ringStopsFor('end', this.endRingDay()),
   }));
 
-  /** The active value, or "now" snapped to the steps: where the keyboard starts on an empty ring. */
+  /** The active value, or "now" snapped to `minuteStep`: where the keyboard starts on an empty ring. */
   public anchorTime = computed<Date>(() => {
     const value = this.activeValue();
 
@@ -158,9 +157,8 @@ export class TimePickerDirective {
 
     const now = this.now();
     const minute = now.getMinutes() - (now.getMinutes() % this.minuteStep());
-    const second = this.formatSpec().showSeconds ? now.getSeconds() - (now.getSeconds() % this.secondStep()) : 0;
 
-    return setMilliseconds(setSeconds(setMinutes(now, minute), second), 0);
+    return setMilliseconds(setSeconds(setMinutes(now, minute), 0), 0);
   });
 
   /** @internal The value of one end as a minute of the day. `single` mode reads `start`. */

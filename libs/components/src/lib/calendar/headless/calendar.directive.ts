@@ -49,6 +49,7 @@ import {
 import { CalendarBandPosition, createCalendarSelectionReader } from './internals/calendar-selection';
 import {
   CalendarRange,
+  CalendarRangeSelectionContext,
   CalendarRangeSelectionStrategy,
   DEFAULT_CALENDAR_RANGE_STRATEGY,
 } from './calendar-range-strategy';
@@ -519,6 +520,9 @@ export class CalendarDirective {
   public canZoomOut = computed(() => this.view() !== 'multiYear');
 
   private effectiveRangeStrategy = computed(() => this.rangeSelectionStrategy() ?? DEFAULT_CALENDAR_RANGE_STRATEGY);
+  private rangeSelectionContext = computed<CalendarRangeSelectionContext>(() => ({
+    weekStartsOn: this.effectiveFirstDayOfWeek(),
+  }));
 
   private previewRange = computed<CalendarRange>(() => {
     if (this.mode() !== 'range' || this.view() !== this.selectionView()) {
@@ -533,7 +537,8 @@ export class CalendarDirective {
 
     const strategy = this.effectiveRangeStrategy();
     const current = this.rangeValue();
-    const preview = strategy.preview ? strategy.preview(at, current) : strategy.select(at, current);
+    const context = this.rangeSelectionContext();
+    const preview = strategy.preview ? strategy.preview(at, current, context) : strategy.select(at, current, context);
 
     if (preview === null || !this.isRangeSelectable(preview)) {
       return { start: null, end: null };
@@ -744,7 +749,7 @@ export class CalendarDirective {
     }
 
     const current = this.rangeValue();
-    const next = this.effectiveRangeStrategy().select(unitStart, current);
+    const next = this.effectiveRangeStrategy().select(unitStart, current, this.rangeSelectionContext());
     const resolved = {
       start: next.start === null ? null : startOfCalendarUnit(next.start, precision),
       end: next.end === null ? null : startOfCalendarUnit(next.end, precision),

@@ -62,6 +62,7 @@
           [startView]="dateTimeInput.startView()"
           [dateClass]="dateTimeInput.dateClass()"
           [weekNumbers]="dateTimeInput.weekNumbers()"
+          [firstDayOfWeek]="dateTimeInput.firstDayOfWeek()"
           [locale]="dateTimeInput.effectiveLocale()"
           (valueChange)="handleDateSelect($event)"
         />
@@ -69,10 +70,9 @@
           <et-time-picker
             [value]="dateTimeInput.pickerTime()"
             [day]="dateTimeInput.pickerDate()"
-            [format]="dateTimeInput.displayFormat()"
+            [format]="dateTimeInput.effectiveDisplayFormat()"
             [locale]="dateTimeInput.effectiveLocale()"
             [minuteStep]="minuteStep()"
-            [secondStep]="secondStep()"
             [min]="dateTimeInput.minTime()"
             [max]="dateTimeInput.maxTime()"
             [timeFilter]="dateTimeInput.timeFilter()"

@@ -1,12 +1,13 @@
 import { inject } from '@angular/core';
 import { FieldContext, LogicFn, validate, ValidationError } from '@angular/forms/signals';
-import { format, startOfDay } from 'date-fns';
+import { startOfDay } from 'date-fns';
 import { CalendarPrecision, startOfCalendarUnit } from '../../calendar/headless';
 import { DATE_FORMAT, DATE_LOCALE, TIME_FORMAT } from './date-time-formats';
 import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
 import { displayFormatForPrecision } from './internals/precision-format';
+import { formatInZone, isValidTimeZone } from './internals/time-zone';
 
 type DateValue = string | null;
 
@@ -24,6 +25,11 @@ export type RangeOrderOptions = {
   valueFormat?: string;
   /** Also fail while both ends are equal. @default false */
   strict?: boolean;
+  /**
+   * The `timeZone` of the date-time control, so an offset-less wire value is read in that zone's
+   * wall clock, as the control writes it.
+   */
+  timeZone?: string | null;
   /** Overrides the default "The start must be before the end" message. */
   message?: string;
 };
@@ -35,11 +41,16 @@ export type DateRangeBoundsOptions = {
   max?: Bound<DateRangeValue>;
   /** date-fns format of the two wire strings. Defaults to the `DATE_FORMAT` token. */
   valueFormat?: string;
+  /**
+   * The `timeZone` of the date-time control: offset-less wire values are read in that zone's wall
+   * clock, and the message names the bound in it.
+   */
+  timeZone?: string | null;
   /** Overrides the default "Choose dates on or after …" / "… on or before …" message. */
   message?: string;
 };
 
-export type DateOnlyRangeBoundsOptions = DateRangeBoundsOptions & {
+export type DateOnlyRangeBoundsOptions = Omit<DateRangeBoundsOptions, 'timeZone'> & {
   /**
    * The unit both ends and the bounds are compared in - the control's `precision`. At `'day'` a
    * `min` of "now" still admits today.
@@ -55,7 +66,7 @@ export type DateBoundsOptions = Omit<DateRangeBoundsOptions, 'min' | 'max'> & {
   max?: Bound<DateValue>;
 };
 
-export type DateOnlyBoundsOptions = DateBoundsOptions & {
+export type DateOnlyBoundsOptions = Omit<DateBoundsOptions, 'timeZone'> & {
   /**
    * The unit the value and the bounds are compared in - the control's `precision`. At `'day'` a
    * `min` of "now" still admits today.
@@ -70,17 +81,25 @@ export type RangeMinError = ValidationError & { kind: 'rangeMin'; min: Date };
 
 export type RangeMaxError = ValidationError & { kind: 'rangeMax'; max: Date };
 
-const parseSide = (value: string | null, valueFormat: string) =>
-  value === null ? null : parseDateValue(value, { format: valueFormat, referenceDate: startOfDay(new Date()) });
+const knownTimeZone = (timeZone: string | null | undefined) =>
+  timeZone && isValidTimeZone(timeZone) ? timeZone : null;
+
+type SideReading = { valueFormat: string; timeZone: string | null };
+
+const parseSide = (value: string | null, { valueFormat, timeZone }: SideReading) =>
+  value === null
+    ? null
+    : parseDateValue(value, { format: valueFormat, referenceDate: startOfDay(new Date()), timeZone });
 
 type RangeOrderConfig = { path: RangeFieldPath; valueFormat: string; options: RangeOrderOptions };
 
-const rangeOrder = ({ path, valueFormat, options: { strict, message } }: RangeOrderConfig) => {
+const rangeOrder = ({ path, valueFormat, options: { strict, message, timeZone } }: RangeOrderConfig) => {
   const labels = injectDateTimeLabels();
+  const reading = { valueFormat, timeZone: knownTimeZone(timeZone) };
 
   validate(path, ({ value }): RangeOrderError | undefined => {
-    const start = parseSide(value().start, valueFormat);
-    const end = parseSide(value().end, valueFormat);
+    const start = parseSide(value().start, reading);
+    const end = parseSide(value().end, reading);
 
     if (start === null || end === null) return undefined;
 
@@ -115,14 +134,14 @@ export const dateRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions 
  * });
  * ```
  */
-export const timeRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions = {}) =>
+export const timeRangeOrder = (path: RangeFieldPath, options: Omit<RangeOrderOptions, 'timeZone'> = {}) =>
   rangeOrder({ path, valueFormat: options.valueFormat ?? inject(TIME_FORMAT), options });
 
 type BoundsConfig<TValue> = {
   path: Parameters<typeof validate<TValue>>[0];
   sidesOf: (value: TValue) => (string | null)[];
   valueFormat: string;
-  options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string };
+  options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string; timeZone?: string | null };
   unit: (date: Date) => Date;
   label: string;
 };
@@ -132,11 +151,13 @@ const resolveBound = <TValue>(bound: Bound<TValue> | undefined, ctx: FieldContex
 
 const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, label }: BoundsConfig<TValue>) => {
   const labels = injectDateTimeLabels();
-  const locale = inject(DATE_LOCALE) ?? undefined;
+  const locale = inject(DATE_LOCALE);
+  const timeZone = knownTimeZone(options.timeZone);
+  const formatBound = (bound: Date) => formatInZone(bound, { format: label, locale, timeZone }) ?? '';
 
   validate(path, (ctx): RangeMinError | RangeMaxError | undefined => {
     const sides = sidesOf(ctx.value())
-      .map((side) => parseSide(side, valueFormat))
+      .map((side) => parseSide(side, { valueFormat, timeZone }))
       .filter((side) => side !== null)
       .map((side) => unit(side).getTime());
 
@@ -144,11 +165,11 @@ const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, label }: Bo
     const max = resolveBound(options.max, ctx);
 
     if (min !== null && sides.some((side) => side < unit(min).getTime())) {
-      return { kind: 'rangeMin', min, message: options.message ?? labels().rangeMin(format(min, label, { locale })) };
+      return { kind: 'rangeMin', min, message: options.message ?? labels().rangeMin(formatBound(min)) };
     }
 
     if (max !== null && sides.some((side) => side > unit(max).getTime())) {
-      return { kind: 'rangeMax', max, message: options.message ?? labels().rangeMax(format(max, label, { locale })) };
+      return { kind: 'rangeMax', max, message: options.message ?? labels().rangeMax(formatBound(max)) };
     }
 
     return undefined;

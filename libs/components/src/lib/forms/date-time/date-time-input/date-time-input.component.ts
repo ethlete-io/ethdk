@@ -65,6 +65,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'startView',
         'dateClass',
         'weekNumbers',
+        'firstDayOfWeek',
         'minTime',
         'maxTime',
         'timeFilter',
@@ -88,7 +89,6 @@ export class DateTimeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** Labels of the pane tabs shown when the picker mounts as a bottom sheet. */
   public dateTabLabel = input<string | null>(null);
   public timeTabLabel = input<string | null>(null);

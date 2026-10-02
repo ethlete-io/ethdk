@@ -71,7 +71,6 @@ export class TimeInputComponent {
   public pickerTriggerLabel = input<string | null>(null);
   public dialogLabel = input<string | null>(null);
   public minuteStep = input(5, { transform: positiveIntegerAttribute });
-  public secondStep = input(1, { transform: positiveIntegerAttribute });
   /** Shows a clear (×) control while a value or pending text is set and the field is in use. */
   public clearable = input(true, { transform: booleanAttribute });
   public clearLabel = input<string | null>(null);

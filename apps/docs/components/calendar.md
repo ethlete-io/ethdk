@@ -45,7 +45,7 @@ On `et-calendar` (forwarded from the headless `[etCalendar]` directive):
 | `monthSelect` | `Date` | A month picked in the month grid, at its 1st.       |
 | `yearSelect`  | `Date` | A year picked in the year grid, at its January 1st. |
 
-`et-calendar` also takes **`weekNumbers`**, which renders a leading column of week numbers in the day grid. It is presentation, so it lives on the component rather than the headless directive - which exposes the numbers themselves as `calendar.weekNumbers()`, one per row of `weeks()`. They are localized, not always ISO: the row boundaries follow `firstDayOfWeek` and which week counts as the year's first follows the locale's `firstWeekContainsDate`, so the numbering always names the rows actually on screen. The column is a `rowheader` per row (`aria-label` `"Week 31"`) under a named-but-blank `columnheader`, and the three date inputs forward `weekNumbers` to their picker.
+`et-calendar` also takes **`weekNumbers`**, which renders a leading column of week numbers in the day grid. It is presentation, so it lives on the component rather than the headless directive - which exposes the numbers themselves as `calendar.weekNumbers()`, one per row of `weeks()`. They are localized, not always ISO: the row boundaries follow `firstDayOfWeek` and which week counts as the year's first follows the locale's `firstWeekContainsDate`, so the numbering always names the rows actually on screen. The column is a `rowheader` per row (`aria-label` `"Week 31"`) under a named-but-blank `columnheader`, and the four date inputs forward `weekNumbers` (and `firstDayOfWeek`) to their picker.
 
 <StoryEmbed id="components-date-time-calendar--week-numbers" height="420px" />
 
@@ -135,19 +135,19 @@ What a pick means in `range` mode is a strategy, and the calendar's own rule - o
 ```ts
 import { createWeekRangeStrategy, createFixedLengthRangeStrategy } from '@ethlete/components';
 
-protected weeks = createWeekRangeStrategy({ weekStartsOn: 1 });
+protected weeks = createWeekRangeStrategy();
 protected sevenDays = createFixedLengthRangeStrategy({ days: 7 });
 ```
 
-| Strategy                                    | A pick means                                                                   |
-| ------------------------------------------- | ------------------------------------------------------------------------------ |
-| default (unset)                             | Open the range, then close it on a later-or-equal pick.                        |
-| `createWeekRangeStrategy({ weekStartsOn })` | Open at the start of that week, close at the end of the second pick's week.    |
-| `createFixedLengthRangeStrategy({ days })`  | A complete range of `days` days from wherever it landed - one pick, no second. |
+| Strategy                                     | A pick means                                                                                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| default (unset)                              | Open the range, then close it on a later-or-equal pick.                                                                                                    |
+| `createWeekRangeStrategy({ weekStartsOn? })` | Open at the start of that week, close at the end of the second pick's week. Weeks start where the calendar's rows do unless `weekStartsOn` says otherwise. |
+| `createFixedLengthRangeStrategy({ days })`   | A complete range of `days` days from wherever it landed - one pick, no second.                                                                             |
 
 <StoryEmbed id="components-date-time-calendar--week-range" height="420px" />
 
-A strategy is two pure functions of `(date, currentRange)`: `select` returns the range a pick produces (an open `end: null` leaves it half-built), and the optional `preview` returns what to band while the reader is only hovering or has moved keyboard focus there. Leaving `preview` out means the band promises exactly what the pick would do, which is usually right; the week strategy overrides it so hovering bands whole weeks from the start, making the snap visible _before_ it happens rather than surprising after. Neither is asked for a preview until there is a real hover or real keyboard focus in the grid that selects, so no strategy - not even one without a `preview` of its own - bands a calendar nobody has touched, and none of them bands a coarser grid the reader has only drilled out to. The result is normalized to the calendar's [`precision`](#month-and-year-pickers), so a strategy can work in days without knowing about coarser calendars. A resolved range whose start or end is disabled - before `min`, after `max`, or rejected by `dateFilter` - is refused like a disabled day: the pick changes nothing and the preview bands nothing, so a seven-day span picked three days before `max` is not selectable. The date range input forwards the input.
+A strategy is two pure functions of `(date, currentRange, context)`, where `context` (`CalendarRangeSelectionContext`) carries the calendar's `weekStartsOn`: `select` returns the range a pick produces (an open `end: null` leaves it half-built), and the optional `preview` returns what to band while the reader is only hovering or has moved keyboard focus there. Leaving `preview` out means the band promises exactly what the pick would do, which is usually right; the week strategy overrides it so hovering bands whole weeks from the start, making the snap visible _before_ it happens rather than surprising after. Neither is asked for a preview until there is a real hover or real keyboard focus in the grid that selects, so no strategy - not even one without a `preview` of its own - bands a calendar nobody has touched, and none of them bands a coarser grid the reader has only drilled out to. The result is normalized to the calendar's [`precision`](#month-and-year-pickers), so a strategy can work in days without knowing about coarser calendars. A resolved range whose start or end is disabled - before `min`, after `max`, or rejected by `dateFilter` - is refused like a disabled day: the pick changes nothing and the preview bands nothing, so a seven-day span picked three days before `max` is not selectable. The date range input forwards the input.
 
 <StoryEmbed id="components-date-time-calendar--fixed-length-range" height="420px" />
 

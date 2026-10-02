@@ -15,8 +15,8 @@ export default {
     showMixedState: { control: false, table: { disable: true } },
     valueFormat: { control: 'text' },
     displayFormat: { control: 'text' },
+    mask: { control: 'boolean' },
     minuteStep: { control: 'number' },
-    secondStep: { control: 'number' },
     locale: { control: 'select', options: ['default', 'de'] },
     minTime: { control: 'text' },
     maxTime: { control: 'text' },
@@ -36,8 +36,8 @@ export default {
     showMixedState: false,
     valueFormat: 'HH:mm',
     displayFormat: 'p',
+    mask: false,
     minuteStep: 5,
-    secondStep: 1,
     locale: 'default',
     minTime: null,
     maxTime: null,
@@ -58,7 +58,7 @@ export const Prefilled: Story = {
 };
 
 export const WithSeconds: Story = {
-  args: { valueFormat: 'HH:mm:ss', displayFormat: 'pp', secondStep: 15, hint: 'Seconds column from the pp format' },
+  args: { valueFormat: 'HH:mm:ss', displayFormat: 'pp', hint: 'Type the seconds; the ring picks hours and minutes' },
 };
 
 export const OpeningHours: Story = {
@@ -81,5 +81,14 @@ export const Mixed: Story = {
     mixedLabel: 'Mixed times',
     showMixedState: true,
     hint: 'The hidden time stays intact and unshown; the mixed label is the placeholder. Parsing a typed time or picking one commits a replacement.',
+  },
+};
+
+export const Masked: Story = {
+  args: {
+    displayFormat: 'HH:mm',
+    mask: true,
+    placeholder: '',
+    hint: 'A fixed-width display format drives a typing mask',
   },
 };
