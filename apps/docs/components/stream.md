@@ -188,6 +188,10 @@ export class MyPipChromeComponent implements PipChromeRef {
 }
 ```
 
+The `CustomPipChrome` story builds this chrome from the headless directives and floats two players in it.
+
+<StoryEmbed id="components-media-stream-youtube--custom-pip-chrome" height="640px" />
+
 The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
 <StoryEmbed id="components-media-stream-mixed--mixed-aspect-ratios" height="560px" />

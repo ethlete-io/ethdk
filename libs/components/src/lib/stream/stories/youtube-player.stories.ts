@@ -1,6 +1,7 @@
 import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
 import {
   YoutubePlayerSlotConsentProviderStorybookComponent,
+  YoutubePlayerSlotCustomPipChromeStorybookComponent,
   YoutubePlayerSlotConsentStorybookComponent,
   YoutubePlayerSlotControlsStorybookComponent,
   YoutubePlayerSlotStorybookComponent,
@@ -88,5 +89,16 @@ const ConsentProviderTemplate: StoryFn<YoutubePlayerSlotConsentProviderStorybook
 export const ConsentProvider = {
   render: ConsentProviderTemplate,
   decorators: [moduleMetadata({ imports: [YoutubePlayerSlotConsentProviderStorybookComponent] })],
+  args: { videoId: 'dQw4w9WgXcQ' },
+};
+
+const CustomPipChromeTemplate: StoryFn<YoutubePlayerSlotCustomPipChromeStorybookComponent> = (args) => ({
+  props: args,
+  template: `<et-sb-youtube-player-slot-custom-pip-chrome [videoId]="videoId" />`,
+});
+
+export const CustomPipChrome = {
+  render: CustomPipChromeTemplate,
+  decorators: [moduleMetadata({ imports: [YoutubePlayerSlotCustomPipChromeStorybookComponent] })],
   args: { videoId: 'dQw4w9WgXcQ' },
 };
