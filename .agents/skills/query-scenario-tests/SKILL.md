@@ -124,5 +124,3 @@ it('dedupes identical requests', () => {
 9. Use a POST or `s.liveQueries()` when checking for double execution; GET dedup hides a second execute.
 10. Change signal args at least 3 times; assert one request per change and that the superseded one aborts.
 11. Legacy patterns run on both clients: native `V2QueryClient` and the interop creator (`describe.each`).
-
-Settled query decisions that a scan must not re-open live in `plans/lib-scan-settled.md`.

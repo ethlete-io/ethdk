@@ -21,5 +21,5 @@ Each domain plan file keeps its open Low lines; the decisions are listed there. 
 
 ## Queue
 
-Nothing is queued from the 2026-09-28 scans. The core scan is closed; its settled notes are in `lib-scan-settled.md`. The
+Nothing is queued from the 2026-09-28 scans. The core scan is closed. The
 `eslint-plugin-lib-scan.md` Medium lines are all done.
