@@ -53,26 +53,28 @@ export const normalizeUnsavedChangesSource = <T>(
 
     // A signal that currently holds a FieldTree - or nothing yet (the late/async form case).
     if (peek === null || peek === undefined || isFieldTree(peek)) {
-      const fieldSignal = source as Signal<FieldTree<T> | null>;
+      const lateSource = source as Signal<FieldTree<T> | T | null>;
 
       return {
         value: computed(() => {
-          const field = fieldSignal();
+          const current = lateSource();
 
-          return isFieldTree<T>(field) ? field().value() : null;
+          if (isFieldTree<T>(current)) return current().value();
+
+          return (current ?? null) as T | null;
         }),
         setValue: (next) => {
-          const field = untracked(fieldSignal);
+          const current = untracked(lateSource);
 
-          if (isFieldTree<T>(field)) {
-            (field().value as WritableSignal<T>).set(next);
+          if (isFieldTree<T>(current)) {
+            (current().value as WritableSignal<T>).set(next);
+          } else if (current !== null && current !== undefined && 'set' in source) {
+            (source as WritableSignal<T>).set(next);
           }
         },
       };
     }
 
-    // A plain writable value signal (escape hatch). Initialize it with a non-null value so it isn't
-    // mistaken for a late FieldTree source above.
     const writable = source as WritableSignal<T>;
 
     return { value: writable, setValue: (next) => writable.set(next) };

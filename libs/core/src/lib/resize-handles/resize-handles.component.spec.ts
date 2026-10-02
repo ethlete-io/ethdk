@@ -48,6 +48,17 @@ describe('ResizeHandlesComponent', () => {
     expect(handle('se').style.cursor).toBe('nwse-resize');
   });
 
+  it('captures the pointer on the pressed handle so moves over an iframe still arrive', () => {
+    const { handle } = setup();
+    const target = handle('se');
+    const capture = vi.fn();
+    target.setPointerCapture = capture;
+
+    pointer('pointerdown', target, 100, 100);
+
+    expect(capture).toHaveBeenCalledWith(1);
+  });
+
   it('emits start, cumulative moves and end for a gesture', () => {
     const { fixture, host, handle } = setup();
 

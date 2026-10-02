@@ -203,7 +203,7 @@ describe('animation scenarios', () => {
     fixture.componentInstance.lifecycle.enter();
     s.frame(4);
     s.flush();
-    expect(fixture.componentInstance.lifecycle.state$.value).toBe('entered');
+    expect(fixture.componentInstance.lifecycle.state()).toBe('entered');
 
     fixture.componentInstance.lifecycle.leave();
     s.frame();

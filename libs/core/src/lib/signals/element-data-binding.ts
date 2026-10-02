@@ -29,6 +29,7 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
 ) => {
   const elements = buildElementSignal(el);
   const injector = inject(Injector);
+  const liveTokens = new Map<string, Signal<unknown>>(Object.entries(config.tokenMap));
 
   effect(() => {
     const { currentElements, previousElements } = elements();
@@ -36,9 +37,7 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
     for (const previousEl of previousElements) {
       if (currentElements.includes(previousEl)) continue;
 
-      const tokens = Object.keys(config.tokenMap)
-        .map((key) => key.split(' '))
-        .flat();
+      const tokens = [...liveTokens.keys()].flatMap((key) => key.split(' '));
 
       if (!tokens.length) continue;
 
@@ -48,7 +47,7 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
     for (const currentEl of currentElements) {
       if (previousElements.includes(currentEl)) continue;
 
-      for (const [tokens, condition] of Object.entries(config.tokenMap)) {
+      for (const [tokens, condition] of liveTokens) {
         untracked(() => {
           const tokenArray = tokens.split(' ');
           if (!tokenArray.length) return;
@@ -65,6 +64,8 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
 
   const push = (tokens: string, signal: Signal<unknown>) => {
     if (has(tokens)) return;
+
+    liveTokens.set(tokens, signal);
 
     runInInjectionContext(injector, () => {
       effects[tokens] = effect(() => {
@@ -91,6 +92,7 @@ export const buildSignalEffects = <T extends Record<string, Signal<unknown>>>(
     effects[tokens]?.destroy();
 
     delete effects[tokens];
+    liveTokens.delete(tokens);
 
     for (const el of elements().currentElements) {
       const tokenArray = tokens.split(' ');

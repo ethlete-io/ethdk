@@ -239,6 +239,44 @@ describe('getElementScrollCoordinates', () => {
     });
   });
 
+  describe('nearest origin in a two-axis container', () => {
+    const container = () =>
+      elementWithLayout({
+        clientHeight: 100,
+        clientWidth: 200,
+        scrollHeight: 500,
+        scrollLeft: 30,
+        scrollTop: 40,
+        scrollWidth: 600,
+      });
+    const item = (left: number, top: number) =>
+      elementWithLayout({ clientHeight: 20, clientWidth: 20, left, scrollHeight: 20, scrollWidth: 20, top });
+
+    it('keeps the inline axis when the element is only below the fold', () => {
+      expect(getElementScrollCoordinates({ container: container(), element: item(50, 150) })).toEqual({
+        behavior: 'smooth',
+        left: 30,
+        top: 110,
+      });
+    });
+
+    it('keeps the block axis when the element is only beyond the right edge', () => {
+      expect(getElementScrollCoordinates({ container: container(), element: item(300, 50) })).toEqual({
+        behavior: 'smooth',
+        left: 150,
+        top: 40,
+      });
+    });
+
+    it('aligns each axis to its own edge when the element is above and to the right', () => {
+      expect(getElementScrollCoordinates({ container: container(), element: item(300, -50) })).toEqual({
+        behavior: 'smooth',
+        left: 150,
+        top: -10,
+      });
+    });
+  });
+
   it('uses the nearest clipped edge and respects the requested direction', () => {
     const { container, element } = createPair();
 

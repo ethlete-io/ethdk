@@ -202,14 +202,19 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   const relativeTop = elTop - conTop;
   const relativeLeft = elLeft - conLeft;
 
+  const calculateInlineStart = () => (scrollLeftTo = scrollLeft + relativeLeft - scrollInlineMargin);
+  const calculateBlockStart = () => (scrollTopTo = scrollTop + relativeTop - scrollBlockMargin);
+  const calculateInlineEnd = () => (scrollLeftTo = scrollLeft + relativeLeft - conWidth + elWidth + scrollInlineMargin);
+  const calculateBlockEnd = () => (scrollTopTo = scrollTop + relativeTop - conHeight + elHeight + scrollBlockMargin);
+
   const calculateScrollToStart = () => {
-    scrollLeftTo = scrollLeft + relativeLeft - scrollInlineMargin;
-    scrollTopTo = scrollTop + relativeTop - scrollBlockMargin;
+    calculateInlineStart();
+    calculateBlockStart();
   };
 
   const calculateScrollToEnd = () => {
-    scrollLeftTo = scrollLeft + relativeLeft - conWidth + elWidth + scrollInlineMargin;
-    scrollTopTo = scrollTop + relativeTop - conHeight + elHeight + scrollBlockMargin;
+    calculateInlineEnd();
+    calculateBlockEnd();
   };
 
   const calculateScrollToCenter = () => {
@@ -218,21 +223,16 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   };
 
   const calculateScrollToNearest = () => {
-    const isAbove = elBottom <= conTop;
-    const isPartialAbove = elTop < conTop && elBottom > conTop;
-    const isBelow = elTop >= conBottom;
-    const isPartialBelow = elTop < conBottom && elBottom > conBottom;
+    const isAbove = elTop < conTop;
+    const isBelow = !isAbove && elBottom > conBottom;
+    const isLeft = elLeft < conLeft;
+    const isRight = !isLeft && elRight > conRight;
 
-    const isLeft = elRight <= conLeft;
-    const isPartialLeft = elLeft < conLeft && elRight > conLeft;
-    const isRight = elLeft >= conRight;
-    const isPartialRight = elLeft < conRight && elRight > conRight;
+    if (isLeft) calculateInlineStart();
+    else if (isRight) calculateInlineEnd();
 
-    if (isAbove || isPartialAbove || isLeft || isPartialLeft) {
-      calculateScrollToStart();
-    } else if (isBelow || isPartialBelow || isRight || isPartialRight) {
-      calculateScrollToEnd();
-    }
+    if (isAbove) calculateBlockStart();
+    else if (isBelow) calculateBlockEnd();
   };
 
   switch (origin) {

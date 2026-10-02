@@ -12,15 +12,28 @@ export class ClickOutsideDirective {
 
   didClickOutside = output<MouseEvent>({ alias: 'etClickOutside' });
 
+  private pressStartedInside = false;
+
   constructor() {
+    fromEvent<PointerEvent>(this.document.documentElement, 'pointerdown', { capture: true })
+      .pipe(
+        tap((event) => {
+          this.pressStartedInside = event.composedPath().includes(this.elementRef.nativeElement);
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     fromEvent<MouseEvent>(this.document.documentElement, 'click')
       .pipe(
         tap((event) => {
           const hostElement = this.elementRef.nativeElement;
           const activeElement = event.target as HTMLElement;
-          const isInside = hostElement.contains(activeElement);
+          const startedInside = this.pressStartedInside;
 
-          if (isInside) return;
+          this.pressStartedInside = false;
+
+          if (startedInside || event.composedPath().includes(hostElement)) return;
 
           if (isOnHigherOverlayLayer(activeElement, resolveOverlayLayer(hostElement))) return;
 

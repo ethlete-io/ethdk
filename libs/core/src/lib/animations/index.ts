@@ -1,5 +1,6 @@
 export * from './animatable.directive';
 export * from './animation-debug';
+export * from './animation-errors';
 export * from './animated-if.directive';
 export * from './animated-lifecycle.directive';
 export * from './animation-utils';

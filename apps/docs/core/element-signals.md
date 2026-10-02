@@ -37,7 +37,7 @@ Shared rules for everything on this page:
 
 All fields are `null` while no element is bound.
 
-`injectViewportSize()` → `Signal<ElementSize>` for the viewport, preferring `visualViewport` over `window` resize events.
+`injectViewportSize()` → `Signal<ElementSize>` for the viewport, preferring `visualViewport` over `window` resize events. Use it for the visual viewport, which shrinks when the soft keyboard opens or the page is pinch-zoomed; use `injectViewportDimensions()` (see [Signal utils](/core/signal-utils)) for the layout viewport, which does not.
 
 ## Animated block size
 

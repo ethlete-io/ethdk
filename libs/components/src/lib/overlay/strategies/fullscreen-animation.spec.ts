@@ -38,7 +38,7 @@ describe('fullscreen leave animation', () => {
     startFullscreenLeaveAnimation({
       context: {
         containerEl,
-        lifecycle: { leave, state$: { value: 'entered' } },
+        lifecycle: { leave, state: () => 'entered' },
       } as unknown as OverlayStrategyContext,
       state: { originElement, cloneComponentRef: null, subscriptions: [], isOriginHidden: false },
       deps,
@@ -67,7 +67,7 @@ describe('fullscreen leave animation', () => {
     const createContext = () =>
       ({
         containerEl,
-        lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave, state$: { value: 'entered' } },
+        lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave, state: () => 'entered' },
       }) as unknown as OverlayStrategyContext;
 
     const enter = (context: OverlayStrategyContext, skipAnimation: boolean) =>
@@ -154,7 +154,7 @@ describe('fullscreen dialog strategy', () => {
     const context = {
       containerEl,
       origin,
-      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state$: { value: 'init' } },
+      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state: () => 'init' },
     } as unknown as OverlayStrategyContext;
     const strategy = TestBed.runInInjectionContext(() => injectFullscreenDialogStrategy().build());
 
@@ -174,7 +174,7 @@ describe('fullscreen dialog strategy', () => {
     const context = {
       containerEl,
       origin,
-      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state$: { value: 'entered' } },
+      lifecycle: { enter: vi.fn(), forceEnteredState: vi.fn(), leave: vi.fn(), state: () => 'entered' },
     } as unknown as OverlayStrategyContext;
     const strategy = TestBed.runInInjectionContext(() => injectFullscreenDialogStrategy().build());
     const cloneCount = () => document.querySelectorAll('et-overlay-origin-clone').length;

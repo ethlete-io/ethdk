@@ -1,5 +1,5 @@
-import { ComponentRef, signal } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { ComponentRef, Signal, signal } from '@angular/core';
+import { Observable, ReplaySubject } from 'rxjs';
 import {
   OverlayRuntimeCloseEvent,
   OverlayRuntimeCloseGuard,
@@ -23,10 +23,10 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
   let positionUpdater: ((strategy: OverlayRuntimePositionStrategy) => void) | null = null;
   let backdropUpdater: ((hasBackdrop: boolean) => void) | null = null;
 
-  const beforeOpenedSubject = new Subject<void>();
-  const afterOpenedSubject = new Subject<void>();
-  const beforeClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
-  const afterClosedSubject = new Subject<OverlayRuntimeCloseEvent<TResult>>();
+  const beforeOpenedSubject = new ReplaySubject<void>(1);
+  const afterOpenedSubject = new ReplaySubject<void>(1);
+  const beforeClosedSubject = new ReplaySubject<OverlayRuntimeCloseEvent<TResult>>(1);
+  const afterClosedSubject = new ReplaySubject<OverlayRuntimeCloseEvent<TResult>>(1);
   const closeGuards = new Set<OverlayRuntimeCloseGuard<TResult>>();
 
   return {
@@ -35,8 +35,6 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
     elements,
     state: _state.asReadonly(),
     componentInstance: _componentInstance.asReadonly(),
-
-    beforeOpenedSubject,
 
     close(result?: TResult, source: OverlayRuntimeCloseSource = 'api') {
       if (_state() === 'closing' || _state() === 'closed') {
@@ -87,6 +85,11 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
 
     attachComponentRef(componentRef: ComponentRef<TComponent>) {
       _componentInstance.set(componentRef.instance);
+    },
+
+    markBeforeOpened() {
+      beforeOpenedSubject.next();
+      beforeOpenedSubject.complete();
     },
 
     attachPositionUpdater(updater: (strategy: OverlayRuntimePositionStrategy) => void) {
@@ -152,6 +155,30 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
   };
 };
 
-export type OverlayRuntimeRef<TComponent extends object = object, TResult = unknown> = ReturnType<
+export type OverlayRuntimeRefInternal<TComponent extends object = object, TResult = unknown> = ReturnType<
   typeof createOverlayRuntimeRef<TComponent, TResult>
 >;
+
+/**
+ * The handle `OverlayRuntime.mount()` returns. The lifecycle observables replay their event, so a
+ * subscriber that arrives after it still gets one emission.
+ */
+export type OverlayRuntimeRef<TComponent extends object = object, TResult = unknown> = {
+  readonly id: string;
+  readonly config: Omit<OverlayRuntimeMountConfig<TComponent>, 'component'>;
+  readonly elements: OverlayRuntimeElements;
+  readonly state: Signal<OverlayRuntimeState>;
+  readonly componentInstance: Signal<TComponent | null>;
+  close(result?: TResult, source?: OverlayRuntimeCloseSource): void;
+  /** Closes while bypassing every registered close guard, e.g. to commit a close a guard vetoed earlier. */
+  forceClose(result?: TResult, source?: OverlayRuntimeCloseSource): void;
+  /** Registers a synchronous veto for pending closes. Returns an unregister function. */
+  registerCloseGuard(guard: OverlayRuntimeCloseGuard<TResult>): () => void;
+  beforeOpened(): Observable<void>;
+  afterOpened(): Observable<void>;
+  beforeClosed(): Observable<OverlayRuntimeCloseEvent<TResult>>;
+  afterClosed(): Observable<OverlayRuntimeCloseEvent<TResult>>;
+  updatePositionStrategy(strategy: OverlayRuntimePositionStrategy): void;
+  /** Adds or removes the backdrop of an open overlay. A closing overlay keeps the backdrop it has. */
+  updateBackdrop(hasBackdrop: boolean): void;
+};

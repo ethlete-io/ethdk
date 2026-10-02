@@ -9,12 +9,23 @@ import { reserveOverlayViewportSpace } from './overlay-viewport-inset';
 
 const createFakeLifecycle = () => {
   const state$ = new BehaviorSubject<AnimatedLifecycleState>('init');
+  const state = signal<AnimatedLifecycleState>('init');
+  const setState = (next: AnimatedLifecycleState) => {
+    state.set(next);
+    state$.next(next);
+  };
 
   return {
-    state$,
-    enter: vi.fn(() => state$.next('entered')),
-    leave: vi.fn(() => state$.next('left')),
-  } as unknown as AnimatedLifecycleDirective & { enter: ReturnType<typeof vi.fn>; leave: ReturnType<typeof vi.fn> };
+    state$: state$.asObservable(),
+    state: state.asReadonly(),
+    setState,
+    enter: vi.fn(() => setState('entered')),
+    leave: vi.fn(() => setState('left')),
+  } as unknown as AnimatedLifecycleDirective & {
+    enter: ReturnType<typeof vi.fn>;
+    leave: ReturnType<typeof vi.fn>;
+    setState: (next: AnimatedLifecycleState) => void;
+  };
 };
 
 let fakeLifecycle = createFakeLifecycle();
@@ -175,7 +186,7 @@ describe('overlay runtime', () => {
     expect(fakeLifecycle.enter).not.toHaveBeenCalled();
 
     // delegate is responsible for finishing the enter transition
-    fakeLifecycle.state$.next('entered');
+    fakeLifecycle.setState('entered');
     expect(ref.state()).toBe('mounted');
 
     ref.close('result');
@@ -184,7 +195,7 @@ describe('overlay runtime', () => {
     expect(leave.mock.calls[0]?.[0]?.closeEvent).toEqual({ result: 'result', source: 'api' });
     expect(fakeLifecycle.leave).not.toHaveBeenCalled();
 
-    fakeLifecycle.state$.next('left');
+    fakeLifecycle.setState('left');
     expect(ref.state()).toBe('closed');
   });
 
@@ -213,7 +224,7 @@ describe('overlay runtime', () => {
           modal: false,
           hasBackdrop: false,
           autoFocus: false,
-          animationDelegate: { enter: () => fakeLifecycle.state$.next('entered'), leave: () => undefined },
+          animationDelegate: { enter: () => fakeLifecycle.setState('entered'), leave: () => undefined },
         },
         AnimatedFocusableOverlayComponent,
       );
@@ -233,7 +244,7 @@ describe('overlay runtime', () => {
       const { ref, trigger } = await mountAndAwaitLeave();
 
       outside.focus();
-      fakeLifecycle.state$.next('left');
+      fakeLifecycle.setState('left');
 
       expect(ref.state()).toBe('closed');
       expect(document.activeElement).toBe(outside);
@@ -247,7 +258,7 @@ describe('overlay runtime', () => {
 
       expect(ref.elements.paneElement.contains(document.activeElement)).toBe(true);
 
-      fakeLifecycle.state$.next('left');
+      fakeLifecycle.setState('left');
 
       expect(document.activeElement).toBe(trigger);
 
@@ -260,7 +271,7 @@ describe('overlay runtime', () => {
       (document.activeElement as HTMLElement | null)?.blur();
       expect(document.activeElement).toBe(document.body);
 
-      fakeLifecycle.state$.next('left');
+      fakeLifecycle.setState('left');
 
       expect(ref.state()).toBe('closed');
       expect(document.activeElement).toBe(trigger);

@@ -6,19 +6,20 @@ Inject-style signal helpers for media queries, router state, form controls and a
 
 Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). The `inject*` helpers are **memoized per application** - calling them repeatedly returns the same signal instance, wherever you call them from, so they're cheap to use everywhere:
 
-| Helper                                                                      | Returns                                                |
-| --------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `injectIsXs()` … `injectIs2Xl()`                                            | `Signal<boolean>` per breakpoint band.                 |
-| `injectCurrentBreakpoint()`                                                 | `Signal<Breakpoint>`                                   |
-| `injectObserveBreakpoint({ min?, max? })`                                   | `Signal<boolean>` for a custom range.                  |
-| `injectObserveMediaQuery(query)`                                            | `Signal<boolean>` for a raw query.                     |
-| `injectPrefersReducedMotion()`                                              | `Signal<boolean>`                                      |
-| `injectCanHover()`                                                          | `Signal<boolean>` (`hover: hover`)                     |
-| `injectHasTouchInput()` / `injectHasPrecisionInput()`                       | `Signal<boolean>` (`pointer: coarse` / `fine`)         |
-| `injectDeviceInputType()`                                                   | `Signal<'touch' \| 'mouse'>`                           |
-| `injectIsPortrait()` / `injectIsLandscape()` / `injectDisplayOrientation()` | orientation signals                                    |
-| `injectViewportDimensions()`                                                | `Signal<NullableElementDimensions>` of `<html>`        |
-| `injectScrollbarDimensions()`                                               | `Signal<{ width, height } \| null>` - live measurement |
+| Helper                                                                      | Returns                                                                                                                                                               |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `injectIsXs()` … `injectIs2Xl()`                                            | `Signal<boolean>` per breakpoint band.                                                                                                                                |
+| `injectCurrentBreakpoint()`                                                 | `Signal<Breakpoint>`                                                                                                                                                  |
+| `injectObserveBreakpoint({ min?, max? })`                                   | `Signal<boolean>` for a custom range.                                                                                                                                 |
+| `injectObserveMediaQuery(query)`                                            | `Signal<boolean>` for a raw query.                                                                                                                                    |
+| `injectPrefersReducedMotion()`                                              | `Signal<boolean>`                                                                                                                                                     |
+| `injectCanHover()`                                                          | `Signal<boolean>` (`hover: hover`)                                                                                                                                    |
+| `injectHasTouchInput()` / `injectHasPrecisionInput()`                       | `Signal<boolean>` (`pointer: coarse` / `fine`)                                                                                                                        |
+| `injectDeviceInputType()`                                                   | `Signal<'touch' \| 'mouse'>`                                                                                                                                          |
+| `injectIsPortrait()` / `injectIsLandscape()` / `injectDisplayOrientation()` | orientation signals                                                                                                                                                   |
+| `injectViewportDimensions()`                                                | `Signal<NullableElementDimensions>` of `<html>` - the layout viewport; see `injectViewportSize()` in [Element signals](/core/element-signals) for the visual viewport |
+| `injectIsDocumentVisible()`                                                 | `Signal<boolean>` - `false` for a backgrounded tab or minimised window; an IntersectionObserver does not report this                                                  |
+| `injectScrollbarDimensions()`                                               | `Signal<{ width, height } \| null>` - live measurement                                                                                                                |
 
 `injectBreakpointIsMatched(options)` and `injectMediaQueryIsMatched(query)` are the non-reactive variants - they return a plain `boolean`, not a signal.
 
@@ -58,7 +59,8 @@ Committed router state as signals - safe to read in child-component constructors
 | ------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | `injectUrl()`                                    | `Signal<string>` - full URL incl. query & fragment.                                |
 | `injectRoute()`                                  | `Signal<string>` - URL without query/fragment.                                     |
-| `injectQueryParams()` / `injectQueryParam(key)`  | All query params / a single one.                                                   |
+| `injectQueryParams()` / `injectQueryParam(key)`  | All query params / a single one (the first value of a repeated param).             |
+| `injectQueryParamAll(key)`                       | Every value of a query param as `string[]`.                                        |
 | `injectPathParams()` / `injectPathParam(key)`    | Path params (deepest route).                                                       |
 | `injectRouteData()` / `injectRouteDataItem(key)` | Route `data`.                                                                      |
 | `injectRouteTitle()`                             | `Signal<string \| null>`                                                           |
@@ -66,7 +68,7 @@ Committed router state as signals - safe to read in child-component constructors
 | `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment in one object. |
 | `injectIsRouterInitialized()`                    | `Signal<boolean>` - true after the first real navigation.                          |
 
-The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. `injectQueryParam` additionally accepts `requireSync: true` to read the initial value synchronously from the browser URL.
+The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. Every `inject*` router helper also accepts `{ injector }` for use outside an injection context. `injectQueryParam` additionally accepts `requireSync: true` to read the initial value synchronously from the browser URL.
 
 `injectQueryParamChanges()` / `injectPathParamChanges()` emit only the keys that changed in the latest navigation; removed keys carry the `ET_PROPERTY_REMOVED` sentinel.
 

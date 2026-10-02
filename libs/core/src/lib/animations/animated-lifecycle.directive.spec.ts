@@ -70,13 +70,13 @@ describe('AnimatedLifecycleDirective', () => {
     await nextFrames();
     await nextFrames();
 
-    expect(lifecycle.state$.value).toBe('leaving');
+    expect(lifecycle.state()).toBe('leaving');
 
     setRunningAnimations([]);
     settle();
     await nextFrames();
 
-    expect(lifecycle.state$.value).toBe('left');
+    expect(lifecycle.state()).toBe('left');
   });
 
   it('leaves without waiting when the class change starts no animation', async () => {
@@ -86,7 +86,7 @@ describe('AnimatedLifecycleDirective', () => {
     await nextFrames();
     await nextFrames();
 
-    expect(lifecycle.state$.value).toBe('left');
+    expect(lifecycle.state()).toBe('left');
   });
 
   it('does not settle synchronously while leave() is still on the stack', () => {
@@ -94,7 +94,7 @@ describe('AnimatedLifecycleDirective', () => {
 
     lifecycle.leave();
 
-    expect(lifecycle.state$.value).toBe('leaving');
+    expect(lifecycle.state()).toBe('leaving');
   });
 
   it('waits for the replacement when an animation is retargeted instead of finished', async () => {
@@ -110,13 +110,13 @@ describe('AnimatedLifecycleDirective', () => {
     first.settle();
     await nextFrames();
 
-    expect(lifecycle.state$.value).toBe('leaving');
+    expect(lifecycle.state()).toBe('leaving');
 
     setRunningAnimations([]);
     second.settle();
     await nextFrames();
 
-    expect(lifecycle.state$.value).toBe('left');
+    expect(lifecycle.state()).toBe('left');
   });
 });
 
@@ -143,14 +143,14 @@ describe('AnimatedLifecycleDirective transitions', () => {
 
   describe('enter', () => {
     it('starts invisible in the init state', () => {
-      expect(lifecycle.state$.value).toBe('init');
+      expect(lifecycle.state()).toBe('init');
       expect(element.classList.contains('et-force-invisible')).toBe(true);
     });
 
     it('runs from, active and to classes and ends in the entered state', () => {
       lifecycle.enter();
 
-      expect(lifecycle.state$.value).toBe('entering');
+      expect(lifecycle.state()).toBe('entering');
       expect(element.classList.contains('et-force-invisible')).toBe(false);
       expect(hasClass('enter-from')).toBe(true);
       expect(hasClass('enter-active')).toBe(true);
@@ -160,11 +160,11 @@ describe('AnimatedLifecycleDirective transitions', () => {
 
       expect(hasClass('enter-from')).toBe(false);
       expect(hasClass('enter-to')).toBe(true);
-      expect(lifecycle.state$.value).toBe('entering');
+      expect(lifecycle.state()).toBe('entering');
 
       frames();
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('enter-active')).toBe(false);
       expect(hasClass('enter-to')).toBe(false);
       expect(hasClass('enter-done')).toBe(true);
@@ -185,13 +185,13 @@ describe('AnimatedLifecycleDirective transitions', () => {
       lifecycle.enter();
       frames(2);
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
     });
 
     it('leaves instantly from init because no enter ever ran', () => {
       lifecycle.leave();
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-done')).toBe(true);
     });
 
@@ -212,14 +212,14 @@ describe('AnimatedLifecycleDirective transitions', () => {
     it('runs from, active and to classes and ends in the left state', () => {
       lifecycle.leave();
 
-      expect(lifecycle.state$.value).toBe('leaving');
+      expect(lifecycle.state()).toBe('leaving');
       expect(hasClass('enter-done')).toBe(false);
       expect(hasClass('leave-from')).toBe(true);
       expect(hasClass('leave-active')).toBe(true);
 
       frames(2);
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-active')).toBe(false);
       expect(hasClass('leave-to')).toBe(false);
       expect(hasClass('leave-done')).toBe(true);
@@ -232,7 +232,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       frames();
       lifecycle.leave();
 
-      expect(lifecycle.state$.value).toBe('leaving');
+      expect(lifecycle.state()).toBe('leaving');
       expect(hasClass('enter-active')).toBe(false);
       expect(hasClass('enter-to')).toBe(false);
       expect(hasClass('leave-active')).toBe(true);
@@ -241,7 +241,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
 
       frames(2);
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-done')).toBe(true);
       expect(hasClass('enter-done')).toBe(false);
     });
@@ -263,7 +263,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       frames();
       lifecycle.enter();
 
-      expect(lifecycle.state$.value).toBe('entering');
+      expect(lifecycle.state()).toBe('entering');
       expect(hasClass('leave-active')).toBe(false);
       expect(hasClass('leave-to')).toBe(false);
       expect(hasClass('enter-active')).toBe(true);
@@ -272,7 +272,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
 
       frames(2);
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('enter-done')).toBe(true);
       expect(hasClass('leave-done')).toBe(false);
     });
@@ -307,7 +307,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       lifecycle.skipNextEnter.set(true);
       lifecycle.enter();
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('enter-done')).toBe(true);
       expect(hasClass('enter-from')).toBe(false);
       expect(lifecycle.skipNextEnter()).toBe(false);
@@ -320,7 +320,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       frames(2);
       lifecycle.enter();
 
-      expect(lifecycle.state$.value).toBe('entering');
+      expect(lifecycle.state()).toBe('entering');
       expect(hasClass('enter-from')).toBe(true);
     });
   });
@@ -329,7 +329,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
     it('forceEnteredState jumps to entered without a transition', () => {
       lifecycle.forceEnteredState();
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('enter-done')).toBe(true);
       expect(element.classList.contains('et-force-invisible')).toBe(false);
     });
@@ -337,7 +337,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
     it('forceLeftState jumps to left without a transition', () => {
       lifecycle.forceLeftState();
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-done')).toBe(true);
     });
 
@@ -346,7 +346,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       lifecycle.forceLeftState();
       frames(4);
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('enter-from')).toBe(false);
       expect(hasClass('enter-active')).toBe(false);
       expect(hasClass('enter-to')).toBe(false);
@@ -359,7 +359,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       lifecycle.forceEnteredState();
       frames(4);
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('leave-from')).toBe(false);
       expect(hasClass('leave-active')).toBe(false);
       expect(hasClass('enter-done')).toBe(true);
@@ -369,13 +369,13 @@ describe('AnimatedLifecycleDirective transitions', () => {
       lifecycle.forceEnteredState();
       lifecycle.leave();
 
-      expect(lifecycle.state$.value).toBe('left');
+      expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-done')).toBe(true);
 
       lifecycle.forceLeftState();
       lifecycle.enter();
 
-      expect(lifecycle.state$.value).toBe('entered');
+      expect(lifecycle.state()).toBe('entered');
       expect(hasClass('enter-done')).toBe(true);
     });
 
@@ -384,7 +384,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
       vi.advanceTimersByTime(20);
       lifecycle.leave();
 
-      expect(lifecycle.state$.value).toBe('leaving');
+      expect(lifecycle.state()).toBe('leaving');
     });
   });
 });
@@ -412,7 +412,7 @@ describe('AnimatedIfDirective', () => {
     create(false);
 
     expect(paragraph()).toBeNull();
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('init');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('init');
   });
 
   it('renders the view and enters when the value turns truthy', () => {
@@ -420,30 +420,30 @@ describe('AnimatedIfDirective', () => {
     setShow(true);
 
     expect(paragraph()).not.toBeNull();
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('entering');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('entering');
 
     frames(2);
 
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('entered');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('entered');
   });
 
   it('enters instantly when truthy from the first render', () => {
     create(true);
 
     expect(paragraph()).not.toBeNull();
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('entered');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('entered');
   });
 
   it('keeps the view until the leave finished, then removes it', () => {
     create(true);
     setShow(false);
 
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('leaving');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('leaving');
     expect(paragraph()).not.toBeNull();
 
     frames(2);
 
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('left');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('left');
     expect(paragraph()).toBeNull();
   });
 
@@ -456,7 +456,7 @@ describe('AnimatedIfDirective', () => {
     frames(4);
 
     expect(paragraph()).toBe(view);
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('entered');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('entered');
   });
 
   it('creates a new view when entering again after the view was removed', () => {
@@ -474,6 +474,6 @@ describe('AnimatedIfDirective', () => {
     create(false);
     setShow(false);
 
-    expect(fixture.componentInstance.lifecycle().state$.value).toBe('init');
+    expect(fixture.componentInstance.lifecycle().state()).toBe('init');
   });
 });

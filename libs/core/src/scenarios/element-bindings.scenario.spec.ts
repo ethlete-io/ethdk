@@ -4,6 +4,8 @@ import { FormControl } from '@angular/forms';
 import {
   computedTillTruthy,
   controlValueSignalWithPrevious,
+  signalAttributes,
+  signalClasses,
   signalHostAttributes,
   signalHostClasses,
   signalHostStyles,
@@ -22,6 +24,16 @@ class TileComponent {
   classes = signalHostClasses({ 'is-active is-selected': this.active, 'is-busy': this.busy });
   attributes = signalHostAttributes({ 'aria-busy': this.busy, 'data-size': this.size, inert: this.inert });
   styles = signalHostStyles({ 'max-height': this.height });
+}
+
+@Component({ selector: 'et-scenario-swap', template: '' })
+class SwapComponent {
+  target = signal<HTMLElement | null>(null);
+  active = signal(true);
+  loading = signal(true);
+
+  classes = signalClasses(this.target, { 'is-base': signal(true) });
+  attributes = signalAttributes(this.target, {});
 }
 
 @Component({ selector: 'et-scenario-editor', template: '' })
@@ -117,6 +129,43 @@ describe('element binding scenarios', () => {
     s.tick();
 
     expect(editor.nameChange()).toEqual(['ada', 'alan']);
+
+    fixture.destroy();
+  });
+
+  it('moves tokens pushed after creation to a swapped element and leaves removed ones behind', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(SwapComponent);
+    const swap = fixture.componentInstance;
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    const third = document.createElement('div');
+
+    swap.target.set(first);
+    s.tick();
+
+    swap.classes.push('is-active', swap.active);
+    swap.classes.push('is-loading', swap.loading);
+    swap.attributes.push('data-state', signal('ready'));
+    s.tick();
+
+    expect(first.classList.value).toBe('is-base is-active is-loading');
+
+    swap.classes.remove('is-loading');
+    swap.target.set(second);
+    s.tick();
+
+    expect(first.classList.value).toBe('');
+    expect(first.hasAttribute('data-state')).toBe(false);
+    expect(second.classList.value).toBe('is-base is-active');
+    expect(second.getAttribute('data-state')).toBe('ready');
+
+    swap.target.set(third);
+    swap.active.set(false);
+    s.tick();
+
+    expect(second.classList.value).toBe('');
+    expect(third.classList.value).toBe('is-base');
 
     fixture.destroy();
   });

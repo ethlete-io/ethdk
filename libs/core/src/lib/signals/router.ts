@@ -129,6 +129,9 @@ export const injectRoute = /* @__PURE__ */ memoizeSignal(() => {
   });
 });
 
+const withInjector = <R>(config: InjectUtilConfig | undefined, fn: () => R): R =>
+  config?.injector ? runInInjectionContext(config.injector, fn) : fn();
+
 export const createRouterState = (router: Router): RouterState => {
   let route = router.routerState.snapshot.root;
 
@@ -183,17 +186,15 @@ export const injectRouterState = /* @__PURE__ */ memoizeSignal(() => {
 export const injectFragment = <T = string | null>(
   config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
 ) => {
-  const routerState = config?.injector
-    ? runInInjectionContext(config.injector, injectRouterState)
-    : injectRouterState();
+  const routerState = withInjector(config, injectRouterState);
   const fragment = computed(() => routerState().fragment);
 
   return transformOrReturn(fragment, config);
 };
 
 /** Inject all currently available query parameters as a signal */
-export const injectQueryParams = () => {
-  const routerState = injectRouterState();
+export const injectQueryParams = (config?: InjectUtilConfig) => {
+  const routerState = withInjector(config, injectRouterState);
 
   const queryParams = computed(() => routerState().queryParams);
 
@@ -201,8 +202,8 @@ export const injectQueryParams = () => {
 };
 
 /** Inject all currently available route data as a signal */
-export const injectRouteData = () => {
-  const routerState = injectRouterState();
+export const injectRouteData = (config?: InjectUtilConfig) => {
+  const routerState = withInjector(config, injectRouterState);
 
   const data = computed(() => routerState().data);
 
@@ -210,29 +211,38 @@ export const injectRouteData = () => {
 };
 
 /** Inject the current route title as a signal */
-export const injectRouteTitle = <T = string | null>(config?: InjectUtilTransformConfig<string | null, T>) => {
-  const routerState = injectRouterState();
+export const injectRouteTitle = <T = string | null>(
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
+) => {
+  const routerState = withInjector(config, injectRouterState);
   const title = computed(() => routerState().title);
 
   return transformOrReturn(title, config);
 };
 
 /** Inject all currently available path parameters as a signal */
-export const injectPathParams = () => {
-  const routerState = injectRouterState();
+export const injectPathParams = (config?: InjectUtilConfig) => {
+  const routerState = withInjector(config, injectRouterState);
 
   const pathParams = computed(() => routerState().pathParams);
 
   return pathParams;
 };
 
-export type InjectQueryParamConfig<T> = InjectUtilTransformConfig<string | null, T> & {
-  /**
-   * If true, the initial value will be read from the browser's url.
-   * Note that this will not work with arrays or complex objects.
-   */
-  requireSync?: boolean;
-};
+export type InjectQueryParamConfig<T> = InjectUtilConfig &
+  InjectUtilTransformConfig<string | null, T> & {
+    /**
+     * If true, the initial value will be read from the browser's url.
+     * Note that this will not work with arrays or complex objects.
+     */
+    requireSync?: boolean;
+  };
+
+export type InjectQueryParamAllConfig<T> = InjectUtilConfig &
+  InjectUtilTransformConfig<string[], T> & {
+    /** If true, the values are read from the browser's url while the router has none. */
+    requireSync?: boolean;
+  };
 
 const getQueryParamFromUrl = (key: string): string | null => {
   if (typeof window === 'undefined') return null;
@@ -241,19 +251,51 @@ const getQueryParamFromUrl = (key: string): string | null => {
   return urlParams.get(key);
 };
 
-/** Inject a specific query parameter as a signal */
+const getAllQueryParamsFromUrl = (key: string): string[] => {
+  if (typeof window === 'undefined') return [];
+
+  return new URLSearchParams(window.location.search).getAll(key);
+};
+
+const toValues = (value: string | string[] | undefined | null): string[] => {
+  if (value === undefined || value === null) return [];
+
+  return Array.isArray(value) ? value : [value];
+};
+
+/**
+ * Inject a specific query parameter as a signal. A repeated parameter (`?tag=a&tag=b`) resolves to its first value;
+ * use `injectQueryParamAll` to read every value.
+ */
 export const injectQueryParam = <T = string | null>(key: string, config?: InjectQueryParamConfig<T>) => {
-  const queryParams = injectQueryParams();
-  const src = computed(() => queryParams()[key] ?? (config?.requireSync ? getQueryParamFromUrl(key) : null)) as Signal<
-    string | null
-  >;
+  const queryParams = injectQueryParams(config);
+  const src = computed(() => {
+    const first = toValues(queryParams()[key])[0];
+
+    return first ?? (config?.requireSync ? getQueryParamFromUrl(key) : null);
+  });
+
+  return transformOrReturn(src, config);
+};
+
+/** Inject every value of a specific query parameter as a signal. Resolves to an empty array when it is absent. */
+export const injectQueryParamAll = <T = string[]>(key: string, config?: InjectQueryParamAllConfig<T>) => {
+  const queryParams = injectQueryParams(config);
+  const src = computed(() => {
+    const values = toValues(queryParams()[key]);
+
+    return values.length || !config?.requireSync ? values : getAllQueryParamsFromUrl(key);
+  });
 
   return transformOrReturn(src, config);
 };
 
 /** Inject a specific route data item as a signal */
-export const injectRouteDataItem = <T = unknown>(key: string, config?: InjectUtilTransformConfig<unknown, T>) => {
-  const data = injectRouteData();
+export const injectRouteDataItem = <T = unknown>(
+  key: string,
+  config?: InjectUtilConfig & InjectUtilTransformConfig<unknown, T>,
+) => {
+  const data = injectRouteData(config);
   const src = computed(() => data()[key] ?? null) as Signal<T>;
 
   return transformOrReturn(src, config);
@@ -262,9 +304,9 @@ export const injectRouteDataItem = <T = unknown>(key: string, config?: InjectUti
 /** Inject a specific path parameter as a signal */
 export const injectPathParam = <T = string | null>(
   key: string,
-  config?: InjectUtilTransformConfig<string | null, T>,
+  config?: InjectUtilConfig & InjectUtilTransformConfig<string | null, T>,
 ) => {
-  const pathParams = injectPathParams();
+  const pathParams = injectPathParams(config);
   const src = computed(() => pathParams()[key] ?? null) as Signal<string | null>;
 
   return transformOrReturn(src, config);
@@ -353,8 +395,8 @@ export const injectPathParamChanges = /* @__PURE__ */ memoizeSignal(() => {
  *   protected cameFromCart = this.navState?.fromCart ?? false;
  * }
  */
-export const injectRouterNavigationState = <T>(): T | null => {
-  const router = inject(Router);
+export const injectRouterNavigationState = <T>(config?: InjectUtilConfig): T | null => {
+  const router = withInjector(config, () => inject(Router));
 
-  return (router.getCurrentNavigation()?.extras.state as T | undefined) ?? null;
+  return (router.currentNavigation()?.extras.state as T | undefined) ?? null;
 };

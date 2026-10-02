@@ -81,7 +81,7 @@ export class OverlayRef<T = any, R = any> {
       return;
     }
 
-    const currentState = this._containerInstance.animatedLifecycle.state$.value;
+    const currentState = this._containerInstance.animatedLifecycle.state();
 
     if (currentState === 'leaving' || currentState === 'left') {
       return;

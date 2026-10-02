@@ -1,5 +1,6 @@
 import { Component, Directive, ElementRef, inject, Injectable, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
   createPipChromeAnimations,
   createPipChromeState,
@@ -125,6 +126,16 @@ const installBrowserStubs = () => {
   };
 };
 
+const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({
+  color: { default: value, hover: value, active: value, disabled: value },
+  onColor: { default: '255 255 255' },
+});
+
+const COLOR_THEMES: ColorTheme[] = [
+  { name: 'primary', isDefault: true, primary: swatch('0 90 200') },
+  { name: 'neutral', primary: swatch('90 90 90') },
+];
+
 let browser: ReturnType<typeof installBrowserStubs>;
 
 beforeEach(() => (browser = installBrowserStubs()));
@@ -133,6 +144,7 @@ afterEach(() => browser.restore());
 describe('stream picture-in-picture scenarios', () => {
   const scenario = useScenario({
     providers: [
+      provideColorThemesWithTailwind4(COLOR_THEMES),
       ...provideStreamPip({
         pipChromeComponent: StreamPipChromeComponent,
         pipChrome: { controlsColor: 'neutral' },

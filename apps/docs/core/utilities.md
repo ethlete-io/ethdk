@@ -66,7 +66,7 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 Guard a form against accidentally discarding edits. Call these from an injection context.
 
 - **`createUnsavedChangesTracker({ source, confirm, defaultValue?, compareFn?, tab? })`** - the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
-  - `source` accepts a signal-forms **`FieldTree`** (first-class), a **`Signal<FieldTree | null>`** for late/async forms (the first non-null value auto-baselines), an **`AbstractControl`** (migration path, bridged via `controlValueSignal`), or a plain **`WritableSignal`**.
+  - `source` accepts a signal-forms **`FieldTree`** (first-class), a **`Signal<FieldTree | null>`** for late/async forms (the first non-null value auto-baselines), an **`AbstractControl`** (migration path, bridged via `controlValueSignal`), or a plain **`WritableSignal`**. A `WritableSignal<T | null>` that starts `null` and is filled later works too: the first non-null value becomes the baseline.
   - Changes are a **deep-equal snapshot** against the baseline - editing then reverting a field is clean again, deliberately unlike signal-forms' `dirty()` ("was edited").
   - `confirm` is **required per call site** and runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog. Its second argument carries an `AbortSignal` - see [Sessions ending underneath a guard](#unsaved-changes-coordinator).
   - `refreshDefaultValue()` re-baselines to the current value - call it after a save that keeps the view open.
@@ -149,7 +149,7 @@ Call `abandonAll()` yourself for anything else that ends a session: an inactivit
 
 ## Storage
 
-- **Cookies** - `getCookie`, `setCookie`, `hasCookie`, `deleteCookie`, `getDomain`. `setCookie` defaults: 30-day expiry (`null` → session cookie), `path: '/'`, `sameSite: 'lax'`, domain derived from the hostname. All SSR-safe (no-ops without `document`).
+- **Cookies** - `getCookie`, `setCookie`, `hasCookie`, `deleteCookie`, `getDomain`. `setCookie` defaults: 30-day expiry (`null` → session cookie), `path: '/'`, `sameSite: 'lax'`, domain derived from the hostname (when the browser refuses it, as on `*.co.uk`, the cookie is written host-only instead). Values are decoded on read; on write only the characters a cookie value cannot hold are encoded, so base64 and JWT values are stored as they are. All SSR-safe (no-ops without `document`).
 - **Session memory** - `createSessionMemory({ key, parse, serialize })` returns a typed `{ read, write, remove }` store over `sessionStorage`; every operation is guarded, so failures (SSR, quota, parse errors) return `null`/`false` instead of throwing. `createAutoSessionMemoryKey({ element, prefix })` derives a stable key from an element's DOM path - how components persist per-instance UI state across reloads.
 
 ## Clipboard

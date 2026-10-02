@@ -1,3 +1,8 @@
+// Only what a cookie value cannot hold is escaped, so base64 and JWT values stay byte-identical for
+// servers and older readers that do not decode them.
+const encodeCookieValue = (value: string) =>
+  encodeURIComponent(value).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g, decodeURIComponent);
+
 export const hasCookie = (name: string) => {
   if (typeof document === 'undefined') {
     return false;
@@ -15,14 +20,22 @@ export const getCookie = (name: string) => {
 
   const cookie = document.cookie.split(';').find((entry) => entry.trim().startsWith(`${name}=`));
 
-  return cookie?.trim().slice(name.length + 1) ?? null;
+  const raw = cookie?.trim().slice(name.length + 1);
+
+  if (raw === undefined) return null;
+
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
 };
 
 export const setCookie = (
   name: string,
   data: string,
   expiresInDays?: number | null,
-  domain: string | null = getDomain(),
+  domain?: string | null,
   path = '/',
   sameSite: 'strict' | 'none' | 'lax' = 'lax',
 ) => {
@@ -30,11 +43,13 @@ export const setCookie = (
     return;
   }
 
+  const derivedDomain = domain === undefined;
+  const resolvedDomain = derivedDomain ? getDomain() : domain;
   const sameSiteUpper = sameSite.toUpperCase();
 
   const expires = expiresInDays ?? 30;
 
-  let cookieString = `${name}=${data}; path=${path}`;
+  let cookieString = `${name}=${encodeCookieValue(data)}; path=${path}`;
 
   if (expiresInDays !== null) {
     const date = new Date();
@@ -42,28 +57,48 @@ export const setCookie = (
     cookieString += `; expires=${date.toUTCString()}`;
   }
 
-  if (domain) {
-    cookieString += `; domain=${domain}`;
-  }
+  const attributes = (withDomain: boolean) => {
+    let result = cookieString;
 
-  cookieString += `; SameSite=${sameSiteUpper}`;
+    if (withDomain && resolvedDomain) {
+      result += `; domain=${resolvedDomain}`;
+    }
+
+    return result;
+  };
+
+  let suffix = `; SameSite=${sameSiteUpper}`;
 
   if (sameSite === 'none' || (typeof window !== 'undefined' && window.location.protocol === 'https:')) {
-    cookieString += '; Secure';
+    suffix += '; Secure';
   }
 
-  cookieString += ';';
-  document.cookie = cookieString;
+  suffix += ';';
+  document.cookie = attributes(true) + suffix;
+
+  if (derivedDomain && resolvedDomain && getCookie(name) !== data) {
+    document.cookie = attributes(false) + suffix;
+  }
 };
 
-export const deleteCookie = (name: string, path = '/', domain: string | null = getDomain()) => {
-  if (hasCookie(name)) {
+export const deleteCookie = (name: string, path = '/', domain?: string | null) => {
+  if (!hasCookie(name)) return;
+
+  const derivedDomain = domain === undefined;
+  const resolvedDomain = derivedDomain ? getDomain() : domain;
+  const expire = (withDomain: boolean) => {
     document.cookie =
       name +
       '=' +
       (path ? ';path=' + path : '') +
-      (domain ? ';domain=' + domain : '') +
+      (withDomain && resolvedDomain ? ';domain=' + resolvedDomain : '') +
       ';expires=Thu, 01 Jan 1970 00:00:01 GMT';
+  };
+
+  expire(true);
+
+  if (derivedDomain && hasCookie(name)) {
+    expire(false);
   }
 };
 

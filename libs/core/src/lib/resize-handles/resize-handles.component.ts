@@ -48,7 +48,22 @@ type GestureEvent =
   | { readonly type: 'end' }
   | { readonly type: 'cancelled' };
 
-const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: Document): Observable<GestureEvent> => {
+// jsdom and other non-browser DOMs ship no pointer capture; the document listeners track the
+// gesture either way, so a failure here only costs events over a cross-origin frame.
+const capturePointer = (el: HTMLElement, pointerId: number) => {
+  try {
+    el.setPointerCapture(pointerId);
+  } catch {
+    return;
+  }
+};
+
+const setupResizeObservable = (
+  startEvent: PointerEvent,
+  handle: HTMLElement,
+  edge: ResizeEdge,
+  doc: Document,
+): Observable<GestureEvent> => {
   const pointerId = startEvent.pointerId;
   const startX = startEvent.clientX;
   const startY = startEvent.clientY;
@@ -64,6 +79,7 @@ const setupResizeObservable = (startEvent: PointerEvent, edge: ResizeEdge, doc: 
 
   return defer(() => {
     const releaseSelection = suppressTextSelection(doc);
+    capturePointer(handle, pointerId);
 
     return concat(
       of<GestureEvent>({ type: 'start', edge }),
@@ -105,10 +121,16 @@ export class ResizeHandlesComponent {
   edges = input<ResizeEdge[]>(['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']);
   disabled = input(false, { transform: booleanAttribute });
 
-  private gestureStart$ = new Subject<{ readonly event: PointerEvent; readonly edge: ResizeEdge }>();
+  private gestureStart$ = new Subject<{
+    readonly event: PointerEvent;
+    readonly handle: HTMLElement;
+    readonly edge: ResizeEdge;
+  }>();
 
   private gesture$ = this.gestureStart$.pipe(
-    exhaustMap(({ event, edge }) => setupResizeObservable(event, edge, this.el.nativeElement.ownerDocument)),
+    exhaustMap(({ event, handle, edge }) =>
+      setupResizeObservable(event, handle, edge, this.el.nativeElement.ownerDocument),
+    ),
     share(),
     takeUntilDestroyed(),
   );
@@ -172,6 +194,6 @@ export class ResizeHandlesComponent {
   protected startResizeGesture(event: PointerEvent, edge: ResizeEdge) {
     if (event.button !== 0 || this.disabled()) return;
     event.stopPropagation();
-    this.gestureStart$.next({ event, edge });
+    this.gestureStart$.next({ event, handle: event.currentTarget as HTMLElement, edge });
   }
 }

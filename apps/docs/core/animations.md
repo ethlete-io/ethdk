@@ -33,18 +33,18 @@ The host additionally carries `et-force-invisible` until the first transition st
 
 API surface:
 
-| Member                                     | Description                                                                                                                                    |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enter()` / `leave()`                      | Start (or redirect) a transition.                                                                                                              |
-| `state$` / `stateChange`                   | `'init' \| 'entering' \| 'entered' \| 'leaving' \| 'left'`.                                                                                    |
-| `forceEnteredState()` / `forceLeftState()` | Jump to the end state synchronously, cancelling any animation.                                                                                 |
-| `skipNextEnter` input                      | When `true`, the next `enter()` completes instantly, then the flag resets. Useful for content that mounts inside an already-visible container. |
+| Member                                     | Description                                                                                                                                                 |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enter()` / `leave()`                      | Start (or redirect) a transition.                                                                                                                           |
+| `state` / `state$` / `stateChange`         | `'init' \| 'entering' \| 'entered' \| 'leaving' \| 'left'` - a read-only signal, a read-only observable and an output. Drive it with `enter()` / `leave()`. |
+| `forceEnteredState()` / `forceLeftState()` | Jump to the end state synchronously, cancelling any animation.                                                                                              |
+| `skipNextEnter` input                      | When `true`, the next `enter()` completes instantly, then the flag resets. Useful for content that mounts inside an already-visible container.              |
 
 The directive settles even when the browser never fires the expected `transitionend` (cancelled or replaced transitions), so state can't get stuck.
 
 ## Animated if
 
-`*etAnimatedIf` is `*ngIf` with exit animations: it creates the view and calls `enter()` when the value turns truthy, and on falsy calls `leave()` - removing the view only once the lifecycle reaches `'left'`. It requires an `etAnimatedLifecycle` on an ancestor element:
+`*etAnimatedIf` is `*ngIf` with exit animations: it creates the view and calls `enter()` when the value turns truthy, and on falsy calls `leave()` - removing the view only once the lifecycle reaches `'left'`. Like `@if`, `*etAnimatedIf="item(); as item"` narrows `item` to the truthy type; while leaving, the view keeps the last truthy value. It requires an `etAnimatedLifecycle` on an ancestor element (without one it throws `ET9000`):
 
 ```html
 <div class="hint" etAnimatedLifecycle>

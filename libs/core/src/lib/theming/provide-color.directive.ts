@@ -45,6 +45,8 @@ export const resolveAppRootColorProvider = (appRef: ApplicationRef): ProvideColo
 
 const FORCED_COLOR_UNSET = /* @__PURE__ */ Symbol('FORCED_COLOR_UNSET');
 
+const appsWarnedAboutMissingThemes = /* @__PURE__ */ new WeakSet<ApplicationRef>();
+
 type ForcedColorState = ColorThemeInput | typeof FORCED_COLOR_UNSET;
 
 @Directive({
@@ -59,6 +61,8 @@ export class ProvideColorDirective {
   private prefix = injectColorThemesPrefix({ optional: true });
   private injector = inject(Injector);
   private parentProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
+
+  private appRef = inject(ApplicationRef);
 
   private currentProviderSync: EffectRef | null = null;
   private forcedColor = signal<ForcedColorState>(FORCED_COLOR_UNSET);
@@ -99,7 +103,18 @@ export class ProvideColorDirective {
 
     if (value === SURFACE_COLOR) return SURFACE_COLOR;
 
-    if (!this.themes || !value) return;
+    if (!value) return;
+
+    if (!this.themes) {
+      if (isDevMode() && !appsWarnedAboutMissingThemes.has(this.appRef)) {
+        appsWarnedAboutMissingThemes.add(this.appRef);
+        console.warn(
+          `etProvideColor="${value}" has no effect because no color themes are registered. Please make sure to add provideColorThemesWithTailwind4()`,
+        );
+      }
+
+      return;
+    }
 
     if (isDevMode() && !this.themes.some((theme) => theme.name === value)) {
       console.error(`Theme ${value} does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`);

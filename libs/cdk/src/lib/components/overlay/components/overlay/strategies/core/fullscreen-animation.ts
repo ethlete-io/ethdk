@@ -571,7 +571,7 @@ export const startFullscreenLeaveAnimation = <T, R>(
       isOriginHidden,
     };
   } else {
-    const cloneState = cloneComponentRef.instance.animatedLifecycle.state$.value;
+    const cloneState = cloneComponentRef.instance.animatedLifecycle.state();
 
     if (cloneState === 'init') {
       destroyClone(cloneComponentRef, deps.appRef);
@@ -676,7 +676,7 @@ export const cleanupFullscreenAnimation = (state: FullscreenAnimationState, deps
     return;
   }
 
-  const cloneState = cloneRef.instance.animatedLifecycle.state$.value;
+  const cloneState = cloneRef.instance.animatedLifecycle.state();
 
   if (cloneState === 'left') {
     destroyClone(cloneRef, appRef);

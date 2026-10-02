@@ -25,7 +25,7 @@ import {
   OverlayRuntimeMountConfig,
 } from './overlay-runtime.types';
 
-type OverlayRuntime = {
+export type OverlayRuntime = {
   mount: <TComponent extends object, TResult = unknown>(
     config: OverlayRuntimeMountConfig<TComponent>,
   ) => OverlayRuntimeRef<TComponent, TResult>;
@@ -253,8 +253,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
       appRef.attachView(componentRef.hostView);
       overlayRef.attachComponentRef(componentRef);
-      overlayRef.beforeOpenedSubject.next();
-      overlayRef.beforeOpenedSubject.complete();
+      overlayRef.markBeforeOpened();
 
       focusRestoreChains.set(overlayRef as OverlayRuntimeRef<object, unknown>, focusRestoreChain);
       openEntriesState.update((entries) => [...entries, overlayRef as OverlayRuntimeRef<object, unknown>]);
@@ -366,7 +365,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
         animationDebugLog(
           `runtime ${config.id}`,
-          `close requested (source "${closeEvent.source}", lifecycle state "${lifecycle?.state$.value ?? 'none'}", delegate ${config.animationDelegate?.leave ? 'yes' : 'no'})`,
+          `close requested (source "${closeEvent.source}", lifecycle state "${lifecycle?.state() ?? 'none'}", delegate ${config.animationDelegate?.leave ? 'yes' : 'no'})`,
         );
 
         // The reference element is gone - there is nothing left to animate away from, so tear the
@@ -487,7 +486,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
         animationDebugLog(
           `runtime ${config.id}`,
-          `enter (delegate ${config.animationDelegate?.enter ? 'yes' : 'no'}, lifecycle state "${lifecycle.state$.value}")`,
+          `enter (delegate ${config.animationDelegate?.enter ? 'yes' : 'no'}, lifecycle state "${lifecycle.state()}")`,
         );
 
         const readySubscription = lifecycle.state$

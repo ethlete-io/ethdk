@@ -395,7 +395,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     // Read off the navigation rather than `history.state`: a symbol key does not survive being
     // structured-cloned into the history entry, which is what keeps the mark from outliving this
     // navigation and re-firing when the user later pops back to the entry it created.
-    const navigationState = router.getCurrentNavigation()?.extras.state as Record<symbol, unknown> | undefined;
+    const navigationState = router.currentNavigation()?.extras.state as Record<symbol, unknown> | undefined;
 
     wantsRestore = !isPopstate && navigationState?.[ET_RESTORE_SCROLL] === true;
   };

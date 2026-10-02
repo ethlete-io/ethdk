@@ -327,7 +327,7 @@ export const createOverlayStrategyController = (
     runtimeRef.updateBackdrop(resolveOverlayHasBackdrop(config, strategyConfig));
 
     const backdropElement = runtimeRef.elements.backdropElement();
-    const lifecycleState = getLifecycle()?.state$.value;
+    const lifecycleState = getLifecycle()?.state();
     const isVisible = lifecycleState === 'entering' || lifecycleState === 'entered';
 
     if (hadBackdrop || !backdropElement || !isVisible) return;

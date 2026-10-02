@@ -542,7 +542,7 @@ export const startFullscreenLeaveAnimation = (options: {
 
   const useReduced = shouldUseReducedAnimation({ document, originElement: state.originElement, applyTransformOrigin });
 
-  animationDebugLog('fullscreen', `leave start (reduced ${useReduced}, lifecycle state "${lifecycle.state$.value}")`);
+  animationDebugLog('fullscreen', `leave start (reduced ${useReduced}, lifecycle state "${lifecycle.state()}")`);
 
   if (useReduced) {
     destroyClone(state.cloneComponentRef, deps.appRef);
@@ -607,7 +607,7 @@ export const startFullscreenLeaveAnimation = (options: {
       isOriginHidden,
     };
   } else {
-    const cloneState = cloneComponentRef.instance.animatedLifecycle.state$.value;
+    const cloneState = cloneComponentRef.instance.animatedLifecycle.state();
 
     if (cloneState === 'init') {
       destroyClone(cloneComponentRef, deps.appRef);
@@ -713,7 +713,7 @@ export const cleanupFullscreenAnimation = (state: FullscreenAnimationState, deps
     return;
   }
 
-  const cloneState = cloneRef.instance.animatedLifecycle.state$.value;
+  const cloneState = cloneRef.instance.animatedLifecycle.state();
 
   if (cloneState === 'left') {
     destroyClone(cloneRef, appRef);

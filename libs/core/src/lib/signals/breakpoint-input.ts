@@ -60,13 +60,20 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
 ): ((value: WriteT) => T) => {
   const currentBp = injectCurrentBreakpoint();
   const injector = inject(Injector);
-  const raw = signal<BreakpointInput<T> | undefined>(undefined);
+  const raw = signal<BreakpointMap<T> | undefined>(undefined);
+  let warnedMissingInstance = false;
   let cachedSig: InputSignalWithTransform<T, any> | null = null;
 
   const transformFn = (value: WriteT): T => {
-    const coerced: BreakpointInput<T> = isBreakpointMap(value) ? (value as unknown as BreakpointMap<T>) : coerce(value);
-    raw.set(coerced);
-    return isBreakpointMap(coerced) ? resolveFromMap(coerced as BreakpointMap<T>, currentBp(), defaultValue) : coerced;
+    if (isBreakpointMap(value)) {
+      const map = value as unknown as BreakpointMap<T>;
+      raw.set(map);
+
+      return resolveFromMap(map, currentBp(), defaultValue);
+    }
+
+    raw.set(undefined);
+    return coerce(value);
   };
 
   effect(() => {
@@ -75,7 +82,17 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
 
     if (!cachedSig) {
       const instance = injector.get(BREAKPOINT_INSTANCE_TOKEN, null) as any;
-      if (!instance) return;
+      if (!instance) {
+        if (ngDevMode && r !== undefined && !warnedMissingInstance) {
+          warnedMissingInstance = true;
+          console.warn(
+            '[ethlete] A breakpoint map was bound to an input, but its component does not call ' +
+              'provideBreakpointInstance(), so the value will not follow the breakpoint after the first render.',
+          );
+        }
+
+        return;
+      }
       for (const key of Object.keys(instance)) {
         const val = instance[key];
 
@@ -86,8 +103,8 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
       }
     }
 
-    if (!cachedSig || r === undefined || !isBreakpointMap(r)) return;
-    const resolved = resolveFromMap(r as BreakpointMap<T>, bp, defaultValue);
+    if (!cachedSig || r === undefined) return;
+    const resolved = resolveFromMap(r, bp, defaultValue);
 
     untracked(() => setInputSignal(cachedSig as InputSignalWithTransform<T, any>, resolved));
   });

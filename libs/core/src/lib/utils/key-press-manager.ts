@@ -1,5 +1,6 @@
 import { Subject, takeUntil, tap, timer } from 'rxjs';
 
+/** @deprecated Keyed on the deprecated `KeyboardEvent.keyCode`. Compare `KeyboardEvent.key` instead. */
 export class KeyPressManager {
   private isKeyPressed = false;
   private keyPressCount = 0;

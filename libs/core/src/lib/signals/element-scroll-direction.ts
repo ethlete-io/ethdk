@@ -30,6 +30,9 @@ export const signalElementLastScrollDirection = (el: SignalElementBindingType) =
           return of(null);
         }
 
+        lastScrollTop = currentElement.scrollTop;
+        lastScrollLeft = currentElement.scrollLeft;
+
         return fromEvent(currentElement, 'scroll').pipe(
           tap(() => {
             const { scrollTop, scrollLeft } = currentElement;
