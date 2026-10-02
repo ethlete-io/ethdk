@@ -25,65 +25,76 @@ A configuration error that is found while the app renders - an unknown icon name
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
-| Range     | Domain             | Guide                                              |
-| --------- | ------------------ | -------------------------------------------------- |
-| 1000–1099 | Select             | [Select](/components/select)                       |
-| 1100–1199 | Chip               | [Chip](/components/chip)                           |
-| 1200–1299 | Overlay            | [Overlays](/components/overlays)                   |
-| 1300–1399 | Menu               | [Menu](/components/menu)                           |
-| 1400–1499 | Tooltip            | [Tooltip](/components/tooltip)                     |
-| 1500–1599 | Toggletip          | [Toggletip](/components/toggletip)                 |
-| 1600–1699 | Stream             | [Stream](/components/stream)                       |
-| 1700–1799 | Notification       | [Notification](/components/notification)           |
-| 1800–1899 | Icon               | [Icon](/components/icon)                           |
-| 1900–1999 | Grid               | [Grid](/components/grid)                           |
-| 2000–2099 | Tabs               | [Tabs](/components/tabs)                           |
-| 2100–2199 | Scrollable         | [Scrollable](/components/scrollable)               |
-| 2200–2299 | Form field         | [Forms](/components/forms)                         |
-| 2300–2399 | Split button       | [Button](/components/button)                       |
-| 2400–2499 | Dropzone           | [Dropzone](/components/dropzone)                   |
-| 2500–2599 | Rich text editor   | [Rich text editor](/components/rich-text-editor)   |
-| 2600–2699 | Multi-language RTE | [Rich text editor](/components/rich-text-editor)   |
-| 2700–2799 | Tag input          | [Text inputs](/components/text-inputs)             |
-| 2800–2899 | Phone input        | [Text inputs](/components/text-inputs)             |
-| 2900–2999 | Calendar           | [Calendar](/components/calendar)                   |
-| 3000–3099 | Date & time inputs | [Date & time inputs](/components/date-time-inputs) |
-| 3100–3199 | Slider             | [Slider](/components/slider)                       |
-| 3200–3299 | Masked input       | [Text inputs](/components/text-inputs)             |
-| 3300–3399 | Cascader           | [Cascader](/components/cascader)                   |
-| 3400–3499 | Bracket            | [Bracket](/components/bracket)                     |
-| 3500–3599 | Table              | [Table](/components/table)                         |
-| 3600–3699 | Accordion          | [Accordion](/components/accordion)                 |
-| 3700–3799 | Breadcrumb         | [Breadcrumb](/components/breadcrumb)               |
-| 3800–3899 | Carousel           | [Carousel](/components/carousel)                   |
-| 3900–3999 | Masonry            | [Masonry](/components/masonry)                     |
-| 4000–4099 | Query error        | [Query error](/components/query-error)             |
-| 4100–4199 | Floating action    | [Floating action](/components/floating-action)     |
-| 4200–4299 | Filter overlay     | [Filter overlay](/components/filter-overlay)       |
-| 4300–4399 | Match              | [Match](/components/match)                         |
-| 4400–4499 | Standings          | [Standings](/components/standings)                 |
-| 4500–4599 | Scheduler          | [Scheduler](/components/scheduler)                 |
-| 4600–4699 | Tree               | [Tree](/components/tree)                           |
-| 4700–4799 | Color input        | [Color input](/components/text-inputs#color-input) |
-| 5000–5099 | Rating             | [Choice & rating](/components/choice-inputs)       |
-| 5200–5299 | Selection lists    | [Choice & rating](/components/choice-inputs)       |
+| Range     | Domain                            | Guide                                              |
+| --------- | --------------------------------- | -------------------------------------------------- |
+| 1000–1099 | Select                            | [Select](/components/select)                       |
+| 1100–1199 | Chip                              | [Chip](/components/chip)                           |
+| 1200–1299 | Overlay                           | [Overlays](/components/overlays)                   |
+| 1300–1399 | Menu                              | [Menu](/components/menu)                           |
+| 1400–1499 | Tooltip                           | [Tooltip](/components/tooltip)                     |
+| 1500–1599 | Toggletip                         | [Toggletip](/components/toggletip)                 |
+| 1600–1699 | Stream                            | [Stream](/components/stream)                       |
+| 1700–1799 | Notification                      | [Notification](/components/notification)           |
+| 1800–1899 | Icon                              | [Icon](/components/icon)                           |
+| 1900–1999 | Grid                              | [Grid](/components/grid)                           |
+| 2000–2099 | Tabs                              | [Tabs](/components/tabs)                           |
+| 2100–2199 | Scrollable                        | [Scrollable](/components/scrollable)               |
+| 2200–2299 | Form field                        | [Forms](/components/forms)                         |
+| 2300–2399 | Split button                      | [Button](/components/button)                       |
+| 2400–2499 | Dropzone                          | [Dropzone](/components/dropzone)                   |
+| 2500–2599 | Rich text editor                  | [Rich text editor](/components/rich-text-editor)   |
+| 2600–2699 | Multi-language RTE                | [Rich text editor](/components/rich-text-editor)   |
+| 2700–2799 | Tag input                         | [Text inputs](/components/text-inputs)             |
+| 2800–2899 | Phone input                       | [Text inputs](/components/text-inputs)             |
+| 2900–2999 | Calendar                          | [Calendar](/components/calendar)                   |
+| 3000–3099 | Date & time inputs                | [Date & time inputs](/components/date-time-inputs) |
+| 3100–3199 | Slider                            | [Slider](/components/slider)                       |
+| 3200–3299 | Masked input                      | [Text inputs](/components/text-inputs)             |
+| 3300–3399 | Cascader                          | [Cascader](/components/cascader)                   |
+| 3400–3499 | Bracket                           | [Bracket](/components/bracket)                     |
+| 3500–3599 | Table                             | [Table](/components/table)                         |
+| 3600–3699 | Accordion                         | [Accordion](/components/accordion)                 |
+| 3700–3799 | Breadcrumb                        | [Breadcrumb](/components/breadcrumb)               |
+| 3800–3899 | Carousel                          | [Carousel](/components/carousel)                   |
+| 3900–3999 | Masonry                           | [Masonry](/components/masonry)                     |
+| 4000–4099 | Query error                       | [Query error](/components/query-error)             |
+| 4100–4199 | Floating action                   | [Floating action](/components/floating-action)     |
+| 4200–4299 | Filter overlay                    | [Filter overlay](/components/filter-overlay)       |
+| 4300–4399 | Match                             | [Match](/components/match)                         |
+| 4400–4499 | Standings                         | [Standings](/components/standings)                 |
+| 4500–4599 | Scheduler                         | [Scheduler](/components/scheduler)                 |
+| 4600–4699 | Tree                              | [Tree](/components/tree)                           |
+| 4700–4799 | Color input                       | [Color input](/components/text-inputs#color-input) |
+| 4800–4899 | Command palette                   | [Command palette](/components/command-palette)     |
+| 4900–4999 | Scrollbar                         | [Scrollbar](/components/scrollbar)                 |
+| 5000–5099 | Rating                            | [Choice & rating](/components/choice-inputs)       |
+| 5100–5199 | Chart                             | [Chart](/components/chart)                         |
+| 5200–5299 | Selection lists                   | [Choice & rating](/components/choice-inputs)       |
+| 9000–9099 | Core animations (`@ethlete/core`) | [Animations](/core/animations)                     |
 
 ::: info Codes below 1000
-Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages - the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
+Codes below 1000 come from other packages: `@ethlete/query` (see [Query errors](/query/errors#error-codes)) and `@ethlete/contentful` (see [Contentful](/contentful/)). The query web-socket codes `ET1000`/`ET1001` collide with the select codes - the bracketed source in the select messages (`[SelectDirective]`) tells them apart.
 :::
 
 ## Select (ET10xx)
 
-| Code     | Cause                                                                            | Fix                                                           |
-| -------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `ET1000` | An `[etSelect]` element has no trigger.                                          | Add an element with `etSelectTrigger` inside the select root. |
-| `ET1001` | An `[etSelect]` element has no surface template.                                 | Add `<ng-template etSelectSurface>` inside the select root.   |
-| `ET1002` | `etSelectTrigger` is not inside an `[etSelect]` element.                         | Move the trigger inside the select root.                      |
-| `ET1003` | `etSelectSurface` is not inside an `[etSelect]` element.                         | Move the surface template inside the select root.             |
-| `ET1004` | `etSelectListbox` is not rendered inside the surface of an `[etSelect]` element. | Move the listbox inside the surface template.                 |
-| `ET1005` | `etSelectOption` is not inside an `[etSelect]` element.                          | Move the option inside the select root.                       |
-| `ET1009` | `etSelectOptionGroup` is not inside an `[etSelect]` element.                     | Move the option group inside the select root.                 |
-| `ET1014` | `etSelectAllOption` is not inside an `[etSelect]` element.                       | Move the select-all row inside the select root.               |
+| Code     | Cause                                                                              | Fix                                                           |
+| -------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `ET1000` | An `[etSelect]` element has no trigger.                                            | Add an element with `etSelectTrigger` inside the select root. |
+| `ET1001` | An `[etSelect]` element has no surface template.                                   | Add `<ng-template etSelectSurface>` inside the select root.   |
+| `ET1002` | `etSelectTrigger` is not inside an `[etSelect]` element.                           | Move the trigger inside the select root.                      |
+| `ET1003` | `etSelectSurface` is not inside an `[etSelect]` element.                           | Move the surface template inside the select root.             |
+| `ET1004` | `etSelectListbox` is not rendered inside the surface of an `[etSelect]` element.   | Move the listbox inside the surface template.                 |
+| `ET1005` | `etSelectOption` is not inside an `[etSelect]` element.                            | Move the option inside the select root.                       |
+| `ET1006` | `etSelectValue` is not inside an `[etSelect]` element.                             | Move the value element inside the select root.                |
+| `ET1007` | `etSelectSearch` is not inside an `[etSelect]` element.                            | Move the search input inside the select root.                 |
+| `ET1008` | A select state template (empty, loading, …) is not inside an `[etSelect]` element. | Move the `<ng-template>` inside the select root.              |
+| `ET1009` | `etSelectOptionGroup` is not inside an `[etSelect]` element.                       | Move the option group inside the select root.                 |
+| `ET1010` | `etSelectVirtualOption` is not inside an `[etSelect]` element.                     | Move the virtual option inside the select root.               |
+| `ET1011` | `etSelectOptionTemplate` is not inside an `[etSelect]` element.                    | Move the option template inside the select root.              |
+| `ET1012` | `etSelectViewport` is not rendered inside the surface of an `[etSelect]` element.  | Move the viewport inside the surface template.                |
+| `ET1013` | `etSelectOptions` is not on an `[etSelect]` / `et-select` element.                 | Put `etSelectOptions` on the select element itself.           |
+| `ET1014` | `etSelectAllOption` is not inside an `[etSelect]` element.                         | Move the select-all row inside the select root.               |
 
 ## Tag input (ET27xx)
 
@@ -93,9 +104,10 @@ Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web so
 
 ## Phone input (ET28xx)
 
-| Code     | Cause                                                          | Fix                                         |
-| -------- | -------------------------------------------------------------- | ------------------------------------------- |
-| `ET2800` | `etPhoneInputField` is not inside an `[etPhoneInput]` element. | Move the field inside the phone input root. |
+| Code     | Cause                                                          | Fix                                                 |
+| -------- | -------------------------------------------------------------- | --------------------------------------------------- |
+| `ET2800` | `etPhoneInputField` is not inside an `[etPhoneInput]` element. | Move the field inside the phone input root.         |
+| `ET2801` | `etPhoneInputFlag` is not inside an `[etPhoneInput]` element.  | Move the flag template inside the phone input root. |
 
 ## Calendar (ET29xx)
 
@@ -315,17 +327,17 @@ All dropzone checks run in dev mode only.
 
 All rich text editor checks run in dev mode only, and cover the opt-in `etRichTextEditorTriggers` building blocks and the opt-in tool providers.
 
-| Code     | Cause                                                                   | Fix                                                                                                                                  |
-| -------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `ET2500` | Two triggers share the same `char`.                                     | Give each trigger a unique trigger character.                                                                                        |
-| `ET2501` | Two triggers share the same `type`.                                     | Give each trigger a unique type.                                                                                                     |
-| `ET2502` | A trigger `type` is malformed.                                          | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                    |
-| `ET2503` | An item `id` is malformed.                                              | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                   |
-| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                                                       |
-| `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                                                   |
-| `ET2506` | A command was called whose tool is not provided (the message names it). | Add the named provider - e.g. `provideRichTextEditorLinkTool()` - or `provideRichTextEditorDefaultTools()` for the full default set. |
-| `ET2507` | `RICH_TEXT_EDITOR_TOOL` was provided without `multi: true`.             | Register the tool with `provideRichTextEditorTool(definition)`.                                                                      |
-| `ET2508` | A trigger `char` is not exactly one character (e.g. `'{{'` or `''`).    | Use a single trigger character such as `'#'` or `'@'`.                                                                               |
+| Code     | Cause                                                                                | Fix                                                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `ET2500` | Two triggers share the same `char`.                                                  | Give each trigger a unique trigger character.                                                                                        |
+| `ET2501` | Two triggers share the same `type`.                                                  | Give each trigger a unique type.                                                                                                     |
+| `ET2502` | A trigger `type` is malformed.                                                       | Match `[a-z][a-z0-9-]*` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                    |
+| `ET2503` | An item `id` is malformed.                                                           | Match `[A-Za-z0-9._:-]+` so the <code v-pre>{{type:id}}</code> token round-trips through Markdown.                                   |
+| `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`.              | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                                                       |
+| `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.                | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                                                   |
+| `ET2506` | A command was called whose tool is not provided (the message names it).              | Add the named provider - e.g. `provideRichTextEditorLinkTool()` - or `provideRichTextEditorDefaultTools()` for the full default set. |
+| `ET2507` | `RICH_TEXT_EDITOR_TOOL` was provided without `multi: true`.                          | Register the tool with `provideRichTextEditorTool(definition)`.                                                                      |
+| `ET2508` | A trigger `char` is not exactly one character (e.g. a two-character string or `''`). | Use a single trigger character such as `'#'` or `'@'`.                                                                               |
 
 ## Multi-language rich text editor (ET26xx)
 
@@ -384,20 +396,24 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 
 All accordion checks run in dev mode only, after the first render.
 
-| Code     | Cause                                                                                   | Fix                                                                                             |
-| -------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `ET3600` | An `etAccordionTrigger`, `etAccordionPanel` or slot template sits outside an accordion. | Move it inside the `[etAccordion]` element (e.g. `<et-accordion>`) it belongs to.               |
-| `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                | Add a trigger - ideally a `<button etAccordionTrigger>` inside a heading.                       |
-| `ET3602` | An accordion is open but has no `etAccordionPanel`.                                     | Add an `etAccordionPanel` element, or render it conditionally only while the accordion is open. |
+| Code     | Cause                                                                                               | Fix                                                                                             |
+| -------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `ET3600` | An `etAccordionTrigger`, `etAccordionPanel` or slot template sits outside an accordion.             | Move it inside the `[etAccordion]` element (e.g. `<et-accordion>`) it belongs to.               |
+| `ET3601` | An accordion rendered no `etAccordionTrigger`, so nothing can expand it.                            | Add a trigger - ideally a `<button etAccordionTrigger>` inside a heading.                       |
+| `ET3602` | An accordion is open but has no `etAccordionPanel`.                                                 | Add an `etAccordionPanel` element, or render it conditionally only while the accordion is open. |
+| `ET3603` | `openAll()` was called on a group with `autoCloseOthers` on, so it did nothing. A dev-mode warning. | Turn `autoCloseOthers` off before expanding every accordion.                                    |
 
 ## Breadcrumb (ET37xx)
 
 All breadcrumb checks run in dev mode only, after the first render.
 
-| Code     | Cause                                                                               | Fix                                                                         |
-| -------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `ET3700` | An `etBreadcrumbItemTemplate` or `etBreadcrumbSeparator` sits outside a breadcrumb. | Move the `<ng-template>` inside the `[etBreadcrumb]` element it belongs to. |
-| `ET3701` | A breadcrumb has no crumb templates, so there is no trail to render.                | Declare one `<ng-template etBreadcrumbItemTemplate>` per crumb.             |
+| Code     | Cause                                                                                                                                     | Fix                                                                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `ET3700` | An `etBreadcrumbItemTemplate` or `etBreadcrumbSeparator` sits outside a breadcrumb.                                                       | Move the `<ng-template>` inside the `[etBreadcrumb]` element it belongs to.                                        |
+| `ET3701` | A breadcrumb has no crumb templates, so there is no trail to render.                                                                      | Declare one `<ng-template etBreadcrumbItemTemplate>` per crumb.                                                    |
+| `ET3702` | `etBreadcrumbSeo` reaches neither an `etBreadcrumb` on its element nor a breadcrumb manager.                                              | Put it on the `[etBreadcrumb]` element, or on `<et-breadcrumb-outlet>` with `provideBreadcrumbManager()` in scope. |
+| `ET3703` | Something other than an `etBreadcrumbSeparator` template was projected into `<et-breadcrumb-outlet>`, which drops it. A dev-mode warning. | Contribute crumbs from an `<ng-template etBreadcrumbSegment>` instead.                                             |
+| `ET3704` | A second `<et-breadcrumb-outlet>` renders the same breadcrumb manager, so every crumb shows twice. A dev-mode warning.                    | Render one outlet per manager.                                                                                     |
 
 ## Carousel (ET38xx)
 
@@ -547,3 +563,11 @@ Checked in dev mode only, after the first render.
 | `ET5161` | A `[etSankeyChart]` link names a `source` or `target` that is no node's `id`. Checked on every layout.           | Add the node, or fix the link's id.                                              |
 | `ET5162` | Two `[etSankeyChart]` nodes share one `id`. Checked on every layout.                                             | Give every node its own `id`.                                                    |
 | `ET5163` | A `[etSankeyChart]` link has a negative or non-finite `value`. Checked on every layout.                          | Pass flows of `0` or more.                                                       |
+
+## Core animations (ET90xx)
+
+Thrown by `@ethlete/core`, in every build.
+
+| Code     | Cause                                                                                | Fix                                                                                    |
+| -------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `ET9000` | `*etAnimatedIf` has no `[etAnimatedLifecycle]` element around it to animate against. | Wrap it in an element with `etAnimatedLifecycle` - see [Animations](/core/animations). |

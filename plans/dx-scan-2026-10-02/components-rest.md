@@ -209,7 +209,8 @@ domain in scope has a suite in `apps/storybook-e2e`.
 
 ## CR-12 ET3603, ET3702, ET3703 are missing from `error-codes.md`
 
-- Status: left: the rows belong in `error-codes.md`, excluded for this pass; no check added (it would fail on the other domains' missing codes).
+- Status: fixed: added ET1006-1008, ET1010-1013, ET2801, ET3603, ET3702-3704 and a core ET9000 section; ranges table gains 4800, 4900, 5100, 9000; ET2508's `{{` (broke the docs build) rephrased. A /tmp script diffed every `*_ERROR_CODES` value against the page; no check added to the repo.
+- Review: ok
 
 - Where: `libs/components/src/lib/accordion/accordion-errors.ts` (`OPEN_ALL_WITH_AUTO_CLOSE_OTHERS: 3603`, thrown at
   `accordion/headless/accordion-group.directive.ts:116`); `libs/components/src/lib/breadcrumb/breadcrumb-errors.ts`
