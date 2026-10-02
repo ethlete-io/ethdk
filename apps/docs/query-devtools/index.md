@@ -12,7 +12,7 @@ separate: `provideQueryDevtools()` lives in `@ethlete/query`, because that is wh
 has to record anything worth showing.
 
 ```bash
-npm i -D @ethlete/query-devtools
+yarn add -D @ethlete/query-devtools
 ```
 
 ## Setup
