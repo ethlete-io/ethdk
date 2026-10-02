@@ -19,8 +19,9 @@ const panel = (treatment: Treatment, surface: Surface) => {
       ${WEEKS.map(
         ([week, days], row) =>
           html`<span class="cell week" style="color:${rgb(tone)}">${week}</span> ${days.map(
-            (day) => html`<span class="cell" style="${isOutside(row, day) ? `color:${rgb(tone)}` : ''}">${day}</span>`,
-          )}`,
+              (day) =>
+                html`<span class="cell" style="${isOutside(row, day) ? `color:${rgb(tone)}` : ''}">${day}</span>`,
+            )}`,
       )}
     </div>
     <div class="ratios">${ratio('outside and week', contrast(tone, surface.background))}</div>
