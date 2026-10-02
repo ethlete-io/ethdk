@@ -8,6 +8,7 @@ const pages = {
   core: 'apps/docs/components/error-codes.md',
   bracket: 'apps/docs/components/error-codes.md',
   contentful: 'apps/docs/contentful/index.md',
+  query: 'apps/docs/query/errors.md',
 };
 
 const files = execSync(
@@ -22,7 +23,7 @@ const files = execSync(
   .split('\n')
   .filter((f) => f && !/\.(spec|stories)\.ts$/.test(f) && !/\/(scenarios|testing)\//.test(f));
 
-const definitionStart = /(?:const\s+\w*_CODES?\b[^={]*=\s*\{|enum\s+\w*Code\w*\s*\{)/g;
+const definitionStart = /(?:const\s+\w*(?:_CODES?|ErrorCode)\b[^={]*=\s*\{|enum\s+\w*Code\w*\s*\{)/g;
 const member = /^\s*(\w+)\s*[:=]\s*(\d+)\b/gm;
 const literalSite = [
   /new\s+\w*RuntimeError\s*(?:<[^>(]*>)?\(\s*(\d+)\s*[,)]/g,
@@ -49,7 +50,7 @@ for (const file of files) {
     }
   }
 
-  if (!/_CODES?\b|Code\w*\s*\{/.test(text)) continue;
+  if (!/_CODES?\b|Code\w*\s*(?:=\s*)?\{/.test(text)) continue;
 
   for (const start of text.matchAll(definitionStart)) {
     const body = text.slice(start.index + start[0].length, text.indexOf('}', start.index + start[0].length));
@@ -75,12 +76,29 @@ if (defined.length === 0) {
   process.exit(1);
 }
 
+const named = new Map();
+const duplicates = [];
+for (const d of defined.filter((d) => d.name !== '(bare literal)')) {
+  const key = `${d.lib}:${d.code}`;
+  const first = named.get(key);
+  if (first && first.name !== d.name) duplicates.push([first, d]);
+  else if (!first) named.set(key, d);
+}
+
+if (duplicates.length) {
+  console.error(`${duplicates.length} error code(s) are declared twice within one lib:\n`);
+  for (const [a, b] of duplicates) {
+    console.error(`  ET${a.code} ${a.name} (${a.file}) and ${b.name} (${b.file})`);
+  }
+}
+
 if (missing.length) {
   console.error(`${missing.length} error code(s) have no row on their docs page:\n`);
   for (const d of missing.sort((a, b) => a.code - b.code)) {
     console.error(`  ET${d.code} ${d.name} (${d.file}) -> ${pages[d.lib]}`);
   }
-  process.exit(1);
 }
+
+if (missing.length || duplicates.length) process.exit(1);
 
 console.log(`All ${defined.length} error codes are documented.`);
