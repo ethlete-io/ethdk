@@ -22,7 +22,7 @@
       border-inline-end: 1px solid var(--et-surface-border-solid);
       font-size: 11px;
       font-variant-numeric: tabular-nums;
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-color-muted-solid);
     }
 
     .et-calendar-week-number-heading {

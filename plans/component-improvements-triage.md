@@ -23,6 +23,32 @@ with `color-mix` (it invents colours).
   weight 300 and a shaded cell lost). Axe still fails on one cause:
   - The today button is an outline button in the default theme, and a surface cannot remap the
     default theme: `#00ffa1` on white, 1.32:1. Needs a `libs/core` API change.
+- Two axe `color-contrast` scans of all 587 `components-*` stories (2026-10-02): one as shipped
+  (root surface dark, 45 failing stories), one with the root surface switched to `light` from the
+  script (`ng.getDirectives` on `ethlete-sb-root`, then the `html` background and colour). In the
+  light scan, `#fafafa`/`#a1a1a1` on white is an artifact: those stories nest a dark surface that
+  paints no background. Overlay content also sits outside the root surface. Open calls, drawn and
+  settled 2026-10-02:
+  - Calendar outside dates and week numbers take muted (`calendar-contrast/00-outside-dates`).
+    The select and cascader placeholder takes muted (`forms-contrast/00-placeholder`). Form errors,
+    warnings, support messages and the counter take the ink (`forms-contrast/01-message-ink`).
+  - Storybook palette: light muted is neutral 600 (`surface-palette/01-muted-on-light`), and
+    `dark-elevated-2` and `-3` muted is neutral 300 (`surface-palette/00-muted-on-elevated`).
+  - **Next, not started:** `scheduler-contrast/02-today-button` chose B. `SurfaceTheme` gets a
+    `colorTheme` field that names the surface's default colour theme. The semantic map keeps only
+    types. Rejected: a `default` key in `semanticColorThemes`, a neutral today button, and a theme
+    each consumer provides. The default theme sits on `:root` in CSS, so the surface must apply it
+    only where no nearer `etProvideColor` exists. Then map `light` and `light-elevated` to
+    `brand-on-light` in Storybook. Needs a core scenario test, docs and a changeset.
+- Fixes with no design question, waiting for an OK: the Storybook light surfaces do not map
+  `warning` to `warning-on-light` (form warning, progress-step warning and banner text button
+  fail). More text takes `--et-theme-color-primary-solid` instead of the ink: rich-text token
+  popup, select extras and option, dropzone, rich-text content - check each after
+  `01-message-ink` settles.
+- Scan findings left out on purpose: disabled labels, hints and calendar dates (WCAG exempts
+  inactive controls), story data that names a dark theme (scheduler and avatar on light), and
+  hardcoded colours in the `layout-scrollable`, `layout-masonry`, `layout-grid` and
+  `color-input-contrast` stories.
 - The touch e2e "range instead of swiping" in `apps/storybook-e2e/src/scheduler` fails on
   `:4400` before these changes too: the edit surface does not open as a full-screen dialog.
 

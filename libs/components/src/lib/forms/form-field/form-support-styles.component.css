@@ -58,7 +58,7 @@
     flex-direction: column;
     gap: 2px;
     padding-block-start: 4px;
-    color: var(--et-theme-color-primary-solid, currentColor);
+    color: var(--et-theme-color-ink-solid, currentColor);
   }
 
   .et-form-support-errors {

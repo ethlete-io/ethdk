@@ -34,7 +34,7 @@
       color: inherit;
 
       &[data-placeholder] {
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
       }
     }
 

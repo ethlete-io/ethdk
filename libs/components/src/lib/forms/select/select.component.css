@@ -68,7 +68,7 @@
         cursor: text;
 
         &::placeholder {
-          color: color-mix(in srgb, currentColor 46%, transparent);
+          color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
         }
 
         /* Before the disabled rule: a disabled input is :read-only too, and there
@@ -96,7 +96,7 @@
       min-inline-size: 0;
 
       &[data-placeholder] {
-        color: color-mix(in srgb, currentColor 46%, transparent);
+        color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
       }
     }
 

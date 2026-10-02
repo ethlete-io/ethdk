@@ -18,7 +18,7 @@
     white-space: nowrap;
 
     &:where([data-over-limit]) {
-      color: var(--et-theme-color-primary-solid);
+      color: var(--et-theme-color-ink-solid);
       font-weight: var(--et-form-field-counter-over-limit-font-weight, 600);
     }
   }
