@@ -1,30 +1,27 @@
 import { RuntimeError } from '@ethlete/core';
+import { QueryRuntimeErrorCode } from '../query-errors';
 
 /**
  * Route building, query-string serialization and the token clock - shared by the current generation and
  * the legacy V2 client, which re-exports them under their original names.
  */
 
-// codes 1-99 of the shared 0-999 `@ethlete/query` range - see `query-errors.ts` for the rest
-export const RouteRuntimeErrorCode = {
-  INVALID_BASE_ROUTE: 1,
-  INVALID_ROUTE: 2,
-  PATH_PARAMS_MISSING_IN_ROUTE_FUNCTION: 3,
-} as const;
-
-export type RouteRuntimeErrorCode = (typeof RouteRuntimeErrorCode)[keyof typeof RouteRuntimeErrorCode];
-
-export const invalidBaseRouteError = (data: unknown) =>
-  new RuntimeError(RouteRuntimeErrorCode.INVALID_BASE_ROUTE, 'The baseRoute must not end with a slash', data);
-
-export const invalidRouteError = (data: unknown) =>
-  new RuntimeError(RouteRuntimeErrorCode.INVALID_ROUTE, 'The route must start with a slash', data);
-
-export const pathParamsMissingInRouteFunctionError = (data: unknown) =>
+export const invalidBaseRouteError = (base: unknown) =>
   new RuntimeError(
-    RouteRuntimeErrorCode.PATH_PARAMS_MISSING_IN_ROUTE_FUNCTION,
-    'The route is a function but pathParams are missing',
-    data,
+    QueryRuntimeErrorCode.INVALID_BASE_URL,
+    `The client base URL "${base}" must not end with "/". Drop the trailing slash.`,
+  );
+
+export const invalidRouteError = (route: unknown) =>
+  new RuntimeError(
+    QueryRuntimeErrorCode.INVALID_ROUTE,
+    `The route "${route}" must start with "/". Write it as "/${route}".`,
+  );
+
+export const pathParamsMissingInRouteFunctionError = (route: unknown) =>
+  new RuntimeError(
+    QueryRuntimeErrorCode.PATH_PARAMS_MISSING_IN_ROUTE_FUNCTION,
+    `The route "${route}" is a function, but the query was executed without pathParams. Pass them through withArgs(() => ({ pathParams })) or execute({ args: { pathParams } }).`,
   );
 
 export type QueryParams = object;

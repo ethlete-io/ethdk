@@ -3,6 +3,7 @@ import { getActiveConsumer } from '@angular/core/primitives/signals';
 import { TestBed } from '@angular/core/testing';
 import { deleteCookie, getCookie, injectRoute, setCookie } from '@ethlete/core';
 import {
+  AuthTestQueryBuilders,
   FakeBroadcastChannelHandle,
   FakeWebLocksHandle,
   flushMultiTabSync,
@@ -47,7 +48,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -72,7 +72,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -101,7 +100,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -131,7 +129,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -155,7 +152,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -185,7 +181,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -210,7 +205,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -237,7 +231,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -272,7 +265,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -302,7 +294,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -330,7 +321,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -363,7 +353,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -396,7 +385,6 @@ describe('bearer-auth-persistent-auth', () => {
           withPersistentAuth({
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -424,7 +412,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true,
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -452,7 +439,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -480,7 +466,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -510,7 +495,6 @@ describe('bearer-auth-persistent-auth', () => {
             defaultRememberMe: true, // Start with rememberMe=true
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -550,7 +534,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -583,7 +566,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -616,7 +598,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -643,7 +624,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -663,7 +643,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { refreshToken: token, clientId: 'test-client' } }),
             },
           }),
@@ -685,7 +664,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
               excludeRoutes: ['/public', '/login'],
             },
@@ -707,7 +685,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
               excludeRoutes: ['/public', '/login'],
             },
@@ -729,7 +706,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
               shouldAutoLogin: (url) => new URL(url, 'https://test.com').pathname !== '/reset-password',
             },
@@ -751,7 +727,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
               shouldAutoLogin: (url) => new URL(url, 'https://test.com').pathname !== '/reset-password',
             },
@@ -773,7 +748,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
               excludeRoutes: ['/public'],
               shouldAutoLogin: () => true,
@@ -803,7 +777,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -825,7 +798,6 @@ describe('bearer-auth-persistent-auth', () => {
             cookie: { name: 'testAuth' },
             autoLogin: {
               queryKey: 'refresh',
-              // @ts-expect-error - Type inference issue in setupAuthTest
               buildArgs: (token) => ({ body: { token } }),
             },
           }),
@@ -859,11 +831,10 @@ describe('bearer-auth-persistent-auth', () => {
     });
 
     const persistentAuthWithSync = () => [
-      withPersistentAuth({
+      withPersistentAuth<AuthTestQueryBuilders>({
         cookie: { name: 'testAuth' },
         autoLogin: {
           queryKey: 'refresh',
-          // @ts-expect-error - Type inference issue in setupAuthTest
           buildArgs: (token) => ({ body: { token } }),
         },
       }),

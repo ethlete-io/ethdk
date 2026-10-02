@@ -76,19 +76,19 @@ This is what v2's `setDefaultHeaders({ refreshQueriesInUse: true })` did implici
 When the _data_ went stale rather than the request - you mutated something, or a push message said someone else did - `invalidateQueries()` re-runs the affected queries here **and in the user's other tabs**:
 
 ```ts
-await createPlayer.execute({ body });
+await executeUntilSettled(createPlayer, { args: { body } });
 
 injectApi().invalidateQueries({ url: '/players' });
 ```
 
 It refreshes the same set as `refreshQueriesInUse()` - reads with at least one consumer, cache bypassed, in-flight requests restarted - narrowed by what you pass:
 
-| Option      | Default | Description                                                                                                             |
-| ----------- | ------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `url`       | -       | Invalidate one part of the API. Relative values resolve against `baseUrl`, like a route.                                |
-| `tag`       | -       | Invalidate the reads that declared this [tag](#tags). Given with `url`, a read has to match both.                       |
-| `filter`    | -       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** - see below.           |
-| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it. |
+| Option      | Default | Description                                                                                                                                                         |
+| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`       | -       | Invalidate one part of the API. A route starting with `/` resolves against `baseUrl`; anything else must be an absolute URL (`https://…`), which the type enforces. |
+| `tag`       | -       | Invalidate the reads that declared this [tag](#tags). Given with `url`, a read has to match both.                                                                   |
+| `filter`    | -       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** - see below.                                                       |
+| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it.                                             |
 
 `url` matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`, `/players/1` and `/players?page=2` - but not `/players-archive`. Passing nothing invalidates everything in use.
 

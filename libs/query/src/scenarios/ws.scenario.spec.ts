@@ -582,6 +582,33 @@ describe('ws scenario', () => {
     expect(completed).toBe(true);
   });
 
+  it('hands a static room to the caller at once, so a messages$ subscription right after joinRoom gets the next message', () => {
+    const s = scenario();
+    const { double, instance } = createSocket(s);
+
+    const c = s.consumer();
+    const received: SocketMessageView[] = [];
+
+    c.run(() => {
+      const room = instance.joinRoom('lobby');
+
+      room()?.messages$.subscribe((m) => received.push(m));
+    });
+
+    expect(double.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
+
+    double.serverConnect();
+    double.serverSend({ room: 'lobby', event: 'goal', data: { goals: 1 } });
+
+    expect(received).toEqual([{ room: 'lobby', event: 'goal', data: { goals: 1 } }]);
+
+    c.destroy();
+    expect(double.sent()).toEqual([
+      { event: 'join-room', data: 'lobby' },
+      { event: 'leave-room', data: 'lobby' },
+    ]);
+  });
+
   it('completes messages$ of a still-joined room when the providing injector is destroyed', () => {
     const s = scenario();
     const double = createWebSocketTestDouble();

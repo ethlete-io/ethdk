@@ -1,11 +1,11 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { DestroyRef, ErrorHandler, inject, Injector, PLATFORM_ID } from '@angular/core';
+import { DestroyRef, EnvironmentInjector, ErrorHandler, inject, Injector, isDevMode, PLATFORM_ID } from '@angular/core';
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { describeQueryDevtoolsFeatures, QueryDevtoolsFeature } from '../devtools/query-devtools-features';
 import { isQueryDevtoolsEnabled } from '../devtools/query-devtools-hook';
 import { registerLiveQueryDevtoolsRepository } from '../devtools/query-devtools-live-clients';
-import { BuildQueryStringConfig } from './internal/request-route';
+import { BuildQueryStringConfig, invalidBaseRouteError } from './internal/request-route';
 import { createQueryInvalidationFilter, QueryInvalidationOptions, resolveInvalidationUrl } from './query-invalidation';
 import { QueryPersistenceEngine } from './persistence/query-persistence-engine';
 import {
@@ -188,7 +188,7 @@ export type QueryClient = {
    * creator's `invalidates` option calls this for you after a successful response.
    *
    * @example
-   * await createPlayer.execute({ body });
+   * await executeUntilSettled(createPlayer, { args: { body } });
    *
    * client.invalidateQueries({ url: '/players' }); // /players, /players/1, /players?page=2
    * client.invalidateQueries({ tag: 'player:1' }); // every read whose `tags` include it
@@ -235,9 +235,31 @@ export type QueryClientRef = ProviderDefinition<QueryClient>;
 export type AnyCreateQueryClientResult = QueryClientRef;
 export type AnyQueryClient = NonNullable<ReturnType<AnyCreateQueryClientResult['inject']>>;
 
+const clientNamesByInjector = /* @__PURE__ */ new WeakMap<EnvironmentInjector, Set<string>>();
+
+const warnOnDuplicateClientName = (name: string, destroyRef: DestroyRef) => {
+  const environmentInjector = inject(EnvironmentInjector);
+  const names = clientNamesByInjector.get(environmentInjector) ?? new Set<string>();
+
+  clientNamesByInjector.set(environmentInjector, names);
+
+  if (names.has(name)) {
+    console.warn(
+      `Two query clients are named "${name}". The name keys multi-tab sync, persistence and the devtools, so both clients share them. Give each createQueryClient() a unique name.`,
+    );
+
+    return;
+  }
+
+  names.add(name);
+  destroyRef.onDestroy(() => names.delete(name));
+};
+
 export const createQueryClient = (options: CreateQueryClientConfigOptions): QueryClientRef =>
   defineRootProvider(
     () => {
+      if (options.baseUrl.endsWith('/')) throw invalidBaseRouteError(options.baseUrl);
+
       const httpClient = inject(HttpClient);
       const ngErrorHandler = inject(ErrorHandler);
       const injector = inject(Injector);
@@ -258,6 +280,8 @@ export const createQueryClient = (options: CreateQueryClientConfigOptions): Quer
       });
 
       const destroyRef = inject(DestroyRef);
+
+      if (isDevMode()) warnOnDuplicateClientName(options.name, destroyRef);
 
       destroyRef.onDestroy(() => {
         for (const entry of repository.subtle.cacheEntries()) {

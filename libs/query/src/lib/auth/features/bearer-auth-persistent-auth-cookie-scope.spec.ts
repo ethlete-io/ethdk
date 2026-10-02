@@ -54,7 +54,6 @@ describe('bearer-auth-persistent-auth cookie scope', () => {
           defaultRememberMe: true,
           autoLogin: {
             queryKey: 'refresh',
-            // @ts-expect-error - Type inference issue in setupAuthTest
             buildArgs: (token) => ({ body: { token } }),
           },
         }),

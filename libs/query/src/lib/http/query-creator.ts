@@ -306,11 +306,9 @@ export type QueryConfig = {
 
   /**
    * If true, executing with `allowCache` on a request that cannot be cached is ignored instead of throwing
-   * `ET301`.
+   * `ET301`. Only for the legacy interop layer, which forwards v2's `skipCache` for every method.
    *
-   * For the legacy interop layer: v2 had a single `skipCache` for every method, so it forwards `allowCache`
-   * without being able to tell a cacheable request from an uncacheable one. Application code should not set
-   * this - on a hand-written `execute()` the error it silences is a real mistake.
+   * @internal
    */
   silenceUncacheableAllowCacheError?: boolean;
 

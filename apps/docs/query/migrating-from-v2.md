@@ -6,7 +6,7 @@ The realistic order is: **prepare → run the codemod → make it boot → migra
 
 ## 1. Prepare and run the generators
 
-The current `@ethlete/query` peer-pins `@angular/core`, `@angular/common`, `@angular/forms` and `@angular/router` to an exact version (`22.1.6` at the time of writing, see the package's `package.json`), and so do `@ethlete/core` and `@ethlete/components`. The legacy client ships in the same package, so there is no v3 for an older Angular: an app on Angular 19 upgrades Angular first, to the pinned minor.
+The current `@ethlete/query` peers on Angular 22 (`^22.1.0` for `@angular/core`, `@angular/common`, `@angular/forms` and `@angular/router`), and so do `@ethlete/core` and `@ethlete/components`. The legacy client ships in the same package, so there is no v3 for an older Angular: an app on Angular 19 upgrades Angular first. The full order for a v4-line app is in [Migrating from the v4 line](/migrating-from-v4).
 
 ```bash
 yarn nx g @ethlete/query:prep-for-query-v3   # rename colliding legacy symbols, then upgrade the package

@@ -330,7 +330,7 @@ describe('auth features without the devtools', () => {
     destroy();
   });
 
-  it('withTokenExpirationWarning flips isExpiringSoon at the configured threshold and resets once a refresh lands', async () => {
+  it('withTokenExpirationWarning stays quiet through a routine refresh, and warns once the refresh is overdue', async () => {
     const s = scenario();
 
     expect(isQueryDevtoolsEnabled()).toBe(false);
@@ -347,19 +347,25 @@ describe('auth features without the devtools', () => {
     expect(auth.features.tokenExpirationWarning.expiresIn()).not.toBeNull();
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 
-    await s.settle(7000); // t=7001: still outside the 12s warning window
-    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
-
-    await s.settle(1000); // t=8001: 12s from the 20s expiry - the window opens
-    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+    await s.settle(8000); // t=8001: inside the 12s window, but the refresh is due at t=10s
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(12000);
-    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(10000);
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 
     await s.settle(3000);
 
     expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
     expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
     expect(auth.features.tokenExpirationWarning.expiresIn()).toBeGreaterThan(15000);
+
+    for (let i = 0; i < 4; i++) {
+      s.api.once('POST', '/auth/refresh', () => ({ status: 503, body: { message: 'unavailable' } }));
+    }
+
+    await s.settle(14000); // the second refresh was due at t~21s and is still failing
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+
+    await s.settle(20000);
+    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
 
     c.destroy();
   });
@@ -402,7 +408,7 @@ describe('auth features without the devtools', () => {
 
     await s.settle(7000);
 
-    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(12000);
 
     c.destroy();
   });
@@ -1020,19 +1026,27 @@ describe('auth features without the devtools', () => {
 
     await s.settle(9000);
 
-    expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+    expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThanOrEqual(12000);
 
     c.destroy();
   });
 
-  it('flips isExpiringSoon five minutes before expiry by default', async () => {
+  it('flips isExpiringSoon five minutes before expiry by default when nothing can renew the session', async () => {
     const s = scenario();
 
     expect(isQueryDevtoolsEnabled()).toBe(false);
 
-    // A buffer of zero keeps the proactive refresh out of the way until long after the warning.
-    const warning = withTokenExpirationWarning();
-    const auth = s.auth({ accessTokenExpiresInMs: 20 * 60 * 1000, refreshStrategy: 1, features: [warning] });
+    s.api.on('POST', '/auth/login', () => ({
+      body: { accessToken: mintToken({ expiresInMs: 20 * 60 * 1000 }), refreshToken: mintToken() },
+    }));
+
+    const ref = createBearerAuthProvider({
+      name: 'auth-features-login-only',
+      queryClientRef: s.clientRef,
+      queries: [withAuthenticationQuery('login', { queryCreator: s.post<TokenArgs>('/auth/login') })],
+      features: [withTokenExpirationWarning()],
+    });
+    const auth = s.run(() => ref.inject());
 
     const c = s.consumer();
     c.run(() => auth.queries.login.execute({ body: {} }));

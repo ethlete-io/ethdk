@@ -6,12 +6,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createDefaultRetryFn,
   createGqlMutationViaGet,
+  createQueryClient,
+  createQueryGroup,
+  createQueryStack,
   createGqlQueryViaPost,
   executeUntilSettled,
   gql,
   isHtmlErrorPayload,
   mapViolationsToFormErrors,
   queryErrorMessages,
+  QueryRuntimeErrorCode,
   registerQueryErrorParser,
   SERVER_ERROR_KIND,
   setDefaultQueryRetryFn,
@@ -1703,6 +1707,73 @@ describe('the default retry policy and non-idempotent methods', () => {
     s.expectError(is503);
     s.expectError(is503);
     c.destroy();
+  });
+});
+
+describe('misconfiguration errors', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('gives the route errors their own codes, apart from the query core ones', () => {
+    const routeCodes = [
+      QueryRuntimeErrorCode.INVALID_BASE_URL,
+      QueryRuntimeErrorCode.INVALID_ROUTE,
+      QueryRuntimeErrorCode.PATH_PARAMS_MISSING_IN_ROUTE_FUNCTION,
+    ];
+    const coreCodes = [
+      QueryRuntimeErrorCode.QUERY_FEATURE_USED_MULTIPLE_TIMES,
+      QueryRuntimeErrorCode.QUERY_CREATED_IN_REACTIVE_CONTEXT,
+      QueryRuntimeErrorCode.INVALIDATES_USED_ON_READ,
+      QueryRuntimeErrorCode.QUERY_CREATED_OUTSIDE_INJECTION_CONTEXT,
+    ];
+
+    expect(new Set([...routeCodes, ...coreCodes]).size).toBe(routeCodes.length + coreCodes.length);
+  });
+
+  it('throws ET010 when a client with a trailing-slash baseUrl is created, not on its first request', () => {
+    const s = scenario();
+    const badClient = createQueryClient({ name: 'trailing-slash', baseUrl: 'https://api.test/' });
+
+    expect(() => s.run(() => badClient.inject())).toThrow(/^ET010: .*"https:\/\/api\.test\/".*Drop the trailing slash/);
+  });
+
+  it('throws ET003 naming the injector option when a query is created outside an injection context', () => {
+    const s = scenario();
+    const getUser = s.get<{ response: { id: string } }>('/users/me');
+
+    expect(() => getUser()).toThrow(/^ET003: .*\{ injector: this\.injector \}/);
+    expect(s.api.requests).toHaveLength(0);
+  });
+
+  it('throws ET003 when a query stack or a query group is created outside an injection context', () => {
+    const s = scenario();
+    const getUser = s.get<{ response: { id: string } }>('/users/me');
+
+    expect(() => createQueryStack({ queryCreator: getUser, dependencies: () => null, args: () => ({}) })).toThrow(
+      /^ET003: A query stack .*runInInjectionContext/,
+    );
+    expect(() => createQueryGroup({})).toThrow(/^ET003: A query group /);
+  });
+
+  it('warns once when two clients with one name are created in the same injector', () => {
+    const s = scenario();
+    const first = createQueryClient({ name: 'duplicate-name', baseUrl: 'https://one.test' });
+    const second = createQueryClient({ name: 'duplicate-name', baseUrl: 'https://two.test' });
+
+    s.run(() => first.inject());
+    expect(s.warnings).toHaveLength(0);
+
+    s.run(() => second.inject());
+    s.expectWarning(/Two query clients are named "duplicate-name"/);
+    expect(s.warnings).toHaveLength(0);
+  });
+
+  it('types an invalidation url as a root-relative route or an absolute URL', () => {
+    const s = scenario();
+
+    // @ts-expect-error a route without a leading slash would match nothing
+    expect(() => s.client.invalidateQueries({ url: 'players' })).not.toThrow();
+    expect(() => s.client.invalidateQueries({ url: '/players' })).not.toThrow();
+    expect(() => s.client.invalidateQueries({ url: 'https://api.test/players' })).not.toThrow();
   });
 });
 

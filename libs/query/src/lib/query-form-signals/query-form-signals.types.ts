@@ -106,7 +106,7 @@ export type QueryFormChange<TFields extends QueryFormFields> = {
  * Options passed to `observe()`. Named distinctly from the legacy
  * `QueryFormObserveOptions` to keep both APIs' barrel exports intact.
  */
-export type QueryFormSignalsObserveOptions = {
+export type QueryFormSignalsObserveOptions<TKey extends string = string> = {
   /**
    * Sync the committed value to the URL query params.
    * @default true
@@ -129,7 +129,7 @@ export type QueryFormSignalsObserveOptions = {
    * Keep the committed value in a storage and restore it when the URL carries none of the persisted fields.
    * Off unless set.
    */
-  readonly persistence?: QueryFormPersistence;
+  readonly persistence?: QueryFormPersistence<TKey>;
 };
 
 /**
@@ -142,7 +142,7 @@ export type QueryFormStorage = {
 };
 
 /** Where and what a query form persists - the `persistence` option of `observe()`. */
-export type QueryFormPersistence = {
+export type QueryFormPersistence<TKey extends string = string> = {
   /** The storage key. Scope it per list, e.g. `'players-list'`. */
   readonly key: string;
 
@@ -153,7 +153,7 @@ export type QueryFormPersistence = {
   readonly storage: 'session' | 'local' | QueryFormStorage;
 
   /** The fields to persist and to check the URL for. Defaults to every field. */
-  readonly fields?: readonly string[];
+  readonly fields?: readonly TKey[];
 };
 
 /**

@@ -16,12 +16,14 @@ import {
 import {
   AnyLegacyQuery,
   AnyV2Query,
+  createGqlMutationViaPost,
   createLegacyQueryCreator,
   createPagedQueryStack,
   createQueryStack,
   createSecurePostQuery,
   def,
   ethletePaginationAdapter,
+  gql,
   provideQueryDevtools,
   queryCreatedInReactiveContext,
   queryComputed,
@@ -129,6 +131,90 @@ describe('reactive contract scenario', () => {
         expect(s.api.requestCount('POST', '/secure/users')).toBe(index + 2);
         expect(mutation.response()).toMatchObject({ name: next });
       }
+
+      c.destroy();
+    });
+
+    it('sends one GQL POST per signal change from execute({ args }) in an effect', () => {
+      const s = scenario();
+      s.api.on('POST', '/', ({ body }) => ({
+        body: { data: { renameUser: { name: (body as { variables: { name: string } }).variables.name } } },
+        delay: 100,
+      }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { name: string } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            name
+          }
+        }
+      `);
+      const name = signal('Ada');
+
+      const c = s.consumer();
+      const mutation = c.run(() => renameUser());
+
+      c.run(() => effect(() => mutation.execute({ args: { variables: { name: name() } } })));
+
+      s.tick(1000);
+      expect(s.api.requestCount('POST', '/')).toBe(1);
+
+      for (const [index, next] of ['Grace', 'Linus', 'Barbara'].entries()) {
+        name.set(next);
+        s.tick(1000);
+
+        expect(s.api.requestCount('POST', '/')).toBe(index + 2);
+        expect(mutation.response()).toEqual({ renameUser: { name: next } });
+      }
+
+      c.destroy();
+    });
+
+    it('resets a GQL mutation from an effect without re-running it', () => {
+      const s = scenario();
+      s.api.on('POST', '/', () => ({ body: { data: { renameUser: { name: 'Ada' } } } }));
+
+      const renameUser = createGqlMutationViaPost(s.clientRef)<{
+        response: { renameUser: { name: string } };
+        variables: { name: string };
+      }>(gql`
+        mutation RenameUser($name: String!) {
+          renameUser(name: $name) {
+            name
+          }
+        }
+      `);
+      const clear = signal(0);
+      let runs = 0;
+
+      const c = s.consumer();
+      const mutation = c.run(() => renameUser());
+
+      c.run(() =>
+        effect(() => {
+          clear();
+          runs++;
+          mutation.reset();
+        }),
+      );
+
+      s.tick();
+
+      for (const [index, next] of ['Ada', 'Grace', 'Linus'].entries()) {
+        mutation.execute({ args: { variables: { name: next } } });
+        s.tick();
+        expect(mutation.response()).not.toBeNull();
+
+        clear.set(index + 1);
+        s.tick();
+
+        expect(mutation.response()).toBeNull();
+      }
+
+      expect(runs).toBe(4);
 
       c.destroy();
     });

@@ -3,6 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { map, of, switchMap, timer } from 'rxjs';
 import { formatQueryDevtoolsDuration } from '../../devtools/query-devtools-features';
 import { AnyQueryBuilder, BearerAuthFeatureType, BearerAuthProviderFeatureContext } from '../bearer-auth-provider';
+import { readAccessTokenTimes, refreshBufferMs } from '../internal/token-times';
 
 export type TokenExpirationWarningConfig = {
   /**
@@ -24,7 +25,9 @@ export type TokenExpirationWarningConfig = {
 
 export type TokenExpirationWarningFeature = {
   /**
-   * Signal that emits true when token is about to expire
+   * `true` while the access token is inside `warningThreshold` of its expiry and nothing is going to
+   * renew it: there is no refresh query or refresh token, or the scheduled refresh is overdue by 10 s
+   * (or half the refresh buffer, if that is shorter) - it failed, was throttled, or is still in flight. A routine refresh never turns it on.
    */
   isExpiringSoon: Signal<boolean>;
   /**
@@ -37,6 +40,8 @@ export type TokenExpirationWarningFeature = {
   expiresAt: Signal<Date | null>;
 };
 
+const RENEWAL_GRACE_MS = 10_000;
+
 export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBuilder[]>(
   config: NoInfer<TokenExpirationWarningConfig> = {},
 ) => {
@@ -44,47 +49,71 @@ export const withTokenExpirationWarning = <TBuilders extends readonly AnyQueryBu
     const warningThreshold = config.warningThreshold ?? 5 * 60 * 1000;
     const checkInterval = config.checkInterval ?? 1000;
     const refreshBuilder = context.queryBuilders.find((builder) => builder._type === 'tokenRefreshQuery');
-    const expiresInPropertyName =
-      config.expiresInPropertyName ??
-      (refreshBuilder?._type === 'tokenRefreshQuery' ? refreshBuilder.config.expiresInPropertyName : undefined) ??
-      'exp';
-    const expiresAt = computed<Date | null>(() => {
-      const decoded = context.bearerData() as Record<string, unknown> | null;
-      if (!decoded) return null;
+    const refreshConfig = refreshBuilder?._type === 'tokenRefreshQuery' ? refreshBuilder.config : null;
+    const expiresInPropertyName = config.expiresInPropertyName ?? refreshConfig?.expiresInPropertyName ?? 'exp';
 
-      const exp = decoded[expiresInPropertyName];
+    let measuredLifetime: { token: string; lifetimeMs: number } | null = null;
 
-      if (typeof exp !== 'number') return null;
+    const tokenTimes = computed(() => {
+      const token = context.accessToken();
 
-      return new Date(exp * 1000);
+      if (!token) return null;
+
+      const times = readAccessTokenTimes({
+        token,
+        decoded: context.bearerData(),
+        claim: expiresInPropertyName,
+        providerName: context.name,
+      });
+
+      if (!times) return null;
+
+      if (times.issuedAtMs !== null && times.expiresAtMs > times.issuedAtMs) {
+        return { ...times, lifetimeMs: times.expiresAtMs - times.issuedAtMs };
+      }
+
+      if (measuredLifetime?.token !== token) {
+        measuredLifetime = { token, lifetimeMs: times.expiresAtMs - Date.now() };
+      }
+
+      return { ...times, lifetimeMs: measuredLifetime.lifetimeMs };
     });
 
-    const expiresIn$ = toObservable(context.bearerData).pipe(
-      switchMap((bearerData) =>
-        bearerData
-          ? timer(0, checkInterval).pipe(
-              map(() => {
-                const expiry = expiresAt();
-                if (!expiry) return null;
+    const expiresAt = computed<Date | null>(() => {
+      const times = tokenTimes();
 
-                const msUntilExpiry = expiry.getTime() - Date.now();
+      return times ? new Date(times.expiresAtMs) : null;
+    });
 
-                return msUntilExpiry > 0 ? msUntilExpiry : null;
-              }),
-            )
-          : of(null),
+    const expiresIn = toSignal(
+      toObservable(tokenTimes).pipe(
+        switchMap((times) =>
+          times
+            ? timer(0, checkInterval).pipe(
+                map(() => {
+                  const msUntilExpiry = times.expiresAtMs - Date.now();
+
+                  return msUntilExpiry > 0 ? msUntilExpiry : null;
+                }),
+              )
+            : of(null),
+        ),
       ),
+      { initialValue: null },
     );
 
-    const isExpiringSoon$ = expiresIn$.pipe(
-      map((msUntilExpiry) => {
-        if (msUntilExpiry === null) return false;
-        return msUntilExpiry <= warningThreshold && msUntilExpiry > 0;
-      }),
-    );
+    const isExpiringSoon = computed(() => {
+      const msUntilExpiry = expiresIn();
+      const times = tokenTimes();
 
-    const expiresIn = toSignal(expiresIn$, { initialValue: null });
-    const isExpiringSoon = toSignal(isExpiringSoon$, { initialValue: false });
+      if (msUntilExpiry === null || !times || msUntilExpiry > warningThreshold) return false;
+      if (!refreshConfig || !context.refreshToken()) return true;
+
+      const bufferMs = refreshBufferMs(refreshConfig.refreshStrategy, times.lifetimeMs);
+      const msOverdue = bufferMs - msUntilExpiry;
+
+      return msOverdue >= Math.min(RENEWAL_GRACE_MS, bufferMs / 2);
+    });
 
     const instance: TokenExpirationWarningFeature = {
       expiresAt,

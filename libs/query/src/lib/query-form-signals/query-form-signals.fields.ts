@@ -11,7 +11,7 @@ import {
   transformToTableSort,
   transformToTableSortQueryParam,
 } from '../query-form/query-form.utils';
-import { ET_EMPTY_ARRAY_VALUE } from './query-form-signals.sentinels';
+import { ET_EMPTY_ARRAY_VALUE, ET_NULL_VALUE } from './query-form-signals.sentinels';
 import { QueryFieldConfig, QueryFieldDef } from './query-form-signals.types';
 
 const normalizeConfig = <T>(config: QueryFieldConfig<T> | undefined): Partial<QueryFieldDef<T>> => {
@@ -23,6 +23,12 @@ const normalizeConfig = <T>(config: QueryFieldConfig<T> | undefined): Partial<Qu
     ...rest,
     isResetBy: isResetBy === undefined ? undefined : Array.isArray(isResetBy) ? isResetBy : [isResetBy],
   };
+};
+
+const dateToQueryParam = (value: unknown) => {
+  if (value === null) return ET_NULL_VALUE;
+
+  return value instanceof Date && !Number.isNaN(value.getTime()) ? value.toISOString() : value;
 };
 
 /** The value types the URL is read back into without a `queryParamToValue`, given a default of that type. */
@@ -135,7 +141,8 @@ export type DateQueryFieldConfig = QueryFieldConfig<Date | null> & { readonly as
 export type DateStringQueryFieldConfig = QueryFieldConfig<string | null> & { readonly as: 'string' };
 
 /**
- * A single date field. By default it holds a `Date` read from an ISO/`Date`-parseable string in the URL.
+ * A single date field. By default it holds a `Date`, written to the URL as an ISO string and read back from
+ * any `Date`-parseable one.
  * `as: 'string'` types it `string | null` like the `@ethlete/components` date and time controls, so
  * `[formField]` binds it to them; the URL then carries the control's `valueFormat` string verbatim.
  *
@@ -162,6 +169,7 @@ export function dateQueryField(
   return {
     defaultValue: null,
     queryParamToValue: transformToDate,
+    valueToQueryParam: dateToQueryParam,
     ...normalizeConfig(rest),
   };
 }
@@ -170,5 +178,10 @@ export function dateQueryField(
 export const dateArrayQueryField = (config?: QueryFieldConfig<Date[] | null>): QueryFieldDef<Date[] | null> => ({
   defaultValue: null,
   queryParamToValue: transformToDateArray,
+  valueToQueryParam: (value) => {
+    if (value === null) return ET_NULL_VALUE;
+
+    return value.length ? value.map(dateToQueryParam) : ET_EMPTY_ARRAY_VALUE;
+  },
   ...normalizeConfig(config),
 });

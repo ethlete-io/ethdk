@@ -1,3 +1,4 @@
+import { untracked } from '@angular/core';
 import {
   circularQueryDependencyChecker,
   CreateQueryExecuteOptions,
@@ -35,60 +36,61 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   const circularChecker = circularQueryDependencyChecker();
   const aborter = createQueryExecutionAborter(executeOptions.state);
 
-  const reset = () => resetExecuteState({ executeState, executeOptions });
+  const reset = () => untracked(() => resetExecuteState({ executeState, executeOptions }));
 
-  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) => {
-    const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+  const exec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
+    untracked(() => {
+      const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-    circularChecker.check(args);
+      circularChecker.check(args);
 
-    let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(
-      args?.variables,
-      executeOptions.creatorInternals.transport,
-    );
+      let gqlParams = gqlTransformerFor(executeOptions.creatorInternals)(
+        args?.variables,
+        executeOptions.creatorInternals.transport,
+      );
 
-    if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
-      gqlParams = { ...gqlParams, ...args.queryParams };
-    }
+      if (args?.queryParams && executeOptions.creatorInternals.transport === 'GET') {
+        gqlParams = { ...gqlParams, ...args.queryParams };
+      }
 
-    const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)) };
+      const computedArgs = { ...(args ?? ({} as RequestArgs<TArgs>)) };
 
-    if (executeOptions.creatorInternals.transport === 'GET') {
-      computedArgs.queryParams = gqlParams;
-    } else {
-      computedArgs.body = gqlParams;
-    }
+      if (executeOptions.creatorInternals.transport === 'GET') {
+        computedArgs.queryParams = gqlParams;
+      } else {
+        computedArgs.body = gqlParams;
+      }
 
-    const normalizedOpts: CreateQueryExecuteOptions<TArgs> = {
-      creator: {
-        ...(executeOptions.creator ?? {}),
-        subtle: {
-          ...(executeOptions.creator?.subtle ?? {}),
-          useQueryRepositoryCache:
-            executeOptions.creator?.subtle?.useQueryRepositoryCache ??
-            executeOptions.creatorInternals.method === 'QUERY',
+      const normalizedOpts: CreateQueryExecuteOptions<TArgs> = {
+        creator: {
+          ...(executeOptions.creator ?? {}),
+          subtle: {
+            ...(executeOptions.creator?.subtle ?? {}),
+            useQueryRepositoryCache:
+              executeOptions.creator?.subtle?.useQueryRepositoryCache ??
+              executeOptions.creatorInternals.method === 'QUERY',
+          },
         },
-      },
-      creatorInternals: {
-        client: executeOptions.creatorInternals.client,
-        method: executeOptions.creatorInternals.transport,
-        route: (executeOptions.creator?.route ?? '') as RouteType<TArgs>,
-      },
-      deps: executeOptions.deps,
-      queryConfig: executeOptions.queryConfig,
-      state: executeOptions.state,
-    };
+        creatorInternals: {
+          client: executeOptions.creatorInternals.client,
+          method: executeOptions.creatorInternals.transport,
+          route: (executeOptions.creator?.route ?? '') as RouteType<TArgs>,
+        },
+        deps: executeOptions.deps,
+        queryConfig: executeOptions.queryConfig,
+        state: executeOptions.state,
+      };
 
-    aborter.capture();
-    recordExecutionArgs(executeOptions.state, args, options);
-    queryExecute({
-      executeOptions: normalizedOpts,
-      executeState,
-      args: computedArgs,
-      options,
-      isRefreshable: executeOptions.creatorInternals.method === 'QUERY',
+      aborter.capture();
+      recordExecutionArgs(executeOptions.state, args, options);
+      queryExecute({
+        executeOptions: normalizedOpts,
+        executeState,
+        args: computedArgs,
+        options,
+        isRefreshable: executeOptions.creatorInternals.method === 'QUERY',
+      });
     });
-  };
 
   exec['reset'] = reset;
   exec['abort'] = () => aborter.abort();

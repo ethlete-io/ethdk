@@ -49,15 +49,16 @@ request.
 
 ## Helpers
 
-| Export                                                                          | What it does                                                                                 |
-| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `expectAndFlush(httpTesting, url, response, status?)`                           | `httpTesting.expectOne(url).flush(response)`, with `status` as `{ status, statusText }`.     |
-| `expectFlushAndWait(httpTesting, url, response, status?)`                       | The same, followed by `TestBed.tick()`.                                                      |
-| `setupQueryTest(config?)`                                                       | Configures `TestBed` and creates a scratch client. Returns a `QueryTestSetup`.               |
-| `setupAuthTest(config)`                                                         | A bearer auth provider over a `QueryTestSetup`. Returns an `AuthTestSetup`.                  |
-| `createFakeQueryPersistenceStore()`                                             | An in-memory persistence adapter - see [Persisted responses](/query/persistence#testing-it). |
-| `installFakeBroadcastChannel()`, `installFakeWebLocks()`, `flushMultiTabSync()` | Two clients in one spec as two tabs - see [Multi-tab sync](/query/multi-tab#testing-it).     |
-| `createWebSocketTestDouble()`                                                   | A scripted socket.io `io` factory - see [WebSockets](/query/ws#testing-it).                  |
+| Export                                                                          | What it does                                                                                               |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `expectAndFlush(httpTesting, url, response, status?)`                           | `httpTesting.expectOne(url).flush(response)`, with `status` as `{ status, statusText }`.                   |
+| `expectFlushAndWait(httpTesting, url, response, status?)`                       | The same, followed by `TestBed.tick()`.                                                                    |
+| `setupQueryTest(config?)`                                                       | Configures `TestBed` and creates a scratch client. Returns a `QueryTestSetup`.                             |
+| `setupAuthTest(config)`                                                         | A bearer auth provider over a `QueryTestSetup`. Returns an `AuthTestSetup`.                                |
+| `createFakeQueryPersistenceStore()`                                             | An in-memory persistence adapter - see [Persisted responses](/query/persistence#testing-it).               |
+| `installFakeBroadcastChannel()`, `installFakeWebLocks()`, `flushMultiTabSync()` | Two clients in one spec as two tabs - see [Multi-tab sync](/query/multi-tab#testing-it).                   |
+| `createWebSocketTestDouble()`                                                   | A scripted socket.io `io` factory - see [WebSockets](/query/ws#testing-it).                                |
+| `mintTestToken(options?)`                                                       | An unsigned JWT the auth provider decodes - see [Testing a view behind auth](#testing-a-view-behind-auth). |
 
 ### setupQueryTest
 
@@ -95,15 +96,15 @@ and `provideRouter([])`, and returns:
 | `createGet`, `createPost`, `createPut`, `createPatch`, `createDelete` | Creators bound to the client.                            |
 | `restoreConsole()`                                                    | Removes the console filter described below.              |
 
-| Option             | Default                  | Description                                                                             |
-| ------------------ | ------------------------ | --------------------------------------------------------------------------------------- |
-| `baseUrl`          | `'https://api.test.com'` | The scratch client's base URL.                                                          |
-| `name`             | `'test'`                 | The scratch client's name.                                                              |
-| `mockErrorHandler` | `true`                   | Replace Angular's `ErrorHandler` with a no-op, so failed requests do not fail the spec. |
+| Option             | Default                  | Description                                                                                                                                                                                                                              |
+| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseUrl`          | `'https://api.test.com'` | The scratch client's base URL.                                                                                                                                                                                                           |
+| `name`             | `'test'`                 | The scratch client's name.                                                                                                                                                                                                               |
+| `mockErrorHandler` | `true`                   | `true` swallows the failed requests a query reports to Angular's `ErrorHandler` and rethrows every other error, so a throwing effect or template still fails the spec. `'all'` swallows everything, `false` keeps Angular's own handler. |
 
 Every call also filters `console.error` for `HttpErrorResponse` objects and bearer-token decode
-failures, and `console.warn` for auto-refresh warnings. Call `restoreConsole()` in `afterEach` when
-the file spies on `console` itself.
+failures. The filter is removed when the `TestBed` module is reset; call `restoreConsole()` to remove
+it earlier, for example when the spec spies on `console` itself.
 
 ### setupAuthTest
 
@@ -123,13 +124,30 @@ expect(auth.accessToken()).toBe('a');
 `refresh` sends what the real provider would: `buildRefreshArgs(token)` when it is configured,
 `{ body: { token } }` otherwise. `makeSecureRequest(route)` sends a secure `GET` through the client.
 
-| Option                                                                                                   | Default                                | What it sets                                                               |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------- |
-| `querySetup`                                                                                             | required                               | The `QueryTestSetup` whose client the provider uses                        |
-| `loginPath` / `refreshPath`                                                                              | `'/auth/login'` / `'/auth/refresh'`    | The routes of the two `POST` queries                                       |
-| `autoRetryOn401`                                                                                         | `false`                                | Refresh and retry a secure request that answers `401`                      |
-| `extractLoginTokens` / `extractRefreshTokens`                                                            | reads `accessToken` and `refreshToken` | Maps each response to its tokens                                           |
-| `buildRefreshArgs`                                                                                       | `{ body: { token } }`                  | The refresh request for a refresh token (`withRefreshQuery`'s `buildArgs`) |
-| `features`                                                                                               | none                                   | Auth [features](/query/auth#features) such as `withPersistentAuth()`       |
-| `bearerDecryptFn`                                                                                        | JWT decoding                           | Turns an access token into the provider's bearer data                      |
-| `refreshStrategy`, `minRefreshInterval`, `refreshIfExpired`, `expiresInPropertyName`, `onRefreshFailure` | the provider's own                     | Passed through to [`withRefreshQuery`](/query/auth#token-refresh)          |
+| Option                                                                                                   | Default                                | What it sets                                                                                                          |
+| -------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `querySetup`                                                                                             | required                               | The `QueryTestSetup` whose client the provider uses                                                                   |
+| `loginPath` / `refreshPath`                                                                              | `'/auth/login'` / `'/auth/refresh'`    | The routes of the two `POST` queries                                                                                  |
+| `autoRetryOn401`                                                                                         | `true`, as in production               | Refresh and retry a secure request that answers `401`                                                                 |
+| `extractLoginTokens` / `extractRefreshTokens`                                                            | reads `accessToken` and `refreshToken` | Maps each response to its tokens                                                                                      |
+| `buildRefreshArgs`                                                                                       | `{ body: { token } }`                  | The refresh request for a refresh token (`withRefreshQuery`'s `buildArgs`)                                            |
+| `features`                                                                                               | none                                   | Auth [features](/query/auth#features) such as `withPersistentAuth()`, typed against the `login` and `refresh` queries |
+| `bearerDecryptFn`                                                                                        | JWT decoding                           | Turns an access token into the provider's bearer data                                                                 |
+| `refreshStrategy`, `minRefreshInterval`, `refreshIfExpired`, `expiresInPropertyName`, `onRefreshFailure` | the provider's own                     | Passed through to [`withRefreshQuery`](/query/auth#token-refresh)                                                     |
+
+## Testing a view behind auth
+
+`setupAuthTest` builds a provider of its own, so it cannot run the app's secure queries - their
+creators take the app's own provider. Seed that provider with `setTokens()` and a token from
+`mintTestToken()`: an unsigned JWT with `iat`, `exp` and the claims you pass, which `bearerData()`,
+the refresh schedule and the [route guards](/query/auth#route-guards) all read.
+
+```ts
+import { mintTestToken } from '@ethlete/query/testing';
+
+TestBed.runInInjectionContext(() =>
+  authProviderRef.inject().setTokens(mintTestToken({ claims: { sub: '1', roles: ['admin'] } }), 'refresh-token'),
+);
+```
+
+`expiresInMs` sets the lifetime (15 minutes by default). Every call returns a distinct token.

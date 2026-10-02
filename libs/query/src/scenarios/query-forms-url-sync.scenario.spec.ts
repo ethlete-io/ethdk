@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter, withRouterConfig } from '@angular/router';
 import {
   booleanArrayQueryField,
+  dateArrayQueryField,
   dateQueryField,
   defineQueryForm,
   queryField,
@@ -124,6 +125,34 @@ describe('query forms URL sync scenario', () => {
     s.tick();
 
     expect(restored.value().from?.getTime()).toBe(from.getTime());
+  });
+
+  it('writes a Date to the URL as an ISO string and keeps its milliseconds across a reload', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+    const from = new Date(Date.UTC(2026, 0, 15, 10, 30, 0, 123));
+    const days = [new Date(Date.UTC(2026, 1, 1, 8, 0, 0, 5)), new Date(Date.UTC(2026, 1, 2, 9, 0, 0, 7))];
+    const fields = () => ({ from: dateQueryField(), days: dateArrayQueryField() });
+
+    const c = s.consumer();
+    const qf = c.run(() => defineQueryForm({ fields: fields() }).observe());
+
+    qf.setValue({ from, days });
+    await s.settle();
+
+    const url = router.url;
+
+    expect(decodeURIComponent(url)).toContain('from=2026-01-15T10:30:00.123Z');
+    expect(decodeURIComponent(url)).toContain('days=2026-02-01T08:00:00.005Z');
+    c.destroy();
+
+    await s.reloadAt(url);
+
+    const restored = s.run(() => defineQueryForm({ fields: fields() }).observe());
+    s.tick();
+
+    expect(restored.value().from?.getTime()).toBe(from.getTime());
+    expect(restored.value().days?.map((d) => d.getTime())).toEqual(days.map((d) => d.getTime()));
   });
 
   it('a string date field writes the wire string verbatim and reads it back as a string', async () => {

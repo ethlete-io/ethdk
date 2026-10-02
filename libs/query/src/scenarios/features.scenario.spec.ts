@@ -12,7 +12,9 @@ import {
   createQueryBatch,
   createQueryClient,
   createQueryFeature,
+  createGqlQueryViaPost,
   createQuerySubmission,
+  gql,
   isPageOutOfRangeError,
   isQueryDevtoolsEnabled,
   nestedEffect,
@@ -1016,6 +1018,96 @@ describe('features scenario', () => {
     s.tick();
 
     expect(query.response()).toEqual({ id: '1', score: 9 });
+
+    c.destroy();
+  });
+
+  it('withResponseUpdate shows the updated value on a creator with a transformResponse', () => {
+    const s = scenario();
+    s.api.on(
+      'GET',
+      '/matches/1',
+      sequence([{ body: { data: { id: '1', score: 0 } } }, { body: { data: { id: '1', score: 9 } } }]),
+    );
+
+    const getMatch = s.get<{
+      response: { id: string; score: number };
+      rawResponse: { data: { id: string; score: number } };
+    }>('/matches/1', { transformResponse: (raw) => raw.data });
+    const incoming = signal<number | null>(null);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getMatch(
+        withResponseUpdate({
+          updater: ({ currentResponse }) => {
+            const score = incoming();
+
+            return score === null || !currentResponse ? null : { ...currentResponse, score };
+          },
+        }),
+      ),
+    );
+
+    s.tick();
+    expect(query.response()).toEqual({ id: '1', score: 0 });
+
+    for (const score of [3, 4, 5]) {
+      incoming.set(score);
+      s.tick();
+
+      expect(query.response()).toEqual({ id: '1', score });
+      expect(query.error()).toBeNull();
+    }
+
+    query.execute();
+    s.tick();
+    expect(query.response()).toEqual({ id: '1', score: 9 });
+
+    c.destroy();
+  });
+
+  it('withResponseUpdate shows the updated value on a GQL query', () => {
+    const s = scenario();
+    s.api.on('POST', '/', () => ({ body: { data: { match: { id: '1', score: 0 } } } }));
+
+    const getMatch = createGqlQueryViaPost(s.clientRef)<{
+      response: { match: { id: string; score: number } };
+      variables: { id: string };
+    }>(gql`
+      query GetMatch($id: ID!) {
+        match(id: $id) {
+          id
+          score
+        }
+      }
+    `);
+    const incoming = signal<number | null>(null);
+
+    const c = s.consumer();
+    const query = c.run(() =>
+      getMatch(
+        withArgs(() => ({ variables: { id: '1' } })),
+        withResponseUpdate({
+          updater: ({ currentResponse }) => {
+            const score = incoming();
+
+            return score === null || !currentResponse ? null : { match: { ...currentResponse.match, score } };
+          },
+        }),
+      ),
+    );
+
+    s.tick();
+    expect(query.response()).toEqual({ match: { id: '1', score: 0 } });
+
+    for (const score of [3, 4, 5]) {
+      incoming.set(score);
+      s.tick();
+
+      expect(query.error()).toBeNull();
+      expect(query.response()).toEqual({ match: { id: '1', score } });
+    }
 
     c.destroy();
   });

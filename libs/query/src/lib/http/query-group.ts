@@ -1,6 +1,7 @@
-import { computed, DestroyRef, inject, Signal, signal, untracked } from '@angular/core';
+import { computed, DestroyRef, Signal, signal, untracked } from '@angular/core';
 import { filter, map, mergeMap, Observable, share, Subject, take } from 'rxjs';
 import { HttpRequestLoadingState } from './http-request';
+import { injectInQueryContext } from './internal/inject-in-query-context';
 import { AnyNewQuery, Query, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 import { RunQueryExecuteOptions } from './query-execute-utils';
@@ -68,7 +69,7 @@ export const createQueryGroup = <TMembers extends QueryGroupMembers>(members: TM
   const executions = new Subject<QueryGroupMember>();
   const latestMember = signal<QueryGroupMember | null>(null);
 
-  inject(DestroyRef).onDestroy(() => executions.complete());
+  injectInQueryContext(DestroyRef, 'query group').onDestroy(() => executions.complete());
 
   const wrap = (key: string, query: AnyNewQuery): AnyNewQuery => {
     const member: QueryGroupMember = {

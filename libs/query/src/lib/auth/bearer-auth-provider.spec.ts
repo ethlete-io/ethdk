@@ -40,8 +40,8 @@ describe('createBearerAuthProvider', () => {
     originalWarn = console.warn;
     console.warn = (...args: unknown[]) => {
       const message = args[0];
-      if (typeof message === 'string' && message.includes('auto-refresh')) {
-        return; // Suppress auto-refresh warnings
+      if (typeof message === 'string' && message.includes('ET204')) {
+        return;
       }
       originalWarn(...args);
     };

@@ -64,9 +64,9 @@ export class UsersComponent {
 | `stringArrayQueryField()`          | `string[] \| null`  |                                                                                                                                                                       |
 | `numberArrayQueryField()`          | `number[] \| null`  |                                                                                                                                                                       |
 | `booleanArrayQueryField()`         | `boolean[] \| null` |                                                                                                                                                                       |
-| `dateQueryField()`                 | `Date \| null`      | Expects a `Date`-parseable string in the URL; `2026-09-01` reads as local midnight.                                                                                   |
+| `dateQueryField()`                 | `Date \| null`      | Writes an ISO string (`2026-09-01T08:00:00.000Z`) to the URL and reads back any `Date`-parseable one; `2026-09-01` reads as local midnight.                           |
 | `dateQueryField({ as: 'string' })` | `string \| null`    | For the date and time controls: the URL carries the control's `valueFormat` string verbatim - see [Binding a date control](#binding-a-date-control).                  |
-| `dateArrayQueryField()`            | `Date[] \| null`    |                                                                                                                                                                       |
+| `dateArrayQueryField()`            | `Date[] \| null`    | Writes each date as an ISO string, like `dateQueryField()`.                                                                                                           |
 
 Every creator accepts the same options:
 
@@ -310,7 +310,9 @@ qf = defineQueryForm({ fields: PLAYER_LIST_FIELDS }).observe({
   never saw.
 - `fields` names what is persisted and what the URL is checked for; it defaults to
   every field. A field left out (e.g. a layout toggle) neither restores nor blocks a
-  restore.
+  restore. It is typed against the form's fields, and an unknown name also warns in dev
+  mode. A variable annotated with the bare `QueryFormPersistence` type is a list of any
+  strings; annotate it `QueryFormPersistence<'search' | 'page'>` instead.
 - `storage` is `'session'`, `'local'`, or any object with `getItem(key)` and
   `setItem(key, value)` (`QueryFormStorage`). The two strings resolve to the
   browser's Web Storage and to nothing on the server. A storage that throws (a

@@ -29,6 +29,8 @@ const listFields = () => ({
   page: queryField<number>({ defaultValue: 1, isResetBy: ['query', 'sort'] }),
 });
 
+type ListFieldKey = keyof ReturnType<typeof listFields>;
+
 describe('query form persistence scenario', () => {
   const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
@@ -37,7 +39,7 @@ describe('query form persistence scenario', () => {
   it('restores the stored state when the URL is empty, and the first request carries it', async () => {
     const s = scenario();
     const { storage } = createMemoryStorage();
-    const persistence: QueryFormPersistence = { key: 'players', storage };
+    const persistence: QueryFormPersistence<ListFieldKey> = { key: 'players', storage };
 
     const first = s.consumer();
     const qf = first.run(() => defineQueryForm({ fields: listFields() }).observe({ persistence }));
@@ -94,7 +96,7 @@ describe('query form persistence scenario', () => {
   it('lets a URL that carries a persisted field win, without merging the stored state into it', async () => {
     const s = scenario();
     const { storage } = createMemoryStorage();
-    const persistence: QueryFormPersistence = { key: 'players', storage };
+    const persistence: QueryFormPersistence<ListFieldKey> = { key: 'players', storage };
 
     const first = s.consumer();
     const qf = first.run(() => defineQueryForm({ fields: listFields() }).observe({ persistence }));
@@ -113,7 +115,7 @@ describe('query form persistence scenario', () => {
   it('persists and checks only the listed fields', async () => {
     const s = scenario();
     const { entries, storage } = createMemoryStorage();
-    const persistence: QueryFormPersistence = { key: 'players', storage, fields: ['query', 'page'] };
+    const persistence: QueryFormPersistence<ListFieldKey> = { key: 'players', storage, fields: ['query', 'page'] };
 
     const first = s.consumer();
     const qf = first.run(() => defineQueryForm({ fields: listFields() }).observe({ persistence }));
@@ -181,5 +183,20 @@ describe('query form persistence scenario', () => {
 
     expect(other.value().query).toBe('');
     await s.settle();
+  });
+
+  it('types persistence.fields against the form, and warns about an unknown one in dev mode', async () => {
+    const s = scenario();
+    const { storage } = createMemoryStorage();
+
+    s.run(() =>
+      defineQueryForm({ fields: listFields() }).observe({
+        // @ts-expect-error - 'serach' is not a field of the form
+        persistence: { key: 'typo', storage, fields: ['serach'] },
+      }),
+    );
+    await s.settle();
+
+    s.expectWarning(/persistence\.fields references unknown field "serach"/);
   });
 });

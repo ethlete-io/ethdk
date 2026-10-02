@@ -424,7 +424,7 @@ export type QueryFormSignals<TFields extends QueryFormFields> = {
   readonly defaultValue: QueryFormModel<TFields>;
 
   /** Start syncing with the URL. Returns the form, so it can be chained onto the definition. */
-  observe(options?: QueryFormSignalsObserveOptions): QueryFormSignals<TFields>;
+  observe(options?: QueryFormSignalsObserveOptions<keyof TFields & string>): QueryFormSignals<TFields>;
 
   /**
    * Stop syncing and strip the form's params from the URL. A pending debounced edit is committed to `value`
@@ -839,6 +839,14 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
       observeOptions = options;
       observing.set(true);
+
+      if (isDevMode()) {
+        for (const key of options?.persistence?.fields ?? []) {
+          if (!(key in fieldDefs)) {
+            console.warn(`defineQueryForm: persistence.fields references unknown field "${key}". Is it a typo?`);
+          }
+        }
+      }
       changesSeenAtObserve = untracked(queryParamChanges);
 
       if (options?.persistence) {

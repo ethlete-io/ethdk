@@ -244,41 +244,55 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         });
       };
 
+      const join = (name: string) => {
+        const existingRoom = rooms.get(name);
+
+        if (existingRoom) {
+          existingRoom.joinCount++;
+
+          return existingRoom;
+        }
+
+        emit({ event: 'join-room', data: name, room: name });
+        joinsDeliveredToClosedConnection.delete(name);
+
+        const messages = new Subject<TMessageData>();
+
+        const newRoom: InternalWebSocketRoom<TMessageData> = {
+          latestMessage: signal<TMessageData | null>(null),
+          messages,
+          messages$: messages.asObservable(),
+          joinCount: 1,
+        };
+
+        rooms.set(name, newRoom);
+        syncDevtoolsRooms();
+
+        return newRoom;
+      };
+
+      const joinStaticRoom = (name: string) => {
+        const destroyRef = inject(DestroyRef);
+        const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(join(name));
+
+        destroyRef.onDestroy(() => {
+          leaveRoom(name);
+          roomData.set(null);
+        });
+
+        return roomData.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
+      };
+
       const joinRoom = (room: string | (() => string | null)) => {
-        const roomFn = typeof room === 'function' ? room : () => room;
+        if (typeof room === 'string') return joinStaticRoom(room);
+
+        const roomFn = room;
         // Must stay above the effect below: `previousSignalValue` registers a `toObservable` effect that has to run
         // first in the same flush. Registered later, it leaves `pre()` on the room from the flush before, and the
         // effect joins the new room without ever leaving the old one.
         const pre = previousSignalValue(computed(() => roomFn()));
         const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
         let joinedRoomName: string | null = null;
-
-        const join = (name: string) => {
-          const existingRoom = rooms.get(name);
-
-          if (existingRoom) {
-            existingRoom.joinCount++;
-
-            return existingRoom;
-          }
-
-          emit({ event: 'join-room', data: name, room: name });
-          joinsDeliveredToClosedConnection.delete(name);
-
-          const messages = new Subject<TMessageData>();
-
-          const newRoom: InternalWebSocketRoom<TMessageData> = {
-            latestMessage: signal<TMessageData | null>(null),
-            messages,
-            messages$: messages.asObservable(),
-            joinCount: 1,
-          };
-
-          rooms.set(name, newRoom);
-          syncDevtoolsRooms();
-
-          return newRoom;
-        };
 
         effect(() => {
           const current = roomFn();
@@ -294,11 +308,8 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
             }
 
             if (current) {
-              const joinedRoom = join(current);
-              if (joinedRoom) {
-                joinedRoomName = current;
-                roomData.set(joinedRoom);
-              }
+              joinedRoomName = current;
+              roomData.set(join(current));
             } else {
               roomData.set(null);
             }

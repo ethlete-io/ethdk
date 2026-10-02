@@ -6,6 +6,7 @@ import {
   BearerAuthProvider,
   BearerAuthProviderFeatureContext,
   createBearerAuthProvider,
+  FeatureRegistry,
   TokenRefreshQueryBuilder,
   TokenRefreshQueryConfig,
   withAuthenticationQuery,
@@ -20,16 +21,24 @@ export type AnyFeatureBuilder = (context: BearerAuthProviderFeatureContext<any, 
   instance: unknown;
 };
 
+type AuthTestArgs = { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } };
+
+/** The query builders of the provider {@link setupAuthTest} builds: a `login` and a `refresh` query. */
+export type AuthTestQueryBuilders<
+  TLoginArgs extends AuthTestArgs = AuthTestArgs,
+  TRefreshArgs extends AuthTestArgs = AuthTestArgs,
+> = [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>];
+
+/** A feature for the provider {@link setupAuthTest} builds, typed against its `login`/`refresh` queries. */
+export type AuthTestFeatureBuilder = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  context: BearerAuthProviderFeatureContext<any, AuthTestQueryBuilders>,
+) => unknown;
+
 export type AuthTestSetupConfig<
-  TLoginArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TRefreshArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TLoginArgs extends AuthTestArgs = AuthTestArgs,
+  TRefreshArgs extends AuthTestArgs = AuthTestArgs,
+  TFeatures extends readonly AuthTestFeatureBuilder[] = [],
   TBearerData = unknown,
 > = {
   /** The query test setup instance */
@@ -38,7 +47,7 @@ export type AuthTestSetupConfig<
   loginPath?: string;
   /** Refresh endpoint path. Default: '/auth/refresh' */
   refreshPath?: string;
-  /** Whether to enable auto-retry on 401. Default: false */
+  /** Whether to refresh and retry a secure request that answers 401. Default: true, as in production */
   autoRetryOn401?: boolean;
   /** Function to extract tokens from login response */
   extractLoginTokens?: (response: TLoginArgs['response']) => { accessToken: string; refreshToken: string };
@@ -47,7 +56,7 @@ export type AuthTestSetupConfig<
   /** Builds the refresh request from the refresh token. See TokenRefreshQueryConfig for details */
   buildRefreshArgs?: TokenRefreshQueryConfig<TRefreshArgs>['buildArgs'];
   /** Feature builders for additional auth functionality */
-  features?: [...TFeatures];
+  features?: TFeatures;
   /** Custom bearer decrypt function for testing */
   bearerDecryptFn?: (token: string) => TBearerData;
   /** Refresh strategy configuration. See TokenRefreshQueryConfig for details */
@@ -63,23 +72,15 @@ export type AuthTestSetupConfig<
 };
 
 export type AuthTestSetup<
-  TLoginArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TRefreshArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TFeatures extends readonly AnyFeatureBuilder[] = [],
+  TLoginArgs extends AuthTestArgs = AuthTestArgs,
+  TRefreshArgs extends AuthTestArgs = AuthTestArgs,
+  TFeatures extends readonly AuthTestFeatureBuilder[] = [],
   TBearerData = unknown,
 > = {
   /** The bearer auth provider instance */
-  auth: BearerAuthProvider<
-    [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
-    TFeatures,
-    TBearerData
-  >;
+  auth: Omit<BearerAuthProvider<AuthTestQueryBuilders<TLoginArgs, TRefreshArgs>, [], TBearerData>, 'features'> & {
+    features: FeatureRegistry<TFeatures, AuthTestQueryBuilders<TLoginArgs, TRefreshArgs>>;
+  };
   /** Helper to login a user and flush the HTTP request */
   login: (credentials: TLoginArgs['body'], response: TLoginArgs['response']) => void;
   /** Helper to trigger a refresh and flush the HTTP request. Sends `buildRefreshArgs(token)` when configured, else `{ body: { token } }` */
@@ -89,15 +90,9 @@ export type AuthTestSetup<
 };
 
 export const setupAuthTest = <
-  TLoginArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TRefreshArgs extends { body: Record<string, unknown>; response: { accessToken: string; refreshToken: string } } = {
-    body: Record<string, unknown>;
-    response: { accessToken: string; refreshToken: string };
-  },
-  TFeatures extends readonly AnyFeatureBuilder[] = readonly AnyFeatureBuilder[],
+  TLoginArgs extends AuthTestArgs = AuthTestArgs,
+  TRefreshArgs extends AuthTestArgs = AuthTestArgs,
+  TFeatures extends readonly AuthTestFeatureBuilder[] = readonly AuthTestFeatureBuilder[],
   TBearerData = unknown,
 >(
   config: AuthTestSetupConfig<TLoginArgs, TRefreshArgs, TFeatures, TBearerData>,
@@ -106,7 +101,7 @@ export const setupAuthTest = <
     querySetup,
     loginPath = '/auth/login',
     refreshPath = '/auth/refresh',
-    autoRetryOn401 = false,
+    autoRetryOn401 = true,
     extractLoginTokens = (response) => ({
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
@@ -149,8 +144,10 @@ export const setupAuthTest = <
         expiresInPropertyName,
         onRefreshFailure,
       }),
-    ] as [AuthQueryBuilder<'login', TLoginArgs>, TokenRefreshQueryBuilder<'refresh', TRefreshArgs>],
-    features: (features ?? ([] as const)) as unknown as TFeatures,
+    ] as AuthTestQueryBuilders<TLoginArgs, TRefreshArgs>,
+    features: (features ?? []) as unknown as readonly ((
+      context: BearerAuthProviderFeatureContext<TBearerData, AuthTestQueryBuilders<TLoginArgs, TRefreshArgs>>,
+    ) => unknown)[],
     bearerDecryptFn,
   });
 
@@ -193,7 +190,7 @@ export const setupAuthTest = <
   };
 
   return {
-    auth,
+    auth: auth as unknown as AuthTestSetup<TLoginArgs, TRefreshArgs, TFeatures, TBearerData>['auth'],
     login: loginHelper,
     refresh: refreshHelper,
     makeSecureRequest,

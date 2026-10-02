@@ -423,6 +423,87 @@ describe('auth token lifecycle scenario', () => {
     c.destroy();
   });
 
+  it('keeps the refresh due at 75% of the whole token lifetime when the schedule is recomputed late', async () => {
+    const s = scenario();
+    const auth = createAuth(s, { refreshStrategy: 0.75, accessTokenExpiresInMs: 60 * 60 * 1000 });
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    vi.setSystemTime(Date.now() + 60 * 1000);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(0);
+
+    vi.setSystemTime(Date.now() + 45 * 60 * 1000);
+    document.dispatchEvent(new Event('visibilitychange'));
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(auth.isAuthenticated()).toBe(true);
+
+    c.destroy();
+  });
+
+  it('refreshes proactively when bearerDecryptFn maps the claims and drops exp', async () => {
+    const s = scenario();
+    const issue = () => ({
+      body: { accessToken: mintToken({ expiresInMs: 2 * 60 * 1000 }), refreshToken: mintToken() },
+    });
+
+    s.api.on('POST', '/auth/login', issue);
+    s.api.on('POST', '/auth/refresh', issue);
+
+    const ref = createBearerAuthProvider({
+      name: `auth-lifecycle-${++providerCounter}`,
+      queryClientRef: s.clientRef,
+      queries: [
+        withAuthenticationQuery('login', { queryCreator: s.post<TokenArgs>('/auth/login') }),
+        withRefreshQuery('refresh', { queryCreator: s.post<TokenArgs>('/auth/refresh') }),
+      ],
+      bearerDecryptFn: () => ({ user: 'max' }),
+    });
+    const auth = s.run(() => ref.inject());
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.bearerData()).toEqual({ user: 'max' });
+
+    await s.settle(61 * 1000);
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(s.warnings).toEqual([]);
+
+    c.destroy();
+  });
+
+  it('keeps bearerData null when a custom bearerDecryptFn returns null', async () => {
+    const s = scenario();
+
+    s.api.on('POST', '/auth/login', () => ({ body: { accessToken: mintToken(), refreshToken: mintToken() } }));
+
+    const ref = createBearerAuthProvider({
+      name: `auth-lifecycle-${++providerCounter}`,
+      queryClientRef: s.clientRef,
+      queries: [withAuthenticationQuery('login', { queryCreator: s.post<TokenArgs>('/auth/login') })],
+      bearerDecryptFn: () => null,
+    });
+    const auth = s.run(() => ref.inject());
+
+    const c = s.consumer();
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+
+    expect(auth.isAuthenticated()).toBe(true);
+    expect(auth.bearerData()).toBeNull();
+
+    c.destroy();
+  });
+
   it('retries a refresh past the normal attempt limit and caps the backoff at 30 seconds', async () => {
     const s = scenario();
     const auth = s.auth();

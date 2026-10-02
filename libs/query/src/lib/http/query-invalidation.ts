@@ -20,6 +20,9 @@ export type QueryInvalidationCandidate = {
  */
 export type QueryInvalidationFilterFn = (query: QueryInvalidationCandidate) => boolean;
 
+/** A root-relative route (`/players`), resolved against the client's `baseUrl`, or an absolute URL. */
+export type QueryInvalidationUrl = `/${string}` | `${string}://${string}`;
+
 /** @see QueryClient.invalidateQueries */
 export type QueryInvalidationOptions = {
   /**
@@ -29,7 +32,7 @@ export type QueryInvalidationOptions = {
    * Matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`,
    * `/players/1` and `/players?page=2` - but not `/players-archive`.
    */
-  url?: string;
+  url?: QueryInvalidationUrl;
 
   /**
    * Narrows the invalidation to the reads that declared this tag (see {@link BaseQueryCreatorOptions.tags}).
@@ -105,7 +108,7 @@ export const createQueryInvalidationFilter = (options: {
 };
 
 /** One thing a mutation invalidates: everything below a URL, or every read that declared a tag. */
-export type QueryInvalidationTarget = { url: string } | { tag: string };
+export type QueryInvalidationTarget = { url: QueryInvalidationUrl } | { tag: string };
 
 /** What a {@link BaseQueryCreatorOptions.invalidates} function is handed after a successful mutation. */
 export type QueryInvalidatesContext<TArgs extends QueryArgs> = {

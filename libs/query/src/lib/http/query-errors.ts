@@ -7,6 +7,12 @@ export const QueryRuntimeErrorCode = {
   QUERY_FEATURE_USED_MULTIPLE_TIMES: 0,
   QUERY_CREATED_IN_REACTIVE_CONTEXT: 1,
   INVALIDATES_USED_ON_READ: 2,
+  QUERY_CREATED_OUTSIDE_INJECTION_CONTEXT: 3,
+
+  // Routes
+  INVALID_BASE_URL: 10,
+  INVALID_ROUTE: 11,
+  PATH_PARAMS_MISSING_IN_ROUTE_FUNCTION: 12,
 
   // Query features
   WITH_ARGS_QUERY_FEATURE_MISSING_BUT_ROUTE_IS_FUNCTION: 100,
@@ -23,6 +29,7 @@ export const QueryRuntimeErrorCode = {
   AUTH_EXTRACT_TOKENS_RESPONSE_MISSING_ACCESS_TOKEN: 201,
   AUTH_EXTRACT_TOKENS_RESPONSE_MISSING_REFRESH_TOKEN: 202,
   AUTH_PROVIDER_FEATURE_USED_MULTIPLE_TIMES: 203,
+  AUTH_ACCESS_TOKEN_EXPIRY_UNREADABLE: 204,
 
   // Query client
   QUERY_CLIENT_FEATURE_USED_MULTIPLE_TIMES: 250,
@@ -172,6 +179,13 @@ export const authProviderFeatureUsedMultipleTimes = (type: string) => {
   return new RuntimeError(
     QueryRuntimeErrorCode.AUTH_PROVIDER_FEATURE_USED_MULTIPLE_TIMES,
     `Bearer auth feature "${type}" was used multiple times.`,
+  );
+};
+
+export const authAccessTokenExpiryUnreadable = (claim: string) => {
+  return new RuntimeError(
+    QueryRuntimeErrorCode.AUTH_ACCESS_TOKEN_EXPIRY_UNREADABLE,
+    `The access token has no numeric "${claim}" claim, neither in what bearerDecryptFn returned nor in its JWT payload, so it is never refreshed before it expires. Keep the claim in the bearerDecryptFn result, or set the refresh query's expiresInPropertyName to the claim that carries the expiry.`,
   );
 };
 

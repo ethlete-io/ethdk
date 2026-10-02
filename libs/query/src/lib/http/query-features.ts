@@ -772,7 +772,7 @@ export type WithResponseUpdateFeatureOptions<TArgs extends QueryArgs> = {
   /**
    * A function that will be called with the latest response
    * If the function returns `null`, the response will not be updated.
-   * Otherwise, the response will be updated with the returned value.
+   * Otherwise, the returned value becomes `response()` as is: it is not passed through `transformResponse` again.
    * The function will be called in a reactive signal context.
    * If the query get's executed after the response was updated, the response will be set the the fresh data received from the server.
    *
@@ -782,17 +782,16 @@ export type WithResponseUpdateFeatureOptions<TArgs extends QueryArgs> = {
    * const matchEvents = mySocket.joinRoom('match-events');
    *
    * const myMatchQuery = getMatch(
-   *  withArgs(() => ({ matchId: 1 })),
-   *  withResponseUpdate(({ currentResponse }) => {
-   *   const matchEvent = matchEvents();
+   *  withArgs(() => ({ pathParams: { matchId: 1 } })),
+   *  withResponseUpdate({
+   *   updater: ({ currentResponse }) => {
+   *    const matchEvent = matchEvents();
    *
-   *   if (!matchEvent) return null;
+   *    if (!matchEvent || !currentResponse) return null;
    *
-   *   // Do some checks here. This is just a very simple example.
-   *   // To apply partial updates, you can use the spread operator in combination with the current response.
-   *
-   *   return matchEvent;
-   *  })
+   *    return { ...currentResponse, score: matchEvent.score };
+   *   },
+   *  }),
    * )
    */
   updater: (data: WithResponseUpdateFeatureFnData<TArgs>) => ResponseType<TArgs> | null;
@@ -811,7 +810,7 @@ export const withResponseUpdate = <TArgs extends QueryArgs>(options: WithRespons
           if (response === null) return;
 
           untracked(() => {
-            context.state.rawResponse.set(response);
+            context.state.response.set(response);
           });
         },
         { injector: context.deps.injector },

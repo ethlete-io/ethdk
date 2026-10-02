@@ -5,9 +5,9 @@ import {
   ElementRef,
   EnvironmentInjector,
   ErrorHandler,
-  inject,
   Injector,
 } from '@angular/core';
+import { injectInQueryContext } from './internal/inject-in-query-context';
 import { AnyCreateQueryClientResult, QueryClient } from './query-client';
 import { createQueryContext, QueryContext } from './query-context';
 import { QueryConfig } from './query-creator';
@@ -49,7 +49,7 @@ export type QueryDependencies = {
 
 /** @internal */
 export const setupQueryDependencies = (options: SetupQueryDependenciesOptions) => {
-  const hostInjector = options.queryConfig?.injector ?? inject(Injector);
+  const hostInjector = options.queryConfig?.injector ?? injectInQueryContext(Injector, 'query');
   const environmentInjector =
     options.queryConfig?.injector?.get(EnvironmentInjector) ?? hostInjector.get(EnvironmentInjector);
 

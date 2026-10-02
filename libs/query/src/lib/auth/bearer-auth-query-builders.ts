@@ -1,11 +1,12 @@
 import { computed, DestroyRef, effect, inject, isDevMode, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { concatMap, EMPTY, fromEvent, Observable, of, race, switchMap, take, timer } from 'rxjs';
-import { patchQueryDevtoolsTokenPayload } from '../devtools/query-devtools-hook';
 import { QueryArgs, QueryCreator, QueryErrorResponse, RequestArgs, ResponseType } from '../http';
+import { authAccessTokenExpiryUnreadable } from '../http/query-errors';
 import { ShouldRetryRequestFn } from '../http/query-retry-utils';
 import { decryptBearer } from '../http/internal/request-route';
 import { BearerAuthProviderQueryContext } from './bearer-auth-provider';
+import { AccessTokenTimes, readAccessTokenTimes, refreshBufferMs } from './internal/token-times';
 
 export type BearerAuthProviderTokens = {
   accessToken: string;
@@ -546,56 +547,62 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
       }
     };
 
-    const calculateRefreshBuffer = (tokenLifetimeMs: number) => {
-      if (typeof config.refreshStrategy === 'number') {
-        return config.refreshStrategy >= 0 && config.refreshStrategy <= 1
-          ? tokenLifetimeMs * (1 - config.refreshStrategy)
-          : Math.max(config.refreshStrategy, 0);
+    let expiryWarnedFor: string | null = null;
+
+    const tokenTimes = (token: string) => {
+      let decoded: unknown;
+
+      try {
+        decoded = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
+      } catch {
+        decoded = null;
       }
 
-      const percentage = config.refreshStrategy?.percentage ?? 0.75;
-      const minBufferMs = config.refreshStrategy?.minBufferMs ?? 60000; // 1 minute
-      const maxBufferMs = config.refreshStrategy?.maxBufferMs ?? 600000; // 10 minutes
+      const times = readAccessTokenTimes({
+        token,
+        decoded,
+        claim: expiresInPropertyName,
+        providerName: context.name,
+      });
 
-      const calculatedBuffer = tokenLifetimeMs * (1 - percentage);
+      if (!times && isDevMode() && expiryWarnedFor !== token) {
+        expiryWarnedFor = token;
+        console.warn(authAccessTokenExpiryUnreadable(expiresInPropertyName).message);
+      }
 
-      return Math.max(minBufferMs, Math.min(maxBufferMs, calculatedBuffer));
+      return times;
     };
 
     /** When this token expires, as a timestamp, or `null` if the expiry cannot be read off it. */
-    const tokenExpiresAt = (token: string) => {
-      try {
-        const decoded = context.bearerDecryptFn ? context.bearerDecryptFn(token) : decryptBearer(token);
-        const bearerDataValue = patchQueryDevtoolsTokenPayload({
-          payload: decoded,
-          providerName: context.name,
-          expiresInPropertyName,
-        });
-        const expiresIn = (bearerDataValue as Record<string, unknown>)?.[expiresInPropertyName];
+    const tokenExpiresAt = (token: string) => tokenTimes(token)?.expiresAtMs ?? null;
 
-        if (typeof expiresIn !== 'number') {
-          if (isDevMode()) {
-            console.warn(`Token does not contain valid ${expiresInPropertyName} property for auto-refresh`);
-          }
+    let measuredLifetime: { token: string; lifetimeMs: number } | null = null;
 
-          return null;
-        }
-
-        return expiresIn * 1000;
-      } catch {
-        return null;
+    /**
+     * The whole lifetime of a token, not what is left of it: a schedule recomputed later (the tab came
+     * back to the foreground) must land at the same instant as the first one.
+     */
+    const tokenLifetimeMs = (token: string, times: AccessTokenTimes) => {
+      if (times.issuedAtMs !== null && times.expiresAtMs > times.issuedAtMs) {
+        return times.expiresAtMs - times.issuedAtMs;
       }
+
+      if (measuredLifetime?.token !== token) {
+        measuredLifetime = { token, lifetimeMs: times.expiresAtMs - Date.now() };
+      }
+
+      return measuredLifetime.lifetimeMs;
     };
 
     /** When this access token is due to be refreshed, or `null` if it cannot be scheduled at all. */
     const scheduledRefreshDelay = (token: string) => {
-      const expiresAt = tokenExpiresAt(token);
+      const times = tokenTimes(token);
 
-      if (expiresAt === null) return null;
+      if (times === null) return null;
 
-      const tokenLifetimeMs = expiresAt - Date.now();
+      const remainingMs = times.expiresAtMs - Date.now();
 
-      if (tokenLifetimeMs <= 0) {
+      if (remainingMs <= 0) {
         if (!refreshIfExpired) return null;
 
         if (isDevMode()) {
@@ -605,7 +612,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
         return 0;
       }
 
-      return Math.max(tokenLifetimeMs - calculateRefreshBuffer(tokenLifetimeMs), 0);
+      return Math.max(remainingMs - refreshBufferMs(config.refreshStrategy, tokenLifetimeMs(token, times)), 0);
     };
 
     /**

@@ -112,8 +112,7 @@ describe('bearer-auth-token-expiration-warning', () => {
       querySetup.httpTesting.verify();
     });
 
-    it('should detect when token is expiring soon', () => {
-      // Token expires in 4 minutes (less than default 5 minute warning)
+    it('warns only once the scheduled refresh of a token inside the threshold is overdue', () => {
       const futureExp = Math.floor(Date.now() / 1000) + 4 * 60;
       const querySetup = setupQueryTest();
       const { auth } = setupAuthTest({
@@ -123,7 +122,6 @@ describe('bearer-auth-token-expiration-warning', () => {
         autoRetryOn401: false,
       });
 
-      // Login
       auth.queries.login.execute({ body: { username: 'test' } });
       querySetup.httpTesting.expectOne(`${querySetup.baseUrl}/auth/login`).flush({
         accessToken: 'token',
@@ -131,18 +129,84 @@ describe('bearer-auth-token-expiration-warning', () => {
       });
       TestBed.tick();
 
-      // Wait for interval
       vi.advanceTimersByTime(150);
       TestBed.tick();
 
-      // Should be expiring soon (4 minutes < 5 minute default threshold)
+      expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
+
+      vi.advanceTimersByTime(3 * 60 * 1000 + 11_000);
+      TestBed.tick();
+
+      expect(querySetup.httpTesting.match(`${querySetup.baseUrl}/auth/refresh`)).toHaveLength(1);
       expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
 
-      // Flush any pending auto-refresh requests
-      const pending = querySetup.httpTesting.match(`${querySetup.baseUrl}/auth/refresh`);
-      pending.forEach((req) => req.flush({ accessToken: 'new-token', refreshToken: 'new-refresh' }));
+      querySetup.httpTesting.verify();
+    });
+
+    it('does not warn before the routine refresh of a 15 minute token with the defaults', () => {
+      const iat = Math.floor(Date.now() / 1000);
+      const querySetup = setupQueryTest();
+      const { auth } = setupAuthTest({
+        querySetup,
+        features: [withTokenExpirationWarning()],
+        bearerDecryptFn: () => ({ iat, exp: iat + 15 * 60 }),
+        autoRetryOn401: false,
+      });
+
+      auth.queries.login.execute({ body: { username: 'test' } });
+      querySetup.httpTesting.expectOne(`${querySetup.baseUrl}/auth/login`).flush({
+        accessToken: 'token',
+        refreshToken: 'refresh',
+      });
+      TestBed.tick();
+
+      vi.advanceTimersByTime(11 * 60 * 1000);
+      TestBed.tick();
+
+      expect(auth.features.tokenExpirationWarning.expiresIn()).toBeLessThan(5 * 60 * 1000);
+      expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(false);
+
+      vi.advanceTimersByTime(30_000);
+      TestBed.tick();
+
+      expect(querySetup.httpTesting.match(`${querySetup.baseUrl}/auth/refresh`)).toHaveLength(1);
+      expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
 
       querySetup.httpTesting.verify();
+    });
+
+    it('warns inside the threshold when there is no refresh token to renew the session', () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 4 * 60;
+      const querySetup = setupQueryTest();
+      const { auth } = setupAuthTest({
+        querySetup,
+        features: [withTokenExpirationWarning({ checkInterval: 100 })],
+        bearerDecryptFn: () => ({ exp: futureExp }),
+        autoRetryOn401: false,
+      });
+
+      TestBed.runInInjectionContext(() => auth.setTokens('token', ''));
+      TestBed.tick();
+      vi.advanceTimersByTime(150);
+      TestBed.tick();
+
+      expect(auth.features.tokenExpirationWarning.isExpiringSoon()).toBe(true);
+    });
+
+    it('reads the expiry off the raw JWT when bearerDecryptFn drops it', () => {
+      const exp = Math.floor(Date.now() / 1000) + 3600;
+      const payload = btoa(JSON.stringify({ exp })).replace(/=+$/, '');
+      const querySetup = setupQueryTest();
+      const { auth } = setupAuthTest({
+        querySetup,
+        features: [withTokenExpirationWarning()],
+        bearerDecryptFn: () => ({ userId: 123 }),
+      });
+
+      TestBed.runInInjectionContext(() => auth.setTokens(`e30.${payload}.`, 'refresh'));
+      TestBed.tick();
+
+      expect(auth.features.tokenExpirationWarning.expiresAt()?.getTime()).toBe(exp * 1000);
     });
 
     it('should not warn if token has plenty of time', () => {

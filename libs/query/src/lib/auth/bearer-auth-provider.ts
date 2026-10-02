@@ -96,7 +96,8 @@ export type BearerAuthExecutionState<TType extends string = string> =
 /**
  * Whether this tab has a session, and whether it is still finding out.
  *
- * - `unknown` - the provider has not finished its own startup yet. Never observed from a component.
+ * - `unknown` - the provider has not finished its own startup yet. With multi-tab sync and a cookie to
+ *   restore from, a joining tab stays here for up to 250 ms after `inject` returns, while it asks the leader.
  * - `restoring` - a session restore is in flight (`withPersistentAuth`'s auto-login).
  * - `authenticated` - tokens are applied.
  * - `anonymous` - no session, and nothing is trying to get one.
@@ -352,7 +353,9 @@ export type CreateBearerAuthProviderConfig<
   features?: TFeatures;
 
   /**
-   * A function that decrypts the bearer token
+   * Turns the access token into what `bearerData()` holds. Returning `null` means the token carries no
+   * usable data. The proactive refresh reads the expiry claim off the result, and off the raw JWT
+   * payload when the result has none.
    * @default decryptBearer()
    */
   bearerDecryptFn?: (token: string) => TBearerData;
@@ -814,7 +817,7 @@ const createBearerAuthProviderImpl = <
     if (!token) return null;
 
     try {
-      const decoded = config.bearerDecryptFn?.(token) ?? decryptBearer<TBearerData>(token);
+      const decoded = config.bearerDecryptFn ? config.bearerDecryptFn(token) : decryptBearer<TBearerData>(token);
 
       return patchQueryDevtoolsTokenPayload({
         payload: decoded,

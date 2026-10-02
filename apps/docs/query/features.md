@@ -98,7 +98,7 @@ A background refresh is `executionState()` `{ type: 'loading', hasCachedResponse
 
 With `pauseWhileHidden`, no timer runs while the tab is hidden. When it becomes visible again, a tick that fell due in the meantime runs at once; a tab hidden for less than one interval just resumes its cadence. A focus or reconnect refetch counts as a tick: the interval restarts from it. With multi-tab sync, a tab that is not polling the key (see below) skips these refetches too, like any tick.
 
-Only for `GET`/`HEAD`/`OPTIONS` queries - anything else throws.
+Only for reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries - anything else throws.
 
 With the [multi-tab sync](/query/multi-tab#polling-dedup) client feature, the same query polled in several tabs is polled by one of them; the rest keep their interval but skip each tick and receive the data instead. Pass `withMultiTabSync({ dedupePolling: false })` if you want every tab to poll for itself, and leave the feature out entirely to keep every tab on its own.
 
@@ -141,7 +141,7 @@ Two things this feature deliberately does not do:
 - **Rounds are not cached.** Each one is requested with `keepUnusedFor: 0`, because a cursor is asked for once and never again; retaining them would leave one dead entry per round behind for the whole retention window.
 - **Rounds are not deduped across tabs.** [Multi-tab sync](/query/multi-tab#polling-dedup) elects a poller per cache key, and a chain's key moves with every round, so every tab drives its own chain.
 
-Only for `GET`/`HEAD`/`OPTIONS` queries - anything else throws, as does combining it with `withPolling`, since both would drive the same query's re-execution.
+Only for reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries - anything else throws, as does combining it with `withPolling`, since both would drive the same query's re-execution.
 
 `delay` exists because a server that already has data answers a long poll immediately: on a busy feed, rounds would otherwise follow each other with no pause at all. Raise it to put a floor under how often a chatty endpoint is asked.
 
@@ -155,7 +155,7 @@ import { withAutoRefresh } from '@ethlete/query';
 withAutoRefresh({ onSignalChanges: [this.locale, this.currency] });
 ```
 
-Throws when combined with `onlyManualExecution` unless you pass `ignoreOnlyManualExecution: true`, and (like polling) is limited to `GET`/`HEAD`/`OPTIONS`.
+Throws when combined with `onlyManualExecution` unless you pass `ignoreOnlyManualExecution: true`, and (like polling) is limited to reads - `GET`/`HEAD`/`OPTIONS` and GraphQL queries.
 
 Pass `enabled` (a signal or a `computed`, default always on) to drop signal changes while it is `false`. Turning it `true` does not execute by itself - the next signal change does.
 
@@ -171,7 +171,7 @@ These listen to the query's discrete event stream, so they never miss a terminal
 
 ## withResponseUpdate
 
-Reactively patches the current response without re-fetching - made for pushing websocket messages into an already-loaded query. Return `null` to skip an update; the next real server response overwrites patches.
+Reactively patches the current response without re-fetching - made for pushing websocket messages into an already-loaded query. Return `null` to skip an update; the next real server response overwrites patches. The updater works on the shape `response()` has, after `transformResponse` (or the GraphQL `data` unwrapping), and its value is not transformed again.
 
 ```ts
 import { withResponseUpdate } from '@ethlete/query';

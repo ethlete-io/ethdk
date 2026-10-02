@@ -116,7 +116,7 @@ or a push message said someone else did - [`invalidateQueries()`](/query/caching
 says so explicitly, and the message reaches every tab:
 
 ```ts
-await createPlayer.execute({ body });
+await executeUntilSettled(createPlayer, { args: { body } });
 
 injectApi().invalidateQueries({ url: '/players' });
 ```

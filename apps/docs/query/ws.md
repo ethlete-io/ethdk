@@ -102,6 +102,15 @@ const room = this.socket.joinRoom('match:1');
 room()?.messages$.subscribe((message) => this.log.push(message));
 ```
 
+A static room name is joined at once, so `room()` already holds the room on the next line. A reactive
+room is joined by an effect, so `room()` is still `null` right after the call. Follow the signal instead:
+
+```ts
+matchRoom = this.socket.joinRoom(() => `match:${this.matchId()}`);
+
+events$ = toObservable(this.matchRoom).pipe(switchMap((room) => room?.messages$ ?? EMPTY));
+```
+
 ## Sending messages
 
 `send({ event, data })` emits a message to the server. While the connection is down socket.io buffers it and delivers it on the next connect.
@@ -171,7 +180,6 @@ TestBed.configureTestingModule({ providers: [MATCH_SOCKET.provide()] });
 const client = TestBed.runInInjectionContext(() => MATCH_SOCKET.inject());
 
 const room = TestBed.runInInjectionContext(() => client.joinRoom('lobby'));
-TestBed.tick();
 
 expect(socket.sent()).toEqual([{ event: 'join-room', data: 'lobby' }]);
 

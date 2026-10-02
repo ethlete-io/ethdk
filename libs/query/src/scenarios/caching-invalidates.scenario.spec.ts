@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createGetQuery, createGqlMutationViaPost, createPatchQuery, gql, withArgs } from '../index';
+import {
+  createGetQuery,
+  createGqlMutationViaPost,
+  createPatchQuery,
+  gql,
+  QueryInvalidationOptions,
+  withArgs,
+} from '../index';
 import { useScenario } from './harness';
 
 type Opportunity = { uuid: string; people: string[] };
@@ -307,7 +314,7 @@ describe('invalidates and tags with retained entries', () => {
     s.tick(5_001);
   });
 
-  it.each([
+  it.each<{ by: string; target: QueryInvalidationOptions }>([
     { by: 'url', target: { url: '/players' } },
     { by: 'tag', target: { tag: 'player:1' } },
   ])('marks an unused entry stale on a $by invalidation, so allowCache refetches it', ({ target }) => {

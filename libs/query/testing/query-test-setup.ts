@@ -1,6 +1,6 @@
-import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { EnvironmentProviders, ErrorHandler, Injector } from '@angular/core';
+import { DestroyRef, EnvironmentProviders, ErrorHandler, Injector } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
@@ -11,6 +11,7 @@ import {
   createPostQuery,
   createPutQuery,
   createQueryClient,
+  isQueryErrorResponse,
   QueryClientRef,
 } from '@ethlete/query';
 
@@ -28,8 +29,8 @@ export type QueryTestSetup = {
   createDelete: ReturnType<typeof createDeleteQuery>;
 
   /**
-   * Puts back the `console.warn` / `console.error` that were installed before the first
-   * {@link setupQueryTest} call. Idempotent, and safe to call from any of the setups a file created.
+   * Puts back the `console.error` that was installed before the first {@link setupQueryTest} call. Runs
+   * on its own when the `TestBed` module is reset; idempotent, and safe to call from any setup.
    */
   restoreConsole: () => void;
 };
@@ -37,21 +38,15 @@ export type QueryTestSetup = {
 export type QueryTestSetupConfig = {
   baseUrl?: string;
   name?: string;
-  mockErrorHandler?: boolean;
+  /**
+   * `true` swallows the `ErrorHandler` reports of failed requests and rethrows every other error, `'all'`
+   * swallows everything, `false` keeps Angular's own handler.
+   * @default true
+   */
+  mockErrorHandler?: boolean | 'all';
 };
 
-let originalWarn: typeof console.warn | null = null;
 let originalError: typeof console.error | null = null;
-
-const filteredWarn = (...args: unknown[]) => {
-  const message = args[0];
-
-  if (typeof message === 'string' && message.includes('auto-refresh')) {
-    return;
-  }
-
-  originalWarn?.(...args);
-};
 
 const filteredError = (...args: unknown[]) => {
   const message = args[0];
@@ -74,25 +69,31 @@ const filteredError = (...args: unknown[]) => {
 // Capture only what is not already the wrapper, so repeated calls reinstall the one filter instead
 // of nesting a new closure over the previous one and stranding the pristine handlers.
 const installConsoleFilters = () => {
-  if (console.warn !== filteredWarn) originalWarn = console.warn;
   if (console.error !== filteredError) originalError = console.error;
 
-  console.warn = filteredWarn;
   console.error = filteredError;
 };
 
 const restoreConsole = () => {
-  if (originalWarn && console.warn === filteredWarn) console.warn = originalWarn;
   if (originalError && console.error === filteredError) console.error = originalError;
 
-  originalWarn = null;
   originalError = null;
+};
+
+const isFailedRequestError = (error: unknown) => error instanceof HttpErrorResponse || isQueryErrorResponse(error);
+
+const requestErrorHandler: Pick<ErrorHandler, 'handleError'> = {
+  handleError: (error: unknown) => {
+    if (isFailedRequestError(error)) return;
+
+    throw error;
+  },
 };
 
 export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup => {
   const baseUrl = config?.baseUrl ?? 'https://api.test.com';
   const name = config?.name ?? 'test';
-  const mockErrorHandler = config?.mockErrorHandler !== false;
+  const mockErrorHandler = config?.mockErrorHandler ?? true;
 
   installConsoleFilters();
 
@@ -105,7 +106,7 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
   if (mockErrorHandler) {
     providers.push({
       provide: ErrorHandler,
-      useValue: { handleError: () => undefined },
+      useValue: mockErrorHandler === 'all' ? { handleError: () => undefined } : requestErrorHandler,
     });
   }
 
@@ -116,6 +117,8 @@ export const setupQueryTest = (config?: QueryTestSetupConfig): QueryTestSetup =>
   return TestBed.runInInjectionContext(() => {
     const { inject } = queryClientRef;
     const queryClient = inject();
+
+    TestBed.inject(DestroyRef).onDestroy(restoreConsole);
 
     if (!queryClient) {
       throw new Error('Failed to create query client in test setup');

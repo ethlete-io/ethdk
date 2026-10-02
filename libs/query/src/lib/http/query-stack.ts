@@ -19,6 +19,7 @@ import {
 import { AnyNewQuery, RequestArgs, ResponseType } from './query';
 import { AnyQueryCreator, QueryArgsOf, RunQueryCreator } from './query-creator';
 import { QueryErrorResponse } from './query-error-response';
+import { injectInQueryContext } from './internal/inject-in-query-context';
 import { queryStackWithArgsUsed, queryStackWithResponseUpdateUsed } from './query-errors';
 import { QueryFeature, QueryFeatureType, withArgs } from './query-features';
 
@@ -227,7 +228,7 @@ export const createQueryStack = <
     removeStrategy = 'oldest',
   } = options ?? {};
 
-  const injector = inject(Injector);
+  const injector = injectInQueryContext(Injector, 'query stack');
 
   const queries = signal<QueryType[]>([]);
   const lastQuery = signal<QueryType | null>(null);
