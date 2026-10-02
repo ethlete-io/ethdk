@@ -212,19 +212,21 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 
 ## Stream (ET16xx)
 
-| Code     | Cause                                                                       | Fix                                                                                               |
-| -------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `ET1600` | The configured consent component doesn't provide the stream consent token.  | Add `hostDirectives: [StreamConsentDirective]` to the consent component.                          |
-| `ET1601` | A platform SDK script failed to load.                                       | Check the URL and network - ad blockers commonly block player SDKs.                               |
-| `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                 | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                                  |
-| `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.              | Ensure the YouTube IFrame API URL is accessible and not rewritten.                                |
-| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.   | Implement `PipChromeRef` and provide `PIP_CHROME_REF_TOKEN` with `useExisting`.                   |
-| `ET1605` | The Facebook SDK loaded but its global isn't available.                     | Ensure the Facebook SDK URL is accessible and not rewritten.                                      |
-| `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready. | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure.              |
-| `ET1607` | The TikTok player reported an error.                                        | The message contains the platform's error value; the video may be unavailable.                    |
-| `ET1608` | A Facebook video didn't become ready in time.                               | The video may be unavailable or restricted.                                                       |
-| `ET1609` | The YouTube player reported an error.                                       | The message contains the YouTube error code; the video may be removed, private or not embeddable. |
-| `ET1610` | `et-pip-player` has neither an `entry` input nor a parent `etPipCell`.      | Bind `[entry]`, or render it inside an `etPipCell`.                                               |
+| Code     | Cause                                                                                                           | Fix                                                                                               |
+| -------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ET1600` | The configured consent component doesn't provide the stream consent token.                                      | Add `hostDirectives: [StreamConsentDirective]` to the consent component.                          |
+| `ET1601` | A platform SDK script failed to load.                                                                           | Check the URL and network - ad blockers commonly block player SDKs.                               |
+| `ET1602` | The Twitch Embed SDK loaded but its global isn't available.                                                     | Ensure the Twitch Embed SDK URL is accessible and not rewritten.                                  |
+| `ET1603` | The YouTube IFrame API loaded but `YT.Player` isn't available.                                                  | Ensure the YouTube IFrame API URL is accessible and not rewritten.                                |
+| `ET1604` | The configured PiP chrome component doesn't provide the PiP chrome token.                                       | Implement `PipChromeRef` and provide `PIP_CHROME_REF_TOKEN` with `useExisting`.                   |
+| `ET1605` | The Facebook SDK loaded but its global isn't available.                                                         | Ensure the Facebook SDK URL is accessible and not rewritten.                                      |
+| `ET1606` | The Vimeo Player SDK isn't available, or the player failed to become ready.                                     | Ensure the Vimeo SDK URL is accessible; the message contains the underlying failure.              |
+| `ET1607` | The TikTok player reported an error.                                                                            | The message contains the platform's error value; the video may be unavailable.                    |
+| `ET1608` | A Facebook video didn't become ready in time.                                                                   | The video may be unavailable or restricted.                                                       |
+| `ET1609` | The YouTube player reported an error.                                                                           | The message contains the YouTube error code; the video may be removed, private or not embeddable. |
+| `ET1610` | `et-pip-player` has neither an `entry` input nor a parent `etPipCell`.                                          | Bind `[entry]`, or render it inside an `etPipCell`.                                               |
+| `ET1611` | A SOOP or Twitch slot resolved no source: no `userId`/`videoId`, or a Twitch `src` that is no channel or video. | Set a valid source. The slot shows its error overlay instead of a spinner that never ends.        |
+| `ET1612` | `pipActivate()` / `pipDeactivate()` was called on a slot without picture-in-picture. Dev mode only.             | Add `provideStreamPip()` to the injector the slot is created in.                                  |
 
 ## Notification (ET17xx)
 
@@ -462,7 +464,7 @@ Checked in dev mode only.
 
 ## Scheduler (ET45xx)
 
-Checked in dev mode only.
+ET4500 and ET4502-ET4504 throw on creation in all builds. ET4501, ET4505 and ET4506 are reported in dev mode only.
 
 | Code     | Cause                                                                                                           | Fix                                                        |
 | -------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -470,7 +472,8 @@ Checked in dev mode only.
 | `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                       | Move it inside the scheduler root.                         |
 | `ET4502` | An edit-surface feature (an edit field or appointment action) is used outside an `<et-scheduler-edit-surface>`. | Move it inside the edit surface root.                      |
 | `ET4503` | `[etSchedulerSwipeNavigation]` is placed on an element that is not an `[etScheduler]`.                          | Move it onto the scheduler root.                           |
-| `ET4505` | An appointment was selected or created without a registered default edit surface.                               | Add `provideSchedulerEditSurface()` to a parent injector.  |
+| `ET4504` | `[etSchedulerAppointmentDrag]` is placed on an element that is not an `[etScheduler]`.                          | Move it onto the scheduler root.                           |
+| `ET4505` | `addAppointment()` was called, or a draft range was committed, without a registered default edit surface.       | Add `provideSchedulerEditSurface()` to a parent injector.  |
 | `ET4506` | A `businessHours` entry has a time that is not `HH:mm`, or ends before it starts.                               | Fix the entry; `24:00` is the only valid end past `23:59`. |
 
 ## Tree (ET46xx)

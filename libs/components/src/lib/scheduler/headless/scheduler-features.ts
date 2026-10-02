@@ -125,6 +125,8 @@ export type SchedulerFeatureHost = {
    * import cycle back to the component that bundles it.
    */
   addAppointment(): void;
+  /** Whether {@link addAppointment} can open anything. The built-in add action hides itself when this returns `false`. */
+  canAddAppointment?(): boolean;
   /**
    * Opens the edit surface for an appointment that is already selected, where writing the same id
    * again changes nothing. The views call it when an already-selected appointment is activated.

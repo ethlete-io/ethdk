@@ -24,7 +24,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotA.slotDirective.slot.pipActivate(() => selectedIndex.set(0))"
+                (click)="slotA.controls.pipActivate(() => selectedIndex.set(0))"
                 et-button
                 size="xs"
                 type="button"
@@ -46,7 +46,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotB.slotDirective.slot.pipActivate(() => selectedIndex.set(1))"
+                (click)="slotB.controls.pipActivate(() => selectedIndex.set(1))"
                 et-button
                 size="xs"
                 type="button"
@@ -69,7 +69,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotC.slotDirective.slot.pipActivate(() => selectedIndex.set(2))"
+                (click)="slotC.controls.pipActivate(() => selectedIndex.set(2))"
                 et-button
                 size="xs"
                 type="button"
@@ -92,7 +92,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotD.slotDirective.slot.pipActivate(() => selectedIndex.set(3))"
+                (click)="slotD.controls.pipActivate(() => selectedIndex.set(3))"
                 et-button
                 size="xs"
                 type="button"
@@ -115,7 +115,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotE.slotDirective.slot.pipActivate(() => selectedIndex.set(4))"
+                (click)="slotE.controls.pipActivate(() => selectedIndex.set(4))"
                 et-button
                 size="xs"
                 type="button"
@@ -140,7 +140,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotF.slotDirective.slot.pipActivate(() => selectedIndex.set(5))"
+                (click)="slotF.controls.pipActivate(() => selectedIndex.set(5))"
                 et-button
                 size="xs"
                 type="button"
@@ -163,7 +163,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotG.slotDirective.slot.pipActivate(() => selectedIndex.set(6))"
+                (click)="slotG.controls.pipActivate(() => selectedIndex.set(6))"
                 et-button
                 size="xs"
                 type="button"
@@ -186,7 +186,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
             />
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotH.slotDirective.slot.pipActivate(() => selectedIndex.set(7))"
+                (click)="slotH.controls.pipActivate(() => selectedIndex.set(7))"
                 et-button
                 size="xs"
                 type="button"

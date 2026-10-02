@@ -1,4 +1,5 @@
 import { Directive, booleanAttribute, computed, input, inputBinding, numberAttribute } from '@angular/core';
+import { randomId } from '@ethlete/core';
 import { STREAM_PLAYER_PARAMS_TOKEN, StreamPlayerParams } from '../../../stream-player-slot.directive';
 import { streamSizeAttribute } from '../../../stream-size';
 
@@ -33,9 +34,15 @@ export class TwitchPlayerParamsDirective implements StreamPlayerParams {
     return /^\d+$/.test(s) ? s : null;
   });
 
+  private missingSourceId = `twitch-missing-${randomId()}`;
+
   public playerId = computed(() => {
-    const c = this.channel();
-    return c ? `twitch-channel-${c}` : `twitch-video-${this.video()}`;
+    const channel = this.channel();
+    const video = this.video();
+
+    if (channel) return `twitch-channel-${channel}`;
+
+    return video ? `twitch-video-${video}` : this.missingSourceId;
   });
 
   public createBindings() {

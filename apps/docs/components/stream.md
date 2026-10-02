@@ -55,6 +55,8 @@ Source inputs per platform:
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
 
+A SOOP slot with neither `userId` nor `videoId`, or a Twitch `src` that is no channel or video (`twitch.tv/videos/`, a clip URL), shows the error overlay and reports `ET1611`. When both SOOP ids are set, `userId` wins.
+
 Upgrading from a version that shipped `YoutubePlayerSlotDirective`? The migration drops it from
 `imports` arrays and marks each other use - a host directive, an injected `YOUTUBE_PLAYER_SLOT_TOKEN` -
 with a `TODO(ethlete-migration)` comment. Replace those with `<et-youtube-player-slot>` or
@@ -82,7 +84,7 @@ Not every platform supports every control - each player exposes a static `CAPABI
 | Facebook, TikTok        | yes (no live streams)      |
 | Kick, SOOP, Dailymotion | no - plain iframe embeds   |
 
-A slot exposes the same controls for whatever player it holds, on `slot.slotDirective.slot` (or `inject(STREAM_PLAYER_SLOT_TOKEN).slot` from content projected into the slot): `currentState()`, `capabilities()`, and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)`. Each control returns `true` when the command reached the player and `false` when it could not - the slot has no player yet (consent gate still up), the player is not ready, or the platform lacks the capability. `capabilities()` is `NO_STREAM_PLAYER_CAPABILITIES` (all `false`) until the player exists. A second slot bound to the same player id controls that same player.
+A slot exposes the same controls for whatever player it holds, on `slot.controls` (or `injectStreamPlayerSlot()` from content projected into the slot): `currentPlayerId()` (read-only), `currentState()`, `capabilities()`, and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)`. Each control returns `true` when the command reached the player and `false` when it could not - the slot has no player yet (consent gate still up), the player is not ready, or the platform lacks the capability. `capabilities()` is `NO_STREAM_PLAYER_CAPABILITIES` (all `false`) until the player exists. A second slot bound to the same player id controls that same player.
 
 ```ts
 @Component({
@@ -94,7 +96,7 @@ A slot exposes the same controls for whatever player it holds, on `slot.slotDire
   `,
 })
 export class PlayToggleComponent {
-  protected slot = inject(STREAM_PLAYER_SLOT_TOKEN).slot;
+  protected slot = injectStreamPlayerSlot();
 
   protected toggle() {
     if (this.slot.currentState().isPlaying) this.slot.pause();
@@ -108,6 +110,8 @@ export class PlayToggleComponent {
   <app-play-toggle />
 </et-youtube-player-slot>
 ```
+
+<StoryEmbed id="components-media-stream-youtube--slot-controls" height="640px" />
 
 ## Consent gating
 
@@ -141,6 +145,8 @@ Rebinding the slot to another video while the gate is still up is safe: acceptin
 
 Revoking consent through the `ConsentHandler` destroys every mounted player, ends its PiP, and puts the gate back up.
 
+<StoryEmbed id="components-media-stream-youtube--consent-provider" height="560px" />
+
 When several slots share a player, rebinding one of them to another id gives that slot its own player and leaves the others playing. The loading and error overlays show in whichever slot currently holds the player.
 
 ## Picture-in-picture
@@ -149,11 +155,13 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 
 ```html
 <et-youtube-player-slot #slot [videoId]="videoId()" class="aspect-video" />
-<button (click)="slot.slotDirective.slot.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
+<button (click)="slot.controls.pipActivate(() => goBackToThisView())" et-button>Enter PiP</button>
 ```
 
-`pipActivate(onBack?)` / `pipDeactivate()` control it. Register `provideStreamPip()` where the slots are
-provided, alongside `STREAM_PIP_IMPORTS`; without it, slots still play normally but expose no PiP behavior.
+`pipActivate(onBack?)` / `pipDeactivate()` control it, and return `false` when they could not: no
+`provideStreamPip()` in scope, no player yet (consent gate still up), or the player is already in (or not in) PiP.
+Register `provideStreamPip()` where the slots are provided, alongside `STREAM_PIP_IMPORTS`; without it, slots
+still play normally, and a PiP call reports `ET1612` in development.
 Configure the PiP chrome and window through that provider:
 
 ```ts

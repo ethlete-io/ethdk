@@ -9,7 +9,7 @@ import { SCHEDULER_IMPORTS } from '../scheduler.imports';
 const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
 const at = (dayOffset: number, hour: number) => addHours(addDays(weekStart, dayOffset), hour);
 
-const DEMO_APPOINTMENTS: Appointment[] = [
+export const DEMO_APPOINTMENTS: Appointment[] = [
   {
     id: 'standup',
     parentId: null,

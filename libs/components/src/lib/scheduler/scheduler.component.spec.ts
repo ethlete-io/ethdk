@@ -197,15 +197,82 @@ describe('SchedulerComponent', () => {
     expect(driver.editSurface()).toHaveLength(0);
   });
 
-  it('reports an open request while no default edit surface is registered', () => {
-    const readOnlyDriver = schedulerTestDriver({ appointments: [testAppointment('a')], editSurface: false });
-    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+  describe('without provideSchedulerEditSurface()', () => {
+    let readOnly: ReturnType<typeof schedulerTestDriver>;
+    let handleError: ReturnType<typeof vi.spyOn>;
 
-    expect(() => readOnlyDriver.openEditSurface('a')).not.toThrow();
-    expect(String(handleError.mock.calls[0]?.[0])).toContain('ET4505');
-    expect(readOnlyDriver.editSurface()).toHaveLength(0);
+    const press = (element: Element | null, init: PointerEventInit = {}) => {
+      const at = { bubbles: true, pointerId: 1, button: 0, ...init };
 
-    readOnlyDriver.fixture.destroy();
+      element?.dispatchEvent(new PointerEvent('pointerdown', at));
+      document.dispatchEvent(new PointerEvent('pointerup', at));
+      readOnly.detectChanges();
+    };
+
+    beforeEach(() => {
+      driver.fixture.destroy();
+      readOnly = schedulerTestDriver({ appointments: [testAppointment('a')], editSurface: false });
+      driver = readOnly;
+      handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+    });
+
+    const draftWrites = () => {
+      const headless = readOnly.scheduler().headless;
+
+      return [vi.spyOn(headless, 'setDraftRange'), vi.spyOn(headless, 'beginDraftRange')];
+    };
+
+    it('leaves no draft range after a click on an empty month cell', () => {
+      const writes = draftWrites();
+
+      press(readOnly.query('.et-scheduler-month-view-weeks'));
+
+      for (const write of writes) expect(write).not.toHaveBeenCalled();
+
+      expect(readOnly.scheduler().headless.draftRange()).toBeNull();
+      expect(readOnly.queryAll('.et-scheduler-month-view-cell[data-draft]')).toHaveLength(0);
+    });
+
+    it('leaves no draft range after Enter on an empty month cell', () => {
+      const writes = draftWrites();
+      const cell = readOnly.cellFor(new Date(2026, 6, 20));
+
+      cell?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      readOnly.detectChanges();
+
+      for (const write of writes) expect(write).not.toHaveBeenCalled();
+      expect(readOnly.scheduler().headless.draftRange()).toBeNull();
+    });
+
+    it('does not start drag-to-create in the time grid', () => {
+      readOnly.host.view.set('day');
+      readOnly.detectChanges();
+      const writes = draftWrites();
+
+      press(readOnly.query('.et-scheduler-time-grid-day'), { clientY: 100 });
+
+      for (const write of writes) expect(write).not.toHaveBeenCalled();
+      expect(readOnly.scheduler().headless.draftRange()).toBeNull();
+    });
+
+    it('renders no add appointment button', () => {
+      expect(readOnly.queryAll('.et-scheduler-toolbar-action')).toHaveLength(0);
+    });
+
+    it('selects a clicked badge without reporting ET4505, also on a second click', () => {
+      readOnly.clickAppointment('a');
+      readOnly.clickAppointment('a');
+
+      expect(readOnly.host.selectedAppointmentId()).toBe('a');
+      expect(handleError).not.toHaveBeenCalled();
+      expect(readOnly.editSurface()).toHaveLength(0);
+    });
+
+    it('reports ET4505 when addAppointment() is called', () => {
+      readOnly.scheduler().addAppointment();
+
+      expect(String(handleError.mock.calls[0]?.[0])).toContain('ET4505');
+    });
   });
 
   it('renders the default badge adornments for a visible appointment', () => {

@@ -256,7 +256,7 @@ describe('stream custom player scenarios', () => {
 
     expect(playerEl.parentElement).toBe(large);
     expect(TestBed.inject(ArenaSdk).players).toHaveLength(1);
-    expect(fixture.componentInstance.frames().map((frame) => frame.slot.currentPlayerIdSignal())).toEqual([
+    expect(fixture.componentInstance.frames().map((frame) => frame.slot.currentPlayerId())).toEqual([
       'arena-final',
       'arena-final',
     ]);

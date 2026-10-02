@@ -44,7 +44,7 @@ export const STREAM_PLAYER_SLOT_TOKEN = new InjectionToken<StreamPlayerSlotDirec
       provide: STREAM_SLOT_PLAYER_ID_TOKEN,
       useFactory: () => {
         const directive = inject(StreamPlayerSlotDirective);
-        return directive.slot.currentPlayerIdSignal;
+        return directive.slot.currentPlayerId;
       },
     },
   ],
@@ -106,3 +106,10 @@ export class StreamPlayerSlotDirective {
     }
   }
 }
+
+/** The handle of the stream player slot in scope: its state, capabilities, playback controls and PiP. */
+export const injectStreamPlayerSlot = () => {
+  const directive = inject(STREAM_PLAYER_SLOT_TOKEN);
+
+  return directive.slot;
+};

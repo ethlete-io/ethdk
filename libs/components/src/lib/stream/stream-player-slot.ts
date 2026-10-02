@@ -7,7 +7,6 @@ import {
   Injector,
   Signal,
   Type,
-  WritableSignal,
   afterNextRender,
   computed,
   createComponent,
@@ -59,7 +58,8 @@ export type StreamPlayerSlotOptions = {
 };
 
 export type StreamPlayerSlotHandle = {
-  currentPlayerIdSignal: WritableSignal<StreamPlayerId | null>;
+  /** The id of the player the slot is bound to, or `null` before the slot first syncs. */
+  currentPlayerId: Signal<StreamPlayerId | null>;
   currentState: Signal<StreamPlayerState>;
   /** What the slot's player supports. All `false` while the slot has no player yet. */
   capabilities: Signal<StreamPlayerCapabilities>;
@@ -72,8 +72,13 @@ export type StreamPlayerSlotHandle = {
   mute(): boolean;
   unmute(): boolean;
   seek(seconds: number): boolean;
-  pipActivate(onBack?: () => void): void;
-  pipDeactivate(): void;
+  /**
+   * Moves the slot's player into picture-in-picture. Returns `false` when it could not: no
+   * `provideStreamPip()` is in scope, the slot has no player yet, or the player is already in PiP.
+   */
+  pipActivate(onBack?: () => void): boolean;
+  /** Brings the slot's player back from picture-in-picture. Returns `false` when it was not in PiP. */
+  pipDeactivate(): boolean;
 };
 
 type StreamOverlay = { player: StreamPlayer; display: 'loading' | 'ready' | 'error' };
@@ -370,20 +375,43 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     errorComponentRef = unmountComponent(errorComponentRef);
   };
 
-  const pipActivate = (onBack?: () => void) =>
-    streamPip?.manager.pipActivate(el, {
+  const reportMissingPip = () => {
+    if (ngDevMode && !streamPip) {
+      errorHandler.handleError(
+        new RuntimeError(
+          STREAM_ERROR_CODES.MISSING_STREAM_PIP_PROVIDER,
+          `[${options.directiveName ?? 'StreamPlayerSlot'}] pipActivate() / pipDeactivate() need picture-in-picture. Add provideStreamPip() to the injector the slot is created in.`,
+          { element: el },
+        ),
+      );
+    }
+  };
+
+  const pipActivate = (onBack?: () => void) => {
+    if (!streamPip) {
+      reportMissingPip();
+
+      return false;
+    }
+
+    return streamPip.manager.pipActivate(el, {
       onBack,
       aspectRatio: options.aspectRatio,
       pipChromeComponent: streamPip.options.pipChromeComponent ?? undefined,
       pipChromeConfig: streamPip.options.pipChrome,
     });
+  };
 
   const pipDeactivate = () => {
+    if (!streamPip) {
+      reportMissingPip();
+
+      return false;
+    }
+
     const id = currentPlayerIdSignal();
 
-    if (id) {
-      streamPip?.manager.pipDeactivate(id);
-    }
+    return !!id && streamPip.manager.pipDeactivate(id);
   };
 
   const control = (capability: keyof StreamPlayerCapabilities, command: (player: StreamPlayer) => void) => {
@@ -406,7 +434,7 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
   destroyRef.onDestroy(() => destroy());
 
   return {
-    currentPlayerIdSignal,
+    currentPlayerId: currentPlayerIdSignal.asReadonly(),
     currentState,
     capabilities,
     play,

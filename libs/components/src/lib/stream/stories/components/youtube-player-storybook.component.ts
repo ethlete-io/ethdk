@@ -13,7 +13,7 @@ import { STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS } from '../../stream.imports';
     <div class="mt-6 bg-neutral-900 rounded-lg p-4">
       <p class="text-xs font-mono text-neutral-400 mb-2">State</p>
       <pre class="bg-neutral-950 rounded p-3 text-xs font-mono text-neutral-300 m-0 overflow-auto">{{
-        player().slotDirective.slot.currentState() | json
+        player().controls.currentState() | json
       }}</pre>
     </div>
   `,

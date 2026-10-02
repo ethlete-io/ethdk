@@ -184,6 +184,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   constructor() {
     mountVisuallyHidden();
 
+    this.headless.createEnabled.set(!!this.editSurface);
+
     effect(() => {
       const appointment = this.headless.selectedAppointment();
 
@@ -232,6 +234,10 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.openAddSurface({ id: randomId(), parentId: null, title: '', start, end: addHours(start, 1) });
   }
 
+  public canAddAppointment() {
+    return !!this.editSurface;
+  }
+
   public get element(): HTMLElement {
     return this.elementRef.nativeElement;
   }
@@ -260,7 +266,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
    * Selects an appointment and opens the default edit surface for it, anchored to whatever the
    * view registered for the interaction. Runs for you whenever `selectedAppointmentId` changes to
    * an appointment the surface is not already open for; call it to re-open the surface for the
-   * appointment that is already selected, or to open one from your own UI.
+   * appointment that is already selected, or to open one from your own UI. Without
+   * `provideSchedulerEditSurface()` it only selects the appointment.
    */
   public openEditSurface(id: AppointmentId) {
     const appointment = untracked(this.headless.appointments).find((candidate) => candidate.id === id);
@@ -269,21 +276,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
       return;
     }
 
+    this.handledSelectionId = id;
+    this.headless.selectedAppointmentId.set(id);
+
     if (!this.editSurfaceOpener) {
-      if (ngDevMode) {
-        this.reportError(
-          new RuntimeError(
-            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-            '[Scheduler] An appointment was selected without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
-          ),
-        );
-      }
+      this.headless.surfaceAnchor.set(null);
 
       return;
     }
-
-    this.handledSelectionId = id;
-    this.headless.selectedAppointmentId.set(id);
 
     const ref = this.editSurfaceOpener.open({
       origin: this.takeSurfaceAnchor(),
@@ -342,6 +342,8 @@ export class SchedulerComponent implements SchedulerFeatureHost {
           ),
         );
       }
+
+      this.headless.clearDraftRange();
 
       return;
     }

@@ -1,3 +1,5 @@
+import { RuntimeError } from '@ethlete/core';
+
 // codes 1600-1699
 export const STREAM_ERROR_CODES = {
   MISSING_CONSENT_TOKEN: 1600,
@@ -11,4 +13,12 @@ export const STREAM_ERROR_CODES = {
   FACEBOOK_VIDEO_UNAVAILABLE: 1608,
   YOUTUBE_PLAYER_ERROR: 1609,
   MISSING_PIP_ENTRY: 1610,
+  MISSING_STREAM_SOURCE: 1611,
+  MISSING_STREAM_PIP_PROVIDER: 1612,
 } as const;
+
+export const missingStreamSourceError = (player: string, inputs: string) =>
+  new RuntimeError(
+    STREAM_ERROR_CODES.MISSING_STREAM_SOURCE,
+    `[${player}] Nothing to play: no source resolved. Set ${inputs}.`,
+  );

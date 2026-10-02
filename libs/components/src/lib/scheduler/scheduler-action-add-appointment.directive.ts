@@ -11,7 +11,7 @@ export type SchedulerActionAddAppointmentConfig = SchedulerFeatureConfig;
  * `<et-scheduler>` bundles - see `registerToolbarAction`. Depends on the default edit surface
  * (it's what the dialog it opens is), so unlike `etSchedulerActionAddSubAppointment` it has no
  * bare-`[etScheduler]` equivalent - a headless-only composition needs its own "new appointment"
- * affordance.
+ * affordance. Left out of the toolbar when no `provideSchedulerEditSurface()` is in scope.
  *
  * @example
  * <et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" … />
@@ -34,7 +34,7 @@ export class SchedulerActionAddAppointmentDirective {
       label: computed(() => this.labels().addAppointment),
       icon: 'et-plus',
       order: 0,
-      enabled: computed(() => this.config().enabled ?? true),
+      enabled: computed(() => (this.host.canAddAppointment?.() ?? true) && (this.config().enabled ?? true)),
       run: () => this.host.addAppointment(),
     });
   }

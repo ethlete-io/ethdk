@@ -229,7 +229,8 @@ export type PipManager = {
 
   /**
    * Moves the player currently in the slot identified by `element` into the
-   * body PIP container, activating PIP mode.
+   * body PIP container, activating PIP mode. Returns `false` when the element is no
+   * registered slot, its player does not exist yet, or the player is already in PIP.
    */
   pipActivate(
     element: HTMLElement,
@@ -239,19 +240,20 @@ export type PipManager = {
       pipChromeComponent?: Type<unknown>;
       pipChromeConfig?: StreamPipChromeConfig;
     },
-  ): void;
+  ): boolean;
 
   /**
    * Deactivates PIP for `playerId` and moves the player back to the best
    * available slot (highest priority / last registered). If no slot exists, the
    * player is fully unregistered.
    *
-   * Pass `{ skipAnimation: true }` to skip the exit animation.
+   * Pass `{ skipAnimation: true }` to skip the exit animation. Returns `false` when the
+   * player was not in PIP.
    */
   pipDeactivate(
     playerId: StreamPlayerId,
     options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
-  ): void;
+  ): boolean;
 
   /**
    * Consumes and returns the rect captured just before `pipActivate` moved the player

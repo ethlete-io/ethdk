@@ -26,7 +26,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotA.slotDirective.slot.pipActivate(() => selectedIndex.set(0))"
+                (click)="slotA.controls.pipActivate(() => selectedIndex.set(0))"
                 et-button
                 size="xs"
                 type="button"
@@ -50,7 +50,7 @@ import { STREAM_SLOT_DEMO_STYLES } from './stream-slot-demo-styles';
 
             <div class="flex gap-3 flex-wrap items-center">
               <button
-                (click)="slotB.slotDirective.slot.pipActivate(() => selectedIndex.set(1))"
+                (click)="slotB.controls.pipActivate(() => selectedIndex.set(1))"
                 et-button
                 size="xs"
                 type="button"

@@ -1,20 +1,41 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, ErrorHandler } from '@angular/core';
 import { ReactiveNode, SIGNAL } from '@angular/core/primitives/signals';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { provideStreamPip } from './stream-pip.provider';
 import { FakeStreamConsentComponent, createStreamSlotDriver } from './testing/stream-driver';
 
 const fakePlayers = () => document.querySelectorAll('et-fake-stream-player').length;
 
 describe('createStreamPlayerSlot', () => {
-  it('keeps picture-in-picture inactive without its provider', async () => {
+  it('keeps picture-in-picture inactive without its provider, and says so', async () => {
     const driver = createStreamSlotDriver({ consentGranted: true });
     await driver.settle();
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
 
-    driver.slot().pipActivate();
+    expect(driver.slot().pipActivate()).toBe(false);
+    expect(driver.slot().pipDeactivate()).toBe(false);
     await driver.settle();
 
     expect(document.querySelector('et-stream-pip-chrome')).toBeNull();
+    expect(String(handleError.mock.calls[0]?.[0])).toContain('ET1612');
+  });
+
+  it('reports whether picture-in-picture was entered and left', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true, providers: [provideStreamPip()] });
+    await driver.settle();
+
+    expect(driver.slot().pipActivate()).toBe(true);
+    expect(driver.slot().pipActivate()).toBe(false);
+    expect(driver.slot().pipDeactivate()).toBe(true);
+    expect(driver.slot().pipDeactivate()).toBe(false);
+  });
+
+  it('refuses picture-in-picture while the consent gate is still up', async () => {
+    const driver = createStreamSlotDriver({ providers: [provideStreamPip()] });
+    await driver.settle();
+
+    expect(driver.slot().pipActivate()).toBe(false);
   });
 
   it('registers the live player id when consent arrives after an id change', async () => {
@@ -27,7 +48,7 @@ describe('createStreamPlayerSlot', () => {
     driver.grant();
     await driver.settle();
 
-    expect(driver.slot().currentPlayerIdSignal()).toBe('youtube-new');
+    expect(driver.slot().currentPlayerId()).toBe('youtube-new');
     expect(driver.playerElementFor('youtube-new')).not.toBeNull();
     expect(driver.playerElementFor('youtube-old')).toBeNull();
   });

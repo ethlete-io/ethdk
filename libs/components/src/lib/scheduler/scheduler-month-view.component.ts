@@ -183,7 +183,7 @@ export class SchedulerMonthViewComponent {
   protected startDraftRange(event: PointerEvent, weeks: HTMLElement) {
     const scheduler = this.scheduler;
 
-    if (!scheduler || event.button !== 0) return;
+    if (!scheduler || !scheduler.createEnabled() || event.button !== 0) return;
 
     const anchor = this.dateAt(event);
 
@@ -279,7 +279,7 @@ export class SchedulerMonthViewComponent {
   private createAppointmentOn(date: Date) {
     const scheduler = this.scheduler;
 
-    if (!scheduler || scheduler.draftRange() || scheduler.selectedAppointmentId()) return;
+    if (!scheduler || !scheduler.createEnabled() || scheduler.draftRange() || scheduler.selectedAppointmentId()) return;
 
     scheduler.setDraftRange({ start: startOfDay(date), end: endOfDay(date), allDay: true });
     this.openDraftSurface(scheduler, this.weeksElement().nativeElement);

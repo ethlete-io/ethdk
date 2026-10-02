@@ -1,8 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Directive, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
+import { Directive, ErrorHandler, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { injectHostElement, injectRenderer } from '@ethlete/core';
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, throwError } from 'rxjs';
+import { missingStreamSourceError } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
 import { SoopPlayerParamsDirective } from './soop-player-params.directive';
@@ -20,6 +21,7 @@ export class SoopPlayerDirective implements StreamPlayer {
   private streamLabels = injectStreamLabels();
 
   private platformId = inject(PLATFORM_ID);
+  private errorHandler = inject(ErrorHandler);
   private params = inject(SoopPlayerParamsDirective);
   private el = injectHostElement();
   private renderer = injectRenderer();
@@ -40,13 +42,18 @@ export class SoopPlayerDirective implements StreamPlayer {
   private playerResource = rxResource({
     params: (): { userId: string | null; videoId: string | null } | null => {
       if (!isPlatformBrowser(this.platformId)) return null;
-      const userId = this.params.userId();
-      const videoId = this.params.videoId();
-      if (!userId && !videoId) return null;
-      return { userId, videoId };
+      return { userId: this.params.userId(), videoId: this.params.videoId() };
     },
     stream: ({ params }) => {
       if (!params) return EMPTY;
+
+      if (!params.userId && !params.videoId) {
+        const error = missingStreamSourceError('EtSoopPlayer', '`userId` (a live channel) or `videoId` (a VOD)');
+
+        if (ngDevMode) this.errorHandler.handleError(error);
+
+        return throwError(() => error);
+      }
 
       return new Observable<void>((subscriber) => {
         const iframe = this.renderer.createElement('iframe');

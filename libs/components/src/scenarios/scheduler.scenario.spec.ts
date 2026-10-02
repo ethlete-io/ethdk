@@ -730,7 +730,7 @@ describe('scheduler misuse scenarios', () => {
     expect(dropElementPayloads(s)).toHaveLength(3);
   });
 
-  it('reports a selection without a registered edit surface and malformed business hours', () => {
+  it('only selects without a registered edit surface, and reports malformed business hours', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(PlannerComponent);
     const host = fixture.nativeElement as HTMLElement;
@@ -740,7 +740,8 @@ describe('scheduler misuse scenarios', () => {
     query('.et-scheduler-appointment[title="Kickoff"]', host).click();
     expect(() => fixture.detectChanges()).not.toThrow();
     s.tick();
-    s.expectError(code(SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED));
+    expect(fixture.componentInstance.selectedId()).not.toBeNull();
+    expect(host.querySelector('.et-scheduler-toolbar-action')).toBeNull();
     expect(document.querySelector('et-scheduler-edit-surface')).toBeNull();
 
     fixture.componentInstance.nowIndicator.set(false);

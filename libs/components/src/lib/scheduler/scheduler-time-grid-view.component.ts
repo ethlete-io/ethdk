@@ -388,7 +388,7 @@ export class SchedulerTimeGridViewComponent {
   protected startDraftRange(event: PointerEvent, column: SchedulerTimeGridColumn) {
     const scheduler = this.scheduler;
 
-    if (!scheduler || event.button !== 0) return;
+    if (!scheduler || !scheduler.createEnabled() || event.button !== 0) return;
 
     startSchedulerDragGesture({
       event,
@@ -571,7 +571,7 @@ export class SchedulerTimeGridViewComponent {
   private draftHourFrom(at: Date) {
     const scheduler = this.scheduler;
 
-    if (!scheduler || scheduler.selectedAppointmentId()) return;
+    if (!scheduler || !scheduler.createEnabled() || scheduler.selectedAppointmentId()) return;
 
     scheduler.beginDraftRange(at, DEFAULT_DRAFT_DURATION);
 

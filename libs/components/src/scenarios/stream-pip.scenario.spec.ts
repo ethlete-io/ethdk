@@ -66,7 +66,7 @@ class MatchCenterComponent {
   short = viewChild.required(TikTokPlayerSlotComponent);
 
   float(index: number) {
-    this.slots()[index]?.slotDirective.slot.pipActivate();
+    this.slots()[index]?.controls.pipActivate();
   }
 }
 
@@ -259,7 +259,7 @@ describe('stream picture-in-picture scenarios', () => {
     expect(chrome.querySelector('.et-stream-pip-chrome__view-btn')).toBeNull();
 
     await floatAndSettle(s, fixture, 1);
-    fixture.componentInstance.short().slotDirective.slot.pipActivate();
+    fixture.componentInstance.short().controls.pipActivate();
     await s.settle();
 
     const toggle = query('.et-stream-pip-chrome__view-btn', chrome);
@@ -432,8 +432,8 @@ describe('stream picture-in-picture with an app-built chrome', () => {
 
     const [arena, studio] = fixture.componentInstance.slots();
 
-    arena?.slotDirective.slot.pipActivate();
-    studio?.slotDirective.slot.pipActivate();
+    arena?.controls.pipActivate();
+    studio?.controls.pipActivate();
     await s.settle();
 
     const chrome = query('body > et-scenario-pip-chrome');
@@ -466,7 +466,7 @@ describe('stream picture-in-picture with an app-built chrome', () => {
     query('.back', chrome).click();
     expect(fixture.componentInstance.backs()).toBe(1);
 
-    arena?.slotDirective.slot.pipActivate();
+    arena?.controls.pipActivate();
     await s.settle();
 
     query('.inline-back', host).click();
@@ -474,7 +474,7 @@ describe('stream picture-in-picture with an app-built chrome', () => {
 
     expect(pip.pips().map((entry) => entry.playerId)).toEqual(['kick-studio']);
 
-    studio?.slotDirective.slot.pipDeactivate();
+    studio?.controls.pipDeactivate();
     await s.settle();
 
     expect(pip.pips()).toEqual([]);
@@ -492,7 +492,7 @@ describe('stream picture-in-picture with a chrome that forgets its ref', () => {
     const fixture = TestBed.createComponent(BringBackComponent);
 
     s.flush();
-    fixture.componentInstance.slots()[0]?.slotDirective.slot.pipActivate();
+    fixture.componentInstance.slots()[0]?.controls.pipActivate();
 
     expect(() => s.tick()).toThrow(`ET${STREAM_ERROR_CODES.MISSING_PIP_CHROME_TOKEN}`);
   });

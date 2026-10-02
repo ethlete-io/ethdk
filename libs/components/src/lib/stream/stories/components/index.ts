@@ -16,3 +16,5 @@ export * from './vimeo-player-storybook.component';
 export * from './youtube-player-slot-consent-storybook.component';
 export * from './youtube-player-slot-storybook.component';
 export * from './youtube-player-storybook.component';
+export * from './youtube-player-slot-controls-storybook.component';
+export * from './youtube-player-slot-consent-provider-storybook.component';

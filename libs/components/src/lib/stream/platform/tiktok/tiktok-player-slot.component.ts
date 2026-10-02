@@ -1,7 +1,7 @@
-import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation } from '@angular/core';
 import {
   STREAM_PLAYER_COMPONENT_TOKEN,
-  STREAM_PLAYER_SLOT_TOKEN,
+  injectStreamPlayerSlot,
   StreamPlayerSlotDirective,
 } from '../../stream-player-slot.directive';
 import { TikTokPlayerParamsDirective } from './headless/tiktok-player-params.directive';
@@ -27,5 +27,6 @@ import { TikTokPlayerComponent } from './tiktok-player.component';
   },
 })
 export class TikTokPlayerSlotComponent {
-  public slotDirective = inject(STREAM_PLAYER_SLOT_TOKEN);
+  /** The slot handle: `currentState()`, `capabilities()`, the playback controls and `pipActivate()`. */
+  public controls = injectStreamPlayerSlot();
 }

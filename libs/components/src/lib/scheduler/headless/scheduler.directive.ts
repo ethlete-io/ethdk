@@ -201,6 +201,12 @@ export class SchedulerDirective<TExtra = unknown> {
   public draftRange = signal<SchedulerDraftRange | null>(null);
 
   /**
+   * Whether the views start a drag-to-create range on a click, a drag or Enter on an empty slot.
+   * `<et-scheduler>` turns it off when no `provideSchedulerEditSurface()` is in scope.
+   */
+  public createEnabled = signal(true);
+
+  /**
    * The element a host should anchor its edit surface to - the appointment that was clicked, or the
    * range that was just dragged out. `null` whenever the interaction had no element behind it, such
    * as a selection made by writing {@link selectedAppointmentId} directly.

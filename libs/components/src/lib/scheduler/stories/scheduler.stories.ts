@@ -1,6 +1,7 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
 import { SchedulerInfiniteAgendaStorybookComponent } from './scheduler-infinite-agenda-storybook.component';
+import { SchedulerReadOnlyStorybookComponent } from './scheduler-read-only-storybook.component';
 import { SchedulerStorybookComponent } from './scheduler-storybook.component';
 
 export default {
@@ -37,6 +38,11 @@ export const LightSurfaceAgenda: Story = { args: { initialView: 'agenda', surfac
 export const WithoutNowIndicator: Story = { args: { initialView: 'day', nowIndicator: false } };
 
 export const Agenda: Story = { args: { initialView: 'agenda' } };
+
+export const ReadOnly: StoryObj<SchedulerReadOnlyStorybookComponent> = {
+  render: () => ({ template: '<et-sb-scheduler-read-only />' }),
+  decorators: [moduleMetadata({ imports: [SchedulerReadOnlyStorybookComponent] })],
+};
 
 export const InfiniteAgenda: StoryObj<SchedulerInfiniteAgendaStorybookComponent> = {
   render: () => ({ template: '<et-sb-scheduler-infinite-agenda />' }),

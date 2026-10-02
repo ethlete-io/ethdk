@@ -1,9 +1,9 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, Directive, InjectionToken, PLATFORM_ID, effect, inject, isDevMode, signal } from '@angular/core';
+import { DOCUMENT, Directive, ErrorHandler, InjectionToken, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement } from '@ethlete/core';
-import { EMPTY, Observable, Subscription, interval, switchMap, tap } from 'rxjs';
-import { STREAM_ERROR_CODES } from '../../../stream-errors';
+import { EMPTY, Observable, Subscription, interval, switchMap, tap, throwError } from 'rxjs';
+import { STREAM_ERROR_CODES, missingStreamSourceError } from '../../../stream-errors';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../../../stream-player';
 import { injectStreamScriptLoader } from '../../../stream-script-loader';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../../../stream.types';
@@ -23,6 +23,7 @@ export const TWITCH_PLAYER_TOKEN = new InjectionToken<TwitchPlayerDirective>('TW
 export class TwitchPlayerDirective implements StreamPlayer {
   private platformId = inject(PLATFORM_ID);
   private document = inject(DOCUMENT);
+  private errorHandler = inject(ErrorHandler);
   private params = inject(TwitchPlayerParamsDirective);
   private el = injectHostElement();
   private scriptLoader = injectStreamScriptLoader();
@@ -43,17 +44,21 @@ export class TwitchPlayerDirective implements StreamPlayer {
   private playerResource = rxResource({
     params: (): TwitchPlayerParams | null => {
       if (!isPlatformBrowser(this.platformId)) return null;
-      const channel = this.params.channel();
-      const video = this.params.video();
-      if (!channel && !video) {
-        if (isDevMode()) console.warn('[et-twitch-player] Either `channel` or `video` input is required.');
-
-        return null;
-      }
-      return { channel, video };
+      return { channel: this.params.channel(), video: this.params.video() };
     },
     stream: ({ params }) => {
       if (!params) return EMPTY;
+
+      if (!params.channel && !params.video) {
+        const error = missingStreamSourceError(
+          'EtTwitchPlayer',
+          '`src` to a channel name, a twitch.tv/<channel> URL, a numeric video id or a twitch.tv/videos/<id> URL',
+        );
+
+        if (ngDevMode) this.errorHandler.handleError(error);
+
+        return throwError(() => error);
+      }
 
       return this.scriptLoader.load(TWITCH_EMBED_URL).pipe(
         switchMap(

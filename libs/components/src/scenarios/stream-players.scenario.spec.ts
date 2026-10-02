@@ -1,4 +1,4 @@
-import { Component, CSP_NONCE, inject, signal, viewChild, viewChildren } from '@angular/core';
+import { Component, CSP_NONCE, ErrorHandler, inject, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, injectLocale, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import { firstValueFrom } from 'rxjs';
@@ -55,7 +55,6 @@ import {
   StreamPlayer,
   StreamPlayerErrorComponent,
   StreamPlayerLoadingComponent,
-  StreamPlayerSlotDirective,
   TIKTOK_PLAYER_TOKEN,
   TikTokPlayerComponent,
   TikTokPlayerDirective,
@@ -493,6 +492,18 @@ class EmbedsComponent {
 }
 
 @Component({
+  selector: 'et-scenario-sourceless-soop',
+  imports: [STREAM_SOOP_IMPORTS],
+  template: `
+    <et-soop-player-slot />
+    <et-soop-player-slot />
+  `,
+})
+class SourcelessSoopComponent {
+  slots = viewChildren(SoopPlayerSlotComponent);
+}
+
+@Component({
   selector: 'et-scenario-hostile-ids',
   imports: [STREAM_KICK_IMPORTS, STREAM_SOOP_IMPORTS, STREAM_DAILYMOTION_IMPORTS, STREAM_TIKTOK_IMPORTS],
   template: `
@@ -665,11 +676,10 @@ describe('stream player scenarios', () => {
     s.flush();
 
     const slotHost = query('et-youtube-player-slot', host);
-    const slot = fixture.componentInstance.slot().slotDirective;
+    const slot = fixture.componentInstance.slot().controls;
 
-    expect(slot).toBeInstanceOf(StreamPlayerSlotDirective);
-    expect(slot.slot.currentPlayerIdSignal()).toBe('youtube-match-recap');
-    expect(slot.slot.currentState()).toEqual(DEFAULT_STREAM_PLAYER_STATE);
+    expect(slot.currentPlayerId()).toBe('youtube-match-recap');
+    expect(slot.currentState()).toEqual(DEFAULT_STREAM_PLAYER_STATE);
 
     const loading = query('et-stream-player-loading', slotHost);
 
@@ -696,7 +706,7 @@ describe('stream player scenarios', () => {
     player?.config.events?.onReady?.({ target: player as never });
     s.flush();
 
-    expect(slot.slot.currentState().isReady).toBe(true);
+    expect(slot.currentState().isReady).toBe(true);
     expect(slotHost.querySelector('et-stream-player-loading')).toBeNull();
   });
 
@@ -720,7 +730,7 @@ describe('stream player scenarios', () => {
     expect(query('.et-stream-player-error-heading', error).textContent?.trim()).toBe(
       DEFAULT_STREAM_LABELS.errorHeading,
     );
-    expect(fixture.componentInstance.slot().slotDirective.slot.currentState().error).not.toBeNull();
+    expect(fixture.componentInstance.slot().controls.currentState().error).not.toBeNull();
 
     const retry = query('button', error);
 
@@ -808,7 +818,7 @@ describe('stream player scenarios', () => {
     yt.config.events?.onError?.({ target: yt as never, data: 150 });
     await s.settle();
 
-    const slot = fixture.componentInstance.slot().slotDirective.slot;
+    const slot = fixture.componentInstance.slot().controls;
 
     expect(String(slot.currentState().error)).toContain('YouTube player error: 150');
     expect(query('et-youtube-player-slot', host).querySelector('et-stream-player-error')).not.toBeNull();
@@ -877,11 +887,11 @@ describe('stream player scenarios', () => {
     s.flush();
 
     expect(embeds.at(-1)?.options).toMatchObject({ video: '987', time: '1h2m5s' });
-    expect(fixture.componentInstance.slot().slotDirective.slot.currentPlayerIdSignal()).toBe('twitch-video-555');
+    expect(fixture.componentInstance.slot().controls.currentPlayerId()).toBe('twitch-video-555');
 
     const { params } = fixture.componentInstance.headless();
     const embedCount = embeds.length;
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
 
     for (const src of ['https://twitch.tv/videos', 'https://example.com/live', 'not a channel']) {
       fixture.componentInstance.src.set(src);
@@ -889,10 +899,34 @@ describe('stream player scenarios', () => {
 
       expect(params.channel()).toBeNull();
       expect(params.video()).toBeNull();
+      expect(params.playerId()).toMatch(/^twitch-missing-/);
     }
 
     expect(embeds).toHaveLength(embedCount);
-    warn.mockRestore();
+    expect(String(handleError.mock.calls.at(-1)?.[0])).toContain('ET1611');
+    expect(String(handleError.mock.calls.at(-1)?.[0])).toContain('`src`');
+    expect(String(fixture.componentInstance.headless().twitch.state().error)).toContain('ET1611');
+    handleError.mockRestore();
+  });
+
+  it('shows the error overlay, and no shared player, for SOOP slots without a source', () => {
+    const s = scenario();
+    const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(SourcelessSoopComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    const [first, second] = fixture.componentInstance.slots();
+    const firstId = first?.controls.currentPlayerId();
+
+    expect(firstId).toMatch(/^soop-missing-/);
+    expect(second?.controls.currentPlayerId()).not.toBe(firstId);
+    expect(String(first?.controls.currentState().error)).toContain('ET1611');
+    expect(host.querySelectorAll('et-stream-player-error')).toHaveLength(2);
+    expect(host.querySelector('et-stream-player-loading')).toBeNull();
+    expect(String(handleError.mock.calls[0]?.[0])).toContain('`userId`');
+    handleError.mockRestore();
   });
 
   it('waits for the Vimeo player to become ready and relays its events', async () => {
@@ -911,7 +945,7 @@ describe('stream player scenarios', () => {
 
     expect(film?.id).toBe(4242);
     expect(players.map((player) => player.id)).toContain('88');
-    expect(fixture.componentInstance.slot().slotDirective.slot.currentState().isReady).toBe(true);
+    expect(fixture.componentInstance.slot().controls.currentState().isReady).toBe(true);
     expect(query('et-vimeo-player').style.width).toBe('480px');
     expect(fixture.componentInstance.film().player).toBeInstanceOf(VimeoPlayerDirective);
     expect(vimeo.state()).toMatchObject({ isReady: true, duration: 95 });
@@ -1007,7 +1041,7 @@ describe('stream player scenarios', () => {
 
     const slotHost = query('et-facebook-player-slot');
 
-    expect(fixture.componentInstance.slot()?.slotDirective.slot.currentPlayerIdSignal()).toBe('facebook-clip-2');
+    expect(fixture.componentInstance.slot()?.controls.currentPlayerId()).toBe('facebook-clip-2');
 
     expect(slotHost.querySelector('et-stream-player-error')).toBeNull();
 
@@ -1039,7 +1073,7 @@ describe('stream player scenarios', () => {
     expect(iframe.src).toBe('https://www.tiktok.com/player/v1/short-1?rel=0');
     expect(iframe.title).toBe('TikTok stream');
     expect(fixture.componentInstance.plain().player).toBeInstanceOf(TikTokPlayerDirective);
-    expect(fixture.componentInstance.slot().slotDirective.slot.currentPlayerIdSignal()).toBe('tiktok-short-3');
+    expect(fixture.componentInstance.slot().controls.currentPlayerId()).toBe('tiktok-short-3');
 
     send({ 'x-tiktok-player': true, type: 'onPlayerReady' });
     expect(tiktok.state().isReady).toBe(true);
@@ -1109,8 +1143,8 @@ describe('stream player scenarios', () => {
     expect(soop.state().isReady).toBe(true);
     expect(dailymotion.state().isReady).toBe(true);
 
-    expect(embeds.soopSlot().slotDirective.slot.currentPlayerIdSignal()).toBe('soop-video-slot');
-    expect(embeds.dailymotionSlot().slotDirective.slot.currentPlayerIdSignal()).toBe('dailymotion-slot');
+    expect(embeds.soopSlot().controls.currentPlayerId()).toBe('soop-video-slot');
+    expect(embeds.dailymotionSlot().controls.currentPlayerId()).toBe('dailymotion-slot');
 
     for (const slot of ['.kick-slot', '.soop-slot', '.dailymotion-slot']) {
       const slotHost = query(slot, host);
@@ -1227,7 +1261,7 @@ describe('stream player scenarios', () => {
 
     expect(manager.getPlayerElement('kick-arena')).toBeNull();
     expect(manager.getPlayerElement('kick-studio')).not.toBeNull();
-    expect(fixture.componentInstance.slot()?.slotDirective.slot.currentPlayerIdSignal()).toBe('kick-studio');
+    expect(fixture.componentInstance.slot()?.controls.currentPlayerId()).toBe('kick-studio');
     expect(query<HTMLIFrameElement>('.inline iframe', host).src).toContain('/studio?');
 
     fixture.componentInstance.showInline.set(false);

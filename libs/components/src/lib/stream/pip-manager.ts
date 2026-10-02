@@ -72,10 +72,10 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       },
     ) => {
       const slot = streamManager.getSlot(element);
-      if (!slot) return;
+      if (!slot) return false;
 
       const playerEntry = streamManager.getPlayerEntry(slot.playerId);
-      if (!playerEntry || isInPip(slot.playerId)) return;
+      if (!playerEntry || isInPip(slot.playerId)) return false;
 
       const initialRect = playerEntry.element.getBoundingClientRect();
       if (isInViewport(initialRect)) {
@@ -95,6 +95,8 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           aspectRatio: resolveStreamAspectRatio(options?.aspectRatio),
         },
       ]);
+
+      return true;
     };
 
     const endPip = (playerId: StreamPlayerId) => {
@@ -125,7 +127,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       playerId: StreamPlayerId,
       options?: { skipAnimation?: boolean; animation?: 'flip' | 'scaleFadeIn' },
     ) => {
-      if (!isInPip(playerId)) return;
+      if (!isInPip(playerId)) return false;
 
       pipInitialRects.delete(playerId);
 
@@ -133,7 +135,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       if (!playerEl) {
         endPip(playerId);
 
-        return;
+        return true;
       }
 
       const bestSlot = streamManager.resolveBestSlot(playerId);
@@ -142,7 +144,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         endPip(playerId);
         streamManager.unregisterPlayer(playerId);
 
-        return;
+        return true;
       }
 
       const targetParent = bestSlot.element;
@@ -170,7 +172,7 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           anim.onfinish = endExitAnimation;
           endPip(playerId);
 
-          return;
+          return true;
         }
 
         const toRect = targetParent.getBoundingClientRect();
@@ -187,12 +189,14 @@ const PIP_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
           });
           endPip(playerId);
 
-          return;
+          return true;
         }
       }
 
       renderer.moveBefore({ newParent: targetParent, child: playerEl });
       endPip(playerId);
+
+      return true;
     };
 
     const getInitialRect = (playerId: StreamPlayerId): DOMRect | null => {
