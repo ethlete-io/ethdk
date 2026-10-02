@@ -8,6 +8,7 @@ import { PASSWORD_INPUT_IMPORTS } from '../input/input.imports';
 import { TextareaDirective } from '../textarea/headless';
 import { FormFieldComponent } from './form-field.component';
 import { LabelDirective } from './headless';
+import { DescriptionComponent } from '../description/description.component';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
 
 @Component({
@@ -155,5 +156,37 @@ describe('FormFieldComponent textarea styles', () => {
     fixture.detectChanges();
 
     expect(textareaStyles()).not.toBeNull();
+  });
+});
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-label>IBAN</et-label>
+      <input etInput />
+      <et-description>Starts with the country code.</et-description>
+    </et-form-field>
+  `,
+  imports: [FormFieldComponent, InputDirective, LabelDirective, DescriptionComponent],
+})
+class DescriptionFormFieldTestHost {}
+
+describe('FormFieldComponent description', () => {
+  it('renders the description outside the control frame and describes the control by it', () => {
+    TestBed.configureTestingModule({
+      imports: [DescriptionFormFieldTestHost],
+      providers: [provideColorThemes([...TEST_COLOR_THEMES])],
+    });
+    const fixture = TestBed.createComponent(DescriptionFormFieldTestHost);
+
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const description = host.querySelector('et-description') as HTMLElement;
+    const input = host.querySelector('input') as HTMLInputElement;
+
+    expect(description.closest('.et-form-field-control-frame')).toBeNull();
+    expect(input.getAttribute('aria-describedby')?.split(' ')).toContain(description.id);
   });
 });

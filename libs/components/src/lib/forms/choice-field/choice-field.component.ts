@@ -38,6 +38,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
   hostDirectives: [FormFieldDirective, { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] }],
   host: {
     class: 'et-choice-field',
+    '[style.display]': 'formField.isHidden() ? "none" : null',
     '[attr.data-size]': 'size()',
     '[attr.data-variant]': 'variant()',
     '[attr.data-control-position]': "variant() === 'card' ? controlPosition() : null",
@@ -48,6 +49,7 @@ export type ChoiceFieldVariant = (typeof CHOICE_FIELD_VARIANTS)[keyof typeof CHO
 })
 export class ChoiceFieldComponent {
   public support = injectFormSupport();
+  protected formField = inject(FormFieldDirective);
 
   private styleManager = injectStyleManager();
   public size = input<FormFieldSize>(FORM_FIELD_SIZES.MD);
@@ -71,10 +73,8 @@ export class ChoiceFieldComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
-    const formField = inject(FormFieldDirective);
-
     // eslint-disable-next-line ethlete/prefer-linked-signal
-    effect(() => formField.descriptionId.set(this.description()?.id ?? null));
+    effect(() => this.formField.descriptionId.set(this.description()?.id ?? null));
 
     effect(() => {
       if (this.variant() === CHOICE_FIELD_VARIANTS.CARD) {

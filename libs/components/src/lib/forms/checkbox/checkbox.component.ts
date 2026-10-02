@@ -13,6 +13,7 @@ import { ColorInteractiveDirective, createCanAnimateSignal } from '@ethlete/core
 import { FocusRingDirective } from '../../focus-ring';
 import { CheckboxDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-checkbox',
@@ -33,6 +34,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'required',
         'name',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['checkedChange', 'indeterminateChange', 'touchedChange', 'touch'],
     },

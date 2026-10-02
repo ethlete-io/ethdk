@@ -21,6 +21,7 @@ import {
   supportsNativeAutosize,
 } from './internals/textarea-autosize';
 import { TextareaAutosizeStylesComponent } from '../textarea-autosize-styles.component';
+import { nullableNumberAttribute } from '../../../internals/number-attributes';
 
 export const TEXTAREA_RESIZE_MODES = {
   NONE: 'none',
@@ -46,8 +47,8 @@ export class TextareaDirective extends TextFieldControlDirective implements Form
   public autocomplete = input('');
   public rows = input(3, { transform: numberAttribute });
   public autosize = input(true, { transform: booleanAttribute });
-  public minRows = input<number | null>(null);
-  public maxRows = input<number | null>(null);
+  public minRows = input(null, { transform: nullableNumberAttribute });
+  public maxRows = input(null, { transform: nullableNumberAttribute });
   /** Only applied when `autosize` is off; an autosizing textarea is never manually resizable. */
   public resize = input<TextareaResizeMode>(TEXTAREA_RESIZE_MODES.VERTICAL);
 

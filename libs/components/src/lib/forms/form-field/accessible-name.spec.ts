@@ -18,6 +18,7 @@ import { PHONE_INPUT_IMPORTS } from '../phone-input/phone-input.imports';
 import { RATING_IMPORTS } from '../rating/rating.imports';
 import { RICH_TEXT_EDITOR_IMPORTS } from '../rich-text-editor/rich-text-editor.imports';
 import { SELECT_IMPORTS } from '../select/select.imports';
+import { SLIDER_IMPORTS } from '../slider/slider.imports';
 import {
   CHECKBOX_GROUP_IMPORTS,
   RADIO_GROUP_IMPORTS,
@@ -135,6 +136,12 @@ const CASES: AccessibleNameCase[] = [
     imports: [RATING_IMPORTS],
     template: (naming) => `<et-rating ${naming} />`,
     namedElement: query('et-rating'),
+  },
+  {
+    selector: 'et-slider',
+    imports: [SLIDER_IMPORTS],
+    template: (naming) => `<et-slider ${naming} />`,
+    namedElement: query('[role="slider"]'),
   },
   {
     selector: 'et-radio-group',

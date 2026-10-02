@@ -7,13 +7,13 @@ import {
   inject,
   input,
   model,
-  numberAttribute,
   signal,
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import {
   adjacentMarkValue,
@@ -32,11 +32,8 @@ import {
   SliderThumbLabelBase,
 } from './slider.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
-import { positiveNumberAttribute } from '../../../internals/number-attributes';
+import { optionalNumberAttribute, positiveNumberAttribute } from '../../../internals/number-attributes';
 import { controlTouches } from '../../../internals/touch-output';
-
-const optionalNumberAttribute = (value: unknown) =>
-  value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
 
 @Directive({
   selector: '[etSlider]',
@@ -47,7 +44,10 @@ const optionalNumberAttribute = (value: unknown) =>
     '[attr.data-orientation]': 'orientation()',
   },
 })
-export class SliderDirective implements FormValueControl<number>, FormFieldControl, SliderHostBase {
+export class SliderDirective
+  extends FieldStateControlDirective
+  implements FormValueControl<number>, FormFieldControl, SliderHostBase
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -97,14 +97,17 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.SLIDER);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   public draggingThumbIndex = signal<number | null>(null);
 
   public thumbs = signal<readonly SliderThumbBase[]>([]);
   public registeredThumbLabelTemplate = signal<SliderThumbLabelBase | null>(null);
 
-  public hasCustomAccessibleName = computed(() => this.thumbs().some((thumb) => !!thumb.label().trim()));
+  public override hasCustomAccessibleName = computed(
+    () =>
+      !!this.ariaLabel()?.trim() ||
+      !!this.ariaLabelledby()?.trim() ||
+      this.thumbs().some((thumb) => !!thumb.label().trim()),
+  );
 
   public focused = computed(() => this.thumbs().some((thumb) => thumb.focused()));
 
@@ -136,6 +139,8 @@ export class SliderDirective implements FormValueControl<number>, FormFieldContr
   );
 
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 

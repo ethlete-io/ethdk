@@ -14,18 +14,15 @@ import {
   input,
   model,
   output,
+  Signal,
   signal,
   untracked,
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FORM_FIELD, FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import {
   createExistingDropzoneEntry,
   createFileDropzoneEntry,
@@ -42,6 +39,7 @@ import {
   DROPZONE_FILE_REJECTION_REASONS,
   DropzoneFileRejection,
 } from './dropzone-validation';
+import { optionalNumberAttribute } from '../../../internals/number-attributes';
 import { controlTouches } from '../../../internals/touch-output';
 import { injectDropzoneLabels } from '../dropzone-labels';
 
@@ -77,7 +75,7 @@ const valuesEqual = (a: unknown, b: unknown) => {
   },
 })
 export class DropzoneDirective<TValue = unknown>
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<TValue | TValue[] | null>, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -99,10 +97,22 @@ export class DropzoneDirective<TValue = unknown>
   public name = input('');
 
   /** The upload workflow configuration. Create it via `createDropzoneUpload()`. */
-  public upload = input.required<AnyDropzoneUploadConfig<TValue>>();
+  public upload = input<AnyDropzoneUploadConfig<TValue>>();
 
   /** Images larger than this many bytes get no preview, so a large photo is not held in memory as a data URL. */
   public maxPreviewFileSize = input(DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE);
+
+  /**
+   * Accepted file types with the native `accept` semantics (`.png`, `image/png`, `image/*`), for a
+   * dropzone without a `dropzoneFiles()` rule. A bound field's rule overrides it.
+   */
+  public accept = input('');
+
+  /** Maximum size of a single file in bytes. A bound field's `dropzoneFiles()` rule overrides it. */
+  public maxFileSize = input(undefined, { transform: optionalNumberAttribute });
+
+  /** Minimum size of a single file in bytes. A bound field's `dropzoneFiles()` rule overrides it. */
+  public minFileSize = input(undefined, { transform: optionalNumberAttribute });
 
   /** Whether multiple files can be uploaded. The control value becomes an array. */
   public multiple = input(false, { transform: booleanAttribute });
@@ -126,6 +136,9 @@ export class DropzoneDirective<TValue = unknown>
   /** Emits when that delete request failed. The entry is already gone from `entries()` by then. */
   public deleteFail = output<{ value: TValue; error: DropzoneUploadError }>();
 
+  private uploadSource = signal<Signal<AnyDropzoneUploadConfig<TValue>> | null>(null);
+  // ET2400 (thrown after the first render) reports a missing config, so the reads past it may assume one
+  private uploadConfig = computed(() => (this.uploadSource()?.() ?? this.upload()) as AnyDropzoneUploadConfig<TValue>);
   private internalEntries = signal<DropzoneEntry<TValue>[]>([]);
   private internalLastRejections = signal<DropzoneFileRejection[]>([]);
   private dragDepth = signal(0);
@@ -148,8 +161,21 @@ export class DropzoneDirective<TValue = unknown>
     return state?.metadata(DROPZONE_FILE_CONSTRAINTS) ?? null;
   });
 
-  /** The `accept` constraint of the bound field's `dropzoneFiles()` rule. Empty accepts everything. */
-  public accept = computed(() => this.fileValidation()?.constraints()?.accept ?? '');
+  private fileConstraints = computed(() => {
+    const schema = this.fileValidation()?.constraints();
+
+    return {
+      accept: schema?.accept ?? this.accept(),
+      maxFileSize: schema?.maxFileSize ?? this.maxFileSize(),
+      minFileSize: schema?.minFileSize ?? this.minFileSize(),
+    };
+  });
+
+  /**
+   * The `accept` in effect: the bound field's `dropzoneFiles()` rule, else the `accept` input. Empty
+   * accepts everything.
+   */
+  public resolvedAccept = computed(() => this.fileConstraints().accept);
 
   public isDragOver = computed(() => this.dragDepth() > 0);
 
@@ -194,7 +220,7 @@ export class DropzoneDirective<TValue = unknown>
 
     if (ngDevMode) {
       afterNextRender(() => {
-        const config = this.upload();
+        const config = this.uploadConfig();
 
         if (typeof config?.createUploadHandle !== 'function' || typeof config?.selectValue !== 'function') {
           throw new RuntimeError(
@@ -206,6 +232,11 @@ export class DropzoneDirective<TValue = unknown>
         }
       });
     }
+  }
+
+  /** @internal Lets a wrapper component that declares `upload` itself supply the config. */
+  public bindUploadSource(source: Signal<AnyDropzoneUploadConfig<TValue>>) {
+    this.uploadSource.set(source);
   }
 
   /** Validates the given files and uploads all accepted ones. */
@@ -224,8 +255,7 @@ export class DropzoneDirective<TValue = unknown>
 
     const rejections: DropzoneFileRejection[] = [];
     const accepted: File[] = [];
-    const constraints = this.fileValidation()?.constraints();
-    const accept = this.accept();
+    const { accept, maxFileSize, minFileSize } = this.fileConstraints();
     const multiple = this.multiple();
 
     const candidates = multiple ? list : list.slice(0, 1);
@@ -237,9 +267,9 @@ export class DropzoneDirective<TValue = unknown>
     for (const file of candidates) {
       if (accept && !isFileAccepted(file, accept)) {
         rejections.push({ file, reason: DROPZONE_FILE_REJECTION_REASONS.ACCEPT });
-      } else if (constraints?.maxFileSize !== undefined && file.size > constraints.maxFileSize) {
+      } else if (maxFileSize !== undefined && file.size > maxFileSize) {
         rejections.push({ file, reason: DROPZONE_FILE_REJECTION_REASONS.MAX_FILE_SIZE });
-      } else if (constraints?.minFileSize !== undefined && file.size < constraints.minFileSize) {
+      } else if (minFileSize !== undefined && file.size < minFileSize) {
         rejections.push({ file, reason: DROPZONE_FILE_REJECTION_REASONS.MIN_FILE_SIZE });
       } else {
         accepted.push(file);
@@ -430,7 +460,7 @@ export class DropzoneDirective<TValue = unknown>
   }
 
   private createFileEntry(file: File): DropzoneEntry<TValue> {
-    const config = this.upload();
+    const config = this.uploadConfig();
     const handle = config.createUploadHandle({ file, injector: this.injector });
     const entry = createFileDropzoneEntry({ file, handle, maxPreviewFileSize: this.maxPreviewFileSize() });
 
@@ -477,13 +507,13 @@ export class DropzoneDirective<TValue = unknown>
     }
 
     const mayDelete =
-      entry.status() !== DROPZONE_ENTRY_STATUSES.EXISTING || (this.upload().deleteIncludesExisting ?? false);
+      entry.status() !== DROPZONE_ENTRY_STATUSES.EXISTING || (this.uploadConfig().deleteIncludesExisting ?? false);
 
     return mayDelete ? entry.value() : null;
   }
 
   private executeDelete(value: TValue) {
-    const execute = this.upload().executeDelete;
+    const execute = this.uploadConfig().executeDelete;
 
     if (!execute) {
       return;
@@ -570,7 +600,7 @@ export class DropzoneDirective<TValue = unknown>
         continue;
       }
 
-      if (ngDevMode && !this.upload().resolveExisting) {
+      if (ngDevMode && !this.uploadConfig().resolveExisting) {
         throw new RuntimeError(
           DROPZONE_ERROR_CODES.MISSING_EXISTING_RESOLVER,
           '[DropzoneDirective] The form control was initialized with a value but the upload config has no "resolveExisting" function. ' +
@@ -579,7 +609,7 @@ export class DropzoneDirective<TValue = unknown>
         );
       }
 
-      valueEntries.push(createExistingDropzoneEntry({ value, upload: this.upload }));
+      valueEntries.push(createExistingDropzoneEntry({ value, upload: this.uploadConfig }));
     }
 
     const pendingEntries = currentEntries.filter((entry) => !usedEntries.has(entry) && !isValueInControl(entry));

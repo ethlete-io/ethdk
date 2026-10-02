@@ -62,7 +62,7 @@ class ArticleFormComponent {
   model = signal({ body: 'Hello **world**' });
   locked = signal(false);
   articleForm = form(this.model, (path) => {
-    required(path.body);
+    required(path.body, { message: 'Write the article body' });
     disabled(path.body, () => this.locked());
   });
 }

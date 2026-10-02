@@ -11,7 +11,7 @@ import {
 import { PhoneInputFieldDirective } from './phone-input-field.directive';
 import { PhoneInputFlagDirective } from './phone-input-flag.directive';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
-import { TextShellControlDirective } from '../../form-field/headless/text-shell-control.directive';
+import { TextFieldControlDirective } from '../../form-field/headless/text-field-control.directive';
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
@@ -33,7 +33,7 @@ const toPhoneCountryCode = (iso2: string) => {
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class PhoneInputDirective extends TextShellControlDirective implements FormValueControl<string> {
+export class PhoneInputDirective extends TextFieldControlDirective implements FormValueControl<string> {
   /** Normalized `+<dialCode><national digits>` - empty string while nothing is entered. */
   public value = model('');
   public placeholder = input('');
@@ -43,7 +43,9 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
   /** ISO codes listed on top of the country dropdown, case-insensitive. */
   public preferredCountries = input([], { transform: (codes: string[]) => codes.map(toPhoneCountryCode) });
 
-  public hasValue = computed(() => this.mixed() || this.value().length > 0);
+  private text = computed(() => this.value() ?? '');
+
+  public hasValue = computed(() => this.mixed() || this.text().length > 0);
 
   /** The placeholder the tel field currently shows - `mixedLabel` while mixed. */
   public effectivePlaceholder = computed(() => (this.mixed() ? this.resolvedMixedLabel() : this.placeholder()));
@@ -67,8 +69,8 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
    */
   public country = linkedSignal<{ value: string; matched: string | null; fallback: string }, string>({
     source: () => ({
-      value: this.value(),
-      matched: matchCountryByDialCode(onlyDigits(this.value()))?.iso2 ?? null,
+      value: this.text(),
+      matched: matchCountryByDialCode(onlyDigits(this.text()))?.iso2 ?? null,
       fallback: this.defaultCountry(),
     }),
     computation: (source, previous) => {
@@ -105,14 +107,14 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
   public dialCode = computed(() => {
     const iso2 = this.country();
     const dialCode = this.dialCodeOf(iso2);
-    const prefix = this.mixed() ? null : this.prefixOf(iso2, onlyDigits(this.value()));
+    const prefix = this.mixed() ? null : this.prefixOf(iso2, onlyDigits(this.text()));
 
     return prefix && !prefix.startsWith(dialCode) ? prefix : dialCode;
   });
 
   /** Whether the value starts with a dial code no listed country has, such as `+999…`. */
   public hasUnknownDialCode = computed(() => {
-    const digits = onlyDigits(this.value());
+    const digits = onlyDigits(this.text());
 
     return !this.mixed() && digits.length > 0 && matchCountryByDialCode(digits) === null;
   });
@@ -126,7 +128,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
       return '';
     }
 
-    const digits = onlyDigits(this.value());
+    const digits = onlyDigits(this.text());
 
     if (this.hasUnknownDialCode()) {
       return `+${digits}`;
@@ -226,7 +228,7 @@ export class PhoneInputDirective extends TextShellControlDirective implements Fo
     this.commitTypedValue(this.ownNumber(national, this.dialCode()));
   }
 
-  public focusControl(options?: FocusOptions) {
+  public override focusControl(options?: FocusOptions) {
     this.registeredField()?.focus(options);
   }
 

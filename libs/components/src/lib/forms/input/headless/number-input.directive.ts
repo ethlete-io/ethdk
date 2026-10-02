@@ -2,6 +2,7 @@ import { computed, Directive, ElementRef, inject, input, model, signal } from '@
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { INPUT_TEXT_ALIGNMENTS, InputTextAlignment } from '../input.types';
+import { nullableNumberAttribute, optionalNumberAttribute } from '../../../internals/number-attributes';
 
 /** How one `stepBy` call departs from a plain single `step`. */
 export type NumberInputStepOptions = {
@@ -43,9 +44,9 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
 
   // `min`/`max` satisfy the signal-forms `FormValueControl` contract, which types them as
   // `NonNullable<TValue> | undefined` - so they must be `number | undefined`, not `number | null`.
-  public min = input<number | undefined>(undefined);
-  public max = input<number | undefined>(undefined);
-  public step = input<number | null>(null);
+  public min = input(undefined, { transform: optionalNumberAttribute });
+  public max = input(undefined, { transform: optionalNumberAttribute });
+  public step = input(null, { transform: nullableNumberAttribute });
   public placeholder = input('');
   public autocomplete = input('');
   public textAlign = input<InputTextAlignment>(INPUT_TEXT_ALIGNMENTS.START);

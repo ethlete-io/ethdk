@@ -58,6 +58,21 @@ class NullableTextareaFieldTestHost {
   public messageForm = form(this.model);
 }
 
+@Component({
+  template: `<et-textarea minRows="2" maxRows="8" aria-label="Message" />`,
+  imports: [TEXTAREA_IMPORTS],
+})
+class StaticRowsTextareaTestHost {}
+
+describe('TextareaDirective static row attributes', () => {
+  it('parses static minRows and maxRows into numbers', () => {
+    const driver = mountTextarea(StaticRowsTextareaTestHost);
+
+    expect(driver.control.minRows()).toBe(2);
+    expect(driver.control.maxRows()).toBe(8);
+  });
+});
+
 describe('TextareaDirective nullable bound field', () => {
   it('reads a null value as empty', () => {
     const driver = mountTextarea(NullableTextareaFieldTestHost);

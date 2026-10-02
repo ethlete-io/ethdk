@@ -11,12 +11,8 @@ import {
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { controlTouches } from '../../../internals/touch-output';
 
 @Directive({
@@ -41,7 +37,7 @@ import { controlTouches } from '../../../internals/touch-output';
     '(blur)': 'touched.set(true)',
   },
 })
-export class SwitchDirective extends AccessibleNameControlDirective implements FormFieldControl {
+export class SwitchDirective extends FieldStateControlDirective implements FormFieldControl {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
   private destroyRef = inject(DestroyRef);
   private el = inject<ElementRef<HTMLElement>>(ElementRef);

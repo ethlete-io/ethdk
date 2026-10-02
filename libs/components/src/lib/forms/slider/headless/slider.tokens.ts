@@ -66,6 +66,8 @@ export type SliderHostBase = {
   readonly: Signal<boolean>;
   interactive: Signal<boolean>;
   shouldDisplayError: Signal<boolean>;
+  /** The consumer's `aria-label` on the slider host, used by a thumb that has no `label` of its own. */
+  ariaLabel: Signal<string | null>;
   labelId: Signal<string | null>;
   describedBy: Signal<string | null>;
   /** The thumb currently being dragged via the track, or `null` - set by the track directive. */

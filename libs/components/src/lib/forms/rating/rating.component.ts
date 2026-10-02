@@ -8,6 +8,7 @@ import { FormSupportComponent } from '../form-field/partials/form-support.compon
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { RatingDirective, RatingIconContext } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-rating',
@@ -34,6 +35,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'max',
         'allowHalf',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
@@ -41,6 +43,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   ],
   host: {
     class: 'et-rating',
+    '[style.display]': 'rating.hidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',

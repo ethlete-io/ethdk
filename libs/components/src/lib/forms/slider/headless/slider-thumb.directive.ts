@@ -27,7 +27,7 @@ export type SliderThumbFocusOptions = FocusOptions & { origin?: 'pointer' };
     // then carries the mixed label so assistive tech announces the bulk-edit state
     '[attr.aria-valuenow]': 'slider?.mixed() ? null : value()',
     '[attr.aria-valuetext]': 'slider?.thumbValueText(index())',
-    '[attr.aria-label]': 'label() || null',
+    '[attr.aria-label]': 'label() || slider?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'label() ? null : slider?.labelId()',
     '[attr.aria-describedby]': 'slider?.describedBy()',
     '[attr.aria-disabled]': 'slider?.disabled() || null',

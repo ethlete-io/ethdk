@@ -1,7 +1,7 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { form, FormField, minLength, required } from '@angular/forms/signals';
+import { form, FormField, max, minLength, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
-import { INPUT_IMPORTS } from '../../input';
+import { INPUT_IMPORTS, NUMBER_INPUT_IMPORTS } from '../../input';
 import { SLIDER_IMPORTS } from '../../slider';
 import { warn } from '../headless';
 import { FORM_FIELD_IMPORTS } from '../form-field.imports';
@@ -20,18 +20,25 @@ const COMMON_PASSWORDS = ['hunter22', 'password1', 'letmein12'];
 
       <et-form-field>
         <et-label>Quantity</et-label>
-        <et-input [formField]="signupForm.quantity" type="number" />
+        <et-number-input [formField]="signupForm.quantity" />
         <et-hint>We usually keep {{ STOCK }} in stock.</et-hint>
       </et-form-field>
 
-      <et-slider [formField]="signupForm.budget" [max]="200">
+      <et-slider [formField]="signupForm.budget">
         <et-label>Budget</et-label>
         <et-hint>Anything up to 150 is typical.</et-hint>
       </et-slider>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...FORM_FIELD_IMPORTS, ...INPUT_IMPORTS, ...SLIDER_IMPORTS, FormField, ProvideColorDirective],
+  imports: [
+    ...FORM_FIELD_IMPORTS,
+    ...INPUT_IMPORTS,
+    ...NUMBER_INPUT_IMPORTS,
+    ...SLIDER_IMPORTS,
+    FormField,
+    ProvideColorDirective,
+  ],
 })
 export class FormFieldWarningStorybookComponent {
   public color = input('brand');
@@ -52,6 +59,7 @@ export class FormFieldWarningStorybookComponent {
       value() > this.STOCK ? { kind: 'aboveStock', message: 'More than we usually have in stock.' } : null,
     );
 
+    max(s.budget, 200);
     warn(s.budget, ({ value }) => (value() > 150 ? 'Well above the average for this tier.' : null));
   });
 }

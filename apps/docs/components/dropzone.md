@@ -163,18 +163,17 @@ On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 | `maxPreviewFileSize` | `number`                                     | `10485760` (10 MB) | Images larger than this many bytes get no preview. `DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE`. |
 | `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                     |
 | `color`              | registered color theme name                  | -                  | Scopes a [color theme](/core/theming) to the control.                                        |
-| `retryLabel`         | `string \| null`                             | `null`             | Overrides `DROPZONE_LABELS.retry` for this instance.                                         |
-| `removeLabel`        | `string \| null`                             | `null`             | Overrides `DROPZONE_LABELS.remove` - the entry name is appended.                             |
-| `replaceLabel`       | `string \| null`                             | `null`             | Overrides `DROPZONE_LABELS.replaceFile` (single mode).                                       |
-| `uploadErrorLabel`   | `string \| null`                             | `null`             | Overrides `DROPZONE_LABELS.uploadFailed`, the wording used when the server sent none.        |
+| `labels`             | `Partial<DropzoneLabels> \| null`            | `null`             | Overrides `DROPZONE_LABELS` for this instance, except the rejection messages.                |
 | `uploadErrorMessage` | `((entry: DropzoneEntry) => string) \| null` | `null`             | Replaces the whole per-entry failure message.                                                |
 
 Plus the shared control members: the `value` (`TValue \| TValue[] \| null`) and
 `touched` models and the `disabled`, `invalid`, `errors`, `required`, `name` and
 `aria-label`/`aria-labelledby` inputs - see [Forms](/components/forms).
 
-`color`, the label inputs and `uploadErrorMessage` are the component's own; the
-rest is forwarded to the headless directive, which also carries the outputs:
+`color`, `labels`, `upload` and `uploadErrorMessage` are the component's own; the
+rest is forwarded to the headless directive. `et-dropzone` takes its `TValue` from the
+`upload` config, so the outputs below are typed by it (`deleteSucceed` emits a `string`
+for a config whose `selectValue` returns one):
 
 | Output          | Type                                            | Emits                                                     |
 | --------------- | ----------------------------------------------- | --------------------------------------------------------- |
@@ -205,7 +204,7 @@ gesture it will refuse:
 - With no file at all the box shrinks to `--et-dropzone-readonly-min-height` and reads
   the `empty` label ("No files") in place of the prompt.
 
-The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the matching `retryLabel` / `removeLabel` / `replaceLabel` / `uploadErrorLabel` inputs override them, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
+The built-in texts all come from [`DROPZONE_LABELS`](/components/localization) - the drop `prompt`, the read-only `empty` text, `retry` / `remove` / `replaceFile` for the action buttons, the `uploadFailed` wording, the whole `uploadFailedMessage` sentence (called with `{ fileName, serverMessage, uploadFailed }`), the `uploading` live-region announcement, and the `dropzoneFiles()` rejection messages `unsupportedFileType`, `fileTooLarge`, `fileTooSmall` and `tooManyFiles` (each called with the file name, the size ones also with the limit in bytes). Per instance, the `labels` input overrides any of them except the four rejection messages, which only the token sets, and `uploadErrorMessage` replaces the whole per-entry failure message. The `prompt` is the one that is also replaceable as markup: anything projected into `<et-dropzone>` other than `et-label` / `et-hint` renders in its place.
 
 ## Validation
 
@@ -213,6 +212,7 @@ All constraints live in the form schema, next to the rest of your validation:
 
 - **Emptiness and count** are plain value validation - `required()` for "must upload something", `minLength()` / `maxLength()` for the number of files in multiple mode (type the model as `string[]` for that).
 - **File constraints** use the `dropzoneFiles()` schema rule: `accept` (native semantics - `.png`, `image/png`, `image/*`, `*/*`; also filters the native picker), `maxFileSize` and `minFileSize` (bytes).
+- **Without a form binding** (`[(value)]`, a custom composite control), set the same three as inputs: `<et-dropzone accept="image/*" [maxFileSize]="5 * 1024 * 1024" …>`. A rejected file is never uploaded and comes back through `filesReject`, but there is no field to carry a validation error. When a `dropzoneFiles()` rule is bound too, each constraint it sets overrides the matching input.
 
 ```ts
 form(model, (s) => {
@@ -242,7 +242,7 @@ Initializing the control with a value **without** providing `resolveExisting` th
 
 ## Failed uploads & retry
 
-A failed upload renders like a validation error: the message (`"name": <server message>`, falling back to `"name" failed to upload.` via `uploadErrorLabel`; the sentence itself is the `uploadFailedMessage` label) appears below the field in the app's error color theme, and the entry gets a retry icon button. Retrying re-executes the query with the file's original request args and clears the message on success:
+A failed upload renders like a validation error: the message (`"name": <server message>`, falling back to `"name" failed to upload.` via the `uploadFailed` label; the sentence itself is the `uploadFailedMessage` label) appears below the field in the app's error color theme, and the entry gets a retry icon button. Retrying re-executes the query with the file's original request args and clears the message on success:
 
 <StoryEmbed id="components-forms-dropzone--failing-uploads" height="420px" />
 
@@ -252,7 +252,7 @@ Per-file progress requires `reportProgress: true` on the query creator **and** t
 
 ## Headless usage
 
-All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `accept()` gives you the schema's `accept` string for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
+All behavior lives in the `etDropzone` directive (`FormValueControl` + drag & drop + upload orchestration); the `et-dropzone` component is template + tokens on top. For a custom UI, apply the directive yourself (grab it with `#zone="etDropzone"` or `viewChild(DropzoneDirective)`) and drive it via `selectFiles(files)`, `removeEntry(id)`, `retryEntry(id)`, `removeAll()` and `clear()` (see [`removeAll()` vs `clear()`](#removeall-vs-clear)), rendering from the `entries()` signal (each entry carries an `id` and its `source`, plus `name`, `size`, `previewUrl`, `status`, `progress`, `error`, `errorMessage` and `value` signals) plus `isDragOver`, `anyUploading`, `anyFailed`, `hasValue`, `interactive` and `lastRejections`. Drag & drop is handled on the directive's host; the file-picker input is yours to wire - `resolvedAccept()` gives you the `accept` string in effect (the schema's, else the `accept` input) for it. Outputs: `filesReject`, `uploadSucceed` / `uploadFail` per entry, and - when the upload config has a `delete` option - `deleteSucceed` / `deleteFail` per removed entry (see [Deleting on remove](#deleting-on-remove)).
 
 To build an entry outside the directive - an upload history, a paste target - create a handle from the
 upload config and turn it into an entry with `createFileDropzoneEntry`. The handle uploads on

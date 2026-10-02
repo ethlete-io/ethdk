@@ -1,4 +1,4 @@
-import { Component, InjectionToken, Provider, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { Component, InjectionToken, Provider, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
 import { ValidationError } from '@angular/forms/signals';
 
 /**
@@ -15,6 +15,20 @@ export const provideFormErrorMessageResolver = (resolver: FormErrorMessageResolv
   useValue: resolver,
 });
 
+const warnedMessagelessKinds = /* @__PURE__ */ new Set<string>();
+
+const warnMessagelessError = (kind: string) => {
+  if (warnedMessagelessKinds.has(kind)) {
+    return;
+  }
+
+  warnedMessagelessKinds.add(kind);
+  console.warn(
+    `[FormErrorComponent] The validation error "${kind}" has no message, so the field shows an empty error. ` +
+      `Pass { message } to the validator, or map the kind to a text app-wide with provideFormErrorMessageResolver().`,
+  );
+};
+
 @Component({
   selector: 'et-form-error',
   template: '{{ message() }}',
@@ -29,4 +43,14 @@ export class FormErrorComponent {
   public error = input.required<ValidationError.WithOptionalFieldTree>();
 
   protected message = computed(() => this.messageResolver?.(this.error()) ?? this.error().message ?? '');
+
+  constructor() {
+    if (ngDevMode) {
+      effect(() => {
+        if (!this.message()) {
+          warnMessagelessError(this.error().kind);
+        }
+      });
+    }
+  }
 }

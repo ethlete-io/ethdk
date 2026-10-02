@@ -81,15 +81,14 @@ describe('DropzoneComponent', () => {
     URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
     URL.revokeObjectURL = vi.fn();
 
-    driver = mountDropzone(DropzoneComponentTestHost);
-    driver.host.upload.set(
-      createDropzoneUpload<UploadArgs, string>({
-        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
-        selectValue: (response) => response.uuid,
-        resolveExisting: (value) => ({ name: `existing-${value}`, previewUrl: `https://cdn.test.com/${value}` }),
-      }),
-    );
-    driver.tick();
+    driver = mountDropzone(DropzoneComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+          resolveExisting: (value) => ({ name: `existing-${value}`, previewUrl: `https://cdn.test.com/${value}` }),
+        }),
+    });
   });
 
   afterEach(() => {
@@ -321,15 +320,13 @@ describe('DropzoneComponent with localized labels', () => {
   });
 
   it('should announce upload activity through the DROPZONE_LABELS uploading label', () => {
-    const driver = mountDropzone(DropzoneLocalizedComponentTestHost);
-
-    driver.host.upload.set(
-      createDropzoneUpload<UploadArgs, string>({
-        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
-        selectValue: (response) => response.uuid,
-      }),
-    );
-    driver.tick();
+    const driver = mountDropzone(DropzoneLocalizedComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+        }),
+    });
 
     driver.pickFiles([createFile()]);
 
@@ -370,15 +367,13 @@ describe('DropzoneComponent with a localized upload failure', () => {
   });
 
   it('should word an upload failure through DROPZONE_LABELS', () => {
-    const driver = mountDropzone(DropzoneLocalizedFailureTestHost);
-
-    driver.host.upload.set(
-      createDropzoneUpload<UploadArgs, string>({
-        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
-        selectValue: (response) => response.uuid,
-      }),
-    );
-    driver.tick();
+    const driver = mountDropzone(DropzoneLocalizedFailureTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+        }),
+    });
 
     driver.pickFiles([createFile('a.png')]);
     driver.query.httpTesting.expectOne(UPLOAD_URL).flush(null, { status: 500, statusText: 'Server Error' });
@@ -398,15 +393,14 @@ describe('DropzoneComponent with schema constraints', () => {
   });
 
   it('should render schema rejections through the standard validation error region', () => {
-    const driver = mountDropzone(DropzoneSchemaComponentTestHost);
-
+    const driver = mountDropzone(DropzoneSchemaComponentTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+        }),
+    });
     driver.host.constraints.set({ accept: 'image/*' });
-    driver.host.upload.set(
-      createDropzoneUpload<UploadArgs, string>({
-        queryCreator: driver.query.createPost<UploadArgs>('/upload'),
-        selectValue: (response) => response.uuid,
-      }),
-    );
     driver.tick();
 
     expect(driver.nativeInput().getAttribute('accept')).toBe('image/*');
@@ -450,5 +444,34 @@ describe('dropzone support region', () => {
     const host = mountControl(DropzoneWithErrorTestHost).nativeElement as HTMLElement;
 
     expectDescribedByPointsAtErrors(host);
+  });
+});
+
+@Component({
+  template: `<et-dropzone [upload]="upload()!" [labels]="{ prompt: 'Logo hier ablegen' }" aria-label="Logo" />`,
+  imports: [DropzoneComponent],
+  providers: [provideDropzoneLabels({ prompt: 'Datei hier ablegen', empty: 'Keine Dateien' })],
+})
+class DropzoneInstanceLabelsTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+}
+
+describe('DropzoneComponent with instance labels', () => {
+  it('should merge the labels input over the provided labels', () => {
+    const driver = mountDropzone(DropzoneInstanceLabelsTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+        }),
+    });
+    const component = driver.directive(DropzoneComponent);
+
+    expect(driver.fixture.nativeElement.querySelector('.et-dropzone-prompt-text')?.textContent).toBe(
+      'Logo hier ablegen',
+    );
+    expect(component.resolvedLabels().empty).toBe('Keine Dateien');
+
+    driver.fixture.destroy();
   });
 });

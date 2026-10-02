@@ -47,7 +47,7 @@ import { Scenario, useScenario } from './harness';
 })
 class ContactFormComponent {
   model = signal({ phone: '' });
-  contact = form(this.model, (path) => required(path.phone));
+  contact = form(this.model, (path) => required(path.phone, { message: 'Enter a phone number' }));
   labels = injectPhoneInputLabels();
   phone = viewChild.required(PhoneInputDirective);
 }

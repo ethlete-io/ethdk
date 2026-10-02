@@ -5,6 +5,7 @@ import { FormSupportComponent } from '../form-field/partials/form-support.compon
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { RangeSliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
 import { injectSliderLabels } from '../../forms/slider/slider-labels';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-range-slider',
@@ -35,6 +36,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
         'orientation',
         'marks',
         'snapToMarks',
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
@@ -42,6 +44,7 @@ import { injectSliderLabels } from '../../forms/slider/slider-labels';
   ],
   host: {
     class: 'et-range-slider',
+    '[style.display]': 'slider.hidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',

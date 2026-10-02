@@ -64,6 +64,12 @@ class MixedNumberInputTestHost {
   mixed = signal(false);
 }
 
+@Component({
+  template: `<et-number-input min="0" max="10" step="0.5" aria-label="Amount" />`,
+  imports: [NUMBER_INPUT_IMPORTS],
+})
+class StaticBoundsTestHost {}
+
 describe('NumberInputDirective', () => {
   describe('inside form field', () => {
     let driver: NumberInputDriver<NumberInputInFormFieldTestHost>;
@@ -465,5 +471,13 @@ describe('NumberInputDirective', () => {
       expect(driver.host.mixed()).toBe(true);
       expect(driver.host.value()).toBe(42);
     });
+  });
+
+  it('parses static min, max and step attributes into numbers', () => {
+    const driver = mountNumberInput(StaticBoundsTestHost);
+
+    expect(driver.control.min()).toBe(0);
+    expect(driver.control.max()).toBe(10);
+    expect(driver.control.step()).toBe(0.5);
   });
 });

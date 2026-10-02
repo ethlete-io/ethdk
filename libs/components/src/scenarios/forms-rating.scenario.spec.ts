@@ -1,6 +1,6 @@
 import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { form, FormField, required } from '@angular/forms/signals';
+import { form, FormField, max, required } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import {
   FORM_FIELD_IMPORTS,
@@ -19,7 +19,7 @@ import { Scenario, useScenario } from './harness';
   selector: 'et-scenario-match-review',
   imports: [FORM_FIELD_IMPORTS, RATING_IMPORTS, FormField],
   template: `
-    <et-rating [formField]="review.stars" [allowHalf]="allowHalf()" [max]="max()" class="stars">
+    <et-rating [formField]="review.stars" [allowHalf]="allowHalf()" class="stars">
       <et-label>Match rating</et-label>
       <et-hint>Required</et-hint>
     </et-rating>
@@ -32,9 +32,12 @@ import { Scenario, useScenario } from './harness';
 })
 class MatchReviewComponent {
   model = signal({ stars: null as number | null });
-  review = form(this.model, (path) => required(path.stars));
   allowHalf = signal(false);
   max = signal<number | undefined>(undefined);
+  review = form(this.model, (path) => {
+    required(path.stars, { message: 'Rate the match' });
+    max(path.stars, () => this.max());
+  });
   hearts = signal<number | null>(2);
 }
 

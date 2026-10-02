@@ -11,12 +11,8 @@ import {
 } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { RatingIconDirective } from './rating-icon.directive';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { controlTouches } from '../../../internals/touch-output';
@@ -55,7 +51,7 @@ export type RatingIconState = 'full' | 'half' | 'empty';
   },
 })
 export class RatingDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<number | null>, FormFieldControl
 {
   private formFieldLabels = injectFormFieldLabels();

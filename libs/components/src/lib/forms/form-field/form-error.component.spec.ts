@@ -20,6 +20,8 @@ const renderError = (error: ValidationError.WithOptionalFieldTree) => {
 };
 
 describe('FormErrorComponent', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('should render the error message verbatim by default', () => {
     TestBed.configureTestingModule({});
 
@@ -28,8 +30,30 @@ describe('FormErrorComponent', () => {
 
   it('should render an empty string for a message-less error by default', () => {
     TestBed.configureTestingModule({});
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     expect(renderError({ kind: 'required' })).toBe('');
+  });
+
+  it('should warn once per kind when an error resolves to no message', () => {
+    TestBed.configureTestingModule({});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    renderError({ kind: 'messagelessKind' });
+    renderError({ kind: 'messagelessKind' });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain('"messagelessKind"');
+    expect(warn.mock.calls[0]?.[0]).toContain('provideFormErrorMessageResolver');
+  });
+
+  it('should not warn when the error has a message', () => {
+    TestBed.configureTestingModule({});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    renderError({ kind: 'messagedKind', message: 'Has text' });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('should prefer the resolved message when a resolver is provided', () => {

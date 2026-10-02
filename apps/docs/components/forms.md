@@ -357,6 +357,9 @@ The field chrome handles error display and aria wiring uniformly:
   (else a [warning](#warnings-valid-but-worth-a-look), else the hint),
   `aria-labelledby` at the `et-label`; the label renders a `*` marker when the
   control is `required`.
+- An `et-description` projected into `et-form-field` renders between the control
+  and the support row, and the control's `aria-describedby` names it ahead of the
+  error, warning or hint.
 - The `et-label` is **optional**, but every control needs an accessible name.
   When you omit the label, give the control its own `aria-label` or
   `aria-labelledby`. Every control forwards both onto the element that carries
@@ -371,7 +374,10 @@ The field chrome handles error display and aria wiring uniformly:
   `option`).
 - Remove a schema-`hidden` field (signal-forms `hidden`) with `@if (!form.x().hidden())`.
   If a hidden field stays rendered, `et-form-field` sets `display: none` on it as a
-  fallback, and Angular logs `NG01916` in dev mode.
+  fallback, and Angular logs `NG01916` in dev mode. The controls that host their own
+  field (`et-slider`, `et-range-slider`, `et-rating`, `et-otp-input`, `et-dropzone`) and
+  `et-choice-field` do the same on themselves, and every control also takes a plain `hidden`
+  input.
 - Dev mode throws an actionable error if an `et-form-field` contains no control
   ([`ET2200`](/components/error-codes#form-field-et22xx)) or a control with no
   accessible name - no `et-label` and no `aria-label`/`aria-labelledby`
@@ -428,7 +434,8 @@ warnings in the same place, from the same rule.
 
 A control that is **not** bound to a signal-forms field has no schema to carry a
 `warn()` rule, so it takes its advisories directly - `[warnings]` accepts the same
-shapes a `warn()` rule may return, and the field shows them the same way:
+shapes a `warn()` rule may return, and the field shows them the same way. Every
+control takes it, the self-hosted ones above and `et-checkbox` / `et-switch` included:
 
 ```html
 <et-form-field>
@@ -622,7 +629,8 @@ shapes are documented in the
 ### Custom error messages
 
 `et-form-error` renders each error's `message` verbatim; a validator without a
-`message` renders an empty row. To centralize or localize error texts, provide a
+`message` renders an empty row, and dev mode warns once per error `kind` when that
+happens. To centralize or localize error texts, provide a
 resolver - it sees every `ValidationError` (including the bridge's
 `etServerViolation` kind) and returns the text to show, or `null` to fall back to
 the error's own message:

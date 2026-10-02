@@ -6,7 +6,7 @@ export type DropzoneUploadFailedContext = {
   fileName: string;
   /** The server's error message, or `null` when the response carried none. */
   serverMessage: string | null;
-  /** The `uploadFailed` label, or the component's `uploadErrorLabel` input when set. */
+  /** The `uploadFailed` label in effect. */
   uploadFailed: string;
 };
 

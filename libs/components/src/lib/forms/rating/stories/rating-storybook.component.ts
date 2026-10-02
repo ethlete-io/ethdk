@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input, linkedSignal } from '@angular/core';
-import { FormField, disabled, form, readonly, required } from '@angular/forms/signals';
+import { FormField, disabled, form, max, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { LabelDirective } from '../../form-field';
 import { HintComponent } from '../../form-field/hint.component';
@@ -13,7 +13,6 @@ import { RATING_IMPORTS } from '../rating.imports';
         [(mixed)]="mixedState"
         [formField]="demoForm.value"
         [mixedLabel]="mixedLabel()"
-        [max]="max()"
         [allowHalf]="allowHalf()"
       >
         <et-label>{{ label() }}</et-label>
@@ -57,5 +56,6 @@ export class RatingStorybookComponent {
     disabled(s, () => this.disabled());
     readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'Please pick a rating' });
+    max(s.value, () => this.max());
   });
 }

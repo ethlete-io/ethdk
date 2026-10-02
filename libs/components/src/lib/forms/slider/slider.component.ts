@@ -2,8 +2,14 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { ProvideColorDirective, createCanAnimateSignal } from '@ethlete/core';
 import { FormSupportComponent } from '../form-field/partials/form-support.component';
-import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
+import {
+  ACCESSIBLE_NAME_INPUTS,
+  FormFieldDirective,
+  injectFormSupport,
+  provideFormSupport,
+} from '../form-field/headless';
 import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderTrackDirective } from './headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-slider',
@@ -33,6 +39,8 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
         'orientation',
         'marks',
         'snapToMarks',
+        ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
@@ -40,6 +48,7 @@ import { SliderDirective, SliderThumbDirective, SliderThumbLabelContext, SliderT
   ],
   host: {
     class: 'et-slider',
+    '[style.display]': 'slider.hidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',

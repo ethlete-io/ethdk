@@ -21,7 +21,7 @@ import {
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectPhoneInputLabels } from '../../forms/phone-input/phone-input-labels';
 import { ControlSuffixDirective, FormFieldBarrierDirective } from '../form-field/partials';
-import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { TEXT_FIELD_CONTROL_INPUTS } from '../form-field/headless';
 
 @Component({
   selector: 'et-phone-input',
@@ -45,22 +45,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   hostDirectives: [
     {
       directive: PhoneInputDirective,
-      inputs: [
-        'value',
-        'mixed',
-        'touched',
-        'disabled',
-        'readonly',
-        'invalid',
-        'errors',
-        'required',
-        'name',
-        'placeholder',
-        'mixedLabel',
-        'defaultCountry',
-        'preferredCountries',
-        ...ACCESSIBLE_NAME_INPUTS,
-      ],
+      inputs: ['value', 'placeholder', 'defaultCountry', 'preferredCountries', ...TEXT_FIELD_CONTROL_INPUTS],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,

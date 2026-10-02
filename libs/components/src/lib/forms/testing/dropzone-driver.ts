@@ -1,9 +1,10 @@
-import { Type } from '@angular/core';
+import { Type, WritableSignal } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { QueryTestSetup, setupQueryTest } from '@ethlete/query/testing';
 import { ControlDriverOptions, createControlDriver, mountControl } from '../../testing/control-driver';
 import { textOf, tick } from '../../testing/driver-core';
 import { DropzoneDirective } from '../dropzone/headless';
+import { AnyDropzoneUploadConfig } from '../dropzone/headless/dropzone-upload';
 
 const DROPZONE = '[etDropzone]';
 const ITEM = '.et-dropzone-item';
@@ -84,11 +85,25 @@ export type MountedDropzoneDriver<T> = Omit<DropzoneDriver<T>, 'query'> & { quer
  * Mounts a dropzone with a query test setup in place - the upload config needs one, and it has to
  * exist before the component is created.
  */
-export const mountDropzone = <T>(component: Type<T>, options: ControlDriverOptions = {}) => {
+export type MountDropzoneOptions = ControlDriverOptions & {
+  /** The host's `upload` config, set before the first render - the directive throws ET2400 without one. */
+  upload?: (query: QueryTestSetup) => AnyDropzoneUploadConfig<string>;
+};
+
+export const mountDropzone = <T>(component: Type<T>, { upload, ...options }: MountDropzoneOptions = {}) => {
   let query!: QueryTestSetup;
-  const fixture = mountControl(component, [], () => {
-    query = setupQueryTest();
-  });
+  const fixture = mountControl(
+    component,
+    [],
+    () => {
+      query = setupQueryTest();
+    },
+    (created) => {
+      if (upload) {
+        (created.componentInstance as { upload: WritableSignal<unknown> }).upload.set(upload(query));
+      }
+    },
+  );
 
   return { ...createDropzoneDriver(fixture, options), query };
 };

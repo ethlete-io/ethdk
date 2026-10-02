@@ -9,3 +9,11 @@ export const positiveNumberAttribute = (value: unknown) => {
 
   return parsed > 0 && Number.isFinite(parsed) ? parsed : 1;
 };
+
+/** `numberAttribute` that keeps an absent value absent: `undefined`, `null` and `''` become `undefined`. */
+export const optionalNumberAttribute = (value: unknown) =>
+  value === undefined || value === null || value === '' ? undefined : numberAttribute(value);
+
+/** `numberAttribute` for an input whose empty state is `null`: `undefined`, `null` and `''` become `null`. */
+export const nullableNumberAttribute = (value: unknown) =>
+  value === undefined || value === null || value === '' ? null : numberAttribute(value);

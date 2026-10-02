@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input, linkedSignal } from '@angular/core';
-import { FormField, disabled, form, readonly } from '@angular/forms/signals';
+import { FormField, disabled, form, max, min, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { LabelDirective } from '../../form-field';
 import { HintComponent } from '../../form-field/hint.component';
@@ -14,8 +14,6 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         [(mixed)]="mixedState"
         [formField]="demoForm.value"
         [mixedLabel]="mixedLabel()"
-        [min]="min()"
-        [max]="max()"
         [step]="step()"
         [orientation]="orientation()"
         [marks]="marks()"
@@ -69,5 +67,7 @@ export class SliderStorybookComponent {
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s.value, () => this.readonly());
+    min(s.value, () => this.min());
+    max(s.value, () => this.max());
   });
 }

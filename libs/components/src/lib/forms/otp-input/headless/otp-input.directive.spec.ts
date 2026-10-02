@@ -105,6 +105,15 @@ describe('OtpInputDirective', () => {
     expect(driver.host.completions).toEqual(['1234', '1234']);
   });
 
+  it('renders empty for a null value that escaped the string type', () => {
+    driver.host.value.set(null as unknown as string);
+    driver.tick();
+
+    expect(driver.segmentTexts()).toEqual([null, null, null, null]);
+    expect(driver.fieldValue()).toBe('');
+    expect(driver.host.value()).toBeNull();
+  });
+
   it('truncates the value when length shrinks', () => {
     driver.type('1234');
 

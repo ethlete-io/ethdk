@@ -2,6 +2,7 @@ import {
   booleanAttribute,
   Component,
   computed,
+  contentChild,
   effect,
   ElementRef,
   inject,
@@ -26,6 +27,7 @@ import {
   signalElementDimensions,
 } from '@ethlete/core';
 import { SpinnerComponent } from '../../loader';
+import { DescriptionComponent } from '../description/description.component';
 import { FormErrorComponent } from './form-error.component';
 import { FormWarningComponent } from './form-warning.component';
 import { FormFieldSuffixOverlapStylesComponent } from './form-field-suffix-overlap-styles.component';
@@ -125,6 +127,7 @@ export class FormFieldComponent {
   public errorAnimatable = viewChild<AnimatableDirective>('errorAnimatable');
   public warningAnimatable = viewChild<AnimatableDirective>('warningAnimatable');
   public hintAnimatable = viewChild<AnimatableDirective>('hintAnimatable');
+  private description = contentChild(DescriptionComponent, { descendants: false });
 
   /** Whether the field is busy - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
@@ -183,6 +186,9 @@ export class FormFieldComponent {
       warningAnimatable: this.warningAnimatable,
       hintAnimatable: this.hintAnimatable,
     });
+
+    // eslint-disable-next-line ethlete/prefer-linked-signal
+    effect(() => this.formFieldDir.descriptionId.set(this.description()?.id ?? null));
 
     effect(() => {
       if (this.formFieldDir.controlType() !== FORM_FIELD_CONTROL_TYPES.TEXTAREA) {

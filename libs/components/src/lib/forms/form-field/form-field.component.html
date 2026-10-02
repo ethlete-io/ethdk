@@ -35,6 +35,8 @@
   </div>
 </div>
 
+<ng-content select="et-description" />
+
 @if (support.shouldRenderSupport()) {
   <div [style.block-size.px]="support.supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
     <div class="et-form-field-support-row">

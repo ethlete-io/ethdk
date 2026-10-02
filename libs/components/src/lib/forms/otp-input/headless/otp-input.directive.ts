@@ -16,12 +16,8 @@ import {
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectRenderer } from '@ethlete/core';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { controlTouches } from '../../../internals/touch-output';
 
 export type OtpInputCharset = 'numeric' | 'alphanumeric' | RegExp;
@@ -43,7 +39,7 @@ const CHARSET_PATTERNS: Record<'numeric' | 'alphanumeric', RegExp> = {
   },
 })
 export class OtpInputDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<string>, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -70,7 +66,9 @@ export class OtpInputDirective
   public complete = output<string>();
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
-  public hasValue = computed(() => this.value().length > 0);
+  private text = computed(() => this.value() ?? '');
+
+  public hasValue = computed(() => this.text().length > 0);
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.OTP_INPUT);
@@ -89,7 +87,7 @@ export class OtpInputDirective
 
   /** The character each segment displays (`null` for empty slots). */
   public segmentChars = computed(() => {
-    const value = this.value();
+    const value = this.text();
     const masked = this.masked();
 
     return Array.from({ length: this.length() }, (_, index) => {
@@ -100,7 +98,7 @@ export class OtpInputDirective
   });
 
   /** The segment the synthetic caret sits on while focused - the next empty slot, or the last one when full. */
-  public caretIndex = computed(() => Math.min(this.value().length, this.length() - 1));
+  public caretIndex = computed(() => Math.min(this.text().length, this.length() - 1));
 
   private charPattern = computed(() => {
     const charset = this.charset();
@@ -127,7 +125,7 @@ export class OtpInputDirective
     // re-sanitize it here, and emit `complete` from the value rather than from the `input`
     // handler, which never sees a programmatic write
     effect(() => {
-      const raw = this.value();
+      const raw = this.text();
       const sanitized = this.sanitize(raw);
       const isComplete = sanitized.length === this.length();
 
@@ -251,7 +249,7 @@ export class OtpInputDirective
     });
 
     effect(() => {
-      const value = this.value();
+      const value = this.text();
 
       if (element.value !== value) renderer.setProperty(element, 'value', value);
     });

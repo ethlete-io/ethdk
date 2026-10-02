@@ -125,6 +125,15 @@ describe('PhoneInputDirective', () => {
     driver = mountPhoneInput(PhoneInputTestHost);
   });
 
+  it('renders empty for a null value that escaped the string type', () => {
+    driver.host.value.set(null as unknown as string);
+    driver.tick();
+
+    expect(driver.phone.hasValue()).toBe(false);
+    expect(driver.phone.nationalNumber()).toBe('');
+    expect(driver.fieldValue()).toBe('');
+  });
+
   it('starts on the default country with an empty value', () => {
     expect(driver.phone.country()).toBe('de');
     expect(driver.phone.dialCode()).toBe('49');

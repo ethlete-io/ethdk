@@ -14,6 +14,7 @@ import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
 import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { SLIDER_ERROR_CODES } from '../slider-errors';
 import {
   adjacentMarkValue,
@@ -48,7 +49,10 @@ export type RangeSliderValue = [number, number];
     '[attr.data-orientation]': 'orientation()',
   },
 })
-export class RangeSliderDirective implements FormValueControl<RangeSliderValue>, FormFieldControl, SliderHostBase {
+export class RangeSliderDirective
+  extends FieldStateControlDirective
+  implements FormValueControl<RangeSliderValue>, FormFieldControl, SliderHostBase
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -101,8 +105,6 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RANGE_SLIDER);
 
-  public labelId = computed(() => this.formField?.registeredLabel()?.id() ?? null);
-
   public draggingThumbIndex = signal<number | null>(null);
 
   public thumbs = signal<readonly SliderThumbBase[]>([]);
@@ -110,7 +112,12 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
 
   public focused = computed(() => this.thumbs().some((thumb) => thumb.focused()));
 
-  public hasCustomAccessibleName = computed(() => this.thumbs().some((thumb) => !!thumb.label().trim()));
+  public override hasCustomAccessibleName = computed(
+    () =>
+      !!this.ariaLabel()?.trim() ||
+      !!this.ariaLabelledby()?.trim() ||
+      this.thumbs().some((thumb) => !!thumb.label().trim()),
+  );
 
   private bounds = computed(() => ({ min: this.effectiveMin(), max: this.effectiveMax(), step: this.step() }));
 
@@ -150,6 +157,8 @@ export class RangeSliderDirective implements FormValueControl<RangeSliderValue>,
   });
 
   constructor() {
+    super();
+
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
 

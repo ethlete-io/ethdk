@@ -2,7 +2,7 @@
 
 <input
   #fileInput
-  [accept]="dropzoneDir.accept() || null"
+  [accept]="dropzoneDir.resolvedAccept() || null"
   [multiple]="dropzoneDir.multiple()"
   [disabled]="!dropzoneDir.interactive()"
   (change)="uploadPickedFiles($event)"
@@ -33,14 +33,14 @@
     <span class="et-dropzone-prompt">
       <ng-content>
         <i class="et-dropzone-prompt-icon" etIcon="et-upload"></i>
-        <span class="et-dropzone-prompt-text">{{ dropzoneLabels().prompt }}</span>
+        <span class="et-dropzone-prompt-text">{{ resolvedLabels().prompt }}</span>
       </ng-content>
     </span>
 
     @if (dropzoneDir.readonly()) {
       <span class="et-dropzone-empty">
         <i class="et-dropzone-prompt-icon" etIcon="et-file"></i>
-        <span class="et-dropzone-prompt-text">{{ dropzoneLabels().empty }}</span>
+        <span class="et-dropzone-prompt-text">{{ resolvedLabels().empty }}</span>
       </span>
     }
   </button>
@@ -74,7 +74,7 @@
           @if (entry.status() === 'error') {
             <button
               [disabled]="!dropzoneDir.interactive()"
-              [attr.aria-label]="resolvedRetryLabel() + ' ' + entry.name()"
+              [attr.aria-label]="resolvedLabels().retry + ' ' + entry.name()"
               (click)="dropzoneDir.retryEntry(entry.id)"
               class="et-dropzone-retry-button"
               type="button"
@@ -87,7 +87,7 @@
           } @else {
             <button
               [disabled]="!dropzoneDir.interactive()"
-              [attr.aria-label]="resolvedReplaceLabel()"
+              [attr.aria-label]="resolvedLabels().replaceFile"
               (click)="openFilePicker()"
               class="et-dropzone-replace-button"
               type="button"
@@ -100,7 +100,7 @@
           }
           <button
             [disabled]="!dropzoneDir.interactive()"
-            [attr.aria-label]="resolvedRemoveLabel() + ' ' + entry.name()"
+            [attr.aria-label]="resolvedLabels().remove + ' ' + entry.name()"
             (click)="removeEntryAnimated(entry, entryEl)"
             class="et-dropzone-remove-button"
             type="button"
@@ -134,8 +134,8 @@
         [entry]="entry"
         [readonly]="dropzoneDir.readonly()"
         [interactive]="dropzoneDir.interactive()"
-        [retryLabel]="resolvedRetryLabel()"
-        [removeLabel]="resolvedRemoveLabel()"
+        [retryLabel]="resolvedLabels().retry"
+        [removeLabel]="resolvedLabels().remove"
         (retry)="dropzoneDir.retryEntry(entry.id)"
         (remove)="removeEntryAnimated(entry, entryEl.elementRef.nativeElement)"
       />

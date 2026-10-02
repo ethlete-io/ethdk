@@ -11,6 +11,7 @@ import {
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
+import { outputFromObservable, outputToObservable } from '@angular/core/rxjs-interop';
 import {
   createCanAnimateSignal,
   createFlipAnimationGroup,
@@ -43,7 +44,9 @@ import { DropzonePreviewStylesComponent } from './dropzone-preview-styles.compon
 import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.component';
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
-import { injectDropzoneLabels } from './dropzone-labels';
+import { AnyDropzoneUploadConfig } from './headless/dropzone-upload';
+import { DropzoneLabels, injectDropzoneLabels } from './dropzone-labels';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-dropzone',
@@ -73,68 +76,66 @@ import { injectDropzoneLabels } from './dropzone-labels';
         'errors',
         'required',
         'name',
-        'upload',
         'multiple',
         'maxPreviewFileSize',
+        'accept',
+        'maxFileSize',
+        'minFileSize',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
-      outputs: [
-        'valueChange',
-        'touchedChange',
-        'touch',
-        'filesReject',
-        'uploadSucceed',
-        'uploadFail',
-        'deleteSucceed',
-        'deleteFail',
-      ],
+      outputs: ['valueChange', 'touchedChange', 'touch', 'filesReject'],
     },
     { directive: ProvideColorDirective, inputs: ['etProvideColor:color'] },
   ],
   host: {
     class: 'et-dropzone',
+    '[style.display]': 'dropzoneDir.hidden() ? "none" : null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
     '[attr.data-multiple]': 'dropzoneDir.multiple() || null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
-export class DropzoneComponent {
-  protected dropzoneLabels = injectDropzoneLabels();
+export class DropzoneComponent<TValue = unknown> {
+  public dropzoneLabels = injectDropzoneLabels();
 
-  protected dropzoneDir = inject(DropzoneDirective);
+  protected dropzoneDir = inject<DropzoneDirective<TValue>>(DropzoneDirective);
   public support = injectFormSupport();
   private injector = inject(Injector);
   private renderer = injectRenderer();
   private prefersReducedMotion = injectPrefersReducedMotion();
 
-  /** Label of the retry button shown for failed uploads. */
-  public retryLabel = input<string | null>(null);
+  /**
+   * The upload workflow configuration. Create it via `createDropzoneUpload()`. Its value type is the
+   * type the upload and delete outputs emit.
+   */
+  public upload = input.required<AnyDropzoneUploadConfig<TValue>>();
 
-  /** Accessible label prefix of the remove button. The entry name is appended. */
-  public removeLabel = input<string | null>(null);
-
-  /** Accessible label of the replace button shown in single mode. */
-  public replaceLabel = input<string | null>(null);
-
-  /** Fallback error message shown when the upload error has no message. */
-  public uploadErrorLabel = input<string | null>(null);
+  /** Per-instance overrides of the dropzone labels, merged over `provideDropzoneLabels()`. */
+  public labels = input<Partial<DropzoneLabels> | null>(null);
 
   /** Overrides the built-in per-entry upload failure message (e.g. for i18n). */
   public uploadErrorMessage = input<((entry: DropzoneEntry) => string) | null>(null);
+
+  /** Emits when the upload of an entry succeeded (after the control value was updated). */
+  public uploadSucceed = outputFromObservable(outputToObservable(this.dropzoneDir.uploadSucceed));
+
+  public uploadFail = outputFromObservable(outputToObservable(this.dropzoneDir.uploadFail));
+
+  /** Emits when the delete request for a removed entry's persisted value succeeded. */
+  public deleteSucceed = outputFromObservable(outputToObservable(this.dropzoneDir.deleteSucceed));
+
+  /** Emits when that delete request failed. The entry is already gone by then. */
+  public deleteFail = outputFromObservable(outputToObservable(this.dropzoneDir.deleteFail));
 
   private fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
   private browseButton = viewChild<ElementRef<HTMLButtonElement>>('browseButton');
   private fileList = viewChild<ElementRef<HTMLUListElement>>('fileList');
   private entryElements = viewChildren<unknown, ElementRef<HTMLElement>>('entryEl', { read: ElementRef });
 
-  protected resolvedRetryLabel = computed(() => this.retryLabel() ?? this.dropzoneLabels().retry);
+  public resolvedLabels = computed<DropzoneLabels>(() => ({ ...this.dropzoneLabels(), ...this.labels() }));
 
-  protected resolvedRemoveLabel = computed(() => this.removeLabel() ?? this.dropzoneLabels().remove);
-
-  protected resolvedReplaceLabel = computed(() => this.replaceLabel() ?? this.dropzoneLabels().replaceFile);
-
-  public resolvedUploadErrorLabel = computed(() => this.uploadErrorLabel() ?? this.dropzoneLabels().uploadFailed);
   private removingEntryIds = new Set<string>();
   private filePickerOpen = false;
   public canAnimate = createCanAnimateSignal();
@@ -151,7 +152,7 @@ export class DropzoneComponent {
     const entries = this.dropzoneDir.entries();
     const uploading = entries.filter((entry) => entry.status() === DROPZONE_ENTRY_STATUSES.UPLOADING).length;
 
-    return uploading > 0 ? this.dropzoneLabels().uploading(uploading) : '';
+    return uploading > 0 ? this.resolvedLabels().uploading(uploading) : '';
   });
 
   protected internalErrorMessages = computed(() => {
@@ -170,6 +171,8 @@ export class DropzoneComponent {
 
   constructor() {
     mountVisuallyHidden();
+
+    this.dropzoneDir.bindUploadSource(this.upload);
 
     const styleManager = injectStyleManager();
 
@@ -284,10 +287,10 @@ export class DropzoneComponent {
   }
 
   private defaultUploadErrorMessage(entry: DropzoneEntry) {
-    return this.dropzoneLabels().uploadFailedMessage({
+    return this.resolvedLabels().uploadFailedMessage({
       fileName: entry.name(),
       serverMessage: entry.errorMessage(),
-      uploadFailed: this.resolvedUploadErrorLabel(),
+      uploadFailed: this.resolvedLabels().uploadFailed,
     });
   }
 }

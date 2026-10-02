@@ -36,6 +36,8 @@ On `et-slider` (forwarded from the headless `[etSlider]` directive), plus the st
 | `mixedLabel`  | `string \| null`                 | `null` ¹       | `aria-valuetext` the thumb announces while `mixed` is true.                                                                                               |
 | `color`       | registered color theme name      | -              | Scopes a [color theme](/core/theming) to the fill and thumb(s).                                                                                           |
 
+Without an `<et-label>`, name the slider with `aria-label` or `aria-labelledby` on `et-slider` itself - both land on the `role="slider"` thumb.
+
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
 
 Values outside the bounds or off the step grid are displayed clamped and snapped, but the model is only rewritten when the user interacts.

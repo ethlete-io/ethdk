@@ -152,6 +152,52 @@ const createUploadConfig = (
       : {}),
   });
 
+@Component({
+  template: `
+    <div
+      [upload]="upload()!"
+      [accept]="accept()"
+      [maxFileSize]="maxFileSize()"
+      [formField]="demoForm.media"
+      (filesReject)="rejections.push($event)"
+      etDropzone
+    ></div>
+  `,
+  imports: [DropzoneDirective, FormField],
+})
+class DropzoneInputConstraintsTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  accept = signal('');
+  maxFileSize = signal<number | undefined>(undefined);
+  constraints = signal<DropzoneFileConstraints | null>(null);
+  model = signal<{ media: string | null }>({ media: null });
+  demoForm = form(this.model, (s) => {
+    dropzoneFiles(s.media, () => this.constraints() ?? {});
+  });
+
+  rejections: DropzoneFileRejection[][] = [];
+}
+
+@Component({
+  template: `
+    <div
+      [upload]="upload()!"
+      [accept]="accept()"
+      [maxFileSize]="maxFileSize()"
+      (filesReject)="rejections.push($event)"
+      etDropzone
+    ></div>
+  `,
+  imports: [DropzoneDirective],
+})
+class UnboundDropzoneConstraintsTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  accept = signal('');
+  maxFileSize = signal<number | undefined>(undefined);
+
+  rejections: DropzoneFileRejection[][] = [];
+}
+
 describe('DropzoneDirective', () => {
   beforeEach(() => {
     // jsdom does not implement object URLs
@@ -163,9 +209,7 @@ describe('DropzoneDirective', () => {
     let driver: MountedDropzoneDriver<DropzoneTestHost>;
 
     beforeEach(() => {
-      driver = mountDropzone(DropzoneTestHost);
-      driver.host.upload.set(createUploadConfig(driver.query));
-      driver.tick();
+      driver = mountDropzone(DropzoneTestHost, { upload: (query) => createUploadConfig(query) });
     });
 
     afterEach(() => {
@@ -574,9 +618,9 @@ describe('DropzoneDirective', () => {
     const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve));
 
     beforeEach(() => {
-      driver = mountDropzone(DropzoneTestHost);
-      driver.host.upload.set(createUploadConfig(driver.query, { withDelete: true, includeExisting: true }));
-      driver.tick();
+      driver = mountDropzone(DropzoneTestHost, {
+        upload: (query) => createUploadConfig(query, { withDelete: true, includeExisting: true }),
+      });
     });
 
     afterEach(() => {
@@ -844,15 +888,82 @@ describe('DropzoneDirective', () => {
     });
   });
 
+  describe('with constraint inputs and no form binding', () => {
+    let driver: MountedDropzoneDriver<UnboundDropzoneConstraintsTestHost>;
+
+    beforeEach(() => {
+      driver = mountDropzone(UnboundDropzoneConstraintsTestHost, { upload: (query) => createUploadConfig(query) });
+    });
+
+    afterEach(() => {
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
+    });
+
+    it('should reject files that do not match the accept input', () => {
+      driver.host.accept.set('image/*');
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('doc.pdf', 'application/pdf')]);
+      driver.tick();
+
+      expect(driver.dropzone.resolvedAccept()).toBe('image/*');
+      expect(driver.host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'accept' }]);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
+    });
+
+    it('should reject files above the maxFileSize input', () => {
+      driver.host.maxFileSize.set(2);
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('big.png', 'image/png', 10)]);
+      driver.tick();
+
+      expect(driver.host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'maxFileSize' }]);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
+    });
+  });
+
+  describe('with constraint inputs and a dropzoneFiles() rule', () => {
+    let driver: MountedDropzoneDriver<DropzoneInputConstraintsTestHost>;
+
+    beforeEach(() => {
+      driver = mountDropzone(DropzoneInputConstraintsTestHost, { upload: (query) => createUploadConfig(query) });
+    });
+
+    afterEach(() => {
+      driver.fixture.destroy();
+      driver.query.httpTesting.verify();
+    });
+
+    it('should let the schema rule override the inputs', () => {
+      driver.host.accept.set('application/pdf');
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
+
+      expect(driver.dropzone.resolvedAccept()).toBe('image/*');
+    });
+
+    it('should fall back to the inputs for a constraint the rule leaves out', () => {
+      driver.host.maxFileSize.set(2);
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('big.png', 'image/png', 10)]);
+      driver.tick();
+
+      expect(driver.host.rejections[0]).toEqual([{ file: expect.any(File), reason: 'maxFileSize' }]);
+      driver.query.httpTesting.expectNone(UPLOAD_URL);
+    });
+  });
+
   describe('with form schema constraints (dropzoneFiles)', () => {
     let driver: MountedDropzoneDriver<DropzoneSchemaTestHost>;
 
     const fieldErrors = () => driver.host.demoForm.media().errors();
 
     beforeEach(() => {
-      driver = mountDropzone(DropzoneSchemaTestHost);
-      driver.host.upload.set(createUploadConfig(driver.query));
-      driver.tick();
+      driver = mountDropzone(DropzoneSchemaTestHost, { upload: (query) => createUploadConfig(query) });
     });
 
     afterEach(() => {
@@ -864,7 +975,7 @@ describe('DropzoneDirective', () => {
       driver.host.constraints.set({ accept: 'image/*' });
       driver.tick();
 
-      expect(driver.dropzone.accept()).toBe('image/*');
+      expect(driver.dropzone.resolvedAccept()).toBe('image/*');
     });
 
     it('should reject files not matching accept and put a validation error on the field', () => {
@@ -960,10 +1071,7 @@ describe('DropzoneDirective', () => {
 
   describe('with a preview size cap', () => {
     it('should preview images up to maxPreviewFileSize and skip larger ones', async () => {
-      const driver = mountDropzone(DropzonePreviewCapTestHost);
-
-      driver.host.upload.set(createUploadConfig(driver.query));
-      driver.tick();
+      const driver = mountDropzone(DropzonePreviewCapTestHost, { upload: (query) => createUploadConfig(query) });
 
       const readAsDataURL = vi.spyOn(FileReader.prototype, 'readAsDataURL');
 
@@ -997,9 +1105,7 @@ describe('DropzoneDirective', () => {
         .map((error) => error.message);
 
     beforeEach(() => {
-      driver = mountDropzone(DropzoneLocalizedSchemaTestHost);
-      driver.host.upload.set(createUploadConfig(driver.query));
-      driver.tick();
+      driver = mountDropzone(DropzoneLocalizedSchemaTestHost, { upload: (query) => createUploadConfig(query) });
     });
 
     afterEach(() => {
@@ -1038,10 +1144,10 @@ describe('DropzoneDirective', () => {
 
   describe('inside form field', () => {
     it('should register and unregister with the parent form field', () => {
-      const driver = mountDropzone(DropzoneInFormFieldTestHost, { directiveSelector: '[etDropzone]' });
-
-      driver.host.upload.set(createUploadConfig(driver.query));
-      driver.tick();
+      const driver = mountDropzone(DropzoneInFormFieldTestHost, {
+        directiveSelector: '[etDropzone]',
+        upload: (query) => createUploadConfig(query),
+      });
 
       const formField = driver.directive(FormFieldDirective);
 

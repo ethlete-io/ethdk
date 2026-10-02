@@ -1,5 +1,5 @@
 import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
+import { disabled, form, FormField, max, min, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
   FORM_FIELD_APPEARANCES,
@@ -28,8 +28,6 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           [(mixed)]="mixedState"
           [formField]="demoForm.value"
           [mixedLabel]="mixedLabel()"
-          [min]="min() ?? undefined"
-          [max]="max() ?? undefined"
           [step]="step()"
           [stepper]="stepper()"
           [placeholder]="placeholder()"
@@ -91,5 +89,7 @@ export class FormFieldNumberInputStorybookComponent {
     disabled(s, () => this.disabled());
     readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
+    min(s.value, () => this.min() ?? undefined, { message: 'The value is below the minimum' });
+    max(s.value, () => this.max() ?? undefined, { message: 'The value is above the maximum' });
   });
 }

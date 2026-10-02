@@ -4,6 +4,7 @@ import { FormSupportComponent } from '../form-field/partials/form-support.compon
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../form-field/headless';
 import { OtpInputDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-otp-input',
@@ -29,6 +30,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'charset',
         'masked',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'touchedChange', 'touch', 'complete'],
     },
@@ -36,6 +38,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
   ],
   host: {
     class: 'et-otp-input',
+    '[style.display]': 'otp.hidden() ? "none" : null',
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',

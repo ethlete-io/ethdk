@@ -63,6 +63,7 @@ distinct from **disabled**, which stays dimmed.
 but its form value is a **`number | null`** instead of a string - an empty or
 unparseable input reads as `null`, never `NaN` or `''`. It accepts `min`, `max`,
 `step`, `placeholder`, `autocomplete`, `textAlign`, and the shared control state.
+`min`, `max` and `step` also take static attributes (`min="0" step="0.5"`).
 The native spin buttons are hidden.
 
 ```html
