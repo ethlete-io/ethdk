@@ -10,10 +10,10 @@ semantic type. Storybook maps `error` and `success` on `light` and `light-elevat
 type on the colour theme (`inkColorBySurfaceType`, reverted in `ad6028304`) and an ink derived
 with `color-mix` (it invents colours).
 
-- Badge and scheduler stories use fixed theme names (`color="success"`, event `colorToken`), so
-  they do not switch. Forced onto `light`, they fall to 1.02-3.18:1. They need `-on-light`
-  themes for `brand` and `warning` too (or a palette per surface) before they can show a light
-  row.
+- `brand-on-light` (emerald 700 ink) and `warning-on-light` (amber 800 ink) exist, chosen in the
+  call `components/on-light-ink/00-brand-warning`: each theme takes the lightest step that clears
+  AA on every badge. The badge story draws a `light` row with them; tonal and outline pass.
+- The scheduler stories still use fixed event `colorToken` names and have no light row.
 - Axe failures on `dark` that predate this work: scheduler date number 3.78:1, danger event time
   3.92:1, month-view outside dates `#737373`, the warning appointment text `#af620a` on
   `#322415` 3.27:1, and badge `filled` (white on the success and warning fills).

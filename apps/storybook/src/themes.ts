@@ -232,6 +232,54 @@ export const CHART_YELLOW_THEME: ColorTheme = {
   },
 };
 
+export const BRAND_ON_LIGHT_THEME: ColorTheme = {
+  name: 'brand-on-light',
+  primary: {
+    color: {
+      default: '0 255 161',
+      hover: '76 247 184',
+      focus: '76 247 184',
+      active: '0 198 126',
+      disabled: '0 122 77',
+    },
+    onColor: {
+      default: '0 0 0',
+      disabled: '0 36 23',
+    },
+    inkColor: {
+      default: '4 120 87',
+      hover: '6 95 70',
+      focus: '6 95 70',
+      active: '6 78 59',
+      disabled: '130 200 170',
+    },
+  },
+};
+
+export const WARNING_ON_LIGHT_THEME: ColorTheme = {
+  name: 'warning-on-light',
+  primary: {
+    color: {
+      default: '217 119 6',
+      hover: '245 158 11',
+      focus: '245 158 11',
+      active: '180 83 9',
+      disabled: '133 77 14',
+    },
+    onColor: {
+      default: '255 255 255',
+      disabled: '255 237 213',
+    },
+    inkColor: {
+      default: '146 64 14',
+      hover: '120 53 15',
+      focus: '120 53 15',
+      active: '69 26 3',
+      disabled: '220 170 120',
+    },
+  },
+};
+
 export const THEMES = [
   BRAND_THEME,
   DANGER_THEME,
@@ -245,4 +293,6 @@ export const THEMES = [
   CHART_YELLOW_THEME,
   DANGER_ON_LIGHT_THEME,
   SUCCESS_ON_LIGHT_THEME,
+  BRAND_ON_LIGHT_THEME,
+  WARNING_ON_LIGHT_THEME,
 ];
