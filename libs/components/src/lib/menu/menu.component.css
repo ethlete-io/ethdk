@@ -270,7 +270,7 @@
 
       &[data-variant='destructive'] {
         /* the item forces the error color theme onto itself while destructive */
-        color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+        color: var(--et-theme-color-ink-solid, rgb(248 113 113));
       }
 
       /* Every kind of item has a label — a plain one, a checkbox, a radio — so its layout lives here

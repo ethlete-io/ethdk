@@ -79,7 +79,7 @@
 
     &[data-state='current'] .et-progress-step-marker {
       border-color: var(--et-theme-color-primary-solid, currentColor);
-      color: var(--et-theme-color-primary-solid, currentColor);
+      color: var(--et-theme-color-ink-solid, currentColor);
     }
 
     &:is([data-state='complete'], [data-state='success'], [data-state='warning'], [data-state='error'])

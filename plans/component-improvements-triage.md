@@ -39,10 +39,8 @@ with `color-mix` (it invents colours).
     on or above the surface element wins. Storybook maps light surfaces to `brand-on-light` and dark
     ones to `brand`.
 - The Storybook light surfaces map `warning` to `warning-on-light`. The error messages of the token popup, dropzone, select,
-  cascader and menu search take the ink, like `01-message-ink`. Open, waits on the user: text that
-  still takes `--et-theme-color-primary-solid` - the rich-text link, the form field label and affix
-  in error, the destructive menu item, the table sort priority and the current progress step
-  marker. Icons in primary (select and menu checks, rating, spinner) are non-text and stay.
+  cascader and menu search take the ink, like `01-message-ink`. The rich-text link, the form field label and affix in error, the destructive menu
+  item, the table sort priority and the current progress step marker take the ink too. Icons in primary (select and menu checks, rating, spinner) are non-text and stay.
 - Scan findings left out on purpose: disabled labels, hints and calendar dates (WCAG exempts
   inactive controls), story data that names a dark theme (scheduler and avatar on light), and
   hardcoded colours in the `layout-scrollable`, `layout-masonry`, `layout-grid` and

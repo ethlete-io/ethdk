@@ -250,11 +250,11 @@
       }
 
       &[data-error] .et-form-field-label-area {
-        color: var(--et-theme-color-primary-solid);
+        color: var(--et-theme-color-ink-solid);
       }
 
       &[data-error] .et-form-field-affix {
-        color: var(--et-theme-color-primary-solid);
+        color: var(--et-theme-color-ink-solid);
         opacity: 1;
       }
 
