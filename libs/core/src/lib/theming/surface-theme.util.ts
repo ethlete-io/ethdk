@@ -53,6 +53,11 @@ export type SurfaceTheme = {
    * that `type`. Read by `injectSemanticColorTheme()`.
    */
   semanticColorThemes?: Partial<Record<ColorThemeType, RegisteredColorThemeName>>;
+  /**
+   * The registered color theme a `[etProvideSurface]` element applies to its subtree, e.g. a darker
+   * `brand-on-light` on a light surface. An `[etProvideColor]` on or above the surface element wins.
+   */
+  colorTheme?: RegisteredColorThemeName;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;
   colorMuted: SurfaceThemeColor;

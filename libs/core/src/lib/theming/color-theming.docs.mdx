@@ -144,6 +144,24 @@ const LIGHT_SURFACE: SurfaceTheme = {
 theme with `type: 'success'`. Every SDK component resolves its semantic colors this way - content in an overlay
 panel follows the panel's surface; the deprecated `injectErrorTheme()` and its siblings do not look at the surface.
 
+### A default color per surface
+
+`colorTheme` names the theme a surface applies to its own subtree, e.g. a darker `brand-on-light` on a light surface:
+
+```ts
+const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  colorTheme: 'brand-on-light',
+  // …
+};
+```
+
+Each `[etProvideSurface]` that resolves the surface adds `.et-color--brand-on-light` to its element. An
+`[etProvideColor]` with a color on that element or above it wins. A surface without `colorTheme` keeps its parent's
+color, so set it on every surface type once you set it on one.
+
 ---
 
 ## CSS tokens generated

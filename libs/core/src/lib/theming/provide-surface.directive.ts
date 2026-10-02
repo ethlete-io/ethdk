@@ -14,6 +14,8 @@ import {
   Signal,
   untracked,
 } from '@angular/core';
+import { createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
+import { COLOR_PROVIDER } from './provide-color.directive';
 import {
   createCssSurfaceName,
   injectDefaultSurfaceTheme,
@@ -42,6 +44,9 @@ export class ProvideSurfaceDirective {
   private injector = inject(Injector);
   private parentProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private defaultTheme = injectDefaultSurfaceTheme();
+  private colorThemes = injectColorThemes({ optional: true });
+  private colorPrefix = injectColorThemesPrefix({ optional: true });
+  private colorProvider = inject(COLOR_PROVIDER, { optional: true });
 
   private currentProviderSync: EffectRef | null = null;
   private forcedSurface = signal<ForcedSurfaceState>(FORCED_SURFACE_UNSET);
@@ -102,14 +107,28 @@ export class ProvideSurfaceDirective {
     return createCssSurfaceName(value);
   });
 
-  protected surfaceClass = computed(() => {
-    const prefix = this.prefix || 'et';
+  private colorThemeClass = computed(() => {
+    const colorTheme = this.resolvedTheme()?.colorTheme;
 
-    if (this.surfaceName()) {
-      return `${prefix}-surface--${this.surfaceName()}`;
+    if (!colorTheme || this.colorProvider?.resolvedColor()) return null;
+
+    if (isDevMode() && !this.colorThemes?.some((theme) => theme.name === colorTheme)) {
+      console.error(
+        `Surface theme ${this.resolvedTheme()?.name} names the color theme ${colorTheme}, which does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`,
+      );
     }
 
-    return `${prefix}-surface--inherited`;
+    return `${this.colorPrefix || 'et'}-color--${createCssColorThemeName(colorTheme)}`;
+  });
+
+  protected surfaceClass = computed(() => {
+    const prefix = this.prefix || 'et';
+    const surfaceClass = this.surfaceName()
+      ? `${prefix}-surface--${this.surfaceName()}`
+      : `${prefix}-surface--inherited`;
+    const colorThemeClass = this.colorThemeClass();
+
+    return colorThemeClass ? `${surfaceClass} ${colorThemeClass}` : surfaceClass;
   });
 
   syncWithProvider(provider: ProvideSurfaceDirective) {

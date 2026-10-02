@@ -60,6 +60,7 @@ A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 | `border`              | `"R G B"`                        | yes      | Border color.                                                                                                                   |
 | `interactionColor`    | swatch                           | no       | The surface's neutral swatch - see below.                                                                                       |
 | `semanticColorThemes` | `{ success?, warning?, error? }` | no       | The color theme serving each semantic `type` on this surface - see [semantic themes per surface](#semantic-themes-per-surface). |
+| `colorTheme`          | color theme name                 | no       | The color theme the surface element applies to its subtree - see [a default color per surface](#a-default-color-per-surface).   |
 
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
 
@@ -397,6 +398,29 @@ progress step, stat tile and the query devtools. Content in an overlay panel fol
 paints, not the one its trigger sits on. The surface only picks which `.et-color--<name>` class an
 element gets: CSS that reads `--et-theme-color-ink-solid` from an outer `.et-color--<name>` scope keeps
 that scope's theme until something re-provides the color.
+
+### A default color per surface
+
+The same problem hits the default color theme: a brand ink tuned for a dark surface can fail contrast on a light
+one. Register a darker variant and name it as the surface's `colorTheme`:
+
+```ts
+export const LIGHT_SURFACE: SurfaceTheme = {
+  name: 'light',
+  type: 'light',
+  elevation: 0,
+  colorTheme: 'brand-on-light', // the app's own name
+  // …
+};
+```
+
+Each `[etProvideSurface]` that resolves this surface adds `.et-color--brand-on-light` to its element, so its
+subtree, and an overlay panel that syncs the surface, draws in that theme. A provider left unset inherits the class
+from its parent. An `[etProvideColor]` with a color on the surface element or on an ancestor wins, so a surface
+never resets a themed region. A surface without `colorTheme` keeps the color of its parent; when you set it on one
+surface, set it on every surface the first can contain, or a dark surface inside a light one keeps the light
+variant. `:root` has no surface element, so the default surface's `colorTheme` needs an `[etProvideSurface]` at
+the app root.
 
 `injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
 

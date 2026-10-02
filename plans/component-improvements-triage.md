@@ -20,9 +20,9 @@ with `color-mix` (it invents colours).
   `components/scheduler-contrast/00-secondary-text`). The warning theme has an amber 500 dark
   ink (call `components/on-light-ink/02-warning-dark-ink`). Outside-month dates take
   `colorMuted` instead of `colorSubtle` (call `components/scheduler-contrast/01-outside-dates`;
-  weight 300 and a shaded cell lost). Axe still fails on one cause:
-  - The today button is an outline button in the default theme, and a surface cannot remap the
-    default theme: `#00ffa1` on white, 1.32:1. Needs a `libs/core` API change.
+  weight 300 and a shaded cell lost). The today button takes `brand-on-light` from the new
+  `SurfaceTheme.colorTheme` (call `scheduler-contrast/02-today-button`, B). The three light
+  scheduler stories pass axe `color-contrast`.
 - Two axe `color-contrast` scans of all 587 `components-*` stories (2026-10-02): one as shipped
   (root surface dark, 45 failing stories), one with the root surface switched to `light` from the
   script (`ng.getDirectives` on `ethlete-sb-root`, then the `html` background and colour). In the
@@ -34,12 +34,10 @@ with `color-mix` (it invents colours).
     warnings, support messages and the counter take the ink (`forms-contrast/01-message-ink`).
   - Storybook palette: light muted is neutral 600 (`surface-palette/01-muted-on-light`), and
     `dark-elevated-2` and `-3` muted is neutral 300 (`surface-palette/00-muted-on-elevated`).
-  - **Next, not started:** `scheduler-contrast/02-today-button` chose B. `SurfaceTheme` gets a
-    `colorTheme` field that names the surface's default colour theme. The semantic map keeps only
-    types. Rejected: a `default` key in `semanticColorThemes`, a neutral today button, and a theme
-    each consumer provides. The default theme sits on `:root` in CSS, so the surface must apply it
-    only where no nearer `etProvideColor` exists. Then map `light` and `light-elevated` to
-    `brand-on-light` in Storybook. Needs a core scenario test, docs and a changeset.
+  - Done: `scheduler-contrast/02-today-button` chose B. `SurfaceTheme.colorTheme` names the colour
+    theme an `[etProvideSurface]` element applies to its subtree. An `[etProvideColor]` with a colour
+    on or above the surface element wins. Storybook maps light surfaces to `brand-on-light` and dark
+    ones to `brand`.
 - The Storybook light surfaces map `warning` to `warning-on-light`. More text takes `--et-theme-color-primary-solid` instead of the ink: rich-text token
   popup, select extras and option, dropzone, rich-text content - check each after
   `01-message-ink` settles.
