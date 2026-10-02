@@ -40,8 +40,13 @@ const TASKS: Task[] = [
 ];
 
 const COLUMNS = {
-  title: { header: 'Title', value: (task) => task.title, editable: true },
+  title: { header: 'Title', value: (task) => task.title },
   owner: { header: 'Owner', value: (task) => task.owner },
+} satisfies TableColumns<Task>;
+
+const EDITABLE_COLUMNS = {
+  ...COLUMNS,
+  title: { ...COLUMNS.title, editable: true },
 } satisfies TableColumns<Task>;
 
 const taskId = (task: Task) => task.id;
@@ -121,7 +126,7 @@ class TaskBoardComponent {
 })
 class TaskEditorComponent {
   tasks = signal<Task[]>(TASKS);
-  columns = COLUMNS;
+  columns = EDITABLE_COLUMNS;
   taskId = taskId;
   failures = signal<Record<number, string>>({});
   cancels = signal(0);

@@ -56,7 +56,7 @@ const SURFACES = [surface('night', 0, true), surface('night-raised', 1)];
 
 const COLUMNS = {
   name: { header: 'Name', value: (member: Member) => member.name, sortable: true },
-  team: { header: 'Team', value: (member: Member) => member.team, filterable: true },
+  team: { header: 'Team', value: (member: Member) => member.team },
   score: { header: 'Score', value: (member: Member) => member.score, sortable: true, align: 'end', quickFilter: false },
 } satisfies TableColumns<Member>;
 

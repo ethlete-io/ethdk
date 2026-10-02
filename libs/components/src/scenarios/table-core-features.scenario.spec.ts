@@ -42,9 +42,15 @@ const players = (count: number): Player[] =>
 
 const COLUMNS = {
   name: { header: 'Name', value: (player: Player) => player.name, sortable: true },
-  email: { header: 'Email', value: (player: Player) => player.email, group: 'Contact' },
-  phone: { header: 'Phone', value: (player: Player) => player.phone, group: 'Contact' },
+  email: { header: 'Email', value: (player: Player) => player.email },
+  phone: { header: 'Phone', value: (player: Player) => player.phone },
   rank: { header: 'Rank', value: (player: Player) => player.rank, align: 'end' },
+} satisfies TableColumns<Player>;
+
+const GROUPED_COLUMNS = {
+  ...COLUMNS,
+  email: { ...COLUMNS.email, group: 'Contact' },
+  phone: { ...COLUMNS.phone, group: 'Contact' },
 } satisfies TableColumns<Player>;
 
 @Component({
@@ -126,7 +132,7 @@ class GroupedPlayersComponent {
   grouped = signal(true);
   enabled = signal(true);
   columns = computed<TableColumns<Player>>(() =>
-    this.grouped() ? COLUMNS : { name: COLUMNS.name, rank: COLUMNS.rank },
+    this.grouped() ? GROUPED_COLUMNS : { name: COLUMNS.name, rank: COLUMNS.rank },
   );
   groups = viewChild.required(TableGroupHeadersDirective);
 }

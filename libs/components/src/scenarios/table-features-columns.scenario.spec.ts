@@ -57,13 +57,17 @@ const COLUMNS = {
   category: {
     header: 'Category',
     value: (product) => product.category,
-    filterable: true,
     filterOptions: [
       { label: 'Furniture', value: 'Furniture' },
       { label: 'Lighting', value: 'Lighting' },
     ],
   },
   stock: { header: 'Stock', value: (product) => product.stock },
+} satisfies TableColumns<Product>;
+
+const FILTERABLE_COLUMNS = {
+  ...COLUMNS,
+  category: { ...COLUMNS.category, filterable: true },
 } satisfies TableColumns<Product>;
 
 const query = <T extends HTMLElement = HTMLElement>(root: ParentNode, selector: string) => {
@@ -129,7 +133,7 @@ const openMenu = (s: Scenario, trigger: HTMLElement) => {
 })
 class InventoryComponent {
   products = PRODUCTS;
-  columns = COLUMNS;
+  columns = FILTERABLE_COLUMNS;
   sort = signal<TableSort[]>([]);
   filters = signal<TableFilter[]>([]);
   table = viewChild.required(TableComponent<Product>);
