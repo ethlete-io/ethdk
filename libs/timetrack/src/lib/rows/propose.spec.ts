@@ -478,7 +478,7 @@ describe('propose, on a row an agent ran through a break', () => {
       'feat(app): Seed the bracket',
       'fix(app): Order the seeds',
     ]);
-    expect(proposals.reduce((sum, row) => sum + row.observedMs, 0)).toBe(133 * MINUTE);
+    expect(proposals.reduce((sum, row) => sum + row.observedMs, 0)).toBe(135 * MINUTE);
   });
 
   it('keeps the part inside the break as a row nobody attended, which books nothing', () => {
@@ -495,6 +495,19 @@ describe('propose, on a row an agent ran through a break', () => {
     ).toEqual([{ from: AT(60), to: AT(105), observedMs: 45 * MINUTE, unattended: true, withheldIssueKey: 'ABC-100' }]);
     expect(unattributed.map((entry) => entry.attended)).toEqual([false]);
     expect(proposals.some((row) => row.from < AT(105) && row.to > AT(60))).toBe(false);
+  });
+
+  it('starts a row at the drawn break end and keeps the id its own start gives it', () => {
+    const late: WorkGroup = { ...group({ fromMinute: 100, observedMinutes: 50, issueKey: 'ABC-200' }), attended: true };
+    const { proposals } = propose({ groups: [THROUGH, late], breaks: [{ from: AT(60), to: AT(98) }] });
+    const row = proposals.find((proposal) => proposal.issueKey === 'ABC-200');
+
+    expect(row && { id: row.id, from: row.from, afterBreak: row.afterBreak }).toEqual({
+      id: `ABC-200@${AT(90).toISOString()}`,
+      from: AT(105),
+      afterBreak: true,
+    });
+    expect(proposals.some((proposal) => proposal.from < AT(105) && proposal.to > AT(60))).toBe(false);
   });
 
   it('cuts nothing out of a stretch no break may cover', () => {

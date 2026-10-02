@@ -18,8 +18,12 @@ any other row. The first part keeps the row's start, and so its id. A part after
 `afterBreak`, so it folds only into a row it touches. A pinned row whose end tracks the day follows the
 part it overlaps most; the parts after the break are rows of their own.
 
-The cut runs on the measured break, before the rows are snapped, so a part after a break starts where
-a row after any other break starts: on the boundary below the minute the user came back.
+The cut runs at the edges the Break lane draws, before the rows are snapped: the part before a break
+ends where the drawn break starts, the part after starts where it ends, and any other attended row
+that reaches into the drawn break is cut there too. Cutting at the measured return let the boundary below it
+book up to an increment of the drawn break: on 2026-10-02 a break measured 13:10-13:43 was drawn
+13:15-13:45 while the next row started at 13:30. A part after a break keeps the id the measured cut
+gave it, so the edits on it survive.
 
 **The work inside the break becomes a row nobody attended.** It is not dropped: an agent did work
 there, and a day with empty gaps reads as if nothing happened. It is the ADR 0018 row ("Nobody was
@@ -28,7 +32,7 @@ and no minute an attended row of its lane holds. The user books it through the s
 Work of one lane and name in one break is one row, as `joinUnattended` makes it.
 
 Measured on the real 2026-10-02, read at 15:30: the one row of 5h 45m is four rows of 4h 45m, and
-the three breaks hold unattended rows of 15m, 15m and 30m.
+the three breaks hold unattended rows of 15m, 30m and 30m, each the full drawn break.
 
 ## Consequences
 
@@ -36,6 +40,8 @@ the three breaks hold unattended rows of 15m, 15m and 30m.
   remote stretch keeps its booking under ADR 0033.
 - **ADR 0030 holds.** A call the user attended and a run they timed are taken out of the break before
   the cut, so neither is cut, nor the work under it.
+- **A part wholly inside the drawn break books nothing.** Its work joins the row nobody attended, as
+  on 2026-09-28, where a break measured from 00:06 was drawn from 00:00.
 - **A row nobody attended is unchanged.** It books nothing, ends with the break it starts in, and is
   still drawn, as ADR 0018 decides.
 - **The break is drawn over the unattended row**, as over any row a break runs through.

@@ -9,7 +9,7 @@ import {
   windowsMs,
   windowsOverlap,
 } from '../model/time-window';
-import { breaksBetweenRows } from '../stream/breaks';
+import { breaksBetweenRows, drawnBreak } from '../stream/breaks';
 import { DescribeOptions, describeWork } from './describe';
 import { CALL_LANE_KEY, laneKeyOf } from './lane';
 import { WorkGroup, joinGroups } from './merge';
@@ -67,11 +67,49 @@ const ALL_TIME = { from: new Date(-8.64e15), to: new Date(8.64e15) };
 
 const blocksMs = (blocks: readonly ActivityBlock[]) => blocks.reduce((sum, block) => sum + blockDurationMs(block), 0);
 
-type BreakPiece = { group: WorkGroup; afterBreak?: true; inBreak?: true };
+/** `idFrom` is the start a part's id is built from, where it differs from the part's own start. */
+type BreakPiece = { group: WorkGroup; afterBreak?: true; inBreak?: true; idFrom?: Date };
 
-/** A part no block reaches is dropped, so a group with no blocks of its own, like a timer run's, is never cut. */
-const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): BreakPiece[] => {
-  const over = away.filter((window) => windowsOverlap(window, group));
+/**
+ * The boundary below the first block after the measured break, which is where a part after a break
+ * started while the cut ran on the measured break. Its id, and the user's edits on it, hang there.
+ */
+const measuredStartOf = (options: {
+  blocks: readonly ActivityBlock[];
+  away: readonly TimeWindow[];
+  part: TimeWindow;
+  incrementMs: number;
+}) => {
+  const { part } = options;
+  const back = Math.max(
+    -Infinity,
+    ...options.away.filter((window) => window.from < part.from).map((window) => window.to.getTime()),
+  );
+  const starts = Number.isFinite(back)
+    ? options.blocks
+        .filter((block) => block.to.getTime() > back && block.from < part.to)
+        .map((block) => Math.max(block.from.getTime(), back))
+    : [];
+
+  return new Date(floorToGrid(starts.length ? Math.min(...starts) : part.from.getTime(), options.incrementMs));
+};
+
+/**
+ * Cuts an attended group at the breaks the Break lane draws over the rows, `drawn`, so no booked part
+ * reaches into one. Only a break a group runs through is drawn there; the lane draws any other break as
+ * the gap the rows leave. A part after a break keeps the id it had when the cut ran on the measured
+ * break, `away`.
+ *
+ * A part no block reaches is dropped, so a group with no blocks of its own, like a timer run's, is never cut.
+ */
+const cutOutBreaks = (options: {
+  group: WorkGroup;
+  away: readonly TimeWindow[];
+  drawn: readonly TimeWindow[];
+  incrementMs: number;
+}): BreakPiece[] => {
+  const { group } = options;
+  const over = options.drawn.filter((window) => windowsOverlap(window, group));
 
   if (group.attended === false || !over.length) return [{ group }];
 
@@ -110,7 +148,17 @@ const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): BreakPiece
       evidence: evidenceOf(index),
       observedMs: Math.min(group.observedMs, blocksMs(piece.blocks)),
     },
-    ...(piece.from > group.from ? { afterBreak: true as const } : {}),
+    ...(piece.from > group.from
+      ? {
+          afterBreak: true as const,
+          idFrom: measuredStartOf({
+            blocks: group.blocks,
+            away: options.away,
+            part: piece,
+            incrementMs: options.incrementMs,
+          }),
+        }
+      : {}),
   }));
   const inBreaks = clipWindows({ windows: over, within: [group] }).flatMap((window) => {
     const inside = clipBlocks({
@@ -150,11 +198,11 @@ const sharesUnattendedRow = (row: BoundGroup, piece: BoundGroup) =>
 
 /** The work inside a break must stay off every attended row of its lane, or the review folds and trims it into a booking. */
 const placeInBreaks = (options: {
-  rows: readonly (BoundGroup & { afterBreak?: true })[];
+  rows: readonly (BoundGroup & { afterBreak?: true; idFrom?: Date })[];
   cut: readonly (readonly BreakPiece[])[];
   placed: ReadonlyMap<BreakPiece, BoundGroup>;
   round?: Partial<RoundOptions>;
-}): (BoundGroup & { afterBreak?: true })[] => {
+}): (BoundGroup & { afterBreak?: true; idFrom?: Date })[] => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
   const rows = [...options.rows];
 
@@ -359,13 +407,23 @@ export const propose = (options: {
   presence?: readonly TimeWindow[];
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
-  const away = subtractWindows({ windows: options.breaks ?? [], without: options.presence ?? [] });
-  const cut = options.groups.map((group) => cutOutBreaks(group, away));
+  const presence = options.presence ?? [];
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+  const away = subtractWindows({ windows: options.breaks ?? [], without: presence });
+  const drawn = (options.breaks ?? [])
+    .filter((window) =>
+      subtractWindows({ windows: [window], without: presence }).some((part) =>
+        options.groups.some((group) => windowsOverlap(part, group)),
+      ),
+    )
+    .flatMap((window) => drawnBreak({ window, presence, round: options.round }));
+  const cut = options.groups.map((group) => cutOutBreaks({ group, away, drawn, incrementMs }));
   const parts = cut.flat().filter((piece) => !piece.inBreak);
   const snapped = snapRowBounds({
-    rows: parts.map(({ group, afterBreak }) => ({
+    rows: parts.map(({ group, afterBreak, idFrom }) => ({
       group,
       ...(afterBreak ? { afterBreak } : {}),
+      ...(idFrom ? { idFrom } : {}),
       from: group.from,
       to: group.to,
       durationMs: roundDurationUp(group.observedMs, options.round),
@@ -413,16 +471,18 @@ export const propose = (options: {
   });
   const attributed = booked.filter(isAttributedRow);
   const unnamedIds = rowIds(unnamedBaseId);
+  const idGroupOf = <T extends WorkGroup>(row: { group: T; idFrom?: Date }): T =>
+    row.idFrom ? { ...row.group, from: row.idFrom } : row.group;
   const unnamed = booked
     .filter((row) => !isAttributedRow(row))
-    .map((row) => ({ ...row, group: { ...row.group, rowId: unnamedIds.next(row.group) } }));
+    .map((row) => ({ ...row, group: { ...row.group, rowId: unnamedIds.next(idGroupOf(row)) } }));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
   const ids = rowIds(proposalId);
 
   return {
-    proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak }) => ({
-      id: ids.next(group),
-      unnamedId: unnamedBaseId(group),
+    proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak, idFrom }) => ({
+      id: ids.next(idGroupOf({ group, idFrom })),
+      unnamedId: unnamedBaseId(idGroupOf({ group, idFrom })),
       issueKey: group.issueKey,
       storyKey: group.storyKey,
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),

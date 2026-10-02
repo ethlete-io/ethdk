@@ -353,6 +353,24 @@ const clippedToPresence = (options: {
   );
 };
 
+/**
+ * What the Break lane draws for a measured break a row runs through: the break on the rows' increment,
+ * less the stretches no break may cover. `propose` cuts the rows at these edges, so the two never drift.
+ */
+export const drawnBreak = (options: {
+  window: TimeWindow;
+  presence: readonly TimeWindow[];
+  round?: Partial<RoundOptions>;
+}): TimeWindow[] => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+
+  return clippedToPresence({
+    breaks: [snapped({ from: options.window.from, to: options.window.to, locked: false }, incrementMs)],
+    presence: options.presence,
+    incrementMs,
+  }).map(({ from, to }) => ({ from, to }));
+};
+
 /** Breaks with every overlap joined, keeping the lock of whichever part carried one. */
 const mergedBreaks = (breaks: readonly BreakWindow[]): BreakWindow[] =>
   mergeWindows(breaks).map((window) => ({

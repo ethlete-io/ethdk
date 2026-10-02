@@ -216,7 +216,7 @@ describe('streamDay, on work the user steered from a phone', () => {
     expect(booked.map((row) => [row.from, row.to])).toEqual([
       [AT(0), AT(15)],
       [AT(60), AT(90)],
-      [AT(120), AT(180)],
+      [AT(135), AT(180)],
     ]);
   });
 
@@ -224,7 +224,7 @@ describe('streamDay, on work the user steered from a phone', () => {
     const inside = (at: Date) => at.getTime() > AT(60).getTime() && at.getTime() < AT(180).getTime();
     const edges = dayOf(REMOTE).rows.proposals.flatMap((row) => [row.from, row.to].filter(inside));
 
-    expect(edges).toEqual([AT(90), AT(120)]);
+    expect(edges).toEqual([AT(90), AT(135)]);
   });
 
   it('draws a break no longer than the one the notifier measured', () => {
@@ -598,8 +598,14 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     });
   const overlapMs = (row: TimeWindow, windows: readonly TimeWindow[]) =>
     windowsMs(clipWindows({ windows: [row], within: windows }));
+  const drawnOf = (day: ReturnType<typeof read>) =>
+    breaksBetweenRows({
+      breaks: day.breaks,
+      rows: [...day.rows.proposals, ...day.rows.unnamed],
+      presence: day.calls.filter((call) => call.isPresence),
+    });
   const bookedInBreaks = (day: ReturnType<typeof read>, rows: readonly TimeWindow[]) => {
-    const drawn = breaksBetweenRows({ breaks: day.breaks, rows, presence: day.presence });
+    const drawn = drawnOf(day);
 
     return rows.reduce((sum, row) => sum + overlapMs(row, drawn), 0);
   };
@@ -613,7 +619,7 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     expect(minutes(booked)).toEqual([
       [585, 135],
       [735, 60],
-      [810, 30],
+      [825, 15],
       [885, 15],
     ]);
     expect(bookedInBreaks(day, booked)).toBe(0);
@@ -625,7 +631,7 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
 
     expect(minutes(unattended)).toEqual([
       [720, 15],
-      [795, 15],
+      [795, 30],
       [840, 45],
     ]);
     expect(unattended.map((row) => row.withheldIssueKey)).toEqual(['ET-772', 'ET-772', 'ET-772']);
@@ -657,7 +663,7 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     const booked = review.rows.filter((row) => row.issueKey === 'ET-772' && !row.hidden);
 
     expect(bookedInBreaks(day, booked)).toBe(0);
-    expect(booked.reduce((sum, row) => sum + row.durationMs, 0)).toBe(240 * MINUTE);
+    expect(booked.reduce((sum, row) => sum + row.durationMs, 0)).toBe(225 * MINUTE);
   });
 
   it('writes no Tempo worklog inside a break', () => {
@@ -676,6 +682,33 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     expect(bookedInBreaks(day, written)).toBe(0);
     expect(reviewed.filter((row) => row.unattended).length).toBe(3);
     expect(written.some((row) => row.unattended)).toBe(false);
+  });
+
+  it('cuts at the drawn break when the return rounds up past the boundary below it', () => {
+    const day = read(THROUGH);
+    const drawn = drawnOf(day).find((window) => window.from.getTime() === AT(795).getTime());
+    const after = day.rows.proposals.find((row) => row.afterBreak && row.from >= AT(795) && row.from < AT(840));
+    const inside = day.rows.unnamed.find((row) => row.unattended && row.from.getTime() === AT(795).getTime());
+
+    expect(drawn).toEqual({ from: AT(795), to: AT(825), locked: false });
+    expect(after?.from).toEqual(AT(825));
+    expect(inside && [inside.from, inside.to]).toEqual([AT(795), AT(825)]);
+  });
+
+  it('keeps an edit the reviewer made on a part after a break where an older build started it', () => {
+    const day = read(THROUGH);
+    const after = day.rows.proposals.find((row) => row.from.getTime() === AT(825).getTime());
+    const stored = `ET-772@${AT(810).toISOString()}`;
+    const review = reviewDay({
+      rows: day.rows,
+      edits: { ...EMPTY_DAY_REVIEW_EDITS, overrides: { [stored]: { description: 'Bracket seeds by hand' } } },
+    });
+
+    expect(after?.afterBreak).toBe(true);
+    expect(review.rows.find((row) => row.id === stored)).toMatchObject({
+      from: AT(825),
+      description: 'Bracket seeds by hand',
+    });
   });
 
   it('still books what a prompt from the phone bought back inside a break', () => {
