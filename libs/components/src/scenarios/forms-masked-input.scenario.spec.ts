@@ -115,7 +115,7 @@ class PaymentFormComponent {
   amountMask = signal<MaskSpec | null>(createCurrencyMask({ prefix: '€ ', allowNegative: true }));
   model = signal({ birthday: '', iban: '', card: '', amount: '' });
   payment = form(this.model, (path) => {
-    required(path.birthday);
+    required(path.birthday, { message: 'Birthday is required' });
   });
 }
 

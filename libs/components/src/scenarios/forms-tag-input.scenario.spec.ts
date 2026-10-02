@@ -34,7 +34,7 @@ import { Scenario, useScenario } from './harness';
 })
 class TeamTagsComponent {
   model = signal({ tags: ['team-a'] });
-  team = form(this.model, (path) => maxLength(path.tags, 4));
+  team = form(this.model, (path) => maxLength(path.tags, 4, { message: 'Pick up to 4 tags' }));
   maxTags = signal<number | undefined>(undefined);
   separators = signal(['Enter', ',']);
   submits = 0;

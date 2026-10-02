@@ -36,7 +36,7 @@ class MatchReviewComponent {
   max = signal<number | undefined>(undefined);
   review = form(this.model, (path) => {
     required(path.stars, { message: 'Rate the match' });
-    max(path.stars, () => this.max());
+    max(path.stars, () => this.max(), { message: 'Too many stars' });
   });
   hearts = signal<number | null>(2);
 }

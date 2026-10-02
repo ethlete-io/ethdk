@@ -46,9 +46,9 @@ class PlayerSignupComponent {
   model = signal({ email: '', shirt: null as number | null, password: '' });
   signup = form(this.model, (path) => {
     required(path.email, { message: 'Email is required' });
-    min(path.shirt, 1);
-    max(path.shirt, 3);
-    required(path.password);
+    min(path.shirt, 1, { message: 'Pick a shirt size from 1 to 3' });
+    max(path.shirt, 3, { message: 'Pick a shirt size from 1 to 3' });
+    required(path.password, { message: 'Password is required' });
   });
   revealed = signal(false);
   passwordDir = viewChild.required(PasswordInputDirective);
