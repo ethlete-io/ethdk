@@ -35,6 +35,7 @@ export const PACKAGES = {
   '@ethlete/bracket': 'bracket/fesm2022/ethlete-bracket.mjs',
   '@ethlete/cdk': 'cdk/fesm2022/ethlete-cdk.mjs',
   '@ethlete/components': 'components/fesm2022/ethlete-components.mjs',
+  '@ethlete/components/testing': 'components/fesm2022/ethlete-components-testing.mjs',
   '@ethlete/contentful': 'contentful/fesm2022/ethlete-contentful.mjs',
   '@ethlete/core': 'core/fesm2022/ethlete-core.mjs',
   '@ethlete/query': 'query/fesm2022/ethlete-query.mjs',

@@ -136,6 +136,8 @@ private add = createOverlayOpener(addOverlay, { single: this.slot });
 
 Inside the overlay component, `definition.injectRef()` returns the fully typed `OverlayRef`. It must be called in the component's injection context (field initializer or constructor) and throws an actionable [`RuntimeError`](/core/utilities#runtime-errors) when no overlay is open - e.g. when the component is accidentally rendered outside an overlay.
 
+To unit-test an overlay component without opening it, provide a fake ref with `provideTestOverlayRef()` from `@ethlete/components/testing` ([Testing an overlay component](/components/testing#testing-an-overlay-component)).
+
 ## Query-param overlays
 
 `defineQueryParamOverlay` creates an overlay whose lifecycle is driven by a URL query param: it opens while the param is present, closes (clearing the param) when dismissed, and survives deep links and browser back/forward. A browser Back that a close guard vetoes puts the param back, so the URL keeps naming the open overlay.

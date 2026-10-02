@@ -115,6 +115,8 @@ yarn add -D @ethlete/cli@next
 
 Install it from `next`: `latest` still points at a 2.x release without `et update`.
 
+In unit specs, call `setupComponentsTestEnvironment()` from `@ethlete/components/testing` in the test setup file: jsdom lacks browser APIs the components need ([Testing](/components/testing)).
+
 ## Framework
 
 - **`provideHttpClient()`** from `@angular/common/http` if you use `@ethlete/query`'s HTTP

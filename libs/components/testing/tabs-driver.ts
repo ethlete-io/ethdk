@@ -1,7 +1,7 @@
 import { ComponentFixture } from '@angular/core/testing';
-import { ControlDriverOptions, createControlDriver } from '../../testing/control-driver';
-import { pressKey } from '../../testing/driver-core';
-import { TabBarDirective } from '../headless/tab-bar.directive';
+import { ControlDriverOptions, createControlDriver } from './control-driver';
+import { pressKey } from './driver-core';
+import { TabBarDirective } from '@ethlete/components';
 
 export type TabBarDriverOptions = ControlDriverOptions & {
   /** Matches every trigger inside the bar. Defaults to the role every `TabBarTriggerDirective` host carries. */

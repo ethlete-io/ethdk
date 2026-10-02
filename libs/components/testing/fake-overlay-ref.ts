@@ -1,8 +1,7 @@
 import { Provider, signal } from '@angular/core';
 import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource } from '@ethlete/core';
 import { ReplaySubject, map } from 'rxjs';
-import { OverlayConfig } from '../overlay/overlay-config';
-import { OVERLAY_REF, OverlayCloseGuard, OverlayRef } from '../overlay/overlay-ref';
+import { OVERLAY_REF, OverlayCloseGuard, OverlayConfig, OverlayRef } from '@ethlete/components';
 
 export type TestOverlayRef<TComponent extends object = object, TResult = unknown> = OverlayRef<TComponent, TResult> & {
   /** Every `close()` / `forceClose()` call, in order, including ones a close guard vetoed. */

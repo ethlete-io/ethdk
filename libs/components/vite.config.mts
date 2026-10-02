@@ -16,7 +16,7 @@ export default defineConfig(() => ({
     globals: true,
     environment: 'jsdom',
     passWithNoTests: true,
-    include: ['{src,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: ['{src,testing,tests,generators}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.mjs'],
     reporters: ['default'],
     // The analog plugin defaults to `vmThreads`, whose heap grows across files. Vitest's default

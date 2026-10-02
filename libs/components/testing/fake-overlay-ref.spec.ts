@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import '../../test-helpers';
-import { defineOverlay } from '../overlay/overlay-definition';
+import '../src/test-helpers';
+import { defineOverlay } from '@ethlete/components';
 import { createTestOverlayRef, provideTestOverlayRef } from './fake-overlay-ref';
 
 type SaveResult = { saved: boolean };

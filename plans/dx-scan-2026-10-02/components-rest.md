@@ -68,6 +68,8 @@ domain in scope has a suite in `apps/storybook-e2e`.
   tabs/select/date-picker). Add `apps/docs/components/testing.md`. The entry point must not import the main
   barrel in a way that creates a cycle (see the query-devtools note in AGENTS.md).
 - Breaking: no. Decision: yes (new public API surface; which drivers are stable enough to publish).
+- Status: fixed: `@ethlete/components/testing` with `setupComponentsTestEnvironment()` (the four shims, also used by `src/test-helpers.ts`), the overlay ref fake, driver core, control/field/overlay-control, select, date-picker and tab bar drivers (`create*` only; the theme-providing `mount*` helpers stay internal). Guide `components/testing.md`.
+- Review: ok
 
 ## CR-03 `totalPages` of `undefined`/`null` makes pagination write `NaN` into the bound `page`
 

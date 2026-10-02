@@ -88,6 +88,7 @@ export default defineConfig({
           text: 'CDK',
           items: [
             { text: 'Overview', link: '/cdk/' },
+            { text: 'Migrating from the v4 line', link: '/migrating-from-v4' },
             { text: 'Migrating to components', link: '/cdk/migration' },
           ],
         },
@@ -236,6 +237,7 @@ export default defineConfig({
             { text: 'Overview', link: '/components/' },
             { text: 'App setup', link: '/components/setup' },
             { text: 'Localization', link: '/components/localization' },
+            { text: 'Testing', link: '/components/testing' },
           ],
         },
         {

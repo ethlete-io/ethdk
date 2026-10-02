@@ -39,7 +39,7 @@ import {
   resolveClosestOverlay,
   resolveOverlayHasBackdrop,
 } from '../index';
-import { createTestOverlayRef } from '../lib/testing/fake-overlay-ref';
+import { createTestOverlayRef } from '../../testing/fake-overlay-ref';
 import { Scenario, useScenario } from './harness';
 
 @Component({

@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { mountControl } from '../../testing/control-driver';
 import { pressKey } from '../../testing/driver-core';
-import { createTabBarDriver } from '../testing/tabs-driver';
+import { createTabBarDriver } from '../../../../testing/tabs-driver';
 import { TabBarTriggerDirective } from './tab-bar-trigger.directive';
 import { TabBarDirective } from './tab-bar.directive';
 import { TAB_BAR_ORIENTATIONS, TabBarOrientation } from './tab-bar.types';
