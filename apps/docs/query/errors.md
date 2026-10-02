@@ -279,20 +279,50 @@ A request retries only while something is bound to it. When the last consumer of
 
 Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area. Only the paged-stack and WebSocket checks are dev mode only:
 
-| Range     | Area                                                                                                                                                                                                                      |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0–9       | Query core - `ET000` a feature used twice, `ET001` a query created in a `computed`/`effect`/template, `ET002` `invalidates` on a read, `ET003` a query, stack or group created outside an injection context.              |
-| 10–12     | Routes - `ET010` a client `baseUrl` ending in `/` (thrown when the client is created), `ET011` a route not starting with `/`, `ET012` a function route executed without `pathParams`.                                     |
-| 100–199   | [Query features](/query/features) - e.g. `withPolling` on a `POST`, a function route without `withArgs`.                                                                                                                  |
-| 200–249   | [Auth](/query/auth#error-codes) - missing token properties, an auth feature used twice.                                                                                                                                   |
-| 250       | A client feature passed to `createQueryClient` twice.                                                                                                                                                                     |
-| 300–301   | [Caching](/query/caching) - a `key` (`ET300`) or `allowCache` (`ET301`) on a request that cannot be cached.                                                                                                               |
-| 400–499   | [Paged query stacks](/query/stacks#paged-queries) - e.g. fetching past the last page. Dev mode only.                                                                                                                      |
-| 500–599   | [Query stacks](/query/stacks#query-stacks) - e.g. `withArgs` passed as a stack feature.                                                                                                                                   |
-| 600–699   | [GraphQL](/query/gql#typing-args) - thrown by the default `{ data }` unwrapping: `ET600` for a `200` with neither `data` nor `errors`, `ET601` for a `200` with `errors` and no `data`.                                   |
-| 700–701   | [Secure queries](/query/auth) - the secure execute lost its tokens or reached an invalid state. Report these: they point at a bug in the library, not in your code.                                                       |
-| 800       | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args (a search box, a slider) never count.        |
-| 900–999   | [Query sequences and batches](/query/batching) plus [legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - e.g. a second `run()` while one is in flight, or `prepare()` called with no injection context. |
-| 1000–1999 | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined, malformed messages. Dev mode only.                                                                                                            |
+| Code     | Thrown when                                                                                                                                                                               |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ET000`  | A query feature passed to one query twice.                                                                                                                                                |
+| `ET001`  | A query created inside a `computed`, an `effect` or a template.                                                                                                                           |
+| `ET002`  | `invalidates` on a read; give the read `tags` and invalidate them from a mutation.                                                                                                        |
+| `ET003`  | A query, stack or group created outside an injection context.                                                                                                                             |
+| `ET010`  | A client `baseUrl` ending in `/`, thrown when the client is created.                                                                                                                      |
+| `ET011`  | A route not starting with `/`.                                                                                                                                                            |
+| `ET012`  | A function route executed without `pathParams`.                                                                                                                                           |
+| `ET100`  | A function route without a [`withArgs()`](/query/features) feature.                                                                                                                       |
+| `ET101`  | `withPolling()` on a method other than `GET`, `HEAD`, `OPTIONS` or a GraphQL query.                                                                                                       |
+| `ET102`  | `withAutoRefresh()` on a method other than `GET`, `HEAD`, `OPTIONS` or a GraphQL query.                                                                                                   |
+| `ET103`  | `withAutoRefresh()` on a query with `onlyManualExecution`, without `ignoreOnlyManualExecution`.                                                                                           |
+| `ET104`  | `silenceMissingWithArgsFeatureError` set although a `withArgs()` feature is present.                                                                                                      |
+| `ET105`  | `withLongPolling()` on a method other than `GET`, `HEAD`, `OPTIONS` or a GraphQL query.                                                                                                   |
+| `ET106`  | `withLongPolling()` and `withPolling()` on the same query.                                                                                                                                |
+| `ET107`  | `withOptimisticUpdate()` on a read.                                                                                                                                                       |
+| `ET200`  | [Auth](/query/auth#error-codes) - a login or refresh response that is not an object.                                                                                                      |
+| `ET201`  | Auth - a login or refresh response without a string `accessToken`.                                                                                                                        |
+| `ET202`  | Auth - a login or refresh response without a string `refreshToken`.                                                                                                                       |
+| `ET203`  | Auth - an auth provider feature used twice.                                                                                                                                               |
+| `ET204`  | Auth - an access token without a numeric expiry claim, so it is never refreshed before it expires.                                                                                        |
+| `ET250`  | A client feature passed to `createQueryClient` twice.                                                                                                                                     |
+| `ET300`  | [Caching](/query/caching) - a `key` on a request that cannot be cached.                                                                                                                   |
+| `ET301`  | Caching - `allowCache` on a request that cannot be cached.                                                                                                                                |
+| `ET400`  | [Paged query stacks](/query/stacks#paged-queries) - a page past the total page count. Dev mode only.                                                                                      |
+| `ET401`  | Paged query stacks - `fetchNextPage()` before the current page has loaded. Dev mode only.                                                                                                 |
+| `ET402`  | Paged query stacks - `fetchPreviousPage()` on the first page. Dev mode only.                                                                                                              |
+| `ET500`  | [Query stacks](/query/stacks#query-stacks) - `withArgs()` passed as a stack feature.                                                                                                      |
+| `ET501`  | Query stacks - `withResponseUpdate()` passed as a stack feature.                                                                                                                          |
+| `ET600`  | [GraphQL](/query/gql#typing-args) - a `200` with neither `data` nor `errors`, from the default `{ data }` unwrapping.                                                                     |
+| `ET601`  | GraphQL - a `200` with `errors` and no `data`; the server's errors are in `raw.error`.                                                                                                    |
+| `ET700`  | [Secure queries](/query/auth) - the tokens are gone inside the secure execute. A library bug: report it.                                                                                  |
+| `ET701`  | Secure queries - the secure execute reached an invalid state. A library bug: report it.                                                                                                   |
+| `ET800`  | A circular query dependency: the same query ran with identical args more than five times in a row, each run less than 100 ms after the last. Fast runs with _different_ args never count. |
+| `ET900`  | [Query sequences](/query/batching) - `run()` while a run is in flight.                                                                                                                    |
+| `ET910`  | [Query batches](/query/batching) - `run()` or `retryFailed()` while a run is in flight.                                                                                                   |
+| `ET911`  | Query batches - a `withArgs()` feature inside a batch.                                                                                                                                    |
+| `ET950`  | [Legacy interop](/query/migrating-from-v2#prepare-needs-an-injector) - `prepare()`, `createSubject()` or `createSignal()` called with no injection context.                               |
+| `ET951`  | Legacy interop - the query state already contains the key.                                                                                                                                |
+| `ET952`  | Legacy interop - the query state does not contain the key.                                                                                                                                |
+| `ET953`  | Legacy interop - the query state is not loading, so it cannot be transformed.                                                                                                             |
+| `ET954`  | Legacy interop - a body that is not valid or not supported.                                                                                                                               |
+| `ET1000` | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined. Dev mode only.                                                                                                |
+| `ET1001` | WebSockets - a malformed incoming message. Dev mode only.                                                                                                                                 |
 
 The error message names the problem and the fix; the codes exist so you can grep for them. Every code is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.
