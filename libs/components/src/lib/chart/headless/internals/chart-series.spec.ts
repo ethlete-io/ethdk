@@ -1,4 +1,9 @@
-import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './chart-series';
+import {
+  describeSeriesDataMismatch,
+  findSharedSeriesColor,
+  resolveChartAccentMixes,
+  resolveChartSeriesColors,
+} from './chart-series';
 
 const PALETTE = [
   { token: 'ocean', label: 'Ocean' },
@@ -52,5 +57,27 @@ describe('findSharedSeriesColor', () => {
   it('does not count entries without a color, which take steps of the accent', () => {
     expect(findSharedSeriesColor(['ocean', null, null])).toBeNull();
     expect(findSharedSeriesColor(['ocean', 'sunset'])).toBeNull();
+  });
+});
+
+describe('describeSeriesDataMismatch', () => {
+  const series = [{ key: 'home' }, { key: 'away' }];
+
+  it('accepts single-series data without series, and series data that covers every key', () => {
+    expect(describeSeriesDataMismatch([{ label: 'a', value: 1 }], [])).toBeNull();
+    expect(describeSeriesDataMismatch([{ label: 'a', values: { home: 1, away: null } }], series)).toBeNull();
+    expect(describeSeriesDataMismatch([], series)).toBeNull();
+  });
+
+  it('names series data drawn without series', () => {
+    expect(describeSeriesDataMismatch([{ label: 'a', values: { home: 1 } }], [])).toContain('no `series`');
+  });
+
+  it('names single-series data drawn with series', () => {
+    expect(describeSeriesDataMismatch([{ label: 'a', value: 1 }], series)).toContain('carries no `values`');
+  });
+
+  it('names a series key that no datum carries', () => {
+    expect(describeSeriesDataMismatch([{ label: 'a', values: { home: 1, Away: 2 } }], series)).toContain('"away"');
   });
 });

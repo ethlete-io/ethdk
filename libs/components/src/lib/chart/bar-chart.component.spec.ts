@@ -1,7 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideColorPalette, provideSurfaceThemesWithTailwind4, SurfaceTheme } from '@ethlete/core';
+import {
+  ColorTheme,
+  provideColorPalette,
+  provideColorThemesWithTailwind4,
+  provideSurfaceThemesWithTailwind4,
+  SurfaceTheme,
+} from '@ethlete/core';
 import '../../test-helpers';
 import { BarChartComponent } from './bar-chart.component';
 import {
@@ -103,6 +109,14 @@ const PALETTE = provideColorPalette([
   { token: 'sunset', label: 'Sunset' },
   { token: 'forest', label: 'Forest' },
 ]);
+
+const PALETTE_THEMES: ColorTheme[] = ['ocean', 'sunset', 'forest'].map((name) => ({
+  name,
+  primary: {
+    color: { default: '0 0 0', hover: '0 0 0', active: '0 0 0', disabled: '0 0 0' },
+    onColor: { default: '255 255 255' },
+  },
+}));
 
 const setupSeries = (
   options: { layout?: BarChartLayout; orientation?: BarChartOrientation; providers?: unknown[] } = {},
@@ -625,10 +639,23 @@ describe('BarChartComponent series colors', () => {
     warn.mockRestore();
   });
 
+  it('warns in dev mode when a series key matches no datum', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { fixture } = setupSeries();
+
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[BarChartDirective]'));
+
+    fixture.componentInstance.series.update((series) => [...series, { key: 'boxoffice', label: 'Box office' }]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"boxoffice"'));
+    warn.mockRestore();
+  });
+
   it('does not warn when the palette covers every series', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
-    setupSeries({ providers: [PALETTE] });
+    setupSeries({ providers: [PALETTE, provideColorThemesWithTailwind4(PALETTE_THEMES)] });
 
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();

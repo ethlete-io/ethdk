@@ -105,28 +105,29 @@ than resetting them.
 
 ## Inputs
 
-| Input                 | Default      | Description                                                                                                          |
-| --------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `data`                | `[]`         | The rows to render.                                                                                                  |
-| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                               |
-| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                               |
-| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`, `'cards'`. See [below](#appearance-density). |
-| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                                |
-| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                         |
-| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                        |
-| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).      |
-| `error`               | `null`       | Anything but `null`, `undefined` or `false` replaces the body with the error state.                                  |
-| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                       |
-| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                     |
-| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                            |
-| `multiSort`           | `false`      | `true` layers a key per header click, `'shift'` per Shift + click - see [below](#multi-column-sorting).              |
-| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                |
-| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                    |
-| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                            |
-| `quickFilter`         | `''`         | Free text; keeps the rows containing every word of it. See [Quick filter](#quick-filter).                            |
-| `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.    |
-| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                           |
-| `rowLink`             | -            | `(row: T) => string \| unknown[] \| null` - make every row a real link. See [Row links](#row-links).                 |
+| Input                 | Default      | Description                                                                                                                                          |
+| --------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data`                | `[]`         | The rows to render.                                                                                                                                  |
+| `rowsSource`          | -            | A server-side source such as `tableRowsFromQuery` - rows, loading, error, sort and filters in one binding. See [below](#one-binding-instead-of-six). |
+| `columns`             | `{}`         | The column definitions, keyed by column key - see [Columns](#columns).                                                                               |
+| `rowKey`              | reference    | `(row: T) => string \| number` for stable change tracking (and later row-keyed state).                                                               |
+| `appearance`          | `'enclosed'` | Visual frame: `'enclosed'`, `'divided'`, `'zebra'`, `'grid'`, `'bare'`, `'cards'`. See [below](#appearance-density).                                 |
+| `density`             | `'md'`       | Cell padding: `'sm'` (tight), `'md'`, `'lg'` (roomy).                                                                                                |
+| `labels`              | injected set | Partial wording override for this table - see [Localization](#localization).                                                                         |
+| `emptyTemplate`       | -            | Template for the empty state. Context: `{ $implicit: rows }`.                                                                                        |
+| `loading`             | `false`      | Placeholder rows when there are no rows yet, a busy bar over existing ones. See [below](#loading-error-states).                                      |
+| `error`               | `null`       | Anything but `null`, `undefined` or `false` replaces the body with the error state.                                                                  |
+| `errorTemplate`       | -            | Template for the error state. Context: `{ $implicit: error }`.                                                                                       |
+| `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                                                     |
+| `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                                                            |
+| `multiSort`           | `false`      | `true` layers a key per header click, `'shift'` per Shift + click - see [below](#multi-column-sorting).                                              |
+| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                                                |
+| `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                                                    |
+| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                                                            |
+| `quickFilter`         | `''`         | Free text; keeps the rows containing every word of it. See [Quick filter](#quick-filter).                                                            |
+| `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.                                    |
+| `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                                                           |
+| `rowLink`             | -            | `(row: T) => string \| unknown[] \| null` - make every row a real link. See [Row links](#row-links).                                                 |
 
 ## Appearance & density
 
@@ -339,7 +340,7 @@ Common cell shapes. Compose the library's existing components (`et-chip`,
 protected readonly COLUMNS = {
   // sorts by name even though the cell renders an avatar + handle
   player: { header: 'Player', value: (player) => player, sortValue: (player) => player.name },
-  status: { header: 'Status', value: (player) => player.status, filterable: true },
+  status: { header: 'Status', value: (player) => player.status },
   // right-align an actions column and give it a fixed width; pin it with sticky: 'end' if the table scrolls
   actions: { header: '', value: (player) => player, align: 'end', width: '120px' },
 } satisfies TableColumns<Player>;
@@ -388,8 +389,10 @@ export class StandingsComponent {
 }
 ```
 
-Without the feature a `group` simply has no effect - the columns render as one flat header
-row. `enabled: false` turns the row off without removing the attribute.
+A `group` without the feature is a dev-mode error ([`ET3512`](/components/error-codes#table-et35xx)), as are
+`filterable`, `sticky` and `editable` without `etTableFilters`, `etTableStickyColumns` and
+`etTableInlineEdit`. `enabled: false` turns the row off without removing the attribute, and keeps the
+columns legal.
 
 <StoryEmbed id="components-data-display-table--grouped-headers" height="360px" />
 
@@ -726,7 +729,7 @@ even the `[etTableFooter]` bar shifts when the table's own height changes.
 
 `tableRowsFromQuery` feeds the table from an [`@ethlete/query`](/query/) query,
 server-side. The query is created once and re-executes reactively as sort/page
-change; pair it with `sortMode="server"` so the backend does the sorting:
+change, and the table binds the whole source in one input:
 
 ```ts
 users = tableRowsFromQuery({
@@ -741,13 +744,7 @@ users = tableRowsFromQuery({
 ```
 
 ```html
-<et-table
-  [data]="users.rows()"
-  [columns]="COLUMNS"
-  [sort]="users.sort()"
-  (sortChange)="users.setSort($event)"
-  sortMode="server"
-/>
+<et-table [rowsSource]="users" [columns]="COLUMNS" />
 ```
 
 `hasMore` comes from your `toHasMore`, with one backstop: a page that comes back with no
@@ -759,8 +756,8 @@ It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters`,
 `quickFilter` and `page` signals plus `setSort`/`setFilters`/`setQuickFilter`/`setPage` - the
 `args` builder reads `sort`/`filters`/`quickFilter`/`page` to build the request. `rows` keeps
 the previous page visible while the next one loads (no empty flash); `setSort`/`setFilters`/
-`setQuickFilter` reset to `initialPage`. Pair with `sortMode="server"` and `filterMode="server"`. Call it from
-a field initializer / constructor, like a query or query stack.
+`setQuickFilter` reset to `initialPage`, and `hasMore` likewise keeps its last answer while a page loads.
+Call it from a field initializer / constructor, like a query or query stack.
 
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** - the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
@@ -768,12 +765,9 @@ share one client-agnostic core (`createTableRowsSource`), so they stay in lockst
 
 ### One binding instead of six
 
-Bind the source itself and the table wires the rest - rows, `loading`, `error`, and its own
-sort/filter changes routed back through the source's setters:
-
-```html
-<et-table [rowsSource]="src" [columns]="COLUMNS" />
-```
+Binding the source itself, as above, wires the rest - rows, `loading`, `error`, and the table's own
+sort/filter changes routed back through the source's setters - in place of `[data]`, `[sort]`,
+`(sortChange)`, `[filters]`, `(filtersChange)` and `sortMode`.
 
 `rowsSource` takes anything of the `TableRowsSource` shape, so both query adapters satisfy it
 as they are and a hand-rolled object works too - the table never imports `@ethlete/query`.
@@ -1172,7 +1166,7 @@ to the adapter's `page` / `setPage`, and let the page-size select drive the quer
 ```ts
 @Component({
   template: `
-    <et-table [data]="rows.rows()" [columns]="COLUMNS" sortMode="server" [style.block-size.rem]="32">
+    <et-table [rowsSource]="rows" [columns]="COLUMNS" [style.block-size.rem]="32">
       <!-- Material-style controls row: label + page-size select + range + prev/next, right-aligned. -->
       <div class="flex flex-wrap items-center justify-end gap-3" etTableFooter>
         <span class="et-table-footer-label">Items per page:</span>
@@ -1572,7 +1566,9 @@ protected readonly COLUMNS = {
 `exportValue` returns a `string | number | boolean | Date | null | undefined`. Dates are
 written as ISO 8601 (the only form that survives a spreadsheet's locale) and nullish
 becomes an empty field rather than the text `null` - a column that declares `exportValue`
-is exported by it alone, so an empty cell never falls back to a non-primitive `value`.
+is exported by it alone, so an empty cell never falls back to a non-primitive `value`. A column
+without `exportValue` whose `value` returns an object, a list or a function throws
+[`ET3513`](/components/error-codes#table-et35xx) in dev mode rather than write `[object Object]`.
 
 ### Options
 

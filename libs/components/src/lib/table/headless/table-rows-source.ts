@@ -1,4 +1,4 @@
-import { computed, effect, linkedSignal, signal, Signal, WritableSignal } from '@angular/core';
+import { effect, linkedSignal, signal, Signal, WritableSignal } from '@angular/core';
 import { TableFilter, TableSort } from '../table.types';
 
 // The client-agnostic core shared by the signals-client (`tableRowsFromQuery`) and legacy-client
@@ -125,27 +125,28 @@ export const createTableRowsSource = <TResponse, TRow>(
   });
   effect(() => void total());
 
+  const hasMore = linkedSignal<TResponse | null, boolean>({
+    source: () => driver.response(),
+    computation: (response, previous) => {
+      if (response === null) return previous?.value ?? false;
+      if (!toHasMore) return false;
+
+      // A page that came back with no rows has nothing after it, whatever `toHasMore` derives from the
+      // response - this is what stops a load-more control from surviving one page past the end when the
+      // end can only be inferred (e.g. "a full page means there is more").
+      if (rows().length === 0) return false;
+
+      return toHasMore(response);
+    },
+  });
+  effect(() => void hasMore());
+
   return {
     rows,
     total,
     loading: driver.loading,
     error: driver.errorText,
-    hasMore: computed(() => {
-      const response = driver.response();
-
-      if (response === null || !toHasMore) {
-        return false;
-      }
-
-      // A page that came back with no rows has nothing after it, whatever `toHasMore` derives from the
-      // response - this is what stops a load-more control from surviving one page past the end when the
-      // end can only be inferred (e.g. "a full page means there is more").
-      if (rows().length === 0) {
-        return false;
-      }
-
-      return toHasMore(response);
-    }),
+    hasMore,
     sort: sort.asReadonly(),
     filters: filters.asReadonly(),
     page: page.asReadonly(),

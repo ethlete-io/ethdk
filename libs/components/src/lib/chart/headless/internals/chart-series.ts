@@ -31,3 +31,29 @@ export const resolveChartAccentMixes = (colors: readonly (RegisteredColorThemeNa
 
 export const findSharedSeriesColor = (colors: readonly (RegisteredColorThemeName | null)[]) =>
   colors.find((color, index) => color !== null && colors.indexOf(color) !== index) ?? null;
+
+export const describeSeriesDataMismatch = (
+  data: readonly object[],
+  series: readonly { key: string }[],
+): string | null => {
+  if (!data.length) return null;
+
+  if (!series.length) {
+    return data.some((datum) => 'values' in datum && !('value' in datum))
+      ? 'The data carries `values`, but no `series` names them, so every point reads as 0. Pass `series`, or give each datum a `value`.'
+      : null;
+  }
+
+  const valuesOf = (datum: object) =>
+    'values' in datum && typeof datum.values === 'object' && datum.values !== null ? datum.values : null;
+
+  if (data.every((datum) => valuesOf(datum) === null)) {
+    return 'The `series` input is set, but the data carries no `values`, so nothing is drawn. Give each datum `values` keyed by series, or drop `series`.';
+  }
+
+  const missing = series.find((entry) => !data.some((datum) => entry.key in (valuesOf(datum) ?? {})));
+
+  return missing
+    ? `No datum carries a value for the series "${missing.key}", so it draws nothing. Check the key against the data's \`values\`.`
+    : null;
+};

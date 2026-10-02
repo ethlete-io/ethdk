@@ -84,9 +84,9 @@ The per-item inputs (`ariaLabel`, `minColSpan` / `maxColSpan` / `minRowSpan` / `
 
 ## Imperative API
 
-Get a handle with a template reference (`<et-grid #grid />`, `exportAs: 'etGrid'`) or by injecting `GRID_TOKEN`:
+Get a handle with a template reference that names the export (`<et-grid #grid="etGrid" />`), with `viewChild(GridComponent)` followed by its `.grid`, or by injecting `GRID_TOKEN`. A bare `#grid` resolves to the `GridComponent`, which does not carry these methods itself.
 
-- `addItem(type, data)` / `removeItem(id)` - add or remove outside of the `items` input.
+- `addItem(type, data)` / `removeItem(id)` - add or remove outside of the `items` input. `addItem` returns the new item's id, for focusing, saving or removing it again.
 - `currentItems()` - what the grid holds right now: the `items` input reconciled with every drag, resize, `addItem()` and `removeItem()` since.
 - `getSerializedState()` - the current `GridSerializedState`, the same value `layoutChange` emits.
 - `restoreState(state)` - replace the whole layout with a previously serialized one. This is how you revert after a cancelled edit: snapshot with `getSerializedState()` when edit mode opens, `restoreState()` that snapshot when the user cancels. Re-feeding unchanged `items` cannot do it - nothing changed, so there is nothing to reconcile.

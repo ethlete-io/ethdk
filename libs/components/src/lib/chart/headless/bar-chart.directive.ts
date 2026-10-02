@@ -13,7 +13,12 @@ import { assertChartPlot } from './internals/chart-plot-check';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { createBandScale, createBarPath, createLinearScale, createValueTicks } from './internals/chart-scale';
 import { createCategoryLabelStride, estimateCategoryLabelSpacing } from './internals/chart-label-thinning';
-import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
+import {
+  describeSeriesDataMismatch,
+  findSharedSeriesColor,
+  resolveChartAccentMixes,
+  resolveChartSeriesColors,
+} from './internals/chart-series';
 import { ChartStackSegment, stackExtent, stackValues } from './internals/chart-stack';
 
 /** One bar of a single-series chart: a category and the value its bar encodes. */
@@ -434,6 +439,12 @@ export class BarChartDirective implements ChartPlotHost {
     assertChartPlot(this, 'BarChartDirective');
 
     if (ngDevMode) {
+      effect(() => {
+        const mismatch = describeSeriesDataMismatch(this.data(), this.series());
+
+        if (mismatch !== null) console.warn(`[BarChartDirective] ${mismatch}`);
+      });
+
       effect(() => {
         const shared = findSharedSeriesColor(this.seriesColors());
 

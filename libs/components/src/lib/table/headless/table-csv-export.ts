@@ -170,6 +170,12 @@ const guardFormula = (field: string) => {
 const isInertValue = (value: unknown) =>
   typeof value === 'number' || typeof value === 'bigint' || typeof value === 'boolean' || value instanceof Date;
 
+const isCsvValue = (value: unknown) => {
+  if (value === null || value instanceof Date) return true;
+
+  return typeof value !== 'object' && typeof value !== 'function' && typeof value !== 'symbol';
+};
+
 type FieldConfig = { delimiter: string; formulaGuard: boolean };
 
 const toField = (value: unknown, { delimiter, formulaGuard }: FieldConfig) => {
@@ -226,7 +232,18 @@ export const tableToCsv = <T>(table: TableCsvSource<T>, options: TableCsvSeriali
   }
 
   for (const row of rows) {
-    const fields = columns.map((column) => toField((column.exportValue ?? column.value)(row), field));
+    const fields = columns.map((column) => {
+      const value = (column.exportValue ?? column.value)(row);
+
+      if (isDevMode() && !column.exportValue && !isCsvValue(value)) {
+        throw new RuntimeError(
+          TABLE_ERROR_CODES.UNSERIALIZABLE_EXPORT_VALUE,
+          `[et-table] CSV export read a ${Array.isArray(value) ? 'list' : typeof value} from the "${column.key}" column's value, which has no text form. Add \`exportValue\` to the column.`,
+        );
+      }
+
+      return toField(value, field);
+    });
 
     lines.push(fields.join(field.delimiter));
   }

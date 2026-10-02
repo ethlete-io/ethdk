@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TableColumnDef } from '../table.types';
+import { TABLE_ERROR_CODES } from '../table-errors';
+import { TableColumnDef, TableCsvValue } from '../table.types';
 import { TableCsvSource, tableToCsv } from './table-csv-export';
 
 type Row = {
@@ -119,6 +120,20 @@ describe('tableToCsv', () => {
     });
   });
 
+  describe('unserializable values', () => {
+    it.each([
+      ['an object', { street: 'Main' }],
+      ['a list', ['a', 'b']],
+      ['a function', () => 'x'],
+    ])('throws for %s from a column without exportValue', (_, raw) => {
+      const columns: TableColumnDef<Row>[] = [{ key: 'address', value: () => raw }];
+
+      expect(() => tableToCsv({ ...source(), allColumns: () => columns }, { columns: ['address'] })).toThrow(
+        expect.objectContaining({ code: TABLE_ERROR_CODES.UNSERIALIZABLE_EXPORT_VALUE }),
+      );
+    });
+  });
+
   describe('quoting', () => {
     const quoted = (value: string) =>
       tableToCsv(
@@ -194,7 +209,9 @@ describe('tableToCsv', () => {
       const csv = tableToCsv(
         {
           rows: () => [{ value }],
-          visibleColumns: () => [{ key: 'v', value: (row) => row.value }],
+          visibleColumns: () => [
+            { key: 'v', value: (row) => row.value, exportValue: (row) => row.value as unknown as TableCsvValue },
+          ],
           allColumns: () => [],
         },
         { header: false },

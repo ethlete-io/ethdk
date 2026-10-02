@@ -693,6 +693,7 @@ export class GridDirective<TData = unknown> {
     this.commitResize();
   }
 
+  /** Add an item of a registered `type`, placed in the first free cell. Returns the new item's id. */
   public addItem(type: string, data: TData) {
     const id = randomId();
 
@@ -704,6 +705,8 @@ export class GridDirective<TData = unknown> {
     };
 
     this.placeItem(config);
+
+    return id;
   }
 
   public removeItem(id: string, options?: GridMutationOptions) {

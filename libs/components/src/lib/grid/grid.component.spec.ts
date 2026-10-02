@@ -1,4 +1,4 @@
-import { Component, ErrorHandler, input, Type } from '@angular/core';
+import { Component, ErrorHandler, input, Type, viewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { query } from '../testing/driver-core';
@@ -103,6 +103,14 @@ class TypedHostComponent {
   states: GridSerializedState<WidgetData>[] = [];
 }
 
+@Component({
+  imports: [GridComponent],
+  template: `<et-grid #grid="etGrid" />`,
+})
+class ExportAsHostComponent {
+  handle = viewChild.required<GridDirective>('grid');
+}
+
 describe('GridComponent', () => {
   let fixture: ComponentFixture<TestHostComponent>;
   let grid: GridHarness;
@@ -119,6 +127,20 @@ describe('GridComponent', () => {
       providers: [...provideGridConfig({ registrations: [{ type: 'test', component: TestItemComponent }] })],
     });
     fixture = TestBed.createComponent(TestHostComponent);
+  });
+
+  it('hands out the grid directive through #grid="etGrid", and addItem answers with the new id', () => {
+    const host = TestBed.createComponent(ExportAsHostComponent);
+    host.detectChanges();
+
+    const handle = host.componentInstance.handle();
+
+    expect(handle).toBeInstanceOf(GridDirective);
+
+    const id = handle.addItem('test', undefined);
+    host.detectChanges();
+
+    expect(handle.currentItems().map((item) => item.id)).toEqual([id]);
   });
 
   it('renders the grid host element with class et-grid', () => {

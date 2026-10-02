@@ -27,13 +27,15 @@ describe('tableRowsFromQuery', () => {
 
   afterEach(() => httpMock.verify());
 
-  const createSource = () => {
+  const createSource = (queryConfig: { keepPreviousResponse?: boolean } = {}) => {
     const client = createQueryClient({ baseUrl: 'https://api.example.com', name: `table-${Math.random()}` });
     const getUsers = createGetQuery(client)<UsersArgs>('/users');
+    const queryCreator = ((...features: Parameters<typeof getUsers>) =>
+      getUsers(queryConfig, ...(features as never[]))) as typeof getUsers;
 
     return TestBed.runInInjectionContext(() =>
       tableRowsFromQuery({
-        queryCreator: getUsers,
+        queryCreator,
         args: ({ sort, page, quickFilter }) => ({
           queryParams: {
             sortBy: sort()[0]?.key,
@@ -138,6 +140,20 @@ describe('tableRowsFromQuery', () => {
     respond({ items: page2, totalHits: 42, hasMore: false });
     expect(source.rows()).toEqual(page2);
     expect(source.loading()).toBe(false);
+  });
+
+  it('keeps hasMore while the next page loads for a query that drops its previous response', () => {
+    const source = createSource({ keepPreviousResponse: false });
+    respond({ items: page1, totalHits: 42, hasMore: true });
+
+    source.setPage(2);
+    TestBed.tick();
+
+    expect(source.loading()).toBe(true);
+    expect(source.hasMore()).toBe(true);
+
+    respond({ items: page2, totalHits: 42, hasMore: false });
+    expect(source.hasMore()).toBe(false);
   });
 
   it('surfaces a query error as text', () => {

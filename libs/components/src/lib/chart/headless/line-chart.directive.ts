@@ -35,7 +35,12 @@ import {
 } from './internals/chart-line';
 import { assertChartPlot } from './internals/chart-plot-check';
 import { createFittedValueTicks, createLinearScale, createValueTicks, numberExtent } from './internals/chart-scale';
-import { findSharedSeriesColor, resolveChartAccentMixes, resolveChartSeriesColors } from './internals/chart-series';
+import {
+  describeSeriesDataMismatch,
+  findSharedSeriesColor,
+  resolveChartAccentMixes,
+  resolveChartSeriesColors,
+} from './internals/chart-series';
 import {
   createTimeTicks,
   createTimeValueFormatter,
@@ -560,6 +565,12 @@ export class LineChartDirective implements ChartPlotHost {
       .subscribe();
 
     if (ngDevMode) {
+      effect(() => {
+        const mismatch = describeSeriesDataMismatch(this.data(), this.series());
+
+        if (mismatch !== null) console.warn(`[LineChartDirective] ${mismatch}`);
+      });
+
       effect(() => {
         if (!this.hasMixedX()) return;
 

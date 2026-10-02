@@ -24,4 +24,8 @@ export const TABLE_ERROR_CODES = {
   UNPAIRED_ROWS_SOURCE_STATE: 3510,
   /** A column was pinned at runtime on a table without `etTableStickyColumns` to pin it. */
   MISSING_STICKY_COLUMNS: 3511,
+  /** A column sets `filterable`, `sticky`, `group` or `editable` on a table without the feature that reads it. */
+  MISSING_COLUMN_FEATURE: 3512,
+  /** A CSV export read an object, list or function from a column that has no `exportValue`. */
+  UNSERIALIZABLE_EXPORT_VALUE: 3513,
 } as const;

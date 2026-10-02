@@ -101,7 +101,7 @@ The chart reads the app's [color palette](/core/theming#offering-colors-to-a-use
 
 A single series never takes a palette entry - it stays on the accent (or `colorToken`), so a lone series matches the rest of the page.
 
-Colors follow the series' position in `series`. When series come and go (a filter, say), give each one its own `colorToken` so a survivor keeps its color. In dev mode the chart warns when two series share one `colorToken`.
+Colors follow the series' position in `series`. When series come and go (a filter, say), give each one its own `colorToken` so a survivor keeps its color. In dev mode the chart warns when two series share one `colorToken`, and when `data` and `series` do not fit: `values` without `series`, `series` over data that carries only `value`, or a series `key` no datum carries.
 
 ```ts
 providers: [

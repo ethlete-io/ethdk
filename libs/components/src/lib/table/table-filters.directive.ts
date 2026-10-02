@@ -50,6 +50,7 @@ export class TableFiltersDirective {
       component: TableFilterTriggerComponent,
       injector: inject(Injector),
       order: 0,
+      columnFlag: 'filterable',
       enabled: computed(() => this.config().enabled ?? true),
     });
   }

@@ -242,6 +242,13 @@ const UNPAIRED_ROWS_SOURCE_CHECKS = [
   ['filters', 'setFilters', 'filterable'],
 ] as const;
 
+const COLUMN_FEATURE_CHECKS = [
+  ['filterable', 'etTableFilters', 'TABLE_FILTER_IMPORTS'],
+  ['sticky', 'etTableStickyColumns', 'TABLE_STICKY_COLUMNS_IMPORTS'],
+  ['group', 'etTableGroupHeaders', 'TABLE_GROUP_HEADERS_IMPORTS'],
+  ['editable', 'etTableInlineEdit', 'TABLE_INLINE_EDIT_IMPORTS'],
+] as const;
+
 // Per-table counter, so the ids a row link is named by are unique across every table on the page.
 let uniqueTableId = 0;
 
@@ -1262,6 +1269,27 @@ export class TableComponent<T> implements TableFeatureHost {
           '[et-table] [rowLink] answered with router commands, which need the router feature to resolve them. Add `etTableRowRouterLink` to the table and import TABLE_ROW_ROUTER_LINK_IMPORTS, or answer with an href string instead.',
           { element: this.elementRef.nativeElement },
         );
+      });
+
+      effect(() => {
+        const registered = {
+          filterable: this.headerAdornmentList().some((adornment) => adornment.columnFlag === 'filterable'),
+          sticky: this.columnPinningList().length > 0,
+          group: this.headerRowList().length > 0,
+          editable: this.cellEditingList().length > 0,
+        };
+
+        for (const column of this.columnDefs()) {
+          for (const [flag, directive, imports] of COLUMN_FEATURE_CHECKS) {
+            if (!column[flag] || registered[flag]) continue;
+
+            throw new RuntimeError(
+              TABLE_ERROR_CODES.MISSING_COLUMN_FEATURE,
+              `[et-table] Column "${column.key}" sets \`${flag}\`, which needs the feature that reads it. Add \`${directive}\` to the table and import ${imports}.`,
+              { element: this.elementRef.nativeElement },
+            );
+          }
+        }
       });
 
       // A source's `sort`/`filters` signal and its setter are one contract the optional members cannot

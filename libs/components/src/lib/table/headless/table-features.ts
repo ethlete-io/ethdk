@@ -34,6 +34,11 @@ export type TableHeaderAdornment = {
    */
   order?: number;
   /**
+   * The column flag this adornment renders for, e.g. `'filterable'` for the filter trigger. A column
+   * that sets the flag on a table where no adornment claims it is a dev-mode error (`ET3512`).
+   */
+  columnFlag?: 'filterable';
+  /**
    * Whether this contribution is live. A feature registers once, in its constructor, and gates itself
    * with this rather than re-registering - so `[etTableResize]="{ enabled: … }"` can be toggled at
    * runtime. Omitted means always on.

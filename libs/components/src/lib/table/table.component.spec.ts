@@ -460,7 +460,6 @@ describe('TableComponent', () => {
         role: {
           header: 'Role',
           value: (person) => person.role,
-          filterable: true,
           filterOptions: [
             { label: 'Admin', value: 'Admin' },
             { label: 'Editor', value: 'Editor' },
@@ -537,12 +536,6 @@ describe('TableComponent', () => {
 
       expect(fixture.componentInstance.rows()).toHaveLength(3);
       expect(fixture.componentInstance.quickFilter()).toBe('ada');
-    });
-
-    it('renders no filter UI without the opt-in feature (the menu system stays out of the bundle)', () => {
-      const fixture = create(filterableColumns(), UNSORTED);
-
-      expect(hostOf(fixture).querySelector('.et-table-filter-trigger')).toBeNull();
     });
   });
 
@@ -654,7 +647,7 @@ describe('TableComponent', () => {
       ({
         id: { header: 'ID', value: (p) => p.id, sortable: true },
         name: { header: 'Name', value: (p) => p.name, sortable: true },
-        role: { header: 'Role', value: (p) => p.role, filterable: true },
+        role: { header: 'Role', value: (p) => p.role },
       }) satisfies TableColumns<Person>;
 
     it('captures sort direction and filter values per column', () => {
@@ -858,23 +851,25 @@ describe('TableComponent', () => {
   });
 
   describe('sticky columns & footer', () => {
-    it('pins nothing without the feature, whatever a column declares', () => {
-      const cols = {
-        name: { value: (p) => p.name, sticky: 'start' },
-        role: { value: (p) => p.role },
-      } satisfies TableColumns<Person>;
-      const host = hostOf(create(cols));
+    it.each([
+      ['filterable', { filterable: true }],
+      ['sticky', { sticky: 'start' }],
+      ['group', { group: 'Who' }],
+      ['editable', { editable: true }],
+    ] as const)('throws when a column sets %s without the feature that reads it', (flag, extra) => {
+      const fixture = TestBed.createComponent<TableComponent<Person>>(TableComponent);
+      fixture.componentRef.setInput('columns', {
+        name: { value: (p: Person) => p.name, ...extra },
+        role: { value: (p: Person) => p.role },
+      } satisfies TableColumns<Person>);
+      fixture.componentRef.setInput('data', PEOPLE);
 
-      // `sticky` is inert until etTableStickyColumns supplies the pinning - no class, no inline offset,
-      // on the declared column or any other.
-      for (const key of ['name', 'role']) {
-        const header = host.querySelector<HTMLElement>(`[data-col-key="${key}"]`);
-
-        expect(header?.classList.contains('et-table-sticky-start')).toBe(false);
-        expect(header?.classList.contains('et-table-sticky-end')).toBe(false);
-        expect(header?.style.insetInlineStart).toBe('');
-        expect(header?.style.insetInlineEnd).toBe('');
-      }
+      expect(() => fixture.detectChanges()).toThrow(
+        expect.objectContaining({
+          code: TABLE_ERROR_CODES.MISSING_COLUMN_FEATURE,
+          message: expect.stringContaining(`"name" sets \`${flag}\``),
+        }) as unknown as RuntimeError<number>,
+      );
     });
 
     it('throws when a column is pinned at runtime without the feature', () => {
@@ -1235,7 +1230,7 @@ describe('TableComponent', () => {
       const source = createSource();
       const fixture = create({
         name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
-        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+        role: { header: 'Role', value: (person: Person) => person.role },
       } satisfies TableColumns<Person>);
       const table = fixture.componentInstance;
 
@@ -1264,7 +1259,7 @@ describe('TableComponent', () => {
       const source = createSource();
       const fixture = create({
         name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
-        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+        role: { header: 'Role', value: (person: Person) => person.role },
       } satisfies TableColumns<Person>);
       const table = fixture.componentInstance;
 
@@ -1297,7 +1292,7 @@ describe('TableComponent', () => {
       const source = { rows: signal<Person[]>(PEOPLE), setSort, setFilters };
       const fixture = create({
         name: { header: 'Name', value: (person: Person) => person.name, sortable: true },
-        role: { header: 'Role', value: (person: Person) => person.role, filterable: true },
+        role: { header: 'Role', value: (person: Person) => person.role },
       } satisfies TableColumns<Person>);
       const table = fixture.componentInstance;
 
