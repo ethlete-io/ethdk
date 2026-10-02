@@ -163,7 +163,7 @@ test.describe('badge / structure', () => {
   test('each size scales padding, minimum height and font size together', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
-    await expect(explicitlySizedBadges(root)).toHaveCount(2);
+    await expect(explicitlySizedBadges(root)).toHaveCount(4);
 
     const sizes = await explicitlySizedBadges(root).evaluateAll((els) =>
       els.map((el) => {
@@ -176,13 +176,15 @@ test.describe('badge / structure', () => {
     expect(sizes).toEqual([
       ['sm', '10px', '16px', '6px', '3px'],
       ['lg', '12px', '24px', '10px', '5px'],
+      ['sm', '10px', '16px', '6px', '3px'],
+      ['lg', '12px', '24px', '10px', '5px'],
     ]);
   });
 
   test('md inherits a token set on an ancestor, while sm and lg set their own and win over it', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
 
-    await expect(explicitlySizedBadges(root)).toHaveCount(2);
+    await expect(explicitlySizedBadges(root)).toHaveCount(4);
 
     const fontSizes = await root.evaluate((el) => {
       const host = el.querySelector('et-sb-badge') as HTMLElement;
@@ -200,8 +202,8 @@ test.describe('badge / structure', () => {
     const bySize = (size: string) => fontSizes.filter(([data]) => data === size).map(([, fontSize]) => fontSize);
 
     expect(bySize('md').every((fontSize) => fontSize === '19px')).toBe(true);
-    expect(bySize('sm')).toEqual(['10px']);
-    expect(bySize('lg')).toEqual(['12px']);
+    expect(bySize('sm')).toEqual(['10px', '10px']);
+    expect(bySize('lg')).toEqual(['12px', '12px']);
   });
 
   test('the default variant is tonal: a tinted fill, no visible border', async ({ page }) => {
@@ -417,7 +419,7 @@ test.describe('badge / touch', () => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const badges = root.locator(BADGE);
 
-    await expect(badges).toHaveCount(10);
+    await expect(badges).toHaveCount(20);
 
     const boxes = await badges.evaluateAll((els) =>
       els.map((el) => {
