@@ -1,9 +1,23 @@
 {
+  "BracketRuntimeError": "spec: libs/components/src/lib/bracket/integrations/ethlete.spec.ts",
+  "DEFAULT_FORM_FIELD_DEFAULTS": "constant: default value of provideFormFieldDefaults",
+  "DEFAULT_KBD_LABELS": "spec: libs/components/src/lib/kbd/kbd.component.spec.ts",
+  "KBD_LABELS": "token: read through injectKbdLabels, set through provideKbdLabels",
   "OverlayOriginCloneComponent": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
+  "PAGINATION_SIZES": "constant: value set of the pagination size input",
   "PipCollapseOverlayDirective": "S8b stream: internal to et-pip-window, collapse is a drag gesture - e2e",
   "PipTitleBarDirective": "S8b stream: internal to et-pip-window, drag is a pointer gesture - e2e",
+  "SELECTION_LIST_ERROR_CODES": "spec: libs/components/src/lib/forms/selection-list/selection-list-errors.spec.ts",
+  "dateTimeRangeOrder": "spec: libs/components/src/lib/forms/date-time/date-time-range-validators.spec.ts",
+  "injectFormFieldDefaults": "internal: read by et-form-field and the choice controls, apps set it through provideFormFieldDefaults",
+  "injectKbdLabels": "internal: read by et-kbd, apps set it through provideKbdLabels",
   "injectPipChromeManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
+  "injectStreamPlayerSlot": "stream: needs a platform player in a slot, the platform SDKs do not run in jsdom - e2e",
   "matchedDialPrefix": "spec: libs/components/src/lib/forms/phone-input/headless/phone-input.directive.spec.ts",
+  "missingStreamSourceError": "error factory: thrown by the soop and twitch player directives, no consumer calls it",
+  "provideFormFieldDefaults": "spec: libs/components/src/lib/forms/form-field/form-field-defaults.spec.ts",
+  "provideKbdLabels": "spec: libs/components/src/lib/kbd/kbd.component.spec.ts",
   "providePipChromeManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
-  "providePipManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use"
+  "providePipManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
+  "provideRichTextEditorTool": "scenario: forms-multi-language-rich-text-editor.scenario.spec.ts, through provideRichTextEditorLanguageTool"
 }
