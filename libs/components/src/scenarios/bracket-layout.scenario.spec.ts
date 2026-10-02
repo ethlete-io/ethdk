@@ -498,8 +498,8 @@ describe('bracket Ethlete integration scenarios', () => {
     ).toBe(TOURNAMENT_MODE.SWISS_WITH_ELIMINATION);
 
     expect(() => generateTournamentModeFromEthleteRounds([])).toThrow(`ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`);
-    expect(() => generateTournamentModeFromEthleteRounds([round('r', 'normal', [])])).toThrow(
-      `ET${BRACKET_ERROR_CODES.SOURCE_EMPTY}`,
+    expect(generateTournamentModeFromEthleteRounds([round('r', 'normal', [])])).toBe(
+      TOURNAMENT_MODE.SINGLE_ELIMINATION,
     );
     expect(() =>
       generateTournamentModeFromEthleteRounds([round('r', 'normal', [ethleteMatch('m1', 'league')])]),
