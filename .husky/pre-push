@@ -40,7 +40,7 @@ done
 
 export NX_BASE="$base" NX_HEAD="$head"
 pids=""
-for check in agents:check versions:check lint:changesets query:export-coverage core:export-coverage components:export-coverage; do
+for check in agents:check versions:check lint:changesets docs:error-codes:check query:export-coverage core:export-coverage components:export-coverage; do
   yarn "$check" >"$tmp/$check.log" 2>&1 &
   pids="$pids $!:$check"
 done

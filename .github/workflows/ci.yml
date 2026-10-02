@@ -61,6 +61,9 @@ jobs:
       # Only unreleased entries are checked - anything listed in .changeset/pre.json is locked.
       - run: yarn lint:changesets
 
+      # Every error code defined in components, core, bracket and contentful needs a row on its docs page.
+      - run: yarn docs:error-codes:check
+
       # Every runtime export of @ethlete/query and @ethlete/core must be referenced by a scenario or
       # allowlisted with a reason in tools/export-coverage/<lib>.allowlist.json. Stale entries fail too.
       - run: yarn query:export-coverage
