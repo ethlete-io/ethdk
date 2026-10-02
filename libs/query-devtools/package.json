@@ -4,12 +4,11 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "22.1.6",
-    "@angular/core": "22.1.6",
+    "@angular/common": "^22.1.0",
+    "@angular/core": "^22.1.0",
     "@ethlete/components": "^1.0.0-next.42",
     "@ethlete/core": "^5.0.0-beta.11",
     "@ethlete/query": "^6.0.0-beta.8",
-    "@ethlete/types": "^2.0.0-beta.4",
-    "rxjs": "7.8.2"
+    "rxjs": "^7.8.0"
   }
 }

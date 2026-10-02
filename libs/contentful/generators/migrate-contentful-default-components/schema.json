@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/schema",
   "$id": "migrate-contentful-default-components",
-  "title": "Add withContentfulDefaultComponents() to provideContentfulConfig",
+  "title": "Spread CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig",
   "type": "object",
   "properties": {
     "projects": {

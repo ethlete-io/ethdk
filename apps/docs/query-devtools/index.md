@@ -68,6 +68,11 @@ Without `provideQueryDevtools()` there is nothing to inspect, so
 no-op until you call it - it retains no references and adds no runtime overhead - so
 a production build can leave the shell mounted and just omit the provider.
 
+Forgetting the provider in development is the usual first mistake, so in dev mode
+`<et-query-devtools-lazy>` and `<et-query-devtools>` each warn once in the console
+when it is missing, and the eager panel's Queries tab says so in its empty state. A
+production build stays silent.
+
 What that does not take back is the shell itself, which is in the bundle either way
 (see [Keeping it out of your bundle](#keeping-it-out-of-your-bundle)); put an `@if`
 on your environment flag around `<et-query-devtools-lazy>` to drop those bytes too.
@@ -76,18 +81,21 @@ it is the whole panel in your bundle, provider or not.
 
 ## Keeping it out of your bundle
 
-The panel is ~125 kB gz of code that only ever runs on a developer's machine.
+The panel is ~184 kB gz of code that only ever runs on a developer's machine.
 `<et-query-devtools-lazy>` is a shell that keeps it out of the bundle your users
 download: it renders the toggle button and nothing else until the panel is first
 asked for, then loads it as its own chunk.
 
-Measured on an application that already uses button, menu, form-field and input:
+Measured as the `@ethlete/*` code each import adds to an application bundle (gzip,
+framework excluded; the `tools/treeshake` size goldens guard both numbers):
 
-| What it mounts             | Initial load | Deferred |
-| -------------------------- | ------------ | -------- |
-| nothing                    | 48.3 kB gz   | -        |
-| `<et-query-devtools>`      | 142.4 kB gz  | -        |
-| `<et-query-devtools-lazy>` | 63.1 kB gz   | 81.2 kB  |
+| What it mounts             | Initial load | Deferred  |
+| -------------------------- | ------------ | --------- |
+| `<et-query-devtools>`      | ~184 kB gz   | -         |
+| `<et-query-devtools-lazy>` | ~5 kB gz     | the panel |
+
+Code the panel shares with what your application already uses from
+`@ethlete/components` is paid once, so the real difference in an app is smaller.
 
 The shell is not just a size trick: nothing about the panel exists before it is
 opened - no component, no stylesheet in the document, no keyboard or resize
@@ -105,6 +113,9 @@ library flattened into one file has none:
 | `@ethlete/query-devtools/lazy`   | the shell - what an application imports      |
 | `@ethlete/query-devtools`        | the panel, loaded on demand by the shell     |
 | `@ethlete/query-devtools/toggle` | the floating button both of the above render |
+
+`@ethlete/query-devtools` exports only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`
+and `QUERY_DEVTOOLS_VERSION`; the panel's tabs and helpers are not public API.
 
 If you would rather own the trigger yourself - a dev-only route, a feature flag, a
 button of your own - defer the panel directly and hand it `startOpen`, which opens

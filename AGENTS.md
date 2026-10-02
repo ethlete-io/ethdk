@@ -48,8 +48,9 @@ emits a real `import(...)`. Hence:
 - `@ethlete/query-devtools/lazy` - the shell an application mounts. Imports the toggle
   entry statically and the panel entry only through its `@defer`.
 
-Measured: mounting the panel eagerly costs an app ~125 kB gz; through the shell, ~3 kB up
-front and the rest on first open. `tools/treeshake` guards both numbers.
+Measured: mounting the panel eagerly costs an app ~184 kB gz; through the shell, ~5 kB up
+front and the rest on first open. The `tools/treeshake` goldens `query-devtools-panel` and
+`query-devtools-lazy` guard both numbers.
 
 ### UI work: components vs cdk
 

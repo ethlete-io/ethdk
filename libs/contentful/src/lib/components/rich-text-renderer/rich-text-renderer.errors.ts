@@ -1,8 +1,8 @@
 import { RuntimeError } from '@ethlete/core';
 
 export const RICH_TEXT_RENDERER_ERRORS = {
-  rich_text_undefined:
-    'The property value given at richTextPath is undefined. Use the richTextPath input to specify the path to the rich text object.',
+  rich_text_not_object: (data: { type: string }) =>
+    `The value at richTextPath is a ${data.type}, not a rich-text document object. Point richTextPath at the rich-text field itself (e.g. items[0].fields.body).`,
   rich_text_wrong_type:
     'The rich text object does not satisfy the RichTextResponse interface. It should contain a property named "nodeType" with the value "document".',
 
@@ -17,7 +17,7 @@ export const RICH_TEXT_RENDERER_ERRORS = {
 } as const;
 
 const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number> = {
-  rich_text_undefined: 0,
+  rich_text_not_object: 0,
   rich_text_wrong_type: 1,
   asset_id_not_found: 2,
   entry_id_not_found: 3,
@@ -27,7 +27,8 @@ const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERR
 };
 
 export const richTextRendererError = (code: keyof typeof RICH_TEXT_RENDERER_ERRORS, data?: unknown) => {
-  const message = `<et-contentful-rich-text-renderer>: ${RICH_TEXT_RENDERER_ERRORS[code]}`;
+  const entry: string | ((data: never) => string) = RICH_TEXT_RENDERER_ERRORS[code];
+  const message = `<et-contentful-rich-text-renderer>: ${typeof entry === 'function' ? entry(data as never) : entry}`;
 
   throw new RuntimeError(RICH_TEXT_RENDERER_ERROR_CODES[code], message, data);
 };

@@ -1,9 +1,9 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, Location } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { injectUrl } from '@ethlete/core';
 import { injectContentfulConfig } from '../../utils/contentful-config';
-import { isInternalWebUrl, parseWebUrl } from './contentful-link.util';
+import { hasUrlScheme, isInternalWebUrl, parseWebUrl, resolveHrefAgainstRoute } from './contentful-link.util';
 
 @Component({
   selector: 'et-contentful-link',
@@ -13,9 +13,9 @@ import { isInternalWebUrl, parseWebUrl } from './contentful-link.util';
     } @else {
       <a
         [class]="linkClass()"
-        [href]="href()"
-        [target]="openInNewTab() ? '_blank' : null"
-        [rel]="openInNewTab() ? 'noopener noreferrer' : null"
+        [href]="anchorHref()"
+        [attr.target]="openInNewTab() ? '_blank' : null"
+        [attr.rel]="openInNewTab() ? 'noopener noreferrer' : null"
         >{{ text() }}</a
       >
     }
@@ -29,6 +29,7 @@ import { isInternalWebUrl, parseWebUrl } from './contentful-link.util';
 })
 export class ContentfulLinkComponent {
   private document = inject(DOCUMENT);
+  private location = inject(Location);
   private router = inject(Router);
   private config = injectContentfulConfig();
   private url = injectUrl();
@@ -49,7 +50,13 @@ export class ContentfulLinkComponent {
       });
     }
 
-    return !href.startsWith('#') && !/^[a-z][a-z\d+.-]*:/i.test(href);
+    return !href.startsWith('#') && !hasUrlScheme(href);
+  });
+
+  protected anchorHref = computed(() => {
+    const href = this.href();
+
+    return href.startsWith('#') ? this.location.prepareExternalUrl(resolveHrefAgainstRoute(href, this.url())) : href;
   });
 
   protected openInNewTab = computed(() => Boolean(parseWebUrl(this.href())) && !this.usesRouterLink());
@@ -66,9 +73,7 @@ export class ContentfulLinkComponent {
       return href;
     }
 
-    const resolved = new URL(href, 'https://contentful.invalid' + this.url());
-
-    return resolved.pathname + resolved.search + resolved.hash;
+    return resolveHrefAgainstRoute(href, this.url());
   });
 
   protected internalUrlTree = computed(() => this.router.parseUrl(this.internalPath()));

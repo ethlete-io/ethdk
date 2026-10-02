@@ -1,4 +1,4 @@
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, Location } from '@angular/common';
 import {
   Component,
   ComponentRef,
@@ -19,7 +19,7 @@ import {
   untracked,
 } from '@angular/core';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
-import { getObjectProperty, injectRenderer, isObject } from '@ethlete/core';
+import { getObjectProperty, injectRenderer, injectUrl, isObject } from '@ethlete/core';
 import {
   ContentfulCollection,
   ContentfulEntry,
@@ -28,7 +28,7 @@ import {
   RichTextResponse,
 } from '../../types';
 import { injectContentfulConfig } from '../../utils/contentful-config';
-import { isExternalWebHref } from '../link/contentful-link.util';
+import { isExternalWebHref, isRouteRelativeHref, resolveHrefAgainstRoute } from '../link/contentful-link.util';
 import { CF_BLOCKS, CF_INLINES } from './rich-text-node-types';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
@@ -231,7 +231,10 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
 
     if (!entry) {
       if (isDevMode()) {
-        console.warn('Entry not found! Will return null. Is the include query param too low?', { id, entryMap });
+        console.warn(
+          'Entry not found! Will return null. Is it unpublished or deleted, or is the include query param too low?',
+          { id },
+        );
       }
 
       return null;
@@ -284,6 +287,34 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
   };
 };
 
+const warnedRichTextPaths = /* @__PURE__ */ new Set<string>();
+
+const warnOnUnresolvedParentPath = (content: ContentfulCollection, richTextPath: string) => {
+  const segments = richTextPath.split('.');
+  const root = content as unknown as Record<string, unknown>;
+
+  if (segments.length < 2 || isObject(getObjectProperty(root, segments.slice(0, -1).join('.')))) return;
+  if (warnedRichTextPaths.has(richTextPath)) return;
+
+  warnedRichTextPaths.add(richTextPath);
+
+  let resolvedSegments = 0;
+
+  while (
+    resolvedSegments < segments.length - 1 &&
+    isObject(getObjectProperty(root, segments.slice(0, resolvedSegments + 1).join('.')))
+  ) {
+    resolvedSegments++;
+  }
+
+  const resolvedPath = segments.slice(0, resolvedSegments).join('.') || '(the content itself)';
+
+  console.warn(
+    `<et-contentful-rich-text-renderer>: richTextPath "${richTextPath}" does not resolve, so nothing is rendered. The deepest part that resolves is ${resolvedPath}; check the next segment for a typo or a missing item.`,
+    { content, richTextPath },
+  );
+};
+
 @Component({
   selector: 'et-contentful-rich-text-renderer',
   template: ``,
@@ -298,6 +329,8 @@ export class ContentfulRichTextRendererComponent {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private config = injectContentfulConfig();
   private document = inject(DOCUMENT);
+  private location = inject(Location);
+  private url = injectUrl();
 
   /**
    * The contentful response gotten via their REST api.
@@ -321,6 +354,10 @@ export class ContentfulRichTextRendererComponent {
     return createContentfulIncludeMap({ assets: assets ?? [], entries: entries ?? [] });
   });
 
+  private includedEntries = computed(
+    () => new Map((this.content()?.includes?.Entry ?? []).map((entry) => [entry.sys.id, entry])),
+  );
+
   private richTextData = computed(() => {
     const content = this.content();
     const richTextPath = this.richTextPath();
@@ -332,11 +369,15 @@ export class ContentfulRichTextRendererComponent {
     const richText = getObjectProperty(content as unknown as Record<string, unknown>, richTextPath);
 
     if (richText === null || richText === undefined) {
+      if (ngDevMode && richText === undefined) {
+        warnOnUnresolvedParentPath(content, richTextPath);
+      }
+
       return null;
     }
 
     if (!isObject(richText)) {
-      throw richTextRendererError('rich_text_undefined', { content, richTextPath });
+      throw richTextRendererError('rich_text_not_object', { content, richTextPath, type: typeof richText });
     }
 
     if (!isRichTextRootNode(richText)) {
@@ -597,7 +638,10 @@ export class ContentfulRichTextRendererComponent {
           const linkComponent = href ? this.config.components.link : null;
 
           if (href && !linkComponent) {
-            const attributes: Record<string, string> = { class: DEFAULT_ANCHOR_CLASS, href };
+            const anchorHref = isRouteRelativeHref(href)
+              ? this.location.prepareExternalUrl(resolveHrefAgainstRoute(href, this.url()))
+              : href;
+            const attributes: Record<string, string> = { class: DEFAULT_ANCHOR_CLASS, href: anchorHref };
 
             if (
               isExternalWebHref(href, { location: this.document.location, internalHosts: this.config.internalHosts })
@@ -689,12 +733,12 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('entry_id_not_found', { node });
           }
 
-          const entry = this.contentIncludesMap().getEntry(entryId, ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID);
+          const entry = this.includedEntries().get(entryId);
 
           if (!entry) {
             if (isDevMode()) {
               console.warn(
-                'Embedded entry is missing from the includes! The entry will be skipped. Is it unpublished or deleted?',
+                'Embedded entry is missing from the includes! The entry will be skipped. Is it unpublished or deleted, or is the include query param too low?',
                 { entryId, node },
               );
             }

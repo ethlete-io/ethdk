@@ -16,7 +16,6 @@ export default [
             '{projectRoot}/src/test-setup.{js,mjs,ts}',
             '{projectRoot}/vite.config.{js,cjs,mjs,ts,mts}',
           ],
-          checkObsoleteDependencies: false,
         },
       ],
     },

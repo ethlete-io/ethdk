@@ -137,6 +137,32 @@ describe('generateContentfulImageSources', () => {
   });
 });
 
+describe('generateContentfulImageSources misuse', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('warns about a size it cannot parse', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+    generateContentfulImageSources(createRestAsset(), { srcsetSizes: ['50vw'] });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"50vw"'));
+  });
+
+  it('warns about a height-only size it has to drop for an asset without dimensions', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+    generateContentfulImageSources(createGqlAsset({ width: null, height: null } as never), { srcsetSizes: ['300h'] });
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"300h"'));
+  });
+
+  it('strips a leading # from the background color', () => {
+    const [avif] = generateContentfulImageSources(createRestAsset(), { backgroundColor: '#ff0000' });
+
+    expect(avif?.srcset).toContain('bg=rgb:ff0000');
+  });
+});
+
 describe('generateDefaultContentfulImageSource', () => {
   it('uses url and contentType of a gql asset', () => {
     expect(generateDefaultContentfulImageSource(createGqlAsset())).toEqual({

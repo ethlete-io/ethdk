@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideQueryDevtools } from '@ethlete/query';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryDevtoolsLazyComponent } from '../lazy/query-devtools-lazy.component';
 
 const pressShortcut = () =>
@@ -15,6 +15,18 @@ describe('QueryDevtoolsLazyComponent without provideQueryDevtools()', () => {
       imports: [QueryDevtoolsLazyComponent],
       providers: [provideZonelessChangeDetection()],
     });
+  });
+
+  it('should warn once that the provider is missing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await TestBed.createComponent(QueryDevtoolsLazyComponent).whenStable();
+    await TestBed.createComponent(QueryDevtoolsLazyComponent).whenStable();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain('provideQueryDevtools()');
+
+    warn.mockRestore();
   });
 
   it('should render nothing', async () => {

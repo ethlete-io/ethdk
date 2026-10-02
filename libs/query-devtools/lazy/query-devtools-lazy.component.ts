@@ -17,6 +17,8 @@ import {
   wasQueryDevtoolsOpen,
 } from '@ethlete/query-devtools/toggle';
 
+let warnedMissingProvider = false;
+
 /**
  * The query devtools behind a deferred load: renders only the floating toggle button until the panel is
  * first asked for, then downloads `<et-query-devtools>` as its own chunk and hands over. Use it instead
@@ -83,7 +85,16 @@ export class QueryDevtoolsLazyComponent {
   );
 
   constructor() {
-    if (!this.enabled) return;
+    if (!this.enabled) {
+      if (ngDevMode && !warnedMissingProvider) {
+        warnedMissingProvider = true;
+        console.warn(
+          "<et-query-devtools-lazy>: provideQueryDevtools() is not in the application providers, so the devtools render nothing. Add it to bootstrapApplication's providers.",
+        );
+      }
+
+      return;
+    }
 
     setQueryDevtoolsUiMounted(true);
     inject(DestroyRef).onDestroy(() => setQueryDevtoolsUiMounted(false));

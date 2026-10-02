@@ -35,4 +35,4 @@ A small set of types is maintained by hand on top of the generated ones:
 
 ## Where it's used
 
-Every other `@ethlete/*` package sits on top of `types`. Notably, [`@ethlete/query`](/query/) uses the pagination wrappers for [paged queries](/query/stacks), and `@ethlete/cdk`'s bracket component consumes the tournament structure views (`RoundStageStructureWithMatchesView`, `MatchListView`). Apps use the same types to annotate their query responses.
+Every other `@ethlete/*` package sits on top of `types`. Notably, [`@ethlete/query`](/query/) uses the pagination wrappers for [paged queries](/query/stacks), and the `@ethlete/components` [bracket](/components/bracket) and [match](/components/match) Ethlete integrations (`generateBracketDataForEthlete`, …) consume the tournament structure views (`RoundStageStructureWithMatchesView`, `MatchListView`). Apps use the same types to annotate their query responses.

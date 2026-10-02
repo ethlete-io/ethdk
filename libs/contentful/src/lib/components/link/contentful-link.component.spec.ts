@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { APP_BASE_HREF } from '@angular/common';
+import { Component, Provider } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideRouter, Router, RouterLink } from '@angular/router';
@@ -8,12 +9,18 @@ import { ContentfulLinkComponent } from './contentful-link.component';
 @Component({ template: '' })
 class EmptyRouteComponent {}
 
-const setup = (href: string, internalHosts: string[] = [], inputs: Record<string, string> = {}) => {
+const setup = (
+  href: string,
+  internalHosts: string[] = [],
+  inputs: Record<string, string> = {},
+  providers: Provider[] = [],
+) => {
   TestBed.configureTestingModule({
     imports: [ContentfulLinkComponent],
     providers: [
       provideRouter([{ path: '**', component: EmptyRouteComponent }]),
       provideContentfulConfig({ internalHosts }),
+      ...providers,
     ],
   });
 
@@ -31,16 +38,33 @@ const setup = (href: string, internalHosts: string[] = [], inputs: Record<string
 };
 
 describe('ContentfulLinkComponent', () => {
-  it.each(['mailto:sales@example.com', 'tel:+4912345', '#section', 'ftp://files.example.com/file'])(
+  it.each(['mailto:sales@example.com', 'tel:+4912345', 'ftp://files.example.com/file'])(
     'renders %s as a native anchor',
     (href) => {
       const fixture = setup(href);
       const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
 
       expect(anchor.getAttribute('href')).toBe(href);
+      expect(anchor.getAttribute('target')).toBeNull();
       expect(fixture.debugElement.query(By.directive(RouterLink))).toBeNull();
     },
   );
+
+  it.each([
+    ['without a base href', [], '/news/article-1?page=1#comments'],
+    ['under a base href', [{ provide: APP_BASE_HREF, useValue: '/app/' }], '/app/news/article-1?page=1#comments'],
+  ])('points a fragment-only href at the current page %s', async (_, providers, expected) => {
+    const fixture = setup('#comments', [], {}, providers);
+
+    await TestBed.inject(Router).navigateByUrl('/news/article-1?page=1');
+    fixture.detectChanges();
+
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+
+    expect(anchor.getAttribute('href')).toBe(expected);
+    expect(anchor.getAttribute('target')).toBeNull();
+    expect(fixture.debugElement.query(By.directive(RouterLink))).toBeNull();
+  });
 
   it('uses router navigation for relative paths', () => {
     const fixture = setup('/news/article');

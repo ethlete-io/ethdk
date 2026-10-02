@@ -14,7 +14,7 @@
       "version": "4.0.0-next.12",
       "kind": "auto",
       "level": "required",
-      "description": "Add withContentfulDefaultComponents() to provideContentfulConfig, and report the calls that need it by hand.",
+      "description": "Spread CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig, and report the calls that need it by hand.",
       "generator": "@ethlete/contentful:migrate-contentful-default-components",
       "docs": "/contentful/"
     }

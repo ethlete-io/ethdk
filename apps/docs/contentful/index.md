@@ -53,7 +53,7 @@ All config options (defaults from `createContentfulConfig()`):
 | `imageOptions.backgroundColor` | `null`                                | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                          |
 
 ::: tip Partial overrides
-`imageOptions` merges one level deep, but a `components` key replaces the whole map, also one spread from `CONTENTFUL_DEFAULT_COMPONENTS` - to swap a single component, write `components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: MyImage }`. Other keys, such as `customComponents` and `internalHosts`, replace the default as a whole.
+`imageOptions` merges one level deep (its type is partial, so `imageOptions: { sizes: ['50vw'] }` is enough), but a `components` key replaces the whole map, also one spread from `CONTENTFUL_DEFAULT_COMPONENTS` - to swap a single component, write `components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: MyImage }`. Other keys, such as `customComponents` and `internalHosts`, replace the default as a whole.
 :::
 
 ::: warning The built-in components are opt-in
@@ -81,6 +81,8 @@ Everything else falls back to the defaults above without the provider. The stand
 | -------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `content`      | `ContentfulCollection \| null \| undefined` (required) | The full collection response. `includes` may be omitted when there are no linked entities. |
 | `richTextPath` | `string` (required)                                    | Dot/array path to the rich-text `document` field, e.g. `items[0].fields.html`.             |
+
+An absent rich-text field renders nothing. In dev mode, a path whose parent does not resolve either (`item[0].fields.html`, or an `items[1]` the response does not have) also logs a warning naming the deepest part that resolved, since that is almost always a typo.
 
 The component has an empty template and renders imperatively. Each node type maps to a plain HTML element:
 
@@ -142,16 +144,16 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 `<et-contentful-image>` renders an `et-picture` (from `@ethlete/components`) with AVIF and WebP sources generated through the [Contentful Images API](https://www.contentful.com/developers/docs/references/images-api/). The original asset is the `<img>` fallback, so browsers that do not support either optimized format keep the asset's original MIME type instead of being forced to PNG.
 
-| Input              | Default                               | Purpose                                                                                                                                                                                                                  |
-| ------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `asset` (required) | —                                     | REST or GQL asset. Alt text comes from the asset title, the figcaption from its description.                                                                                                                             |
-| `srcsetSizes`      | config `imageOptions.srcsetSizes`     | Srcset candidates: `'400'`/`'400w'` (width), `'400h'` (height), `'400x300'` (both). A height-only candidate uses the asset aspect ratio to emit a valid width descriptor and is omitted when dimensions are unavailable. |
-| `sizes`            | config `imageOptions.sizes`           | `sizes` attribute entries.                                                                                                                                                                                               |
-| `quality`          | `null`                                | Contentful `q=` parameter.                                                                                                                                                                                               |
-| `focusArea`        | `null`                                | `f=` parameter (`'center'`, `'top_left'`, `'face'`, …).                                                                                                                                                                  |
-| `resizeBehavior`   | `null`                                | `fit=` parameter (`'pad'`, `'crop'`, `'fill'`, `'scale'`, `'thumb'`, `'fit'`).                                                                                                                                           |
-| `backgroundColor`  | config `imageOptions.backgroundColor` | `bg=rgb:…` parameter.                                                                                                                                                                                                    |
-| `priority`         | `false`                               | Marks the image as high-priority (eager loading).                                                                                                                                                                        |
+| Input              | Default                               | Purpose                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `asset` (required) | —                                     | REST or GQL asset. Alt text comes from the asset title, the figcaption from its description.                                                                                                                                                                                                                          |
+| `srcsetSizes`      | config `imageOptions.srcsetSizes`     | Srcset candidates: `'400'`/`'400w'` (width), `'400h'` (height), `'400x300'` (both). A height-only candidate uses the asset aspect ratio to emit a valid width descriptor and is omitted when dimensions are unavailable. In dev mode a dropped or unparseable candidate (`'50vw'` belongs in `sizes`) logs a warning. |
+| `sizes`            | config `imageOptions.sizes`           | `sizes` attribute entries.                                                                                                                                                                                                                                                                                            |
+| `quality`          | `null`                                | Contentful `q=` parameter.                                                                                                                                                                                                                                                                                            |
+| `focusArea`        | `null`                                | `f=` parameter (`'center'`, `'top_left'`, `'face'`, …).                                                                                                                                                                                                                                                               |
+| `resizeBehavior`   | `null`                                | `fit=` parameter (`'pad'`, `'crop'`, `'fill'`, `'scale'`, `'thumb'`, `'fit'`).                                                                                                                                                                                                                                        |
+| `backgroundColor`  | config `imageOptions.backgroundColor` | `bg=rgb:…` parameter. A leading `#` is stripped.                                                                                                                                                                                                                                                                      |
+| `priority`         | `false`                               | Marks the image as high-priority (eager loading).                                                                                                                                                                                                                                                                     |
 
 There are no class passthrough inputs — target the static `et-picture-figure`, `et-picture-picture`, `et-picture-img` and `et-picture-figcaption` classes with CSS instead.
 
@@ -172,9 +174,10 @@ provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).rep
 `<et-contentful-link>` (inputs: `href`, `text` required; `textClass` and `anchorClass` default `''`, both placed on the anchor) renders hyperlink nodes and decides between router navigation and a plain anchor. The renderer passes the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`) through `anchorClass`, so a standalone link carries none of them; a custom `components.link` receives them too if it declares an `anchorClass` input:
 
 - Application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
-- Native destinations such as `mailto:`, `tel:`, `ftp:` and fragment-only links use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.
+- Native destinations such as `mailto:`, `tel:` and `ftp:` use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.
+- A fragment-only link (`#comments`) is a plain `<a>` whose `href` is the current page plus the fragment (`/news/article-1#comments`, prefixed with the `<base href>`), so it scrolls on the page instead of resolving against the base URL.
 - Paths that do not start with `/` (`?page=2`, `./next`, `../list`) resolve against the current router URL, like a browser resolves them against the page, and follow later navigations.
-- Without a `components.link` in the config, the renderer falls back to a plain anchor, which opens external HTTP(S) links in a new tab the same way. Unsafe URL schemes are rendered as text without an `href`.
+- Without a `components.link` in the config, the renderer falls back to a plain anchor, which opens external HTTP(S) links in a new tab the same way and resolves `#fragment`, `?query` and `./relative` hrefs against the current router URL (prefixed with the `<base href>`). Unsafe URL schemes are rendered as text without an `href`.
 - Internal absolute URLs are reduced to path + query + hash and passed as an Angular `UrlTree`, so content authored against the production domain works on localhost or a preview host without encoding the query or fragment.
 - Asset hyperlinks resolve to the included asset URL. Entry hyperlinks render their label as text because Contentful entries have no generic URL; render entry links through a custom embedded-entry component when the content model defines routing.
 
@@ -192,14 +195,12 @@ REST-side types (`ContentfulCollection`, `ContentfulEntry<T>`, `ContentfulRestAs
 
 The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 3 digits - a separate namespace from the [`@ethlete/components` ranges](/components/error-codes)), all prefixed `<et-contentful-rich-text-renderer>:`.
 
-| Code  | Thrown when                                                                               |
-| ----- | ----------------------------------------------------------------------------------------- |
-| ET000 | The value at `richTextPath` exists but is not an object. An absent field renders nothing. |
-| ET001 | The value is not a rich-text root (`nodeType: 'document'`).                               |
-| ET002 | An embedded asset node has no asset id.                                                   |
-| ET003 | An embedded entry node has no entry id.                                                   |
-| ET007 | A text node's parent node was not found.                                                  |
-| ET008 | A text node's parent is neither an HTML element nor a custom component.                   |
-| ET009 | An internal render update found no rendered node for its command.                         |
-| ET010 | An internal render update expected a component but found a plain node.                    |
-| ET011 | An internal parent lookup hit a missing render command.                                   |
+| Code  | Thrown when                                                                          |
+| ----- | ------------------------------------------------------------------------------------ |
+| ET000 | The value at `richTextPath` exists but is not an object; the message names its type. |
+| ET001 | The value is not a rich-text root (`nodeType: 'document'`).                          |
+| ET002 | An embedded asset node has no asset id.                                              |
+| ET003 | An embedded entry node has no entry id.                                              |
+| ET007 | A text node's parent node was not found.                                             |
+| ET009 | An internal render update found no rendered node for its command.                    |
+| ET010 | An internal render update expected a component but found a plain node.               |

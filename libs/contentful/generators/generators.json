@@ -8,7 +8,7 @@
     "migrate-contentful-default-components": {
       "factory": "./migrate-contentful-default-components/migration",
       "schema": "./migrate-contentful-default-components/schema.json",
-      "description": "Add withContentfulDefaultComponents() to provideContentfulConfig and report the calls that need it by hand"
+      "description": "Spread CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig, and report the calls that need it by hand"
     }
   }
 }

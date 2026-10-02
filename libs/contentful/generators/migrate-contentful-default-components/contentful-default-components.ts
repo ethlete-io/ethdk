@@ -36,15 +36,37 @@ const namesOwnComponents = (content: string, braceIndex: number) => {
   return /(^|[,\s])components\s*:/.test(topLevel);
 };
 
+const contentfulImportNaming = (content: string, name: RegExp) =>
+  [...content.matchAll(CONTENTFUL_IMPORT)].find((match) => name.test(match[1] ?? ''));
+
+export const importsProvideContentfulConfig = (content: string) =>
+  contentfulImportNaming(content, /\bprovideContentfulConfig\b/) !== undefined;
+
+export const findUnprovidedRendererTask = (
+  filePath: string,
+  content: string,
+): ContentfulDefaultComponentsTask | null => {
+  const match = contentfulImportNaming(content, /\b(ContentfulRichTextRendererComponent|ContentfulImports)\b/);
+
+  if (!match) return null;
+
+  const line = lineOf(content, match.index ?? 0);
+
+  return {
+    id: taskId(filePath, line),
+    file: filePath,
+    line,
+    message: `Renders Contentful rich text, but no file calls \`provideContentfulConfig\`. Without it embedded assets are skipped and links lose router navigation. Add \`provideContentfulConfig({ ${SPREAD} })\` to the application providers.`,
+  };
+};
+
 export const scanContentfulDefaultComponentsInFile = (
   filePath: string,
   content: string,
 ): ContentfulDefaultComponentsScan => {
   const tasks: ContentfulDefaultComponentsTask[] = [];
 
-  const importStatement = [...content.matchAll(CONTENTFUL_IMPORT)].find((match) =>
-    /\bprovideContentfulConfig\b/.test(match[1] ?? ''),
-  );
+  const importStatement = contentfulImportNaming(content, /\bprovideContentfulConfig\b/);
 
   if (!importStatement || content.includes(CONSTANT)) return { next: null, tasks };
 

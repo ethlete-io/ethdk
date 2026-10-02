@@ -172,6 +172,10 @@
         <p class="et-query-devtools-empty">
           The inspected element's queries are no longer registered. Clear the filter.
         </p>
+      } @else if (!devtoolsEnabled) {
+        <p class="et-query-devtools-empty">
+          No queries registered: provideQueryDevtools() is not in the application providers.
+        </p>
       } @else {
         <p class="et-query-devtools-empty">No queries registered.</p>
       }

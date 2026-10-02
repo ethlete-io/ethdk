@@ -114,4 +114,33 @@ describe('migrate-contentful-default-components', () => {
     expect(await run(unrelated)).toBe(unrelated);
     expect(tree.exists(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH)).toBe(false);
   });
+
+  it.each(['ContentfulRichTextRendererComponent', 'ContentfulImports'])(
+    'reports a file importing %s when the workspace never provides a config',
+    async (name) => {
+      const component = 'apps/web/src/app/article.component.ts';
+
+      tree.write(component, `import { ${name} } from '@ethlete/contentful';\n`);
+      await migration(tree, { skipFormat: true });
+
+      const report = tree.read(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH, 'utf-8');
+
+      expect(report).toContain(`${component}:1`);
+      expect(report).toContain('provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS })');
+    },
+  );
+
+  it('does not report a renderer import when another file provides a config', async () => {
+    tree.write('apps/web/src/app/article.component.ts', "import { ContentfulImports } from '@ethlete/contentful';\n");
+
+    await run(
+      [
+        "import { CONTENTFUL_DEFAULT_COMPONENTS, provideContentfulConfig } from '@ethlete/contentful';",
+        '',
+        'provideContentfulConfig({ ...CONTENTFUL_DEFAULT_COMPONENTS });',
+      ].join('\n'),
+    );
+
+    expect(tree.exists(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH)).toBe(false);
+  });
 });

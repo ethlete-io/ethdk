@@ -1,6 +1,6 @@
 import { Component, OnDestroy, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
 import {
   ContentfulCollection,
@@ -150,6 +150,9 @@ class StubPartialComponent {
   }
 }
 
+@Component({ template: '' })
+class EmptyRouteComponent {}
+
 @Component({
   selector: 'et-test-host',
   template: `<et-contentful-rich-text-renderer [content]="content()" [richTextPath]="richTextPath()" />`,
@@ -185,7 +188,7 @@ const setup = (options: SetupOptions = {}) => {
   TestBed.configureTestingModule({
     imports: [TestHostComponent],
     providers: [
-      provideRouter([]),
+      provideRouter([{ path: '**', component: EmptyRouteComponent }]),
       ...(options.withoutConfig
         ? []
         : [
@@ -588,6 +591,20 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(anchor?.querySelector('strong')).not.toBeNull();
     });
 
+    it.each([
+      ['a fragment-only href', '#comments', '/news/article-1?page=1#comments'],
+      ['a query-only href', '?page=2', '/news/article-1?page=2'],
+      ['a dot-relative href', './next', '/news/next'],
+      ['a parent-relative href', '../list', '/list'],
+    ])('resolves %s of a fallback anchor against the current route', async (_, uri, expected) => {
+      const { fixture } = setup({ withoutConfig: true, richText: doc(block('paragraph', [hyperlink(uri, 'Link')])) });
+
+      await TestBed.inject(Router).navigateByUrl('/news/article-1?page=1');
+      fixture.detectChanges();
+
+      expect(renderRoot(fixture).querySelector('a')?.getAttribute('href')).toBe(expected);
+    });
+
     it('does not assign an unsafe href to a fallback anchor', () => {
       const { fixture } = setup({
         withoutConfig: true,
@@ -965,6 +982,46 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(readRenderCommands({ richText: doc(paragraph('a')), richTextPath: 'items[0].fields.missing' })).toEqual(
         [],
       );
+    });
+
+    it('throws rich_text_not_object naming the type when the path points at a primitive', () => {
+      expect(() => readRenderCommands({ richText: 'plain', richTextPath: 'items[0].fields.html' })).toThrow(
+        /The value at richTextPath is a string, not a rich-text document object/,
+      );
+    });
+
+    it('does not warn when only the leaf field is absent', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+      readRenderCommands({ richText: doc(paragraph('a')), richTextPath: 'items[0].fields.missing' });
+
+      expect(warn).not.toHaveBeenCalled();
+
+      warn.mockRestore();
+    });
+
+    it.each([
+      ['a misspelled segment', 'item[0].fields.html'],
+      ['an index past the end', 'items[1].fields.html'],
+    ])('warns when the parent of richTextPath does not resolve (%s)', (_, richTextPath) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+      expect(readRenderCommands({ richText: doc(paragraph('a')), richTextPath })).toEqual([]);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toContain(richTextPath);
+
+      warn.mockRestore();
+    });
+
+    it('warns once for an embedded entry that is missing from the includes', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+
+      setup({ customComponents: { teaser: StubTeaserComponent }, richText: doc(embeddedEntry('missing')) });
+
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toMatch(/unpublished or deleted.*include/s);
+
+      warn.mockRestore();
     });
 
     it('throws rich_text_wrong_type for a non document node', () => {

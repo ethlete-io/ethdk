@@ -32,7 +32,7 @@ describe('createContentfulConfig', () => {
   });
 
   it('keeps the default image options when one is overridden', () => {
-    const { imageOptions } = createContentfulConfig({ imageOptions: { sizes: ['50vw'] } as never });
+    const { imageOptions } = createContentfulConfig({ imageOptions: { sizes: ['50vw'] } });
 
     expect(imageOptions.sizes).toEqual(['50vw']);
     expect(imageOptions.srcsetSizes).toEqual(['375w', '1280w', '1920w', '2560w']);

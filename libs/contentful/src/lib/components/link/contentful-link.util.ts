@@ -37,3 +37,13 @@ export const isExternalWebHref = (href: string, context: WebUrlContext) => {
 
   return url !== null && !isInternalWebUrl(url, context);
 };
+
+export const hasUrlScheme = (href: string) => /^[a-z][a-z\d+.-]*:/i.test(href);
+
+export const isRouteRelativeHref = (href: string) => !hasUrlScheme(href) && !href.startsWith('/');
+
+export const resolveHrefAgainstRoute = (href: string, routerUrl: string) => {
+  const resolved = new URL(href, 'https://contentful.invalid' + routerUrl);
+
+  return resolved.pathname + resolved.search + resolved.hash;
+};

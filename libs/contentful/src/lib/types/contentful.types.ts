@@ -90,13 +90,16 @@ export type ContentfulConfig = {
     sizes: string[];
 
     /**
-     * Background color for the image in hex. Eg. `"000000"`
+     * Background color for the image in hex. Eg. `"000000"` (a leading `#` is stripped)
      */
     backgroundColor: string | null;
   };
 };
 
-export type ContentfulConfigOptions = Partial<ContentfulConfig>;
+export type ContentfulConfigOptions = Partial<Omit<ContentfulConfig, 'imageOptions'>> & {
+  /** Merged one level deep into the defaults, so a single option can be overridden. */
+  imageOptions?: Partial<ContentfulConfig['imageOptions']>;
+};
 
 export type ContentfulLinkType = 'Space' | 'ContentType' | 'Environment' | 'Entry' | 'Asset' | 'Tag';
 export type ContentfulLink<T extends ContentfulLinkType> = {

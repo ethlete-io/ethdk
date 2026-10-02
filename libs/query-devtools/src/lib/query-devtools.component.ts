@@ -55,6 +55,7 @@ import {
   createQueryErrorResponse,
   createQueryKeyLockManager,
   EMPTY_QUERY_DEVTOOLS_FAULT,
+  isQueryDevtoolsEnabled,
   isQueryDevtoolsFaultArmed,
   isQueryDevtoolsRepositoryLive,
   measureQueryDevtoolsPayload,
@@ -599,6 +600,8 @@ const decodeJwtPayload = (token: string | null): Record<string, unknown> | null 
     return null;
   }
 };
+
+let warnedMissingProvider = false;
 
 /**
  * A floating, dockable panel that inspects the live state of the signals-first `@ethlete/query`
@@ -1205,6 +1208,13 @@ export class QueryDevtoolsComponent implements OnInit {
   protected readonly FLOAT_RESIZE_EDGES: ResizeEdge[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 
   constructor() {
+    if (ngDevMode && !warnedMissingProvider && !isQueryDevtoolsEnabled()) {
+      warnedMissingProvider = true;
+      console.warn(
+        "<et-query-devtools>: provideQueryDevtools() is not in the application providers, so the panel stays empty. Add it to bootstrapApplication's providers.",
+      );
+    }
+
     setQueryDevtoolsUiMounted(true);
     this.destroyRef.onDestroy(() => setQueryDevtoolsUiMounted(false));
 

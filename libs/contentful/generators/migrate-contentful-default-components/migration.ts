@@ -1,11 +1,27 @@
-import { formatFiles, Tree } from '@nx/devkit';
+import { formatFiles, Tree, visitNotIgnoredFiles } from '@nx/devkit';
 import { createMigrationScope, MigrationScopeOptions } from '../migrate-to-contentful-v5/migration-scope.js';
 import {
   ContentfulDefaultComponentsTask,
+  findUnprovidedRendererTask,
+  importsProvideContentfulConfig,
   scanContentfulDefaultComponentsInFile,
 } from './contentful-default-components.js';
 
 export const CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH = 'contentful-default-components-migration-tasks.md';
+
+const isSourceFile = (filePath: string) => filePath.endsWith('.ts') && !filePath.endsWith('.d.ts');
+
+const workspaceProvidesContentfulConfig = (tree: Tree) => {
+  let found = false;
+
+  visitNotIgnoredFiles(tree, '', (filePath) => {
+    if (found || !isSourceFile(filePath)) return;
+
+    found = importsProvideContentfulConfig(tree.read(filePath, 'utf-8') ?? '');
+  });
+
+  return found;
+};
 
 const renderReport = (tasks: ContentfulDefaultComponentsTask[]) =>
   [
@@ -13,7 +29,7 @@ const renderReport = (tasks: ContentfulDefaultComponentsTask[]) =>
     '',
     'The shipped asset and link components are opt-in. Without them embedded assets are skipped and',
     'hyperlinks render as plain anchors. The migration spread `CONTENTFUL_DEFAULT_COMPONENTS` into every',
-    'literal `provideContentfulConfig` call; the calls below need it by hand:',
+    'literal `provideContentfulConfig` call; the places below need it by hand:',
     '',
     '```ts',
     "import { CONTENTFUL_DEFAULT_COMPONENTS, provideContentfulConfig } from '@ethlete/contentful';",
@@ -41,22 +57,30 @@ export default async function migrateContentfulDefaultComponents(tree: Tree, sch
 
   const changed: string[] = [];
   const tasks: ContentfulDefaultComponentsTask[] = [];
+  const rendererTasks: ContentfulDefaultComponentsTask[] = [];
 
   scope.visit(tree, (filePath) => {
-    if (!filePath.endsWith('.ts') || filePath.endsWith('.d.ts')) return;
+    if (!isSourceFile(filePath)) return;
 
     const content = tree.read(filePath, 'utf-8');
     if (!content) return;
 
     const result = scanContentfulDefaultComponentsInFile(filePath, content);
+    const rendererTask = findUnprovidedRendererTask(filePath, content);
 
     tasks.push(...result.tasks);
+
+    if (rendererTask) rendererTasks.push(rendererTask);
 
     if (result.next !== null) {
       tree.write(filePath, result.next);
       changed.push(filePath);
     }
   });
+
+  if (rendererTasks.length > 0 && !workspaceProvidesContentfulConfig(tree)) {
+    tasks.push(...rendererTasks);
+  }
 
   if (tasks.length > 0) {
     tree.write(CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH, renderReport(tasks));
@@ -72,7 +96,7 @@ export default async function migrateContentfulDefaultComponents(tree: Tree, sch
 
   if (tasks.length > 0) {
     console.log(
-      `\n⚠️  ${tasks.length} call(s) need the default components by hand — see ${CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH}.`,
+      `\n⚠️  ${tasks.length} place(s) need the default components by hand — see ${CONTENTFUL_DEFAULT_COMPONENTS_REPORT_PATH}.`,
     );
   } else if (changed.length === 0) {
     console.log('\n✅ Nothing to do.');

@@ -1,6 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, untracked, ViewEncapsulation } from '@angular/core';
-import { clearQueryDevtoolsTombstones, QueryDevtoolsEntry } from '@ethlete/query';
+import { clearQueryDevtoolsTombstones, isQueryDevtoolsEnabled, QueryDevtoolsEntry } from '@ethlete/query';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { buildQueryPathTree, flattenQueryPathTree, queryRoutePathSegments } from './query-devtools-query-tree';
@@ -26,6 +26,7 @@ type QueryRowGroup = { key: string; head: QueryRow; items: QueryRow[] };
 })
 export class QueryDevtoolsQueriesTabComponent {
   protected host = injectQueryDevtoolsHost();
+  protected devtoolsEnabled = isQueryDevtoolsEnabled();
 
   /** The status chips above the list, in the order a problem is usually looked for. */
   private readonly facets = [

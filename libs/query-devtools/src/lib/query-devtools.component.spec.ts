@@ -63,6 +63,18 @@ describe('QueryDevtoolsComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should warn once when the provider is missing', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    mount(false).destroy();
+    mount(false).destroy();
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[0]).toContain('provideQueryDevtools()');
+
+    warn.mockRestore();
+  }, 30_000);
+
   it('should report a socket that refuses a message apart from invalid JSON', () => {
     const fixture = mount(false);
     const panel = fixture.componentInstance;
@@ -92,6 +104,16 @@ describe('QueryDevtoolsComponent', () => {
 
     fixture.destroy();
   });
+
+  it('should name the missing provider in the empty Queries tab', () => {
+    const fixture = mount(true);
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'provideQueryDevtools() is not in the application providers',
+    );
+
+    fixture.destroy();
+  }, 30_000);
 
   it('should schedule the clock only while the panel is open', () => {
     const fixture = mount(true);

@@ -12,6 +12,9 @@
  * (`date-fns`, `@contentful/rich-text-types`, `socket.io-client`) count towards its size. Those are
  * the only entries that can catch a newly value-imported third-party module.
  *
+ * An entry with `"initialChunk": true` keeps every dynamic `import()` external, so it measures what a
+ * consumer downloads up front and not the chunks a `@defer` loads later.
+ *
  * Usage:
  *   npx nx build core query components
  *   node tools/treeshake/check-goldens.mjs [--update] [--dist <dist/libs>] [--cache <dir>] [--json]
@@ -39,7 +42,16 @@ const { arg, flag } = makeArgs();
 const GOLDENS_FILE = join(dirname(fileURLToPath(import.meta.url)), 'goldens.json');
 const distLibs = resolve(arg('dist', defaultDistLibs()));
 
-const measure = async (name, code, aliases, workDir, withThirdParty) => {
+const externalizeDynamicImports = {
+  name: 'externalize-dynamic-imports',
+  setup(build) {
+    build.onResolve({ filter: /.*/ }, (args) =>
+      args.kind === 'dynamic-import' ? { path: args.path, external: true } : undefined,
+    );
+  },
+};
+
+const measure = async (name, code, aliases, workDir, withThirdParty, initialChunk) => {
   const entry = join(workDir, `golden-${name}.mjs`);
   await writeFile(entry, code.endsWith('\n') ? code : `${code}\n`, 'utf8');
 
@@ -48,7 +60,10 @@ const measure = async (name, code, aliases, workDir, withThirdParty) => {
     entryPoints: [entry],
     minify: true,
     alias: aliases,
-    plugins: [withThirdParty ? externalizeFrameworkOnly : externalizeNonEthlete],
+    plugins: [
+      ...(initialChunk ? [externalizeDynamicImports] : []),
+      withThirdParty ? externalizeFrameworkOnly : externalizeNonEthlete,
+    ],
   });
 
   return gzipSync(Buffer.from(result.outputFiles[0].contents), { level: 9 }).byteLength;
@@ -75,7 +90,14 @@ const main = async () => {
   const rows = [];
 
   for (const [name, golden] of Object.entries(goldens.entries)) {
-    const actual = await measure(name, golden.entry, aliases, workDir, golden.thirdParty === true);
+    const actual = await measure(
+      name,
+      golden.entry,
+      aliases,
+      workDir,
+      golden.thirdParty === true,
+      golden.initialChunk === true,
+    );
     const expected = golden.gzip;
     const limit = allowance(expected, goldens.tolerance);
     // A brand-new golden (`0`) is recorded, never failed — that is how an entry is added.

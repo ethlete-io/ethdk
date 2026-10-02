@@ -100,7 +100,7 @@ export const generateContentfulImageSources = (
     queryParams.push(`fm=${type.split('/')[1]}`);
 
     if (backgroundColor) {
-      queryParams.push(`bg=rgb:${backgroundColor}`);
+      queryParams.push(`bg=rgb:${backgroundColor.replace(/^#/, '')}`);
     }
 
     if (quality !== null && Number.isFinite(quality)) {
@@ -128,6 +128,12 @@ export const generateContentfulImageSources = (
         } else if (height && imageDimensions?.width && imageDimensions.height) {
           const derivedWidth = Math.round((height * imageDimensions.width) / imageDimensions.height);
           sourceSets.push(`${urlWithParams}&w=${derivedWidth}&h=${height} ${derivedWidth}w`);
+        } else if (ngDevMode && type === SOURCE_TYPES[0]) {
+          console.warn(
+            height
+              ? `Contentful image: srcsetSizes entry "${size}" is dropped. A height-only size needs the asset's width and height to derive a width descriptor.`
+              : `Contentful image: srcsetSizes entry "${size}" is not a valid size and is dropped. Use "400", "400w", "400h" or "400x300"; viewport sizes like "50vw" belong in sizes.`,
+          );
         }
       }
     }
