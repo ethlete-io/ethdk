@@ -191,7 +191,7 @@
       gap: 2px;
       margin-block-start: calc(4px - var(--et-dropzone-gap));
       font-size: var(--et-dropzone-error-font-size);
-      color: var(--et-theme-color-primary-solid, currentColor);
+      color: var(--et-theme-color-ink-solid, currentColor);
     }
 
     .et-dropzone-entry-progress {

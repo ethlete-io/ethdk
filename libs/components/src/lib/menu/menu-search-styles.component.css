@@ -26,7 +26,7 @@
       margin: 6px 2px 0;
       font-size: 12px;
       /* the element carries the error color theme via etProvideColor */
-      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+      color: var(--et-theme-color-ink-solid, rgb(248 113 113));
     }
 
     input[etmenusearch] {

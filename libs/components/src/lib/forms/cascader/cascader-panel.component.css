@@ -349,7 +349,7 @@
     }
 
     .et-cascader-state-error-message {
-      color: var(--et-theme-color-primary-solid, rgb(248 113 113));
+      color: var(--et-theme-color-ink-solid, rgb(248 113 113));
     }
   }
 
