@@ -40,9 +40,7 @@ with `color-mix` (it invents colours).
     each consumer provides. The default theme sits on `:root` in CSS, so the surface must apply it
     only where no nearer `etProvideColor` exists. Then map `light` and `light-elevated` to
     `brand-on-light` in Storybook. Needs a core scenario test, docs and a changeset.
-- Fixes with no design question, waiting for an OK: the Storybook light surfaces do not map
-  `warning` to `warning-on-light` (form warning, progress-step warning and banner text button
-  fail). More text takes `--et-theme-color-primary-solid` instead of the ink: rich-text token
+- The Storybook light surfaces map `warning` to `warning-on-light`. More text takes `--et-theme-color-primary-solid` instead of the ink: rich-text token
   popup, select extras and option, dropzone, rich-text content - check each after
   `01-message-ink` settles.
 - Scan findings left out on purpose: disabled labels, hints and calendar dates (WCAG exempts

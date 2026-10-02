@@ -5,7 +5,7 @@ export const LIGHT_SURFACE: SurfaceTheme = {
   type: 'light',
   elevation: 0,
   isDefault: true,
-  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light' },
+  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light', warning: 'warning-on-light' },
   interactionColor: {
     color: {
       default: '115 115 115',
@@ -26,7 +26,7 @@ export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
   name: 'light-elevated',
   type: 'light',
   elevation: 1,
-  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light' },
+  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light', warning: 'warning-on-light' },
   interactionColor: {
     color: {
       default: '115 115 115',
