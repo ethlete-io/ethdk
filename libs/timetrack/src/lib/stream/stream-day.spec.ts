@@ -143,6 +143,21 @@ describe('streamDay', () => {
     expect(day.concurrency).toBe(1);
   });
 
+  it('reads no break inside a stretch the window held, whatever commit lands in it', () => {
+    const day = streamDay({
+      events: [
+        focus(0, 'code', 'pdf-export.ts - ethlete-sdk - Code'),
+        commit(39, 'Try pdfkit for the invoice export'),
+        presence(59, 'idle-start'),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect(day.breaks).toEqual([]);
+    expect(day.presence).toEqual([{ from: AT(0), to: AT(59) }]);
+    expect(day.rows.unnamed.map((row) => [row.from, row.to, row.unattended])).toEqual([[AT(0), AT(60), undefined]]);
+  });
+
   it('folds every application with no checkout into one line', () => {
     const day = streamDay({
       events: [

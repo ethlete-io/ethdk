@@ -1077,15 +1077,6 @@ export const streamDay = (options: {
   // apart would otherwise be split by `maxUnobservedMs` into two instants with an absence between them.
   const heldMicrophone = calls.filter((call) => call.isPresence).map(({ from, to }) => ({ from, to }));
 
-  const presence = mergeWindows([
-    ...presenceWindows({
-      samples: rebuildSamples,
-      maxUnobservedMs: config.maxUnobservedMs,
-      maxAgentGapMs: config.maxAgentGapMs,
-    }),
-    ...heldMicrophone,
-  ]);
-
   // What the machine itself watched. Everything presence holds beyond it was rebuilt, and the two are
   // disjoint, so each minute of presence has exactly one owner and the ratio keeps its meaning.
   //
@@ -1098,6 +1089,17 @@ export const streamDay = (options: {
       maxUnobservedMs: config.maxUnobservedMs,
     }),
     ...heldMicrophone,
+  ]);
+
+  // Must hold `seen`: a commit inside a stretch the window held can trip `maxUnobservedMs` here, and a
+  // watched minute read as a break is cut out of the row it lies under.
+  const presence = mergeWindows([
+    ...presenceWindows({
+      samples: rebuildSamples,
+      maxUnobservedMs: config.maxUnobservedMs,
+      maxAgentGapMs: config.maxAgentGapMs,
+    }),
+    ...seen,
   ]);
 
   const rebuilt = subtractWindows({ windows: presence, without: seen });
