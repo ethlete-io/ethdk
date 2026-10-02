@@ -48,6 +48,7 @@
 
   .et-scheduler-appointment-title {
     overflow: hidden;
+    font-weight: 600;
     min-inline-size: 0;
     flex: 1;
     text-overflow: ellipsis;
@@ -71,7 +72,6 @@
     flex-shrink: 0;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
-    opacity: 0.75;
   }
 
   .et-scheduler-appointment-location {
@@ -80,7 +80,6 @@
     align-items: center;
     gap: 3px;
     max-inline-size: 40%;
-    opacity: 0.75;
   }
 
   .et-scheduler-appointment-location-icon {
@@ -102,7 +101,6 @@
     align-items: center;
     gap: 2px;
     font-variant-numeric: tabular-nums;
-    opacity: 0.75;
   }
 
   .et-scheduler-appointment-chain-count-icon {
