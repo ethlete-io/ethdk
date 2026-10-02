@@ -342,6 +342,25 @@ export const imports = [TableImports, TabImports];`,
       expect(report).toContain('`color` input');
     });
 
+    it('lists app stylesheet selectors that no components class matches', async () => {
+      tree.write(
+        'libs/theme/et-button.scss',
+        `/* .et-commented-out */\n.et-button {\n  &:hover {}\n}\n\n.et-button-legacy-wrap .et-select-combobox-thing {\n  content: '.et-in-a-string';\n}`,
+      );
+
+      await run();
+
+      const report = tree.read(MIGRATE_FROM_CDK_REPORT_PATH, 'utf-8')!;
+
+      expect(report).toContain('## Stylesheet selectors no components class matches');
+      expect(report).toContain('- `.et-button-legacy-wrap` - `libs/theme/et-button.scss:6`');
+      expect(report).toContain('### `et-select`');
+      expect(report).toContain('- `.et-select-combobox-thing` - `libs/theme/et-button.scss:6`');
+      expect(report).not.toContain('`.et-button` -');
+      expect(report).not.toContain('et-commented-out');
+      expect(report).not.toContain('et-in-a-string');
+    });
+
     it('writes no report when nothing needs a decision', async () => {
       tree.write('src/app/skeleton.component.html', '<et-skeleton-item></et-skeleton-item>');
 

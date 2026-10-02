@@ -1,3 +1,4 @@
+import { COMPONENTS_CLASSES } from './components-classes.js';
 import { MigrationEntry } from './migration-map.js';
 import {
   LEGACY_SPINNER_COLOR_VARIABLE,
@@ -39,6 +40,7 @@ export type MigrationReport = {
   spinnerModeBindings: ReportSite[];
   judgmentSymbols: Map<string, SymbolSites>;
   gatedSymbols: Map<string, SymbolSites>;
+  unknownStyleClasses: Map<string, ReportSite[]>;
 };
 
 export type ReportContext = {
@@ -53,6 +55,7 @@ export const createEmptyReport = (): MigrationReport => ({
   spinnerModeBindings: [],
   judgmentSymbols: new Map(),
   gatedSymbols: new Map(),
+  unknownStyleClasses: new Map(),
 });
 
 export const isReportEmpty = (report: MigrationReport) =>
@@ -61,7 +64,8 @@ export const isReportEmpty = (report: MigrationReport) =>
   report.themedSpinners.length === 0 &&
   report.spinnerModeBindings.length === 0 &&
   report.judgmentSymbols.size === 0 &&
-  report.gatedSymbols.size === 0;
+  report.gatedSymbols.size === 0 &&
+  report.unknownStyleClasses.size === 0;
 
 const PICTURE_CLASS_INPUTS = ['imgClass', 'figureClass', 'pictureClass', 'figcaptionClass'] as const;
 
@@ -191,8 +195,35 @@ export const scanTemplate = (report: MigrationReport, template: string, { file, 
   }
 };
 
+const blankOut = (match: string) => match.replace(/[^\n]/g, ' ');
+
+export const collectEtClasses = (styles: string) => {
+  const code = styles.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, blankOut);
+  const pattern = /(?<![\w-])\.(et-[\w-]+)/g;
+  const classes: { name: string; index: number }[] = [];
+  let match = pattern.exec(code);
+
+  while (match) {
+    classes.push({ name: match[1]!, index: match.index });
+    match = pattern.exec(code);
+  }
+
+  return classes;
+};
+
+const KNOWN_COMPONENTS_CLASSES = new Set(COMPONENTS_CLASSES);
+
 export const scanStyleSheet = (report: MigrationReport, styles: string, { file, startLine }: TemplateScanOptions) => {
   const lineAt = (index: number) => startLine + lineOfIndex(styles, index) - 1;
+
+  for (const { name, index } of collectEtClasses(styles)) {
+    if (KNOWN_COMPONENTS_CLASSES.has(name)) continue;
+
+    const sites = report.unknownStyleClasses.get(name) ?? [];
+
+    sites.push({ file, line: lineAt(index) });
+    report.unknownStyleClasses.set(name, sites);
+  }
   const variablePattern = new RegExp(`${LEGACY_SPINNER_COLOR_VARIABLE}(-\\d+)?`, 'g');
   let variableMatch = variablePattern.exec(styles);
 
@@ -273,6 +304,21 @@ const renderPictureClassGroup = (sites: readonly PictureClassSite[], heading: st
     ),
     '',
   ];
+};
+
+const styleClassGroup = (name: string) => name.replace(/^et-/, '').split(/-/)[0] ?? name;
+
+const renderUnknownStyleClasses = (classes: Map<string, ReportSite[]>) => {
+  const groups = new Map<string, string[]>();
+
+  for (const name of [...classes.keys()].sort()) {
+    const group = styleClassGroup(name);
+    const sites = classes.get(name)!.map((site) => `\`${site.file}:${site.line}\``);
+
+    groups.set(group, [...(groups.get(group) ?? []), `- \`.${name}\` - ${sites.join(', ')}`]);
+  }
+
+  return [...groups.entries()].flatMap(([group, lines]) => [`### \`et-${group}\``, '', ...lines, '']);
 };
 
 export const renderReport = (report: MigrationReport, context: ReportContext) => {
@@ -390,6 +436,17 @@ export const renderReport = (report: MigrationReport, context: ReportContext) =>
 
             return `${entry.kind}: ${successor} in \`${entry.package}\`.${renderDocsLink(entry)}`;
           }),
+        ]
+      : []),
+    ...(report.unknownStyleClasses.size > 0
+      ? [
+          '## Stylesheet selectors no components class matches',
+          '',
+          'These `.et-*` selectors restyle a cdk class that no `@ethlete/components` stylesheet defines, so after the',
+          "move they match nothing. Restyle through the successor's tokens and CSS variables instead (each component",
+          `guide has a Theming section). See ${DOCS_BASE_URL}/cdk/migration#your-cdk-styles.`,
+          '',
+          ...renderUnknownStyleClasses(report.unknownStyleClasses),
         ]
       : []),
   ].join('\n');

@@ -62,6 +62,8 @@ The target follows the dist tag the installed version belongs to. A repo on `5.0
 
 A dist tag can point backwards. If the tag this command picks by itself is older than the version the repo is on, the tag is stale and the package is reported instead of downgraded. An explicit `--tag` or `--to` is taken as asked, so `--tag latest` still moves a repo off the prerelease line.
 
+Following `latest` never crosses into a new major that is still on `next`. When another dist tag holds a higher major than the target, the plan says so per package (`a newer major is on "next": 5.0.0-next.61 - run et update --tag next`), also when the repo is up to date. A repo on the v4 line moves in a fixed order; follow [Migrating from the v4 line](/migrating-from-v4) before passing `--tag next`.
+
 ```bash
 yarn et update --check                    # what would change, writes nothing, exits 1 while pending
 yarn et update core                       # only @ethlete/core

@@ -15,10 +15,12 @@ import {
   declaredEthletePackages,
   findManifests,
   manifestPath,
+  newestDeclaredVersion,
   readManifest,
   writeRanges,
 } from './packages';
 import {
+  NewerMajor,
   PackageUpdate,
   PendingMigration,
   UpdatedPackage,
@@ -26,6 +28,8 @@ import {
   isDowngrade,
   orderMigrations,
   availableMigrationsLine,
+  newerMajorLine,
+  newerMajorOnTag,
   pendingMigrations,
 } from './plan';
 import {
@@ -86,6 +90,10 @@ const printUpdates = (updates: readonly (UpdatedPackage & { tag?: string })[]) =
   }
 };
 
+const printNewerMajors = (newerMajors: readonly NewerMajor[]) => {
+  for (const newer of newerMajors) console.log(`\n  ${newerMajorLine(newer)}`);
+};
+
 const problemsOf = (updates: readonly PackageUpdate[]) =>
   updates.flatMap((update) =>
     update.unwritable.map(
@@ -99,6 +107,7 @@ type ResolveResult = {
   updates: PackageUpdate[];
   problems: string[];
   upToDate: string[];
+  newerMajors: NewerMajor[];
 };
 
 const resolveUpdates = async (options: {
@@ -112,7 +121,7 @@ const resolveUpdates = async (options: {
   const registry = registryUrl({ root, manager: manager.name });
   const authorization = registryAuthorization({ root, registry });
   const authorizationSource = registryAuthorizationSource({ root, registry });
-  const result: ResolveResult = { updates: [], problems: [], upToDate: [] };
+  const result: ResolveResult = { updates: [], problems: [], upToDate: [], newerMajors: [] };
 
   const lookups = await Promise.all(
     declared.map(async (entry) => ({
@@ -133,6 +142,15 @@ const resolveUpdates = async (options: {
       result.problems.push(choice.problem);
       continue;
     }
+
+    const target =
+      'upToDate' in choice ? (entry.installedVersion ?? newestDeclaredVersion(entry.sites)) : choice.update.to;
+    const newer =
+      version === undefined && target !== undefined
+        ? newerMajorOnTag({ name: entry.name, version: target, distTags: lookup.package.distTags })
+        : undefined;
+
+    if (newer) result.newerMajors.push(newer);
 
     if ('upToDate' in choice) {
       result.upToDate.push(entry.name);
@@ -640,6 +658,8 @@ export const updateCommand = async ({
 
     console.log(`\nEvery @ethlete package is on its newest version (${resolved.upToDate.length} checked).`);
 
+    printNewerMajors(resolved.newerMajors);
+
     if (args.check || args.dryRun) return 0;
 
     if (agent !== undefined) return workOpenTasks({ root, agent, invocation, commit: args.commit });
@@ -654,6 +674,7 @@ export const updateCommand = async ({
   if (manifests.length > 1) console.log(`  ${manifests.length} package.json files scanned.\n`);
 
   printUpdates(resolved.updates);
+  printNewerMajors(resolved.newerMajors);
 
   for (const update of resolved.updates.filter(isDowngrade)) {
     console.log(`\n  ${update.name} moves back to ${update.to}, which is older than the installed ${update.from}.`);

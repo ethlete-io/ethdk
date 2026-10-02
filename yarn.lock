@@ -4457,7 +4457,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/agent-rules@workspace:libs/agent-rules"
   peerDependencies:
-    tslib: 2.8.1
+    tslib: ^2.3.0
   bin:
     ethlete-agents: ./src/index.js
   languageName: unknown
@@ -4473,30 +4473,24 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/cdk@workspace:libs/cdk"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.3
-    "@angular/cdk": 22.1.6
-    "@angular/common": 22.1.6
-    "@angular/core": 22.1.6
-    "@angular/forms": 22.1.6
-    "@angular/platform-browser": 22.1.6
-    "@angular/router": 22.1.6
+    "@angular/cdk": ^22.1.0
+    "@angular/common": ^22.1.0
+    "@angular/core": ^22.1.0
+    "@angular/forms": ^22.1.0
+    "@angular/platform-browser": ^22.1.0
+    "@angular/router": ^22.1.0
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
     "@ethlete/types": ^2.0.0-beta.4
-    "@floating-ui/dom": 1.8.0
-    "@nx/devkit": 23.1.0
-    date-fns: 4.4.0
-    rxjs: 7.8.2
-    typescript: 6.0.3
-    vite: 8.1.5
+    "@floating-ui/dom": ^1.6.0
+    "@nx/devkit": ^23.0.0
+    date-fns: ^4.0.0
+    rxjs: ^7.8.0
+    typescript: ^6.0.0
   peerDependenciesMeta:
-    "@analogjs/vite-plugin-angular":
-      optional: true
     "@nx/devkit":
       optional: true
     typescript:
-      optional: true
-    vite:
       optional: true
   languageName: unknown
   linkType: soft
@@ -4509,8 +4503,8 @@ __metadata:
     typescript: "npm:6.0.3"
     vite: "npm:8.1.5"
   peerDependencies:
-    playwright: 1.61.1
-    tslib: 2.8.1
+    playwright: ^1.50.0
+    tslib: ^2.3.0
   peerDependenciesMeta:
     playwright:
       optional: true
@@ -4525,24 +4519,21 @@ __metadata:
   dependencies:
     "@ethlete/bracket": "npm:^1.0.0-next.2"
   peerDependencies:
-    "@analogjs/vitest-angular": 2.6.3
-    "@angular/common": 22.1.6
-    "@angular/compiler": 22.1.6
-    "@angular/core": 22.1.6
-    "@angular/forms": 22.1.6
-    "@angular/platform-browser": 22.1.6
-    "@angular/router": 22.1.6
-    "@date-fns/tz": 1.5.0
+    "@angular/common": ^22.1.0
+    "@angular/compiler": ^22.1.0
+    "@angular/core": ^22.1.0
+    "@angular/forms": ^22.1.0
+    "@angular/platform-browser": ^22.1.0
+    "@angular/router": ^22.1.0
+    "@date-fns/tz": ^1.2.0
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
     "@ethlete/types": ^2.0.0-beta.4
-    "@floating-ui/dom": 1.8.0
-    "@nx/devkit": 23.1.0
-    date-fns: 4.4.0
-    rxjs: 7.8.2
+    "@floating-ui/dom": ^1.6.0
+    "@nx/devkit": ^23.0.0
+    date-fns: ^4.0.0
+    rxjs: ^7.8.0
   peerDependenciesMeta:
-    "@analogjs/vitest-angular":
-      optional: true
     "@date-fns/tz":
       optional: true
     "@nx/devkit":
@@ -4556,14 +4547,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/contentful@workspace:libs/contentful"
   peerDependencies:
-    "@angular/common": 22.1.6
-    "@angular/core": 22.1.6
-    "@angular/router": 22.1.6
-    "@contentful/rich-text-types": 17.2.7
+    "@angular/common": ^22.1.0
+    "@angular/core": ^22.1.0
+    "@angular/router": ^22.1.0
+    "@contentful/rich-text-types": ^17.0.0
     "@ethlete/components": ^1.0.0-next.32
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
-    "@nx/devkit": 23.1.0
+    "@nx/devkit": ^23.0.0
   peerDependenciesMeta:
     "@nx/devkit":
       optional: true
@@ -4574,17 +4565,17 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/core@workspace:libs/core"
   peerDependencies:
-    "@angular/common": 22.1.6
-    "@angular/core": 22.1.6
-    "@angular/forms": 22.1.6
-    "@angular/platform-browser": 22.1.6
-    "@angular/router": 22.1.6
+    "@angular/common": ^22.1.0
+    "@angular/core": ^22.1.0
+    "@angular/forms": ^22.1.0
+    "@angular/platform-browser": ^22.1.0
+    "@angular/router": ^22.1.0
     "@ethlete/types": ^2.0.0-beta.4
-    "@floating-ui/dom": 1.8.0
-    "@nx/devkit": 23.1.0
-    rxjs: 7.8.2
-    ts-morph: 21.0.1
-    typescript: 6.0.3
+    "@floating-ui/dom": ^1.6.0
+    "@nx/devkit": ^23.0.0
+    rxjs: ^7.8.0
+    ts-morph: ^21.0.0
+    typescript: ^6.0.0
   peerDependenciesMeta:
     "@nx/devkit":
       optional: true
@@ -4616,12 +4607,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query-devtools@workspace:libs/query-devtools"
   peerDependencies:
-    "@angular/common": 22.1.6
-    "@angular/core": 22.1.6
+    "@angular/common": ^22.1.0
+    "@angular/core": ^22.1.0
     "@ethlete/components": ^1.0.0-next.42
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/query": ^6.0.0-beta.8
-    rxjs: 7.8.2
+    rxjs: ^7.8.0
   languageName: unknown
   linkType: soft
 
@@ -4629,25 +4620,19 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/query@workspace:libs/query"
   peerDependencies:
-    "@analogjs/vite-plugin-angular": 2.6.3
-    "@angular/common": 22.1.6
-    "@angular/core": 22.1.6
-    "@angular/forms": 22.1.6
-    "@angular/router": 22.1.6
+    "@angular/common": ^22.1.0
+    "@angular/core": ^22.1.0
+    "@angular/forms": ^22.1.0
+    "@angular/router": ^22.1.0
     "@ethlete/core": ^5.0.0-beta.11
     "@ethlete/types": ^2.0.0-beta.4
-    "@nx/devkit": 23.1.0
-    rxjs: 7.8.2
-    typescript: 6.0.3
-    vite: 8.1.5
+    "@nx/devkit": ^23.0.0
+    rxjs: ^7.8.0
+    typescript: ^6.0.0
   peerDependenciesMeta:
-    "@analogjs/vite-plugin-angular":
-      optional: true
     "@nx/devkit":
       optional: true
     typescript:
-      optional: true
-    vite:
       optional: true
   languageName: unknown
   linkType: soft
@@ -4757,7 +4742,7 @@ __metadata:
   resolution: "@ethlete/timetrack@workspace:libs/timetrack"
   peerDependencies:
     "@ethlete/agent-rules": ^0.1.0-next.5
-    rxjs: 7.8.2
+    rxjs: ^7.8.0
   languageName: unknown
   linkType: soft
 

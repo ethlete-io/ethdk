@@ -3,6 +3,7 @@ import { Migration, MigrationLevel, PackageMigrations } from './migration-manife
 import { MigrationRecord, migrationKey } from './migration-record';
 import { RegistryPackage, tagForInstalled } from './registry';
 import { compareVersions, isInUpdateRange, isNewer, isValidVersion } from './semver';
+import { NEXT_DOCS_BASE_URL } from './tasks';
 
 /**
  * The order two migrations of the same version run in, following the dependency layering: a rewrite in
@@ -109,6 +110,37 @@ export const chooseTarget = (options: {
     },
   };
 };
+
+export type NewerMajor = {
+  name: string;
+  tag: string;
+  version: string;
+};
+
+const majorOf = (version: string) => Number.parseInt(version.split('.')[0] ?? '', 10) || 0;
+
+export const newerMajorOnTag = (options: {
+  name: string;
+  version: string;
+  distTags: Record<string, string>;
+}): NewerMajor | undefined => {
+  const { name, version, distTags } = options;
+  const major = majorOf(version);
+
+  return Object.entries(distTags)
+    .filter(([, tagged]) => isValidVersion(tagged) && majorOf(tagged) > major)
+    .reduce<NewerMajor | undefined>(
+      (newest, [tag, tagged]) =>
+        newest === undefined || compareVersions(tagged, newest.version) > 0 ? { name, tag, version: tagged } : newest,
+      undefined,
+    );
+};
+
+export const MIGRATING_FROM_V4_URL = `${NEXT_DOCS_BASE_URL}/migrating-from-v4`;
+
+export const newerMajorLine = (newer: NewerMajor) =>
+  `${newer.name}: a newer major is on "${newer.tag}": ${newer.version} - run et update --tag ${newer.tag}. ` +
+  `The order of the move is in ${MIGRATING_FROM_V4_URL}`;
 
 export const isDowngrade = (update: PackageUpdate) => update.from !== undefined && !isNewer(update.to, update.from);
 

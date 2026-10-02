@@ -4,17 +4,17 @@
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {
-    "@angular/common": "22.1.6",
-    "@angular/core": "22.1.6",
-    "@angular/forms": "22.1.6",
-    "@angular/platform-browser": "22.1.6",
-    "@angular/router": "22.1.6",
+    "@angular/common": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
     "@ethlete/types": "^2.0.0-beta.4",
-    "@floating-ui/dom": "1.8.0",
-    "@nx/devkit": "23.1.0",
-    "rxjs": "7.8.2",
-    "ts-morph": "21.0.1",
-    "typescript": "6.0.3"
+    "@floating-ui/dom": "^1.6.0",
+    "@nx/devkit": "^23.0.0",
+    "rxjs": "^7.8.0",
+    "ts-morph": "^21.0.0",
+    "typescript": "^6.0.0"
   },
   "peerDependenciesMeta": {
     "@nx/devkit": {

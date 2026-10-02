@@ -49,6 +49,10 @@ features:
     link: /agent-rules/
 ---
 
+## Moving an app from the v4 line
+
+An app on `@ethlete/cdk` 4 / `@ethlete/core` 4 / `@ethlete/query` 5 moves in a fixed order: [Migrating from the v4 line](/migrating-from-v4).
+
 ## Using these docs with LLMs
 
 This site follows the [llms.txt convention](https://llmstxt.org). Point your tool at:

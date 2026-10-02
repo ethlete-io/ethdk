@@ -33,7 +33,7 @@
     "report-legacy-query-apis": {
       "factory": "./report-legacy-query-apis/migration",
       "schema": "./report-legacy-query-apis/schema.json",
-      "description": "Write a task to query-v3-migration-tasks.md for every legacy query collection, infinity query and entity store"
+      "description": "Write a task to query-v3-migration-tasks.md for every legacy query collection, infinity query, *etQuery template and entity store"
     }
   }
 }

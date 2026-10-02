@@ -79,6 +79,29 @@ describe('report-legacy-query-apis', () => {
     expect(report).toContain('https://ethlete-sdk-docs.web.app/components/paged-query-trigger');
   });
 
+  it('reports every *etQuery and [etQuery] site of a component that imports QueryDirective', async () => {
+    const report = await run({
+      'libs/app/post/post.component.ts': `import { Component } from '@angular/core';\nimport { QueryDirective } from '@ethlete/query';\n\n@Component({\n  selector: 'app-post',\n  templateUrl: './post.component.html',\n  imports: [QueryDirective],\n})\nexport class PostComponent {}\n`,
+      'libs/app/post/post.component.html': `<div *etQuery="postQuery$ as post">{{ post.title }}</div>\n<div *etQueryFoo></div>\n<ng-template [etQuery]="commentsQuery$" let-comments></ng-template>\n`,
+    });
+
+    expect(report).toContain('Replace *etQuery');
+    expect(report).toContain('- libs/app/post/post.component.html:1');
+    expect(report).toContain('- libs/app/post/post.component.html:3');
+    expect(report).not.toContain('- libs/app/post/post.component.html:2');
+    expect(report).toContain(
+      'https://ethlete-sdk-docs.web.app/query/migrating-from-v2#templates-read-signals-not-directives',
+    );
+  });
+
+  it('leaves *etQuery alone in a component that does not import QueryDirective', async () => {
+    const report = await run({
+      'libs/app/other.component.ts': `import { Component } from '@angular/core';\nimport { def } from '@ethlete/query';\n\n@Component({\n  selector: 'app-other',\n  template: '<div *etQuery="x"></div>',\n})\nexport class OtherComponent {}\n`,
+    });
+
+    expect(report).not.toContain('Replace *etQuery');
+  });
+
   it('reports an etInfinityQueryTrigger in an inline template at its line in the component file', async () => {
     const report = await run({
       'libs/app/list.component.ts': `import { Component } from '@angular/core';\nimport { InfinityQueryTriggerDirective } from '@ethlete/query';\n\n@Component({\n  selector: 'app-list',\n  template: \`\n    <ul></ul>\n    <et-infinity-query-trigger />\n  \`,\n  imports: [InfinityQueryTriggerDirective],\n})\nexport class ListComponent {}\n`,

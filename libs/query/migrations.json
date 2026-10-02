@@ -68,7 +68,7 @@
       "version": "6.0.0-next.55",
       "kind": "auto",
       "level": "optional",
-      "description": "List every query collection, infinity query and entity store that still needs a hand edit in query-v3-migration-tasks.md.",
+      "description": "List every query collection, infinity query, *etQuery template and entity store that still needs a hand edit in query-v3-migration-tasks.md.",
       "generator": "@ethlete/query:report-legacy-query-apis",
       "scan": "@ethlete/query:report-legacy-query-apis",
       "docs": "/query/migrating-from-v2"

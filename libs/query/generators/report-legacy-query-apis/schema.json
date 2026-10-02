@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/schema",
   "$id": "report-legacy-query-apis",
-  "title": "Report legacy query collections, infinity queries and entity stores",
+  "title": "Report legacy query collections, infinity queries, *etQuery templates and entity stores",
   "type": "object",
   "properties": {
     "projects": {

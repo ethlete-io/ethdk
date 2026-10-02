@@ -20,7 +20,7 @@
     "ethlete-agents": "./src/index.js"
   },
   "peerDependencies": {
-    "tslib": "2.8.1"
+    "tslib": "^2.3.0"
   },
   "ethlete": {
     "migrations": "./migrations.json"

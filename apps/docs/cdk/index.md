@@ -38,13 +38,13 @@ A consumer-facing Nx generator codemods an app from cdk v4 to v5:
 yarn nx g @ethlete/cdk:migrate-to-v5
 ```
 
-It runs seven transforms over your TypeScript, templates and CSS - combobox input/provider renames, `*etLet`/`*ngLet` removal, the theming move to `@ethlete/core` (color-theme class renames included), CDK-menu/`et-menu` consolidation into `MenuImports`, `IsActiveElementDirective` → `ScrollableIsActiveChildDirective`, overlay position-preset rewrites, and the dialog/bottom-sheet merge into the unified overlay (`DialogImports`/`BottomSheetImports` → `OverlayImports`). Each transform can be disabled with its own flag; review the diff afterwards. The [`@ethlete/core` v5 migration](/core/#also-in-the-package) covers the core-side renames.
+It runs seven transforms over your TypeScript, templates and CSS - combobox input/provider renames, `*etLet`/`*ngLet` removal, the theming move to `@ethlete/core` (color-theme class renames included), CDK-menu/`et-menu` consolidation into `MenuImports`, `IsActiveElementDirective` → `ScrollableIsActiveChildDirective`, overlay position-preset rewrites, and the dialog/bottom-sheet merge into the unified overlay (`DialogImports`/`BottomSheetImports` → `OverlayImports`). Each transform can be disabled with its own flag; review the diff afterwards. The [`@ethlete/core` v5 migration](/core/#also-in-the-package) covers the core-side renames. [Migrating from the v4 line](/migrating-from-v4) has the order of the whole move.
 
 ## Superseded by @ethlete/components
 
 New code should use the successor; fixes made here should usually be mirrored there. Each CDK guide below opens with the renames its successor brings.
 
-This table is the domain-level view. For a single identifier - "what does `TableImports` / `createOverlayHandler` / `SortHeaderComponent` become?" - use the [symbol-by-symbol migration table](/cdk/migration), which covers every public CDK export and flags the three rename patterns that make a successor look like it doesn't exist.
+This table is the domain-level view. For a single identifier - "what does `TableImports` / `createOverlayHandler` / `SortHeaderComponent` become?" - use the [symbol-by-symbol migration table](/cdk/migration), which covers every public CDK export and flags the three rename patterns that make a successor look like it doesn't exist. To apply the mechanical rows, [run the `migrate-from-cdk` codemod](/cdk/migration#run-the-codemod) instead of editing by hand; the order of the whole move from a v4-line app is in [Migrating from the v4 line](/migrating-from-v4).
 
 | CDK domain                                                | Successor                                                                                   |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |

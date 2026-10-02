@@ -427,3 +427,23 @@ the app root.
 ## Legacy runtime theming
 
 `provideColorThemes(themes)` (without the `WithTailwind4` suffix) is the previous, Tailwind-v3-era system: it injects `<style>` tags at runtime instead of generating CSS at build time. It - along with its helpers (`createThemeStyle`, `createTailwindColorThemes`, …) - is **deprecated** with intent to remove in v6. New apps should use the generator-based setup above.
+
+### Migrating from runtime theming
+
+The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) is the type the generators read. The setup around it changes:
+
+1. **Tailwind 3 → 4.** Delete the `tailwind.config.ts` color block built from `createTailwindColorThemes(THEMES, 'gg')`. Run the color generator on the same theme file with the same prefix; it emits the same `bg-gg-<name>`, `bg-gg-<name>-hover`, `text-gg-on-<name>` utilities through `@theme`:
+
+   ```bash
+   yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=libs/theme/src/themes.ts --prefix=gg
+   ```
+
+   `--prefix` names the utilities; the runtime variables keep `--et-*` unless you also pass `--runtimePrefix`.
+
+2. **Providers.** `provideColorThemes(THEMES)` becomes `...provideColorThemesWithTailwind4(THEMES)`. The runtime `<style>` injection goes away; import the generated `.css` in the global stylesheet instead.
+
+3. **Surface themes.** A legacy app has none, and every component reads its backgrounds, text and borders from one. Start with one `light` surface (`isDefault: true`, elevation 0) built from the app's existing page background, text, muted text and border colors, plus a `light-elevated` one for cards and overlays. Add `dark` surfaces only if the app has a dark mode. Generate them with `tailwind-4-surface-theme` and register them with `provideSurfaceThemesWithTailwind4()` - see [Surface themes](#surface-themes).
+
+4. **The app's own CSS.** `--et-color-primary`, `--et-color-on-primary`, `--et-color-primary-ink` and their `-hover`/`-focus`/`-active`/`-disabled` states (also for `secondary` and `tertiary`) are still emitted on every `.et-color--<name>` scope, as `"R G B"` channels, so `rgb(var(--et-color-primary))` keeps working. The `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-color-primary` there. `--et-theme-color-primary` is the opacity-aware form of the same color.
+
+The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: that call is the step above.

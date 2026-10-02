@@ -246,10 +246,6 @@ export const fetchRegistryPackage = async (options: {
 };
 
 /**
- * Which dist tag an update follows when the caller names none: the one the installed prerelease belongs
- * to, so a repo on `-next.46` stays on `next` instead of being pulled back to the stable line.
- */
-/**
  * The dist tag an update follows: for a prerelease, the tag holding the newest version of the same prerelease
  * line, which is not always the tag named after it.
  */

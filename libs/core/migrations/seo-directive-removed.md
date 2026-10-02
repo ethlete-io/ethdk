@@ -9,7 +9,8 @@ function call. Both are decisions about the call site.
 
 ## What to change
 
-1. Find every component that injects `SeoDirective` or lists it in `hostDirectives` or `imports`.
+1. Find every component that injects `SeoDirective` or `SEO_DIRECTIVE_TOKEN`, or lists the directive in
+   `hostDirectives` or `imports`.
 2. Remove the directive from the component.
 3. Replace the `updateConfig({ … })` call with one `apply*Binding` call per key it set.
 4. Turn an Observable value into a signal: `toSignal()` at the edge of the component, or a

@@ -12,34 +12,26 @@
     }
   },
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": "2.6.3",
-    "@angular/cdk": "22.1.6",
-    "@angular/common": "22.1.6",
-    "@angular/core": "22.1.6",
-    "@angular/forms": "22.1.6",
-    "@angular/platform-browser": "22.1.6",
-    "@angular/router": "22.1.6",
+    "@angular/cdk": "^22.1.0",
+    "@angular/common": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
     "@ethlete/core": "^5.0.0-beta.11",
     "@ethlete/query": "^6.0.0-beta.8",
     "@ethlete/types": "^2.0.0-beta.4",
-    "@floating-ui/dom": "1.8.0",
-    "@nx/devkit": "23.1.0",
-    "date-fns": "4.4.0",
-    "rxjs": "7.8.2",
-    "typescript": "6.0.3",
-    "vite": "8.1.5"
+    "@floating-ui/dom": "^1.6.0",
+    "@nx/devkit": "^23.0.0",
+    "date-fns": "^4.0.0",
+    "rxjs": "^7.8.0",
+    "typescript": "^6.0.0"
   },
   "peerDependenciesMeta": {
-    "@analogjs/vite-plugin-angular": {
-      "optional": true
-    },
     "@nx/devkit": {
       "optional": true
     },
     "typescript": {
-      "optional": true
-    },
-    "vite": {
       "optional": true
     }
   },

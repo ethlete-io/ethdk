@@ -23,6 +23,7 @@ const INFINITY_GUIDE = `${DOCS_URL}/query/migrating-from-v2#infinity-queries`;
 const TRIGGER_DOCS = `${DOCS_URL}/components/paged-query-trigger`;
 const ENTITY_GUIDE = `${DOCS_URL}/query/migrating-from-v2#entitystore-becomes-invalidates-and-tags`;
 const CACHING_DOCS = `${DOCS_URL}/query/caching`;
+const TEMPLATES_GUIDE = `${DOCS_URL}/query/migrating-from-v2#templates-read-signals-not-directives`;
 
 const COLLECTION_FNS = ['createQueryCollection', 'createQueryCollectionSignal', 'createQueryCollectionSubject'];
 const COLLECTION_STATE_FN = 'switchQueryCollectionState';
@@ -31,7 +32,9 @@ const ENTITY_STORE_CLASS = 'EntityStore';
 const LEGACY_CREATOR_FN = 'createLegacyQueryCreator';
 const INFINITY_DIRECTIVE = 'InfinityQueryDirective';
 const INFINITY_TRIGGER_DIRECTIVE = 'InfinityQueryTriggerDirective';
+const QUERY_DIRECTIVE = 'QueryDirective';
 
+const QUERY_DIRECTIVE_PATTERN = /\*etQuery(?![\w-])|\[etQuery\](?=\s*=)/g;
 const INFINITY_DIRECTIVE_PATTERN = /\*etInfinityQuery(?![\w-])/g;
 const INFINITY_TRIGGER_PATTERN = /(?<![\w-])etInfinityQueryTrigger(?![\w-])|<et-infinity-query-trigger(?![\w-])/g;
 
@@ -221,8 +224,9 @@ const scanComponentTemplate = (options: {
   const { tree, filePath, sourceFile, decorator, imports, report } = options;
   const usesDirective = hasImported(imports, INFINITY_DIRECTIVE);
   const usesTrigger = hasImported(imports, INFINITY_TRIGGER_DIRECTIVE);
+  const usesQueryDirective = hasImported(imports, QUERY_DIRECTIVE);
 
-  if (!usesDirective && !usesTrigger) return;
+  if (!usesDirective && !usesTrigger && !usesQueryDirective) return;
 
   const call = decorator.expression;
 
@@ -277,6 +281,20 @@ const scanComponentTemplate = (options: {
     }
   }
 
+  if (usesQueryDirective) {
+    for (const { line } of matches(QUERY_DIRECTIVE_PATTERN)) {
+      report.addFollowUp({
+        title: 'Replace *etQuery',
+        summary:
+          'The template renders a query through `*etQuery`, which accepts only legacy queries. Moving its creator off the interop breaks this template.',
+        action: `Read the query's \`loading()\`, \`error()\` and \`response()\` signals in \`@if\` / \`@switch\` blocks - see ${TEMPLATES_GUIDE}.`,
+        locations: [{ filePath: templatePath, line }],
+        source: SOURCE,
+        dedupeKey: `${SOURCE}:query-directive:${templatePath}:${line}`,
+      });
+    }
+  }
+
   if (usesTrigger) {
     for (const { line } of matches(INFINITY_TRIGGER_PATTERN)) {
       report.addFollowUp({
@@ -310,7 +328,7 @@ export const reportLegacyQueryApis = (tree: Tree, scope: ReturnType<typeof creat
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
-  console.log('\n🔄 Reporting legacy query collections, infinity queries and entity stores...');
+  console.log('\n🔄 Reporting legacy query collections, infinity queries, *etQuery templates and entity stores...');
 
   const scope = createMigrationScope(tree, schema);
 

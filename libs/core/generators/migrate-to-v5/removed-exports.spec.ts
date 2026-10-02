@@ -3,7 +3,44 @@ import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import migration from './migration';
-import reportRemovedExports from './removed-exports';
+import { join } from 'node:path';
+import ts from 'typescript';
+import coreV4Exports from './core-v4-exports.json';
+import reportRemovedExports, { REMOVED_EXPORTS } from './removed-exports';
+
+const REWRITTEN_BY_OTHER_TRANSFORMS = new Set([
+  'ViewportService',
+  'RouterStateService',
+  'createProvider',
+  'createRootProvider',
+  'createStaticProvider',
+  'createStaticRootProvider',
+]);
+
+const currentCoreExports = () => {
+  const barrel = join(__dirname, '../../src/index.ts');
+  const program = ts.createProgram([barrel], { skipLibCheck: true, noEmit: true, types: [] });
+  const checker = program.getTypeChecker();
+  const moduleSymbol = checker.getSymbolAtLocation(program.getSourceFile(barrel)!)!;
+
+  return new Set(checker.getExportsOfModule(moduleSymbol).map((symbol) => symbol.name));
+};
+
+describe('migrate-to-v5 -> REMOVED_EXPORTS', () => {
+  const current = currentCoreExports();
+
+  it('covers every 4.32 export that core 5 no longer has', () => {
+    const uncovered = coreV4Exports.filter(
+      (name) => !current.has(name) && !REMOVED_EXPORTS.has(name) && !REWRITTEN_BY_OTHER_TRANSFORMS.has(name),
+    );
+
+    expect(uncovered).toEqual([]);
+  });
+
+  it('names no symbol core 5 still exports', () => {
+    expect([...REMOVED_EXPORTS.keys()].filter((name) => current.has(name))).toEqual([]);
+  });
+});
 
 describe('migrate-to-v5 -> removed exports report', () => {
   let tree: Tree;
@@ -21,6 +58,23 @@ describe('migrate-to-v5 -> removed exports report', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('points a removed v4 export at its successor', async () => {
+    tree.write(
+      'libs/app/save-bar.component.ts',
+      `import { ObserveResizeDirective, LetDirective, SEO_DIRECTIVE_TOKEN } from '@ethlete/core';\n`,
+    );
+
+    const log = (await reportRemovedExports(tree)).review.join('\n');
+
+    expect(log).toContain(
+      'ObserveResizeDirective was removed from @ethlete/core in v5. Use `signalElementDimensions()`.',
+    );
+    expect(log).toContain("LetDirective was removed from @ethlete/core in v5. Use Angular's `@let`.");
+    expect(log).toContain(
+      'SEO_DIRECTIVE_TOKEN was removed from @ethlete/core in v5. Use the `apply*Binding` functions',
+    );
   });
 
   it('should list each removed import per file without changing it', async () => {

@@ -6,6 +6,8 @@ import {
   availableMigrationsLine,
   chooseTarget,
   isDowngrade,
+  newerMajorLine,
+  newerMajorOnTag,
   orderAvailableMigrations,
   orderMigrations,
   pendingMigrations,
@@ -316,5 +318,42 @@ describe('orderMigrations', () => {
     ]);
 
     expect(ordered.map((entry) => entry.migration.name)).toEqual(['types', 'core', 'components']);
+  });
+});
+
+describe('newerMajorOnTag', () => {
+  it('names the tag that holds a newer major than a stable target', () => {
+    const newer = newerMajorOnTag({
+      name: '@ethlete/core',
+      version: '4.32.0',
+      distTags: { latest: '4.32.0', next: '5.0.0-next.61' },
+    });
+
+    expect(newer).toEqual({ name: '@ethlete/core', tag: 'next', version: '5.0.0-next.61' });
+    expect(newerMajorLine(newer!)).toContain('et update --tag next');
+    expect(newerMajorLine(newer!)).toContain('/migrating-from-v4');
+  });
+
+  it('stays quiet when no tag holds a higher major', () => {
+    expect(
+      newerMajorOnTag({
+        name: '@ethlete/core',
+        version: '5.0.0-next.61',
+        distTags: { latest: '4.32.0', next: '5.0.0-next.61' },
+      }),
+    ).toBeUndefined();
+    expect(
+      newerMajorOnTag({ name: '@ethlete/core', version: '4.30.0', distTags: { latest: '4.32.0' } }),
+    ).toBeUndefined();
+  });
+
+  it('picks the newest of several higher-major tags', () => {
+    expect(
+      newerMajorOnTag({
+        name: '@ethlete/query',
+        version: '5.44.0',
+        distTags: { latest: '5.44.0', beta: '6.0.0-beta.8', next: '6.0.0-next.54' },
+      }),
+    ).toEqual({ name: '@ethlete/query', tag: 'next', version: '6.0.0-next.54' });
   });
 });

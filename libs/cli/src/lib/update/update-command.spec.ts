@@ -644,3 +644,30 @@ describe('the commits of et update', () => {
     expect(spawnSync).toHaveBeenCalledWith('yarn', ['et', 'update', '--continue', '--no-commit'], expect.anything());
   });
 });
+
+describe('et update on a stable line with a newer major on next', () => {
+  it('points at the next tag even when the repo is up to date', async () => {
+    const root = makeRepo();
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    rmSync(join(root, UPDATE_DIR), { recursive: true });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              'dist-tags': { latest: '5.1.0', next: '6.0.0-next.3' },
+              versions: { '5.1.0': {}, '6.0.0-next.3': {} },
+            }),
+          ),
+      ),
+    );
+
+    expect(await updateCommand({ argv: ['--check'], root })).toBe(0);
+
+    const output = log.mock.calls.map(([line]) => String(line)).join('\n');
+
+    expect(output).toContain('a newer major is on "next": 6.0.0-next.3 - run et update --tag next');
+  });
+});
