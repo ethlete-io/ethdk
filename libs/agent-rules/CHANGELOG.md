@@ -1,5 +1,16 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.20
+
+### Patch Changes
+
+- The theming skill and styling rules recommend `injectSemanticColorTheme(type)` over the deprecated `injectErrorTheme()` and its siblings.
+- The theming skill covers `injectSemanticColorTheme()` and `SurfaceTheme.semanticColorThemes`.
+- The `app-styling` rule now also fits apps on Tailwind 3 and apps that define their own colour palette.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- The query skill names `createQueryGroup` and `withOptimisticUpdate` and links the query groups page; the sdk-docs skill lists the `paged-query-trigger` domain.
+- List the stat tile in the component domains of the `sdk-docs` skill.
+
 ## 0.1.0-next.19
 
 ### Minor Changes

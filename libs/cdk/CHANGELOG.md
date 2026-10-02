@@ -1,5 +1,13 @@
 # @ethlete/cdk
 
+## 5.0.0-next.38
+
+### Patch Changes
+
+- Name the hostDirective wrapper case and the injection context of `queryButtonSourceFromV2Query` in the `QueryButton*` migration notes.
+- Add `etQueryButton`, which shows a query's loading state and progress on any button, and `queryButtonSourceFromV2Query` for legacy queries; the cdk migration map now points the cdk query button at it.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
 ## 5.0.0-next.37
 
 ### Patch Changes

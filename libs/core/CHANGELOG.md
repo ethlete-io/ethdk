@@ -1,5 +1,21 @@
 # @ethlete/core
 
+## 5.0.0-next.62
+
+### Minor Changes
+
+- `provideColorPalette` also takes one list per registered surface theme name plus a `default` list. The new `injectSurfaceColorPalette()` returns a signal of the list for the surface the caller sits on. `injectColorPalette()` returns the `default` list.
+- Add `SurfaceTheme.semanticColorThemes`, which names the color theme serving `success`, `warning` or `error` on that surface, and `injectSemanticColorTheme(type)`, a signal of that theme for the nearest surface, else of the theme with that `type`.
+- Add a shared `et-visually-hidden` class and `mountVisuallyHidden()` to core, replacing 16 per-component copies of the clip rule in components.
+- Add `colorTheme` to `SurfaceTheme`: an `[etProvideSurface]` that resolves the surface applies that color theme to its subtree, e.g. a darker `brand-on-light` on a light surface. An `[etProvideColor]` with a color on or above the surface element wins
+
+### Patch Changes
+
+- Deprecate `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` in favor of `injectSemanticColorTheme(type)`, which follows the surface.
+- `signalElementIntersection` now takes its first reading after render instead of before layout, and a `rootMargin` or `threshold` signal re-creates the observer when it changes.
+- `htmlToMarkdown` and `markdownToHtml` keep the start number of an ordered list (`<ol start="3">` and `3.`) instead of renumbering from 1.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
 ## 5.0.0-next.61
 
 ### Minor Changes

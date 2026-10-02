@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-next.15
+
+### Patch Changes
+
+- The override menus' error text takes its color from the surface of the menu panel.
+- Add `invalidates` to mutation creators and `tags` to read creators, plus `invalidateQueries({ tag })`, so a mutation declares what it makes stale.
+
 ## 1.0.0-next.14
 
 ### Patch Changes
