@@ -21,6 +21,11 @@ export interface TouchPoint {
 export interface TouchDragOptions {
   /** Time the finger rests on `from` before it moves, for long-press gestures. */
   holdMs?: number;
+  /**
+   * Hold by advancing an installed `page.clock` instead of waiting. A clock in its natural mode can
+   * fire a page timer late, so a long press under `clock.install` may move before it arms.
+   */
+  clock?: boolean;
   steps?: number;
 }
 
@@ -31,12 +36,12 @@ export async function touchDrag(
   to: TouchPoint,
   opts: TouchDragOptions = {},
 ): Promise<void> {
-  const { holdMs = 0, steps = 12 } = opts;
+  const { holdMs = 0, clock = false, steps = 12 } = opts;
   const client: CDPSession = await page.context().newCDPSession(page);
 
   await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from.x, y: from.y }] });
 
-  if (holdMs > 0) await page.waitForTimeout(holdMs);
+  if (holdMs > 0) await (clock ? page.clock.runFor(holdMs) : page.waitForTimeout(holdMs));
 
   for (let i = 1; i <= steps; i++) {
     const x = from.x + ((to.x - from.x) * i) / steps;

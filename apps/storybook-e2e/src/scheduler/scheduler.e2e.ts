@@ -741,7 +741,7 @@ test.describe('scheduler / touch surfaces and gestures', () => {
     const hour = await hourRowHeight(root);
     const from = await pointInColumn(root, TUESDAY, 2);
 
-    await touchDrag(page, from, { x: from.x - 120, y: from.y + hour * 2 }, { holdMs: 500 });
+    await touchDrag(page, from, { x: from.x - 120, y: from.y + hour * 2 }, { holdMs: 500, clock: true });
 
     await expect(page.locator(PANE)).toHaveClass(/et-overlay--full-screen-dialog/);
     await expect(header).toHaveText(before ?? '');

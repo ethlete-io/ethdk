@@ -2,12 +2,6 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
-## Scheduler touch e2e fails on Storybook
-
-The touch e2e "range instead of swiping" in `apps/storybook-e2e/src/scheduler` fails on `:4400`:
-the edit surface does not open as a full-screen dialog. It failed before the light-surface contrast
-work too, so that work did not cause it.
-
 ## Run the error-color-theme migration on a consumer
 
 `error-color-theme-signal` (`dd4a84727`, `1.0.0-next.67`) rewrites `.errorColorTheme` reads on
