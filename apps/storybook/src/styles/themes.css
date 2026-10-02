@@ -78,10 +78,10 @@
   --color-et-on-warning-active: rgb(23 23 23);
   --color-et-on-warning-disabled: rgb(255 237 213);
 
-  --color-et-warning-ink: rgb(217 119 6);
-  --color-et-warning-ink-hover: rgb(245 158 11);
-  --color-et-warning-ink-focus: rgb(245 158 11);
-  --color-et-warning-ink-active: rgb(180 83 9);
+  --color-et-warning-ink: rgb(245 158 11);
+  --color-et-warning-ink-hover: rgb(251 191 36);
+  --color-et-warning-ink-focus: rgb(251 191 36);
+  --color-et-warning-ink-active: rgb(217 119 6);
   --color-et-warning-ink-disabled: rgb(133 77 14);
 
   /* neutral theme */
@@ -370,11 +370,11 @@
     --et-color-on-primary-active: 23 23 23;
     --et-color-on-primary-disabled: 255 237 213;
 
-    --et-color-primary-ink: 217 119 6;
-    --et-color-primary-ink-hover: 217 119 6;
-    --et-color-primary-ink-focus: 217 119 6;
+    --et-color-primary-ink: 245 158 11;
+    --et-color-primary-ink-hover: 251 191 36;
+    --et-color-primary-ink-focus: 251 191 36;
     --et-color-primary-ink-active: 217 119 6;
-    --et-color-primary-ink-disabled: 217 119 6;
+    --et-color-primary-ink-disabled: 133 77 14;
   }
 
   .et-color--neutral {

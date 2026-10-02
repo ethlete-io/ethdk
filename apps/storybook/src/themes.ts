@@ -131,6 +131,13 @@ export const WARNING_THEME: ColorTheme = {
       default: '23 23 23',
       disabled: '255 237 213',
     },
+    inkColor: {
+      default: '245 158 11',
+      hover: '251 191 36',
+      focus: '251 191 36',
+      active: '217 119 6',
+      disabled: '133 77 14',
+    },
   },
 };
 

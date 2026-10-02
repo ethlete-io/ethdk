@@ -17,12 +17,11 @@ with `color-mix` (it invents colours).
   `components/on-light-ink/01-filled-text`), so every filled badge passes on all four surfaces.
 - The scheduler has `LightSurface`, `LightSurfaceWeek` and `LightSurfaceAgenda` stories. The
   appointment time and location dropped `opacity: 0.75` for a 600-weight title (call
-  `components/scheduler-contrast/00-secondary-text`). Axe still fails on three causes:
+  `components/scheduler-contrast/00-secondary-text`). The warning theme has an amber 500 dark
+  ink (call `components/on-light-ink/02-warning-dark-ink`). Axe still fails on two causes:
   - The today button is an outline button in the default theme, and a surface cannot remap the
     default theme: `#00ffa1` on white, 1.32:1. Needs a `libs/core` API change.
   - Outside-month dates use `colorSubtle`: 2.58:1 on light, 3.78:1 on dark.
-  - The warning theme has no dark ink, so the dark warning title is `#d97706` on `#392c1c`,
-    4.24:1.
 - The touch e2e "range instead of swiping" in `apps/storybook-e2e/src/scheduler` fails on
   `:4400` before these changes too: the edit surface does not open as a full-screen dialog.
 
