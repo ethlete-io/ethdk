@@ -7,6 +7,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "rolldown -c",
+    "slack:dry-run": "node src/slack-dry-run.ts ../..",
     "test": "vitest run",
     "typecheck": "tsc"
   },

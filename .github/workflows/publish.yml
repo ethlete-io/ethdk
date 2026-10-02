@@ -54,16 +54,9 @@ jobs:
           pr-title: ${{ inputs.title }}
           slack-title: ${{ inputs.slack_title }}
           slack-channel: ${{ secrets.SLACK_CHANNEL_ID }}
+          slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
         env:
           HUSKY: 0
-
-      - name: Post release notes to slack
-        if: steps.changesets.outputs.published == 'true'
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
-        with:
-          method: chat.postMessage
-          token: ${{ secrets.SLACK_BOT_TOKEN }}
-          payload: ${{ steps.changesets.outputs.slack-payload }}
 
   # The private apps are versioned by changesets but never published, so `changeset publish`
   # makes no release for them. A version without a GitHub release gets a draft here, the bundles

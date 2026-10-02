@@ -54,6 +54,12 @@ inputs:
   slack-channel:
     description: "The Slack channel ID or name to post the release notification to (e.g. `C1234567890` or `#releases`). If not set, the channel must be configured in the Slack app or workflow."
     required: false
+  slack-token:
+    description: >
+      A Slack bot token with the `chat:write` scope. When set, the action posts the release
+      message itself and each package's full notes as replies in its thread. A Slack failure
+      only logs a warning.
+    required: false
   cwd:
     description: "The working directory to execute Changesets in. Defaults to the root of the repository."
     required: false
@@ -68,7 +74,7 @@ outputs:
   pr-number:
     description: The pull request number that was created or updated
   slack-payload:
-    description: A ready-to-use Slack API payload (channel, text, blocks) for use with slackapi/slack-github-action. `null` when nothing was published.
+    description: The main Slack release message (channel, text, blocks) as a `chat.postMessage` payload, for posting it yourself instead of through `slack-token`. `null` when nothing was published.
 branding:
   icon: "package"
   color: "blue"

@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { GitHub } from "./github.ts";
 import readChangesetState from "./readChangesetState.ts";
 import { runPublish, runVersion } from "./run.ts";
+import { postSlackMessages } from "./slack-post.ts";
 import {
   getOptionalInput,
   getRequiredInput,
@@ -90,6 +91,7 @@ async function main() {
             "or set 'create-github-releases' to false.",
         );
       }
+      const slackToken = getOptionalInput("slack-token");
       const result = await runPublish({
         script: publishScript,
         github,
@@ -98,6 +100,7 @@ async function main() {
         cwd,
         slackTitle: getOptionalInput("slack-title"),
         slackChannel: getOptionalInput("slack-channel"),
+        slackThreaded: !!slackToken,
       });
 
       if (result.published) {
@@ -106,7 +109,13 @@ async function main() {
           "published-packages",
           JSON.stringify(result.publishedPackages),
         );
-        core.setOutput("slack-payload", JSON.stringify(result.slackPayload));
+        core.setOutput(
+          "slack-payload",
+          JSON.stringify(result.slackMessages?.main ?? null),
+        );
+        if (slackToken && result.slackMessages) {
+          await postSlackMessages(result.slackMessages, { token: slackToken });
+        }
       }
 
       if (result.exitCode !== 0) {

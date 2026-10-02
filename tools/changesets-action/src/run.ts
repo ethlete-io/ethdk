@@ -15,7 +15,7 @@ import { type Package, getPackages } from "@manypkg/get-packages";
 import type { GitHub } from "./github.ts";
 import type { Octokit } from "./octokit.ts";
 import readChangesetState from "./readChangesetState.ts";
-import { type SlackPayload, createSlackPayload } from "./slack.ts";
+import { type SlackMessages, createSlackMessages } from "./slack.ts";
 import {
   execChangesetsCli,
   getChangedPackages,
@@ -73,6 +73,7 @@ type PublishOptions = {
   cwd: string;
   slackTitle?: string;
   slackChannel?: string;
+  slackThreaded?: boolean;
 };
 
 type PublishedPackage = { name: string; version: string };
@@ -88,7 +89,7 @@ type PublishResult =
   | {
       published: true;
       publishedPackages: PublishedPackage[];
-      slackPayload: SlackPayload;
+      slackMessages: SlackMessages | null;
       exitCode: number;
     }
   | {
@@ -168,6 +169,7 @@ export async function runPublish({
   cwd,
   slackTitle = "New Release",
   slackChannel,
+  slackThreaded = false,
 }: PublishOptions): Promise<PublishResult> {
   const { octokit } = github;
   // Changesets creates annotated tags locally, including when the action pushes those tags through the GitHub API.
@@ -258,10 +260,15 @@ export async function runPublish({
         name: pkg.packageJson.name,
         version: pkg.packageJson.version,
       })),
-      slackPayload: await createSlackPayload(
-        releases.map(({ pkg }) => pkg),
-        { title: slackTitle, channel: slackChannel },
-      ),
+      slackMessages: await createSlackMessages(releases, {
+        title: slackTitle,
+        channel: slackChannel,
+        githubReleases: createGithubReleases,
+        threaded: slackThreaded,
+      }).catch((err: Error) => {
+        core.warning(`Could not build the Slack message: ${err.message}`);
+        return null;
+      }),
       exitCode: changesetPublishOutput.exitCode,
     };
   }
