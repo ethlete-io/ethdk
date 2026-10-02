@@ -7,6 +7,7 @@ import {
   fetchRegistryPackage,
   packageUrl,
   registryAuthorization,
+  registryAuthorizationSource,
   registryUrl,
   tagForInstalled,
 } from './registry';
@@ -134,6 +135,37 @@ describe('registry auth', () => {
       expect.any(String),
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer x' }) }),
     );
+  });
+
+  it('names the file whose token a registry refused', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 401 })),
+    );
+
+    const refused = await fetchRegistryPackage({
+      packageName: '@ethlete/core',
+      registry: DEFAULT_REGISTRY,
+      authorization: 'Bearer x',
+      authorizationSource: '/repo/.npmrc',
+    });
+    const missing = await fetchRegistryPackage({ packageName: '@ethlete/core', registry: DEFAULT_REGISTRY });
+
+    expect(refused).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining('The token in /repo/.npmrc was refused'),
+    });
+    expect(missing).toMatchObject({ ok: false, reason: expect.stringContaining('No token for') });
+  });
+
+  it('reports which .npmrc the token came from', () => {
+    const root = makeRoot({ '.npmrc': '//npm.example.com/:_authToken=abc\n' });
+    const home = makeRoot();
+
+    expect(registryAuthorizationSource({ registry: 'https://npm.example.com', root, home, env: {} })).toBe(
+      join(root, '.npmrc'),
+    );
+    expect(registryAuthorizationSource({ registry: DEFAULT_REGISTRY, root, home, env: {} })).toBeUndefined();
   });
 });
 

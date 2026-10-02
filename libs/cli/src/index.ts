@@ -73,11 +73,11 @@ const usage = (root: string) => {
 const cli = async (args: string[]): Promise<number> => {
   switch (args[0]) {
     case 'release':
-      // `release` reads its flags from a list that was split on "=" before this switch existed.
-      // Keep that shape here so its own parsing is untouched.
-      await release(args.join('=').split('='));
-
-      return 0;
+      return release({
+        root: process.cwd(),
+        args: args.slice(1),
+        invocation: repoInvocation({ root: process.cwd(), subcommand: 'release' }),
+      });
 
     case 'api':
       return apiCommand({

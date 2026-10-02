@@ -14,7 +14,7 @@ Don't hand-check or hand-fix those - **run lint with `--fix` first**; many rules
 ship auto-fixers, so most violations are corrected for you:
 
 ```bash
-{%lintFixCommand%}   # auto-fixes first (case, ordering, $ suffix, metadata, …)
+{%lintFixCommand%}   # auto-fixes first (case, ordering, metadata, …); rename to the $ suffix by hand
 {%lintCommand%}      # then re-run to see what needs a manual fix
 ```
 

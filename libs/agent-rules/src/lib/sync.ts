@@ -135,7 +135,9 @@ export const check = (options: RunOptions) => {
 
   console.error('Agent rules are out of sync with @ethlete/agent-rules:');
   changes.forEach((change) => console.error(describe(change)));
-  console.error('\nRun `npx ethlete-agents sync` and commit the result.');
+  const runner = typeof config.vars['packageRunner'] === 'string' ? config.vars['packageRunner'] : 'npx';
+
+  console.error(`\nRun \`${runner} ethlete-agents sync\` and commit the result.`);
 
   return 1;
 };

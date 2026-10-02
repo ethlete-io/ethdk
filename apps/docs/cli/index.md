@@ -8,7 +8,7 @@ yarn add --dev @ethlete/cli@next
 
 `et update` ships on the `next` tag; the `latest` release does not have it yet.
 
-`et release` needs no configuration: it drives the tools already present in your repo (`git`, `yarn`, and your existing `.changeset/` setup). `et api` and `et doctor` read two files described in [Local APIs](/cli/api) and [Local config](/cli/config).
+`et release` needs no configuration: it drives the tools already present in your repo (`git`, your package manager, and your existing `.changeset/` setup). `et api` and `et doctor` read two files described in [Local APIs](/cli/api) and [Local config](/cli/config).
 
 ## `et release`
 
@@ -20,22 +20,26 @@ The command runs the full release sequence synchronously and aborts on the first
 
 1. **Checks for uncommitted changes** (`git status --porcelain`) and aborts if the working tree is dirty (unless [`--force`](#flags)).
 2. **Asks for confirmation** - a reminder not to release a version that was already released from another branch. Press <kbd>Enter</kbd> to continue; typing anything else aborts.
-3. Runs `yarn changeset version` - consumes the pending changesets, bumps package versions and writes changelogs. If there are no pending changesets, the command aborts here.
-4. Runs `yarn changeset git-tag` (Changesets 3) or `yarn changeset tag` (Changesets 2) - creates a git tag per released package version.
-5. Stages only the files the version step changed (package versions, changelogs, consumed changesets) and commits as `Release versions` (your pre-commit hooks run here).
+3. Runs `changeset version` - consumes the pending changesets, bumps package versions and writes changelogs. If there are no pending changesets, the command aborts here.
+4. Stages only the files the version step changed (package versions, changelogs, consumed changesets) and commits them as `Release versions`, or the [`--message`](#flags) you pass (your pre-commit and commit-msg hooks run here). If the commit fails, the command stops before any tag exists, and names the commands that finish the release once the staged files are committed.
+5. Runs `changeset git-tag` (Changesets 3) or `changeset tag` (Changesets 2) - tags the release commit once per released package version.
 6. Runs `git push --follow-tags` (unless [`--skip-push`](#flags)).
+
+Changesets runs through the package manager the repo uses (`yarn changeset`, `pnpm exec changeset`, `bunx changeset` or `npx changeset`), detected from `packageManager` in `package.json` or the lockfile.
 
 ### Flags
 
-| Flag          | Alias | Default | Effect                                                                                                                     |
-| ------------- | ----- | ------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `--force`     | `-f`  | off     | Proceed even when the working tree has uncommitted changes (they are left uncommitted and stay out of the release commit). |
-| `--skip-push` | `-sp` | off     | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing.    |
+| Flag          | Alias | Default            | Effect                                                                                                                      |
+| ------------- | ----- | ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `--force`     | `-f`  | off                | Proceed even when the working tree has uncommitted changes (they are left uncommitted and stay out of the release commit).  |
+| `--skip-push` | `-sp` | off                | Do everything except the final `git push --follow-tags`, e.g. to inspect the release commit and tags before publishing.     |
+| `--message`   | `-m`  | `Release versions` | The release commit message, e.g. `--message "chore(release): Release versions"` when a commitlint hook rejects the default. |
+| `--help`      | `-h`  |                    | Print the flags and run nothing. An unknown flag is rejected the same way, before any step runs.                            |
 
 ### Requirements
 
 - A git repository with a clean working tree (or `--force`).
-- Yarn, with Changesets set up (`.changeset/config.json` and pending changeset files) - the CLI shells out to `yarn changeset version` and `yarn changeset git-tag` (or `tag` on Changesets 2) rather than reimplementing them.
+- `@changesets/cli` in the root `package.json`, with Changesets set up (`.changeset/config.json` and pending changeset files) - the CLI shells out to `changeset version` and `changeset git-tag` (or `tag` on Changesets 2) rather than reimplementing them. Without `@changesets/cli` the command stops before the prompt.
 
 ## Other commands
 

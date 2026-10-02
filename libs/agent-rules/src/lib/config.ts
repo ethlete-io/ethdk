@@ -4,7 +4,7 @@ import { commitMessageVars, findCommitlintConfig } from './commitlint';
 import { ContentScope } from './frontmatter';
 import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
-import { detectPackageRunner } from './package-runner';
+import { detectCommandVars, detectPackageRunner } from './package-runner';
 
 export const AGENT_TARGETS = ['claude', 'codex', 'cursor', 'copilot'] as const;
 
@@ -43,6 +43,7 @@ export type SyncConfig = {
   /** The branch grammar, resolved against its defaults — see `@ethlete/agent-rules/git-flow`. */
   gitFlow: GitFlowConfig;
   jira: JiraSettings;
+  configWarnings?: string[];
 };
 
 type RawConfig = {
@@ -72,12 +73,52 @@ export const resolveRepoRoot = (start: string) => {
   return current;
 };
 
-const readRawConfig = (root: string) => {
+const RAW_CONFIG_KEYS: (keyof RawConfig)[] = [
+  'targets',
+  'profile',
+  'vars',
+  'exclude',
+  'claudeMdImportsAgentsMd',
+  'hooks',
+  'gitHooks',
+  'gitFlow',
+  'jira',
+];
+
+const parseJson = (text: string): { value: unknown } | { error: string } => {
+  try {
+    return { value: JSON.parse(text) as unknown };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+const readRawConfig = (root: string): RawConfig => {
   const path = join(root, CONFIG_FILE_NAME);
 
   if (!existsSync(path)) return {};
 
-  return JSON.parse(readFileSync(path, 'utf8')) as RawConfig;
+  const parsed = parseJson(readFileSync(path, 'utf8'));
+
+  if ('error' in parsed) throw new Error(`${CONFIG_FILE_NAME}: ${parsed.error}`);
+
+  const { value } = parsed;
+
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new Error(`${CONFIG_FILE_NAME}: expected a JSON object.`);
+  }
+
+  return value as RawConfig;
+};
+
+const unknownConfigKeyWarnings = (raw: RawConfig) => {
+  const unknown = Object.keys(raw).filter((key) => !RAW_CONFIG_KEYS.includes(key as keyof RawConfig));
+
+  return unknown.length
+    ? [
+        `${CONFIG_FILE_NAME} has unknown key(s): ${unknown.join(', ')} — sync ignores them. Known keys: ${RAW_CONFIG_KEYS.join(', ')}.`,
+      ]
+    : [];
 };
 
 /**
@@ -196,6 +237,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     scopes: raw.profile === 'sdk' ? ['sdk', 'both'] : ['consumer', 'both'],
     vars: {
       ...loadDefaultVars(),
+      ...detectCommandVars(root),
       packageRunner: detectPackageRunner(root),
       ...gitFlowVars(gitFlow),
       ...commitMessageVars(findCommitlintConfig(root)),
@@ -207,5 +249,6 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     gitHooks: raw.gitHooks ?? [],
     gitFlow,
     jira: raw.jira ?? {},
+    configWarnings: unknownConfigKeyWarnings(raw),
   };
 };

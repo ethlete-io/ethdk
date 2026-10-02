@@ -24,6 +24,7 @@ tester.run('template-member-accessibility', rule, {
   valid: [
     `@Directive({}) abstract class C { protected abstract x: number; }`,
     `@Directive({}) abstract class C { protected abstract x(): void; }`,
+    `@Directive({}) abstract class BaseDirective { protected label = 'x'; }`,
     {
       code: `
         @Component({

@@ -32,8 +32,36 @@ tester.run('no-trivial-wrapper-method', rule, {
     { code: `class Foo implements ControlValueAccessor { writeValue(value) { this.control.set(value); } }` },
     { code: `class Foo extends Base { override handle(event) { this.delegate.handle(event); } }` },
     { code: `class Foo { static ngTemplateContextGuard(dir, ctx) { return guard(dir, ctx); } }` },
+    // A method more visible than the member it wraps is the encapsulation
+    {
+      code: `class CartStore {
+  private items = signal([]);
+  private cache = new Map();
+  setItems(items: string[]) { this.items.set(items); }
+  get(key: string) { return this.cache.get(key); }
+}`,
+    },
+    { code: `class Foo { protected store = new Map(); public read(key) { return this.store.get(key); } }` },
+    { code: `class Foo { private impl = {}; protected run(a) { this.impl.run(a); } }` },
+    { code: `class Foo { #items = signal([]); setItems(items) { this.#items.set(items); } }` },
+    { code: `class Foo { private write(v) {} save(v) { this.write(v); } }` },
+    { code: `class Foo { constructor(private readonly repo: Repo) {} find(id) { return this.repo.find(id); } }` },
   ],
   invalid: [
+    {
+      // A private method over a private member hides nothing
+      code: `class Foo { private items = signal([]); private setItems(items) { this.items.set(items); } }`,
+      errors: [{ messageId: 'noTrivialWrapperMethod' }],
+    },
+    {
+      // A public method over a public member
+      code: `class Foo { readonly items = signal([]); setItems(items) { this.items.set(items); } }`,
+      errors: [{ messageId: 'noTrivialWrapperMethod' }],
+    },
+    {
+      code: `class Foo { protected store = new Map(); protected read(key) { return this.store.get(key); } }`,
+      errors: [{ messageId: 'noTrivialWrapperMethod' }],
+    },
     {
       code: `import { Component } from 'some-other-lib';
 @Component({}) class A { focus(options) { this.dir.focus(options); } }`,

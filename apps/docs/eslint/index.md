@@ -24,12 +24,12 @@ export default [
 
 `recommended` is an array of four entries, also exported individually for granular composition:
 
-| Config                 | Applies to     | Contents                                                                                                                                                  |
-| ---------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `recommendedTs`        | `**/*.ts`      | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                                          |
-| `recommendedAngularTs` | `**/*.ts`      | The `@angular-eslint/*` TypeScript rules below. Leave it out of a non-Angular (e.g. NestJS) project                                                       |
-| `recommendedTemplate`  | `**/*.html`    | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`, `ethlete/no-csp-unsafe`) |
-| `recommendedSpec`      | `**/*.spec.ts` | Relaxes non-null assertions, async test code, and DOM/platform access used by test fixtures and browser assertions                                        |
+| Config                 | Applies to                                                                                | Contents                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `recommendedTs`        | `**/*.ts`                                                                                 | All custom `ethlete/*` rules plus the baseline TypeScript/JavaScript rules below                                                                                                                                                                                                                                                               |
+| `recommendedAngularTs` | `**/*.ts`                                                                                 | The `@angular-eslint/*` TypeScript rules below. Leave it out of a non-Angular (e.g. NestJS) project                                                                                                                                                                                                                                            |
+| `recommendedTemplate`  | `**/*.html`                                                                               | Angular template rules (`@angular-eslint/template/*`, `ethlete/prefer-static-boolean-properties`, `ethlete/require-form-submit`, `ethlete/no-csp-unsafe`)                                                                                                                                                                                      |
+| `recommendedSpec`      | `**/*.spec.ts`, `**/*.test.ts`, `**/testing/**/*.ts`, `**/*.stories.ts`, `**/e2e/**/*.ts` | Relaxes non-null assertions, async test code, DOM/platform access, `max-params`, timers, subscribe bodies (`obs$.subscribe((v) => values.push(v))`), `prefer-clone-equal` and `no-unused-class-member` for test fixtures, stories and browser assertions. Spread it after `recommendedTs`, so a test file needs no `ignores` in the main block |
 
 The `ethlete` plugin itself is pre-wired into the configs - you don't need a `plugins:` entry for it.
 
@@ -65,8 +65,35 @@ export default [
 ```
 
 ::: warning Bring your own base config
-`recommendedTs` sets severities for `@typescript-eslint/*` rules, and `recommendedAngularTs` and `recommendedTemplate` for `@angular-eslint/*` rules, but none of them register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). A non-Angular project (NestJS, Node tooling) uses `recommendedTs` and `recommendedSpec` alone and needs no `@angular-eslint` plugin. Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
+`recommendedTs` sets severities for `@typescript-eslint/*` rules, and `recommendedAngularTs` and `recommendedTemplate` for `@angular-eslint/*` rules, but none of them register those plugins or parsers - your base config must (Nx's `flat/angular` / `flat/angular-template` presets do). A non-Angular project leaves out `recommendedAngularTs` and `recommendedTemplate` and needs no `@angular-eslint` plugin. Peer requirements: Angular and Angular ESLint >= 21, ESLint >= 9, TypeScript >= 5.9 and `@typescript-eslint/eslint-plugin >= 8`.
 :::
+
+### NestJS and other Node projects
+
+`recommendedTs` is written for Angular code, so on its own it bans what NestJS dependency injection is built on: `no-restricted-syntax` rejects `@Injectable()`, constructor parameter properties (`constructor(private readonly repo: Repo)`) and classes that implement `CanActivate`, and `ethlete/no-async-await` rejects `async` handlers. Turn those off after spreading it, and keep the rest of `no-restricted-syntax`:
+
+```js
+// eslint.config.mjs
+import ethlete from '@ethlete/eslint-plugin';
+
+const [severity, ...selectors] = ethlete.configs.recommendedTs.rules['no-restricted-syntax'];
+
+export default [
+  // ...your base config (parser, @typescript-eslint plugin)
+  {
+    ...ethlete.configs.recommendedTs,
+    rules: {
+      ...ethlete.configs.recommendedTs.rules,
+      'no-restricted-syntax': [
+        severity,
+        ...selectors.filter((entry) => !/^No (@Injectable|constructor injection|route guards)/.test(entry.message)),
+      ],
+      'ethlete/no-async-await': 'off',
+    },
+  },
+  ethlete.configs.recommendedSpec,
+];
+```
 
 ## What `recommended` enforces beyond the custom rules
 

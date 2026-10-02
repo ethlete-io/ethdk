@@ -113,6 +113,9 @@ const noUnusedClassMember = {
       noUnused:
         "'{{name}}' is declared but its value is never read within this class. " +
         'Remove it, or widen its accessibility if it is intentionally used externally.',
+      noUnusedProtected:
+        "'{{name}}' is protected but its value is never read within this class. " +
+        'If a subclass reads it, mark this class `abstract`; otherwise remove it.',
     },
     schema: [],
   },
@@ -181,7 +184,11 @@ const noUnusedClassMember = {
         if (!frame) return;
         for (const [name, memberNode] of frame.candidates) {
           if (!frame.usedNames.has(name)) {
-            context.report({ node: memberNode, messageId: 'noUnused', data: { name } });
+            context.report({
+              node: memberNode,
+              messageId: memberNode.accessibility === 'protected' ? 'noUnusedProtected' : 'noUnused',
+              data: { name },
+            });
           }
         }
       },

@@ -36,7 +36,7 @@ import {
   readPendingUpdate,
   writePendingUpdate,
 } from './pending';
-import { fetchRegistryPackage, registryAuthorization, registryUrl } from './registry';
+import { fetchRegistryPackage, registryAuthorization, registryAuthorizationSource, registryUrl } from './registry';
 import { MigrationOutcome, hasNx, runInstall, runPendingMigrations } from './run-migrations';
 import { SyncFailure, UPDATE_DIR, UpdateTask, refreshUpdateTasks, writeUpdateTasks } from './tasks';
 
@@ -111,12 +111,13 @@ const resolveUpdates = async (options: {
   const { root, manager, declared, version, tag } = options;
   const registry = registryUrl({ root, manager: manager.name });
   const authorization = registryAuthorization({ root, registry });
+  const authorizationSource = registryAuthorizationSource({ root, registry });
   const result: ResolveResult = { updates: [], problems: [], upToDate: [] };
 
   const lookups = await Promise.all(
     declared.map(async (entry) => ({
       entry,
-      lookup: await fetchRegistryPackage({ packageName: entry.name, registry, authorization }),
+      lookup: await fetchRegistryPackage({ packageName: entry.name, registry, authorization, authorizationSource }),
     })),
   );
 

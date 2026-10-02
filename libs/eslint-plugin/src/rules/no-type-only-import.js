@@ -1,6 +1,25 @@
 // @ts-check
 'use strict';
 
+/** @param {any} node */
+const renderValueImport = (node) => {
+  const clauses = [];
+  const named = [];
+
+  for (const s of node.specifiers) {
+    if (s.type === 'ImportDefaultSpecifier') clauses.push(s.local.name);
+    else if (s.type === 'ImportNamespaceSpecifier') clauses.push(`* as ${s.local.name}`);
+    else {
+      const imported = s.imported.type === 'Identifier' ? s.imported.name : `'${s.imported.value}'`;
+      named.push(s.local.name === imported ? imported : `${imported} as ${s.local.name}`);
+    }
+  }
+
+  if (named.length) clauses.push(`{ ${named.join(', ')} }`);
+
+  return `import ${clauses.join(', ')} from '${node.source.value}';`;
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noTypeOnlyImport = {
   meta: {
@@ -11,10 +30,9 @@ const noTypeOnlyImport = {
     },
     fixable: 'code',
     messages: {
-      noTypeImportDeclaration:
-        "Do not use `import type`. Use a regular import instead: `import { {{specifiers}} } from '{{source}}';`.",
+      noTypeImportDeclaration: 'Do not use `import type`. Use a regular import instead: `{{replacement}}`.',
       noInlineTypeSpecifier:
-        "Do not use inline `type` on import specifiers. Use a regular import instead: `import { {{specifiers}} } from '{{source}}';`.",
+        'Do not use inline `type` on import specifiers. Use a regular import instead: `{{replacement}}`.',
     },
     schema: [],
   },
@@ -23,13 +41,10 @@ const noTypeOnlyImport = {
       ImportDeclaration(node) {
         const decl = /** @type {any} */ (node);
         if (decl.importKind === 'type') {
-          const source = /** @type {string} */ (node.source.value);
-          const specifiers = node.specifiers.map((s) => s.local.name).join(', ');
-
           context.report({
             node,
             messageId: 'noTypeImportDeclaration',
-            data: { specifiers, source },
+            data: { replacement: renderValueImport(node) },
             fix(fixer) {
               const sourceCode = context.sourceCode;
               const importToken = sourceCode.getFirstToken(node);
@@ -47,21 +62,10 @@ const noTypeOnlyImport = {
         for (const specifier of node.specifiers) {
           const spec = /** @type {any} */ (specifier);
           if (specifier.type === 'ImportSpecifier' && spec.importKind === 'type') {
-            const source = /** @type {string} */ (node.source.value);
-            const allSpecifiers = node.specifiers
-              .map((s) => {
-                if (s.type === 'ImportSpecifier') {
-                  const imported = s.imported.type === 'Identifier' ? s.imported.name : s.imported.value;
-                  return s.local.name === imported ? imported : `${imported} as ${s.local.name}`;
-                }
-                return s.local.name;
-              })
-              .join(', ');
-
             context.report({
               node: specifier,
               messageId: 'noInlineTypeSpecifier',
-              data: { specifiers: allSpecifiers, source },
+              data: { replacement: renderValueImport(node) },
               fix(fixer) {
                 const sourceCode = context.sourceCode;
                 const tokenBefore = sourceCode.getTokenBefore(specifier.imported ?? specifier.local);

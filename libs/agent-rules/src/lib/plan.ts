@@ -10,6 +10,7 @@ import {
 } from './config';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
+import { readScripts } from './package-runner';
 import { emitAgentsSkills } from './targets/agents-skills';
 import { CLAUDE_SETTINGS_FILE, emitClaudeHooks } from './targets/claude-hooks';
 import { emitClaude } from './targets/claude';
@@ -216,8 +217,29 @@ const collectHookSettingsWarnings = (root: string) =>
     .filter((path) => isUnparseableJson(readExisting(root, path)))
     .map((path) => `${path} is not valid JSON — sync leaves it alone, so no hook is registered or removed there.`);
 
+const SCRIPT_COMMAND_VARS = ['lintCommand', 'lintFixCommand'];
+
+const collectMissingScriptWarnings = (config: SyncConfig) => {
+  const scripts = readScripts(config.root);
+
+  if (!scripts) return [];
+
+  return SCRIPT_COMMAND_VARS.flatMap((name) => {
+    const value = config.vars[name];
+    const script = typeof value === 'string' ? /^(?:npm|yarn|pnpm|bun) run (\S+)/.exec(value)?.[1] : undefined;
+
+    if (script === undefined || scripts.has(script)) return [];
+
+    return [
+      `vars.${name} is \`${value}\`, but package.json has no "${script}" script — set vars.${name} in ${CONFIG_FILE_NAME} to the command this repo uses.`,
+    ];
+  });
+};
+
 const collectWarnings = (config: SyncConfig, items: ContentItem[]) => {
   const warnings: string[] = [
+    ...(config.configWarnings ?? []),
+    ...collectMissingScriptWarnings(config),
     ...collectLocalConfigWarnings(config.root),
     ...collectHookSettingsWarnings(config.root),
     ...collectPathVarWarnings(config),

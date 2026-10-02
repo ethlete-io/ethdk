@@ -150,31 +150,45 @@ export const registryUrl = (
  * `:_auth` entries of the repo's and the user's `.npmrc`, with `${VAR}` expanded. The longest matching
  * path wins.
  */
-export const registryAuthorization = (options: {
+export const registryAuthorization = (options: RegistryAuthorizationOptions) => findAuthorization(options)?.header;
+
+/** The `.npmrc` the token for a registry was read from, or `undefined` when neither holds one. */
+export const registryAuthorizationSource = (options: RegistryAuthorizationOptions) =>
+  findAuthorization(options)?.source;
+
+type RegistryAuthorizationOptions = {
   registry: string;
   root?: string;
   env?: NodeJS.ProcessEnv;
   home?: string;
-}) => {
+};
+
+const findAuthorization = (options: RegistryAuthorizationOptions) => {
   const { registry, root = process.cwd(), env = process.env, home = homedir() } = options;
   const target = `${registry.replace(/^[a-z]+:/i, '').replace(/\/+$/, '')}/`;
-  const entries = [readText(join(root, '.npmrc')), readText(userNpmrcPath(home))].flatMap((text) =>
-    text === undefined ? [] : npmrcEntries(text, env),
-  );
+  const entries = [join(root, '.npmrc'), userNpmrcPath(home)].flatMap((source) => {
+    const text = readText(source);
 
-  let best: { length: number; header: string } | undefined;
+    return text === undefined ? [] : npmrcEntries(text, env).map((entry) => ({ ...entry, source }));
+  });
 
-  for (const { key, value } of entries) {
+  let best: { length: number; header: string; source: string } | undefined;
+
+  for (const { key, value, source } of entries) {
     const match = /^(\/\/.+?)\/?:(_authToken|_auth)$/.exec(key);
     const prefix = match?.[1] === undefined ? undefined : `${match[1]}/`;
 
     if (!match || !prefix || !value || !target.startsWith(prefix)) continue;
     if (best && best.length >= prefix.length) continue;
 
-    best = { length: prefix.length, header: match[2] === '_authToken' ? `Bearer ${value}` : `Basic ${value}` };
+    best = {
+      length: prefix.length,
+      header: match[2] === '_authToken' ? `Bearer ${value}` : `Basic ${value}`,
+      source,
+    };
   }
 
-  return best?.header;
+  return best;
 };
 
 export const packageUrl = (options: { registry: string; packageName: string }) =>
@@ -185,8 +199,10 @@ export const fetchRegistryPackage = async (options: {
   packageName: string;
   registry?: string;
   authorization?: string;
+  /** Where `authorization` was read from, named in the reason of a 401 or 403. */
+  authorizationSource?: string;
 }): Promise<RegistryLookup> => {
-  const { packageName, registry = registryUrl(), authorization } = options;
+  const { packageName, registry = registryUrl(), authorization, authorizationSource } = options;
 
   let response: Response;
 
@@ -204,6 +220,14 @@ export const fetchRegistryPackage = async (options: {
   }
 
   if (response.status === 404) return { ok: false, reason: `${registry} has no ${packageName}.` };
+
+  if (response.status === 401 || response.status === 403) {
+    const hint = authorizationSource
+      ? `The token in ${authorizationSource} was refused; it may be expired or lack read access.`
+      : `No token for ${registry} was found in the repo's or your own .npmrc; add an _authToken entry for it.`;
+
+    return { ok: false, reason: `${registry} answered ${response.status} for ${packageName}. ${hint}` };
+  }
 
   if (!response.ok) return { ok: false, reason: `${registry} answered ${response.status} for ${packageName}.` };
 

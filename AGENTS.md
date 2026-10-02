@@ -309,7 +309,7 @@ Run lint with `--fix` — most styleguide rules in `@ethlete/eslint-plugin` ship
 so let them do the work before correcting anything by hand:
 
 ```bash
-npx nx lint <project> --fix   # auto-fixes first (case, ordering, $ suffix, metadata, …)
+npx nx lint <project> --fix   # auto-fixes first (case, ordering, metadata, …); rename to the $ suffix by hand
 npx nx lint <project>      # then re-run to see what needs a manual fix
 ```
 

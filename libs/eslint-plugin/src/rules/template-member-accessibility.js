@@ -75,7 +75,7 @@ const templateMemberAccessibility = {
       shouldBeExplicit:
         'Member `{{name}}` is referenced from a template or host binding. Use `public` when it is intentionally exposed outside the component; otherwise use `protected`.',
       shouldNotBeProtected:
-        'Member `{{name}}` should not be protected because it is not referenced from a template or host binding.',
+        'Member `{{name}}` should not be protected because it is not referenced from a template or host binding. If a subclass reads it, mark this class `abstract`.',
     },
   },
   create(context) {
@@ -141,7 +141,7 @@ const templateMemberAccessibility = {
       }
 
       if (node.accessibility !== 'protected') return;
-      if (node.type.startsWith('TSAbstract')) return;
+      if (node.type.startsWith('TSAbstract') || classNode.abstract) return;
 
       context.report({
         node,

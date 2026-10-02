@@ -432,13 +432,20 @@ const recommendedTemplate = {
 };
 
 /**
- * Relaxed rules for test/spec files, including common DOM assertions and async test orchestration.
+ * Relaxed rules for specs, test harnesses, stories and e2e files: DOM assertions, async test
+ * orchestration, collecting emissions in a subscribe body, and fixture helpers with many parameters.
  * @type {import('eslint').Linter.Config}
  */
 const recommendedSpec = {
-  files: ['**/*.spec.ts'],
+  files: ['**/*.spec.ts', '**/*.test.ts', '**/testing/**/*.ts', '**/*.stories.ts', '**/e2e/**/*.ts'],
   rules: {
     '@typescript-eslint/no-non-null-assertion': 'off',
+    'max-params': 'off',
+    'ethlete/no-subscribe-in-pipe': 'off',
+    'ethlete/no-subscribe-with-body': 'off',
+    'ethlete/no-unused-class-member': 'off',
+    'ethlete/prefer-clone-equal': 'off',
+    'ethlete/prefer-rxjs-timer': 'off',
     'no-restricted-globals': 'off',
     'ethlete/no-async-await': 'off',
     'ethlete/no-csp-unsafe': 'off',

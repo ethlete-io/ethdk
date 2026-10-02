@@ -79,7 +79,7 @@ tester.run('no-unused-class-member', rule, {
     {
       code: `import { Directive as Dir } from '@angular/core';
 @Dir({}) class C { protected svc = inject(S); }`,
-      errors: [{ messageId: 'noUnused' }],
+      errors: [{ messageId: 'noUnusedProtected' }],
     },
     // private field — never referenced
     {
@@ -102,19 +102,19 @@ tester.run('no-unused-class-member', rule, {
     // protected in @Directive — never referenced
     {
       code: `@Directive({}) class C { protected svc = inject(S); }`,
-      errors: [{ messageId: 'noUnused', data: { name: 'svc' } }],
+      errors: [{ messageId: 'noUnusedProtected', data: { name: 'svc' } }],
     },
 
     // protected in @Pipe — never referenced
     {
       code: `@Pipe({ name: 'myPipe' }) class C { protected formatter = inject(Formatter); }`,
-      errors: [{ messageId: 'noUnused', data: { name: 'formatter' } }],
+      errors: [{ messageId: 'noUnusedProtected', data: { name: 'formatter' } }],
     },
 
     // protected in @Injectable — never referenced
     {
       code: `@Injectable() class C { protected http = inject(HttpClient); }`,
-      errors: [{ messageId: 'noUnused', data: { name: 'http' } }],
+      errors: [{ messageId: 'noUnusedProtected', data: { name: 'http' } }],
     },
 
     // Multiple unused private members

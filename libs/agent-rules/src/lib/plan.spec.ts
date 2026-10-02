@@ -125,6 +125,33 @@ describe('plan warnings', () => {
   });
 });
 
+describe('config file checks', () => {
+  it('names the config file when it does not parse', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), '{ "vars": { "a": 1 } "exclude": [] }', 'utf8');
+
+    expect(() => loadConfig({ root })).toThrow(new RegExp(`^${CONFIG_FILE_NAME}: `));
+  });
+
+  it('warns about an unknown top-level key', () => {
+    expect(planWithConfig({ exlude: ['x'] }).warnings).toEqual([
+      expect.stringContaining(`${CONFIG_FILE_NAME} has unknown key(s): exlude`),
+    ]);
+  });
+
+  it('warns when a command var names a script package.json does not have', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { lint: 'eslint .' } }), 'utf8');
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ vars: { lintCommand: 'npm run lint:all' } }), 'utf8');
+
+    expect(buildPlan({ config: loadConfig({ root }) }).warnings).toEqual([
+      expect.stringContaining('vars.lintCommand is `npm run lint:all`, but package.json has no "lint:all" script'),
+    ]);
+  });
+});
+
 describe('hook config checks', () => {
   it('rejects a prototype key as a hook or git hook name', () => {
     expect(() => planWithConfig({ hooks: ['constructor'] })).toThrow('Unknown hook(s): constructor');

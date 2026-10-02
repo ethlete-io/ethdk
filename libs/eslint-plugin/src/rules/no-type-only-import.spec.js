@@ -26,17 +26,22 @@ tester.run('no-type-only-import', rule, {
     {
       code: `import type { Foo as Bar } from 'bar';`,
       output: `import { Foo as Bar } from 'bar';`,
-      errors: [{ messageId: 'noTypeImportDeclaration' }],
+      errors: [{ messageId: 'noTypeImportDeclaration', data: { replacement: "import { Foo as Bar } from 'bar';" } }],
     },
     {
       code: `import type Foo from 'bar';`,
       output: `import Foo from 'bar';`,
-      errors: [{ messageId: 'noTypeImportDeclaration' }],
+      errors: [{ messageId: 'noTypeImportDeclaration', data: { replacement: "import Foo from 'bar';" } }],
     },
     {
       code: `import type * as Foo from 'bar';`,
       output: `import * as Foo from 'bar';`,
-      errors: [{ messageId: 'noTypeImportDeclaration' }],
+      errors: [{ messageId: 'noTypeImportDeclaration', data: { replacement: "import * as Foo from 'bar';" } }],
+    },
+    {
+      code: `import Foo, { type Bar as Baz } from 'bar';`,
+      output: `import Foo, { Bar as Baz } from 'bar';`,
+      errors: [{ messageId: 'noInlineTypeSpecifier', data: { replacement: "import Foo, { Bar as Baz } from 'bar';" } }],
     },
     {
       // Inline type specifier

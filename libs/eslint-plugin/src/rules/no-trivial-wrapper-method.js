@@ -17,6 +17,8 @@ const { getAngularDecoratorName } = require('./internals/import-resolution');
  *
  * GOOD:
  *   // Call this.value.set(val) directly at the call sites.
+ *   // A public method over a private/protected member is the encapsulation, not a wrapper:
+ *   //   private items = signal([]); setItems(items) { this.items.set(items); }
  *   // If the method wraps something non-trivially (transforms args, adds logic), it is fine.
  *   // `focus`/`blur`/`reset` on a @Component/@Directive are exempt - see CONTRACT_METHOD_NAMES.
  */
@@ -92,6 +94,39 @@ const getTrivialCallExpr = (methodNode) => {
   return allMatch ? callExpr : null;
 };
 
+/** @param {any} member */
+const visibilityOf = (member) => {
+  if (member.key?.type === 'PrivateIdentifier' || member.accessibility === 'private') return 0;
+  if (member.accessibility === 'protected') return 1;
+  return 2;
+};
+
+/**
+ * @param {any} classBody
+ * @param {any} callee
+ */
+const receiverVisibility = (classBody, callee) => {
+  let object = callee;
+  while (object.type === 'MemberExpression' && object.object.type !== 'ThisExpression') object = object.object;
+  if (object.type !== 'MemberExpression' || object.computed) return undefined;
+
+  const name = object.property.type === 'PrivateIdentifier' ? `#${object.property.name}` : object.property.name;
+  /** @param {any} key */
+  const keyName = (key) => (key?.type === 'PrivateIdentifier' ? `#${key.name}` : key?.name);
+
+  for (const member of classBody.body) {
+    if (member.type === 'MethodDefinition' && member.kind === 'constructor') {
+      const property = member.value.params.find(
+        (/** @type {any} */ param) => param.type === 'TSParameterProperty' && param.parameter.name === name,
+      );
+      if (property) return visibilityOf(property);
+      continue;
+    }
+    if (keyName(member.key) === name) return visibilityOf(member);
+  }
+  return undefined;
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noTrivialWrapperMethod = {
   meta: {
@@ -102,7 +137,7 @@ const noTrivialWrapperMethod = {
     },
     messages: {
       noTrivialWrapperMethod:
-        "'{{name}}' is a trivial wrapper — it only forwards all its arguments to '{{target}}'. Remove it and call '{{target}}' directly at each call site.",
+        "'{{name}}' is a trivial wrapper — it only forwards all its arguments to '{{target}}', which callers can already reach. Remove it and call '{{target}}' directly at each call site.",
     },
     schema: [],
   },
@@ -132,6 +167,9 @@ const noTrivialWrapperMethod = {
               : null;
 
         if (!targetName) return;
+
+        const wrapped = receiverVisibility(node.parent, callee);
+        if (wrapped !== undefined && visibilityOf(node) > wrapped) return;
 
         context.report({
           node,
