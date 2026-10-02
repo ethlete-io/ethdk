@@ -5,6 +5,7 @@ import { TimeWindow, clipWindows, windowsMs } from '../model/time-window';
 import { ClosedTimerRun } from '../model/timer';
 import { EMPTY_DAY_REVIEW_EDITS, PinnedRow, isNamedRow } from '../review/model';
 import { TIMER_LANE_KEY } from '../rows/lane';
+import { checkDay } from '../rows/round';
 import { planTempoSync } from '../tempo/diff';
 import { breakMs, breaksBetweenRows } from './breaks';
 import { reviewDay } from '../review/review-day';
@@ -618,6 +619,23 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     expect(bookedInBreaks(day, booked)).toBe(0);
   });
 
+  it('keeps the agent work inside each break as a row nobody was here for', () => {
+    const day = read(THROUGH);
+    const unattended = day.rows.unnamed.filter((row) => row.unattended);
+
+    expect(minutes(unattended)).toEqual([
+      [720, 15],
+      [795, 15],
+      [840, 45],
+    ]);
+    expect(unattended.map((row) => row.withheldIssueKey)).toEqual(['ET-772', 'ET-772', 'ET-772']);
+    expect(
+      checkDay({ proposals: day.rows.proposals, unattributed: day.rows.unattributed }).warnings.map(
+        (warning) => warning.kind,
+      ),
+    ).toContain('unattended-time');
+  });
+
   it('cuts the breaks out of a row whose start the reviewer pinned', () => {
     const day = read(THROUGH);
     const [first] = day.rows.proposals;
@@ -644,9 +662,8 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
 
   it('writes no Tempo worklog inside a break', () => {
     const day = read(THROUGH);
-    const accepted = reviewDay({ rows: day.rows }).rows.flatMap((row) =>
-      isNamedRow(row) ? [{ ...row, state: 'accepted' as const }] : [],
-    );
+    const reviewed = reviewDay({ rows: day.rows }).rows;
+    const accepted = reviewed.flatMap((row) => (isNamedRow(row) ? [{ ...row, state: 'accepted' as const }] : []));
     const { creates } = planTempoSync({
       proposals: accepted,
       ledger: [],
@@ -657,6 +674,8 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
 
     expect(written.length).toBeGreaterThan(1);
     expect(bookedInBreaks(day, written)).toBe(0);
+    expect(reviewed.filter((row) => row.unattended).length).toBe(3);
+    expect(written.some((row) => row.unattended)).toBe(false);
   });
 
   it('still books what a prompt from the phone bought back inside a break', () => {

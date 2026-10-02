@@ -21,7 +21,14 @@ part it overlaps most; the parts after the break are rows of their own.
 The cut runs on the measured break, before the rows are snapped, so a part after a break starts where
 a row after any other break starts: on the boundary below the minute the user came back.
 
-Measured on the real 2026-10-02, read at 15:30: the one row of 5h 45m is four rows of 4h 45m.
+**The work inside the break becomes a row nobody attended.** It is not dropped: an agent did work
+there, and a day with empty gaps reads as if nothing happened. It is the ADR 0018 row ("Nobody was
+here"), withheld from Tempo with its issue on `withheldIssueKey`, and it fills the gap the parts leave
+and no minute an attended row of its lane holds. The user books it through the same unattended edit.
+Work of one lane and name in one break is one row, as `joinUnattended` makes it.
+
+Measured on the real 2026-10-02, read at 15:30: the one row of 5h 45m is four rows of 4h 45m, and
+the three breaks hold unattended rows of 15m, 15m and 30m.
 
 ## Consequences
 
@@ -31,7 +38,9 @@ Measured on the real 2026-10-02, read at 15:30: the one row of 5h 45m is four ro
   the cut, so neither is cut, nor the work under it.
 - **A row nobody attended is unchanged.** It books nothing, ends with the break it starts in, and is
   still drawn, as ADR 0018 decides.
-- **The break lane draws the gap the parts leave**, as it does for any break between two rows.
+- **The break is drawn over the unattended row**, as over any row a break runs through.
+- **A short row no longer folds across a break.** The unattended row blocks the growth in its lane, so
+  the fold that used to book a break increment leaves the short row standing.
 - **A row the reviewer pinned at both ends keeps its span.** The cut is the day's proposal, not a
   rewrite of what the reviewer wrote.
 - **A statement does not undo the cut.** A `present` statement over a break clears the drawn break but

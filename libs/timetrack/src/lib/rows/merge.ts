@@ -173,7 +173,7 @@ const swapEvidence = (unnamed: WorkGroup, named: WorkGroup): Evidence => {
   };
 };
 
-const join = (into: WorkGroup, next: WorkGroup): WorkGroup => {
+export const joinGroups = (into: WorkGroup, next: WorkGroup): WorkGroup => {
   const swapped = !nameOf(into) && !!nameOf(next);
   const tiers = joinTiers(into, next);
 
@@ -475,7 +475,7 @@ const mergePass = (options: { ordered: readonly AttributedBlock[] } & PassOption
     const previous = at === undefined ? undefined : rows[at];
 
     if (at !== undefined && previous) {
-      const joined = join(previous, group);
+      const joined = joinGroups(previous, group);
 
       if (joinable({ into: previous, added: group, joined, gap: { from: previous.to, to: group.from }, pass })) {
         rows[at] = joined;
@@ -531,7 +531,7 @@ const absorbSlivers = (options: { rows: readonly WorkGroup[]; minBandMs: number;
       .sort((left, right) => distance(sliver, left.row) - distance(sliver, right.row));
 
     for (const host of hosts) {
-      const joined = join(host.row, sliver);
+      const joined = joinGroups(host.row, sliver);
 
       if (!joinable({ into: host.row, added: sliver, joined, gap: gapBetween(host.row, sliver), pass })) continue;
 
@@ -641,7 +641,7 @@ export const joinUnattended = (options: {
     const previous = at === undefined ? undefined : rows[at];
 
     if (at !== undefined && previous && group.from.getTime() - previous.to.getTime() <= options.maxGapMs) {
-      rows[at] = join(previous, group);
+      rows[at] = joinGroups(previous, group);
       continue;
     }
 

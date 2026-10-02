@@ -1,13 +1,21 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock, blockDurationMs, dominantContext, streamKey } from '../model/block';
 import { WorklogProposal } from '../model/proposal';
-import { TimeWindow, mergeWindows, subtractWindows, windowsMs, windowsOverlap } from '../model/time-window';
+import {
+  TimeWindow,
+  clipWindows,
+  mergeWindows,
+  subtractWindows,
+  windowsMs,
+  windowsOverlap,
+} from '../model/time-window';
 import { breaksBetweenRows } from '../stream/breaks';
 import { DescribeOptions, describeWork } from './describe';
 import { CALL_LANE_KEY, laneKeyOf } from './lane';
-import { WorkGroup } from './merge';
+import { WorkGroup, joinGroups } from './merge';
 import { clipBlocks } from './overlap';
-import { RoundOptions, roundDurationUp, siblingBookingsOf } from './round';
+import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp, siblingBookingsOf } from './round';
+import { floorToGrid, nearestOnGrid } from './grid';
 import { snapRowBounds } from './snap';
 import { stretchesOf } from './stretches';
 
@@ -59,14 +67,16 @@ const ALL_TIME = { from: new Date(-8.64e15), to: new Date(8.64e15) };
 
 const blocksMs = (blocks: readonly ActivityBlock[]) => blocks.reduce((sum, block) => sum + blockDurationMs(block), 0);
 
+type BreakPiece = { group: WorkGroup; afterBreak?: true; inBreak?: true };
+
 /** A part no block reaches is dropped, so a group with no blocks of its own, like a timer run's, is never cut. */
-const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): (WorkGroup & { afterBreak?: true })[] => {
+const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): BreakPiece[] => {
   const over = away.filter((window) => windowsOverlap(window, group));
 
-  if (group.attended === false || !over.length) return [group];
+  if (group.attended === false || !over.length) return [{ group }];
 
   const blocks = clipBlocks({ blocks: group.blocks, windows: over });
-  const pieces = subtractWindows({ windows: [group], without: over }).flatMap((window) => {
+  const attended = subtractWindows({ windows: [group], without: over }).flatMap((window) => {
     const inside = blocks.filter((block) => block.from >= window.from && block.to <= window.to);
     const extent = mergeWindows(inside);
     const first = extent[0];
@@ -83,24 +93,119 @@ const cutOutBreaks = (group: WorkGroup, away: readonly TimeWindow[]): (WorkGroup
     ];
   });
 
-  if (!pieces.length) return [group];
+  if (!attended.length) return [{ group }];
 
   const evidenceOf = (index: number) => {
-    const from = (index && pieces[index]?.from.getTime()) || -Infinity;
-    const to = pieces[index + 1]?.from.getTime() ?? Infinity;
+    const from = (index && attended[index]?.from.getTime()) || -Infinity;
+    const to = attended[index + 1]?.from.getTime() ?? Infinity;
 
     return group.evidence.filter((entry) => entry.at.getTime() >= from && entry.at.getTime() < to);
   };
-
-  return pieces.map((piece, index) => ({
-    ...group,
+  const parts = attended.map((piece, index) => ({
+    group: {
+      ...group,
+      from: piece.from,
+      to: piece.to,
+      blocks: piece.blocks,
+      evidence: evidenceOf(index),
+      observedMs: Math.min(group.observedMs, blocksMs(piece.blocks)),
+    },
     ...(piece.from > group.from ? { afterBreak: true as const } : {}),
-    from: piece.from,
-    to: piece.to,
-    blocks: piece.blocks,
-    evidence: evidenceOf(index),
-    observedMs: Math.min(group.observedMs, blocksMs(piece.blocks)),
   }));
+  const inBreaks = clipWindows({ windows: over, within: [group] }).flatMap((window) => {
+    const inside = clipBlocks({
+      blocks: group.blocks,
+      windows: subtractWindows({ windows: [ALL_TIME], without: [window] }),
+    });
+
+    if (!inside.length) return [];
+
+    return [
+      {
+        group: {
+          ...group,
+          attended: false,
+          from: window.from,
+          to: window.to,
+          blocks: inside,
+          evidence: group.evidence.filter((entry) => entry.at >= window.from && entry.at < window.to),
+          observedMs: Math.min(group.observedMs, blocksMs(inside)),
+        },
+        inBreak: true as const,
+      },
+    ];
+  });
+
+  return [...parts, ...inBreaks].sort((a, b) => a.group.from.getTime() - b.group.from.getTime());
+};
+
+const laneOf = (row: { group: WorkGroup }) => row.group.laneKey ?? laneKeyOf(row.group.blocks);
+
+const sharesUnattendedRow = (row: BoundGroup, piece: BoundGroup) =>
+  row.group.attended === false &&
+  row.group.issueKey === piece.group.issueKey &&
+  row.group.standInId === piece.group.standInId &&
+  laneOf(row) === laneOf(piece) &&
+  windowsOverlap(row, piece);
+
+/** The work inside a break must stay off every attended row of its lane, or the review folds and trims it into a booking. */
+const placeInBreaks = (options: {
+  rows: readonly (BoundGroup & { afterBreak?: true })[];
+  cut: readonly (readonly BreakPiece[])[];
+  placed: ReadonlyMap<BreakPiece, BoundGroup>;
+  round?: Partial<RoundOptions>;
+}): (BoundGroup & { afterBreak?: true })[] => {
+  const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
+  const rows = [...options.rows];
+
+  for (const pieces of options.cut) {
+    pieces.forEach((piece, index) => {
+      if (!piece.inBreak) return;
+
+      const placedAt = (at: number) => {
+        const neighbour = pieces[at];
+
+        return neighbour && options.placed.get(neighbour);
+      };
+      const from = placedAt(index - 1)?.to.getTime() ?? floorToGrid(piece.group.from.getTime(), incrementMs);
+      const to =
+        placedAt(index + 1)?.from.getTime() ??
+        Math.max(nearestOnGrid(piece.group.to.getTime(), incrementMs), from + incrementMs);
+      const lane = laneOf(piece);
+      const free = subtractWindows({
+        windows: to > from ? [{ from: new Date(from), to: new Date(to) }] : [],
+        without: rows.filter((row) => row.group.attended !== false && laneOf(row) === lane),
+      });
+
+      for (const window of free) {
+        const blocks = clipBlocks({
+          blocks: piece.group.blocks,
+          windows: subtractWindows({ windows: [ALL_TIME], without: [window] }),
+        });
+
+        if (!blocks.length) continue;
+
+        const row = {
+          group: { ...piece.group, ...window, blocks, observedMs: Math.min(piece.group.observedMs, blocksMs(blocks)) },
+          ...window,
+          durationMs: windowsMs([window]),
+        };
+        const at = rows.findIndex((other) => sharesUnattendedRow(other, row));
+        const host = rows[at];
+
+        if (!host) {
+          rows.push(row);
+          continue;
+        }
+
+        const joined = joinGroups(host.group, row.group);
+
+        rows[at] = { ...host, group: joined, from: joined.from, to: joined.to, durationMs: windowsMs([joined]) };
+      }
+    });
+  }
+
+  return rows;
 };
 
 /** The unattended part must keep the row's start: its id, and the user's edits on it, hang on that start. */
@@ -255,16 +360,16 @@ export const propose = (options: {
 }): ProposeResult => {
   const sessionBlocks = options.sessionBlocks ?? [];
   const away = subtractWindows({ windows: options.breaks ?? [], without: options.presence ?? [] });
+  const cut = options.groups.map((group) => cutOutBreaks(group, away));
+  const parts = cut.flat().filter((piece) => !piece.inBreak);
   const snapped = snapRowBounds({
-    rows: options.groups
-      .flatMap((group) => cutOutBreaks(group, away))
-      .map(({ afterBreak, ...group }) => ({
-        group,
-        ...(afterBreak ? { afterBreak } : {}),
-        from: group.from,
-        to: group.to,
-        durationMs: roundDurationUp(group.observedMs, options.round),
-      })),
+    rows: parts.map(({ group, afterBreak }) => ({
+      group,
+      ...(afterBreak ? { afterBreak } : {}),
+      from: group.from,
+      to: group.to,
+      durationMs: roundDurationUp(group.observedMs, options.round),
+    })),
     options: options.round,
     observedMsOf: (row) => (row.group.laneKey === CALL_LANE_KEY ? row.group.observedMs : undefined),
   }).map((row) => ({
@@ -272,10 +377,15 @@ export const propose = (options: {
     group: { ...row.group, from: row.from, to: row.to },
     durationMs: row.to.getTime() - row.from.getTime(),
   }));
-  const rows = cutAtBreakEnd({
-    rows: snapped,
-    breaks: options.breaks ?? [],
-    presence: options.presence ?? [],
+  const rows = placeInBreaks({
+    rows: cutAtBreakEnd({
+      rows: snapped,
+      breaks: options.breaks ?? [],
+      presence: options.presence ?? [],
+      round: options.round,
+    }),
+    cut,
+    placed: new Map(parts.flatMap((piece, index) => (snapped[index] ? [[piece, snapped[index]] as const] : []))),
     round: options.round,
   });
   const siblings = siblingBookingsOf(

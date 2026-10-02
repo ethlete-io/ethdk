@@ -481,9 +481,26 @@ describe('propose, on a row an agent ran through a break', () => {
     expect(proposals.reduce((sum, row) => sum + row.observedMs, 0)).toBe(133 * MINUTE);
   });
 
+  it('keeps the part inside the break as a row nobody attended, which books nothing', () => {
+    const { proposals, unnamed, unattributed } = propose({ groups: [THROUGH], breaks: [BREAK] });
+
+    expect(
+      unnamed.map(({ from, to, observedMs, unattended, withheldIssueKey }) => ({
+        from,
+        to,
+        observedMs,
+        unattended,
+        withheldIssueKey,
+      })),
+    ).toEqual([{ from: AT(60), to: AT(105), observedMs: 45 * MINUTE, unattended: true, withheldIssueKey: 'ABC-100' }]);
+    expect(unattributed.map((entry) => entry.attended)).toEqual([false]);
+    expect(proposals.some((row) => row.from < AT(105) && row.to > AT(60))).toBe(false);
+  });
+
   it('cuts nothing out of a stretch no break may cover', () => {
-    const { proposals } = propose({ groups: [THROUGH], breaks: [BREAK], presence: [BREAK] });
+    const { proposals, unnamed } = propose({ groups: [THROUGH], breaks: [BREAK], presence: [BREAK] });
 
     expect(proposals.map(({ from, to }) => [from, to])).toEqual([[AT(0), AT(180)]]);
+    expect(unnamed).toEqual([]);
   });
 });
