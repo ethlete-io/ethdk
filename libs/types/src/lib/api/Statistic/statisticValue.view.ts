@@ -2,7 +2,7 @@
 
 export interface StatisticValueView {
     value: number | null;
-    totalMatchesOrMatchGames: number;
+    totalMatchGames: number;
 }
 
 export default StatisticValueView;
