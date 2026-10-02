@@ -28,6 +28,7 @@ import {
 import { SpinnerComponent } from '../../loader';
 import { FormErrorComponent } from './form-error.component';
 import { FormWarningComponent } from './form-warning.component';
+import { FormFieldSuffixOverlapStylesComponent } from './form-field-suffix-overlap-styles.component';
 import { FormFieldTextareaStylesComponent } from './form-field-textarea-styles.component';
 import {
   FORM_FIELD_APPEARANCES,
@@ -189,6 +190,14 @@ export class FormFieldComponent {
       }
 
       untracked(() => this.styleManager.mount(FormFieldTextareaStylesComponent));
+    });
+
+    effect(() => {
+      if (!this.formFieldDir.registeredControlSuffix() && !this.showBusySpinner()) {
+        return;
+      }
+
+      untracked(() => this.styleManager.mount(FormFieldSuffixOverlapStylesComponent));
     });
 
     effect(() => {

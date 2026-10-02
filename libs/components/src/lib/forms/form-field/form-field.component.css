@@ -94,7 +94,6 @@
     --_et-form-field-control-background: transparent;
     --_et-form-field-control-focus-ring: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
     --_et-form-field-floating-label-scale: 0.75;
-    --_et-form-field-suffix-fade: 24px;
 
     display: flex;
     flex-direction: column;
@@ -254,67 +253,6 @@
     .et-form-field-support {
       overflow: clip;
       block-size: 0;
-    }
-
-    .et-form-field-busy-spinner {
-      flex: none;
-      color: var(--et-surface-color-muted-solid, currentColor);
-    }
-
-    /* The overlap amount lives on the frame, not on the suffix that consumes it: a focused text
-       control has to read it too, and the frame is what both of them inherit from. */
-    .et-form-field-control-frame:has(> .et-form-field-suffix > :is(.et-input-clear, .et-form-field-busy-spinner)) {
-      --_et-form-field-suffix-overlap: calc(
-        var(--et-form-field-affix-icon-size) + var(--et-form-field-control-affix-gap)
-      );
-
-      --_et-form-field-suffix-cover: calc(
-        var(--_et-form-field-suffix-overlap) - var(--et-form-field-control-affix-gap)
-      );
-
-      --_et-form-field-suffix-mask-direction: to right;
-
-      &:dir(rtl) {
-        --_et-form-field-suffix-mask-direction: to left;
-      }
-
-      /* An alpha mask, not a gradient in a background colour: a `transparent` fill shows whatever the
-         consumer painted behind the field. */
-      .et-form-field-control-slot {
-        mask-image: linear-gradient(
-          var(--_et-form-field-suffix-mask-direction),
-          black calc(100% - var(--_et-form-field-suffix-cover) - var(--_et-form-field-suffix-fade)),
-          transparent calc(100% - var(--_et-form-field-suffix-cover))
-        );
-      }
-
-      /* A caret scrolls to the very end of the control's box, and a value that is not start-aligned
-         sits there from the first frame - both would land under the opaque part of the ramp, so the
-         box stops where the ramp starts. `:last-of-type` keeps a range input's start field - not
-         near the suffix anyway - from widening and pushing its own separator along. */
-      .et-form-field-control-slot
-        :is(input, textarea):last-of-type:is(:focus, [data-text-align='end'], [data-text-align='center']) {
-        padding-inline-end: calc(var(--_et-form-field-suffix-overlap) + var(--_et-form-field-suffix-fade));
-      }
-    }
-
-    .et-form-field-control-frame:has(> .et-form-field-suffix > .et-input-clear):has(
-        > .et-form-field-suffix > .et-form-field-busy-spinner
-      ) {
-      --_et-form-field-suffix-overlap: calc(
-        2 * (var(--et-form-field-affix-icon-size) + var(--et-form-field-control-affix-gap))
-      );
-    }
-
-    /* The overlap is the suffix's, not the item's: cancelling each item on its own would collapse a
-       clear button and a spinner onto the same spot, since the second one's flow position already
-       accounts for the first one's cancelled width. */
-    .et-form-field-suffix:is(:has(> .et-input-clear), :has(> .et-form-field-busy-spinner)) {
-      position: relative;
-      z-index: 1;
-      align-self: stretch;
-      padding-inline-start: var(--_et-form-field-suffix-fade);
-      margin-inline-start: calc(-1 * (var(--_et-form-field-suffix-fade) + var(--_et-form-field-suffix-overlap)));
     }
 
     .et-form-field-support-row {
