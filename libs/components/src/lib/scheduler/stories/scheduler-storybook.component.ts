@@ -1,5 +1,7 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { addDays, addHours, startOfWeek } from 'date-fns';
+import { CARD_IMPORTS } from '../../card';
 import { Appointment, AppointmentId, SchedulerBusinessHours, SchedulerView } from '../scheduler.types';
 import { provideSchedulerEditSurface } from '../scheduler-edit-surface.provider';
 import { SCHEDULER_IMPORTS } from '../scheduler.imports';
@@ -84,6 +86,16 @@ const DEMO_APPOINTMENTS: Appointment[] = [
   selector: 'et-sb-scheduler',
   template: `
     <div [style.max-inline-size]="containerWidth()" class="p-8 font-sans">
+      @if (surface(); as surface) {
+        <et-card [surface]="surface">
+          <ng-container *ngTemplateOutlet="scheduler" />
+        </et-card>
+      } @else {
+        <ng-container *ngTemplateOutlet="scheduler" />
+      }
+    </div>
+
+    <ng-template #scheduler>
       <et-scheduler
         [(view)]="view"
         [(selectedAppointmentId)]="selectedAppointmentId"
@@ -98,10 +110,10 @@ const DEMO_APPOINTMENTS: Appointment[] = [
       />
 
       <p class="mt-4 text-sm opacity-60">Selected: {{ selectedTitle() ?? 'none' }}</p>
-    </div>
+    </ng-template>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...SCHEDULER_IMPORTS],
+  imports: [...SCHEDULER_IMPORTS, CARD_IMPORTS, NgTemplateOutlet],
   providers: [provideSchedulerEditSurface()],
 })
 export class SchedulerStorybookComponent {
@@ -111,8 +123,16 @@ export class SchedulerStorybookComponent {
   public containerWidth = input<string | null>(null);
   public businessHours = input<readonly SchedulerBusinessHours[] | null>(null);
   public nowIndicator = input(true);
+  public surface = input<string | null>(null);
   protected view = linkedSignal(() => this.initialView());
-  protected appointments = signal(DEMO_APPOINTMENTS);
+  protected appointments = linkedSignal(() =>
+    this.surface() === 'light'
+      ? DEMO_APPOINTMENTS.map((appointment) => ({
+          ...appointment,
+          colorToken: `${appointment.colorToken ?? 'brand'}-on-light`,
+        }))
+      : DEMO_APPOINTMENTS,
+  );
   protected selectedAppointmentId = signal<string | null>(null);
 
   protected selectedTitle = computed(

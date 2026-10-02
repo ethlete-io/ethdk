@@ -28,6 +28,12 @@ export const BusinessHours: Story = {
   },
 };
 
+export const LightSurface: Story = { args: { surface: 'light' } };
+
+export const LightSurfaceWeek: Story = { args: { initialView: 'week', surface: 'light' } };
+
+export const LightSurfaceAgenda: Story = { args: { initialView: 'agenda', surface: 'light' } };
+
 export const WithoutNowIndicator: Story = { args: { initialView: 'day', nowIndicator: false } };
 
 export const Agenda: Story = { args: { initialView: 'agenda' } };
