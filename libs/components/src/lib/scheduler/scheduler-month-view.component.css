@@ -68,10 +68,10 @@
     }
 
     &:where([data-outside-month]) {
-      color: var(--et-surface-color-subtle-solid);
+      color: var(--et-surface-color-muted-solid);
 
       .et-scheduler-month-view-cell-date {
-        color: var(--et-surface-color-subtle-solid);
+        color: var(--et-surface-color-muted-solid);
       }
     }
   }
