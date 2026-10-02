@@ -3,10 +3,19 @@ import { injectLocale } from '@ethlete/core';
 import { Locale } from 'date-fns';
 
 /**
- * The wire format date controls read and write their string values in
- * (a date-fns format string). Defaults to ISO 8601 with offset.
+ * The wire format the date-only controls (`et-date-input`, `et-date-range-input`) read and write
+ * their string values in (a date-fns format string). Defaults to `yyyy-MM-dd`.
  */
 export const DATE_FORMAT = new InjectionToken<string>('DATE_FORMAT', {
+  providedIn: 'root',
+  factory: () => 'yyyy-MM-dd',
+});
+
+/**
+ * The wire format the date-time controls (`et-date-time-input`, `et-date-time-range-input`) read
+ * and write their string values in. Defaults to ISO 8601 with offset.
+ */
+export const DATE_TIME_FORMAT = new InjectionToken<string>('DATE_TIME_FORMAT', {
   providedIn: 'root',
   factory: () => "yyyy-MM-dd'T'HH:mm:ssxxx",
 });
@@ -31,11 +40,15 @@ export const DATE_LOCALE = new InjectionToken<Locale | null>('DATE_LOCALE', {
 
 export const provideDateFormat = (format: string): Provider => ({ provide: DATE_FORMAT, useValue: format });
 
+export const provideDateTimeFormat = (format: string): Provider => ({ provide: DATE_TIME_FORMAT, useValue: format });
+
 export const provideTimeFormat = (format: string): Provider => ({ provide: TIME_FORMAT, useValue: format });
 
 export const provideDateLocale = (locale: Locale): Provider => ({ provide: DATE_LOCALE, useValue: locale });
 
 export const injectDateFormat = () => inject(DATE_FORMAT);
+
+export const injectDateTimeFormat = () => inject(DATE_TIME_FORMAT);
 
 export const injectTimeFormat = () => inject(TIME_FORMAT);
 

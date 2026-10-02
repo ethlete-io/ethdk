@@ -37,23 +37,23 @@ describe('unparsed wire value warning', () => {
   it('names the value, the valueFormat and a matching value, once per control', () => {
     const fixture = mountControl(DateInputHost);
 
-    fixture.componentInstance.value.set('2026-07-30');
+    fixture.componentInstance.value.set('2026-07-30T00:00:00+00:00');
     fixture.detectChanges();
     fixture.componentInstance.value.set('30.07.2026');
     fixture.detectChanges();
 
     expect(warnings()).toHaveLength(1);
     expect(warnings()[0]).toContain('[et-date-input]');
-    expect(warnings()[0]).toContain('"2026-07-30"');
-    expect(warnings()[0]).toContain(`"yyyy-MM-dd'T'HH:mm:ssxxx"`);
-    expect(warnings()[0]).toMatch(/"2026-07-16T21:30:00[+-]\d\d:\d\d"/);
+    expect(warnings()[0]).toContain('"2026-07-30T00:00:00+00:00"');
+    expect(warnings()[0]).toContain('"yyyy-MM-dd"');
+    expect(warnings()[0]).toContain('"2026-07-16"');
     expect(warnings()[0]).toContain('provideDateFormat()');
   });
 
   it('stays quiet for a matching, empty or mixed value', () => {
     const fixture = mountControl(DateInputHost);
 
-    fixture.componentInstance.value.set('2026-07-30T00:00:00+00:00');
+    fixture.componentInstance.value.set('2026-07-30');
     fixture.detectChanges();
     fixture.componentInstance.value.set('');
     fixture.detectChanges();

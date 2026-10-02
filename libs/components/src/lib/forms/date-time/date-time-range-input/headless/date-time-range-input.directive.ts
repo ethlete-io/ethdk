@@ -3,7 +3,7 @@ import { FormValueControl } from '@angular/forms/signals';
 import { CalendarDateClassFn, CalendarView, CalendarWeekStartsOn } from '../../../../calendar/headless';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
-import { injectDateFormat } from '../../date-time-formats';
+import { injectDateTimeFormat } from '../../date-time-formats';
 import {
   DateRangePickerInputDirective,
   DateRangeSide,
@@ -49,7 +49,7 @@ export class DateTimeRangeInputDirective
 {
   private dateTimeLabels = injectDateTimeLabels();
 
-  public defaultValueFormat = injectDateFormat();
+  public defaultValueFormat = injectDateTimeFormat();
 
   /** Message the form field shows when either side's typed text can't be parsed as a date & time. */
   public parseErrorMessage = input<string | null>(null);
@@ -166,7 +166,7 @@ export class DateTimeRangeInputDirective
 
     warnOnUnparsedValue({
       selector: 'et-date-time-range-input',
-      formatProvider: 'provideDateFormat',
+      formatProvider: 'provideDateTimeFormat',
       readings: () =>
         this.mixed()
           ? []

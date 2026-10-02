@@ -2,8 +2,9 @@ import { Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form } from '@angular/forms/signals';
 import '../../../test-helpers';
+import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { provideDateFormat, provideDateLocale, provideTimeFormat } from './date-time-formats';
+import { provideDateFormat, provideDateLocale, provideDateTimeFormat, provideTimeFormat } from './date-time-formats';
 import { provideDateTimeLabels } from './date-time-labels';
 import {
   dateBounds,
@@ -11,6 +12,7 @@ import {
   dateRangeOrder,
   dateTimeBounds,
   dateTimeRangeBounds,
+  dateTimeRangeOrder,
   RangeOrderOptions,
   timeRangeOrder,
 } from './date-time-range-validators';
@@ -57,12 +59,9 @@ describe('dateRangeOrder', () => {
     expect(orderErrors(range(start, end))).toEqual([]);
   });
 
-  it('compares instants, not strings, so mixed offsets order correctly', () => {
-    const errors = errorsFor(range('2026-03-01T10:00:00+02:00', '2026-03-01T09:30:00+00:00'), (path) =>
-      dateRangeOrder(path),
-    );
-
-    expect(errors).toEqual([]);
+  it('reads date-only wire values by default', () => {
+    expect(errorsFor(range('2026-03-10', '2026-03-01'), (path) => dateRangeOrder(path))).toHaveLength(1);
+    expect(errorsFor(range('2026-03-01', '2026-03-10'), (path) => dateRangeOrder(path))).toEqual([]);
   });
 
   it('reads the DATE_FORMAT token when no valueFormat is given', () => {
@@ -180,6 +179,29 @@ describe('dateRangeBounds', () => {
   });
 });
 
+describe('dateTimeRangeOrder', () => {
+  beforeEach(() => TestBed.configureTestingModule({}));
+
+  it('compares instants, not strings, so mixed offsets order correctly', () => {
+    const apply = (path: RangePath) => dateTimeRangeOrder(path);
+
+    expect(errorsFor(range('2026-03-01T10:00:00+02:00', '2026-03-01T09:30:00+00:00'), apply)).toEqual([]);
+    expect(errorsFor(range('2026-03-01T10:00:00+00:00', '2026-03-01T09:30:00+00:00'), apply)).toHaveLength(1);
+  });
+
+  it('reads the DATE_TIME_FORMAT token and ignores DATE_FORMAT', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideDateFormat('yyyy-MM-dd'), provideDateTimeFormat('dd.MM.yyyy HH:mm')],
+    });
+
+    const apply = (path: RangePath) => dateTimeRangeOrder(path);
+
+    expect(errorsFor(range('01.03.2026 10:00', '01.03.2026 09:30'), apply)).toHaveLength(1);
+    expect(errorsFor(range('01.03.2026 09:30', '01.03.2026 10:00'), apply)).toEqual([]);
+  });
+});
+
 describe('dateTimeRangeBounds', () => {
   beforeEach(() => TestBed.configureTestingModule({}));
 
@@ -236,6 +258,28 @@ describe('dateBounds and dateTimeBounds', () => {
     ).toEqual([{ kind: 'rangeMin', message: 'Too early' }]);
   });
 
+  it('reads DATE_FORMAT for dateBounds and DATE_TIME_FORMAT for dateTimeBounds by default', () => {
+    const bound = new Date(2026, 2, 5, 12, 0, 0);
+    const instant = (date: Date) => format(date, "yyyy-MM-dd'T'HH:mm:ssxxx");
+
+    expect(singleErrors('2026-03-04', (path) => dateBounds(path, { min: bound }))).toHaveLength(1);
+    expect(singleErrors('2026-03-05', (path) => dateBounds(path, { min: bound }))).toEqual([]);
+    expect(
+      singleErrors(instant(new Date(2026, 2, 5, 11, 59)), (path) => dateTimeBounds(path, { min: bound })),
+    ).toHaveLength(1);
+    expect(singleErrors(instant(bound), (path) => dateTimeBounds(path, { min: bound }))).toEqual([]);
+  });
+
+  it('reads a provided DATE_TIME_FORMAT in dateTimeBounds', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideDateTimeFormat("yyyy-MM-dd'T'HH:mm")] });
+
+    const apply = (path: Parameters<typeof dateBounds>[0]) => dateTimeBounds(path, { min: new Date(2026, 2, 5, 12) });
+
+    expect(singleErrors('2026-03-05T11:59', apply)).toHaveLength(1);
+    expect(singleErrors('2026-03-05T12:00', apply)).toEqual([]);
+  });
+
   it('compares a date-time to the millisecond', () => {
     const bound = new Date(2026, 2, 5, 12, 0, 0);
 
@@ -264,7 +308,7 @@ describe('dateBounds and dateTimeBounds', () => {
 
   it('orders a range in the given timeZone', () => {
     const errors = errorsFor(range('2026-03-05T12:00', '2026-03-05T11:00'), (path) =>
-      dateRangeOrder(path, { valueFormat: "yyyy-MM-dd'T'HH:mm", timeZone: 'Asia/Tokyo' }),
+      dateTimeRangeOrder(path, { valueFormat: "yyyy-MM-dd'T'HH:mm", timeZone: 'Asia/Tokyo' }),
     );
 
     expect(errors).toMatchObject([{ kind: 'rangeOrder' }]);

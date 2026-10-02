@@ -9,7 +9,7 @@ export type WireValueReading = {
 
 export type UnparsedValueWarningOptions = {
   selector: string;
-  formatProvider: 'provideDateFormat' | 'provideTimeFormat';
+  formatProvider: 'provideDateFormat' | 'provideDateTimeFormat' | 'provideTimeFormat';
   readings: () => readonly WireValueReading[];
   format: Signal<string>;
   locale: Signal<Locale | null>;

@@ -89,7 +89,7 @@ export type DateTimeLabels = {
   /** Validation message for text that isn't a duration. */
   invalidDuration: string;
 
-  /** `dateRangeOrder`/`timeRangeOrder`'s message for a start after the end. */
+  /** `dateRangeOrder`/`dateTimeRangeOrder`/`timeRangeOrder` message for a start after the end. */
   rangeOrder: string;
   /** `dateRangeBounds`/`dateTimeRangeBounds`' message for an end before `min`, given the formatted bound. */
   rangeMin: (min: string) => string;

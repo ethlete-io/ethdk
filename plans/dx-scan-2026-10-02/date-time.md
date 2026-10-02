@@ -24,6 +24,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 
 ## DT-01 `provideDateFormat('yyyy-MM-dd')` from the setup guide silently strips every date-time value's time
 
+- Status: fixed
 - Where: `forms/date-time/date-time-formats.ts:9-12` (one `DATE_FORMAT` token),
   `forms/date-time/date-time-input/headless/date-time-input.directive.ts:44`,
   `forms/date-time/date-time-range-input/headless/date-time-range-input.directive.ts:51`,
@@ -93,6 +94,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 
 ## DT-04 Date-only controls default to an instant wire format, which the docs themselves call wrong for a chosen date
 
+- Status: fixed
 - Where: `forms/date-time/date-time-formats.ts:9-12` (default `yyyy-MM-dd'T'HH:mm:ssxxx`), used by
   `date-input.directive.ts:31` and `date-range-input.directive.ts:37`; `apps/docs/components/date-time-inputs.md:188-205`.
 - Problem: the "Time zones" section says an offset-carrying instant is wrong for "a date someone chose": it

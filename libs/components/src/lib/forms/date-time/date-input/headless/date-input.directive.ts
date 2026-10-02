@@ -19,7 +19,7 @@ import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 
 /**
  * A date form control with a `string | null` value (a date-fns `valueFormat`
- * wire string, ISO by default). Typed entry parses strictly against
+ * wire string, `yyyy-MM-dd` by default). Typed entry parses strictly against
  * `displayFormat` on blur/Enter; the anchored picker overlay hosts a calendar.
  */
 @Directive({

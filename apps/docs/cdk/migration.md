@@ -7,13 +7,74 @@ a single identifier.
 
 The rows come from `migration-map.json`, which ships inside the `@ethlete/cdk` package (so a
 migrating app already has it on disk, at `node_modules/@ethlete/cdk/migration-map.json`). A spec in
-that library asserts every public barrel export appears in the map exactly once, and that every key is
-a real export - a symbol missing here means the map is out of date, not that the symbol has no
-successor.
+that library asserts every cdk v5 export appears in the map exactly once, and that every key is a
+real export - a cdk v5 symbol missing here means the map is out of date, not that the symbol has no
+successor. Names that only cdk 4 exported are not in the map; they are listed under
+[Removed before v5](#removed-before-v5).
 
 Every public cdk export is also `@deprecated`, so an import that still needs migrating strikes through
 in the editor and the whole library sinks to the bottom of autocomplete. The tag is documentation, not
 a lint error - nothing breaks while an app still depends on it. Intent to remove is v6.
+
+## Run the codemod {#run-the-codemod}
+
+Most rows do not need a hand edit. `migrate-from-cdk` rewrites every `move` and `rename` row, the
+skeleton, spinner, picture and tooltip template changes, and writes everything else into a task file.
+
+Before you run it:
+
+1. The app is on cdk 5. Run cdk `to-v5` first (`et update` runs it as a required migration); the
+   codemod reads cdk 5 names and skips cdk 4 ones. The full order is in
+   [Migrating from the v4 line](/migrating-from-v4).
+2. `@ethlete/components` is installed. Rows with `requires @ethlete/components ≥ x` are compared
+   against the version the root `package.json` declares.
+
+```bash
+yarn nx g @ethlete/cdk:migrate-from-cdk                         # every project
+yarn nx g @ethlete/cdk:migrate-from-cdk --projects=shop,admin   # only these Nx projects
+yarn nx g @ethlete/cdk:migrate-from-cdk --include=apps/shop     # only these path prefixes
+```
+
+`--projects` and `--include` are unioned. `--mapPath` points at a `migration-map.json` outside
+`node_modules/@ethlete/cdk`.
+
+What it cannot decide goes into **`migrate-from-cdk-tasks.md`** at the repository root: pictures
+without `alt`, picture class inputs, themed spinners, symbols whose contract changed, successors that
+need a newer package, and [stylesheet selectors](#your-cdk-styles) that no components class matches.
+Run it again after an upgrade: a version-gated row is rewritten once its package is new enough.
+
+Both steps are `optional` in `@ethlete/cdk`'s migrations, so `et update` never runs them. `et migrations`
+lists them: `from-cdk` is this codemod, `from-cdk-decisions` hands the task file to an agent with the
+instructions for each section.
+
+## Your cdk styles {#your-cdk-styles}
+
+The cdk was styled by overriding its `et-*` classes. The components render other class names and take
+their look from the [surface and colour tokens](/core/theming) and each component's CSS variables, so an
+app stylesheet written against cdk classes matches nothing after the move - or half of it matches and
+fights the component CSS.
+
+The codemod lists every `.et-*` selector in an app `.css`/`.scss` file that no `@ethlete/components`
+stylesheet defines, grouped by component. For each group, open the component's guide and move the
+override to its Theming section: set the CSS variable or the theme, not the class. A selector whose
+class still exists is not listed, but it may target different markup - check it against the guide too.
+Component CSS sits in `@layer components`, so an unlayered app rule or a Tailwind utility wins without
+`!important`.
+
+## Removed before v5 {#removed-before-v5}
+
+These names only cdk 4 exported. cdk `to-v5` rewrites them, except `OVERLAY_STATE`, which nothing
+rewrites.
+
+| cdk 4                                                          | What happens                                                                                                                                                                                               |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DialogRef`, `BottomSheetRef`                                  | `to-v5` rewrites to `OverlayRef`                                                                                                                                                                           |
+| `DIALOG_DATA`, `BOTTOM_SHEET_DATA`                             | `to-v5` rewrites to `OVERLAY_DATA`                                                                                                                                                                         |
+| `provideDialog`, `provideBottomSheet`                          | `to-v5` rewrites to `provideOverlay`                                                                                                                                                                       |
+| `DialogService`, `BottomSheetService`, `DynamicOverlayService` | `to-v5` rewrites the service and its `open` calls to the overlay service with a position strategy                                                                                                          |
+| `DialogImports`, `BottomSheetImports`, `DynamicOverlayImports` | `to-v5` rewrites to `OverlayImports`                                                                                                                                                                       |
+| `OverlayBreakpointConfigEntry`                                 | `to-v5` rewrites the breakpoint config to the position strategies                                                                                                                                          |
+| `OVERLAY_STATE`, `OverlayRef.getState()`                       | Not migrated. Neither cdk 5 nor the [components `OverlayRef`](/components/overlays) exposes a state; derive one from `afterOpened()` and `afterClosed()`, or read `beforeClosed()` for a close in progress |
 
 ::: warning Read this before concluding "there is no replacement"
 Migrating one real 47-file app by diffing `.d.ts` exports got **nine** symbols wrong the same way:
@@ -575,7 +636,7 @@ Same identifier, new package: an import-path edit. The successor may still have 
 | `provideBottomSheetStrategy`                              | [`provideBottomSheetStrategy`](/components/overlays)                              | —                                                                                                                                             |
 | `provideBottomSheetStrategyDefaults`                      | [`provideBottomSheetStrategyDefaults`](/components/overlays)                      | —                                                                                                                                             |
 | `provideBreadcrumbManager`                                | [`provideBreadcrumbManager`](/components/breadcrumb)                              | —                                                                                                                                             |
-| `provideDateFormat`                                       | [`provideDateFormat`](/components/date-time-inputs)                               | signature unchanged                                                                                                                           |
+| `provideDateFormat`                                       | [`provideDateFormat`](/components/date-time-inputs)                               | signature unchanged; the default is now `yyyy-MM-dd` (cdk: ISO 8601 with offset)                                                              |
 | `provideDialogStrategy`                                   | [`provideDialogStrategy`](/components/overlays)                                   | —                                                                                                                                             |
 | `provideDialogStrategyDefaults`                           | [`provideDialogStrategyDefaults`](/components/overlays)                           | —                                                                                                                                             |
 | `provideFullscreenDialogStrategy`                         | [`provideFullscreenDialogStrategy`](/components/overlays)                         | —                                                                                                                                             |
@@ -638,7 +699,7 @@ Same shape under a new name: change the import and the identifier.
 | `CarouselToggleAutoPlayButtonDirective` | [`CarouselPlayToggleDirective`](/components/carousel)           | —                                                                                                            |
 | `CHECKBOX_GROUP_TOKEN`                  | [`SELECTION_LIST_TOKEN`](/components/choice-inputs)             | —                                                                                                            |
 | `CheckboxImports`                       | [`CHECKBOX_IMPORTS`](/components/choice-inputs)                 | the multi-select group is CHECKBOX_GROUP_IMPORTS                                                             |
-| `DATE_INPUT_FORMAT_TOKEN`               | [`DATE_FORMAT`](/components/date-time-inputs)                   | —                                                                                                            |
+| `DATE_INPUT_FORMAT_TOKEN`               | [`DATE_FORMAT`](/components/date-time-inputs)                   | defaults to `yyyy-MM-dd`; provide the ISO format to keep cdk wire values                                     |
 | `ET_OVERLAY_CONFIG_CLASS_KEYS`          | [`OVERLAY_CONFIG_CLASS_KEYS`](/components/overlays)             | —                                                                                                            |
 | `IconImports`                           | [`ICON_IMPORTS`](/components/icon)                              | —                                                                                                            |
 | `InputImports`                          | [`INPUT_IMPORTS`](/components/text-inputs)                      | also FORM_FIELD_IMPORTS for the field shell, plus one array per control family                               |
@@ -856,7 +917,7 @@ The use case is covered, by something shaped differently enough that the row is 
 | `ComboboxDirective`                          | [`SelectDirective`](/components/select)                      | et-select unifies select and combobox: an optional search input turns it into the combobox                                                                                                                                |
 | `ComboboxImports`                            | [`SELECT_IMPORTS`](/components/select)                       | et-select unifies select and combobox: an optional search input turns it into the combobox                                                                                                                                |
 | `ComboboxOptionComponent`                    | [`SelectOptionComponent`](/components/select)                | —                                                                                                                                                                                                                         |
-| `DATE_TIME_INPUT_FORMAT_TOKEN`               | [`DATE_FORMAT`](/components/date-time-inputs)                | —                                                                                                                                                                                                                         |
+| `DATE_TIME_INPUT_FORMAT_TOKEN`               | [`DATE_TIME_FORMAT`](/components/date-time-inputs)           | —                                                                                                                                                                                                                         |
 | `DefaultSubmitButtonConfigFnConfig`          | [`FilterOverlaySubmitState`](/components/filter-overlay)     | —                                                                                                                                                                                                                         |
 | `DefaultValidatorErrorsService`              | [`FormErrorMessageResolver`](/components/forms)              | a resolver function, not an injectable service                                                                                                                                                                            |
 | `DynamicFormFieldDirective`                  | [`FormFieldDirective`](/components/forms)                    | one field directive drives every control                                                                                                                                                                                  |
@@ -904,7 +965,7 @@ The use case is covered, by something shaped differently enough that the row is 
 | `PasswordInputToggleComponent`               | [`PasswordInputComponent`](/components/text-inputs)          | the reveal toggle is built in                                                                                                                                                                                             |
 | `provideBracketConfig`                       | [`provideBracketConfig`](/components/bracket)                | legacy portal config; the components config registers layouts and card components                                                                                                                                         |
 | `provideComboboxConfig`                      | [`SELECT_IMPORTS`](/components/select)                       | et-select unifies select and combobox: an optional search input turns it into the combobox; there is no global config - configure each et-select and use provideSelectLabels for strings                                  |
-| `provideDateTimeFormat`                      | [`provideDateFormat`](/components/date-time-inputs)          | date-time controls read the DATE_FORMAT wire format                                                                                                                                                                       |
+| `provideDateTimeFormat`                      | [`provideDateTimeFormat`](/components/date-time-inputs)      | signature unchanged                                                                                                                                                                                                       |
 | `QueryButtonComponent`                       | [`QueryButtonDirective`](/components/button#query-button)    | `[etQueryButton]` on a button; loading and progress only, no one-second success/failure flash; `queryButtonSourceFromV2Query` for a legacy query                                                                          |
 | `QueryButtonDirective`                       | [`QueryButtonDirective`](/components/button#query-button)    | `[etQueryButton]` on a button; loading and progress only, no one-second success/failure flash; `queryButtonSourceFromV2Query` for a legacy query                                                                          |
 | `QueryErrorItem`                             | [`QueryErrorView`](/components/query-error)                  | @ethlete/query normalizes error shapes before they reach the component                                                                                                                                                    |
@@ -993,8 +1054,8 @@ No successor. Most were internal bases, DI tokens or config objects that the new
 | `DATE_TIME_INPUT_TOKEN`                         | inject DateTimeInputDirective directly                                                                            |
 | `DecoratedFormFieldBase`                        | internal base of the cdk form-field decorators                                                                    |
 | `DecoratedInputBase`                            | internal base of the cdk input decorators                                                                         |
-| `DEFAULT_DATE_INPUT_FORMAT`                     | the DATE_FORMAT token defaults to the same ISO format                                                             |
-| `DEFAULT_DATE_TIME_INPUT_FORMAT`                | the DATE_FORMAT token defaults to the same ISO format                                                             |
+| `DEFAULT_DATE_INPUT_FORMAT`                     | the DATE_FORMAT token defaults to `yyyy-MM-dd`                                                                    |
+| `DEFAULT_DATE_TIME_INPUT_FORMAT`                | the DATE_TIME_FORMAT token defaults to the same ISO format                                                        |
 | `DEFAULT_TIME_INPUT_FORMAT`                     | the TIME_FORMAT token defaults to the same format                                                                 |
 | `DYNAMIC_FORM_FIELD_TOKEN`                      | inject FormFieldDirective directly                                                                                |
 | `DYNAMIC_FORM_GROUP_TOKEN`                      | signal forms model groups in the schema; there is no group directive                                              |

@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { FieldContext, LogicFn, validate, ValidationError } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
 import { CalendarPrecision, startOfCalendarUnit } from '../../calendar/headless';
-import { DATE_FORMAT, DATE_LOCALE, TIME_FORMAT } from './date-time-formats';
+import { DATE_FORMAT, DATE_LOCALE, DATE_TIME_FORMAT, TIME_FORMAT } from './date-time-formats';
 import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
@@ -19,8 +19,8 @@ type Bound<TValue> = Date | null | LogicFn<TValue, Date | null>;
 
 export type RangeOrderOptions = {
   /**
-   * date-fns format of the two wire strings - the control's `valueFormat`. Defaults to the
-   * `DATE_FORMAT` token (`TIME_FORMAT` for {@link timeRangeOrder}), the same default the control uses.
+   * date-fns format of the two wire strings - the control's `valueFormat`. Defaults to the token
+   * the matching control reads: `DATE_FORMAT`, `DATE_TIME_FORMAT` or `TIME_FORMAT`.
    */
   valueFormat?: string;
   /** Also fail while both ends are equal. @default false */
@@ -39,7 +39,10 @@ export type DateRangeBoundsOptions = {
   min?: Bound<DateRangeValue>;
   /** The latest date either end may name, or a function returning it. */
   max?: Bound<DateRangeValue>;
-  /** date-fns format of the two wire strings. Defaults to the `DATE_FORMAT` token. */
+  /**
+   * date-fns format of the two wire strings. Defaults to `DATE_FORMAT` for the date-only validators
+   * and `DATE_TIME_FORMAT` for the date-time ones.
+   */
   valueFormat?: string;
   /**
    * The `timeZone` of the date-time control: offset-less wire values are read in that zone's wall
@@ -110,19 +113,32 @@ const rangeOrder = ({ path, valueFormat, options: { strict, message, timeZone } 
 };
 
 /**
- * Signal-forms validator for `et-date-range-input` and `et-date-time-range-input`: fails the range
- * while its start lies after its end. Neither control reorders the two ends itself.
+ * Signal-forms validator for `et-date-range-input`: fails the range while its start lies after its
+ * end. The control does not reorder the two ends itself.
  *
  * Passes while either end is empty or unparseable; pair it with `required()` on the child paths.
  *
  * ```ts
  * form(model, (s) => {
- *   dateRangeOrder(s.stay, { valueFormat: 'yyyy-MM-dd' });
+ *   dateRangeOrder(s.stay);
  * });
  * ```
  */
-export const dateRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions = {}) =>
+export const dateRangeOrder = (path: RangeFieldPath, options: Omit<RangeOrderOptions, 'timeZone'> = {}) =>
   rangeOrder({ path, valueFormat: options.valueFormat ?? inject(DATE_FORMAT), options });
+
+/**
+ * Signal-forms validator for `et-date-time-range-input`: fails the range while its start lies after
+ * its end. Same contract as {@link dateRangeOrder}, read against the `DATE_TIME_FORMAT` token.
+ *
+ * ```ts
+ * form(model, (s) => {
+ *   dateTimeRangeOrder(s.slot, { strict: true });
+ * });
+ * ```
+ */
+export const dateTimeRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions = {}) =>
+  rangeOrder({ path, valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT), options });
 
 /**
  * Signal-forms validator for `et-time-range-input`: fails the range while its start time lies after
@@ -189,7 +205,7 @@ const rangeBounds = (config: Omit<BoundsConfig<DateRangeValue>, 'sidesOf'>) =>
  *
  * ```ts
  * form(model, (s) => {
- *   dateRangeBounds(s.stay, { min: new Date(), valueFormat: 'yyyy-MM-dd' });
+ *   dateRangeBounds(s.stay, { min: new Date() });
  * });
  * ```
  */
@@ -218,7 +234,7 @@ export const dateRangeBounds = (path: RangeFieldPath, options: DateOnlyRangeBoun
 export const dateTimeRangeBounds = (path: RangeFieldPath, options: DateRangeBoundsOptions) =>
   rangeBounds({
     path,
-    valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
+    valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
     options,
     unit: (date) => date,
     label: 'Pp',
@@ -234,7 +250,7 @@ export const dateTimeRangeBounds = (path: RangeFieldPath, options: DateRangeBoun
  *
  * ```ts
  * form(model, (s) => {
- *   dateBounds(s.birthday, { max: new Date(), valueFormat: 'yyyy-MM-dd' });
+ *   dateBounds(s.birthday, { max: new Date() });
  * });
  * ```
  */
@@ -265,7 +281,7 @@ export const dateTimeBounds = (path: DateFieldPath, options: DateBoundsOptions =
   bounds<DateValue>({
     path,
     sidesOf: (value) => [value],
-    valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
+    valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
     options,
     unit: (date) => date,
     label: 'Pp',

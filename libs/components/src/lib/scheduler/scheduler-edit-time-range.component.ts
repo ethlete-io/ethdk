@@ -1,6 +1,6 @@
 import { Component, computed, input, ViewEncapsulation, WritableSignal } from '@angular/core';
 import { format, parse } from 'date-fns';
-import { injectDateFormat } from '../forms/date-time/date-time-formats';
+import { injectDateTimeFormat } from '../forms/date-time/date-time-formats';
 import { DATE_TIME_RANGE_INPUT_IMPORTS } from '../forms/date-time/date-time-range-input/date-time-range-input.imports';
 import { DateTimeRangeValue } from '../forms/date-time/date-time-range-input/headless';
 import { FORM_FIELD_IMPORTS } from '../forms/form-field';
@@ -33,7 +33,7 @@ import { Appointment } from './scheduler.types';
 })
 export class SchedulerEditTimeRangeComponent {
   private labels = injectSchedulerLabels();
-  private dateFormat = injectDateFormat();
+  private dateTimeFormat = injectDateTimeFormat();
 
   public draft = input.required<WritableSignal<Appointment>>();
 
@@ -42,15 +42,15 @@ export class SchedulerEditTimeRangeComponent {
   public endLabel = computed(() => this.labels().endField);
 
   protected rangeValue = computed<DateTimeRangeValue>(() => ({
-    start: format(this.draft()().start, this.dateFormat),
-    end: format(this.draft()().end, this.dateFormat),
+    start: format(this.draft()().start, this.dateTimeFormat),
+    end: format(this.draft()().end, this.dateTimeFormat),
   }));
 
   protected updateRange(value: DateTimeRangeValue) {
     this.draft().update((appointment) => ({
       ...appointment,
-      start: value.start === null ? appointment.start : parse(value.start, this.dateFormat, appointment.start),
-      end: value.end === null ? appointment.end : parse(value.end, this.dateFormat, appointment.end),
+      start: value.start === null ? appointment.start : parse(value.start, this.dateTimeFormat, appointment.start),
+      end: value.end === null ? appointment.end : parse(value.end, this.dateTimeFormat, appointment.end),
     }));
   }
 }

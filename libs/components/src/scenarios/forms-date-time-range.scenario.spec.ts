@@ -80,7 +80,6 @@ const PRESETS = [
       [minDate]="minDate"
       [startAt]="startAt"
       aria-label="Stay"
-      valueFormat="yyyy-MM-dd"
       displayFormat="dd.MM.yyyy"
     />
   `,
@@ -89,8 +88,8 @@ class StayComponent {
   model = signal<{ stay: DateRangeValue }>({ stay: { start: null, end: null } });
   minDate = new Date(2026, 6, 5);
   stayForm = form(this.model, (path) => {
-    dateRangeOrder(path.stay, { valueFormat: 'yyyy-MM-dd', message: 'Check out after check in' });
-    dateRangeBounds(path.stay, { min: this.minDate, valueFormat: 'yyyy-MM-dd' });
+    dateRangeOrder(path.stay, { message: 'Check out after check in' });
+    dateRangeBounds(path.stay, { min: this.minDate });
   });
   presets = PRESETS;
   locale = signal<typeof de | null>(null);
@@ -103,7 +102,7 @@ class StayComponent {
   selector: 'et-scenario-headless-stay',
   imports: [DateRangeInputDirective, DateRangeInputFieldDirective],
   template: `
-    <div [(value)]="stay" etDateRangeInput displayFormat="dd.MM.yyyy" valueFormat="yyyy-MM-dd">
+    <div [(value)]="stay" etDateRangeInput displayFormat="dd.MM.yyyy">
       <input class="stay-start" etDateRangeInputField side="start" />
       <input class="stay-end" etDateRangeInputField side="end" />
     </div>

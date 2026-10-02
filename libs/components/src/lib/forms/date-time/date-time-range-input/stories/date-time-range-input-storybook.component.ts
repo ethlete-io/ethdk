@@ -13,7 +13,7 @@ import {
   thisYearPreset,
   todayPreset,
 } from '../../date-range-presets';
-import { dateRangeOrder } from '../../date-time-range-validators';
+import { dateTimeRangeOrder } from '../../date-time-range-validators';
 import { DATE_TIME_RANGE_INPUT_IMPORTS } from '../date-time-range-input.imports';
 import { DateTimeRangeTimeFilterFn, DateTimeRangeValue } from '../headless';
 
@@ -107,7 +107,7 @@ export class DateTimeRangeInputStorybookComponent {
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s.range, () => this.readonly());
-    dateRangeOrder(s.range, { valueFormat: this.valueFormat() });
+    dateTimeRangeOrder(s.range, { valueFormat: this.valueFormat() });
   });
 
   protected filterFn = computed<DateTimeRangeTimeFilterFn | null>(() => {

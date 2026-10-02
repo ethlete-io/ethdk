@@ -2,6 +2,7 @@ import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
+import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
   DATE_FORMAT,
@@ -11,6 +12,7 @@ import {
   DATE_PICKER_HOST,
   DATE_TIME_INPUT_ERROR_CODES,
   DATE_TIME_INPUT_IMPORTS,
+  DATE_TIME_FORMAT,
   DATE_TIME_LABELS,
   DateInputComponent,
   DateInputDirective,
@@ -32,10 +34,12 @@ import {
   FORM_FIELD_IMPORTS,
   injectDateFormat,
   injectDateLocale,
+  injectDateTimeFormat,
   injectDateTimeLabels,
   injectTimeFormat,
   provideDateFormat,
   provideDateLocale,
+  provideDateTimeFormat,
   provideDateTimeLabels,
   provideOverlay,
   provideTimeFormat,
@@ -287,6 +291,19 @@ class LocalizedBookingComponent {
   day = signal<string | null>(null);
   time = signal<string | null>(null);
   startAt = new Date(2026, 6, 1);
+}
+
+@Component({
+  selector: 'et-scenario-token-formats',
+  imports: [DATE_INPUT_IMPORTS, DATE_TIME_INPUT_IMPORTS],
+  template: `
+    <et-date-input [(value)]="day" aria-label="Day" displayFormat="dd.MM.yyyy" />
+    <et-date-time-input [(value)]="startsAt" aria-label="Starts at" displayFormat="dd.MM.yyyy HH:mm" />
+  `,
+})
+class TokenFormatsComponent {
+  day = signal<string | null>(null);
+  startsAt = signal<string | null>(null);
 }
 
 @Component({
@@ -770,10 +787,27 @@ describe('forms date-time scenarios', () => {
     expect(takeErrorPayload(s).element.nodeType).toBe(Node.COMMENT_NODE);
   });
 
+  it('writes a date-only value for the date input and an offset instant for the date-time input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TokenFormatsComponent);
+    const [dayField, startsAtField] = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input'));
+
+    s.flush();
+
+    typeAndBlur(s, dayField!, '16.07.2026');
+    typeAndBlur(s, startsAtField!, '16.07.2026 21:30');
+
+    expect(fixture.componentInstance.day()).toBe('2026-07-16');
+    expect(fixture.componentInstance.startsAt()).toBe(
+      format(new Date(2026, 6, 16, 21, 30), "yyyy-MM-dd'T'HH:mm:ssxxx"),
+    );
+  });
+
   it('reads the default formats, locale and labels', () => {
     const s = scenario();
 
-    expect(s.run(injectDateFormat)).toBe(TestBed.inject(DATE_FORMAT));
+    expect(s.run(injectDateFormat)).toBe('yyyy-MM-dd');
+    expect(s.run(injectDateTimeFormat)).toBe("yyyy-MM-dd'T'HH:mm:ssxxx");
     expect(s.run(injectTimeFormat)).toBe('HH:mm');
     expect(s.run(injectDateLocale)).toBeNull();
     expect(s.run(injectDateTimeLabels)().openCalendar).toBe(DEFAULT_DATE_TIME_LABELS.openCalendar);
@@ -786,6 +820,7 @@ describe('forms date-time scenarios with app-wide formats, locale and labels', (
       provideOverlay(),
       provideColorThemesWithTailwind4(COLOR_THEMES),
       provideDateFormat('dd.MM.yyyy'),
+      provideDateTimeFormat("yyyy-MM-dd'T'HH:mm"),
       provideTimeFormat('HH:mm:ss'),
       provideDateLocale(de),
       provideDateTimeLabels({ openCalendar: 'Kalender öffnen', openTimePicker: 'Uhrzeit wählen' }),
@@ -800,6 +835,7 @@ describe('forms date-time scenarios with app-wide formats, locale and labels', (
     s.flush();
 
     expect(TestBed.inject(DATE_FORMAT)).toBe('dd.MM.yyyy');
+    expect(TestBed.inject(DATE_TIME_FORMAT)).toBe("yyyy-MM-dd'T'HH:mm");
     expect(TestBed.inject(TIME_FORMAT)).toBe('HH:mm:ss');
     expect(TestBed.inject(DATE_LOCALE)).toBe(de);
     expect(TestBed.inject(DATE_TIME_LABELS)).toEqual({
@@ -827,5 +863,19 @@ describe('forms date-time scenarios with app-wide formats, locale and labels', (
 
     s.keydown('Escape');
     s.flush();
+  });
+
+  it('keeps the time of a date-time value when the app sets a date-only DATE_FORMAT', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TokenFormatsComponent);
+    const [dayField, startsAtField] = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input'));
+
+    s.flush();
+
+    typeAndBlur(s, dayField!, '16.07.2026');
+    typeAndBlur(s, startsAtField!, '16.07.2026 21:30');
+
+    expect(fixture.componentInstance.day()).toBe('16.07.2026');
+    expect(fixture.componentInstance.startsAt()).toBe('2026-07-16T21:30');
   });
 });

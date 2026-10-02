@@ -1,7 +1,7 @@
 import { booleanAttribute, computed, input, signal, Directive } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
-import { injectDateFormat } from '../../date-time-formats';
+import { injectDateTimeFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
 import { parseDateValue } from '../../internals/date-value';
 import {
@@ -42,7 +42,7 @@ import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
 export class DateTimeInputDirective extends DatePickerInputDirective implements FormValueControl<string | null> {
   private dateTimeLabels = injectDateTimeLabels();
 
-  public defaultValueFormat = injectDateFormat();
+  public defaultValueFormat = injectDateTimeFormat();
 
   /** Message the form field shows when typed text can't be parsed as a date & time. */
   public parseErrorMessage = input<string | null>(null);
@@ -209,7 +209,7 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
 
     warnOnUnparsedValue({
       selector: 'et-date-time-input',
-      formatProvider: 'provideDateFormat',
+      formatProvider: 'provideDateTimeFormat',
       readings: () => (this.mixed() ? [] : [{ value: this.value(), parsed: this.dateTime() }]),
       format: this.effectiveValueFormat,
       locale: this.effectiveLocale,
