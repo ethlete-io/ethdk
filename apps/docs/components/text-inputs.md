@@ -513,6 +513,8 @@ regional-indicator emoji.
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
 
+The phone input also takes the `pending` and `maxLength` inputs signal forms binds, so an async validator shows the field's busy state and an `<et-counter />` counts against the schema's `maxLength()`. A `null` value renders as an empty field, on the OTP input too.
+
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped
 (`0171…` with Germany active → `+49171…` - except for countries like Italy where
 the `0` is part of the number), and the `00` international call prefix works like

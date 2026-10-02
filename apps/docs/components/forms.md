@@ -587,14 +587,14 @@ form(model, (s) => {
 });
 ```
 
-| Option        | On                       | Default                      | What it does                                                                                                          |
-| ------------- | ------------------------ | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `valueFormat` | all                      | the matching control's token | `DATE_FORMAT`, `DATE_TIME_FORMAT` or `TIME_FORMAT` - pass the control's `valueFormat` when it names another           |
-| `strict`      | the orders               | `false`                      | Also fail while both ends are equal                                                                                   |
-| `min` / `max` | the bounds               | -                            | A `Date`, or a function of the field context returning one (or `null` for no bound)                                   |
-| `precision`   | `dateRangeBounds`        | `'day'`                      | The unit ends and bounds are compared in - match the control's `precision`                                            |
-| `timeZone`    | the date-time validators | `null`                       | The date-time control's `timeZone` - offset-less wire values are read in its wall clock, and the bound is named in it |
-| `message`     | all                      | -                            | Replaces the generated text                                                                                           |
+| Option        | On                              | Default                      | What it does                                                                                                          |
+| ------------- | ------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `valueFormat` | all                             | the matching control's token | `DATE_FORMAT`, `DATE_TIME_FORMAT` or `TIME_FORMAT` - pass the control's `valueFormat` when it names another           |
+| `strict`      | the orders                      | `false`                      | Also fail while both ends are equal                                                                                   |
+| `min` / `max` | the bounds                      | -                            | A `Date`, or a function of the field context returning one (or `null` for no bound)                                   |
+| `precision`   | `dateRangeBounds`, `dateBounds` | `'day'`                      | The unit ends and bounds are compared in - match the control's `precision`                                            |
+| `timeZone`    | the date-time validators        | `null`                       | The date-time control's `timeZone` - offset-less wire values are read in its wall clock, and the bound is named in it |
+| `message`     | all                             | -                            | Replaces the generated text                                                                                           |
 
 They parse both ends and compare the dates, not the strings, so two ISO values with different
 offsets order correctly. An empty or unparseable end passes - `required()` on the child path and
