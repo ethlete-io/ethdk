@@ -31,10 +31,19 @@ describe('OverlayRouter with syncUrl', () => {
   let ref: OverlayRef<RoutedOverlayComponent>;
   let router: Router;
   let location: Location;
+  let releaseGuard: (allowed: boolean) => void;
 
   beforeEach(() => {
+    const guard = () => new Promise<boolean>((resolve) => (releaseGuard = resolve));
+
     TestBed.configureTestingModule({
-      providers: [provideRouter([{ path: '**', children: [] }]), provideLocationMocks()],
+      providers: [
+        provideRouter([
+          { path: 'guarded', canActivate: [guard], children: [] },
+          { path: '**', children: [] },
+        ]),
+        provideLocationMocks(),
+      ],
     });
   });
 
@@ -148,5 +157,32 @@ describe('OverlayRouter with syncUrl', () => {
     expect(overlayRouter.currentPage()?.path).toBe('/two');
 
     await closeAndExpectPageEntry();
+  });
+
+  it('leaves a navigation that closed the overlay alone when it is destroyed before the navigation ends', async () => {
+    const overlayRouter = await open();
+
+    await goTo(overlayRouter, '/two');
+
+    const overlayUrl = router.url;
+    const sources: string[] = [];
+    ref.afterClosedEvent().subscribe(({ source }) => sources.push(source));
+
+    const navigation = router.navigateByUrl('/guarded');
+    await settle();
+
+    expect(sources).toEqual(['navigation']);
+
+    releaseGuard(true);
+
+    await expect(navigation).resolves.toBe(true);
+    await settle();
+
+    expect(router.url).toBe('/guarded');
+    expect(location.path()).toBe('/guarded');
+
+    await browser('back');
+
+    expect(router.url).toBe(overlayUrl);
   });
 });

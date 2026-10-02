@@ -165,6 +165,7 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const id = createComponentId('ovr');
     let syncUrl = config.syncUrl ?? false;
     let ownHistoryEntries = 0;
+    let closedByNavigation = false;
 
     let router: Router | null = null;
     let route: Signal<string> | null = null;
@@ -456,10 +457,13 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       let isUndoingVetoedMove = false;
 
       overlayRef
-        .beforeClosed()
+        .beforeClosedEvent()
         .pipe(
           take(1),
-          tap(() => (isClosing = true)),
+          tap(({ source }) => {
+            isClosing = true;
+            closedByNavigation = source === 'navigation';
+          }),
         )
         .subscribe();
 
@@ -529,7 +533,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     }
 
     inject(DestroyRef).onDestroy(() => {
-      if (!syncUrl || readUrlParam() === undefined) return;
+      // The navigation that closed the overlay may still be in flight; touching the history now would cancel it.
+      if (!syncUrl || closedByNavigation || readUrlParam() === undefined) return;
 
       if (location && ownHistoryEntries > 0) {
         location.historyGo(-ownHistoryEntries);
