@@ -24,11 +24,15 @@ export * from './tools/rich-text-editor-heading.provider';
 export * from './tools/rich-text-editor-link.provider';
 export * from './tools/rich-text-editor-heading-tool.component';
 export * from './tools/rich-text-editor-image.provider';
-export * from './tools/rich-text-editor-image-styles.component';
 export * from './tools/rich-text-editor-image-tool.component';
-export * from './tools/rich-text-editor-image-upload';
+export type {
+  RichTextEditorImageFailure,
+  RichTextEditorImageFailureReason,
+  RichTextEditorImageUpload,
+  RichTextEditorImageUploadContext,
+  RichTextEditorImageUploadFn,
+} from './tools/rich-text-editor-image-upload';
 export * from './tools/rich-text-editor-table.provider';
-export * from './tools/rich-text-editor-table-styles.component';
 export * from './tools/rich-text-editor-table-tool.component';
 export * from './rich-text-editor-trigger-with-query';
 export * from './rich-text-editor-triggers.imports';

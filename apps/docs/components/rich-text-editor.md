@@ -248,6 +248,8 @@ Add `provideRichTextEditorLinkEditor()` for the real thing: a popover that sets 
 caret when editing one, and
 responsive — an arrow'd popover anchored to the selection on wider screens, a top sheet (pinned above
 the on-screen keyboard) on small/touch ones.
+The popover only opens from the link tool, so it needs `provideRichTextEditorLinkTool()` next to it;
+without that, dev mode warns.
 
 ```ts
 import { provideRichTextEditorLinkEditor } from '@ethlete/components';
@@ -315,8 +317,29 @@ that needs the menu system - the single largest graph the editor could pull in (
 
 <StoryEmbed id="components-forms-rich-text-editor--with-table-and-alignment" height="440px" />
 
-To register your own tool, provide a `RichTextEditorToolDefinition` (a toggle button, or a custom
-control component) through the `RICH_TEXT_EDITOR_TOOL` multi-provider token. Besides the button, a
+To register your own tool, pass a `RichTextEditorToolDefinition` (a toggle button, or a custom
+control component) to `provideRichTextEditorTool`, then list its `token` in `tools`. Pass a factory
+instead of the object to `inject()` services - it runs in an injection context:
+
+```ts
+import { provideRichTextEditorTool } from '@ethlete/components';
+
+providers: [
+  provideRichTextEditorTool({
+    token: 'clear',
+    icon: 'et-close',
+    label: 'Clear',
+    run: (editor) => editor.value.set(''),
+  }),
+];
+```
+
+Providing `RICH_TEXT_EDITOR_TOOL` by hand without `multi: true` throws `ET2507` in dev mode. In dev
+mode the editor also warns once for every token listed in its `tools` input or
+`provideRichTextEditorTools` that no tool registers (a typo, or a missing provider - the warning
+names it). The default toolbar stays quiet, since its opt-in tokens are meant to drop out.
+
+Besides the button, a
 definition can hook the content itself - `keydown`, `paste`, `drop` and `click` all run for every
 provided tool, whether or not its token is in the visible toolbar, because they act on content rather
 than on a button (that is how table caret navigation and image paste/drop work). A definition is
@@ -329,17 +352,26 @@ The `'image'` tool is opt-in too, and it carries no transport: you supply the up
 URL you resolve to.
 
 ```ts
+import { inject } from '@angular/core';
 import { provideRichTextEditorImageTool } from '@ethlete/components';
 
 providers: [
-  provideRichTextEditorImageTool({
-    upload: (file) => this.api.uploadImage(file).pipe(map((res) => res.url)),
-    maxSize: 5 * 1024 * 1024,
-    onFailure: ({ file, reason }) =>
-      this.notifications.open({ status: 'error', title: `${file.name} could not be added (${reason})` }),
+  provideRichTextEditorImageTool(() => {
+    const api = inject(Api);
+    const notifications = inject(Notifications);
+
+    return {
+      upload: (file) => api.uploadImage(file).pipe(map((res) => res.url)),
+      maxSize: 5 * 1024 * 1024,
+      onFailure: ({ file, reason }) =>
+        notifications.open({ status: 'error', title: `${file.name} could not be added (${reason})` }),
+    };
   }),
 ];
 ```
+
+The factory runs in an injection context, so it can `inject()` the services the upload and the
+failure handler need. A config that needs no services can be passed as a plain object instead.
 
 | Option      | Type                                                          | Notes                                                                                                     |
 | ----------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -533,7 +565,8 @@ A token codec must be installed - by `etRichTextEditorTriggers` or
 `provideRichTextEditorTokenRendering(triggers)` - or the call throws in dev (tokens can't
 (de)serialize without one).
 
-A codec provided directly through `RICH_TEXT_EDITOR_TOKEN_CODEC` may set `markdownPattern`, a
+A codec provided directly through `RICH_TEXT_EDITOR_TOKEN_CODEC` implements the exported
+`RichTextEditorTokenCodec` type, and may set `markdownPattern`, a
 `RegExp` matching one token in the Markdown value. The editor and `et-rich-text-viewer` pass it to
 `markdownToHtml` as `verbatim`, so Markdown characters in a token id (<span v-pre>`{{field:__x__}}`</span>) stay
 literal. The built-in codec sets it.
@@ -631,8 +664,10 @@ demoForm.translations().value(); // { en: '# Hello', de: '# Hallo', fr: '' }
 ```
 
 Each language `{ code, label, icon? }` maps its Markdown under `code`; the first language is active
-initially. It embeds a plain `et-rich-text-editor`, so `tools`, `autoformat`, `placeholder` and the
-field chrome all work the same - the switcher tool is prepended to the toolbar automatically.
+initially. It embeds a plain `et-rich-text-editor`, so `tools`, `autoformat`, `placeholder`,
+`provideRichTextEditorTools` and the field chrome all work the same - the switcher tool is prepended
+to the toolbar automatically. Switching the language starts a fresh undo history, so undo never
+brings back text typed under another language.
 
 **Seeing which languages still need content.** The toolbar switcher shows the active language code
 with a badge dot while any language is empty. Opening it marks the active language with a leading
@@ -659,6 +694,22 @@ demoForm = form(this.model, (s) => {
   requiredLanguages(s.translations, { codes: ['en', 'de'] });
 });
 ```
+
+`codes` also takes a function, which is re-read on every validation - pass `() => this.requiredCodes()`
+to follow a signal. The default message is English (`Missing translations: en`); `message` replaces
+it, either as a string or as a function of the missing codes, which is the localization path:
+
+```ts
+requiredLanguages(s.translations, {
+  codes: () => this.requiredCodes(),
+  message: (missing) => `Fehlende Übersetzungen: ${missing.join(', ')}`,
+});
+```
+
+The languages are checked when they change: an empty `languages` list (`ET2600`) or a duplicate code
+(`ET2601`) is reported through the `ErrorHandler` and the editor renders nothing. The `'language'`
+switcher tool only works inside the multi-language editor; placed in a bare `et-rich-text-editor` it
+reports `ET2602`. See [`ET26xx`](/components/error-codes#multi-language-rich-text-editor-et26xx).
 
 ## Headless editor
 
@@ -773,10 +824,12 @@ Public design tokens, overridable in your CSS scope - all colors resolve through
 ## Error codes
 
 The trigger/token building blocks throw [`ET25xx`](/components/error-codes#rich-text-editor-et25xx)
-in dev mode (duplicate trigger char/type, invalid token type/id, triggers used outside an editor, or
-`insertToken` called with no token codec installed).
+in dev mode (duplicate trigger char/type, a trigger `char` that is not exactly one character, invalid
+token type/id - a trigger's `type` is checked as soon as the triggers are set - triggers used outside an
+editor, `insertToken` called with no token codec installed, or `RICH_TEXT_EDITOR_TOOL` provided without
+`multi: true`).
 
 Calling a command whose tool was never provided - `toggleBlockquote()`, `toggleCodeBlock()`,
-`toggleHeading()`, `setHeading()`, `applyLink()`, `removeLink()`, `promptForLink()` - throws `ET2506`
+`toggleHeading()`, `setHeading()` (both take a level `1`-`6`), `applyLink()`, `removeLink()`, `promptForLink()` - throws `ET2506`
 in dev mode and names the provider to add. In production it is a no-op. The hooks the editor calls
 itself (autoformat, the key handling) never throw; they just skip what is not there.

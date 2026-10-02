@@ -36,6 +36,7 @@ import {
   buildChipElement,
   createRichTextEditorTokenCodec,
   TOKEN_CHIP_ATTR,
+  TOKEN_TYPE_RE,
 } from './internals/rich-text-editor-token';
 import {
   resolveTriggerMatch,
@@ -133,7 +134,7 @@ export class RichTextEditorTriggersDirective {
     });
 
     if (ngDevMode) {
-      effect(() => this.assertUniqueTriggers(this.triggers()));
+      effect(() => this.assertValidTriggers(this.triggers()));
     }
 
     effect((onCleanup) => {
@@ -456,11 +457,25 @@ export class RichTextEditorTriggersDirective {
     }
   }
 
-  private assertUniqueTriggers(triggers: readonly RichTextEditorTrigger[]) {
+  private assertValidTriggers(triggers: readonly RichTextEditorTrigger[]) {
     const chars = new Set<string>();
     const types = new Set<string>();
 
     for (const trigger of triggers) {
+      if (trigger.char.length !== 1) {
+        throw new RuntimeError(
+          RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TRIGGER_CHAR,
+          `[etRichTextEditorTriggers] trigger char "${trigger.char}" must be exactly one character.`,
+        );
+      }
+
+      if (!TOKEN_TYPE_RE.test(trigger.type)) {
+        throw new RuntimeError(
+          RICH_TEXT_EDITOR_ERROR_CODES.INVALID_TOKEN_TYPE,
+          `[etRichTextEditorTriggers] invalid trigger type "${trigger.type}". Types must match ${TOKEN_TYPE_RE}.`,
+        );
+      }
+
       if (chars.has(trigger.char)) {
         throw new RuntimeError(
           RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_TRIGGER_CHAR,

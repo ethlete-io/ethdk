@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
@@ -73,11 +73,10 @@ export class FormFieldMultiLanguageRichTextEditorStorybookComponent {
   public color = input('brand');
 
   private formModel = linkedSignal(() => ({ translations: this.value() }));
-  private requiredCodes = computed(() => this.requireLanguages());
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s.translations, () => this.readonly());
-    requiredLanguages(s.translations, { codes: this.requiredCodes() });
+    requiredLanguages(s.translations, { codes: () => this.requireLanguages() });
   });
 }

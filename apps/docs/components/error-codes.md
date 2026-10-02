@@ -43,6 +43,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 2300–2399 | Split button       | [Button](/components/button)                       |
 | 2400–2499 | Dropzone           | [Dropzone](/components/dropzone)                   |
 | 2500–2599 | Rich text editor   | [Rich text editor](/components/rich-text-editor)   |
+| 2600–2699 | Multi-language RTE | [Rich text editor](/components/rich-text-editor)   |
 | 2700–2799 | Tag input          | [Text inputs](/components/text-inputs)             |
 | 2800–2899 | Phone input        | [Text inputs](/components/text-inputs)             |
 | 2900–2999 | Calendar           | [Calendar](/components/calendar)                   |
@@ -319,6 +320,18 @@ All rich text editor checks run in dev mode only, and cover the opt-in `etRichTe
 | `ET2504` | `etRichTextEditorTriggers` is on an element without `etRichTextEditor`. | Place it on the editor element (e.g. `<et-rich-text-editor>`).                                                                       |
 | `ET2505` | `insertToken`/`insertTokenItem` called with no token codec installed.   | Add `etRichTextEditorTriggers` or `provideRichTextEditorTokenRendering(triggers)`.                                                   |
 | `ET2506` | A command was called whose tool is not provided (the message names it). | Add the named provider - e.g. `provideRichTextEditorLinkTool()` - or `provideRichTextEditorDefaultTools()` for the full default set. |
+| `ET2507` | `RICH_TEXT_EDITOR_TOOL` was provided without `multi: true`.             | Register the tool with `provideRichTextEditorTool(definition)`.                                                                      |
+| `ET2508` | A trigger `char` is not exactly one character (e.g. `'{{'` or `''`).    | Use a single trigger character such as `'#'` or `'@'`.                                                                               |
+
+## Multi-language rich text editor (ET26xx)
+
+These are reported through the `ErrorHandler` rather than thrown; the editor renders nothing while `ET2600` or `ET2601` is set.
+
+| Code     | Cause                                                                                            | Fix                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| `ET2600` | The `languages` input is empty.                                                                  | Pass at least one `{ code, label }`.                                          |
+| `ET2601` | Two languages share the same `code`.                                                             | Give each language a unique code.                                             |
+| `ET2602` | The `'language'` switcher tool rendered outside an `[etMultiLanguageRichTextEditor]` (dev mode). | Use `<et-multi-language-rich-text-editor>`, which places the switcher itself. |
 
 ## Bracket (ET34xx)
 

@@ -1,4 +1,4 @@
-import { InjectionToken, Type } from '@angular/core';
+import { InjectionToken, Provider, Type } from '@angular/core';
 import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { RichTextEditorDirective } from './headless/rich-text-editor.directive';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from './rich-text-editor-labels';
@@ -241,5 +241,26 @@ export type RichTextEditorToolDefinition = {
   editorDestroyed?: (editor: RichTextEditorDirective) => void;
 };
 
-/** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into. */
+/** Multi-provider token opt-in tools register their {@link RichTextEditorToolDefinition} into.
+ *  Register through {@link provideRichTextEditorTool}, which always sets `multi: true`. */
 export const RICH_TEXT_EDITOR_TOOL = new InjectionToken<RichTextEditorToolDefinition[]>('RichTextEditorTool');
+
+/**
+ * Registers a custom toolbar tool for every editor in scope; include its `token` in the editor's
+ * `tools` to place it. The factory form runs in an injection context, so it can `inject()` services.
+ *
+ * @example
+ * providers: [
+ *   provideRichTextEditorTool(() => {
+ *     const analytics = inject(Analytics);
+ *
+ *     return { token: 'clear', icon: 'et-close', label: 'Clear', run: (editor) => (analytics.track('clear'), editor.value.set('')) };
+ *   }),
+ * ]
+ */
+export const provideRichTextEditorTool = (
+  definition: RichTextEditorToolDefinition | (() => RichTextEditorToolDefinition),
+): Provider =>
+  typeof definition === 'function'
+    ? { provide: RICH_TEXT_EDITOR_TOOL, useFactory: definition, multi: true }
+    : { provide: RICH_TEXT_EDITOR_TOOL, useValue: definition, multi: true };

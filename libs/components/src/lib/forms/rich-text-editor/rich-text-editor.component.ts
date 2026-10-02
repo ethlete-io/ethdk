@@ -38,7 +38,8 @@ import { mountRichTextContentStyles } from './rich-text-content-styles.component
 import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-toolbar.token';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
-import { RICH_TEXT_EDITOR_TOOL, RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
+import { injectRegisteredRichTextEditorTools } from './headless/internals/rich-text-editor-registered-tools';
+import { RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './tools/rich-text-editor-tool-icons';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
 
@@ -133,13 +134,13 @@ export class RichTextEditorComponent {
 
   private linkEditorSetup = inject(RICH_TEXT_EDITOR_LINK_EDITOR, { optional: true });
   private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
+  private registeredTools = injectRegisteredRichTextEditorTools();
+
   public editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
   protected readonly TOOLS = RICH_TEXT_EDITOR_TOOLS;
 
   protected labels = computed(() => this.dir.resolvedLabels());
-
-  private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true }) ?? [];
 
   private editingActive = signal(false);
   private blurGraceTimer: ReturnType<Window['setTimeout']> | null = null;

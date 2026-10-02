@@ -5,7 +5,7 @@ import {
 } from '../headless/internals/rich-text-editor-dom-features';
 import { createRichTextEditorHeadings } from '../headless/internals/rich-text-editor-dom-headings';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool } from '../rich-text-editor-tools';
 import { RichTextEditorHeadingToolComponent } from './rich-text-editor-heading-tool.component';
 
 /**
@@ -23,13 +23,9 @@ export const provideRichTextEditorHeadingTool = (): Provider[] => [
     } satisfies RichTextEditorDomFeature,
     multi: true,
   },
-  {
-    provide: RICH_TEXT_EDITOR_TOOL,
-    useValue: {
-      token: 'heading',
-      label: DEFAULT_RICH_TEXT_EDITOR_LABELS.textStyle(DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph),
-      control: RichTextEditorHeadingToolComponent,
-    } satisfies RichTextEditorToolDefinition,
-    multi: true,
-  },
+  provideRichTextEditorTool({
+    token: 'heading',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.textStyle(DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph),
+    control: RichTextEditorHeadingToolComponent,
+  }),
 ];

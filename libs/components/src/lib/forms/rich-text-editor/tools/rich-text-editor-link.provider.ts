@@ -6,7 +6,7 @@ import {
 } from '../headless/internals/rich-text-editor-dom-features';
 import { createRichTextEditorLinks } from '../headless/internals/rich-text-editor-dom-links';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
@@ -35,18 +35,14 @@ export const provideRichTextEditorLinkTool = (): Provider[] => [
     useValue: LINK_ICON,
     multi: true,
   },
-  {
-    provide: RICH_TEXT_EDITOR_TOOL,
-    useValue: {
-      token: 'link',
-      icon: 'et-link',
-      label: DEFAULT_RICH_TEXT_EDITOR_LABELS.link,
-      // Also pressed while the link editor popover is open, matching the menu-trigger tools.
-      isActive: (editor) => editor.linkActive() || editor.linkEditorOpen(),
-      run: (editor) => editor.promptForLink(),
-      isDisabled: (editor) => editor.codeBlockActive(),
-      allowHardcodedColor: true,
-    } satisfies RichTextEditorToolDefinition,
-    multi: true,
-  },
+  provideRichTextEditorTool({
+    token: 'link',
+    icon: 'et-link',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.link,
+    // Also pressed while the link editor popover is open, matching the menu-trigger tools.
+    isActive: (editor) => editor.linkActive() || editor.linkEditorOpen(),
+    run: (editor) => editor.promptForLink(),
+    isDisabled: (editor) => editor.codeBlockActive(),
+    allowHardcodedColor: true,
+  }),
 ];

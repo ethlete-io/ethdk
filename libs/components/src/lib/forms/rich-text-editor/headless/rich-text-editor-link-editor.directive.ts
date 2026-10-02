@@ -25,6 +25,12 @@ import { RichTextEditorDirective } from './rich-text-editor.directive';
  * @internal
  */
 export const setupRichTextEditorLinkEditor = (editor: RichTextEditorDirective, host: HTMLElement) => {
+  if (ngDevMode && !editor.editorDom.links) {
+    console.warn(
+      '[etRichTextEditor] The link editor is set up without the link tool, so no link button opens it. Add provideRichTextEditorLinkTool() next to provideRichTextEditorLinkEditor().',
+    );
+  }
+
   const document = inject(DOCUMENT);
   const overlayManager = injectOverlayManager();
   const destroyRef = inject(DestroyRef);

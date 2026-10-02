@@ -1,9 +1,12 @@
 import { Component, ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { form, FormField } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { flushFrames, latestPane, textOf, tick } from '../../testing/driver-core';
 import { mountRichTextEditor, RichTextEditorDriver } from '../testing/rich-text-editor-driver';
-import { provideRichTextEditorDefaultTools } from '../rich-text-editor';
+import { FORM_FIELD_IMPORTS } from '../form-field/form-field.imports';
+import { FormFieldDirective } from '../form-field/headless';
+import { provideRichTextEditorDefaultTools, provideRichTextEditorTools } from '../rich-text-editor';
 import { RichTextEditorDirective } from '../rich-text-editor/headless/rich-text-editor.directive';
 import { RichTextEditorLabels } from '../rich-text-editor/rich-text-editor-labels';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
@@ -12,6 +15,7 @@ import {
   MultiLanguageRichTextEditorValue,
 } from './multi-language-rich-text-editor-config';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from './multi-language-rich-text-editor-errors';
+import { requiredLanguages } from './multi-language-rich-text-editor-validators';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from './multi-language-rich-text-editor.imports';
 
 @Component({
@@ -38,6 +42,117 @@ class MultiLanguageEditorTestHost {
     { code: 'de', label: 'German' },
   ]);
 }
+
+@Component({
+  template: `
+    <et-form-field>
+      <et-multi-language-rich-text-editor [formField]="entry.translations" [languages]="languages" aria-label="Body" />
+    </et-form-field>
+  `,
+  imports: [MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS, FORM_FIELD_IMPORTS, FormField],
+  providers: [provideRichTextEditorDefaultTools(), provideRichTextEditorTools(['bold', 'italic'])],
+})
+class MultiLanguageEditorFormHost {
+  public model = signal<{ translations: MultiLanguageRichTextEditorValue }>({ translations: {} });
+  public entry = form(this.model, (path) => {
+    requiredLanguages(path.translations, { codes: ['en'] });
+  });
+
+  public languages: readonly MultiLanguageRichTextEditorLanguage[] = [
+    { code: 'en', label: 'English' },
+    { code: 'de', label: 'German' },
+  ];
+}
+
+const rewriteContent = (driver: RichTextEditorDriver<unknown>, html: string) => {
+  driver.setHtml(html);
+  driver.editor.syncFromDom({ boundary: true });
+  tick();
+};
+
+const switchLanguage = async (driver: RichTextEditorDriver<unknown>, label: string) => {
+  driver.query<HTMLElement>('.et-ml-rte-lang-trigger')!.click();
+  tick();
+  await flushFrames();
+  tick();
+
+  const items = Array.from(latestPane()?.querySelectorAll<HTMLElement>('et-menu-radio-item') ?? []);
+
+  items.find((candidate) => textOf(candidate)?.startsWith(label))!.click();
+  tick();
+  await flushFrames();
+  tick();
+};
+
+describe('MultiLanguageRichTextEditorComponent in a form', () => {
+  let driver: RichTextEditorDriver<MultiLanguageEditorFormHost>;
+
+  const field = () => driver.directive(FormFieldDirective, 'et-form-field');
+
+  beforeEach(() => {
+    driver = mountRichTextEditor(MultiLanguageEditorFormHost, { directiveSelector: 'et-rich-text-editor' });
+  });
+
+  it('shows the requiredLanguages error once the form marks the field touched', () => {
+    expect(driver.editable().getAttribute('aria-invalid')).toBeNull();
+
+    driver.host.entry.translations().markAsTouched();
+    tick();
+
+    expect(field().shouldDisplayError()).toBe(true);
+    expect(driver.editable().getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('hides the error again when the form is reset', () => {
+    driver.focus();
+    driver.blur();
+
+    expect(driver.editable().getAttribute('aria-invalid')).toBe('true');
+
+    driver.host.entry().reset();
+    tick();
+
+    expect(field().shouldDisplayError()).toBe(false);
+    expect(driver.editable().getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('builds its toolbar from provideRichTextEditorTools', () => {
+    expect(driver.editor.resolvedTools()).toEqual(['language', 'divider', 'bold', 'italic']);
+  });
+
+  it('does not undo into text typed under the previous language', async () => {
+    driver.caretAtStart();
+    driver.type('Hello');
+    rewriteContent(driver, '');
+
+    expect(driver.host.model().translations['en']).toBe('');
+
+    await switchLanguage(driver, 'German');
+
+    driver.editor.undo();
+    tick();
+
+    expect(driver.editableText()).toBe('');
+    expect(driver.host.model().translations['de'] ?? '').toBe('');
+  });
+
+  it('does not undo into the previous language when both hold the same text', async () => {
+    driver.host.model.set({ translations: { en: 'Brand', de: 'Brand' } });
+    tick();
+
+    driver.caretAtEnd();
+    driver.type('X');
+    rewriteContent(driver, '<p>Brand</p>');
+
+    await switchLanguage(driver, 'German');
+
+    driver.editor.undo();
+    tick();
+
+    expect(driver.editableText()).toBe('Brand');
+    expect(driver.host.model().translations).toEqual({ en: 'Brand', de: 'Brand' });
+  });
+});
 
 describe('MultiLanguageRichTextEditorComponent', () => {
   let driver: RichTextEditorDriver<MultiLanguageEditorTestHost>;

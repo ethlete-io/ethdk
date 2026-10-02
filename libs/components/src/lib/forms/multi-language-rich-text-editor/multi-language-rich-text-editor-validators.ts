@@ -6,10 +6,12 @@ import { MultiLanguageRichTextEditorValue } from './multi-language-rich-text-edi
 type MultiLanguageRichTextEditorFieldPath = Parameters<typeof validate<MultiLanguageRichTextEditorValue>>[0];
 
 export type RequiredLanguagesOptions = {
-  /** Language codes that must have content for the field to be valid. */
-  codes: readonly string[];
-  /** Overrides the generated "Missing translations: …" message. */
-  message?: string;
+  /** Language codes that must have content for the field to be valid. Pass a function to read
+   *  them reactively (e.g. from a signal) - it is re-read on every validation. */
+  codes: readonly string[] | (() => readonly string[]);
+  /** Overrides the generated English "Missing translations: …" message. This is the localization
+   *  path: a function receives the missing codes. */
+  message?: string | ((missing: readonly string[]) => string);
 };
 
 /**
@@ -29,9 +31,14 @@ export const requiredLanguages = (
   { codes, message }: RequiredLanguagesOptions,
 ) =>
   validate(path, ({ value }) => {
-    const missing = codes.filter((code) => (value()[code] ?? '').trim().length === 0);
+    const missing = (typeof codes === 'function' ? codes() : codes).filter(
+      (code) => (value()[code] ?? '').trim().length === 0,
+    );
 
     if (missing.length === 0) return undefined;
 
-    return { kind: 'requiredLanguages', message: message ?? `Missing translations: ${missing.join(', ')}` };
+    const text =
+      typeof message === 'function' ? message(missing) : (message ?? `Missing translations: ${missing.join(', ')}`);
+
+    return { kind: 'requiredLanguages', message: text };
   });

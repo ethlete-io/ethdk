@@ -34,7 +34,7 @@ import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
 import {
-  RICH_TEXT_EDITOR_TOOL,
+  DEFAULT_RICH_TEXT_EDITOR_TOOLS,
   RICH_TEXT_EDITOR_TOOL_BUTTONS,
   RICH_TEXT_EDITOR_TOOLS,
   injectRichTextEditorTools,
@@ -43,13 +43,13 @@ import {
 } from '../rich-text-editor-tools';
 import { RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import {
-  HeadingTag,
   injectRichTextEditorDom,
   InlineTag,
   provideRichTextEditorDom,
   RichTextMarkStates,
 } from './internals/rich-text-editor-dom';
-import { EditorRenderer } from './internals/rich-text-editor-dom-core';
+import { EditorRenderer, RichTextEditorHeadingLevel } from './internals/rich-text-editor-dom-core';
+import { injectRegisteredRichTextEditorTools } from './internals/rich-text-editor-registered-tools';
 import { clipboardPlainText } from './internals/rich-text-editor-dom-paste';
 import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
 import {
@@ -61,6 +61,8 @@ import {
 } from './internals/rich-text-editor-token';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
+
+export type { RichTextEditorHeadingLevel };
 
 const EMPTY_INLINE_SWEEP_SELECTOR = 'strong, em, del, u, code, a';
 
@@ -118,6 +120,24 @@ const inlineMarkStates = (tags: InlineTag[]): InlineMarkStates => ({
   code: tags.includes('code'),
 });
 
+const TOOL_PROVIDERS: Partial<Record<string, string>> = {
+  heading: 'provideRichTextEditorHeadingTool()',
+  blockquote: 'provideRichTextEditorBlockquoteTool()',
+  codeBlock: 'provideRichTextEditorCodeBlockTool()',
+  link: 'provideRichTextEditorLinkTool()',
+  align: 'provideRichTextEditorAlignmentTool()',
+  table: 'provideRichTextEditorTableTool()',
+  image: 'provideRichTextEditorImageTool()',
+};
+
+const missingToolWarning = (tool: string) => {
+  const provider = TOOL_PROVIDERS[tool];
+
+  return provider
+    ? `[etRichTextEditor] The '${tool}' tool is configured but not provided, so the toolbar leaves it out. Add ${provider} to a component or route's providers.`
+    : `[etRichTextEditor] The '${tool}' tool is configured but no tool registers that token, so the toolbar leaves it out. Check the spelling, or register it with provideRichTextEditorTool().`;
+};
+
 const missingDomFeature = (method: string, provider: string) =>
   new RuntimeError(
     RICH_TEXT_EDITOR_ERROR_CODES.DOM_FEATURE_NOT_PROVIDED,
@@ -140,7 +160,7 @@ export class RichTextEditorDirective
   private toolsConfig = injectRichTextEditorTools();
   private injectedLabels = injectRichTextEditorLabels();
 
-  private registeredTools = inject(RICH_TEXT_EDITOR_TOOL, { optional: true });
+  private registeredTools = injectRegisteredRichTextEditorTools();
 
   /** @internal */
   public editorDom = injectRichTextEditorDom();
@@ -186,7 +206,7 @@ export class RichTextEditorDirective
       if (button) defs.set(token, { token, ...button });
     }
 
-    for (const def of this.registeredTools ?? []) defs.set(def.token, def);
+    for (const def of this.registeredTools) defs.set(def.token, def);
 
     return defs;
   })();
@@ -232,23 +252,35 @@ export class RichTextEditorDirective
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.RICH_TEXT);
   public focused = signal(false);
 
-  public boldActive = signal(false);
-  public italicActive = signal(false);
-  public strikeActive = signal(false);
-  public underlineActive = signal(false);
-  public codeActive = signal(false);
-  public unorderedListActive = signal(false);
-  public orderedListActive = signal(false);
-  public linkActive = signal(false);
-  public blockquoteActive = signal(false);
+  private boldActiveState = signal(false);
+  public boldActive = this.boldActiveState.asReadonly();
+  private italicActiveState = signal(false);
+  public italicActive = this.italicActiveState.asReadonly();
+  private strikeActiveState = signal(false);
+  public strikeActive = this.strikeActiveState.asReadonly();
+  private underlineActiveState = signal(false);
+  public underlineActive = this.underlineActiveState.asReadonly();
+  private codeActiveState = signal(false);
+  public codeActive = this.codeActiveState.asReadonly();
+  private unorderedListActiveState = signal(false);
+  public unorderedListActive = this.unorderedListActiveState.asReadonly();
+  private orderedListActiveState = signal(false);
+  public orderedListActive = this.orderedListActiveState.asReadonly();
+  private linkActiveState = signal(false);
+  public linkActive = this.linkActiveState.asReadonly();
+  private blockquoteActiveState = signal(false);
+  public blockquoteActive = this.blockquoteActiveState.asReadonly();
 
   /** Whether the caret sits in a fenced code block, where the value is literal text. */
-  public codeBlockActive = signal(false);
+  private codeBlockActiveState = signal(false);
+  public codeBlockActive = this.codeBlockActiveState.asReadonly();
 
-  public headingLevel = signal<number | null>(null);
+  private headingLevelState = signal<RichTextEditorHeadingLevel | null>(null);
+  public headingLevel = this.headingLevelState.asReadonly();
 
   /** Whether the selection sits inside a table cell. */
-  public inTableCell = signal(false);
+  private inTableCellState = signal(false);
+  public inTableCell = this.inTableCellState.asReadonly();
 
   public headingToolDisabled = computed(
     () =>
@@ -299,7 +331,7 @@ export class RichTextEditorDirective
     this.formField?.registerControl(this);
     this.destroyRef.onDestroy(() => this.formField?.unregisterControl(this));
     this.destroyRef.onDestroy(() => {
-      for (const tool of this.registeredTools ?? []) tool.editorDestroyed?.(this);
+      for (const tool of this.registeredTools) tool.editorDestroyed?.(this);
     });
 
     fromEvent(this.document, 'selectionchange')
@@ -311,6 +343,8 @@ export class RichTextEditorDirective
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    if (ngDevMode) this.warnAboutMissingTools();
 
     // Skips the user's own edits: those already match `lastEmittedMarkdown`, and re-rendering them would reset the caret.
     effect(() => {
@@ -426,9 +460,9 @@ export class RichTextEditorDirective
     const states = this.editorDom.markStates();
 
     this.reflectMarks(states);
-    this.unorderedListActive.set(states?.unorderedList ?? false);
-    this.orderedListActive.set(states?.orderedList ?? false);
-    this.linkActive.set(states?.link ?? false);
+    this.unorderedListActiveState.set(states?.unorderedList ?? false);
+    this.orderedListActiveState.set(states?.orderedList ?? false);
+    this.linkActiveState.set(states?.link ?? false);
     this.reflectBlockStates(states);
   }
 
@@ -540,7 +574,7 @@ export class RichTextEditorDirective
   }
 
   /** Needs `provideRichTextEditorHeadingTool()`. */
-  public toggleHeading(level: number) {
+  public toggleHeading(level: RichTextEditorHeadingLevel) {
     const { headings } = this.editorDom;
 
     if (!headings) {
@@ -549,11 +583,11 @@ export class RichTextEditorDirective
       return;
     }
 
-    this.runCommand(() => headings.toggleHeading(`h${level}` as HeadingTag));
+    this.runCommand(() => headings.toggleHeading(`h${level}`));
   }
 
   /** Needs `provideRichTextEditorHeadingTool()`. */
-  public setHeading(level: number | null) {
+  public setHeading(level: RichTextEditorHeadingLevel | null) {
     const current = this.headingLevel();
 
     if (level === current) return;
@@ -749,6 +783,22 @@ export class RichTextEditorDirective
     this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
   }
 
+  private warnAboutMissingTools() {
+    const warned = new Set<string>();
+
+    effect(() => {
+      const configured =
+        this.tools() ?? (this.toolsConfig.tools === DEFAULT_RICH_TEXT_EDITOR_TOOLS ? [] : this.toolsConfig.tools);
+
+      for (const tool of configured) {
+        if (tool === RICH_TEXT_EDITOR_TOOLS.DIVIDER || this.toolDefs.has(tool) || warned.has(tool)) continue;
+
+        warned.add(tool);
+        console.warn(missingToolWarning(tool));
+      }
+    });
+  }
+
   private pasteIntoCodeBlock(text: string) {
     if (!text) return false;
 
@@ -817,7 +867,7 @@ export class RichTextEditorDirective
   }
 
   private normalizeContent(root: HTMLElement) {
-    for (const tool of this.registeredTools ?? []) tool.normalize?.(root);
+    for (const tool of this.registeredTools) tool.normalize?.(root);
   }
 
   private serializeTokens(root: HTMLElement) {
@@ -899,18 +949,18 @@ export class RichTextEditorDirective
   }
 
   private reflectBlockStates(states: RichTextMarkStates | null) {
-    this.blockquoteActive.set(states?.blockquote ?? false);
-    this.codeBlockActive.set(states?.codeBlock ?? false);
-    this.headingLevel.set(states?.heading ?? null);
-    this.inTableCell.set(states?.tableCell ?? false);
+    this.blockquoteActiveState.set(states?.blockquote ?? false);
+    this.codeBlockActiveState.set(states?.codeBlock ?? false);
+    this.headingLevelState.set(states?.heading ?? null);
+    this.inTableCellState.set(states?.tableCell ?? false);
   }
 
   private reflectMarks(states: InlineMarkStates | null) {
-    this.boldActive.set(states?.bold ?? false);
-    this.italicActive.set(states?.italic ?? false);
-    this.strikeActive.set(states?.strike ?? false);
-    this.underlineActive.set(states?.underline ?? false);
-    this.codeActive.set(states?.code ?? false);
+    this.boldActiveState.set(states?.bold ?? false);
+    this.italicActiveState.set(states?.italic ?? false);
+    this.strikeActiveState.set(states?.strike ?? false);
+    this.underlineActiveState.set(states?.underline ?? false);
+    this.codeActiveState.set(states?.code ?? false);
   }
 
   private runCommand(command: () => void) {

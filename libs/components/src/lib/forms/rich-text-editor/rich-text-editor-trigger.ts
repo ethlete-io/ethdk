@@ -46,7 +46,7 @@ export type RichTextEditorTriggerItemResolver = (
 
 /** A single trigger character and the domain-specific items it offers. */
 export type RichTextEditorTrigger = {
-  /** The character that opens the popup at a word boundary (e.g. `'#'`, `'@'`). */
+  /** The single character that opens the popup at a word boundary (e.g. `'#'`, `'@'`). */
   char: string;
   /** Namespaces the inserted token. Unique per editor. Must match `[a-z][a-z0-9-]*`. */
   type: RichTextEditorTriggerType;

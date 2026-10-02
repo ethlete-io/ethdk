@@ -6,7 +6,7 @@ import {
   RichTextEditorDomFeature,
 } from '../headless/internals/rich-text-editor-dom-features';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
@@ -33,16 +33,12 @@ export const provideRichTextEditorBlockquoteTool = (): Provider[] => [
     useValue: QUOTE_ICON,
     multi: true,
   },
-  {
-    provide: RICH_TEXT_EDITOR_TOOL,
-    useValue: {
-      token: 'blockquote',
-      icon: 'et-quote',
-      label: DEFAULT_RICH_TEXT_EDITOR_LABELS.blockquote,
-      isActive: (editor) => editor.blockquoteActive(),
-      run: (editor) => editor.toggleBlockquote(),
-      isDisabled: (editor) => editor.blockquoteToolDisabled(),
-    } satisfies RichTextEditorToolDefinition,
-    multi: true,
-  },
+  provideRichTextEditorTool({
+    token: 'blockquote',
+    icon: 'et-quote',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.blockquote,
+    isActive: (editor) => editor.blockquoteActive(),
+    run: (editor) => editor.toggleBlockquote(),
+    isDisabled: (editor) => editor.blockquoteToolDisabled(),
+  }),
 ];

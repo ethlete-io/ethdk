@@ -6,7 +6,7 @@ import {
   RichTextEditorDomFeature,
 } from '../headless/internals/rich-text-editor-dom-features';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool } from '../rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './rich-text-editor-tool-icons';
 
 /**
@@ -36,16 +36,12 @@ export const provideRichTextEditorCodeBlockTool = (): Provider[] => [
     useValue: CODE_BLOCK_ICON,
     multi: true,
   },
-  {
-    provide: RICH_TEXT_EDITOR_TOOL,
-    useValue: {
-      token: 'codeBlock',
-      icon: 'et-code-block',
-      label: DEFAULT_RICH_TEXT_EDITOR_LABELS.codeBlock,
-      isActive: (editor) => editor.codeBlockActive(),
-      run: (editor) => editor.toggleCodeBlock(),
-      isDisabled: (editor) => editor.codeBlockToolDisabled(),
-    } satisfies RichTextEditorToolDefinition,
-    multi: true,
-  },
+  provideRichTextEditorTool({
+    token: 'codeBlock',
+    icon: 'et-code-block',
+    label: DEFAULT_RICH_TEXT_EDITOR_LABELS.codeBlock,
+    isActive: (editor) => editor.codeBlockActive(),
+    run: (editor) => editor.toggleCodeBlock(),
+    isDisabled: (editor) => editor.codeBlockToolDisabled(),
+  }),
 ];

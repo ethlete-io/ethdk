@@ -1,5 +1,7 @@
 import { InjectionToken } from '@angular/core';
-import { RichTextEditorTokenCodec } from './headless/internals/rich-text-editor-token';
+import { RichTextEditorTokenChip, RichTextEditorTokenCodec } from './headless/internals/rich-text-editor-token';
+
+export type { RichTextEditorTokenChip, RichTextEditorTokenCodec };
 
 /**
  * Optional codec the base editor uses to (de)serialize `{{type:id}}` token chips. Installed

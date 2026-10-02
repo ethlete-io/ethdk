@@ -8,6 +8,8 @@ export type InlineTag = (typeof INLINE_TAGS)[number];
 export type ListTag = 'ul' | 'ol';
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
+export type RichTextEditorHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
 export const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
 /** Must list only block-level containers: an inline element re-tagged in place loses its mark, so a
  *  bare `<strong>` under the root has to be wrapped by the heading rather than turned into one. */
@@ -44,7 +46,7 @@ export type RichTextMarkStates = {
   link: boolean;
   blockquote: boolean;
   codeBlock: boolean;
-  heading: number | null;
+  heading: RichTextEditorHeadingLevel | null;
   tableCell: boolean;
 };
 
@@ -462,7 +464,7 @@ export const createRichTextEditorDomCore = (doc: Document, renderer: EditorRende
       link: !!closestWithin(node, 'a'),
       blockquote: !!closestWithin(node, 'blockquote'),
       codeBlock,
-      heading: headingEl ? Number(headingEl.tagName[1]) : null,
+      heading: headingEl ? (Number(headingEl.tagName[1]) as RichTextEditorHeadingLevel) : null,
       tableCell: !!closestWithin(node, 'td, th'),
     };
   };

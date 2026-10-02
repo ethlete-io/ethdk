@@ -10,8 +10,6 @@ import {
   createRichTextEditorTrigger,
   createRichTextEditorTriggerWithQuery,
   DEFAULT_RICH_TEXT_EDITOR_LABELS,
-  mountRichTextEditorImageStyles,
-  mountRichTextEditorTableStyles,
   provideOverlay,
   provideRichTextEditorAlignmentTool,
   provideRichTextEditorFloatingToolbar,
@@ -33,21 +31,27 @@ import {
   RichTextEditorFloatingToolbarDirective,
   RichTextEditorImageEditorComponent,
   RichTextEditorImageFailure,
-  RichTextEditorImageStylesComponent,
   RichTextEditorImageToolComponent,
   RichTextEditorLinkEditorComponent,
   RichTextEditorLinkEditorDirective,
-  RichTextEditorTableStylesComponent,
   RichTextEditorTableToolComponent,
   RichTextEditorTokenPaletteComponent,
   RichTextEditorTokenPopupComponent,
   RichTextEditorTrigger,
   RichTextEditorTriggersDirective,
-  setupRichTextEditorFloatingToolbar,
-  setupRichTextEditorLinkEditor,
-  startImageUpload,
   TEXT_ALIGNS,
 } from '../index';
+import { setupRichTextEditorFloatingToolbar } from '../lib/forms/rich-text-editor/headless/rich-text-editor-floating-toolbar.directive';
+import { setupRichTextEditorLinkEditor } from '../lib/forms/rich-text-editor/headless/rich-text-editor-link-editor.directive';
+import {
+  mountRichTextEditorImageStyles,
+  RichTextEditorImageStylesComponent,
+} from '../lib/forms/rich-text-editor/tools/rich-text-editor-image-styles.component';
+import {
+  mountRichTextEditorTableStyles,
+  RichTextEditorTableStylesComponent,
+} from '../lib/forms/rich-text-editor/tools/rich-text-editor-table-styles.component';
+import { startImageUpload } from '../lib/forms/rich-text-editor/tools/rich-text-editor-image-upload';
 import { Scenario, useScenario } from './harness';
 
 const swatch = (value: `${number} ${number} ${number}`): ThemeSwatch => ({

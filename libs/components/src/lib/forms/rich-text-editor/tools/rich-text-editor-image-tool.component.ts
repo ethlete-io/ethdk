@@ -1,9 +1,9 @@
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { IconDirective, IMAGE_ICON, provideIcons } from '../../../icon';
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
 import { richTextEditorToolLabel } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
+import { injectRegisteredRichTextEditorTools } from '../headless/internals/rich-text-editor-registered-tools';
 
 /**
  * The opt-in image tool's toolbar button. It exists so the tool's icon is registered here rather than
@@ -35,7 +35,7 @@ import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
   host: { class: 'et-rte-image-tool' },
 })
 export class RichTextEditorImageToolComponent {
-  private tools = inject(RICH_TEXT_EDITOR_TOOL);
+  private tools = injectRegisteredRichTextEditorTools();
 
   public editor = input.required<RichTextEditorDirective>();
 

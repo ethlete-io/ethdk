@@ -10,10 +10,14 @@ import {
   provideIcons,
 } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
-import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
+import { RichTextEditorDirective, RichTextEditorHeadingLevel } from '../headless/rich-text-editor.directive';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
 
-const richTextEditorHeadingOptions = (): readonly { level: number | null; label: string; icon: string }[] => [
+const richTextEditorHeadingOptions = (): readonly {
+  level: RichTextEditorHeadingLevel | null;
+  label: string;
+  icon: string;
+}[] => [
   { level: null, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.paragraph, icon: 'et-paragraph' },
   { level: 1, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(1), icon: 'et-heading-1' },
   { level: 2, label: DEFAULT_RICH_TEXT_EDITOR_LABELS.heading(2), icon: 'et-heading-2' },
@@ -65,7 +69,7 @@ export class RichTextEditorHeadingToolComponent {
   );
 
   protected select(level: unknown) {
-    this.editor().setHeading(level as number | null);
+    this.editor().setHeading(level as RichTextEditorHeadingLevel | null);
     // the menu overlay pulled focus off the editor; hand it back (deferred so it wins over the
     // menu's own focus restoration on close) so the re-applied selection stays live in the editor.
     queueMicrotask(() => this.editor().activate());

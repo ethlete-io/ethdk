@@ -10,7 +10,7 @@ import { injectAnchoredDialogStrategy, injectTopSheetStrategy } from '../../../o
 import { RichTextEditorDirective } from '../headless/rich-text-editor.directive';
 import { RichTextEditorImageEditorComponent } from '../rich-text-editor-image-editor.component';
 import { DEFAULT_RICH_TEXT_EDITOR_LABELS } from '../rich-text-editor-labels';
-import { RICH_TEXT_EDITOR_TOOL, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool, RichTextEditorToolDefinition } from '../rich-text-editor-tools';
 import {
   RichTextEditorImageFailure,
   RichTextEditorImageUpload,
@@ -75,19 +75,27 @@ const imageFilesOf = (data: DataTransfer | null | undefined, accept: string): Fi
  * visible toolbar. Everything here (and the image DOM ops and popover it pulls in) tree-shakes away
  * for editors that don't provide the tool.
  *
+ * Pass a factory to reach services: it runs in an injection context, so it can `inject()` them.
+ *
  * @example
  * providers: [
- *   provideRichTextEditorImageTool({
- *     upload: (file) => this.api.uploadImage(file).pipe(map((res) => res.url)),
- *     maxSize: 5 * 1024 * 1024,
- *     onFailure: ({ reason }) => this.notifications.open({ status: 'error', title: `Upload failed: ${reason}` }),
+ *   provideRichTextEditorImageTool(() => {
+ *     const api = inject(Api);
+ *     const notifications = inject(Notifications);
+ *
+ *     return {
+ *       upload: (file) => api.uploadImage(file).pipe(map((res) => res.url)),
+ *       maxSize: 5 * 1024 * 1024,
+ *       onFailure: ({ reason }) => notifications.open({ status: 'error', title: `Upload failed: ${reason}` }),
+ *     };
  *   }),
  * ]
  */
-export const provideRichTextEditorImageTool = (config: RichTextEditorImageToolConfig): Provider => ({
-  provide: RICH_TEXT_EDITOR_TOOL,
-  useFactory: (): RichTextEditorToolDefinition => {
-    const controller = createImageToolController(config);
+export const provideRichTextEditorImageTool = (
+  config: RichTextEditorImageToolConfig | (() => RichTextEditorImageToolConfig),
+): Provider =>
+  provideRichTextEditorTool((): RichTextEditorToolDefinition => {
+    const controller = createImageToolController(typeof config === 'function' ? config() : config);
 
     return {
       token: 'image',
@@ -102,9 +110,7 @@ export const provideRichTextEditorImageTool = (config: RichTextEditorImageToolCo
       click: (editor, event) => controller.handleClick(editor, event),
       editorDestroyed: (editor) => controller.release(editor),
     };
-  },
-  multi: true,
-});
+  });
 
 const createImageToolController = (config: RichTextEditorImageToolConfig) => {
   mountRichTextEditorImageStyles();

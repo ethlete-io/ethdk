@@ -1,6 +1,6 @@
 import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, defer, map, of, switchMap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../../button';
 import { RichTextEditorDirective } from './headless';
 import { resolveTriggerItems } from './headless/internals/rich-text-editor-trigger-source';
@@ -65,7 +65,7 @@ export class RichTextEditorTokenPaletteComponent {
           ? of<RichTextEditorTokenPaletteGroup[]>([])
           : combineLatest(
               triggers.map((trigger) =>
-                resolveTriggerItems(trigger, '').pipe(
+                defer(() => resolveTriggerItems(trigger, '')).pipe(
                   // a failing source drops to an empty run rather than blanking the whole palette
                   catchError(() => of<RichTextEditorTriggerItem[]>([])),
                   map((items): RichTextEditorTokenPaletteGroup => ({ trigger, items })),

@@ -1,6 +1,7 @@
 @if (!dir.languagesError()) {
   <et-rich-text-editor
     [value]="dir.activeMarkdown()"
+    [touched]="dir.touched()"
     [disabled]="dir.disabled()"
     [readonly]="dir.readonly()"
     [hidden]="dir.hidden()"

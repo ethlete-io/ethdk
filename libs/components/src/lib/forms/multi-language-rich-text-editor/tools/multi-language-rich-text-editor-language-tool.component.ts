@@ -1,9 +1,11 @@
 import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
-import { injectHasTouchInput, mountVisuallyHidden } from '@ethlete/core';
+import { injectHasTouchInput, mountVisuallyHidden, RuntimeError } from '@ethlete/core';
+import { injectReportError } from '../../../internals/report-error';
 import { CHECK_ICON, provideIcons } from '../../../icon';
 import { MENU_IMPORTS } from '../../../menu';
 import { RichTextEditorDirective } from '../../rich-text-editor';
 import { MultiLanguageRichTextEditorDirective } from '../headless/multi-language-rich-text-editor.directive';
+import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-rich-text-editor-errors';
 
 @Component({
   selector: 'et-multi-language-rich-text-editor-language-tool',
@@ -45,6 +47,15 @@ export class MultiLanguageRichTextEditorLanguageToolComponent {
 
   constructor() {
     mountVisuallyHidden();
+
+    if (ngDevMode && !this.wrapper) {
+      injectReportError()(
+        new RuntimeError(
+          MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.LANGUAGE_TOOL_OUTSIDE_EDITOR,
+          "The 'language' tool needs an ancestor [etMultiLanguageRichTextEditor] to read its languages from. Use <et-multi-language-rich-text-editor>, which places the switcher itself.",
+        ),
+      );
+    }
   }
 
   /** The active language shows a leading check; others show no leading marker. */
