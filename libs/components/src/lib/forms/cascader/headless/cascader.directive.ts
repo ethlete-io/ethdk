@@ -140,6 +140,13 @@ export class CascaderDirective<T = unknown>
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
   public mixedLabel = input<string | null>(null);
+  /**
+   * The maximum number of values of a multi cascader, bound by signal forms from the schema's
+   * `maxLength()` and shown by `<et-counter />`. Display only: picks past it are not refused.
+   */
+  public maxLength = input<number | undefined>(undefined);
+  /** True while an async validator runs on the bound field (bound by signal forms); the field shows it as busy. */
+  public pending = input(false, { transform: booleanAttribute });
 
   /** The hierarchical source browsed by the cascader. Required. */
   public dataSource = input<CascaderDataSource<T> | null>(null);

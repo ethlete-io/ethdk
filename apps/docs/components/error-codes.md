@@ -66,6 +66,7 @@ Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU
 | 4600–4699 | Tree               | [Tree](/components/tree)                           |
 | 4700–4799 | Color input        | [Color input](/components/text-inputs#color-input) |
 | 5000–5099 | Rating             | [Choice & rating](/components/choice-inputs)       |
+| 5200–5299 | Selection lists    | [Choice & rating](/components/choice-inputs)       |
 
 ::: info Codes below 1000
 Codes `0`–`1001` also appear in `@ethlete/query` (query features, auth, web sockets). `ET1000`/`ET1001` therefore exist in both packages - the bracketed source in the message (`[SelectDirective]` vs. a query feature) tells them apart.
@@ -501,6 +502,16 @@ Checked in dev mode only - `ET4800` after the first render, `ET4801` when the di
 | -------- | ---------------------------------------------------------------------- | -------------------------------------------------- |
 | `ET4800` | `etCommandPaletteSearch` is used outside an `[etCommandPalette]`.      | Move the input inside the command palette element. |
 | `ET4801` | `etCommandPaletteShortcut` was given a chord of modifiers with no key. | Add a key to the chord, for example `mod+k`.       |
+
+## Selection lists (ET52xx)
+
+Checked in dev mode only, while the option is constructed.
+
+| Code     | Cause                                                                  | Fix                                                 |
+| -------- | ---------------------------------------------------------------------- | --------------------------------------------------- |
+| `ET5200` | An `et-radio` is not inside an `et-radio-group`.                       | Wrap the radios in an `et-radio-group`.             |
+| `ET5201` | An `et-checkbox-option` is not inside an `et-checkbox-group`.          | Wrap the options in an `et-checkbox-group`.         |
+| `ET5202` | An `et-segmented-button` is not inside an `et-segmented-button-group`. | Wrap the buttons in an `et-segmented-button-group`. |
 
 ## Rating (ET50xx)
 

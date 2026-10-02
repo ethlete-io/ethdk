@@ -6,23 +6,29 @@ import { CheckboxComponent } from './checkbox';
 import { ChoiceFieldComponent } from './choice-field/choice-field.component';
 import { LabelDirective } from './form-field/headless';
 import { SelectionCardControlPosition } from './selection-card.types';
+import { CheckboxGroupComponent } from './selection-list/checkbox-group/checkbox-group.component';
 import { CheckboxOptionComponent } from './selection-list/checkbox-group/checkbox-option.component';
+import { RadioGroupComponent } from './selection-list/radio-group/radio-group.component';
 import { RadioComponent } from './selection-list/radio-group/radio.component';
 import { TEST_COLOR_THEMES } from '../testing/color-themes';
 
 @Component({
   template: `
-    <et-radio [variant]="variant()" [controlPosition]="controlPosition()" value="pro">
-      <i class="leading" etSelectionCardLeading>icon</i>
-      Pro
-      <span class="trailing" etSelectionCardTrailing>$29</span>
-    </et-radio>
+    <et-radio-group aria-label="Plan">
+      <et-radio [variant]="variant()" [controlPosition]="controlPosition()" value="pro">
+        <i class="leading" etSelectionCardLeading>icon</i>
+        Pro
+        <span class="trailing" etSelectionCardTrailing>$29</span>
+      </et-radio>
+    </et-radio-group>
 
-    <et-checkbox-option [variant]="variant()" [controlPosition]="controlPosition()" value="pro">
-      <i class="leading" etSelectionCardLeading>icon</i>
-      Pro
-      <span class="trailing" etSelectionCardTrailing>$29</span>
-    </et-checkbox-option>
+    <et-checkbox-group aria-label="Plans">
+      <et-checkbox-option [variant]="variant()" [controlPosition]="controlPosition()" value="pro">
+        <i class="leading" etSelectionCardLeading>icon</i>
+        Pro
+        <span class="trailing" etSelectionCardTrailing>$29</span>
+      </et-checkbox-option>
+    </et-checkbox-group>
 
     <et-choice-field [variant]="variant()" [controlPosition]="controlPosition()">
       <et-checkbox />
@@ -31,7 +37,15 @@ import { TEST_COLOR_THEMES } from '../testing/color-themes';
       <span class="trailing" etSelectionCardTrailing>$29</span>
     </et-choice-field>
   `,
-  imports: [RadioComponent, CheckboxOptionComponent, ChoiceFieldComponent, CheckboxComponent, LabelDirective],
+  imports: [
+    RadioGroupComponent,
+    RadioComponent,
+    CheckboxGroupComponent,
+    CheckboxOptionComponent,
+    ChoiceFieldComponent,
+    CheckboxComponent,
+    LabelDirective,
+  ],
 })
 class HostComponent {
   public variant = signal<'plain' | 'card'>('card');

@@ -13,6 +13,7 @@ import {
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { SELECT_ERROR_CODES } from '../select-errors';
+import { separatorPattern } from '../../tag-input/headless/internals/separator-pattern';
 import { SelectDirective } from './select.directive';
 
 /**
@@ -281,22 +282,18 @@ export class SelectSearchDirective {
       return;
     }
 
-    const separators = select.customValueSeparators();
-
-    if (!separators.length && !text.includes('\n')) {
-      return;
-    }
-
-    const pattern = new RegExp(
-      `[\\n${separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')).join('')}]`,
-    );
-    const parts = text.split(pattern);
+    const element = this.elementRef.nativeElement;
+    const selectionStart = element.selectionStart ?? element.value.length;
+    const selectionEnd = element.selectionEnd ?? selectionStart;
+    const merged = element.value.slice(0, selectionStart) + text + element.value.slice(selectionEnd);
+    const parts = merged.split(separatorPattern(select.customValueSeparators()));
 
     if (parts.length < 2) {
       return;
     }
 
     event.preventDefault();
+    this.clear();
 
     for (const part of parts) {
       select.commitCustomValue(part);

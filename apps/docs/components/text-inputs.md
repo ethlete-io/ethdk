@@ -450,6 +450,8 @@ tag-input ergonomics on top of an option list: a "Create …" row, separator com
 input remains the deliberately minimal variant for pure free-text entry with no
 panel at all.
 
+<StoryEmbed id="components-forms-tag-input--default" height="260px" />
+
 ```html
 <et-form-field>
   <et-label>Tags</et-label>

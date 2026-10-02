@@ -2,6 +2,7 @@ import { Directive, ElementRef, afterNextRender, computed, inject, signal } from
 import { registerSingleton } from '../../form-field/headless';
 import { RuntimeError } from '@ethlete/core';
 import { TAG_INPUT_ERROR_CODES } from '../tag-input-errors';
+import { separatorPattern } from './internals/separator-pattern';
 import { TagInputDirective } from './tag-input.directive';
 
 /** The text field of a tag input - commits its text as a tag on separators and blur. */
@@ -166,6 +167,3 @@ export class TagInputFieldDirective {
     this.pendingText.set(value);
   }
 }
-
-const separatorPattern = (separators: readonly string[]) =>
-  new RegExp(['\\n', ...separators.map((separator) => separator.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&'))].join('|'));

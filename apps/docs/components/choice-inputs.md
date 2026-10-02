@@ -105,6 +105,36 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 
 Checkbox options and radios accept an `et-description` child for secondary text.
 
+An option must sit inside its group: in dev mode an `et-radio`, `et-checkbox-option` or
+`et-segmented-button` without one throws [`ET5200`–`ET5202`](/components/error-codes#selection-lists-et52xx).
+Only the bare headless `etSelectionOption` works on its own, as a standalone toggle.
+
+#### Object values {#selection-list-object-values}
+
+By default a group matches an option's value to the model with `===`, so a value that holds a
+_copy_ - a form model loaded from an API, a refetched option list - checks nothing. Pass
+`compareWith` to decide equality yourself, exactly as on the [select](/components/select#object-values):
+
+```ts
+protected readonly COMPARE_BY_ID = (a: Plan, b: Plan) => a.id === b.id;
+```
+
+```html
+<et-radio-group [formField]="demoForm.plan" [compareWith]="COMPARE_BY_ID">
+  @for (plan of plans(); track plan.id) {
+  <et-radio [value]="plan">{{ plan.name }}</et-radio>
+  }
+</et-radio-group>
+```
+
+| Input         | Type                              | Default | Description                                                                                                                                     |
+| ------------- | --------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compareWith` | `(optionValue, value) => boolean` | `===`   | Decides whether an option's value and a model value are the same choice. Only called with two non-`null` values; identical values always match. |
+
+All three groups take it. A user pick writes the option's own value into the model. The groups also
+take the `pending` input signal forms binds, so a pending async validator shows the field's
+[busy state](/components/forms#busy-state).
+
 #### Keyboard {#selection-list-keyboard}
 
 | Key                                          | Radio / segmented button group                                        | Checkbox group              |

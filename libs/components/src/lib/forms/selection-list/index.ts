@@ -2,5 +2,6 @@ export * from './checkbox-group';
 export * from './headless';
 export * from './radio-group';
 export * from './segmented-button-group';
+export * from './selection-list-errors';
 export * from './selection-list.imports';
 export * from './selection-list.types';

@@ -13,8 +13,10 @@ import {
   createCanAnimateSignal,
   createFlipAnimation,
   injectHostElement,
+  RuntimeError,
 } from '@ethlete/core';
-import { SelectionOptionDirective } from '../headless';
+import { SELECTION_LIST_TOKEN, SelectionOptionDirective } from '../headless';
+import { SELECTION_LIST_ERROR_CODES } from '../selection-list-errors';
 import { SegmentedButtonGroupComponent } from './segmented-button-group.component';
 
 @Component({
@@ -49,6 +51,18 @@ export class SegmentedButtonComponent {
 
   constructor() {
     const hostEl = injectHostElement();
+
+    if (ngDevMode) {
+      const list = inject(SELECTION_LIST_TOKEN, { optional: true });
+
+      if (!list) {
+        throw new RuntimeError(
+          SELECTION_LIST_ERROR_CODES.SEGMENTED_BUTTON_OUTSIDE_GROUP,
+          '[SegmentedButtonComponent] et-segmented-button must be placed inside an et-segmented-button-group.',
+          { element: hostEl },
+        );
+      }
+    }
 
     inject(DestroyRef).onDestroy(() => {
       const group = this.group;

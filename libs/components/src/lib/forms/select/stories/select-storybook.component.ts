@@ -1,5 +1,5 @@
 import { JsonPipe } from '@angular/common';
-import { Component, DestroyRef, ViewEncapsulation, inject, input, linkedSignal, signal } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap, timer } from 'rxjs';
 import { FormField, disabled, form, readonly, required } from '@angular/forms/signals';
@@ -399,6 +399,63 @@ export class FormFieldSelectObjectValuesStorybookComponent {
 
   private toOptions() {
     return TEAMS.map((team) => ({ value: cloneTeam(team), label: team.name }));
+  }
+}
+
+const PEOPLE = [
+  { id: 1, name: 'Alex Adler' },
+  { id: 2, name: 'Chris Berg' },
+  { id: 3, name: 'Dana Castro' },
+  { id: 4, name: 'Eli Diaz' },
+  { id: 5, name: 'Femi Egede' },
+] as const;
+
+@Component({
+  selector: 'et-sb-form-field-select-pick-only',
+  template: `
+    <div class="flex max-w-md flex-col gap-4 p-8 font-sans" etProvideColor="brand">
+      <et-form-field>
+        <et-label>Add members</et-label>
+        <et-select
+          [value]="memberIds()"
+          (pickOption)="toggleMember($event)"
+          pickOnly
+          multiple
+          placeholder="Add a member"
+        >
+          <input etSelectSearch placeholder="Search people" />
+          @for (person of PEOPLE; track person.id) {
+            <et-select-option [value]="person.id">{{ person.name }}</et-select-option>
+          }
+        </et-select>
+        <et-hint>The select never holds a value - every pick travels out through (pickOption)</et-hint>
+      </et-form-field>
+
+      <ul class="et-sb-pick-only-members flex flex-col gap-2">
+        @for (person of members(); track person.id) {
+          <li class="flex items-center gap-2">
+            {{ person.name }}
+            <button (click)="toggleMember(person.id)" type="button">Remove</button>
+          </li>
+        } @empty {
+          <li class="text-small opacity-60">No members yet</li>
+        }
+      </ul>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, ProvideColorDirective],
+})
+export class FormFieldSelectPickOnlyStorybookComponent {
+  protected readonly PEOPLE = PEOPLE;
+
+  protected memberIds = signal<number[]>([]);
+  protected members = computed(() => PEOPLE.filter((person) => this.memberIds().includes(person.id)));
+
+  protected toggleMember(id: unknown) {
+    this.memberIds.update((ids) =>
+      ids.includes(id as number) ? ids.filter((member) => member !== id) : [...ids, id as number],
+    );
   }
 }
 

@@ -8,6 +8,7 @@ import {
   FormFieldSelectManyOptionsStorybookComponent,
   FormFieldSelectObjectValuesStorybookComponent,
   FormFieldSelectOptionTemplateStorybookComponent,
+  FormFieldSelectPickOnlyStorybookComponent,
   FormFieldSelectStorybookComponent,
 } from './select-storybook.component';
 
@@ -186,6 +187,11 @@ export const ObjectValues: StoryObj<FormFieldSelectObjectValuesStorybookComponen
 export const OptionTemplate: StoryObj<FormFieldSelectOptionTemplateStorybookComponent> = {
   decorators: [moduleMetadata({ imports: [FormFieldSelectOptionTemplateStorybookComponent] })],
   render: () => ({ template: `<et-sb-form-field-select-option-template />` }),
+};
+
+export const PickOnly: StoryObj<FormFieldSelectPickOnlyStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectPickOnlyStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-pick-only />` }),
 };
 
 export const NestedElevation: StoryObj<SelectNestedElevationStorybookComponent> = {

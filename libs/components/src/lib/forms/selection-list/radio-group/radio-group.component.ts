@@ -28,6 +28,8 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'errors',
         'required',
         'name',
+        'pending',
+        'compareWith',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],

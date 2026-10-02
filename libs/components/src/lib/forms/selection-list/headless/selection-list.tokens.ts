@@ -5,6 +5,9 @@ export const SELECTION_LIST_TOKEN = new InjectionToken<SelectionListDirectiveBas
 
 export const SELECTION_LIST_MULTIPLE = new InjectionToken<boolean>('SELECTION_LIST_MULTIPLE');
 
+/** Whether an option value and a model value are the same choice - see the group's `compareWith` input. */
+export type SelectionListCompareWith<TValue = unknown> = (optionValue: TValue, value: TValue) => boolean;
+
 export type SelectionListItem<TValue = unknown> = {
   value: Signal<TValue>;
   checked: WritableSignal<boolean>;

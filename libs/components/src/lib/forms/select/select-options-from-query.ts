@@ -69,8 +69,9 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
 /**
  * Feeds a select's options from an `@ethlete/query` query as the user searches. It takes the
  * `queryCreator` plus a reactive `args` builder and runs them on a `createPagedQueryStack`: the stack
- * restarts at `initialPage` as the (debounced) search query changes. Wire the returned signals
- * to the select's async inputs and render `options` yourself with `filterMode="external"`:
+ * restarts at `initialPage` as the (debounced) search query changes. Bind the returned bundle with
+ * `[etSelectOptions]` - it wires the async state and the query/load-more plumbing - and render
+ * `options` yourself:
  *
  * ```ts
  * users = selectOptionsFromQuery({
@@ -82,21 +83,16 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * ```
  *
  * ```html
- * <et-select
- *   [formField]="form.assignee"
- *   [loading]="users.loading()"
- *   [error]="users.error()"
- *   [hasMoreItems]="users.hasMore()"
- *   (queryChange)="users.setQuery($event)"
- *   (loadMore)="users.loadMore()"
- *   filterMode="external"
- * >
+ * <et-select [formField]="form.assignee" [etSelectOptions]="users">
  *   <input etSelectSearch placeholder="Search users" />
  *   @for (user of users.options(); track user.id) {
  *     <et-select-option [value]="user.id">{{ user.name }}</et-select-option>
  *   }
  * </et-select>
  * ```
+ *
+ * To intercept a single binding, wire `loading`, `error`, `hasMoreItems`, `queryChange`, `loadMore` and
+ * `filterMode="external"` by hand instead - see the select guide's async options section.
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd create
  * a query or a query stack.

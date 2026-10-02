@@ -134,6 +134,13 @@ export class SelectDirective
   public placeholder = input('');
   /** Trigger text shown while `mixed` is set. */
   public mixedLabel = input<string | null>(null);
+  /**
+   * The maximum number of values of a multi select, bound by signal forms from the schema's
+   * `maxLength()` and shown by `<et-counter />`. Display only: use `maxSelection` to refuse picks.
+   */
+  public maxLength = input<number | undefined>(undefined);
+  /** True while an async validator runs on the bound field (bound by signal forms); the field shows it as busy. */
+  public pending = input(false, { transform: booleanAttribute });
 
   /**
    * Data-driven options: the select owns the option rows instead of the consumer projecting
@@ -161,6 +168,7 @@ export class SelectDirective
   /**
    * Single characters that commit the pending search query as a custom value the moment they
    * are typed (e.g. `[',']`), and split pasted text in multi mode. Only with `allowCustomValues`.
+   * Longer entries such as `'Enter'` are ignored - Enter always commits.
    */
   public customValueSeparators = input<string[]>([]);
   /** Maps raw text to the stored custom value - return `null` to reject. Defaults to trimming. */
@@ -613,6 +621,18 @@ export class SelectDirective
 
     mountTextFieldShellStyles();
     mountFloatingPanelStyles();
+
+    if (ngDevMode) {
+      effect(() => {
+        const ignored = this.customValueSeparators().filter((separator) => separator.length !== 1);
+
+        if (ignored.length) {
+          console.warn(
+            `[SelectDirective] customValueSeparators only takes single characters, so ${ignored.map((separator) => `"${separator}"`).join(', ')} is ignored. Enter already commits a custom value.`,
+          );
+        }
+      });
+    }
 
     const styleManager = injectStyleManager();
     let hasMountedExtrasStyles = false;

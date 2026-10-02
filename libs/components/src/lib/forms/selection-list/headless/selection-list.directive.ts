@@ -24,6 +24,7 @@ import { createSelectionState } from './internals/selection-state';
 import {
   SELECTION_LIST_MULTIPLE,
   SELECTION_LIST_TOKEN,
+  SelectionListCompareWith,
   SelectionListDirectiveBase,
   SelectionListItem,
 } from './selection-list.tokens';
@@ -33,6 +34,8 @@ const sortConnectedItems = (items: SelectionListItem[]) =>
   items.some((item) => !item.elementRef.nativeElement.isConnected)
     ? items
     : sortByDomOrder(items, (item) => item.elementRef.nativeElement);
+
+const referenceEquality: SelectionListCompareWith = (a, b) => a === b;
 
 @Directive({
   selector: '[etSelectionList]',
@@ -74,9 +77,23 @@ export class SelectionListDirective
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
+  /** True while an async validator runs on the bound field (bound by signal forms); the field shows it as busy. */
+  public pending = input(false, { transform: booleanAttribute });
+  /**
+   * Decides whether an option's value and a value in the model are the same choice - set it when
+   * values are objects that are not the same instance (e.g. `(a, b) => a.id === b.id`). Only
+   * called with two non-null values; identical values always match. Defaults to `===`.
+   */
+  public compareWith = input<SelectionListCompareWith<never>>(referenceEquality);
   public touch = outputFromObservable(controlTouches(this.touched));
 
   public multiple = computed(() => this.multipleOverride ?? this.multipleInput());
+
+  private valuesMatch = computed<SelectionListCompareWith>(() => {
+    const compareWith = this.compareWith() as SelectionListCompareWith;
+
+    return (a, b) => a === b || (a !== null && a !== undefined && b !== null && b !== undefined && compareWith(a, b));
+  });
 
   public selection = createSelectionState<unknown, SelectionListItem>({
     value: this.value,
@@ -84,6 +101,7 @@ export class SelectionListDirective
     disabled: this.disabled,
     pruneValueOnUnregister: true,
     mixed: this.mixed,
+    compareWith: this.valuesMatch,
     orderItems: sortConnectedItems,
   });
 

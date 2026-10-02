@@ -65,6 +65,8 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         'options',
         'compareWith',
         'valueKey',

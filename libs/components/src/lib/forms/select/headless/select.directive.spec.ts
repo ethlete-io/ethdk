@@ -953,6 +953,38 @@ describe('SelectDirective (search)', () => {
     expect(driver.host.value()).toEqual(['a1b', 'c', 'd']);
   });
 
+  it('splits a paste on the single-character entries of tag-input style separators', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.separators.set(['Enter', ',']);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.paste('Peter, Anne');
+
+    expect(driver.host.value()).toEqual(['Peter', 'Anne']);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"Enter" is ignored'));
+
+    warn.mockRestore();
+  });
+
+  it('splices a paste into the pending query at the caret', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('pre');
+    driver.paste('one,two');
+
+    expect(driver.host.value()).toEqual(['preone', 'two']);
+    expect(driver.searchInput().value).toBe('');
+  });
+
   it('commits the pending query when the panel closes with commitCustomValueOnClose', async () => {
     driver.host.allowCustom.set(true);
     driver.host.commitOnClose.set(true);

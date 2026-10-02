@@ -131,7 +131,7 @@ Treat `mixed` as explicitly controlled state. Updating the raw form value from a
 
 ## Options
 
-On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`):
+On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus the standard form-field contract set (`disabled`, `readonly`, `invalid`, `errors`, `required`, `name`, `touched`, and `pending` / `maxLength`, which signal forms binds so an async validator shows the field's [busy state](/components/forms#busy-state) and `<et-counter />` counts selected values against the schema's `maxLength()`):
 
 | Input               | Type                            | Default  | Description                                                                                                                                                                            |
 | ------------------- | ------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -156,11 +156,15 @@ On `et-cascader` (forwarded from the headless `[etCascader]` directive), plus th
 
 ¹ `null` falls through to the domain's label set - [`FORM_FIELD_LABELS.mixed`](/components/localization) for `mixedLabel`, [`CASCADER_LABELS`](/components/localization) for `searchPlaceholder`, `backLabel` and the panel's loading/empty/error/retry states, all overridable for a subtree with `provideCascaderLabels({ … })`.
 
-| Output       | Payload   | Emitted when                                                  |
-| ------------ | --------- | ------------------------------------------------------------- |
-| `afterOpen`  | `void`    | The panel (or bottom sheet) has finished mounting.            |
-| `afterClose` | `void`    | The panel has finished closing.                               |
-| `openChange` | `boolean` | The panel opens or closes (the `open` model's change output). |
+| Output          | Payload            | Emitted when                                                                                                |
+| --------------- | ------------------ | ----------------------------------------------------------------------------------------------------------- |
+| `valueChange`   | `T \| T[] \| null` | The value changes - user commits, clears and programmatic writes alike (the `value` model's change output). |
+| `mixedChange`   | `boolean`          | A user commit or clear resolves the controlled mixed state.                                                 |
+| `openChange`    | `boolean`          | The panel opens or closes (the `open` model's change output).                                               |
+| `touchedChange` | `boolean`          | The field is blurred for the first time (the `touched` model's change output).                              |
+| `touch`         | `void`             | The cascader becomes touched. Signal forms listens to it to mark the bound field touched.                   |
+| `afterOpen`     | `void`             | The panel (or bottom sheet) has finished mounting.                                                          |
+| `afterClose`    | `void`             | The panel has finished closing.                                                                             |
 
 The full chosen chain is exposed as `path` (a `WritableSignal<CascaderNode<T>[]>`) and the derived `pathValue` (`T[]`) computed, and the trigger shows the breadcrumb (`Euro / Knockout stage / Final`) - or the joined labels in multi mode.
 

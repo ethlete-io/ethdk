@@ -71,6 +71,8 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'errors',
         'required',
         'name',
+        'maxLength',
+        'pending',
         ...ACCESSIBLE_NAME_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'openChange', 'afterOpen', 'afterClose'],

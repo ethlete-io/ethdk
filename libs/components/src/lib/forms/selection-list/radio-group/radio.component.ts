@@ -1,8 +1,15 @@
 import { Component, effect, inject, input, ViewEncapsulation } from '@angular/core';
-import { ColorInteractiveDirective, createCanAnimateSignal, injectStyleManager } from '@ethlete/core';
+import {
+  ColorInteractiveDirective,
+  createCanAnimateSignal,
+  injectHostElement,
+  injectStyleManager,
+  RuntimeError,
+} from '@ethlete/core';
 import { SelectionCardStylesComponent } from '../../selection-card-styles.component';
 import { SELECTION_CARD_CONTROL_POSITIONS, SelectionCardControlPosition } from '../../selection-card.types';
-import { SelectionOptionDirective } from '../headless';
+import { SELECTION_LIST_TOKEN, SelectionOptionDirective } from '../headless';
+import { SELECTION_LIST_ERROR_CODES } from '../selection-list-errors';
 
 /** How a radio presents itself. See {@link RadioComponent.variant}. */
 export const RADIO_VARIANTS = {
@@ -55,6 +62,19 @@ export class RadioComponent {
   public canAnimate = createCanAnimateSignal();
 
   constructor() {
+    if (ngDevMode) {
+      const list = inject(SELECTION_LIST_TOKEN, { optional: true });
+      const element = injectHostElement();
+
+      if (!list) {
+        throw new RuntimeError(
+          SELECTION_LIST_ERROR_CODES.RADIO_OUTSIDE_GROUP,
+          '[RadioComponent] et-radio must be placed inside an et-radio-group.',
+          { element },
+        );
+      }
+    }
+
     effect(() => {
       if (this.variant() === RADIO_VARIANTS.CARD) {
         this.styleManager.mount(SelectionCardStylesComponent);

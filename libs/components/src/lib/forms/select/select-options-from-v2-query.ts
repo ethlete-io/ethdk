@@ -73,8 +73,8 @@ const firstErrorMessage = (error: RequestError) => {
 /**
  * Feeds a select's options from a **legacy v2** query as the user searches - the
  * `V2QueryClient` counterpart of {@link selectOptionsFromQuery}, so apps that haven't migrated
- * yet can still adopt the new async select. It returns the same signal bundle; wire it to the
- * select's async inputs and render `options` yourself with `filterMode="external"`:
+ * yet can still adopt the new async select. It returns the same signal bundle; bind it with
+ * `[etSelectOptions]` and render `options` yourself:
  *
  * ```ts
  * users = selectOptionsFromV2Query({
@@ -86,21 +86,16 @@ const firstErrorMessage = (error: RequestError) => {
  * ```
  *
  * ```html
- * <et-select
- *   [formField]="form.assignee"
- *   [loading]="users.loading()"
- *   [error]="users.error()"
- *   [hasMoreItems]="users.hasMore()"
- *   (queryChange)="users.setQuery($event)"
- *   (loadMore)="users.loadMore()"
- *   filterMode="external"
- * >
+ * <et-select [formField]="form.assignee" [etSelectOptions]="users">
  *   <input etSelectSearch placeholder="Search users" />
  *   @for (user of users.options(); track user.id) {
  *     <et-select-option [value]="user.id">{{ user.name }}</et-select-option>
  *   }
  * </et-select>
  * ```
+ *
+ * To intercept a single binding, wire `loading`, `error`, `hasMoreItems`, `queryChange`, `loadMore` and
+ * `filterMode="external"` by hand instead - see the select guide's async options section.
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd use
  * `queryComputed` or a query container.
