@@ -91,7 +91,12 @@ async function main() {
             "or set 'create-github-releases' to false.",
         );
       }
-      const slackToken = getOptionalInput("slack-token");
+      const slackChannel = getOptionalInput("slack-channel");
+      let slackToken = getOptionalInput("slack-token");
+      if (slackToken && !slackChannel) {
+        core.warning("slack-token needs slack-channel; skipping the Slack post.");
+        slackToken = undefined;
+      }
       const result = await runPublish({
         script: publishScript,
         github,
@@ -99,7 +104,7 @@ async function main() {
         pushGitTags,
         cwd,
         slackTitle: getOptionalInput("slack-title"),
-        slackChannel: getOptionalInput("slack-channel"),
+        slackChannel,
         slackThreaded: !!slackToken,
       });
 

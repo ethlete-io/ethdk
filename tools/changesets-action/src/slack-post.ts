@@ -38,10 +38,6 @@ async function postMessage(
   }
 }
 
-/**
- * Posts the main release message, then each detailed note as a reply in its thread.
- * Never throws: a Slack failure is reported as a warning and resolves to `false`.
- */
 export async function postSlackMessages(
   messages: SlackMessages,
   options: PostOptions,
