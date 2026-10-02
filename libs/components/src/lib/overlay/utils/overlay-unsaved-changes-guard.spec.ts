@@ -4,6 +4,7 @@ import { form, FieldTree } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { injectOverlayManager } from '../overlay-manager';
 import { OverlayRef } from '../overlay-ref';
+import { getOverlayRefInternals } from '../overlay-ref-internal';
 import { OverlayRouter, injectOverlayRouter, provideOverlayRouter } from '../routing/overlay-router';
 import { createOverlayUnsavedChangesGuard, OverlayUnsavedChangesGuardRef } from './overlay-unsaved-changes-guard';
 
@@ -162,7 +163,7 @@ describe('createOverlayUnsavedChangesGuard', () => {
     instance.form().value.set({ name: 'Grace' });
     tick();
 
-    ref.closeVia('drag');
+    getOverlayRefInternals(ref)?.closeVia('drag');
 
     expect(paneCount()).toBe(1);
     expect(instance.confirmCalls).toBe(1);
@@ -181,7 +182,7 @@ describe('createOverlayUnsavedChangesGuard', () => {
     instance.form().value.set({ name: 'Grace' });
     tick();
 
-    ref.closeVia('drag');
+    getOverlayRefInternals(ref)?.closeVia('drag');
     await flushFrames();
 
     expect(instance.confirmCalls).toBe(0);
@@ -196,7 +197,7 @@ describe('createOverlayUnsavedChangesGuard', () => {
     instance.form().value.set({ name: 'Grace' });
     tick();
 
-    ref.closeVia('replace');
+    getOverlayRefInternals(ref)?.closeVia('replace');
     await flushFrames();
 
     expect(instance.confirmCalls).toBe(1);
@@ -210,7 +211,7 @@ describe('createOverlayUnsavedChangesGuard', () => {
     instance.form().value.set({ name: 'Grace' });
     tick();
 
-    ref.closeVia('replace');
+    getOverlayRefInternals(ref)?.closeVia('replace');
     await flushFrames();
 
     expect(instance.confirmCalls).toBe(0);

@@ -91,6 +91,11 @@ export class ToggletipDirective {
     const content = this.content();
     return typeof content === 'string' ? content : null;
   });
+  private effectiveContent = computed(() => {
+    const content = this.content();
+
+    return typeof content === 'string' && content.trim() === '' ? null : content;
+  });
   private resolvedAriaDescribedBy = computed(() => {
     const content = this.content();
 
@@ -106,7 +111,7 @@ export class ToggletipDirective {
     mountFloatingTipStyles();
 
     effect(() => {
-      const content = this.content();
+      const content = this.effectiveContent();
       const disabled = this.effectiveDisabled();
 
       if ((content === null || disabled) && this.open()) {
@@ -117,7 +122,7 @@ export class ToggletipDirective {
     });
 
     effect(() => {
-      const content = this.content();
+      const content = this.effectiveContent();
       const disabled = this.effectiveDisabled();
       const open = this.open();
 
@@ -152,7 +157,7 @@ export class ToggletipDirective {
   }
 
   public toggle() {
-    if (this.effectiveDisabled() || this.content() === null) {
+    if (this.effectiveDisabled() || this.effectiveContent() === null) {
       this.hide();
 
       return;
@@ -162,7 +167,7 @@ export class ToggletipDirective {
   }
 
   public show() {
-    if (this.effectiveDisabled() || this.content() === null) {
+    if (this.effectiveDisabled() || this.effectiveContent() === null) {
       return;
     }
 
@@ -182,11 +187,11 @@ export class ToggletipDirective {
   }
 
   public expanded() {
-    return this.content() && !this.effectiveDisabled() ? this.open() : null;
+    return this.effectiveContent() && !this.effectiveDisabled() ? this.open() : null;
   }
 
   public popupRole() {
-    return this.content() && !this.effectiveDisabled() ? 'dialog' : null;
+    return this.effectiveContent() && !this.effectiveDisabled() ? 'dialog' : null;
   }
 
   private mountToggletip(content: ToggletipContent) {

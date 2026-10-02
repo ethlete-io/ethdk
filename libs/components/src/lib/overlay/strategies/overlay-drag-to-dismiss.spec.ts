@@ -55,7 +55,7 @@ describe('overlay drag to dismiss', () => {
   let afterClosed$: Subject<never>;
   let beforeClosed$: Subject<unknown>;
   let overlayRef: OverlayRef<object, unknown>;
-  let closeVia: ReturnType<typeof vi.fn>;
+  let close: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     pane = document.createElement('div');
@@ -66,9 +66,9 @@ describe('overlay drag to dismiss', () => {
 
     afterClosed$ = new Subject<never>();
     beforeClosed$ = new Subject<unknown>();
-    closeVia = vi.fn();
+    close = vi.fn();
     overlayRef = {
-      closeVia,
+      close,
       beforeClosed: () => beforeClosed$.asObservable(),
       afterClosed: () => afterClosed$.asObservable(),
     } as unknown as OverlayRef<object, unknown>;
@@ -112,7 +112,7 @@ describe('overlay drag to dismiss', () => {
     dragDown(pane, 200);
     release(200);
 
-    expect(closeVia).toHaveBeenCalledWith('drag');
+    expect(close).toHaveBeenCalledWith();
     expect(onDismissVetoed).toHaveBeenCalledTimes(1);
     expect(pane.style.transform).toBe('translateY(0px)');
 
@@ -154,7 +154,7 @@ describe('overlay drag to dismiss', () => {
   it('leaves the sheet at the drag offset when the dismiss starts the close', () => {
     const onDismissVetoed = vi.fn();
 
-    closeVia.mockImplementation(() => beforeClosed$.next(undefined));
+    close.mockImplementation(() => beforeClosed$.next(undefined));
 
     const ref = enableDragToDismiss({
       element: pane,

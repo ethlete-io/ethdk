@@ -71,6 +71,17 @@ describe('ToggletipDirective', () => {
     expect(toggletipDirective.overlayRef()?.config.ariaLabel).toBe('More information');
   });
 
+  it('treats blank string content like no content', () => {
+    setInputSignal(toggletipDirective.content, ' ');
+    fixture.detectChanges();
+
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    expect(toggletipDirective.overlayRef()).toBeNull();
+    expect(button.getAttribute('aria-haspopup')).toBeNull();
+  });
+
   it('follows aria config changes while open', () => {
     toggletipDirective.show();
     fixture.detectChanges();

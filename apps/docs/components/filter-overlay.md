@@ -7,23 +7,28 @@ those filters would return, and commits - or dismisses, which discards. Built on
 Import `FILTER_OVERLAY_IMPORTS` for the controls; `provideFilterOverlay` goes in the overlay's providers.
 
 ```ts
+export const TEAM_FILTERS_OVERLAY = defineOverlay<TeamFiltersOverlayComponent, FilterOverlayResult<TeamFilterValue>>({
+  component: TeamFiltersOverlayComponent,
+  strategies: bottomSheetToSidebarOverlayStrategy(),
+});
+
 export class TeamsPageComponent {
-  private overlayManager = injectOverlayManager();
+  private filtersOverlay = createOverlayOpener(TEAM_FILTERS_OVERLAY);
 
   protected filters = defineQueryForm({ fields: TEAM_FILTER_FIELDS }).observe();
 
   protected openFilters() {
-    this.overlayManager.open(TeamFiltersOverlayComponent, {
-      strategies: bottomSheetToSidebarOverlayStrategy(),
-      providers: [
-        provideFilterOverlay({
-          queryForm: this.filters,
-          preview: filterOverlayPreviewFromQuery({
-            queryCreator: searchTeams,
-            args: (value) => ({ queryParams: { ...value, limit: 1 } }),
-          }),
+    this.filtersOverlay.open({
+      providers: provideFilterOverlay({
+        queryForm: this.filters,
+        preview: filterOverlayPreviewFromQuery({
+          queryCreator: searchTeams,
+          args: (value) => ({ queryParams: { ...value, limit: 1 } }),
         }),
-      ],
+      }),
+      afterClosed: (result) => {
+        if (result?.didUpdate) this.scrollToResults();
+      },
     });
   }
 }
@@ -57,7 +62,8 @@ value, the same debounce and reset graph, and no URL writes. Every control in th
   close;
 - `submit()` writes the draft's `liveValue()` - what the controls hold, ahead of any pending debounce - back
   through `queryForm.setValue()`, so the reset graph fires (a new search resetting the page number) and the URL
-  updates. It then closes with `{ didUpdate: true, value }` - `{ didUpdate: false }` on a discard.
+  updates. It then closes with `{ didUpdate: true, value }`. Every other close - `discard()`, Escape, the
+  backdrop, a drag - yields `{ didUpdate: false }`, so a result handler never sees `undefined`.
 
 `reset()` puts the draft back to the query form's defaults without closing. Unlike cdk's version it needs no
 configured `defaults`, because the query form already knows them.

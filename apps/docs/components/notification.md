@@ -9,16 +9,19 @@ import { provideNotificationManager } from '@ethlete/components';
 
 provideNotificationManager({
   position: 'bottom-end',
-  statusColorMapping: { info: 'brand', error: 'danger', success: 'brand', loading: 'brand' },
+  // `brand` is a theme name this example app registered - the SDK ships none.
+  statusColorMapping: { info: 'brand', loading: 'brand' },
 });
 ```
+
+Without a mapping entry, an `error` toast takes the app's `type: 'error'` color theme and a `success` toast its `type: 'success'` one. `info` and `loading` get no theme unless the mapping names one.
 
 | Config option        | Default                                               | Notes                                                                           |
 | -------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `position`           | `'bottom-end'`                                        | `bottom/top` × `start/center/end` - `start`/`end` are logical (see below)       |
 | `maxVisible`         | `3`                                                   | Opening past the cap auto-dismisses the oldest (whole number, min 1)            |
 | `defaultDuration`    | `{ success: 4000, info: 4000, loading: 0, error: 0 }` | Per-status auto-dismiss (0 = sticky); a partial map keeps the other defaults    |
-| `statusColorMapping` | -                                                     | Status → app-registered color theme name for buttons inside the toast           |
+| `statusColorMapping` | semantic `error` / `success` themes                   | Status → app-registered color theme name for buttons inside the toast           |
 | `controlsColor`      | -                                                     | Color theme for control elements (e.g. dismiss); falls back to the status color |
 | `statusIcons`        | see [Status icons](#status-icons)                     | Per-status icon name; `null` opts a status out                                  |
 | `swipeToDismiss`     | `true`                                                | Whether a notification can be flicked away with a pointer or finger             |
@@ -220,7 +223,7 @@ import { NOTIFICATION_IMPORTS } from '@ethlete/components';
 
 ## Theming
 
-The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`, both dropped [below `480px`](#narrow-viewports)), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`), `--et-notification-icon-size` (`16px`). Status colors resolve through `statusColorMapping` / `controlsColor` - [app-registered themes](/core/theming), not tokens; the status icon and the accent border read from the resolved status color.
+The toast shell exposes size/typography tokens: `--et-notification-border-radius` (`4px`), `--et-notification-padding`, `--et-notification-min-width` (`300px`) / `--et-notification-max-width` (`420px`, both dropped [below `480px`](#narrow-viewports)), `--et-notification-shadow`, `--et-notification-border-width` (`4px`), `--et-notification-font-size` / `--et-notification-line-height`, `--et-notification-gap`, `--et-notification-title-font-weight`, `--et-notification-message-font-size` / `-line-height` / `-opacity`, `--et-notification-progress-bar-height` (`3px`), `--et-notification-icon-size` (`16px`). Status colors resolve through `statusColorMapping` / `controlsColor`, then the semantic `error` / `success` theme types - [app-registered themes](/core/theming), not tokens; the status icon and the accent border read from the resolved status color.
 
 ## Error codes
 

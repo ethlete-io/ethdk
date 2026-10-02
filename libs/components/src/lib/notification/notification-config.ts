@@ -88,6 +88,8 @@ export type NotificationManagerConfig = {
    * Maps each notification status to a color key used by `ProvideColorDirective`.
    * When set, the notification host element receives the corresponding color class
    * so that `et-button` and other colored components render correctly inside the notification.
+   * A status it does not list falls back to the semantic theme of its type: `error` to the
+   * `type: 'error'` theme, `success` to the `type: 'success'` theme, `info` and `loading` to none.
    */
   statusColorMapping?: Partial<Record<NotificationStatus, string>>;
   /**

@@ -1,8 +1,9 @@
-import { InjectionToken, Injector, Provider, Signal, computed, inject } from '@angular/core';
+import { InjectionToken, Injector, Signal, StaticProvider, computed, inject } from '@angular/core';
 import { FieldTree } from '@angular/forms/signals';
 import { equal } from '@ethlete/core';
 import { QueryFormFields, QueryFormModel, QueryFormSignals } from '@ethlete/query';
 import { OVERLAY_REF, OverlayRef } from '../overlay';
+import { getOverlayRefInternals } from '../overlay/overlay-ref-internal';
 import {
   FilterOverlayLabels,
   injectFilterOverlayLabels,
@@ -102,6 +103,8 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
   });
   const labels = injectFilterOverlayLabels();
 
+  getOverlayRefInternals(overlayRef)?.setDismissResult({ didUpdate: false });
+
   const draft = config.queryForm.branch(inject(Injector));
   const maxCountedHits = config.maxCountedHits ?? 250;
 
@@ -151,30 +154,29 @@ const createFilterOverlay = <TFields extends QueryFormFields>(
  * Provides the filter overlay for an overlay component: a draft of the page's filters that the reader edits, a
  * live count of what those filters would return, and an explicit apply.
  *
- * The model is **edit a copy, then commit** - dismissing the overlay discards, which is what lets a filter panel
- * be closed with Escape without consequence.
+ * The model is **edit a copy, then commit** - dismissing the overlay discards and closes with
+ * `{ didUpdate: false }`, so a filter panel can be closed with Escape without consequence.
  *
  * @example
- * export const FILTERS_OVERLAY = defineOverlay({ component: TeamFiltersComponent, … });
+ * export const TEAM_FILTERS_OVERLAY = defineOverlay<TeamFiltersComponent, FilterOverlayResult<TeamFilterValue>>({
+ *   component: TeamFiltersComponent,
+ *   strategies: bottomSheetToSidebarOverlayStrategy(),
+ * });
  *
- * @Component({
- *   providers: [
- *     provideFilterOverlay({
- *       queryForm: injectTeamFilters(),
- *       preview: filterOverlayPreviewFromQuery({
- *         queryCreator: searchTeams,
- *         args: (value) => ({ queryParams: { ...value, limit: 1 } }),
- *       }),
- *     }),
- *   ],
- * })
- * export class TeamFiltersComponent {
- *   protected filters = injectFilterOverlay();
+ * // in the page component
+ * private filtersOverlay = createOverlayOpener(TEAM_FILTERS_OVERLAY);
+ * protected filters = injectTeamFilters();
+ *
+ * protected openFilters() {
+ *   this.filtersOverlay.open({ providers: provideFilterOverlay({ queryForm: this.filters }) });
  * }
+ *
+ * // in TeamFiltersComponent
+ * protected filters = injectFilterOverlay<TeamFilterValue>();
  */
 export const provideFilterOverlay = <TFields extends QueryFormFields>(
   config: FilterOverlayConfig<TFields>,
-): Provider[] => [{ provide: FILTER_OVERLAY_TOKEN, useFactory: () => createFilterOverlay(config) }];
+): StaticProvider[] => [{ provide: FILTER_OVERLAY_TOKEN, useFactory: () => createFilterOverlay(config) }];
 
 /**
  * The filter overlay provided above this component, typed to your filters' **value** shape:

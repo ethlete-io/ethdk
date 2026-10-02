@@ -10,6 +10,7 @@ import {
 } from '@ethlete/core';
 import { combineLatest, tap } from 'rxjs';
 import { injectOverlayManager } from './overlay-manager';
+import { markOverlayScrollBlockerActive } from './overlay-scroll-blocker-registry';
 
 const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
@@ -17,6 +18,8 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
     const document = inject(DOCUMENT);
     const renderer = injectRenderer();
     const documentScrollState = signalElementScrollState(createDocumentElementSignal());
+
+    markOverlayScrollBlockerActive(document);
 
     const blockedDocuments = computed(
       () => {

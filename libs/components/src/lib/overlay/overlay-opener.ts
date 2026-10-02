@@ -24,6 +24,7 @@ import {
 } from './overlay-definition';
 import { injectOverlayManager } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
+import { getOverlayRefInternals } from './overlay-ref-internal';
 
 /** Per-open config overrides. The component and `strategies` are fixed by the definition. */
 export type OverlayOpenConfig = Omit<OverlayConfig, 'strategies'>;
@@ -116,7 +117,7 @@ export const createOverlaySingleSlot = (): OverlaySingleSlot => {
     if (!previous) return track(openFn());
 
     waiting = openFn;
-    previous.closeVia('replace');
+    getOverlayRefInternals(previous)?.closeVia('replace');
 
     return current !== previous ? current : null;
   };

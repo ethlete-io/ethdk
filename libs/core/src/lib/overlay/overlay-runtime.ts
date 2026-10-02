@@ -52,6 +52,15 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     // Synchronous teardown for each currently-mounted overlay, run when the runtime's injector is
     // destroyed (app teardown). Registered on mount, removed once the overlay is destroyed normally.
     const mountedTeardowns = new Set<() => void>();
+    const focusRestoreChains = new WeakMap<OverlayRuntimeRef<object, unknown>, (HTMLElement | SVGElement)[]>();
+
+    const resolveFocusRestoreChain = (focused: HTMLElement | SVGElement | null) => {
+      if (!focused) return [];
+
+      const owner = openEntriesState().find((entry) => entry.elements.hostElement.contains(focused));
+
+      return [focused, ...((owner && focusRestoreChains.get(owner)) ?? [])];
+    };
 
     const getRootElement = (targetDocument: Document, zIndex: number) => {
       let documentRoots = rootElements.get(targetDocument);
@@ -142,9 +151,9 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       const hostElement = renderer.createElement('div');
       const paneElement = renderer.createElement('div');
       const backdropElement = signal<HTMLElement | null>(null);
-      const previousFocusedElement = isHTMLOrSVGElement(targetDocument.activeElement)
-        ? targetDocument.activeElement
-        : null;
+      const focusRestoreChain = resolveFocusRestoreChain(
+        isHTMLOrSVGElement(targetDocument.activeElement) ? targetDocument.activeElement : null,
+      );
       const autoFocus = config.autoFocus ?? 'first-tabbable';
       let currentHasBackdrop = config.hasBackdrop !== false;
       let currentPositionStrategy = config.positionStrategy;
@@ -247,6 +256,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
       overlayRef.beforeOpenedSubject.next();
       overlayRef.beforeOpenedSubject.complete();
 
+      focusRestoreChains.set(overlayRef as OverlayRuntimeRef<object, unknown>, focusRestoreChain);
       openEntriesState.update((entries) => [...entries, overlayRef as OverlayRuntimeRef<object, unknown>]);
 
       let positionCleanup = setupPositioning(
@@ -330,8 +340,8 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         openEntriesState.update((entries) => entries.filter((entry) => entry !== overlayRef));
         maybeDestroyRootElements(targetDocument);
 
-        if (config.restoreFocus !== false && overlayStillOwnsFocus && previousFocusedElement?.isConnected) {
-          previousFocusedElement.focus({ preventScroll: true });
+        if (config.restoreFocus !== false && overlayStillOwnsFocus) {
+          focusRestoreChain.find((element) => element.isConnected)?.focus({ preventScroll: true });
         }
 
         overlayRef.finishClose(closeEvent);

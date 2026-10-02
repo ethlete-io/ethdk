@@ -2,6 +2,7 @@ import { Directive, ElementRef, InjectionToken, OnDestroy, OnInit, TemplateRef, 
 import { resolveClosestOverlay } from './get-closest-overlay';
 import { injectOverlayManager } from './overlay-manager';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
+import { getOverlayRefInternals } from './overlay-ref-internal';
 
 export const OVERLAY_HEADER_TEMPLATE_TOKEN = new InjectionToken<OverlayHeaderTemplateDirective>(
   'OVERLAY_HEADER_TEMPLATE_TOKEN',
@@ -22,7 +23,7 @@ export class OverlayHeaderTemplateDirective implements OnInit, OnDestroy {
 
   public template = inject<TemplateRef<unknown>>(TemplateRef);
   private overlayManager = injectOverlayManager();
-  private unregister = this.overlayRef?.registerHeaderTemplate(this.template);
+  private unregister = getOverlayRefInternals(this.overlayRef)?.registerHeaderTemplate(this.template);
 
   public ngOnInit() {
     const overlayRef = resolveClosestOverlay({
@@ -34,7 +35,7 @@ export class OverlayHeaderTemplateDirective implements OnInit, OnDestroy {
     if (overlayRef !== this.overlayRef) {
       this.unregister?.();
       this.overlayRef = overlayRef;
-      this.unregister = overlayRef.registerHeaderTemplate(this.template);
+      this.unregister = getOverlayRefInternals(overlayRef)?.registerHeaderTemplate(this.template);
     }
   }
 

@@ -8,6 +8,7 @@ import {
 import { Subject, Subscription, filter, fromEvent, take, takeUntil, tap, timer } from 'rxjs';
 import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { OverlayRef } from '../overlay-ref';
+import { getOverlayRefInternals } from '../overlay-ref-internal';
 import {
   OverlayDragToDismissConfig,
   OverlayDragToDismissDirection,
@@ -25,7 +26,7 @@ export type DragDismissMomentum = {
 
 export type DragToDismissContext = {
   element: HTMLElement;
-  overlayRef: Pick<OverlayRef, 'closeVia' | 'beforeClosed' | 'afterClosed'>;
+  overlayRef: Pick<OverlayRef, 'beforeClosed' | 'afterClosed' | 'close'>;
   config: OverlayDragToDismissConfig;
   renderer: AngularRenderer;
 
@@ -336,7 +337,13 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
         )
         .subscribe();
 
-      overlayRef.closeVia('drag');
+      const internals = getOverlayRefInternals(overlayRef as OverlayRef);
+
+      if (internals) {
+        internals.closeVia('drag');
+      } else {
+        overlayRef.close();
+      }
       leaveSub.unsubscribe();
 
       if (isLeaving) return;

@@ -358,3 +358,87 @@ describe('single overlay opener', () => {
     expect(labels()).toEqual(['b']);
   });
 });
+
+@Component({ template: 'plain overlay' })
+class PlainOverlayComponent {}
+
+const plainOverlay = defineOverlay<PlainOverlayComponent, string>({
+  component: PlainOverlayComponent,
+  ariaLabel: 'definition',
+  hostClass: 'from-definition',
+});
+
+@Component({ template: '' })
+class PlainOpenerHostComponent {
+  public openerClosed: (string | null)[] = [];
+  public plain = createOverlayOpener(plainOverlay, {
+    ariaLabel: 'opener',
+    hostClass: 'from-opener',
+    afterClosed: (result) => this.openerClosed.push(result),
+  });
+}
+
+describe('overlay opener', () => {
+  let fixture: ReturnType<typeof TestBed.createComponent<PlainOpenerHostComponent>>;
+  let host: PlainOpenerHostComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    fixture = TestBed.createComponent(PlainOpenerHostComponent);
+    fixture.detectChanges();
+    host = fixture.componentInstance;
+  });
+
+  afterEach(async () => {
+    TestBed.runInInjectionContext(() => injectOverlayManager())
+      .openOverlays()
+      .forEach((ref) => ref.forceClose());
+    await flushFrames();
+  });
+
+  it('runs both the opener and the per-open afterClosed with the result', async () => {
+    const openClosed: (string | null)[] = [];
+    const ref = host.plain.open({ afterClosed: (result) => openClosed.push(result) });
+    await flushFrames();
+
+    ref.close('saved');
+    await flushFrames();
+
+    expect(host.openerClosed).toEqual(['saved']);
+    expect(openClosed).toEqual(['saved']);
+  });
+
+  it('reports a close without a result as null', async () => {
+    const ref = host.plain.open();
+    await flushFrames();
+
+    ref.close();
+    await flushFrames();
+
+    expect(host.openerClosed).toEqual([null]);
+  });
+
+  it('merges definition, opener and per-open config in that order', () => {
+    const ref = host.plain.open({ ariaLabel: 'per-open', hostClass: 'from-open' });
+
+    expect(ref.config.ariaLabel).toBe('per-open');
+    expect([ref.config.hostClass].flat()).toEqual(['from-definition', 'from-opener', 'from-open']);
+  });
+
+  it('falls back to the host view container', () => {
+    const ref = host.plain.open();
+
+    expect(ref.config.viewContainerRef).toBeDefined();
+  });
+
+  it('stops calling the opener callbacks once its host is destroyed', async () => {
+    const ref = host.plain.open();
+    await flushFrames();
+
+    fixture.destroy();
+    ref.close('late');
+    await flushFrames();
+
+    expect(host.openerClosed).toEqual([]);
+  });
+});

@@ -105,6 +105,26 @@ describe('TooltipDirective', () => {
     anchor.remove();
   });
 
+  it('treats blank string content like no content', () => {
+    setInputSignal(tooltipDirective.content, '  ');
+    fixture.detectChanges();
+
+    tooltipDirective.show();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+    expect(button.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('hides when the content turns blank while shown', () => {
+    tooltipDirective.show();
+    expect(tooltipDirective.overlayRef()).not.toBeNull();
+
+    setInputSignal(tooltipDirective.content, '');
+    fixture.detectChanges();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+  });
+
   it('does not open when disabled', () => {
     setInputSignal(tooltipDirective.disabled, true);
     fixture.detectChanges();

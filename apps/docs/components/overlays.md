@@ -79,7 +79,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` - the content component instance
 - `updatePositionStrategy(strategy)` - reposition without remounting
-- `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(source?, result?)` commits a close bypassing all guards. These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
+- `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(result?, source?)` commits a close bypassing all guards (same argument order as the core runtime ref). These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement()`) - identity and DOM access. `backdropElement` is a signal because a strategy switch can add or remove the backdrop
 
 The manager also exposes an `openOverlays` computed with every currently open ref.
@@ -366,6 +366,8 @@ The reason to prefer it over `fallbackPlacements` for such a pane is stability: 
 ## Color theme context
 
 Overlay panes render in detached DOM, so a [color theme](/core/theming) scope around the trigger doesn't reach them through CSS inheritance. The overlay container re-applies the context itself: it syncs with the nearest color provider reachable through `config.viewContainerRef` / `config.injector` (openers created with `createOverlayOpener` pass the calling component's `ViewContainerRef` automatically), and otherwise falls back to a color provider on the bootstrapped root component - e.g. `ProvideColorDirective` added via `hostDirectives` on the app component. The pane keeps following that provider while open, so forcing a different color on it re-themes already-open overlays too.
+
+The container is only mounted for an overlay opened with `strategies`. An overlay opened without them (`overlayManager.open(Comp)` or a `defineOverlay` with no `strategies`) renders bare: no color or surface context, no default animation, and `directives` / `customAnimated` throw [`ET1211`](/components/error-codes#overlay-et12xx) in dev mode.
 
 ## Declarative overlays
 

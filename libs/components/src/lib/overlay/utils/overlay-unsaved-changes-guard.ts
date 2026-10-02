@@ -121,7 +121,7 @@ export const createOverlayUnsavedChangesGuard = <T>(
         checkPending = false;
 
         if (confirmed) {
-          overlayRef.forceClose(event.source, event.result);
+          overlayRef.forceClose(event.result, event.source);
         }
       })
       .catch(() => {

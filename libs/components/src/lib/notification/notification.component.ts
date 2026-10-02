@@ -18,6 +18,7 @@ import {
   TRIANGLE_EXCLAMATION_ICON,
   provideIcons,
 } from '../icon';
+import { injectOptionalSemanticTheme } from '../internals/semantic-theme';
 import { ProgressBarComponent } from '../loader/progress-bar/progress-bar.component';
 import { SpinnerComponent } from '../loader/spinner/spinner.component';
 import { NotificationActionDirective } from './headless/notification-action.directive';
@@ -75,12 +76,18 @@ export class NotificationComponent {
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfaceType = injectSurfaceType();
 
-  private resolvedColor = computed(() => {
-    const mapping = this.managerConfig.statusColorMapping;
-    if (!mapping) return null;
+  private semanticThemes = {
+    success: injectOptionalSemanticTheme('success'),
+    error: injectOptionalSemanticTheme('error'),
+  };
 
+  private resolvedColor = computed(() => {
     const status = this.notification.status();
-    return mapping[status] ?? null;
+    const mapped = this.managerConfig.statusColorMapping?.[status];
+
+    if (mapped) return mapped;
+
+    return status === 'success' || status === 'error' ? (this.semanticThemes[status]()?.name ?? null) : null;
   });
 
   private resolvedSurface = computed(() => {

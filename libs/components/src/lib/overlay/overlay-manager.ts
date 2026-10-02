@@ -6,14 +6,18 @@ import {
   isElement,
   OverlayRuntimeRef,
   resolveOverlayLayer,
+  RuntimeError,
   toInjectFn,
   toProvideFn,
 } from '@ethlete/core';
 import { normalizeClassList } from './normalize-class-list';
+import { OVERLAY_ERROR_CODES } from './overlay-errors';
+import { warnIfOverlayScrollBlockerMissing } from './overlay-scroll-blocker-registry';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
-import { OVERLAY_REF, OverlayRef, createOverlayRef } from './overlay-ref';
+import { OVERLAY_REF, OverlayRef } from './overlay-ref';
+import { createOverlayRef } from './overlay-ref-internal';
 import { createOverlayStrategyController } from './strategies/overlay-strategy-controller';
 import { resolveOriginElement } from './strategies/resolve-origin-element';
 
@@ -76,12 +80,23 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       component: Type<TComponent>,
       config: OverlayConfig = {},
     ) => {
+      if (ngDevMode && config.mode !== 'non-modal' && !config.passive) {
+        warnIfOverlayScrollBlockerMissing(document);
+      }
+
       if (config.strategies) {
         return openWithStrategies<TComponent, TResult>(component, config);
       }
 
+      if (ngDevMode && (config.directives?.length || config.customAnimated)) {
+        throw new RuntimeError(
+          OVERLAY_ERROR_CODES.STRATEGY_ONLY_OPTION,
+          `[Overlay] \`${config.directives?.length ? 'directives' : 'customAnimated'}\` only applies to an overlay opened with \`strategies\`. Add a strategy (e.g. \`strategies: () => [{ strategy: dialogOverlayStrategy() }]\`) or remove the option.`,
+        );
+      }
+
       const id = config.id ?? `et-overlay-${++overlayId}`;
-      const overlayRef = createOverlayRef<TComponent, TResult>(config);
+      const { ref: overlayRef, internals } = createOverlayRef<TComponent, TResult>(config);
       const modal = config.mode !== 'non-modal';
       const role = config.role ?? (modal ? 'dialog' : undefined);
       const disableClose = config.disableClose ?? false;
@@ -117,7 +132,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         paneClass: normalizeClassList(config.panelClass),
       });
 
-      overlayRef.attachRuntime(runtimeRef);
+      internals.attachRuntime(runtimeRef);
       runtimeToOverlayRef.set(
         runtimeRef as OverlayRuntimeRef<object, unknown>,
         overlayRef as OverlayRef<object, unknown>,
@@ -137,7 +152,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         origin: resolveOrigin(config.origin, document),
       };
 
-      const overlayRef = createOverlayRef<TComponent, TResult>(resolvedConfig);
+      const { ref: overlayRef, internals } = createOverlayRef<TComponent, TResult>(resolvedConfig);
       const controller = createOverlayStrategyController(resolvedConfig, injector);
       const modal = resolvedConfig.mode !== 'non-modal';
       const role = resolvedConfig.role ?? (modal ? 'dialog' : undefined);
@@ -192,8 +207,8 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
       const typedRuntimeRef = runtimeRef as unknown as OverlayRuntimeRef<TComponent, TResult>;
 
-      overlayRef.attachRuntime(typedRuntimeRef);
-      overlayRef.attachComponentInstanceOverride(
+      internals.attachRuntime(typedRuntimeRef);
+      internals.attachComponentInstanceOverride(
         () => (runtimeRef.componentInstance()?.contentComponentRef()?.instance as TComponent | null) ?? null,
       );
       controller.attach(runtimeRef as OverlayRuntimeRef<object, unknown>, overlayRef as OverlayRef<object, unknown>);

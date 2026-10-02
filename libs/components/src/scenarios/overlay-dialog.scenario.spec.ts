@@ -5,7 +5,6 @@ import {
   ALERT_DIALOG_LABELS,
   createAlertDialogOpener,
   createOverlayOpener,
-  createOverlayRef,
   createOverlaySingleSlot,
   createOverlayUnsavedChangesGuard,
   DEFAULT_ALERT_DIALOG_LABELS,
@@ -40,6 +39,7 @@ import {
   resolveClosestOverlay,
   resolveOverlayHasBackdrop,
 } from '../index';
+import { createTestOverlayRef } from '../lib/testing/fake-overlay-ref';
 import { Scenario, useScenario } from './harness';
 
 @Component({
@@ -210,7 +210,7 @@ const backdropOf = (ref: { readonly elements: OverlayRef['elements'] }) => {
 @Component({
   selector: 'et-scenario-inline-preview',
   imports: [RegionsOverlayComponent],
-  providers: [{ provide: OVERLAY_REF, useFactory: () => createOverlayRef({}) }],
+  providers: [{ provide: OVERLAY_REF, useFactory: () => createTestOverlayRef() }],
   template: '<et-scenario-regions-overlay />',
 })
 class InlinePreviewComponent {
@@ -528,7 +528,7 @@ describe('overlay dialog scenarios', () => {
     s.flush();
     expect(closed).toEqual([]);
 
-    ref.forceClose('api', 'forced');
+    ref.forceClose('forced', 'api');
     s.flush();
     expect(closed).toEqual(['api:forced']);
     unregister();

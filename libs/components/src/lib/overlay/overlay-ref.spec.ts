@@ -1,21 +1,21 @@
 import { inputBinding } from '@angular/core';
 import '../../test-helpers';
-import { createOverlayRef } from './overlay-ref';
+import { createOverlayRef } from './overlay-ref-internal';
 
 describe('createOverlayRef', () => {
   it('initializes with empty id', () => {
-    const ref = createOverlayRef({});
+    const { ref } = createOverlayRef({});
     expect(ref.id).toBe('');
   });
 
   it('initializes with null componentInstance', () => {
-    const ref = createOverlayRef({});
+    const { ref } = createOverlayRef({});
     expect(ref.componentInstance()).toBeNull();
   });
 
   it('stores config', () => {
     const config = { bindings: [inputBinding('key', () => 'value')] };
-    const ref = createOverlayRef(config);
+    const { ref } = createOverlayRef(config);
     expect(ref.config).toEqual(config);
   });
 });

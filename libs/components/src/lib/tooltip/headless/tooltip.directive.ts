@@ -88,6 +88,12 @@ export class TooltipDirective {
   private appliedDescriptionId: string | null = null;
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
+  private hasContent = computed(() => {
+    const content = this.content();
+
+    return content !== null && (typeof content !== 'string' || content.trim() !== '');
+  });
+
   private accessibleDescription = computed(() => {
     const ariaDescription = this.ariaDescription();
 
@@ -96,7 +102,7 @@ export class TooltipDirective {
     }
 
     const content = this.content();
-    return typeof content === 'string' ? content : null;
+    return typeof content === 'string' && this.hasContent() ? content : null;
   });
 
   constructor() {
@@ -121,10 +127,10 @@ export class TooltipDirective {
     });
 
     effect(() => {
-      const content = this.content();
+      const hasContent = this.hasContent();
       const disabled = this.disabled();
 
-      if ((content === null || disabled) && this.overlayRef()) {
+      if ((!hasContent || disabled) && this.overlayRef()) {
         untracked(() => {
           this.hide();
         });
@@ -143,7 +149,7 @@ export class TooltipDirective {
     }
 
     const content = this.content();
-    if (content === null) {
+    if (!this.hasContent()) {
       return;
     }
 

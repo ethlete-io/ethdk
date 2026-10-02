@@ -43,7 +43,7 @@ export type OverlayConfig = {
    *
    * This is how a consumer extends an overlay the SDK itself defines and opens: the component has no
    * template to place a directive in, so a self-registering feature - a scheduler edit field, a badge
-   * adornment - reaches it here instead.
+   * adornment - reaches it here instead. Requires `strategies`; without them it throws `ET1211`.
    */
   directives?: (Type<unknown> | DirectiveWithBindings<unknown>)[];
 
@@ -71,14 +71,16 @@ export type OverlayConfig = {
 
   /**
    * Breakpoint-driven overlay strategies (dialog, sheets, full-screen, …).
-   * When set, position, sizing and classes are controlled by the active strategy.
+   * When set, position, sizing and classes are controlled by the active strategy. Without them the
+   * overlay mounts bare: no `directives`, no default animation and no color or surface theme context.
    * Include one entry without a `breakpoint` as the base strategy - an array without one falls back
    * to its smallest entry below every breakpoint it lists.
    */
   strategies?: () => OverlayStrategyBreakpoint[];
 
   /**
-   * Disables the default overlay animations so custom ones can be applied.
+   * Disables the default overlay animations so custom ones can be applied. Requires `strategies`;
+   * without them it throws `ET1211`.
    *
    * @default false
    */

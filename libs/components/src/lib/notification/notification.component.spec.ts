@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ProvideColorDirective, provideColorThemes } from '@ethlete/core';
 import '../../test-helpers';
+import { TEST_SEMANTIC_COLOR_THEMES } from '../testing/color-themes';
 import { NotificationConfig, provideNotificationManagerConfig } from './notification-config';
 import { provideNotificationLabels } from './notification-labels';
 import { NotificationPauseReason, NotificationRef, createNotificationRef } from './notification-ref';
@@ -249,5 +251,45 @@ describe('NotificationComponent', () => {
       expect(handlers.primary).toHaveBeenCalledTimes(1);
       expect(pairRef.entry().isDismissing).toBe(true);
     });
+  });
+});
+
+describe('NotificationComponent status color', () => {
+  const managerConfig = {
+    position: 'bottom-end',
+    maxVisible: 3,
+    defaultDuration: { success: 0, info: 0, loading: 0, error: 0 },
+  } as const;
+
+  const render = (status: NotificationConfig['status'], statusColorMapping?: Record<string, string>) => {
+    TestBed.configureTestingModule({
+      imports: [NotificationComponent],
+      providers: [
+        provideColorThemes(TEST_SEMANTIC_COLOR_THEMES),
+        provideNotificationManagerConfig({ ...managerConfig, statusColorMapping }),
+      ],
+    });
+
+    const fixture = TestBed.createComponent(NotificationComponent);
+    fixture.componentRef.setInput('ref', createNotificationRef({ status, title: 'Toast' }, { managerConfig }));
+    fixture.detectChanges();
+
+    return fixture.debugElement.injector.get(ProvideColorDirective).colorName();
+  };
+
+  it('falls back to the semantic theme of the status type without a mapping', () => {
+    expect(render('error')).toBe('danger');
+  });
+
+  it('falls back to the success theme for a success toast', () => {
+    expect(render('success')).toBe('grass');
+  });
+
+  it('applies no theme to an info toast without a mapping', () => {
+    expect(['danger', 'grass']).not.toContain(render('info'));
+  });
+
+  it('prefers the mapped name over the semantic theme', () => {
+    expect(render('error', { error: 'sunshine' })).toBe('sunshine');
   });
 });

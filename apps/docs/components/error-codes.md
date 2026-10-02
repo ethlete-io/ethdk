@@ -166,19 +166,20 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 
 ## Overlay (ET12xx)
 
-| Code     | Cause                                                                                              | Fix                                                                                           |
-| -------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `ET1200` | An `[etOverlay]` element has no surface template.                                                  | Add `<ng-template etOverlaySurface>` inside the `[etOverlay]` element.                        |
-| `ET1201` | `etOverlayTrigger` is not inside an `[etOverlay]` element.                                         | Move the trigger inside the overlay root.                                                     |
-| `ET1202` | `etOverlayAnchor` is not inside an `[etOverlay]` element.                                          | Move the anchor inside the overlay root.                                                      |
-| `ET1203` | `etOverlaySurface` is not inside an `[etOverlay]` element.                                         | Move the surface template inside the overlay root.                                            |
-| `ET1204` | Merged overlay strategies each contribute a layout class for the same config key.                  | Overwrite the layout class instead of combining strategies that each provide one.             |
-| `ET1205` | A closest-overlay lookup ran on an element that isn't rendered inside an open overlay.             | Only call it from content rendered inside an overlay.                                         |
-| `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.             | Keep exactly one main region per overlay.                                                     |
-| `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition.   | Call it only inside the component the definition opens.                                       |
-| `ET1208` | An `et-overlay-header`, `et-overlay-body`, or `et-overlay-footer` has no `etOverlayMain` ancestor. | Wrap them in an `<et-overlay-main>` element or a host carrying the `etOverlayMain` directive. |
-| `ET1209` | The full-screen enter animation ran without an origin element to grow out of.                      | Pass `origin` in the overlay config (the strategy otherwise uses its reduced animation).      |
-| `ET1210` | The `strategies` factory returned an empty array, so the overlay has no strategy to open with.     | Return at least one entry, including one without a `breakpoint` as the base strategy.         |
+| Code     | Cause                                                                                                 | Fix                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `ET1200` | An `[etOverlay]` element has no surface template.                                                     | Add `<ng-template etOverlaySurface>` inside the `[etOverlay]` element.                               |
+| `ET1201` | `etOverlayTrigger` is not inside an `[etOverlay]` element.                                            | Move the trigger inside the overlay root.                                                            |
+| `ET1202` | `etOverlayAnchor` is not inside an `[etOverlay]` element.                                             | Move the anchor inside the overlay root.                                                             |
+| `ET1203` | `etOverlaySurface` is not inside an `[etOverlay]` element.                                            | Move the surface template inside the overlay root.                                                   |
+| `ET1204` | Merged overlay strategies each contribute a layout class for the same config key.                     | Overwrite the layout class instead of combining strategies that each provide one.                    |
+| `ET1205` | A closest-overlay lookup ran on an element that isn't rendered inside an open overlay.                | Only call it from content rendered inside an overlay.                                                |
+| `ET1206` | An overlay contains nested `<et-overlay-main>` elements or `etOverlayMain` directives.                | Keep exactly one main region per overlay.                                                            |
+| `ET1207` | An overlay definition's `injectRef()` was called outside a component opened via that definition.      | Call it only inside the component the definition opens.                                              |
+| `ET1208` | An `et-overlay-header`, `et-overlay-body`, or `et-overlay-footer` has no `etOverlayMain` ancestor.    | Wrap them in an `<et-overlay-main>` element or a host carrying the `etOverlayMain` directive.        |
+| `ET1209` | The full-screen enter animation ran without an origin element to grow out of.                         | Pass `origin` in the overlay config (the strategy otherwise uses its reduced animation).             |
+| `ET1210` | The `strategies` factory returned an empty array, so the overlay has no strategy to open with.        | Return at least one entry, including one without a `breakpoint` as the base strategy.                |
+| `ET1211` | An overlay was opened with `directives` or `customAnimated` but without `strategies` (dev mode only). | Add a `strategies` entry - only the strategy container applies those options - or remove the option. |
 
 ## Menu (ET13xx)
 

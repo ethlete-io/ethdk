@@ -1,12 +1,15 @@
-import { FactoryProvider, signal } from '@angular/core';
+import { Component, FactoryProvider, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideLocale } from '@ethlete/core';
 import { provideRouter } from '@angular/router';
 import { QueryFormModel, defineQueryForm, queryField } from '@ethlete/query';
+import { firstValueFrom } from 'rxjs';
 import '../../test-helpers';
-import { FilterOverlay, provideFilterOverlay } from './filter-overlay';
+import { injectOverlayManager } from '../overlay/overlay-manager';
+import { getOverlayRefInternals } from '../overlay/overlay-ref-internal';
+import { FilterOverlay, injectFilterOverlay, provideFilterOverlay } from './filter-overlay';
 import { DEFAULT_FILTER_OVERLAY_LABELS, resolveFilterOverlaySubmitButton } from './filter-overlay-labels';
-import { FilterOverlayPreview } from './filter-overlay.types';
+import { FilterOverlayPreview, FilterOverlayResult } from './filter-overlay.types';
 
 const FIELDS = {
   search: queryField<string>({ defaultValue: '' }),
@@ -284,5 +287,35 @@ describe('filter overlay pristine state', () => {
 
     expect(filterOverlay.activeFilterCount()).toBe(0);
     expect(filterOverlay.isPristine()).toBe(false);
+  });
+});
+
+describe('filter overlay dismissal', () => {
+  @Component({ template: '' })
+  class FilterPanelComponent {
+    protected filters = injectFilterOverlay();
+  }
+
+  it('closes with { didUpdate: false } when dismissed without a result', async () => {
+    TestBed.configureTestingModule({ providers: [provideLocale(), provideRouter([{ path: '**', children: [] }])] });
+
+    const ref = TestBed.runInInjectionContext(() => {
+      const queryForm = defineQueryForm({ fields: FIELDS }).observe({
+        writeToQueryParams: false,
+        syncOnNavigation: false,
+      });
+
+      return injectOverlayManager().open<FilterPanelComponent, FilterOverlayResult>(FilterPanelComponent, {
+        providers: provideFilterOverlay({ queryForm }),
+      });
+    });
+    TestBed.tick();
+
+    const result = firstValueFrom(ref.afterClosed());
+
+    getOverlayRefInternals(ref)?.closeVia('escape');
+    TestBed.tick();
+
+    expect(await result).toEqual({ didUpdate: false });
   });
 });
