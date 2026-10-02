@@ -2,13 +2,6 @@
 
 Live work only, ordered by what to do first. Finished items are removed; git history has them.
 
-## Run the error-color-theme migration on a consumer
-
-`error-color-theme-signal` (`dd4a84727`, `1.0.0-next.67`) rewrites `.errorColorTheme` reads on
-`injectFormSupport()` and `TableComponent` to calls. It is syntactic and has run only in Nx tree
-tests. Run it with `et update` on a scratch copy of fut-frontend once next.67 ships, and check
-that it changes nothing else.
-
 ## Watchlist - gated on browsers
 
 Nothing here is actionable now. **Re-check support before planning any of it.** Last checked
