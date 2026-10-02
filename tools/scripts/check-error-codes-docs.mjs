@@ -24,6 +24,11 @@ const files = execSync(
 
 const definitionStart = /(?:const\s+\w*_CODES?\b[^={]*=\s*\{|enum\s+\w*Code\w*\s*\{)/g;
 const member = /^\s*(\w+)\s*[:=]\s*(\d+)\b/gm;
+const literalSite = [
+  /new\s+\w*RuntimeError\s*(?:<[^>(]*>)?\(\s*(\d+)\s*[,)]/g,
+  /formatRuntimeError\s*(?:<[^>(]*>)?\(\s*(\d+)\s*[,)]/g,
+  /['"`]ET(\d+):/g,
+];
 
 const defined = [];
 
@@ -36,9 +41,15 @@ for (const file of files) {
   } catch {
     continue;
   }
-  if (!/_CODES?\b|Code\w*\s*\{/.test(text)) continue;
-
   const lib = file.split('/')[1];
+
+  for (const pattern of literalSite) {
+    for (const m of text.matchAll(pattern)) {
+      defined.push({ lib, name: '(bare literal)', code: Number(m[1]), file });
+    }
+  }
+
+  if (!/_CODES?\b|Code\w*\s*\{/.test(text)) continue;
 
   for (const start of text.matchAll(definitionStart)) {
     const body = text.slice(start.index + start[0].length, text.indexOf('}', start.index + start[0].length));
