@@ -1,7 +1,6 @@
 import { isPlatformServer } from '@angular/common';
 import {
   assertInInjectionContext,
-  computed,
   DestroyRef,
   effect,
   inject,
@@ -12,7 +11,7 @@ import {
   untracked,
   WritableSignal,
 } from '@angular/core';
-import { defineRootProvider, previousSignalValue, ProviderDefinition } from '@ethlete/core';
+import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
 import { messageMalformed, roomNotJoined } from './web-socket-errors';
@@ -288,23 +287,17 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         if (typeof room === 'string') return joinStaticRoom(room);
 
         const roomFn = room;
-        // Must stay above the effect below: `previousSignalValue` registers a `toObservable` effect that has to run
-        // first in the same flush. Registered later, it leaves `pre()` on the room from the flush before, and the
-        // effect joins the new room without ever leaving the old one.
-        const pre = previousSignalValue(computed(() => roomFn()));
         const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
         let joinedRoomName: string | null = null;
 
         effect(() => {
-          const current = roomFn();
+          const current = roomFn() || null;
 
           untracked(() => {
-            const previous = pre();
+            if (current === joinedRoomName) return;
 
-            if (previous === current) return;
-
-            if (previous) {
-              leaveRoom(previous);
+            if (joinedRoomName) {
+              leaveRoom(joinedRoomName);
               joinedRoomName = null;
             }
 
