@@ -3,8 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { SELECT_IMPORTS, TabBarDirective, TabBarTriggerDirective } from '@ethlete/components';
 import { createSelectDriver } from './select-driver';
 import { createTabBarDriver } from './tabs-driver';
-import { directiveAt } from './control-driver';
-import { focusEvent, resetOverlays } from './driver-core';
+import { directiveAt, focusEvent, resetOverlays } from './driver-core';
 import { setupComponentsTestEnvironment } from './test-environment';
 
 @Component({
