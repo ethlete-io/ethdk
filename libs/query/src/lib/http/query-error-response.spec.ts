@@ -126,4 +126,21 @@ describe('queryErrorMessages', () => {
   it('should return the first message', () => {
     expect(queryErrorMessage(listError)).toBe('name is required');
   });
+
+  it('should drop blank messages from a list', () => {
+    const error = createQueryErrorResponse(
+      new HttpErrorResponse({ status: 400, error: { errors: [{ message: ' ' }, { message: 'email is invalid' }] } }),
+    );
+
+    expect(queryErrorMessages(error)).toEqual(['email is invalid']);
+    expect(queryErrorMessage(error)).toBe('email is invalid');
+  });
+
+  it('should fall back to the raw message when every message is blank', () => {
+    const raw = new HttpErrorResponse({ status: 400, url: '/x', error: { message: '  ' } });
+    const error = createQueryErrorResponse(raw);
+
+    expect(queryErrorMessages(error)).toEqual([raw.message]);
+    expect(queryErrorMessage(error)).toBe(raw.message);
+  });
 });

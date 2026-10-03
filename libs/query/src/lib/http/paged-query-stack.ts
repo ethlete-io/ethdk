@@ -515,7 +515,7 @@ export const createPagedQueryStack = <
     return stack.queries().length === 1 && !!stack.lastQuery()?.loading();
   });
 
-  const execute = (options?: PagedQueryStackExecuteOptions<TArgs>) =>
+  const execute = (options?: PagedQueryStackExecuteOptions<TNormPagination>) =>
     untracked(() => {
       const whereFn = options?.where;
 

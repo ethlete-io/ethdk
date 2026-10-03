@@ -35,6 +35,7 @@ export const isQueryErrorResponse = (error: unknown): error is QueryErrorRespons
 /**
  * Every message carried by an error, flattened into a plain list - one entry for a single error,
  * one per violation for a list (a form response with several field violations), empty for `null`.
+ * Blank messages are dropped; an error left with none yields the raw response's message instead.
  *
  * The single/list split exists because that is how APIs answer; UI almost never wants to branch on
  * it. Reach for this when rendering, and keep {@link QueryErrorResponse} for anything that needs
@@ -50,7 +51,10 @@ export const isQueryErrorResponse = (error: unknown): error is QueryErrorRespons
 export const queryErrorMessages = (error: QueryErrorResponse | null | undefined): string[] => {
   if (!error) return [];
 
-  return error.isList ? error.errors.map((item) => item.message) : [error.error.message];
+  const items = error.isList ? error.errors : [error.error];
+  const messages = items.map((item) => item.message).filter((message) => message.trim());
+
+  return messages.length ? messages : [error.raw.message];
 };
 
 /**

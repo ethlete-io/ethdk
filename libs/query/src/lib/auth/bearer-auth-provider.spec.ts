@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { createUnsavedChangesTracker, getCookie, getDomain, injectRoute } from '@ethlete/core';
 import { flushMultiTabSync, installFakeBroadcastChannel, installFakeWebLocks } from '@ethlete/query/testing';
+import { setQueryDevtoolsTokenPayloadPatcher } from '../devtools/query-devtools-hook';
 import { createPostQuery, createQueryClient, createSecureGetQuery, QueryClientRef } from '../http';
 import { createBearerAuthProvider } from './bearer-auth-provider';
 import { withAuthenticationQuery, withRefreshQuery } from './bearer-auth-query-builders';
@@ -1233,6 +1234,56 @@ describe('createBearerAuthProvider', () => {
 
         expect(provider.bearerData()?.userId).toBe('456');
       });
+    });
+    it('hands the devtools token patch the expiry claim the refresh query reads', () => {
+      const claims: string[] = [];
+      setQueryDevtoolsTokenPayloadPatcher(({ payload, expiresInPropertyName }) => {
+        claims.push(expiresInPropertyName);
+        return payload;
+      });
+
+      const postQuery = createPostQuery(queryClientRef);
+      const login = postQuery<{
+        body: { username: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/login');
+      const refresh = postQuery<{
+        body: { token: string };
+        response: { token: string; refresh_token: string };
+      }>('/auth/refresh');
+      const extractTokens = (response: { token: string; refresh_token: string }) => ({
+        accessToken: response.token,
+        refreshToken: response.refresh_token,
+      });
+
+      const { inject: injectAuthProvider } = createBearerAuthProvider({
+        name: 'test-auth',
+        queryClientRef,
+        queries: [
+          withAuthenticationQuery('login', { queryCreator: login, extractTokens }),
+          withRefreshQuery('refresh', { queryCreator: refresh, extractTokens, expiresInPropertyName: 'expires_at' }),
+        ],
+        bearerDecryptFn: (token: string) => JSON.parse(atob(token.split('.')[1] ?? '')),
+      });
+
+      try {
+        TestBed.runInInjectionContext(() => {
+          const provider = injectAuthProvider();
+          const payload = JSON.stringify({ userId: '123', expires_at: Math.floor(Date.now() / 1000) + 3600 });
+
+          provider.queries.login.execute({ body: { username: 'test' } });
+          httpTesting
+            .expectOne('https://api.example.com/auth/login')
+            .flush({ token: `header.${btoa(payload)}.signature`, refresh_token: 'refresh-456' });
+          TestBed.tick();
+          claims.length = 0;
+
+          expect(provider.bearerData()).toMatchObject({ userId: '123' });
+          expect(claims).toEqual(['expires_at']);
+        });
+      } finally {
+        setQueryDevtoolsTokenPayloadPatcher(({ payload }) => payload);
+      }
     });
   });
 

@@ -554,6 +554,9 @@ export type BearerAuthProviderQueryContext<
    * all, so the provider cannot work it out on its own.
    */
   reportAccessTokenExpiry: (isExpired: () => boolean) => void;
+
+  /** Hands the provider the claim that carries the access token's expiry. `exp` until reported. */
+  reportExpiresInPropertyName: (claim: string) => void;
 };
 
 const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
@@ -811,6 +814,7 @@ const createBearerAuthProviderImpl = <
   const accessToken = signal<string | null>(null);
   const refreshToken = signal<string | null>(null);
   const afterTokenRefresh$ = new Subject<void>();
+  const expiresInPropertyName = signal('exp');
 
   const bearerData = computed<TBearerData | null>(() => {
     const token = accessToken();
@@ -822,7 +826,7 @@ const createBearerAuthProviderImpl = <
       return patchQueryDevtoolsTokenPayload({
         payload: decoded,
         providerName: config.name,
-        expiresInPropertyName: 'exp',
+        expiresInPropertyName: expiresInPropertyName(),
       });
     } catch (error) {
       if (isDevMode()) {
@@ -968,6 +972,7 @@ const createBearerAuthProviderImpl = <
     reportAccessTokenExpiry: (isExpired) => {
       readAccessTokenExpiry = isExpired;
     },
+    reportExpiresInPropertyName: (claim) => expiresInPropertyName.set(claim),
   };
 
   for (const builder of config.queries) {

@@ -324,6 +324,7 @@ export const withRefreshQuery = <TKey extends string, TArgs extends QueryArgs>(
 
   const setup = (context: BearerAuthProviderQueryContext) => {
     const expiresInPropertyName = config.expiresInPropertyName ?? 'exp';
+    context.reportExpiresInPropertyName(expiresInPropertyName);
     const minRefreshInterval = config.minRefreshInterval ?? 30000; // 30 seconds default
     const refreshIfExpired = config.refreshIfExpired ?? true;
 

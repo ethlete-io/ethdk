@@ -212,4 +212,29 @@ describe('http error pipes scenario', () => {
     a.destroy();
     b.destroy();
   });
+
+  it('never hands a blank message to the UI', () => {
+    const s = scenario();
+    s.api.on('GET', '/blank-message', () => ({ status: 400, body: { message: '   ' } }));
+    s.api.on('GET', '/blank-violation', () => ({ status: 400, body: ['', 'Name is too short.'] }));
+
+    const getBlank = s.get<{ response: unknown }>('/blank-message');
+    const getBlankViolation = s.get<{ response: unknown }>('/blank-violation');
+
+    const a = s.consumer();
+    const b = s.consumer();
+    const blankQuery = a.run(() => getBlank());
+    const violationQuery = b.run(() => getBlankViolation());
+
+    s.flush();
+
+    expect(queryErrorMessage(blankQuery.error())).toBe(blankQuery.error()?.raw.message);
+    expect(queryErrorMessage(blankQuery.error())?.trim()).toBeTruthy();
+    expect(queryErrorMessages(violationQuery.error())).toEqual(['Name is too short.']);
+
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 400);
+    a.destroy();
+    b.destroy();
+  });
 });

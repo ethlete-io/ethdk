@@ -161,6 +161,18 @@ describe('ngrx-toolkit interop', () => {
     cached.subscription.unsubscribe();
   });
 
+  it('joins the request in flight when the same args are called again', () => {
+    const s = scenario();
+    const first = facade().getTeam({ queryParams: { teamId: '1' } });
+    s.tick(50);
+
+    const second = facade().getTeam({ queryParams: { teamId: '1' } });
+    s.tick(200);
+
+    expect(second).toBe(first);
+    expect(s.api.requestCount('GET', '/teams/1')).toBe(1);
+  });
+
   it('re-runs the last args on refresh() and resets the entry on remove()', () => {
     const s = scenario();
     const store = facade().getTeam({ queryParams: { teamId: '1' } });

@@ -41,7 +41,7 @@ export type QueryDevtoolsSettings = {
    * The session vault: the token pairs the panel switches between, and the credentials it logs in with.
    * `local` by default, because a vault that forgets the other user on every reload is not one - and
    * `none` for a machine where nothing of the sort may be kept. Outside a development build `local` is
-   * refused and read back as `session`, see {@link queryDevtoolsAllowsLocalAuthSessions}.
+   * refused and read back as `none`, see {@link queryDevtoolsAllowsLocalAuthSessions}.
    */
   authSessions: QueryDevtoolsStorageScope;
 

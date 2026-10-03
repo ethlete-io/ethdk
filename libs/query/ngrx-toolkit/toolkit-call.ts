@@ -128,8 +128,8 @@ export const toolkitSelect = <TCreator extends AnyQueryCreator>(
 
 /**
  * Executes a query creator with toolkit-shaped args and returns its handle - the `FacadeBase.call(group, args)` of
- * `@tomtomb/ngrx-toolkit`. Every call sends the request again; equal args return the same handle, which lives as
- * long as the injector.
+ * `@tomtomb/ngrx-toolkit`. Every call sends the request again, unless one with equal args is still in flight, which it
+ * joins; equal args return the same handle, which lives as long as the injector.
  *
  * @example
  * ```ts
