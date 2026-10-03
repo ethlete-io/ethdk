@@ -47,8 +47,16 @@ export const withTurn = (session: StoredSession | null, turn: Turn): StoredSessi
 
 const KINDS: Turn['kind'][] = ['ask', 'say', 'act', 'note'];
 
-const isTurn = (value: unknown): value is Turn =>
-  !!value && typeof value === 'object' && KINDS.includes((value as Turn).kind);
+const isTurn = (value: unknown): value is Turn => {
+  if (!value || typeof value !== 'object') return false;
+
+  const turn = value as Record<string, unknown>;
+
+  if (!KINDS.includes(turn['kind'] as Turn['kind'])) return false;
+  if (turn['kind'] === 'act') return typeof turn['action'] === 'string' && typeof turn['detail'] === 'string';
+
+  return typeof turn['text'] === 'string';
+};
 
 const read = (value: unknown): StoredSession | null => {
   if (typeof value === 'string') return { id: value, tokens: 0, turns: [] };

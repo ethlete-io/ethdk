@@ -68,12 +68,12 @@ export const touchedLabel = (touched: number, now = Date.now() / 1000) => {
 
   if (!touched) return '';
   if (ago < MINUTE) return 'just now';
-  if (ago < HOUR) return count(Math.round(ago / MINUTE), 'minute');
-  if (ago < DAY) return count(Math.round(ago / HOUR), 'hour');
+  if (ago < HOUR) return count(Math.floor(ago / MINUTE), 'minute');
+  if (ago < DAY) return count(Math.floor(ago / HOUR), 'hour');
   if (ago < 2 * DAY) return 'yesterday';
-  if (ago < WEEK) return count(Math.round(ago / DAY), 'day');
+  if (ago < WEEK) return count(Math.floor(ago / DAY), 'day');
 
-  return count(Math.round(ago / WEEK), 'week');
+  return count(Math.floor(ago / WEEK), 'week');
 };
 
 /** The heading a call without a feature reads under. */
