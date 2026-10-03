@@ -14,7 +14,12 @@ const tester = new RuleTester({
 });
 
 // The repo's own copy of the map the published package ships, so the messages under test are the real ones.
-const withMap = [{ migrationMapPath: '../cdk/migration-map.json', docsBaseUrl: 'https://docs.example.com' }];
+const withMap = [
+  {
+    migrationMapPath: path.resolve(__dirname, '../../../cdk/migration-map.json'),
+    docsBaseUrl: 'https://docs.example.com',
+  },
+];
 
 tester.run('no-cdk-import', rule, {
   valid: [
