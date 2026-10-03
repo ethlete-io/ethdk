@@ -55,7 +55,7 @@ Source inputs per platform:
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
 
-A SOOP slot with neither `userId` nor `videoId`, or a Twitch `src` that is no channel or video (`twitch.tv/videos/`, a clip URL), shows the error overlay and reports `ET1611`. When both SOOP ids are set, `userId` wins.
+A SOOP slot with neither `userId` nor `videoId`, or a Twitch `src` that is no channel or video (`twitch.tv/videos/`, a clip URL), shows the error overlay and reports `ET1611` to the `ErrorHandler` in development. When both SOOP ids are set, `userId` wins.
 
 Upgrading from a version that shipped `YoutubePlayerSlotDirective`? The migration drops it from
 `imports` arrays and marks each other use - a host directive, an injected `YOUTUBE_PLAYER_SLOT_TOKEN` -
@@ -162,7 +162,13 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 `provideStreamPip()` in scope, no player yet (consent gate still up), or the player is already in (or not in) PiP.
 Register `provideStreamPip()` where the slots are provided, alongside `STREAM_PIP_IMPORTS`; without it, slots
 still play normally, and a PiP call reports `ET1612` in development.
-Configure the PiP chrome and window through that provider:
+While the player floats, the slot it left shows a placeholder (a "playing in picture-in-picture" message with a back button). It is off by default - register `PipSlotPlaceholderComponent` to get it, otherwise the slot is an empty box:
+
+```ts
+provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent });
+```
+
+Configure the PiP chrome and window through the PiP provider:
 
 ```ts
 provideStreamPip({

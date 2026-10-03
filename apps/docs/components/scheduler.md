@@ -94,7 +94,7 @@ Toolbar actions are the same self-registering-feature mechanism as everything el
 <et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" [appointments]="appointments" />
 ```
 
-Like the edit surface's own "Add sub-appointment"/"Delete" actions, this depends on the default edit surface (it's what the dialog it opens is) - a bare `[etScheduler]` composition needs its own "new appointment" affordance, the same caveat [clicking a badge](#month-view) already has.
+Like the edit surface's own "Add sub-appointment"/"Delete" actions, this depends on the default edit surface (it's what the dialog it opens is): without `provideSchedulerEditSurface()` the action hides itself. A bare `[etScheduler]` composition needs its own "new appointment" affordance, the same caveat [clicking a badge](#month-view) already has.
 
 ### At narrow widths {#toolbar-narrow}
 
@@ -127,7 +127,7 @@ A day cell per day of the padded month, leading/trailing days from adjacent mont
 | ------------------- | -------- | ------- | ---------------------------------------------------------------- |
 | `maxVisiblePerCell` | `number` | `3`     | How many appointments a day cell shows before the rest overflow. |
 
-Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI, so it only renders correctly inside `<et-scheduler>` or your own `[etScheduler]` element.
+Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI. Its badges are built from the registered [badge adornments](#badge-composability), which only `<et-scheduler>` (or a shell of your own that provides [`SCHEDULER_FEATURE_HOST`](#own-feature-host)) supplies - inside a bare `[etScheduler]` the badges render empty.
 
 ## Time grid: week & day view
 
@@ -295,7 +295,7 @@ The state behind it lives on the headless directive, so a custom view can drive 
 
 ## Edit surface {#edit-surface}
 
-Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler is read-only: a click on a badge only selects it (bind `(selectedAppointmentIdChange)` to drive a detail panel of your own), the toolbar has no "Add appointment" button, and clicking, dragging or pressing Enter on an empty slot drafts nothing. The headless `createEnabled` signal on `[etScheduler]` is what turns drag-to-create off; set it yourself in a headless composition. Calling `addAppointment()` without the surface reports `ET4505` to the `ErrorHandler` in development. The Scheduler `ReadOnly` story in Storybook shows this setup.
+Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler is read-only: a click on a badge only selects it (bind `(selectedAppointmentIdChange)` to drive a detail panel of your own), the toolbar has no "Add appointment" button, and clicking, dragging or pressing Enter on an empty slot drafts nothing. The headless `createEnabled` signal on `[etScheduler]` is what turns drag-to-create off; set it yourself in a headless composition. Calling `addAppointment()` without the surface reports `ET4505` to the `ErrorHandler` in development (and does nothing). The Scheduler `ReadOnly` story in Storybook shows this setup.
 
 `SCHEDULER_IMPORTS` no longer includes the editor. Add `SCHEDULER_EDIT_IMPORTS` when rendering `<et-scheduler-edit-surface>` directly in a custom composition.
 
@@ -331,7 +331,7 @@ Anchored, it opens **beside** what it belongs to - to the right of it, aligned t
 
 The scheduler never mutates `appointments` itself - `appointmentSave` emits the edited (or newly-added) `Appointment` for you to merge back into your own array, and `appointmentsDelete` emits every id to remove (the appointment plus, for "Delete (with descendants)", its whole sub-appointment chain) for you to filter out. See the [live demo](#live-demo)'s story source for the merge/filter logic.
 
-Like the badge, the surface is built from self-registering feature directives bundled onto `<et-scheduler-edit-surface>` by default - not a set of boolean inputs. Disable one by binding its own config input:
+Like the badge, the surface is built from self-registering feature directives bundled onto `<et-scheduler-edit-surface>` by default - not a set of boolean inputs. When you host the surface in a template of your own, disable one by binding its own config input (`<et-scheduler>` opens a fixed surface and takes no field configuration - see [extending](#extending-the-edit-surface)):
 
 ```html
 <et-scheduler-edit-surface [etSchedulerEditDescription]="{ enabled: false }" />
@@ -370,9 +370,9 @@ Add your own field the same way: a directive that injects `SCHEDULER_EDIT_SURFAC
 
 #### Extending the edit surface {#extending-the-edit-surface}
 
-Where that directive goes depends on who opens the surface.
+`provideSchedulerEditSurface()` takes no options and `<et-scheduler>` opens the default surface with its built-in fields and actions only, so it cannot hide a field or add a custom one. Extend the surface from a scheduler composition of your own instead.
 
-`<et-scheduler>` opens the default surface through an overlay definition, so there is no template of yours to place the directive in. Pass it as the open call's [`directives`](/components/overlay-openers#extending-an-overlay) instead - which is also how a headless scheduler of your own opens the surface:
+A headless scheduler opens the surface through the overlay definition, so there is no template of yours to place the directive in. Pass it as the open call's [`directives`](/components/overlay-openers#extending-an-overlay):
 
 ```ts
 private editSurface = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
@@ -533,4 +533,4 @@ Badge and selection colors come from the nearest [color theme](/core/theming) vi
 
 ## Error codes
 
-The scheduler domain owns the `ET4500`–`ET4599` range - see [error codes](/components/error-codes#scheduler-et45xx).
+The scheduler domain owns the `ET4500`–`ET4599` range - see [error codes](/components/error-codes#scheduler-et45xx). `ET4500` and `ET4502`–`ET4504` (a feature directive outside its host) throw on creation in every build; `ET4501`, `ET4505` and `ET4506` are reported in development only.
