@@ -13,6 +13,22 @@ const minifyGql = (document: string) =>
     .replace(whitespaceOutsideString, (_match, literal?: string) => literal ?? ' ')
     .trim();
 
+/** Blanks everything inside braces, so a field named `query` or `mutation` cannot pass for an operation. */
+const topLevelOnly = (document: string) => {
+  let depth = 0;
+  let result = '';
+
+  for (const char of document) {
+    if (char === '}') depth = Math.max(depth - 1, 0);
+
+    result += depth === 0 ? char : ' ';
+
+    if (char === '{') depth++;
+  }
+
+  return result;
+};
+
 export type TransformedGqlQuery = {
   query: string;
   variables?: string | Record<string, unknown>;
@@ -33,7 +49,7 @@ export const transformGql = (str: string | string[]): GqlTransformer => {
   const normalizedStr = Array.isArray(str) ? str.join('') : str;
 
   const operationName = getOpName.exec(
-    normalizedStr.replace(commentOutsideString, (_match, literal?: string) => (literal ? '""' : '')),
+    topLevelOnly(normalizedStr.replace(commentOutsideString, (_match, literal?: string) => (literal ? '""' : ''))),
   )?.[1];
   let minified: string | undefined;
 

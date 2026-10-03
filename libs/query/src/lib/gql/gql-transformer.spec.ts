@@ -166,6 +166,13 @@ describe('transformGql', () => {
       expect(result.operationName).toBeUndefined();
     });
 
+    it('does not read a field named query inside an anonymous operation as the operation name', () => {
+      const query = 'mutation ($input: CreateUserInput!) { createUser(input: $input) { query viewer { id } } }';
+      const result = transformGql(query)(null, 'POST');
+
+      expect(result.operationName).toBeUndefined();
+    });
+
     it('should handle query with extra whitespace', () => {
       const query = 'query GetUser (  $id:  ID!  ) { user { id } }';
       const transformer = transformGql(query);
