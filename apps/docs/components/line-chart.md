@@ -54,7 +54,7 @@ When every `x` is a `Date`, the chart draws a time axis instead. Points sit at t
 
 The tooltip and the table name each instant at the resolution the data has: the month (`March 2025`) when every instant is the first of a month, the date (`Mar 30, 2025`) when every instant is a midnight, and date and time otherwise. `dateFormatter` replaces that.
 
-Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in dev mode, and the chart draws nothing. Like the bar chart, it warns in dev mode when `data` and `series` do not fit, such as a series `key` no datum carries.
+Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in dev mode, and the chart draws nothing. Like the bar chart, it calls `console.warn` in dev mode when `data` and `series` do not fit: `values` without `series`, `series` over data that carries only `value`, or a series `key` no datum carries. It also warns when two series share one `colorToken`.
 
 <StoryEmbed id="components-data-display-line-chart--time-axis" height="380px" />
 

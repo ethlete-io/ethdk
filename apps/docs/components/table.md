@@ -121,9 +121,9 @@ than resetting them.
 | `cellState`           | -            | `(row: T, key: string) => 'loading' \| 'error' \| null` for [per-cell states](#per-cell-states).                                                     |
 | `sort`                | `[]`         | Two-way bindable sort state - an ordered `{ key, direction }[]`. See [Sorting](#sorting).                                                            |
 | `multiSort`           | `false`      | `true` layers a key per header click, `'shift'` per Shift + click - see [below](#multi-column-sorting).                                              |
-| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort.                                                                |
+| `sortMode`            | `'client'`   | `'client'` sorts rows in the browser; `'server'` leaves them for the backend to sort. `'server'` while a `rowsSource` is bound.                      |
 | `filters`             | `[]`         | Two-way bindable filter state - `{ key, values }[]`. See [Filtering](#filtering).                                                                    |
-| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter.                                                            |
+| `filterMode`          | `'client'`   | `'client'` filters rows in the browser; `'server'` leaves them for the backend to filter. `'server'` while a `rowsSource` is bound.                  |
 | `quickFilter`         | `''`         | Free text; keeps the rows containing every word of it. See [Quick filter](#quick-filter).                                                            |
 | `expandedRowTemplate` | -            | Detail template for [row expansion](#row-expansion) - needs `etTableRowExpansion`. Context: `{ $implicit: row }`.                                    |
 | `rowInteractive`      | `false`      | Make rows clickable, emitting `(rowClick)`. See [Row clicks](#row-clicks).                                                                           |
@@ -209,25 +209,32 @@ wrapping it in a scroller.
 
 Each value of the `TableColumns<T>` record:
 
-| Field              | Default               | Description                                                                                                                     |
-| ------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `value`            | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                    |
-| `sortable`         | `false`               | Render a sortable header for this column.                                                                                       |
-| `sortValue`        | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                      |
-| `filterable`       | `false`               | Render a filter menu on this column's header.                                                                                   |
-| `filterOptions`    | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).          |
-| `filterSearch`     | `false`               | Add a search box to the filter menu.                                                                                            |
-| `filterValue`      | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                         |
-| `quickFilter`      | `true`                | Search this column with the table's [`quickFilter`](#quick-filter); `false` leaves it out.                                      |
-| `quickFilterValue` | `value`               | `(row: T) => string \| number \| null` - the text the [quick filter](#quick-filter) searches in this column.                    |
-| `header`           | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                 |
-| `group`            | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).  |
-| `sticky`           | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer). |
-| `interactive`      | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                 |
-| `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                 |
-| `width`            | `'minmax(48px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                            |
-| `hidden`           | `false`               | Hide the column initially; toggle later via table state.                                                                        |
-| `disabled`         | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                               |
+| Field              | Default               | Description                                                                                                                        |
+| ------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `value`            | - (required)          | `(row: T) => V` - the typed cell accessor. Rendered directly unless an `etTableCell` template is registered.                       |
+| `sortable`         | `false`               | Render a sortable header for this column.                                                                                          |
+| `sortValue`        | `value`               | Comparable to sort by (`string`/`number`/`Date`/`boolean`/`null`) when the display value isn't comparable.                         |
+| `filterable`       | `false`               | Render a filter menu on this column's header.                                                                                      |
+| `filterOptions`    | -                     | The `{ label, value }[]` choices - a static list or an async provider (see [below](#searchable-async-filter-options)).             |
+| `filterSearch`     | `false`               | Add a search box to the filter menu.                                                                                               |
+| `filterSelection`  | `'multiple'`          | `'single'` picks one value (radio items), `'multiple'` several. See [below](#one-value-or-several).                                |
+| `filterValue`      | `value`               | The value matched against the selected filter values, when the display value isn't the one to match on.                            |
+| `quickFilter`      | `true`                | Search this column with the table's [`quickFilter`](#quick-filter); `false` leaves it out.                                         |
+| `quickFilterValue` | `value`               | `(row: T) => string \| number \| null` - the text the [quick filter](#quick-filter) searches in this column.                       |
+| `exportValue`      | `value`               | What a [CSV export](#what-each-cell-says) writes for this column. Required when the cell is a template or `value` is no primitive. |
+| `editable`         | `false`               | Let the cells be [edited in place](#inline-cell-editing) - needs `etTableInlineEdit` and an `etTableCellEdit` template.            |
+| `header`           | -                     | Static header text. Ignored when an `etTableHeaderCell` template is registered.                                                    |
+| `group`            | -                     | Group label; adjacent columns sharing it span a header - needs `etTableGroupHeaders`. See [Grouped headers](#grouped-headers).     |
+| `sticky`           | -                     | `'start' \| 'end'` - pin the column while scrolling, with `etTableStickyColumns`. See [Sticky columns](#sticky-columns-footer).    |
+| `interactive`      | `false`               | This column's cells hold their own controls: a [row link](#row-links) never covers them, nor is it hosted here.                    |
+| `align`            | `'start'`             | `'start' \| 'center' \| 'end'`.                                                                                                    |
+| `width`            | `'minmax(96px, 1fr)'` | Any `grid-template-columns` track value (`'200px'`, `'minmax(120px, 1fr)'`, …). See the notes below.                               |
+| `minWidth`         | `96`                  | The column's floor in px, for squeezing and resizing alike. See the notes below.                                                   |
+| `hidden`           | `false`               | Hide the column initially; toggle later via table state.                                                                           |
+| `disabled`         | `false`               | Turn off this column's header controls: its sortable header, its filter menu and its column menu.                                  |
+
+`filterable`, `sticky`, `group` and `editable` are read by an opt-in feature; setting one on a table
+without that feature is a dev-mode error ([`ET3512`](/components/error-codes#table-et35xx)).
 
 **Every column has a floor**, `minWidth` (96px by default), and it applies whether the
 column is squeezed by a wider neighbour or dragged there by a
@@ -677,7 +684,7 @@ nested component) is measured as it actually lays out. On a
 [virtualized](#virtualization) table that means the current window: rows outside it
 aren't in the DOM to measure. Results are still clamped to the column's
 [`minWidth`](#columns) and the table's own width. Hidden columns are ordinary
-[column-visibility state](#column-visibility--reordering), so `state()` round-trips
+[column-visibility state](#column-visibility-reordering), so `state()` round-trips
 them and your own "columns" chooser can bring one back.
 
 The menu's controls - it and the filter trigger - are **permanently visible** rather
@@ -759,6 +766,16 @@ the previous page visible while the next one loads (no empty flash); `setSort`/`
 `setQuickFilter` reset to `initialPage`, and `hasMore` likewise keeps its last answer while a page loads.
 Call it from a field initializer / constructor, like a query or query stack.
 
+| Config                                                  | Default             | Description                                                                                                |
+| ------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `queryCreator`                                          | - (required)        | The query creator. The query is created once and re-executes as `args` changes.                            |
+| `args`                                                  | - (required)        | `(state) => args \| null` - build the request from `sort`/`filters`/`quickFilter`/`page`; `null` skips it. |
+| `toRows`                                                | - (required)        | Maps a response to the page's rows.                                                                        |
+| `toTotal` / `toHasMore`                                 | -                   | Map a response to the total row count / whether more pages exist.                                          |
+| `toErrorMessage`                                        | first error message | Turns a query failure into the `error` text.                                                               |
+| `initialSort` / `initialFilters` / `initialQuickFilter` | `[]` / `[]` / `''`  | The state `args` sees on first load.                                                                       |
+| `initialPage`                                           | `1`                 | The first page, and the one `setSort`/`setFilters`/`setQuickFilter` reset to.                              |
+
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** - the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
 share one client-agnostic core (`createTableRowsSource`), so they stay in lockstep.
@@ -781,8 +798,8 @@ A state signal and its setter are a **pair**. Publish both and the source owns t
 publish only the setter and the table keeps its own `sort()` / `filters()` in step with
 what it handed over, so a header still cycles through every direction. Publishing `sort`
 without `setSort` (or `filters` without `setFilters`) leaves the matching control with
-nothing to write to - the table names that in dev mode rather than rendering a header that
-does nothing.
+nothing to write to - the table names that in dev mode ([`ET3510`](/components/error-codes#table-et35xx))
+rather than rendering a header that does nothing.
 
 ## Row expansion
 
@@ -1025,6 +1042,8 @@ header or a toolbar that is pinned there itself:
   --et-table-sticky-header-offset: 6.4rem;
 }
 ```
+
+The feature's `offset` option sets the same property in px: `[etTablePageStickyHeader]="{ offset: 64 }"`.
 
 Not for a bounded table: one with a height of its own already pins its header, and
 [virtualization](#virtualization) needs that bounded height to work at all.
@@ -1425,9 +1444,8 @@ Column **order and visibility** are also fully programmatic, so you can build a
 | `showAllColumns()`               | Show every hidden column again.                           |
 
 ::: tip Bringing a hidden column back
-The [column menu](#column-menu)'s **Choose columns** panel already does this. Without
-that feature, nothing in the table's own chrome lists a column that isn't rendered, so
-expose `allColumns()` + `toggleColumnVisibility()` yourself (or a "Show all columns"
+The [column chooser](#column-chooser) already does this. Without it, nothing in the
+table's own chrome lists a column that isn't rendered, so expose `allColumns()` + `toggleColumnVisibility()` yourself (or a "Show all columns"
 action calling `showAllColumns()`) - otherwise a user can strand a hidden column until
 the page reloads.
 :::
@@ -1699,6 +1717,9 @@ protected allPeople = tableCsvRowsFromPages<Person>({
   {{ csv.exporting() ? 'Exporting…' : 'Export all pages' }}
 </button>
 ```
+
+`hasMore` also gets the page number, `initialPage` (default `1`) serves a 0-based API, and
+`maxPages` (default `1000`) stops a `hasMore` that never turns false.
 
 It makes N round trips for a file the server could stream in one, and holds the whole
 dataset in memory to do it - prefer route 1 where it exists.

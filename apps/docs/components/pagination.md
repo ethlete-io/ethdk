@@ -278,7 +278,7 @@ query source is a one-liner.
 With the [table](/components/table)'s `tableRowsFromQuery` adapter:
 
 ```html
-<et-table [rowsSource]="rows" [columns]="columns" />
+<et-table [rowsSource]="rows" [columns]="COLUMNS" />
 <et-pagination [page]="rows.page()" [totalPages]="totalPages()" (pageChange)="rows.setPage($event)" />
 ```
 
