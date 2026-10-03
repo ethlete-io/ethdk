@@ -87,4 +87,55 @@ describe('paginate', () => {
     expect(items.find((i) => i.page === 3)?.label).toBe('Seite 3 von 10');
     expect(control(items, 'next')?.label).toBe('Next page'); // not overridden
   });
+
+  it('treats a fractional current page as the page it falls on', () => {
+    const items = paginate({ currentPage: 2.5, totalPages: 10 });
+
+    expect(items.find((i) => i.current)?.page).toBe(2);
+    expect(control(items, 'previous')?.page).toBe(1);
+    expect(control(items, 'next')?.page).toBe(3);
+  });
+
+  it('falls back to the first page for a non-numeric current page', () => {
+    const items = paginate({ currentPage: Number.NaN, totalPages: 10 });
+
+    expect(items.find((i) => i.current)?.page).toBe(1);
+    expect(control(items, 'previous')?.disabled).toBe(true);
+    expect(control(items, 'next')?.page).toBe(2);
+  });
+
+  it('keeps the window whole-numbered for fractional or negative counts', () => {
+    expect(window(paginate({ currentPage: 5, totalPages: 10, siblingCount: 1.5 }))).toEqual(
+      window(paginate({ currentPage: 5, totalPages: 10, siblingCount: 1 })),
+    );
+    expect(window(paginate({ currentPage: 5, totalPages: 10, siblingCount: -1 }))).toEqual([1, '…', 5, '…', 10]);
+    expect(window(paginate({ currentPage: 5, totalPages: 10, boundaryCount: Number.NaN }))).toEqual(
+      window(paginate({ currentPage: 5, totalPages: 10 })),
+    );
+  });
+
+  it('shows a single page with every control disabled', () => {
+    const items = paginate({ currentPage: 1, totalPages: 1 });
+
+    expect(window(items)).toEqual([1]);
+    expect(items.filter((i) => i.type !== 'page').every((i) => i.disabled)).toBe(true);
+  });
+
+  it('keeps pages unique, ascending and around the current page for every small configuration', () => {
+    for (let totalPages = 1; totalPages <= 12; totalPages++) {
+      for (let currentPage = 1; currentPage <= totalPages; currentPage++) {
+        for (let siblingCount = 0; siblingCount <= 2; siblingCount++) {
+          for (let boundaryCount = 0; boundaryCount <= 2; boundaryCount++) {
+            const seq = window(paginate({ currentPage, totalPages, siblingCount, boundaryCount }));
+            const pages = seq.filter((p): p is number => typeof p === 'number');
+
+            expect(pages).toEqual([...pages].sort((a, b) => a - b));
+            expect(new Set(pages).size).toBe(pages.length);
+            expect(pages).toContain(currentPage);
+            expect(seq.some((p, i) => p === '…' && seq[i + 1] === '…')).toBe(false);
+          }
+        }
+      }
+    }
+  });
 });

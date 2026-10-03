@@ -154,6 +154,56 @@ describe('TabGroupComponent', () => {
     expect(tablists[0]?.getAttribute('aria-orientation')).toBe('horizontal');
   });
 
+  it('clamps an out-of-range bound selectedIndex to the last tab', () => {
+    hostComponent.selectedIndex = 99;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(2);
+    expect(hostComponent.selectedIndex).toBe(2);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['false', 'false', 'true']);
+  });
+
+  it('clamps a negative bound selectedIndex to the first tab', () => {
+    hostComponent.selectedIndex = -3;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(0);
+    expect(hostComponent.selectedIndex).toBe(0);
+  });
+
+  it('skips a disabled tab bound as the initial selection', () => {
+    hostComponent.selectedIndex = 1;
+    hostComponent.secondTabDisabled = true;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).not.toBe(1);
+    expect(getTriggerButtons()[1]?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('links every trigger and panel to each other', () => {
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    for (const trigger of getTriggerButtons()) {
+      const panelId = trigger.getAttribute('aria-controls');
+
+      expect(panelId).toBeTruthy();
+
+      const panel = host.querySelector(`[id="${panelId}"]`);
+
+      if (panel) {
+        expect(panel.getAttribute('role')).toBe('tabpanel');
+        expect(panel.getAttribute('aria-labelledby')).toBe(trigger.id);
+      }
+    }
+
+    expect(host.querySelector('[role="tabpanel"]')).not.toBeNull();
+  });
+
   const mountRemembering = () => {
     fixture.destroy();
 

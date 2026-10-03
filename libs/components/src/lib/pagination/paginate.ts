@@ -3,6 +3,9 @@ import { toPageCount } from './page-count';
 import { DEFAULT_PAGINATION_LABELS } from './pagination-labels';
 import { PaginateOptions, PaginationItem } from './pagination.types';
 
+const toCount = (value: number, fallback: number) =>
+  Number.isFinite(value) ? Math.max(Math.floor(value), 0) : fallback;
+
 const range = (start: number, end: number): number[] =>
   Array.from({ length: Math.max(end - start + 1, 0) }, (_, index) => start + index);
 
@@ -19,13 +22,15 @@ const range = (start: number, end: number): number[] =>
  * Item `label`s come from the default English labels unless `options.labels` overrides them.
  */
 export const paginate = (options: PaginateOptions): PaginationItem[] => {
-  const { siblingCount = 1, boundaryCount = 1, hideFirstLast = false, hidePreviousNext = false } = options;
+  const { hideFirstLast = false, hidePreviousNext = false } = options;
+  const siblingCount = toCount(options.siblingCount ?? 1, 1);
+  const boundaryCount = toCount(options.boundaryCount ?? 1, 1);
   const totalPages = toPageCount(options.totalPages);
   const labels = { ...DEFAULT_PAGINATION_LABELS, ...options.labels };
 
   if (totalPages === 0) return [];
 
-  const current = clamp(options.currentPage, 1, totalPages);
+  const current = Number.isFinite(options.currentPage) ? clamp(Math.floor(options.currentPage), 1, totalPages) : 1;
 
   const startPages = range(1, Math.min(boundaryCount, totalPages));
   const endPages = range(Math.max(totalPages - boundaryCount + 1, boundaryCount + 1), totalPages);
