@@ -28,6 +28,6 @@ export const initials = (value: string | null | undefined, maxLength = 2) => {
 
   return words
     .slice(0, maxLength)
-    .map((word) => word[0]?.toUpperCase() ?? '')
+    .map((word) => [...word.normalize()][0]?.toUpperCase() ?? '')
     .join('');
 };

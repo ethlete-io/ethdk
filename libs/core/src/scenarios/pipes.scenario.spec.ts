@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatchListView } from '@ethlete/types';
 import {
   HtmlToMarkdownPipe,
+  InitialsPipe,
   MarkdownToHtmlPipe,
   normalizeMatchParticipant,
   NormalizeGameResultTypePipe,
@@ -50,6 +51,15 @@ class AlignedSourceComponent {
 })
 class PaginationComponent {
   maxPage = signal(3);
+}
+
+@Component({
+  selector: 'et-scenario-avatar',
+  imports: [InitialsPipe],
+  template: '<span class="avatar">{{ name() | initials }}</span>',
+})
+class AvatarComponent {
+  name = signal('Jane Doe');
 }
 
 @Component({
@@ -121,6 +131,24 @@ describe('pipe scenarios', () => {
     s.tick();
 
     expect(labels()).toEqual([]);
+
+    fixture.destroy();
+  });
+
+  it('shows whole characters as initials for names outside the basic multilingual plane or typed decomposed', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AvatarComponent);
+    const avatar = () => (fixture.nativeElement as HTMLElement).querySelector('.avatar')?.textContent;
+
+    fixture.componentInstance.name.set('\u{1D49C}da \u{20BB7}ong');
+    s.tick();
+
+    expect(avatar()).toBe('\u{1D49C}\u{20BB7}');
+
+    fixture.componentInstance.name.set('E\u0301mile Zola');
+    s.tick();
+
+    expect(avatar()).toBe('\u00C9Z');
 
     fixture.destroy();
   });
