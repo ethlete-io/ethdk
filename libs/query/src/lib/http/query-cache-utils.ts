@@ -16,7 +16,8 @@ export const extractExpiresInSeconds = (headers: HttpHeaders) => {
     return null;
   }
 
-  const maxAgeMatch = cacheControl?.match(/(?:^|,)\s*(?:s-maxage|max-age)=(\d+)/i);
+  const maxAgeMatch =
+    cacheControl?.match(/(?:^|,)\s*max-age=(\d+)/i) ?? cacheControl?.match(/(?:^|,)\s*s-maxage=(\d+)/i);
 
   if (maxAgeMatch?.[1]) {
     maxAge = parseInt(maxAgeMatch[1]);

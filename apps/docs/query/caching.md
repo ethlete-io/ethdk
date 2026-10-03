@@ -52,7 +52,7 @@ Details worth knowing:
 
 ## Freshness
 
-The client's `cacheAdapter` - a `CacheAdapterFn`, `(headers: HttpHeaders) => number | null` - derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `no-store`, `max-age`, `s-maxage`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin, while `max-age=0` expires immediately.
+The client's `cacheAdapter` - a `CacheAdapterFn`, `(headers: HttpHeaders) => number | null` - derives a TTL from response headers. The default (`extractExpiresInSeconds`) reads `cache-control` (`no-cache`, `no-store`, `max-age`, and `s-maxage` when there is no `max-age`), `age` and `expires`; a `max-age` without an `age` header is halved as a safety margin, while `max-age=0` expires immediately.
 
 The window is opt-in per execution. `execute({ options: { allowCache: true } })` reuses a fresh entry's response without hitting the server and re-fetches a stale one - as does the same option on a [stack](/query/stacks) or a [batch](/query/batching), which forwards it to each query it runs. Nothing else consults the window: an auto-execution never passes `allowCache`, so a query always sends a request when it mounts, including one binding again to a [retained entry](#keeping-unused-entries-around) that is still fresh - it renders that entry's response while the request is in flight. There is no interval-based revalidation - combine with [`withPolling`](/query/features#withpolling) when you need periodic refreshes.
 
