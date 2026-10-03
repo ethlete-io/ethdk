@@ -34,6 +34,8 @@ On `et-slider` (forwarded from the headless `[etSlider]` directive), plus the st
 | `disabled`    | `boolean`                        | `false`        | Blocks all interaction and removes the thumb from the tab order.                                                                                          |
 | `readonly`    | `boolean`                        | `false`        | Focusable but not adjustable (`aria-readonly`).                                                                                                           |
 | `mixedLabel`  | `string \| null`                 | `null` ¹       | `aria-valuetext` the thumb announces while `mixed` is true.                                                                                               |
+| `hidden`      | `boolean`                        | `false`        | Hides the whole field. A schema `hidden(...)` rule does the same without the input.                                                                       |
+| `warnings`    | `string \| … \| null`            | `null`         | Advisories for a slider not bound to signal forms - same shapes as a [`warn()`](/components/forms#warnings-valid-but-worth-a-look) rule returns.          |
 | `color`       | registered color theme name      | -              | Scopes a [color theme](/core/theming) to the fill and thumb(s).                                                                                           |
 
 Without an `<et-label>`, name the slider with `aria-label` or `aria-labelledby` on `et-slider` itself - both land on the `role="slider"` thumb.
@@ -59,7 +61,7 @@ Values outside the bounds or off the step grid are displayed clamped and snapped
 ¹ `null` falls through to [`FORM_FIELD_LABELS.mixed`](/components/localization) (`'Mixed'`).
 ² `null` falls through to [`SLIDER_LABELS`](/components/localization) (`'Minimum'` / `'Maximum'`), which `provideSliderLabels({ minimum, maximum })` overrides for a whole subtree.
 
-`orientation`, `marks`, `snapToMarks`, `mixed` and the form-field contract set behave exactly as they do on `et-slider`.
+`orientation`, `marks`, `snapToMarks`, `mixed`, `hidden`, `warnings` and the form-field contract set behave exactly as they do on `et-slider`.
 
 A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Dragging or stepping a thumb never lets it cross its sibling; each thumb's `aria-valuemin`/`aria-valuemax` shrink to the sibling's position (± `minDistance`), so assistive tech announces the real limits.
 

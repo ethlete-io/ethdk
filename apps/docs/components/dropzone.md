@@ -147,7 +147,7 @@ Without a `delete` config, removing an entry only updates the control locally, s
 
 Both empty the dropzone, but only one talks to the server:
 
-- `removeAll()` removes every entry the way `removeEntry(id)` does: in-flight uploads are cancelled and each persisted value goes through the configured `delete` under the same rules (existing values only with `deleteIncludesExisting`), reporting through `deleteSucceed` / `deleteFail`.
+- `removeAll()` removes every entry the way `removeEntry(id)` does: in-flight uploads are cancelled and each persisted value goes through the configured `delete` under the same rules (existing values only with `includeExisting`), reporting through `deleteSucceed` / `deleteFail`.
 - `clear()` is a local reset. It drops the entries and the control value and never sends a `delete` request - use it when the form itself is discarded and the server state belongs to someone else.
 
 `createV2DropzoneUpload` takes the same `delete` shape, with a legacy `queryCreator` in place of the new one.
@@ -156,15 +156,20 @@ Both empty the dropzone, but only one talks to the server:
 
 On `et-dropzone` (forwarded to the headless `etDropzone` directive):
 
-| Input                | Type                                         | Default            | Description                                                                                  |
-| -------------------- | -------------------------------------------- | ------------------ | -------------------------------------------------------------------------------------------- |
-| `upload`             | `AnyDropzoneUploadConfig<TValue>`            | -                  | The upload workflow config (required) - the result of `createDropzoneUpload()`.              |
-| `multiple`           | `boolean`                                    | `false`            | Allow several files; the control value becomes an array.                                     |
-| `maxPreviewFileSize` | `number`                                     | `10485760` (10 MB) | Images larger than this many bytes get no preview. `DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE`. |
-| `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                     |
-| `color`              | registered color theme name                  | -                  | Scopes a [color theme](/core/theming) to the control.                                        |
-| `labels`             | `Partial<DropzoneLabels> \| null`            | `null`             | Overrides `DROPZONE_LABELS` for this instance, except the rejection messages.                |
-| `uploadErrorMessage` | `((entry: DropzoneEntry) => string) \| null` | `null`             | Replaces the whole per-entry failure message.                                                |
+| Input                | Type                                         | Default            | Description                                                                                                              |
+| -------------------- | -------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `upload`             | `AnyDropzoneUploadConfig<TValue>`            | -                  | The upload workflow config (required) - the result of `createDropzoneUpload()`.                                          |
+| `multiple`           | `boolean`                                    | `false`            | Allow several files; the control value becomes an array.                                                                 |
+| `maxPreviewFileSize` | `number`                                     | `10485760` (10 MB) | Images larger than this many bytes get no preview. `DEFAULT_DROPZONE_MAX_PREVIEW_FILE_SIZE`.                             |
+| `accept`             | `string`                                     | `''`               | Accepted file types, native `accept` semantics. Also filters the native picker.                                          |
+| `maxFileSize`        | `number \| undefined`                        | `undefined`        | Largest accepted file in bytes.                                                                                          |
+| `minFileSize`        | `number \| undefined`                        | `undefined`        | Smallest accepted file in bytes.                                                                                         |
+| `readonly`           | `boolean`                                    | `false`            | View-only: the entries stay visible, nothing can change.                                                                 |
+| `hidden`             | `boolean`                                    | `false`            | Hides the whole field. A schema `hidden(...)` rule does the same without the input.                                      |
+| `warnings`           | `string \| … \| null`                        | `null`             | Advisories for a dropzone not bound to signal forms - see [warnings](/components/forms#warnings-valid-but-worth-a-look). |
+| `color`              | registered color theme name                  | -                  | Scopes a [color theme](/core/theming) to the control.                                                                    |
+| `labels`             | `Partial<DropzoneLabels> \| null`            | `null`             | Overrides `DROPZONE_LABELS` for this instance, except the rejection messages.                                            |
+| `uploadErrorMessage` | `((entry: DropzoneEntry) => string) \| null` | `null`             | Replaces the whole per-entry failure message.                                                                            |
 
 Plus the shared control members: the `value` (`TValue \| TValue[] \| null`) and
 `touched` models and the `disabled`, `invalid`, `errors`, `required`, `name` and

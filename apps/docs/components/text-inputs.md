@@ -406,9 +406,9 @@ raw string.
 | ---------- | -------- | ------------------------------------------------- |
 | `complete` | `string` | The value each time it reaches the full `length`. |
 
-Plus the shared control members every control on this page has: the `value`
-(`string`, `''`) and `touched` models and the `disabled`, `readonly`, `invalid`,
-`errors`, `required`, `name` and `aria-label`/`aria-labelledby` inputs - see the
+Plus the shared control members: the `value`
+(`string`, `''`) and `touched` models and the `disabled`, `readonly`, `hidden`, `invalid`,
+`errors`, `warnings`, `required`, `name` and `aria-label`/`aria-labelledby` inputs - see the
 [Forms overview](/components/forms).
 
 `complete` fires no matter who wrote the value - typing, paste, SMS autofill or a
@@ -474,7 +474,8 @@ Plus the shared control members: the `value` (`string[]`, `[]`), `mixed` and
 `name` and `aria-label`/`aria-labelledby` inputs, and the `maxLength` / `pending`
 inputs signal forms binds from the schema (see
 [the counter](/components/forms#character-counter) and
-[the busy state](/components/forms#busy-state)).
+[the busy state](/components/forms#busy-state)). The tag input has no `hidden` or
+`warnings` input - a schema `warn()` rule still reaches it.
 
 Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field
 removes the last tag - and writes nothing at all when there is no tag left to
@@ -510,10 +511,13 @@ regional-indicator emoji.
 | `defaultCountry`     | `string`         | `'us'`   | ISO alpha-2 country used while the value carries none, case-insensitive. A late change (a locale or geo lookup that resolves after the first render) still applies, as long as the country has not been picked or derived from the value since. |
 | `preferredCountries` | `string[]`       | `[]`     | Listed on top of the country dropdown, case-insensitive.                                                                                                                                                                                        |
 | `countryLabel`       | `string \| null` | `null` ¹ | Leads the country trigger's accessible name, followed by the active country and its dial code (`Select country Germany +49`).                                                                                                                   |
+| `clearable`          | `boolean`        | `true`   | Shows a clear (×) button while a number is set and the field is in use.                                                                                                                                                                         |
+| `clearLabel`         | `string \| null` | `null` ² | Accessible name of the clear button.                                                                                                                                                                                                            |
 
 ¹ `null` falls through to [`PHONE_INPUT_LABELS.selectCountry`](/components/localization) (`'Select country'`).
+² `null` falls through to [`FORM_FIELD_LABELS.clear`](/components/localization).
 
-The phone input also takes the `pending` and `maxLength` inputs signal forms binds, so an async validator shows the field's busy state and an `<et-counter />` counts against the schema's `maxLength()`. A `null` value renders as an empty field, on the OTP input too.
+The phone input also takes the `pending`, `maxLength`, `hidden` and `warnings` inputs: an async validator shows the field's busy state and an `<et-counter />` counts against the schema's `maxLength()`. A `null` value renders as an empty field, on the OTP input too.
 
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped
 (`0171…` with Germany active → `+49171…` - except for countries like Italy where
