@@ -78,6 +78,11 @@ describe('releaseFlags', () => {
       'Unknown flag "--spec".',
     ]);
   });
+
+  it('reports a --message without a value', () => {
+    expect(releaseFlags(['--message']).problems).toEqual(['--message needs a value.']);
+    expect(releaseFlags(['-m', '--force']).problems).toEqual(['-m needs a value.']);
+  });
 });
 
 describe('release', () => {
@@ -105,6 +110,24 @@ describe('release', () => {
     expect(calls.some((call) => call.startsWith('yarn changeset tag'))).toBe(false);
     expect(calls).not.toContain('git push --follow-tags');
     expect(errors).toContain('no tag was written');
+  });
+
+  it('does not push when tagging the release commit fails', async () => {
+    const { code, calls, errors } = await runRelease({
+      fail: { 'yarn changeset tag': { status: 1, output: 'tag exists' } },
+    });
+
+    expect(code).toBe(1);
+    expect(calls).toContain('git commit -m Release versions');
+    expect(calls).not.toContain('git push --follow-tags');
+    expect(errors).toContain('tagging it failed');
+  });
+
+  it('exits 1 when the push fails', async () => {
+    const { code, errors } = await runRelease({ fail: { 'git push --follow-tags': { status: 1, output: '' } } });
+
+    expect(code).toBe(1);
+    expect(errors).toContain('`git push --follow-tags` failed');
   });
 
   it('commits with the message passed in', async () => {
