@@ -79,7 +79,9 @@ export class QueryErrorDirective {
       errorList.items.push({ message: detail.detail });
     } else if (typeof detail === 'string') {
       errorList.items.push({ message: detail });
-    } else {
+    }
+
+    if (!errorList.items.length) {
       errorList.items.push({ message: defaultErrorMessage });
     }
 
