@@ -1,19 +1,19 @@
 @layer components {
   @property --et-progress-step-marker-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 24px;
   }
 
   @property --et-progress-step-label-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-progress-step-description-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 

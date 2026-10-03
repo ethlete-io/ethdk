@@ -167,7 +167,8 @@ not.
 ## Theming
 
 Public design tokens: `--et-progress-steps-gap`, `--et-progress-step-marker-size`,
-`--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`.
+`--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`. All of them inherit, so
+setting one on `et-progress-steps` or any ancestor configures every step inside it.
 
 `current`/`complete` markers and the connector after a resolved step read
 from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` /
