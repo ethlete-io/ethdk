@@ -527,9 +527,16 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
           })
         : route;
 
+    const wireKey = [
+      creatorOptions?.responseType && creatorOptions.responseType !== 'json' ? creatorOptions.responseType : '',
+      creatorOptions?.withCredentials ? 'credentials' : '',
+    ]
+      .filter(Boolean)
+      .join('_');
+
     const cacheKey = shouldCache
       ? buildQueryCacheKey(
-          `${options.key ? options.key + '_' : ''}${keyRoute}`,
+          `${wireKey ? wireKey + '_' : ''}${options.key ? options.key + '_' : ''}${keyRoute}`,
           {
             body: args?.body,
             queryParams: args?.queryParams,

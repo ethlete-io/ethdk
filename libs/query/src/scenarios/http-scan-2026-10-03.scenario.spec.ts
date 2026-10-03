@@ -14,6 +14,7 @@ import {
   LegacyClientCreator,
   LegacyClientKind,
   LegacyClientQuery,
+  sequence,
   useScenario,
 } from './harness';
 
@@ -196,7 +197,7 @@ describe('http scan 2026-10-03 scenario', () => {
 
     it('keeps a json, a text and a credentialed query on one route in separate cache entries', () => {
       const s = scenario();
-      s.api.on('GET', '/report', () => ({ body: { n: 1 } }));
+      s.api.on('GET', '/report', sequence([{ body: { n: 1 } }, { body: 'n=1' }, { body: { n: 1 } }]));
 
       const getJson = s.get<{ response: { n: number } }>('/report');
       const getText = s.get<{ response: string }>('/report', { responseType: 'text' });
