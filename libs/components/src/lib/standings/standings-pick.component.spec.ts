@@ -1,8 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { StandingPick } from '@ethlete/bracket';
 import '../../test-helpers';
+import { DragMoveEvent } from '@ethlete/core';
 import { NormalizedMatchParticipant } from '../match';
 import { pressKey } from '../testing/driver-core';
+import { StandingsPickComponent } from './standings-pick.component';
 import { STANDINGS_PICK_IMPORTS } from './standings.imports';
 import { mountStandingsPick } from './testing/standings-pick-driver';
 
@@ -207,6 +209,33 @@ describe('StandingsPickComponent', () => {
     expect(driver.order()).toEqual(['Alpha', 'Bravo', 'Charlie', 'Delta']);
     expect(driver.handles()).toEqual([]);
     expect(driver.element().getAttribute('data-locked')).toBe('');
+  });
+
+  it('drops a drag in progress when the list locks, so unlocking it draws no stale preview', () => {
+    const driver = create();
+    const gesture = driver.directive(StandingsPickComponent) as unknown as {
+      startDrag: (index: number) => void;
+      previewDrop: (event: Pick<DragMoveEvent, 'clientY' | 'totalDy'>) => void;
+    };
+
+    gesture.startDrag(0);
+    gesture.previewDrop({ clientY: 100, totalDy: 30 });
+    driver.detectChanges();
+
+    expect(driver.query('.et-standings-pick-list')?.hasAttribute('data-dragging')).toBe(true);
+
+    driver.host.locked.set(true);
+    driver.detectChanges();
+    driver.host.locked.set(false);
+    driver.detectChanges();
+
+    expect(driver.query('.et-standings-pick-list')?.hasAttribute('data-dragging')).toBe(false);
+    expect(driver.queryAll<HTMLElement>('.et-standings-pick-card').map((card) => card.style.translate)).toEqual([
+      '',
+      '',
+      '',
+      '',
+    ]);
   });
 
   it('refuses a move while locked', () => {

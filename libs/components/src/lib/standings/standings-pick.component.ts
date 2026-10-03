@@ -1,5 +1,14 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, ElementRef, inject, signal, ViewEncapsulation, viewChildren } from '@angular/core';
+import {
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  linkedSignal,
+  signal,
+  ViewEncapsulation,
+  viewChildren,
+} from '@angular/core';
 import { DragHandleDirective, DragMoveEvent, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import { injectMatchLabels, MATCH_PARTICIPANT_IMPORTS, matchParticipantDisplayName } from '../match';
@@ -80,7 +89,14 @@ export class StandingsPickComponent {
 
   private rowElements = viewChildren<ElementRef<HTMLElement>>('rowElement');
 
-  private dragState = signal<{ from: number; to: number; liftY: number; offsets: readonly number[] } | null>(null);
+  /** Reset whenever `locked` changes: locking removes the handle mid-drag, and a removed handle never ends its drag. */
+  private dragState = linkedSignal<
+    boolean,
+    { from: number; to: number; liftY: number; offsets: readonly number[] } | null
+  >({
+    source: this.pick.locked,
+    computation: () => null,
+  });
 
   protected labels = computed(() => this.pick.resolvedLabels());
 
