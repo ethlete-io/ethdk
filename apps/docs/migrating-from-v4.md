@@ -35,12 +35,18 @@ yarn et update --tag next
 It runs the **required** migrations of every version it crosses, oldest first and in the lib layering
 inside one version:
 
-| Package               | Required migration  | What it does                                                                                                                                          |
-| --------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@ethlete/core`       | `to-v5`             | viewport and router helpers to signals, theme → color renames. [Core](/core/#also-in-the-package)                                                     |
-| `@ethlete/cdk`        | `to-v5`             | dialog/bottom sheet → overlay, `*etLet` removal, theming move to core. [CDK](/cdk/#migrating-from-v4)                                                 |
-| `@ethlete/query`      | `prep-for-query-v3` | renames the legacy symbols the current client collides with. [Query](/query/migrating-from-v2)                                                        |
-| `@ethlete/contentful` | `to-contentful-v5`  | image input rename, `useTailwindClasses` removal, adds `@ethlete/components`; tasks in `contentful-v5-migration-tasks.md`. [Contentful](/contentful/) |
+| Package               | First required migration | What it does                                                                                                                                          |
+| --------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@ethlete/core`       | `to-v5`                  | viewport and router helpers to signals, theme → color renames. [Core](/core/#also-in-the-package)                                                     |
+| `@ethlete/cdk`        | `to-v5`                  | dialog/bottom sheet → overlay, `*etLet` removal, theming move to core. [CDK](/cdk/#migrating-from-v4)                                                 |
+| `@ethlete/query`      | `prep-for-query-v3`      | renames the legacy symbols the current client collides with. [Query](/query/migrating-from-v2)                                                        |
+| `@ethlete/contentful` | `to-contentful-v5`       | image input rename, `useTailwindClasses` removal, adds `@ethlete/components`; tasks in `contentful-v5-migration-tasks.md`. [Contentful](/contentful/) |
+
+The later required migrations of each package run in the same pass: core `provider-shape`,
+`surface-interaction-swatch` and the tasks `seo-directive-removed` and `surface-theme-regenerate`; query
+`query-client-features`, `query-opt-in-features` and the tasks `search-query-field-string` and
+`query-field-default-types`; contentful `contentful-default-components`; and the required migrations of
+`@ethlete/components` and `@ethlete/eslint-plugin` once they are installed.
 
 `@ethlete/types` 2 no longer exports `JsonLD`, and no migration rewrites it: import it from
 `@ethlete/core` instead.
@@ -48,7 +54,7 @@ inside one version:
 What a codemod cannot finish lands in `.ethlete/update/tasks.md` (and `tasks.json` for an agent). Work
 that list until it is empty and the app builds - it is still the cdk app, on the new versions.
 
-`yarn et migrations` then lists the optional ones. Run them in this order, each in its own commit.
+`yarn et migrations` then lists the recommended and optional ones. Run them in this order, each in its own commit.
 
 ## 3. Query: the current client
 
@@ -86,11 +92,19 @@ The runtime theming (`provideColorThemes`, `createTailwindColorThemes`) is depre
 read surface and colour tokens from generated Tailwind 4 CSS - see
 [Migrating from runtime theming](/core/theming#migrating-from-runtime-theming).
 
+```bash
+yarn et migrations run core:legacy-color-themes
+```
+
+It rewrites `provideColorThemes` into `provideColorThemesWithTailwind4` and writes the generator runs and
+the surface themes to add into `legacy-color-themes-migration-tasks.md`.
+
 ## You are done when
 
 - [ ] `@ethlete/cdk` is gone from every `package.json`, and no file imports it.
-- [ ] `.ethlete/update/tasks.md`, `query-v3-migration-tasks.md`, `contentful-v5-migration-tasks.md` and `migrate-from-cdk-tasks.md` are
-      empty or deleted.
+- [ ] `.ethlete/update/tasks.md`, `query-v3-migration-tasks.md`, `contentful-v5-migration-tasks.md`,
+      `contentful-default-components-migration-tasks.md`, `migrate-from-cdk-tasks.md` and
+      `legacy-color-themes-migration-tasks.md` are empty or deleted.
 - [ ] `report-legacy-query-apis` reports nothing, or only what you decided to keep on the interop.
 - [ ] No component uses a reactive `FormControl` with an `et-*` control.
 - [ ] `provideColorThemes` is gone, and the app's own CSS reads only the generated `--et-*` tokens.
