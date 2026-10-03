@@ -1,4 +1,4 @@
-import { addDays, addMonths, addYears, setMonth, setYear, startOfWeek } from 'date-fns';
+import { addDays, addMonths, addYears, setMonth, startOfWeek } from 'date-fns';
 import { CalendarWeekStartsOn } from './calendar-month';
 import { CALENDAR_COARSE_COLUMNS, CALENDAR_MULTI_YEAR_PAGE_SIZE, CalendarView } from './calendar-view';
 
@@ -12,6 +12,8 @@ export type ResolveCalendarKeyboardDateOptions = {
   multiYearPageStart?: Date;
   rtl?: boolean;
 };
+
+const toYear = (date: Date, year: number) => addYears(date, year - date.getFullYear());
 
 const MIRRORED_KEYS: Record<string, string> = { ArrowLeft: 'ArrowRight', ArrowRight: 'ArrowLeft' };
 
@@ -83,11 +85,9 @@ const resolveMultiYearViewDate = (key: string, options: ResolveCalendarKeyboardD
     case 'PageDown':
       return addYears(focusedDate, shiftKey ? page * BIG_JUMP_UNITS : page);
     case 'Home':
-      return multiYearPageStart === undefined ? null : setYear(focusedDate, multiYearPageStart.getFullYear());
+      return multiYearPageStart === undefined ? null : toYear(focusedDate, multiYearPageStart.getFullYear());
     case 'End':
-      return multiYearPageStart === undefined
-        ? null
-        : setYear(focusedDate, multiYearPageStart.getFullYear() + page - 1);
+      return multiYearPageStart === undefined ? null : toYear(focusedDate, multiYearPageStart.getFullYear() + page - 1);
     default:
       return null;
   }
