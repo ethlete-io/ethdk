@@ -42,12 +42,18 @@
     column-gap: var(--et-description-list-column-gap);
     margin: 0;
 
+    > div {
+      display: contents;
+    }
+
     dt {
+      grid-column: 1;
       font-size: var(--et-description-list-term-font-size);
       color: var(--et-surface-color-muted-solid, currentColor);
     }
 
     dd {
+      grid-column: 2;
       margin: 0;
       font-size: var(--et-description-list-detail-font-size);
       color: var(--et-surface-color-solid, currentColor);
@@ -57,7 +63,13 @@
       grid-template-columns: 1fr;
       row-gap: var(--et-description-list-stacked-term-gap);
 
-      dt:not(:first-of-type) {
+      dt,
+      dd {
+        grid-column: 1;
+      }
+
+      :is(dd, div) + dt,
+      :is(dd, div) + div > dt:first-child {
         margin-block-start: max(0px, var(--et-description-list-row-gap) - var(--et-description-list-stacked-term-gap));
       }
     }

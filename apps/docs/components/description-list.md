@@ -43,7 +43,7 @@ Switching between them is a plain binding, so a narrow layout can go stacked fro
 
 ## Why grid, not a row wrapper
 
-`<dl>` renders `<dt>`/`<dd>` as a flat sequence of siblings, not grouped pairs - there's no native "row" element to hang layout on. `et-description-list` sets the `<dl>` itself to `display: grid`; CSS grid auto-placement then walks the flat `dt, dd, dt, dd, …` sequence a cell at a time, landing each pair on its own row (`inline`) or each term and detail on its own row (`stacked`), without any JS pairing logic or extra markup. Any content works inside a `<dd>` - text, a badge, a link - it's still just a grid cell.
+`<dl>` renders `<dt>`/`<dd>` as a flat sequence of siblings, not grouped pairs - there's no native "row" element to hang layout on. `et-description-list` sets the `<dl>` itself to `display: grid`; CSS grid auto-placement then walks the flat `dt, dd, dt, dd, …` sequence a cell at a time, landing each pair on its own row (`inline`) or each term and detail on its own row (`stacked`), without any JS pairing logic or extra markup. Any content works inside a `<dd>` - text, a badge, a link - it's still just a grid cell. A term with several details (`<dt>` followed by more than one `<dd>`) keeps every detail in the detail column, and a `<div>` wrapping a `<dt>`/`<dd>` group - which HTML allows inside a `<dl>` - lays out exactly like the flat form.
 
 ## Options
 
