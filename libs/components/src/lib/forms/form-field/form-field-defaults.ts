@@ -1,4 +1,4 @@
-import { defineStaticRootProvider, toInjectFn } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 import { FormFieldAppearance, FormFieldFill, FormFieldLabelMode, FormFieldSize } from './form-field.variants';
 
 export type FormFieldDefaults = {
@@ -28,8 +28,5 @@ const FORM_FIELD_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider(DEFAULT
  * @example
  * provideFormFieldDefaults({ labelMode: 'floating-inside', fill: 'filled' });
  */
-export const provideFormFieldDefaults = (defaults?: Partial<FormFieldDefaults>) =>
-  FORM_FIELD_DEFAULTS_DEF.provide(
-    defaults && Object.fromEntries(Object.entries(defaults).filter(([, value]) => value !== undefined)),
-  );
+export const provideFormFieldDefaults = /* @__PURE__ */ toProvideFn(FORM_FIELD_DEFAULTS_DEF);
 export const injectFormFieldDefaults = /* @__PURE__ */ toInjectFn(FORM_FIELD_DEFAULTS_DEF);
