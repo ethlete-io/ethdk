@@ -93,7 +93,9 @@ fn push_logs_in(
         let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
             continue;
         };
-        let at_ms = modified_at_ms(&path)?;
+        let Ok(at_ms) = modified_at_ms(&path) else {
+            continue;
+        };
 
         if modified_after_ms.is_some_and(|after| at_ms <= after) {
             continue;
@@ -210,19 +212,23 @@ fn read_from(path: &Path, from_line: usize) -> TimetrackResult<Read> {
     let mut lines = Vec::new();
     let mut next_line = from_line;
     let mut complete = 0usize;
-    let mut buffer = String::new();
+    let mut buffer = Vec::new();
 
     loop {
         buffer.clear();
 
         // A line with no terminating newline is one the agent is still writing. Consuming it as
         // complete loses it for good, because the cursor would move past a fragment of JSON.
-        if reader.read_line(&mut buffer)? == 0 || !buffer.ends_with('\n') {
+        if reader.read_until(b'\n', &mut buffer)? == 0 || !buffer.ends_with(b"\n") {
             break;
         }
 
         if complete >= from_line {
-            lines.push(buffer.trim_end_matches(['\n', '\r']).to_owned());
+            lines.push(
+                String::from_utf8_lossy(&buffer)
+                    .trim_end_matches(['\n', '\r'])
+                    .to_owned(),
+            );
             next_line = complete + 1;
         }
 
@@ -378,6 +384,27 @@ mod tests {
         assert_eq!(ids, ["session-one", "session-one/agent-a1"]);
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn lists_the_other_logs_when_one_is_a_dangling_link() {
+        let root = temp_root("dangling");
+
+        write_log(&root, "-home-tom-dev-a", "session-one", "{}\n");
+        std::os::unix::fs::symlink(
+            root.join("gone"),
+            root.join("-home-tom-dev-a").join("session-two.jsonl"),
+        )
+        .unwrap();
+
+        let ids = list_logs(&root, None)
+            .unwrap()
+            .into_iter()
+            .map(|log| log.id)
+            .collect::<Vec<_>>();
+
+        assert_eq!(ids, ["session-one"]);
+    }
+
     #[test]
     fn keeps_two_subagent_logs_of_the_same_name_apart() {
         let root = temp_root("subagent-name-repeats");
@@ -478,6 +505,38 @@ mod tests {
 
         assert_eq!(read.lines, ["{\"a\":1}", "{\"b\":2}"]);
         assert_eq!(read.next_line, 2);
+    }
+
+    #[test]
+    fn withholds_a_trailing_line_cut_inside_a_multibyte_character() {
+        let root = temp_root("partial-utf8");
+        let dir = root.join("-home-tom-dev-a");
+        let path = dir.join("session-one.jsonl");
+        let mut contents = "{\"a\":\"ü\"}\n".as_bytes().to_vec();
+
+        contents.extend_from_slice(&"{\"b\":\"ü".as_bytes()[..7]);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, contents).unwrap();
+
+        let read = read_lines(&path, 0).unwrap();
+
+        assert_eq!(read.lines, ["{\"a\":\"ü\"}"]);
+        assert_eq!(read.next_line, 1);
+    }
+
+    #[test]
+    fn reads_past_a_line_that_is_not_utf8() {
+        let root = temp_root("invalid-utf8");
+        let dir = root.join("-home-tom-dev-a");
+        let path = dir.join("session-one.jsonl");
+
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, b"a\n\xff\nb\n").unwrap();
+
+        let read = read_lines(&path, 0).unwrap();
+
+        assert_eq!(read.lines, ["a", "\u{fffd}", "b"]);
+        assert_eq!(read.next_line, 3);
     }
 
     #[test]
