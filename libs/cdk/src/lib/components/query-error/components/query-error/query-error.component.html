@@ -20,7 +20,7 @@
     }
 
     @if (errorList.canBeRetried) {
-      <button (click)="retry()" class="et-query-error-retry-button">
+      <button (click)="retry()" class="et-query-error-retry-button" type="button">
         {{ host.language() === 'en' ? 'Retry' : 'Erneut versuchen' }}
       </button>
     }

@@ -20,4 +20,10 @@ describe('QueryErrorComponent', () => {
 
     expect(element.querySelector('.et-query-error-message')?.textContent).toContain('(Code: 400)');
   });
+
+  it('renders the retry button as a non-submitting button', () => {
+    const element = renderError(null, 503);
+
+    expect(element.querySelector('.et-query-error-retry-button')?.getAttribute('type')).toBe('button');
+  });
 });
