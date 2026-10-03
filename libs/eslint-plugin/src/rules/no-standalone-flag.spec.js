@@ -28,6 +28,11 @@ tester.run('no-standalone-flag', rule, {
     {
       code: `@Directive({ selector: '[etTest]', standalone: false, host: {} }) class Foo {}`,
     },
+    { code: `@Component({ selector: 'et-a', standalone: !0 }) class A {}` },
+    { code: `@Injectable({ standalone: true }) class A {}` },
+    { code: `@NgModule({ standalone: true }) class A {}` },
+    { code: `@Component() class A {}` },
+    { code: `@Component(metadata) class A {}` },
   ],
   invalid: [
     {
@@ -45,6 +50,31 @@ tester.run('no-standalone-flag', rule, {
     {
       code: `@Pipe({ standalone: true, name: 'testPipe' }) class Foo {}`,
       output: `@Pipe({ name: 'testPipe' }) class Foo {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
+    {
+      code: `@Component({ standalone: true }) class A {}`,
+      output: `@Component({}) class A {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
+    {
+      code: `@Component({ 'standalone': true, selector: 'a' }) class A {}`,
+      output: `@Component({ selector: 'a' }) class A {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
+    {
+      code: `@Component({ ['standalone']: true, selector: 'a' }) class A {}`,
+      output: `@Component({ selector: 'a' }) class A {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
+    {
+      code: `@Component({ ...base, standalone: true }) class A {}`,
+      output: `@Component({ ...base }) class A {}`,
+      errors: [{ messageId: 'noStandalone' }],
+    },
+    {
+      code: `@Component({\n  selector: 'a',\n  standalone: true,\n  template: '',\n})\nclass A {}`,
+      output: `@Component({\n  selector: 'a',\n  template: '',\n})\nclass A {}`,
       errors: [{ messageId: 'noStandalone' }],
     },
     {

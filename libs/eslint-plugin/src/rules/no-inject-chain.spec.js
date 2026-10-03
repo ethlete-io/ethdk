@@ -22,6 +22,9 @@ const t = inject(Foo).bar;`,
     { code: `const bar = new (inject(Foo).Bar)();` },
     // Plain inject call without member access
     { code: `inject(MyService);` },
+    { code: `const a = inject(Foo)?.bar();` },
+    { code: `const { a } = inject(Foo);` },
+    { code: `const inject = (x) => x; const a = inject(Foo).bar;` },
   ],
   invalid: [
     {
@@ -40,6 +43,22 @@ const t = ngInject(Foo).bar;`,
     {
       code: `const x = inject(Foo).bar + 1;`,
       errors: [{ messageId: 'noChain' }],
+    },
+    {
+      code: `const a = inject(Foo)?.bar;`,
+      errors: [{ messageId: 'noChain' }],
+    },
+    {
+      code: `const a = inject(Foo).bar.baz();`,
+      errors: [{ messageId: 'noChain' }],
+    },
+    {
+      code: `const a = inject(Foo)['bar'];`,
+      errors: [{ messageId: 'noChain', data: { token: 'Foo', member: '...' } }],
+    },
+    {
+      code: `const a = inject(TOKEN, { optional: true }).value;`,
+      errors: [{ messageId: 'noChain', data: { token: 'TOKEN', member: 'value' } }],
     },
   ],
 });

@@ -26,8 +26,27 @@ source$.pipe(switchMap(() => new Obs((subscriber) => inner$.subscribe(subscriber
         const o = new Observable(sub => { inner$.subscribe(sub); });
       })).subscribe();`,
     },
+    { code: `defer(() => { trigger$.subscribe(); return source$; }).pipe(take(1));` },
+    { code: `obs$.pipe(map(() => 1)).subscribe(() => other$.subscribe());` },
+    { code: `obs$.pipe(takeUntil(stop$)).subscribe();` },
   ],
   invalid: [
+    {
+      code: `obs$.pipe(tap(function () { other$.subscribe(); }));`,
+      errors: [{ messageId: 'noSubscribeInPipe' }],
+    },
+    {
+      code: `obs$.pipe(tap(() => other$?.subscribe()));`,
+      errors: [{ messageId: 'noSubscribeInPipe' }],
+    },
+    {
+      code: `defer(() => source$).pipe(tap(() => other$.subscribe()));`,
+      errors: [{ messageId: 'noSubscribeInPipe' }],
+    },
+    {
+      code: `obs$.pipe(map((x) => x)).pipe(switchMap(() => { other$.subscribe(); return of(1); }));`,
+      errors: [{ messageId: 'noSubscribeInPipe' }],
+    },
     {
       code: `obs$.pipe(tap(() => { inner$.subscribe(); })).subscribe();`,
       errors: [{ messageId: 'noSubscribeInPipe' }],

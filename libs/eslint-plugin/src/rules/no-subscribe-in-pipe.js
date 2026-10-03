@@ -43,6 +43,8 @@ const noSubscribeInPipe = {
      */
     const isInsidePipeCallback = (node) => {
       let crossedFunctionBoundary = false;
+      /** @type {import('eslint').Rule.Node} */
+      let previous = node;
       let current = node.parent;
       while (current) {
         // A `new Observable(factory)` is its own subscription boundary — subscribing
@@ -62,10 +64,12 @@ const noSubscribeInPipe = {
           current.type === 'CallExpression' &&
           current.callee.type === 'MemberExpression' &&
           current.callee.property.type === 'Identifier' &&
-          current.callee.property.name === 'pipe'
+          current.callee.property.name === 'pipe' &&
+          current.arguments.includes(/** @type {any} */ (previous))
         ) {
           return true;
         }
+        previous = current;
         current = current.parent;
       }
       return false;
