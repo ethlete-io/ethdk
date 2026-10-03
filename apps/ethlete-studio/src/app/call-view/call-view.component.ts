@@ -887,6 +887,10 @@ export class CallViewComponent {
 
   protected setCheckout(path: string) {
     this.checkout.set(path);
+    this.design.set(null);
+    this.slug.set('');
+    this.variantKey.set('');
+    this.dismiss();
     this.read();
     this.readServer();
     this.watchCalls();
@@ -1145,9 +1149,11 @@ export class CallViewComponent {
 
     designProject$(checkout)
       .pipe(
-        tap((project) => this.show(project)),
+        tap((project) => {
+          if (checkout === this.checkout()) this.show(project);
+        }),
         catchError((error: unknown) => {
-          this.trouble.set(`${error}`);
+          if (checkout === this.checkout()) this.trouble.set(`${error}`);
 
           return of(null);
         }),
@@ -1164,7 +1170,9 @@ export class CallViewComponent {
 
     designProject$(checkout)
       .pipe(
-        tap((project) => this.absorb(project)),
+        tap((project) => {
+          if (checkout === this.checkout()) this.absorb(project);
+        }),
         catchError(() => EMPTY),
         takeUntilDestroyed(this.destroyRef),
       )

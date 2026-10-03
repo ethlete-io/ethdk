@@ -229,4 +229,26 @@ describe('CallViewComponent', () => {
 
     expect(element(fixture).querySelector('.studio__compose')).not.toBeNull();
   });
+
+  it('drops the calls of the checkout before when the next one cannot be read', async () => {
+    stubHost({
+      design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }),
+      design_project: () => PROJECT,
+    });
+
+    const fixture = await mount(ASKING.slug);
+    const picker = element(fixture).querySelector<HTMLSelectElement>('.studio__checkout');
+
+    stubHost({
+      design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }),
+      design_project: () => Promise.reject('No design config in /broken.'),
+    });
+
+    if (picker) picker.value = '/broken';
+    picker?.dispatchEvent(new Event('change'));
+    await settle(fixture);
+
+    expect(row(fixture, ASKING.slug)).toBeUndefined();
+    expect(drawings(fixture)).toEqual([]);
+  });
 });
