@@ -76,7 +76,13 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
         wasRefused.set(false);
         failure.set(null);
 
-        return ports.windowLock.unlock$(password).pipe(catchError(failed));
+        return ports.windowLock.unlock$(password).pipe(
+          catchError((error: unknown) => {
+            isChecking.set(false);
+
+            return failed(error);
+          }),
+        );
       }),
       tap((verified) => {
         isChecking.set(false);

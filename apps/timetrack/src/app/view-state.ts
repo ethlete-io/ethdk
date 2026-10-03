@@ -27,6 +27,8 @@ const REMEMBERED_SCROLL_DAYS = 60;
 const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const VIEW_PATH = /^[a-z-]+$/;
 
+const isDayKey = (value: string) => DAY_KEY.test(value) && dayKeyOfDate(new Date(`${value}T00:00:00`)) === value;
+
 const stringAt = (state: Record<string, unknown>, key: string) => {
   const value = state[key];
 
@@ -36,7 +38,7 @@ const stringAt = (state: Record<string, unknown>, key: string) => {
 const dayAt = (state: Record<string, unknown>, key: string) => {
   const value = stringAt(state, key);
 
-  return value && DAY_KEY.test(value) ? value : undefined;
+  return value && isDayKey(value) ? value : undefined;
 };
 
 const offsetAt = (state: Record<string, unknown>, key: string) => {
@@ -60,7 +62,7 @@ const scrollsAt = (state: Record<string, unknown>, key: string) => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return undefined;
 
   const days = Object.entries(value).flatMap(([day, scroll]): [string, TimelineScroll][] => {
-    const valid = DAY_KEY.test(day) ? scrollOf(scroll) : undefined;
+    const valid = isDayKey(day) ? scrollOf(scroll) : undefined;
 
     return valid ? [[day, valid]] : [];
   });
