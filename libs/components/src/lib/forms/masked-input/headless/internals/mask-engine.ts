@@ -80,9 +80,12 @@ export const applyMaskEdit = (options: MaskEditOptions): MaskEditResult => {
   let anchorBefore = spec.toRaw(text.slice(0, caret)).length;
   const deletion = !!inputType?.startsWith('delete');
 
-  // a deletion that left the raw value untouched only removed formatting (e.g.
-  // backspace over the dash in `12-|34`) - delete the adjacent content character instead
-  if (deletion && raw === previousRaw && raw.length > 0) {
+  // a key deletion that left the raw value untouched only removed formatting (e.g.
+  // backspace over the dash in `12-|34`) - delete the adjacent content character instead.
+  // A cut or drag removed exactly the selection, so it never reaches past it.
+  const removedSelection = inputType === 'deleteByCut' || inputType === 'deleteByDrag';
+
+  if (deletion && !removedSelection && raw === previousRaw && raw.length > 0) {
     if (inputType === 'deleteContentForward') {
       raw = raw.slice(0, anchorBefore) + raw.slice(anchorBefore + 1);
     } else if (anchorBefore > 0) {

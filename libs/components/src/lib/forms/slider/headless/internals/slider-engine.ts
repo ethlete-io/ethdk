@@ -15,13 +15,10 @@ export type SliderSteppedBounds = SliderBounds & {
 const decimalPrecisionOf = (value: number) => {
   const text = value.toString();
 
-  if (text.includes('e-')) {
-    return Number(text.split('e-')[1]);
-  }
+  const [mantissa = '', exponent] = text.split('e-');
+  const fractionDigits = mantissa.split('.')[1]?.length ?? 0;
 
-  const fraction = text.split('.')[1];
-
-  return fraction ? fraction.length : 0;
+  return fractionDigits + (exponent ? Number(exponent) : 0);
 };
 
 export const clampValue = (value: number, bounds: SliderBounds) => Math.min(bounds.max, Math.max(bounds.min, value));
