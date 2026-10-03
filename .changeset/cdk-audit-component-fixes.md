@@ -2,4 +2,4 @@
 '@ethlete/cdk': patch
 ---
 
-Stop `et-breadcrumb` collapsing endlessly with fewer than three items, accept `0` as a masonry item key and keep one column in a narrow masonry, prefix every `et-picture` srcset candidate with the base URL, and close an open tooltip when `etTooltip` turns null.
+Fix `et-breadcrumb` collapsing endlessly with few items, masonry `0` keys and narrow layouts, `et-picture` srcset base URLs, and tooltips staying open when `etTooltip` turns null.

@@ -2,4 +2,4 @@
 '@ethlete/components': patch
 ---
 
-A `syncUrl` overlay router no longer pops the history entry of an overlay opened while it was still leaving, which closed that overlay too. A route change that closes a `syncUrl` overlay with `queryParamsHandling: 'preserve'` no longer carries the overlay's query param onto the next page.
+A `syncUrl` overlay router no longer closes an overlay opened while the previous one was leaving, and no longer carries its query param onto the next page.
