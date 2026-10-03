@@ -40,7 +40,11 @@ export class BreadcrumbSegmentDirective {
    * scale - so `order="0"` pins a segment to the front. @default null
    */
   public order = input<number | null, unknown>(null, {
-    transform: (value: unknown) => (value === null || value === undefined ? null : numberAttribute(value)),
+    transform: (value: unknown) => {
+      const order = numberAttribute(value);
+
+      return Number.isNaN(order) ? null : order;
+    },
   });
 
   /** The crumbs declared inside this segment, in declaration order. */

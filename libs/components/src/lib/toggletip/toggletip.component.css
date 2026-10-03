@@ -1,31 +1,31 @@
 @layer components {
   @property --et-toggletip-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 13px;
   }
 
   @property --et-toggletip-line-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 18px;
   }
 
   @property --et-toggletip-padding-inline {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-toggletip-padding-block {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 
   @property --et-toggletip-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 

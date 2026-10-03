@@ -24,6 +24,8 @@ import { CarouselAutoplayStylesComponent } from '../carousel-autoplay-styles.com
 import { CAROUSEL_ERROR_CODES } from '../carousel-errors';
 import { CAROUSEL_AUTOPLAY_TOKEN, CAROUSEL_TOKEN } from './carousel.tokens';
 
+const MAX_TIMER_DELAY = 2_147_483_647;
+
 /** Why autoplay isn't running, in the order the reasons are checked. `null` while it is running. */
 export type CarouselAutoplayPauseReason =
   | 'disabled'
@@ -166,7 +168,10 @@ export class CarouselAutoplayDirective {
 
     if (this.pauseOnHover() && this.isHovered() && !this.isPointerOnPauseControl()) return 'hover';
     if (this.pauseOnFocus() && this.isFocusWithin() && !this.isFocusOnPauseControl()) return 'focus';
-    if (this.duration() <= 0) return 'no-duration';
+    // setTimeout fires at once for NaN, Infinity and anything past 2^31-1 ms
+    const duration = this.duration();
+
+    if (!Number.isFinite(duration) || duration <= 0 || duration > MAX_TIMER_DELAY) return 'no-duration';
 
     return null;
   });

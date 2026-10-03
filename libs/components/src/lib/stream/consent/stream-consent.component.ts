@@ -41,67 +41,67 @@ let nextHeadingId = 0;
     @layer components {
       @property --et-stream-consent-padding {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 32px;
       }
 
       @property --et-stream-consent-gap {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 12px;
       }
 
       @property --et-stream-consent-icon-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 36px;
       }
 
       @property --et-stream-consent-border-radius {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 16px;
       }
 
       @property --et-stream-consent-heading-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 16px;
       }
 
       @property --et-stream-consent-heading-weight {
         syntax: '<number>';
-        inherits: false;
+        inherits: true;
         initial-value: 600;
       }
 
       @property --et-stream-consent-heading-line-height {
         syntax: '<percentage>';
-        inherits: false;
+        inherits: true;
         initial-value: 122%;
       }
 
       @property --et-stream-consent-heading-letter-spacing {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 0.2px;
       }
 
       @property --et-stream-consent-description-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 14px;
       }
 
       @property --et-stream-consent-description-weight {
         syntax: '<number>';
-        inherits: false;
+        inherits: true;
         initial-value: 400;
       }
 
       @property --et-stream-consent-description-line-height {
         syntax: '<percentage>';
-        inherits: false;
+        inherits: true;
         initial-value: 150%;
       }
 

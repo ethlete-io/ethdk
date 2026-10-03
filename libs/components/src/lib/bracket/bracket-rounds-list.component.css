@@ -1,19 +1,19 @@
 @layer components {
   @property --et-bracket-rounds-list-section-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 32px;
   }
 
   @property --et-bracket-rounds-list-round-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 20px;
   }
 
   @property --et-bracket-rounds-list-match-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 8px;
   }
 

@@ -179,6 +179,23 @@ describe('TooltipDirective', () => {
 });
 
 @Component({
+  template: `<button etTooltip="Tip" showDelay="250" type="button">Trigger</button>`,
+  imports: [TooltipDirective],
+})
+class StaticDelayTooltipTestHost {}
+
+describe('TooltipDirective showDelay', () => {
+  it('accepts a static attribute value as a number', () => {
+    const fixture = TestBed.createComponent(StaticDelayTooltipTestHost);
+    fixture.detectChanges();
+
+    const directive = fixture.debugElement.query(By.directive(TooltipDirective)).injector.get(TooltipDirective);
+
+    expect(directive.showDelay()).toBe(250);
+  });
+});
+
+@Component({
   template: `<button [showDelay]="0" class="dialog-trigger" etTooltip="Dialog tip" type="button">Inside</button>`,
   imports: [TooltipDirective],
 })

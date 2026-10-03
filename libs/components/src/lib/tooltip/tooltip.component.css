@@ -1,37 +1,37 @@
 @layer components {
   @property --et-tooltip-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 13px;
   }
 
   @property --et-tooltip-line-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 18px;
   }
 
   @property --et-tooltip-font-weight {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
     initial-value: 500;
   }
 
   @property --et-tooltip-letter-spacing {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: -0.13px;
   }
 
   @property --et-tooltip-padding-inline {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-tooltip-padding-block {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 

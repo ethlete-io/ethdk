@@ -110,7 +110,7 @@ describe('MenuSearchDirective', () => {
 
     // Hovering marks the item active but must not take focus - otherwise the rest of what someone is
     // typing goes nowhere the moment the pointer drifts over the list.
-    query('.item').dispatchEvent(new PointerEvent('pointerenter', { bubbles: true, pointerType: 'mouse' }));
+    query('.item').dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerType: 'mouse' }));
     tick();
 
     expect(document.activeElement).toBe(search);

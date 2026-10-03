@@ -37,43 +37,43 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
     @layer components {
       @property --et-pip-slot-placeholder-gap {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 12px;
       }
 
       @property --et-pip-slot-placeholder-padding {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 32px;
       }
 
       @property --et-pip-slot-placeholder-icon-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 36px;
       }
 
       @property --et-pip-slot-placeholder-border-radius {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 16px;
       }
 
       @property --et-pip-slot-placeholder-message-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 14px;
       }
 
       @property --et-pip-slot-placeholder-message-weight {
         syntax: '<number>';
-        inherits: false;
+        inherits: true;
         initial-value: 400;
       }
 
       @property --et-pip-slot-placeholder-message-line-height {
         syntax: '<percentage>';
-        inherits: false;
+        inherits: true;
         initial-value: 150%;
       }
 

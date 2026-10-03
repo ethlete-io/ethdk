@@ -37,67 +37,67 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
     @layer components {
       @property --et-stream-player-error-gap {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 12px;
       }
 
       @property --et-stream-player-error-padding {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 32px;
       }
 
       @property --et-stream-player-error-icon-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 36px;
       }
 
       @property --et-stream-player-error-border-radius {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 16px;
       }
 
       @property --et-stream-player-error-heading-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 16px;
       }
 
       @property --et-stream-player-error-heading-weight {
         syntax: '<number>';
-        inherits: false;
+        inherits: true;
         initial-value: 600;
       }
 
       @property --et-stream-player-error-heading-line-height {
         syntax: '<percentage>';
-        inherits: false;
+        inherits: true;
         initial-value: 122%;
       }
 
       @property --et-stream-player-error-heading-letter-spacing {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 0.2px;
       }
 
       @property --et-stream-player-error-description-size {
         syntax: '<length>';
-        inherits: false;
+        inherits: true;
         initial-value: 14px;
       }
 
       @property --et-stream-player-error-description-weight {
         syntax: '<number>';
-        inherits: false;
+        inherits: true;
         initial-value: 400;
       }
 
       @property --et-stream-player-error-description-line-height {
         syntax: '<percentage>';
-        inherits: false;
+        inherits: true;
         initial-value: 150%;
       }
 

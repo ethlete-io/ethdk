@@ -1,13 +1,13 @@
 @layer components {
   @property --et-select-panel-max-height {
     syntax: '<length-percentage>';
-    inherits: false;
+    inherits: true;
     initial-value: 40vh;
   }
 
   @property --et-select-panel-padding {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 6px;
   }
 

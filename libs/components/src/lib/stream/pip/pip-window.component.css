@@ -1,19 +1,19 @@
 @layer components {
   @property --et-pip-border-radius {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 8px;
   }
 
   @property --et-pip-backdrop-blur {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 4px;
   }
 
   @property --et-pip-title-bar-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 32px;
   }
 

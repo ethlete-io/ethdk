@@ -8,7 +8,7 @@ import { BreadcrumbComponent } from './breadcrumb.component';
 import { BreadcrumbOverflowComponent } from './breadcrumb-overflow.component';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS } from './breadcrumb.imports';
 import { fakeLayout, fakeResizeObserver } from '../testing/fake-layout';
-import { BreadcrumbDirective } from './headless';
+import { BreadcrumbDirective, BreadcrumbSegmentDirective } from './headless';
 import { BreadcrumbSeoDirective } from './seo/breadcrumb-seo.directive';
 
 @Component({
@@ -450,5 +450,40 @@ describe('breadcrumb measurement passes', () => {
     expect(breadcrumb.isCollapsed()).toBe(false);
     expect(breadcrumb.isMeasuring()).toBe(false);
     expect(trail.measurementPasses() - settled).toBe(1);
+  });
+});
+
+@Component({
+  selector: 'et-test-breadcrumb-segment-order',
+  template: `
+    <et-breadcrumb-outlet />
+
+    <ng-template [order]="order()" etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate><a etBreadcrumbItem href="#">Home</a></ng-template>
+    </ng-template>
+  `,
+  imports: [BREADCRUMB_IMPORTS],
+  providers: [provideBreadcrumbManager()],
+})
+class BreadcrumbSegmentOrderComponent {
+  public segment = viewChild.required(BreadcrumbSegmentDirective);
+  public order = signal<unknown>(null);
+}
+
+describe('BreadcrumbSegmentDirective order', () => {
+  it.each(['', 'first', NaN])('treats %j as no explicit order', (order) => {
+    const fixture = TestBed.createComponent(BreadcrumbSegmentOrderComponent);
+    fixture.componentInstance.order.set(order);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.segment().order()).toBeNull();
+  });
+
+  it('keeps a numeric order', () => {
+    const fixture = TestBed.createComponent(BreadcrumbSegmentOrderComponent);
+    fixture.componentInstance.order.set('2');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.segment().order()).toBe(2);
   });
 });

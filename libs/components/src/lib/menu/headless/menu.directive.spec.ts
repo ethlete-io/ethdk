@@ -85,6 +85,9 @@ const pointerdown = (element: Element) =>
 const pointerenter = (element: Element, pointerType = 'mouse') =>
   element.dispatchEvent(new PointerEvent('pointerenter', { bubbles: false, cancelable: true, pointerType }));
 
+const pointermove = (element: Element, pointerType = 'mouse') =>
+  element.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, pointerType }));
+
 const flushFrames = () =>
   new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
@@ -525,6 +528,24 @@ describe('MenuDirective', () => {
     });
   });
 
+  it('marks the item the pointer moves over active', async () => {
+    await openMenu();
+
+    pointermove(query('.item-charlie'));
+    tick();
+
+    expect(document.activeElement).toBe(query('.item-charlie'));
+  });
+
+  it('keeps the active item when scrolling brings another under a pointer that did not move', async () => {
+    await openMenu();
+
+    pointerenter(query('.item-charlie'));
+    tick();
+
+    expect(document.activeElement).toBe(query('.item-alpha'));
+  });
+
   describe('hover intent', () => {
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] });
@@ -540,7 +561,7 @@ describe('MenuDirective', () => {
 
       const submenuTrigger = query('.submenu-trigger');
 
-      pointerenter(submenuTrigger);
+      pointermove(submenuTrigger);
       tick();
 
       expect(menu.openSubmenu()).toBeNull();
@@ -550,7 +571,7 @@ describe('MenuDirective', () => {
 
       expect(menu.openSubmenu()).not.toBeNull();
 
-      pointerenter(query('.item-alpha'));
+      pointermove(query('.item-alpha'));
       tick();
       vi.advanceTimersByTime(150);
       tick();
@@ -567,13 +588,13 @@ describe('MenuDirective', () => {
       trigger.click();
       tick();
 
-      pointerenter(query('.submenu-trigger'));
+      pointermove(query('.submenu-trigger'));
       vi.advanceTimersByTime(150);
       tick();
 
       expect(menu.openSubmenu()).not.toBeNull();
 
-      pointerenter(query('.item-alpha'));
+      pointermove(query('.item-alpha'));
       tick();
 
       pointerenter(query('.sub-panel'));
@@ -588,7 +609,7 @@ describe('MenuDirective', () => {
       trigger.click();
       tick();
 
-      pointerenter(query('.submenu-trigger'));
+      pointermove(query('.submenu-trigger'));
       vi.advanceTimersByTime(1000);
       tick();
 
@@ -599,7 +620,7 @@ describe('MenuDirective', () => {
       trigger.click();
       tick();
 
-      pointerenter(query('.submenu-trigger'), 'touch');
+      pointermove(query('.submenu-trigger'), 'touch');
       vi.advanceTimersByTime(1000);
       tick();
 

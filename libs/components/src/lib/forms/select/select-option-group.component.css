@@ -1,7 +1,7 @@
 @layer components {
   @property --et-select-option-group-label-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 

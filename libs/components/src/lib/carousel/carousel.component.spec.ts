@@ -414,6 +414,21 @@ describe('CarouselComponent', () => {
     expect(autoplay.pauseReason()).toBe('no-duration');
   });
 
+  it.each([Number.NaN, Number.POSITIVE_INFINITY])(
+    'reports no-duration rather than advancing every tick for an autoplayTime of %s',
+    (autoplayTime) => {
+      const fixture = createHost();
+      fixture.componentInstance.autoplay.set(true);
+      fixture.componentInstance.autoplayTime.set(autoplayTime);
+      fixture.detectChanges();
+
+      const autoplay = fixture.componentInstance.autoplayDirective();
+
+      expect(autoplay.isPlaying()).toBe(false);
+      expect(autoplay.pauseReason()).toBe('no-duration');
+    },
+  );
+
   it('falls back to the carousel’s autoplayTime when no slide overrides it', () => {
     const fixture = createHost();
     fixture.componentInstance.autoplay.set(true);

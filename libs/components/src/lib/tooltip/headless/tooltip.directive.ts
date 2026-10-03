@@ -12,6 +12,7 @@ import {
   inject,
   input,
   inputBinding,
+  numberAttribute,
   signal,
   untracked,
 } from '@angular/core';
@@ -74,7 +75,7 @@ export class TooltipDirective {
    */
   public arrowPadding = input<Padding | null>(20);
   public viewportPadding = input<Padding | null>(8);
-  public showDelay = input(DEFAULT_TOOLTIP_DELAY);
+  public showDelay = input(DEFAULT_TOOLTIP_DELAY, { transform: numberAttribute });
   public disabled = input(false, { alias: 'etTooltipDisabled', transform: booleanAttribute });
 
   /** @internal */

@@ -33,7 +33,8 @@ export type MenuItemActivationEvent = {
     '(click)': 'handleClick($event)',
     '(keydown)': 'handleKeydown($event)',
     '(mousedown)': 'handleMousedown($event)',
-    '(pointerenter)': 'handlePointerEnter($event)',
+    '(pointermove)': 'handlePointerMove($event)',
+    '(pointerleave)': 'handlePointerLeave()',
     '(focus)': 'handleFocus()',
   },
 })
@@ -58,6 +59,7 @@ export class MenuItemDirective {
   public disabledOverride = signal<Signal<boolean> | null>(null);
   private defaultCloseOnActivate = true;
   private pendingKeyboardSource: MenuItemActivationSource | null = null;
+  private pointerInside = false;
 
   protected role = computed(() => this.roleOverride()?.() ?? 'menuitem');
 
@@ -176,12 +178,19 @@ export class MenuItemDirective {
     event.preventDefault();
   }
 
-  protected handlePointerEnter(event: PointerEvent) {
-    if (event.pointerType === 'touch') {
+  // A move rather than pointerenter: scrolling an item under a resting pointer fires pointerenter too, and
+  // would pull focus away from the item the arrow keys just reached.
+  protected handlePointerMove(event: PointerEvent) {
+    if (event.pointerType === 'touch' || this.pointerInside) {
       return;
     }
 
+    this.pointerInside = true;
     this.owner?.notifyItemPointerEnter(this);
+  }
+
+  protected handlePointerLeave() {
+    this.pointerInside = false;
   }
 
   protected handleFocus() {
