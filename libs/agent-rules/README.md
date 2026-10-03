@@ -15,6 +15,10 @@ npx ethlete-agents init   # writes ethlete-agents.config.json
 npx ethlete-agents sync   # writes the generated rules and skills
 ```
 
+`init` pre-fills `vars` with the lint, format and Storybook commands for your repo; check them before
+the first sync. `sync`, `check`, `init` and `migrate` reject a flag they do not know and print the usage
+instead of running, and a config file that does not parse is reported by name.
+
 Commit the generated files, and add a drift check to CI:
 
 ```bash
@@ -111,7 +115,10 @@ Prettier rewrites them and `check` then reports drift on every run:
   `package.json`). Without one, the git-commit guide presents the format as the repo's
   convention and never mentions a `commitlint` run - an agent that goes looking for a
   promised validator and finds nothing reports the discrepancy instead of just
-  committing. Setting any derived var in `vars` overrides the detection.
+  committing. `lintCommand` / `lintFixCommand` run the repo's `lint` script, else
+  `nx lint <project>` when Nx is installed, and `storybookStartCommand` runs its `storybook`
+  script; `sync` warns when a lint var names a script `package.json` does not have. Setting
+  any derived var in `vars` overrides the detection.
 - **`exclude`** - rule or skill names to skip entirely for every configured agent and
   developer. For example, `"exclude": ["git-flow", "handoff"]` prevents those skills
   from being generated; the next `sync` also removes copies generated previously. Unknown
