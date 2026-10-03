@@ -92,7 +92,22 @@ describe('createAnchoredPanelController with a real overlay', () => {
     host.open.set(true);
     await driver.openVia(() => fixture.detectChanges());
 
-    return { fixture, host, driver };
+    let closed = false;
+    host
+      .overlayRef()!
+      .afterClosed()
+      .subscribe(() => (closed = true));
+
+    // the leave runs on real frames, and a loaded machine spreads them over more settles than an idle one
+    const settleClosed = async () => {
+      for (let round = 0; round < 50 && !closed; round++) {
+        await driver.settle();
+      }
+
+      expect(closed).toBe(true);
+    };
+
+    return { fixture, host, driver, settleClosed };
   };
 
   const byId = (id: string) => document.getElementById(id) as HTMLElement;
@@ -108,12 +123,12 @@ describe('createAnchoredPanelController with a real overlay', () => {
   });
 
   it('closes on a pointerdown outside and reports it', async () => {
-    const { host, driver } = await setup();
+    const { host, driver, settleClosed } = await setup();
 
     expect(driver.pane()).not.toBeNull();
 
     byId('before').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-    await driver.settle();
+    await settleClosed();
 
     expect(host.open()).toBe(false);
     expect(host.closes).toEqual([{ byOutsidePointer: true, byFocusLeave: false, fromBottomSheet: false }]);
@@ -133,10 +148,10 @@ describe('createAnchoredPanelController with a real overlay', () => {
   });
 
   it('closes when focus moves outside and reports a focus leave', async () => {
-    const { host, driver } = await setup();
+    const { host, driver, settleClosed } = await setup();
 
     byId('after').focus();
-    await driver.settle();
+    await settleClosed();
 
     expect(host.open()).toBe(false);
     expect(host.closes).toEqual([{ byOutsidePointer: false, byFocusLeave: true, fromBottomSheet: false }]);
@@ -144,7 +159,7 @@ describe('createAnchoredPanelController with a real overlay', () => {
   });
 
   it('moves focus to the tab stop after the anchor and closes when Tab leaves the last pane element', async () => {
-    const { host, driver } = await setup();
+    const { host, driver, settleClosed } = await setup();
     const last = driver.paneEl('#last')!;
 
     last.focus();
@@ -156,10 +171,8 @@ describe('createAnchoredPanelController with a real overlay', () => {
     expect(document.activeElement).toBe(byId('after'));
     expect(host.open()).toBe(false);
 
-    await vi.waitFor(async () => {
-      await driver.settle();
-      expect(host.closes[0]?.byFocusLeave).toBe(true);
-    });
+    await settleClosed();
+    expect(host.closes[0]?.byFocusLeave).toBe(true);
     driver.closeAll();
   });
 

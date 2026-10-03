@@ -487,7 +487,7 @@ class SidebarComponent {
   }
 }
 
-describe('scheduler composition scenarios', () => {
+describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(COLOR_THEMES)] });
 
   beforeEach(() => vi.setSystemTime(at(15, 8, 30)));

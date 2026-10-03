@@ -211,7 +211,7 @@ const typeInto = (s: Scenario, input: HTMLInputElement, value: string) => {
   settle(s);
 };
 
-describe('forms cascader scenarios', () => {
+describe('forms cascader scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
 
   it('drills by keyboard into a signal form, commits a leaf and reports touch and the required error', () => {

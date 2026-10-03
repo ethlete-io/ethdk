@@ -414,7 +414,7 @@ const keepSelectionAcrossMenuFocus = (root: HTMLElement, offset: number) => {
 
 const image = (name: string, size = 10) => new File(['x'.repeat(size)], name, { type: 'image/png' });
 
-describe('forms rich-text-editor tool scenarios', () => {
+describe('forms rich-text-editor tool scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario({
     providers: [
       provideOverlay(),

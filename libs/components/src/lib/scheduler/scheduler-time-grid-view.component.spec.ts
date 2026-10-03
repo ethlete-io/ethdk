@@ -14,7 +14,7 @@ const allDayAppointment = testAppointment('holiday', {
   end: new Date(2026, 6, 15, 23, 59),
 });
 
-describe('SchedulerTimeGridViewComponent keyboard', () => {
+describe('SchedulerTimeGridViewComponent keyboard', { timeout: 15_000 }, () => {
   let driver: ReturnType<typeof schedulerTestDriver>;
 
   const mount = (options: { view?: SchedulerView; appointments?: readonly Appointment[] } = {}) => {

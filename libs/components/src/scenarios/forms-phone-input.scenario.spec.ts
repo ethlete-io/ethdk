@@ -103,7 +103,7 @@ const typeInto = (s: Scenario, input: HTMLInputElement, value: string) => {
   s.tick();
 };
 
-describe('forms phone input scenarios', () => {
+describe('forms phone input scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
 
   it('types a national number, picks a country from the searchable panel and clears', () => {

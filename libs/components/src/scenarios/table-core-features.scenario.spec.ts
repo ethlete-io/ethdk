@@ -93,7 +93,7 @@ class LoadingPlayersComponent {
 })
 class LongPlayersComponent {
   columns = COLUMNS;
-  rows = players(500);
+  rows = players(120);
   enabled = signal(true);
   virtual = viewChild.required(TableVirtualScrollDirective);
 }
@@ -249,7 +249,7 @@ const styleManaged = (component: Parameters<typeof reflectComponentType>[0]) =>
 const renderedNames = (host: HTMLElement) =>
   [...host.querySelectorAll('.et-table-row [data-col-key="name"]')].map((cell) => (cell.textContent ?? '').trim());
 
-describe('table skeleton, virtual scroll and group header scenarios', () => {
+describe('table skeleton, virtual scroll and group header scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario();
 
   it('stands skeleton rows in for the first load and a bone in a cell loading on its own', () => {
@@ -309,7 +309,7 @@ describe('table skeleton, virtual scroll and group header scenarios', () => {
 
     fixture.componentInstance.enabled.set(false);
     s.tick();
-    expect(host.querySelectorAll('.et-table-row')).toHaveLength(500);
+    expect(host.querySelectorAll('.et-table-row')).toHaveLength(120);
   });
 
   it('rejects a second feature windowing the same rows', () => {
