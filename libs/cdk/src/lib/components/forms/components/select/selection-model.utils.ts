@@ -359,6 +359,16 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
       newIndex = nextIndex >= 0 && nextIndex < length ? nextIndex : loop ? resolveIndex(nextIndex) : null;
     }
 
+    if (!clamp || loop) return null;
+
+    const clampedTarget = resolveIndex(index + offset) as number;
+
+    for (let i = clampedTarget - step; i >= 0 && i < length; i -= step) {
+      const option = options[i] as T;
+
+      if (!this.isDisabled(option)) return option;
+    }
+
     return null;
   }
 

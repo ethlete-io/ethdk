@@ -134,7 +134,19 @@ describe('SelectionModel', () => {
         { id: 1, label: 'One', disabled: true },
       ]);
 
-      expect(model.getOptionByOffset(10, 0, { skipDisabled: true, clamp: true })).toBeNull();
+      expect(model.getOptionByOffset(10, 0, { skipDisabled: true, clamp: true })?.id).toBe(0);
+    });
+
+    it('falls back to the nearest enabled option when the clamped edge is disabled', () => {
+      const model = objectModel([
+        { id: 0, label: 'Zero', disabled: true },
+        { id: 1, label: 'One' },
+        { id: 2, label: 'Two' },
+        { id: 3, label: 'Three', disabled: true },
+      ]);
+
+      expect(model.getOptionByOffset(10, 1, { skipDisabled: true, clamp: true })?.id).toBe(2);
+      expect(model.getOptionByOffset(-10, 2, { skipDisabled: true, clamp: true })?.id).toBe(1);
     });
 
     it('does not recurse forever when every option is disabled', () => {
