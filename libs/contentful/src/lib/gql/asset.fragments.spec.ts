@@ -32,4 +32,23 @@ describe('isContentfulGqlAsset', () => {
     expect(isContentfulGqlAsset(null)).toBe(false);
     expect(isContentfulGqlAsset({})).toBe(false);
   });
+
+  it('rejects values without a sys id', () => {
+    expect(isContentfulGqlAsset(undefined)).toBe(false);
+    expect(isContentfulGqlAsset([])).toBe(false);
+    expect(isContentfulGqlAsset('asset-1')).toBe(false);
+    expect(isContentfulGqlAsset({ sys: null })).toBe(false);
+    expect(isContentfulGqlAsset({ sys: { id: '' } })).toBe(false);
+  });
+
+  it('rejects a rest asset whose fields are null or undefined', () => {
+    expect(isContentfulGqlAsset({ sys: { id: 'asset-1' }, fields: null })).toBe(false);
+    expect(isContentfulGqlAsset({ sys: { id: 'asset-1' }, fields: undefined })).toBe(false);
+  });
+
+  it('accepts a gql asset without the optional fileName', () => {
+    const { fileName: _, ...asset } = gqlAsset({ fileName: 'a.png' });
+
+    expect(isContentfulGqlAsset(asset)).toBe(true);
+  });
 });

@@ -37,4 +37,34 @@ describe('createContentfulConfig', () => {
     expect(imageOptions.sizes).toEqual(['50vw']);
     expect(imageOptions.srcsetSizes).toEqual(['375w', '1280w', '1920w', '2560w']);
   });
+
+  it('falls back to the defaults for options passed as undefined', () => {
+    const config = createContentfulConfig({
+      internalHosts: undefined,
+      customComponents: undefined,
+      components: undefined,
+      imageOptions: { srcsetSizes: undefined, sizes: undefined, backgroundColor: undefined },
+    });
+
+    expect(config.internalHosts).toEqual([]);
+    expect(config.customComponents).toEqual({});
+    expect(config.components).toEqual({});
+    expect(config.imageOptions).toEqual({
+      srcsetSizes: ['375w', '1280w', '1920w', '2560w'],
+      sizes: ['100vw'],
+      backgroundColor: null,
+    });
+  });
+
+  it('keeps an explicitly empty srcsetSizes and a null background color', () => {
+    const { imageOptions } = createContentfulConfig({ imageOptions: { srcsetSizes: [], backgroundColor: null } });
+
+    expect(imageOptions.srcsetSizes).toEqual([]);
+    expect(imageOptions.backgroundColor).toBeNull();
+  });
+
+  it('does not share the fallback arrays between configs', () => {
+    expect(createContentfulConfig({ internalHosts: ['example.com'] }).internalHosts).toEqual(['example.com']);
+    expect(createContentfulConfig().internalHosts).toEqual([]);
+  });
 });

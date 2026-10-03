@@ -18,6 +18,9 @@ const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
   },
 };
 
+const withoutUndefined = <T extends object>(value: T | null | undefined) =>
+  Object.fromEntries(Object.entries(value ?? {}).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+
 export const createContentfulConfig = (options?: ContentfulConfigOptions | null): ContentfulConfig => {
   const config = options ?? {};
 
@@ -25,7 +28,9 @@ export const createContentfulConfig = (options?: ContentfulConfigOptions | null)
     ...CONTENTFUL_FALLBACK_CONFIG,
     ...config,
     components: config.components ?? CONTENTFUL_FALLBACK_CONFIG.components,
-    imageOptions: { ...CONTENTFUL_FALLBACK_CONFIG.imageOptions, ...config.imageOptions },
+    customComponents: config.customComponents ?? CONTENTFUL_FALLBACK_CONFIG.customComponents,
+    internalHosts: config.internalHosts ?? CONTENTFUL_FALLBACK_CONFIG.internalHosts,
+    imageOptions: { ...CONTENTFUL_FALLBACK_CONFIG.imageOptions, ...withoutUndefined(config.imageOptions) },
   };
 };
 
