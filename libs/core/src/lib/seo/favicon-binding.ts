@@ -142,6 +142,7 @@ const FAVICON_STORE_DEF = /* @__PURE__ */ defineRootProvider(
       return new Promise((resolve) => {
         const image = new Image();
 
+        image.crossOrigin = 'anonymous';
         image.onload = () => {
           baseImage = image;
           resolve(image);
