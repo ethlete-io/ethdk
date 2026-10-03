@@ -9,6 +9,7 @@ import { CHOICE_FIELD_IMPORTS } from '../choice-field/choice-field.imports';
 import { OTP_INPUT_IMPORTS } from '../otp-input/otp-input.imports';
 import { RATING_IMPORTS } from '../rating/rating.imports';
 import { SLIDER_IMPORTS } from '../slider/slider.imports';
+import { SWITCH_IMPORTS } from '../switch/switch.imports';
 
 @Component({
   template: `
@@ -38,8 +39,16 @@ class SchemaHiddenTestHost {
     <et-rating warnings="Rating advisory" aria-label="Rating" />
     <et-range-slider warnings="Range advisory" />
     <et-otp-input hidden aria-label="Code" />
+    <et-choice-field class="checkbox-field">
+      <et-checkbox warnings="Checkbox advisory" />
+      <et-label>Terms</et-label>
+    </et-choice-field>
+    <et-choice-field class="switch-field">
+      <et-switch hidden />
+      <et-label>Notify</et-label>
+    </et-choice-field>
   `,
-  imports: [RATING_IMPORTS, SLIDER_IMPORTS, OTP_INPUT_IMPORTS],
+  imports: [RATING_IMPORTS, SLIDER_IMPORTS, OTP_INPUT_IMPORTS, CHECKBOX_IMPORTS, SWITCH_IMPORTS, CHOICE_FIELD_IMPORTS],
 })
 class UnboundStateTestHost {}
 
@@ -80,5 +89,7 @@ describe('self-hosted control field state', () => {
     expect(host.querySelector('et-rating')?.textContent).toContain('Rating advisory');
     expect(host.querySelector('et-range-slider')?.textContent).toContain('Range advisory');
     expect((host.querySelector('et-otp-input') as HTMLElement).style.display).toBe('none');
+    expect(host.querySelector('.checkbox-field')?.textContent).toContain('Checkbox advisory');
+    expect((host.querySelector('.switch-field') as HTMLElement).style.display).toBe('none');
   });
 });

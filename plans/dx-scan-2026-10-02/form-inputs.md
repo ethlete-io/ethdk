@@ -42,7 +42,7 @@ Scope: `libs/components/src/lib/forms/{form-field,form,input,textarea,checkbox,s
 ## FI-02 `et-phone-input` lacks `pending`, `warnings`, `hidden` and `maxLength`
 
 - Status: fixed
-- Review: ok (golden phone-input 47571 -> 48562: FI-02 measured +407 B on its own, the rest predates this slice)
+- Review: ok (golden phone-input 47571 -> 48562: FI-02 measured +407 B on its own, the rest predates this slice); test audit: phone input added to the wrapper-inputs spec
 
 - Where: `libs/components/src/lib/forms/phone-input/headless/phone-input.directive.ts:36` (extends
   `TextShellControlDirective`, not `TextFieldControlDirective`);
@@ -115,7 +115,7 @@ Scope: `libs/components/src/lib/forms/{form-field,form,input,textarea,checkbox,s
 ## FI-05 `[warnings]` and the schema-`hidden` fallback exist only on the text-field controls
 
 - Status: fixed except `et-choice-field` (outside this slice: its host needs the `display: none` binding)
-- Review: fixed `et-choice-field` now binds `display: none` while hidden, with a spec
+- Review: fixed `et-choice-field` now binds `display: none` while hidden, with a spec; test audit: unbound checkbox warnings and switch hidden covered
 
 - Where: `form-field/headless/text-field-control.directive.ts:41,48` (the only declarations);
   `checkbox/headless/checkbox.directive.ts:48-58`, `switch/headless/switch.directive.ts:49-64`,

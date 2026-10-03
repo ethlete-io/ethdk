@@ -3,6 +3,7 @@ import { ColorInputComponent } from '../../color-input/color-input.component';
 import { InputComponent } from '../../input/input.component';
 import { NumberInputComponent } from '../../input/number-input.component';
 import { PasswordInputComponent } from '../../input/password-input.component';
+import { PhoneInputComponent } from '../../phone-input/phone-input.component';
 import { expectWrapperExposesBaseInputs, expectWrapperExposesBaseOutputs } from '../../testing/wrapper-inputs';
 import { TextareaComponent } from '../../textarea/textarea.component';
 import { ACCESSIBLE_NAME_INPUTS } from './accessible-name-control.directive';
@@ -14,6 +15,7 @@ const WRAPPERS = [
   { selector: 'et-password-input', component: PasswordInputComponent },
   { selector: 'et-textarea', component: TextareaComponent },
   { selector: 'et-color-input', component: ColorInputComponent },
+  { selector: 'et-phone-input', component: PhoneInputComponent },
 ];
 
 const TEXT_FIELD_CONTROL_OUTPUTS = ['valueChange', 'mixedChange', 'touchedChange'];
