@@ -1098,7 +1098,8 @@ export class CallViewComponent {
         finalize(() => {
           this.running.set(false);
           this.handingOff.set(false);
-          this.reload();
+          this.checkEpoch.update((seen) => seen + 1);
+          this.absorbLatest();
         }),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -1150,6 +1151,21 @@ export class CallViewComponent {
 
           return of(null);
         }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  /** Reads what a run wrote, and keeps the reader where they are, draft and all. */
+  private absorbLatest() {
+    const checkout = this.checkout();
+
+    if (!checkout) return;
+
+    designProject$(checkout)
+      .pipe(
+        tap((project) => this.absorb(project)),
+        catchError(() => EMPTY),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();

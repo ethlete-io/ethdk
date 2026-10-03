@@ -204,4 +204,29 @@ describe('CallViewComponent', () => {
 
     expect(run?.request.tools?.variant).toBe('b');
   });
+
+  it('keeps a draft composed during a run once the run ends', async () => {
+    let fail: (error: unknown) => void = () => undefined;
+
+    stubHost({
+      agent_list: () => [CLAUDE],
+      agent_run: () => new Promise((_, reject) => (fail = reject)),
+    });
+
+    const fixture = await mount(ASKING.slug);
+    const box = element(fixture).querySelector<HTMLTextAreaElement>('.studio__input textarea');
+
+    if (box) box.value = 'Look at the spacing';
+    box?.dispatchEvent(new Event('input'));
+    await settle(fixture);
+    element(fixture).querySelector<HTMLButtonElement>('.studio__input .studio__send')?.click();
+    await settle(fixture);
+    button(fixture, '.studio__verb', 'Iterate')?.click();
+    await settle(fixture);
+    expect(element(fixture).querySelector('.studio__compose')).not.toBeNull();
+    fail('The run broke.');
+    await settle(fixture);
+
+    expect(element(fixture).querySelector('.studio__compose')).not.toBeNull();
+  });
 });
