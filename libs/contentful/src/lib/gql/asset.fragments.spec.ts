@@ -47,8 +47,9 @@ describe('isContentfulGqlAsset', () => {
   });
 
   it('accepts a gql asset without the optional fileName', () => {
-    const { fileName: _, ...asset } = gqlAsset({ fileName: 'a.png' });
+    const asset = gqlAsset();
 
+    expect('fileName' in asset).toBe(false);
     expect(isContentfulGqlAsset(asset)).toBe(true);
   });
 });
