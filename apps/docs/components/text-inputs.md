@@ -397,7 +397,7 @@ raw string.
 
 | Input     | Type                                    | Default     | Description                                                                                                                                                       |
 | --------- | --------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `length`  | `number`                                | `6`         | Number of characters/segments.                                                                                                                                    |
+| `length`  | `number`                                | `6`         | Number of characters/segments. A value below 1 or one that does not parse falls back to `6`.                                                                      |
 | `charset` | `'numeric' \| 'alphanumeric' \| RegExp` | `'numeric'` | Accepted characters - everything else is stripped (pastes included).                                                                                              |
 | `masked`  | `boolean`                               | `false`     | Renders dots instead of characters (PIN entry) and turns the native input into `type="password"`, so a screen reader does not read the PIN; the value stays real. |
 | `color`   | registered color theme name             | -           | Scopes a [color theme](/core/theming) to the input - tints the active segment's border and caret.                                                                 |

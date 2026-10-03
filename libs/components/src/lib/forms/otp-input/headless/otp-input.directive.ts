@@ -22,6 +22,14 @@ import { controlTouches } from '../../../internals/touch-output';
 
 export type OtpInputCharset = 'numeric' | 'alphanumeric' | RegExp;
 
+const DEFAULT_OTP_LENGTH = 6;
+
+const otpLengthAttribute = (value: unknown) => {
+  const parsed = Math.trunc(numberAttribute(value, DEFAULT_OTP_LENGTH));
+
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : DEFAULT_OTP_LENGTH;
+};
+
 const CHARSET_PATTERNS: Record<'numeric' | 'alphanumeric', RegExp> = {
   numeric: /[0-9]/,
   alphanumeric: /[a-zA-Z0-9]/,
@@ -54,8 +62,8 @@ export class OtpInputDirective
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
 
-  /** Number of characters/segments. */
-  public length = input(6, { transform: numberAttribute });
+  /** Number of characters/segments. Anything below 1 or unparseable falls back to 6. */
+  public length = input(DEFAULT_OTP_LENGTH, { transform: otpLengthAttribute });
   /** Which characters are accepted - anything else is stripped (also from pastes). */
   public charset = input<OtpInputCharset>('numeric');
   /** Renders dots instead of the typed characters (PIN entry). */
