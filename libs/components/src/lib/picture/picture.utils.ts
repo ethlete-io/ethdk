@@ -2,6 +2,8 @@ import { numberAttribute } from '@angular/core';
 import { inferMimeType } from '@ethlete/core';
 import { PictureConfig, PictureSource } from './picture.types';
 
+const splitSrcset = (srcset: string) => srcset.split(/,\s+|(?<=\s[\d.]+[wx]),/);
+
 /**
  * The first URL out of a srcset, for the `<img src>` fallback a `<picture>` still needs - a browser that
  * matches no `<source>` (or doesn't support `<picture>` at all) loads the `img`.
@@ -18,7 +20,7 @@ export const extractFirstImageUrl = (source: string | PictureSource | null): str
     return srcset.trim() || null;
   }
 
-  const firstCandidate = srcset.split(',')[0]?.trim();
+  const firstCandidate = splitSrcset(srcset)[0]?.trim();
 
   return firstCandidate?.split(/\s+/)[0] || null;
 };
@@ -68,8 +70,7 @@ export const withPictureBaseUrl = (source: PictureSource, config: PictureConfig 
 
   if (!baseUrl || source.srcset.trimStart().startsWith('data:')) return source;
 
-  const srcset = source.srcset
-    .split(',')
+  const srcset = splitSrcset(source.srcset)
     .map((candidate) => {
       const [url, ...descriptors] = candidate.trim().split(/\s+/);
 

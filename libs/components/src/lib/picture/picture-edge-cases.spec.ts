@@ -113,4 +113,20 @@ describe('picture utils with missing sources', () => {
       '',
     );
   });
+
+  it('keeps a comma inside a candidate url', () => {
+    const srcset = 'img.jpg?rect=0,0,100,100 1x, img@2x.jpg 2x';
+
+    expect(extractFirstImageUrl(srcset)).toBe('img.jpg?rect=0,0,100,100');
+    expect(withPictureBaseUrl({ srcset, type: null, media: null, sizes: null }, { baseUrl: '/cdn' }).srcset).toBe(
+      '/cdn/img.jpg?rect=0,0,100,100 1x, /cdn/img@2x.jpg 2x',
+    );
+  });
+
+  it('splits candidates separated by a comma without a space after a descriptor', () => {
+    expect(
+      withPictureBaseUrl({ srcset: 'a.jpg 1x,b.jpg 2x', type: null, media: null, sizes: null }, { baseUrl: '/cdn' })
+        .srcset,
+    ).toBe('/cdn/a.jpg 1x, /cdn/b.jpg 2x');
+  });
 });
