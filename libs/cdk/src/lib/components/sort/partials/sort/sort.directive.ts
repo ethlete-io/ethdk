@@ -68,7 +68,7 @@ export class SortDirective implements OnChanges, OnDestroy, OnInit {
   private _direction: SortDirection = '';
 
   @Input({ alias: 'etSortDisableClear', transform: booleanAttribute })
-  disableClear = false;
+  disableClear?: boolean;
 
   @Input()
   sortControl?: FormControl<Sort | null>;

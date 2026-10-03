@@ -79,7 +79,7 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
   private _sortActionDescription = 'Sort';
 
   @Input({ transform: booleanAttribute })
-  disableClear = false;
+  disableClear?: boolean;
 
   get _isSorted() {
     if (!this._sort) {

@@ -113,7 +113,7 @@ The `etSort` directive tracks the active sort; `[et-sort-header]` elements regis
 | `sortControl`                      | -            | `FormControl<Sort \| null>` two-way bound to the combined `{ active, direction }` state (also available split as `sortByControl` / `sortDirectionControl`). |
 | `(etSortChange)`                   | -            | Emits `Sort` on every change - reorder your data (or re-query) here.                                                                                        |
 
-Per header you can set `start` (overrides `etSortStart`), `arrowPosition` (`'after'` by default), `disableClear`, `disabled` and `sortActionDescription` (the screen-reader description of the sort action, default `'Sort'`). App-wide defaults go through the `SORT_DEFAULT_OPTIONS` token; `provideSort()` sets up the `SortHeaderIntl` service whose `changes` subject re-renders all headers (useful for runtime language switches).
+Per header you can set `start` (overrides `etSortStart`), `arrowPosition` (`'after'` by default), `disableClear` (overrides `etSortDisableClear`, which overrides `SORT_DEFAULT_OPTIONS`), `disabled` and `sortActionDescription` (the screen-reader description of the sort action, default `'Sort'`). App-wide defaults go through the `SORT_DEFAULT_OPTIONS` token; `provideSort()` sets up the `SortHeaderIntl` service whose `changes` subject re-renders all headers (useful for runtime language switches).
 
 Sort headers are fully accessible: `aria-sort` on the header, a `role="button"` sort trigger with keyboard support (Space/Enter) and a direction-arrow hint on keyboard focus.
 
