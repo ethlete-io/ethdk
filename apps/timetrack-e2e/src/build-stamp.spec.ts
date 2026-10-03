@@ -20,7 +20,7 @@ test.describe('the build stamp', () => {
   });
 
   test('repeats the stamp on the screen a problem gets reported from', async ({ page }) => {
-    await page.goto('/host');
+    await page.goto('/#/host');
 
     await expect(page.locator('[data-alpha-patch]')).toHaveCount(2);
   });

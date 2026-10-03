@@ -7,7 +7,7 @@ const card = (page: Page) => page.locator('ethlete-google-connection');
 
 /** The Google card sits on the sources tab, which the settings screen does not open on. */
 const openCard = async (page: Page) => {
-  await page.goto('/settings');
+  await page.goto('/#/settings');
   await page.getByRole('tab', { name: 'Sources' }).click();
   await expect(card(page)).toBeVisible();
 };

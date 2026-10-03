@@ -30,7 +30,7 @@ const WAYLAND_WLR = {
 test.describe('the sources screen', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
   });
 
   test('says a source the host is not watching is not running', async ({ page }) => {
@@ -55,7 +55,7 @@ test.describe('the sources screen', () => {
 test.describe('what the focused-window source reads on this machine', () => {
   test('names the working directory as unread, and why', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(capability(page, 'working-directory')).toContainText('does not read');
     await expect(capability(page, 'working-directory')).toContainText('The directory the focused window works in');
@@ -64,7 +64,7 @@ test.describe('what the focused-window source reads on this machine', () => {
 
   test('names what it does read, so the list is not a list of faults', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(capability(page, 'title')).toContainText('reads');
     await expect(capability(page, 'title')).not.toContainText('does not read');
@@ -84,7 +84,7 @@ test.describe('what the focused-window source reads on this machine', () => {
         ],
       },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(capability(page, 'title')).toContainText('does not read');
     await expect(capability(page, 'title')).toContainText('Accessibility permission');
@@ -92,7 +92,7 @@ test.describe('what the focused-window source reads on this machine', () => {
 
   test('claims nothing at all while no source is watching', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'window')).toContainText('not running');
     await expect(row(page, 'window')).not.toContainText('What it reads on this machine');
@@ -100,7 +100,7 @@ test.describe('what the focused-window source reads on this machine', () => {
 
   test('never claims it of the presence row, which shares the same collector', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'idle')).not.toContainText('What it reads on this machine');
   });
@@ -110,7 +110,7 @@ test.describe('what the focused-window source reads on this machine', () => {
 test.describe('the desk input row', () => {
   test('collects on a Wayland compositor', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'input')).toContainText('collecting');
   });
@@ -128,7 +128,7 @@ test.describe('the desk input row', () => {
         ],
       },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'input')).toContainText('not running');
     await expect(row(page, 'input')).toContainText('macOS does not collect it yet');
@@ -172,7 +172,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
         ],
       },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'gitlab')).toContainText('collecting');
     await expect(row(page, 'gitlab')).toContainText('Last read at');
@@ -182,7 +182,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
 
   test('says the binary is missing, and does not call that a login problem', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, glab: { installed: false, logins: [] } });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'gitlab')).toContainText('not installed');
     await expect(row(page, 'gitlab')).not.toContainText('auth login');
@@ -190,7 +190,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
 
   test('names the login command when the binary is there and holds no credential', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, glab: { installed: true, logins: [] } });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
     await expect(row(page, 'gitlab')).not.toContainText('not installed');
@@ -201,7 +201,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
       now: E2E_NOW,
       glab: { installed: true, logins: [{ host: 'gitlab.com', login: 'somebody' }] },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'gitlab')).toContainText('glab auth login --hostname gitlab.example.com');
   });
@@ -215,7 +215,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
       now: E2E_NOW,
       glab: { installed: true, logins: [{ host: 'gitlab.com', login: 'somebody' }] },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'gitlab')).toContainText('holds a login for gitlab.com, not for gitlab.example.com');
     await expect(row(page, 'gitlab')).toContainText('Correct the instance in Settings');
@@ -229,7 +229,7 @@ test.describe('the GitLab row, which reads through `glab`', () => {
 test.describe('the GitHub row, which reads through `gh`', () => {
   test('waits on the switch, even with the binary installed and logged in', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'github')).toContainText('Waiting on the GitHub switch in Settings');
     await expect(row(page, 'github')).not.toContainText('not installed');
@@ -260,7 +260,7 @@ test.describe('the GitHub row, which reads through `gh`', () => {
         ],
       },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'github')).toContainText('collecting');
     await expect(row(page, 'github')).toContainText('Reading github.com');
@@ -273,7 +273,7 @@ test.describe('the GitHub row, which reads through `gh`', () => {
       settings: { ...defaultSettings(), github: { enabled: true } },
       gh: { installed: false, logins: [] },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'github')).toContainText('not installed');
     await expect(row(page, 'github')).not.toContainText('auth login');
@@ -285,7 +285,7 @@ test.describe('the GitHub row, which reads through `gh`', () => {
       settings: { ...defaultSettings(), github: { enabled: true } },
       gh: { installed: true, logins: [] },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'github')).toContainText('gh auth login --hostname github.com');
   });
@@ -302,7 +302,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
   test('names the editor that holds the reporter, and offers it no install', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(editor(page, 'code')).toContainText('installed');
     await expect(editor(page, 'code')).not.toContainText('not installed');
@@ -315,7 +315,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
       reporterVsix: null,
       editors: { cursor: { onPath: true, reporter: false } },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(editor(page, 'cursor')).toContainText('not installed');
     await expect(editor(page, 'cursor')).toContainText('TIMETRACK_VSCODE_CLI=cursor npx nx install timetrack-vscode');
@@ -324,7 +324,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
   test('installs the shipped extension into one editor, and says that editor loads it by itself', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(editor(page, 'cursor')).toContainText('not installed');
     await expect(editor(page, 'cursor')).not.toContainText('npx nx install');
@@ -340,7 +340,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
   test('leaves the editor that already holds the reporter alone while another is installed', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, editors: { cursor: { onPath: true, reporter: false } } });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
 
@@ -353,7 +353,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
       now: E2E_NOW,
       editors: { cursor: { onPath: true, reporter: false, installFails: 'Extension is not compatible.' } },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await editor(page, 'cursor').getByRole('button', { name: 'Install' }).click();
 
@@ -364,7 +364,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
   test('leaves out an editor that is not on the machine, rather than asking for it', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(editor(page, 'code')).toBeVisible();
     await expect(editor(page, 'windsurf')).toHaveCount(0);
@@ -372,7 +372,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 
   test('says so when no editor it knows is on the PATH', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, editors: { code: { onPath: false, reporter: false } } });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'vscode')).toContainText('No editor this app has a reporter for is on the PATH');
   });
@@ -382,7 +382,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
       now: E2E_NOW,
       editors: { code: { onPath: true, reporter: true, fails: 'Unable to connect to the extension host.' } },
     });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(editor(page, 'code')).toContainText('could not be read');
     await expect(editor(page, 'code')).toContainText('Unable to connect to the extension host.');
@@ -398,7 +398,7 @@ test.describe('the editor row, which reports which editors hold the reporter', (
 test.describe('the sources the app does not have yet', () => {
   test('keeps them out of the list of what is watching, behind one disclosure', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
 
     await expect(row(page, 'figma')).toBeHidden();
 

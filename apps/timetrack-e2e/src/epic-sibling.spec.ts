@@ -186,7 +186,7 @@ test.describe('a checkout that shares a branch name with a checkout that is alre
 test.describe('the epic child limit', () => {
   test('is offered on the Jira tab, showing the number the day reads with', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, settings: { ...settings(), epicChildLimit: 500 } });
-    await page.goto('/settings');
+    await page.goto('/#/settings');
     await page.getByRole('tab', { name: 'Jira' }).click();
 
     await expect(page.getByText('How far an epic is read')).toBeVisible();

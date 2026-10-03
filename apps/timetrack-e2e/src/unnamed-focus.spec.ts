@@ -54,7 +54,7 @@ const titles = (page: Page, app: string) => row(page, app).locator('[data-title]
 test.describe('the focus that named no checkout', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: day() });
-    await page.goto('/sources');
+    await page.goto('/#/sources');
   });
 
   test('says how much of the focused time named no checkout', async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe('the focus that named no checkout', () => {
       now: E2E_NOW,
       events: [...day(), focus(105, 'code', 'Visual Studio Code'), focus(120, 'foot', 'tom@e2e: ~')],
     });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(row(page, 'code')).toContainText('names one elsewhere');
     await expect(gap(page)).toContainText('15m of it is a window a checkout should have taken');
@@ -102,7 +102,7 @@ test.describe('the focus that named no checkout', () => {
       now: E2E_NOW,
       events: [...day(), focus(91, 'gnome-ssh-askpass', 'ssh'), focus(91.25, 'foot', 'tom@e2e: ~')],
     });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(row(page, 'spotify')).toContainText('16m');
     await expect(row(page, 'gnome-ssh-askpass')).toHaveCount(0);
@@ -119,7 +119,7 @@ test.describe('the focus that named no checkout', () => {
         focus(60, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
       ],
     });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(page.getByText('held it for under a minute')).toBeVisible();
   });
@@ -144,7 +144,7 @@ test.describe('the focus that named no checkout', () => {
         projectLinks: [{ id: 'link-secret', path: SECRET, target: { kind: 'private' }, createdAt: new Date(0) }],
       },
     });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(row(page, 'code')).toContainText('a private project');
     await expect(row(page, 'code')).toContainText('on purpose');
@@ -200,7 +200,7 @@ test.describe('the focus that named no checkout', () => {
         focus(120, 'foot', 'tom@e2e: ~'),
       ],
     });
-    await page.goto('/sources');
+    await page.reload();
     await titlesButton(page, 'firefox').click();
 
     await expect(titles(page, 'firefox')).toHaveText(['localhost:4200 - Mozilla Firefox', 'Mail - Mozilla Firefox']);
@@ -219,7 +219,7 @@ test.describe('the focus that named no checkout', () => {
         focus(116, 'foot', 'tom@e2e: ~'),
       ],
     });
-    await page.goto('/sources');
+    await page.reload();
     await titlesButton(page, 'firefox').click();
 
     await expect(titles(page, 'firefox')).toHaveText(['localhost:4200 - Mozilla Firefox']);
@@ -239,7 +239,7 @@ test.describe('the focus that named no checkout', () => {
         projectLinks: [{ id: 'link-secret', path: SECRET, target: { kind: 'private' }, createdAt: new Date(0) }],
       },
     });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(row(page, 'code')).toContainText('a private project');
     await expect(titlesButton(page, 'code')).toHaveCount(0);
@@ -248,7 +248,7 @@ test.describe('the focus that named no checkout', () => {
 
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
-    await page.goto('/sources');
+    await page.reload();
 
     await expect(total(page)).toContainText('no window held the focus');
   });

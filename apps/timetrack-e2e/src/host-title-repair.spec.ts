@@ -20,7 +20,7 @@ test.describe('redacting the titles already stored', () => {
       now: E2E_NOW,
       events: [focus('accounts.google.com/signin/oauth?rapt=AEjHL4Na - Google Chrome')],
     });
-    await page.goto('/host');
+    await page.goto('/#/host');
 
     await page.getByRole('button', { name: 'Redact stored data' }).click();
 
@@ -29,7 +29,7 @@ test.describe('redacting the titles already stored', () => {
 
   test('says it changed nothing on a store whose titles are already clean', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [focus('timer.rs - Visual Studio Code')] });
-    await page.goto('/host');
+    await page.goto('/#/host');
 
     await page.getByRole('button', { name: 'Redact stored data' }).click();
 
@@ -38,7 +38,7 @@ test.describe('redacting the titles already stored', () => {
 
   test('has nothing left to change on a second run', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [focus('gitlab.com/search?q=secret')] });
-    await page.goto('/host');
+    await page.goto('/#/host');
     const button = page.getByRole('button', { name: 'Redact stored data' });
 
     await button.click();

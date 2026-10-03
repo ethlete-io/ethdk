@@ -134,7 +134,7 @@ test.describe('bands marked to be merged', () => {
   test('marks a band a modifier click landed on rather than opening it', async ({ page }) => {
     await halves(page)
       .first()
-      .click({ modifiers: ['Control'] });
+      .click({ modifiers: ['ControlOrMeta'] });
 
     await expect(halves(page).first()).toHaveAttribute('data-marked', 'true');
     await expect(editSurface(page)).toHaveCount(0);
@@ -143,10 +143,10 @@ test.describe('bands marked to be merged', () => {
   test('folds the marked bands back into one row', async ({ page }) => {
     await halves(page)
       .first()
-      .click({ modifiers: ['Control'] });
+      .click({ modifiers: ['ControlOrMeta'] });
     await halves(page)
       .last()
-      .click({ modifiers: ['Control'] });
+      .click({ modifiers: ['ControlOrMeta'] });
 
     await halves(page).first().click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Merge the 2 marked rows' }).click();
@@ -157,7 +157,7 @@ test.describe('bands marked to be merged', () => {
   test('offers no merge until two bands are marked', async ({ page }) => {
     await halves(page)
       .first()
-      .click({ modifiers: ['Control'] });
+      .click({ modifiers: ['ControlOrMeta'] });
     await halves(page).first().click({ button: 'right' });
 
     await expect(page.getByRole('menuitem', { name: /Merge the/ })).toHaveCount(0);
