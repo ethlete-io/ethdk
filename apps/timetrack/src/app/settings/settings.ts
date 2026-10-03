@@ -59,8 +59,11 @@ import {
   withStandInsHidden,
   WriteSource,
   ClassedAction,
+  ModelPrice,
   OpClass,
   withActionClass,
+  withModelPrice,
+  withoutModelPrice,
 } from '@ethlete/timetrack';
 import {
   Subject,
@@ -240,6 +243,12 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
     setLockAfterIdleMs: (lockAfterIdleMs: number) => patch({ lockAfterIdleMs: clampLockAfterIdleMs(lockAfterIdleMs) }),
     setTranscribeCalls: (transcribeCalls: boolean) => patch({ transcribeCalls }),
+    setPriceCurrency: (currency: string) =>
+      patch({ priceTable: { ...settings().priceTable, currency: currency.trim().toUpperCase() } }),
+    addModelPrice: (price: ModelPrice) =>
+      patch({ priceTable: withModelPrice({ table: settings().priceTable, price }) }),
+    removeModelPrice: (price: ModelPrice) =>
+      patch({ priceTable: withoutModelPrice({ table: settings().priceTable, price }) }),
 
     addExclusionRule: (rule: TimetrackExclusionRule) => {
       const rules = settings().exclusionRules;

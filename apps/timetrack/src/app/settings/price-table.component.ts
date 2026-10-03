@@ -1,0 +1,192 @@
+import { Component, ViewEncapsulation, computed, input, output, signal } from '@angular/core';
+import {
+  BUTTON_IMPORTS,
+  FORM_FIELD_IMPORTS,
+  INPUT_IMPORTS,
+  NUMBER_INPUT_IMPORTS,
+  SELECT_IMPORTS,
+} from '@ethlete/components';
+import { CLAUDE_CODE_PROVIDER, CODEX_PROVIDER, ModelPrice, PriceTable } from '@ethlete/timetrack';
+import { ExplainComponent } from './explain.component';
+
+const WHY = `A day's spend becomes a cost through these prices. Each turn is priced at the price of its
+model dated last on or before the turn, so a new price never reprices the days before its date.
+
+The model is the name the agent wrote into its log, such as claude-opus-4-1. A day that used a model
+with no price here shows its spend and no cost, and names the model.
+
+Rates are per million tokens. Thinking is priced as output.`;
+
+const PROVIDERS = [CLAUDE_CODE_PROVIDER, CODEX_PROVIDER];
+
+const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+const CURRENCY_PATTERN = /^[A-Za-z]{3}$/;
+
+const dayStartOf = (typed: string) => {
+  const match = DAY_PATTERN.exec(typed.trim());
+
+  if (!match) return null;
+
+  const [, year, month, day] = match.map(Number);
+  const at = new Date(year ?? 0, (month ?? 1) - 1, day);
+
+  return at.getMonth() === (month ?? 1) - 1 ? at : null;
+};
+
+const calendarDayOf = (at: Date) =>
+  [at.getFullYear(), at.getMonth() + 1, at.getDate()].map((part) => String(part).padStart(2, '0')).join('-');
+
+const rateOf = (value: number | null) => (value !== null && Number.isFinite(value) && value >= 0 ? value : null);
+
+@Component({
+  selector: 'ethlete-price-table',
+  template: `
+    <div class="flex flex-col gap-3" data-price-table>
+      <div class="flex items-center gap-1">
+        <h3 class="text-h4">What a model costs</h3>
+        <ethlete-explain [text]="WHY" label="model prices" />
+      </div>
+
+      <et-form-field class="w-30" appearance="underline" size="sm">
+        <et-label>Currency</et-label>
+        <et-input [value]="table().currency" (valueChange)="setCurrency($event)" data-price-currency />
+      </et-form-field>
+
+      @for (price of sorted(); track price.provider + price.model + price.from.getTime()) {
+        <div
+          [attr.data-model-price]="price.model"
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-et-surface-border p-3"
+        >
+          <span class="text-mono text-small">{{ price.provider }} · {{ price.model }}</span>
+          <span class="text-small text-et-surface-muted">from {{ DAY_OF(price) }}</span>
+          <span class="grow text-small text-et-surface-muted">
+            in {{ price.input }} · out {{ price.output }} · cache write {{ price.cacheWrite }} · cache read
+            {{ price.cacheRead }} per million
+          </span>
+
+          <button
+            [attr.aria-label]="'Remove the price of ' + price.model + ' from ' + DAY_OF(price)"
+            (click)="remove.emit(price)"
+            et-button
+            variant="transparent"
+            size="sm"
+          >
+            Remove
+          </button>
+        </div>
+      } @empty {
+        <p class="text-small text-et-surface-subtle">No price yet, so no day shows a cost.</p>
+      }
+
+      <div class="flex flex-wrap items-end gap-3">
+        <et-form-field class="w-36" appearance="underline" size="sm">
+          <et-label>Agent</et-label>
+          <et-select [(value)]="provider">
+            @for (option of PROVIDERS; track option) {
+              <et-select-option [value]="option" [label]="option" />
+            }
+          </et-select>
+        </et-form-field>
+
+        <et-form-field class="min-w-50 grow" appearance="underline" size="sm">
+          <et-label>Model</et-label>
+          <et-input [(value)]="model" placeholder="as the log names it" data-price-model />
+        </et-form-field>
+
+        <et-form-field class="w-32" appearance="underline" size="sm">
+          <et-label>From</et-label>
+          <et-input [(value)]="from" placeholder="yyyy-mm-dd" data-price-from />
+        </et-form-field>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-3">
+        <et-form-field class="w-28" appearance="underline" size="sm">
+          <et-label>Input</et-label>
+          <et-number-input [(value)]="inputRate" [min]="0" data-price-input />
+        </et-form-field>
+
+        <et-form-field class="w-28" appearance="underline" size="sm">
+          <et-label>Output</et-label>
+          <et-number-input [(value)]="outputRate" [min]="0" data-price-output />
+        </et-form-field>
+
+        <et-form-field class="w-28" appearance="underline" size="sm">
+          <et-label>Cache write</et-label>
+          <et-number-input [(value)]="cacheWriteRate" [min]="0" data-price-cache-write />
+        </et-form-field>
+
+        <et-form-field class="w-28" appearance="underline" size="sm">
+          <et-label>Cache read</et-label>
+          <et-number-input [(value)]="cacheReadRate" [min]="0" data-price-cache-read />
+        </et-form-field>
+
+        <button [disabled]="!typed()" (click)="addTyped()" et-button variant="outline" size="sm" data-price-add>
+          Add
+        </button>
+      </div>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS, ExplainComponent, FORM_FIELD_IMPORTS, INPUT_IMPORTS, NUMBER_INPUT_IMPORTS, SELECT_IMPORTS],
+})
+export class PriceTableComponent {
+  public table = input.required<PriceTable>();
+
+  public currencyChange = output<string>();
+  public add = output<ModelPrice>();
+  public remove = output<ModelPrice>();
+
+  protected readonly WHY = WHY;
+  protected readonly PROVIDERS = PROVIDERS;
+
+  protected provider = signal<string>(CLAUDE_CODE_PROVIDER);
+  protected model = signal('');
+  protected from = signal(calendarDayOf(new Date()));
+  protected inputRate = signal<number | null>(null);
+  protected outputRate = signal<number | null>(null);
+  protected cacheWriteRate = signal<number | null>(null);
+  protected cacheReadRate = signal<number | null>(null);
+
+  protected sorted = computed(() =>
+    [...this.table().prices].sort(
+      (a, b) =>
+        a.provider.localeCompare(b.provider) || a.model.localeCompare(b.model) || a.from.getTime() - b.from.getTime(),
+    ),
+  );
+
+  protected typed = computed((): ModelPrice | null => {
+    const model = this.model().trim();
+    const from = dayStartOf(this.from());
+    const inputRate = rateOf(this.inputRate());
+    const outputRate = rateOf(this.outputRate());
+    const cacheWrite = rateOf(this.cacheWriteRate());
+    const cacheRead = rateOf(this.cacheReadRate());
+
+    if (!model || !from || inputRate === null || outputRate === null || cacheWrite === null || cacheRead === null)
+      return null;
+
+    return { provider: this.provider(), model, from, input: inputRate, output: outputRate, cacheWrite, cacheRead };
+  });
+
+  protected DAY_OF(price: ModelPrice) {
+    return calendarDayOf(price.from);
+  }
+
+  protected setCurrency(typed: string) {
+    if (CURRENCY_PATTERN.test(typed.trim())) this.currencyChange.emit(typed);
+  }
+
+  protected addTyped() {
+    const price = this.typed();
+
+    if (!price) return;
+
+    this.add.emit(price);
+    this.model.set('');
+    this.inputRate.set(null);
+    this.outputRate.set(null);
+    this.cacheWriteRate.set(null);
+    this.cacheReadRate.set(null);
+  }
+}

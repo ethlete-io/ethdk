@@ -1,4 +1,5 @@
 import { parseActionClasses } from '../agent-api/action-classes';
+import { ModelPrice, PriceTable } from '../model/price';
 import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
 import { FieldSource } from '../model/field-source';
@@ -8,6 +9,7 @@ import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
 import {
+  DEFAULT_PRICE_CURRENCY,
   DEFAULT_TIMETRACK_SETTINGS,
   TimetrackCallRules,
   TimetrackFavoriteProject,
@@ -419,6 +421,35 @@ const asTicket = (value: unknown): TimetrackTicketSettings => {
   };
 };
 
+const asRate = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null);
+
+const asModelPrice = (value: unknown): ModelPrice | null => {
+  const raw = asRecord(value);
+  const provider = asText(raw['provider']);
+  const model = asText(raw['model']);
+  const from = new Date(typeof raw['from'] === 'number' ? raw['from'] : asText(raw['from']));
+  const input = asRate(raw['input']);
+  const output = asRate(raw['output']);
+  const cacheWrite = asRate(raw['cacheWrite']);
+  const cacheRead = asRate(raw['cacheRead']);
+
+  if (!provider || !model || Number.isNaN(from.getTime())) return null;
+  if (input === null || output === null || cacheWrite === null || cacheRead === null) return null;
+
+  return { provider, model, from, input, output, cacheWrite, cacheRead };
+};
+
+const asPriceTable = (value: unknown): PriceTable => {
+  const raw = asRecord(value);
+  const prices = raw['prices'];
+  const currency = asText(raw['currency']).toUpperCase();
+
+  return {
+    currency: /^[A-Z]{3}$/.test(currency) ? currency : DEFAULT_PRICE_CURRENCY,
+    prices: Array.isArray(prices) ? prices.flatMap((entry) => asModelPrice(entry) ?? []) : [],
+  };
+};
+
 /**
  * Reads the stored document back, and sweeps the placeholders it holds that nothing names any more.
  *
@@ -471,5 +502,6 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
     transcribeCalls: document['transcribeCalls'] === true,
+    priceTable: asPriceTable(document['priceTable']),
   };
 };

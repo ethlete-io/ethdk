@@ -1,5 +1,6 @@
 import { ActionClasses } from '../agent-api/action-classes';
 import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
+import { PriceTable } from '../model/price';
 import { TimetrackProjectLink } from '../model/project-link';
 import { AttributionRule } from '../model/attribution';
 import { StandIn, StandInRefusal } from '../model/stand-in';
@@ -241,6 +242,9 @@ export const MAX_MINUTE_OF_DAY = 24 * 60 - 1;
 /** Holds a reminder time inside a day, whether it came from a control or from a stored document. */
 export const clampMinuteOfDay = (value: number) => Math.min(MAX_MINUTE_OF_DAY, Math.max(0, Math.round(value)));
 
+/** The currency the providers bill agent tokens in. */
+export const DEFAULT_PRICE_CURRENCY = 'USD';
+
 /** How long the window waits after the user goes idle before it locks itself. */
 export const DEFAULT_LOCK_AFTER_IDLE_MS = 60_000;
 
@@ -394,6 +398,8 @@ export type TimetrackSettings = {
    * store. Off by default, and only a build with the host's `transcribe` feature acts on it.
    */
   transcribeCalls: boolean;
+  /** What each agent model costs, which turns a day's spend into a cost. Empty until the user writes a price. */
+  priceTable: PriceTable;
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -444,4 +450,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   lockWindow: true,
   lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
   transcribeCalls: false,
+  priceTable: { currency: DEFAULT_PRICE_CURRENCY, prices: [] },
 };

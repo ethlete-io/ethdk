@@ -276,6 +276,8 @@ export type StreamDay = {
   rebuiltMs: number;
   /** Every turn the day read, whichever stream took it. */
   spend: StreamSpend;
+  /** The turns `spend` sums, one by one, so each can be priced by its own model and instant. */
+  spendTurns: AgentUsageEvent[];
   /**
    * The part of `spend` that names no working directory at all, so nothing can carry it. A turn spent
    * while the user was away is not this: its checkout books it, and the stream reports the time as
@@ -1628,6 +1630,7 @@ export const streamDay = (options: {
     rebuiltMs: windowsMs(rebuilt),
     streams,
     spend,
+    spendTurns: turns,
     unattributedSpend,
     ownSpend,
     ambiguousNames: [...claimedAmbiguously],

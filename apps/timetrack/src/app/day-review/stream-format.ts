@@ -1,4 +1,4 @@
-import { READABLE_MS, Stream, StreamSpend, formatDurationMs, formatTokenCount } from '@ethlete/timetrack';
+import { READABLE_MS, SpendCost, Stream, StreamSpend, formatDurationMs, formatTokenCount } from '@ethlete/timetrack';
 
 /** What a stream is, for its line: the checkout's directory name, else the folded line's own name. */
 export const formatStreamLabel = (stream: Stream) =>
@@ -17,6 +17,11 @@ export const formatSpend = (spend: StreamSpend) => {
     usage.cacheRead,
   )} cached`;
 };
+
+export const formatCost = (cost: SpendCost) =>
+  cost.cost === undefined
+    ? `no price for ${cost.unpriced.map((model) => `${model.provider} · ${model.model}`).join(', ')}`
+    : new Intl.NumberFormat(undefined, { style: 'currency', currency: cost.currency }).format(cost.cost);
 
 /**
  * How many agent runs a checkout held. Blocks are intervals, so five consoles in one checkout extend

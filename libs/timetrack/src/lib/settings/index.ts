@@ -5,6 +5,7 @@ export * from './favorites';
 export * from './masked-name';
 export * from './model';
 export * from './parse';
+export * from './price';
 export * from './project-link';
 export * from './repo-project';
 export * from './rules';

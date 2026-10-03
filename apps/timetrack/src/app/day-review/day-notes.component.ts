@@ -8,13 +8,15 @@ import {
   StreamDay,
   UnobservedOccurrence,
   callLabel,
+  costOfTurns,
   formatDurationMs,
   unnamedFocusMs,
 } from '@ethlete/timetrack';
 import { injectWindowCollector } from '../../collectors';
+import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 import { formatClockTime } from './format';
-import { formatRebuilt, formatSpend } from './stream-format';
+import { formatCost, formatRebuilt, formatSpend } from './stream-format';
 
 type OccurrenceOffer = {
   id: string;
@@ -184,6 +186,20 @@ const NO_DIRECTORY =
       </div>
     }
 
+    @if (cost(); as cost) {
+      <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
+        <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span class="text-base" data-cost-label>What the agents cost</span>
+          <span class="text-small text-et-surface-muted" data-cost>{{ cost }}</span>
+        </div>
+
+        <span class="text-small text-et-surface-subtle">
+          Every turn of the day at the price its model had when it ran, the turns no checkout carries included. A model
+          with no price in Settings leaves the day without a cost.
+        </span>
+      </div>
+    }
+
     @if (unattributed(); as spend) {
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
@@ -217,6 +233,7 @@ const NO_DIRECTORY =
 })
 export class DayNotesComponent {
   private windows = injectWindowCollector();
+  private settings = injectTimetrackSettings();
   protected store = injectDayReview();
   public day = input.required<StreamDay | null>();
 
@@ -245,6 +262,13 @@ export class DayNotesComponent {
     if (ms < READABLE_MS) return null;
 
     return { duration: formatDurationMs(ms), why: this.readsDirectory() ? NAMES_NONE : NO_DIRECTORY };
+  });
+
+  protected cost = computed(() => {
+    const turns = this.day()?.spendTurns ?? [];
+    const table = this.settings.settings().priceTable;
+
+    return turns.length && table.prices.length ? formatCost(costOfTurns({ table, turns })) : '';
   });
 
   /**

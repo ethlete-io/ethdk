@@ -42,6 +42,7 @@ import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
 import { GoogleConnectionComponent } from './google-connection.component';
 import { MaskedNamesComponent } from './masked-names.component';
+import { PriceTableComponent } from './price-table.component';
 import { ProjectPathsComponent } from './project-paths.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
@@ -325,6 +326,13 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                   </div>
                 }
               }
+
+              <ethlete-price-table
+                [table]="store.settings().priceTable"
+                (currencyChange)="store.setPriceCurrency($event)"
+                (add)="store.addModelPrice($event)"
+                (remove)="store.removeModelPrice($event)"
+              />
             </div>
           </et-tab>
 
@@ -758,6 +766,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
     GoogleConnectionComponent,
     INPUT_IMPORTS,
     MaskedNamesComponent,
+    PriceTableComponent,
     ProjectPathsComponent,
     SELECT_IMPORTS,
     SWITCH_IMPORTS,

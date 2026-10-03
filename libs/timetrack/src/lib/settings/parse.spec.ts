@@ -91,6 +91,7 @@ describe('parseTimetrackSettings', () => {
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
       transcribeCalls: false,
+      priceTable: { currency: 'USD', prices: [] },
     });
   });
 
@@ -103,6 +104,29 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings({}).transcribeCalls).toBe(false);
     expect(parseTimetrackSettings({ transcribeCalls: 'yes' }).transcribeCalls).toBe(false);
     expect(parseTimetrackSettings({ transcribeCalls: true }).transcribeCalls).toBe(true);
+  });
+
+  it('reads a price table, and drops a price that could price a turn wrongly', () => {
+    const rates = { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.3 };
+    const { priceTable } = parseTimetrackSettings({
+      priceTable: {
+        currency: 'eur',
+        prices: [
+          { provider: 'claude-code', model: 'opus', from: '2026-01-01T00:00:00.000Z', ...rates },
+          { provider: 'claude-code', model: '', from: '2026-01-01T00:00:00.000Z', ...rates },
+          { provider: 'codex', model: 'gpt', from: 'never', ...rates },
+          { provider: 'codex', model: 'gpt', from: '2026-01-01T00:00:00.000Z', ...rates, output: -1 },
+          { provider: 'codex', model: 'gpt', from: '2026-01-01T00:00:00.000Z', ...rates, cacheRead: '0.3' },
+        ],
+      },
+    });
+
+    expect(priceTable).toEqual({
+      currency: 'EUR',
+      prices: [{ provider: 'claude-code', model: 'opus', from: new Date('2026-01-01T00:00:00.000Z'), ...rates }],
+    });
+    expect(parseTimetrackSettings({ priceTable: { currency: 3 } }).priceTable).toEqual({ currency: 'USD', prices: [] });
+    expect(parseTimetrackSettings({ priceTable: { currency: 'euro' } }).priceTable.currency).toBe('USD');
   });
 
   it('keeps the idle wait inside its range, and defaults it to a minute', () => {
@@ -145,6 +169,7 @@ describe('parseTimetrackSettings', () => {
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
       transcribeCalls: false,
+      priceTable: { currency: 'USD', prices: [] },
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });

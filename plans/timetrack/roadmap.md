@@ -143,8 +143,9 @@ Slices 5 and 9. `unattributedSpend` is built and shown in `day-notes`.
 
 - The price table (slice 5). Engine done (2026-10-03): `ModelPrice`, `PriceTable`, `priceAt` and
   `costOfTurns` in `model/price.ts` price each turn at the price dated last at or before it, and a day
-  with an unpriced model gets no cost. Open: where the table is stored and edited, and reading the
-  day's turns into `costOfTurns` (`StreamSpend` sums the models together, so it cannot be priced).
+  with an unpriced model gets no cost. App side done: the table is `priceTable` in the settings
+  document, edited under Settings > The day (currency USD by default, no prices). `StreamDay.spendTurns`
+  holds the turns `spend` sums, and the day notes show their cost once the table holds a price.
 - A cost on the day, with the share of spend no stream took stated, not folded in.
 - A second, per-plan price mode, if subscription days are used for pricing.
 - Whether a model-call press refreshes the day. `probe` in `day-review.ts` tracks collector
