@@ -24,7 +24,9 @@ import { CommandPaletteDirective } from './headless';
     '(click)': 'palette.run(command())',
     // Keeps the caret in the search field, which is where every key the palette answers to is typed.
     '(mousedown)': '$event.preventDefault()',
-    '(mouseenter)': 'palette.setActive(result())',
+    // Not mouseenter: scrolling a row under a resting pointer fires that too, and would pull the highlight
+    // away from the row the arrow keys just reached.
+    '(mousemove)': 'palette.setActive(result())',
   },
 })
 export class CommandPaletteItemComponent {

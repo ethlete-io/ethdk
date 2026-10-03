@@ -177,10 +177,30 @@ describe('CommandPaletteComponent', () => {
     press('ArrowDown');
     press('ArrowDown');
 
-    rows()[2]?.dispatchEvent(new MouseEvent('mouseenter'));
+    rows()[2]?.dispatchEvent(new MouseEvent('mousemove'));
     fixture.detectChanges();
 
     expect(activeLabel()).toBe('Create table');
+  });
+
+  it('marks the row the pointer moves over active', () => {
+    const { fixture, rows, activeLabel } = create();
+
+    rows()[3]?.dispatchEvent(new MouseEvent('mousemove'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Create table');
+  });
+
+  it('keeps the active row when scrolling brings a row under a pointer that did not move', () => {
+    const { fixture, press, rows, activeLabel } = create();
+
+    press('ArrowDown');
+
+    rows()[3]?.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Add row');
   });
 
   it('wraps around at the end of the list', () => {
