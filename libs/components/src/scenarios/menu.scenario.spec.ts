@@ -338,7 +338,7 @@ describe('menu scenarios', () => {
     const menu = openFileMenu(s);
 
     const hover = (element: Element) => {
-      element.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+      element.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse' }));
       s.tick();
     };
 

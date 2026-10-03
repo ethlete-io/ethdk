@@ -337,7 +337,7 @@ describe('command palette scenarios', () => {
     expect(shell.ran).toEqual([]);
     expect(paletteOpen()).toBe(true);
 
-    rows()[3]?.dispatchEvent(new MouseEvent('mouseenter'));
+    rows()[3]?.dispatchEvent(new MouseEvent('mousemove'));
     s.tick();
     expect(activeRow()).toBe('Export teams');
 
