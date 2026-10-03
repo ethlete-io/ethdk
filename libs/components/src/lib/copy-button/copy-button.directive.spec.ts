@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../test-helpers';
+import { ButtonDirective } from '../button/headless/button.directive';
 import { CopyButtonDirective } from './copy-button.directive';
 import { provideCopyButtonLabels } from './copy-button-labels';
 import { COPY_BUTTON_IMPORTS } from './copy-button.imports';
@@ -39,6 +40,13 @@ class CopyButtonGetterHostComponent {
   public value = 'initial';
   public getText = () => this.value;
 }
+
+@Component({
+  selector: 'et-test-copy-button-loading-host',
+  template: `<button etButton etCopyButton loading text="hello" type="button">Copy</button>`,
+  imports: [COPY_BUTTON_IMPORTS, ButtonDirective],
+})
+class CopyButtonLoadingHostComponent {}
 
 const button = (fixture: { nativeElement: HTMLElement }) => fixture.nativeElement.querySelector('button')!;
 
@@ -198,5 +206,39 @@ describe('CopyButtonDirective', () => {
     const directive = fixture.debugElement.query(By.directive(CopyButtonDirective)).injector.get(CopyButtonDirective);
 
     expect('set' in directive.copied).toBe(false);
+  });
+
+  it('reports a failure when writeText throws instead of rejecting', async () => {
+    stubClipboard({
+      writeText: vi.fn(() => {
+        throw new TypeError('not allowed');
+      }),
+    });
+    document.execCommand = vi.fn().mockReturnValue(false);
+
+    const fixture = TestBed.createComponent(CopyButtonHostComponent);
+    fixture.detectChanges();
+
+    button(fixture).click();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.errorCount).toBe(1);
+    expect(button(fixture).getAttribute('data-copy-failed')).toBe('true');
+  });
+
+  it('copies nothing from a loading button', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    stubClipboard({ writeText });
+
+    const fixture = TestBed.createComponent(CopyButtonLoadingHostComponent);
+    fixture.detectChanges();
+
+    button(fixture).click();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(writeText).not.toHaveBeenCalled();
+    expect(button(fixture).getAttribute('data-copied')).toBeNull();
   });
 });

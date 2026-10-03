@@ -283,3 +283,23 @@ describe('StandingsComponent', () => {
     ]);
   });
 });
+
+describe('StandingsComponent ties', () => {
+  it('draws rows sharing a position in the order given', () => {
+    const driver = create();
+
+    driver.host.rows.set([ROWS[0]!, { ...ROWS[2]!, position: 2 }, { ...ROWS[1]!, position: 2 }]);
+    driver.detectChanges();
+
+    expect(driver.queryAll('tbody tr').map((element) => element.textContent?.includes('Rote Löwen'))).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(driver.queryAll('tbody th[scope="row"]').map((element) => element.textContent?.trim())).toEqual([
+      '1',
+      '2',
+      '2',
+    ]);
+  });
+});

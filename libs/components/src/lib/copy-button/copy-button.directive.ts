@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { copyToClipboard } from '@ethlete/core';
 import { injectCopyButtonLabels } from './copy-button-labels';
-import { Subject, switchMap, tap, timer } from 'rxjs';
+import { Subject, catchError, of, switchMap, tap, timer } from 'rxjs';
 
 const VISUALLY_HIDDEN = {
   position: 'absolute',
@@ -125,6 +125,7 @@ export class CopyButtonDirective {
 
     copyToClipboard(typeof text === 'function' ? text() : text)
       .pipe(
+        catchError(() => of(false)),
         tap((didCopy) => {
           this.outcome.set(didCopy ? 'copied' : 'failed');
 

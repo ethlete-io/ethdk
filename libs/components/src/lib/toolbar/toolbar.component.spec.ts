@@ -90,6 +90,34 @@ class ToolbarHiddenHostComponent {}
 })
 class ToolbarTabindexHostComponent {}
 
+@Component({
+  selector: 'et-test-toolbar-hidden-first-host',
+  template: `
+    <et-toolbar aria-label="Formatting">
+      <button hidden type="button">Bold</button>
+      <button type="button">Italic</button>
+      <button type="button">Link</button>
+    </et-toolbar>
+  `,
+  imports: [TOOLBAR_IMPORTS],
+})
+class ToolbarHiddenFirstHostComponent {}
+
+@Component({
+  selector: 'et-test-toolbar-fieldset-host',
+  template: `
+    <et-toolbar aria-label="Formatting">
+      <button type="button">Bold</button>
+      <fieldset disabled>
+        <button type="button">Italic</button>
+      </fieldset>
+      <button type="button">Link</button>
+    </et-toolbar>
+  `,
+  imports: [TOOLBAR_IMPORTS],
+})
+class ToolbarFieldsetHostComponent {}
+
 const buttonsOf = (fixture: { nativeElement: HTMLElement }) =>
   Array.from(fixture.nativeElement.querySelectorAll('button')) as HTMLButtonElement[];
 
@@ -319,5 +347,38 @@ describe('ToolbarComponent', () => {
       expect(press(buttons[0]!, 'ArrowRight', { [modifier]: true })).toBe(true);
       expect(document.activeElement).toBe(buttons[0]);
     }
+  });
+
+  it('keeps the tab stop off a hidden first control', () => {
+    const fixture = TestBed.createComponent(ToolbarHiddenFirstHostComponent);
+    fixture.detectChanges();
+
+    expect(buttonsOf(fixture).map((button) => button.tabIndex)).toEqual([-1, 0, -1]);
+  });
+
+  it('skips the controls of a disabled fieldset', () => {
+    const fixture = TestBed.createComponent(ToolbarFieldsetHostComponent);
+    fixture.detectChanges();
+
+    const buttons = buttonsOf(fixture);
+    const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
+
+    expect(buttons.map((button) => button.tabIndex)).toEqual([0, -1, -1]);
+
+    buttons[0]!.focus();
+    press(toolbar, 'ArrowRight');
+
+    expect(document.activeElement).toBe(buttons[2]);
+  });
+
+  it('leaves the arrow keys alone when every control is disabled', () => {
+    const fixture = TestBed.createComponent(ToolbarFieldsetHostComponent);
+    fixture.detectChanges();
+
+    const toolbar = fixture.nativeElement.querySelector('et-toolbar') as HTMLElement;
+
+    for (const button of buttonsOf(fixture)) button.disabled = true;
+
+    expect(press(toolbar, 'ArrowRight')).toBe(true);
   });
 });

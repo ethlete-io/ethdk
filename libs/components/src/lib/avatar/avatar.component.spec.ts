@@ -211,4 +211,32 @@ describe('AvatarComponent', () => {
 
     expect(provider.color()).toBe('brand');
   });
+
+  it('takes a whole character for initials, not half of a surrogate pair', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.name.set('𝔸nna 𝔹erg');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.et-avatar-initials')?.textContent.trim()).toBe('𝔸𝔹');
+  });
+
+  it('projects fallback content for a name of only whitespace', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.name.set('   ');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.et-avatar-initials')).toBeNull();
+  });
+
+  it('projects fallback content when a nameless image fails to load', () => {
+    const fixture = TestBed.createComponent(AvatarConfiguredHostComponent);
+    fixture.componentInstance.src.set('/broken.jpg');
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('img').dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.et-avatar-initials')).toBeNull();
+  });
 });

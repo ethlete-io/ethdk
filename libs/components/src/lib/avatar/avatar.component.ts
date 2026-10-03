@@ -20,8 +20,9 @@ export type AvatarShape = (typeof AVATAR_SHAPES)[keyof typeof AVATAR_SHAPES];
 
 const initialsFromName = (name: string) => {
   const words = name.trim().split(/\s+/).filter(Boolean);
-  const first = words[0]?.[0] ?? '';
-  const last = words.length > 1 ? (words[words.length - 1]?.[0] ?? '') : '';
+  const firstCharacter = (word: string | undefined) => (word ? (Array.from(word)[0] ?? '') : '');
+  const first = firstCharacter(words[0]);
+  const last = words.length > 1 ? firstCharacter(words[words.length - 1]) : '';
 
   return (first + last).toUpperCase();
 };

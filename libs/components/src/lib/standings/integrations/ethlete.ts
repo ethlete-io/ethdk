@@ -47,6 +47,18 @@ export const normalizeEthletePlacement = (placement: EthletePlacementInput): Nor
   form: null,
 });
 
+const withUniqueIds = (rows: NormalizedStandingRow[]) => {
+  const seen = new Map<string, number>();
+
+  return rows.map((row) => {
+    const count = seen.get(row.id) ?? 0;
+
+    seen.set(row.id, count + 1);
+
+    return count ? { ...row, id: `${row.id}-${count}` } : row;
+  });
+};
+
 /**
  * `EthleteGroupRankingInput` → its rows plus the zone its `qualifiedPlayers` implies, which is the one piece of
  * banding the API knows about: the top N advance. The label is yours to pass, since "advance to the
@@ -74,7 +86,7 @@ export const normalizeEthleteGroupRanking = (options: {
 
   return {
     caption: group.groupName,
-    rows: group.placements.map(normalizeEthletePlacement),
+    rows: withUniqueIds(group.placements.map(normalizeEthletePlacement)),
     zones,
   };
 };

@@ -9,7 +9,7 @@ const CONTROL_SELECTOR = `button, [href], input, select, textarea, [contentedita
 const TOOLBAR_SELECTOR = '[role="toolbar"]';
 const KEYLESS_INPUT_TYPES = /* @__PURE__ */ new Set(['button', 'checkbox', 'image', 'reset', 'submit']);
 
-const isEnabled = (control: HTMLElement) => !(control as HTMLElement & { disabled?: boolean }).disabled;
+const isEnabled = (control: HTMLElement) => !control.matches(':disabled');
 
 const isRendered = (control: HTMLElement) => {
   if (typeof control.checkVisibility === 'function') return control.checkVisibility();
@@ -141,8 +141,8 @@ export class ToolbarDirective {
     const controls = this.controls();
     const focusable = this.focusableControls(controls);
 
-    if (!this.tabStop || !focusable.includes(this.tabStop)) {
-      this.tabStop = focusable[0] ?? null;
+    if (!this.tabStop || !focusable.includes(this.tabStop) || !isRendered(this.tabStop)) {
+      this.tabStop = focusable.find(isRendered) ?? focusable[0] ?? null;
     }
 
     for (const control of controls) {
