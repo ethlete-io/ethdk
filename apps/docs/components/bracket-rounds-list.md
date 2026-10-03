@@ -71,9 +71,14 @@ What it drops is everything a narrow column can't show: the SVG connectors and t
 | `finalMatchComponent`  | -            | Your own cell for the deciding round.                                                                                                     |
 | `roundHeaderComponent` | -            | Your own round header.                                                                                                                    |
 
-`layouts`, `hideRoundHeaders`, `roundHeaderLevel` and the four component slots also come from
-`provideBracketConfig` when you don't bind them, so a config registered for the bracket already
-applies here.
+`layouts`, `hideRoundHeaders`, `roundHeaderLevel`, `matchNormalizer` and the component slots also come
+from `provideBracketConfig` when you don't bind them, so a config registered for the bracket already
+applies here. `continueComponent` is accepted so both hosts take the same bindings, and ignored: the
+list draws no continue element.
+
+The section headings come from `provideBracketLabels()` - `upperBracketSection` ("Upper bracket"),
+`lowerBracketSection` ("Lower bracket") and `finalsSection` ("Finals") - see
+[Localization](/components/bracket#localization).
 
 ## Round switcher
 

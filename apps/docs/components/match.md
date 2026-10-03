@@ -235,17 +235,19 @@ wired to an [overlay opener](/components/overlay-openers) with its own `role` an
 
 ## Options
 
-`et-match-card` (element or attribute, `[et-match-card]`):
+`et-match-card` (element or attribute, `[et-match-card]`), plus the `(scoreChange)` output:
 
-| Input             | Type                                             | Default  | What it does                                                                                           |
-| ----------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
-| `match`           | `NormalizedMatch`                                | -        | Required. The match to draw.                                                                           |
-| `size`            | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                     |
-| `showSeeds`       | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                           |
-| `startTimeFormat` | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` - a rail of today's matches usually wants `'p'`. |
-| `interactive`     | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                               |
-| `labels`          | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                         |
-| `liveColor`       | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                             |
+| Input                 | Type                                             | Default  | What it does                                                                                           |
+| --------------------- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| `match`               | `NormalizedMatch`                                | -        | Required. The match to draw.                                                                           |
+| `size`                | `'auto' \| 'compact' \| 'expanded' \| 'wide'`    | `'auto'` | Layout; see above.                                                                                     |
+| `showSeeds`           | `boolean`                                        | `false`  | Draw each participant's seeding position when they have one.                                           |
+| `hideNames`           | `boolean`                                        | `false`  | Emblems and results only, no names. The names stay in the accessible name.                             |
+| `startTimeFormat`     | `string \| null`                                 | `null`   | date-fns format for the kick-off. `null` uses `'P p'` - a rail of today's matches usually wants `'p'`. |
+| `interactive`         | `boolean \| null`                                | `null`   | `null` infers it from the host tag (`<a>` / `<button>`).                                               |
+| `labels`              | `Partial<MatchLabels> \| null`                   | `null`   | Per-instance string overrides.                                                                         |
+| `liveColor`           | `RegisteredColorThemeName \| ColorTheme \| null` | `null`   | The live badge's color theme. `null` uses the app's `type: 'error'` theme.                             |
+| `animateScoreChanges` | `boolean`                                        | `true`   | Roll a live match's values when they change. Never animates while the match is not live.               |
 
 The kick-off is formatted with [date-fns](https://date-fns.org/docs/format) in the app's `DATE_LOCALE` - an app
 that calls `provideLocale('de')` should call `provideDateLocale(de)` next to it, or dates stay en-US.

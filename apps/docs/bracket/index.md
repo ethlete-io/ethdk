@@ -72,11 +72,13 @@ const participantId = resolveBracketSlot({
 ```
 
 The resolver follows winner and loser paths recursively. A bye advances the other side without a
-pick. Missing picks, invalid references, and cycles return `null`. Real match outcomes do not replace
-the viewer's chain; deciding whether a prediction scored correctly remains application logic.
+pick. Missing picks, invalid references, and cycles return `null`. By default real match outcomes do not replace
+the viewer's chain; `realParticipantOutranksPick` and `keepPickWhileFeederSideIsOpen` change that - see
+[resolution policies](/components/bracket-prediction#resolution-policies). Deciding whether a prediction scored
+correctly remains application logic.
 
-`isBracketSlotPredictable(source)` distinguishes pick-driven sources from `bye`, `external`, and
-undrawn `swiss-bucket` slots.
+`isBracketSlotPredictable(source)` is true for `match-outcome`, `standing-rank` and `seed` slots, and false
+for `bye`, `external` and undrawn `swiss-bucket` ones.
 
 ## Angular rendering
 

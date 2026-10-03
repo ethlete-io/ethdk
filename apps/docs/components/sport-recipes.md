@@ -104,4 +104,7 @@ participant - without that the link would read "FC Berlin emblem FC Berlin".
 | One side of a match, anywhere  | [`et-match-participant`](/components/match#participants-on-their-own) |
 | A league or group table        | [`et-standings`](/components/standings)                               |
 | A bracket                      | [`et-bracket`](/components/bracket)                                   |
+| A bracket as a list of rounds  | [`et-bracket-rounds-list`](/components/bracket-rounds-list)           |
+| A bracket to predict in        | [`et-bracket-pick-card`](/components/bracket-prediction)              |
+| A group order to predict       | [`et-standings-pick`](/components/standings-pick)                     |
 | A horizontal strip of anything | [`et-scrollable`](/components/scrollable)                             |

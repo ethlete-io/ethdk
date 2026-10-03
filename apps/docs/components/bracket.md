@@ -208,7 +208,7 @@ order (upper and lower rounds of a double elimination interleaved as they are pl
 of each round in bracket order, top to bottom - matches 1 and 2 of a round feed match 1 of the next.
 Declare `homeSource` / `awaySource` (or pass [`previousMatchIds`](#options)) and order stops mattering.
 
-Prediction sources may additionally set `homeSource` and `awaySource` to preserve where an empty or filled slot came from:
+Prediction sources may additionally set `homeSource` and `awaySource` to preserve where an empty or filled slot came from. A slot also takes an optional `seed` (the seeding position) and `standingName` (what `standingId` is called):
 
 ```ts
 {
@@ -307,7 +307,7 @@ shipped default listed below. The resolved set is on the component as `settings(
 | `rowGap`                  | `30`         | Vertical gap between matches in a column.                                                                                  |
 | `rowRoundGap`             | `20`         | Vertical gap between the upper/lower halves of a double-elimination round.                                                 |
 | `rowSpanRoundId`          | `null`       | Round whose match count sets vertical spacing; the opening round is the default. An id the source lacks warns in dev mode. |
-| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density.                                               |
+| `focusRoundId`            | `null`       | Translates this round to the inline start without changing vertical density. An id the source lacks warns in dev mode.     |
 | `focusInset`              | `0`          | Room kept to the inline start of `focusRoundId` - the gutter a one-round panel navigates in.                               |
 | `finalColumnWidth`        | `360`        | Width of the final column - sized for the shipped final card.                                                              |
 | `finalMatchHeight`        | `200`        | Height of the final match card - likewise.                                                                                 |
@@ -458,13 +458,19 @@ The cards' own strings - the match count, "N winners advance", the champion line
 `provideBracketLabels()`. Everything inside a match card (TBD, Live, the composed accessible
 name) comes from [`provideMatchLabels()`](/components/match#localization).
 
-| Label             | Default                                          |
-| ----------------- | ------------------------------------------------ |
-| `roundMatchCount` | `(n) => '<n> matches'`                           |
-| `winnersAdvance`  | `(n) => '<n> winners advance'`                   |
-| `continueLabel`   | `(n) => '<n> winners advance to the next stage'` |
-| `champion`        | `(name) => 'Champion: <name>'`                   |
-| `championPending` | `'Champion not decided yet'`                     |
+| Label                 | Default                                                                     |
+| --------------------- | --------------------------------------------------------------------------- |
+| `roundMatchCount`     | `(n) => '<n> matches'`, `'1 match'` for one                                 |
+| `winnersAdvance`      | `(n) => '<n> winners advance'`, `'1 winner advances'` for one               |
+| `continueLabel`       | `(n) => '<n> winners advance to the next stage'`, `'1 winner advances ...'` |
+| `champion`            | `(name) => 'Champion: <name>'`                                              |
+| `championPending`     | `'Champion not decided yet'`                                                |
+| `upperBracketSection` | `'Upper bracket'` - heads the winners rounds in a double-elimination list   |
+| `lowerBracketSection` | `'Lower bracket'` - heads the losers rounds in a double-elimination list    |
+| `finalsSection`       | `'Finals'` - heads the grand final, bracket reset and third place in a list |
+| `participantsLegend`  | `'Participants'` - names the `et-bracket-participants` group                |
+| `pickCardPicked`      | `'Your pick'`, announced on the picked side of a locked pick card           |
+| `pickCardPredicted`   | `'Prediction'`, announced after a predicted pick-card side                  |
 
 `describeBracketSlot` words a [slot nobody stands on](/components/bracket-prediction#wording-a-slot-nobody-stands-on)
 from the same
@@ -482,7 +488,6 @@ label set:
 | `slotUnknown`             | `'Not known yet'`                                                           |
 | `slotPredictEarlierRound` | `'Predict the earlier round first'`                                         |
 | `slotNotPredicted`        | `'Not predicted'`                                                           |
-| `pickCardPredicted`       | `'Prediction'`, announced on a predicted pick-card side                     |
 
 ## Custom cards
 
@@ -494,7 +499,7 @@ imports just that one default:
 ```ts
 provideBracketConfig({
   layouts: [singleEliminationBracketLayout()],
-  matchComponent: MatchCardComponent,
+  matchComponent: AppMatchCardComponent,
   roundHeaderComponent: BracketDefaultRoundHeaderComponent,
 });
 ```
@@ -514,7 +519,7 @@ live in your own `bracketMatch().data`:
   selector: 'app-match-card',
   template: `{{ bracketMatch().data.homeName }} vs {{ bracketMatch().data.awayName }}`,
 })
-export class MatchCardComponent {
+export class AppMatchCardComponent {
   bracketRound = input.required<BracketRound<RoundData, MatchData>>();
   bracketMatch = input.required<BracketMatch<RoundData, MatchData>>();
   bracketRoundSwissGroup = input.required<BracketRoundSwissGroup<RoundData, MatchData> | null>();
@@ -522,7 +527,7 @@ export class MatchCardComponent {
 ```
 
 ```html
-<et-bracket [source]="source" [matchComponent]="MatchCardComponent" [finalMatchComponent]="FinalCardComponent" />
+<et-bracket [source]="source" [matchComponent]="AppMatchCardComponent" [finalMatchComponent]="AppFinalCardComponent" />
 ```
 
 ## Prediction brackets

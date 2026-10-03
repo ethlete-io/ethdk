@@ -64,8 +64,9 @@ component.
 Both input types list only the fields the adapter reads, so the generated `PlacementView` / `GroupRankingView`
 from `@ethlete/types` fit them, and so does an API variant's own model.
 
-Two mapping notes: `score` is what the API ranks by so it becomes `points`, and the list views carry no form
-history - fill `form` in yourself if you have it elsewhere.
+Mapping notes: `score` is what the API ranks by so it becomes `points`, `difference` is `ownPoints - enemyPoints`,
+and the list views carry no form history - fill `form` in yourself if you have it elsewhere. Without an
+`advancingColor` (or with no `qualifiedPlayers`) `normalizeEthleteGroupRanking` returns no zone.
 
 The advancing zone's label defaults to the English `'Advances'`, which a screen reader reads on every row in
 the zone. **Pass `advancingLabel` in a localized app**: `normalizeEthleteGroupRanking({ group, advancingColor,
