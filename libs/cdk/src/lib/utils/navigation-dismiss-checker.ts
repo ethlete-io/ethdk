@@ -90,7 +90,7 @@ export const createNavigationDismissChecker = <T extends AbstractControl>(
   const hasChanges = computed(() => {
     const formValue = currentFormValue();
 
-    if (formValue === null || formValue === undefined) return false;
+    if (formValue === undefined) return false;
 
     return !(compareFn ? compareFn(formValue, defaultFormValue()) : equal(formValue, defaultFormValue()));
   });

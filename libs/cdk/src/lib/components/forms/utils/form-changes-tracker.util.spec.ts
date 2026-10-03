@@ -21,6 +21,15 @@ describe('createFormChangesTracker', () => {
     expect(tracker.hasChanges()).toBe(true);
   });
 
+  it('reports a control cleared to null as a change', () => {
+    const form = new FormControl<string | null>('abc');
+    const tracker = track(form);
+
+    form.setValue(null);
+
+    expect(tracker.hasChanges()).toBe(true);
+  });
+
   it('reports no changes after the value is set back to the default', () => {
     const form = new FormGroup({ name: new FormControl('Ada') });
     const tracker = track(form);

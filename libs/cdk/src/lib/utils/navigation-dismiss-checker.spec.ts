@@ -19,6 +19,7 @@ describe('createNavigationDismissChecker', () => {
     ['an empty string', 'text', ''],
     ['zero', 5, 0],
     ['false', true, false],
+    ['null', 'text', null],
   ])('asks before dismissing when a control is changed to %s', async (_, initial, next) => {
     const dismissCheckFn = vi.fn(() => of(false));
     const form = new FormControl<unknown>(initial);
