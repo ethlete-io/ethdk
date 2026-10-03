@@ -88,11 +88,11 @@ export class RatingDirective
 
   public step = computed(() => (this.allowHalf() ? 0.5 : 1));
 
-  /** The committed value capped at `max` - a lowered `max` leaves the model untouched for its validator to report. */
+  /** The committed value kept within `0..max` - a lowered `max` leaves the model untouched for its validator to report. */
   public clampedValue = computed(() => {
     const value = this.value();
 
-    return value === null ? null : Math.min(value, this.effectiveMax());
+    return value === null || Number.isNaN(value) ? null : Math.min(Math.max(value, 0), this.effectiveMax());
   });
 
   /** The value previewed under the pointer, set by the rendered icons. */
@@ -199,7 +199,6 @@ export class RatingDirective
       return;
     }
 
-    const step = this.step();
     // while mixed, nothing reads as filled - keyboard steps start from that visible zero
     const current = this.mixed() ? 0 : (this.clampedValue() ?? 0);
     const rtl = getComputedStyle(this.elementRef.nativeElement).direction === 'rtl';
@@ -210,7 +209,7 @@ export class RatingDirective
       case 'ArrowRight':
       case 'ArrowUp': {
         event.preventDefault();
-        this.commitUserValue(Math.min(this.effectiveMax(), current + step));
+        this.commitUserValue(Math.min(this.effectiveMax(), this.stepFrom(current, 1)));
 
         return;
       }
@@ -218,7 +217,7 @@ export class RatingDirective
       case 'ArrowDown': {
         event.preventDefault();
 
-        const next = Math.max(0, current - step);
+        const next = Math.max(0, this.stepFrom(current, -1));
 
         this.commitUserValue(next === 0 ? null : next);
 
@@ -226,14 +225,14 @@ export class RatingDirective
       }
       case 'PageUp': {
         event.preventDefault();
-        this.commitUserValue(Math.min(this.effectiveMax(), current + step * PAGE_STEP_MULTIPLIER));
+        this.commitUserValue(Math.min(this.effectiveMax(), this.stepFrom(current, PAGE_STEP_MULTIPLIER)));
 
         return;
       }
       case 'PageDown': {
         event.preventDefault();
 
-        const next = Math.max(0, current - step * PAGE_STEP_MULTIPLIER);
+        const next = Math.max(0, this.stepFrom(current, -PAGE_STEP_MULTIPLIER));
 
         this.commitUserValue(next === 0 ? null : next);
 
@@ -241,7 +240,7 @@ export class RatingDirective
       }
       case 'Home': {
         event.preventDefault();
-        this.commitUserValue(step);
+        this.commitUserValue(this.step());
 
         return;
       }
@@ -267,6 +266,13 @@ export class RatingDirective
   private commitUserValue(value: number | null) {
     this.mixed.set(false);
     this.value.set(value);
+  }
+
+  private stepFrom(current: number, steps: number) {
+    const step = this.step();
+    const onGrid = steps > 0 ? Math.floor(current / step) : Math.ceil(current / step);
+
+    return (onGrid + steps) * step;
   }
 
   private clamp(value: number) {

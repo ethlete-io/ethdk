@@ -387,10 +387,10 @@ current value **clears** to `null`), and **dragging/swiping across the stars**
 (mouse or touch) previews continuously and commits on release - vertical page
 scrolling stays untouched (`touch-action: pan-y`). A drag the browser takes away
 mid-gesture (a system swipe, an incoming call) commits nothing and drops the
-preview. Arrows step by `1` (or `0.5`; Left/Right flip in RTL),
+preview. Arrows step by `1` (or `0.5`; Left/Right flip in RTL), snapping a value between steps onto the nearest step in that direction,
 <kbd>PageUp</kbd>/<kbd>PageDown</kbd> move by ten steps, <kbd>Home</kbd>/<kbd>End</kbd> jump to first/last step,
 <kbd>Backspace</kbd>/<kbd>Delete</kbd> clear - arrowing below the first step also
-clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` (capped at `max`) and
+clears. The host exposes `aria-valuemin="0"`/`aria-valuemax`/`aria-valuenow` (kept within `0`..`max`; `NaN` reads as no rating) and
 an `aria-valuetext` like `3.5 of 5`.
 
 The default stars fill as **one continuous motion** - a single clipped overlay
