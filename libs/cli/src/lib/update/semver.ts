@@ -6,7 +6,7 @@ type ParsedVersion = {
 };
 
 const parseVersion = (version: string): ParsedVersion => {
-  const [core = '', ...prereleaseParts] = version.split('-');
+  const [core = '', ...prereleaseParts] = (version.split('+')[0] ?? '').split('-');
   const prerelease = prereleaseParts.join('-');
 
   return {

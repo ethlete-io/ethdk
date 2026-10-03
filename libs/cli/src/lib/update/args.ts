@@ -76,7 +76,7 @@ export const parseUpdateArgs = (argv: readonly string[]): UpdateArgs => {
 
       if (inline === undefined) index += 1;
 
-      if (value === undefined || value.startsWith('-')) {
+      if (!value || value.startsWith('-')) {
         args.problems.push(`${flag} needs a value.`);
         continue;
       }
@@ -98,6 +98,11 @@ export const parseUpdateArgs = (argv: readonly string[]): UpdateArgs => {
 
     if (!BOOLEAN_FLAGS.includes(flag)) {
       args.problems.push(`Unknown flag "${flag}".`);
+      continue;
+    }
+
+    if (inline !== undefined) {
+      args.problems.push(`${flag} takes no value.`);
       continue;
     }
 

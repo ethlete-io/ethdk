@@ -104,3 +104,11 @@ describe('versionOfRange', () => {
     expect(versionOfRange('*')).toBeUndefined();
   });
 });
+
+describe('build metadata', () => {
+  it('is ignored when ordering, even when it holds a hyphen', () => {
+    expect(compareVersions('1.0.0+build-5', '1.0.0')).toBe(0);
+    expect(compareVersions('1.0.0-next.2+sha.abc', '1.0.0-next.10')).toBe(-1);
+    expect(prereleaseTag('1.0.0+build-next')).toBeUndefined();
+  });
+});

@@ -49,7 +49,8 @@ export const releaseFlags = (args: readonly string[]): ReleaseFlags => {
 
       if (!value || value.startsWith('-')) flags.problems.push(`${flag} needs a value.`);
       else flags.message = value;
-    } else if (flag === '--force' || flag === '-f') flags.shouldForce = true;
+    } else if (separator !== -1) flags.problems.push(`${flag} takes no value.`);
+    else if (flag === '--force' || flag === '-f') flags.shouldForce = true;
     else if (flag === '--skip-push' || flag === '-sp') flags.skipPush = true;
     else if (flag === '--help' || flag === '-h') flags.help = true;
     else flags.problems.push(`Unknown flag "${argument}".`);

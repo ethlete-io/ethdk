@@ -83,6 +83,18 @@ describe('releaseFlags', () => {
     expect(releaseFlags(['--message']).problems).toEqual(['--message needs a value.']);
     expect(releaseFlags(['-m', '--force']).problems).toEqual(['-m needs a value.']);
   });
+
+  it('reports a value written onto a boolean flag rather than forcing the release', () => {
+    expect(releaseFlags(['--force=false'])).toMatchObject({
+      shouldForce: false,
+      problems: ['--force takes no value.'],
+    });
+    expect(releaseFlags(['--skip-push=no']).problems).toEqual(['--skip-push takes no value.']);
+  });
+
+  it('keeps everything after the first = in the message', () => {
+    expect(releaseFlags(['-m=chore: a=b']).message).toBe('chore: a=b');
+  });
 });
 
 describe('release', () => {

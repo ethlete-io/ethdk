@@ -74,4 +74,32 @@ describe('parseUpdateArgs', () => {
       '--to sets the version of one package, so name that package.',
     );
   });
+
+  it('reports an empty inline value instead of reading it as a tag or a version', () => {
+    expect(parseUpdateArgs(['--tag=']).problems).toEqual(['--tag needs a value.']);
+    expect(parseUpdateArgs(['core', '--to=']).problems).toEqual(['--to needs a value.']);
+    expect(parseUpdateArgs(['--tag=']).tag).toBeUndefined();
+  });
+
+  it('reports a value written onto a boolean flag rather than ignoring it', () => {
+    const args = parseUpdateArgs(['--dry-run=false', '--no-install=no']);
+
+    expect(args.problems).toEqual(['--dry-run takes no value.', '--no-install takes no value.']);
+    expect(args.dryRun).toBe(false);
+    expect(args.install).toBe(true);
+  });
+
+  it('keeps reading after a value flag at the end of the line', () => {
+    expect(parseUpdateArgs(['core', '--tag']).problems).toEqual(['--tag needs a value.']);
+    expect(parseUpdateArgs(['core', '--tag']).packages).toEqual(['@ethlete/core']);
+  });
+
+  it('splits --from at the last @ of a scoped prerelease', () => {
+    expect(parseUpdateArgs(['--from', '@ethlete/core@5.0.0-next.1']).from).toEqual({
+      '@ethlete/core': '5.0.0-next.1',
+    });
+    expect(parseUpdateArgs(['--from', '@ethlete/core']).problems).toEqual([
+      '--from needs <package>@<version>, not "@ethlete/core".',
+    ]);
+  });
 });
