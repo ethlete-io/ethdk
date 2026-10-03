@@ -79,6 +79,10 @@ nothing at all.
   no longer showing.
 
 `canUndo()` / `canRedo()` and `undo()` / `redo()` are on the editor directive, for a custom toolbar.
+The directive's state signals for a custom toolbar (`boldActive()`, `italicActive()`, `headingLevel()`,
+`inTableCell()`, ...) are read-only; change formatting through the commands (`toggleBold()`,
+`toggleHeading(level)`, ...). `toggleHeading()` and `setHeading()` take a `RichTextEditorHeadingLevel`
+(`1` to `6`).
 
 ## Choosing which tools appear
 
@@ -665,8 +669,9 @@ demoForm.translations().value(); // { en: '# Hello', de: '# Hallo', fr: '' }
 
 Each language `{ code, label, icon? }` maps its Markdown under `code`; the first language is active
 initially. It embeds a plain `et-rich-text-editor`, so `tools`, `autoformat`, `placeholder`,
-`provideRichTextEditorTools` and the field chrome all work the same - the switcher tool is prepended
-to the toolbar automatically. Switching the language starts a fresh undo history, so undo never
+`provideRichTextEditorTools` (the fallback when `tools` is not set) and the field chrome all work the
+same - the switcher tool is prepended to the toolbar automatically. The `touched` state is forwarded
+both ways, so a submit shows a `requiredLanguages` error and a form reset clears it. Switching the language starts a fresh undo history, so undo never
 brings back text typed under another language.
 
 **Seeing which languages still need content.** The toolbar switcher shows the active language code
