@@ -1,4 +1,5 @@
 import { ETHLETE_SCOPE } from './packages';
+import { isValidVersion } from './semver';
 
 export type UpdateArgs = {
   /** Full package names the run is limited to. Empty means every `@ethlete/*` the manifest declares. */
@@ -90,6 +91,7 @@ export const parseUpdateArgs = (argv: readonly string[]): UpdateArgs => {
         const version = separator > 0 ? value.slice(separator + 1) : undefined;
 
         if (!name || !version) args.problems.push(`--from needs <package>@<version>, not "${value}".`);
+        else if (!isValidVersion(version)) args.problems.push(`--from ${value}: "${version}" is not a version.`);
         else args.from[fullPackageName(name)] = version;
       }
 

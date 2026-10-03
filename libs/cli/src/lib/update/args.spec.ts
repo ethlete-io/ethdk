@@ -41,6 +41,13 @@ describe('parseUpdateArgs', () => {
     expect(parseUpdateArgs(['--from', 'core']).problems).toEqual(['--from needs <package>@<version>, not "core".']);
   });
 
+  it('reports a --from whose version is not a version, instead of migrating from 0.0.0', () => {
+    const args = parseUpdateArgs(['--from', 'core@v5.0.0']);
+
+    expect(args.problems).toEqual(['--from core@v5.0.0: "v5.0.0" is not a version.']);
+    expect(args.from).toEqual({});
+  });
+
   it('reads the boolean flags', () => {
     const args = parseUpdateArgs(['--check', '--dry-run', '--no-install', '--continue', '--ai', '--force']);
 
