@@ -7,7 +7,7 @@ type Opt = { id: number; label: string; disabled?: boolean };
 
 const createModel = <T>() => runInInjectionContext(TestBed.inject(Injector), () => new SelectionModel<T>());
 
-const opts: Opt[] = [
+const opts: [Opt, Opt, Opt, Opt] = [
   { id: 0, label: 'Zero' },
   { id: 1, label: 'One' },
   { id: 2, label: 'Two' },
