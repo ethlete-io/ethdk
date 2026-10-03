@@ -1,7 +1,7 @@
 import { Locator, Page } from '@playwright/test';
 import { CollectedEvent } from '@ethlete/timetrack';
 import { E2E_ISSUE_BRANCH, E2E_REPO } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, editSurface, expect, seedWorld, test } from './support';
 
 /** The seeded day's own morning, in the browser's pinned UTC. */
 const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
@@ -91,6 +91,28 @@ test.describe('one part of a split band dragged at an end', () => {
     await expect(bands(page).last()).toHaveAttribute('title', 'ABC-3010 · 15m');
     await expect(bands(page)).toHaveCount(2);
   });
+});
+
+test.describe('a band opened from the keyboard after a drag', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: anHour() });
+    await page.goto('/day');
+  });
+
+  for (const key of ['Enter', 'Space']) {
+    test(`opens its edit surface on ${key}`, async ({ page }) => {
+      const row = band(page);
+
+      await dragEdge({ page, row, edge: 'end', by: await pxPerHour(page) });
+      await expect(row).toHaveAttribute('title', 'ABC-3010 · 2h 0m');
+      await expect(editSurface(page)).toBeHidden();
+
+      await row.focus();
+      await page.keyboard.press(key);
+
+      await expect(editSurface(page)).toBeVisible();
+    });
+  }
 });
 
 /**

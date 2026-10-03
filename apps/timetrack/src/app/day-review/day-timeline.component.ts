@@ -69,6 +69,9 @@ import { injectDayReview } from './day-review';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectGitCollector } from '../../collectors';
 
+/** A keyboard activation is never the click a pointer drag ends in, even on a `<button>`, where it reads `detail` 0. */
+const endsAPointerPress = (event: Event) => event instanceof MouseEvent && event.detail > 0;
+
 const markIntentOf = (event: Event) => {
   if (!(event instanceof MouseEvent)) return 'open';
   if (event.shiftKey) return 'extend';
@@ -345,6 +348,7 @@ type RowDrag = {
                       "
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
+                      (keydown.space)="$event.preventDefault(); select(laid.block.node.appointment, $event)"
                       class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
@@ -485,7 +489,7 @@ type RowDrag = {
                         [attr.data-dragging]="dragging(cut.appointment) || null"
                         [attr.data-chip-only]="cut.at.getTime() === cut.row.to.getTime() || null"
                         (pointerdown)="startCut({ event: $event, cut, column })"
-                        (click)="snip(cut.row)"
+                        (click)="snip(cut.row, $event)"
                         class="tt-cut"
                         aria-label="End here"
                         data-cut
@@ -1173,8 +1177,8 @@ export class DayTimelineComponent {
     return `Let ${row.issueKey ?? 'this row'} follow the call again`;
   }
 
-  protected snip(row: ReviewedRow) {
-    if (this.hasDragged) return;
+  protected snip(row: ReviewedRow, event: Event) {
+    if (this.hasDragged && endsAPointerPress(event)) return;
 
     this.store.endRowAtSnip(row);
   }
@@ -1315,7 +1319,7 @@ export class DayTimelineComponent {
    * a story opens the first row under it, because a story is a grouping and carries nothing to edit.
    */
   protected select(appointment: Appointment<TimelineEntry>, event: Event) {
-    if (this.hasDragged) return;
+    if (this.hasDragged && endsAPointerPress(event)) return;
 
     const entry = appointment.extra;
     const origin = event.currentTarget as HTMLElement;

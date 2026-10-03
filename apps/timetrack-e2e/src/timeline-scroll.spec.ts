@@ -42,3 +42,14 @@ test('keeps a scroll position per day', async ({ page }) => {
 
   await expect.poll(() => scroller(page).evaluate((element) => element.scrollTop)).toBe(REMEMBERED_TOP);
 });
+
+test('remembers a scroll under its own day when the day changes before it settles', async ({ page }) => {
+  await scroller(page).evaluate(async (element, top) => {
+    element.scrollTo({ top });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    document.querySelector<HTMLButtonElement>('button[aria-label="Previous day"]')?.click();
+  }, REMEMBERED_TOP);
+
+  await expect(page.locator('[data-kind="row"]')).toHaveCount(0);
+  await expect.poll(async () => (await rememberedScrolls(page))?.[E2E_DAY_KEY]?.top).toBe(REMEMBERED_TOP);
+});
