@@ -147,7 +147,7 @@ const joinOneTicket = (options: {
   const bands: BehindStretch[] = [];
 
   for (const stretch of joinTouching(options.stretches)) {
-    const key = `${stretch.laneKey}\n${stretch.issueKey}`;
+    const key = `${stretch.laneKey}\n${stretch.issueKey}\n${stretch.session ?? ''}`;
     const band = open.get(key);
     const joins = band && workedAcross({ from: band.to.getTime(), to: stretch.from.getTime(), rows: options.rows });
 

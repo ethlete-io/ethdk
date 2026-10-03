@@ -360,6 +360,14 @@ describe('clearOfLaneRows', () => {
     ).toEqual([]);
   });
 
+  it('keeps a session stretch a row of its lane on another issue covers', () => {
+    const lost = { ...stretch, session: 'a' };
+    const rows = [{ laneKey: LANE, issueKey: 'AB-2', from: at('12:30'), to: at('13:30') }];
+
+    expect(clearOfLaneRows({ behind: [lost], rows })).toEqual([lost]);
+    expect(clearOfLaneRows({ behind: [lost], rows: [{ ...rows[0], issueKey: 'AB-1' }] })).toEqual([]);
+  });
+
   it('keeps the part of a stretch no row of its own lane covers', () => {
     expect(
       clearOfLaneRows({ behind: [stretch], rows: [{ laneKey: LANE, from: at('12:45'), to: at('13:00') }] }),
@@ -442,6 +450,32 @@ describe('cutUnwatched', () => {
       { session: 'a', from: '10:15', to: '11:15' },
       { session: 'b', from: '11:15', to: '11:45' },
     ]);
+  });
+
+  it('reports what a session lost to a session of its checkout on another issue', () => {
+    const behind = cutUnwatched({
+      blocks: [
+        { ...ran({ session: 'a', from: '10:15', to: '11:30' }), issueKey: 'ET-1' },
+        { ...ran({ session: 'b', from: '11:15', to: '11:45' }), issueKey: 'ET-2' },
+      ],
+      events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:15' })],
+    }).behind;
+
+    expect(behind).toEqual([
+      { from: at('11:15'), to: at('11:30'), issueKey: 'ET-1', laneKey: `repo:${APP}`, session: 'a' },
+    ]);
+  });
+
+  it('reports nothing a session lost to a session of its checkout on the same issue', () => {
+    const behind = cutUnwatched({
+      blocks: [
+        { ...ran({ session: 'a', from: '10:15', to: '11:30' }), issueKey: 'ET-1' },
+        { ...ran({ session: 'b', from: '11:15', to: '11:45' }), issueKey: 'ET-1' },
+      ],
+      events: [typed({ session: 'a', clock: '10:15' }), typed({ session: 'b', clock: '11:15' })],
+    }).behind;
+
+    expect(behind).toEqual([]);
   });
 
   it('gives the overlap back when the user prompts the first session again', () => {
@@ -664,6 +698,15 @@ describe('joinTouching', () => {
 
     expect(joined?.to).toEqual(at('10:30'));
     expect(joined?.durationMs).toBe(50 * 60_000);
+  });
+
+  it('keeps a session stretch apart from a stretch of the same lane and issue', () => {
+    expect(
+      joinTouching([
+        { from: at('09:00'), to: at('10:00'), issueKey: 'ET-1', laneKey: 'repo:/a' },
+        { from: at('10:00'), to: at('10:30'), issueKey: 'ET-1', laneKey: 'repo:/a', session: 'a' },
+      ]),
+    ).toHaveLength(2);
   });
 
   it('leaves the lost time unsaid where every stretch lost its whole span', () => {

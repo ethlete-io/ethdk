@@ -35,8 +35,11 @@ directory as `workPath`, where the checkout's pieces name 2+ directories. A piec
 days is its directory, not its session id. Thus `groupByWork`, the rules and the stand-ins keep the
 `repo@branch#workPath` key, and stored rules still match. 6754ade81 keys the `lastOfStream` fallback in
 `mergePass` on checkout plus piece (`pieceOf`). `absorbSlivers` folds an unnamed sliver only into a band
-of its own piece (`streamOf` → `pieceOf`); a sliver no band of its piece takes is dropped. Open: the
-`BehindStretch` below. Named bands of two pieces on one
+of its own piece (`streamOf` → `pieceOf`); a sliver no band of its piece takes is dropped.
+`cutUnwatched` reports what a session lost to a session of its checkout on another issue as a
+`BehindStretch` with `session` (2026-10-03); only a row of its lane on its own issue clears it
+(`clearOfLaneRows`). Open: check the band on a live day (the snapshot needs the running app), and how
+`packLane` draws it beside the row that took it. Named bands of two pieces on one
 issue still join through `lastOfTrack`; slice 6 changes that.
 
 - Key `groupByWork` in `ticket/auto-stand-in.ts` on the piece. Today it keys on
@@ -81,7 +84,7 @@ covers most.
 Open:
 
 - Done b2f55fa44: `packLane` in `apps/timetrack/src/app/day-review/lanes.ts` draws a one-ticket overlap group in fixed columns (Tom picked this over one outer band or a collapsed band). e2e `session-columns.spec.ts`.
-- `BehindStretch` for the stretch an unwatched session lost (slice 5).
+- Engine side done (2026-10-03): `BehindStretch` for the stretch an unwatched session lost (slice 5); the drawing is open.
 - Done e0f482bbc: a second unnamed row with the same stream and start gets `+<piece>` on its id.
 - Done 45403c8ae: sibling rows no longer sit in columns. `packLane` in `lanes.ts` draws each one as full-width
   pieces over the minutes it books (`piecesOf`): each 15-minute step of the group goes to the session that

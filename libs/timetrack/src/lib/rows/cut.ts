@@ -141,6 +141,11 @@ export type BehindStretch = {
   durationMs?: number;
   /** The stretches the ticket lost, where the stretch was joined across time it lost none of. */
   pieces?: { from: Date; to: Date }[];
+  /**
+   * The agent session that lost the stretch to another session of its own checkout. Such a stretch shares
+   * its lane with the row that took it, so only a row of its lane booking its own issue clears it.
+   */
+  session?: string;
 };
 
 export type CutResult = {
@@ -186,7 +191,7 @@ const snapStretches = (stretches: readonly BehindStretch[], options?: Partial<Ro
 };
 
 /** A drawn row, as the lane it sits in and the bounds it was snapped to. A row with no lane is in none. */
-export type LaneRow = { laneKey?: string; from: Date; to: Date };
+export type LaneRow = { laneKey?: string; issueKey?: string; from: Date; to: Date };
 
 /**
  * Puts each end of a reported stretch on the row beside it in its own lane, where the two are within
@@ -238,7 +243,9 @@ export const clearOfLaneRows = (options: {
   rows: readonly LaneRow[];
 }): BehindStretch[] =>
   options.behind.flatMap((stretch) => {
-    const without = options.rows.filter((row) => row.laneKey === stretch.laneKey);
+    const without = options.rows.filter(
+      (row) => row.laneKey === stretch.laneKey && (!stretch.session || row.issueKey === stretch.issueKey),
+    );
     const pieces = stretch.pieces ?? [{ from: stretch.from, to: stretch.to }];
     const left = subtractWindows({ windows: pieces, without });
 
@@ -280,6 +287,7 @@ export const joinTouching = (stretches: readonly BehindStretch[]): BehindStretch
       last &&
       last.laneKey === stretch.laneKey &&
       last.issueKey === stretch.issueKey &&
+      last.session === stretch.session &&
       last.to.getTime() >= stretch.from.getTime();
 
     if (!continues || !last) {
@@ -387,6 +395,8 @@ export const cutBackground = (options: { blocks: readonly AttributedBlock[] } & 
  * A checkout and its linked worktrees are one attention — ADR 0034. Where two of them hold the same
  * instant, the one the focused window was on keeps it, else the one holding the session the user
  * prompted last. What the others lose is reported as `behind`, the way `cutBackground` reports it.
+ * A session that loses an instant to a session of its own checkout on another issue reports it too,
+ * with its `session`; one on the same issue lost nothing, because that issue's row books the instant.
  * Two checkouts that are not worktrees of each other are two things at once and keep their minutes,
  * unless one session holds both — `cutSessionAcrossCheckouts` has already resolved that.
  *
@@ -431,6 +441,7 @@ export const cutUnwatched = (options: {
 
   const unwatched = new Map<string, TimeWindow[]>();
   const lost = new Map<string, TimeWindow[]>();
+  const taken = new Map<string, { window: TimeWindow; takenBy?: string }[]>();
   const push = (into: Map<string, TimeWindow[]>, cut: { unit: string; window: TimeWindow }) => {
     const found = into.get(cut.unit);
 
@@ -524,7 +535,20 @@ export const cutUnwatched = (options: {
       const watched =
         running.find((unit) => units.get(unit)?.session === watchedSession) ?? [...running].sort(olderFirst)[0];
 
-      for (const unit of running) if (unit !== watched) push(unwatched, { unit, window });
+      const takenBy = candidates.find(
+        (entry) => unitOf(entry) === watched && entry.block.from.getTime() <= from && entry.block.to.getTime() >= to,
+      )?.issueKey;
+
+      for (const unit of running) {
+        if (unit === watched) continue;
+
+        push(unwatched, { unit, window });
+
+        const found = taken.get(unit);
+
+        if (found) found.push({ window, takenBy });
+        else taken.set(unit, [{ window, takenBy }]);
+      }
     }
   }
 
@@ -547,6 +571,17 @@ export const cutUnwatched = (options: {
           issueKey,
           laneKey: streamKey(entry.block.context),
         })),
+      );
+    }
+
+    const session = entry.block.context.session;
+    const toOtherIssue = (taken.get(unit) ?? []).flatMap((cut) => (cut.takenBy === issueKey ? [] : [cut.window]));
+
+    if (toOtherIssue.length && issueKey && session) {
+      behind.push(
+        ...holesOf({ block: entry.block, kept: piecesOf(entry, toOtherIssue).map((piece) => piece.block) }).map(
+          (hole) => ({ ...hole, issueKey, laneKey: streamKey(entry.block.context), session }),
+        ),
       );
     }
 
