@@ -44,4 +44,28 @@ describe('ledgerEntriesForRange$', () => {
     expect(read({ ledger: storeOf([named]), day: '2026-08-11', boundary: { startHour: 0 } })).toEqual([named]);
     expect(read({ ledger: storeOf([named]), day: '2026-08-12', boundary: { startHour: 0 } })).toEqual([]);
   });
+
+  it('places entries by instant over the 23-hour day the clocks go forward, with a 04:00 boundary', () => {
+    const boundary = { startHour: 4 };
+    const first = entryAt(new Date(2026, 2, 29, 4, 0), '2026-03-29');
+    const last = entryAt(new Date(2026, 2, 30, 3, 59), '2026-03-30');
+    const next = entryAt(new Date(2026, 2, 30, 4, 0), '2026-03-30');
+    const ledger = storeOf([first, last, next]);
+
+    expect(read({ ledger, day: '2026-03-29', boundary })).toEqual([first, last]);
+    expect(read({ ledger, day: '2026-03-30', boundary })).toEqual([next]);
+  });
+
+  it('reads nothing for a day with no entries around it', () => {
+    expect(read({ ledger: storeOf([]), day: '2026-01-01', boundary: { startHour: 0 } })).toEqual([]);
+  });
+
+  it('places an entry by the instant after the last @, whatever the issue key holds', () => {
+    const entry = {
+      ...entryAt(new Date(2026, 7, 11, 9), '2026-08-12'),
+      proposalId: `unnamed:a@b@${new Date(2026, 7, 11, 9).toISOString()}`,
+    };
+
+    expect(read({ ledger: storeOf([entry]), day: '2026-08-11', boundary: { startHour: 0 } })).toEqual([entry]);
+  });
 });

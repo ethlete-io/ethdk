@@ -193,6 +193,16 @@ describe('applyExclusionRules, on a call', () => {
     expect(result.excluded).toEqual([]);
   });
 
+  it('never denies a call by its app id, which would turn the call into absence', () => {
+    const result = applyExclusionRules({
+      events: [callStart('Standup - Discord')],
+      rules: [{ kind: 'app-id', appId: 'Discord' }],
+    });
+
+    expect(result.kept).toEqual([callStart('Standup - Discord')]);
+    expect(result.excluded).toEqual([]);
+  });
+
   it('keeps a title no rule names', () => {
     const result = applyExclusionRules({
       events: [callStart('Meeting #2 | Braune Digital - Discord')],
