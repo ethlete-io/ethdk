@@ -18,14 +18,14 @@ export const transformToStringArray = (value: unknown) => {
 
 export const transformToNumber = (value: unknown) => {
   if (typeof value === 'number') {
-    return value;
+    return Number.isFinite(value) ? value : null;
   }
   if (typeof value === 'string') {
     if (!value.trim()) return null;
 
     const number = Number(value);
 
-    return Number.isNaN(number) ? null : number;
+    return Number.isFinite(number) ? number : null;
   }
   return null;
 };
@@ -68,7 +68,7 @@ const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export const transformToDate = (value: unknown) => {
   if (value instanceof Date) {
-    return value;
+    return Number.isNaN(value.getTime()) ? null : value;
   }
   if (typeof value === 'string') {
     const date = new Date(value);

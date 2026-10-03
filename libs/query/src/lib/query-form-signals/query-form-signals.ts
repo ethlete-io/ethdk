@@ -74,6 +74,7 @@ const changedKeysBetween = (previous: Dict | null, current: Dict): string[] =>
 
 /** Reads a URL string into the type of the field's default; `null` means the default's type cannot hold it. */
 const autoCoerce = (raw: unknown, defaultValue: unknown): unknown => {
+  if (Array.isArray(raw)) return Array.isArray(defaultValue) ? raw : null;
   if (typeof raw !== 'string') return raw;
   if (Array.isArray(defaultValue)) return [raw];
   if (typeof defaultValue === 'number') return transformToNumber(raw);
@@ -101,10 +102,15 @@ const resolveDebounce = (fieldDefs: QueryFormFields, changedKeys: string[], live
   return Math.min(...times);
 };
 
+const isUnserializable = (value: unknown) =>
+  value === undefined ||
+  (typeof value === 'number' && Number.isNaN(value)) ||
+  (value instanceof Date && Number.isNaN(value.getTime()));
+
 /**
  * A value that cannot be told apart from the default once serialized - a cleared text (`''`), an emptied list
- * (`[]`) or one whose `valueToQueryParam` yields nothing - commits as the default, so the URL reproduces the
- * committed state and the filter count does not report it.
+ * (`[]`), `undefined`, `NaN`, an invalid `Date` or one whose `valueToQueryParam` yields nothing - commits as the
+ * default, so the URL reproduces the committed state and the filter count does not report it.
  */
 const normalizeLive = (fieldDefs: QueryFormFields, rawLive: Dict, defaults: Dict): Dict => {
   const live = { ...rawLive };
@@ -118,7 +124,7 @@ const normalizeLive = (fieldDefs: QueryFormFields, rawLive: Dict, defaults: Dict
     const serializedToNothing = !!def.valueToQueryParam && (serialized === null || serialized === undefined);
     const clearedNullable = defaults[key] === null && (value === '' || (Array.isArray(value) && value.length === 0));
 
-    if (serializedToNothing || clearedNullable) {
+    if (serializedToNothing || clearedNullable || isUnserializable(value)) {
       live[key] = defaults[key];
     }
   }
