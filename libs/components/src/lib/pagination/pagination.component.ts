@@ -16,6 +16,7 @@ import {
 import { clamp, createComponentId, optionalBooleanAttribute, signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
 import { PaginationDirective } from './headless/pagination.directive';
+import { toCount } from './page-count';
 import { PaginationRangeContext } from './pagination-labels';
 import { paginate } from './paginate';
 import { PAGINATION_SIZES, PaginateOptions, PaginationItem, PaginationSize } from './pagination.types';
@@ -343,10 +344,12 @@ export class PaginationComponent {
   private fitAttempts(base: PaginateOptions): Partial<PaginateOptions>[] {
     const attempts: Partial<PaginateOptions>[] = [];
     const firstLastVariants = base.hideFirstLast ? [true] : [false, true];
+    const maxBoundaryCount = toCount(base.boundaryCount ?? 1, 1);
+    const maxSiblingCount = toCount(base.siblingCount ?? 1, 1);
 
     for (const hideFirstLast of firstLastVariants) {
-      for (let boundaryCount = base.boundaryCount ?? 1; boundaryCount >= 1; boundaryCount--) {
-        for (let siblingCount = base.siblingCount ?? 1; siblingCount >= 0; siblingCount--) {
+      for (let boundaryCount = maxBoundaryCount; boundaryCount >= Math.min(maxBoundaryCount, 1); boundaryCount--) {
+        for (let siblingCount = maxSiblingCount; siblingCount >= 0; siblingCount--) {
           attempts.push({ boundaryCount, siblingCount, hideFirstLast });
         }
       }

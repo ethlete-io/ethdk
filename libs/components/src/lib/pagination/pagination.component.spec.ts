@@ -357,4 +357,31 @@ describe('PaginationComponent', () => {
     expect(directiveOf(fixture).page()).toBe(5);
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Page 5');
   });
+
+  it.each([
+    ['a NaN boundaryCount', { boundaryCount: Number.NaN, siblingCount: 5 }],
+    ['a zero boundaryCount', { boundaryCount: 0, siblingCount: 5 }],
+    ['a NaN siblingCount', { boundaryCount: 5, siblingCount: Number.NaN }],
+  ])('trims the window to the available width with %s', (_, counts) => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(600);
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(40);
+
+    try {
+      const fixture = TestBed.createComponent(PaginationComponent);
+      fixture.componentRef.setInput('totalPages', 50);
+      fixture.componentRef.setInput('page', 25);
+
+      for (const [name, value] of Object.entries(counts)) fixture.componentRef.setInput(name, value);
+
+      fixture.detectChanges();
+      fixture.detectChanges();
+
+      const host = fixture.nativeElement as HTMLElement;
+
+      expect(host.querySelector('[aria-current="page"]')).not.toBeNull();
+      expect(host.querySelectorAll('.et-pagination-item').length).toBeLessThanOrEqual(15);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
 });

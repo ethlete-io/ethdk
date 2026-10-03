@@ -1,10 +1,7 @@
 import { clamp } from '@ethlete/core';
-import { toPageCount } from './page-count';
+import { toCount, toPageCount } from './page-count';
 import { DEFAULT_PAGINATION_LABELS } from './pagination-labels';
 import { PaginateOptions, PaginationItem } from './pagination.types';
-
-const toCount = (value: number, fallback: number) =>
-  Number.isFinite(value) ? Math.max(Math.floor(value), 0) : fallback;
 
 const range = (start: number, end: number): number[] =>
   Array.from({ length: Math.max(end - start + 1, 0) }, (_, index) => start + index);
