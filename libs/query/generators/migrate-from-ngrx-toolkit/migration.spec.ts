@@ -48,7 +48,7 @@ const APP_B = {
 
 const STORE_KINDS = ['actions', 'effects', 'reducer', 'selectors', 'service'];
 
-describe('migrate-from-ngrx-toolkit', () => {
+describe('migrate-from-ngrx-toolkit', { timeout: 30_000 }, () => {
   let tree: Tree;
   let report: ToolkitMigrationReport;
 

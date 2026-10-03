@@ -30,6 +30,14 @@ describe('migrateLegacyColorThemesInFile', () => {
     ]);
   });
 
+  it('changes nothing in an already migrated file', () => {
+    const migrated = migrateLegacyColorThemesInFile('app.config.ts', APP_CONFIG).content;
+    const second = migrateLegacyColorThemesInFile('app.config.ts', migrated);
+
+    expect(second.changed).toBe(false);
+    expect(second.content).toBe(migrated);
+  });
+
   it('drops the old specifier when the Tailwind 4 provider is already imported', () => {
     const source = `import { provideColorThemes, provideColorThemesWithTailwind4 } from '@ethlete/core';
 export const a = provideColorThemes([]);

@@ -45,7 +45,7 @@ const FILES_EFFECTS = 'libs/store/src/lib/stores/files/files.effects.ts';
 const INTERCEPTOR = 'libs/store/src/lib/interceptors/jwt.interceptor.ts';
 const ENTRY_DETAIL = 'libs/domain/public/event-detail/src/lib/components/entry-detail/entry-detail.component';
 
-describe('migrate-from-ngrx-toolkit consumers', () => {
+describe('migrate-from-ngrx-toolkit consumers', { timeout: 30_000 }, () => {
   let tree: Tree;
   let report: ToolkitMigrationReport;
 

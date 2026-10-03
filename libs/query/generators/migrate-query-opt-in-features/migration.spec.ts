@@ -209,4 +209,15 @@ describe('migrate-query-opt-in-features', () => {
     expect(report).toContain('- client.ts:3\n- client.ts:4');
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Generated 2 follow-up tasks'));
   });
+
+  it('changes nothing on a second run', async () => {
+    const { client: first } = await run(
+      `import { createBearerAuthProvider, createQueryClient } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ name: 'api', baseUrl: 'x' });\nexport const AUTH = createBearerAuthProvider({ name: 'auth', queryClientRef: CLIENT, queries: [] });\n`,
+    );
+    const { client: second } = await run(first);
+
+    expect(second).toBe(first);
+    expect(second.match(/withEthleteApiErrors\(\)/g)).toHaveLength(1);
+    expect(second.match(/withBearerAuthMultiTabSync\(\)/g)).toHaveLength(1);
+  });
 });
