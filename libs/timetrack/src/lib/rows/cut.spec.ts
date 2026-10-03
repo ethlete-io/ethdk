@@ -365,7 +365,7 @@ describe('clearOfLaneRows', () => {
     const rows = [{ laneKey: LANE, issueKey: 'AB-2', from: at('12:30'), to: at('13:30') }];
 
     expect(clearOfLaneRows({ behind: [lost], rows })).toEqual([lost]);
-    expect(clearOfLaneRows({ behind: [lost], rows: [{ ...rows[0], issueKey: 'AB-1' }] })).toEqual([]);
+    expect(clearOfLaneRows({ behind: [lost], rows: [{ ...rows[0]!, issueKey: 'AB-1' }] })).toEqual([]);
   });
 
   it('keeps the part of a stretch no row of its own lane covers', () => {
