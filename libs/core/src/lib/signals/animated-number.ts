@@ -124,7 +124,7 @@ export const signalAnimatedNumber = (
         if (destroyed) return;
 
         const elapsed = timestamp - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const progress = duration > 0 ? Math.min(Math.max(elapsed / duration, 0), 1) : 1;
         const easedProgress = easing(progress);
 
         const value = startValue + delta * easedProgress;

@@ -11,7 +11,7 @@ export class RepeatDirective {
 
   constructor() {
     effect(() => {
-      const count = Math.max(0, this.repeatCount());
+      const count = Math.max(0, this.repeatCount()) || 0;
 
       while (this.viewContainerRef.length < count) {
         this.viewContainerRef.createEmbeddedView(this.mainTemplateRef);
