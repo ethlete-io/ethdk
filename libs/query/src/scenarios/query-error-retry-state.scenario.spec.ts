@@ -139,6 +139,64 @@ describe('retryState with a configured policy', () => {
     });
   });
 
+  describe('on a client whose retryableStatusCodes predicate adds a status to the defaults', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0 },
+      clientFeatures: [
+        withDefaultRetry({
+          retryableStatusCodes: (status, byDefault) => byDefault || status === 500,
+          maxAttempts: 2,
+          baseDelayMs: 100,
+          jitter: 0,
+        }),
+      ],
+    });
+
+    it('retries the added status', () => {
+      const s = scenario();
+      s.api.on('GET', '/restarting', () => ({ status: 500, body: { message: 'restarting' } }));
+
+      const getRestarting = s.get<{ response: unknown }>('/restarting');
+      const c = s.consumer();
+      const query = c.run(() => getRestarting());
+
+      for (const delay of [0, 200, 400]) {
+        s.tick(delay);
+        s.tick(1);
+      }
+
+      expect(s.api.requestCount('GET', '/restarting')).toBe(3);
+      expect(query.error()?.retryState.retry).toBe(true);
+
+      s.expectError(isStatus(500));
+      c.destroy();
+    });
+
+    it('still retries a default status and skips one neither retries', () => {
+      const s = scenario();
+      s.api.on('GET', '/down', () => ({ status: 503, body: { message: 'down' } }));
+      s.api.on('GET', '/missing', () => ({ status: 404, body: { message: 'missing' } }));
+
+      const getDown = s.get<{ response: unknown }>('/down');
+      const getMissing = s.get<{ response: unknown }>('/missing');
+      const c = s.consumer();
+      c.run(() => getDown());
+      c.run(() => getMissing());
+
+      for (const delay of [0, 200, 400]) {
+        s.tick(delay);
+        s.tick(1);
+      }
+
+      expect(s.api.requestCount('GET', '/down')).toBe(3);
+      expect(s.api.requestCount('GET', '/missing')).toBe(1);
+
+      s.expectError(isStatus(503));
+      s.expectError(isStatus(404));
+      c.destroy();
+    });
+  });
+
   describe('on a client with its own retryFn', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0, retryFn: () => ({ retry: false }) } });
 
