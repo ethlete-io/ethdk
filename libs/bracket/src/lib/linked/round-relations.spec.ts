@@ -3,6 +3,7 @@ import {
   BracketDataLayout,
   BracketRoundId,
   BracketRoundType,
+  COMMON_BRACKET_ROUND_TYPE,
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
 } from '../core';
@@ -127,5 +128,37 @@ describe('generateRoundRelations', () => {
     expect(relationOf(source, 'r2', mirrored)).toBe('one-to-nothing prev=r1--half-1');
     expect(relationOf(source, 'r1--half-2', mirrored)).toBe('one-to-one prev=r0--half-2 next=r2');
     expect(relationOf(source, 'r0--half-2', mirrored)).toBe('nothing-to-one next=r1--half-2');
+  });
+
+  it('leaves a third place round out of the chain that ends in the final', () => {
+    const source = singleElimination([2, 1]);
+    source.rounds.push({ id: 't', name: 'Third place', type: COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE, data: null });
+    source.matches.push({
+      id: 'tm0',
+      roundId: 't',
+      home: null,
+      away: null,
+      winner: null,
+      status: 'pending',
+      data: null,
+    });
+
+    expect(relationOf(source, 'r1')).toBe('one-to-nothing prev=r0');
+    expect(relationOf(source, 't')).toBe('none');
+  });
+
+  it('leaves a third place round out of a double elimination ending in a reverse final', () => {
+    const source = doubleElimination([
+      { id: 'u1', type: UPPER_BRACKET, matchCount: 2 },
+      { id: 'u2', type: UPPER_BRACKET, matchCount: 1 },
+      { id: 'l1', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'l2', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'gf', type: 'final', matchCount: 1 },
+      { id: 'rf', type: REVERSE_FINAL, matchCount: 1 },
+      { id: 't', type: COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE, matchCount: 1 },
+    ]);
+
+    expect(relationOf(source, 'rf')).toBe('one-to-nothing prev=gf');
+    expect(relationOf(source, 't')).toBe('none');
   });
 });

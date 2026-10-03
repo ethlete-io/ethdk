@@ -214,6 +214,22 @@ describe('createSingleEliminationGrid, a folded third place', () => {
     expect(continued.raw.grid.dimensions.height).toBe(folded.raw.grid.dimensions.height);
   });
 
+  it('draws the continue column for a source with a third place and no provenance', () => {
+    const grid = createSingleEliminationGrid(
+      createBracket(source(), { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT }),
+      {
+        ...CONFIG,
+        layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT,
+        continueElement: { columnWidth: 100, elementHeight: 50 },
+      },
+      { ...COMPONENTS, continue: class {} } as unknown as BracketComponents<null, null>,
+    );
+
+    expect(
+      grid.columns.flatMap((column) => column.elements).filter((element) => element.type === 'continue'),
+    ).toHaveLength(1);
+  });
+
   it('leaves the fold alone when the source has no final to fold it into', () => {
     const noFinal: BracketDataSource<null, null> = {
       ...withThirdPlace(singleElimination([4, 2])),

@@ -425,7 +425,10 @@ export const generateRoundRelationsNew = <TRoundData, TMatchData>(
   // A relation may never name a round with no matches: every position in it comes from a ratio of match
   // counts, so a zero puts each neighbour's match at a position nothing occupies. A round whose matches
   // are not drawn yet is treated as absent instead, and its neighbours wired to each other.
-  const allRounds = [...bracketData.rounds.values()].filter((round) => round.matchCount > 0);
+  // A third place match is fed by losers, so it is no step in the chain that ends in the final.
+  const allRounds = [...bracketData.rounds.values()].filter(
+    (round) => round.matchCount > 0 && round.type !== COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE,
+  );
   const upperRounds = allRounds.filter((r) => r.type !== DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
   const lowerRounds = allRounds.filter((r) => r.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET);
 
