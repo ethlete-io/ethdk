@@ -1,5 +1,5 @@
 import { isPlatformBrowser } from '@angular/common';
-import { DOCUMENT, effect, EnvironmentInjector, inject, PLATFORM_ID } from '@angular/core';
+import { ApplicationRef, DOCUMENT, effect, EnvironmentInjector, inject, PLATFORM_ID } from '@angular/core';
 import { injectRenderer } from '../../providers';
 import { injectScrollbarDimensions, injectViewportDimensions } from '../media-queries';
 
@@ -15,26 +15,30 @@ export const writeScrollbarSizeToCssVariables = () => {
     return;
   }
 
-  const environmentInjector = inject(EnvironmentInjector);
-  if (scrollbarSizeWriters.has(environmentInjector)) {
+  // The app's injector, not the caller's: a writer started from a component must outlive it.
+  const appInjector = inject(ApplicationRef).injector;
+  if (scrollbarSizeWriters.has(appInjector)) {
     return;
   }
-  scrollbarSizeWriters.add(environmentInjector);
+  scrollbarSizeWriters.add(appInjector);
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
   const scrollbarDimensions = injectScrollbarDimensions();
 
-  effect(() => {
-    const dimensions = scrollbarDimensions();
+  effect(
+    () => {
+      const dimensions = scrollbarDimensions();
 
-    if (!dimensions) return;
+      if (!dimensions) return;
 
-    renderer.setCssProperties(document.documentElement, {
-      '--et-sw': `${dimensions.width}px`,
-      '--et-sh': `${dimensions.height}px`,
-    });
-  });
+      renderer.setCssProperties(document.documentElement, {
+        '--et-sw': `${dimensions.width}px`,
+        '--et-sh': `${dimensions.height}px`,
+      });
+    },
+    { injector: appInjector },
+  );
 };
 
 const viewportSizeWriters = /* @__PURE__ */ new WeakSet<EnvironmentInjector>();
@@ -49,24 +53,27 @@ export const writeViewportSizeToCssVariables = () => {
     return;
   }
 
-  const environmentInjector = inject(EnvironmentInjector);
-  if (viewportSizeWriters.has(environmentInjector)) {
+  const appInjector = inject(ApplicationRef).injector;
+  if (viewportSizeWriters.has(appInjector)) {
     return;
   }
-  viewportSizeWriters.add(environmentInjector);
+  viewportSizeWriters.add(appInjector);
 
   const document = inject(DOCUMENT);
   const renderer = injectRenderer();
   const htmlElementDimensions = injectViewportDimensions();
 
-  effect(() => {
-    const dimensions = htmlElementDimensions().rect?.();
+  effect(
+    () => {
+      const dimensions = htmlElementDimensions().rect?.();
 
-    if (!dimensions) return;
+      if (!dimensions) return;
 
-    renderer.setCssProperties(document.documentElement, {
-      '--et-vw': `${dimensions.width}px`,
-      '--et-vh': `${dimensions.height}px`,
-    });
-  });
+      renderer.setCssProperties(document.documentElement, {
+        '--et-vw': `${dimensions.width}px`,
+        '--et-vh': `${dimensions.height}px`,
+      });
+    },
+    { injector: appInjector },
+  );
 };
