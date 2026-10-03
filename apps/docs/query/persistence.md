@@ -268,10 +268,10 @@ const store = createFakeQueryPersistenceStore();
 const first = createQueryClient({
   name: 'first',
   baseUrl,
-  features: [withQueryPersistence({ adapter: store.adapter })],
+  features: [withQueryPersistence({ adapter: store.adapter, writeDelay: 0 })],
 });
-// …drive a query, then:
-await TestBed.inject(first.token).subtle.persistence!.flush();
+// …drive a query, then wait for its write to land:
+await vi.waitFor(() => expect(store.entries()).not.toHaveLength(0));
 
 const second = createQueryClient({
   name: 'second',

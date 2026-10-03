@@ -59,9 +59,13 @@ The socket disconnects automatically when the providing scope is destroyed.
 
 `auth` becomes socket.io's handshake `auth` payload, which the server reads as
 `socket.handshake.auth`. Pass a function when the value changes over time - it is called on every
-connect and reconnect, so a rotated access token reaches the next handshake:
+connect and reconnect, so a rotated access token reaches the next handshake. The function runs outside
+an injection context, so it cannot call `injectAuthProvider()` - read the token from wherever your app
+keeps it:
 
 ```ts
+declare function readAccessToken(): string | null; // your app's own token store
+
 const MATCH_SOCKET = createWebSocketClient({
   name: 'match-events',
   url: 'https://ws.example.com',
