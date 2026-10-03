@@ -88,12 +88,12 @@ describe('migrate-query-client-features', () => {
     expect(report).toContain('not a literal');
   });
 
-  it('leaves an existing features array alone', async () => {
+  it('leaves an existing features array alone and reports a removed option next to it', async () => {
     const { client, report } = await run(
-      `import { createQueryClient, withMultiTabSync } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ baseUrl: 'x', name: 'api', features: [withMultiTabSync()] });\n`,
+      `import { createQueryClient, withMultiTabSync } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ baseUrl: 'x', name: 'api', persistence: false, features: [withMultiTabSync()] });\n`,
     );
 
-    expect(client).toContain('features: [withMultiTabSync()]');
+    expect(client).toContain('persistence: false, features: [withMultiTabSync()]');
     expect(report).toContain('already has a features array');
   });
 
@@ -142,5 +142,23 @@ describe('migrate-query-client-features', () => {
     expect(report).toContain('- client.ts:3\n- client.ts:4');
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('Generated 2 follow-up tasks'));
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('(client.ts:3, client.ts:4)'));
+  });
+
+  it('changes nothing and records no task on a second run', async () => {
+    const { client: first } = await run(
+      `import { createQueryClient } from '@ethlete/query';\n\nexport const CLIENT = createQueryClient({ baseUrl: 'x', name: 'api', persistence: false });\n`,
+    );
+    const { client: second, report } = await run(first);
+
+    expect(second).toBe(first);
+    expect(report).toContain('No open follow-up tasks');
+  });
+
+  it('leaves a file without a query client untouched', async () => {
+    const source = `import { createQueryClient } from '@ethlete/query';\n\nexport const nothing = 1;\n`;
+    const { client, report } = await run(source);
+
+    expect(client).toBe(source);
+    expect(report).toContain('No open follow-up tasks');
   });
 });

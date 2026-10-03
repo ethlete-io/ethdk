@@ -75,14 +75,16 @@ const collectClientEdits = (
         const featuresProperty = named('features');
 
         if (featuresProperty) {
-          report.addManualReview({
-            title: 'createQueryClient already has a features array',
-            summary: 'The client was left untouched so an existing `features` array is not overwritten.',
-            action: 'Fold the removed `multiTabSync` / `persistence` options into the existing `features` array.',
-            locations: [{ filePath, line }],
-            source: SOURCE,
-            dedupeKey: 'existing-features',
-          });
+          if (syncProperty || persistenceProperty) {
+            report.addManualReview({
+              title: 'createQueryClient already has a features array',
+              summary: 'The client was left untouched so an existing `features` array is not overwritten.',
+              action: 'Fold the removed `multiTabSync` / `persistence` options into the existing `features` array.',
+              locations: [{ filePath, line }],
+              source: SOURCE,
+              dedupeKey: 'existing-features',
+            });
+          }
         } else {
           for (const property of [syncProperty, persistenceProperty]) {
             const value = property?.initializer;
