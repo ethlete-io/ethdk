@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement } from '@ethlete/core';
-import { EMPTY, catchError, defer, merge, mergeMap, switchMap, take, tap } from 'rxjs';
+import { EMPTY, catchError, defaultIfEmpty, defer, merge, mergeMap, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../internals/typeahead';
 import { TREE_ERROR_CODES } from '../tree-errors';
 import { canExpand, defaultCompareWith, nodesEqual, toChildrenObservable } from './internals/tree-data';
@@ -700,6 +700,7 @@ export class TreeDirective<T = unknown> {
     // rather than tearing down the whole pipeline
     return defer(() => toChildrenObservable(source.loadChildren(parent))).pipe(
       take(1),
+      defaultIfEmpty([] as TreeNode<T>[]),
       tap({
         next: (nodes) => {
           if (isCurrent()) this.setLevel(parent, { status: TREE_LEVEL_STATUSES.LOADED, nodes, error: null });

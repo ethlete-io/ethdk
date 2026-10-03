@@ -31,7 +31,7 @@ type TreeDataSource<T> = {
 };
 ```
 
-`parent` is `null` for the root level. Returning a plain array covers a static tree; a `Promise` or `Observable` covers a remote one, and a branch is only ever asked for once it is expanded - so a hierarchy that is deep, wide or paid-for by the request costs only what the user actually opens. A level is loaded **once** and then kept: collapsing and re-expanding a branch is instant, and `retry(node)` is what reloads it.
+`parent` is `null` for the root level. Returning a plain array covers a static tree; a `Promise` or `Observable` covers a remote one, and a branch is only ever asked for once it is expanded - so a hierarchy that is deep, wide or paid-for by the request costs only what the user actually opens. A level is loaded **once** and then kept: collapsing and re-expanding a branch is instant, and `retry(node)` is what reloads it. Only the first emission of an `Observable` counts, and one that completes without emitting loads an empty level.
 
 This is the same shape as the cascader's `CascaderDataSource.loadChildren`, so one source object can drive an `et-tree` and an `et-cascader` over the same hierarchy.
 

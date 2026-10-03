@@ -1,6 +1,6 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
+import { EMPTY, Subject } from 'rxjs';
 import '../../test-helpers';
 import { ICON_IMPORTS, IconDefinition, provideIcons } from '../icon';
 import { TreeDataSource, TreeDirective, TreeNode, TreeSelectionMode } from './headless';
@@ -637,6 +637,14 @@ describe('TreeComponent', () => {
     await settle();
 
     expect(labels()).toEqual(['other']);
+  });
+
+  it('treats a children observable that completes without emitting as an empty level', async () => {
+    fixture.componentInstance.dataSource.set({ loadChildren: () => EMPTY });
+    await settle();
+
+    expect(tree.rootStatus()).toBe('loaded');
+    expect(status()?.textContent?.trim()).toBe('Nothing to show');
   });
 
   it('resolves children from a promise', async () => {
