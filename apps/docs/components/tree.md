@@ -145,17 +145,17 @@ The host is `role="tree"` (plus `aria-multiselectable` in multiple mode, and `ar
 
 Rows are `role="treeitem"` with `aria-level`, `aria-posinset`, `aria-setsize`, `aria-expanded` (branches only), `aria-selected` (unless `selectionMode="none"`) and `aria-disabled`. Because the DOM is flat rather than nested in `role="group"` elements, those position attributes are what tell assistive tech the shape of the tree - which is why `visibleRows()` computes them and `[etTreeNode]` binds them for you.
 
-| Key                              | Action                                                                  |
-| -------------------------------- | ----------------------------------------------------------------------- |
-| <kbd>Tab</kbd>                   | Enters the tree on its single tab stop, or leaves it                    |
-| <kbd>↑</kbd> / <kbd>↓</kbd>      | Previous / next visible row, across levels                              |
-| <kbd>→</kbd>                     | Expands a collapsed branch, or moves into an expanded one               |
-| <kbd>←</kbd>                     | Collapses an expanded branch, or moves to the parent                    |
-| <kbd>Home</kbd> / <kbd>End</kbd> | First / last visible row                                                |
-| <kbd>Enter</kbd>                 | Activates the row - selects, expands, or retries a failed branch        |
-| <kbd>Space</kbd>                 | Selects the row without expanding it                                    |
-| <kbd>\*</kbd>                    | Expands every sibling of the focused row                                |
-| any character                    | Type-ahead: focuses the next row whose label starts with what was typed |
+| Key                              | Action                                                                                                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| <kbd>Tab</kbd>                   | Enters the tree on its single tab stop, or leaves it                                                                     |
+| <kbd>↑</kbd> / <kbd>↓</kbd>      | Previous / next visible row, across levels                                                                               |
+| <kbd>→</kbd>                     | Expands a collapsed branch, or moves into an expanded one                                                                |
+| <kbd>←</kbd>                     | Collapses an expanded branch, or moves to the parent                                                                     |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First / last visible row                                                                                                 |
+| <kbd>Enter</kbd>                 | Activates the row - selects, expands, or retries a failed branch                                                         |
+| <kbd>Space</kbd>                 | Selects the row without expanding it; mid type-ahead, extends the query                                                  |
+| <kbd>\*</kbd>                    | Expands every sibling of the focused row                                                                                 |
+| any character                    | Type-ahead: focuses the next row whose label starts with what was typed; repeating one letter cycles through its matches |
 
 <kbd>→</kbd> and <kbd>←</kbd> expand and collapse, so they follow the writing direction and swap under `direction: rtl` (as does the chevron). The tab stop stays on the row the user last focused, so <kbd>Shift</kbd>+<kbd>Tab</kbd> back into the tree re-enters where they left off; arrow navigation does not wrap, since running off the end of a tree is disorienting rather than helpful. Collapsing a branch that contains the focused row - by `collapse()`, `collapseAll()`, or a write to `[(expandedValues)]` - moves the tab stop up to the nearest surviving ancestor rather than back to the first row, and hands it DOM focus when the tree held focus at the time.
 

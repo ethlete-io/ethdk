@@ -448,6 +448,17 @@ describe('TreeComponent', () => {
 
       expect(document.activeElement).toBe(rowByLabel('berry'));
     });
+
+    it('treats Space as part of a running query instead of selecting', () => {
+      type('new f');
+
+      expect(document.activeElement).toBe(rowByLabel('new file'));
+      expect(fixture.componentInstance.value()).toBeNull();
+
+      type('o');
+
+      expect(document.activeElement).toBe(rowByLabel('new folder'));
+    });
   });
 
   it('shows the empty state when the root loads nothing', async () => {

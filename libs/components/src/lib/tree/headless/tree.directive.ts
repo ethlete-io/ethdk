@@ -562,6 +562,8 @@ export class TreeDirective<T = unknown> {
 
         return;
       case ' ':
+        if (this.typeahead.isRunning()) break;
+
         if (this.selectionMode() === TREE_SELECTION_MODES.NONE) return;
 
         event.preventDefault();
