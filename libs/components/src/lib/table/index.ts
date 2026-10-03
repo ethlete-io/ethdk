@@ -29,6 +29,7 @@ export * from './table-row-router-link.directive';
 export * from './table-resize-grip.component';
 export * from './table-resize.directive';
 export * from './table-select-cell.component';
+export * from './table-sticky-columns-styles.component';
 export * from './table-sticky-columns.directive';
 export * from './table-skeleton-rows.component';
 export * from './table-skeleton.directive';

@@ -1,11 +1,12 @@
 import { afterRenderEffect, computed, Directive, input, signal } from '@angular/core';
-import { signalHostElementDimensions } from '@ethlete/core';
+import { injectStyleManager, signalHostElementDimensions } from '@ethlete/core';
 import {
   injectTableFeatureHost,
   TableCellPinning,
   TableFeatureConfig,
   tableFeatureConfig,
 } from './headless/table-features';
+import { TableStickyColumnsStylesComponent } from './table-sticky-columns-styles.component';
 import { TableColumnPin } from './table.types';
 
 /**
@@ -92,6 +93,8 @@ export class TableStickyColumnsDirective {
   );
 
   constructor() {
+    injectStyleManager().mount(TableStickyColumnsStylesComponent);
+
     const enabled = this.enabled;
 
     this.table.registerColumnPinning({

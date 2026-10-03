@@ -361,25 +361,9 @@
     box-shadow: var(--_et-table-edge-block-start);
   }
 
-  .et-table-header-cell.et-table-sticky-start {
-    box-shadow: var(--_et-table-edge-block-start), var(--_et-table-edge-start);
-  }
-
-  .et-table-header-cell.et-table-sticky-end {
-    box-shadow: var(--_et-table-edge-block-start), var(--_et-table-edge-end);
-  }
-
   .et-table-footer,
   .et-table-footer-cell {
     box-shadow: var(--_et-table-edge-block-end);
-  }
-
-  .et-table-footer-cell.et-table-sticky-start {
-    box-shadow: var(--_et-table-edge-block-end), var(--_et-table-edge-start);
-  }
-
-  .et-table-footer-cell.et-table-sticky-end {
-    box-shadow: var(--_et-table-edge-block-end), var(--_et-table-edge-end);
   }
 
   /* A divider separates two rows, so the one that ends the table has nothing to separate: a `divided`
@@ -405,73 +389,6 @@
   .et-table-header-row .et-table-header-cell:last-child,
   .et-table-row .et-table-cell:nth-last-child(1 of .et-table-cell) {
     border-inline-end: 0;
-  }
-
-  /* ── Sticky columns ─────────────────────────────────────────────────────
-     Pinned cells stay put during horizontal scroll. The inline offset comes from a per-cell
-     style binding, fed by the widths `etTableStickyColumns` measures; the edge shadow marks the pinned
-     boundary. Without the feature nothing ever carries these classes, so the rules simply never match.
-
-     These stay in the base sheet rather than travelling with the feature: routing them through a
-     styles-only component costs a table that *does* pin 955 B gz of style-manager machinery, against the
-     113 B they cost every table by staying here. */
-  .et-table-sticky-start,
-  .et-table-sticky-end {
-    position: sticky;
-    z-index: 1;
-  }
-
-  .et-table-sticky-start {
-    box-shadow: var(--_et-table-edge-start);
-  }
-
-  .et-table-sticky-end {
-    box-shadow: var(--_et-table-edge-end);
-  }
-
-  /* Only the outermost pinned cell of an edge marks it. Being opaque, the next pinned cell covers an
-     inner one's shadow - until it is a utility column lifted over its neighbours to keep its own clicks
-     (see the row-link rules), and the inner shadow then escapes as a rule down the middle of the pinned
-     block. Dropped through the edge variable rather than `box-shadow`, so a header or footer cell keeps
-     the block-axis shadow it carries in the same property. */
-  .et-table-sticky-start:has(~ .et-table-sticky-start) {
-    --_et-table-edge-start: 0 0 transparent;
-  }
-
-  .et-table-sticky-end ~ .et-table-sticky-end {
-    --_et-table-edge-end: 0 0 transparent;
-  }
-
-  /* Body pinned cells need an opaque fill so scrolled cells pass behind them — but they still
-     reflect the row's zebra stripe and hover, using opaque (solid) variants of those tints. The
-     real `.et-table-sticky-*` classes (not `:where`) give these the specificity to win over the
-     translucent stripe/hover rules. */
-  .et-table-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
-    background: var(--_et-table-row-surface);
-  }
-
-  .et-table-row--stripe .et-table-cell.et-table-sticky-start,
-  .et-table-row--stripe .et-table-cell.et-table-sticky-end {
-    background: var(--_et-table-stripe-solid);
-  }
-
-  /* Only on real hover-capable pointers — a touch tap otherwise leaves the row stuck "hovered". */
-  @media (hover: hover) {
-    .et-table-row:hover .et-table-cell.et-table-sticky-start,
-    .et-table-row:hover .et-table-cell.et-table-sticky-end {
-      background: var(--_et-table-row-hover-solid);
-    }
-  }
-
-  .et-table-row:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell.et-table-sticky-start,
-  .et-table-row:where(.et-table-row--interactive, .et-table-row--link):active .et-table-cell.et-table-sticky-end {
-    background: var(--_et-table-row-pressed-solid);
-  }
-
-  /* Header/footer pinned cells are corner-sticky (both axes) and sit above the row-pinned cells. */
-  .et-table-header-cell:where(.et-table-sticky-start, .et-table-sticky-end),
-  .et-table-footer-cell:where(.et-table-sticky-start, .et-table-sticky-end) {
-    z-index: 3;
   }
 
   /* ── Sticky footer row ──────────────────────────────────────────────────
