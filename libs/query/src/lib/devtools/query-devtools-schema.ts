@@ -391,9 +391,7 @@ const stringSample = (node: SeedNode, schema: Record<string, unknown>, ctx: Seed
 
   const title = schema['title'];
 
-  if (typeof title === 'string' && title) return title;
-
-  return node.key ?? 'string';
+  return fitLength(typeof title === 'string' && title ? title : (node.key ?? 'string'), schema);
 };
 
 const boundsOf = (schema: Record<string, unknown>) => {
@@ -416,10 +414,13 @@ const clampToBounds = (value: number, bounds: { min: number | null; max: number 
 const numberSample = (schema: Record<string, unknown>, ctx: SeedContext) => {
   const bounds = boundsOf(schema);
 
-  if (ctx.style === 'placeholder') return bounds.min ?? 0;
+  if (ctx.style === 'placeholder') return clampToBounds(bounds.min ?? 0, bounds);
 
   if (ctx.style === 'realistic') {
-    return generateQueryDevtoolsSampleNumber({ ...bounds, fractional: typeOf(schema) === 'number' });
+    return clampToBounds(
+      generateQueryDevtoolsSampleNumber({ ...bounds, fractional: typeOf(schema) === 'number' }),
+      bounds,
+    );
   }
 
   const allowsNegative = bounds.min === null || bounds.min < 0;

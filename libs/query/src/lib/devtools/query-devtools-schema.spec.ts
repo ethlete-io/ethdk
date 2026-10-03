@@ -75,6 +75,14 @@ const BOUNDED_DOC = {
           tags: { type: 'array', items: { type: 'string' }, maxItems: 1 },
         },
       },
+      Ceilings: {
+        type: 'object',
+        properties: {
+          below: { type: 'integer', maximum: -3 },
+          short: { type: 'string', maxLength: 2 },
+          long: { type: 'string', minLength: 12 },
+        },
+      },
     },
   },
 };
@@ -347,6 +355,21 @@ describe('query devtools schema', () => {
       expect(body.code.length).toBeLessThanOrEqual(4);
       expect(body.tags).toHaveLength(1);
     });
+
+    it.each(['placeholder', 'realistic', 'stress'] as const)(
+      'should keep a %s seed inside a ceiling that lies below its default value',
+      (style) => {
+        const body = seedQueryDevtoolsSchemaBody(CLIENT, 'Ceilings', style)?.body as {
+          below: number;
+          short: string;
+          long: string;
+        };
+
+        expect(body.below).toBeLessThanOrEqual(-3);
+        expect(body.short.length).toBeLessThanOrEqual(2);
+        expect(body.long.length).toBeGreaterThanOrEqual(12);
+      },
+    );
 
     it('should reach the length a string has to have', () => {
       const body = seedQueryDevtoolsSchemaBody(CLIENT, 'Limits', 'realistic')?.body as { slug: string };
