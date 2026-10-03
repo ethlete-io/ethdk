@@ -68,7 +68,9 @@ export class CheckboxComponent {
         if (checked) {
           this.frozenCheckmarkColor.set(null);
         } else if (checkmarkEl) {
-          this.frozenCheckmarkColor.set(getComputedStyle(checkmarkEl).color);
+          this.frozenCheckmarkColor.set(
+            checkmarkEl.ownerDocument.defaultView?.getComputedStyle?.(checkmarkEl).color ?? null,
+          );
         }
       });
     });
@@ -81,7 +83,9 @@ export class CheckboxComponent {
         if (indeterminate) {
           this.frozenIndeterminateColor.set(null);
         } else if (indeterminateEl) {
-          this.frozenIndeterminateColor.set(getComputedStyle(indeterminateEl).color);
+          this.frozenIndeterminateColor.set(
+            indeterminateEl.ownerDocument.defaultView?.getComputedStyle?.(indeterminateEl).color ?? null,
+          );
         }
       });
     });
