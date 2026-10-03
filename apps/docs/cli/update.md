@@ -176,7 +176,7 @@ Repos that use `@ethlete/agent-rules` also get the `sdk-update` skill, which tea
 ## Requirements
 
 - A `package.json` at the repo root. Library manifests deeper in the repo are found from there, leaving out what git ignores.
-- Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then the user's `~/.npmrc`, then `npm_config_registry`, then the public registry. A `//host/path/:_authToken` or `:_auth` entry for that registry in either `.npmrc`, with `${VAR}` expanded, is sent with the lookup.
+- Network access to the registry the repo installs from: the `@ethlete` scope or the registry of `.yarnrc.yml` (yarn 2+), `.yarnrc` and `.npmrc` (yarn 1), or `.npmrc` (npm, pnpm, bun), then the user's `~/.npmrc`, then `npm_config_registry`, then the public registry. A `//host/path/:_authToken` or `:_auth` entry for that registry in either `.npmrc`, with `${VAR}` expanded, is sent with the lookup. A `401` or `403` names the `.npmrc` the refused token came from, or says that neither holds one.
   The install reads the same files: yarn 1 exports its default registry to `yarn et update` as `npm_config_registry`, and `et update` drops that variable before it installs.
 - Nx, for the codemods. The migrations ship as Nx generators, so a repo without Nx gets each one reported as a command instead. Everything else works.
 

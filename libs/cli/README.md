@@ -14,7 +14,9 @@ yarn add --dev @ethlete/cli@next
 yarn et release
 ```
 
-Turns pending changesets into a tagged, pushed release commit (version → tag → commit → push).
+Turns pending changesets into a tagged, pushed release commit (version → commit → tag → push). A
+failed commit stops the run before any tag exists. Pass `--message "chore(release): Release versions"`
+when a commit-msg hook rejects the default `Release versions`; `et release --help` lists the flags.
 
 ## `et auth`
 
@@ -51,7 +53,8 @@ yarn et update --no-commit                # leave every change uncommitted
 ```
 
 The target follows the dist tag the installed version is on, so a repo on a `-next` prerelease stays
-on `next`. The working tree must be clean, because the codemods rewrite files; `--force` skips that
+on `next`, and a repo on `latest` is told per package when a newer major waits on `next`. The working
+tree must be clean, because the codemods rewrite files; `--force` skips that
 check.
 
 The install runs before the migrations are read, because the migrations of a version ship inside that
