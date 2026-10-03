@@ -54,10 +54,11 @@ export type SegmentedButtonGroupVariant =
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[attr.aria-busy]': 'list.pending() ? "true" : null',
   },
 })
 export class SegmentedButtonGroupComponent {
-  private list = inject(SelectionListDirective);
+  protected list = inject(SelectionListDirective);
   public support = injectFormSupport();
   public size = input<FormFieldSize>(injectFormFieldDefaults().size);
 

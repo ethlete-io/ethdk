@@ -313,6 +313,14 @@ describe('TagInputDirective with a dash separator', () => {
 
     expect(driver.host.value()).toEqual(['a1b', 'c', 'd']);
   });
+
+  it('never splits a paste on a key name such as Enter', () => {
+    const driver = mountTagInput(DashSeparatorTagInputTestHost);
+
+    driver.paste('Enterprise;Bank');
+
+    expect(driver.host.value()).toEqual(['Enterprise', 'Bank']);
+  });
 });
 
 describe('TagInputDirective (contract)', () => {

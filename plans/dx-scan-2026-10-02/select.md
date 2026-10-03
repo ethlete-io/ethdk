@@ -47,7 +47,7 @@ Scope: `libs/components/src/lib/forms/select`, `forms/cascader`, `forms/selectio
 
 - Status: fixed: `pending` + `maxLength` on select and cascader, `pending` on the selection-list groups; forms.md updated.
 
-- Review: fixed trimmed the maxLength/pending JSDoc
+- Review: fixed trimmed the maxLength/pending JSDoc; test audit: the groups rendered no busy state, now bind `aria-busy` while pending (spec added)
 
 - Where: `libs/components/src/lib/forms/select/headless/select.directive.ts:122-136` and
   `libs/components/src/lib/forms/cascader/headless/cascader.directive.ts:127-142` declare no `pending`

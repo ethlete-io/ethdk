@@ -44,10 +44,11 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[attr.aria-busy]': 'list.pending() ? "true" : null',
   },
 })
 export class RadioGroupComponent {
-  private list = inject(SelectionListDirective);
+  protected list = inject(SelectionListDirective);
   public support = injectFormSupport();
   public size = input<FormFieldSize>(injectFormFieldDefaults().size);
 
