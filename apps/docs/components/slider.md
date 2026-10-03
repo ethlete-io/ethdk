@@ -106,7 +106,7 @@ const qualityMarks = [
 <StoryEmbed id="components-forms-slider--marks" height="240px" />
 
 - Ticks inside the filled part of the track (between the thumbs, for a range) render in the theme's on-primary color; the rest sit on the neutral rail.
-- Explicit marks are sorted, de-duplicated and clipped to the bounds. `marks="true"` refuses to generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
+- Explicit marks are sorted, de-duplicated and clipped to the bounds. In development, `marks="true"` throws rather than generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
 - A pointer press that starts on a tick (or its label) commits **that exact value**, not the value under the pointer - a mark that sits off the `step` grid included. The arrow keys still move along the `step` grid, so reach for `snapToMarks` when the marks are meant to be the only stops.
 - Whenever the value equals a labelled mark, the mark's `label` becomes the thumb's `aria-valuetext`, so screen readers announce "Medium" instead of "1". This holds with or without `snapToMarks`; on any other value the raw number is announced.
 - Labels are decoration: the whole tick layer is `aria-hidden`, and the accessible value stays on the thumb.

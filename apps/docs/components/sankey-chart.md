@@ -84,7 +84,7 @@ Set `direction="horizontal"` to keep columns at any width: the plot then never g
 
 Node `i` is drawn in its own `colorToken`, else in entry `i` of the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional), else in the chart's `colorToken`, else in a step of the surrounding accent. A link takes its source node's colour at reduced opacity. A palette is never cycled: the nodes past it share the accent in steps from full strength down to 40% (a lone node keeps the full accent), so they stay apart. Give the chart a `colorToken` to step a different theme, or give nodes a `colorToken` each to group them.
 
-<StoryEmbed id="components-data-display-sankey-chart--dark" height="520px" />
+<StoryEmbed id="components-data-display-sankey-chart--many-nodes" height="560px" />
 
 ## Interaction
 

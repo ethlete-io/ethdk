@@ -70,8 +70,8 @@ card is a team card with a flag in the emblem slot; a squad list is a column of 
   </div>
 
   <div class="competition-card-tags">
-    <et-chip size="sm">{{ competition.sport }}</et-chip>
-    <et-chip size="sm">{{ competition.teamCount }} teams</et-chip>
+    <et-chip>{{ competition.sport }}</et-chip>
+    <et-chip>{{ competition.teamCount }} teams</et-chip>
   </div>
 </a>
 ```

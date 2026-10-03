@@ -182,7 +182,7 @@ row, a pinned column) can't square off a corner, whichever column happens to be 
 reorder or a hidden column.
 
 **A card's ends follow its pinned columns.** A card wider than the viewport has its own ends
-off-screen, so a corner layer in the row holds each end at the [pinned](#sticky-columns) edge and
+off-screen, so a corner layer in the row holds each end at the [pinned](#sticky-columns-footer) edge and
 draws it there: the corner, its border arc, and the leading line between them. The card therefore
 reads as a card at every scroll offset, rather than as a box cut off square at the pinned column.
 The layer is a child of the row rather than of the end cell, because a pinned cell is a stacking
@@ -889,7 +889,7 @@ protected selected = signal<Set<unknown>>(new Set());
 | `side`                    | `start`  | Which inline edge the checkbox column sits at - `'start'` or `'end'`. |
 
 `side: 'end'` puts the checkbox column after the data columns, where it ends every row. With
-[`etTableStickyColumns`](#sticky-columns) on it is pinned to that edge and stays put while the
+[`etTableStickyColumns`](#sticky-columns-footer) on it is pinned to that edge and stays put while the
 table scrolls sideways - a column moved there is one meant to stay reachable, so it does not
 wait for a data column to be pinned the way the leading utility columns do.
 

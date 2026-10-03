@@ -74,9 +74,9 @@ Only a change of the source input creates a new embed. The extras, `width` and `
 
 ## Player state & control
 
-Every player implements the shared `StreamPlayer` interface: a `state` signal (`isReady`, `isLoading`, `isPlaying`, `isMuted`, `isEnded`, `currentTime`, `duration` - `null` for live streams, `error`) and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)` / `retry()`.
+Every player implements the shared `StreamPlayer` interface: a `state` signal (`isReady`, `isLoading`, `isPlaying`, `isMuted`, `isEnded`, `currentTime` - `null` for live streams, `duration` - `null` until known, `error`) and `play()` / `pause()` / `mute()` / `unmute()` / `seek(seconds)` / `retry()`.
 
-Not every platform supports every control - each player exposes a static `CAPABILITIES` (`canPlay`, `canPause`, `canMute`, `canSeek`, `canGetDuration`, `isLiveCapable`, `hasThumbnail`). Methods without the capability are no-ops, so check it to decide which controls to render.
+Not every platform supports every control - each player exposes a `CAPABILITIES` object (`canPlay`, `canPause`, `canMute`, `canSeek`, `canGetDuration`, `isLiveCapable`, `hasThumbnail`). Methods without the capability are no-ops, so check it to decide which controls to render.
 
 | Platform                | play / pause / mute / seek |
 | ----------------------- | -------------------------- |

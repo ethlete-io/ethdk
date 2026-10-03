@@ -169,7 +169,7 @@ not.
 Public design tokens: `--et-progress-steps-gap`, `--et-progress-step-marker-size`,
 `--et-progress-step-label-font-size`, `--et-progress-step-description-font-size`.
 
-`current`/`complete` markers, the connector after a resolved step, and the `current` label all read
+`current`/`complete` markers and the connector after a resolved step read
 from the ambient [color theme](/core/theming) (`--et-theme-color-primary-solid` /
 `--et-theme-color-on-primary-solid`) - scope one with `[etProvideColor]` the same way any other
 component in this library picks up an accent. `upcoming` markers and the base connector use the

@@ -39,7 +39,7 @@ export class GroupPicksComponent {
 | `order`          | `readonly string[] \| null`             | `null`  | Two-way. The order on screen, as participant ids. `null` follows `participants` + `storedPicks`. |
 | `labels`         | `Partial<StandingsLabels> \| null`      | `null`  | Per-instance string overrides.                                                                   |
 
-`participant` is the same [normalized participant](/components/match#any-backend-the-normalized-match)
+`participants` takes the same [normalized participants](/components/match#any-backend-the-normalized-match)
 the match card and the standings table take, so one adapter feeds all three.
 
 ## Where the order starts

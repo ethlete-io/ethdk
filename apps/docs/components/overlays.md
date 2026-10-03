@@ -224,14 +224,14 @@ import { OVERLAY_CONTENT_IMPORTS } from '@ethlete/components';
 
 The header, body, and footer must have an `etOverlayMain` ancestor - either an `<et-overlay-main>` element (as above) or a host applying the directive via `hostDirectives` (`etOverlayMain` sits equally well on a `<form>` that wraps the body). Using any of them without a main throws [`ET1208`](/components/error-codes). The main may live on the routed page rather than the overlay component itself - see [Routing inside overlays](#routing-inside-overlays).
 
-| Piece                    | Selector                               | Purpose                                                                                                                  |
-| ------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `OverlayMainDirective`   | `[etOverlayMain]`                      | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives`                        |
-| `OverlayHeaderDirective` | `[etOverlayHeader]`                    | Pinned header region                                                                                                     |
-| `OverlayBodyComponent`   | `et-overlay-body`, `[et-overlay-body]` | Scrollable body; `dividers: 'static' \| 'dynamic' \| false` shows edge dividers while scrolled; `scrollToTop(behavior?)` |
-| `OverlayFooterDirective` | `[etOverlayFooter]`                    | Pinned footer region                                                                                                     |
-| `OverlayTitleDirective`  | `[etOverlayTitle]`                     | Wires the overlay's `aria-labelledby` to the title element                                                               |
-| `OverlayCloseDirective`  | `[etOverlayClose]`                     | Click closes the nearest overlay; the bound value becomes the close result                                               |
+| Piece                    | Selector                                 | Purpose                                                                                                                  |
+| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `OverlayMainDirective`   | `[etOverlayMain]`, `et-overlay-main`     | Layout wrapper enabling pinned header/footer + scrolling body; often applied via `hostDirectives`                        |
+| `OverlayHeaderDirective` | `[etOverlayHeader]`, `et-overlay-header` | Pinned header region                                                                                                     |
+| `OverlayBodyComponent`   | `et-overlay-body`, `[et-overlay-body]`   | Scrollable body; `dividers: 'static' \| 'dynamic' \| false` shows edge dividers while scrolled; `scrollToTop(behavior?)` |
+| `OverlayFooterDirective` | `[etOverlayFooter]`, `et-overlay-footer` | Pinned footer region                                                                                                     |
+| `OverlayTitleDirective`  | `[etOverlayTitle]`, `[et-overlay-title]` | Wires the overlay's `aria-labelledby` to the title element                                                               |
+| `OverlayCloseDirective`  | `[etOverlayClose]`                       | Click closes the nearest overlay; the bound value becomes the close result                                               |
 
 Spacing is tokenized, so an overlay can retune it per instance via `panelClass` without restyling the pieces:
 
@@ -287,7 +287,7 @@ A strategy controls the overlay's position, sizing, classes and animation. Pass 
 | `anchoredDialogOverlayStrategy`                          | Anchored popover next to `origin` (floating-ui), arrow by default |
 | `centeredOverlayStrategy`                                | Plain centered pane with size overrides                           |
 
-Every factory accepts a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …). Its `documentClass` and `bodyClass` land on elements every overlay shares, so they are reference counted: two open overlays asking for the same document class keep it until the last of them closes.
+The dialog, sheet, full-screen and anchored-dialog factories accept a partial `OverlayBreakpointConfig` (sizes, classes, `dragToDismiss`, `hasBackdrop`, `arrow`, …); `anchoredOverlayStrategy` and `centeredOverlayStrategy` take their own smaller option sets. Its `documentClass` and `bodyClass` land on elements every overlay shares, so they are reference counted: two open overlays asking for the same document class keep it until the last of them closes.
 
 Size a non-anchored overlay in percentages rather than viewport units (`80%`, not `80vh`). The pane fills a cell that spans the space an overlay may use, which is the viewport minus whatever [reserved it](/core/overlay-runtime#reserved-viewport-space) - a docked devtools panel, for example. `vh` and `vw` measure the whole window instead, so a pane sized that way can reach under such a surface. This is why the dialog and sheet defaults are percentages.
 
@@ -297,7 +297,7 @@ A strategy's default enter/leave animation ships with the strategy rather than w
 
 The consequence is for hand-rolled strategies: an overlay that sets a layout `containerClass` of its own (instead of composing a built-in factory) gets no default animation unless it points `stylesComponent` at a styles-only component of its own - a `@Component` with an empty template, `ViewEncapsulation.None` and the animation rules in its `styleUrl`.
 
-`anchoredDialogOverlayStrategy` enters and leaves with the same scale-and-fade the plain dialog uses, but around a `transform-origin` set to the origin element's center - so the pane grows out of its trigger without ever taking the trigger's dimensions. Scaling _to the origin's width and height_ reads as the trigger morphing into the pane, which is what the full-screen dialog does and an anchored dialog does not: it appears beside its origin and stays a separate surface. `applyTransformOrigin` (default `true`) is what computes and writes that origin point; set it to `false` to scale from the pane's own center instead.
+`anchoredDialogOverlayStrategy` enters and leaves with the same scale-and-fade the plain dialog uses, but around a `transform-origin` set to the origin element's center - so the pane grows out of its trigger without ever taking the trigger's dimensions. Scaling _to the origin's width and height_ reads as the trigger morphing into the pane, which is what the full-screen dialog does and an anchored dialog does not: it appears beside its origin and stays a separate surface. `applyTransformOrigin` (default `true` for this strategy) is what computes and writes that origin point; set it to `false` to scale from the pane's own center instead.
 
 ### Full-screen animation internals
 
@@ -319,7 +319,7 @@ A drag surface inside the sheet keeps its own gesture: the sheet skips any point
 
 On release the sheet either settles back or leaves, decided by `minDistanceToDismiss` (150px) and `minVelocityToDismiss` (150px/s) - either one is enough. Release velocity is measured over the last 100ms of the gesture rather than averaged across it, so a slow drag that ends in a flick dismisses, and a fast drag parked before release does not.
 
-Both the settle and the exit animate at the speed the pointer had when it let go, clamped to 100–350ms - the sheet is thrown, not handed to a fixed transition. Under `prefers-reduced-motion` the momentum handoff is skipped and the stylesheet's own durations apply.
+Both the settle and the exit animate at the speed the pointer had when it let go, clamped to 100–350ms - the sheet is thrown, not handed to a fixed transition. Under `prefers-reduced-motion` the exit skips the momentum handoff (the stylesheet's duration applies) and a settle uses the 100ms minimum.
 
 ### Snap points
 
@@ -502,7 +502,7 @@ export class MembersPageComponent {
 
 ### Sidebar layouts
 
-`provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet (with each nav target as an `<et-overlay-sidebar-page>`); below it, the sidebar collapses into a navigable route of its own.
+`provideSidebarOverlay(config?)` (requires the overlay router) adds a responsive sidebar: above `renderSidebarFrom` (default `'md'`, measured against the **pane** width) the `<et-overlay-sidebar>` renders inline next to the outlet; below it, the sidebar collapses into a route of its own (`sidebarPageRoute`, default `'/sidebar'`, rendered by `<et-overlay-sidebar-page>`). `renderSidebarFrom` also accepts a pixel number.
 
 The overlay content only has to place the two pieces - the layout is the library's:
 

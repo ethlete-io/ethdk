@@ -6,10 +6,10 @@ Out of the box the toolbar has undo/redo, the inline marks (bold, italic, underl
 
 ## Importing
 
-| Array                                     | Contains                             |
-| ----------------------------------------- | ------------------------------------ |
-| `RICH_TEXT_EDITOR_IMPORTS`                | `et-rich-text-editor`                |
-| `MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS` | `et-multi-language-rich-text-editor` |
+| Array                                     | Contains                                                                |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| `RICH_TEXT_EDITOR_IMPORTS`                | `et-rich-text-editor`, `[etRichTextEditor]`                             |
+| `MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS` | `et-multi-language-rich-text-editor`, `[etMultiLanguageRichTextEditor]` |
 
 To show a stored value read-only, import `RichTextViewerComponent` on its own - see
 [Displaying a stored value](#displaying-a-stored-value).
@@ -598,7 +598,7 @@ _Rich Text Editor/Triggers_ shows it live.
 | `label`                                   | `string \| null`          | `null` ¹     | Accessible name for the palette group.                        |
 | `focusEditorOnInsert`                     | `boolean`                 | `true`       | Focus the editor after inserting so the user can keep typing. |
 
-¹ `null` falls through to [`RICH_TEXT_EDITOR_LABELS.insertToken`](/components/localization) (`'Insert token'`).
+¹ `null` falls through to the editor's `insertToken` [label](/components/localization) (`'Insert token'` by default).
 
 ## Displaying a stored value
 

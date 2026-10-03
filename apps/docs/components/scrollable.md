@@ -95,8 +95,8 @@ still, and then a second ~200ms animation ran to correct it, sometimes by three 
 offset outright, and silently.** On a track whose snap positions are 306px apart,
 `container.scroll({ left: 950, behavior: 'instant' })` lands at 918 and reports 918; `container.scrollLeft = 1260`
 lands at 1224. Anything that means a specific offset therefore has to take snapping off the table while it
-writes one, which is what `ScrollableDirective.suspendSnap()` is for: it puts `snap-suspended` on the host,
-which the CSS gates `scroll-snap-type` on, and returns the function that hands snapping back. It is
+writes one, which the directive does internally: it puts
+`snap-suspended` on the host, which the CSS gates `scroll-snap-type` on, until the suspension is released. It is
 ref-counted, so two overlapping suspensions can't release each other's.
 
 Two things use it already. A **cursor drag** holds it for the whole drag, because it writes the offset on

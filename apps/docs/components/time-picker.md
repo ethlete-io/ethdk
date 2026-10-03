@@ -34,7 +34,7 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 
 [`mode`, `rangeValue`, `activeSide`, `rangeDays`, `startLabel`/`endLabel`, and the `timeSelect` and `rangeHandOff` outputs](#range-picker) belong to range mode.
 
-**The ring picks hours and minutes only.** A drag, a press or a key writes a whole time with seconds at 0, on the current day. Seconds are typed in the [time input](/components/date-time-inputs#time-input). The keyboard starts an empty ring at "now", snapped to `minuteStep` with seconds at 0, and re-read whenever focus enters the picker.
+**The ring picks hours and minutes only.** A drag, a press or a key writes a whole time with seconds at 0, on the day the value already has (today while empty). Seconds are typed in the [time input](/components/date-time-inputs#time-input). The keyboard starts an empty ring at "now", snapped to `minuteStep` with seconds at 0, and re-read whenever focus enters the picker.
 
 The format decides the labels, not the granularity: a 24-hour format labels the ring `00 03 06 … 21`; a 12-hour one (`h:mm a`, or a localized `p` in en-US) keeps the 24-hour ring and labels it `12 AM / 3 / 6 / 9 / 12 PM / …`, with a moon under 12 AM and a sun over 12 PM. Localized tokens work too - `p` resolves per locale (12-hour in en-US, 24-hour in de).
 
@@ -64,7 +64,7 @@ const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
 
 <StoryEmbed id="components-date-time-time-picker--opening-hours" height="420px" />
 
-- `timeFilter` receives the whole timestamp (the candidate time of day on the current day), so opening hours can differ per weekday.
+- `timeFilter` receives the whole timestamp (the candidate time of day on the day of the value being set, today while empty), so opening hours can differ per weekday.
 - Every step is evaluated, so a filter can carve out any set of times; runs of blocked steps merge into one span, also across midnight.
 - A value set from outside that falls out of bounds is still shown as the selection - bounds gate what a user can pick, they never rewrite the model.
 
@@ -105,7 +105,7 @@ Below the `md` breakpoint the date and time pickers open as a bottom sheet, wher
 | `[etTimePickerRingHandle]` | `side`  | `'start' \| 'end'` | The end of a range the handle sets. `'start'` by default and for single. |
 | `[etTimePickerRingHandle]` | `label` | `string \| null`   | Accessible name. Defaults to the `time` label, or the name of the end.   |
 
-The ring directive exposes `spans()` (the open and blocked spans as minutes of the day), `arc()` (the range's start-to-end arc), `empty()` and `draggingSide()`; a handle exposes `minute()`, `angle()` (degrees clockwise from midnight at the top), `active()` and `dragging()`, and mirrors them as `data-active`, `data-dragging`, `data-empty` and `data-side`. A handle outside a ring, or a ring outside a picker, throws in dev mode - see [error codes](#error-codes).
+The ring directive exposes `spans()` (the open and blocked spans as minutes of the day), `arc()` (the range's start-to-end arc), `empty()` and `draggingSide()`; a handle exposes `minute()`, `angle()` (degrees clockwise from midnight at the top), `active()` and `dragging()`, and mirrors them as `data-active`, `data-dragging`, `data-empty` and `data-side`. A handle outside a ring, or a ring outside a picker, throws - see [error codes](#error-codes).
 
 ## Range mode {#range-picker}
 
