@@ -42,7 +42,7 @@ class UntabbableButtonTestHost {
 }
 
 @Component({
-  template: `<button [loading]="true" [progress]="progress" etButton>Test</button>`,
+  template: `<button [progress]="progress" etButton loading>Test</button>`,
   imports: [ButtonDirective],
 })
 class ProgressButtonTestHost {
