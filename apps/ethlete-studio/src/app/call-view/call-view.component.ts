@@ -955,6 +955,9 @@ export class CallViewComponent {
 
     this.dismiss();
     this.fold.set(null);
+
+    if (call.slug !== this.slug()) this.forgetScroll();
+
     this.slug.set(call.slug);
     this.variantKey.set(variant);
     rememberView({ checkout: this.checkout(), slug: call.slug, variant });
@@ -1160,6 +1163,12 @@ export class CallViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  /** A scroll report names the variant key alone, which repeats across calls, and a new call draws in new frames. */
+  private forgetScroll() {
+    this.scrolledDown.set({});
+    this.lastScroll.clear();
   }
 
   /** Reads what a run wrote, and keeps the reader where they are, draft and all. */

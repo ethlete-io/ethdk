@@ -251,4 +251,25 @@ describe('CallViewComponent', () => {
     expect(row(fixture, ASKING.slug)).toBeUndefined();
     expect(drawings(fixture)).toEqual([]);
   });
+
+  it('shows the top bar of a call opened after the one before was scrolled down', async () => {
+    const fixture = await mount(ASKING.slug);
+
+    window.dispatchEvent(
+      new MessageEvent('message', { data: { type: 'design-explore:scroll', variant: 'b', y: 400 } }),
+    );
+    await settle(fixture);
+    expect(element(fixture).querySelector('.studio__float--top.studio__float--hidden')).not.toBeNull();
+
+    await openRow(fixture, RESOLVED.slug);
+    [...element(fixture).querySelectorAll<HTMLButtonElement>('.studio__fold-line')]
+      .find((line) => line.querySelector('.studio__round-key')?.textContent?.trim() === 'r1')
+      ?.click();
+    await settle(fixture);
+    tile(fixture, 'B')?.click();
+    await settle(fixture);
+    expect(shown(fixture)).toEqual([`${RESOLVED.slug} b`]);
+
+    expect(element(fixture).querySelector('.studio__float--top.studio__float--hidden')).toBeNull();
+  }, 20_000);
 });
