@@ -102,6 +102,12 @@ describe('normalizeEthleteParticipant', () => {
     expect(normalizeEthleteParticipant(player)?.name).toBe('Jane Doe');
   });
 
+  it('falls through to the account name when a player has a blank gamertag', () => {
+    const player = team({ id: 'p', name: 'Jane Doe', gamertag: '  ' });
+
+    expect(normalizeEthleteParticipant(player)?.name).toBe('Jane Doe');
+  });
+
   it('falls back to the club emblem when the participant has none', () => {
     const emblemless = team({ footballClubEmblem: { original: null, path: '/c.png' } });
 

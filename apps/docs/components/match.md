@@ -86,7 +86,7 @@ API variant's own extended or reduced model - no cast needed.
 The smaller mappers are exported too, so a partial shape can reuse one without the whole match adapter. Any
 other backend writes its own `(data) => NormalizedMatch` - no DI, no registration.
 
-Two mapping decisions worth knowing about: a player's `gamertag` beats the account `name` (it is what people
+Two mapping decisions worth knowing about: a player's non-blank `gamertag` beats the account `name` (it is what people
 know them by), and the five API statuses collapse to three - `started` is live, `finished`/`published` are both
 over, everything else (including `hidden`) reads as scheduled rather than throwing inside a list. `seed` and
 `subtitle` come out `null`: neither is in the list views, and both are easy to fill in after normalizing.

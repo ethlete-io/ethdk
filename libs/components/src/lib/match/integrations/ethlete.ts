@@ -78,7 +78,7 @@ export const normalizeEthleteParticipant = ((
 
   return {
     id: participant.id,
-    name: participant.gamertag ?? participant.name,
+    name: participant.gamertag?.trim() ? participant.gamertag : participant.name,
     code: participant.code,
     // Left to the consumer: the second line is usually the org or club behind the participant, which is
     // a relationship the list views don't carry - and a player's real name under their gamertag is not
