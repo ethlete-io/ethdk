@@ -826,16 +826,6 @@ export class CallViewComponent {
   /** A session this full pays the long-context rate on its next turn, so it has to hand over. */
   protected full = computed(() => fullness(this.session()) >= HANDOFF_AT);
 
-  /** What the run can reach through Studio's own tool server. A run without an open variant gets none. */
-  private tools = computed<AgentTools | null>(() => {
-    const design = this.design();
-    const variant = this.variant();
-
-    if (!design || !variant) return null;
-
-    return { call: this.slug(), variant: variant.key, port: design.port, callsRoot: design.callsRoot };
-  });
-
   private callDir = computed(() => {
     const root = this.design()?.callsRoot;
 
@@ -1076,7 +1066,7 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  protected send() {
+  protected send(tools = this.toolsFor(this.slug(), this.variant()?.key)) {
     const cli = this.cli();
     const cwd = this.checkout();
     const prompt = this.prompt();
@@ -1096,7 +1086,7 @@ export class CallViewComponent {
       prompt,
       cwd,
       resume: this.resume(),
-      tools: this.tools(),
+      tools,
     })
       .pipe(
         tap((event) => this.keepEvent(key, event)),
@@ -1172,7 +1162,16 @@ export class CallViewComponent {
 
     this.prompt.set(promptDraft({ call, variant, dir, made, message: this.message().trim() }, verb));
     this.dismiss();
-    this.send();
+    this.send(this.toolsFor(call.slug, variant.key));
+  }
+
+  /** What the run can reach through Studio's own tool server. A run without a variant gets none. */
+  private toolsFor(call: string, variant: string | undefined): AgentTools | null {
+    const design = this.design();
+
+    if (!design || !variant) return null;
+
+    return { call, variant, port: design.port, callsRoot: design.callsRoot };
   }
 
   /** Writes what one event says into the conversation the run started in. */

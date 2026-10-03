@@ -44,21 +44,29 @@ const ASKING = call('app/01-asking', [
 
 const PROJECT: Project = { callsRoot: `${CHECKOUT}/calls`, port: 4402, defaultCall: null, calls: [RESOLVED, ASKING] };
 
-const stubHost = () => {
+const CLAUDE = { id: 'claude', label: 'Claude', binary: 'claude', version: '1', suggestedModels: [] };
+
+const sent: { command: string; args: unknown }[] = [];
+
+const stubHost = (overrides: Record<string, () => unknown> = {}) => {
   const answers: Record<string, () => unknown> = {
     design_roots: () => ({ search: '', roots: [CHECKOUT] }),
     design_project: () => PROJECT,
     design_server_state: () => ({ port: 4402, listening: true, managed: false, log: [] }),
     design_check: () => null,
     agent_list: () => [],
+    ...overrides,
   };
   let next = 1;
 
   Object.defineProperty(window, '__TAURI_INTERNALS__', {
     configurable: true,
     value: {
-      invoke: (command: string) =>
-        command in answers ? Promise.resolve(answers[command]?.()) : new Promise(() => undefined),
+      invoke: (command: string, args: unknown) => {
+        sent.push({ command, args });
+
+        return command in answers ? Promise.resolve(answers[command]?.()) : new Promise(() => undefined);
+      },
       transformCallback: () => next++,
       unregisterCallback: () => undefined,
     },
@@ -101,6 +109,16 @@ const openRow = async (fixture: ComponentFixture<CallViewComponent>, slug: strin
   await settle(fixture);
 };
 
+const tile = (fixture: ComponentFixture<CallViewComponent>, name: string) =>
+  [...element(fixture).querySelectorAll<HTMLButtonElement>('.studio__tile')].find(
+    (button) => button.querySelector('.studio__tile-name')?.textContent?.trim() === name,
+  );
+
+const button = (fixture: ComponentFixture<CallViewComponent>, selector: string, text: string) =>
+  [...element(fixture).querySelectorAll<HTMLButtonElement>(selector)].find(
+    (found) => found.textContent?.trim() === text,
+  );
+
 const mount = async (slug: string) => {
   localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT, project: 'app', slug }));
 
@@ -114,6 +132,7 @@ const mount = async (slug: string) => {
 
 describe('CallViewComponent', () => {
   beforeEach(() => {
+    sent.length = 0;
     localStorage.clear();
     stubHost();
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
@@ -165,5 +184,24 @@ describe('CallViewComponent', () => {
     const fixture = await mount(RESOLVED.slug);
 
     expect(row(fixture, ASKING.slug)?.querySelector('.studio__count')?.textContent?.trim()).toBe('1 of 3 ruled');
+  });
+
+  it('runs a composed verb on the variant the card names, not the one on screen', async () => {
+    stubHost({ agent_list: () => [CLAUDE] });
+
+    const fixture = await mount(ASKING.slug);
+
+    button(fixture, '.studio__verb', 'Accept')?.click();
+    await settle(fixture);
+    tile(fixture, 'C')?.click();
+    await settle(fixture);
+    element(fixture).querySelector<HTMLButtonElement>('.studio__compose .studio__send')?.click();
+    await settle(fixture);
+
+    const run = sent.find((entry) => entry.command === 'agent_run')?.args as {
+      request: { tools: { variant: string } | null };
+    };
+
+    expect(run?.request.tools?.variant).toBe('b');
   });
 });
