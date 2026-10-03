@@ -164,4 +164,38 @@ describe('tableRowsFromQuery', () => {
 
     expect(source.error()).toBe('Boom');
   });
+
+  it('settles a failed next page into the error, not a stuck loading state, and recovers on the next page', () => {
+    silenceExpectedConsole('error');
+
+    const source = createSource();
+    respond({ items: page1, totalHits: 42, hasMore: true });
+
+    source.setPage(2);
+    respond({ error: true });
+
+    expect(source.loading()).toBe(false);
+    expect(source.error()).toBe('Boom');
+    expect(source.page()).toBe(2);
+    expect(source.total()).toBe(42);
+
+    source.setPage(3);
+    respond({ items: page2, totalHits: 42, hasMore: false });
+
+    expect(source.error()).toBeNull();
+    expect(source.rows()).toEqual(page2);
+    expect(source.hasMore()).toBe(false);
+  });
+
+  it('reports no rows for a first page that fails', () => {
+    silenceExpectedConsole('error');
+
+    const source = createSource();
+    respond({ error: true });
+
+    expect(source.rows()).toEqual([]);
+    expect(source.total()).toBeNull();
+    expect(source.hasMore()).toBe(false);
+    expect(source.loading()).toBe(false);
+  });
 });
