@@ -70,7 +70,7 @@ export const createFormChangesTracker = <T extends AbstractControl>(
   const currentFormValue = controlValueSignal(form);
 
   const hasChanges = computed(() => {
-    const formValue = currentFormValue();
+    const formValue = currentFormValue() as ReturnType<T['getRawValue']> | undefined;
 
     if (formValue === undefined) return false;
 
