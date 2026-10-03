@@ -52,6 +52,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     // Synchronous teardown for each currently-mounted overlay, run when the runtime's injector is
     // destroyed (app teardown). Registered on mount, removed once the overlay is destroyed normally.
     const mountedTeardowns = new Set<() => void>();
+    const armedReopenSwallows = new Set<() => void>();
     const focusRestoreChains = new WeakMap<OverlayRuntimeRef<object, unknown>, (HTMLElement | SVGElement)[]>();
 
     const resolveFocusRestoreChain = (focused: HTMLElement | SVGElement | null) => {
@@ -444,13 +445,25 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           const originElement = getOriginElement();
           if (originElement && originElement.contains(target)) {
             const swallowReopenClick = (clickEvent: MouseEvent) => {
+              disarmReopenSwallow();
+
               if (isElement(clickEvent.target) && originElement.contains(clickEvent.target)) {
                 clickEvent.stopImmediatePropagation();
                 clickEvent.preventDefault();
               }
             };
 
-            targetDocument.addEventListener('click', swallowReopenClick, { capture: true, once: true });
+            // A press that ends without a click (cancelled, dragged off) must not leave the swallow
+            // armed for the next, unrelated click on the origin.
+            const disarmReopenSwallow = () => {
+              targetDocument.removeEventListener('click', swallowReopenClick, true);
+              targetDocument.removeEventListener('pointerdown', disarmReopenSwallow, true);
+              armedReopenSwallows.delete(disarmReopenSwallow);
+            };
+
+            targetDocument.addEventListener('click', swallowReopenClick, true);
+            targetDocument.addEventListener('pointerdown', disarmReopenSwallow, true);
+            armedReopenSwallows.add(disarmReopenSwallow);
           }
         };
 
@@ -525,6 +538,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
     destroyRef.onDestroy(() => {
       [...mountedTeardowns].forEach((teardown) => teardown());
+      [...armedReopenSwallows].forEach((disarm) => disarm());
       [...rootElements.keys()].forEach((targetDocument) => maybeDestroyRootElements(targetDocument));
     });
 
