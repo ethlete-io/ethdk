@@ -10,12 +10,13 @@ import { MatchScoreComponent } from './match-score.component';
 const scoreCss = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'match-score.component.css'), 'utf8');
 
 @Component({
-  template: `<et-match-score [value]="value()" [subject]="subject()" animate />`,
+  template: `<et-match-score [value]="value()" [subject]="subject()" [animate]="animate()" />`,
   imports: [MatchScoreComponent],
 })
 class HostComponent {
   public value = signal('1');
   public subject = signal<unknown>('match-a');
+  public animate = signal(true);
 }
 
 const create = () => {
@@ -82,6 +83,18 @@ describe('MatchScoreComponent', () => {
     driver.change('5');
 
     expect(driver.digits()).toEqual([['5', 'static']]);
+    expect(driver.flashCount()).toBe(0);
+  });
+
+  it('does not replay a change made while animation was off once it turns on', () => {
+    const driver = create();
+    driver.fixture.componentInstance.animate.set(false);
+    driver.change('2');
+
+    driver.fixture.componentInstance.animate.set(true);
+    driver.fixture.detectChanges();
+
+    expect(driver.digits()).toEqual([['2', 'static']]);
     expect(driver.flashCount()).toBe(0);
   });
 

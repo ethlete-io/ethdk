@@ -1,4 +1,13 @@
-import { booleanAttribute, Component, computed, input, linkedSignal, signal, ViewEncapsulation } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  signal,
+  untracked,
+  ViewEncapsulation,
+} from '@angular/core';
 
 /**
  * One drawn value of a match, which rolls when it changes: the old value leaves upward as the new one
@@ -42,13 +51,17 @@ export class MatchScoreComponent {
 
   /**
    * The value's history as one number: it goes up on every change, which is what makes `@for` replace the
-   * element and the CSS animation run again. `previous` is what the outgoing element draws.
+   * element and the CSS animation run again. `previous` is what the outgoing element draws, and stays
+   * `null` for a change made while `animate` was off, so turning it on later does not replay that change.
    */
   private revision = linkedSignal<{ value: string; subject: unknown }, { key: number; previous: string | null }>({
     source: () => ({ value: this.value(), subject: this.subject() }),
     computation: (source, previous) => ({
       key: (previous?.value.key ?? 0) + 1,
-      previous: previous && previous.source.subject === source.subject ? previous.source.value : null,
+      previous:
+        previous && previous.source.subject === source.subject && untracked(this.animate)
+          ? previous.source.value
+          : null,
     }),
   });
 
