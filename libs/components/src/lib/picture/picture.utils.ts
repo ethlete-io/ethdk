@@ -1,3 +1,4 @@
+import { numberAttribute } from '@angular/core';
 import { inferMimeType } from '@ethlete/core';
 import { PictureConfig, PictureSource } from './picture.types';
 
@@ -80,4 +81,10 @@ export const withPictureBaseUrl = (source: PictureSource, config: PictureConfig 
     .join(', ');
 
   return { ...source, srcset };
+};
+
+export const toPictureDimension = (value: unknown): number | null => {
+  const dimension = numberAttribute(value);
+
+  return Number.isNaN(dimension) ? null : dimension;
 };

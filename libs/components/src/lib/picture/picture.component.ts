@@ -9,7 +9,6 @@ import {
   effect,
   input,
   linkedSignal,
-  numberAttribute,
   output,
   viewChild,
   ElementRef,
@@ -21,6 +20,7 @@ import {
   extractFirstImageUrl,
   normalizePictureSizes,
   normalizePictureSource,
+  toPictureDimension,
   withPictureBaseUrl,
 } from './picture.utils';
 
@@ -94,10 +94,10 @@ export class PictureComponent {
    * The image's intrinsic width in px, set as the `width` attribute. Together with `height` this reserves the
    * space before the image arrives, which is what stops the page shifting.
    */
-  public width = input(null, { transform: numberAttribute });
+  public width = input<number | null, unknown>(null, { transform: toPictureDimension });
 
   /** The image's intrinsic height in px, set as the `height` attribute. */
-  public height = input(null, { transform: numberAttribute });
+  public height = input<number | null, unknown>(null, { transform: toPictureDimension });
 
   /**
    * The ratio to hold the image's box at, e.g. `16 / 9`. The alternative to `width`/`height` for a responsive

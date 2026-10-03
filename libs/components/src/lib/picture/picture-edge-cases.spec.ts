@@ -64,6 +64,42 @@ describe('PictureComponent with missing sources', () => {
   });
 });
 
+describe('PictureComponent with unset dimensions', () => {
+  it('treats a width and height bound to null as unset', () => {
+    TestBed.configureTestingModule({ imports: [PictureComponent] });
+
+    const fixture = TestBed.createComponent(PictureComponent);
+    fixture.componentRef.setInput('alt', '');
+    fixture.componentRef.setInput('defaultSrc', 'hero.jpg');
+    fixture.componentRef.setInput('aspectRatio', '16 / 9');
+    fixture.componentRef.setInput('width', null);
+    fixture.componentRef.setInput('height', null);
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const img = host.querySelector('img');
+
+    expect(fixture.componentInstance.width()).toBeNull();
+    expect(fixture.componentInstance.height()).toBeNull();
+    expect(img?.hasAttribute('width')).toBe(false);
+    expect(img?.hasAttribute('height')).toBe(false);
+    expect(host.getAttribute('data-aspect-ratio')).toBe('16 / 9');
+  });
+
+  it('treats a width that is not a number as unset', () => {
+    TestBed.configureTestingModule({ imports: [PictureComponent] });
+
+    const fixture = TestBed.createComponent(PictureComponent);
+    fixture.componentRef.setInput('alt', '');
+    fixture.componentRef.setInput('defaultSrc', 'hero.jpg');
+    fixture.componentRef.setInput('width', 'auto');
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.width()).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('img')?.hasAttribute('width')).toBe(false);
+  });
+});
+
 describe('picture utils with missing sources', () => {
   it('extracts nothing from an empty or whitespace srcset', () => {
     expect(extractFirstImageUrl('')).toBeNull();
