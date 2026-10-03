@@ -101,4 +101,13 @@ describe('Contentful asset components', () => {
 
     expect((fixture.nativeElement.querySelector(selector) as HTMLElement).textContent?.trim()).toBe('report.pdf');
   });
+  it('leaves the video source type off when the gql asset has no content type', () => {
+    TestBed.configureTestingModule({ imports: [ContentfulVideoComponent] });
+
+    const fixture = createAssetFixture(ContentfulVideoComponent, gqlAsset({ contentType: null }));
+    const source = fixture.nativeElement.querySelector('source') as HTMLSourceElement;
+
+    expect(source.src).toContain('image.png');
+    expect(source.hasAttribute('type')).toBe(false);
+  });
 });

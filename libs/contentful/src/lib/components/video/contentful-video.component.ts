@@ -9,7 +9,7 @@ import { ContentfulRestAsset } from '../../types';
   template: `
     @if (data(); as data) {
       <video [ngClass]="videoClass()" controls>
-        <source [src]="data.url" [type]="data.contentType" />
+        <source [src]="data.url" [attr.type]="data.contentType || null" />
       </video>
     }
   `,
