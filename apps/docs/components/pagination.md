@@ -204,24 +204,24 @@ pageTitle = (page: number) => (page > 1 ? `Results – Page ${page}` : null);
 
 ## Inputs
 
-| Input              | Default     | Description                                                                                                         |
-| ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------- |
-| `page`             | `1`         | The current page (1-based). Two-way bindable.                                                                       |
-| `totalPages`       | `1`         | Total number of pages. `undefined`, `null` or `NaN` renders no pages and leaves `page` alone; a fraction rounds up. |
-| `siblingCount`     | `1`         | Pages shown on each side of the current page.                                                                       |
-| `boundaryCount`    | `1`         | Pages shown at each edge before an ellipsis.                                                                        |
-| `hideFirstLast`    | `false`     | Omit the first/last jump controls.                                                                                  |
-| `hidePreviousNext` | `false`     | Omit the previous/next controls.                                                                                    |
-| `responsive`       | `true`      | Auto-fit the page window to the available width (see below).                                                        |
-| `compact`          | `null`      | Force the compact prev/next pager on/off; `null` leaves it to `responsive` width.                                   |
-| `size`             | `'md'`      | `'sm'` shrinks the items for tight spots like a mobile table footer. Typed `PaginationSize` (`PAGINATION_SIZES`).   |
-| `renderAs`         | `'buttons'` | `'buttons'` (client state) or `'links'` (crawlable `<a href>`, needs `urlForPage`).                                 |
-| `urlForPage`       | `null`      | `(page) => string`; maps a page to its URL for links mode.                                                          |
-| `totalItems`       | `null`      | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.                                            |
-| `pageSize`         | `null`      | Items per page; used to compute the readout range.                                                                  |
-| `showJumpTo`       | `false`     | Show a jump-to-page number field.                                                                                   |
-| `labels`           | `null`      | Per-instance string overrides, merged over the provided set (see Localization).                                     |
-| `ariaLabel`        | `null`      | Landmark label; `null` uses the label set's `navigation` string.                                                    |
+| Input              | Default     | Description                                                                                                          |
+| ------------------ | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| `page`             | `1`         | The current page (1-based). Two-way bindable. A fraction rounds down; `NaN` reads as page 1.                         |
+| `totalPages`       | `1`         | Total number of pages. `undefined`, `null` or `NaN` renders no pages and leaves `page` alone; a fraction rounds up.  |
+| `siblingCount`     | `1`         | Pages shown on each side of the current page. A fraction rounds down, a negative reads as `0`, `NaN` as the default. |
+| `boundaryCount`    | `1`         | Pages shown at each edge before an ellipsis. Rounded like `siblingCount`.                                            |
+| `hideFirstLast`    | `false`     | Omit the first/last jump controls.                                                                                   |
+| `hidePreviousNext` | `false`     | Omit the previous/next controls.                                                                                     |
+| `responsive`       | `true`      | Auto-fit the page window to the available width (see below).                                                         |
+| `compact`          | `null`      | Force the compact prev/next pager on/off; `null` leaves it to `responsive` width.                                    |
+| `size`             | `'md'`      | `'sm'` shrinks the items for tight spots like a mobile table footer. Typed `PaginationSize` (`PAGINATION_SIZES`).    |
+| `renderAs`         | `'buttons'` | `'buttons'` (client state) or `'links'` (crawlable `<a href>`, needs `urlForPage`).                                  |
+| `urlForPage`       | `null`      | `(page) => string`; maps a page to its URL for links mode.                                                           |
+| `totalItems`       | `null`      | Total item count; with `pageSize`, shows the "Showing X–Y of Z" readout.                                             |
+| `pageSize`         | `null`      | Items per page; used to compute the readout range.                                                                   |
+| `showJumpTo`       | `false`     | Show a jump-to-page number field.                                                                                    |
+| `labels`           | `null`      | Per-instance string overrides, merged over the provided set (see Localization).                                      |
+| `ariaLabel`        | `null`      | Landmark label; `null` uses the label set's `navigation` string.                                                     |
 
 ## Responsive window
 
