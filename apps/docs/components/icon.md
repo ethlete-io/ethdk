@@ -22,7 +22,7 @@ import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/c
 ## How it works
 
 - An icon is an `IconDefinition` - `{ name, variant?, data }` with an inline SVG string. The SDK ships a small built-in `et-*` set (`PLUS_ICON`, `CHEVRON_ICON`, `TIMES_ICON`, `ARROW_RIGHT_ICON`, `PENCIL_ICON`, …); your own icons are just more constants.
-- `provideIcons(...icons)` registers them for the injector scope it's provided in. Registering the same name+variant twice throws in dev mode.
+- `provideIcons(...icons)` registers them for the injector scope it's provided in. Registering the same name+variant twice throws (`ET1806`).
 - `[etIcon]` renders the SVG via `innerHTML`, adds `aria-hidden="true"` (unless given a [`label`](#accessibility)) and the classes `et-icon et-icon--<name>`. The markup is not sanitised, so `data` must be trusted, build-time SVG - never a string from a CMS, an API or user input.
 - `.et-icon` centres the SVG with `display: flex`, in the `components` cascade layer, so a class such as `inline-flex` or `hidden` overrides it.
 - `variant` selects between registered variants of the same name. When unset, a variant-less registration wins, falling back to the `'solid'` variant. With a variant set, the host also gets an `et-icon--<name>--<variant>` class.

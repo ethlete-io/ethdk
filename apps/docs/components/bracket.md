@@ -182,7 +182,7 @@ Two rules a layout of your own has to keep, because the animation depends on the
 - **A connector's path has to keep its shape.** A browser interpolates the CSS `d` property only
   between two paths with the same commands in the same order, so emit one fixed command sequence per
   connector and let a degenerate case collapse - a curve with a radius of nothing rather than a
-  straight `M ... H ...`. The shipped `curvePath` scales its bends down to nothing between two cards
+  straight `M ... H ...`. The shipped layouts scale a connector's bends down to nothing between two cards
   on the same row for exactly this reason.
 
 The participant short ids the [journey highlight](#journey-highlight) matches on ride in `cssClass`,
@@ -362,7 +362,7 @@ wants, where the header names the panel rather than labelling a column it starts
 
 ## Default cards
 
-Four cards ship with the bracket, and all three match-bearing ones are built on
+Four cards ship with the bracket, and the two match-bearing ones (match and final) are built on
 [`et-match-card`](/components/match). They are **opt-in**: spread `BRACKET_DEFAULT_CARDS` into
 `provideBracketConfig`, or name single ones (`BracketDefaultRoundHeaderComponent`, …) next to cards of
 your own. An app that draws only its own cards leaves them out and bundles none of them - the default

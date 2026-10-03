@@ -79,6 +79,9 @@ On `<et-carousel>`:
 | `slideAlign`       | `'start'` | Where the current slide rests: `'start'` or `'center'` - see [Alignment](#alignment).         |
 | `autoplay`         | `false`   | Advance on its own. Renders the required pause control.                                       |
 | `autoplayTime`     | `5000`    | Milliseconds per slide.                                                                       |
+| `pauseOnHover`     | `true`    | Pause while a mouse or pen is over the carousel.                                              |
+| `pauseOnFocus`     | `true`    | Pause while focus is inside the carousel.                                                     |
+| `pauseOnOffScreen` | `true`    | Pause while the carousel is scrolled out of view or the tab is hidden.                        |
 | `playOnInit`       | `true`    | Whether autoplay starts by itself. Off waits for the play control (or `start()`).             |
 | `transition`       | `'none'`  | `'dim'`, `'wipe'` or `'custom'` - see [Transitions](#transitions).                            |
 | `transitionDriver` | `'auto'`  | What drives the transition - see [Two drivers](#two-drivers).                                 |
@@ -415,7 +418,7 @@ progress ring take the primary accent, inactive dots a neutral tint. Geometry is
 | Property                       | Default | Applies to                                                                |
 | ------------------------------ | ------- | ------------------------------------------------------------------------- |
 | `--et-carousel-wipe-shift`     | `125px` | how far the two slides are pushed against each other; `0` for a pure wipe |
-| `--et-carousel-wipe-dim`       | `0.5`   | how dark a slide goes as it leaves                                        |
+| `--et-carousel-wipe-dim`       | `0.5`   | the brightness a leaving slide drops to; `1` for no dip                   |
 | `--et-carousel-wipe-dim-color` | `#000`  | what it darkens _with_ - the veil's colour                                |
 
 `--et-carousel-slide-progress` (`<number>`, inherits) is an input to read rather than a knob to set, and only

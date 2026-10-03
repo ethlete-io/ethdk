@@ -131,18 +131,18 @@ For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]`
 
 Inputs on `[etMenu]`:
 
-| Input                | Default        | Notes                                                                                                                                  |
-| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` (`left-start` in RTL) for submenus/context menus                              |
-| `fallbackPlacements` | -              | floating-ui fallbacks. Setting it opts the menu out of the placement behavior below                                                    |
-| `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                       |
-| `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                    |
-| `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners |
-| `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                           |
-| `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead - better for a long menu, where wrapping reads as a jump somewhere else.  |
-| `autoFocus`          | `true`         | Focus the search field/first item on open, however the menu was opened - except a hover-opened submenu, which never takes focus        |
-| `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                              |
-| `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                      |
+| Input                | Default        | Notes                                                                                                                                                                                                    |
+| -------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `placement`          | `'auto'`       | Resolves to `bottom-start` for root menus, `right-start` (`left-start` in RTL) for submenus/context menus                                                                                                |
+| `fallbackPlacements` | -              | floating-ui fallbacks. Setting it opts the menu out of the placement behavior below                                                                                                                      |
+| `offset`             | `'auto'`       | Resolves to `10` with the arrow, smaller without                                                                                                                                                         |
+| `viewportPadding`    | `8`            | Clearance against the viewport edge                                                                                                                                                                      |
+| `arrow`              | `true`         | Floating arrow pointing at the trigger (root, trigger-anchored menus only); `arrowPadding` (default `14`) keeps it off rounded corners                                                                   |
+| `hoverOpen`          | `true`         | Submenu hover-open with `hoverOpenDelay` (120ms) / `hoverCloseDelay` (300ms)                                                                                                                             |
+| `loop`               | `true`         | Wrap the arrow keys at the ends. Off makes them stop instead - better for a long menu, where wrapping reads as a jump somewhere else. With a search field the ends hand focus back to the field instead. |
+| `autoFocus`          | `true`         | Focus the search field/first item on open, however the menu was opened - except a hover-opened submenu, which never takes focus                                                                          |
+| `open`               | `model(false)` | Two-way open state; methods `show()`, `hide()`, `toggle()`, `closeAll()`, `openAt(point)`                                                                                                                |
+| `disabled`           | `false`        | Ignores open requests (trigger clicks, hover, `openAt`) while set                                                                                                                                        |
 
 `show()`, `toggle()` and `openAt(point)` take the same options object: `focus` overrides `autoFocus` for that one open (`false` to leave focus alone, `'last'` to land on the last item), and `source` records where the request came from without affecting focus.
 

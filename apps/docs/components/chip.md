@@ -1,6 +1,6 @@
 # Chip
 
-`et-chip` is a compact pill for a selected value, tag or filter - with an optional built-in remove button. It is usable anywhere on its own, and it is the building block the upcoming select (multi-select trigger) and tag input compose. Import `CHIP_IMPORTS`.
+`et-chip` is a compact pill for a selected value, tag or filter - with an optional built-in remove button. It is usable anywhere on its own, and it is the building block the select (multi-select trigger) and tag input compose. Import `CHIP_IMPORTS`.
 
 ```ts
 import { CHIP_IMPORTS } from '@ethlete/components';
@@ -51,7 +51,7 @@ Selectable chips - filter bars, tag pickers - are a **composition**, not a dedic
 
 <StoryEmbed id="components-data-display-chip--filter-chips" height="320px" />
 
-Everything the [selection lists](/components/choice-inputs#selection-lists) document applies: value is an array with `multiple` and a single value otherwise, arrow keys rove across chips (selecting as they move in single mode), <kbd>Space</kbd>/<kbd>Enter</kbd> toggles, `readonly` keeps the chips focusable but blocks changes. Don't combine `removable` with `etSelectionOption` on the same chip - a filter chip toggles, it doesn't remove.
+Everything the [selection lists](/components/choice-inputs#selection-lists) document applies: value is an array with `multiple` and a single value otherwise, arrow keys rove across chips (selecting as they move in single mode), <kbd>Space</kbd> toggles (<kbd>Enter</kbd> does not, per the ARIA radio and checkbox patterns), `readonly` keeps the chips focusable but blocks changes. Don't combine `removable` with `etSelectionOption` on the same chip - a filter chip toggles, it doesn't remove.
 
 ## Headless usage
 

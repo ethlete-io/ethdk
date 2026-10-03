@@ -566,7 +566,7 @@ given, so both measure the colors at full opacity.
 
 The three range controls never reorder or clamp their two ends, and their `minDate`/`maxDate`
 (`minTime`/`maxTime`) only shape the picker, so a typed, pasted or patched value can be out of order
-or out of bounds. These four validators close that gap on the range path itself, so the error shows
+or out of bounds. These five validators close that gap on the range path itself, so the error shows
 in the control's single error area:
 
 ```ts

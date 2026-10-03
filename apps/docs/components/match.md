@@ -131,6 +131,8 @@ The card measures **itself** with a container query, and the same DOM lands on o
 
 There is nothing to configure and no breakpoint to keep in sync with a layout.
 
+The card never gets narrower than `--et-match-card-min-inline-size` (180px), so the minimal layout only appears where that floor is lowered - the bracket's own cells set it to `0`.
+
 The dense row is deliberately stripped: a bracket cell's round is named by the column it sits in, and its
 kick-off by the list around it, so repeating either inside every cell is noise. A **live badge is the one
 exception** - it is the reason someone is looking at the card. For the densest cell there is, `hideNames`
@@ -140,12 +142,12 @@ drops the names too, leaving emblems and results.
 
 `size` pins one when you want the same card everywhere regardless of width:
 
-| `size`       | Renders                                                                  |
-| ------------ | ------------------------------------------------------------------------ |
-| `'auto'`     | Container query decides (the default)                                    |
-| `'compact'`  | Always the dense row, **and** participant names become their short codes |
-| `'expanded'` | Always the featured card                                                 |
-| `'wide'`     | Always the wide row                                                      |
+| `size`       | Renders                                                                                 |
+| ------------ | --------------------------------------------------------------------------------------- |
+| `'auto'`     | Container query decides (the default)                                                   |
+| `'compact'`  | The dense row (minimal below 150px), **and** participant names become their short codes |
+| `'expanded'` | Always the featured card                                                                |
+| `'wide'`     | Always the wide row                                                                     |
 
 ::: tip Only an explicit `compact` swaps names for codes
 Swapping "Neon Esports" for "NEO" is a text change, and a container query can only change styles. So `auto`

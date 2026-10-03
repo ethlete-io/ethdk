@@ -9,8 +9,9 @@ Import `BRACKET_IMPORTS` for the bracket and `BRACKET_PICK_CARD_IMPORTS` for the
 [layout](/components/bracket#layouts) and a round header card with `provideBracketConfig()`, the same
 as for a results bracket - `roundHeaderComponent: BracketDefaultRoundHeaderComponent` when the pick
 cell is the only card of your own. `resolveBracketSlot`,
-`describeBracketSlot`, `createBracket` and `migrateBracketPicks` are pure functions, and they also
-ship from the framework-free `@ethlete/bracket` package, which has no Angular peer dependency.
+`describeBracketSlot`, `createBracket` and `migrateBracketPicks` are pure functions. All but
+`describeBracketSlot` also ship from the framework-free `@ethlete/bracket` package, which has no Angular
+peer dependency.
 
 A prediction bracket is a normal `<et-bracket>` with a [card of your
 own](/components/bracket#custom-cards) that wraps the pick card. The wrapper resolves the two sides
@@ -143,7 +144,7 @@ and a row that only words its slot come out the same height.
 | Input      | What it means                                                      | What the card does                                                                               |
 | ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `locked`   | The deadline for this match passed.                                | Picks stay visible and stop changing; the chosen mark reads settled, not accent.                 |
-| `disabled` | This viewer may not pick here at all - not signed in, not entered. | Nothing is a control, and no marks are drawn.                                                    |
+| `disabled` | This viewer may not pick here at all - not signed in, not entered. | Nothing is a control; only the chosen side keeps its mark.                                       |
 | `readonly` | A results view, not a second way to pick.                          | Nothing is a control, no marks; once the match is decided the side it decided against is dimmed. |
 
 They are independent inputs, not one enum: an app can lock a match it also renders read-only.

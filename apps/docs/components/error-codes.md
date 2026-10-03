@@ -260,7 +260,7 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 | `ET1805` | The icon uses a hardcoded `fill`/`stroke` color.                        | Use `currentColor` so the icon follows the text color, or set `[allowHardcodedColor]="true"`. |
 | `ET1806` | Two icons were registered with the same name/variant combination.       | Make every name/variant combination unique.                                                   |
 
-`ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` are raised in production too. `ET1800` throws while the icon is created; the others go to the `ErrorHandler`, and the icon renders empty.
+`ET1802`–`ET1805` are dev-mode-only SVG validations; `ET1800`/`ET1801` are raised in production too. `ET1800` throws while the icon is created, and `ET1806` throws in every build while the icon providers are resolved; `ET1801`–`ET1805` go to the `ErrorHandler`, and the icon renders empty.
 
 ## Grid (ET19xx)
 

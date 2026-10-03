@@ -53,6 +53,7 @@ keeps its slot until the name arrives.
 | ---------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `collapse` | `true`  | Move the middle crumbs into the overflow control when the trail doesn't fit. Off leaves your CSS in charge. Needs `etBreadcrumbCollapse`. |
 | `labels`   | `null`  | Per-instance overrides for the accessible labels, merged over the provided `BREADCRUMB_LABELS`.                                           |
+| `crumbs`   | `null`  | A trail supplied from outside instead of the declared `etBreadcrumbItemTemplate`s - what `et-breadcrumb-outlet` binds.                    |
 
 `etBreadcrumbItemTemplate` takes `loading` (default `false`) plus `name`/`url` for
 [structured data](#seo-structured-data); `etBreadcrumbSegment` takes `order` (default `null`);

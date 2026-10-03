@@ -143,14 +143,13 @@ client. `isSettled()` is client-agnostic - gate the trigger on it whatever fetch
 | `columnWidth` | `number \| BreakpointMap<number>` | `250`   | Minimum column width in px. The count is how many fit; the width stretches to fill. |
 | `gap`         | `number \| BreakpointMap<number>` | `16`    | Space between columns and between stacked items, in px.                             |
 
-| Member         | Type                             | Purpose                                                                                         |
-| -------------- | -------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `isSettled()`  | `Signal<boolean>`                | Every item has reported its size at the current column width. Gate fetches on this.             |
-| `isResizing()` | `Signal<boolean>`                | The container changed width in the last 150ms. Items snap rather than animate while it is true. |
-| `columns()`    | `Signal<MasonryColumns>`         | The grid in effect: `{ count, inlineSize }`. `count: 0` until the container has been measured.  |
-| `blockSize()`  | `Signal<number>`                 | The container's height, i.e. the tallest column.                                                |
-| `items()`      | `Signal<MasonryItemDirective[]>` | The items in DOM order, which is the order they are packed in.                                  |
-| `repack()`     | `() => void`                     | Rebalance the columns from scratch.                                                             |
+| Member         | Type                     | Purpose                                                                                         |
+| -------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `isSettled()`  | `Signal<boolean>`        | Every item has reported its size at the current column width. Gate fetches on this.             |
+| `isResizing()` | `Signal<boolean>`        | The container changed width in the last 150ms. Items snap rather than animate while it is true. |
+| `columns()`    | `Signal<MasonryColumns>` | The grid in effect: `{ count, inlineSize }`. `count: 0` until the container has been measured.  |
+| `blockSize()`  | `Signal<number>`         | The container's height, i.e. the tallest column.                                                |
+| `repack()`     | `() => void`             | Rebalance the columns from scratch.                                                             |
 
 The host also carries `data-settled` and `data-resizing` attributes mirroring those signals, for styling.
 

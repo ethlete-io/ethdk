@@ -108,7 +108,7 @@ The [range validators](/components/forms#range-validators) read the token of the
 check. Read the value in effect with `injectDateFormat()`, `injectDateTimeFormat()`,
 `injectTimeFormat()` and `injectDateLocale()`; `DATE_LOCALE` is the token behind the locale.
 `DATE_LOCALE` does not follow `provideLocale()`: an app that sets `provideLocale('de')` also needs
-`provideDateLocale(de)`, and dev mode warns once when it is missing.
+`provideDateLocale(de)`, and dev mode warns once when it is missing for a non-English locale.
 
 Every validator takes a `valueFormat` (defaulting to the token of its control) and a `message`:
 
