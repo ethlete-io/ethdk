@@ -27,4 +27,16 @@ describe('parseCommandArgs', () => {
   it('reports a value flag without a value', () => {
     expect(parseCommandArgs('sync', ['--root']).problems).toEqual(['--root needs a value.']);
   });
+
+  it('reads --help and -h for every command', () => {
+    expect(parseCommandArgs('init', ['--help'])).toMatchObject({ help: true, problems: [] });
+    expect(parseCommandArgs('migrate', ['-h'])).toMatchObject({ help: true, problems: [] });
+  });
+
+  it('rejects --targets for init', () => {
+    expect(parseCommandArgs('init', ['--targets', 'claude']).problems).toEqual([
+      'Unknown flag "--targets" for init.',
+      'Unexpected argument "claude".',
+    ]);
+  });
 });

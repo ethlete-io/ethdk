@@ -134,6 +134,14 @@ describe('config file checks', () => {
     expect(() => loadConfig({ root })).toThrow(new RegExp(`^${CONFIG_FILE_NAME}: `));
   });
 
+  it('names the config file when it is not a JSON object', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), '["claude"]', 'utf8');
+
+    expect(() => loadConfig({ root })).toThrow(`${CONFIG_FILE_NAME}: expected a JSON object.`);
+  });
+
   it('warns about an unknown top-level key', () => {
     expect(planWithConfig({ exlude: ['x'] }).warnings).toEqual([
       expect.stringContaining(`${CONFIG_FILE_NAME} has unknown key(s): exlude`),

@@ -52,6 +52,17 @@ describe('sync and check report', () => {
     }
   });
 
+  it('names the repo package runner in the out-of-sync hint', () => {
+    const root = consumerRepo({ targets: ['codex'] });
+
+    writeFileSync(join(root, 'yarn.lock'), '', 'utf8');
+
+    const output = captureOutput();
+
+    expect(check({ root })).toBe(1);
+    expect(output).toContain('\nRun `yarn ethlete-agents sync` and commit the result.');
+  });
+
   it('summarises out-of-profile content instead of listing it', () => {
     const root = consumerRepo({ targets: ['codex'] });
     const output = captureOutput();
