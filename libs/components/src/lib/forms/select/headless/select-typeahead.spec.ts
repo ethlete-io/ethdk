@@ -83,3 +83,67 @@ describe('SelectDirective typeahead', () => {
     expect(driver.host.value()).toBe('berlin');
   });
 });
+
+@Component({
+  template: `
+    <et-select [value]="value()" (valueChange)="value.set($event)" placeholder="Pick a city">
+      <et-select-option value="berlin">Berlin</et-select-option>
+      <et-select-option [disabled]="true" value="bern">Bern</et-select-option>
+      <et-select-option value="boston">Boston</et-select-option>
+      <et-select-option [disabled]="true" value="cairo">Cairo</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class DisabledTypeaheadTestHost {
+  value = signal<unknown>(null);
+}
+
+describe('SelectDirective typeahead with disabled options', () => {
+  let driver: SelectDriver<DisabledTypeaheadTestHost>;
+
+  beforeEach(() => {
+    driver = mountSelect(DisabledTypeaheadTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('skips disabled options while cycling the closed value', () => {
+    driver.press('b');
+    expect(driver.host.value()).toBe('berlin');
+
+    driver.press('b');
+    expect(driver.host.value()).toBe('boston');
+
+    driver.press('b');
+    expect(driver.host.value()).toBe('berlin');
+  });
+
+  it('never commits a disabled option that is the only match', () => {
+    driver.press('c');
+
+    expect(driver.host.value()).toBeNull();
+    expect(driver.select.open()).toBe(false);
+  });
+
+  it('matches regardless of the case of the typed key', () => {
+    driver.press('B');
+    driver.press('O');
+
+    expect(driver.host.value()).toBe('boston');
+  });
+
+  it('skips disabled options with the arrow keys', async () => {
+    await driver.open();
+
+    expect(driver.activeLabel()).toBe('Berlin');
+
+    driver.press('ArrowDown');
+    expect(driver.activeLabel()).toBe('Boston');
+
+    driver.press('ArrowDown');
+    expect(driver.activeLabel()).toBe('Boston');
+  });
+});

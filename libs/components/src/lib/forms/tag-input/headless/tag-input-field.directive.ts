@@ -147,8 +147,10 @@ export class TagInputFieldDirective {
     }
 
     event.preventDefault();
-    this.writeField('');
-    tagInput.addAll(parts);
+
+    const rejected = parts.filter((part) => part.trim() && !tagInput.add(part));
+
+    this.writeField(rejected.map((part) => part.trim()).join(' '));
   }
 
   protected handleFocus() {

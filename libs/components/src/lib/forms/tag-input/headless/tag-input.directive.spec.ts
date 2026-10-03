@@ -116,6 +116,27 @@ describe('TagInputDirective', () => {
     expect(driver.host.value()).toEqual(['one', 'two']);
   });
 
+  it('keeps the pasted text a full field rejected instead of dropping it', () => {
+    driver.host.maxTags.set(2);
+    driver.tick();
+
+    driver.paste('one,two,three');
+
+    expect(driver.host.value()).toEqual(['one', 'two']);
+    expect(driver.fieldValue()).toBe('three');
+    expect(driver.field().readOnly).toBe(false);
+  });
+
+  it('keeps a pasted duplicate in the field like a typed one', () => {
+    driver.host.value.set(['one']);
+    driver.tick();
+
+    driver.paste('one,two');
+
+    expect(driver.host.value()).toEqual(['one', 'two']);
+    expect(driver.fieldValue()).toBe('one');
+  });
+
   it('keeps the chips out of the tab order', () => {
     driver.host.value.set(['one']);
     driver.tick();

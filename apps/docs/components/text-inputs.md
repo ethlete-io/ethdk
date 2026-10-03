@@ -481,7 +481,8 @@ removes the last tag - and writes nothing at all when there is no tag left to
 remove, so a no-op keystroke never dirties the bound field. A paste splits on
 separator characters and newlines, spliced into the pending text at the caret
 the way the browser would insert it: field text `pre` plus a pasted `one,two`
-commits `preone` and `two`. Once `maxTags` is reached the field goes read-only,
+commits `preone` and `two`; the pieces it refuses (duplicates, or those past
+`maxTags`) stay in the field, as typed ones do. Once `maxTags` is reached the field goes read-only,
 but never while it still holds text - text a full input refused stays editable
 instead of stranding the keyboard. The chips are pointer-removable (`×`, out of
 the tab order) - see the [chip](/components/chip) guide.
