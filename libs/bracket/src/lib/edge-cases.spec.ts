@@ -204,7 +204,7 @@ describe('bracket edge cases', () => {
           linked.push(`${match.id} ${r['type']} <${prev.join(',')}> ${next}`);
           for (const p of prev) {
             const pm = bracket.matches.get(p as never)!;
-            expect((pm.relation as Record<string, { id: string }>)['nextMatch']?.id).toBe(match.id);
+            expect((pm.relation as unknown as Record<string, { id: string }>)['nextMatch']?.id).toBe(match.id);
           }
         }
         expect(linked).toMatchSnapshot();
