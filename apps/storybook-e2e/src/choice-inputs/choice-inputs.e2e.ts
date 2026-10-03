@@ -7,6 +7,7 @@ const SWITCH_DEFAULT = 'components-forms-switch--default';
 const SWITCH_DISABLED = 'components-forms-switch--disabled';
 const RADIO_GROUP_DEFAULT = 'components-forms-selection-list-radio-group--default';
 const RADIO_GROUP_HORIZONTAL = 'components-forms-selection-list-radio-group--horizontal';
+const RADIO_GROUP_ASYNC_VALIDATION = 'components-forms-selection-list-radio-group--async-validation';
 const CHECKBOX_GROUP_DEFAULT = 'components-forms-selection-list-checkbox-group--default';
 const SEGMENTED_BUTTON_GROUP_DEFAULT = 'components-forms-selection-list-segmented-button-group--default';
 const SEGMENTED_BUTTON_GROUP_TABS = 'components-forms-selection-list-segmented-button-group--tabs';
@@ -490,5 +491,21 @@ test.describe('choice-inputs / support region', () => {
     const hint = root.locator('.et-form-support-hint');
 
     await expect(hint).toHaveCSS('transition-duration', '0.001s');
+  });
+});
+
+test.describe('choice-inputs / async validation', () => {
+  test('the radio group is aria-busy while its async validator runs, and drops it once settled', async ({ page }) => {
+    const root = await openStory(page, RADIO_GROUP_ASYNC_VALIDATION);
+    const group = root.getByRole('radiogroup');
+    const green = root.getByRole('radio', { name: 'Green' });
+
+    await expect(group).not.toHaveAttribute('aria-busy');
+
+    await green.click();
+
+    await expect(green).toHaveAttribute('aria-checked', 'true');
+    await expect(group).toHaveAttribute('aria-busy', 'true');
+    await expect(group).not.toHaveAttribute('aria-busy', { timeout: 5000 });
   });
 });

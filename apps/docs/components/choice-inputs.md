@@ -137,6 +137,8 @@ take the `pending` input signal forms binds, so a pending async validator shows 
 hides a group (a schema `hidden(...)` rule does the same), and `[warnings]` shows advisories on a
 group not bound to signal forms.
 
+<StoryEmbed id="components-forms-selection-list-radio-group--async-validation" height="300px" />
+
 #### Keyboard {#selection-list-keyboard}
 
 | Key                                          | Radio / segmented button group                                        | Checkbox group              |

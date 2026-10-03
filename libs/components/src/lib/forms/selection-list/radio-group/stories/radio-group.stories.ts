@@ -20,6 +20,7 @@ export default {
     variant: { control: 'radio', options: ['plain', 'card'] },
     controlPosition: { control: 'inline-radio', options: ['start', 'end'] },
     options: { control: false, table: { disable: true } },
+    asyncValidation: { control: false, table: { disable: true } },
   },
   args: {
     label: 'Favorite color',
@@ -120,6 +121,23 @@ export const Horizontal: Story = {
           'error/hint block keeping their own lines. Best kept for a small set of short options - vertical ' +
           'scans better and gives each option a full-width hit area. All four arrow keys move between ' +
           'options either way, which is what the ARIA radio pattern expects.',
+      },
+    },
+  },
+};
+
+export const AsyncValidation: Story = {
+  args: {
+    asyncValidation: true,
+    label: 'Color',
+    hint: 'Each pick is checked against stock for about a second; red is out of stock.',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'An async validator from signal forms runs for a second after each pick. While it is pending, the group ' +
+          'carries `aria-busy="true"`; it drops the attribute once the check settles.',
       },
     },
   },

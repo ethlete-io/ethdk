@@ -1,7 +1,8 @@
 import { JsonPipe } from '@angular/common';
-import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
-import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
+import { Component, input, linkedSignal, resource, ViewEncapsulation } from '@angular/core';
+import { disabled, form, FormField, readonly, required, validateAsync } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
+import { firstValueFrom, map, timer } from 'rxjs';
 import {
   CIRCLE_CHECK_ICON,
   ICON_IMPORTS,
@@ -16,6 +17,9 @@ import { SelectionCardControlPosition } from '../../../selection-card.types';
 import { SelectionListOrientation } from '../../selection-list.types';
 import { RadioGroupComponent } from '../radio-group.component';
 import { RadioComponent, RadioVariant } from '../radio.component';
+
+const STOCK_CHECK_MS = 1200;
+const OUT_OF_STOCK = ['red'];
 
 @Component({
   selector: 'et-sb-radio-group',
@@ -89,6 +93,7 @@ export class RadioGroupStorybookComponent {
   public size = input<FormFieldSize>('md');
   public variant = input<RadioVariant>('plain');
   public controlPosition = input<SelectionCardControlPosition>('end');
+  public asyncValidation = input(false);
 
   public options = input<
     { value: string; label: string; description?: string; icon?: RegisteredIconName; price?: string }[]
@@ -106,5 +111,18 @@ export class RadioGroupStorybookComponent {
     disabled(s, () => this.disabled());
     readonly(s, () => this.readonly());
     required(s.color, { when: () => this.required(), message: 'Please select a color' });
+
+    validateAsync(s.color, {
+      params: ({ value }) => (this.asyncValidation() ? (value() ?? undefined) : undefined),
+      factory: (params) =>
+        resource({
+          params: () => params(),
+          loader: ({ params: color }) =>
+            firstValueFrom(timer(STOCK_CHECK_MS).pipe(map(() => OUT_OF_STOCK.includes(color)))),
+        }),
+      onSuccess: (isOutOfStock) =>
+        isOutOfStock ? { kind: 'outOfStock', message: 'That color is out of stock' } : null,
+      onError: () => null,
+    });
   });
 }
