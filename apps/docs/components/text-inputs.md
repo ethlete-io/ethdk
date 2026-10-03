@@ -244,7 +244,7 @@ default rejects the eight-digit form.
 <et-color-input [formField]="demoForm.brandColor" [swatches]="['#ff5533', 'rgb(51 187 136)', '#36f']" />
 ```
 
-Presets take any notation the [color validators](/components/forms#color-validators)
+Presets take any notation the [color validators](/components/forms#validators-the-library-ships)
 accept and render as canonical hex, so one color given twice in two notations
 renders one swatch. An entry that cannot be read is dropped rather than shown as a
 broken swatch.

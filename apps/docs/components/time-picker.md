@@ -144,7 +144,7 @@ A press moves the handle nearest to the pressed time - a tie goes to the active 
 
 From an **empty** range, the first press places the start and hands the active side on to the end **once**, emitting `rangeHandOff`. The range inputs answer by moving focus to the end field on desktop; in the bottom sheet, which covers the fields, they do not.
 
-**Ordering is not enforced**, exactly as in the calendar and the range inputs: an end before its start is a [validator's](/components/forms#validation) job. The hook for pushing that rule into the picker instead is `timeFilter`'s side argument - "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per end and moves with the value.
+**Ordering is not enforced**, exactly as in the calendar and the range inputs: an end before its start is a [validator's](/components/forms#validation-accessibility) job. The hook for pushing that rule into the picker instead is `timeFilter`'s side argument - "the end must be after the start" is not expressible as a `min`/`max` bound, because the bound differs per end and moves with the value.
 
 ```ts
 const endAfterStart = (candidate: Date, side: 'start' | 'end') =>

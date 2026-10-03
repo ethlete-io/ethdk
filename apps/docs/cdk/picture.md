@@ -27,7 +27,7 @@ This page documents the CDK version, which still receives bug fixes.
 ```
 
 ```ts
-import { PictureImports } from '@ethlete/cdk';
+import { PictureComponent } from '@ethlete/cdk';
 ```
 
 <StoryEmbed id="cdk-picture--default" height="380px" />

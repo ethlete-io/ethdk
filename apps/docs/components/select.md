@@ -471,6 +471,8 @@ Public design tokens:
 | `--et-select-option-check-size`            | `16px`  | Selected check icon size                                                  |
 | `--et-select-option-group-label-font-size` | `12px`  | [Option group](#option-groups) header font size                           |
 
+The panel and option group tokens inherit, so setting one on `et-select-panel`, `et-select-option-group` or any ancestor reaches the parts that read it.
+
 ## Error codes
 
 The select domain owns the `ET1000`–`ET1099` range - see [error codes](/components/error-codes#select-et10xx).

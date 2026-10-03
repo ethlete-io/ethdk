@@ -190,7 +190,7 @@ they do in [the grid](/components/bracket#accessibility):
 
 ## Theming
 
-Three public custom properties, all lengths:
+Three public custom properties, all lengths. All of them inherit, so setting one on `et-bracket-rounds-list` or any ancestor reaches the sections and rounds that read it:
 
 | Token                                  | Default | Controls                                      |
 | -------------------------------------- | ------- | --------------------------------------------- |

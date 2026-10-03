@@ -19,11 +19,11 @@ theming. Each control family has its own guide:
 ::: info Signal forms only
 These controls implement Angular's [signal forms](https://angular.dev/guide/forms)
 contracts (`FormValueControl` / `FormCheckboxControl`) and bind via `[formField]`
-from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer
-
-- the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]`
-  / `[(checked)]` also works for simple cases.
-  :::
+from `@angular/forms/signals`. There is no `ngModel`/`ControlValueAccessor` layer -
+the classic stack lives only in the legacy `@ethlete/cdk`. Two-way `[(value)]`
+/ `[(checked)]` also works for simple cases. Moving an app over is covered in
+[Coming from reactive forms](#coming-from-reactive-forms).
+:::
 
 ```ts
 private formModel = signal({ email: '' });
@@ -762,6 +762,71 @@ this.form.email().focusBoundControl();
 
 It only focuses. Unlike clicking the field's label, it never toggles a checkbox,
 opens a picker, or selects an option.
+
+## Coming from reactive forms {#coming-from-reactive-forms}
+
+The controls have no `ControlValueAccessor`, so `[formControl]`, `formControlName` and
+`[(ngModel)]` do not bind to them. Each control implements the signal-forms
+`FormValueControl` (or `FormCheckboxControl`) contract instead: a `value` (or `checked`)
+model the `[formField]` directive reads and writes, plus the field state - `disabled`,
+`readonly`, `required`, `invalid`, `touched` - as inputs.
+
+A `@ethlete/cdk` text field on reactive forms:
+
+```ts
+import { InputImports } from '@ethlete/cdk';
+
+@Component({ imports: [InputImports, ReactiveFormsModule] })
+export class SignupComponent {
+  email = new FormControl('', [Validators.required, Validators.email]);
+}
+```
+
+```html
+<et-input-field [formControl]="email">
+  <et-label>E-mail</et-label>
+  <et-email-input />
+</et-input-field>
+```
+
+The same field with `@ethlete/components` and signal forms:
+
+```ts
+import { FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+import { email, form, FormField, required } from '@angular/forms/signals';
+
+@Component({ imports: [FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField] })
+export class SignupComponent {
+  private model = signal({ email: '' });
+
+  protected signupForm = form(this.model, (s) => {
+    required(s.email, { message: 'Email is required' });
+    email(s.email, { message: 'Enter a valid email' });
+  });
+}
+```
+
+```html
+<et-form-field>
+  <et-label>E-mail</et-label>
+  <et-input [formField]="signupForm.email" type="email" />
+</et-form-field>
+```
+
+What moves:
+
+- The binding sits on the control, not on the field wrapper: `[formField]` goes on
+  `et-input`, and `et-form-field` picks the control up from its content.
+- Validators move from the `FormControl` constructor into the form schema, and the
+  error message travels with the rule - no `provideValidatorErrorsService()`.
+- The value lives in your model signal; read it with `signupForm.email().value()` instead
+  of `email.value`.
+
+A form can be migrated one screen at a time - a reactive-forms screen keeps the cdk
+controls until it moves. The [`migrate-from-cdk`](/cdk/migration#run-the-codemod) codemod
+rewrites the imports it can and lists every form control whose contract changed in
+`migrate-from-cdk-tasks.md`; the [CDK forms guide](/cdk/forms) maps each cdk control to its
+successor.
 
 ## Theming
 

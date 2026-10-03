@@ -73,7 +73,7 @@ This table is the domain-level view. For a single identifier - "what does `Table
 | Forms (all controls)                                      | [Forms](/components/forms) and its per-family guides - **signal forms only**                |
 | Utilities (dismiss checker, router state, swipe tracking) | `@ethlete/core` - see [Utilities](/core/utilities) & [Signal utilities](/core/signal-utils) |
 
-One important difference in forms: the CDK controls integrate with **classic reactive forms** (`FormControl` / `ControlValueAccessor`), while the `@ethlete/components` controls are built for Angular's **signal forms** and have no `ControlValueAccessor` layer. If your app is still on reactive forms, the CDK form controls are the ones to use - see the [Forms guide](/cdk/forms).
+One important difference in forms: the CDK controls integrate with **classic reactive forms** (`FormControl` / `ControlValueAccessor`), while the `@ethlete/components` controls are built for Angular's **signal forms** and have no `ControlValueAccessor` layer. If your app is still on reactive forms, the CDK form controls are the ones to use - see the [Forms guide](/cdk/forms). [Coming from reactive forms](/components/forms#coming-from-reactive-forms) shows the same field before and after the move.
 
 ## Guides
 

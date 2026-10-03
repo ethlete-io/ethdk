@@ -285,17 +285,17 @@ opt-in on `<et-carousel>` and off by default. It
 pauses whenever moving the page under the reader would be rude, and reports which of those is
 happening via `pauseReason()`:
 
-| Reason           | When                                                             |
-| ---------------- | ---------------------------------------------------------------- |
-| `hover`          | a mouse or pen is over the carousel (a touch tap does not count) |
-| `focus`          | focus is inside it                                               |
-| `off-screen`     | the carousel is scrolled out of view                             |
-| `page-hidden`    | this tab isn't the one in front                                  |
-| `reduced-motion` | the reader asked for reduced motion - autoplay then never starts |
-| `stopped`        | the pause control (or `stop()`) was used                         |
-| `no-slides`      | there are fewer than two slides, so there is nowhere to advance  |
-| `no-duration`    | the duration is `0`, on the carousel or on the active slide      |
-| `disabled`       | `autoplay` is off                                                |
+| Reason           | When                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `hover`          | a mouse or pen is over the carousel (a touch tap does not count)                           |
+| `focus`          | focus is inside it                                                                         |
+| `off-screen`     | the carousel is scrolled out of view                                                       |
+| `page-hidden`    | this tab isn't the one in front                                                            |
+| `reduced-motion` | the reader asked for reduced motion - autoplay then never starts                           |
+| `stopped`        | the pause control (or `stop()`) was used                                                   |
+| `no-slides`      | there are fewer than two slides, so there is nowhere to advance                            |
+| `no-duration`    | the duration is `0`, negative, `NaN` or `Infinity`, on the carousel or on the active slide |
+| `disabled`       | `autoplay` is off                                                                          |
 
 `page-hidden` and `off-screen` are separate checks because they are separate questions: an
 IntersectionObserver reports a fully visible element in a background tab. The first matters more - a hidden

@@ -103,7 +103,7 @@ With a [flat search](#flat-search), activating a result toggles it and **keeps t
 
 <StoryEmbed id="components-forms-cascader--multiple-with-search" height="420px" />
 
-Values set programmatically (a form patch/restore) display and mark their ancestors once the data source's [`resolvePath`](#resolving-a-programmatic-value---resolvepath) resolves their chains - one call per unknown value. The panel reports itself as an `aria-multiselectable` tree.
+Values set programmatically (a form patch/restore) display and mark their ancestors once the data source's [`resolvePath`](#resolving-a-programmatic-value-resolvepath) resolves their chains - one call per unknown value. The panel reports itself as an `aria-multiselectable` tree.
 
 ## Mixed values in bulk editors
 
@@ -285,7 +285,7 @@ Public design tokens:
 
 ## Scope
 
-The cascader selects leaf-or-any-level, in [single or multi mode](#multi-select), with a [flat search](#flat-search) augment and a [`cascaderFromQuery`](#query-backed-levels---cascaderfromquery) convenience for query-backed levels.
+The cascader selects leaf-or-any-level, in [single or multi mode](#multi-select), with a [flat search](#flat-search) augment and a [`cascaderFromQuery`](#query-backed-levels-cascaderfromquery) convenience for query-backed levels.
 
 ## Error codes
 

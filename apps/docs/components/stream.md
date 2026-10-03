@@ -232,10 +232,10 @@ tokens keep only their button colors. See the [localization guide](/components/l
 All stream chrome resolves its colors from the [surface/color theme systems](/core/theming). Slots provide a surface scope one elevation above their context, resolved against the ambient surface `type` - a slot on a light surface stays light. The PiP chrome is the exception: it mounts into `document.body`, outside any surface scope, so it resolves a `type: 'dark'` surface of its own (video UI floating over the page reads as dark).
 
 - Slot: `--et-stream-player-slot-radius` (`12px`).
-- PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind. The glass background derives from the surface theme; override it via `--et-pip-bg`.
+- PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind. These inherit, so a value set on `et-pip-window`, `et-pip-slot-placeholder` or any ancestor reaches the title bar, content and card that read it. The glass background derives from the surface theme; override it via `--et-pip-bg`.
 - PiP placement: the window opens in the bottom right corner, `--et-pip-window-offset-right` and `--et-pip-window-offset-bottom` (`24px`) from the edges (reduced to the viewport padding where the window would not fit), at `--et-pip-window-z-index` (`1000`). Dragging takes over once it has opened. The body-level container that holds players between slots ships its own off-screen rule.
 - PiP grid: the featured-cell ring uses the color theme's primary; override via `--et-stream-pip-chrome-featured-ring-color`.
-- Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography.
+- Consent gate and error overlay: `--et-stream-consent-*` and `--et-stream-player-error-*` families covering padding, gap, icon size, border radius and heading/description typography. They inherit, so a value set on the gate, the error overlay or any ancestor reaches the card that reads it.
 
 ## Content Security Policy
 
