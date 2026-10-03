@@ -101,10 +101,8 @@ Open:
 - Open: the background band that covers 10:00-14:00 on the live day should become a thin marker.
 - Open: the phone stretch 13:15-14:00 on the live day lost its ticket (issueKey missing, description is
   the branch `next`).
-- Open: sibling rows can book more than the clock holds. Each rounds its observed minutes up to 15m on
-  its own, so two sessions that fill one hour can book 45m + 30m. The drawing hides it (a row is drawn
-  shorter), but Tempo would get 75m for 60m. Fix it in the booking (`bookedMsOf` in `rows/round.ts`), not
-  in the drawing.
+- Done 973c95585: sibling rows no longer book more than the clock holds. `siblingBookingsOf` in
+  `rows/round.ts` rounds a group's summed observed minutes up once, capped at the clock it covers.
 - Done 68a9e9aae: a Bash `workedIn` directory ends in `/`, so `workPathOf` no longer reads it one level
   too high. On the live 2026-09-29 this joined one ET-772 session to its predecessor (6 pieces to 5).
 - Done 8c0c299af: a lane shows at most 3 parallel rows of one ticket. Where more overlap, `reviewDay`
@@ -159,4 +157,6 @@ because the audit piece ended last before it started.
 
 Live result 2026-09-29, 10:45-14:00: four ET-772 rows, not three. The fourth is session `f902bd2e`
 ("Sounds good", audit follow-up): it wrote no handoff or plan and worked mostly in `libs/core`, so no
-evidence joins it to the audit. Open: the auto-mode dispute and branch-ref reflogs (third bullet above) are not started.
+evidence joins it to the audit. Done: branch-ref reflogs (a3147ca8f) and the dispute of a rule-named row
+by activity on another branch (b1c781b7d, settled by auto mode in 4a963cfb9). Open: a dispute from the
+row's own titles or from Tempo history (the FIP-3006 case).

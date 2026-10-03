@@ -9,6 +9,7 @@ export * from './evidence';
 export * from './field-source';
 export * from './meeting-naming';
 export * from './naming-age';
+export * from './price';
 export * from './project-link';
 export * from './proposal';
 export * from './recurrence';
