@@ -583,11 +583,14 @@ export class TreeDirective<T = unknown> {
     if (event.key.length !== 1) return;
 
     const query = this.typeahead.append(event.key);
-    // start after the focused row and wrap, so repeating a letter walks through the matches
+    // a repeated letter walks through the matches; a longer query keeps the focused row while it still matches
+    const repeated = [...query].every((character) => character === query[0]);
+    const needle = repeated ? query.charAt(0) : query;
+    const start = repeated ? index + 1 : index;
     const match = rows
-      .slice(index + 1)
-      .concat(rows.slice(0, index + 1))
-      .find((candidate) => !candidate.isDisabled && candidate.node.label.toLowerCase().startsWith(query));
+      .slice(start)
+      .concat(rows.slice(0, start))
+      .find((candidate) => !candidate.isDisabled && candidate.node.label.toLowerCase().startsWith(needle));
 
     if (match) {
       event.preventDefault();

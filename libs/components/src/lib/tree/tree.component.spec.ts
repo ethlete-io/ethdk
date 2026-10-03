@@ -412,6 +412,44 @@ describe('TreeComponent', () => {
     expect(document.activeElement).toBe(rowByLabel('docs'));
   });
 
+  describe('type-ahead', () => {
+    const fruitSource: TreeDataSource<string> = {
+      loadChildren: (parent) =>
+        parent
+          ? []
+          : ['apple', 'banana', 'bandana', 'berry', 'new file', 'new folder'].map((label) => ({
+              value: label,
+              label,
+              isLeaf: true,
+            })),
+    };
+
+    const type = (keys: string) => {
+      for (const key of keys) {
+        press(document.activeElement as HTMLElement, key);
+        tick();
+      }
+    };
+
+    beforeEach(async () => {
+      fixture.componentInstance.dataSource.set(fruitSource);
+      await settle();
+      rowByLabel('apple')!.focus();
+    });
+
+    it('stays on the focused row while it still matches the longer prefix', () => {
+      type('ba');
+
+      expect(document.activeElement).toBe(rowByLabel('banana'));
+    });
+
+    it('walks through the matches when the same letter is repeated', () => {
+      type('bbb');
+
+      expect(document.activeElement).toBe(rowByLabel('berry'));
+    });
+  });
+
   it('shows the empty state when the root loads nothing', async () => {
     fixture.componentInstance.dataSource.set({ loadChildren: () => [] });
     await settle();
