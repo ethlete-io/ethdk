@@ -40,7 +40,7 @@ adding a twelfth means updating that array and `schema.json`'s enum together.
 ## The three-tier model
 
 1. **Tier 1 - Primitives (`libs/core`).** Pure behavior, zero domain awareness
-   (e.g. `ListKeyManagerDirective`, `OverlayDirective`). No public `--et-` design
+   (e.g. `AnimatedLifecycleDirective`, `ClickOutsideDirective`). No public `--et-` design
    tokens; may own private `--_` tokens it sets itself.
 2. **Tier 2 - Headless (`libs/components/.../headless/`).** All behavior + state
    for a domain, no visual opinion. Holds inputs/host-bindings/state. Sub-pieces
