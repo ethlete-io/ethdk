@@ -163,7 +163,11 @@ const createValueProviders = <T>(
 
 const maybeMergeValues = <T>(defaultValue: T | undefined, valueOverride?: Partial<T>) => {
   if (isObject(valueOverride) && isObject(defaultValue)) {
-    return { ...defaultValue, ...valueOverride };
+    const definedOverride = Object.fromEntries(
+      Object.entries(valueOverride).filter(([, value]) => value !== undefined),
+    );
+
+    return { ...defaultValue, ...definedOverride };
   }
 
   return valueOverride ?? defaultValue;
