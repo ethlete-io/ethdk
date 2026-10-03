@@ -95,7 +95,12 @@ export class CommandPaletteDirective {
     return this.rowIds().get(command.id) ?? null;
   }
 
+  /** Marks a row as the one Enter runs. A disabled command cannot be active, so passing one changes nothing. */
   public setActive(result: CommandPaletteResult | null) {
+    if (result?.command.disabled) {
+      return;
+    }
+
     this.activeId.set(result?.command.id ?? null);
   }
 

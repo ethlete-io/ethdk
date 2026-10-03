@@ -171,6 +171,18 @@ describe('CommandPaletteComponent', () => {
     expect(activeLabel()).toBe('Create table');
   });
 
+  it('keeps the active row when the pointer crosses a disabled one', () => {
+    const { fixture, press, rows, activeLabel } = create();
+
+    press('ArrowDown');
+    press('ArrowDown');
+
+    rows()[2]?.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(activeLabel()).toBe('Create table');
+  });
+
   it('wraps around at the end of the list', () => {
     const { press, activeLabel } = create();
 
