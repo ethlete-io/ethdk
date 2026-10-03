@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { createDestroy } from '@ethlete/core';
-import { Sort, SortDirection } from '@ethlete/query';
+import { Sort, type SortDirection } from '@ethlete/query';
 import { Observable, Subject, Subscriber, takeUntil } from 'rxjs';
 import { SortDefaultOptions, Sortable } from './sort.types';
 

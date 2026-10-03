@@ -373,10 +373,10 @@ describe('scrolling helper scenarios', () => {
       expect(getScrollSnapTarget(items, track, 'horizontal', 'auto')).toEqual({ element: items[1], origin: 'start' });
 
       position.left = 100;
-      expect(getScrollSnapTarget([items[0]], track, 'horizontal', 'auto')).toBeNull();
+      expect(getScrollSnapTarget(items.slice(0, 1), track, 'horizontal', 'auto')).toBeNull();
 
       position.left = 320;
-      expect(getScrollSnapTarget([items[0]], track, 'horizontal', 'auto')).toEqual({
+      expect(getScrollSnapTarget(items.slice(0, 1), track, 'horizontal', 'auto')).toEqual({
         element: items[0],
         origin: 'end',
       });

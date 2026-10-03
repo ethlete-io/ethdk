@@ -13,13 +13,13 @@ import {
   inject,
 } from '@angular/core';
 import { applyHostListeners } from '@ethlete/core';
-import { SortDirection } from '@ethlete/query';
+import type { SortDirection } from '@ethlete/query';
 import { Subscription, merge } from 'rxjs';
 import { CHEVRON_ICON } from '../../../icons/chevron-icon';
 import { provideIcons } from '../../../icons/icon-provider';
 import { IconDirective } from '../../../icons/icon.directive';
 import { SORT_HEADER_COLUMN_DEF } from '../../../table/partials/cells/column-def';
-import { SORT_DEFAULT_OPTIONS, SortDirective, SortHeaderArrowPosition, Sortable } from '../../partials/sort';
+import { SORT_DEFAULT_OPTIONS, SortDirective, type SortHeaderArrowPosition, Sortable } from '../../partials/sort';
 import { SortHeaderIntl } from '../../services';
 import { ArrowViewStateTransition } from './sort-header.types';
 

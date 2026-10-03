@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { createNavigationDismissChecker } from './navigation-dismiss-checker';
 
 const create = (form: FormControl<unknown>, dismissCheckFn = vi.fn(() => of(false))) =>
@@ -11,7 +11,7 @@ describe('createNavigationDismissChecker', () => {
     const dismissCheckFn = vi.fn(() => of(false));
     const checker = create(new FormControl<unknown>('Ada'), dismissCheckFn);
 
-    expect(await firstValueFrom(checker.runCheck())).toBe(true);
+    expect(await firstValueFrom(checker.runCheck() as Observable<boolean>)).toBe(true);
     expect(dismissCheckFn).not.toHaveBeenCalled();
   });
 
@@ -28,7 +28,7 @@ describe('createNavigationDismissChecker', () => {
     form.setValue(next);
 
     expect(checker.hasChanges()).toBe(true);
-    expect(await firstValueFrom(checker.runCheck())).toBe(false);
+    expect(await firstValueFrom(checker.runCheck() as Observable<boolean>)).toBe(false);
     expect(dismissCheckFn).toHaveBeenCalledWith(next);
   });
 });
