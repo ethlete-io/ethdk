@@ -66,13 +66,13 @@ export const appConfig: ApplicationConfig = {
   borders) components resolve from. One `isDefault` surface per `type` (`'light'` / `'dark'`).
 - **`provideColorThemesWithTailwind4(themes)`** - the accent palettes. Exactly one
   `isDefault` theme. Pass the same arrays you ran the generators on.
-- **A color theme with `type: 'error'`.** `et-form-field`, `et-select` and `et-cascader`
-  resolve their error styling through `injectSemanticColorTheme('error')`, which throws
+- **A color theme with `type: 'error'`.** `et-form-field`, `et-select`, `et-cascader`,
+  `et-menu` / menu items (destructive items) and alert dialogs resolve their error styling through `injectSemanticColorTheme('error')`, which throws
   `No color theme with type "error" found` when none is registered - so every form control
   fails without it. Register `type: 'warning'` too if you use form warnings, and
   `'success'` / `'warning'` / `'error'` for `et-progress-steps` states. `et-stat-tile` reads
   `'success'` and `'error'` for its deltas, and `et-banner` reads `'success'`, `'warning'` and
-  `'error'` for those types - each throws the same way when the type is missing.
+  `'error'` for those types - each throws the same way when the type is missing. The table, notifications, match and bracket pick cards and the rich text editor's token popup only use a registered theme of that type and fall back to neutral styling without one.
 
 Theme names (`brand`, `neongreen`, …) are yours to choose; the SDK ships none. Semantic behavior
 only ever looks up the `type`.
@@ -95,7 +95,7 @@ only ever looks up the `type`.
   `provideSelectLabels`. Every label is partial; omitted keys keep their English default. The
   full list is in [Localization](/components/localization).
 - **`provideFormFieldDefaults(...)`** - optional: the default `appearance`, `fill`, `labelMode` and
-  `size` of every form field, if your design differs from `box`/`transparent`/`static`/`md`
+  `size` of every form field (`size` also applies to choice fields and the checkbox, radio and segmented groups), if your design differs from `box`/`transparent`/`static`/`md`
   ([Forms](/components/forms#the-field-shell)).
 - **`provideIcons(...icons)`** - not app-wide setup: register icons on the component that
   renders them, so unused ones stay tree-shakeable ([Icon](/components/icon)).

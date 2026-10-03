@@ -67,8 +67,8 @@ provideTableLabels((locale) => ({
 Three things hold for every token:
 
 - **Partial.** What you leave out keeps its English default (or, for
-  `QUERY_ERROR_LABELS` and `FILTER_OVERLAY_LABELS`, whatever the current locale resolves
-  to - both ship German as well). Overriding a single key is fine.
+  `QUERY_ERROR_LABELS`, `FILTER_OVERLAY_LABELS` and `COMMAND_PALETTE_LABELS`, whatever the
+  current locale resolves to - all three ship German as well). Overriding a single key is fine.
 - **A signal out.** `inject<Domain>Labels()` returns `Signal<Labels>`, because both the
   locale and the provided set can change at runtime. Read it in a template or computed;
   never destructure it once.
@@ -133,13 +133,14 @@ that provides labels needs no per-instance wiring at all.
 | `STREAM_LABELS`           | `provideStreamLabels`         | Consent gate, failure overlay, PiP placeholder and controls, frame title                                                                                                                                  |
 | `BANNER_LABELS`           | `provideBannerLabels`         | A dismissible banner's dismiss button                                                                                                                                                                     |
 | `KBD_LABELS`              | `provideKbdLabels`            | The printed label and spoken name of each named key (`Ctrl`/`Strg`, "Control"), per platform                                                                                                              |
-| `COMMAND_PALETTE_LABELS`  | `provideCommandPaletteLabels` | Search placeholder and label, the no-results and no-commands states                                                                                                                                       |
+| `COMMAND_PALETTE_LABELS`  | `provideCommandPaletteLabels` | Search placeholder and label, the no-results and no-commands states - **English and German ship**                                                                                                         |
 | `MATCH_LABELS`            | `provideMatchLabels`          | Match status (`tbd`, `live`, `finished`, `scheduled`), outcomes, scores, seeds, match names                                                                                                               |
 | `STANDINGS_LABELS`        | `provideStandingsLabels`      | Table caption, column headers and their full names, form results, legend, pick mode                                                                                                                       |
 | `SCHEDULER_LABELS`        | `provideSchedulerLabels`      | Navigation, view switcher, all-day, more appointments, the appointment editor's actions                                                                                                                   |
 | `BRACKET_LABELS`          | `provideBracketLabels`        | Round headers, section names, champion, slot descriptions (winner/loser of, seed, bye, …)                                                                                                                 |
 | `QUERY_ERROR_LABELS`      | `provideQueryErrorLabels`     | Status titles/messages and retry - **English and German ship**                                                                                                                                            |
 | `FILTER_OVERLAY_LABELS`   | `provideFilterOverlayLabels`  | Result-count submit button and reset - **English and German ship**                                                                                                                                        |
+| `CONTENTFUL_FILE_LABELS`  | `provideContentfulFileLabels` | `et-contentful-file`'s size text (`fileSize`) - exported from `@ethlete/contentful`, not `@ethlete/components`                                                                                            |
 
 ## Your own strings vs the library's
 

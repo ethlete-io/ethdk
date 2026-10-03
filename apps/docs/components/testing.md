@@ -33,13 +33,13 @@ finishes on the next microtask, so code that waits for `finished` still runs its
 A driver takes a `ComponentFixture` whose host renders the control, and returns the control's
 directive, scoped queries, and user actions. Mount the host with your own `TestBed` setup. Form
 controls resolve their validation colours by theme `type`, so the testing module needs your app's
-`provideColorThemes(...)` with an `error` and a `warning` theme.
+`provideColorThemesWithTailwind4(...)` with an `error` and a `warning` theme (see [App setup](/components/setup)).
 
 ```ts
 import { createSelectDriver } from '@ethlete/components/testing';
 
 it('picks a country', async () => {
-  TestBed.configureTestingModule({ providers: [provideColorThemes(APP_COLOR_THEMES)] });
+  TestBed.configureTestingModule({ providers: [provideColorThemesWithTailwind4(APP_COLOR_THEMES)] });
   const fixture = TestBed.createComponent(CountryFormComponent);
   fixture.detectChanges();
 
@@ -66,8 +66,8 @@ it; without it the driver uses the host's first child.
 
 The event helpers the drivers use are exported too: `pressKey`, `setInputValue`, `typeChars`,
 `typeInField`, `focusField`, `blurField`, `pointerEvent`, `pointerEnter`, `pointerDownOutside`,
-`pasteInto`, plus `tick` (one `ApplicationRef.tick()`), `flushFrames` (two animation frames) and
-`latestPane`. Overlays render into `document.body`, not into the fixture, and jsdom fires no
+`pasteInto`, `typeMasked` (masked date/time text), plus `tick` (one `ApplicationRef.tick()`), `flushFrames` (two animation frames) and
+`latestPane`. Lookups on a fixture: `query`, `queryAll`, `hostElement`, `hostDirective`, `directiveAt` and `textOf`. Overlays render into `document.body`, not into the fixture, and jsdom fires no
 transition events, so a pane in its leave transition stays in the DOM: query panes through
 `latestPane()`, and call `resetOverlays()` between tests.
 
