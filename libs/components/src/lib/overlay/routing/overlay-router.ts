@@ -486,6 +486,9 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
           tap(({ source }) => {
             isClosing = true;
 
+            // While its own navigation is in flight, the URL is about to change to an entry this overlay owns.
+            if (ownNavigationsInFlight === 0) urlAtClose = angularRouter.url;
+
             if (source === 'navigation') {
               watchClosingNavigation(angularRouter);
             }
@@ -598,7 +601,11 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
           tap(() => {
             closingNavigation = pathOf(angularRouter.url) === pathAtClose ? 'stayed' : 'navigated';
 
-            if (destroyed && closingNavigation === 'stayed') clearUrlParam();
+            if (closingNavigation === 'navigated') {
+              if (readUrlParam() !== undefined) updateBrowserUrl(undefined, true);
+            } else if (destroyed) {
+              clearUrlParam();
+            }
           }),
         )
         .subscribe();

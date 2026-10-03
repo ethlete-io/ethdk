@@ -258,7 +258,7 @@ describe('OverlayRouter with syncUrl', () => {
     expect(router.url).toBe('/');
   });
 
-  it('leaves the url alone when the navigation that closed the overlay keeps its param', async () => {
+  it('drops its url param from the next page when the navigation that closed the overlay preserved it', async () => {
     const overlayRouter = await open();
 
     await goTo(overlayRouter, '/two');
@@ -271,8 +271,48 @@ describe('OverlayRouter with syncUrl', () => {
     await expect(navigation).resolves.toBe(true);
     await settle();
 
-    expect(router.url).toMatch(/^\/guarded\?/);
-    expect(location.path()).toBe(router.url);
+    expect(router.url).toBe('/guarded');
+    expect(location.path()).toBe('/guarded');
+
+    await browser('back');
+
+    expect(router.url).toMatch(/^\/page\?/);
+  });
+
+  it('leaves the history entry of an overlay opened during its leave transition alone', async () => {
+    const overlayRouter = await open({ strategies: dialogOverlayStrategy() });
+
+    await goTo(overlayRouter, '/two');
+
+    const [firstParam] = urlParams();
+
+    let finishLeave!: () => void;
+    const leave = {
+      playState: 'running',
+      effect: { pseudoElement: null, getComputedTiming: () => ({ iterations: 1 }) },
+      finished: new Promise<void>((resolve) => (finishLeave = resolve)),
+    } as unknown as Animation;
+    let running = [leave];
+    Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => running });
+    onTestFinished(() => {
+      delete (Element.prototype as Partial<Element>).getAnimations;
+    });
+
+    ref.close();
+    running = [];
+    const second = openRef();
+    await settle();
+
+    finishLeave();
+    await settle();
+
+    expect(ref.componentInstance()).toBeNull();
+    expect(second.componentInstance()).not.toBeNull();
+    expect(urlParams()).toHaveLength(1);
+    expect(urlParams()).not.toContain(firstParam);
+
+    second.close();
+    await settle();
   });
 
   it('leaves an overlay opened while the closing navigation is pending alone', async () => {
