@@ -48,7 +48,7 @@
       "name": "legacy-color-themes",
       "version": "5.0.0-next.62",
       "kind": "assisted",
-      "level": "optional",
+      "level": "recommended",
       "description": "Move the runtime color theming to Tailwind 4: provideColorThemes becomes provideColorThemesWithTailwind4, and the generated CSS and surface themes replace the runtime styles.",
       "scan": "@ethlete/core:migrate-legacy-color-themes",
       "instructions": "./migrations/legacy-color-themes.md",
