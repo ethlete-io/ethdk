@@ -4,13 +4,13 @@
 const { getAngularDecoratorName } = require('./internals/import-resolution');
 
 /**
- * Disallows class members that are declared but never read within the class body.
+ * Disallows class members that are declared but never referenced through `this` within the class body.
  *
  * Only checks members that CANNOT be accessed from outside the class at compile
  * time — so false positives (e.g. template usage) are avoided:
  *
  * - `private` members — always checked. Private members are only accessible
- *   within the class body, so if they are never read there they are dead code.
+ *   within the class body, so if they are never referenced there they are dead code.
  *
  * - `protected` members — checked only when the class has an Angular decorator
  *   other than `@Component` (i.e. `@Directive`, `@Pipe`, `@Injectable`).
@@ -106,15 +106,16 @@ const noUnusedClassMember = {
   meta: {
     type: 'suggestion',
     docs: {
-      description: 'Disallow class members that are declared but never read within the class body.',
+      description:
+        'Disallow class members that are declared but never referenced through `this` within the class body.',
       recommended: true,
     },
     messages: {
       noUnused:
-        "'{{name}}' is declared but its value is never read within this class. " +
+        "'{{name}}' is declared but never referenced through `this` within this class. " +
         'Remove it, or widen its accessibility if it is intentionally used externally.',
       noUnusedProtected:
-        "'{{name}}' is protected but its value is never read within this class. " +
+        "'{{name}}' is protected but never referenced through `this` within this class. " +
         'If a subclass reads it, mark this class `abstract`; otherwise remove it.',
     },
     schema: [],
