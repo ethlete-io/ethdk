@@ -692,9 +692,9 @@
   },
   "DATE_TIME_INPUT_FORMAT_TOKEN": {
     "docs": "/components/date-time-inputs",
-    "kind": "replaced-by",
+    "kind": "rename",
     "package": "@ethlete/components",
-    "to": "DATE_FORMAT"
+    "to": "DATE_TIME_FORMAT"
   },
   "DATE_TIME_INPUT_TOKEN": {
     "kind": "removed",
@@ -702,11 +702,11 @@
   },
   "DEFAULT_DATE_INPUT_FORMAT": {
     "kind": "removed",
-    "note": "the DATE_FORMAT token defaults to the same ISO format"
+    "note": "the DATE_FORMAT token defaults to yyyy-MM-dd"
   },
   "DEFAULT_DATE_TIME_INPUT_FORMAT": {
     "kind": "removed",
-    "note": "the DATE_FORMAT token defaults to the same ISO format"
+    "note": "the DATE_TIME_FORMAT token defaults to the same ISO format"
   },
   "DEFAULT_TIME_INPUT_FORMAT": {
     "kind": "removed",
@@ -1983,7 +1983,7 @@
   "QueryButtonDirective": {
     "docs": "/components/button#query-button",
     "kind": "replaced-by",
-    "note": "has no selector, so it runs as a hostDirective of an app wrapper component and no template is rewritten: replace the wrapper with [etQueryButton] on an et-button, or keep the wrapper and feed its query input through queryButtonSourceFromV2Query(query), which needs an injection context (a field initializer or the constructor); loading and progress only, no one-second success/failure flash",
+    "note": "[etQueryButton] on a button; loading and progress only, no one-second success/failure flash; queryButtonSourceFromV2Query for a legacy query",
     "package": "@ethlete/components",
     "to": "QueryButtonDirective"
   },
@@ -3408,10 +3408,10 @@
   },
   "provideDateTimeFormat": {
     "docs": "/components/date-time-inputs",
-    "kind": "replaced-by",
-    "note": "date-time controls read the DATE_FORMAT wire format",
+    "kind": "move",
     "package": "@ethlete/components",
-    "to": "provideDateFormat"
+    "signatureUnchanged": true,
+    "to": "provideDateTimeFormat"
   },
   "provideDialogStrategy": {
     "docs": "/components/overlays",

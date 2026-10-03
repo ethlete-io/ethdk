@@ -13,7 +13,7 @@ export type ToggletipConfig = {
   /**
    * The offset of the toggletip.
    * @see https://popper.js.org/docs/v2/modifiers/offset/#offset-1
-   * @default { mainAxis: 8, crossAxis: 8 }
+   * @default 8
    */
   offset: OffsetOptions | null;
 

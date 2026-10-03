@@ -116,7 +116,7 @@ export type OverlayConfig<D = unknown> = {
 
   /**
    * Whether to wait for the opening animation to finish before trapping focus.
-   * @default true
+   * @default false
    */
   delayFocusTrap?: boolean;
 
