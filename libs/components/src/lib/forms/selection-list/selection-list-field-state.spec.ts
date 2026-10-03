@@ -1,6 +1,6 @@
 import { Component, resource, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { FormField, form, validateAsync } from '@angular/forms/signals';
+import { FormField, SchemaPath, form, validateAsync } from '@angular/forms/signals';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
 import { TEST_COLOR_THEMES } from '../../testing/color-themes';
@@ -31,14 +31,17 @@ import { CHECKBOX_GROUP_IMPORTS, RADIO_GROUP_IMPORTS, SEGMENTED_BUTTON_IMPORTS }
 class SelectionListFieldStateTestHost {
   model = signal({ plan: 'free', addons: [] as string[], view: 'list', settled: 'yes' });
   demoForm = form(this.model, (s) => {
-    for (const path of [s.plan, s.addons, s.view]) {
+    const neverSettle = <T>(path: SchemaPath<T>) =>
       validateAsync(path, {
         params: ({ value }) => value(),
         factory: (params) => resource({ params, loader: () => new Promise<null>(() => undefined) }),
         onSuccess: () => null,
         onError: () => null,
       });
-    }
+
+    neverSettle(s.plan);
+    neverSettle(s.addons);
+    neverSettle(s.view);
   });
 }
 

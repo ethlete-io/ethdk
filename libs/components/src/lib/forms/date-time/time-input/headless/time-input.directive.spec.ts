@@ -449,7 +449,9 @@ describe('TimeInputDirective with null formats', () => {
 
     expect(time?.getHours()).toBe(14);
     expect(driver.control.effectiveDisplayFormat()).toBe('p');
-    expect(driver.field().value).toBe(format(time as Date, 'p', { locale: driver.control.effectiveLocale() }));
+    expect(driver.field().value).toBe(
+      format(time as Date, 'p', { locale: driver.control.effectiveLocale() ?? undefined }),
+    );
 
     driver.typeAndBlur('09:30');
 
