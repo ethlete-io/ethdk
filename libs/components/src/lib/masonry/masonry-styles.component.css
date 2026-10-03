@@ -33,8 +33,6 @@
 
   .et-masonry {
     display: block;
-    /* The containing block for the items. A consumer override to `static` would let them escape to the page,
-       which MasonryDirective checks for in dev mode. */
     position: relative;
   }
 
