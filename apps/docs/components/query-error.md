@@ -44,6 +44,9 @@ response's own - except in two cases where the status table's sentence is better
   `HttpErrorResponse.message` - `"Http failure response for /api/teams/42: 500 Error"` - which is developer text
   and must never reach a reader.
 
+Blank messages are dropped first, so an empty or whitespace-only body counts as no message, and a violation list
+never renders an empty bullet.
+
 Titles and fallback messages come from `@ethlete/query`'s English status tables by default. A German table
 ships too, but as an opt-in - referencing it would otherwise put both languages in every bundle:
 

@@ -81,7 +81,7 @@ export class QueryErrorDirective {
     const status = error.code;
     const title = labels.title(status);
     const statusMessage = labels.messageWithCode(labels.message(status), status);
-    const messages = queryErrorMessages(error);
+    const messages = queryErrorMessages(error).filter((message) => message.trim());
     const [single] = messages;
 
     // Two cases where the response's own message is worse than the status table's sentence:

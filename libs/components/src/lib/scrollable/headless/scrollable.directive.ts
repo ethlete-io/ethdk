@@ -79,7 +79,7 @@ export class ScrollableDirective {
     transform: typedBreakpointTransform<ScrollableScrollMode>('container'),
   });
   public scrollOrigin = input<ScrollableScrollOrigin>('auto');
-  public scrollMargin = input(0, { transform: numberAttribute });
+  public scrollMargin = input(0, { transform: (value: unknown) => numberAttribute(value, 0) });
   public renderScrollbars = input(false, { transform: booleanAttribute });
 
   /** @internal */

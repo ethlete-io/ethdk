@@ -21,11 +21,12 @@ export const resolveMasonryColumns = ({
   minColumnInlineSize: number;
   gap: number;
 }): MasonryColumns => {
-  if (containerInlineSize <= 0) return { count: 0, inlineSize: 0 };
+  if (!(containerInlineSize > 0)) return { count: 0, inlineSize: 0 };
 
-  // A zero or negative minimum would divide by zero and ask for infinite columns.
-  const minInlineSize = Math.max(1, minColumnInlineSize);
-  const safeGap = Math.max(0, gap);
+  // A zero or negative minimum would divide by zero and ask for infinite columns; a NaN one (a non-numeric
+  // input) would ask for NaN of them, so it falls back to a single column.
+  const minInlineSize = Number.isNaN(minColumnInlineSize) ? containerInlineSize : Math.max(1, minColumnInlineSize);
+  const safeGap = Math.max(0, gap) || 0;
 
   // Every column but the first brings a gap with it, hence the `+ gap` on both sides. Always at least one
   // column, so a container narrower than a single column still lays out (the item just overflows it).
@@ -73,9 +74,9 @@ export const packMasonryItems = ({
   columnInlineSize: number;
   gap: number;
 }): MasonryPacking => {
-  if (columnCount <= 0) return { placements: [], columnBlockSizes: [], blockSize: 0 };
+  if (!(columnCount > 0)) return { placements: [], columnBlockSizes: [], blockSize: 0 };
 
-  const safeGap = Math.max(0, gap);
+  const safeGap = Math.max(0, gap) || 0;
   const columnBlockSizes = Array.from({ length: columnCount }, () => 0);
   const placements: MasonryPlacement[] = [];
 
