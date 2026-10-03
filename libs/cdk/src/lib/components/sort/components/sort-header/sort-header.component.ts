@@ -170,6 +170,10 @@ export class SortHeaderComponent implements Sortable, OnDestroy, OnInit, AfterVi
     this._focusMonitor.stopMonitoring(this._elementRef);
     this._sort?.deregister(this);
     this._rerenderSubscription?.unsubscribe();
+
+    if (this._sortButton) {
+      this._ariaDescriber?.removeDescription(this._sortButton, this._sortActionDescription);
+    }
   }
 
   _setIndicatorHintVisible(visible: boolean) {

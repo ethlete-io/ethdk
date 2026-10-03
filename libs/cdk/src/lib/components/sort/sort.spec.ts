@@ -66,4 +66,14 @@ describe('SortDirective', () => {
   it('honors disableClear from the default options', () => {
     expect(clickThrice(render({ defaults: { disableClear: true } }))).toEqual(['asc', 'desc', 'asc']);
   });
+
+  it('removes the sort action description when the header is destroyed', () => {
+    const fixture = render();
+
+    expect(document.querySelectorAll('.cdk-describedby-message-container > *').length).toBe(1);
+
+    fixture.destroy();
+
+    expect(document.querySelectorAll('.cdk-describedby-message-container > *').length).toBe(0);
+  });
 });
