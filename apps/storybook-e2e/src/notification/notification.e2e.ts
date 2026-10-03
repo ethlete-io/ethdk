@@ -9,6 +9,7 @@ import {
   settle,
   tabUntilFocused,
   tap,
+  touchDrag,
   touchSwipe,
 } from '../support';
 
@@ -297,10 +298,14 @@ test.describe('notification / swipe', () => {
   });
 
   test('a quick flick dismisses the notification before it reaches the dismiss distance', async ({ page }) => {
+    await page.clock.install();
     const notification = await openNotification(page, BOTTOM_END_STORY_ID, 'Loading');
     const start = middleLeftOf(await boxOf(notification));
 
-    await touchSwipe(page, start, { x: start.x + 40, y: start.y }, 3);
+    await page.clock.pauseAt(Date.now() + 1000);
+    await expect(notification).toHaveCount(1);
+    await touchDrag(page, start, { x: start.x + 40, y: start.y }, { steps: 3, clock: true });
+    await page.clock.resume();
 
     await expect(notification).toHaveCount(0);
   });

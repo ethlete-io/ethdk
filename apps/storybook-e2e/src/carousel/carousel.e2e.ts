@@ -1,5 +1,5 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchSwipe } from '../support';
+import { boxOf, expectFocusVisible, openStory, pressKey, settle, tap, touchDrag } from '../support';
 
 const DEFAULT_STORY_ID = 'components-media-carousel--default';
 const LOOP_STORY_ID = 'components-media-carousel--loop';
@@ -9,6 +9,11 @@ const WIPE_STORY_ID = 'components-media-carousel--wipe-transition';
 
 const TRACK = '.et-carousel-track';
 const DOT = '.et-carousel-dot';
+
+/** A swipe paced like a hand: its momentum carries one slide, no further. */
+const UNHURRIED_STEP_MS = 48;
+/** A flick whose momentum carries a short swipe on to the next slide. */
+const FLICK_STEP_MS = 16;
 
 interface SlideState {
   isClone: boolean;
@@ -372,8 +377,14 @@ test.describe('carousel / touch', () => {
 
     const y = box.y + box.height / 2;
 
-    await touchSwipe(page, { x: box.x + box.width * 0.8, y }, { x: box.x + box.width * 0.2, y });
+    await touchDrag(
+      page,
+      { x: box.x + box.width * 0.8, y },
+      { x: box.x + box.width * 0.2, y },
+      { stepMs: UNHURRIED_STEP_MS },
+    );
 
+    await expectActiveSlideAtRest(root);
     await expect(dots.nth(1)).toHaveAttribute('aria-current', 'true');
   });
 
@@ -382,10 +393,15 @@ test.describe('carousel / touch', () => {
     const box = await boxOf(root.locator(TRACK));
     const y = box.y + box.height / 2;
 
-    await touchSwipe(page, { x: box.x + box.width * 0.6, y }, { x: box.x + box.width * 0.35, y });
+    await touchDrag(
+      page,
+      { x: box.x + box.width * 0.6, y },
+      { x: box.x + box.width * 0.35, y },
+      { stepMs: FLICK_STEP_MS },
+    );
 
-    await expect(root.locator(DOT).nth(1)).toHaveAttribute('aria-current', 'true');
     await expectActiveSlideAtRest(root);
+    await expect(root.locator(DOT).nth(1)).toHaveAttribute('aria-current', 'true');
   });
 
   test('a backward swipe on the first slide of a looping carousel wraps to the last', async ({ page }) => {
@@ -393,10 +409,15 @@ test.describe('carousel / touch', () => {
     const box = await boxOf(root.locator(TRACK));
     const y = box.y + box.height / 2;
 
-    await touchSwipe(page, { x: box.x + box.width * 0.2, y }, { x: box.x + box.width * 0.8, y });
+    await touchDrag(
+      page,
+      { x: box.x + box.width * 0.2, y },
+      { x: box.x + box.width * 0.8, y },
+      { stepMs: UNHURRIED_STEP_MS },
+    );
 
-    await expect(root.locator(DOT).last()).toHaveAttribute('aria-current', 'true');
     await expectActiveSlideAtRest(root);
+    await expect(root.locator(DOT).last()).toHaveAttribute('aria-current', 'true');
   });
 
   test('a tap on an indicator jumps to that slide', async ({ page }) => {

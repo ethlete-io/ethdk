@@ -156,10 +156,13 @@ test.describe('number input / touch stepper', () => {
   });
 
   test('a sideways touch drag off a stepper button steps once and never scrubs', async ({ page }) => {
+    await page.clock.install();
     const root = await openStory(page, NUMBER_COARSE_ID);
     const start = await centerOf(incrementButton(root));
 
-    await touchDrag(page, start, { x: start.x + 80, y: start.y }, { steps: 8 });
+    await page.clock.pauseAt(Date.now() + 1000);
+    await touchDrag(page, start, { x: start.x + 80, y: start.y }, { steps: 8, clock: true });
+    await page.clock.resume();
 
     await expect(numberField(root)).toHaveValue('1');
     expect(await documentIsScrubbing(page)).toBe(false);

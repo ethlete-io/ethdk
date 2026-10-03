@@ -12,24 +12,24 @@ export interface FocusedDescriptor {
 export async function expectFocusVisible(locator: Locator): Promise<void> {
   await expect(locator).toBeFocused();
 
-  const state = await locator.evaluate((el) => {
-    const style = getComputedStyle(el);
+  // The ring fades in through a CSS transition, so a single read right after Tab can still see the
+  // transparent start value.
+  await expect
+    .poll(() =>
+      locator.evaluate((el) => {
+        const style = getComputedStyle(el);
+        const hasVisibleOutline =
+          style.outlineStyle !== 'none' &&
+          style.outlineColor !== 'transparent' &&
+          style.outlineColor !== 'rgba(0, 0, 0, 0)';
 
-    return {
-      matchesFocusVisible: el.matches(':focus-visible'),
-      outlineStyle: style.outlineStyle,
-      outlineColor: style.outlineColor,
-      boxShadow: style.boxShadow,
-    };
-  });
-
-  expect(state.matchesFocusVisible).toBe(true);
-
-  const hasVisibleOutline =
-    state.outlineStyle !== 'none' && state.outlineColor !== 'transparent' && state.outlineColor !== 'rgba(0, 0, 0, 0)';
-  const hasVisibleBoxShadow = state.boxShadow !== 'none';
-
-  expect(hasVisibleOutline || hasVisibleBoxShadow).toBe(true);
+        return {
+          matchesFocusVisible: el.matches(':focus-visible'),
+          hasVisibleRing: hasVisibleOutline || style.boxShadow !== 'none',
+        };
+      }),
+    )
+    .toEqual({ matchesFocusVisible: true, hasVisibleRing: true });
 }
 
 export async function focusedDescriptor(page: Page): Promise<FocusedDescriptor> {
