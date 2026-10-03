@@ -3,33 +3,9 @@ import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulImageFocusArea, ContentfulImageResizeBehavior, ContentfulRestAsset } from '../../types';
 
 export const generateDefaultContentfulImageSource = (data: ContentfulRestAsset | ContentfulGqlAsset): PictureSource => {
-  if (isContentfulGqlAsset(data)) {
-    if (!data.contentType || !data.url) {
-      return {
-        type: '',
-        srcset: '',
-      };
-    }
+  const { url, contentType } = isContentfulGqlAsset(data) ? data : (data.fields.file ?? {});
 
-    return {
-      type: data.contentType,
-      srcset: data.url,
-    };
-  }
-
-  const file = data.fields.file;
-
-  if (!file?.contentType || !file.url) {
-    return {
-      type: '',
-      srcset: '',
-    };
-  }
-
-  return {
-    type: file.contentType,
-    srcset: file.url,
-  };
+  return url ? { type: contentType ?? '', srcset: url } : { type: '', srcset: '' };
 };
 
 /**

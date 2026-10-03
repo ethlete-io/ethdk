@@ -182,17 +182,17 @@ describe('generateDefaultContentfulImageSource', () => {
     expect(generateDefaultContentfulImageSource(createRestAsset({ url: null }))).toEqual({ type: '', srcset: '' });
   });
 
-  it('returns an empty source when the rest asset has no content type', () => {
+  it('keeps the url of a rest asset without a content type', () => {
     expect(generateDefaultContentfulImageSource(createRestAsset({ contentType: null }))).toEqual({
       type: '',
-      srcset: '',
+      srcset: '//images.ctfassets.net/foo.png',
     });
   });
 
-  it('returns an empty source when a gql asset has no content type', () => {
+  it('keeps the url of a gql asset without a content type', () => {
     expect(generateDefaultContentfulImageSource(createGqlAsset({ contentType: null }))).toEqual({
       type: '',
-      srcset: '',
+      srcset: '//images.ctfassets.net/gql.png',
     });
   });
 
