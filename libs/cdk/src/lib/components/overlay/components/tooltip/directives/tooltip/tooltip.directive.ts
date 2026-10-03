@@ -45,11 +45,12 @@ export class TooltipDirective implements OnDestroy {
     this._tooltip = v;
 
     this._updateAriaDescription();
+    this._removeListeners();
 
     if (v) {
       this._addListeners();
-    } else {
-      this._removeListeners();
+    } else if (this.animatedOverlay.canUnmount()) {
+      this.animatedOverlay.unmount();
     }
   }
   private _tooltip: TooltipTemplate | null = null;

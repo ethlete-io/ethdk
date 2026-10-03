@@ -188,7 +188,7 @@ export class MasonryComponent implements AfterContentInit {
     if (!config?.partial || !state.isInitialized) {
       state.preferredColumnWidth = this.columWidth;
       state.hostDimensions = this._getHostDimensions();
-      state.columns = Math.floor(state.hostDimensions.width / this.columWidth);
+      state.columns = Math.max(1, Math.floor(state.hostDimensions.width / this.columWidth));
       state.gap = this.gap;
       state.itemCount = items.length;
       state.columnWidth = (state.hostDimensions.width - (state.columns - 1) * state.gap) / state.columns;

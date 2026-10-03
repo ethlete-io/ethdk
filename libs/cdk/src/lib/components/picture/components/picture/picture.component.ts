@@ -75,15 +75,25 @@ export class PictureComponent {
   defaultSrcFallbackUrl = computed(() => extractFirstImageUrl(this.defaultSourceWithConfig()));
 
   _combineWithConfig(src: PictureSource) {
-    if (!this._config?.baseUrl || src.srcset.startsWith('http') || src.srcset.startsWith('data:')) {
+    const baseUrl = this._config?.baseUrl;
+
+    if (!baseUrl || src.srcset.startsWith('data:')) {
       return src;
     }
 
-    const shouldAppendSlash = !this._config.baseUrl.endsWith('/') && !src.srcset.startsWith('/');
+    const srcset = src.srcset
+      .split(',')
+      .map((candidate) => {
+        const url = candidate.trim();
 
-    return {
-      ...src,
-      srcset: `${this._config.baseUrl}${shouldAppendSlash ? '/' : ''}${src.srcset}`,
-    };
+        if (!url || url.startsWith('http')) return url;
+
+        const shouldAppendSlash = !baseUrl.endsWith('/') && !url.startsWith('/');
+
+        return `${baseUrl}${shouldAppendSlash ? '/' : ''}${url}`;
+      })
+      .join(', ');
+
+    return { ...src, srcset };
   }
 }

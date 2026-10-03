@@ -122,7 +122,7 @@ export class BreadcrumbComponent {
     effect(() => {
       const canScrollHorizontally = this.scrollState().canScrollHorizontally;
 
-      if (!canScrollHorizontally || this.visibleElementCount() === MIN_ITEMS_TO_RENDER) {
+      if (!canScrollHorizontally || this.visibleElementCount() <= MIN_ITEMS_TO_RENDER) {
         return;
       }
 

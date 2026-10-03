@@ -67,7 +67,7 @@ export class MasonryItemComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (!this.key) {
+    if (this.key === undefined || this.key === null || this.key === '') {
       throw new Error('MasonryItemComponent: @Input() key is required');
     }
 
