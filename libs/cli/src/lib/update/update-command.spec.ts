@@ -1,9 +1,9 @@
 import { execFileSync } from 'child_process';
 import { EventEmitter } from 'events';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { writeMigrationRun } from './migration-record';
 import { PENDING_FILE, readPendingUpdate, writePendingUpdate } from './pending';
 import { TASKS_DATA_FILE, TASKS_FILE, UPDATE_DIR } from './tasks';
@@ -497,7 +497,9 @@ describe('the printed plan', () => {
 
 const gitIn = (root: string, ...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
 
-const makeGitRepo = () => {
+let gitRepoTemplate: string | null = null;
+
+const buildGitRepoTemplate = () => {
   const root = makeRepo();
 
   rmSync(join(root, UPDATE_DIR), { recursive: true });
@@ -520,6 +522,16 @@ const makeGitRepo = () => {
   gitIn(root, 'add', '--all');
   gitIn(root, 'commit', '--quiet', '-m', 'initial');
   gitIn(root, 'tag', 'initial');
+
+  return root;
+};
+
+const makeGitRepo = () => {
+  if (!gitRepoTemplate) throw new Error('the git repo template is built in beforeAll');
+
+  const root = mkdtempSync(join(tmpdir(), 'cli-update-command-'));
+
+  cpSync(gitRepoTemplate, root, { recursive: true });
   writeFileSync(join(root, 'src', 'mine.ts'), 'my own work', 'utf8');
 
   return root;
@@ -541,7 +553,11 @@ const subjects = (root: string) => gitIn(root, 'log', '--format=%s').trim().spli
 const committedFiles = (root: string) =>
   gitIn(root, 'log', '--name-only', '--format=', 'initial..HEAD').trim().split('\n').filter(Boolean);
 
-describe('the commits of et update', () => {
+describe('the commits of et update', { timeout: 20_000 }, () => {
+  beforeAll(() => {
+    gitRepoTemplate = buildGitRepoTemplate();
+  });
+
   it("commits the bump and each codemod by itself, and leaves the user's changes alone", async () => {
     const root = makeGitRepo();
 
