@@ -112,3 +112,40 @@ describe('ScrollbarDirective edge cases', () => {
     expect(scroll.lastCall()?.options).toEqual({ top: 10, behavior: 'smooth' });
   });
 });
+
+@Component({
+  selector: 'et-test-scrollbar-min-thumb-host',
+  template: `
+    <div #list class="list"></div>
+    <et-scrollbar [for]="list" [minThumbSize]="minThumbSize" />
+  `,
+  imports: [SCROLLBAR_IMPORTS],
+})
+class ScrollbarMinThumbHostComponent {
+  public minThumbSize: unknown = undefined;
+}
+
+describe('ScrollbarDirective minThumbSize', () => {
+  it.each([undefined, '', 'abc', NaN])('falls back to the default for the unusable value %s', (value) => {
+    const resizeObserver = fakeResizeObserver();
+    fakeElementScroll();
+    const fixture = TestBed.createComponent(ScrollbarMinThumbHostComponent);
+
+    fixture.componentInstance.minThumbSize = value;
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    fakeScrollbarTarget(element.querySelector('.list') as HTMLElement, 'vertical', {
+      viewportSize: 100,
+      contentSize: 10000,
+    });
+    fakeLayout([{ match: 'et-scrollbar', clientHeight: TRACK_SIZE }]);
+    resizeObserver.fire();
+    fixture.detectChanges();
+
+    const { thumbSize, thumbOffset } = directiveAt(fixture, ScrollbarDirective, 'et-scrollbar').geometry();
+
+    expect(thumbSize).toBe(24);
+    expect(thumbOffset).toBe(0);
+  });
+});

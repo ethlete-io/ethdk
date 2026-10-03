@@ -85,7 +85,7 @@ export class ScrollbarDirective {
   public autoHide = input(false, { transform: booleanAttribute });
 
   /** Shortest the thumb may get on a long track, in pixels. */
-  public minThumbSize = input(24, { transform: numberAttribute });
+  public minThumbSize = input(24, { transform: (value: unknown) => numberAttribute(value, 24) });
 
   /** Hide the thumb and ignore the pointer. */
   public disabled = input(false, { transform: booleanAttribute });
