@@ -141,7 +141,7 @@ confirm: (value, { signal }) => {
 };
 ```
 
-With `@ethlete/components`, [`createAlertDialogOpener()`](/components/overlays#confirm-and-alert-dialogs) closes its dialog when you unsubscribe, so `dialogs.confirm({ … }).pipe(takeUntil(fromEvent(signal, 'abort')))` is the whole wiring.
+An `Observable` confirm is unsubscribed when the signal aborts. With `@ethlete/components`, [`createAlertDialogOpener()`](/components/overlays#confirm-and-alert-dialogs) closes its dialog when you unsubscribe, so returning `dialogs.confirm({ … })` is the whole wiring.
 
 Call `abandonAll()` yourself for anything else that ends a session: an inactivity timeout, a hard workspace switch, a forced re-auth.
 

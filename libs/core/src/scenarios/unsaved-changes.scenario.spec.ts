@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { FieldTree, form } from '@angular/forms/signals';
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router, RouterOutlet } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   createUnsavedChangesGuard,
   createUnsavedChangesTracker,
@@ -244,6 +245,35 @@ describe('unsaved-changes scenarios', () => {
     expect(isTabLocked()).toBe(false);
 
     fixture.destroy();
+  });
+
+  it('stops an observable confirm when the session ends while it is open', async () => {
+    const s = scenario();
+    const model = signal<Model>({ name: 'Ada' });
+    const c = s.consumer();
+    const tracker = c.run(() =>
+      createUnsavedChangesTracker({
+        source: model,
+        tab: false,
+        confirm: () =>
+          new Observable<boolean>(() => {
+            const pollId = setInterval(() => undefined, 1000);
+
+            return () => clearInterval(pollId);
+          }),
+      }),
+    );
+
+    model.set({ name: 'Grace' });
+    s.tick();
+
+    const check = tracker.runCheck();
+
+    s.run(() => injectUnsavedChangesCoordinator()).abandonAll('logout');
+
+    await expect(check).resolves.toBe(true);
+
+    c.destroy();
   });
 
   it('sums the app badge across trackers and clears it with the last clean one', async () => {

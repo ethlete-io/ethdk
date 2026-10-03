@@ -8,7 +8,18 @@ import {
   Signal,
   untracked,
 } from '@angular/core';
-import { catchError, defaultIfEmpty, firstValueFrom, isObservable, map, Observable, of, take } from 'rxjs';
+import {
+  catchError,
+  defaultIfEmpty,
+  firstValueFrom,
+  fromEvent,
+  isObservable,
+  map,
+  Observable,
+  of,
+  take,
+  takeUntil,
+} from 'rxjs';
 import { equal } from '../utils';
 import { injectUnsavedChangesCoordinator, UnsavedChangesConfirmContext } from './unsaved-changes-coordinator';
 import { normalizeUnsavedChangesSource, UnsavedChangesSource } from './unsaved-changes-source';
@@ -102,7 +113,10 @@ export type UnsavedChangesTrackerRef<T> = {
   tab: UnsavedChangesTabLockRef | null;
 };
 
-const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolean> | unknown): Promise<boolean> => {
+const toBooleanPromise = (
+  result: boolean | Promise<boolean> | Observable<boolean> | unknown,
+  signal: AbortSignal,
+): Promise<boolean> => {
   if (result instanceof Promise) {
     return result.then(Boolean);
   }
@@ -112,6 +126,7 @@ const toBooleanPromise = (result: boolean | Promise<boolean> | Observable<boolea
       result.pipe(
         take(1),
         map(Boolean),
+        takeUntil(fromEvent(signal, 'abort')),
         defaultIfEmpty(false),
         catchError(() => of(false)),
       ),
@@ -204,7 +219,9 @@ export const createUnsavedChangesTracker = <T>(
       return Promise.resolve(true);
     }
 
-    return coordinator.runCheck((context) => toBooleanPromise(confirm(untracked(normalized.value) as T, context)));
+    return coordinator.runCheck((context) =>
+      toBooleanPromise(confirm(untracked(normalized.value) as T, context), context.signal),
+    );
   };
 
   const refreshDefaultValue = () => _defaultValue.set(untracked(normalized.value));
