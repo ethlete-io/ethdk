@@ -127,7 +127,7 @@ export class ScrollbarDirective {
 
     this.targetScrollState();
 
-    if (!target || this.orientation() !== 'horizontal') return false;
+    if (!target || this.orientation() !== 'horizontal' || typeof getComputedStyle === 'undefined') return false;
 
     return getComputedStyle(target).direction === 'rtl';
   });

@@ -1,9 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { directiveAt } from '../testing/driver-core';
 import { fakeElementScroll, fakeLayout, fakeResizeObserver } from '../testing/fake-layout';
-import { ScrollbarDirective } from './headless';
+import { ScrollbarDirective, ScrollbarOrientation } from './headless';
 import { SCROLLBAR_IMPORTS } from './scrollbar.imports';
 import { dragScrollbarThumb, fakeScrollbarTarget } from './testing/scrollbar-driver';
 
@@ -147,5 +147,34 @@ describe('ScrollbarDirective minThumbSize', () => {
 
     expect(thumbSize).toBe(24);
     expect(thumbOffset).toBe(0);
+  });
+});
+
+@Component({
+  selector: 'et-test-scrollbar-orientation-host',
+  template: `
+    <div #list class="list"></div>
+    <et-scrollbar [for]="list" [orientation]="orientation()" />
+  `,
+  imports: [SCROLLBAR_IMPORTS],
+})
+class ScrollbarOrientationHostComponent {
+  public orientation = signal<ScrollbarOrientation>('vertical');
+}
+
+describe('ScrollbarDirective without a browser window', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('reads a horizontal target as left to right where getComputedStyle does not exist, as on the server', () => {
+    const fixture = TestBed.createComponent(ScrollbarOrientationHostComponent);
+    fixture.detectChanges();
+
+    const scrollbar = directiveAt(fixture, ScrollbarDirective, 'et-scrollbar');
+
+    vi.stubGlobal('getComputedStyle', undefined);
+    fixture.componentInstance.orientation.set('horizontal');
+
+    expect(() => fixture.detectChanges()).not.toThrow();
+    expect(scrollbar.isRtl()).toBe(false);
   });
 });
