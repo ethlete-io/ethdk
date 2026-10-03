@@ -48,6 +48,8 @@ export const createNotificationRef = (
     timerSubscription = null;
 
     const duration = getEffectiveDuration(cfg);
+    remainingDuration = 0;
+
     if (!duration) return;
 
     remainingDuration = duration;

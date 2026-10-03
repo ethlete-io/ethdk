@@ -75,3 +75,37 @@ describe('createNotificationRef', () => {
     expect(typeof ref.afterDismissed().subscribe).toBe('function');
   });
 });
+
+describe('createNotificationRef auto-dismiss', () => {
+  const managerConfig = {
+    position: 'bottom-end' as const,
+    maxVisible: 3,
+    defaultDuration: { success: 4000, error: 0 },
+  };
+
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('does not resume a cleared countdown after the notification became sticky while held', () => {
+    const ref = createNotificationRef({ status: 'success', title: 'Saved' }, { managerConfig });
+
+    vi.advanceTimersByTime(1000);
+    ref.pauseTimer('hover');
+    ref.update({ status: 'error', title: 'Failed' });
+    ref.resumeTimer('hover');
+    vi.advanceTimersByTime(10_000);
+
+    expect(ref.entry().isDismissing).toBe(false);
+  });
+
+  it('does not resume a cleared countdown after an update to duration 0', () => {
+    const ref = createNotificationRef({ status: 'success', title: 'Saved' }, { managerConfig });
+
+    ref.update({ duration: 0 });
+    ref.pauseTimer('hover');
+    ref.resumeTimer('hover');
+    vi.advanceTimersByTime(10_000);
+
+    expect(ref.entry().isDismissing).toBe(false);
+  });
+});
