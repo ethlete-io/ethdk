@@ -87,7 +87,7 @@ export default async function migrateLegacyColorThemes(tree: Tree, schema: Migra
   const rewrites = new Map<string, string>();
 
   scope.visit(tree, (filePath) => {
-    if (!/\.(ts|mts|cts)$/.test(filePath) || filePath.endsWith('.d.ts')) return;
+    if (!/\.[cm]?[jt]s$/.test(filePath) || filePath.endsWith('.d.ts')) return;
 
     const before = tree.read(filePath, 'utf-8');
 

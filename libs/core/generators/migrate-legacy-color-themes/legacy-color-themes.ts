@@ -154,7 +154,15 @@ export const migrateLegacyColorThemesInFile = (filePath: string, content: string
   const renamed = references.filter((identifier) => !isAliased || identifier.getText() !== legacyLocal);
 
   for (const identifier of renamed.reverse()) {
-    identifier.replaceWithText(TAILWIND_4_PROVIDER);
+    const parent = identifier.getParent();
+
+    if (Node.isShorthandPropertyAssignment(parent)) {
+      parent.replaceWithText(`${identifier.getText()}: ${TAILWIND_4_PROVIDER}`);
+    } else if (Node.isExportSpecifier(parent) && !parent.getAliasNode()) {
+      parent.replaceWithText(`${TAILWIND_4_PROVIDER} as ${identifier.getText()}`);
+    } else {
+      identifier.replaceWithText(TAILWIND_4_PROVIDER);
+    }
   }
 
   if (legacySpecifier) {

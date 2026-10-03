@@ -86,6 +86,18 @@ export const providers = [provideColorThemes(THEMES), config.provideColorThemes]
     expect(result.content).toContain('[provideColorThemesWithTailwind4(THEMES)');
   });
 
+  it('keeps the names a shorthand property and a local export publish', () => {
+    const source = `import { provideColorThemes } from '@ethlete/core';
+export const api = { provideColorThemes };
+export { provideColorThemes };
+`;
+
+    const result = migrateLegacyColorThemesInFile('a.ts', source);
+
+    expect(result.content).toContain('{ provideColorThemes: provideColorThemesWithTailwind4 }');
+    expect(result.content).toContain('export { provideColorThemesWithTailwind4 as provideColorThemes };');
+  });
+
   it('reports the Tailwind 3 helpers without changing them', () => {
     const source = `import { createTailwindColorThemes } from '@ethlete/core';
 export default { theme: { extend: { colors: createTailwindColorThemes(THEMES, 'gg') } } };
@@ -138,6 +150,16 @@ export default { theme: { extend: { colors: createTailwindColorThemes(THEMES, 'g
     expect(report).toContain('tailwind.config.ts:2 - `createTailwindColorThemes`');
     expect(report).toContain('## Add surface themes');
     expect(report).toContain('nx g @ethlete/core:tailwind-4-surface-theme');
+  });
+
+  it('reports the Tailwind 3 helpers in a JavaScript config', async () => {
+    tree.rename('tailwind.config.ts', 'tailwind.config.js');
+
+    await migrateLegacyColorThemes(tree, { skipFormat: true });
+
+    expect(tree.read(LEGACY_COLOR_THEMES_REPORT_PATH, 'utf-8')).toContain(
+      'tailwind.config.js:2 - `createTailwindColorThemes`',
+    );
   });
 
   it('skips the surface task when the workspace already provides surface themes', async () => {
