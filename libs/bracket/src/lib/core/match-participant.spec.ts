@@ -86,4 +86,20 @@ describe('createNewMatchParticipantBase in a double elimination', () => {
       { isEliminationMatch: true, isEliminated: false },
     ]);
   });
+
+  it('finds the lower-bracket finalist whatever order the source lists its rounds in', () => {
+    const source = doubleEliminationFinal(true);
+    const lowerFirst = [...source.rounds].sort(
+      (a, b) =>
+        Number(b.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET) -
+        Number(a.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET),
+    );
+
+    const final = createBracket(
+      { ...source, rounds: lowerFirst },
+      { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+    ).matches.getOrThrow('gf' as BracketMatchId);
+
+    expect([final.home?.isEliminationMatch, final.away?.isEliminationMatch]).toEqual([false, true]);
+  });
 });

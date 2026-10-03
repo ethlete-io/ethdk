@@ -120,29 +120,15 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
             break;
           }
 
-          const currentMatchIndex = participantBase.matchIds.indexOf(match.id as BracketMatchId);
+          isEliminationMatch = participantBase.matchIds.some((matchId) => {
+            const playedMatch = findSourceMatch(matchId);
 
-          if (currentMatchIndex === -1)
-            throw new BracketRuntimeError(
-              BRACKET_ERROR_CODES.MATCH_RELATION_INVALID,
-              `Match with id ${match.id} not found in participant with id ${participantId}`,
+            return (
+              !!playedMatch &&
+              source.rounds.find((round) => round.id === playedMatch.roundId)?.type ===
+                DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET
             );
-
-          if (currentMatchIndex === 0) break;
-
-          const previousMatchIndex = currentMatchIndex - 1;
-          const previousMatchId = participantBase.matchIds[previousMatchIndex];
-          const previousMatch = findSourceMatch(previousMatchId);
-
-          if (!previousMatch)
-            throw new BracketRuntimeError(
-              BRACKET_ERROR_CODES.MATCH_RELATION_INVALID,
-              `Previous match with id ${previousMatchId} not found`,
-            );
-
-          const previousRound = rounds.getOrThrow(previousMatch.roundId as BracketRoundId);
-
-          isEliminationMatch = previousRound.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.LOWER_BRACKET;
+          });
         }
 
         isEliminated = (isEliminationMatch && isLooser) ?? false;
