@@ -245,7 +245,7 @@
     z-index: 3;
   }
 
-  /* `relative` only where the cell is not pinned: it outweighs the base sheet's `sticky`, so applying it
+  /* `relative` only where the cell is not pinned: it outweighs the pinned cell's `sticky`, so applying it
      to a pinned cell unpins it. The utility cells then scroll away with the rows and let scrolled content
      show through the strip they were holding at the pinned column's edge. */
   .et-table-row--link

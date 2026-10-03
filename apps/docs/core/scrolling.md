@@ -15,14 +15,14 @@ scrollToElement({
 });
 ```
 
-| Option                                     | Default     | Description                                                                                                                                       |
-| ------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `element`                                  | -           | The element to scroll into view.                                                                                                                  |
-| `container`                                | -           | The scroll container (required - the viewport isn't supported).                                                                                   |
-| `direction`                                | `'both'`    | `'inline' \| 'block' \| 'both'` - which axes to scroll.                                                                                           |
-| `origin`                                   | `'nearest'` | `'start' \| 'end' \| 'center' \| 'nearest'` alignment. `'nearest'` decides per axis and leaves an axis alone when the element already fits in it. |
-| `behavior`                                 | `'smooth'`  | Native `ScrollBehavior`.                                                                                                                          |
-| `scrollInlineMargin` / `scrollBlockMargin` | `0`         | Extra margin around the target (applies to `'start'`, `'end'` and `'nearest'`; `'center'` ignores it).                                            |
+| Option                                     | Default     | Description                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `element`                                  | -           | The element to scroll into view.                                                                                                                                                                                                                      |
+| `container`                                | -           | The scroll container (required - the viewport isn't supported).                                                                                                                                                                                       |
+| `direction`                                | `'both'`    | `'inline' \| 'block' \| 'both'` - which axes to scroll.                                                                                                                                                                                               |
+| `origin`                                   | `'nearest'` | `'start' \| 'end' \| 'center' \| 'nearest'` alignment. `'nearest'` decides per axis: it leaves an axis alone when the element already fits in it or overflows both edges, and keeps the visible edge of an element larger than the container in view. |
+| `behavior`                                 | `'smooth'`  | Native `ScrollBehavior`.                                                                                                                                                                                                                              |
+| `scrollInlineMargin` / `scrollBlockMargin` | `0`         | Extra margin around the target (applies to `'start'`, `'end'` and `'nearest'`; `'center'` ignores it).                                                                                                                                                |
 
 `getElementScrollCoordinates(options)` computes the same `{ left, top, behavior }` without scrolling - useful for custom animation or batching. When there is no element or container, the container does not contain the element, or the container cannot scroll, `left` and `top` are `undefined` and nothing moves.
 
