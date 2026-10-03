@@ -358,3 +358,170 @@ describe('AccordionGroupComponent', () => {
     expect(document.activeElement).toBe(triggers[0]);
   });
 });
+
+@Component({
+  template: `
+    <form (submit)="submitCount = submitCount + 1; $event.preventDefault()">
+      <et-accordion-group [arrowKeyNavigation]="arrowKeys()">
+        <et-accordion [disabled]="disabled()" [isOpenByDefault]="openByDefault()" label="first">
+          <input class="panel-input" />
+          <ng-template etAccordionContent><span class="lazy-content">lazy</span></ng-template>
+        </et-accordion>
+        <et-accordion label="second">
+          <et-accordion-group>
+            <et-accordion label="inner-a">a</et-accordion>
+            <et-accordion label="inner-b">b</et-accordion>
+          </et-accordion-group>
+        </et-accordion>
+        <et-accordion label="third">
+          <ng-template etAccordionLabel><b class="custom-label">Custom</b></ng-template>
+          <ng-template etAccordionHint><span class="custom-hint">3 items</span></ng-template>
+          third body
+        </et-accordion>
+      </et-accordion-group>
+    </form>
+  `,
+  imports: [ACCORDION_IMPORTS],
+})
+class AccordionEdgeHostComponent {
+  public first = viewChild.required(AccordionComponent, { read: AccordionDirective });
+  public arrowKeys = signal(true);
+  public disabled = signal(false);
+  public openByDefault = signal(false);
+  public submitCount = 0;
+}
+
+describe('Accordion edge behaviour', () => {
+  const setup = () => {
+    const fixture = TestBed.createComponent(AccordionEdgeHostComponent);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const trigger = (label: string) =>
+      [...el.querySelectorAll<HTMLButtonElement>('.et-accordion-trigger')].find((t) =>
+        t.textContent?.trim().startsWith(label),
+      )!;
+
+    return { fixture, el, trigger };
+  };
+
+  const press = (target: HTMLElement, key: string) => {
+    const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+
+    return event;
+  };
+
+  it('does not move focus with the arrow keys while arrowKeyNavigation is off', () => {
+    const { fixture, trigger } = setup();
+    fixture.componentInstance.arrowKeys.set(false);
+    fixture.detectChanges();
+
+    trigger('first').focus();
+    const event = press(trigger('first'), 'ArrowDown');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(trigger('first'));
+  });
+
+  it('leaves arrow keys inside panel content alone', () => {
+    const { fixture, el, trigger } = setup();
+    trigger('first').click();
+    fixture.detectChanges();
+
+    const input = el.querySelector<HTMLInputElement>('.panel-input')!;
+    input.focus();
+    const event = press(input, 'End');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(input);
+  });
+
+  it('keeps arrow keys of a nested group inside that group', () => {
+    const { fixture, trigger } = setup();
+    trigger('second').click();
+    fixture.detectChanges();
+
+    trigger('inner-a').focus();
+    press(trigger('inner-a'), 'ArrowDown');
+    expect(document.activeElement).toBe(trigger('inner-b'));
+
+    press(trigger('inner-b'), 'ArrowDown');
+    expect(document.activeElement).toBe(trigger('inner-a'));
+  });
+
+  it('never submits a surrounding form from the trigger', () => {
+    const { fixture, trigger } = setup();
+
+    expect(trigger('first').getAttribute('type')).toBe('button');
+    trigger('first').click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.submitCount).toBe(0);
+  });
+
+  it('creates etAccordionContent only on the first expand and keeps it afterwards', () => {
+    const { fixture, el, trigger } = setup();
+    expect(el.querySelector('.lazy-content')).toBeNull();
+
+    trigger('first').click();
+    fixture.detectChanges();
+    expect(el.querySelector('.lazy-content')).not.toBeNull();
+
+    trigger('first').click();
+    fixture.detectChanges();
+    expect(el.querySelector('.lazy-content')).not.toBeNull();
+  });
+
+  it('renders the label and hint templates in the header', () => {
+    const { el } = setup();
+    const header = [...el.querySelectorAll('.et-accordion-trigger')].at(-1)!;
+
+    expect(header.querySelector('.custom-label')?.textContent).toBe('Custom');
+    expect(header.querySelector('.et-accordion-hint .custom-hint')?.textContent).toBe('3 items');
+  });
+
+  it('opens by default, and ignores a later isOpenByDefault change', () => {
+    const fixture = TestBed.createComponent(AccordionEdgeHostComponent);
+    fixture.componentInstance.openByDefault.set(true);
+    fixture.detectChanges();
+    const accordion = fixture.componentInstance.first();
+
+    expect(accordion.isOpen()).toBe(true);
+
+    accordion.close();
+    fixture.componentInstance.openByDefault.set(false);
+    fixture.detectChanges();
+    fixture.componentInstance.openByDefault.set(true);
+    fixture.detectChanges();
+
+    expect(accordion.isOpen()).toBe(false);
+  });
+
+  it('ignores open() while disabled but still lets close() collapse it', () => {
+    const { fixture } = setup();
+    const accordion = fixture.componentInstance.first();
+    accordion.open();
+    fixture.componentInstance.disabled.set(true);
+    fixture.detectChanges();
+
+    accordion.close();
+    expect(accordion.isOpen()).toBe(false);
+
+    accordion.open();
+    accordion.toggle();
+    expect(accordion.isOpen()).toBe(false);
+  });
+
+  it('keeps a disabled header focusable and reachable with the arrow keys', () => {
+    const { fixture, trigger } = setup();
+    fixture.componentInstance.disabled.set(true);
+    fixture.detectChanges();
+
+    expect(trigger('first').disabled).toBe(false);
+    expect(trigger('first').getAttribute('aria-disabled')).toBe('true');
+
+    trigger('second').focus();
+    press(trigger('second'), 'ArrowUp');
+    expect(document.activeElement).toBe(trigger('first'));
+  });
+});

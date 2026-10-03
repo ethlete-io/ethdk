@@ -182,6 +182,46 @@ describe('ToggletipDirective', () => {
     expect(document.activeElement).toBe(input);
   });
 
+  it('toggles on trigger click and closes on Escape from the trigger', () => {
+    button.click();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(true);
+
+    button.click();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+
+    button.click();
+    fixture.detectChanges();
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('refuses to open while disabled, from click, show() or the open model', () => {
+    setInputSignal(toggletipDirective.disabled, true);
+    fixture.detectChanges();
+
+    button.click();
+    toggletipDirective.show();
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+
+    toggletipDirective.open.set(true);
+    fixture.detectChanges();
+    expect(toggletipDirective.open()).toBe(false);
+    expect(toggletipDirective.overlayRef()).toBeNull();
+  });
+
+  it('points aria-controls at an element inside the rendered dialog', () => {
+    toggletipDirective.show();
+    fixture.detectChanges();
+
+    const controlled = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    expect(controlled?.closest('[role="dialog"]')).not.toBeNull();
+  });
+
   it('reports template content without an accessible label and stays closed', () => {
     const handleError = vi.spyOn(TestBed.inject(ErrorHandler), 'handleError').mockImplementation(() => undefined);
 
