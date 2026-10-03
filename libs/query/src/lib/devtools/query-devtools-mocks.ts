@@ -191,7 +191,7 @@ export const matchesQueryDevtoolsMockQuery = (declared: string, url: string) => 
 
   const asked = new URLSearchParams(queryOf(url));
 
-  return [...new URLSearchParams(declared)].every(([key, value]) => asked.get(key) === value);
+  return [...new URLSearchParams(declared)].every(([key, value]) => asked.getAll(key).includes(value));
 };
 
 /**

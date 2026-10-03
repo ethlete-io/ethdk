@@ -1,10 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  armQueryDevtoolsMock,
+  clearQueryDevtoolsArmedMocks,
+  clearQueryDevtoolsMockStore,
   isQueryDevtoolsEnabled,
   loadQueryDevtoolsSchema,
   provideQueryDevtools,
+  queryDevtoolsMockId,
   queryDevtoolsSchemaState,
+  saveQueryDevtoolsMock,
   seedQueryDevtoolsSchemaBody,
+  withArgs,
 } from '../index';
 import { useScenario } from './harness';
 
@@ -32,6 +38,11 @@ describe('devtools scan 2026-10-03', () => {
     providers: () => [provideQueryDevtools({ schema: () => SCHEMA })],
   });
 
+  beforeEach(() => {
+    clearQueryDevtoolsArmedMocks();
+    clearQueryDevtoolsMockStore();
+  });
+
   it('seeds a placeholder and a realistic body inside a maximum below zero and inside the declared lengths', async () => {
     const s = scenario();
     expect(isQueryDevtoolsEnabled()).toBe(true);
@@ -54,4 +65,37 @@ describe('devtools scan 2026-10-03', () => {
     }
   });
 
+  it('serves a mock that declares one value of a query param the request repeats', async () => {
+    const s = scenario();
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    const pattern = '/posts';
+    const query = 'tag[]=b';
+    const id = queryDevtoolsMockId({ clientName: CLIENT_NAME, method: 'GET', pattern, query });
+
+    saveQueryDevtoolsMock({
+      id,
+      clientName: CLIENT_NAME,
+      method: 'GET',
+      pattern,
+      query,
+      status: 200,
+      body: { title: 'designed' },
+      latencyMs: 0,
+      capturedAt: null,
+    });
+    armQueryDevtoolsMock(id, true);
+
+    s.api.on('GET', '/posts', () => ({ body: { title: 'real' } }));
+
+    const getPosts = s.get<{ response: { title: string }; queryParams: { tag: string[] } }>('/posts');
+    const c = s.consumer();
+    const posts = c.run(() => getPosts(withArgs(() => ({ queryParams: { tag: ['a', 'b'] } }))));
+    await s.settle();
+
+    expect(posts.response()).toEqual({ title: 'designed' });
+    expect(s.api.requests).toHaveLength(0);
+
+    c.destroy();
+  });
 });

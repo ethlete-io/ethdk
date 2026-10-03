@@ -100,6 +100,14 @@ describe('query devtools mocks', () => {
       expect(matchesQueryDevtoolsMockQuery('draft=true', url)).toBe(false);
       expect(matchesQueryDevtoolsMockQuery('page=2', 'https://api.example.com/posts')).toBe(false);
     });
+
+    it('should match a declared parameter that the request repeats', () => {
+      const url = 'https://api.example.com/posts?tag=a&tag=b&page=1';
+
+      expect(matchesQueryDevtoolsMockQuery('tag=b', url)).toBe(true);
+      expect(matchesQueryDevtoolsMockQuery('tag=a&tag=b', url)).toBe(true);
+      expect(matchesQueryDevtoolsMockQuery('tag=a&tag=c', url)).toBe(false);
+    });
   });
 
   describe('the library', () => {
