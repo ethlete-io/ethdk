@@ -195,7 +195,7 @@ export class TableDataSource<T, P extends TableDataSourcePaginator = TableDataSo
       paginator.length = filteredDataLength;
 
       if (paginator.pageIndex > 0) {
-        const lastPageIndex = Math.ceil(paginator.length / paginator.pageSize) - 1 || 0;
+        const lastPageIndex = Math.max(Math.ceil(paginator.length / paginator.pageSize) - 1, 0);
         const newPageIndex = Math.min(paginator.pageIndex, lastPageIndex);
 
         if (newPageIndex !== paginator.pageIndex) {

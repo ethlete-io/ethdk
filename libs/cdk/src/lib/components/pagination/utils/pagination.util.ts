@@ -12,7 +12,9 @@ export const paginate = (value?: PaginateOptions | null) => {
   const { omitFirstLast = false, omitPreviousNext = false, pagesBeforeAfter = 2, firstPage = 1 } = value;
 
   const pages: PaginationItem[] = [];
-  const activePage = clamp(value.currentPage, firstPage, value.totalPageCount);
+  const activePage = Number.isFinite(value.currentPage)
+    ? clamp(Math.floor(value.currentPage), firstPage, value.totalPageCount)
+    : firstPage;
 
   if (value.totalPageCount === 0) {
     return null;
@@ -49,7 +51,7 @@ export const paginate = (value?: PaginateOptions | null) => {
       page: activePage - 1,
       current: false,
       ariaLabel: `Previous page`,
-      disabled: activePage === 1,
+      disabled: activePage === firstPage,
       type: 'hotLink',
       explicitType: 'previous',
       url: createUrl(activePage - 1),
