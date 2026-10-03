@@ -1,4 +1,4 @@
-import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { defineStaticRootProvider, toInjectFn } from '@ethlete/core';
 import { FormFieldAppearance, FormFieldFill, FormFieldLabelMode, FormFieldSize } from './form-field.variants';
 
 export type FormFieldDefaults = {
@@ -22,11 +22,14 @@ const FORM_FIELD_DEFAULTS_DEF = /* @__PURE__ */ defineStaticRootProvider(DEFAULT
 
 /**
  * Set the default `appearance`, `fill`, `labelMode` and `size` of every form field below this injector.
- * Partial - whatever you leave out keeps its {@link DEFAULT_FORM_FIELD_DEFAULTS} value, also when an outer
+ * Partial - whatever you leave out or set to `undefined` keeps its {@link DEFAULT_FORM_FIELD_DEFAULTS} value, also when an outer
  * injector provides it. An input set on a field still wins.
  *
  * @example
  * provideFormFieldDefaults({ labelMode: 'floating-inside', fill: 'filled' });
  */
-export const provideFormFieldDefaults = /* @__PURE__ */ toProvideFn(FORM_FIELD_DEFAULTS_DEF);
+export const provideFormFieldDefaults = (defaults?: Partial<FormFieldDefaults>) =>
+  FORM_FIELD_DEFAULTS_DEF.provide(
+    defaults && Object.fromEntries(Object.entries(defaults).filter(([, value]) => value !== undefined)),
+  );
 export const injectFormFieldDefaults = /* @__PURE__ */ toInjectFn(FORM_FIELD_DEFAULTS_DEF);

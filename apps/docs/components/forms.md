@@ -179,7 +179,7 @@ bootstrapApplication(AppComponent, {
 ```
 
 The `size` default also applies to `et-choice-field`, `et-checkbox-group`, `et-radio-group` and
-`et-segmented-button-group`. The call is partial: what you leave out keeps the built-in default. A
+`et-segmented-button-group`. The call is partial: what you leave out or set to `undefined` keeps the built-in default. A
 nested `provideFormFieldDefaults()` replaces the outer one, so it does not inherit the outer values.
 
 `appearance: 'underline'` is the compact one: it has no box to fill, so its frame is
