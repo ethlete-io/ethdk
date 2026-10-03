@@ -31,4 +31,28 @@ describe('http scan 2026-10-03 scenario', () => {
       c.destroy();
     });
   });
+
+  describe('a cacheAdapter that answers NaN', () => {
+    const scenario = useScenario({
+      clientOptions: { keepUnusedFor: 0, cacheAdapter: (headers) => parseInt(headers.get('x-ttl') ?? '') },
+    });
+
+    it('treats the response as having no freshness window instead of fresh forever', () => {
+      const s = scenario();
+      s.api.on('GET', '/nan-ttl', () => ({ body: { n: 1 } }));
+
+      const getNanTtl = s.get<{ response: { n: number } }>('/nan-ttl');
+
+      const c = s.consumer();
+      const query = c.run(() => getNanTtl());
+      s.tick();
+
+      s.tick(1_000);
+      query.execute({ options: { allowCache: true } });
+      s.tick();
+      expect(s.api.requestCount('GET', '/nan-ttl')).toBe(2);
+
+      c.destroy();
+    });
+  });
 });

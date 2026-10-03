@@ -229,7 +229,7 @@ export const buildRoute = (options: {
 };
 
 export const buildTimestampFromSeconds = (seconds: number | null) => {
-  if (seconds === null) {
+  if (seconds === null || Number.isNaN(seconds)) {
     return null;
   }
 
