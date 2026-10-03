@@ -41,6 +41,7 @@ export type MigrationReport = {
   judgmentSymbols: Map<string, SymbolSites>;
   gatedSymbols: Map<string, SymbolSites>;
   unknownStyleClasses: Map<string, ReportSite[]>;
+  reactiveFormControls: Map<string, ReportSite[]>;
 };
 
 export type ReportContext = {
@@ -56,6 +57,7 @@ export const createEmptyReport = (): MigrationReport => ({
   judgmentSymbols: new Map(),
   gatedSymbols: new Map(),
   unknownStyleClasses: new Map(),
+  reactiveFormControls: new Map(),
 });
 
 export const isReportEmpty = (report: MigrationReport) =>
@@ -65,7 +67,33 @@ export const isReportEmpty = (report: MigrationReport) =>
   report.spinnerModeBindings.length === 0 &&
   report.judgmentSymbols.size === 0 &&
   report.gatedSymbols.size === 0 &&
-  report.unknownStyleClasses.size === 0;
+  report.unknownStyleClasses.size === 0 &&
+  report.reactiveFormControls.size === 0;
+
+const FORM_CONTROL_TAGS = [
+  'et-checkbox',
+  'et-checkbox-group',
+  'et-color-input',
+  'et-combobox',
+  'et-date-input',
+  'et-date-time-input',
+  'et-email-input',
+  'et-native-select',
+  'et-number-input',
+  'et-password-input',
+  'et-radio-group',
+  'et-search-input',
+  'et-segmented-button-group',
+  'et-select',
+  'et-slide-toggle',
+  'et-slider',
+  'et-tel-input',
+  'et-text-input',
+  'et-textarea-input',
+  'et-time-input',
+] as const;
+
+const REACTIVE_FORM_BINDING = /\s\[?(formControl|formControlName|formGroup)\]?(?=[\s=/>])/;
 
 const PICTURE_CLASS_INPUTS = ['imgClass', 'figureClass', 'pictureClass', 'figcaptionClass'] as const;
 
@@ -185,6 +213,19 @@ export const scanTemplate = (report: MigrationReport, template: string, { file, 
       match = attributePattern.exec(tag);
     }
   });
+
+  for (const tagName of FORM_CONTROL_TAGS) {
+    forEachOpeningTag(template, tagName, (tag, index) => {
+      const binding = REACTIVE_FORM_BINDING.exec(tag);
+
+      if (!binding) return;
+
+      const sites = report.reactiveFormControls.get(tagName) ?? [];
+
+      sites.push({ file, line: lineAt(index), detail: `\`${binding[1]}\`` });
+      report.reactiveFormControls.set(tagName, sites);
+    });
+  }
 
   for (const tagName of [SPINNER_TAG, LEGACY_SPINNER_TAG]) {
     forEachOpeningTag(template, tagName, (tag, index) => {
@@ -436,6 +477,22 @@ export const renderReport = (report: MigrationReport, context: ReportContext) =>
 
             return `${entry.kind}: ${successor} in \`${entry.package}\`.${renderDocsLink(entry)}`;
           }),
+        ]
+      : []),
+    ...(report.reactiveFormControls.size > 0
+      ? [
+          '## Form controls that need signal forms first',
+          '',
+          'The components form controls bind through signal forms (`[formField]`) and have no ControlValueAccessor,',
+          'so these cdk controls, still bound through reactive forms, stay on `@ethlete/cdk` until their form moves',
+          `to signal forms. See ${DOCS_BASE_URL}/cdk/migration.`,
+          '',
+          ...[...report.reactiveFormControls.entries()].flatMap(([tagName, sites]) => [
+            `### \`<${tagName}>\``,
+            '',
+            ...renderSites(sites),
+            '',
+          ]),
         ]
       : []),
     ...(report.unknownStyleClasses.size > 0

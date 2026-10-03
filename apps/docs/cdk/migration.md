@@ -40,7 +40,8 @@ yarn nx g @ethlete/cdk:migrate-from-cdk --include=apps/shop     # only these pat
 
 What it cannot decide goes into **`migrate-from-cdk-tasks.md`** at the repository root: pictures
 without `alt`, picture class inputs, themed spinners, symbols whose contract changed, successors that
-need a newer package, and [stylesheet selectors](#your-cdk-styles) that no components class matches.
+need a newer package, cdk form controls still bound through reactive forms (`formControl`, `formControlName`
+or `[formGroup]`, grouped by control - they need signal forms first), and [stylesheet selectors](#your-cdk-styles) that no components class matches.
 Run it again after an upgrade: a version-gated row is rewritten once its package is new enough.
 
 Both steps are `optional` in `@ethlete/cdk`'s migrations, so `et update` never runs them. `et migrations`
