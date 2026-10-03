@@ -42,16 +42,16 @@ everything at once - handy in a playground, wasteful in an app.
 
 Source inputs per platform:
 
-| Platform    | Source                                                       | Extras                          |
-| ----------- | ------------------------------------------------------------ | ------------------------------- |
-| YouTube     | `videoId`                                                    | `startTime`                     |
-| Twitch      | `src` - channel name, channel URL or `…/videos/<id>` VOD URL | `autoplay`, `chat`, `startTime` |
-| Vimeo       | `videoId`                                                    | `startTime`                     |
-| Dailymotion | `videoId`                                                    | `startTime`                     |
-| Kick        | `channel`                                                    | `muted`                         |
-| Facebook    | `videoId`                                                    | -                               |
-| TikTok      | `videoId`                                                    | portrait 9∶16 by default        |
-| SOOP        | `userId` or `videoId`                                        | -                               |
+| Platform    | Source                                                       | Extras                              |
+| ----------- | ------------------------------------------------------------ | ----------------------------------- |
+| YouTube     | `videoId`                                                    | `startTime`                         |
+| Twitch      | `src` - channel name, channel URL or `…/videos/<id>` VOD URL | `autoplay`, `chat`, `startTime`     |
+| Vimeo       | `videoId`                                                    | `startTime`                         |
+| Dailymotion | `videoId`                                                    | `startTime`                         |
+| Kick        | `channel`                                                    | `muted`                             |
+| Facebook    | `videoId`                                                    | -                                   |
+| TikTok      | `videoId`                                                    | portrait 9∶16 in picture-in-picture |
+| SOOP        | `userId` or `videoId`                                        | -                                   |
 
 Every slot additionally accepts `width` / `height` (iframe sizing - usually leave them alone and size via CSS), `streamSlotPriority` (when several slots want the same player id, a priority slot wins the player) and `streamSlotOnPipBack` (declarative PiP-return callback, the template-friendly alternative to `pipActivate(onBack)`).
 

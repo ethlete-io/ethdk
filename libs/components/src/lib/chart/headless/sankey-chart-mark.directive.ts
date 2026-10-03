@@ -14,6 +14,7 @@ import { SankeyChartActiveMark, SankeyChartDirective } from './sankey-chart.dire
   selector: '[etSankeyChartMark]',
   exportAs: 'etSankeyChartMark',
   host: {
+    role: 'img',
     '[attr.tabindex]': 'isTabStop() ? 0 : -1',
     '(focus)': 'chart.focusMark(mark())',
     '(blur)': 'chart.blurMark(key())',

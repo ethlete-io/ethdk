@@ -36,7 +36,7 @@ export type TreeDataSource<T> = {
 export type TreeCompareWith<T> = (a: T, b: T) => boolean;
 
 export const TREE_SELECTION_MODES = {
-  /** Rows never select. Expansion, focus and `activated` still work - a pure navigation tree. */
+  /** Rows never select. Expansion, focus and `nodeActivate` still work - a pure navigation tree. */
   NONE: 'none',
   /** At most one selected node; `value` is `T | null`. */
   SINGLE: 'single',

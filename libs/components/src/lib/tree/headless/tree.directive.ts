@@ -106,7 +106,7 @@ export class TreeDirective<T = unknown> {
    */
   public expandedValues = model<readonly T[]>([]);
 
-  /** Refuse to expand, select or move focus. Rows are marked `aria-disabled` and keep their DOM order. */
+  /** Refuse to expand, select or move focus with the arrow keys. Rows are marked `aria-disabled` and keep their Tab stop. */
   public disabled = input(false, { transform: booleanAttribute });
 
   /**
