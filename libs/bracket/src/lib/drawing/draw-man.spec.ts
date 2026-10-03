@@ -5,6 +5,7 @@ import { drawMan } from './draw-man';
 import { BracketComponents } from './grid/core';
 import { createDoubleEliminationGrid } from './grid/double-elimination';
 import { createStackedDoubleEliminationGrid } from './grid/double-elimination-stacked';
+import { createSingleEliminationGrid } from './grid/single-elimination';
 import { CreateBracketGridConfig } from './grid/types';
 
 const config = (layout: BracketDataLayout): CreateBracketGridConfig => ({
@@ -148,5 +149,41 @@ describe('drawMan', () => {
     expect(gutter?.d).toBe('M 700 325 H 725 V 165 H 700');
     expect(gutter?.dashArray).toBe(4);
     expect(drawing.edges.find((e) => e.id === 'u3a|gfa')?.d).toBe('M 600 125 V 125');
+  });
+
+  it('bends a merge arm towards its card when the source names the lower feeder first', () => {
+    const winnerOf = (matchId: string) =>
+      ({ kind: 'match-outcome', role: 'winner', matchId, standingId: null, rank: null, label: null }) as const;
+    const source: BracketDataSource<null, null> = {
+      mode: 'single-elimination',
+      rounds: [
+        { id: 'r0', name: 'r0', type: 'single-elimination-bracket', data: null },
+        { id: 'f', name: 'f', type: 'final', data: null },
+      ],
+      matches: [
+        match('a', 'r0', 'p1', 'p2', null),
+        match('b', 'r0', 'p3', 'p4', null),
+        { ...match('fm', 'f', null, null, null), homeSource: winnerOf('b'), awaySource: winnerOf('a') },
+      ],
+    };
+    const layout = BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT;
+    const grid = createSingleEliminationGrid(createBracket(source, { layout }), config(layout), COMPONENTS);
+    const blockCoordinates = (d: string) =>
+      [...d.matchAll(/(?:M|Q) [\d.-]+ ([\d.-]+)|, [\d.-]+ ([\d.-]+)|V ([\d.-]+)/g)].map((found) =>
+        Number(found[1] ?? found[2] ?? found[3]),
+      );
+
+    for (const edge of drawMan({ ...DRAW_OPTIONS, bracketGrid: grid }).edges) {
+      const [from, ...rest] = blockCoordinates(edge.d);
+      const to = rest.at(-1);
+
+      expect(from).toBeDefined();
+      expect(to).toBeDefined();
+
+      const low = Math.min(from ?? 0, to ?? 0);
+      const high = Math.max(from ?? 0, to ?? 0);
+
+      expect(blockCoordinates(edge.d).every((y) => y >= low && y <= high)).toBe(true);
+    }
   });
 });

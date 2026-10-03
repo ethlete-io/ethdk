@@ -48,15 +48,12 @@ const isSameColumn = (from: BracketPosition, to: BracketPosition) =>
 const straightPath = (from: BracketPosition, to: BracketPosition, options: LineOptions) =>
   isSameColumn(from, to) ? verticalPath(from, to, options) : linePath(from, to, options);
 
-/** One arm of a merge, collapsing to a straight run when the two cards share a column. */
-const mergePath = (
-  from: BracketPosition,
-  to: BracketPosition,
-  direction: 'up' | 'down',
-  options: CurveOptions,
-  // eslint-disable-next-line max-params -- mirrors curvePath's (from, to, direction, options)
-) =>
-  isSameColumn(from, to) ? verticalPath(from, to, { path: options.path }) : curvePath(from, to, direction, options);
+/** One arm of a merge, bending towards its card, collapsing to a straight run when the two share a column. */
+// eslint-disable-next-line max-params -- geometry helper: (from, to, options) reads naturally positional
+const mergePath = (from: BracketPosition, to: BracketPosition, options: CurveOptions) =>
+  isSameColumn(from, to)
+    ? verticalPath(from, to, { path: options.path })
+    : curvePath(from, to, to.block.center >= from.block.center ? 'down' : 'up', options);
 
 const edgeId = (fromMatchId: string, toMatchId: string) => `${fromMatchId}|${toMatchId}`;
 
@@ -185,7 +182,7 @@ export const drawMan = <TRoundData, TMatchData>(
             );
           } else {
             pushEdge(
-              mergePath(prevUpperPos, currentPos, 'down', {
+              mergePath(prevUpperPos, currentPos, {
                 ...curveOptions,
                 path: {
                   ...curveOptions.path,
@@ -220,7 +217,7 @@ export const drawMan = <TRoundData, TMatchData>(
                   inverted: invertCurve,
                   gutter: dimensions.columnGap / 2,
                 })
-              : mergePath(prevLowerPos, currentPos, 'up', { ...curveOptions, path: lowerPathOptions }),
+              : mergePath(prevLowerPos, currentPos, { ...curveOptions, path: lowerPathOptions }),
           );
 
           break;
