@@ -166,18 +166,18 @@ const buildTrackingFeature = <TBuilders extends readonly AnyQueryBuilder[]>(
     }
   };
 
-  const fireHandlers = (event: string, data: unknown) => {
-    const eventHandlers = handlers.get(event);
-    if (eventHandlers) {
-      eventHandlers.forEach((handler) => {
+  // Handlers run outside the reactive context of the effects that fire them, so one that ends the
+  // session or creates a query does not throw NG0602.
+  const fireHandlers = (event: string, data: unknown) =>
+    untracked(() => {
+      handlers.get(event)?.forEach((handler) => {
         try {
           handler(data);
         } catch (error) {
           console.error(`Error in tracking event handler for "${event}":`, error);
         }
       });
-    }
-  };
+    });
 
   type ForwardedMessage = { event: string; data: unknown };
   const pendingForwardedMessages: ForwardedMessage[] = [];

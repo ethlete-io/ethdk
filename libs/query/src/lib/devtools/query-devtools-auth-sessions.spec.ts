@@ -1,7 +1,7 @@
 import { Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { QueryDevtoolsAuthProviderHandle } from './query-devtools-hook';
-import { setQueryDevtoolsApiEnvs } from './query-devtools-api-envs';
+import { queryDevtoolsApiEnvScope, setQueryDevtoolsApiEnvs } from './query-devtools-api-envs';
 import {
   addQueryDevtoolsAuthAccount,
   clearQueryDevtoolsAuthSessions,
@@ -223,6 +223,23 @@ describe('query devtools auth sessions', () => {
       expect(sessionStorage.getItem(STORE_KEY)).toBeNull();
       expect(sessionStorage.getItem(ACTIVE_KEY)).toBeNull();
     });
+  });
+
+  it('should skip a stored account that is not one rather than failing the provider that registers', () => {
+    const scope = queryDevtoolsApiEnvScope();
+    const kept = { id: 'a', provider: 'hub-auth', label: 'Coach', loginQuery: 'login', scope };
+
+    localStorage.setItem(
+      STORE_KEY,
+      JSON.stringify({ sessions: [], credentials: {}, accounts: [null, 'x', { id: 'b', provider: 'hub-auth' }, kept] }),
+    );
+    initQueryDevtoolsAuthSessions([]);
+
+    const provider = createProvider('hub-auth');
+
+    expect(queryDevtoolsAuthAccountsFor('hub-auth').map((account) => account.id)).toEqual(['local:a']);
+
+    provider.stop();
   });
 
   it('should drop the copy a former scope left in the other store', () => {

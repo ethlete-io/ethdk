@@ -307,12 +307,27 @@ const sanitizeSession = (value: unknown): QueryDevtoolsAuthSession | null => {
   };
 };
 
+const isLocalAccount = (value: unknown): value is QueryDevtoolsAuthLocalAccount => {
+  const account = value as Partial<QueryDevtoolsAuthLocalAccount> | null;
+
+  return (
+    typeof account === 'object' &&
+    account !== null &&
+    typeof account.id === 'string' &&
+    typeof account.provider === 'string' &&
+    typeof account.label === 'string' &&
+    typeof account.loginQuery === 'string' &&
+    typeof account.scope === 'string' &&
+    (account.fields === undefined || Array.isArray(account.fields))
+  );
+};
+
 const sanitize = (value: Partial<Store> | null): Store => ({
   sessions: Array.isArray(value?.sessions)
     ? value.sessions.map(sanitizeSession).filter((session): session is QueryDevtoolsAuthSession => session !== null)
     : [],
   credentials: typeof value?.credentials === 'object' && value.credentials !== null ? value.credentials : {},
-  accounts: Array.isArray(value?.accounts) ? value.accounts : [],
+  accounts: Array.isArray(value?.accounts) ? value.accounts.filter(isLocalAccount) : [],
 });
 
 /**

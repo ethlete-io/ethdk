@@ -190,6 +190,37 @@ describe('http scan 2026-10-03 scenario', () => {
       c.destroy();
     });
   });
+
+  describe('creators that differ only in wire options', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('keeps a json, a text and a credentialed query on one route in separate cache entries', () => {
+      const s = scenario();
+      s.api.on('GET', '/report', () => ({ body: { n: 1 } }));
+
+      const getJson = s.get<{ response: { n: number } }>('/report');
+      const getText = s.get<{ response: string }>('/report', { responseType: 'text' });
+      const getWithCredentials = s.get<{ response: { n: number } }>('/report', { withCredentials: true });
+
+      const c = s.consumer();
+      const json = c.run(() => getJson());
+      const text = c.run(() => getText());
+      const credentialed = c.run(() => getWithCredentials());
+      s.tick();
+
+      expect(s.api.requestCount('GET', '/report')).toBe(3);
+      expect(s.api.httpRequests('GET', '/report').map((r) => [r.responseType, r.withCredentials])).toEqual([
+        ['json', false],
+        ['text', false],
+        ['json', true],
+      ]);
+      expect(json.response()).toEqual({ n: 1 });
+      expect(typeof text.response()).toBe('string');
+      expect(credentialed.response()).toEqual({ n: 1 });
+
+      c.destroy();
+    });
+  });
 });
 
 describe.each(LEGACY_CLIENT_KINDS)('*etQuery over a query collection on the %s client', (kind) => {
