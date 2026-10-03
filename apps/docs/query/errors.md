@@ -2,7 +2,7 @@
 
 ## The error object
 
-Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (a `QueryErrorResponseSingle`: `isList: false`, `error.message`) or a violation list (a `QueryErrorResponseList`: `isList: true`, `errors[].message`). Both halves hold `QueryErrorResponseItem`s, which are just `{ message }`.
+Failed requests resolve to a **`QueryErrorResponse`** on [`query.error()`](/query/queries#the-query-object): `{ raw: HttpErrorResponse, code: number, retryState }` plus a normalized message - either a single message (a `QueryErrorResponseSingle`: `isList: false`, `error.message`) or, when the body carries two or more messages, a list (a `QueryErrorResponseList`: `isList: true`, `errors[].message`). Both halves hold `QueryErrorResponseItem`s, which are just `{ message }`.
 
 Out of the box the normalizer reads the shapes every API has: `{ message }`, `{ detail }`, plain strings, string arrays, and lists of `{ message }` objects - bare (`[{ message }]`) or GraphQL-style (`{ errors: [{ message }] }`) - so templates can render error messages without caring about the backend flavor.
 
@@ -277,7 +277,7 @@ A request retries only while something is bound to it. When the last consumer of
 
 ## Error codes
 
-Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area. Only the paged-stack and WebSocket checks are dev mode only:
+Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area. Only the paged-stack and WebSocket checks are dev mode only, and `ET204` is a dev mode `console.warn` rather than a throw:
 
 | Code     | Thrown when                                                                                                                                                                               |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -325,4 +325,4 @@ Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area
 | `ET1000` | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined. Dev mode only.                                                                                                |
 | `ET1001` | WebSockets - a malformed incoming message. Dev mode only.                                                                                                                                 |
 
-The error message names the problem and the fix; the codes exist so you can grep for them. Every code is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.
+The error message names the problem and the fix; the codes exist so you can grep for them. Every code below `ET1000` is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.

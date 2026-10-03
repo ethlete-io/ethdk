@@ -217,13 +217,13 @@ installed, and every capture call is a no-op after that.
 
 ## Types
 
-| Type                                 | What it is                                                                                                                                                                                                                                                           |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                                                                                                   |
-| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `send`, `subtle`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. `WebSocketClientSubtle` is the escape-hatch namespace on the client. |
-| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - `latestMessage()` and `messages$`.                                                                                                                                                                                                |
-| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                                                                                                   |
-| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.                                                                                        |
+| Type                                 | What it is                                                                                                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SocketMessageView<TData>`           | The message envelope - `{ room, event, data }` - and the constraint on the client's type argument.                                                                                    |
+| `WebSocketClient<TMessageData>`      | The injected client (`joinRoom`, `isConnected`, `send`). `WebSocketClientResult` is the provider definition `createWebSocketClient` returns, and `AnyWebSocketClient` an alias of it. |
+| `WebSocketRoom<TMessageData>`        | What the `joinRoom` signal holds - `latestMessage()` and `messages$`.                                                                                                                 |
+| `CreateWebSocketClientConfigOptions` | The options bag above; `CreateWebSocketClientTransport` is the `'polling' \| 'websocket' \| 'webtransport'` union of `transports`.                                                    |
+| `WebSocketClientIo`                  | The `io` factory as this client calls it - `(url, options: WebSocketClientIoOptions) => WebSocketClientSocket`. socket.io's own `io` satisfies it, and so does a test double.         |
 
 ## Error codes
 

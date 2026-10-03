@@ -98,7 +98,7 @@ Configure the difference with `withEthleteApiErrors({ retry: { … } })` (see [r
 yarn nx g @ethlete/query:migrate-query-opt-in-features
 ```
 
-Two more v2 defaults are gone: `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` were both `true` unless a client turned them off. v3 has no client-wide switch for either, so they are off unless you turn them on per query. Use `withPolling({ interval, pauseWhileHidden: true })` to stop polling in a hidden tab, and `withPolling({ refetchOnFocus: true })` or `withAutoRefresh` to refetch when the window gets focus. The generator reports every client that relied on these defaults.
+Two more v2 defaults are gone: `autoRefreshQueriesOnWindowFocus` and `enableSmartPolling` were both `true` unless a client turned them off. v3 has no client-wide switch for either, so they are off unless you turn them on per query. Use `withPolling({ interval, pauseWhileHidden: true })` to stop polling in a hidden tab, and `withPolling({ interval, refetchOnFocus: true })` to refetch when the window gets focus. `withAutoRefresh({ onSignalChanges })` refetches on signal changes, not on focus. The generator reports every client that relied on these defaults.
 
 A v2 poll stopped by piping the query into `takeUntil` becomes `withPolling({ interval, enabled })`: pass a signal or a `computed` - over the query's own `response()` if the stop condition is in the data - and polling runs only while it is `true`. See [withPolling](/query/features#withpolling).
 
@@ -243,7 +243,7 @@ The two panels do not merge. The current one lists current-system queries, and t
 
 A v2 query collection tracked "which of these queries ran last". What replaces one depends on what it held:
 
-- **An action set, the latest wins** (accept/decline, create/edit/delete): a [query group](/query/groups). Execute each member through `group.members.<key>.execute()`, and bind the group where the collection went - `[etQueryButton]="group"`, `<et-query-error [error]="group.error()" [query]="group">`. `*etQuery="collection(); …"` has no v3 counterpart; read `group.loading()` and `group.error()` in the template. A `switchQueryCollectionState()` or `pushQueryCollection` subscription for "the current member succeeded" becomes `group.succeeded$`, and a `type === '…'` check reads `group.latest()?.key`.
+- **An action set, the latest wins** (accept/decline, create/edit/delete): a [query group](/query/groups). Execute each member through `group.members.<key>.execute()`, and bind the group where the collection went - `[etQueryButton]="group"`, `<et-query-error [error]="group.error()" [query]="group">`. `*etQuery="collection(); …"` has no v3 counterpart; read `group.loading()` and `group.error()` in the template. A `switchQueryCollectionState()` subscription for "the current member succeeded" becomes `group.succeeded$`, and a `type === '…'` check reads `group.latest()?.key`.
 - **One endpoint chosen by context** (player or team, organisation or team): select the query in a `computed`, `current = computed(() => (this.isTeam() ? this.inviteTeam : this.inviteOrganisation))`. The context signal already says which query applies.
 - **Auth** (refresh, login, two-factor): [`createBearerAuthProvider`](/query/auth) replaces it; read [`provider.executionState()`](/query/auth#execution-state).
 
@@ -372,7 +372,7 @@ A callback on that list compiles in both versions and only behaves differently, 
 ## Behavior worth knowing before you debug it
 
 - **Secure queries wait for a token.** A secure query executed before login does not fail - it parks until `accessToken()` is set, then runs. Don't gate them on `isAuthenticated()` by hand.
-- **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need a `tryLoginViaCookie()` call in an app initializer. A **failed** restore does not settle on `type: 'autoLogin'`, `state: 'error'`: the cookie is spent through the refresh query, so the default policy ends the session in the same effect pass and a consumer sees `autoLogin` `loading` followed straight by `{ type: 'logout', state: 'success' }`. Gate a startup screen on [`sessionStatus()`](/query/auth#is-there-a-session) rather than on that error state.
+- **`withPersistentAuth` calls `tryLogin()` during setup.** The cookie-backed session restore happens on its own; you do not need to trigger the restore from an app initializer. A **failed** restore does not settle on `type: 'autoLogin'`, `state: 'error'`: the cookie is spent through the refresh query, so the default policy ends the session in the same effect pass and a consumer sees `autoLogin` `loading` followed straight by `{ type: 'logout', state: 'success' }`. Gate a startup screen on [`sessionStatus()`](/query/auth#is-there-a-session) rather than on that error state.
 - **`logout()` clears the queries bound to it.** It drops the tokens, tears down every secure cache entry, and resets the secure queries still holding a response - a component mounted across the logout stops showing the previous user's data without a manual `reset()`.
 - **Responses survive new args.** In v2 a query with new args was a new query, so a view lost its data unless it read the state through `cacheResponse: true` (`queryStateSignal`, `*etQuery` with `cache`). A v3 query does that by default: `response()` keeps the previous args' response while the new ones load, reported as `executionState().cachedResponse`. Set `keepPreviousResponse: false` in the query's config (`getPost({ keepPreviousResponse: false }, withArgs(...))`) where the old behavior is wanted. Mutations keep clearing. Interop queries are unaffected - `prepare()` still builds one query per args, and `cacheResponse` / `etQueryCache` work on them as before.
 - **Responses survive a re-execution and a failed re-run.** `response()` is kept while a query re-runs and remains available if that run fails - v2 swapped the whole state, so its `Failure` carried no response at all. The exception is a **secure** query re-executed while the refresh it waits on has failed: that one reports the refresh error and clears `response()`, because the session the response belonged to is over.
@@ -384,11 +384,11 @@ A callback on that list compiles in both versions and only behaves differently, 
 
 ## The `Any*` types
 
-After `prep-for-query-v3` a workspace has several escape-hatch types in scope. They are not interchangeable:
+After `prep-for-query-v3` (which renames the v2 `AnyQuery` to `AnyV2Query`) a workspace has several escape-hatch types in scope. They are not interchangeable:
 
 | Type                    | What it accepts                                                                                                             |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `AnyQuery`              | Any **current-system** query (`Query<TArgs>`).                                                                              |
+| `AnyNewQuery`           | Any **current-system** query (`Query<TArgs>`).                                                                              |
 | `AnyV2Query`            | Any **legacy** query built by `V2QueryClient` (`.prepare()` / `.state$`).                                                   |
 | `AnyLegacyQuery`        | Any **interop** query - a current-system query behind the legacy surface, produced by a `createLegacyQueryCreator` wrapper. |
 | `AnyQueryCollection`    | `{ type, query }` where `query` is an `AnyV2Query` or an `AnyLegacyQuery`.                                                  |

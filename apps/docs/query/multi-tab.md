@@ -29,8 +29,7 @@ browser without the two APIs.
 ### Response sharing
 
 When a refreshable request - a `GET`, or a GraphQL query sent as a `POST` - settles successfully in
-one tab, its body and freshness window are broadcast. A mutation that opts into the cache with
-`subtle.useQueryRepositoryCache` keeps its response in the tab that made it. Any tab holding a cache entry for the **same key** adopts it - the key is a hash of route
+one tab, its body and freshness window are broadcast. A mutation's response never leaves the tab that made it - other tabs hear about the mutation instead (see below). Any tab holding a cache entry for the **same key** adopts it - the key is a hash of route
 plus args, so two tabs running the same query derive the same one.
 
 That is the foundation the rest is built on, and on its own it means:

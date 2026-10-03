@@ -108,14 +108,16 @@ storing anything.
 The three entry points exist because bundlers split along module boundaries, and a
 library flattened into one file has none:
 
-| Entry point                      | Holds                                        |
-| -------------------------------- | -------------------------------------------- |
-| `@ethlete/query-devtools/lazy`   | the shell - what an application imports      |
-| `@ethlete/query-devtools`        | the panel, loaded on demand by the shell     |
-| `@ethlete/query-devtools/toggle` | the floating button both of the above render |
+| Entry point                      | Holds                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------- |
+| `@ethlete/query-devtools/lazy`   | the shell - what an application imports                                 |
+| `@ethlete/query-devtools`        | the panel, loaded on demand by the shell                                |
+| `@ethlete/query-devtools/toggle` | the floating button both of the above render, plus the shortcut helpers |
 
 `@ethlete/query-devtools` exports only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`
-and `QUERY_DEVTOOLS_VERSION`; the panel's tabs and helpers are not public API.
+and `QUERY_DEVTOOLS_VERSION`; the panel's tabs and helpers are not public API. The `/toggle`
+entry point also exports the bare `QueryDevtoolsToggleComponent` (`<et-query-devtools-toggle>`)
+and the shortcut helpers `queryDevtoolsShortcutLabel` and `isQueryDevtoolsShortcut`.
 
 If you would rather own the trigger yourself - a dev-only route, a feature flag, a
 button of your own - defer the panel directly and hand it `startOpen`, which opens
@@ -308,7 +310,7 @@ one-click **Float instead**, rather than the button appearing to do nothing.
 | **Cache**     | Per-client repository entries: cache key, consumer count, [measured size](#cache-what-is-actually-in-it), secure flag, a live freshness countdown, the [multi-tab sync](/query/multi-tab#debugging-it) state (`polling` / `standby`, and when the entry last took a response from another tab), whether the entry took its data from the [persisted store](/query/persistence#debugging-it) and per-entry **Value** / **Refetch** / **Evict** actions. The card header adds the cache's total size, how many entries are collectible, how many responses the client has on disk (with **Clear disk**), **Evict all**, and [the client's own features](#features-show-what-they-were-configured-with). |
 | **Locks**     | [Every Web Lock held across the whole origin](#locks-what-the-other-tabs-are-doing) - the auth leader election and the poll election per cache key, decoded, with how many tabs are taking part in each and where this tab stands. The one view in the panel that is not about this tab alone.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **Timeline**  | [Every request as a bar on one shared axis](#timeline-what-overlapped-with-what) - what fires on mount, whether a chain is an N+1, whether a poll is stampeding. Clicking a bar opens its query in a split-view drawer (like Stacks), so the waterfall stays on screen next to it.                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **Events**    | A rolling log (last 100) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to in a split-view drawer beside the log, so walking the log is not interrupted by a jump to another tab.                                                                                                                                                                                                                                                    |
+| **Events**    | A rolling log (the last 100 by default, [adjustable in Settings](#limits-how-much-the-panel-keeps-in-memory)) of repository `request-success` / `request-error` events with [timestamps, duration and response size](#events-what-each-request-cost), narrowable by client and to failures only, plus one row per [invalidation and its fan-out](#why-did-this-refetch). Clicking a row's request opens the query it belonged to in a split-view drawer beside the log, so walking the log is not interrupted by a jump to another tab.                                                                                                                                                               |
 | **Faults**    | [Latency and failures you can arm per client](#faults-making-requests-actually-misbehave), injected into the request pipeline so retries, error handling and the cache see them as real.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **Mocks**     | [Responses served instead of the request](#mocks-answering-a-route-the-panel-not-the-api) - designed by hand for a route nothing has called yet, or captured from one that has, and [exportable as OpenAPI](#handing-the-designed-routes-to-the-api-team).                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **About**     | [Which SDK and application build is actually running](#about-which-build-is-running) - the loaded `@ethlete/*` versions, the Angular version, and whatever the app handed to `provideQueryDevtools({ about })`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -507,7 +509,7 @@ panel from something you check into something that tells you.
 
 ### Empty tabs fold into "More"
 
-Ten tabs is a lot of strip for an app that uses neither sockets nor sequences, and
+Fourteen tabs is a lot of strip for an app that uses neither sockets nor sequences, and
 stacked it scrolls sideways. A tab with nothing behind it - no
 entries and nothing failing - is offered under **More** instead, and moves back
 into the strip the moment it holds something, badge and all. **Queries** and
@@ -869,7 +871,7 @@ climb is the read-out that the injection is real and not a frozen state.
 ::: warning
 While anything is armed the panel carries a red bar under the tab strip, naming the clients and
 offering **Review** and **Disarm all** - on every tab, not just Faults. A badge on a tab you are
-not reading cannot be seen, and the nine other tabs are exactly where an injected 503 gets read as
+not reading cannot be seen, and the other tabs are exactly where an injected 503 gets read as
 a real one. The armed client's own card is drawn with a red border, and **Disarm** on it clears
 that one client.
 

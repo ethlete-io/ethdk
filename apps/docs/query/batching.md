@@ -105,7 +105,7 @@ The same information is exposed as signals while the batch runs, so a template c
 
 ### Time remaining
 
-A batch of 800 items is exactly where "37%" stops being enough. `remainingTime()` estimates the milliseconds still to go the same way [upload progress](/query/http#request-options) does for a transfer: `itemsPerSecond()` measures the throughput of the current run, and the outstanding items are extrapolated from it.
+A batch of 800 items is exactly where "37%" stops being enough. `remainingTime()` estimates the milliseconds still to go the same way [upload progress](/query/http#upload-download-progress) does for a transfer: `itemsPerSecond()` measures the throughput of the current run, and the outstanding items are extrapolated from it.
 
 ```html
 @if (archive.running()) {

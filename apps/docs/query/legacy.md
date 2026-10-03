@@ -42,7 +42,7 @@ post = queryStateResponseSignal(this.postQuery);
 - `.prepare(args)` builds a `V2Query` (returning a cached instance for cacheable methods); `.execute()` runs it. Creators also offer `createSignal()` / `createSubject()` containers with automatic lifecycle handling.
 - A query moves through the states `Prepared → Loading → Success | Failure | Cancelled`, published on `state$`. Helper operators (`filterSuccess()`, `filterFailure()`, `takeUntilResponse()`, `switchQueryState()`, …) and the `queryState*Signal` helpers unwrap it.
 - **Caching**: `GET`, `OPTIONS`, `HEAD` and GraphQL queries are cached with a TTL from response cache headers. Expired unused queries are garbage-collected every 15 seconds.
-- **Auto-refresh**: queries in use re-execute on window focus (`autoRefreshQueriesOnWindowFocus`, default `true`). The tab must have been away for about 20 seconds - a short alt-tab refreshes nothing. _Smart polling_ (`enableSmartPolling`, default `true`) pauses `poll()` intervals while the window is blurred.
+- **Auto-refresh**: queries in use re-execute on window focus (`autoRefreshQueriesOnWindowFocus`, default `true`). Only expired queries that are in use and opted in with `autoRefreshOn: { windowFocus: true }` refresh, and the tab must have been away for about 20 seconds - a short alt-tab refreshes nothing. _Smart polling_ (`enableSmartPolling`, default `true`) pauses `poll()` intervals while the window is blurred.
 - **Auth** uses its own providers passed to `client.setAuthProvider(...)`: `V2BearerAuthProvider` (JWT + refresh), `BasicAuthProvider`, `CustomHeaderAuthProvider`. Queries opt in with `secure: true`; a 401 triggers refresh-and-retry.
 
 ## Supporting features

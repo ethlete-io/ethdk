@@ -26,7 +26,7 @@ const postsStack = createQueryStack({
 | `appendFn`        | append to end | Controls merge order in append mode.                                                                      |
 | `transform`       | identity      | Maps the array of responses (`transformArrayResponse`, `transformPaginatedResponse`).                     |
 | `deduplicateArgs` | `true`        | Skip queries whose args (via `argsKeyFn`, default `JSON.stringify`) already exist.                        |
-| `maxQueries`      | `Infinity`    | Evict via `removeStrategy` (`'oldest'` default, or `'newest'`).                                           |
+| `maxQueries`      | `Infinity`    | Append mode only: evict past this count via `removeStrategy` (`'oldest'` default, or `'newest'`).         |
 
 The stack exposes aggregate signals (`queries`, `response`, `anyLoading`, `allLoading`, `loadingCount`, `loadingProgress`, `anyError`, `errors`, `firstQuery`, `lastQuery`) and methods `execute({ allowCache? })`, `retryFailed()`, `clear()`.
 
@@ -53,11 +53,13 @@ const postPages = createPagedQueryStack({
 | `initialPage`                 | `1`          | First page loaded - pages can then be fetched in **both** directions.                                 |
 | `blockExecutionDuringLoading` | `false`      | Ignore fetch calls while a page is loading.                                                           |
 
-The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNextPage` / `canFetchPreviousPage`, `isLastPageLoaded` / `isFirstPageLoaded` and `maxPagination` / `minPagination`, plus:
+The paged stack exposes `items`, `loading`, `error`, `isFirstLoad`, `canFetchNextPage` / `canFetchPreviousPage`, `isLastPageLoaded` / `isFirstPageLoaded` and `maxPagination` / `minPagination`, `queries`, `lastQuery` and `direction` (`'next'` or `'previous'`, the direction of the latest fetch).
 
 `canFetchNextPage` / `canFetchPreviousPage` are also `false` while any page is loading - including a refresh of an already loaded page - so a "load more" button bound to them goes quiet until the stack settles. `isLastPageLoaded` is also `true` for an empty result (`totalPages: 0`) and when a refresh reports fewer pages than are loaded. `isFirstPageLoaded` means page 1 is in the stack, which a stack started at a higher `initialPage` only reaches by fetching backwards.
 
 The loading gate on those two signals is unconditional; `blockExecutionDuringLoading` governs the **methods** only. So under the default (`false`) a `fetchNextPage()` call mid-flight still runs, while the signals already read `false`: it fetches the page after the one in flight, bounded by the last page count a response reported. Bind the UI to the signals and the two never disagree in practice. Set the option to `true` when a page's args depend on the previous page's response, so an out-of-order call cannot happen at all.
+
+The methods:
 
 - `fetchNextPage()` / `fetchPreviousPage()` - return the new page's query, or `null` when no page was added: there is no page in that direction, or the page's args repeat a loaded page. In dev mode, a call with no page in that direction throws instead.
 - `reset({ initialPage? })`

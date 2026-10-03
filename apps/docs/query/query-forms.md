@@ -70,18 +70,18 @@ export class UsersComponent {
 
 Every creator accepts the same options:
 
-| Option                    | Default                                       | Description                                                                                                             |
-| ------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `defaultValue`            | `null` (`''` for search, `[]` for table sort) | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
-| `debounce`                | - (`300` for `searchQueryField`)              | Milliseconds to wait before committing a change.                                                                        |
-| `disableDebounceIfFalsy`  | `false` (`true` for search)                   | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
-| `appendToUrl`             | `true`                                        | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
-| `appendDefaultValueToUrl` | `false`                                       | Write the field even when it holds its default.                                                                         |
-| `isResetBy`               | -                                             | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
-| `skipInFilterCount`       | `false` (`true` for search/sort)              | Exclude from `activeFilterCount`.                                                                                       |
-| `skipAutoTransform`       | `false`                                       | Keep the raw URL value: no number/boolean coercion and no `ET_NULL__`/`ET_EMPTY_ARRAY__` sentinels.                     |
-| `queryParamToValue`       | -                                             | Custom URL → value transform.                                                                                           |
-| `valueToQueryParam`       | -                                             | Custom value → URL transform.                                                                                           |
+| Option                    | Default                                          | Description                                                                                                             |
+| ------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `defaultValue`            | `null` (`''` for search, `[]` for table sort)    | Value the field starts at. Elided from the URL and ignored by the filter count. A function is evaluated lazily.         |
+| `debounce`                | - (`300` for `searchQueryField`)                 | Milliseconds to wait before committing a change.                                                                        |
+| `disableDebounceIfFalsy`  | `false` (`true` for search)                      | Commit immediately when the new value is falsy (e.g. clearing a search).                                                |
+| `appendToUrl`             | `true`                                           | Write the field to the URL. `false` makes the field a read-only mirror: it still tracks the param another owner writes. |
+| `appendDefaultValueToUrl` | `false`                                          | Write the field even when it holds its default.                                                                         |
+| `isResetBy`               | -                                                | Sibling field(s) whose change resets this field to its default (single key or list). Transitive - see below.            |
+| `skipInFilterCount`       | `false` (`true` for search, sort and table sort) | Exclude from `activeFilterCount`.                                                                                       |
+| `skipAutoTransform`       | `false`                                          | Keep the raw URL value: no number/boolean coercion and no `ET_NULL__`/`ET_EMPTY_ARRAY__` sentinels.                     |
+| `queryParamToValue`       | -                                                | Custom URL → value transform.                                                                                           |
+| `valueToQueryParam`       | -                                                | Custom value → URL transform.                                                                                           |
 
 ### Generic fields
 
@@ -283,8 +283,8 @@ Serialization rules:
   it isn't the default), so both survive a reload.
 - **Sort** is `active:direction` (`name:asc`); a **table sort** is one `key:direction` param per column
   (`?sort=rank:desc&sort=name:asc`).
-- **`queryParamPrefix`** namespaces every key (`prefix-page`), so two forms can
-  share a route:
+- **`queryParamPrefix`** (a string, or a function evaluated whenever a key is built) namespaces every key
+  (`prefix-page`), so two forms can share a route:
 
 ```ts
 defineQueryForm({ fields: { page: queryField<number>({ defaultValue: 1 }) }, queryParamPrefix: 'users' });

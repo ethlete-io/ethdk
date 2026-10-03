@@ -82,8 +82,8 @@ Steps take **query instances**, not creators - consistent with `executeUntilSett
 
 ```ts
 type QuerySequenceResult<T extends unknown[]> =
-  | { ok: true; responses: T; snapshots: QuerySnapshot[] }
-  | { ok: false; failedAt: number; error: QueryErrorResponse | null; snapshots: QuerySnapshot[] };
+  | { ok: true; responses: T; snapshots: AnyQuerySnapshot[] }
+  | { ok: false; failedAt: number; error: QueryErrorResponse | null; snapshots: AnyQuerySnapshot[] };
 ```
 
 The chain object itself is a `QuerySequence<TResponses>`, `status()` a `QuerySequenceStatus`, and the seed/step args a `QuerySequenceStepArgs<TArgs>` - the same `{ args }` shape `query.execute()` takes.
@@ -94,22 +94,24 @@ On success `responses` is the typed tuple of every step's response. On failure t
 
 The sequence also exposes signals mirroring [`createQueryStack`](/query/stacks), so a template can drive a stepper or spinner without manual bookkeeping:
 
-| Signal / member | Type                                                  | Description                                         |
-| --------------- | ----------------------------------------------------- | --------------------------------------------------- |
-| `status`        | `Signal<'idle' \| 'running' \| 'success' \| 'error'>` | Lifecycle phase.                                    |
-| `running`       | `Signal<boolean>`                                     | `true` while a run is in flight.                    |
-| `currentStep`   | `Signal<number>`                                      | 1-based index of the in-flight step; `0` when idle. |
-| `total`         | `number`                                              | Step count of the fully-built chain.                |
-| `error`         | `Signal<QueryErrorResponse \| null>`                  | The failing step's error; `null` for an abort.      |
-| `failedAt`      | `Signal<number \| null>`                              | Zero-based index of the failing step.               |
-| `snapshots`     | `Signal<QuerySnapshot[]>`                             | Settled snapshots so far.                           |
-| `responses`     | `Signal<Partial<T>>`                                  | Responses so far.                                   |
+| Signal / member | Type                                                  | Description                                                    |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| `status`        | `Signal<'idle' \| 'running' \| 'success' \| 'error'>` | Lifecycle phase.                                               |
+| `running`       | `Signal<boolean>`                                     | `true` while a run is in flight.                               |
+| `currentStep`   | `Signal<number>`                                      | 1-based index of the in-flight step; `0` before the first run. |
+| `total`         | `number`                                              | Step count of the fully-built chain.                           |
+| `error`         | `Signal<QueryErrorResponse \| null>`                  | The failing step's error; `null` for an abort.                 |
+| `failedAt`      | `Signal<number \| null>`                              | Zero-based index of the failing step.                          |
+| `snapshots`     | `Signal<AnyQuerySnapshot[]>`                          | Settled snapshots so far.                                      |
+| `responses`     | `Signal<Partial<T>>`                                  | Responses so far.                                              |
+| `stepArgs`      | `Signal<unknown[]>`                                   | The args each step ran with, as `mapArgs` produced them.       |
+| `queries`       | `AnyNewQuery[]`                                       | The query object backing each step, in order.                  |
 
 ```html
 @if (checkout.running()) {
-<et-progress>Step {{ checkout.currentStep() }} / {{ checkout.total }}</et-progress>
+<p>Step {{ checkout.currentStep() }} / {{ checkout.total }}</p>
 } @if (checkout.error(); as err) {
-<et-error [error]="err" />
+<et-query-error [error]="err" />
 }
 ```
 
