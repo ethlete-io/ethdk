@@ -61,7 +61,7 @@ Spreading `CONTENTFUL_DEFAULT_COMPONENTS` registers `ContentfulImage/Video/Audio
 
 Leaving it out keeps the five components - and with them `PictureComponent` - out of the bundle, about 6.9 kB gz for an app that renders text only or brings its own components.
 
-Upgrading from a version that registered them by default? `et update` runs the migration, or run it directly. It adds the feature to every `provideContentfulConfig(...)` literal and lists the calls it could not edit in `contentful-default-components-migration-tasks.md`:
+Upgrading from a version that registered them by default? `et update` runs the migration, or run it directly. It spreads `CONTENTFUL_DEFAULT_COMPONENTS` into every `provideContentfulConfig(...)` literal and lists the calls it could not edit in `contentful-default-components-migration-tasks.md`. An app that renders rich text without calling `provideContentfulConfig` at all gets a task there too, naming the file that renders it:
 
 ```bash
 yarn nx g @ethlete/contentful:migrate-contentful-default-components
