@@ -119,6 +119,26 @@ describe('legacy interop scenario', () => {
       c.destroy();
     });
 
+    it('reads the url of the bound request through the interop query', () => {
+      const s = scenario();
+      s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' } }));
+
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const legacyGetUser = createLegacyQueryCreator({ creator: getUser, name: 'legacyGetUser' });
+
+      const c = s.consumer();
+      const query = c.run(() => legacyGetUser.prepare({ pathParams: { id: '1' } }));
+
+      expect(query.url).toBeNull();
+
+      query.execute();
+      s.tick();
+
+      expect(query.url).toBe('https://api.test/users/1');
+
+      c.destroy();
+    });
+
     it('forwards variables to a wrapped gql creator', () => {
       const s = scenario();
       s.api.on('POST', '/', () => ({ body: { data: { user: { id: '2', name: 'Grace' } } } }));

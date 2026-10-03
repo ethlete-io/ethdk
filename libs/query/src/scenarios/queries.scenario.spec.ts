@@ -557,6 +557,43 @@ describe('queries scenario', () => {
     c.destroy();
   });
 
+  it('reads the full url of the bound request through url() on the query and its readonly view', () => {
+    const s = scenario();
+    s.api.on('GET', '/posts/:id', ({ params }) => ({ body: { id: params['id'] }, delay: 50 }));
+
+    const getPost = s.get<{
+      response: { id: string };
+      pathParams: { id: string };
+      queryParams: { expand: string };
+    }>((p) => `/posts/${p.id}`);
+
+    const id = signal<string | null>(null);
+    const c = s.consumer();
+    const query = c.run(() =>
+      getPost(withArgs(() => (id() ? { pathParams: { id: id()! }, queryParams: { expand: 'author' } } : null))),
+    );
+    const readonlyQuery = query.asReadonly();
+
+    s.tick();
+
+    expect(query.url()).toBeNull();
+
+    for (const next of ['1', '2', '3']) {
+      id.set(next);
+      s.tick();
+
+      expect(query.url()).toBe(`https://api.test/posts/${next}?expand=author`);
+      expect(readonlyQuery.url()).toBe(`https://api.test/posts/${next}?expand=author`);
+    }
+
+    s.tick(50);
+
+    expect(s.api.requestCount('GET', '/posts/3')).toBe(1);
+    expect(query.response()).toEqual({ id: '3' });
+
+    c.destroy();
+  });
+
   it('reports the kept response on the failure execution state when a refresh errors', () => {
     const s = scenario();
     s.api.on('GET', '/stats', sequence([{ body: { v: 1 } }, { status: 400, body: { message: 'nope' } }]));
