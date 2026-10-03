@@ -44,7 +44,7 @@ The directive settles even when the browser never fires the expected `transition
 
 ## Animated if
 
-`*etAnimatedIf` is `*ngIf` with exit animations: it creates the view and calls `enter()` when the value turns truthy, and on falsy calls `leave()` - removing the view only once the lifecycle reaches `'left'`. Like `@if`, `*etAnimatedIf="item(); as item"` narrows `item` to the truthy type; while leaving, the view keeps the last truthy value. It requires an `etAnimatedLifecycle` on an ancestor element (without one it throws `ET9000`):
+`*etAnimatedIf` is `*ngIf` with exit animations: it creates the view and calls `enter()` when the value turns truthy, and on falsy calls `leave()` - removing the view only once the lifecycle reaches `'left'`. Like `@if`, `*etAnimatedIf="item(); as item"` narrows `item` to the truthy type; while leaving, the view keeps the last truthy value. Swapping one truthy value for another updates the shown view without replaying the enter animation. It requires an `etAnimatedLifecycle` on an ancestor element (without one it throws `ET9000`):
 
 ```html
 <div class="hint" etAnimatedLifecycle>

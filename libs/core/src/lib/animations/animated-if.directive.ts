@@ -62,7 +62,7 @@ export class AnimatedIfDirective<T = unknown> {
               this.hasView = true;
             }
 
-            animatedLifecycle.enter();
+            if (animatedLifecycle.state() !== 'entered') animatedLifecycle.enter();
 
             return of(null);
           }

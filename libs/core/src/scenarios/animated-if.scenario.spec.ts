@@ -72,6 +72,29 @@ describe('animated if scenarios', () => {
     fixture.destroy();
   });
 
+  it('swaps the value of a shown view without replaying the enter animation', () => {
+    const { s, fixture, content } = setup();
+
+    fixture.componentInstance.value.set('a');
+    s.flush();
+
+    const lifecycle = fixture.componentInstance.lifecycle()!;
+    const states: string[] = [];
+    const subscription = lifecycle.state$.subscribe((state) => states.push(state));
+
+    fixture.componentInstance.value.set('b');
+    s.tick();
+
+    expect(states).toEqual(['entered']);
+    expect(lifecycle.state()).toBe('entered');
+    expect(content()?.textContent).toBe('b');
+    expect(fixture.nativeElement.querySelector('.et-animation-enter-from')).toBeNull();
+
+    subscription.unsubscribe();
+    s.flush();
+    fixture.destroy();
+  });
+
   it('leaves nothing behind when destroyed mid-enter or mid-leave', () => {
     const { s, fixture } = setup();
 
