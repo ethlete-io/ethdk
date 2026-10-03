@@ -1,12 +1,7 @@
 import { DestroyRef, Directive, booleanAttribute, computed, effect, inject, input, model, signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../../form-field/headless';
 import {
   deriveDurationFormatSpec,
   durationFormatProblem,
@@ -18,6 +13,7 @@ import { injectFormFieldLabels } from '../../../../forms/form-field/form-field-l
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import { mountTextFieldShellStyles } from '../../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../../internals/touch-output';
+import { FieldStateControlDirective } from '../../../form-field/headless/field-state-control.directive';
 
 /**
  * A duration form control whose value is a **total elapsed time in milliseconds**
@@ -32,7 +28,7 @@ import { controlTouches } from '../../../../internals/touch-output';
   },
 })
 export class DurationInputDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<number | null>, FormFieldControl
 {
   private dateTimeLabels = injectDateTimeLabels();

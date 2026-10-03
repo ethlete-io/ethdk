@@ -133,7 +133,9 @@ protected readonly COMPARE_BY_ID = (a: Plan, b: Plan) => a.id === b.id;
 
 All three groups take it. A user pick writes the option's own value into the model. The groups also
 take the `pending` input signal forms binds, so a pending async validator shows the field's
-[busy state](/components/forms#busy-state) and sets `aria-busy="true"` on the group while it runs.
+[busy state](/components/forms#busy-state) and sets `aria-busy="true"` on the group while it runs. `hidden`
+hides a group (a schema `hidden(...)` rule does the same), and `[warnings]` shows advisories on a
+group not bound to signal forms.
 
 #### Keyboard {#selection-list-keyboard}
 

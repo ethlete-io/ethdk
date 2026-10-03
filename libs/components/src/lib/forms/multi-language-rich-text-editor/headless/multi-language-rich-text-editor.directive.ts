@@ -6,7 +6,7 @@ import {
   MultiLanguageRichTextEditorLanguage,
   MultiLanguageRichTextEditorValue,
 } from '../multi-language-rich-text-editor-config';
-import { AccessibleNameControlDirective } from '../../form-field/headless';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 import { RichTextEditorLabels } from '../../rich-text-editor/rich-text-editor-labels';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from '../multi-language-rich-text-editor-errors';
 import { injectReportError } from '../../../internals/report-error';
@@ -16,7 +16,7 @@ import { controlTouches } from '../../../internals/touch-output';
   selector: '[etMultiLanguageRichTextEditor]',
 })
 export class MultiLanguageRichTextEditorDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<MultiLanguageRichTextEditorValue>
 {
   private reportError = injectReportError();
@@ -28,8 +28,6 @@ export class MultiLanguageRichTextEditorDirective
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });
   public name = input('');
-  // eslint-disable-next-line ethlete/no-native-html-input-name
-  public hidden = input(false, { transform: booleanAttribute });
 
   /** Per-instance overrides of the editor's strings, merged over the injected label set. */
   public labels = input<Partial<RichTextEditorLabels> | null>(null);

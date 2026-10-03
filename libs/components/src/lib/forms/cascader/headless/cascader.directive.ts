@@ -23,7 +23,6 @@ import { createTypeahead } from '../../../internals/typeahead';
 import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
-  AccessibleNameControlDirective,
   AnchoredPanelOverlayRef,
   createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
@@ -49,6 +48,7 @@ import {
 import { injectFormFieldLabels } from '../../form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 
 export const CASCADER_SELECTABLE_LEVELS = {
   /** Only terminal leaves commit a value (default). */
@@ -111,7 +111,7 @@ type CascaderSearchLike = {
   },
 })
 export class CascaderDirective<T = unknown>
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<T | T[] | null>, FormFieldControl
 {
   private formFieldLabels = injectFormFieldLabels();

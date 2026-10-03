@@ -389,11 +389,8 @@ The field chrome handles error display and aria wiring uniformly:
   If a hidden field stays rendered, `et-form-field` sets `display: none` on it as a
   fallback, and Angular logs `NG01916` in dev mode. The controls that host their own
   field (`et-slider`, `et-range-slider`, `et-rating`, `et-otp-input`, `et-dropzone`) and
-  `et-choice-field` do the same on themselves. A plain `hidden` input is there on the text-field
-  controls (`et-input`, `et-number-input`, `et-password-input`, `et-textarea`, `et-color-input`,
-  `et-phone-input`), `et-otp-input`, `et-rating`, the sliders, `et-dropzone`, `et-checkbox`,
-  `et-switch` and the rich text editors; the tag input, date/time, select, cascader and selection
-  groups have no such input.
+  `et-choice-field` and the selection groups do the same on themselves. Every form control also
+  takes a plain `hidden` input for a control that is not bound to signal forms.
 - Dev mode throws an actionable error if an `et-form-field` contains no control
   ([`ET2200`](/components/error-codes#form-field-et22xx)) or a control with no
   accessible name - no `et-label` and no `aria-label`/`aria-labelledby`
@@ -450,12 +447,8 @@ warnings in the same place, from the same rule.
 
 A control that is **not** bound to a signal-forms field has no schema to carry a
 `warn()` rule, so it takes its advisories directly - `[warnings]` accepts the same
-shapes a `warn()` rule may return, and the field shows them the same way. The text-field
-controls (`et-input`, `et-number-input`, `et-password-input`, `et-textarea`, `et-color-input`,
-`et-phone-input`) take it, and so do the self-hosted ones above (`et-slider`, `et-range-slider`,
-`et-rating`, `et-otp-input`, `et-dropzone`), `et-checkbox` and `et-switch` (an `et-choice-field` shows what its control carries).
-The tag input, date/time, select, cascader and selection-group controls have no `warnings`
-input - use a `warn()` rule there:
+shapes a `warn()` rule may return, and the field shows them the same way. Every form control
+takes it (an `et-choice-field` shows what its `et-checkbox` or `et-switch` carries):
 
 ```html
 <et-form-field>

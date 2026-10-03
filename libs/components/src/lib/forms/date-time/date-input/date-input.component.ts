@@ -10,6 +10,7 @@ import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labe
 import { injectDateTimeLabels } from '../../../forms/date-time/date-time-labels';
 import { ControlSuffixDirective } from '../../form-field/partials';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-date-input',
@@ -58,6 +59,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'firstDayOfWeek',
         'pickerOpen',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
     },

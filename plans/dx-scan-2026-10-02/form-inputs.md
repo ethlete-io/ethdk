@@ -114,7 +114,7 @@ Scope: `libs/components/src/lib/forms/{form-field,form,input,textarea,checkbox,s
 
 ## FI-05 `[warnings]` and the schema-`hidden` fallback exist only on the text-field controls
 
-- Status: fixed except `et-choice-field` (outside this slice: its host needs the `display: none` binding)
+- Status: fixed; 2026-10-03 the tag input, date/time inputs, select, cascader, selection groups and both rich text editors got `hidden` and `warnings` too (`TextShellControlDirective` and the remaining bases extend `FieldStateControlDirective`)
 - Review: fixed `et-choice-field` now binds `display: none` while hidden, with a spec; test audit: unbound checkbox warnings and switch hidden covered
 
 - Where: `form-field/headless/text-field-control.directive.ts:41,48` (the only declarations);

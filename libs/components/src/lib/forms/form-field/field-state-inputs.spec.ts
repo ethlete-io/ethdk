@@ -10,6 +10,30 @@ import { OTP_INPUT_IMPORTS } from '../otp-input/otp-input.imports';
 import { RATING_IMPORTS } from '../rating/rating.imports';
 import { SLIDER_IMPORTS } from '../slider/slider.imports';
 import { SWITCH_IMPORTS } from '../switch/switch.imports';
+import { CascaderComponent } from '../cascader/cascader.component';
+import { DateInputComponent } from '../date-time/date-input/date-input.component';
+import { DateRangeInputComponent } from '../date-time/date-range-input/date-range-input.component';
+import { DateTimeInputComponent } from '../date-time/date-time-input/date-time-input.component';
+import { DateTimeRangeInputComponent } from '../date-time/date-time-range-input/date-time-range-input.component';
+import { DurationInputComponent } from '../date-time/duration-input/duration-input.component';
+import { TimeInputComponent } from '../date-time/time-input/time-input.component';
+import { TimeRangeInputComponent } from '../date-time/time-range-input/time-range-input.component';
+import { RichTextEditorComponent } from '../rich-text-editor/rich-text-editor.component';
+import { SelectComponent } from '../select/select.component';
+import { SELECT_IMPORTS } from '../select/select.imports';
+import { CheckboxGroupComponent } from '../selection-list/checkbox-group/checkbox-group.component';
+import { RadioGroupComponent } from '../selection-list/radio-group/radio-group.component';
+import { SegmentedButtonGroupComponent } from '../selection-list/segmented-button-group/segmented-button-group.component';
+import {
+  CHECKBOX_GROUP_IMPORTS,
+  RADIO_GROUP_IMPORTS,
+  SEGMENTED_BUTTON_IMPORTS,
+} from '../selection-list/selection-list.imports';
+import { TagInputComponent } from '../tag-input/tag-input.component';
+import { TAG_INPUT_IMPORTS } from '../tag-input/tag-input.imports';
+import { expectWrapperExposesBaseInputs } from '../testing/wrapper-inputs';
+import { FORM_FIELD_IMPORTS } from './form-field.imports';
+import { FIELD_STATE_INPUTS } from './headless/field-state-control.directive';
 
 @Component({
   template: `
@@ -52,6 +76,74 @@ class SchemaHiddenTestHost {
 })
 class UnboundStateTestHost {}
 
+@Component({
+  template: `
+    <et-form-field class="select-field">
+      <et-label>Plan</et-label>
+      <et-select [formField]="demoForm.plan">
+        <et-select-option value="free">Free</et-select-option>
+      </et-select>
+    </et-form-field>
+    <et-form-field class="tags-field">
+      <et-label>Tags</et-label>
+      <et-tag-input [formField]="demoForm.tags" />
+    </et-form-field>
+    <et-radio-group [formField]="demoForm.size" aria-label="Size">
+      <et-radio value="s">S</et-radio>
+    </et-radio-group>
+  `,
+  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS, TAG_INPUT_IMPORTS, RADIO_GROUP_IMPORTS, FormField],
+})
+class SchemaHiddenFieldTestHost {
+  hide = signal(false);
+  model = signal({ plan: 'free', tags: [] as string[], size: 's' });
+  demoForm = form(this.model, (s) => {
+    hidden(s.plan, () => this.hide());
+    hidden(s.tags, () => this.hide());
+    hidden(s.size, () => this.hide());
+  });
+}
+
+@Component({
+  template: `
+    <et-form-field class="select-field">
+      <et-label>Plan</et-label>
+      <et-select warnings="Select advisory">
+        <et-select-option value="free">Free</et-select-option>
+      </et-select>
+    </et-form-field>
+    <et-form-field class="tags-field">
+      <et-label>Tags</et-label>
+      <et-tag-input warnings="Tags advisory" />
+    </et-form-field>
+    <et-checkbox-group warnings="Group advisory" aria-label="Add-ons">
+      <et-checkbox-option value="stats">Stats</et-checkbox-option>
+    </et-checkbox-group>
+    <et-segmented-button-group hidden aria-label="View">
+      <et-segmented-button value="list">List</et-segmented-button>
+    </et-segmented-button-group>
+  `,
+  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS, TAG_INPUT_IMPORTS, CHECKBOX_GROUP_IMPORTS, SEGMENTED_BUTTON_IMPORTS],
+})
+class UnboundFieldStateTestHost {}
+
+const FIELD_STATE_WRAPPERS = [
+  { selector: 'et-select', component: SelectComponent },
+  { selector: 'et-cascader', component: CascaderComponent },
+  { selector: 'et-tag-input', component: TagInputComponent },
+  { selector: 'et-date-input', component: DateInputComponent },
+  { selector: 'et-time-input', component: TimeInputComponent },
+  { selector: 'et-date-time-input', component: DateTimeInputComponent },
+  { selector: 'et-date-range-input', component: DateRangeInputComponent },
+  { selector: 'et-time-range-input', component: TimeRangeInputComponent },
+  { selector: 'et-date-time-range-input', component: DateTimeRangeInputComponent },
+  { selector: 'et-duration-input', component: DurationInputComponent },
+  { selector: 'et-radio-group', component: RadioGroupComponent },
+  { selector: 'et-checkbox-group', component: CheckboxGroupComponent },
+  { selector: 'et-segmented-button-group', component: SegmentedButtonGroupComponent },
+  { selector: 'et-rich-text-editor', component: RichTextEditorComponent },
+];
+
 const mount = <T>(host: new () => T) => {
   TestBed.configureTestingModule({ imports: [host], providers: [provideColorThemes(TEST_COLOR_THEMES)] });
 
@@ -92,4 +184,42 @@ describe('self-hosted control field state', () => {
     expect(host.querySelector('.checkbox-field')?.textContent).toContain('Checkbox advisory');
     expect((host.querySelector('.switch-field') as HTMLElement).style.display).toBe('none');
   });
+
+  it('hides the form field around a select or tag input, and a selection group, while hidden() holds', () => {
+    const fixture = mount(SchemaHiddenFieldTestHost);
+    const host = fixture.nativeElement as HTMLElement;
+    const display = (selector: string) => (host.querySelector(selector) as HTMLElement).style.display;
+    const selectors = ['.select-field', '.tags-field', 'et-radio-group'];
+
+    expect(selectors.map(display)).toEqual(['', '', '']);
+
+    fixture.componentInstance.hide.set(true);
+    fixture.detectChanges();
+
+    expect(selectors.map(display)).toEqual(['none', 'none', 'none']);
+  });
+
+  it('takes warnings and hidden as plain inputs on an unbound select, tag input and selection group', async () => {
+    const fixture = mount(UnboundFieldStateTestHost);
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('.select-field')?.textContent).toContain('Select advisory');
+    expect(host.querySelector('.tags-field')?.textContent).toContain('Tags advisory');
+    expect(host.querySelector('et-checkbox-group')?.textContent).toContain('Group advisory');
+    expect((host.querySelector('et-segmented-button-group') as HTMLElement).style.display).toBe('none');
+  });
+});
+
+describe('field state wrappers', () => {
+  for (const wrapper of FIELD_STATE_WRAPPERS) {
+    it(`${wrapper.selector} exposes hidden and warnings`, () => {
+      TestBed.configureTestingModule({ providers: [provideColorThemes(TEST_COLOR_THEMES)] });
+
+      expectWrapperExposesBaseInputs(wrapper, FIELD_STATE_INPUTS);
+    });
+  }
 });

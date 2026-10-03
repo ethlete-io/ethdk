@@ -3,6 +3,7 @@ import { ColorInteractiveDirective } from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { TagInputDirective, TagInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-tag-input',
@@ -43,6 +44,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
         'normalizeTag',
         'maxTags',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },

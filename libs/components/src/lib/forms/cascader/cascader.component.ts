@@ -22,6 +22,7 @@ import {
 import { injectFormFieldLabels } from '../form-field/form-field-labels';
 import { injectCascaderLabels } from './cascader-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 import { SemanticThemesDirective } from '../../internals/semantic-themes.directive';
 
 @Component({
@@ -74,6 +75,7 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'maxLength',
         'pending',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'openChange', 'afterOpen', 'afterClose'],
     },

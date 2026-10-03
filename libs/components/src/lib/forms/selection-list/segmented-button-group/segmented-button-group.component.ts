@@ -7,6 +7,7 @@ import { FormSupportComponent } from '../../form-field/partials/form-support.com
 import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../../form-field/headless';
 import { SelectionListDirective } from '../headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
 
 /** How a segmented button group presents its selection. See {@link SegmentedButtonGroupComponent.variant}. */
 export const SEGMENTED_BUTTON_GROUP_VARIANTS = {
@@ -41,6 +42,7 @@ export type SegmentedButtonGroupVariant =
         'pending',
         'compareWith',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
@@ -54,6 +56,7 @@ export type SegmentedButtonGroupVariant =
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[style.display]': 'list.hidden() ? "none" : null',
     '[attr.aria-busy]': 'list.pending() ? "true" : null',
   },
 })

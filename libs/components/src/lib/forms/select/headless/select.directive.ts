@@ -35,7 +35,6 @@ import { createVirtualWindow } from '../../../internals/virtual-window';
 import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy } from '../../../overlay/strategies';
 import {
-  AccessibleNameControlDirective,
   AnchoredPanelOverlayRef,
   createAnchoredPanelController,
   FORM_FIELD_CONTROL_TYPES,
@@ -58,6 +57,7 @@ import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry, S
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 
 export const SELECT_FILTER_MODES = {
   /** The select never filters - a search input is purely informational for the consumer. */
@@ -108,10 +108,7 @@ const defaultNormalizeCustomValue = (raw: string) => {
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class SelectDirective
-  extends AccessibleNameControlDirective
-  implements FormValueControl<unknown>, FormFieldControl
-{
+export class SelectDirective extends FieldStateControlDirective implements FormValueControl<unknown>, FormFieldControl {
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });

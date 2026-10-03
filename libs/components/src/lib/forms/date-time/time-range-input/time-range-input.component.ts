@@ -11,6 +11,7 @@ import { DatePickerSurfaceDirective } from '../picker/date-picker-surface.direct
 import { DatePickerTriggerDirective } from '../picker/date-picker-trigger.directive';
 import { TimeRangeInputDirective, TimeRangeInputFieldDirective } from './headless';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
 import { mountRangeInputShellStyles } from '../range-input-shell-styles.component';
 
 @Component({
@@ -57,6 +58,7 @@ import { mountRangeInputShellStyles } from '../range-input-shell-styles.componen
         'startAriaLabel',
         'endAriaLabel',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch', 'pickerOpenChange'],
     },

@@ -14,7 +14,7 @@ import {
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { Locale } from 'date-fns';
-import { AccessibleNameControlDirective, FORM_FIELD_TOKEN, FormFieldControlType } from '../../form-field/headless';
+import { FORM_FIELD_TOKEN, FormFieldControlType } from '../../form-field/headless';
 import { mountControlSuffixStyles } from '../../form-field/form-field-control-suffix-styles.component';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
@@ -23,6 +23,7 @@ import { DatePickerHost, DatePickerSurfaceBase, DatePickerTriggerBase } from '..
 import { createDatePickerOverlay } from './date-picker-overlay';
 import { maskPatternFromDisplayFormat } from './display-format-mask';
 import { controlTouches } from '../../../internals/touch-output';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 
 /** The registered text field a date-picker input focuses and anchors to. */
 export type DatePickerInputFieldBase = {
@@ -46,7 +47,7 @@ export type DatePickerInputFieldBase = {
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export abstract class PickerInputBaseDirective extends AccessibleNameControlDirective implements DatePickerHost {
+export abstract class PickerInputBaseDirective extends FieldStateControlDirective implements DatePickerHost {
   private formFieldLabels = injectFormFieldLabels();
   private document = inject(DOCUMENT);
 

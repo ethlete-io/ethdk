@@ -683,7 +683,7 @@ still empty (announced as `RICH_TEXT_EDITOR_LABELS.languageFilled` / `languageEm
 Translations stored under a code not in `languages` are preserved untouched (never dropped) and
 don't affect the status counts.
 
-The multi-language editor takes the single editor's `labels`, `hidden`, `aria-label` and
+The multi-language editor takes the single editor's `labels`, `hidden`, `warnings`, `aria-label` and
 `aria-labelledby` inputs and hands them to the editor it embeds.
 
 <StoryEmbed id="components-forms-rich-text-editor-multi-language--with-existing-translations" height="420px" />

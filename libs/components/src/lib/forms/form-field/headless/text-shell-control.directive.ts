@@ -1,11 +1,11 @@
 import { booleanAttribute, computed, DestroyRef, Directive, inject, input, model, signal, Signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
-import { AccessibleNameControlDirective } from './accessible-name-control.directive';
 import { FORM_FIELD_TOKEN, FormFieldControl, FormFieldControlType } from './form-field.tokens';
 import { injectFormFieldLabels } from '../form-field-labels';
 import { mountTextFieldShellStyles } from '../form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
+import { FieldStateControlDirective } from './field-state-control.directive';
 
 /** Must be extended by an `@Directive` - Angular only surfaces inherited inputs/outputs from a decorated base. */
 @Directive({
@@ -13,7 +13,7 @@ import { controlTouches } from '../../../internals/touch-output';
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export abstract class TextShellControlDirective extends AccessibleNameControlDirective implements FormFieldControl {
+export abstract class TextShellControlDirective extends FieldStateControlDirective implements FormFieldControl {
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });

@@ -42,6 +42,7 @@ import { injectRegisteredRichTextEditorTools } from './headless/internals/rich-t
 import { RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './tools/rich-text-editor-tool-icons';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
 /** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
 const DOCKED_TOOLBAR_POLL_MS = 500;
@@ -101,7 +102,6 @@ const provideRichTextEditorIcons = () =>
         'touched',
         'disabled',
         'readonly',
-        'hidden',
         'invalid',
         'errors',
         'required',
@@ -111,6 +111,7 @@ const provideRichTextEditorIcons = () =>
         'autoformat',
         'labels',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'touchedChange', 'touch'],
     },

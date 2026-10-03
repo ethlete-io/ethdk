@@ -12,12 +12,7 @@ import {
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { ValidationError } from '@angular/forms/signals';
 import { signalElementMutations } from '@ethlete/core';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { isSameOrder, sortByDomOrder } from '../../../internals/dom-order';
 import { createTypeahead } from '../../../internals/typeahead';
 import { createSelectionState } from './internals/selection-state';
@@ -29,6 +24,7 @@ import {
   SelectionListItem,
 } from './selection-list.tokens';
 import { controlTouches } from '../../../internals/touch-output';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 
 const sortConnectedItems = (items: SelectionListItem[]) =>
   items.some((item) => !item.elementRef.nativeElement.isConnected)
@@ -54,7 +50,7 @@ const referenceEquality: SelectionListCompareWith = (a, b) => a === b;
   },
 })
 export class SelectionListDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements SelectionListDirectiveBase, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });

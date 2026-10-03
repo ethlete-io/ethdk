@@ -7,6 +7,7 @@ import { FormFieldDirective, injectFormSupport, provideFormSupport } from '../..
 import { SelectionListDirective } from '../../selection-list/headless';
 import { SelectionListOrientation } from '../selection-list.types';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-radio-group',
@@ -32,6 +33,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'pending',
         'compareWith',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
@@ -44,6 +46,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
     '[attr.data-can-animate]': 'canAnimate.state() || null',
     '[attr.data-error]': 'support.displaysError() || null',
     '[attr.data-warning]': 'support.displaysWarning() || null',
+    '[style.display]': 'list.hidden() ? "none" : null',
     '[attr.aria-busy]': 'list.pending() ? "true" : null',
   },
 })

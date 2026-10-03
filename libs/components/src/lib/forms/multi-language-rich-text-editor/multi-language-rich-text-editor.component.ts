@@ -10,6 +10,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 import {
   DEFAULT_RICH_TEXT_EDITOR_TOOLS,
   injectRichTextEditorTools,
@@ -42,7 +43,6 @@ import {
         'touched',
         'disabled',
         'readonly',
-        'hidden',
         'invalid',
         'errors',
         'required',
@@ -50,6 +50,7 @@ import {
         'languages',
         'labels',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'touchedChange', 'touch'],
     },

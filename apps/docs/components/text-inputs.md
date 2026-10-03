@@ -470,12 +470,11 @@ panel at all.
 | `mixedLabel`      | `string \| null`                  | `null`               | Placeholder shown in place of the value while `mixed` - see [Bulk editing](#bulk-editing).                                |
 
 Plus the shared control members: the `value` (`string[]`, `[]`), `mixed` and
-`touched` models, the `disabled`, `readonly`, `invalid`, `errors`, `required`,
-`name` and `aria-label`/`aria-labelledby` inputs, and the `maxLength` / `pending`
+`touched` models, the `disabled`, `readonly`, `hidden`, `invalid`, `errors`, `warnings`,
+`required`, `name` and `aria-label`/`aria-labelledby` inputs, and the `maxLength` / `pending`
 inputs signal forms binds from the schema (see
 [the counter](/components/forms#character-counter) and
-[the busy state](/components/forms#busy-state)). The tag input has no `hidden` or
-`warnings` input - a schema `warn()` rule still reaches it.
+[the busy state](/components/forms#busy-state)).
 
 Pending text also commits on blur; <kbd>Backspace</kbd> on the empty field
 removes the last tag - and writes nothing at all when there is no tag left to

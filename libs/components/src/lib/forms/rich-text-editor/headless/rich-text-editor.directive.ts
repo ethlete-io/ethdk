@@ -24,12 +24,7 @@ import {
   RuntimeError,
 } from '@ethlete/core';
 import { fromEvent, tap } from 'rxjs';
-import {
-  AccessibleNameControlDirective,
-  FORM_FIELD_CONTROL_TYPES,
-  FORM_FIELD_TOKEN,
-  FormFieldControl,
-} from '../../form-field/headless';
+import { FORM_FIELD_CONTROL_TYPES, FORM_FIELD_TOKEN, FormFieldControl } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { injectRichTextEditorLabels, RichTextEditorLabels } from '../rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_TOKEN_CODEC } from '../rich-text-editor-token-codec.token';
@@ -61,6 +56,7 @@ import {
 } from './internals/rich-text-editor-token';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { FormFieldRichTextStylesComponent } from '../../form-field/form-field-rich-text-styles.component';
+import { FieldStateControlDirective } from '../../form-field/headless/field-state-control.directive';
 
 export type { RichTextEditorHeadingLevel };
 
@@ -150,7 +146,7 @@ const missingDomFeature = (method: string, provider: string) =>
   providers: [provideRichTextEditorDom()],
 })
 export class RichTextEditorDirective
-  extends AccessibleNameControlDirective
+  extends FieldStateControlDirective
   implements FormValueControl<string>, FormFieldControl
 {
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -169,8 +165,6 @@ export class RichTextEditorDirective
   public touched = model(false);
   public disabled = input(false, { transform: booleanAttribute });
   public readonly = input(false, { transform: booleanAttribute });
-  // eslint-disable-next-line ethlete/no-native-html-input-name
-  public hidden = input(false, { transform: booleanAttribute });
   public invalid = input(false, { transform: booleanAttribute });
   public errors = input<readonly ValidationError.WithOptionalFieldTree[]>([]);
   public required = input(false, { transform: booleanAttribute });

@@ -3,6 +3,7 @@ import { IconDirective, TIMES_ICON, provideIcons } from '../../../icon';
 import { DurationInputDirective, DurationInputFieldDirective } from './headless';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
+import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-control.directive';
 
 @Component({
   selector: 'et-duration-input',
@@ -29,6 +30,7 @@ import { ACCESSIBLE_NAME_INPUTS } from '../../form-field/headless';
         'parseErrorMessage',
         'durationFormat',
         ...ACCESSIBLE_NAME_INPUTS,
+        ...FIELD_STATE_INPUTS,
       ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },

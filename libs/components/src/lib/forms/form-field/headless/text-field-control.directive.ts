@@ -1,6 +1,5 @@
 import { booleanAttribute, Directive, effect, input, signal } from '@angular/core';
 import { injectRenderer } from '@ethlete/core';
-import { FieldWarningResult } from './field-warnings';
 import { TextShellControlDirective } from './text-shell-control.directive';
 
 /**
@@ -36,16 +35,6 @@ export const TEXT_FIELD_CONTROL_INPUTS = [
 @Directive()
 export abstract class TextFieldControlDirective extends TextShellControlDirective {
   private nativeHostRenderer = injectRenderer();
-
-  // eslint-disable-next-line ethlete/no-native-html-input-name -- form-field hidden state deliberately mirrors the native attribute
-  public hidden = input(false, { transform: booleanAttribute });
-
-  /**
-   * Non-blocking advisories to show under the field, for a control that is not bound to a
-   * signal-forms field (which would carry them through `warn()` rules instead). A bare string is
-   * one advisory; `null` is none. They never reach validity.
-   */
-  public warnings = input<FieldWarningResult>(null);
 
   /**
    * The bound field's `maxLength()` limit, bound automatically by signal forms because this input
