@@ -25,14 +25,13 @@ type Row = {
   template: `
     <span class="studio__checkouts">
       <select
-        [value]="current()"
         [disabled]="!held().roots.length"
         [title]="current() || 'The checkout the design work lives in'"
         (change)="choose(typed($event))"
         class="studio__checkout"
       >
         @for (root of held().roots; track root) {
-          <option [value]="root">{{ folderName(root) }}</option>
+          <option [value]="root" [selected]="root === current()">{{ folderName(root) }}</option>
         } @empty {
           <option value="">No checkout</option>
         }
