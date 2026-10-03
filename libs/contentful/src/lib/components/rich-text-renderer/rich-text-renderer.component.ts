@@ -561,9 +561,7 @@ export class ContentfulRichTextRendererComponent {
           const contentType = asset.fields.file?.contentType;
           const assetComponents = this.config.components;
 
-          const isMissing = !contentType && !asset.fields.file?.url;
-
-          if (isMissing) {
+          if (!asset.fields.file?.url) {
             if (isDevMode()) {
               console.warn(
                 'Asset is missing file data! Asset will be skipped. Did you forget to upload a file for the current translation in Contentful?',

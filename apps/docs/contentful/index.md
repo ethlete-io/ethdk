@@ -138,7 +138,7 @@ The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its conten
 
 ## Embedded assets
 
-`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `CONTENTFUL_DEFAULT_COMPONENTS` spread and no own `components` entry for it) is skipped with a dev-mode warning, as is an asset missing from `includes`. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
+`embedded-asset-block` nodes pick a component by the asset's MIME type: `image/*` → `components.image`, `video/*` → `components.video`, `audio/*` → `components.audio`, anything else → `components.file`. A node whose component is not registered (no `CONTENTFUL_DEFAULT_COMPONENTS` spread and no own `components` entry for it) is skipped with a dev-mode warning, as is an asset missing from `includes` or one whose file has no URL yet. Each receives the resolved asset as its `asset` input; all four accept both REST (`ContentfulRestAsset`) and GraphQL (`ContentfulGqlAsset`) asset shapes. You can use them standalone, too.
 
 ### Images
 

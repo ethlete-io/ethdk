@@ -513,6 +513,21 @@ describe('ContentfulRichTextRendererComponent', () => {
       warn.mockRestore();
     });
 
+    it('skips an asset that has a content type but no url', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        richText: doc(embeddedAsset('a1')),
+        includes: { Asset: [createAsset('a1', 'image/png', null)] },
+      });
+
+      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(StubImageComponent.instances).toHaveLength(0);
+      expect(warn).toHaveBeenCalled();
+
+      warn.mockRestore();
+    });
+
     it('skips an asset whose file field is omitted', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
       const asset = { ...createAsset('a1', 'image/png'), fields: { title: 'a1', description: '' } };
