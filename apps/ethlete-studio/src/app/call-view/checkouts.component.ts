@@ -155,7 +155,7 @@ export class CheckoutsComponent {
   }
 
   protected folderName(path: string) {
-    return path.split('/').filter(Boolean).pop() ?? path;
+    return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
   }
 
   protected typed(event: Event) {

@@ -52,4 +52,10 @@ describe('CheckoutsComponent', () => {
 
     expect(picker(fixture)?.value).toBe('/dev/beta');
   });
+
+  it('names a Windows checkout by its folder', async () => {
+    const fixture = await mount(['C:\\Users\\tom\\dev\\alpha'], '');
+
+    expect(picker(fixture)?.selectedOptions[0]?.textContent?.trim()).toBe('alpha');
+  });
 });
