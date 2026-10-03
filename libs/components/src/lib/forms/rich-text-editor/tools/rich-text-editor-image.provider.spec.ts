@@ -3,6 +3,8 @@ import {
   createEnvironmentInjector,
   DestroyRef,
   EnvironmentInjector,
+  inject,
+  InjectionToken,
   Injector,
   runInInjectionContext,
 } from '@angular/core';
@@ -120,6 +122,30 @@ describe('provideRichTextEditorImageTool in a shared scope', () => {
     expect(onFailure.mock.calls[0]?.[0]).toMatchObject({ file: FILE, reason: 'upload-failed' });
     expect(root.querySelectorAll('img')).toHaveLength(1);
     expect(root.querySelector('img[src^="javascript:"]')).toBeNull();
+  });
+
+  it('runs a config factory in the provider injection context', () => {
+    const FAILURES = new InjectionToken<(failure: RichTextEditorImageFailure) => void>('Failures');
+    const onFailure = vi.fn();
+
+    scope = createEnvironmentInjector(
+      [
+        { provide: FAILURES, useValue: onFailure },
+        provideRichTextEditorImageTool(() => ({
+          upload: () => of('javascript:alert(1)'),
+          onFailure: inject(FAILURES),
+        })),
+      ],
+      TestBed.inject(EnvironmentInjector),
+    );
+
+    const tools = scope.get(RICH_TEXT_EDITOR_TOOL) as unknown as RichTextEditorToolDefinition[];
+    const tool = tools.find((candidate) => candidate.token === 'image') as RichTextEditorToolDefinition;
+    const { editor } = createEditor();
+
+    pasteImage(tool, editor);
+
+    expect(onFailure).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ reason: 'upload-failed' }));
   });
 
   it('registers nothing for an upload that settles synchronously', () => {

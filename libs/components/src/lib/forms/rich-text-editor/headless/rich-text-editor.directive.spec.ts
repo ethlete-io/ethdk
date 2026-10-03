@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, InjectionToken } from '@angular/core';
 import '../../../../test-helpers';
 import {
   caretIn,
@@ -8,7 +8,7 @@ import {
 } from '../../testing/rich-text-editor-driver';
 import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
-import { RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
+import { provideRichTextEditorTool, RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
@@ -49,6 +49,31 @@ const editorDestroyed = vi.fn();
 })
 class EditorWithCustomToolTestHost {}
 
+@Component({
+  template: `<div etRichTextEditor></div>`,
+  imports: [RichTextEditorDirective],
+  providers: [{ provide: RICH_TEXT_EDITOR_TOOL, useValue: { token: 'custom', label: 'Custom' } }],
+})
+class EditorWithSingleToolProviderTestHost {}
+
+const TOOL_LABEL = new InjectionToken<string>('ToolLabel');
+
+@Component({
+  template: `<div etRichTextEditor></div>`,
+  imports: [RichTextEditorDirective],
+  providers: [
+    { provide: TOOL_LABEL, useValue: 'Injected' },
+    provideRichTextEditorTool(() => ({ token: 'custom', label: inject(TOOL_LABEL), editorDestroyed })),
+  ],
+})
+class EditorWithFactoryToolTestHost {}
+
+@Component({
+  template: `<div [tools]="['bold', 'divider', 'heading', 'sparkle']" etRichTextEditor></div>`,
+  imports: [RichTextEditorDirective],
+})
+class EditorWithUnprovidedToolsTestHost {}
+
 describe('RichTextEditorDirective', () => {
   describe('tool lifecycle', () => {
     it('tells each registered tool when the editor is destroyed', () => {
@@ -61,6 +86,48 @@ describe('RichTextEditorDirective', () => {
       driver.fixture.destroy();
 
       expect(editorDestroyed).toHaveBeenCalledExactlyOnceWith(driver.editor);
+    });
+
+    it('throws ET2507 when RICH_TEXT_EDITOR_TOOL is provided without multi', () => {
+      expect(() => mountRichTextEditor(EditorWithSingleToolProviderTestHost)).toThrow(
+        `ET${RICH_TEXT_EDITOR_ERROR_CODES.TOOL_NOT_MULTI_PROVIDED}`,
+      );
+    });
+
+    it('runs a provideRichTextEditorTool factory in an injection context', () => {
+      editorDestroyed.mockClear();
+
+      const driver = mountRichTextEditor(EditorWithFactoryToolTestHost);
+
+      driver.fixture.destroy();
+
+      expect(editorDestroyed).toHaveBeenCalledExactlyOnceWith(driver.editor);
+    });
+
+    it('warns once per configured tool that nothing registers, naming its provider', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      mountRichTextEditor(EditorWithUnprovidedToolsTestHost);
+
+      const messages = warn.mock.calls.map(([message]) => String(message));
+
+      expect(messages.filter((message) => message.includes("'heading'"))).toEqual([
+        expect.stringContaining('provideRichTextEditorHeadingTool()'),
+      ]);
+      expect(messages.filter((message) => message.includes("'sparkle'"))).toEqual([
+        expect.stringContaining('provideRichTextEditorTool()'),
+      ]);
+      expect(messages.some((message) => message.includes("'bold'") || message.includes("'divider'"))).toBe(false);
+      warn.mockRestore();
+    });
+
+    it('does not warn about the default toolbar', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      mountRichTextEditor(MinimalEditorTestHost);
+
+      expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('is configured but'));
+      warn.mockRestore();
     });
   });
 

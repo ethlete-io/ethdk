@@ -1,4 +1,4 @@
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemes } from '@ethlete/core';
 import '../../../test-helpers';
@@ -20,6 +20,13 @@ import { provideRichTextEditorLinkTool } from './tools/rich-text-editor-link.pro
   providers: [provideRichTextEditorLinkTool()],
 })
 class EditorTestHost {}
+
+@Component({
+  template: `<et-rich-text-editor />`,
+  imports: [RichTextEditorComponent],
+  providers: [provideRichTextEditorLinkEditor()],
+})
+class EditorWithoutLinkToolTestHost {}
 
 const editorDirectiveOf = (fixture: ComponentFixture<EditorTestHost>) =>
   (fixture.debugElement.children[0] as DebugElement).injector.get(RichTextEditorDirective);
@@ -79,6 +86,29 @@ describe('rich text editor link editor', () => {
 
       expect(open).toHaveBeenCalledOnce();
       expect(prompt).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dev warnings', () => {
+    const warningsFor = (component: typeof EditorTestHost, providers: Provider[] = []) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      TestBed.configureTestingModule({ imports: [component], providers });
+      TestBed.createComponent(component).detectChanges();
+
+      const messages = warn.mock.calls.map(([message]) => String(message));
+
+      warn.mockRestore();
+
+      return messages.filter((message) => message.includes('link editor is set up without the link tool'));
+    };
+
+    it('warns when the link editor is provided without the link tool', () => {
+      expect(warningsFor(EditorWithoutLinkToolTestHost)).toHaveLength(1);
+    });
+
+    it('stays quiet when the link tool is provided too', () => {
+      expect(warningsFor(EditorTestHost, [provideRichTextEditorLinkEditor()])).toEqual([]);
     });
   });
 

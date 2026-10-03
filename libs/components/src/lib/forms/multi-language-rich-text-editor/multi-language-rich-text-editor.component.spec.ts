@@ -9,6 +9,7 @@ import { FormFieldDirective } from '../form-field/headless';
 import { provideRichTextEditorDefaultTools, provideRichTextEditorTools } from '../rich-text-editor';
 import { RichTextEditorDirective } from '../rich-text-editor/headless/rich-text-editor.directive';
 import { RichTextEditorLabels } from '../rich-text-editor/rich-text-editor-labels';
+import { RichTextEditorComponent } from '../rich-text-editor/rich-text-editor.component';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
 import {
   MultiLanguageRichTextEditorLanguage,
@@ -17,6 +18,7 @@ import {
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES } from './multi-language-rich-text-editor-errors';
 import { requiredLanguages } from './multi-language-rich-text-editor-validators';
 import { MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS } from './multi-language-rich-text-editor.imports';
+import { provideRichTextEditorLanguageTool } from './tools/multi-language-rich-text-editor-language.provider';
 
 @Component({
   template: `
@@ -336,5 +338,52 @@ describe('MultiLanguageRichTextEditorComponent', () => {
       `ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.DUPLICATE_LANGUAGE_CODE}`,
     );
     expect(driver.fixture.nativeElement.querySelector('et-rich-text-editor')).toBeNull();
+  });
+});
+
+@Component({
+  template: `<et-rich-text-editor [tools]="['language', 'bold']" aria-label="Body" />`,
+  imports: [RichTextEditorComponent],
+  providers: [provideRichTextEditorDefaultTools(), provideRichTextEditorLanguageTool()],
+})
+class BareEditorWithLanguageToolHost {}
+
+describe('the language tool outside the multi-language editor', () => {
+  it('reports ET2602', () => {
+    const handleError = vi.fn();
+
+    mountRichTextEditor(BareEditorWithLanguageToolHost, { directiveSelector: 'et-rich-text-editor' }, [
+      { provide: ErrorHandler, useValue: { handleError } },
+    ]);
+
+    expect(handleError.mock.calls.map(([error]) => String(error))).toContainEqual(
+      expect.stringContaining(`ET${MULTI_LANGUAGE_RICH_TEXT_EDITOR_ERROR_CODES.LANGUAGE_TOOL_OUTSIDE_EDITOR}`),
+    );
+  });
+});
+
+describe('requiredLanguages', () => {
+  it('re-reads function codes on every validation and builds the message from a function', () => {
+    const codes = signal<readonly string[]>(['en']);
+    const model = signal<{ translations: MultiLanguageRichTextEditorValue }>({ translations: { en: 'Hi' } });
+    const entry = TestBed.runInInjectionContext(() =>
+      form(model, (path) => {
+        requiredLanguages(path.translations, {
+          codes: () => codes(),
+          message: (missing) => `Fehlt: ${missing.join('/')}`,
+        });
+      }),
+    );
+
+    expect(entry.translations().errors()).toEqual([]);
+
+    codes.set(['en', 'de', 'fr']);
+
+    expect(
+      entry
+        .translations()
+        .errors()
+        .map((error) => error.message),
+    ).toEqual(['Fehlt: de/fr']);
   });
 });
