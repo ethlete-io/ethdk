@@ -407,6 +407,7 @@ describe('streamDay', () => {
     expect(day.spend.turns).toBe(1);
     expect(day.spendTurns.map((turn) => turn.usage.output)).toEqual([400]);
     expect(day.unattributedSpend.turns).toBe(0);
+    expect(day.unattributedTurns).toEqual([]);
     expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${SDK}`]);
   });
 
@@ -442,6 +443,7 @@ describe('streamDay', () => {
     });
 
     expect(day.unattributedSpend.usage.output).toBe(700);
+    expect(day.unattributedTurns.map((turn) => turn.usage.output)).toEqual([700]);
     expect(day.spend.usage.output).toBe(700);
     expect(day.streams.map((stream) => stream.key)).toEqual([`repo:${SDK}`]);
   });
@@ -616,6 +618,7 @@ describe('streamDay', () => {
         turns: 0,
         models: [],
       },
+      unattributedTurns: [],
       ownSpend: { usage: { input: 0, output: 0, cacheWrite: 0, cacheRead: 0, thinking: 0 }, turns: 0, models: [] },
       ambiguousNames: [],
       calls: [],

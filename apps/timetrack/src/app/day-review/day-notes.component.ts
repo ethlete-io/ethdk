@@ -190,8 +190,15 @@ const NO_DIRECTORY =
       <div class="flex flex-col gap-1 rounded-md border border-dashed border-et-surface-border px-3 py-2">
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <span class="text-base" data-cost-label>What the agents cost</span>
-          <span class="text-small text-et-surface-muted" data-cost>{{ cost }}</span>
+          <span class="text-small text-et-surface-muted" data-cost>{{ cost.total }}</span>
         </div>
+
+        @if (cost.unattributed) {
+          <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span class="text-small" data-unattributed-cost-label>Of that, no checkout carries</span>
+            <span class="text-small text-et-surface-muted" data-unattributed-cost>{{ cost.unattributed }}</span>
+          </div>
+        }
 
         <span class="text-small text-et-surface-subtle">
           Every turn of the day at the price its model had when it ran, the turns no checkout carries included. A model
@@ -268,7 +275,14 @@ export class DayNotesComponent {
     const turns = this.day()?.spendTurns ?? [];
     const table = this.settings.settings().priceTable;
 
-    return turns.length && table.prices.length ? formatCost(costOfTurns({ table, turns })) : '';
+    if (!turns.length || !table.prices.length) return null;
+
+    const unattributed = this.day()?.unattributedTurns ?? [];
+
+    return {
+      total: formatCost(costOfTurns({ table, turns })),
+      unattributed: unattributed.length ? formatCost(costOfTurns({ table, turns: unattributed })) : '',
+    };
   });
 
   /**

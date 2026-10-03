@@ -284,6 +284,8 @@ export type StreamDay = {
    * unattended.
    */
   unattributedSpend: StreamSpend;
+  /** The turns `unattributedSpend` sums, one by one, so their cost can be stated apart from the day's. */
+  unattributedTurns: AgentUsageEvent[];
   /**
    * What the app itself spent on the user's behalf, under the reserved `TIMETRACK_PROVIDER`.
    *
@@ -1509,6 +1511,7 @@ export const streamDay = (options: {
 
   const spend = emptySpend();
   const unattributedSpend = emptySpend();
+  const unattributedTurns: AgentUsageEvent[] = [];
 
   for (const turn of turns) {
     const repoPath = checkoutOf(turn.cwd);
@@ -1519,6 +1522,7 @@ export const streamDay = (options: {
     const stream = turn.cwd ? streams.find((candidate) => candidate.key === key) : undefined;
 
     addSpend(stream ? stream.spend : unattributedSpend, turn);
+    if (!stream) unattributedTurns.push(turn);
     addSpend(spend, turn);
   }
 
@@ -1632,6 +1636,7 @@ export const streamDay = (options: {
     spend,
     spendTurns: turns,
     unattributedSpend,
+    unattributedTurns,
     ownSpend,
     ambiguousNames: [...claimedAmbiguously],
     calls,

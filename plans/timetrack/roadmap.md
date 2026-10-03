@@ -146,7 +146,9 @@ Slices 5 and 9. `unattributedSpend` is built and shown in `day-notes`.
   with an unpriced model gets no cost. App side done: the table is `priceTable` in the settings
   document, edited under Settings > The day (currency USD by default, no prices). `StreamDay.spendTurns`
   holds the turns `spend` sums, and the day notes show their cost once the table holds a price.
-- A cost on the day, with the share of spend no stream took stated, not folded in.
+- A cost on the day, with the share of spend no stream took stated, not folded in. Done (2026-10-03):
+  `StreamDay.unattributedTurns` holds the turns `unattributedSpend` sums, and the day notes' cost line
+  states their cost under the total as "Of that, no checkout carries".
 - A second, per-plan price mode, if subscription days are used for pricing.
 - Whether a model-call press refreshes the day. `probe` in `day-review.ts` tracks collector
   `lastRun()`, so the own-spend line appears only on the next collector pass.
