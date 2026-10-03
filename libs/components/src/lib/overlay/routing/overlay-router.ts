@@ -14,7 +14,7 @@ import {
   untracked,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationSkipped, Router } from '@angular/router';
 import {
   createComponentId,
   defineProvider,
@@ -25,7 +25,7 @@ import {
   toProvideFn,
   toToken,
 } from '@ethlete/core';
-import { map, switchMap, take, tap } from 'rxjs';
+import { asapScheduler, filter, map, observeOn, switchMap, take, tap } from 'rxjs';
 import { OVERLAY_REF } from '../overlay-ref';
 
 export const OVERLAY_ROUTER_CONFIG_TOKEN = new InjectionToken<OverlayRouterConfig>('OVERLAY_ROUTER_CONFIG_TOKEN');
@@ -532,15 +532,45 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       setupUrlSync();
     }
 
-    inject(DestroyRef).onDestroy(() => {
-      // The navigation that closed the overlay may still be in flight; touching the history now would cancel it.
-      if (!syncUrl || closedByNavigation || readUrlParam() === undefined) return;
+    const clearUrlParam = () => {
+      if (readUrlParam() === undefined) return;
 
       if (location && ownHistoryEntries > 0) {
         location.historyGo(-ownHistoryEntries);
       } else {
         updateBrowserUrl(undefined, true);
       }
+    };
+
+    inject(DestroyRef).onDestroy(() => {
+      if (!syncUrl) return;
+
+      if (!closedByNavigation || !router) {
+        clearUrlParam();
+
+        return;
+      }
+
+      // Touching the history while the navigation that closed the overlay is in flight would cancel it.
+      // A guard can still cancel it, which leaves the page on its old URL with this param in it.
+      const angularRouter = router;
+
+      angularRouter.events
+        .pipe(
+          filter(
+            (event) =>
+              event instanceof NavigationEnd ||
+              event instanceof NavigationCancel ||
+              event instanceof NavigationError ||
+              event instanceof NavigationSkipped,
+          ),
+          // The router emits the end event before it drops the finished navigation.
+          observeOn(asapScheduler),
+          filter(() => angularRouter.currentNavigation() === null),
+          take(1),
+          tap(() => clearUrlParam()),
+        )
+        .subscribe();
     });
 
     return {

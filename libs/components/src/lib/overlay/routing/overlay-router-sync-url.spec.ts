@@ -185,4 +185,26 @@ describe('OverlayRouter with syncUrl', () => {
 
     expect(router.url).toBe(overlayUrl);
   });
+
+  it('clears its url param when a guard cancels the navigation that closed the overlay', async () => {
+    const overlayRouter = await open();
+
+    await goTo(overlayRouter, '/two');
+
+    const navigation = router.navigateByUrl('/guarded');
+    await settle();
+
+    releaseGuard(false);
+
+    await expect(navigation).resolves.toBe(false);
+    await settle();
+
+    expect(ref.componentInstance()).toBeNull();
+    expect(router.url).toBe('/page');
+    expect(location.path()).toBe('/page');
+
+    await browser('back');
+
+    expect(router.url).toBe('/');
+  });
 });

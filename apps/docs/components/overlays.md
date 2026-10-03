@@ -463,7 +463,7 @@ Inside the overlay:
 - `injectOverlayRouter()` gives programmatic access (`navigate`, `back`, `currentRoute`, …).
 - `button[et-overlay-nav-tab-link]` inside `<et-nav-tabs>` gives the overlay a tab bar driven by this router instead of Angular's - see [nav tabs in an overlay](/components/tabs#nav-tabs-in-an-overlay).
 
-With `syncUrl: true`, closing the overlay steps back over the history entries it added, so the next browser Back leaves the page instead of landing on an entry of the closed overlay. A browser Back that a [close guard](#guarding-against-accidental-dismissal) vetoes puts the route param back.
+With `syncUrl: true`, closing the overlay steps back over the history entries it added, so the next browser Back leaves the page instead of landing on an entry of the closed overlay. A browser Back that a [close guard](#guarding-against-accidental-dismissal) vetoes puts the route param back. When an app navigation closes the overlay and a route guard then cancels that navigation, the param is removed as well.
 
 **Which way a transition plays** follows the routes' order in the config: navigating to a route listed earlier plays backward, later plays forward - so a settings dialog or a stepper animates the way its bar reads, whichever direction the user came from. A route the config doesn't know falls back to the navigation's own semantics (`back()` is backward, everything else forward). Override per navigation with `navigate(route, { navigationDirection })`, or per route with the `navigationDirection: { to, from }` hint on the route itself; both win over route order. Only the animation is affected - `back()` and `canGoBack()` keep following the actual navigation history.
 
