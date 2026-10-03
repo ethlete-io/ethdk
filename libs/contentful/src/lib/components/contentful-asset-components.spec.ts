@@ -110,4 +110,15 @@ describe('Contentful asset components', () => {
     expect(source.src).toContain('image.png');
     expect(source.hasAttribute('type')).toBe(false);
   });
+  it('renders no empty figcaption for an audio asset without a title or file name', () => {
+    TestBed.configureTestingModule({ imports: [ContentfulAudioComponent] });
+
+    const fixture = createAssetFixture(
+      ContentfulAudioComponent,
+      gqlAsset({ title: null, fileName: null, contentType: 'audio/mpeg' }),
+    );
+
+    expect(fixture.nativeElement.querySelector('audio')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('figcaption')).toBeNull();
+  });
 });

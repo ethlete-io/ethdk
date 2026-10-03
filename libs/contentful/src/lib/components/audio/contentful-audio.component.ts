@@ -9,7 +9,9 @@ import { ContentfulRestAsset } from '../../types';
   template: `
     @if (data(); as data) {
       <figure [ngClass]="figureClass()">
-        <figcaption [ngClass]="figcaptionClass()">{{ data.title }}</figcaption>
+        @if (data.title) {
+          <figcaption [ngClass]="figcaptionClass()">{{ data.title }}</figcaption>
+        }
         <audio [ngClass]="audioClass()" [src]="data.url" controls></audio>
       </figure>
     }
