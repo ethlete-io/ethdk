@@ -112,11 +112,9 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
         return selection.map((option) => this.execFnOrGetOptionProperty(option, valueBinding));
       }
 
-      const [option] = selection;
+      if (!selection.length) return null;
 
-      if (!option) return null;
-
-      return this.execFnOrGetOptionProperty(option, valueBinding);
+      return this.execFnOrGetOptionProperty(selection[0] as T, valueBinding);
     }),
   );
 
@@ -133,11 +131,9 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
         tap(() => {
           if (this.allowMultiple) return;
 
-          const [option] = this.selection;
+          if (!this.selection.length) return;
 
-          if (!option) return;
-
-          this.setSelection([option]);
+          this.setSelection([this.selection[0] as T]);
         }),
         takeUntilDestroyed(),
       )
@@ -162,7 +158,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     } else {
       const selection = this.getOptionByValue(value);
 
-      if (selection) {
+      if (selection !== undefined) {
         this.setSelection(selection);
       } else {
         this.clearSelectedOptions();
@@ -326,7 +322,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   getOptionByIndex(index: number, options = this.getFilteredOptions()): T | null {
-    return options[index] || null;
+    return index >= 0 && index < options.length ? (options[index] as T) : null;
   }
 
   getOptionByOffset(
@@ -335,37 +331,35 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     config: { loop?: boolean; clamp?: boolean; skipDisabled?: boolean; options?: T[] } = { clamp: true },
   ): T | null {
     const { loop, clamp, skipDisabled, options = this.getFilteredOptions() } = config;
+    const length = options.length;
 
-    const newIndex = index + offset;
-    const remainingOffset = newIndex * -1;
+    if (!length) return null;
 
-    let optionResult: T | null;
+    const resolveIndex = (i: number) => {
+      if (i >= 0 && i < length) return i;
+      if (loop) return ((i % length) + length) % length;
+      if (clamp) return i < 0 ? 0 : length - 1;
 
-    if (newIndex < 0) {
-      if (loop) {
-        optionResult = this.getOptionByOffset(remainingOffset, options.length - 1, config);
-      } else if (clamp) {
-        optionResult = this.getFirstOption();
-      } else {
-        optionResult = null;
-      }
-    } else if (newIndex >= options.length) {
-      if (loop) {
-        optionResult = this.getOptionByOffset(remainingOffset, 0, config);
-      } else if (clamp) {
-        optionResult = this.getLastOption();
-      } else {
-        optionResult = null;
-      }
-    } else {
-      optionResult = this.getOptionByIndex(newIndex);
+      return null;
+    };
+
+    let newIndex = resolveIndex(index + offset);
+
+    if (!skipDisabled) return newIndex === null ? null : this.getOptionByIndex(newIndex, options);
+
+    const step = offset < 0 ? -1 : 1;
+
+    for (let attempt = 0; attempt < length && newIndex !== null; attempt++) {
+      const option = options[newIndex] as T;
+
+      if (!this.isDisabled(option)) return option;
+
+      const nextIndex = newIndex + step;
+
+      newIndex = nextIndex >= 0 && nextIndex < length ? nextIndex : loop ? resolveIndex(nextIndex) : null;
     }
 
-    if (optionResult && skipDisabled && this.isDisabled(optionResult)) {
-      return this.getOptionByOffset(offset, newIndex, config);
-    }
-
-    return optionResult;
+    return null;
   }
 
   getFirstOption(options = this.getFilteredOptions()): T | null {
@@ -386,7 +380,7 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   getNonMultipleSelectedOption(): T | null {
     if (this.allowMultiple) return null;
 
-    return this.selection[0] || null;
+    return this.selection.length ? (this.selection[0] as T) : null;
   }
 
   getNonMultipleSelectedOptionIndex() {
