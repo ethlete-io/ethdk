@@ -131,4 +131,31 @@ describe('CarouselDirective edge cases', () => {
 
     expect(scroll.calls().length).toBe(callsBefore);
   });
+
+  it.each([Number.NaN, 1.5, Number.POSITIVE_INFINITY])('ignores goTo(%s), which names no slide', async (index) => {
+    const scroll = fakeElementScroll();
+    const fixture = await createHost([{ title: 'a' }, { title: 'b' }, { title: 'c' }], false);
+    const carousel = fixture.componentInstance.carousel();
+    const callsBefore = scroll.calls().length;
+    const currentBefore = carousel.currentIndex();
+
+    carousel.goTo(index);
+    fixture.detectChanges();
+
+    expect(scroll.calls().length).toBe(callsBefore);
+    expect(carousel.currentIndex()).toBe(currentBefore);
+  });
+
+  it.each([Number.NaN, 1.5])('snaps an activeIndex of %s back to the current slide', async (index) => {
+    fakeElementScroll();
+    const fixture = await createHost([{ title: 'a' }, { title: 'b' }, { title: 'c' }], false);
+    const carousel = fixture.componentInstance.carousel();
+    const currentBefore = carousel.currentIndex();
+
+    carousel.activeIndex.set(index);
+    fixture.detectChanges();
+
+    expect(carousel.currentIndex()).toBe(currentBefore);
+    expect(carousel.activeIndex()).toBe(currentBefore);
+  });
 });

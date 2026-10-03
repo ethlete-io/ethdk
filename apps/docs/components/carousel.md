@@ -125,7 +125,7 @@ where the transitions read best, since every effect is measured from the centre.
 
 `activeIndex` follows the controls, the dots, autoplay and swipes, so a position readout, a deep link or
 analytics can live outside the carousel. Setting it scrolls to that slide the way `goTo()` does, animated;
-an index outside the slides snaps back to the current one. For the rest of the API (`count()`, `next()`, …),
+an index that names no slide (out of range, fractional or `NaN`) snaps back to the current one. For the rest of the API (`count()`, `next()`, …),
 read the component's `carousel` member through `viewChild(CarouselComponent)`.
 
 ```html

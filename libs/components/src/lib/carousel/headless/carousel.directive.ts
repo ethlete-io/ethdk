@@ -161,7 +161,8 @@ export class CarouselDirective {
   public labels = input<Partial<CarouselLabels> | null>(null);
   /**
    * The current slide (0-based). Two-way bindable: it follows the controls, dots, autoplay and swipes, and
-   * setting it scrolls to that slide like `goTo()`. An out-of-range value snaps back to the current slide.
+   * setting it scrolls to that slide like `goTo()`. A value that names no slide (out of range, fractional, `NaN`)
+   * snaps back to the current slide.
    */
   public activeIndex = model(0);
   private contentScrollable = contentChild(ScrollableDirective, { descendants: true });
@@ -375,7 +376,7 @@ export class CarouselDirective {
       untracked(() => {
         if (requested === current) {
           agreedIndex = current;
-        } else if (requested === agreedIndex || requested < 0 || requested >= this.count()) {
+        } else if (requested === agreedIndex || !this.isSlideIndex(requested)) {
           agreedIndex = current;
           this.activeIndex.set(current);
         } else {
@@ -449,13 +450,13 @@ export class CarouselDirective {
   }
 
   /**
-   * Scroll a slide into view by index. Out-of-range indices are ignored.
+   * Scroll a slide into view by index. Indices that name no slide (out of range, fractional, `NaN`) are ignored.
    *
    * On a looping carousel it goes the shorter way round - the clones mean the same slide exists a whole
    * track either side, so slide 5 of 6 is one step back from slide 1, not five forward.
    */
   public goTo(index: number) {
-    if (index < 0 || index >= this.count()) return;
+    if (!this.isSlideIndex(index)) return;
 
     this.goToDomIndex(this.nearestDomIndexOf(index));
   }
@@ -482,6 +483,10 @@ export class CarouselDirective {
     const shifted = domIndex - this.cloneCount();
 
     return ((shifted % count) + count) % count;
+  }
+
+  private isSlideIndex(index: number) {
+    return Number.isInteger(index) && index >= 0 && index < this.count();
   }
 
   private goToDomIndex(domIndex: number) {
