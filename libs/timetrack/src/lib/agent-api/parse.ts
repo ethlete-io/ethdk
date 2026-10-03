@@ -34,8 +34,12 @@ const utcDayOf = (day: string) => {
   const [year, month, date] = day.split('-').map(Number) as [number, number, number];
   const ms = Date.UTC(year, month - 1, date);
 
-  return new Date(ms).getUTCDate() === date ? ms : undefined;
+  const at = new Date(ms);
+
+  return at.getUTCMonth() === month - 1 && at.getUTCDate() === date ? ms : undefined;
 };
+
+const isDayKey = (day: string) => utcDayOf(day) !== undefined;
 
 /**
  * Reads one row edit, or nothing where the caller named no row or no change this endpoint makes.
@@ -85,7 +89,7 @@ const asWorkCommit = (value: unknown): AgentApiWorkCommit | undefined => {
   const day = asText(raw['day']);
   const paths = (Array.isArray(raw['paths']) ? raw['paths'] : []).map(asText).filter(Boolean);
 
-  return DAY_KEY.test(day) && paths.length ? { day, paths } : undefined;
+  return isDayKey(day) && paths.length ? { day, paths } : undefined;
 };
 
 /**
@@ -227,7 +231,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
   if (op === 'naming.offers') {
     const day = asText(raw['day']);
 
-    return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
+    return isDayKey(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
   }
 
   if (op === 'tempo.worklogs' || op === 'calendar.events') {
@@ -249,7 +253,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     const day = asText(raw['day']);
     const planHash = asText(raw['planHash']);
 
-    if (!DAY_KEY.test(day)) return missing(op, 'day as YYYY-MM-DD');
+    if (!isDayKey(day)) return missing(op, 'day as YYYY-MM-DD');
 
     return { ok: true, request: planHash ? { op, day, planHash } : { op, day } };
   }
@@ -258,7 +262,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     const day = asText(raw['day']);
     const worklogId = asText(raw['worklogId']);
 
-    if (utcDayOf(day) === undefined) return missing(op, 'day as YYYY-MM-DD');
+    if (!isDayKey(day)) return missing(op, 'day as YYYY-MM-DD');
     if (!TEMPO_WORKLOG_ID.test(worklogId)) return missing(op, 'numeric worklogId');
 
     return { ok: true, request: { op, day, worklogId } };
@@ -267,14 +271,14 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
   if (op === 'day.events' || op === 'day.rows' || op === 'day.inputs') {
     const day = asText(raw['day']);
 
-    return DAY_KEY.test(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
+    return isDayKey(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
   }
 
   if (op === 'day.edits') {
     const day = asText(raw['day']);
     const listed = raw['edits'];
 
-    if (!DAY_KEY.test(day)) return missing(op, 'day as YYYY-MM-DD');
+    if (!isDayKey(day)) return missing(op, 'day as YYYY-MM-DD');
     if (!Array.isArray(listed)) return missing(op, 'list of edits');
 
     const edits = listed.map(asRowEdit).filter((edit): edit is AgentApiRowEdit => !!edit);

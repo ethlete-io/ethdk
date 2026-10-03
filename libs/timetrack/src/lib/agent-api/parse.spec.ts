@@ -238,6 +238,35 @@ describe('parseAgentRequest, over a day', () => {
       message: 'naming.offers needs a day as YYYY-MM-DD.',
     });
   });
+
+  it.each(['day.events', 'day.rows', 'day.inputs', 'naming.offers', 'tempo.sync'])(
+    'refuses a %s day key that names no calendar day',
+    (op) => {
+      for (const day of ['2026-02-30', '2026-13-01', '2026-00-10']) {
+        expect(parseAgentRequest({ op, day })).toEqual({
+          ok: false,
+          message: `${op} needs a day as YYYY-MM-DD.`,
+        });
+      }
+    },
+  );
+
+  it('refuses a day.edits day key that names no calendar day', () => {
+    expect(
+      parseAgentRequest({ op: 'day.edits', day: '2026-02-30', edits: [{ kind: 'reset', rowId: 'row-1' }] }),
+    ).toEqual({ ok: false, message: 'day.edits needs a day as YYYY-MM-DD.' });
+  });
+
+  it('refuses a split commit whose day names no calendar day', () => {
+    expect(
+      parseAgentRequest({
+        op: 'standIn.split',
+        id: 'stand-in-1',
+        branch: 'main',
+        commits: [{ day: '2026-02-30', paths: ['a.ts'] }],
+      }),
+    ).toEqual({ ok: false, message: 'standIn.split needs a commits.' });
+  });
 });
 
 describe('parseAgentRequest, over a day edit', () => {
