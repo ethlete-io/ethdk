@@ -171,7 +171,7 @@ unchanged, so a year-precision `2026` stays a string. Empty is `null`, which wri
 
 ### The transforms the typed creators use
 
-Every creator above is `queryField()` with a `queryParamToValue` (and, for the sorts, a
+Every creator above is `queryField()` with a `queryParamToValue` (and, for the sorts and dates, a
 `valueToQueryParam`) already set. Those functions are exported, so a custom field can reuse one
 instead of re-deriving it - a `queryField<Date | null>()` inside a wrapper, or a transform that runs
 one of them and then narrows further:

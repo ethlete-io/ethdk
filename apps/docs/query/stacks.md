@@ -28,7 +28,7 @@ const postsStack = createQueryStack({
 | `deduplicateArgs` | `true`        | Skip queries whose args (via `argsKeyFn`, default `JSON.stringify`) already exist.                        |
 | `maxQueries`      | `Infinity`    | Evict via `removeStrategy` (`'oldest'` default, or `'newest'`).                                           |
 
-The stack exposes aggregate signals (`queries`, `response`, `anyLoading`, `allLoading`, `loadingProgress`, `anyError`, `errors`, `firstQuery`, `lastQuery`) and methods `execute({ allowCache? })`, `retryFailed()`, `clear()`.
+The stack exposes aggregate signals (`queries`, `response`, `anyLoading`, `allLoading`, `loadingCount`, `loadingProgress`, `anyError`, `errors`, `firstQuery`, `lastQuery`) and methods `execute({ allowCache? })`, `retryFailed()`, `clear()`.
 
 ## Paged queries
 

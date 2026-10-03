@@ -102,8 +102,8 @@ and `provideRouter([])`, and returns:
 | `name`             | `'test'`                 | The scratch client's name.                                                                                                                                                                                                               |
 | `mockErrorHandler` | `true`                   | `true` swallows the failed requests a query reports to Angular's `ErrorHandler` and rethrows every other error, so a throwing effect or template still fails the spec. `'all'` swallows everything, `false` keeps Angular's own handler. |
 
-Every call also filters `console.error` for `HttpErrorResponse` objects and bearer-token decode
-failures. The filter is removed when the `TestBed` module is reset; call `restoreConsole()` to remove
+Every call also filters `console.error` for `HttpErrorResponse` objects, bearer-token decode failures
+and token-extraction failures. The filter is removed when the `TestBed` module is reset; call `restoreConsole()` to remove
 it earlier, for example when the spec spies on `console` itself.
 
 ### setupAuthTest

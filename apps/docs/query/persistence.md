@@ -67,7 +67,7 @@ this still valid" but "is this still plausible enough to show for a moment".
 
 A response's freshness window is persisted alongside it and restored verbatim - usually meaning it is
 already in the past, which is correct. It matters for what happens _next_ in the session: a later
-`execute({ allowCache: true })` on a hydrated entry behaves exactly as it would have in the session
+`execute({ options: { allowCache: true } })` on a hydrated entry behaves exactly as it would have in the session
 that fetched it.
 
 ## Authenticated responses
@@ -88,11 +88,11 @@ A logged-in user's data is on the other side of the default:
   that was fetched with a bearer token sitting on disk marked public.
 
 ```ts
-const getQuery = createGetQuery(client);
+const secureGetQuery = createSecureGetQuery(client, authProviderRef);
 
 // A secure query that may sit on the device - worth it for the data a returning user expects to see
 // immediately, like their own profile or a dashboard shell.
-export const getMe = getQuery<GetMeArgs>('/me', { persistence: true });
+export const getMe = secureGetQuery<GetMeArgs>('/me', { persistence: true });
 ```
 
 ::: warning What "on disk" means
@@ -150,7 +150,7 @@ of a deploy keep their own; an entry no build reads any more is removed once it 
 ### Opting a single query out
 
 ```ts
-export const getHugeExport = getQuery<ExportArgs>('/exports/full', { persistence: false });
+export const getHugeExport = createGetQuery(client)<ExportArgs>('/exports/full', { persistence: false });
 ```
 
 Three reasons to reach for this: a payload too large to be worth the disk, data that must never be

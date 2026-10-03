@@ -86,18 +86,20 @@ const getUser = getQuery<GetUserQueryArgs>((p) => `/users/${p.userId}`, {
 
 The second argument of a creator factory - a `BaseQueryCreatorOptions`, required only when `rawResponse` differs from `response`:
 
-| Option              | Default  | Description                                                                                                                                                                       |
-| ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transformResponse` | identity | Maps `rawResponse` → `response`. A throw lands in `error()` as a failure with code `0` - see [Errors](/query/errors#a-transformresponse-that-throws).                             |
-| `reportProgress`    | `false`  | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) - upload progress needs XHR.                                           |
-| `responseType`      | `'json'` | `'json' \| 'text' \| 'blob' \| 'arraybuffer'`.                                                                                                                                    |
-| `withCredentials`   | `false`  | Send cookies on cross-origin requests.                                                                                                                                            |
-| `transferCache`     | -        | Angular SSR transfer-cache config.                                                                                                                                                |
-| `retryFn`           | client's | Per-endpoint retry override.                                                                                                                                                      |
-| `reportErrors`      | `true`   | Pass a failed request to Angular's `ErrorHandler` - see [Errors](/query/errors#reporting-to-angular-s-errorhandler).                                                              |
-| `keepUnusedFor`     | client's | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).                                                   |
-| `tags`              | -        | Reads only. Strings, or a function of `{ args }`, that `invalidateQueries({ tag })` matches - see [Caching](/query/caching#tags).                                                 |
-| `invalidates`       | -        | Mutations only. `{ url }` / `{ tag }` targets, or a function of `{ args, response }`, invalidated after a success - see [Caching](/query/caching#invalidating-from-the-mutation). |
+| Option              | Default                                       | Description                                                                                                                                                                       |
+| ------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transformResponse` | identity                                      | Maps `rawResponse` → `response`. A throw lands in `error()` as a failure with code `0` - see [Errors](/query/errors#a-transformresponse-that-throws).                             |
+| `reportProgress`    | `false`                                       | Emit upload/download progress into `query.loading()`. Not supported with the fetch backend (`withFetch()`) - upload progress needs XHR.                                           |
+| `responseType`      | `'json'`                                      | `'json' \| 'text' \| 'blob' \| 'arraybuffer'`.                                                                                                                                    |
+| `withCredentials`   | `false`                                       | Send cookies on cross-origin requests.                                                                                                                                            |
+| `transferCache`     | -                                             | Angular SSR transfer-cache config.                                                                                                                                                |
+| `retryFn`           | client's                                      | Per-endpoint retry override.                                                                                                                                                      |
+| `reportErrors`      | `true`                                        | Pass a failed request to Angular's `ErrorHandler` - see [Errors](/query/errors#reporting-to-angular-s-errorhandler).                                                              |
+| `keepUnusedFor`     | client's                                      | Per-endpoint override for how long an unused cache entry is kept - see [Caching](/query/caching#keeping-unused-entries-around).                                                   |
+| `multiTabSync`      | `true`                                        | Share this query's responses and polling with the user's other tabs - see [Multi-tab sync](/query/multi-tab). No effect without the client feature.                               |
+| `persistence`       | `true` for public, `false` for secure queries | Keep this query's responses on disk - see [Persisted responses](/query/persistence). No effect without the client feature.                                                        |
+| `tags`              | -                                             | Reads only. Strings, or a function of `{ args }`, that `invalidateQueries({ tag })` matches - see [Caching](/query/caching#tags).                                                 |
+| `invalidates`       | -                                             | Mutations only. `{ url }` / `{ tag }` targets, or a function of `{ args, response }`, invalidated after a success - see [Caching](/query/caching#invalidating-from-the-mutation). |
 
 ## Secure queries
 
@@ -119,7 +121,7 @@ type ExportUsersArgs = {
   queryParams: { search?: string };
 };
 
-export const exportUsers = createSecureGetQuery(client, authProvider)<ExportUsersArgs>('/users/export.csv', {
+export const exportUsers = createSecureGetQuery(client, authProviderRef)<ExportUsersArgs>('/users/export.csv', {
   responseType: 'blob',
 });
 ```

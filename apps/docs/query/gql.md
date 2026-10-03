@@ -67,6 +67,11 @@ GQL args extend the core `QueryArgs` with a `variables` bag:
 **Response unwrapping:** by default the `{ data }` envelope is stripped automatically. A `200` whose `errors` array is non-empty while `data` is `null` or missing is a `failure` with code `0`: `error().raw.error` holds the server's `errors` array, `raw.message` names `ET601`, and [`queryErrorMessages`](/query/errors#rendering-error-messages) returns each error's `message`. Partial data - a non-null `data` next to `errors` - stays a success. A `200` with neither `data` nor `errors` fails with the `ET600` error as `raw.error`. Both hold in every build - see [a `transformResponse` that throws](/query/errors#a-transformresponse-that-throws). Supplying your own `transformResponse` replaces this default:
 
 ```ts
+type GetUserNameQueryArgs = {
+  response: string;
+  rawResponse: { data: { user: { name: string } } };
+};
+
 const getUserName = gqlQueryPost<GetUserNameQueryArgs>(gqlDocument, {
   transformResponse: (raw) => raw.data.user.name,
 });

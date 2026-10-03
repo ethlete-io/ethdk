@@ -83,12 +83,12 @@ injectApi().invalidateQueries({ url: '/players' });
 
 It refreshes the same set as `refreshQueriesInUse()` - reads with at least one consumer, cache bypassed, in-flight requests restarted - narrowed by what you pass:
 
-| Option      | Default | Description                                                                                                                                                         |
-| ----------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`       | -       | Invalidate one part of the API. A route starting with `/` resolves against `baseUrl`; anything else must be an absolute URL (`https://…`), which the type enforces. |
-| `tag`       | -       | Invalidate the reads that declared this [tag](#tags). Given with `url`, a read has to match both.                                                                   |
-| `filter`    | -       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** - see below.                                                       |
-| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it.                                             |
+| Option      | Default | Description                                                                                                                                                                                                                |
+| ----------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`       | -       | Invalidate one part of the API. A route starting with `/` resolves against `baseUrl`; anything else must be an absolute URL (`https://…`). The type, `QueryInvalidationUrl`, enforces it, so `'players'` does not compile. |
+| `tag`       | -       | Invalidate the reads that declared this [tag](#tags). Given with `url`, a read has to match both.                                                                                                                          |
+| `filter`    | -       | Narrow further on the built `{ method, url }` of each query. Runs after `url`. **This tab only** - see below.                                                                                                              |
+| `otherTabs` | `true`  | Whether the user's other tabs invalidate too. Needs the [multi-tab sync](/query/multi-tab) feature; ignored without it.                                                                                                    |
 
 `url` matching is boundary aware rather than a plain prefix test, so `/players` covers `/players`, `/players/1` and `/players?page=2` - but not `/players-archive`. Passing nothing invalidates everything in use.
 
@@ -113,11 +113,11 @@ export const patchOpportunityPerson = createPatchQuery(client)<PatchPersonArgs>(
 );
 ```
 
-`invalidates` takes a static array or a function of `{ args, response }` - the args the mutation was sent with and its response (`null` for a `204`). A target is `{ url }` or `{ tag }`, typed `QueryInvalidationTarget`. It works on the `POST`, `PUT`, `PATCH` and `DELETE` creators, their secure variants and the [GraphQL mutation creators](/query/gql), where `args.variables` holds the variables.
+`invalidates` takes a static array or a function of `{ args, response }` - the args the mutation was sent with and its response (`null` for a `204`). A target is `{ url }` (a `QueryInvalidationUrl`, so it starts with `/`) or `{ tag }`, typed `QueryInvalidationTarget`. It works on the `POST`, `PUT`, `PATCH` and `DELETE` creators, their secure variants and the [GraphQL mutation creators](/query/gql), where `args.variables` holds the variables.
 
 - **Only a success invalidates.** A failed or aborted mutation invalidates nothing.
 - **Same rules as the call.** Each target is an `invalidateQueries()` call: reads in use only, in-flight requests restarted, and the user's other tabs too.
-- **Reads throw.** `invalidates` on a `GET`, `HEAD`, `OPTIONS` or GraphQL query creator throws `ET2`: a read that invalidates would do so on every load, itself included. Give the read `tags` and invalidate those from the mutation.
+- **Reads throw.** `invalidates` on a `GET`, `HEAD`, `OPTIONS` or GraphQL query creator throws `ET002`: a read that invalidates would do so on every load, itself included. Give the read `tags` and invalidate those from the mutation.
 
 ### Tags
 
