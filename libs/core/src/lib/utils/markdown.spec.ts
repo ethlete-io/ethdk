@@ -1,4 +1,4 @@
-import { htmlToMarkdown, markdownToHtml } from './markdown';
+import { htmlToMarkdown, isSafeLinkUrl, isSafeUrl, markdownToHtml } from './markdown';
 
 describe('markdownToHtml', () => {
   it('returns empty string for empty input', () => {
@@ -455,5 +455,20 @@ describe('htmlToMarkdown', () => {
   it('round-trips literal angle brackets typed by the user', () => {
     // the editor serializes typed `<` as markdown text; re-rendering must not treat it as a tag
     expect(htmlToMarkdown(markdownToHtml('a < b and c <b not a tag'))).toBe('a < b and c <b not a tag');
+  });
+});
+
+describe('URL safety checks', () => {
+  it('refuse an out-of-range character reference instead of throwing', () => {
+    expect(isSafeLinkUrl('&#99999999;javascript:alert(1)')).toBe(true);
+    expect(isSafeLinkUrl('&#x110000;')).toBe(true);
+    expect(isSafeUrl('&#x110000;javascript:alert(1)')).toBe(true);
+    expect(isSafeLinkUrl('java&#x110000;script:alert(1)')).toBe(true);
+    expect(() => markdownToHtml('[x](&#99999999;)')).not.toThrow();
+  });
+
+  it('still refuse an encoded javascript scheme', () => {
+    expect(isSafeLinkUrl('&#106;avascript:alert(1)')).toBe(false);
+    expect(isSafeUrl('&#x6A;avascript:alert(1)')).toBe(false);
   });
 });

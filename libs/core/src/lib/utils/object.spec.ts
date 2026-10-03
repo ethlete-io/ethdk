@@ -19,6 +19,16 @@ describe('getObjectProperty', () => {
     expect(getObjectProperty(obj, 'a.b.h[0].i[0]')).toEqual('j');
   });
 
+  it('should follow chained array indexes', () => {
+    const obj = { a: [[1, 2], [3]], b: { c: [[{ d: 'e' }]] } };
+
+    expect(getObjectProperty(obj, 'a[0][1]')).toBe(2);
+    expect(getObjectProperty(obj, 'a[1][0]')).toBe(3);
+    expect(getObjectProperty(obj, 'b.c[0][0].d')).toBe('e');
+    expect(getObjectProperty(obj, 'a[0][5]')).toBeUndefined();
+    expect(getObjectProperty(obj, 'a[0][1][0]')).toBeUndefined();
+  });
+
   it('should return undefined if the property does not exist', () => {
     const obj = {
       a: {

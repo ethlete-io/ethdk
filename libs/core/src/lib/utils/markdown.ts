@@ -21,10 +21,12 @@ const VERBATIM_RE = /* @__PURE__ */ new RegExp(
   'gi',
 );
 
+const codePointToString = (codePoint: number) => (codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : '\ufffd');
+
 const decodeUrlCharacterReferences = (url: string) =>
   url
-    .replace(/&#(\d+);?/g, (_, value: string) => String.fromCodePoint(Number(value)))
-    .replace(/&#x([0-9a-f]+);?/gi, (_, value: string) => String.fromCodePoint(Number.parseInt(value, 16)))
+    .replace(/&#(\d+);?/g, (_, value: string) => codePointToString(Number(value)))
+    .replace(/&#x([0-9a-f]+);?/gi, (_, value: string) => codePointToString(Number.parseInt(value, 16)))
     .replace(/&(colon|tab|newline);/gi, (_, entity: string) =>
       entity.toLowerCase() === 'colon' ? ':' : entity.toLowerCase() === 'tab' ? '\t' : '\n',
     );

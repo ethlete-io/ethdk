@@ -20,11 +20,14 @@ export const getObjectProperty = (obj: Record<string, unknown>, prop: string) =>
     if (!isObject(value)) return undefined;
 
     if (prop.includes('[')) {
-      const [key, index] = prop.split('[').map((part) => part.replace(']', '')) as [string, string];
-      const arr = value[key];
-      if (!Array.isArray(arr)) return undefined;
+      const [key, ...indexes] = prop.split('[').map((part) => part.replace(']', '')) as [string, ...string[]];
+      value = value[key];
 
-      value = arr[+index];
+      for (const index of indexes) {
+        if (!Array.isArray(value)) return undefined;
+
+        value = value[+index];
+      }
     } else {
       value = value[prop];
     }

@@ -172,7 +172,7 @@ export const equal = (foo: any, bar: any) => {
           tmp = find(bar, tmp);
           if (!tmp) return false;
         }
-        if (!equal(len[1], bar.get(tmp))) {
+        if (!bar.has(tmp) || !equal(len[1], bar.get(tmp))) {
           return false;
         }
       }
