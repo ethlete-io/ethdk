@@ -422,7 +422,12 @@ export class SchedulerTimeGridViewComponent {
     const days = differenceInCalendarDays(target.day, column.day);
     const minutes = this.minutesAt(target.element, at.clientY) - grabMinutes;
     const day = addDays(appointment.start, days);
-    const start = atMinutesIntoDay(day, snapToSlot(minutesIntoDay(day) + minutes));
+    const startMinutes = snapToSlot(minutesIntoDay(day) + minutes);
+    const keepsDay = isSameDay(appointment.start, column.day);
+    const start = atMinutesIntoDay(
+      day,
+      keepsDay ? Math.min(Math.max(startMinutes, 0), MINUTES_PER_DAY - SLOT_MINUTES) : startMinutes,
+    );
 
     return { start, end: new Date(start.getTime() + (appointment.end.getTime() - appointment.start.getTime())) };
   }
