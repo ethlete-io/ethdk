@@ -54,7 +54,7 @@ export class AccordionComponent {
       const isOpenByDefault = this.isOpenByDefault();
 
       untracked(() => {
-        this.isOpen.set(isOpenByDefault);
+        if (isOpenByDefault) this.isOpen.set(true);
         ref.destroy();
       });
     });
