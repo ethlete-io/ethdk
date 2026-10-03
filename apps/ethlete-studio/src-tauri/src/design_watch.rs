@@ -36,15 +36,19 @@ fn watch_root(root: &Path, report: impl Fn() + Send + 'static) -> Result<Recomme
 /// live watches over one root would report every change twice.
 #[tauri::command]
 pub fn design_watch(state: State<'_, DesignWatch>, checkout: String, changes: Channel<()>) -> Result<(), String> {
-    read_config(&checkout)?;
+    arm(&state, &checkout, move || {
+        let _ = changes.send(());
+    })
+}
 
-    let root = calls_root(&checkout);
-    let mut slot = state.0.lock().map_err(|_| "The design watch is poisoned.".to_owned())?;
+/// The watch before is dropped even when the new checkout cannot be watched, so a window that
+/// moved on never hears from the checkout it left.
+fn arm(watch: &DesignWatch, checkout: &str, report: impl Fn() + Send + 'static) -> Result<(), String> {
+    let mut slot = watch.0.lock().map_err(|_| "The design watch is poisoned.".to_owned())?;
 
     *slot = None;
-    *slot = Some(watch_root(&root, move || {
-        let _ = changes.send(());
-    })?);
+    read_config(checkout)?;
+    *slot = Some(watch_root(&calls_root(checkout), report)?);
 
     Ok(())
 }
@@ -69,6 +73,32 @@ mod tests {
         }
 
         false
+    }
+
+    #[test]
+    fn arming_a_checkout_without_a_config_stops_the_watch_before() {
+        let base = std::env::temp_dir().join(format!("ethlete-studio-{}-rearm", std::process::id()));
+        let first = base.join("first");
+        let second = base.join("second");
+        let calls = calls_root(&first.to_string_lossy());
+
+        std::fs::create_dir_all(&calls).unwrap();
+        std::fs::create_dir_all(&second).unwrap();
+        std::fs::write(first.join(crate::design::DESIGN_DIR).join("config.json"), "{}").unwrap();
+
+        let watch = DesignWatch::default();
+        let count = Arc::new(AtomicUsize::new(0));
+        let seen = count.clone();
+
+        arm(&watch, &first.to_string_lossy(), move || {
+            seen.fetch_add(1, Ordering::SeqCst);
+        })
+        .unwrap();
+
+        assert!(arm(&watch, &second.to_string_lossy(), || {}).is_err());
+        assert!(watch.0.lock().unwrap().is_none(), "the first checkout's watch is gone");
+
+        std::fs::remove_dir_all(&base).unwrap();
     }
 
     #[test]

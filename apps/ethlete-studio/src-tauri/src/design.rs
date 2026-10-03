@@ -578,14 +578,27 @@ pub fn design_add_variants(
     let round = next_round_key(&round_keys(&source));
     let written = add_variants(&source, &round, &round_title, &keys)?;
 
-    for key in &keys {
-        std::fs::write(dir.join(variant_file(key)), stub(&slug, key))
-            .map_err(|error| format!("Unable to write {}: {error}", variant_file(key)))?;
+    let mut stubs: Vec<PathBuf> = Vec::with_capacity(keys.len());
+    let outcome = keys
+        .iter()
+        .try_for_each(|key| {
+            let file = dir.join(variant_file(key));
+
+            std::fs::write(&file, stub(&slug, key))
+                .map_err(|error| format!("Unable to write {}: {error}", variant_file(key)))?;
+            stubs.push(file);
+
+            Ok(())
+        })
+        .and_then(|()| std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}")));
+
+    if outcome.is_err() {
+        for file in &stubs {
+            let _ = std::fs::remove_file(file);
+        }
     }
 
-    std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))?;
-
-    Ok(AddedVariants { round, keys })
+    outcome.map(|()| AddedVariants { round, keys })
 }
 
 #[cfg(test)]
@@ -892,6 +905,33 @@ export default defineCall({
 
         assert_eq!(project.calls[0].variants[1].verdict.as_deref(), Some("chosen"));
 
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_call_that_cannot_be_written_keeps_no_new_variant_file() {
+        let checkout = a_checkout("add-refused");
+        let dir = checkout.join(".ethlete/design/calls/timetrack/kerbe/09-gutter");
+        let call = dir.join("call.ts");
+        let mut permissions = std::fs::metadata(&call).unwrap().permissions();
+
+        permissions.set_readonly(true);
+        std::fs::set_permissions(&call, permissions.clone()).unwrap();
+
+        let added = design_add_variants(
+            checkout.to_string_lossy().into_owned(),
+            "timetrack/kerbe/09-gutter".to_owned(),
+            2,
+            "Narrower".to_owned(),
+        );
+
+        assert!(added.is_err());
+        assert!(!dir.join("variant-c.ts").exists());
+        assert!(!dir.join("variant-d.ts").exists());
+
+        #[allow(clippy::permissions_set_readonly_false)]
+        permissions.set_readonly(false);
+        std::fs::set_permissions(&call, permissions).unwrap();
         std::fs::remove_dir_all(checkout).unwrap();
     }
 

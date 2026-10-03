@@ -10,6 +10,7 @@ mod error;
 mod tools;
 mod update;
 
+use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -83,27 +84,29 @@ fn workspace_diff() -> String {
 /// printed - and a shell that also prints a clear-screen escape leaves PATH empty, so not even git
 /// is reachable. Widen instead: what the shell adds goes in front, what the launcher gave stays.
 fn widen_path() {
-    let inherited = std::env::var("PATH").unwrap_or_default();
+    let inherited = std::env::var_os("PATH").unwrap_or_default();
 
     let _ = fix_path_env::fix();
 
-    let mut widened: Vec<String> = Vec::new();
+    let shell = std::env::var_os("PATH").unwrap_or_default();
 
-    for entry in std::env::var("PATH")
-        .unwrap_or_default()
-        .split(':')
-        .chain(inherited.split(':'))
-    {
-        let entry = entry.trim();
+    if let Some(widened) = widened(&shell, &inherited) {
+        std::env::set_var("PATH", widened);
+    }
+}
 
-        if entry.is_empty() || widened.iter().any(|seen| seen == entry) {
+fn widened(shell: &OsStr, inherited: &OsStr) -> Option<OsString> {
+    let mut entries: Vec<PathBuf> = Vec::new();
+
+    for entry in std::env::split_paths(shell).chain(std::env::split_paths(inherited)) {
+        if entry.as_os_str().is_empty() || entries.contains(&entry) {
             continue;
         }
 
-        widened.push(entry.to_owned());
+        entries.push(entry);
     }
 
-    std::env::set_var("PATH", widened.join(":"));
+    std::env::join_paths(entries).ok()
 }
 
 pub fn run() {
@@ -157,6 +160,32 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn a_widened_path_keeps_every_entry_whole_once() {
+        let shell = std::env::join_paths(["/opt/homebrew/bin", "/usr/bin"]).unwrap();
+        let inherited = std::env::join_paths(["/usr/bin", "/bin"]).unwrap();
+        let path = widened(&shell, &inherited).unwrap();
+
+        assert_eq!(
+            std::env::split_paths(&path).collect::<Vec<_>>(),
+            ["/opt/homebrew/bin", "/usr/bin", "/bin"].map(PathBuf::from)
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn a_widened_windows_path_keeps_its_drive_letters() {
+        let shell = OsString::from(r"C:\Windows;C:\Program Files\nodejs");
+        let inherited = OsString::from(r"C:\Windows;D:\tools");
+
+        assert_eq!(
+            widened(&shell, &inherited).unwrap(),
+            OsString::from(r"C:\Windows;C:\Program Files\nodejs;D:\tools")
+        );
+    }
+
     fn registered_commands() -> Vec<String> {
         let source = include_str!("lib.rs");
         let list = source

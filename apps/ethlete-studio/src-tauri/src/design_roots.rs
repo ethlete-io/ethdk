@@ -27,14 +27,16 @@ fn holds_design(checkout: &Path) -> bool {
     checkout.join(DESIGN_DIR).join("config.json").is_file()
 }
 
+/// Drops trailing separators, but never from a root: `/` or `C:\` without its separator names
+/// another folder, or none.
 fn tidy(path: &str) -> String {
-    let trimmed = path.trim().trim_end_matches('/');
+    let trimmed = path.trim();
 
-    if trimmed.is_empty() {
-        String::new()
-    } else {
-        trimmed.to_owned()
+    if Path::new(trimmed).parent().is_none() {
+        return trimmed.to_owned();
     }
+
+    trimmed.trim_end_matches(std::path::is_separator).to_owned()
 }
 
 fn read(store: &Path) -> DesignRoots {
@@ -281,6 +283,24 @@ mod tests {
         assert_eq!(read(&store).search, ground.to_string_lossy());
 
         fs::remove_dir_all(ground).expect("a clean ground");
+    }
+
+    #[test]
+    fn the_root_folder_can_be_named_for_a_search() {
+        let ground = a_ground("root");
+        let store = ground.join(STORE_FILE);
+        let root = std::path::MAIN_SEPARATOR_STR;
+
+        assert_eq!(set_search(&store, root).expect("the root is named").search, root);
+
+        fs::remove_dir_all(ground).expect("a clean ground");
+    }
+
+    #[test]
+    fn a_trailing_platform_separator_is_dropped() {
+        let checkout = format!("{}sdk{}", std::path::MAIN_SEPARATOR, std::path::MAIN_SEPARATOR);
+
+        assert_eq!(tidy(&checkout), format!("{}sdk", std::path::MAIN_SEPARATOR));
     }
 
     #[test]
