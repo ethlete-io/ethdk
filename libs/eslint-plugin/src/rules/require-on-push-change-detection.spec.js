@@ -39,6 +39,38 @@ class MyCmp {}`,
   ],
   invalid: [
     {
+      code: `import * as ng from '@angular/core';
+@ng.Component({ selector: 'et-a', template: '' }) class A {}`,
+      output: `import * as ng from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
+@ng.Component({ selector: 'et-a', template: '', changeDetection: ChangeDetectionStrategy.OnPush }) class A {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `import { Foo } from 'x';
+@Component({ selector: 'et-a', template: '' }) class A {}`,
+      output: `import { Foo } from 'x';
+import { ChangeDetectionStrategy } from '@angular/core';
+@Component({ selector: 'et-a', template: '', changeDetection: ChangeDetectionStrategy.OnPush }) class A {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `// header
+@Component({ selector: 'et-a', template: '' }) class A {}`,
+      output: `// header
+import { ChangeDetectionStrategy } from '@angular/core';
+
+@Component({ selector: 'et-a', template: '', changeDetection: ChangeDetectionStrategy.OnPush }) class A {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
+      code: `@Component({}) class A {}`,
+      output: `import { ChangeDetectionStrategy } from '@angular/core';
+
+@Component({ changeDetection: ChangeDetectionStrategy.OnPush }) class A {}`,
+      errors: [{ messageId: 'missing' }],
+    },
+    {
       code: `import {
   // the decorator
   Component,

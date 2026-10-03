@@ -20,21 +20,6 @@ const isInjectCall = (sourceCode, node) => {
   return isImportedAs(sourceCode, node.value.callee, 'inject');
 };
 
-/**
- * @param {any} node
- * @param {import('eslint').SourceCode} sourceCode
- */
-const buildRemoveProtectedFix = (node, sourceCode) => {
-  const protectedToken = sourceCode.getFirstToken(node, (token) => token.value === 'protected');
-  const nextToken = protectedToken ? sourceCode.getTokenAfter(protectedToken) : null;
-
-  if (!protectedToken || !nextToken) {
-    return null;
-  }
-
-  return (fixer) => fixer.removeRange([protectedToken.range[0], nextToken.range[0]]);
-};
-
 const MEMBER_TYPES = new Set([
   'PropertyDefinition',
   'AccessorProperty',
@@ -147,7 +132,7 @@ const templateMemberAccessibility = {
         node,
         messageId: 'shouldNotBeProtected',
         data: { name: memberName },
-        fix: buildRemoveProtectedFix(node, sourceCode),
+        fix: buildAccessibilityFix(node, sourceCode, 'public'),
       });
 
       return;

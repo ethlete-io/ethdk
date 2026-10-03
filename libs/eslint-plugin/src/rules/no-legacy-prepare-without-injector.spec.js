@@ -51,6 +51,21 @@ tester.run('no-legacy-prepare-without-injector', rule, {
   ],
   invalid: [
     {
+      code: `import { computed, inject } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  users = computed(() => legacyGetUsers.prepare({}));
+}`,
+      output: `import { computed, inject, Injector } from '@angular/core';
+import { legacyGetUsers } from './queries';
+class A {
+  private injector = inject(Injector);
+
+  users = computed(() => legacyGetUsers.prepare({ injector: this.injector }));
+}`,
+      errors: [{ messageId: 'missingInjector' }],
+    },
+    {
       code: `import * as ng from '@angular/core';
 import { legacyGetUsers } from './queries';
 class A {
