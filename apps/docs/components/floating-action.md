@@ -44,7 +44,7 @@ holds it as an inline `min-inline-size` / `min-block-size` for as long as the tr
 
 ## Three states
 
-The host publishes `data-state`, and `state()` returns the same thing:
+The host publishes `data-state`, the trigger publishes the same value as `data-floating-action-state`, and `state()` returns it too. A floating action nested inside another one keeps its own state:
 
 | State      | When                                                   | What the trigger does                      |
 | ---------- | ------------------------------------------------------ | ------------------------------------------ |

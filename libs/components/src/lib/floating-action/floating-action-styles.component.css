@@ -28,8 +28,7 @@
 
     /* The trigger is the same element throughout — inline, floating, gone — so the tab order never changes and
        assistive technology never sees a button appear or disappear. Only its position does. */
-    &:where([data-state='floating']) .et-floating-action-trigger,
-    &:where([data-state='hidden']) .et-floating-action-trigger {
+    .et-floating-action-trigger:where([data-floating-action-state='floating'], [data-floating-action-state='hidden']) {
       position: fixed;
       inset-inline-end: var(--et-floating-action-inset-inline-end);
       /* Plus the home-bar inset on a phone, when there is one, and whatever a surface above the page has
@@ -41,7 +40,7 @@
       z-index: var(--et-floating-action-z-index);
     }
 
-    &:where([data-state='hidden']) .et-floating-action-trigger {
+    .et-floating-action-trigger:where([data-floating-action-state='hidden']) {
       scale: 0;
       /* Not merely invisible: a zero-scale button is still focusable, so tabbing would land on something the
          reader cannot see. */
@@ -53,13 +52,13 @@
     .et-floating-action {
       /* Scaling *in* is a keyframe rather than a transition: the first time the trigger detaches there is no
          previous scale to animate from. */
-      &:where([data-state='floating']) .et-floating-action-trigger {
+      .et-floating-action-trigger:where([data-floating-action-state='floating']) {
         animation: et-floating-action-in var(--et-floating-action-duration) var(--ease-3, ease-out);
       }
 
       /* Out is a transition, and `visibility` is held back to the end of it so the scale-out stays watchable
          while the button still becomes properly unfocusable afterwards. */
-      &:where([data-state='hidden']) .et-floating-action-trigger {
+      .et-floating-action-trigger:where([data-floating-action-state='hidden']) {
         transition:
           scale var(--et-floating-action-duration) var(--ease-3, ease-out),
           visibility 0s linear var(--et-floating-action-duration);

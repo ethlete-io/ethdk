@@ -60,6 +60,25 @@ class FloatingActionRemovableAnchorTestHost {
   withAnchor = signal(true);
 }
 
+@Component({
+  template: `
+    <div etFloatingAction>
+      <div etFloatingActionAnchor>
+        <button id="outer" etFloatingActionTrigger>Back to top</button>
+      </div>
+      <section etFloatingActionScope>
+        <div etFloatingAction>
+          <div etFloatingActionAnchor>
+            <button id="inner" etFloatingActionTrigger>Filter</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `,
+  imports: [FLOATING_ACTION_IMPORTS],
+})
+class NestedFloatingActionTestHost {}
+
 describe('FloatingActionDirective', () => {
   it('starts inline while the anchor is on screen', async () => {
     const driver = await mountFloatingAction(FloatingActionTestHost);
@@ -131,6 +150,16 @@ describe('FloatingActionDirective', () => {
 
     expect(driver.floatingAction.anchor()).toBeNull();
     expect(driver.floatingAction.state()).toBe(FLOATING_ACTION_STATES.INLINE);
+  });
+
+  it('marks each trigger with the state of its own floating action, not of an outer one', async () => {
+    const driver = await mountFloatingAction(NestedFloatingActionTestHost);
+    const trigger = (id: string) => (driver.fixture.nativeElement as HTMLElement).querySelector(`#${id}`);
+
+    driver.scrollAnchorAbove();
+
+    expect(trigger('outer')?.getAttribute('data-floating-action-state')).toBe(FLOATING_ACTION_STATES.FLOATING);
+    expect(trigger('inner')?.getAttribute('data-floating-action-state')).toBe(FLOATING_ACTION_STATES.INLINE);
   });
 
   it('stays inline while disabled, whatever the scroll position', async () => {

@@ -85,16 +85,19 @@ export class FloatingActionAnchorDirective {
 @Directive({
   selector: '[etFloatingActionTrigger]',
   exportAs: 'etFloatingActionTrigger',
-  host: { class: 'et-floating-action-trigger' },
+  host: {
+    class: 'et-floating-action-trigger',
+    '[attr.data-floating-action-state]': 'floatingAction?.state()',
+  },
 })
 export class FloatingActionTriggerDirective {
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  constructor() {
-    const floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
+  protected floatingAction = inject(FLOATING_ACTION_TOKEN, { optional: true });
 
-    registerPart(floatingAction?.trigger, this);
-    assertInsideFloatingAction(floatingAction, 'FloatingActionTriggerDirective');
+  constructor() {
+    registerPart(this.floatingAction?.trigger, this);
+    assertInsideFloatingAction(this.floatingAction, 'FloatingActionTriggerDirective');
   }
 }
 
