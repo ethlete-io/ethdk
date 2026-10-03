@@ -107,6 +107,23 @@ Each control family reads its own wire format token:
 The [range validators](/components/forms#range-validators) read the token of the control they
 check. Read the value in effect with `injectDateFormat()`, `injectDateTimeFormat()`,
 `injectTimeFormat()` and `injectDateLocale()`; `DATE_LOCALE` is the token behind the locale.
+`DATE_LOCALE` does not follow `provideLocale()`: an app that sets `provideLocale('de')` also needs
+`provideDateLocale(de)`, and dev mode warns once when it is missing.
+
+Every validator takes a `valueFormat` (defaulting to the token of its control) and a `message`:
+
+| Validator                            | Control                    | Also takes                |
+| ------------------------------------ | -------------------------- | ------------------------- |
+| `dateBounds(path, options?)`         | `et-date-input`            | `min`, `max`, `precision` |
+| `dateTimeBounds(path, options?)`     | `et-date-time-input`       | `min`, `max`, `timeZone`  |
+| `dateRangeBounds(path, options)`     | `et-date-range-input`      | `min`, `max`, `precision` |
+| `dateTimeRangeBounds(path, options)` | `et-date-time-range-input` | `min`, `max`, `timeZone`  |
+| `dateRangeOrder(path, options?)`     | `et-date-range-input`      | `strict`                  |
+| `dateTimeRangeOrder(path, options?)` | `et-date-time-range-input` | `strict`, `timeZone`      |
+| `timeRangeOrder(path, options?)`     | `et-time-range-input`      | `strict`                  |
+
+`min` and `max` are a `Date` or a function of the field context returning one. Failures report
+`kind: 'rangeMin'` / `'rangeMax'` / `'rangeOrder'`. There is no time-only bounds validator.
 
 ### The shared contract set {#shared-contract}
 
@@ -501,7 +518,9 @@ shows the same ring.
 **Ordering is not enforced.** The control never reorders or clamps the two ends - same
 contract as the other two ranges - so an end before the start is a
 [validator's](/components/forms#range-validators) job: `timeRangeOrder(s.hours)`, which
-reads the `TIME_FORMAT` token (pass `valueFormat` otherwise). What the picker _can_
+reads the `TIME_FORMAT` token (pass `valueFormat` otherwise). It fails whenever the start is after the
+end on one day, so it also rejects an overnight range (`22:00` to `06:00`) that the ring draws as one
+arc - leave it off, or write your own validator, when overnight ranges are valid. What the picker _can_
 express is the same rule as a bound, because `timeFilter` receives the side it is filling:
 
 ```ts
