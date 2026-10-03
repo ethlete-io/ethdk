@@ -272,7 +272,8 @@ export const createQueryBatch = <TCreator extends AnyQueryCreator, TItem>(
   type ItemResult = QueryBatchItemResult<TItem, TArgs>;
 
   const { queryCreator, args: mapArgs, stopOnError, allowCache, onItemSettled, features = [] } = options;
-  const concurrency = Math.max(1, Math.floor(options.concurrency ?? 4));
+  const requestedConcurrency = options.concurrency ?? 4;
+  const concurrency = Number.isNaN(requestedConcurrency) ? 4 : Math.max(1, Math.floor(requestedConcurrency));
 
   if (features.some((f) => f.type === QueryFeatureType.WITH_ARGS)) {
     throw queryBatchWithArgsUsed();
