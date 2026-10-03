@@ -113,7 +113,8 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
     inject(ViewContainerRef).createEmbeddedView(inject(TemplateRef), this.viewContext);
 
     effect(() => {
-      const query = extractQuery(this.query());
+      const rawQuery = this.query();
+      const query = extractQuery(rawQuery);
 
       untracked(() => {
         if (!query) {
@@ -133,7 +134,7 @@ export class QueryDirective<Q extends QueryDirectiveType | null> {
           query.execute();
         }
 
-        this.viewContext.scope = isQueryCollection(query) ? (query.type as QueryCollectionKeysOf<Q>) : null;
+        this.viewContext.scope = isQueryCollection(rawQuery) ? (rawQuery.type as QueryCollectionKeysOf<Q>) : null;
         this.viewContext.query = query as QueryOf<Q>;
       });
     });

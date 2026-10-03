@@ -1,8 +1,59 @@
-import { signal } from '@angular/core';
+import { Component, ComponentRef, inject, InjectionToken, Injector, signal, WritableSignal } from '@angular/core';
 import { Paginated } from '@ethlete/types';
-import { createPagedQueryStack, createQueryBatch, ethletePaginationAdapter } from '../index';
+import {
+  createPagedQueryStack,
+  createQueryBatch,
+  createQueryCollectionSignal,
+  ethletePaginationAdapter,
+  QueryDirective,
+} from '../index';
 import { describe, expect, it } from 'vitest';
-import { useScenario } from './harness';
+import {
+  createLegacyClient,
+  LEGACY_CLIENT_KINDS,
+  LegacyClientCreator,
+  LegacyClientKind,
+  LegacyClientQuery,
+  useScenario,
+} from './harness';
+
+type ClaimArgs = { pathParams: { id: string } };
+type ClaimCollection = { type: 'accept' | 'decline'; query: LegacyClientQuery };
+
+const ACCEPT_CLAIM = new InjectionToken<LegacyClientCreator<ClaimArgs>>('ACCEPT_CLAIM');
+const DECLINE_CLAIM = new InjectionToken<LegacyClientCreator<ClaimArgs>>('DECLINE_CLAIM');
+const CLIENT_KIND = new InjectionToken<LegacyClientKind>('CLIENT_KIND');
+
+@Component({
+  imports: [QueryDirective],
+  template: `
+    <ng-container *etQuery="claim(); scope as scope">
+      <span data-slot="scope">{{ scope ?? '-' }}</span>
+    </ng-container>
+  `,
+})
+class ClaimScopeHost {
+  private readonly acceptClaim = inject(ACCEPT_CLAIM);
+  private readonly declineClaim = inject(DECLINE_CLAIM);
+  private readonly injector = inject(CLIENT_KIND) === 'interop' ? inject(Injector) : undefined;
+
+  readonly claim = createQueryCollectionSignal({
+    accept: this.acceptClaim as never,
+    decline: this.declineClaim as never,
+  }) as unknown as WritableSignal<ClaimCollection | null>;
+
+  run(type: ClaimCollection['type'], id: string) {
+    const creator = type === 'accept' ? this.acceptClaim : this.declineClaim;
+
+    this.claim.set({
+      type,
+      query: creator.prepare({ pathParams: { id }, ...(this.injector && { injector: this.injector }) }).execute(),
+    });
+  }
+}
+
+const slot = (ref: ComponentRef<unknown>, name: string) =>
+  ((ref.location.nativeElement as HTMLElement).querySelector(`[data-slot="${name}"]`)?.textContent ?? '').trim();
 
 describe('http scan 2026-10-03 scenario', () => {
   describe('a cache-control with both max-age and s-maxage', () => {
@@ -138,5 +189,37 @@ describe('http scan 2026-10-03 scenario', () => {
 
       c.destroy();
     });
+  });
+});
+
+describe.each(LEGACY_CLIENT_KINDS)('*etQuery over a query collection on the %s client', (kind) => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  it('exposes the collection key as scope', () => {
+    const s = scenario();
+    const legacy = createLegacyClient(s, kind);
+    s.api.on('POST', '/claims/:id/:action', () => ({ body: { ok: true }, delay: 50 }));
+
+    const c = s.consumer([
+      { provide: ACCEPT_CLAIM, useValue: legacy.post<ClaimArgs>((p) => `/claims/${p.id}/accept`) },
+      { provide: DECLINE_CLAIM, useValue: legacy.post<ClaimArgs>((p) => `/claims/${p.id}/decline`) },
+      { provide: CLIENT_KIND, useValue: kind },
+    ]);
+    const ref = s.mount(ClaimScopeHost, c.injector);
+
+    for (const [type, id] of [
+      ['accept', '1'],
+      ['decline', '2'],
+      ['accept', '3'],
+    ] as const) {
+      ref.instance.run(type, id);
+      s.tick(100);
+
+      expect(slot(ref, 'scope')).toBe(type);
+    }
+
+    ref.destroy();
+    c.destroy();
+    legacy.destroy();
   });
 });
