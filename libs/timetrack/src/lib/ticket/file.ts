@@ -1,9 +1,7 @@
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { JiraIssueInput, createJiraIssue$ } from '../jira/create';
-import { fetchJiraDuplicateCandidates$ } from '../jira/candidates';
 import { TimetrackTransport } from '../transport/ports';
-import { alreadyFiled } from './parents';
 
 /** The issue a press landed on, and whether Jira already held it. */
 export type FiledTicket = {
@@ -17,42 +15,20 @@ export type FiledTicket = {
 };
 
 /**
- * Files a ticket, unless the project already holds an open or a new issue with this very summary.
- *
- * The read in front of the write is what makes a second press safe. Jira has no idempotency key, so a
- * create whose answer was lost on the wire looks exactly like a create that never happened, and
- * guarding only the call still in flight leaves that case filing a duplicate. Nothing else can tell
- * the two apart — see {@link alreadyFiled}.
- *
- * A duplicate is answered rather than thrown. The press still means "this work is that issue", so a
- * caller writes the same standing rule either way; what differs is only that Jira already had it.
+ * Files a ticket through {@link createJiraIssue$}, whose guard answers an issue the project already
+ * holds instead of filing it again. The press still means "this work is that issue", so a caller
+ * writes the same standing rule either way.
  */
 export const fileTicketOnce$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
   input: JiraIssueInput;
-}): Observable<FiledTicket> => {
-  const { transport, credentials, input } = options;
-
-  return fetchJiraDuplicateCandidates$({
-    transport,
-    credentials,
-    projectKey: input.projectKey,
-    subjectField: input.subjectField,
-  }).pipe(
-    switchMap((issues) => {
-      const held = alreadyFiled({ summary: input.summary, issues });
-
-      if (held) return of<FiledTicket>({ issueKey: held.key, issueId: held.id, duplicate: true });
-
-      return createJiraIssue$({ transport, credentials, input }).pipe(
-        map((created): FiledTicket => ({
-          issueKey: created.key,
-          issueId: created.id,
-          duplicate: false,
-          ...(created.linkError ? { linkError: created.linkError } : {}),
-        })),
-      );
-    }),
+}): Observable<FiledTicket> =>
+  createJiraIssue$(options).pipe(
+    map((created): FiledTicket => ({
+      issueKey: created.key,
+      issueId: created.id,
+      duplicate: !!created.duplicate,
+      ...(created.linkError ? { linkError: created.linkError } : {}),
+    })),
   );
-};

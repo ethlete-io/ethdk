@@ -1,6 +1,8 @@
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, defer, finalize, map, of, shareReplay, switchMap } from 'rxjs';
+import { alreadyFiled } from '../ticket/parents';
 import { TimetrackTransport } from '../transport/ports';
 import { adfDocument } from './adf';
+import { fetchJiraDuplicateCandidates$ } from './candidates';
 import { JiraCredentials, jiraRequest$ } from './client';
 import { JiraParenting } from './hierarchy';
 
@@ -32,6 +34,8 @@ export type JiraCreatedIssue = {
   key: string;
   /** Why the link to `parentKey` failed. The issue exists regardless, so a retry must not file it again. */
   linkError?: string;
+  /** True where Jira already held this issue, or another call was filing it, so nothing new was filed. */
+  duplicate?: true;
 };
 
 type JiraCreatedIssueResource = {
@@ -74,13 +78,7 @@ export const linkJiraIssues$ = (options: {
     },
   }).pipe(map(() => undefined));
 
-/**
- * Files one issue and reads back the key the work is then attributed to.
- *
- * The key is the whole point of the call, so an instance that accepts the issue without naming it is
- * a failure here rather than a silent success — the block it was created for would stay unnamed.
- */
-export const createJiraIssue$ = (options: {
+const postJiraIssue$ = (options: {
   transport: TimetrackTransport;
   credentials: JiraCredentials;
   input: JiraIssueInput;
@@ -120,3 +118,50 @@ export const createJiraIssue$ = (options: {
     ),
   );
 };
+
+const inFlight = new Map<string, Observable<JiraCreatedIssue>>();
+
+const lockKeyOf = (credentials: JiraCredentials, input: JiraIssueInput) =>
+  [credentials.host, credentials.email, input.projectKey, input.summary.trim().replace(/\s+/g, ' ').toLowerCase()].join(
+    '\n',
+  );
+
+/**
+ * Files one issue and reads back its key. An issue the project already holds with this summary, or one
+ * another call is filing right now, is answered with `duplicate: true` instead of being filed again.
+ */
+export const createJiraIssue$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  input: JiraIssueInput;
+}): Observable<JiraCreatedIssue> =>
+  defer(() => {
+    const { transport, credentials, input } = options;
+    const lockKey = lockKeyOf(credentials, input);
+    const running = inFlight.get(lockKey);
+
+    if (running) return running.pipe(map((created): JiraCreatedIssue => ({ ...created, duplicate: true })));
+
+    const guarded$ = fetchJiraDuplicateCandidates$({
+      transport,
+      credentials,
+      projectKey: input.projectKey,
+      subjectField: input.subjectField,
+    }).pipe(
+      switchMap((issues) => {
+        const held = alreadyFiled({ summary: input.summary, issues });
+
+        return held
+          ? of<JiraCreatedIssue>({ id: held.id, key: held.key, duplicate: true })
+          : postJiraIssue$({ transport, credentials, input });
+      }),
+      finalize(() => {
+        if (inFlight.get(lockKey) === guarded$) inFlight.delete(lockKey);
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+
+    inFlight.set(lockKey, guarded$);
+
+    return guarded$;
+  });

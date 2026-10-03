@@ -53,11 +53,6 @@ contradicts it. Settle that too.
 
 ## M4 leftovers: creating in Jira
 
-- **The create guard is incomplete.** Task creates have a pre-flight duplicate search
-  (`ticket/file.ts`). The epic or parent create (`app/day-review/ticket-draft.ts:508`) has only
-  `exhaustMap`, and the agent endpoint `jira.create` (`app/agent/agent-endpoint.ts:241`) has no guard.
-  Move the in-flight lock and the pre-flight search under `createJiraIssue$` (`jira/create.ts`), as
-  ADR 0022 says. The search matches project, exact summary, creator and a short time window.
 - **Required fields the app cannot fill.** `createmeta` parses `requiredFieldIds`, and nothing reads
   it. The design: learn the dominant value with one JQL per project and issue type through
   `searchJiraIssues$`; fill it when it is `likely` or better; otherwise open the Jira create screen

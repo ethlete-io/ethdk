@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
@@ -17,6 +17,8 @@ const fakeTransport = (bodies: unknown[]) => {
   const requests: TimetrackRequest[] = [];
   const transport: TimetrackTransport = {
     request$: vi.fn((request: TimetrackRequest) => {
+      if (request.method === 'GET') return of({ status: 200, headers: {}, body: { issues: [] } }) as never;
+
       requests.push(request);
 
       return of({ status: 201, headers: {}, body: bodies[requests.length - 1] ?? {} }) as never;
@@ -135,6 +137,8 @@ describe('createJiraIssue$', () => {
     const requests: TimetrackRequest[] = [];
     const transport: TimetrackTransport = {
       request$: vi.fn((request: TimetrackRequest) => {
+        if (request.method === 'GET') return of({ status: 200, headers: {}, body: { issues: [] } }) as never;
+
         requests.push(request);
 
         return of(
@@ -155,5 +159,74 @@ describe('createJiraIssue$', () => {
 
     expect(failed).not.toHaveBeenCalled();
     expect(seen).toHaveBeenCalledWith({ id: '1', key: 'FIP-9', linkError: expect.any(String) });
+  });
+});
+
+describe('createJiraIssue$ guard', () => {
+  it('answers an issue the project already holds instead of filing it again', () => {
+    const requests: TimetrackRequest[] = [];
+    const transport: TimetrackTransport = {
+      request$: vi.fn((request: TimetrackRequest) => {
+        requests.push(request);
+
+        return of({
+          status: 200,
+          headers: {},
+          body: {
+            issues: [{ id: '10007', key: 'FIP-7', fields: { summary: INPUT.summary, issuetype: { name: 'Epic' } } }],
+          },
+        }) as never;
+      }),
+    };
+    const seen = vi.fn();
+
+    createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe(seen);
+
+    expect(requests.map((request) => request.method)).toEqual(['GET']);
+    expect(seen).toHaveBeenCalledWith({ id: '10007', key: 'FIP-7', duplicate: true });
+  });
+
+  it('files once when a second call starts while the first is in flight', () => {
+    const creates: Subject<unknown>[] = [];
+    const transport: TimetrackTransport = {
+      request$: vi.fn((request: TimetrackRequest) => {
+        if (request.method === 'GET') return of({ status: 200, headers: {}, body: { issues: [] } }) as never;
+
+        const answer = new Subject<unknown>();
+
+        creates.push(answer);
+
+        return answer as never;
+      }),
+    };
+    const first = vi.fn();
+    const second = vi.fn();
+
+    createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe(first);
+    createJiraIssue$({
+      transport,
+      credentials: CREDENTIALS,
+      input: { ...INPUT, summary: ' rework THE user management screen ' },
+    }).subscribe(second);
+
+    expect(creates).toHaveLength(1);
+
+    creates[0]?.next({ status: 201, headers: {}, body: { id: '10001', key: 'FIP-9' } });
+    creates[0]?.complete();
+
+    expect(first).toHaveBeenCalledWith({ id: '10001', key: 'FIP-9' });
+    expect(second).toHaveBeenCalledWith({ id: '10001', key: 'FIP-9', duplicate: true });
+  });
+
+  it('releases the lock once the create has answered', () => {
+    const { transport, requests } = fakeTransport([
+      { id: '1', key: 'FIP-9' },
+      { id: '2', key: 'FIP-10' },
+    ]);
+
+    createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe();
+    createJiraIssue$({ transport, credentials: CREDENTIALS, input: INPUT }).subscribe();
+
+    expect(requests).toHaveLength(2);
   });
 });
