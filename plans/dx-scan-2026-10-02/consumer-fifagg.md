@@ -201,7 +201,7 @@ the parts no codemod reports, and the forms/styling rewrite.
   Optionally an `assisted` core migration that rewrites `provideColorThemes(X)` → `provideColorThemesWithTailwind4(X)`
   and writes a task for the surface themes.
 - Breaking: no. Decision: no.
-- Status: fixed (docs) - "Migrating from runtime theming" section in `apps/docs/core/theming.md`. The optional assisted codemod was not built.
+- Status: fixed - "Migrating from runtime theming" section in `apps/docs/core/theming.md`, and the optional assisted core migration `legacy-color-themes` (`nx g @ethlete/core:migrate-legacy-color-themes`): rewrites `provideColorThemes(X)` → `provideColorThemesWithTailwind4(X)` with its import and writes `legacy-color-themes-migration-tasks.md` (generator run per site, Tailwind 3 helpers, surface themes).
 - Review: ok
 
 ## FG-10 `report-legacy-query-apis` does not list `*etQuery`

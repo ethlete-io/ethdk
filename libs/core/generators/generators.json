@@ -16,6 +16,11 @@
       "schema": "./migrate-surface-interaction-swatch/schema.json",
       "description": "Rewrite surface theme interactionColor maps into the { color, onColor, inkColor } swatch shape"
     },
+    "migrate-legacy-color-themes": {
+      "implementation": "./migrate-legacy-color-themes/migration",
+      "schema": "./migrate-legacy-color-themes/schema.json",
+      "description": "Rewrite provideColorThemes into provideColorThemesWithTailwind4 and list the Tailwind 4 setup that is left"
+    },
     "tailwind-4-color-theme": {
       "implementation": "./tailwind-4-color-theme/generator",
       "schema": "./tailwind-4-color-theme/schema.json",
