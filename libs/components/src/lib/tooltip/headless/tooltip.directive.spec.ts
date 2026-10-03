@@ -327,4 +327,32 @@ describe('TooltipDirective on an svg element', () => {
 
     expect(tooltipDirective.overlayRef()).toBeNull();
   });
+
+  it('closes the tooltip when its host is destroyed while shown', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(1);
+
+    fixture.destroy();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(0);
+    expect(document.querySelectorAll('[role="tooltip"]').length).toBe(0);
+  });
+
+  it('hides a shown tooltip when the host turns disabled', async () => {
+    tooltipDirective.show();
+    await driver.settle();
+
+    setInputSignal(tooltipDirective.disabled, true);
+    fixture.detectChanges();
+    await driver.settle();
+    await driver.settle();
+
+    expect(tooltipDirective.overlayRef()).toBeNull();
+    expect(driver.manager().openOverlays().length).toBe(0);
+  });
 });

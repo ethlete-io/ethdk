@@ -154,6 +154,10 @@ export class ToggletipDirective {
         'aria-describedby': this.resolvedAriaDescribedBy(),
       });
     });
+
+    this.destroyRef.onDestroy(() => {
+      this.overlayRef()?.close();
+    });
   }
 
   public toggle() {

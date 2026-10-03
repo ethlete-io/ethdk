@@ -138,6 +138,7 @@ export class TooltipDirective {
     });
 
     this.destroyRef.onDestroy(() => {
+      this.overlayRef()?.close();
       this.removeDescriptionElement();
       this.syncHostDescription(null);
     });

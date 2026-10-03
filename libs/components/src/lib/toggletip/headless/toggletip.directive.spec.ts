@@ -196,3 +196,30 @@ describe('ToggletipDirective', () => {
     expect(document.querySelector('et-toggletip')).toBeNull();
   });
 });
+
+describe('ToggletipDirective host destroyed while open', () => {
+  it('closes the toggletip with its host', async () => {
+    TestBed.configureTestingModule({ imports: [ToggletipNeighbourTestHost] });
+    fakeLayout([
+      { match: 'html', clientWidth: 1024, clientHeight: 768 },
+      { match: '.toggletip-trigger', rect: { x: 100, y: 100, width: 80, height: 32 } },
+    ]);
+
+    const fixture = TestBed.createComponent(ToggletipNeighbourTestHost);
+    fixture.detectChanges();
+    const driver = createOverlayDriver();
+    const directive = fixture.debugElement.query(By.directive(ToggletipDirective)).injector.get(ToggletipDirective);
+
+    directive.show();
+    fixture.detectChanges();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(1);
+
+    fixture.destroy();
+    await driver.settle();
+    await driver.settle();
+
+    expect(driver.manager().openOverlays().length).toBe(0);
+  });
+});
