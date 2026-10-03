@@ -123,11 +123,12 @@ export type CreateWebSocketClientConfigOptions = {
 
   /**
    * The handshake payload, sent on every connect and reconnect. Pass a function to read a fresh value
-   * (e.g. the current access token) each time.
+   * each time; it runs outside an injection context, so read the token from your app's own store, not
+   * `injectAuthProvider()`.
    *
    * @example
    * ```ts
-   * createWebSocketClient({ name: 'match', url, io, auth: () => ({ token: auth.accessToken() }) });
+   * createWebSocketClient({ name: 'match', url, io, auth: () => ({ token: readAccessToken() }) });
    * ```
    */
   auth?: WebSocketClientAuth | (() => WebSocketClientAuth);
