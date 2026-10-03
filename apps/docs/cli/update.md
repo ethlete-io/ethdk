@@ -89,6 +89,7 @@ A range no single version can be written into - `workspace:*`, `>=5 <6` - is rep
 | `--continue`     | Run the migrations of an update that was written but never finished.                                          |
 | `--ai`           | Hand every open agent-assisted task to the command in [`updateAgentCommand`](/cli/config).                    |
 | `--force`        | Update even when the working tree has uncommitted changes.                                                    |
+| `--help`, `-h`   | Print the usage and run nothing. An unknown flag is rejected the same way.                                    |
 | `--no-commit`    | Leave every change uncommitted. By default each step is [committed by itself](#commits).                      |
 
 The working tree must be clean, because the codemods rewrite files and you need a diff you can read. `--force` skips that check.

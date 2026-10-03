@@ -17,14 +17,14 @@ export class ToolbarComponent {
 
 `injectBreakpointObserver()` - signal-based media-query matching:
 
-| Method                           | Returns           | Description                                            |
-| -------------------------------- | ----------------- | ------------------------------------------------------ |
-| `observeBreakpoint(options)`     | `Signal<boolean>` | Live match state for a min/max breakpoint range.       |
-| `isBreakpointMatched(options)`   | `boolean`         | One-off check.                                         |
-| `observeMediaQuery(query)`       | `Signal<boolean>` | Live match state for a raw media query string.         |
-| `isMediaQueryMatched(query)`     | `boolean`         | One-off check for a raw query.                         |
-| `buildMediaQueryString(options)` | `string`          | Builds the query without observing it.                 |
-| `getBreakpointSize(name, side)`  | `number`          | Pixel value of a breakpoint's `'min'` or `'max'` side. |
+| Method                           | Returns           | Description                                                                                                                                       |
+| -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `observeBreakpoint(options)`     | `Signal<boolean>` | Live match state for a min/max breakpoint range.                                                                                                  |
+| `isBreakpointMatched(options)`   | `boolean`         | One-off check.                                                                                                                                    |
+| `observeMediaQuery(query)`       | `Signal<boolean>` | Live match state for a raw media query string.                                                                                                    |
+| `isMediaQueryMatched(query)`     | `boolean`         | One-off check for a raw query.                                                                                                                    |
+| `buildMediaQueryString(options)` | `string`          | Builds the query without observing it. Throws when neither `min` nor `max` is given.                                                              |
+| `getBreakpointSize(name, side)`  | `number`          | Pixel value of a breakpoint's `'min'` or `'max'` side; a finite `'max'` gets `+ 0.9` so fractional viewport widths (display scaling) still match. |
 
 Options take `{ min?, max? }` where each side is a breakpoint name or a raw pixel number. The breakpoints come from the viewport config - the default matches Tailwind:
 
@@ -37,7 +37,7 @@ Options take `{ min?, max? }` where each side is a breakpoint name or a raw pixe
 | `xl`       | 1280 – 1535 |
 | `2xl`      | 1536 – ∞    |
 
-Override them app-wide with `provideViewportConfig({ breakpoints: { … } })` (shallow-merged onto the default).
+Override them app-wide with `provideViewportConfig({ breakpoints: { … } })`. The merge is shallow, so `breakpoints` replaces the default map as a whole - list all six, each as a `[min, max]` tuple. `observeMediaQuery` / `observeBreakpoint` return the same signal for the same query string.
 
 ## Locale
 
@@ -73,7 +73,7 @@ The one provider here that is **not** root-provided: `provideBoundaryElement()` 
 
 ## User consent
 
-`createUserConsentProvider({ for, isGranted, grant, revoke? })` binds your app's consent source (e.g. a cookie banner service) to an injection token of your choosing, as a `ConsentHandler`:
+`createUserConsentProvider({ for, isGranted, grant, revoke? })` returns a `Provider` that binds your app's consent source (e.g. a cookie banner service) to an injection token of your choosing, as a `ConsentHandler`:
 
 ```ts
 const STREAM_CONSENT_DEF = /* @__PURE__ */ defineStaticProvider<ConsentHandler | null>(null);

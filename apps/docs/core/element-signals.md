@@ -21,7 +21,7 @@ export class ScrollShadowComponent {
 Shared rules for everything on this page:
 
 - **Injection context required** - call the helpers in a constructor or field initializer.
-- **Flexible element binding** - the `el` argument (`SignalElementBindingType`) accepts an `HTMLElement`, `ElementRef`, `QueryList`, an array of those, or a signal/observable of any of them. When the bound element changes, observers move with it. Every helper also has a `signalHost*` variant that binds to the component's own host element.
+- **Flexible element binding** - the `el` argument (`SignalElementBindingType`) accepts an `HTMLElement`, `ElementRef`, `QueryList`, an array of those, or a signal/observable of any of them. When the bound element changes, observers move with it. Most helpers also have a `signalHost*` variant that binds to the component's own host element (`signalElementChildren` is the exception).
 - **SSR-safe** - the observers only attach after first render (`signalIsRendered()`); until then you get the empty/initial value.
 
 ## Dimensions
@@ -74,12 +74,15 @@ Observe the content (children), not the host - observing the animated host would
 `signalElementScrollState(el)` / `signalHostElementScrollState()` → `Signal<ElementScrollState>`:
 
 ```ts
-{
-  (canScroll, canScrollHorizontally, canScrollVertically, elementDimensions);
-}
+type ElementScrollState = {
+  canScroll: boolean;
+  canScrollHorizontally: boolean;
+  canScrollVertically: boolean;
+  elementDimensions: NullableElementDimensions;
+};
 ```
 
-Recomputes on both resizes and DOM mutations. Pass `{ initialScrollPosition }` (a `Signal<ScrollToOptions | null>`) to apply a one-time scroll position once the element renders.
+Recomputes on both resizes and DOM mutations. The element variant takes `{ initialScrollPosition?, mutations? }`: `initialScrollPosition` (a `Signal<ScrollToOptions | null>`) applies a one-time scroll position once the element renders and a truthy value arrives; `mutations` (a `MutationObserverInit`) narrows what the underlying observer watches - the default `{ childList, subtree, attributes: true }` re-measures on every style or class write in the subtree. The host variant takes no options.
 
 `signalElementLastScrollDirection(el)` / the host variant track the last scroll direction as `{ type: 'up' | 'down' | 'left' | 'right', time }`. The first scroll is measured from the element's scroll position when it was bound, so an element that starts scrolled reports the right direction.
 
@@ -104,10 +107,10 @@ hostClassBindings = signalHostClasses({
 });
 ```
 
-Each call returns a handle with `push` / `remove` / `has` to add or drop bindings at runtime. The lower-level `buildSignalEffects` powers all six, if you need a custom token-applying binding.
+Each call returns a handle with `push` / `pushMany` / `remove` / `removeMany` / `has` to add or drop bindings at runtime. The lower-level `buildSignalEffects` powers all six, if you need a custom token-applying binding.
 
 ## Render guards
 
 - `signalIsRendered()` - `false` until `afterNextRender`, then `true`. The SSR/first-paint guard used by everything above.
-- `createCanAnimateSignal()` - a state signal that flips `true` one frame after render; use it to suppress enter animations on initial paint.
-- `createIsRenderedSignal()` - manual variant for components that need to control when the "rendered" state binds (call `bind()` at the end of the constructor).
+- `createCanAnimateSignal()` - returns `{ state }`, a read-only signal that flips `true` one frame after creation; use it to suppress enter animations on initial paint.
+- `createIsRenderedSignal()` - manual variant returning `{ state, bind }`, for components that need to control when the "rendered" state binds (call `bind()` at the end of the constructor; a console error is logged next frame if it was never bound).

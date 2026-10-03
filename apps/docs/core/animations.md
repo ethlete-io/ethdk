@@ -38,7 +38,7 @@ API surface:
 | `enter()` / `leave()`                      | Start (or redirect) a transition.                                                                                                                           |
 | `state` / `state$` / `stateChange`         | `'init' \| 'entering' \| 'entered' \| 'leaving' \| 'left'` - a read-only signal, a read-only observable and an output. Drive it with `enter()` / `leave()`. |
 | `forceEnteredState()` / `forceLeftState()` | Jump to the end state synchronously, cancelling any animation.                                                                                              |
-| `skipNextEnter` input                      | When `true`, the next `enter()` completes instantly, then the flag resets. Useful for content that mounts inside an already-visible container.              |
+| `skipNextEnter` model                      | When `true`, the next `enter()` completes instantly, then the flag resets. Useful for content that mounts inside an already-visible container.              |
 
 The directive settles even when the browser never fires the expected `transitionend` (cancelled or replaced transitions), so state can't get stuck.
 

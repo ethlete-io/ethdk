@@ -79,12 +79,27 @@ yarn ethlete-agents migrate
   on Windows checkouts.)
 - A short layout note is added to `AGENTS.md` so agents know the symlinked skills are
   the same files, not duplicates - skipped if yours already explains it.
-- The config gains `claudeMdImportsAgentsMd: true`, which stops the claude target from
+- The config gains the `codex` target (when `targets` lists them explicitly) and `claudeMdImportsAgentsMd: true`, which stops the claude target from
   writing `.claude/rules/ethlete/` - the rules already reach Claude through the
   `AGENTS.md` marker block, and a second copy would load twice.
 - A `sync` runs, which also prunes output from older layouts.
 
 The command is idempotent - every step detects the migrated state and skips itself.
+
+## Commands
+
+| Command        | What it does                                                                                         |
+| -------------- | ---------------------------------------------------------------------------------------------------- |
+| `sync`         | Writes the generated rules, skills, hooks and git hooks. Flags: `--targets`, `--root`, `--dry-run`.  |
+| `check`        | Exits non-zero when the generated files are stale. Flags: `--targets`, `--root`.                     |
+| `init`         | Writes a starter `ethlete-agents.config.json`; refuses when one exists. Flag: `--root`.              |
+| `migrate`      | Converts the repo to the AGENTS.md layout. Flags: `--targets`, `--root`, `--dry-run`.                |
+| `git-flow`     | `start`, `check`, `repair` and `explain` for branches against the repo's git flow.                   |
+| `timetrack`    | Asks the running Timetrack app about Jira (`status`, `issue`, `search`, `project`, `create`, `log`). |
+| `output-style` | Installs an Ethlete output style into this machine's Claude Code config.                             |
+
+`--targets` takes a comma-separated subset of `claude`, `codex`, `cursor` and `copilot`. `sync`, `check`,
+`init` and `migrate` reject a flag they do not know and print the usage.
 
 ## Configuration
 
@@ -110,10 +125,12 @@ The command is idempotent - every step detects the migrated state and skips itse
 | Option                    | Default      | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `targets`                 | `"auto"`     | `"auto"` always emits `codex` (`AGENTS.md` + `.agents/skills/` is the cross-tool baseline) and adds `claude`, `cursor`, `copilot` when their directory exists; or list an explicit subset.                                                                                                                                                                                                                                                                                       |
-| `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits only `both` (used by the SDK repo itself).                                                                                                                                                                                                                                                                                                                                                         |
+| `profile`                 | `"consumer"` | `"consumer"` emits `scope: consumer` and `scope: both` content; `"sdk"` emits `scope: sdk` and `scope: both` content (used by the SDK repo itself).                                                                                                                                                                                                                                                                                                                              |
 | `vars`                    | -            | Values for the template tokens a guide declares. A guide whose variable has no default and no value is skipped with a warning. `packageRunner` (`yarn`, `pnpm exec`, `bunx`, `npx`) is derived from `packageManager` or the lockfile. `lintCommand`/`lintFixCommand` run the repo's `lint` script, else `nx lint <project>` when Nx is installed; `storybookStartCommand` runs its `storybook` script. `sync` warns when a lint var names a script `package.json` does not have. |
 | `exclude`                 | `[]`         | Rule or skill names to skip for every configured agent and developer. `sync` removes previously generated copies and warns about unknown names.                                                                                                                                                                                                                                                                                                                                  |
 | `claudeMdImportsAgentsMd` | `false`      | Set (usually by `migrate`) when `CLAUDE.md` imports `AGENTS.md`; skips `.claude/rules/ethlete/` so rules don't load twice. `sync` warns when the flag is set but the import is missing.                                                                                                                                                                                                                                                                                          |
+| `gitFlow`                 | -            | The branch grammar read by `git-flow`, the git hooks and CI: `keyPrefixes`, `baseBranches`, `enforcement`, `severity`, `subPrefix`, `deprecatedShapes`.                                                                                                                                                                                                                                                                                                                          |
+| `jira`                    | `{}`         | `typeByIssueType` maps a Jira issue type to a branch type for `git-flow start`; anything unlisted becomes `feat`.                                                                                                                                                                                                                                                                                                                                                                |
 | `hooks`                   | `[]`         | Opt-in Claude Code and Codex hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `gitHooks`                | `[]`         | Opt-in checks appended to existing Husky hooks, see below.                                                                                                                                                                                                                                                                                                                                                                                                                       |
 

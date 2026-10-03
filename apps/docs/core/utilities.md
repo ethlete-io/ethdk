@@ -22,12 +22,12 @@ export const MY_SERVICE_TOKEN = /* @__PURE__ */ toToken(MY_SERVICE_DEF);
 const myService = injectMyService();
 ```
 
-| Factory                                   | Value source     | Root-provided?                                            |
-| ----------------------------------------- | ---------------- | --------------------------------------------------------- |
-| `defineProvider(factory)`                 | Factory function | No - an ancestor must call `provide…()`.                  |
-| `defineRootProvider(factory)`             | Factory function | Yes - injectable everywhere; `provide…()` only re-scopes. |
-| `defineStaticProvider(defaultValue?)`     | Static value     | No. `provide…(override)` shallow-merges the override.     |
-| `defineStaticRootProvider(defaultValue?)` | Static value     | Yes.                                                      |
+| Factory                                   | Value source     | Root-provided?                                                                                                                   |
+| ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `defineProvider(factory)`                 | Factory function | No - an ancestor must call `provide…()`.                                                                                         |
+| `defineRootProvider(factory)`             | Factory function | Yes - injectable everywhere; `provide…()` only re-scopes.                                                                        |
+| `defineStaticProvider(defaultValue?)`     | Static value     | No. `provide…(override)` shallow-merges the override into the default when both are objects; otherwise the override replaces it. |
+| `defineStaticRootProvider(defaultValue?)` | Static value     | Yes.                                                                                                                             |
 
 The returned `inject…()` is typed: plain calls return `T`, `inject…({ optional: true })` returns `T | null`. Also here: `injectHostElement()` (the host's `HTMLElement`) and `injectTemplateRef()`.
 
@@ -58,7 +58,7 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 
 - `controlValueSignal` - see [Signal utilities](/core/signal-utils#form-control-values).
 - `cloneFormGroup(group)` - deep-clones a `FormGroup` including validators, disabled state and nested groups/arrays.
-- `getFormGroupValue(group)` - the group's value **including disabled controls**, empty values coalesced to `null`.
+- `getFormGroupValue(group)` - the group's value **including disabled controls**, `null`/`undefined` values coalesced to `null` (an empty string stays `''`).
 - Validators (also grouped under the `EthleteValidators` const): `MustMatch(controlName, matchingControlName)` for password-repeat patterns, `IsEmail`, `IsArrayNotEmpty`, and `ValidateAtLeastOneRequired({ keys, checkFalse? })` for "at least one of these fields" groups. Each has a matching error-key const (`MUST_MATCH`, `IS_EMAIL`, …).
 
 ## Unsaved changes {#unsaved-changes}
@@ -182,21 +182,23 @@ protected save() {
 ## Gestures & input
 
 - `createSwipeTracker(startEvent)` - track a touch/mouse swipe from a start event: `update(event)` returns per-move movement/axis-lock info (`isSwiping` vs `isScrolling`), `end()` returns final movement plus px/sec velocities, `cancel()` aborts.
+- `suppressTextSelection(document)` - stops the browser from starting a text selection until the returned release function is called; nested calls are counted. Call it when a pointer gesture starts and release it when the gesture ends or is cancelled.
 - `KeyPressManager` - detects rapid repeat presses of a single key (`isPressed(event)` is `true` from the second press within 100 ms); used for type-to-repeat behaviors. Deprecated: it keys on `KeyboardEvent.keyCode`; compare `KeyboardEvent.key` instead.
 
 ## Logging
 
-`createLogger({ scope, feature })` returns `{ log, warn, error }` with a color-coded `[scope feature]` prefix. All loggers go quiet when the URL contains the `et-logger-quiet` query param (`DISABLE_LOGGER_PARAM`). Requires an injection context.
+`createLogger({ scope, feature })` returns `{ log, warn, error }` with a color-coded `[scope feature]` prefix. All loggers go quiet when the URL carries a non-empty `et-logger-quiet` query param, e.g. `?et-logger-quiet=1` (`DISABLE_LOGGER_PARAM`); a bare `?et-logger-quiet` does not count. Requires an injection context.
 
 ## Small helpers
 
-| Helper                                           | Description                                                                                                                        |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `clamp(value, min?, max?)`                       | Constrain to a range - **defaults `min: 0`, `max: 100`**.                                                                          |
-| `round(value, precision?)`                       | Round to N decimals (default `0`).                                                                                                 |
-| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-0`, `et-button-1`, …).                                                                   |
-| `Translatable`                                   | `{ i18n, text }` - translation key + fallback text.                                                                                |
-| `NgClassType`                                    | The value type `[ngClass]` accepts, for typing class inputs.                                                                       |
-| `TypedQueryList<T>` / `switchQueryListChanges()` | A `QueryList` with typed `changes`, and an RxJS operator that switches to a list's changes stream.                                 |
-| `optionalBooleanAttribute`                       | An input transform like `booleanAttribute` that keeps `null` / `undefined`, so a tri-state input takes a bare attribute as `true`. |
-| `setInputSignal(input, value)`                   | Imperatively write an `input()` signal. Relies on Angular signal internals - a last-resort escape hatch.                           |
+| Helper                                           | Description                                                                                                                                                 |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clamp(value, min?, max?)`                       | Constrain to a range - **defaults `min: 0`, `max: 100`**.                                                                                                   |
+| `round(value, precision?)`                       | Round to N decimals (default `0`).                                                                                                                          |
+| `createComponentId('et-button')`                 | Process-unique ids per prefix (`et-button-0`, `et-button-1`, …).                                                                                            |
+| `randomId()`                                     | A unique id string: `crypto.randomUUID()` with fallbacks for insecure contexts, where it is missing. Prefer it over calling `crypto.randomUUID()` directly. |
+| `Translatable`                                   | `{ i18n, text }` - translation key + fallback text.                                                                                                         |
+| `NgClassType`                                    | The value type `[ngClass]` accepts, for typing class inputs.                                                                                                |
+| `TypedQueryList<T>` / `switchQueryListChanges()` | A `QueryList` with typed `changes`, and an RxJS operator that switches to a list's changes stream.                                                          |
+| `optionalBooleanAttribute`                       | An input transform like `booleanAttribute` that keeps `null` / `undefined`, so a tri-state input takes a bare attribute as `true`.                          |
+| `setInputSignal(input, value)`                   | Imperatively write an `input()` signal. Relies on Angular signal internals - a last-resort escape hatch.                                                    |

@@ -4,7 +4,7 @@ Inject-style signal helpers for media queries, router state, form controls and a
 
 ## Media queries & breakpoints
 
-Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). The `inject*` helpers are **memoized per application** - calling them repeatedly returns the same signal instance, wherever you call them from, so they're cheap to use everywhere:
+Sugar on top of the [breakpoint observer](/core/providers#breakpoint-observer). Most `inject*` helpers below are **memoized per application** - calling them repeatedly returns the same signal instance, wherever you call them from, so they're cheap to use everywhere. The exceptions are `injectObserveBreakpoint()` and `injectObserveMediaQuery()`, which delegate to the breakpoint observer (it returns the same signal for the same query, so they are cheap too):
 
 | Helper                                                                      | Returns                                                                                                                                                               |
 | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,7 +68,7 @@ Committed router state as signals - safe to read in child-component constructors
 | `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment in one object. |
 | `injectIsRouterInitialized()`                    | `Signal<boolean>` - true after the first real navigation.                          |
 
-The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. Every `inject*` router helper also accepts `{ injector }` for use outside an injection context. `injectQueryParam` additionally accepts `requireSync: true` to read the initial value synchronously from the browser URL.
+The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. The router helpers that take a config (`injectFragment`, `injectQueryParams`, `injectQueryParam`, `injectQueryParamAll`, `injectPathParams`, `injectPathParam`, `injectRouteData`, `injectRouteDataItem`, `injectRouteTitle`, `injectRouterNavigationState`) also accept `{ injector }` for use outside an injection context; the memoized ones (`injectUrl`, `injectRoute`, `injectRouterState`, `injectIsRouterInitialized`, `injectQueryParamChanges`, `injectPathParamChanges`) do not. `injectQueryParam` and `injectQueryParamAll` additionally accept `requireSync: true`, which falls back to the browser URL while the router has no value for the key yet (not usable for arrays or complex objects).
 
 `injectQueryParamChanges()` / `injectPathParamChanges()` emit only the keys that changed in the latest navigation; removed keys carry the `ET_PROPERTY_REMOVED` sentinel.
 
@@ -84,7 +84,7 @@ Use it for what a URL should not carry (a "you were redirected because…" reaso
 
 ## Animated numbers
 
-`signalAnimatedNumber(source, options?)` returns a read-only signal that tweens toward the source value - for count-up stats and animated meters:
+`signalAnimatedNumber(source, options?)` returns a read-only signal that tweens from its current value to the source value - for count-up stats and animated meters. The source (a number or a signal) is read each time `.play()` is called; later changes to it do not animate until the next `.play()`:
 
 ```ts
 import { signalAnimatedNumber } from '@ethlete/core';
@@ -101,7 +101,7 @@ animatedScore = signalAnimatedNumber(this.score).play();
 | `round`                               | `Math.round` | Applied to each emitted value. |
 | `onAnimationStart` / `onAnimationEnd` | -            | Callbacks.                     |
 
-Nothing animates until you call `.play()`; `.stop()` and `.reset()` are also chainable. The RAF loop runs outside the Angular zone. Easing presets ship alongside: `easeLinear`, `easeIn`, `easeOut`, `easeInOut`, `easeElastic`, `easeOutBack`, `easeOutBackStrong`.
+Nothing animates until you call `.play()`; `.stop()` (keeps the current value) and `.reset()` (back to `initialValue`) are also chainable. The RAF loop runs outside the Angular zone. Easing presets ship alongside (plain functions - pass them uncalled): `easeLinear`, `easeIn`, `easeOut`, `easeInOut`, `easeElastic`, `easeOutBack`, `easeOutBackStrong`.
 
 ## Deferred loading
 

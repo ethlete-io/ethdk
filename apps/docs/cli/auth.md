@@ -45,8 +45,8 @@ checkout's `composer.json`, never the API repository itself: you fetch that one 
 credential. A token that can read the API but not fetch code answers `403` there, which is the
 difference a private dependency fails on.
 
-When either check fails, nothing is written and the reason is printed. `--force` writes the token
-anyway. When the host cannot be reached at all, the checks are skipped and the token is written.
+When either check fails, nothing is written and the reason is printed. `--force` writes a token that
+cannot fetch code anyway, but never one the host rejects with `401`. When the host cannot be reached at all, the checks are skipped and the token is written.
 
 ## Replacing a token
 

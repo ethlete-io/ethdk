@@ -31,7 +31,7 @@ export class MatchAlertsComponent {
 }
 ```
 
-The service is root-provided, so `injectNotifications()` works anywhere without a `provideNotifications()` call - use that only to give a subtree its own instance (`closeAll()` then only reaches that instance's notifications).
+The service is root-provided, so `injectNotifications()` works anywhere without a `provideNotifications()` call - use that only to give a subtree its own instance (`closeAll()` then closes only that instance's own notifications, plus every persistent one still in the tray).
 
 Nothing here shows a notification on its own: permission must be granted first, and `show()` never prompts implicitly.
 
@@ -118,7 +118,7 @@ Options marked **worker** are silently dropped on the page path - the `Notificat
 
 Leave `tag` unset for a stand-alone notification and a unique one is generated. That is not cosmetic: the tag is what `close()` matches on the service-worker path and what a relayed click is routed by, so a notification without one could be neither closed nor clicked.
 
-Set it to coalesce repeated notifications about the same thing - one per chat, one per upload. Notifications sharing a tag replace rather than stack, and `close()` on such a ref closes all of them.
+Set it to coalesce repeated notifications about the same thing - one per chat, one per upload. Notifications sharing a tag replace rather than stack, and on the service-worker path `close()` on such a ref closes every notification carrying that tag.
 
 ## Delivery paths
 

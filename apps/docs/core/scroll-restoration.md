@@ -6,7 +6,7 @@ App-wide navigation scroll management: scroll-to-top between routes, fragment sc
 set it up once and it runs for the app's lifetime.
 
 Call `setupScrollRestoration()` once at app start, in an injection context (e.g. an
-`APP_INITIALIZER`-style provider or the root component's constructor). It is a no-op on the server.
+`APP_INITIALIZER`-style provider or the root component's constructor). It is a no-op on the server, and it stops (and restores `history.scrollRestoration`) when its injection context is destroyed.
 
 ```ts
 import { setupScrollRestoration } from '@ethlete/core';
@@ -41,10 +41,10 @@ through its `data`:
 }
 ```
 
-| Option              | Default | Description                                                                   |
-| ------------------- | ------- | ----------------------------------------------------------------------------- |
-| `asReturnRoute`     | `false` | Only skip scroll-to-top when arriving here **from** an opted-out route.       |
-| `onPathParamChange` | `false` | Also skip it when only a path param changed (e.g. `details/1` → `details/2`). |
+| Option              | Default | Description                                                                                                                                                                                     |
+| ------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `asReturnRoute`     | `false` | Only skip scroll-to-top when arriving here **from** an opted-out route.                                                                                                                         |
+| `onPathParamChange` | `false` | Also skip it when only a path param changed (e.g. `details/1` → `details/2`). Only needed together with `asReturnRoute: true` - a plain `routerDisableScrollTop()` already skips every arrival. |
 
 `asReturnRoute` describes a **pair** of routes, and both halves have to be marked. A route with
 `routerDisableScrollTop({ asReturnRoute: true })` keeps its offset only if the route being left was
@@ -68,8 +68,8 @@ height is the signal, so it works for lists, images, fonts and virtualized table
 | `maxTimeout`     | `10000` | Absolute cap (ms) per attempt, regardless of holds.                                           |
 | `clampOnTimeout` | `true`  | On timeout, apply the offset clamped to the reachable maximum instead of staying put.         |
 
-`maxTimeout` is only ever an upper bound: the effective cap is `max(timeout, maxTimeout)`, so setting
-it below `timeout` has no effect.
+`maxTimeout` is only ever an upper bound: the wait ends at whichever of the two deadlines comes
+first, so setting it below `timeout` shortens the wait to `maxTimeout`.
 
 ### Waiting for slow data
 

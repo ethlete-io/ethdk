@@ -78,7 +78,7 @@ APIs: hub, platform
 
 ## Declaring the APIs
 
-`ethlete.apis.js` at the repo root exports one entry per API. It is a module rather than JSON because `env` is a function.
+`ethlete.apis.js` (or `ethlete.apis.cjs`) at the repo root exports one entry per API. It is a module rather than JSON because `env` is a function.
 
 ```js
 const { sshKeyPath } = require('@ethlete/cli');
@@ -121,7 +121,7 @@ Adding an API is an entry in this map. Nothing else changes.
 | `env`          | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
 | `exec`         | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
 
-Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service.
+Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`) or `help`; the file then fails to load with an error that names the entry.
 
 ## Where the checkout comes from
 
@@ -289,12 +289,13 @@ This takes platform down, then removes:
 Take platform down and remove the checkouts? [y/N]
 ```
 
-Two checks refuse the removal instead, because what they hold exists nowhere else:
+Three checks refuse the removal instead, because what they hold exists nowhere else. If git cannot read the checkout at all, that refuses it too:
 
-| Check                   | How to pass it            |
-| ----------------------- | ------------------------- |
-| Uncommitted changes     | Commit them, or `--force` |
-| Commits no remote holds | Push them, or `--force`   |
+| Check                   | How to pass it                   |
+| ----------------------- | -------------------------------- |
+| Uncommitted changes     | Commit them, or `--force`        |
+| Commits no remote holds | Push them, or `--force`          |
+| Stashed changes         | Apply or drop them, or `--force` |
 
 The refusal lists what stands in the way, so a change you do not care about is obvious at a glance:
 
@@ -308,7 +309,7 @@ $ yarn et api clear platform
 Commit them, or pass --force to lose them.
 ```
 
-`--force` skips both git checks. It never skips the take-down: a checkout that is gone leaves its
+`--force` skips every git check. It never skips the take-down: a checkout that is gone leaves its
 containers with no files.
 
 ## Container engines

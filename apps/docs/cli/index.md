@@ -1,6 +1,6 @@
 # @ethlete/cli
 
-Repo tooling. The package installs a single binary, `et`, with six commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, [`et auth`](/cli/auth) writes the git host token a private dependency needs, [`et update`](/cli/update) moves the `@ethlete/*` packages to a newer version and runs the migrations they ship, [`et migrations`](/cli/update#migration-levels) runs the optional ones when the app is ready, and [`et doctor`](/cli/config#et-doctor) checks that machine's setup.
+Repo tooling. The package installs a single binary, `et`, with seven commands: `et release` turns pending changesets into a tagged, pushed release commit, [`et api`](/cli/api) runs the backend an app talks to from a checkout on your own machine, [`et auth`](/cli/auth) writes the git host token a private dependency needs, [`et update`](/cli/update) moves the `@ethlete/*` packages to a newer version and runs the migrations they ship, [`et migrations`](/cli/update#migration-levels) runs the optional ones when the app is ready, [`et doctor`](/cli/config#et-doctor) checks that machine's setup, and `et design` serves the design page of a checkout.
 
 ```bash
 yarn add --dev @ethlete/cli@next
@@ -48,5 +48,6 @@ Changesets runs through the package manager the repo uses (`yarn changeset`, `pn
 - [`et update`](/cli/update) - move the `@ethlete/*` packages to a newer version, run the codemods those versions ship, and report what needs a decision.
 - [`et migrations`](/cli/update#migration-levels) - list the recommended and optional migrations the app has not run, and run one of them.
 - [`et doctor`](/cli/config#et-doctor) - report every problem with this machine's config and API checkouts at once.
+- `et design [checkout]` - serve the design page of the `.ethlete/design` folder of a checkout (the current repo by default, or a path, or `--checkout <path>`). `et design check` finds out why a call does not render.
 
 Running `et` with no command, `--help` or an unknown command prints the command list.

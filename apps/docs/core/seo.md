@@ -32,7 +32,7 @@ provideTitleConfig({ suffixPart: { text: 'Ethlete SDK' } }),
 | `transformer`               | identity | Runs over the final title, e.g. for translation.                              |
 | `prefixPart` / `suffixPart` | -        | Static parts around the composed title.                                       |
 
-Pass `{ useAsStart: true }` to make a part the leftmost segment, discarding parts registered before it.
+Pass `{ useAsStart: true }` to make a part the leftmost segment, discarding parts registered before it. Until the router has completed its first navigation, only the default title is shown, and with no parts registered `prefixPart`/`suffixPart` are not applied either.
 
 ### Title markers {#title-markers}
 
@@ -73,16 +73,16 @@ This is the only real answer to "show progress on the tab": no browser exposes t
 
 `applyMetaBinding(config)` is the generic form; shortcuts exist for the common cases:
 
-| Function                   | Writes                                                                                                                                                     |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `applyDescriptionBinding`  | `name="description"`                                                                                                                                       |
-| `applyKeywordsBinding`     | `name="keywords"` from a `string[]`                                                                                                                        |
-| `applyAuthorBinding`       | `name="author"`                                                                                                                                            |
-| `applyRobotsBinding`       | `name="robots"` from a `RobotsConfig` (`index`, `follow`, `maxSnippet`, …)                                                                                 |
-| `applyOpenGraphBindings`   | The full `og:*` family (title, description, images, videos, …)                                                                                             |
-| `applyTwitterCardBindings` | `twitter:*` (card, site, creator, images, player, …)                                                                                                       |
-| `applyArticleBindings`     | `article:*` (published_time, authors, tags, …)                                                                                                             |
-| `applySocialMediaBindings` | The convenience wrapper: from `title`/`description`/`image`/`url` it fans out to title, description, Open Graph **and** Twitter - the usual one-stop call. |
+| Function                   | Writes                                                                                                                                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `applyDescriptionBinding`  | `name="description"`                                                                                                                                                                                        |
+| `applyKeywordsBinding`     | `name="keywords"` from a `string[]`                                                                                                                                                                         |
+| `applyAuthorBinding`       | `name="author"`                                                                                                                                                                                             |
+| `applyRobotsBinding`       | `name="robots"` from a `RobotsConfig` (`index`, `follow`, `maxSnippet`, …)                                                                                                                                  |
+| `applyOpenGraphBindings`   | The full `og:*` family (title, description, images, videos, …)                                                                                                                                              |
+| `applyTwitterCardBindings` | `twitter:*` (card, site, creator, images, player, …)                                                                                                                                                        |
+| `applyArticleBindings`     | `article:*` (published_time, authors, tags, …)                                                                                                                                                              |
+| `applySocialMediaBindings` | The convenience wrapper: from `title`/`description`/`image`/`url` it fans out to title, description, Open Graph **and** Twitter (plus `openGraph`/`twitter`/`article` overrides) - the usual one-stop call. |
 
 Duplicate tags are deduplicated by selector with the highest-priority binding winning, except for multi-instance tags (`og:image`, `twitter:image`, `article:tag`, …) which all render. Extend the set via `provideMetaConfig({ multiInstanceTags })`.
 

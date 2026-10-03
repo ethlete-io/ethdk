@@ -238,8 +238,8 @@ A `ColorTheme` - colors accept `"R G B"` or `"H S% L%"` strings:
 A `ThemeSwatch` is `{ color, onColor, inkColor? }`:
 
 - `color` - the fill: `default`, `hover`, `active`, `disabled` required, `focus` optional.
-- `onColor` - content rendered on the fill: only `default` required; missing states fall back (`focus` → `hover` → `default`).
-- `inkColor` - optional tinted text/border for transparent or tonal fills; same fallbacks as `onColor`.
+- `onColor` - content rendered on the fill: only `default` required; a missing `hover` falls back to `default`, `focus` to `hover`, and `active` and `disabled` to `default`.
+- `inkColor` - optional tinted text/border for transparent or tonal fills; same fallbacks as `onColor`, and `default` falls back to the fill's `default`.
 
 Inside a color scope these tokens resolve (the un-suffixed variant is opacity-aware):
 
@@ -440,12 +440,12 @@ The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) i
    yarn nx g @ethlete/core:tailwind-4-color-theme --themesPath=libs/theme/src/themes.ts --prefix=gg
    ```
 
-   `--prefix` names the utilities; the runtime variables keep `--et-*` unless you also pass `--runtimePrefix`.
+   `--prefix` names the utilities, and the runtime variables and scope classes follow it (`--gg-*`) unless you also pass `--runtimePrefix`. The legacy runtime always used `--et-*`, so pass `--runtimePrefix=et` to keep it - the provider's `prefix` argument must match.
 
 2. **Providers.** `provideColorThemes(THEMES)` becomes `provideColorThemesWithTailwind4(THEMES)`. The runtime `<style>` injection goes away; import the generated `.css` in the global stylesheet instead.
 
 3. **Surface themes.** A legacy app has none, and every component reads its backgrounds, text and borders from one. Start with one `light` surface (`isDefault: true`, elevation 0) built from the app's existing page background, text, muted text and border colors, plus a `light-elevated` one for cards and overlays. Add `dark` surfaces only if the app has a dark mode. Generate them with `tailwind-4-surface-theme` and register them with `provideSurfaceThemesWithTailwind4()` - see [Surface themes](#surface-themes).
 
-4. **The app's own CSS.** `--et-color-primary`, `--et-color-on-primary`, `--et-color-primary-ink` and their `-hover`/`-focus`/`-active`/`-disabled` states (also for `secondary` and `tertiary`) are still emitted on every `.et-color--<name>` scope, as `"R G B"` channels, so `rgb(var(--et-color-primary))` keeps working. The `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-color-primary` there. `--et-theme-color-primary` is the opacity-aware form of the same color.
+4. **The app's own CSS.** `--et-color-primary`, `--et-color-on-primary`, `--et-color-primary-ink` (with `--runtimePrefix=et`, as above) and their `-hover`/`-focus`/`-active`/`-disabled` states (also for `secondary` and `tertiary`) are still emitted on every `.et-color--<name>` scope, as `"R G B"` channels, so `rgb(var(--et-color-primary))` keeps working. The `--et-color-alt-*` variables of the alternate theme are not emitted: put the region in its own `etProvideColor` scope and read `--et-color-primary` there. `--et-theme-color-primary` is the opacity-aware form of the same color.
 
 The runtime directives (`etProvideColor`, `injectColorThemes()`) work the same under both setups. `migrate-to-v5` renames the old `theme` names to `color` but leaves `provideColorThemes` in place: that call is the step above.

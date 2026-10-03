@@ -8,7 +8,7 @@ option or CLI command.
 
 Rules and skills pass through four filters before `sync` emits them:
 
-1. `profile` selects `consumer` plus `both`, or only `both` for the SDK profile.
+1. `profile` selects `consumer` plus `both`, or `sdk` plus `both` for the SDK profile.
 2. Content with `requires` is kept only when that package is installed.
 3. Every declared template variable must have a configured, derived or default value.
 4. Names in `exclude` are removed for every agent and developer in the repository.
@@ -18,13 +18,15 @@ machine-specific values only, keeping generated output identical locally and in 
 
 ## Always-loaded rules
 
-| Name              | Guidance                                                                                                                 | Availability                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
-| `comments`        | Allows comments only for timing constraints, type-inexpressible invariants, documented workarounds and public API JSDoc. | All profiles                           |
-| `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                         | All profiles                           |
-| `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                     | All profiles                           |
-| `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                              | All profiles; requires `@ethlete/core` |
-| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.           | All profiles                           |
+| Name              | Guidance                                                                                                                                                     | Availability                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| `app-styling`     | Styles app components with Tailwind utilities in templates, keeps app CSS out of `@layer components` and never uses a hardcoded colour as the primary value. | Consumer profile; requires `@ethlete/core` |
+| `comments`        | Allows comments only for timing constraints, type-inexpressible invariants, documented workarounds and public API JSDoc.                                     | All profiles                               |
+| `lint-and-format` | Runs lint with auto-fixes first and formats every edited file before completion.                                                                             | All profiles                               |
+| `nx-layout`       | Nx workspace layout: thin apps, feature code in libs grouped by kind, path-mirroring aliases and scope tags.                                                 | Consumer profile; requires `nx`            |
+| `reactive-state`  | Uses signals for synchronous state, RxJS for asynchronous work and bridges rather than copied state.                                                         | All profiles                               |
+| `styling`         | Keeps component styling in plain layered CSS and resolves every color through theme tokens.                                                                  | SDK profile; requires `@ethlete/core`      |
+| `subagent-models` | Names the model on every subagent call: haiku for a lookup, opus for real work, fable for judgment-heavy work.                                               | All profiles                               |
 
 Rules are always loaded by the configured agents. Use `exclude` when a repository has
 its own replacement for one of them.
@@ -35,6 +37,9 @@ its own replacement for one of them.
 | --------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `angular-patterns`    | Choosing and structuring Angular components, directives, services, pipes, templates and lifecycle behavior.   | All profiles; requires `@ethlete/core`              |
 | `api-source`          | Reading a configured backend checkout to verify API behavior without editing that checkout.                   | Consumer profile                                    |
+| `app-testing`         | Unit-testing an app built on the SDK: query views, overlays and views that read the URL.                      | Consumer profile; requires `@ethlete/core`          |
+| `codex-subagent`      | Delegating a task to a Codex agent for a second opinion, a review or a cheap parallel lookup.                 | All profiles                                        |
+| `design-exploration`  | Running a visual design exploration in steps, with the user as the designer.                                  | All profiles                                        |
 | `domain-modeling`     | Building a project's glossary and recording an architecture decision while a design is discussed.             | All profiles                                        |
 | `figma-export`        | Reconciling rendered components with SVG and CSS exports from Figma.                                          | All profiles                                        |
 | `git-commit`          | Writing commitlint-compatible, scoped, lean commit messages.                                                  | All profiles                                        |
@@ -47,10 +52,12 @@ its own replacement for one of them.
 | `sdk-docs`            | Finding the authoritative SDK guide or Storybook documentation before using an unfamiliar API.                | Consumer profile                                    |
 | `sdk-local-build`     | Building an unreleased SDK checkout and temporarily installing it through a `file:` dependency.               | Consumer profile                                    |
 | `sdk-source`          | Reading a configured SDK checkout when published docs and installed types are insufficient.                   | Consumer profile                                    |
+| `sdk-update`          | Updating the `@ethlete/*` packages with `et update` and working the migration tasks it leaves behind.         | Consumer profile; requires `@ethlete/cli`           |
 | `story-styling`       | Styling Storybook stories with the repository's trimmed Tailwind theme.                                       | Consumer profile; requires `@ethlete/core`          |
 | `styleguide`          | Applying the TypeScript and Angular judgment calls that lint cannot enforce.                                  | Consumer profile; requires `@ethlete/eslint-plugin` |
 | `theming`             | Using surface and semantic color theming, including across overlays and portals.                              | Consumer profile; requires `@ethlete/core`          |
 | `timetrack`           | Reading and writing Jira data through the running Timetrack app without repository credentials.               | All profiles                                        |
+| `verify-in-app`       | Driving the running app with Playwright to verify a view or style change and prove a fix with a test.         | Consumer profile                                    |
 | `verify-in-storybook` | Driving a Storybook story with Playwright to verify DOM, styles, animations and interactions.                 | Consumer profile                                    |
 
 Skills are emitted in the Agent Skills `SKILL.md` format and load on demand. Their
