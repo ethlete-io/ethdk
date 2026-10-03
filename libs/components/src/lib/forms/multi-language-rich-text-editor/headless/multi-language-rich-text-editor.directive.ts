@@ -36,6 +36,8 @@ export class MultiLanguageRichTextEditorDirective
   public languages = input.required<readonly MultiLanguageRichTextEditorLanguage[]>();
   public touch = outputFromObservable(controlTouches(this.touched));
 
+  private record = computed(() => this.value() ?? {});
+
   /** The problem with `languages` - none given, or a duplicate code - or `null`. The editor renders nothing while set. */
   public languagesError = computed(() => findLanguagesError(this.languages()));
 
@@ -50,7 +52,7 @@ export class MultiLanguageRichTextEditorDirective
   });
 
   /** Markdown of the active language - bound one-way into the embedded editor. */
-  public activeMarkdown = computed(() => this.value()[this.activeLanguage()] ?? '');
+  public activeMarkdown = computed(() => this.record()[this.activeLanguage()] ?? '');
 
   /** Languages configured but still without content - what the switcher flags as "missing". */
   public missingLanguages = computed(() => this.languages().filter((language) => !this.isFilled(language.code)));
@@ -59,7 +61,7 @@ export class MultiLanguageRichTextEditorDirective
   public totalCount = computed(() => this.languages().length);
 
   /** Any language holds content (used e.g. for form-field label float). */
-  public hasValue = computed(() => Object.values(this.value()).some((markdown) => (markdown ?? '').trim().length > 0));
+  public hasValue = computed(() => Object.values(this.record()).some((markdown) => (markdown ?? '').trim().length > 0));
 
   constructor() {
     super();
@@ -73,7 +75,7 @@ export class MultiLanguageRichTextEditorDirective
 
   /** Whether the given language's stored Markdown is non-empty (trimmed). */
   public isFilled(code: string) {
-    return (this.value()[code] ?? '').trim().length > 0;
+    return (this.record()[code] ?? '').trim().length > 0;
   }
 
   /** Writes Markdown for the active language, preserving every other key - including translations
@@ -81,7 +83,9 @@ export class MultiLanguageRichTextEditorDirective
   public writeActiveMarkdown(markdown: string) {
     const code = this.activeLanguage();
 
-    this.value.update((record) => (record[code] === markdown ? record : { ...record, [code]: markdown }));
+    const record = this.record();
+
+    if (record[code] !== markdown) this.value.set({ ...record, [code]: markdown });
   }
 }
 

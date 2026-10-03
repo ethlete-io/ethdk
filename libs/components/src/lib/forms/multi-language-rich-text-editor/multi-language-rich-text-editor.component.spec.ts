@@ -295,6 +295,39 @@ describe('MultiLanguageRichTextEditorComponent', () => {
     expect(wrapper.hasValue()).toBe(false);
   });
 
+  it('reads a null value from API data as an empty record', () => {
+    driver.host.value.set(null as unknown as MultiLanguageRichTextEditorValue);
+    tick();
+
+    expect(driver.editableText()).toBe('');
+    expect(wrapper.hasValue()).toBe(false);
+    expect(wrapper.missingLanguages().map((language) => language.code)).toEqual(['en', 'de']);
+
+    driver.caretAtStart();
+    driver.type('Hi');
+
+    expect(driver.host.value()).toEqual({ en: 'Hi' });
+  });
+
+  it('clears the editor when the value is reset from outside while another language is active', async () => {
+    driver.host.value.set({ en: 'Hello', de: 'Hallo' });
+    tick();
+
+    await switchTo('German');
+
+    expect(driver.editableText()).toBe('Hallo');
+
+    driver.host.value.set({});
+    tick();
+
+    expect(driver.editableText()).toBe('');
+
+    driver.caretAtStart();
+    driver.type('Neu');
+
+    expect(driver.host.value()).toEqual({ de: 'Neu' });
+  });
+
   it('takes the embedded editor being blurred as touched', () => {
     expect(wrapper.touched()).toBe(false);
 

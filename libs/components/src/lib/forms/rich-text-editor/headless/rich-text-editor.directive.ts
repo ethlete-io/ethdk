@@ -233,7 +233,7 @@ export class RichTextEditorDirective
   public tokenCodec = signal<RichTextEditorTokenCodec | null>(inject(RICH_TEXT_EDITOR_TOKEN_CODEC, { optional: true }));
 
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
-  public hasValue = computed(() => this.value().trim().length > 0);
+  public hasValue = computed(() => (this.value() ?? '').trim().length > 0);
 
   /** Whether {@link undo} would do anything: there is an edit left to take back, and the editor
    *  can currently be edited at all. */
@@ -342,7 +342,7 @@ export class RichTextEditorDirective
 
     // Skips the user's own edits: those already match `lastEmittedMarkdown`, and re-rendering them would reset the caret.
     effect(() => {
-      const markdown = this.value();
+      const markdown = this.value() ?? '';
 
       if (markdown === this.lastEmittedMarkdown) return;
 
@@ -433,7 +433,7 @@ export class RichTextEditorDirective
   }
 
   /** @internal Restarts the history: an outside write is a new document, so undo must not reach back into the previous one's states. */
-  public renderExternalValue(markdown = this.value()) {
+  public renderExternalValue(markdown = this.value() ?? '') {
     if (!this.writeValueToDom(markdown)) return;
 
     this.history.reset(markdown);
