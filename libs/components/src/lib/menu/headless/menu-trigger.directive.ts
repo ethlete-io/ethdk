@@ -73,6 +73,10 @@ export class MenuTriggerDirective {
   }
 
   protected handleClick() {
+    if (this.hostItem?.isDisabled()) {
+      return;
+    }
+
     this.menu?.toggle({ source: 'click' });
   }
 

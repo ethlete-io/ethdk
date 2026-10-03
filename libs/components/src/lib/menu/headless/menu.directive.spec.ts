@@ -32,7 +32,15 @@ import { MenuDirective } from './menu.directive';
           }
 
           <div etMenu>
-            <button class="submenu-trigger" etMenuItem etMenuTrigger type="button">Export</button>
+            <button
+              [disabled]="submenuTriggerDisabled()"
+              class="submenu-trigger"
+              etMenuItem
+              etMenuTrigger
+              type="button"
+            >
+              Export
+            </button>
 
             <ng-template etMenuSurface>
               <div class="sub-panel" etMenuPanel>
@@ -53,6 +61,7 @@ class MenuDirectiveTestHost {
   extraLabels = signal<string[]>([]);
   loop = signal(true);
   menuAutoFocus = signal(true);
+  submenuTriggerDisabled = signal(false);
 }
 
 @Component({
@@ -329,6 +338,17 @@ describe('MenuDirective', () => {
     expect(menu.open()).toBe(true);
   });
 
+  it('does not open the submenu of a disabled submenu trigger item on click', async () => {
+    fixture.componentInstance.submenuTriggerDisabled.set(true);
+    await openMenu();
+
+    query('.submenu-trigger').click();
+    tick();
+
+    expect(menu.openSubmenu()).toBeNull();
+    expect(document.querySelector('.sub-panel')).toBeNull();
+  });
+
   it('closes the whole tree on an outside pointerdown but not on one inside a pane', async () => {
     await openMenu();
 
@@ -561,6 +581,18 @@ describe('MenuDirective', () => {
       tick();
 
       expect(menu.openSubmenu()).not.toBeNull();
+    });
+
+    it('does not open the submenu of a disabled submenu trigger item on hover', async () => {
+      fixture.componentInstance.submenuTriggerDisabled.set(true);
+      trigger.click();
+      tick();
+
+      pointerenter(query('.submenu-trigger'));
+      vi.advanceTimersByTime(1000);
+      tick();
+
+      expect(menu.openSubmenu()).toBeNull();
     });
 
     it('ignores touch pointer hovering', async () => {

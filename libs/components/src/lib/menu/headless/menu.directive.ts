@@ -568,7 +568,7 @@ export class MenuDirective {
       return;
     }
 
-    const submenu = item.submenu;
+    const submenu = item.isDisabled() ? null : item.submenu;
     const currentSubmenu = this.openSubmenu();
 
     this.hoverIntent.cancelOpen();
