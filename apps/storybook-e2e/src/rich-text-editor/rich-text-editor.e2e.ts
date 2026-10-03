@@ -135,11 +135,16 @@ test.describe('rich-text-editor / triggers keyboard', () => {
     await content.focus();
     await page.keyboard.type('#');
     await expect(page.getByRole('listbox')).toBeVisible();
+    await expect(content).toHaveAttribute('aria-haspopup', 'listbox');
+    await expect(content).toHaveAttribute('aria-controls', (await page.getByRole('listbox').getAttribute('id')) ?? '');
+    await expect(content).not.toHaveAttribute('aria-expanded');
 
     await pressKey(page, 'Escape');
 
     await expect(page.getByRole('listbox')).toBeHidden();
     await expect(content).toBeFocused();
+    await expect(content).not.toHaveAttribute('aria-controls');
+    await expect(content).not.toHaveAttribute('aria-activedescendant');
 
     await page.keyboard.type('x');
     await expect(content).toContainText('#x');

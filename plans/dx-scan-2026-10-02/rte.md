@@ -134,6 +134,8 @@ Scope: `libs/components/src/lib/forms/rich-text-editor`, `libs/components/src/li
 - Fix: drop `aria-expanded`; keep `aria-haspopup="listbox"` (allowed on textbox) and `aria-activedescendant`; set
   `aria-controls` only while open and remove it on close. Update `rich-text-editor-triggers.directive.spec.ts:91`.
 - Breaking: no. Decision: no.
+- Status: fixed in `fix(components): Drop aria-expanded from the rich text editor textbox` - `aria-haspopup="listbox"`
+  set while triggers are attached, `aria-controls` only while the popup is open; spec + e2e assertions
 
 ## RTE-08 Custom tools: no `provide…Tool` helper; a non-`multi` provider crashes with "not iterable"
 

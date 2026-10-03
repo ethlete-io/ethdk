@@ -104,7 +104,40 @@ describe('RichTextEditorTriggersDirective', () => {
     driver.type('zzz');
     driver.detectChanges();
 
-    expect(driver.editable().getAttribute('aria-expanded')).toBe('true');
     expect(driver.editable().hasAttribute('aria-activedescendant')).toBe(false);
+  });
+
+  it('marks the textbox as a listbox popup host and points aria-controls at the popup only while it is open', () => {
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => new DOMRect(),
+    });
+    onTestFinished(() => {
+      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+    });
+
+    const editable = driver.editable();
+
+    expect(editable.getAttribute('aria-haspopup')).toBe('listbox');
+    expect(editable.hasAttribute('aria-controls')).toBe(false);
+
+    driver.focus();
+    driver.caretAtEnd();
+    driver.type('#');
+    driver.detectChanges();
+
+    const controls = editable.getAttribute('aria-controls');
+
+    expect(controls).toBeTruthy();
+    expect(editable.ownerDocument.getElementById(controls ?? '')?.getAttribute('role')).toBe('listbox');
+    expect(editable.hasAttribute('aria-expanded')).toBe(false);
+
+    driver.press('Escape');
+    driver.detectChanges();
+
+    expect(editable.hasAttribute('aria-controls')).toBe(false);
+    expect(editable.hasAttribute('aria-activedescendant')).toBe(false);
+    expect(editable.hasAttribute('aria-expanded')).toBe(false);
+    expect(editable.getAttribute('aria-haspopup')).toBe('listbox');
   });
 });

@@ -144,7 +144,13 @@ export class RichTextEditorTriggersDirective {
 
       const subscription = untracked(() => this.attachListeners(root));
 
-      onCleanup(() => subscription.unsubscribe());
+      this.renderer.setAttribute(root, 'aria-haspopup', 'listbox');
+
+      onCleanup(() => {
+        subscription.unsubscribe();
+        this.renderer.removeAttribute(root, 'aria-haspopup');
+        this.renderer.removeAttribute(root, 'aria-controls');
+      });
     });
 
     effect(() => {
@@ -393,7 +399,7 @@ export class RichTextEditorTriggersDirective {
     const ref = this.overlayManager.open<RichTextEditorTokenPopupComponent>(RichTextEditorTokenPopupComponent, config);
 
     this.overlayRef.set(ref);
-    this.setAriaExpanded(true);
+    this.setAriaControls(true);
 
     ref
       .afterClosed()
@@ -403,7 +409,7 @@ export class RichTextEditorTriggersDirective {
           if (this.overlayRef() !== ref) return;
 
           this.overlayRef.set(null);
-          this.setAriaExpanded(false);
+          this.setAriaControls(false);
           if (this.activeMatch()) this.dismiss();
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -417,7 +423,7 @@ export class RichTextEditorTriggersDirective {
     if (!ref) return;
 
     this.overlayRef.set(null);
-    this.setAriaExpanded(false);
+    this.setAriaControls(false);
     ref.close();
   }
 
@@ -444,16 +450,15 @@ export class RichTextEditorTriggersDirective {
     });
   }
 
-  private setAriaExpanded(open: boolean) {
+  private setAriaControls(open: boolean) {
     const root = this.editor?.editorDom.root();
 
     if (!root) return;
 
-    this.renderer.setAttribute(root, 'aria-expanded', String(open));
-
     if (open) {
       this.renderer.setAttribute(root, 'aria-controls', this.listboxId);
-      this.renderer.setAttribute(root, 'aria-haspopup', 'listbox');
+    } else {
+      this.renderer.removeAttribute(root, 'aria-controls');
     }
   }
 
