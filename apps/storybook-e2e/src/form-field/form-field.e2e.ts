@@ -2,6 +2,7 @@ import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, openStory, pressKey, tap } from '../support';
 
 const INPUT_STORY_ID = 'components-forms-input--default';
+const DESCRIPTION_STORY_ID = 'components-forms-input--description';
 const WARNING_STORY_ID = 'components-forms-warning--default';
 const COUNTER_STORY_ID = 'components-forms-counter--default';
 
@@ -222,6 +223,15 @@ test.describe('form-field / support region', () => {
     await expect(field.locator('.et-form-field-support-content[data-active]')).toHaveCount(1);
     await expect(control).toHaveAttribute('aria-describedby', (await hint.getAttribute('id')) ?? '');
     await expectSupportFitsActiveMessage(field);
+  });
+});
+
+test.describe('form-field / description', () => {
+  test('an et-description describes the control', async ({ page }) => {
+    const root = await openStory(page, DESCRIPTION_STORY_ID);
+    const control = root.getByRole('textbox', { name: 'IBAN' });
+
+    await expect(control).toHaveAccessibleDescription(/Payouts go to this account within two working days\./);
   });
 });
 

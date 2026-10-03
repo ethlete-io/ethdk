@@ -18,8 +18,11 @@ import { SLIDER_IMPORTS } from '../slider.imports';
         [orientation]="orientation()"
         [marks]="marks()"
         [snapToMarks]="snapToMarks()"
+        [aria-label]="label() ? null : ariaLabel()"
       >
-        <et-label>{{ label() }}</et-label>
+        @if (label()) {
+          <et-label>{{ label() }}</et-label>
+        }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -43,6 +46,7 @@ import { SLIDER_IMPORTS } from '../slider.imports';
 })
 export class SliderStorybookComponent {
   public label = input('Volume');
+  public ariaLabel = input('Volume');
   public hint = input('');
   public value = input(40);
   public mixed = input(false);

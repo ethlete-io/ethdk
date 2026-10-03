@@ -14,6 +14,7 @@ export default {
     label: { control: 'text' },
     ariaLabel: { control: 'text' },
     placeholder: { control: 'text' },
+    description: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'text' },
     mixed: { control: 'boolean' },
@@ -36,6 +37,7 @@ export default {
     label: 'Label',
     ariaLabel: 'Search',
     placeholder: 'Placeholder',
+    description: '',
     hint: '',
     value: '',
     mixed: false,
@@ -73,6 +75,15 @@ export const NoLabel: Story = {
  * An affix takes a text glyph or an `[etIcon]`. Icons need no size class - the field shell sizes
  * them via `--et-form-field-affix-icon-size` (16px), matching the other in-field icons.
  */
+/** An `<et-description>` renders under the label and joins the control's `aria-describedby`. */
+export const Description: Story = {
+  args: {
+    label: 'IBAN',
+    placeholder: 'DE00 0000 0000 0000 0000 00',
+    description: 'Payouts go to this account within two working days.',
+  },
+};
+
 export const IconAffixes: Story = {
   args: {
     label: 'API key',

@@ -35,3 +35,10 @@ export const Bottom: Story = {
     placement: 'bottom',
   },
 };
+
+/** An empty `etTooltip` opens nothing and adds no description, so `[etTooltip]="cond ? text : ''"` is safe. */
+export const EmptyText: Story = {
+  args: {
+    tooltipText: '',
+  },
+};

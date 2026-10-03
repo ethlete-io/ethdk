@@ -2,6 +2,7 @@ import { Locator, expect, test } from '@playwright/test';
 import { boxOf, expectFocusVisible, openStory, pressKey, touchDrag } from '../support';
 
 const STORY_ID = 'components-forms-slider--default';
+const NO_LABEL_STORY_ID = 'components-forms-slider--no-label';
 const THUMB = '.et-slider-thumb[role="slider"]';
 
 test.describe('slider / focus', () => {
@@ -14,6 +15,15 @@ test.describe('slider / focus', () => {
     await pressKey(page, 'Tab');
 
     await expectFocusVisible(thumb);
+  });
+});
+
+test.describe('slider / accessible name', () => {
+  test('without an et-label, the aria-label names the thumb', async ({ page }) => {
+    const root = await openStory(page, NO_LABEL_STORY_ID);
+
+    await expect(root.locator('et-label')).toHaveCount(0);
+    await expect(root.getByRole('slider', { name: 'Volume' })).toHaveAttribute('aria-valuenow', '40');
   });
 });
 

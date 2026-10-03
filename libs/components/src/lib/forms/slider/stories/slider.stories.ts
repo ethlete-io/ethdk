@@ -7,6 +7,7 @@ export default {
   decorators: [moduleMetadata({ imports: [SliderStorybookComponent] })],
   argTypes: {
     label: { control: 'text' },
+    ariaLabel: { control: 'text' },
     hint: { control: 'text' },
     value: { control: 'number' },
     mixed: { control: 'boolean' },
@@ -26,6 +27,7 @@ export default {
   },
   args: {
     label: 'Volume',
+    ariaLabel: 'Volume',
     hint: '',
     value: 40,
     mixed: false,
@@ -48,6 +50,11 @@ export default {
 type Story = StoryObj<SliderStorybookComponent>;
 
 export const Default: Story = {};
+
+/** Without an `<et-label>`, the slider is named by its `aria-label`, which lands on the thumb. */
+export const NoLabel: Story = {
+  args: { label: '', ariaLabel: 'Volume' },
+};
 
 export const Steps: Story = {
   args: { step: 10, hint: 'Snaps to multiples of 10' },

@@ -2,6 +2,7 @@ import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, openStory, pressKey, pressKeys, settle, tap } from '../support';
 
 const STORY_ID = 'components-feedback-tooltip--default';
+const EMPTY_TEXT_STORY_ID = 'components-feedback-tooltip--empty-text';
 const IN_DIALOG_STORY_ID = 'components-feedback-tooltip-in-dialog--default';
 const TOOLTIP_TEXT = 'A lightweight tooltip built on the new overlay primitives.';
 
@@ -204,6 +205,31 @@ test.describe('tooltip / keyboard', () => {
     await pressKey(page, 'Escape');
 
     await expect(tooltip).toBeHidden();
+  });
+});
+
+test.describe('tooltip / empty text', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover and keyboard focus trigger the tooltip');
+
+  test('hovering a trigger with an empty etTooltip opens nothing and adds no description', async ({ page }) => {
+    const root = await openStory(page, EMPTY_TEXT_STORY_ID);
+    const trigger = root.getByRole('button', { name: 'Text tooltip' });
+
+    await trigger.hover();
+    await settle(page, 400);
+
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expect(trigger).not.toHaveAttribute('aria-describedby');
+  });
+
+  test('focusing a trigger with an empty etTooltip opens nothing', async ({ page }) => {
+    const root = await openStory(page, EMPTY_TEXT_STORY_ID);
+
+    await pressKey(page, 'Tab');
+    await expect(root.getByRole('button', { name: 'Text tooltip' })).toBeFocused();
+    await settle(page, 400);
+
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
   });
 });
 

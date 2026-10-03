@@ -13,6 +13,7 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from '../../form-field';
+import { DESCRIPTION_IMPORTS } from '../../description/description.imports';
 import { InputPrefixDirective, InputSuffixDirective } from '../../form-field/partials';
 import { INPUT_TYPES } from '../headless/input.directive';
 import { INPUT_IMPORTS } from '../input.imports';
@@ -45,6 +46,9 @@ import { INPUT_IMPORTS } from '../input.imports';
         @if (showSuffixIcon()) {
           <i etIcon="et-check" etInputSuffix></i>
         }
+        @if (description()) {
+          <et-description>{{ description() }}</et-description>
+        }
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
         }
@@ -63,6 +67,7 @@ import { INPUT_IMPORTS } from '../input.imports';
     ...FORM_FIELD_IMPORTS,
     ...INPUT_IMPORTS,
     ...ICON_IMPORTS,
+    ...DESCRIPTION_IMPORTS,
     InputPrefixDirective,
     InputSuffixDirective,
     FormField,
@@ -80,6 +85,7 @@ export class FormFieldInputStorybookComponent {
   /** Accessible name used when `label` is empty - a placeholder is not an accessible name. */
   public ariaLabel = input('Search');
   public placeholder = input('Placeholder');
+  public description = input('');
   public hint = input('');
   public value = input('');
   public mixed = input(false);

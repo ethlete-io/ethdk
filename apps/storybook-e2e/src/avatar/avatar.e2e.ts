@@ -95,6 +95,21 @@ test.describe('avatar / structure', () => {
     await expect(avatar.locator(IMAGE)).toHaveCount(0);
   });
 
+  test('initials are exposed as an image named by the full name', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const avatar = root.locator(STANDALONE_AVATAR).first();
+
+    await expect(avatar.getByRole('img', { name: 'Jane Doe' })).toHaveText('JD');
+  });
+
+  test('the initials fallback of a failed image keeps the name as its accessible name', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const avatar = root.locator(STANDALONE_AVATAR).nth(3);
+
+    await expect(avatar.locator(INITIALS)).toHaveText('FF');
+    await expect(avatar.getByRole('img', { name: 'Fallback Fred' })).toHaveText('FF');
+  });
+
   test('an avatar with neither src nor name renders projected content only - no image, no initials', async ({
     page,
   }) => {
