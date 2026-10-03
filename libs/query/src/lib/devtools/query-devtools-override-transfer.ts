@@ -28,7 +28,7 @@ export type QueryDevtoolsOverrideTransferParse =
       ok: true;
       ops: OverrideOp[];
 
-      /** Ops the payload held that this build has no `type` for - a newer panel wrote them. */
+      /** Ops the payload held that this build cannot replay: a `type` a newer panel wrote, or a field missing. */
       skipped: number;
       source?: { id?: string; url?: string };
     }
@@ -51,6 +51,33 @@ const OP_TYPES: ReadonlySet<string> = /* @__PURE__ */ new Set<OverrideOp['type']
 const isJsonPath = (value: unknown): value is JsonPath =>
   Array.isArray(value) && value.every((step) => typeof step === 'string' || typeof step === 'number');
 
+const STRING_PRESETS: readonly unknown[] = ['short', 'long', 'longWord', 'unicode', 'custom'];
+const NUMBER_PRESETS: readonly unknown[] = ['zero', 'negative', 'huge', 'custom'];
+const DATE_PRESETS: readonly unknown[] = ['now', 'plusDay', 'minusDay', 'farFuture', 'farPast', 'invalid'];
+
+const isIndex = (value: unknown) => Number.isInteger(value) && (value as number) >= 0;
+
+const hasReplayableFields = (op: Record<string, unknown>) => {
+  switch (op['type']) {
+    case 'set':
+      return 'value' in op;
+    case 'stringPreset':
+      return STRING_PRESETS.includes(op['preset']) && (op['custom'] === undefined || typeof op['custom'] === 'string');
+    case 'numberPreset':
+      return NUMBER_PRESETS.includes(op['preset']) && (op['custom'] === undefined || Number.isFinite(op['custom']));
+    case 'datePreset':
+      return DATE_PRESETS.includes(op['preset']);
+    case 'duplicateArrayItem':
+      return isIndex(op['index']);
+    case 'pasteArrayItem':
+      return 'value' in op && (op['index'] === undefined || isIndex(op['index']));
+    case 'paginationResize':
+      return (op['mode'] === 'shrink' || op['mode'] === 'extend') && isIndex(op['amount']);
+    default:
+      return true;
+  }
+};
+
 /**
  * Whether a value parsed from outside - a paste, a stored set - is an op this build can replay.
  * @internal
@@ -58,9 +85,11 @@ const isJsonPath = (value: unknown): value is JsonPath =>
 export const isOverrideOp = (value: unknown): value is OverrideOp => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
 
-  const op = value as { type?: unknown; path?: unknown };
+  const op = value as Record<string, unknown>;
 
-  return typeof op.type === 'string' && OP_TYPES.has(op.type) && isJsonPath(op.path);
+  return (
+    typeof op['type'] === 'string' && OP_TYPES.has(op['type']) && isJsonPath(op['path']) && hasReplayableFields(op)
+  );
 };
 
 /**

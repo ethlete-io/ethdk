@@ -70,6 +70,25 @@ describe('query devtools override transfer', () => {
       expect(parsed.ok).toBe(false);
     });
 
+    it('should skip an op that lacks the fields its type replays with', () => {
+      const ops = [
+        { type: 'set', path: ['a'] },
+        { type: 'stringPreset', path: ['a'], preset: 'enormous' },
+        { type: 'numberPreset', path: ['a'], preset: 'zero', custom: '5' },
+        { type: 'datePreset', path: ['a'], preset: 'tomorrow' },
+        { type: 'duplicateArrayItem', path: ['items'] },
+        { type: 'pasteArrayItem', path: ['items'], index: 0 },
+        { type: 'pasteArrayItem', path: ['items'], value: 1, index: 'end' },
+        { type: 'paginationResize', path: [], mode: 'shrink' },
+        { type: 'paginationResize', path: [], mode: 'halve', amount: 2 },
+        { type: 'booleanFlip', path: ['flag'] },
+      ];
+
+      const parsed = parseQueryDevtoolsOverrideTransfer(JSON.stringify(ops));
+
+      expect(parsed).toEqual({ ok: true, ops: [{ type: 'booleanFlip', path: ['flag'] }], skipped: 9 });
+    });
+
     it('should reject a copied value rather than reading it as a set', () => {
       const parsed = parseQueryDevtoolsOverrideTransfer('{ "id": 1, "name": "a" }');
 

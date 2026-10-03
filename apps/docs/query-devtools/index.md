@@ -1232,8 +1232,9 @@ every rule armed on the selected query as one JSON payload, and pastes one back:
 
 Paths are relative to the response root, so a set pasted onto a differently-shaped query lands on
 whatever still matches and **says how much did not**: the menu reports how many rules it armed, how
-many of them resolve against nothing in the current response, and how many the running build has no
-`type` for. Nothing is silently dropped.
+many of them resolve against nothing in the current response, and how many the running build cannot
+replay - a `type` it does not know, or a hand-edited rule missing a field its type needs (a `preset`, an
+`index`, a `mode`). Nothing is silently dropped.
 
 A paste **adds** to whatever is already armed rather than replacing it - use **Reset all overrides**
 first if you want only the pasted set. `source` is a bearing for whoever reads the payload next;

@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   armQueryDevtoolsMock,
+  armQueryDevtoolsOverrideTransfer,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsMockStore,
   isQueryDevtoolsEnabled,
   loadQueryDevtoolsSchema,
+  parseQueryDevtoolsOverrideTransfer,
   provideQueryDevtools,
+  queryDevtoolsEntries,
   queryDevtoolsMockId,
   queryDevtoolsSchemaState,
   saveQueryDevtoolsMock,
@@ -96,6 +99,42 @@ describe('devtools scan 2026-10-03', () => {
     expect(posts.response()).toEqual({ title: 'designed' });
     expect(s.api.requests).toHaveLength(0);
 
+    c.destroy();
+  });
+
+  it('skips a pasted override that lacks a field its type replays with instead of arming it', async () => {
+    const s = scenario();
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    s.api.on('GET', '/standings', () => ({
+      body: { items: [{ id: 1 }, { id: 2 }], limit: 2, skip: 0, total: 2, live: false },
+    }));
+
+    const getStandings = s.get<{ response: { items: { id: number }[]; total: number; live: boolean } }>('/standings');
+    const c = s.consumer();
+    const standings = c.run(() => getStandings());
+    await s.settle();
+
+    const recorder = queryDevtoolsEntries().find((entry) => entry.handle === standings)?.overrides;
+
+    if (!recorder) throw new Error('devtools scan 2026-10-03: the query registered no overrides recorder');
+
+    const parsed = parseQueryDevtoolsOverrideTransfer(
+      JSON.stringify([
+        { type: 'paginationResize', path: [], mode: 'shrink' },
+        { type: 'booleanFlip', path: ['live'] },
+      ]),
+    );
+
+    if (!parsed.ok) throw new Error('devtools scan 2026-10-03: the replayable half of the paste was rejected');
+
+    expect(parsed.skipped).toBe(1);
+
+    armQueryDevtoolsOverrideTransfer(recorder, parsed.ops);
+
+    expect(standings.response()).toMatchObject({ items: [{ id: 1 }, { id: 2 }], total: 2, live: true });
+
+    recorder.clearAll();
     c.destroy();
   });
 });
