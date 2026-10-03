@@ -81,7 +81,7 @@ Observe the content (children), not the host - observing the animated host would
 
 Recomputes on both resizes and DOM mutations. Pass `{ initialScrollPosition }` (a `Signal<ScrollToOptions | null>`) to apply a one-time scroll position once the element renders.
 
-`signalElementLastScrollDirection(el)` / the host variant track the last scroll direction as `{ type: 'up' | 'down' | 'left' | 'right', time }`.
+`signalElementLastScrollDirection(el)` / the host variant track the last scroll direction as `{ type: 'up' | 'down' | 'left' | 'right', time }`. The first scroll is measured from the element's scroll position when it was bound, so an element that starts scrolled reports the right direction.
 
 ## Children
 

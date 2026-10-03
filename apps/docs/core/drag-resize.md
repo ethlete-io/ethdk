@@ -71,7 +71,7 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 | `resizeEnded`     | `void`                                                                         |
 | `resizeCancelled` | `void` - the browser took the gesture away; revert to the size it started at.  |
 
-`isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
+A handle captures the pointer when the gesture starts, so the gesture keeps its moves while the pointer crosses an iframe. `isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
 
 Under `any-pointer: coarse` every strip swaps to `--et-resize-handles-touch-edge-size` / `-touch-corner-size` (20px / 28px). The query is `any-pointer`, not `hover: none`, so a touchscreen laptop - where the mouse is the primary input - grows its handles too.
 

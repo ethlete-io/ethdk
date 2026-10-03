@@ -432,7 +432,7 @@ the app root.
 
 The theme data carries over: a legacy `ColorTheme` (RGB triplets, `isDefault`) is the type the generators read. The setup around it changes:
 
-`yarn nx g @ethlete/core:migrate-legacy-color-themes` does step 2 and writes the rest as a checklist: it rewrites every `provideColorThemes(X)` into `provideColorThemesWithTailwind4(X)`, fixes the import, and lists in `legacy-color-themes-migration-tasks.md` the generator run per call site, the Tailwind 3 helpers left in a config, and the surface themes to add. `et update` offers it as the optional assisted migration `legacy-color-themes`.
+`yarn nx g @ethlete/core:migrate-legacy-color-themes` does step 2 and writes the rest as a checklist: it rewrites every `provideColorThemes(X)` into `provideColorThemesWithTailwind4(X)`, fixes the import, and lists in `legacy-color-themes-migration-tasks.md` the generator run per call site, the Tailwind 3 helpers left in a config, and the surface themes to add. Pass `--projects` or `--include <path prefix>` to migrate one app at a time. [`et migrations`](/cli/update#migration-levels) lists it as the optional assisted migration `core:legacy-color-themes`; `yarn et migrations run core:legacy-color-themes` runs it and leaves the checklist as a task for an agent.
 
 1. **Tailwind 3 → 4.** Delete the `tailwind.config.ts` color block built from `createTailwindColorThemes(THEMES, 'gg')`. Run the color generator on the same theme file with the same prefix; it emits the same `bg-gg-<name>`, `bg-gg-<name>-hover`, `text-gg-on-<name>` utilities through `@theme`:
 

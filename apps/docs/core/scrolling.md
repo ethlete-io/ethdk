@@ -15,14 +15,14 @@ scrollToElement({
 });
 ```
 
-| Option                                     | Default     | Description                                                     |
-| ------------------------------------------ | ----------- | --------------------------------------------------------------- |
-| `element`                                  | -           | The element to scroll into view.                                |
-| `container`                                | -           | The scroll container (required - the viewport isn't supported). |
-| `direction`                                | `'both'`    | `'inline' \| 'block' \| 'both'` - which axes to scroll.         |
-| `origin`                                   | `'nearest'` | `'start' \| 'end' \| 'center' \| 'nearest'` alignment.          |
-| `behavior`                                 | `'smooth'`  | Native `ScrollBehavior`.                                        |
-| `scrollInlineMargin` / `scrollBlockMargin` | `0`         | Extra margin around the target.                                 |
+| Option                                     | Default     | Description                                                                                                                                       |
+| ------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `element`                                  | -           | The element to scroll into view.                                                                                                                  |
+| `container`                                | -           | The scroll container (required - the viewport isn't supported).                                                                                   |
+| `direction`                                | `'both'`    | `'inline' \| 'block' \| 'both'` - which axes to scroll.                                                                                           |
+| `origin`                                   | `'nearest'` | `'start' \| 'end' \| 'center' \| 'nearest'` alignment. `'nearest'` decides per axis and leaves an axis alone when the element already fits in it. |
+| `behavior`                                 | `'smooth'`  | Native `ScrollBehavior`.                                                                                                                          |
+| `scrollInlineMargin` / `scrollBlockMargin` | `0`         | Extra margin around the target.                                                                                                                   |
 
 `getElementScrollCoordinates(options)` computes the same `{ left, top, behavior }` without scrolling - useful for custom animation or batching.
 

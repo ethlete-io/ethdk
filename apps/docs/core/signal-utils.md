@@ -45,7 +45,7 @@ export class MyGridComponent {
 }
 ```
 
-Each transform receives the input's default explicitly and uses it when no map key applies at the current breakpoint. `provideBreakpointInstance(ComponentClass)` in the component's `providers` makes transforms re-resolve when the breakpoint changes; without it, the initial resolution still works. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
+Each transform receives the input's default explicitly and uses it when no map key applies at the current breakpoint. `provideBreakpointInstance(ComponentClass)` in the component's `providers` makes transforms re-resolve when the breakpoint changes; without it, the initial resolution still works, the value stays at what the first render resolved, and dev mode logs one warning that names `provideBreakpointInstance()`. For a signal you already hold, `injectBreakpointInput(signal, defaultValue)` resolves it into a plain `Signal<T>`.
 
 ::: warning The keys are `xs sm md lg xl 2xl` - and only those
 A map with **one** unrecognized key stops being a breakpoint map entirely: it is passed through as a plain value, which for an attribute binding means `[object Object]` and no effect at all. There is no `default` key: the transform's explicit default applies below the smallest key, so `{ lg: 'third' }` remains `'auto'` below `lg` in the example. Dev mode warns when a map has some valid keys and some not.

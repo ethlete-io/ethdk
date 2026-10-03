@@ -14,6 +14,8 @@ Small standalone directives and pipes that don't belong to a larger system.
 import { ClickOutsideDirective } from '@ethlete/core';
 ```
 
+A click counts as outside only when the press started outside the host too, so selecting text or dragging a slider from inside the host and releasing outside does not emit. The check uses the event's composed path, so a click on a node that its own handler removed (a chip's remove button) still counts as inside. A press on a surface that paints on a [higher overlay level](/core/overlay-runtime#a-press-on-a-level-above-never-closes-what-is-below) never emits.
+
 ## Repeat
 
 `*etRepeat` renders its template N times (default `2`) - for skeletons and placeholder rows:
