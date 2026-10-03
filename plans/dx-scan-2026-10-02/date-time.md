@@ -160,7 +160,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 ## DT-08 `durationFormat` silently drops unknown letters: `'HH:mm:ss'` becomes `'mm:ss'`
 
 - Status: fixed
-- Review: ok
+- Review: ok; test audit: directive warning covered
 
 - Where: `forms/date-time/duration-input/headless/internals/duration-format.ts:23,30-59`.
 - Problem: only `h`/`m`/`s`/`S` are tokens, and anything else counts as a separator. Text before the first
@@ -236,7 +236,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 ## DT-13 `displayFormat` / `valueFormat` nullability differs between sibling controls
 
 - Status: fixed
-- Review: ok
+- Review: ok; test audit: null display/value formats covered on the time input
 
 - Where: `date-input.directive.ts:42` and `date-range-input.directive.ts:46` (`string | null`), against
   `time-input.directive.ts:31`, `time-range-input.directive.ts:45`, `date-time-input.directive.ts:50` and

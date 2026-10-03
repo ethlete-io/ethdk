@@ -118,6 +118,20 @@ describe('DurationInputDirective', () => {
     expect(driver.fieldValue()).toBe('01:23:45');
   });
 
+  it('warns about a durationFormat with letters that are no tokens', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    driver.tick();
+    expect(warn).not.toHaveBeenCalled();
+
+    driver.host.durationFormat.set('mm:ss.ff');
+    driver.tick();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('durationFormat "mm:ss.ff"'));
+
+    warn.mockRestore();
+  });
+
   it('keeps unparseable text visible and flags a parse error', () => {
     driver.focus();
     driver.type('abc');

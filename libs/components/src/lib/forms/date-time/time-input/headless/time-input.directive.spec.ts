@@ -1,4 +1,5 @@
 import { Component, signal } from '@angular/core';
+import { format } from 'date-fns';
 import { TestBed } from '@angular/core/testing';
 import '../../../../../test-helpers';
 import { InputMaskDirective } from '../../../masked-input/headless';
@@ -422,5 +423,36 @@ describe('TimeInputFieldDirective errors', () => {
     expect(() => TestBed.createComponent(OrphanTimeInputFieldTestHost)).toThrow(
       `ET${TIME_INPUT_ERROR_CODES.FIELD_OUTSIDE_TIME_INPUT}`,
     );
+  });
+});
+
+@Component({
+  template: `
+    <div [(value)]="value" [displayFormat]="null" [valueFormat]="null" etTimeInput>
+      <input etTimeInputField />
+    </div>
+  `,
+  imports: [TimeInputDirective, TimeInputFieldDirective],
+})
+class NullFormatsTimeInputTestHost {
+  value = signal<string | null>('14:05');
+}
+
+describe('TimeInputDirective with null formats', () => {
+  it('falls back to the default display and value formats', async () => {
+    const driver = mountDatePicker(NullFormatsTimeInputTestHost, TimeInputDirective);
+
+    tick();
+    await driver.fixture.whenStable();
+
+    const time = driver.control.time();
+
+    expect(time?.getHours()).toBe(14);
+    expect(driver.control.effectiveDisplayFormat()).toBe('p');
+    expect(driver.field().value).toBe(format(time as Date, 'p', { locale: driver.control.effectiveLocale() }));
+
+    driver.typeAndBlur('09:30');
+
+    expect(driver.host.value()).toBe('09:30');
   });
 });
