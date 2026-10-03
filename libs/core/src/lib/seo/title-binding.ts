@@ -30,12 +30,12 @@ export type TitleConfig = {
   transformer: (title: string, locale: string) => string;
 
   /**
-   * A title part to be prefixed to all titles
+   * A title part to be suffixed to all titles
    */
   suffixPart?: TitlePart;
 
   /**
-   * A title part to be suffixed to all titles
+   * A title part to be prefixed to all titles
    */
   prefixPart?: TitlePart;
 };

@@ -40,7 +40,7 @@ export type UnsavedChangesTabConfig = {
    * {@link UNSAVED_CHANGES_TITLE_MARKER}, a string is used as-is.
    *
    * Goes through the core title store (`injectTitleStore`), so the app's title must be owned by it
-   * (`applyHeadTitleBinding` / the `etSeo` directive) - an app that writes `document.title` by some
+   * (`applyHeadTitleBinding` / `applySocialMediaBindings`) - an app that writes `document.title` by some
    * other means would fight the store over it.
    * @default false
    */

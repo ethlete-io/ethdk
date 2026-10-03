@@ -187,7 +187,7 @@ protected save() {
 
 ## Logging
 
-`createLogger({ scope, feature })` returns `{ log, warn, error }` with a color-coded `[scope feature]` prefix. All loggers go quiet when the URL carries a non-empty `et-logger-quiet` query param, e.g. `?et-logger-quiet=1` (`DISABLE_LOGGER_PARAM`); a bare `?et-logger-quiet` does not count. Requires an injection context.
+`createLogger({ scope, feature })` returns `{ log, warn, error }` with a color-coded `[scope feature]` prefix. All loggers go quiet when the URL carries the `et-logger-quiet` query param (`DISABLE_LOGGER_PARAM`), with or without a value - a bare `?et-logger-quiet` works. Requires an injection context.
 
 ## Small helpers
 

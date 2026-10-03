@@ -9,7 +9,7 @@ export type CreateLoggerConfig = {
 
 export const createLogger = (config: CreateLoggerConfig) => {
   const { scope, feature } = config;
-  const disableLogging = injectQueryParam(DISABLE_LOGGER_PARAM);
+  const disableLogging = injectQueryParam(DISABLE_LOGGER_PARAM, { transform: (value) => value !== null });
 
   return {
     log: (...args: unknown[]) => {
