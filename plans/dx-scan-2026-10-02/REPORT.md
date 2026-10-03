@@ -79,9 +79,6 @@ A human can reverse each of these.
 
 - The scheduler stories Headless, CustomBadgeAdornment and CustomEditField wait on SS-02 and SS-03.
 - Overlay router (`syncUrl: true`): after overlay B closes, the stale param of overlay A can come back from the old history entry of A. The browser cannot remove that entry.
-- Overlay router: an overlay that closes before its own opening navigation ends leaves its param in the URL. This race is older than the DX scan.
-- SEL-02 has no Storybook story that shows a pending selection group, so no e2e test covers `aria-busy`.
-- Under heavy load (load average above 20), some components scenario specs time out at 5 s. Each one passes alone.
 - Commit `b53c99304` has the subject `test(components)` but also holds the SEL-02 source fix.
 
 ## 5. What shipped
