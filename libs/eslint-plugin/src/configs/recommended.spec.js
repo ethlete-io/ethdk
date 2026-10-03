@@ -76,7 +76,7 @@ const lintAndFix = (code) => {
   );
 };
 
-const lintSpec = (code) => {
+const lintSpec = (code, filename = 'test.spec.ts') => {
   const linter = new Linter({ configType: 'flat' });
   return linter.verify(
     code,
@@ -96,7 +96,7 @@ const lintSpec = (code) => {
       },
       plugin.configs.recommendedSpec,
     ],
-    { filename: 'test.spec.ts' },
+    { filename },
   );
 };
 
@@ -127,6 +127,27 @@ test('recommendedSpec relaxes DOM and async test code', () => {
   expect(ruleIds(messages)).not.toContain('ethlete/no-dom-query');
   expect(ruleIds(messages)).not.toContain('no-restricted-globals');
 });
+
+const TEST_ONLY_CODE = `export const collect = (a: number, b: number, c: number, d: number, e: number) => {
+  const values: number[] = [];
+  source$.subscribe((value) => { values.push(value); });
+  setTimeout(() => values.push(a + b + c + d + e), 10);
+  return values;
+};`;
+const TEST_ONLY_RULES = ['max-params', 'ethlete/no-subscribe-with-body', 'ethlete/prefer-rxjs-timer'];
+
+test('the test-only rules fire outside the recommendedSpec files', () => {
+  expect(ruleIds(lintSpec(TEST_ONLY_CODE, 'src/collect.ts'))).toEqual(expect.arrayContaining(TEST_ONLY_RULES));
+});
+
+test.each(['a.test.ts', 'src/testing/harness.ts', 'button.stories.ts', 'apps/x/e2e/flow.ts'])(
+  'recommendedSpec covers %s and turns off the test-only rules',
+  (filename) => {
+    const ids = ruleIds(lintSpec(TEST_ONLY_CODE, filename));
+
+    for (const rule of TEST_ONLY_RULES) expect(ids).not.toContain(rule);
+  },
+);
 
 // ── ethlete/consistent-type-definitions ─────────────────────────────────────
 
