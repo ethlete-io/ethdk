@@ -74,7 +74,7 @@ domain in scope has a suite in `apps/storybook-e2e`.
 ## CR-03 `totalPages` of `undefined`/`null` makes pagination write `NaN` into the bound `page`
 
 - Status: fixed: `toPageCount` normalizes `totalPages` (non-finite/<=0 → no pages, fractions round up) in the input transform and in `paginate`; `goTo` floors and ignores NaN. Specs failed first.
-- Review: ok
+- Review: ok; test audit: goTo(NaN) covered
 
 - Where: `libs/components/src/lib/pagination/headless/pagination.directive.ts:28`, `:73-79`;
   `libs/components/src/lib/pagination/paginate.ts:24`, `:91`, `:101`.

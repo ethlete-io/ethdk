@@ -61,6 +61,16 @@ describe('PaginationComponent', () => {
     expect(pagination.page()).toBe(2);
   });
 
+  it('ignores a target page that is not a number', () => {
+    const fixture = create();
+    const pagination = directiveOf(fixture);
+
+    pagination.goTo(3);
+    pagination.goTo(Number.NaN);
+
+    expect(pagination.page()).toBe(3);
+  });
+
   it('goes to a page (clamped) via the headless directive, driving the two-way page', () => {
     const fixture = create();
     const pagination = directiveOf(fixture);
