@@ -1044,9 +1044,9 @@ export class DayTimelineComponent {
       fromEvent(body, 'scroll')
         .pipe(
           filter(() => !this.scrollTarget()),
-          map(() => this.scrollDay()),
+          map(() => ({ day: this.scrollDay(), scroll: { top: body.scrollTop, left: body.scrollLeft } })),
           debounceTime(SCROLL_REMEMBER_DEBOUNCE_MS),
-          tap((day) => rememberTimelineScroll(day, { top: body.scrollTop, left: body.scrollLeft })),
+          tap(({ day, scroll }) => rememberTimelineScroll(day, scroll)),
           takeUntilDestroyed(this.destroyRef),
         )
         .subscribe();
