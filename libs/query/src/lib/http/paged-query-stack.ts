@@ -336,6 +336,7 @@ export const createPagedQueryStack = <
 
     untracked(() => {
       stack.clear();
+      pageDirection.set('next');
       currentPageArgs.set(args);
       loadedMinPage.set(initialPage());
       loadedMaxPage.set(initialPage());

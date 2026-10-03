@@ -1,4 +1,6 @@
-import { createQueryBatch } from '../index';
+import { signal } from '@angular/core';
+import { Paginated } from '@ethlete/types';
+import { createPagedQueryStack, createQueryBatch, ethletePaginationAdapter } from '../index';
 import { describe, expect, it } from 'vitest';
 import { useScenario } from './harness';
 
@@ -85,6 +87,54 @@ describe('http scan 2026-10-03 scenario', () => {
 
       expect(ok).toBe(true);
       expect(batch.status()).toBe('success');
+
+      c.destroy();
+    });
+  });
+
+  describe('a paged query stack reloaded by its args', () => {
+    const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+    it('reports direction next again after a backward fetch', () => {
+      const s = scenario();
+      s.api.on('GET', '/ranked', ({ query }) => ({
+        body: {
+          items: [{ id: `${query['tag']}-${query['page']}` }],
+          currentPage: Number(query['page']),
+          nextPage: Number(query['page']) + 1,
+          totalPageCount: 5,
+          itemsPerPage: 1,
+          totalHits: 5,
+        },
+      }));
+
+      const getRanked = s.get<{ response: Paginated<{ id: string }>; queryParams: { page: number; tag: string } }>(
+        '/ranked',
+      );
+      const tag = signal('a');
+
+      const c = s.consumer();
+      const pages = c.run(() =>
+        createPagedQueryStack({
+          queryCreator: getRanked,
+          responseNormalizer: ethletePaginationAdapter,
+          args: (page) => ({ queryParams: { page, tag: tag() } }),
+          initialPage: 3,
+        }),
+      );
+      s.tick();
+
+      pages.fetchPreviousPage();
+      s.tick();
+      expect(pages.direction()).toBe('previous');
+
+      for (const next of ['b', 'c', 'd']) {
+        tag.set(next);
+        s.tick();
+
+        expect(pages.items()).toEqual([{ id: `${next}-3` }]);
+        expect(pages.direction()).toBe('next');
+      }
 
       c.destroy();
     });
