@@ -123,9 +123,10 @@ describe('overlay manager closeOnNavigation', () => {
       .forEach((ref) => ref.forceClose());
   });
 
-  const open = (closeOnNavigation?: boolean) => {
+  const open = (closeOnNavigation?: boolean, disableClose?: boolean) => {
     const ref = TestBed.runInInjectionContext(() => injectOverlayManager()).open(PlainOverlayComponent, {
       closeOnNavigation,
+      disableClose,
     });
 
     ref.afterClosedEvent().subscribe(({ source }) => sources.push(source));
@@ -161,5 +162,22 @@ describe('overlay manager closeOnNavigation', () => {
 
     expect(sources).toEqual([]);
     expect(openOverlayCount()).toBe(1);
+  });
+
+  it('keeps an overlay opened with disableClose', async () => {
+    open(undefined, true);
+
+    await TestBed.inject(Router).navigateByUrl('/elsewhere');
+
+    expect(sources).toEqual([]);
+    expect(openOverlayCount()).toBe(1);
+  });
+
+  it('closes a disableClose overlay that opts back in with closeOnNavigation true', async () => {
+    open(true, true);
+
+    await TestBed.inject(Router).navigateByUrl('/elsewhere');
+
+    expect(sources).toEqual(['navigation']);
   });
 });

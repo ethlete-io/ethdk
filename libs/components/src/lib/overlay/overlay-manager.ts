@@ -98,7 +98,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         filter((event) => stripQueryAndFragment(event.url) !== stripQueryAndFragment(router.url)),
         tap(() => {
           for (const overlayRef of untracked(openOverlays)) {
-            if (overlayRef.config.closeOnNavigation === false) continue;
+            if (!(overlayRef.config.closeOnNavigation ?? !overlayRef.config.disableClose)) continue;
 
             getOverlayRefInternals(overlayRef)?.closeVia('navigation');
           }

@@ -65,7 +65,7 @@ export type OverlayConfig = {
    * starts. A navigation that only changes query params or the fragment keeps it open. Has no effect in an
    * app without `provideRouter()`. A query-param overlay never closes this way - its URL drives it.
    *
-   * @default true
+   * @default true, or false when `disableClose` is set
    */
   closeOnNavigation?: boolean;
 

@@ -57,7 +57,7 @@ Defaults worth knowing:
 | `role`                                   | `'dialog'` when modal                                                                                                               |
 | `hasBackdrop`                            | The strategy's own default when it sets one, otherwise follows `mode` (modal → backdrop)                                            |
 | `closeOnEscape`, `closeOnOutsidePointer` | `true`; `disableClose: true` forces both off                                                                                        |
-| `closeOnNavigation`                      | `true` - see [Closing on navigation](#closing-on-navigation)                                                                        |
+| `closeOnNavigation`                      | `true`, `false` with `disableClose` - see [Closing on navigation](#closing-on-navigation)                                           |
 | Position                                 | Anchored to `origin` when it's an element or an event (its clickable target), otherwise centered                                    |
 | `origin` (with strategies)               | Falls back to the currently focused element (used as transform origin too); `null` opens without one, so anchored strategies center |
 | `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations)          |
@@ -73,7 +73,7 @@ A press on such a higher level is never an outside press either: working in a de
 
 ### Closing on navigation
 
-When the Angular Router starts a navigation to another path, every open overlay closes with the source `'navigation'`, so a dialog does not stay over the new page and its `afterClosed` callbacks still run. A navigation that changes only query params or the fragment keeps overlays open. Close guards still run, but `createOverlayUnsavedChangesGuard` does not veto this source. `disableClose` does not stop it either.
+When the Angular Router starts a navigation to another path, every open overlay closes with the source `'navigation'`, so a dialog does not stay over the new page and its `afterClosed` callbacks still run. A navigation that changes only query params or the fragment keeps overlays open. Close guards still run, but `createOverlayUnsavedChangesGuard` does not veto this source. An overlay opened with `disableClose` stays open unless it also sets `closeOnNavigation: true`.
 
 Set `closeOnNavigation: false` on an overlay that should outlive a route change. Query-param overlays never close this way: their URL opens and closes them. An app without `provideRouter()` is not affected.
 
@@ -408,26 +408,26 @@ When an anchor/trigger exists (and mode is non-modal) the surface opens anchored
 
 `[etOverlay]` mirrors most of the imperative config as inputs:
 
-| Input                                        | Default       | Notes                                                               |
-| -------------------------------------------- | ------------- | ------------------------------------------------------------------- |
-| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics                      |
-| `role`                                       | -             | Overrides the mode-derived ARIA role                                |
-| `disabled`                                   | `false`       | Ignores open requests while set                                     |
-| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off                |
-| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                                     |
-| `closeOnNavigation`                          | `true`        | See [Closing on navigation](#closing-on-navigation)                 |
-| `hasBackdrop`                                | -             | Follows `mode` when unset                                           |
-| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close                        |
-| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                                   |
-| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                               |
-| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                                  |
-| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                               |
-| `shift`                                      | `true`        | Slide along the axis to stay in the viewport                        |
-| `autoResize`                                 | `false`       | Constrain size to the available space                               |
-| `minAvailableSpace`                          | -             | Shrink into the current side above this many px instead of flipping |
-| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport                            |
-| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                        |
-| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                      |
+| Input                                        | Default       | Notes                                                                            |
+| -------------------------------------------- | ------------- | -------------------------------------------------------------------------------- |
+| `mode`                                       | `'non-modal'` | `'modal'` adds backdrop + focus trap semantics                                   |
+| `role`                                       | -             | Overrides the mode-derived ARIA role                                             |
+| `disabled`                                   | `false`       | Ignores open requests while set                                                  |
+| `disableClose`                               | `false`       | Forces `closeOnEscape` / `closeOnOutsidePointer` off                             |
+| `closeOnEscape` / `closeOnOutsidePointer`    | `true`        |                                                                                  |
+| `closeOnNavigation`                          | `true`        | `false` with `disableClose`; see [Closing on navigation](#closing-on-navigation) |
+| `hasBackdrop`                                | -             | Follows `mode` when unset                                                        |
+| `autoFocus` / `restoreFocus`                 | - / `true`    | Initial focus target; restore focus on close                                     |
+| `hostClass` / `backdropClass` / `panelClass` | -             | Extra classes per overlay element                                                |
+| `placement`                                  | `'bottom'`    | floating-ui placement (anchored mode)                                            |
+| `fallbackPlacements`                         | -             | Tried when `placement` doesn't fit                                               |
+| `offset` / `viewportPadding`                 | `8` / `8`     | Distance from anchor / viewport edges                                            |
+| `shift`                                      | `true`        | Slide along the axis to stay in the viewport                                     |
+| `autoResize`                                 | `false`       | Constrain size to the available space                                            |
+| `minAvailableSpace`                          | -             | Shrink into the current side above this many px instead of flipping              |
+| `autoHide`                                   | `false`       | Hide when the anchor leaves the viewport                                         |
+| `autoCloseIfReferenceHidden`                 | `false`       | Close instead of just hiding                                                     |
+| `mirrorWidth`                                | `false`       | Match the anchor's width (select-style panels)                                   |
 
 Apart from `disabled`, the overlay reads these inputs when it opens. A change while it is open, such as a new `placement`, applies at the next open.
 

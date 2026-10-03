@@ -186,6 +186,7 @@ export class TooltipDirective {
         inputBinding('colorProvider', () => this.colorProvider ?? null),
       ],
       disableClose: true,
+      closeOnNavigation: true,
       hasBackdrop: false,
       mode: 'non-modal',
       origin: this.anchor() ?? hostElement,
