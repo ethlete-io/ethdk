@@ -43,6 +43,7 @@ describe('OverlayRouter with syncUrl', () => {
         provideRouter([
           { path: 'guarded', canActivate: [guard], children: [] },
           { path: 'blocked', canActivate: [() => false], children: [] },
+          { path: 'slow', runGuardsAndResolvers: 'always', canActivate: [guard], children: [] },
           { path: '**', children: [] },
         ]),
         provideLocationMocks(),
@@ -333,6 +334,39 @@ describe('OverlayRouter with syncUrl', () => {
 
     expect(ref.componentInstance()).toBeNull();
     expect(router.url).toBe('/page');
+
+    await browser('back');
+
+    expect(router.url).toBe('/');
+  });
+
+  it('never leaves its url param behind when it closes before its opening navigation ends', async () => {
+    router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
+    router.setUpLocationChangeListener();
+
+    const arrival = router.navigateByUrl('/slow');
+    await settle();
+    releaseGuard(true);
+    await arrival;
+
+    const overlay = openRef();
+    await settle();
+
+    expect(router.url).toBe('/slow');
+
+    overlay.close();
+    await settle();
+
+    expect(overlay.componentInstance()).toBeNull();
+
+    releaseGuard(true);
+    await settle();
+    releaseGuard(true);
+    await settle();
+
+    expect(router.url).toBe('/slow');
+    expect(location.path()).toBe('/slow');
 
     await browser('back');
 

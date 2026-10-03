@@ -168,6 +168,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     let closingNavigation: 'pending' | 'navigated' | 'stayed' | null = null;
     let urlAtClose: string | null = null;
     let destroyed = false;
+    let ownNavigationsInFlight = 0;
+    let clearWhenOwnNavigationsSettle = false;
 
     let router: Router | null = null;
     let route: Signal<string> | null = null;
@@ -230,15 +232,34 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const updateBrowserUrl = (r: string | undefined, replaceUrl = false) => {
       if (!router || !route) return;
 
-      if (!replaceUrl && r !== readUrlParam()) {
+      const addsHistoryEntry = !replaceUrl && r !== readUrlParam();
+
+      if (addsHistoryEntry) {
         ownHistoryEntries++;
       }
 
-      router.navigate([route()], {
-        queryParams: { [id]: r },
-        queryParamsHandling: 'merge',
-        replaceUrl,
-      });
+      ownNavigationsInFlight++;
+
+      const settled = (committed: boolean) => {
+        ownNavigationsInFlight--;
+
+        if (!committed && addsHistoryEntry) {
+          ownHistoryEntries = Math.max(0, ownHistoryEntries - 1);
+        }
+
+        if (ownNavigationsInFlight === 0 && clearWhenOwnNavigationsSettle) {
+          clearWhenOwnNavigationsSettle = false;
+          clearUrlParam();
+        }
+      };
+
+      router
+        .navigate([route()], {
+          queryParams: { [id]: r },
+          queryParamsHandling: 'merge',
+          replaceUrl,
+        })
+        .then(settled, () => settled(false));
     };
 
     const updateCurrentRoute = (r: string) => {
@@ -587,6 +608,13 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       destroyed = true;
 
       if (!syncUrl || closingNavigation === 'pending' || closingNavigation === 'navigated') return;
+
+      // The param of a navigation still in flight is not in the URL yet, so clearing it now would miss it.
+      if (ownNavigationsInFlight > 0) {
+        clearWhenOwnNavigationsSettle = true;
+
+        return;
+      }
 
       clearUrlParam();
     });
