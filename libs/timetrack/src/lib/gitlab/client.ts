@@ -37,7 +37,7 @@ export type GitLabQuery = Record<string, string | number | boolean | undefined>;
 
 /** Trailing slashes and a missing scheme both produce a URL that answers with a redirect, not data. */
 export const normalizeGitLabHost = (host: string) =>
-  (/^https?:\/\//.test(host) ? host : `https://${host}`).replace(/\/+$/, '');
+  (/^https?:\/\//i.test(host) ? host : `https://${host}`).replace(/\/+$/, '');
 
 /**
  * Whether a remote's host names the configured instance. Only the hostnames are compared: a remote

@@ -32,6 +32,11 @@ describe('normalizeGitLabHost', () => {
     expect(normalizeGitLabHost('git.example.com/')).toBe('https://git.example.com');
     expect(normalizeGitLabHost('https://git.example.com///')).toBe('https://git.example.com');
   });
+
+  it('keeps a scheme written in capitals', () => {
+    expect(normalizeGitLabHost('HTTPS://git.example.com/')).toBe('HTTPS://git.example.com');
+    expect(new URL(normalizeGitLabHost('Https://git.example.com')).hostname).toBe('git.example.com');
+  });
 });
 
 describe('gitlabRequest$', () => {

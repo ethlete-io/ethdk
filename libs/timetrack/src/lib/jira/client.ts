@@ -28,7 +28,7 @@ export type JiraQuery = Record<string, string | number | boolean | undefined>;
 
 /** Trailing slashes and a missing scheme both produce a URL Jira answers with a redirect, not data. */
 export const normalizeJiraHost = (host: string) =>
-  (/^https?:\/\//.test(host) ? host : `https://${host}`).replace(/\/+$/, '');
+  (/^https?:\/\//i.test(host) ? host : `https://${host}`).replace(/\/+$/, '');
 
 const encodeCredentials = (credentials: JiraCredentials) => {
   const bytes = new TextEncoder().encode(`${credentials.email}:${credentials.token}`);

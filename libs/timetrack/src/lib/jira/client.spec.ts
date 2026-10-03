@@ -27,6 +27,11 @@ describe('normalizeJiraHost', () => {
     expect(normalizeJiraHost('team.atlassian.net/')).toBe('https://team.atlassian.net');
     expect(normalizeJiraHost('https://team.atlassian.net///')).toBe('https://team.atlassian.net');
   });
+
+  it('keeps a scheme written in capitals', () => {
+    expect(normalizeJiraHost('HTTPS://team.atlassian.net/')).toBe('HTTPS://team.atlassian.net');
+    expect(new URL(normalizeJiraHost('Https://team.atlassian.net')).hostname).toBe('team.atlassian.net');
+  });
 });
 
 describe('jiraRequest$', () => {
