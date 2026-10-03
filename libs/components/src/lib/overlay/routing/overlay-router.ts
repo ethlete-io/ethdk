@@ -166,6 +166,7 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     let syncUrl = config.syncUrl ?? false;
     let ownHistoryEntries = 0;
     let closingNavigation: 'pending' | 'navigated' | 'stayed' | null = null;
+    let urlAtClose: string | null = null;
     let destroyed = false;
 
     let router: Router | null = null;
@@ -539,7 +540,10 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const clearUrlParam = () => {
       if (readUrlParam() === undefined) return;
 
-      if (location && ownHistoryEntries > 0) {
+      // Once another navigation moved the URL past this overlay's last entry, the entries above it are not ours to pop.
+      const ownsTopEntry = urlAtClose === null || router?.url === urlAtClose;
+
+      if (location && ownHistoryEntries > 0 && ownsTopEntry) {
         location.historyGo(-ownHistoryEntries);
       } else {
         updateBrowserUrl(undefined, true);
@@ -552,6 +556,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     // Once it settles, only a navigation that stayed on this page (a guard cancelled it) leaves the param behind.
     const watchClosingNavigation = (angularRouter: Router) => {
       const pathAtClose = pathOf(angularRouter.url);
+
+      urlAtClose = angularRouter.url;
 
       closingNavigation = 'pending';
 

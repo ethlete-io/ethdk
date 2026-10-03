@@ -50,6 +50,14 @@ describe('OverlayRouter with syncUrl', () => {
     });
   });
 
+  const openRef = (config: OverlayConfig = {}) =>
+    TestBed.runInInjectionContext(() => injectOverlayManager()).open<RoutedOverlayComponent>(RoutedOverlayComponent, {
+      ...config,
+      providers: [provideOverlayRouter({ routes: [{ path: '/', component: PageComponent }], syncUrl: true })],
+    });
+
+  const urlParams = () => Object.keys(router.parseUrl(router.url).queryParams);
+
   const open = async (config: OverlayConfig = {}) => {
     router = TestBed.inject(Router);
     location = TestBed.inject(Location);
@@ -264,5 +272,70 @@ describe('OverlayRouter with syncUrl', () => {
 
     expect(router.url).toMatch(/^\/guarded\?/);
     expect(location.path()).toBe(router.url);
+  });
+
+  it('leaves an overlay opened while the closing navigation is pending alone', async () => {
+    const overlayRouter = await open();
+
+    await goTo(overlayRouter, '/two');
+
+    const [firstParam] = urlParams();
+    const navigation = router.navigateByUrl('/guarded');
+    await settle();
+
+    const second = openRef();
+    await settle();
+    releaseGuard(false);
+    await navigation;
+    await settle();
+
+    expect(second.componentInstance()).not.toBeNull();
+    expect(urlParams()).toHaveLength(1);
+    expect(urlParams()).not.toContain(firstParam);
+
+    second.close();
+    await settle();
+
+    expect(second.componentInstance()).toBeNull();
+    expect(router.url.split('?')[0]).toBe('/page');
+  });
+
+  it('clears its url param when an overlay opened during the closing navigation closes first', async () => {
+    const overlayRouter = await open({ strategies: dialogOverlayStrategy() });
+
+    await goTo(overlayRouter, '/two');
+
+    let finishLeave!: () => void;
+    const leave = {
+      playState: 'running',
+      effect: { pseudoElement: null, getComputedTiming: () => ({ iterations: 1 }) },
+      finished: new Promise<void>((resolve) => (finishLeave = resolve)),
+    } as unknown as Animation;
+    let running = [leave];
+    Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => running });
+    onTestFinished(() => {
+      delete (Element.prototype as Partial<Element>).getAnimations;
+    });
+
+    await expect(router.navigateByUrl('/blocked')).resolves.toBe(false);
+    await settle();
+
+    running = [];
+    const second = openRef();
+    await settle();
+
+    expect(urlParams()).toHaveLength(2);
+
+    second.close();
+    await settle();
+    finishLeave();
+    await settle();
+
+    expect(ref.componentInstance()).toBeNull();
+    expect(router.url).toBe('/page');
+
+    await browser('back');
+
+    expect(router.url).toBe('/');
   });
 });
