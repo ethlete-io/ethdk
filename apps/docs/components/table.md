@@ -431,8 +431,8 @@ For explicit "sort ascending / descending / clear" entries, add the
 [column menu](#column-menu). `setSort(key, direction | null)` does the same
 programmatically, without `toggleSort`'s cycle.
 
-- **Client mode** (default) sorts rows in the browser. Nullish values always sink
-  to the bottom.
+- **Client mode** (default) sorts rows in the browser. Nullish values, `NaN` and
+  invalid dates always sink to the bottom.
 - **Server mode** (`sortMode="server"`) leaves rows untouched - read `sort()` and
   feed it into your query args:
 

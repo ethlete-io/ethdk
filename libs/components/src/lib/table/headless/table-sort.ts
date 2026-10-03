@@ -1,11 +1,15 @@
 import { TableColumns, TableSort, TableSortValue } from '../table.types';
 
-const isNullish = (value: TableSortValue): value is null | undefined => value === null || value === undefined;
+const isMissing = (value: TableSortValue) =>
+  value === null ||
+  value === undefined ||
+  (typeof value === 'number' && Number.isNaN(value)) ||
+  (value instanceof Date && Number.isNaN(value.getTime()));
 
 const compare = (a: TableSortValue, b: TableSortValue) => {
-  if (isNullish(a) && isNullish(b)) return 0;
-  if (isNullish(a)) return 1;
-  if (isNullish(b)) return -1;
+  if (isMissing(a) && isMissing(b)) return 0;
+  if (isMissing(a)) return 1;
+  if (isMissing(b)) return -1;
 
   if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
   if (typeof a === 'number' && typeof b === 'number') return a - b;
@@ -24,8 +28,8 @@ export type SortRowsConfig<T> = {
  * Sort rows by a {@link TableSort} list, using each column's `sortValue` (or its
  * `value` accessor). Stable, multi-key, pure and tree-shakable - the base table
  * doesn't apply it unless in client sort mode; import it directly for custom flows.
- * Server-side callers ignore this and let the backend sort instead. Nullish values
- * always sink to the bottom, regardless of direction.
+ * Server-side callers ignore this and let the backend sort instead. Nullish values,
+ * `NaN` and invalid dates always sink to the bottom, regardless of direction.
  */
 export const sortRows = <T>({ rows, sort, columns }: SortRowsConfig<T>): T[] => {
   if (!sort.length) return [...rows];
@@ -40,7 +44,7 @@ export const sortRows = <T>({ rows, sort, columns }: SortRowsConfig<T>): T[] => 
       const valueA = accessor(rowA) as TableSortValue;
       const valueB = accessor(rowB) as TableSortValue;
 
-      if (isNullish(valueA) || isNullish(valueB)) {
+      if (isMissing(valueA) || isMissing(valueB)) {
         const nullCmp = compare(valueA, valueB);
 
         if (nullCmp !== 0) return nullCmp;
