@@ -20,6 +20,11 @@ describe('extractFirstImageUrl', () => {
     expect(extractFirstImageUrl({ srcset: `${unexpectedUrl} 300w, ${expectedUrl} 600w` })).not.toBe(expectedUrl);
   });
 
+  it('keeps a comma inside the first url', () => {
+    const url = 'https://res.cloudinary.com/demo/image/upload/w_300,h_200/a.jpg';
+    expect(extractFirstImageUrl(`${url} 1x, ${unexpectedUrl} 2x`)).toEqual(url);
+  });
+
   it('should return null for invalid input', () => {
     expect(extractFirstImageUrl(null)).toBeNull();
     expect(extractFirstImageUrl('')).toBeNull();

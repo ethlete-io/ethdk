@@ -82,7 +82,7 @@ export class PictureComponent {
     }
 
     const srcset = src.srcset
-      .split(',')
+      .split(/,\s+|(?<=\s[\d.]+[wx]),/)
       .map((candidate) => {
         const url = candidate.trim();
 

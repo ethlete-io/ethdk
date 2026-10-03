@@ -23,6 +23,18 @@ describe('PictureComponent base url', () => {
     );
   });
 
+  it('keeps a comma inside a candidate url', () => {
+    expect(combine('/upload/w_300,h_200/a.jpg 1x, /upload/w_600,h_400/a.jpg 2x', 'https://cdn.example.com')).toBe(
+      'https://cdn.example.com/upload/w_300,h_200/a.jpg 1x, https://cdn.example.com/upload/w_600,h_400/a.jpg 2x',
+    );
+  });
+
+  it('splits candidates separated without whitespace', () => {
+    expect(combine('a.jpg 400w,b.jpg 800w', 'https://cdn.example.com')).toBe(
+      'https://cdn.example.com/a.jpg 400w, https://cdn.example.com/b.jpg 800w',
+    );
+  });
+
   it('leaves a data URI with commas alone', () => {
     expect(combine('data:image/png;base64,abc,def', 'https://cdn.example.com')).toBe('data:image/png;base64,abc,def');
   });

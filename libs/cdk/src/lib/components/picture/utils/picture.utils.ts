@@ -17,6 +17,8 @@ export const provideImageConfig = (config: Partial<PictureConfig> | null | undef
   };
 };
 
+const splitSrcset = (srcset: string) => srcset.split(/,\s+|(?<=\s[\d.]+[wx]),/);
+
 /**
  * @deprecated `@ethlete/cdk` is in maintenance mode. Use the `@ethlete/components` equivalent instead - see https://ethlete-sdk-docs.web.app/cdk/migration, and run `nx g @ethlete/cdk:migrate-from-cdk` to rewrite the mechanical parts. Intent to remove in v6.
  */
@@ -29,7 +31,7 @@ export const extractFirstImageUrl = (source: string | PictureSource | null): str
     return srcString.trim() || null;
   }
 
-  const srcsetParts = srcString.split(',').map((part) => part.trim());
+  const srcsetParts = splitSrcset(srcString).map((part) => part.trim());
 
   if (srcsetParts.length > 0) {
     const firstPart = srcsetParts[0];
