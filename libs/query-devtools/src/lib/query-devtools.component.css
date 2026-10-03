@@ -237,9 +237,9 @@
     flex-wrap: wrap;
   }
 
-  /* Both header strips scroll sideways instead of wrapping. Ten tabs and six actions wrap to five lines
-     at phone width - a header taller than the content it labels - and the action group does not even
-     wrap: it is `flex: 0 0 auto`, so unshrunk it runs past the panel edge and takes Close with it. */
+  /* Both header strips scroll sideways instead of wrapping. Wrapped, the tabs and actions make a header
+     taller than the content it labels at phone width, and the action group does not even wrap: it is
+     `flex: 0 0 auto`, so unshrunk it runs past the panel edge and takes Close with it. */
   .et-query-devtools-panel:where([data-pane-axis='block'])
     :is(.et-query-devtools-tabs, .et-query-devtools-header-actions) {
     flex: 1 1 auto;
