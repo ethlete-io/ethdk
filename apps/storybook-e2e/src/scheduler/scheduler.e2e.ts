@@ -17,7 +17,7 @@ const DIALOG_ROOT = '[role="dialog"]';
 
 /** The edit surface ignores Escape until its enter transition has started. */
 async function waitForEntered(page: Page): Promise<void> {
-  await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
+  await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/, { timeout: 10_000 });
 }
 
 async function shadeCountsPerDay(root: Locator): Promise<number[]> {
@@ -241,6 +241,7 @@ test.describe('scheduler / keyboard', () => {
 
     const dialog = page.locator(DIALOG_ROOT);
     await expect(dialog).toBeVisible({ timeout: 3_000 });
+    await waitForEntered(page);
 
     const cancel = dialog.getByRole('button', { name: 'Cancel' });
     const save = dialog.getByRole('button', { name: 'Save' });
@@ -320,10 +321,11 @@ test.describe('scheduler / grid keyboard', () => {
   });
 
   test('Enter on an empty month day opens the create surface', async ({ page }) => {
-    await openStory(page, DEFAULT_ID);
+    const root = await openStory(page, DEFAULT_ID);
     await tabIntoGrid(page);
 
     await pressKey(page, 'ArrowRight');
+    await expect(root.locator('[role="gridcell"]', { hasText: 'Thursday, July 16th, 2026' })).toBeFocused();
     await pressKey(page, 'Enter');
 
     await expect(page.locator(DIALOG_ROOT)).toBeVisible({ timeout: 8_000 });
