@@ -39,9 +39,9 @@ export const STAR_ICON: IconDefinition = {
 };
 ```
 
-`provideIcons(...icons)` builds the lookup map for the injector it is provided on. Put it on a component's `providers` and only that component subtree sees those icons; put it on the app's providers and every component does. Registering the same `name` twice in one call throws.
+`provideIcons(...icons)` builds the lookup map for the injector it is provided on. Put it on a component's `providers` and only that component subtree sees those icons; put it on the app's providers and every component does. A nearer `provideIcons()` replaces the outer map instead of merging with it, so a subtree that provides its own icons no longer sees the app-level ones. Registering the same `name` twice in one call throws.
 
-Because the resolution is per-injector, a component that provides its own icons is self-contained - which is how the CDK's own components work (the scrollable provides `CHEVRON_ICON` for its buttons). A component provided with no icons at all throws on construction.
+Because the resolution is per-injector, a component that provides its own icons is self-contained - which is how the CDK's own components work (the scrollable provides `CHEVRON_ICON` for its buttons). An `[etIcon]` with no `provideIcons()` anywhere above it throws on construction.
 
 The SDK ships two icons: `CHEVRON_ICON` (`et-chevron`) and `TIMES_ICON` (`et-times`).
 

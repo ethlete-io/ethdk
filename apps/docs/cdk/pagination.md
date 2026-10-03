@@ -33,13 +33,13 @@ Navigation happens through the control: clicking a page calls `pageControl.setVa
 
 ## Options
 
-| Input                    | Default        | Purpose                                                                    |
-| ------------------------ | -------------- | -------------------------------------------------------------------------- |
-| `pageControl` (required) | -              | `FormControl<number \| null>` with the current page.                       |
-| `totalPages` (required)  | `0`            | Total number of pages.                                                     |
-| `renderAs`               | `'links'`      | Render items as `<a href>` (with `?page=N` URLs) or as `'buttons'`.        |
-| `pageChangeScrollAnchor` | `null`         | Element scrolled into view after a page change (e.g. the top of the list). |
-| `ariaLabel`              | `'Pagination'` | The `aria-label` of the wrapping `<nav>`.                                  |
+| Input                    | Default        | Purpose                                                                                     |
+| ------------------------ | -------------- | ------------------------------------------------------------------------------------------- |
+| `pageControl` (required) | -              | `FormControl<number \| null>` with the current page.                                        |
+| `totalPages` (required)  | `0`            | Total number of pages.                                                                      |
+| `renderAs`               | `'links'`      | Render items as `<a href>` (with `?page=N` URLs; page 1 drops the param) or as `'buttons'`. |
+| `pageChangeScrollAnchor` | `null`         | Element scrolled into view after a page change (e.g. the top of the list).                  |
+| `ariaLabel`              | `'Pagination'` | The `aria-label` of the wrapping `<nav>`.                                                   |
 
 The list always shows first/previous/next/last hot links plus the current page with two neighbors on each side; every item carries a descriptive `aria-label` and the current page is marked with `aria-current="page"`.
 

@@ -55,7 +55,7 @@ export class ProductListComponent {
 
 <StoryEmbed id="cdk-overlay-overlay-handlers--handler" height="420px" />
 
-The handler is two-staged on purpose: the outer call binds the component and its base config once (no injection context needed), the inner call runs in a component's injection context and wires the lifecycle callbacks (`afterOpened`, `beforeClosed`, `afterClosed`) with automatic unsubscription.
+`createOverlayHandler` also accepts a `template` (a `TemplateRef`) instead of `component`. The handler is two-staged on purpose: the outer call binds the component and its base config once (no injection context needed), the inner call runs in a component's injection context and wires the lifecycle callbacks (`afterOpened`, `beforeClosed`, `afterClosed`) with automatic unsubscription.
 
 Inside the overlay component, read the data and the ref off the same handler - both are typed:
 
@@ -98,23 +98,25 @@ If the overlay component declares an input or model named `overlayQueryParam`, t
 
 ## Config
 
-| Option                                             | Default            | Purpose                                                                                         |
-| -------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------- |
-| `strategies`                                       | required           | A function returning the breakpoint→strategy list - see below.                                  |
-| `data`                                             | `null`             | Injected into the overlay as `OVERLAY_DATA`.                                                    |
-| `role`                                             | `'dialog'`         | Or `'alertdialog'`.                                                                             |
-| `hasBackdrop`                                      | `true`             |                                                                                                 |
-| `disableClose`                                     | `false`            | Blocks <kbd>Escape</kbd> and backdrop clicks.                                                   |
-| `autoFocus`                                        | `'first-tabbable'` | Or `'dialog'`, `'first-heading'`, or a CSS selector.                                            |
-| `restoreFocus`                                     | `true`             | Return focus to the previously focused element on close.                                        |
-| `delayFocusTrap`                                   | `true`             | Wait for the enter animation before trapping focus.                                             |
-| `closeOnNavigation`                                | `true`             | Forced to `false` when the overlay contains an overlay router.                                  |
-| `ariaModal`                                        | `true`             |                                                                                                 |
-| `ariaLabel` / `ariaLabelledBy` / `ariaDescribedBy` | `null`             |                                                                                                 |
-| `customAnimated`                                   | `false`            | Suppress the built-in enter/leave animation.                                                    |
-| `origin`                                           | -                  | The element or event that opened the overlay - used by anchored and full-screen strategies.     |
-| `id`                                               | generated          |                                                                                                 |
-| `providers`                                        | -                  | Extra providers for the overlay. Avoid `@Injectable()` services here; they are never destroyed. |
+| Option                                             | Default            | Purpose                                                                                                                                                          |
+| -------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `strategies`                                       | required           | A function returning the breakpoint→strategy list - see below.                                                                                                   |
+| `data`                                             | `null`             | Injected into the overlay as `OVERLAY_DATA`.                                                                                                                     |
+| `role`                                             | `'dialog'`         | Or `'alertdialog'`.                                                                                                                                              |
+| `hasBackdrop`                                      | `true`             |                                                                                                                                                                  |
+| `disableClose`                                     | `false`            | Blocks <kbd>Escape</kbd> and backdrop clicks.                                                                                                                    |
+| `autoFocus`                                        | `'first-tabbable'` | Or `'dialog'`, `'first-heading'`, or a CSS selector.                                                                                                             |
+| `restoreFocus`                                     | `true`             | Return focus to the previously focused element on close.                                                                                                         |
+| `delayFocusTrap`                                   | `false`            | Wait for the enter animation before trapping focus.                                                                                                              |
+| `closeOnNavigation`                                | `true`             | Forced to `false` when the overlay contains an overlay router.                                                                                                   |
+| `ariaModal`                                        | `true`             |                                                                                                                                                                  |
+| `ariaLabel` / `ariaLabelledBy` / `ariaDescribedBy` | `null`             |                                                                                                                                                                  |
+| `customAnimated`                                   | `false`            | Suppress the built-in enter/leave animation.                                                                                                                     |
+| `origin`                                           | focused element    | The element or event that opened the overlay - used by anchored and full-screen strategies. Falls back to `document.activeElement` (unless it is `html`/`body`). |
+| `direction`                                        | -                  | Layout direction (`Direction`) for the overlay's content.                                                                                                        |
+| `viewContainerRef` / `injector`                    | -                  | Where the component lives in the logical tree / the injector used to create it (wins over `viewContainerRef`'s).                                                 |
+| `id`                                               | generated          |                                                                                                                                                                  |
+| `providers`                                        | -                  | Extra providers for the overlay. Avoid `@Injectable()` services here; they are never destroyed.                                                                  |
 
 ## Strategies
 
@@ -155,7 +157,7 @@ Writing your own strategy means providing an `OverlayStrategy`: an `id`, a `conf
 
 ## Content shell
 
-The overlay's own markup is yours; these directives give it the standard regions and let the runtime know what it has:
+The overlay's own markup is yours; the directives below (all in `OverlayImports`) give it the standard regions and let the runtime know what it has:
 
 ```html
 <div etOverlayHeader>
@@ -187,10 +189,11 @@ These directives find their overlay through DI, falling back to the closest open
 
 ## Routing inside an overlay
 
-An overlay can hold its own little router, so a multi-step flow stays in one overlay instead of opening a stack of them. Provide routes and render an outlet:
+An overlay can hold its own little router, so a multi-step flow stays in one overlay instead of opening a stack of them. Provide the router service and its routes on the overlay component, and render an outlet:
 
 ```ts
 providers: [
+  OverlayRouterService,
   provideOverlayRouterConfig({
     routes: [
       { path: '/', component: OverviewComponent },
@@ -222,14 +225,18 @@ Import `OverlayWithRoutingImports` for these. Highlights:
 `SidebarOverlayService` turns a routed overlay into a master/detail layout: a sidebar next to the content on wide viewports, and a separate navigable page on narrow ones. Import `OverlayWithSidebarImports`.
 
 ```ts
-providers: [provideSidebarOverlayConfig({ renderSidebarFrom: 'md', sidebarPageRoute: '/sidebar' })],
+providers: [
+  OverlayRouterService,
+  SidebarOverlayService,
+  provideSidebarOverlayConfig({ renderSidebarFrom: 'md', sidebarPageRoute: '/sidebar' }),
+],
 ```
 
-Above `renderSidebarFrom` (default `'md'`) the sidebar renders inline via `et-overlay-sidebar`; below it, the same content becomes the `/sidebar` route reachable through `et-overlay-sidebar-page`. You write the content once.
+From `renderSidebarFrom` upwards (default `'md'`; a breakpoint or a pixel number) the sidebar renders inline via `et-overlay-sidebar` and the router uses the `'vertical'` transition. Below it, the same content becomes a route at `sidebarPageRoute` (default `/sidebar`, rendered by the internal `OverlaySidebarPageComponent`, not something you place yourself) and the transition switches to `'overlay'`. You write the content once. `et-overlay-sidebar` takes a `pageDividers` input that is applied to that page's body.
 
 ## Unsaved-changes guard
 
-`createOverlayDismissChecker` blocks dismissal while a form is dirty, so a backdrop click doesn't throw away a half-filled form:
+`createOverlayDismissChecker` (call it in the overlay component's injection context) blocks dismissal while a form is dirty, so a backdrop click doesn't throw away a half-filled form:
 
 ```ts
 const checker = createOverlayDismissChecker({
@@ -238,27 +245,29 @@ const checker = createOverlayDismissChecker({
 });
 ```
 
-It compares the form's current value against `defaultValue` (the form's raw value at creation by default) and runs your check only when they differ. `dismissEvents` picks which dismissals are guarded - `backdropClick`, `escapeKey` and `closeCall` (an explicit `overlayRef.close()`), all `true` by default. The returned ref has `destroy()` and `refreshDefaultFormValue()` - call the latter after a request fills in the remaining defaults, or every later dismissal will look like an unsaved change.
+It compares the form's current value against `defaultValue` (the form's raw value at creation by default, compared with `compareFn` if you pass one) and runs your check only when they differ; the dismissal proceeds only if the check returns a truthy value (it may also return a promise or observable). `dismissEvents` picks which dismissals are guarded - `backdropClick`, `escapeKey` and `closeCall` (an explicit `overlayRef.close()`), all `true` by default. The returned ref has `destroy()` and `refreshDefaultFormValue()` - call the latter after a request fills in the remaining defaults, or every later dismissal will look like an unsaved change.
 
 ## The overlay ref
 
 `OverlayRef` is what `open()` returns and what the overlay component injects:
 
-| Member                                | Purpose                                                                                   |
-| ------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `close(result?, force?)`              | Close, optionally with a result. `force` bypasses `disableClose` and the dismiss checker. |
-| `afterOpened()`                       | Emits once the enter animation is done.                                                   |
-| `beforeClosed()` / `afterClosed()`    | Emit the result before / after the leave animation.                                       |
-| `backdropClick()` / `keydownEvents()` | Raw interaction streams.                                                                  |
-| `updatePosition(position?)`           | Re-position a global-strategy overlay.                                                    |
-| `componentInstance` / `componentRef`  | The mounted component.                                                                    |
-| `id`, `config`, `disableClose`        | Identity and the resolved config.                                                         |
+| Member                                                    | Purpose                                                                                                                                                                       |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `close(result?, force?)`                                  | Close, optionally with a result. Always closes, regardless of `disableClose` (which only guards <kbd>Escape</kbd> and backdrop clicks). `force` bypasses the dismiss checker. |
+| `afterOpened()`                                           | Emits once the enter animation is done.                                                                                                                                       |
+| `beforeClosed()` / `afterClosed()`                        | Emit the result before / after the leave animation.                                                                                                                           |
+| `backdropClick()` / `keydownEvents()`                     | Raw interaction streams.                                                                                                                                                      |
+| `closeCalled()`                                           | Emits `{ result, forced }` on every `close()` call.                                                                                                                           |
+| `updatePosition(position?)`                               | Re-position a global-strategy overlay.                                                                                                                                        |
+| `updateSize()` / `addPanelClass()` / `removePanelClass()` | Resize the pane / toggle pane classes.                                                                                                                                        |
+| `componentInstance` / `componentRef`                      | The mounted component.                                                                                                                                                        |
+| `id`, `config`, `disableClose`                            | Identity and the resolved config.                                                                                                                                             |
 
 `injectOverlayManager()` exposes the whole stack: `openOverlays` (a signal), `closeAll()` and `getOverlayById(id)`.
 
 ## Accessibility
 
-The container renders as `role="dialog"` (or `alertdialog`) with `aria-modal`, and CDK's focus trap keeps <kbd>Tab</kbd> inside it. On open, focus moves per `autoFocus` - `'first-tabbable'` by default, and `delayFocusTrap` holds that until the enter animation finishes so focus doesn't land on a moving target. On close, focus returns to whatever was focused before, which is why `restoreFocus` should stay on.
+The container renders as `role="dialog"` (or `alertdialog`) with `aria-modal`, and CDK's focus trap keeps <kbd>Tab</kbd> inside it. On open, focus moves per `autoFocus` - `'first-tabbable'` by default, and set `delayFocusTrap: true` to hold that until the enter animation finishes so focus doesn't land on a moving target. On close, focus returns to whatever was focused before, which is why `restoreFocus` should stay on.
 
 <kbd>Escape</kbd> and backdrop clicks close the overlay unless `disableClose` is set or a [dismiss checker](#unsaved-changes-guard) intervenes. Use `[etOverlayTitle]` rather than a bare `<h2>` - it is what labels the dialog for screen readers.
 
@@ -266,6 +275,6 @@ Reach for `role="alertdialog"` only for a confirmation that interrupts a destruc
 
 ## Styling
 
-The structural styles ship in the CDK's [global stylesheet](/cdk/#styles). Each strategy adds its own container class - `et-overlay--dialog`, `et-overlay--bottom-sheet`, `et-overlay--anchored-dialog` and so on - and the config's `containerClass`, `paneClass`, `overlayClass`, `backdropClass`, `bodyClass` and `documentClass` let you hang styles on the pane, the backdrop, `<body>` and `<html>` for the duration of the overlay.
+The structural styles ship with the components; the CDK's [global stylesheet](/cdk/#styles) adds the Angular CDK overlay base styles. Each strategy adds its own container class - `et-overlay--dialog`, `et-overlay--bottom-sheet`, `et-overlay--anchored-dialog` and so on - and the strategy config's (`OverlayBreakpointConfig`) `containerClass`, `paneClass`, `overlayClass`, `backdropClass`, `bodyClass` and `documentClass` let you hang styles on the pane, the backdrop, `<body>` and `<html>` for the duration of the overlay.
 
 Style the content regions against `et-overlay-header`, `et-overlay-body` (with `--render-dividers`, `--dynamic-dividers`, and the `et-scrollable-body--*` scroll-state classes), `et-overlay-footer` and `et-overlay-main`.

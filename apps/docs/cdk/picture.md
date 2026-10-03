@@ -1,6 +1,6 @@
 # Picture
 
-`et-picture` renders a responsive `<picture>` element - a list of `<source>` entries plus a fallback `<img>`, optionally wrapped in a `<figure>` with caption. It's also the rendering target of the [`@ethlete/contentful`](/contentful/#images) image component.
+`et-picture` renders a responsive `<picture>` element - a list of `<source>` entries plus a fallback `<img>`, always wrapped in a `<figure>` with an optional caption. It's also the rendering target of the [`@ethlete/contentful`](/contentful/#images) image component.
 
 ::: warning Superseded by @ethlete/components
 New code should use the [components picture](/components/picture) (`PICTURE_IMPORTS`). `sources`,
@@ -49,7 +49,7 @@ Outputs `imgLoaded` / `imgError` mirror the image's `load` / `error` events.
 
 ## Behavior
 
-Srcsets support width descriptors (`800w`, pair them with `sizes`) or density descriptors (`2x`) - not both in one srcset. When a source has no explicit `type`, the MIME type is inferred from the URL. With `provideImageConfig({ baseUrl: '…' })`, relative srcsets are prefixed with your CDN base URL (absolute and `data:` URLs are left alone).
+Srcsets support width descriptors (`800w`, pair them with `sizes`) or density descriptors (`2x`) - not both in one srcset. When a source has no explicit `type`, the MIME type is inferred from the URL. With `provideImageConfig({ baseUrl: '…' })`, a srcset that does not start with `http` or `data:` gets your CDN base URL prepended. The base URL is prepended to the srcset string as a whole, so in a multi-candidate srcset only the first candidate is prefixed.
 
 ## Styling
 

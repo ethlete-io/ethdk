@@ -14,14 +14,14 @@ The package peers on `@ethlete/core`, `@ethlete/query`, `@ethlete/types`, `@angu
 
 ## Styles
 
-Unlike `@ethlete/components` (where each component carries its own CSS), the CDK ships one global stylesheet with the structural styles for all of its components. Add it to your application's styles:
+Component structure (menu, tooltip, overlay container and so on) is styled by CSS the components ship themselves. On top of that the CDK needs one global stylesheet, which pulls in the Angular CDK prebuilt styles (a11y, overlay, text-field) plus the easing tokens, the floating-element rules, the drag-scroll cursor and the active-tab underline. Add it to your application's styles:
 
 ```jsonc
 // project.json / angular.json
 "styles": ["node_modules/@ethlete/cdk/src/lib/styles/index.css"]
 ```
 
-The stylesheet is intentionally minimal - it handles layout and behavior (positioning, easing, drag-scroll cursors, the active-tab underline), not visual design. Colors, spacing and typography are yours to style via the `et-` classes each component renders.
+Both layers are intentionally minimal - they handle layout and behavior (positioning, easing, drag-scroll cursors, the active-tab underline), not visual design. Colors, spacing and typography are yours to style via the `et-` classes each component renders.
 
 ## Interactive demos
 

@@ -45,11 +45,11 @@ Each `et-inline-tab` carries its own label and content; the group renders the ba
 
 The bar is a [scrollable](/cdk/scrollable), so it also takes `itemSize` (`'auto' \| 'same'`, default `'auto'`), `renderMasks` (`true`), `renderButtons` (`true`), `renderScrollbars` (`false`) and `scrollableClass`, all forwarded straight through.
 
-| Output                | Payload                | Fires when                                                                |
-| --------------------- | ---------------------- | ------------------------------------------------------------------------- |
-| `selectedIndexChange` | `number`               | The active index changes.                                                 |
-| `selectedTabChange`   | `InlineTabChangeEvent` | Same moment, with `{ index, tab }`. Emits the current value on subscribe. |
-| `focusChange`         | `InlineTabChangeEvent` | Keyboard focus moves to another tab header.                               |
+| Output                | Payload                | Fires when                                                  |
+| --------------------- | ---------------------- | ----------------------------------------------------------- |
+| `selectedIndexChange` | `number`               | The active index changes.                                   |
+| `selectedTabChange`   | `InlineTabChangeEvent` | Same moment, with `{ index, tab }`; emitted asynchronously. |
+| `focusChange`         | `InlineTabChangeEvent` | Keyboard focus moves to another tab header.                 |
 
 ### Tab options
 
@@ -114,6 +114,7 @@ The active link is derived from the router, honoring `routerLinkActiveOptions` w
 | Input (on `[et-nav-tab-link]`) | Default        | Purpose                                        |
 | ------------------------------ | -------------- | ---------------------------------------------- |
 | `disabled`                     | `false`        | Blocks navigation and marks the link disabled. |
+| `fitUnderlineToContent`        | `false`        | Shrink the active underline to the label text. |
 | `tabIndex`                     | `0`            | Ignored while a `tabOutlet` is set.            |
 | `id`                           | auto-generated | Used to label the outlet panel.                |
 

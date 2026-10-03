@@ -27,27 +27,27 @@ import { FilterOverlayService, provideFilterOverlayConfig } from '@ethlete/cdk';
 
 The service clones the form you hand it and works on the clone. Nothing you type in the overlay touches the page behind it until `submit()` runs - which is what makes "cancel" free and lets the preview query run against a selection the user hasn't committed to yet.
 
-| Member           | Purpose                                                                                              |
-| ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `form`           | The cloned form to bind your controls to.                                                            |
-| `formValue`      | Signal of the clone's current value.                                                                 |
-| `submit()`       | Writes the clone's value back to the original form and closes with `{ didUpdate: true, formValue }`. |
-| `reset()`        | Patches the clone back to `defaults`. Throws when no `defaults` were configured.                     |
-| `close(result?)` | Closes without writing back - the result defaults to `{ didUpdate: false }` shape.                   |
+| Member           | Purpose                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `form`           | The cloned form to bind your controls to.                                                                |
+| `formValue`      | Signal of the clone's current value.                                                                     |
+| `submit()`       | Writes the clone's value back to the original form and closes with `{ didUpdate: true, formValue }`.     |
+| `reset()`        | Patches the clone back to `defaults`. Throws when no `defaults` were configured.                         |
+| `close(result?)` | Closes without writing back. Passes `result` through as is - with no argument the result is `undefined`. |
 
-The overlay closes with a `FilterOverlayResult`: `{ didUpdate: false }` when the user backed out, `{ didUpdate: true, formValue }` when they submitted. Read it from the overlay ref's `afterClosed()`.
+`FilterOverlayResult` is `{ didUpdate: false }` or `{ didUpdate: true, formValue }`. `submit()` closes with the latter; nothing produces `{ didUpdate: false }` unless you pass it to `close()`, so backing out via <kbd>Escape</kbd>, the backdrop or a bare `close()` yields `undefined`. Read it from the overlay ref's `afterClosed()` and treat `undefined` as "not updated".
 
 ## Result preview
 
 `searchPreviewQueryFn` turns the current form value into a query, which re-runs as the user changes filters. Its result feeds the submit button's label, so the button can say "Show 42 results" before anything is applied:
 
-| Option                 | Default                         | Purpose                                                   |
-| ---------------------- | ------------------------------- | --------------------------------------------------------- |
-| `form`                 | required                        | The form to clone and edit.                               |
-| `defaults`             | -                               | Value used by `reset()`.                                  |
-| `searchPreviewQueryFn` | -                               | Builds the preview query from the current form value.     |
-| `totalHitsExtractorFn` | reads `response.totalHits`      | Pulls the count out of your API's response shape.         |
-| `submitButtonConfigFn` | `defaultSubmitButtonConfigFn()` | Turns query state + hit count into `{ label, disabled }`. |
+| Option                 | Default                         | Purpose                                                                                                                                         |
+| ---------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `form`                 | required                        | The form to clone and edit.                                                                                                                     |
+| `defaults`             | -                               | Value used by `reset()`.                                                                                                                        |
+| `searchPreviewQueryFn` | -                               | Builds the preview query from the current form value. Without it no query runs and the default button stays on "Loading results..." (disabled). |
+| `totalHitsExtractorFn` | reads `response.totalHits`      | Pulls the count out of your API's response shape.                                                                                               |
+| `submitButtonConfigFn` | `defaultSubmitButtonConfigFn()` | Turns query state + hit count into `{ label, disabled }`.                                                                                       |
 
 Without a `totalHitsExtractorFn`, the response must have a `totalHits` property - anything else logs an error and yields `null`.
 

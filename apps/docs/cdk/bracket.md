@@ -20,28 +20,29 @@ version, which still receives bug fixes.
 ```
 
 ```ts
-import { NewBracketComponent, generateBracketDataForEthlete } from '@ethlete/cdk';
+import { BracketNew, NewBracketComponent } from '@ethlete/cdk';
 
-source = generateBracketDataForEthlete(roundsWithMatches);
+source = BracketNew.generateBracketDataForEthlete(roundsWithMatches);
 ```
 
 <StoryEmbed id="cdk-bracket-new--double-et-sync" height="520px" />
 
 ## The data source
 
-A `BracketDataSource<TRoundData, TMatchData>` is a plain object: a list of rounds (`{ id, type, name, data }`), a list of matches (`{ id, roundId, home, away, winner, status, data }`) and the tournament `mode` (`'single-elimination'`, `'double-elimination'` or `'swiss-with-elimination'`). Two builders are included - `generateBracketDataForEthlete()` maps the Ethlete API's round/match views (inferring the mode from the match type), `generateBracketDataForGg()` maps a gg-shaped source - or you construct the object yourself.
+A `BracketDataSource<TRoundData, TMatchData>` is a plain object: a list of rounds (`{ id, type, name, data }`), a list of matches (`{ id, roundId, home, away, winner, status, data }`) and the tournament `mode` (`'single-elimination'`, `'double-elimination'` or `'swiss-with-elimination'`). Two builders are included - `generateBracketDataForEthlete()` maps the Ethlete API's round/match views (inferring the mode from the match type), `generateBracketDataForGg()` maps a gg-shaped source - or you construct the object yourself. The builders and the bracket data types are exported only through the `BracketNew` namespace (`BracketNew.generateBracketDataForEthlete`, `BracketNew.NewBracketMatch`, …), not as top-level names.
 
 ## Custom match & header components
 
-The default match, round-header and continue components are debug placeholders meant to be replaced. Pass your own component classes; each receives the linked bracket data as signal inputs:
+The default match, round-header and continue components are debug placeholders meant to be replaced. Pass your own component classes; each receives the linked bracket data as signal inputs. A match or round-header component must declare `bracketRoundSwissGroup` too - the renderer passes it in every mode (`null` outside Swiss), and Angular reports an unknown-input error for an undeclared one:
 
 ```ts
 @Component({
-  template: `{{ bracketMatch().data.homeParticipant?.name }} vs …`,
+  template: `{{ bracketMatch().home?.id }} vs {{ bracketMatch().away?.id }}`,
 })
 export class MyMatchComponent {
-  bracketRound = input.required<NewBracketRound>();
-  bracketMatch = input.required<NewBracketMatch>();
+  bracketRound = input.required<BracketNew.NewBracketRound<MyRound, MyMatch>>();
+  bracketMatch = input.required<BracketNew.NewBracketMatch<MyRound, MyMatch>>();
+  bracketRoundSwissGroup = input.required<BracketNew.BracketRoundSwissGroup<MyRound, MyMatch> | null>();
 }
 ```
 
@@ -49,7 +50,7 @@ export class MyMatchComponent {
 <et-new-bracket [source]="source" [matchComponent]="MyMatchComponent" [roundHeaderComponent]="MyRoundHeaderComponent" />
 ```
 
-There are four slots: `matchComponent`, `finalMatchComponent`, `roundHeaderComponent` and `continueComponent` (an element after the last round for "winners advance to the next stage", enabled with `showContinueElement`). App-wide defaults for all of them - and for every geometry value below - can be registered once with `provideNewBracketConfig()`; explicit inputs always win.
+There are four slots: `matchComponent`, `finalMatchComponent`, `roundHeaderComponent` and `continueComponent` (an element after the last round for "winners advance to the next stage", enabled with `showContinueElement`, left-to-right layout only; it receives `bracketMatches`). App-wide defaults for all of them - and for every geometry value below - can be registered once with `provideNewBracketConfig()`; explicit inputs always win.
 
 ## Geometry & appearance
 

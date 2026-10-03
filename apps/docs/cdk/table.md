@@ -68,20 +68,20 @@ export class ElementsTableComponent {
 
 ### Building blocks
 
-| Piece                                                  | Purpose                                                                                                   |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `et-table` / `table[et-table]`                         | The table itself. Use the `table[et-table]` form for native `<table>`/`<thead>`/`<tbody>` semantics.      |
-| `etColumnDef="name"`                                   | Declares a column; adds an `et-column-<name>` class to its cells. Supports `sticky` / `stickyEnd`.        |
-| `*etHeaderCellDef` / `*etCellDef` / `*etFooterCellDef` | Templates for the column's header, data and footer cells (`et-header-cell`, `et-cell`, `et-footer-cell`). |
-| `*etHeaderRowDef` / `*etRowDef` / `*etFooterRowDef`    | Which columns each row type renders, in order. Row defs support `sticky` too.                             |
-| `et-text-column`                                       | Shorthand for a plain text column (`name`, `headerText`, `dataAccessor`, `justify`).                      |
-| `ng-template[etNoDataRow]`                             | Rendered when the data source is empty.                                                                   |
+| Piece                                                  | Purpose                                                                                                                                                                                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `et-table` / `table[et-table]`                         | The table itself. Use the `table[et-table]` form for native `<table>`/`<thead>`/`<tbody>` semantics.                                                                                                                          |
+| `etColumnDef="name"`                                   | Declares a column; adds an `et-column-<name>` class to its cells. Supports `sticky` / `stickyEnd`.                                                                                                                            |
+| `*etHeaderCellDef` / `*etCellDef` / `*etFooterCellDef` | Templates for the column's header, data and footer cells (`et-header-cell`, `et-cell`, `et-footer-cell`).                                                                                                                     |
+| `*etHeaderRowDef` / `*etRowDef` / `*etFooterRowDef`    | Which columns each row type renders, in order. The data row def takes its columns through `columns:` (`etRowDefColumns`); header and footer row defs can be made sticky with `etHeaderRowDefSticky` / `etFooterRowDefSticky`. |
+| `et-text-column`                                       | Shorthand for a plain text column (`name`, `headerText`, `dataAccessor`, `justify`).                                                                                                                                          |
+| `ng-template[etNoDataRow]`                             | Rendered when the data source is empty.                                                                                                                                                                                       |
 
 `dataSource` accepts an array, an observable of arrays, or a CDK `DataSource`. Inherited from the CDK table you also get `trackBy`, `fixedLayout` and `multiTemplateDataRows`.
 
 ### Busy overlay
 
-Set `busy` (default `false`) and project an `etTableBusy` template - the table renders it over the body without tearing down rows, and sets `aria-busy` while active:
+Set `busy` (default `false`) and project an `etTableBusy` template - the table renders it over the body without tearing down rows, and sets `aria-busy` while active. The outlet exists only in the `et-table` element form, not in `table[et-table]`:
 
 ```html
 <et-table [dataSource]="data" [busy]="isLoading">
@@ -104,15 +104,16 @@ The `etSort` directive tracks the active sort; `[et-sort-header]` elements regis
 
 <StoryEmbed id="cdk-sort--default" height="220px" />
 
-| Input / output (on `etSort`)       | Default | Purpose                                                                                                                                                     |
-| ---------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `etSortActive` / `etSortDirection` | `''`    | The currently sorted column id and direction.                                                                                                               |
-| `etSortStart`                      | `'asc'` | Direction a column starts with when first clicked.                                                                                                          |
-| `etSortDisableClear`               | `false` | Skip the cleared state in the cycle.                                                                                                                        |
-| `sortControl`                      | -       | `FormControl<Sort \| null>` two-way bound to the combined `{ active, direction }` state (also available split as `sortByControl` / `sortDirectionControl`). |
-| `(etSortChange)`                   | -       | Emits `Sort` on every change - reorder your data (or re-query) here.                                                                                        |
+| Input / output (on `etSort`)       | Default      | Purpose                                                                                                                                                     |
+| ---------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `etSortActive` / `etSortDirection` | unset / `''` | The currently sorted column id and direction.                                                                                                               |
+| `etSortStart`                      | `'asc'`      | Direction a column starts with when first clicked.                                                                                                          |
+| `etSortDisabled`                   | `false`      | Disable sorting for all headers.                                                                                                                            |
+| `etSortDisableClear`               | `false`      | Skip the cleared state in the cycle.                                                                                                                        |
+| `sortControl`                      | -            | `FormControl<Sort \| null>` two-way bound to the combined `{ active, direction }` state (also available split as `sortByControl` / `sortDirectionControl`). |
+| `(etSortChange)`                   | -            | Emits `Sort` on every change - reorder your data (or re-query) here.                                                                                        |
 
-Per header you can set `arrowPosition` (`'after'` by default), `disableClear`, `disabled` and `sortActionDescription` (the screen-reader description of the sort action, default `'Sort'`). App-wide defaults go through the `SORT_DEFAULT_OPTIONS` token; `provideSort()` sets up the `SortHeaderIntl` service whose `changes` subject re-renders all headers (useful for runtime language switches).
+Per header you can set `start` (overrides `etSortStart`), `arrowPosition` (`'after'` by default), `disableClear`, `disabled` and `sortActionDescription` (the screen-reader description of the sort action, default `'Sort'`). App-wide defaults go through the `SORT_DEFAULT_OPTIONS` token; `provideSort()` sets up the `SortHeaderIntl` service whose `changes` subject re-renders all headers (useful for runtime language switches).
 
 Sort headers are fully accessible: `aria-sort` on the header, a `role="button"` sort trigger with keyboard support (Space/Enter) and a direction-arrow hint on keyboard focus.
 

@@ -60,7 +60,7 @@ A spinner on its own says "busy" but not what is busy - label the region it belo
 
 ## Styling
 
-The structural styles ship in the CDK's [global stylesheet](/cdk/#styles). The host carries `et-progress-spinner`, plus `et-circular-progress--indeterminate` and `et-progress-spinner--multi-color` for the current state, and a `mode` attribute with the resolved mode.
+The component carries its own stylesheet; the [global stylesheet](/cdk/#styles) adds nothing for it. The host carries `et-progress-spinner`, plus `et-circular-progress--indeterminate` and `et-progress-spinner--multi-color` for the current state, and a `mode` attribute with the resolved mode.
 
 | Property                           | Default     | Purpose                                           |
 | ---------------------------------- | ----------- | ------------------------------------------------- |

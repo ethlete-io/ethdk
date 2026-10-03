@@ -188,7 +188,7 @@ The scroll container has no role by default - set `scrollableRole` when the coll
 
 The structural styles ship in the CDK's [global stylesheet](/cdk/#styles). Style against `et-scrollable` (with `--can-scroll`, `--is-at-start`, `--is-at-end`, `--has-partial-items` modifiers), `et-scrollable-container`, `et-scrollable-item` (`--not-intersecting` while partly out of view), `et-scrollable-mask`, `et-scrollable-button`, `et-scrollable-footer` and `et-scrollable-navigation-item`. The host also carries `item-size`, `direction`, `render-scrollbars` and `sticky-buttons` attributes for the current resolved values.
 
-Four custom properties are exposed on `.et-scrollable`:
+These custom properties live on `.et-scrollable`:
 
 | Property                                 | Default                       | Purpose                                                              |
 | ---------------------------------------- | ----------------------------- | -------------------------------------------------------------------- |

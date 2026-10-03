@@ -80,4 +80,4 @@ Never put interactive content in a tooltip: it can't be reached by hover, and it
 
 ## Styling
 
-The structural styles ship in the CDK's [global stylesheet](/cdk/#styles). Style against `et-tooltip`. The container also gets any `containerClass` from the config, and `et-with-default-animation` unless `customAnimated` is set - clear that flag when you want to drive the enter/leave transition yourself through the [animation classes](/core/animations).
+The structural styles ship with the tooltip component; the CDK's [global stylesheet](/cdk/#styles) adds the shared floating-element rules. Style against `et-tooltip`. The container also gets any `containerClass` from the config, and `et-with-default-animation` unless `customAnimated` is set - clear that flag when you want to drive the enter/leave transition yourself through the [animation classes](/core/animations).

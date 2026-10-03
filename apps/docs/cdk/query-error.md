@@ -31,11 +31,11 @@ import { QueryErrorComponent } from '@ethlete/cdk';
 
 <StoryEmbed id="cdk-query-error--retryable-error" height="220px" />
 
-| Input              | Default | Purpose                                                                                          |
-| ------------------ | ------- | ------------------------------------------------------------------------------------------------ |
-| `error` (required) | -       | The `RequestError` to render (`null` renders nothing).                                           |
-| `query` (required) | -       | The query - used for the retry action. Accepts v2 queries, legacy queries and query collections. |
-| `language`         | `'en'`  | Message language: `'en'` or `'de'`.                                                              |
+| Input              | Default | Purpose                                                                                                 |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------- |
+| `error` (required) | -       | The `RequestError` to render (`null` renders nothing).                                                  |
+| `query` (required) | -       | The query - used for the retry action. Accepts v2 queries, legacy queries, query collections or `null`. |
+| `language`         | `'en'`  | Message language: `'en'` or `'de'`.                                                                     |
 
 The error `detail` is parsed into a message list with support for common backend shapes - class-validator errors, Symfony violation lists and list errors, plain `{ message }` / `{ detail }` objects and raw strings - falling back to a generic message derived from the HTTP status. Multiple messages render as a list.
 

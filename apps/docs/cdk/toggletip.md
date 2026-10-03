@@ -31,15 +31,15 @@ import { ToggletipImports } from '@ethlete/cdk';
 
 ## You own the open state
 
-Unlike the tooltip, the toggletip has no built-in trigger handling: `showToggletip` opens and closes it, and you set that from a click. The `toggletipClose` output fires whenever the toggletip closes itself - <kbd>Escape</kbd>, an outside click, or the close directive - and you must write `false` back to your state there, or the next click will toggle the wrong way.
+Unlike the tooltip, the toggletip has no built-in trigger handling: `showToggletip` opens and closes it, and you set that from a click. The `toggletipClose` output fires whenever the toggletip has closed - <kbd>Escape</kbd>, an outside click, the close directive, or you setting `showToggletip` to `false` - and you must write `false` back to your state there, or the next click will toggle the wrong way.
 
 ## Options
 
-| Input           | Default    | Purpose                                                                              |
-| --------------- | ---------- | ------------------------------------------------------------------------------------ |
-| `etToggletip`   | `null`     | The content: a plain string, or a `TemplateRef` for rich, interactive markup.        |
-| `showToggletip` | `false`    | Open state. Mounting/unmounting happens on the next frame after this changes.        |
-| `placement`     | `'bottom'` | Any floating-ui [placement](https://floating-ui.com/docs/computePosition#placement). |
+| Input           | Default    | Purpose                                                                                                                    |
+| --------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `etToggletip`   | `null`     | The content: a plain string, or a `TemplateRef` for rich, interactive markup.                                              |
+| `showToggletip` | `false`    | Open state. Mounting happens on the next frame after it turns `true`; unmounting starts immediately when it turns `false`. |
+| `placement`     | `'bottom'` | Any floating-ui [placement](https://floating-ui.com/docs/computePosition#placement).                                       |
 
 | Output           | Fires when                                          |
 | ---------------- | --------------------------------------------------- |
@@ -67,7 +67,7 @@ The reason to reach for a toggletip over a tooltip: the content stays put while 
 </ng-template>
 ```
 
-`[etToggletipClose]` (also `[et-toggletip-close]`) closes the toggletip from inside its own content - it resolves the owning toggletip through DI, so it needs no wiring.
+`[etToggletipClose]` (also `[et-toggletip-close]`) closes the toggletip from inside its own content - it resolves the owning toggletip through DI, so it needs no wiring. `ToggletipCloseDirective` is not part of `ToggletipImports`; import it separately.
 
 ## Global configuration
 
@@ -90,14 +90,14 @@ providers: [provideToggletipConfig({ placement: 'top', offset: 12 })],
 
 While open, the toggletip listens for <kbd>Escape</kbd> and for clicks anywhere outside its own container - both unmount it and emit `toggletipClose`. It also closes automatically when the trigger scrolls out of view. The listeners exist only while it is mounted, so a page full of closed toggletips costs nothing.
 
-Note that the outside-click listener also fires for a click on the trigger itself, which is what makes a second click on the trigger close it rather than reopen it.
+Note that the outside-click listener also fires for a click on the trigger itself. With the toggle handler shown above both agree and the second click closes it; a handler that only ever sets `true` would still see the toggletip close and `toggletipClose` write `false`.
 
 ## Accessibility
 
-<kbd>Escape</kbd> closes the toggletip from anywhere, which is the escape hatch keyboard users expect from a popover. Beyond that, the CDK toggletip does not manage focus or wire ARIA between trigger and panel: it does not trap focus, move focus into the content on open, or restore it on close.
+<kbd>Escape</kbd> closes the toggletip from anywhere, which is the escape hatch keyboard users expect from a popover. Beyond that, the CDK toggletip does not manage focus or wire ARIA between trigger and panel: it does not trap focus, move focus into the content on open, or restore it on close. The container is also rendered with `aria-hidden="true"`, so its content is hidden from assistive technology even though it is interactive.
 
 For content that needs any of that - a form, a menu, anything a keyboard user must reach - either add the wiring yourself (`aria-expanded` and `aria-controls` on the trigger, focus management on open/close) or reach for a [menu](/cdk/menu) or an [overlay](/cdk/overlays), which handle it. The successor in `@ethlete/components` closes this gap.
 
 ## Styling
 
-The structural styles ship in the CDK's [global stylesheet](/cdk/#styles). Style against `et-toggletip`, plus any `containerClass` from the config and `et-with-default-animation` unless `customAnimated` is set - clear that flag to drive the enter/leave transition yourself through the [animation classes](/core/animations).
+The structural styles ship with the toggletip component; the CDK's [global stylesheet](/cdk/#styles) adds the shared floating-element rules. Style against `et-toggletip`, plus any `containerClass` from the config and `et-with-default-animation` unless `customAnimated` is set - clear that flag to drive the enter/leave transition yourself through the [animation classes](/core/animations).

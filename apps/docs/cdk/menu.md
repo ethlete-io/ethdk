@@ -29,6 +29,8 @@ documents the CDK version, which still receives bug fixes.
 import { MenuImports } from '@ethlete/cdk';
 ```
 
+`MenuImports` does not include the checkbox-group control or the form modules the [checkbox and radio items](#checkbox-radio-items) use (`CheckboxGroupControlDirective`, `ReactiveFormsModule`); the search example below also needs the input-field imports.
+
 <StoryEmbed id="cdk-overlay-menu--default" height="420px" />
 
 ## Anatomy
@@ -37,15 +39,15 @@ import { MenuImports } from '@ethlete/cdk';
 
 The trigger and the menu find each other through DI: the menu reads the trigger for its `aria-labelledby`, and the trigger gets `aria-controls` / `aria-expanded` back. Nothing needs wiring by hand.
 
-| Element                                           | Role               | Purpose                                              |
-| ------------------------------------------------- | ------------------ | ---------------------------------------------------- |
-| `[etMenuTrigger]`                                 | `aria-haspopup`    | Opens the menu on click.                             |
-| `et-menu`                                         | `menu`             | The panel. Scrollable, with a max size.              |
-| `[etMenuItem]`, `et-menu-item`                    | `menuitem`         | An action. Closes the menu when activated.           |
-| `[etMenuGroup]` + `[etMenuGroupTitle]`            | `group`            | A labelled section.                                  |
-| `[etMenuCheckboxGroup]` + `et-menu-checkbox-item` | `menuitemcheckbox` | Multi-select items.                                  |
-| `[etMenuRadioGroup]` + `et-menu-radio-item`       | `menuitemradio`    | Single-select items.                                 |
-| `ng-template[etMenuSearchTemplate]`               | -                  | A search field pinned above the scrolling item list. |
+| Element                                           | Role                     | Purpose                                              |
+| ------------------------------------------------- | ------------------------ | ---------------------------------------------------- |
+| `[etMenuTrigger]`                                 | `aria-haspopup`          | Opens the menu on click.                             |
+| `et-menu`                                         | `menu`                   | The panel. Scrollable, with a max size.              |
+| `[etMenuItem]`, `et-menu-item`                    | `menuitem`               | An action. Closes the menu when activated.           |
+| `[etMenuGroup]` + `[etMenuGroupTitle]`            | `group` / `presentation` | A labelled section.                                  |
+| `[etMenuCheckboxGroup]` + `et-menu-checkbox-item` | `menuitemcheckbox`       | Multi-select items.                                  |
+| `[etMenuRadioGroup]` + `et-menu-radio-item`       | `menuitemradio`          | Single-select items.                                 |
+| `ng-template[etMenuSearchTemplate]`               | -                        | A search field pinned above the scrolling item list. |
 
 ## Positioning
 
@@ -55,9 +57,9 @@ The trigger forwards positioning inputs to the underlying floating overlay:
 | -------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `placement`          | `'bottom'`                                                                | Preferred side.                                                                         |
 | `fallbackPlacements` | `['bottom', 'bottom-start', 'bottom-end', 'top', 'top-start', 'top-end']` | Tried in order when the preferred side doesn't fit.                                     |
-| `offset`             | -                                                                         | Distance from the reference element.                                                    |
+| `offset`             | none                                                                      | Distance from the reference element (a floating-ui `OffsetOptions` value).              |
 | `shift`              | `false`                                                                   | Slide along the reference to stay in the viewport.                                      |
-| `viewportPadding`    | -                                                                         | Minimum gap to the viewport edge.                                                       |
+| `viewportPadding`    | `8`                                                                       | Minimum gap to the viewport edge (used by the auto-resize).                             |
 | `referenceElement`   | the trigger                                                               | Position against a different element - e.g. a toolbar rather than the button inside it. |
 | `mirrorWidth`        | `false`                                                                   | Match the reference element's width.                                                    |
 
@@ -86,7 +88,7 @@ A horizontal menu also enables cursor drag-scrolling on the item list.
 <p [etMenuItemDisabled]="!canDelete()" (click)="remove()" etMenuItem>Delete</p>
 ```
 
-`etMenuItemDisabled` sets `disabled` and `aria-disabled` and blocks activation. Note that the item does **not** make a non-interactive element focusable for you - put `etMenuItem` on a natively focusable element (`<button>`, `<a href>`) or add `tabindex` yourself.
+`etMenuItemDisabled` sets `disabled` and `aria-disabled` and blocks closing the menu. The directive manages `tabindex` itself (`-1`, or `0` while focused), so any element can receive focus, but only a natively interactive element (`<button>`, `<a href>`) fires `click` on <kbd>Enter</kbd> / <kbd>Space</kbd>. On a `<p>` the keys close the menu without running your `(click)` handler, so prefer a `<button>` or `<a>` and treat the `<p>` form as mouse-only.
 
 ## Groups
 

@@ -62,11 +62,11 @@ The default service translates the built-in validators (`required`, `email`, `mi
 
 ### Prefixes & suffixes
 
-Inputs accept projected affixes via `[etInputPrefix]` / `[etInputSuffix]` (an icon, a unit, a button); the field gets `--has-prefix` / `--has-suffix` classes for styling.
+Inputs accept projected affixes via `[etInputPrefix]` / `[etInputSuffix]` (an icon, a unit, a button); the field gets `et-form-field--has-prefix` / `et-form-field--has-suffix` and the input `et-input--has-prefix` / `et-input--has-suffix` classes for styling.
 
 ## Typed inputs
 
-`InputImports` bundles twelve input variants, each a thin shell around the corresponding native input type: `et-text-input`, `et-textarea-input`, `et-number-input` (value as `number | null`), `et-email-input`, `et-password-input`, `et-search-input`, `et-tel-input`, `et-date-input`, `et-time-input`, `et-date-time-input` and `et-color-input`. All support `placeholder` and `autocomplete`; number and date variants add `min` / `max`.
+`InputImports` bundles eleven input variants, each a thin shell around the corresponding native input type: `et-text-input`, `et-textarea-input`, `et-number-input` (value as `number | null`), `et-email-input`, `et-password-input`, `et-search-input`, `et-tel-input`, `et-date-input`, `et-time-input`, `et-date-time-input` and `et-color-input`. All support `placeholder` and `autocomplete`; number and date variants add `min` / `max`.
 
 <StoryEmbed id="cdk-forms-input-text--default" height="220px" />
 
@@ -74,7 +74,7 @@ Extras worth knowing:
 
 - **Password visibility** - project `<et-password-input-toggle etInputSuffix />` into an `et-password-input` to toggle between masked and plain text.
 - **Search clear** - `<et-search-input-clear *etIfInputFilled etInputSuffix />` clears the input; the `*etIfInputFilled` / `*etIfInputEmpty` structural directives render content based on the value.
-- **Autosize textarea** - `et-textarea-input[etAutosize]` grows with its content, capped by `maxHeight`.
+- **Autosize textarea** - `et-textarea-input[etAutosize]` grows with its content, capped by `etAutosizeMaxHeight` (pixels).
 - **Date formats** - the native pickers speak their own formats, but the _model_ value format is configurable app-wide via `provideDateFormat()` / `provideTimeFormat()` / `provideDateTimeFormat()` (date-fns format strings; the default is an ISO-like `yyyy-MM-dd'T'HH:mm:ssxxx`, times default to `HH:mm`).
 - **Native pickers** - `[etShowPickerTrigger]` opens the browser picker programmatically; `*etIfSupportsShowPicker` guards for support.
 
