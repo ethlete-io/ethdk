@@ -196,7 +196,7 @@ export class BracketComponent<TRoundData = unknown, TMatchData = unknown> {
    *
    * Two-way, and **driven from outside**: a participants list beside the bracket, a query param, a
    * search box. The bracket never pins on a card tap - a card's click belongs to the card - but it does
-   * drop the pin when <kbd>Escape</kbd> is pressed inside it or a click lands past the cells, and writes
+   * drop the pin when an unhandled <kbd>Escape</kbd> is pressed anywhere on the page or a click lands past the cells, and writes
    * the `null` back through this model.
    *
    * @example

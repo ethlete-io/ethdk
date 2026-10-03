@@ -7,7 +7,7 @@ import { CommandPaletteDirective, CommandPaletteSearchDirective } from './headle
 /**
  * The command palette: a search field over every registered command, ranked as the reader types.
  *
- * Open it as an overlay rather than placing it in a page - {@link commandPaletteOverlay} defines it as a
+ * Open it as an overlay rather than placing it in a page - {@link COMMAND_PALETTE_OVERLAY} defines it as a
  * dialog, and {@link injectCommandPalette} opens that. Commands come from
  * {@link registerCommands}, not from this element's content.
  *

@@ -168,6 +168,7 @@ The written guides below cover the code-first APIs (utilities, patterns, archite
 - [Focus ring](/components/focus-ring) - the shared keyboard-focus outline for custom interactive elements.
 - [Paged query trigger](/components/paged-query-trigger) - infinite scroll for a paged query stack: fetches the next page when the end of a list or rail scrolls into view.
 - [Query error](/components/query-error) - the default rendering of a failed query: status title, message or violation list, and a retry when it's worth offering.
+- [Testing](/components/testing) - the `@ethlete/components/testing` entry point: jsdom shims, an `OverlayRef` fake and drivers for unit specs of an app that renders these components.
 - [Error codes](/components/error-codes) - every `ETxxxx` runtime error, what causes it and how to fix it.
 
 The query devtools panel moved to its own package - see [`@ethlete/query-devtools`](/query-devtools/).

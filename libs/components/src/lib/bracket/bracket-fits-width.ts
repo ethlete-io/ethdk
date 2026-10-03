@@ -47,7 +47,7 @@ export const bracketNaturalWidth = <TRoundData, TMatchData>(
 
 /**
  * Whether the bracket fits into `availableWidth` px without scrolling - the decision behind swapping
- * `<et-bracket>` for [`<et-bracket-rounds-list>`](/components/bracket#responsive-switching) on a narrow
+ * `<et-bracket>` for [`<et-bracket-rounds-list>`](/components/bracket#narrow-screens) on a narrow
  * screen.
  *
  * Measure a container that does **not** grow with its content (a scroll container's parent, not the

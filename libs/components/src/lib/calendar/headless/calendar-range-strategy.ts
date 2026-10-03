@@ -124,8 +124,8 @@ export const DEFAULT_CALENDAR_RANGE_STRATEGY: CalendarRangeSelectionStrategy = {
     return { start: current.start, end: day };
   },
   /**
-   * Bands the span from the open start to the hovered day. Hovering before the start bands nothing,
-   * since picking there starts the range over.
+   * Bands the span from the open start to the hovered day. Before the start it returns the open range a
+   * pick there would start, which has no end and so bands nothing.
    */
   preview: (date, current) => {
     if (current.start === null || current.end !== null) {
