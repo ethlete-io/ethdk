@@ -1078,4 +1078,186 @@ describe('ContentfulRichTextRendererComponent', () => {
       warn.mockRestore();
     });
   });
+
+  describe('edge cases', () => {
+    const teaserTexts = (fixture: ComponentFixture<TestHostComponent>) =>
+      Array.from(renderRoot(fixture).querySelectorAll('.teaser')).map((e) => e.textContent);
+
+    it('moves inline entries that swap paragraphs and keeps the paragraph text in place', () => {
+      const a = createEntry('a', 'teaser', { title: 'A' });
+      const b = createEntry('b', 'teaser', { title: 'B' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(
+          block('paragraph', [text('x '), inlineEmbeddedEntry('a')]),
+          block('paragraph', [text('y '), inlineEmbeddedEntry('b')]),
+        ),
+        includes: { Entry: [a, b] },
+      });
+
+      const [first, second] = StubTeaserComponent.instances;
+      const spansBefore = Array.from(renderRoot(fixture).querySelectorAll('p > span'));
+
+      setContent(
+        fixture,
+        doc(
+          block('paragraph', [text('x '), inlineEmbeddedEntry('b')]),
+          block('paragraph', [text('y '), inlineEmbeddedEntry('a')]),
+        ),
+        { Entry: [a, b] },
+      );
+
+      expect(StubTeaserComponent.instances).toEqual([first, second]);
+      expect(StubTeaserComponent.destroyed).toBe(0);
+      expect(Array.from(renderRoot(fixture).querySelectorAll('p > span'))).toEqual(spansBefore);
+      expect(Array.from(renderRoot(fixture).querySelectorAll('p')).map((p) => p.textContent)).toEqual(['x B', 'y A']);
+    });
+
+    it('renders one instance per occurrence of the same entry', () => {
+      const a = createEntry('a', 'teaser', { title: 'A' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(embeddedEntry('a'), paragraph('between'), embeddedEntry('a')),
+        includes: { Entry: [a] },
+      });
+
+      expect(StubTeaserComponent.instances).toHaveLength(2);
+      expect(StubTeaserComponent.instances[0]).not.toBe(StubTeaserComponent.instances[1]);
+      expect(renderRoot(fixture).textContent).toBe('AbetweenA');
+    });
+
+    it('destroys exactly one instance when one of two occurrences of an entry goes away', () => {
+      const a = createEntry('a', 'teaser', { title: 'A' });
+      const b = createEntry('b', 'teaser', { title: 'B' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(embeddedEntry('a'), embeddedEntry('b'), embeddedEntry('a')),
+        includes: { Entry: [a, b] },
+      });
+
+      setContent(fixture, doc(embeddedEntry('b'), embeddedEntry('a')), { Entry: [a, b] });
+
+      expect(StubTeaserComponent.destroyed).toBe(1);
+      expect(StubTeaserComponent.instances).toHaveLength(3);
+      expect(renderRoot(fixture).querySelectorAll('et-stub-teaser')).toHaveLength(2);
+      expect(teaserTexts(fixture)).toEqual(['B', 'A']);
+    });
+
+    it('drops a paragraph that only holds an entry missing from the includes, and renders it once included', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const a = createEntry('a', 'teaser', { title: 'A' });
+      const richText = doc(paragraph('before'), block('paragraph', [inlineEmbeddedEntry('a')]), paragraph('after'));
+
+      const { fixture } = setup({ customComponents: { teaser: StubTeaserComponent }, richText });
+
+      expect(renderRoot(fixture).querySelectorAll('p')).toHaveLength(2);
+      expect(StubTeaserComponent.instances).toHaveLength(0);
+
+      setContent(fixture, richText, { Entry: [a] });
+
+      expect(Array.from(renderRoot(fixture).querySelectorAll('p')).map((p) => p.textContent)).toEqual([
+        'before',
+        'A',
+        'after',
+      ]);
+
+      setContent(fixture, richText);
+
+      expect(StubTeaserComponent.destroyed).toBe(1);
+      expect(renderRoot(fixture).textContent).toBe('beforeafter');
+
+      warn.mockRestore();
+    });
+
+    it('updates text deep inside nested lists without rebuilding the outer lists', () => {
+      const list = (inner: string) =>
+        doc(
+          block('unordered-list', [
+            block('list-item', [paragraph('one')]),
+            block('list-item', [
+              paragraph('two'),
+              block('ordered-list', [block('list-item', [paragraph(inner)]), block('list-item', [paragraph('2.2')])]),
+            ]),
+          ]),
+        );
+
+      const { fixture } = setup({ richText: list('2.1') });
+      const ulBefore = renderRoot(fixture).querySelector('ul');
+      const olBefore = renderRoot(fixture).querySelector('ol');
+
+      setContent(fixture, list('2.1 changed'));
+
+      expect(renderRoot(fixture).querySelector('ul')).toBe(ulBefore);
+      expect(renderRoot(fixture).querySelector('ol')).toBe(olBefore);
+      expect(Array.from(renderRoot(fixture).querySelectorAll('ol > li')).map((li) => li.textContent)).toEqual([
+        '2.1 changed',
+        '2.2',
+      ]);
+      expect(renderRoot(fixture).querySelectorAll('li')).toHaveLength(4);
+    });
+
+    it('nests bold, italic and code marks and rebuilds the span when the marks change', () => {
+      const { fixture } = setup({ richText: doc(paragraph('x', ['bold', 'italic', 'code'])) });
+
+      const span = renderRoot(fixture).querySelector('p > span');
+
+      expect(span?.innerHTML).toBe('<strong><em><code>x</code></em></strong>');
+
+      setContent(fixture, doc(paragraph('x', ['bold', 'code'])));
+
+      expect(renderRoot(fixture).querySelector('p > span')?.innerHTML).toBe('<strong><code>x</code></strong>');
+    });
+
+    it('clears everything for an empty document and renders again afterwards', () => {
+      const a = createEntry('a', 'teaser', { title: 'A' });
+
+      const { fixture } = setup({
+        customComponents: { teaser: StubTeaserComponent },
+        richText: doc(paragraph('text'), embeddedEntry('a')),
+        includes: { Entry: [a] },
+      });
+
+      setContent(fixture, doc(), { Entry: [a] });
+
+      expect(renderRoot(fixture).innerHTML).toBe('');
+      expect(StubTeaserComponent.destroyed).toBe(1);
+
+      setContent(fixture, doc(paragraph('text'), embeddedEntry('a')), { Entry: [a] });
+
+      expect(renderRoot(fixture).textContent).toBe('textA');
+      expect(StubTeaserComponent.instances).toHaveLength(2);
+    });
+
+    it('renders no fallback anchor for a hyperlink without content', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(block('paragraph', [text('before'), block('hyperlink', [], { uri: 'https://example.com' })])),
+      });
+
+      expect(renderRoot(fixture).querySelector('a')).toBeNull();
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('before');
+    });
+
+    it('renders no link component for a hyperlink without content', () => {
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        richText: doc(block('paragraph', [text('before'), block('hyperlink', [], { uri: 'https://example.com' })])),
+      });
+
+      expect(StubLinkComponent.instances).toHaveLength(0);
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('before');
+    });
+
+    it('drops a paragraph that only holds a hyperlink without content', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(block('paragraph', [block('hyperlink', [text('')], { uri: 'https://example.com' })])),
+      });
+
+      expect(renderRoot(fixture).innerHTML).toBe('');
+    });
+  });
 });

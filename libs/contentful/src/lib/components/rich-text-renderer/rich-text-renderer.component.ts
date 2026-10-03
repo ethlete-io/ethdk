@@ -634,6 +634,10 @@ export class ContentfulRichTextRendererComponent {
           const linkTexts = node.content.filter(
             (child): child is Text => child.nodeType === 'text' && Boolean(child.value),
           );
+          if (!linkTexts.length) {
+            break;
+          }
+
           const linkText = linkTexts.map((child) => child.value).join('');
           const linkComponent = href ? this.config.components.link : null;
 
