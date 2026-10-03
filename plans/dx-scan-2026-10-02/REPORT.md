@@ -18,7 +18,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (41)
+## 2. Open user decisions (40)
 
 The domain file of each ID has the full problem and the proposed fix.
 
@@ -44,7 +44,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | BR-08   | Add `bracketSlot.*` constructors for `BracketSlotSource`? Make it a discriminated union per `kind` (breaking)?                                                                                                            |
 | RTE-05  | Give the multi-language editor a `triggers` input and expose the inner editor (`insertToken`, palette)?                                                                                                                   |
 | RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                                                   |
-| RTE-07  | The trigger popup puts `aria-expanded` on `role="textbox"`. The file marks it Decision: no, but it is not fixed. Confirm the fix (drop `aria-expanded`, set `aria-controls` only while open).                             |
 | MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable.                            |
 | MISC-08 | The rich-text renderer cannot render a GraphQL rich-text field. Input shape: a `[gqlRichText]` input with `{ json, links }`, or a `createContentfulIncludeMapFromGqlLinks()` helper?                                      |
 | MISC-13 | Contentful asset components: static `et-contentful-*` classes everywhere (drop the inputs), or string class inputs everywhere?                                                                                            |
@@ -78,10 +77,12 @@ A human can reverse each of these.
 
 ## 4. Known gaps
 
-- A navigation that a guard cancels leaves a stale overlay URL param.
-- `yarn docs:error-codes:check` does not find error codes written as bare literals.
-- FG-09: the assisted codemod is not done.
 - The scheduler stories Headless, CustomBadgeAdornment and CustomEditField wait on SS-02 and SS-03.
+- Overlay router (`syncUrl: true`): after overlay B closes, the stale param of overlay A can come back from the old history entry of A. The browser cannot remove that entry.
+- Overlay router: an overlay that closes before its own opening navigation ends leaves its param in the URL. This race is older than the DX scan.
+- SEL-02 has no Storybook story that shows a pending selection group, so no e2e test covers `aria-busy`.
+- Under heavy load (load average above 20), some components scenario specs time out at 5 s. Each one passes alone.
+- Commit `b53c99304` has the subject `test(components)` but also holds the SEL-02 source fix.
 
 ## 5. What shipped
 
@@ -110,6 +111,37 @@ A human can reverse each of these.
 | Changesets within the word bar                   | `1d51e5323`                                      |
 | CR-12 error-codes page + CI check                | `1a6f5c22e`, `84f738d78`                         |
 
+## 6. Endgame session 2026-10-03
+
+| Item                                                                       | Commit(s)                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RTE-07 textbox ARIA                                                        | `f8d2982dc`                                                                                                                                                                                                                                                                     |
+| Overlay URL param after a guard-cancelled navigation, and two review fixes | `df80a8246`, `046b1f89e`, `65448bd42`                                                                                                                                                                                                                                           |
+| FG-09 `legacy-color-themes` migration (level `recommended`)                | `3a398122f`, `9fca6f2a5`, `291b82272`                                                                                                                                                                                                                                           |
+| Error-codes check: bare literals, query, duplicates                        | `24ee259dd`, `a6654f5da`, `afe82a1ec`, `bf94fb6b1`                                                                                                                                                                                                                              |
+| FI-05 `hidden` and `warnings` on every form control                        | `abc205668`, `95282ceee`                                                                                                                                                                                                                                                        |
+| SEL-02 `aria-busy` on selection groups                                     | `b53c99304`                                                                                                                                                                                                                                                                     |
+| Scenario tests (core, query)                                               | `4dc86c66c`, `8367ae41e`, `4378e96b7`                                                                                                                                                                                                                                           |
+| Spec tests (components, cli, agent-rules, eslint-plugin, contentful)       | `81b05a500`, `f1f645a21`, `df12895c7`, `0b5fe2196`, `ece6ffb5b`, `d5084bdfe`, `e5e26bb88`, `7bd260292`, `c882d0978`, `4aee7c12d`, `2dcf74ad1`                                                                                                                                   |
+| Storybook e2e: new suites and less flaky tests                             | `2262c6e2e`, `59ab99ab8`, `aa3a876e6`                                                                                                                                                                                                                                           |
+| Docs audit                                                                 | `dc95a6a4d`, `a9f0c8adc`, `57f1abc2b`, `412d09301`, `1319dfc58`, `fce2af577`, `2368f8bd9`, `ce7b9034a`, `69e29adaa`, `c1a4f0ba8`, `de91bfd65`, `8873946c6`, `72a9d76d9`, `07d00881a`, `f67792cd8`, `6b9ed6ad0`, `bd94c9ee8`, `2e6257f30`, `6caa43285`, `ff7a991f9`, `f1bacbecf` |
+| CI: export coverage, bundle goldens, sdk-docs skill                        | `8fe221099`, `29eb40ada`, `8dd9db72b`, `630403d4b`                                                                                                                                                                                                                              |
+
 ## Verification
 
-Pending: full test run and ci-check (coordinator fills this in).
+All checks ran on 2026-10-03 against `next`. Nothing is pushed.
+
+| Check                                                       | Result                                                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `nx test components` (quiet machine)                        | `Test Files 493 passed (493)`, `Tests 6225 passed \| 12 skipped (6237)`                                               |
+| `nx test query`                                             | `Test Files 199 passed (199)`                                                                                         |
+| `nx test core`                                              | `Test Files 124 passed (124)`                                                                                         |
+| `nx test bracket`                                           | `Test Files 19 passed (19)`                                                                                           |
+| format, `agents:check`, `versions:check`, `lint:changesets` | pass                                                                                                                  |
+| `docs:error-codes:check`                                    | `All 268 error codes are documented.`                                                                                 |
+| export coverage (query, core, components)                   | pass                                                                                                                  |
+| affected typecheck, lint, test, build (base `main`)         | pass                                                                                                                  |
+| treeshake bundle goldens                                    | pass (all entries within tolerance)                                                                                   |
+| `nx build docs`, `build-storybook:ci`                       | pass                                                                                                                  |
+| `test-storybook`                                            | `Tests 684 passed (684)`                                                                                              |
+| storybook-e2e                                               | Changed suites pass with `--repeat-each=5`. Run the full suite in CI: on this Mac, some tests flake under heavy load. |
