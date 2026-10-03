@@ -1,31 +1,31 @@
 @layer components {
   @property --et-notification-border-radius {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 4px;
   }
 
   @property --et-notification-padding {
     syntax: '*';
-    inherits: false;
+    inherits: true;
     initial-value: 12px 12px 12px 14px;
   }
 
   @property --et-notification-min-width {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 300px;
   }
 
   @property --et-notification-max-width {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 420px;
   }
 
   @property --et-notification-shadow {
     syntax: '*';
-    inherits: false;
+    inherits: true;
     initial-value:
       0 4px 16px rgb(var(--et-shadow-color-rgb, 0 0 0) / 10%),
       0 0 0 1px rgb(var(--et-shadow-color-rgb, 0 0 0) / 5%);
@@ -33,61 +33,61 @@
 
   @property --et-notification-border-width {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 4px;
   }
 
   @property --et-notification-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-notification-line-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 20px;
   }
 
   @property --et-notification-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 8px;
   }
 
   @property --et-notification-title-font-weight {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
     initial-value: 600;
   }
 
   @property --et-notification-message-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 
   @property --et-notification-message-line-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 16px;
   }
 
   @property --et-notification-message-opacity {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
     initial-value: 0.65;
   }
 
   @property --et-notification-progress-bar-height {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 3px;
   }
 
   @property --et-notification-icon-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 16px;
   }
 
