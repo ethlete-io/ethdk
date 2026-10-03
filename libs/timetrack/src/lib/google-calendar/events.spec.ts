@@ -171,6 +171,40 @@ describe('fetchGoogleCalendarEvents$', () => {
     expect(collect(transport).map((event) => event.title)).toEqual(['Deep work']);
   });
 
+  it('keeps the real length of a meeting held over the night the clocks go forward', () => {
+    const [event] = collect(
+      eventTransport([
+        {
+          items: [
+            {
+              ...MEETING,
+              start: { dateTime: '2026-03-29T01:30:00+01:00' },
+              end: { dateTime: '2026-03-29T03:30:00+02:00' },
+            },
+          ],
+        },
+      ]).transport,
+    );
+
+    expect(event!.until.getTime() - event!.at.getTime()).toBe(60 * 60_000);
+  });
+
+  it('drops an event whose times are not dates, and one with no end', () => {
+    expect(
+      collect(
+        eventTransport([
+          {
+            items: [
+              { ...MEETING, id: 'x', start: { dateTime: 'tomorrow' } },
+              { ...MEETING, id: 'y', end: {} },
+              { ...MEETING, id: 'z', end: { dateTime: MEETING.start!.dateTime } },
+            ],
+          },
+        ]).transport,
+      ),
+    ).toEqual([]);
+  });
+
   it('drops an event that ends before it starts', () => {
     const { transport } = eventTransport([{ items: [{ ...MEETING, end: { dateTime: '2026-08-11T09:00:00+02:00' } }] }]);
 
@@ -288,6 +322,24 @@ describe('listGoogleCalendarEvents$', () => {
         response: 'declined',
       },
     ]);
+  });
+
+  it('drops an all-day entry whose date does not exist or that has no end', () => {
+    expect(
+      list([
+        { id: 'a', summary: 'Bad', start: { date: '2026-02-30' }, end: { date: '2026-03-01' } },
+        { id: 'b', summary: 'Open', start: { date: '2026-08-11' } },
+        { id: 'c', summary: 'Garbled', start: { date: '11.08.2026' }, end: { date: '12.08.2026' } },
+      ]),
+    ).toEqual([]);
+  });
+
+  it('keeps a multi-day entry with its exclusive end date', () => {
+    expect(
+      list([{ id: 'trip', summary: 'Trip', start: { date: '2026-12-31' }, end: { date: '2027-01-02' } }])?.map(
+        (event: { start: Date; end: Date }) => [event.start, event.end],
+      ),
+    ).toEqual([[new Date(2026, 11, 31), new Date(2027, 0, 2)]]);
   });
 
   it('drops a cancelled occurrence and a working location', () => {

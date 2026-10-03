@@ -160,7 +160,11 @@ const RESPONSES = ['accepted', 'declined', 'tentative', 'needsAction'] as const;
 const localMidnightOf = (value: string | undefined) => {
   const match = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
-  return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : undefined;
+  if (!match) return undefined;
+
+  const at = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+
+  return at.getMonth() === Number(match[2]) - 1 && at.getDate() === Number(match[3]) ? at : undefined;
 };
 
 const responseOf = (resource: GoogleCalendarEventResource): GoogleCalendarResponse => {
