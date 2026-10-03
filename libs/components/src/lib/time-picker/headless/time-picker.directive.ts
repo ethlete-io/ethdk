@@ -1,6 +1,6 @@
 import { Directive, computed, input, model, output, signal } from '@angular/core';
 import { injectHostElement } from '@ethlete/core';
-import { Locale, isSameDay, setMilliseconds, setMinutes, setSeconds, startOfDay } from 'date-fns';
+import { Locale, isSameDay, setMilliseconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
 import { setTimeOfDay } from './internals/time-availability';
@@ -156,9 +156,10 @@ export class TimePickerDirective {
     }
 
     const now = this.now();
-    const minute = now.getMinutes() - (now.getMinutes() % this.minuteStep());
+    const minuteOfDay = now.getHours() * 60 + now.getMinutes();
+    const snapped = minuteOfDay - (minuteOfDay % this.minuteStep());
 
-    return setMilliseconds(setSeconds(setMinutes(now, minute), 0), 0);
+    return setMilliseconds(setTimeOfDay(now, { hour: Math.floor(snapped / 60), minute: snapped % 60, second: 0 }), 0);
   });
 
   /** @internal The value of one end as a minute of the day. `single` mode reads `start`. */

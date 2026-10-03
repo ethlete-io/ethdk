@@ -177,6 +177,39 @@ describe('dateRangeBounds', () => {
   it('passes an empty range', () => {
     expect(errorsFor(range(null, null), (path) => dateRangeBounds(path, { min: new Date(), valueFormat }))).toEqual([]);
   });
+
+  it('treats a null bound or a bound function returning null as no bound', () => {
+    const value = range('1900-01-01', '2999-12-31');
+
+    expect(errorsFor(value, (path) => dateRangeBounds(path, { min: null, max: null, valueFormat }))).toEqual([]);
+    expect(
+      errorsFor(value, (path) => dateRangeBounds(path, { min: () => null, max: () => null, valueFormat })),
+    ).toEqual([]);
+  });
+
+  it('reports a reversed range inside the bounds only through the order validator', () => {
+    const value = range('2026-03-10', '2026-03-05');
+    const options = { min: new Date(2026, 2, 1), max: new Date(2026, 2, 31), valueFormat };
+
+    expect(errorsFor(value, (path) => dateRangeBounds(path, options))).toEqual([]);
+    expect(
+      errorsFor(value, (path) => {
+        dateRangeBounds(path, options);
+        dateRangeOrder(path, { valueFormat });
+      }).map(({ kind }) => kind),
+    ).toEqual(['rangeOrder']);
+  });
+
+  it('reports a reversed range that also crosses a bound with both kinds', () => {
+    const value = range('2026-04-02', '2026-03-05');
+
+    expect(
+      errorsFor(value, (path) => {
+        dateRangeBounds(path, { max: new Date(2026, 2, 31), valueFormat });
+        dateRangeOrder(path, { valueFormat });
+      }).map(({ kind }) => kind),
+    ).toEqual(['rangeMax', 'rangeOrder']);
+  });
 });
 
 describe('dateTimeRangeOrder', () => {

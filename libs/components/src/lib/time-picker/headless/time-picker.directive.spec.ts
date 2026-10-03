@@ -125,6 +125,30 @@ describe('TimePickerDirective', () => {
     expect(timeOf(picker().anchorTime())).toBe('08:12:03');
   });
 
+  it('anchors an empty ring to a stop when the minute step does not divide an hour', () => {
+    host.minuteStep.set(90);
+    tick();
+
+    expect(timeOf(picker().anchorTime())).toBe('09:00:00');
+
+    key('ArrowUp');
+
+    expect(timeOf(host.value())).toBe('10:30:00');
+  });
+
+  it('steps an empty ring from now to the next stop past midnight', () => {
+    vi.setSystemTime(at(23, 58, 10));
+    handle().dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget: null }));
+    host.minuteStep.set(15);
+    tick();
+
+    expect(timeOf(picker().anchorTime())).toBe('23:45:00');
+
+    key('ArrowUp');
+
+    expect(timeOf(host.value())).toBe('00:00:00');
+  });
+
   it('filters against the current day once focus enters a picker that stayed mounted past midnight', () => {
     vi.setSystemTime(new Date(2026, 6, 17, 23, 58));
 
