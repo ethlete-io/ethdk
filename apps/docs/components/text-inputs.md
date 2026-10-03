@@ -522,7 +522,8 @@ The phone input also takes the `pending`, `maxLength`, `hidden` and `warnings` i
 Typing national digits builds the `+dial` value; a national trunk `0` is stripped
 (`0171…` with Germany active → `+49171…` - except for countries like Italy where
 the `0` is part of the number), and the `00` international call prefix works like
-`+` (`0049…` → `+49…`). Typing or pasting a full `+…` number re-derives the
+`+` (`0049…` → `+49…`). A bracketed trunk `0` in an international number is
+dropped (`+49 (0) 171…` → `+49171…`). Typing or pasting a full `+…` number re-derives the
 country by longest prefix match - but a manually picked country survives shared
 dial codes (`+1` stays Canada if you chose Canada) unless the number carries a
 longer prefix of another country (`+1416…` moves the US to Canada), and a number

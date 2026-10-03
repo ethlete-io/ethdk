@@ -15,6 +15,8 @@ import { TextFieldControlDirective } from '../../form-field/headless/text-field-
 
 const onlyDigits = (raw: string) => raw.replace(/\D/g, '');
 
+const BRACKETED_TRUNK_ZERO = /\(\s*0\s*\)/g;
+
 const toPhoneCountryCode = (iso2: string) => {
   const code = iso2.trim().toLowerCase();
 
@@ -209,14 +211,15 @@ export class PhoneInputDirective extends TextFieldControlDirective implements Fo
    * @internal Wired to the tel field. Raw text starting with `+` (or the `00` international
    * call prefix) re-derives the country by longest dial-code match; anything else is national
    * digits for the active country, with a national trunk `0` stripped where applicable
-   * (`0171…` with Germany active → `+49171…`).
+   * (`0171…` with Germany active → `+49171…`, `+49 (0) 171…` → `+49171…`).
    */
   public setNationalInput(raw: string) {
     const trimmed = raw.trim();
     const digits = onlyDigits(trimmed);
 
     if (trimmed.startsWith('+') || digits.startsWith('00')) {
-      const international = digits.startsWith('00') ? digits.slice(2) : digits;
+      const internationalDigits = onlyDigits(trimmed.replace(BRACKETED_TRUNK_ZERO, ''));
+      const international = internationalDigits.startsWith('00') ? internationalDigits.slice(2) : internationalDigits;
 
       this.commitTypedValue(international ? `+${international}` : '');
 
