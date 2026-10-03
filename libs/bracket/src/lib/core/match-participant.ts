@@ -114,7 +114,11 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
             (r) => r.type === DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE.REVERSE_FINAL,
           );
 
-          if (!hasReverseFinal) break;
+          if (!hasReverseFinal) {
+            isEliminationMatch = true;
+            isEliminated = isLooser ?? false;
+            break;
+          }
 
           const currentMatchIndex = participantBase.matchIds.indexOf(match.id as BracketMatchId);
 
