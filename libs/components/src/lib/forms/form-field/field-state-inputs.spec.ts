@@ -127,6 +127,27 @@ class SchemaHiddenFieldTestHost {
 })
 class UnboundFieldStateTestHost {}
 
+@Component({
+  template: `
+    <et-form-field class="range-warning-field">
+      <et-label>Stay</et-label>
+      <et-date-range-input warnings="Range advisory" />
+    </et-form-field>
+    <et-form-field class="range-hidden-field">
+      <et-label>Shift</et-label>
+      <et-time-range-input [formField]="demoForm.shift" />
+    </et-form-field>
+  `,
+  imports: [FORM_FIELD_IMPORTS, DateRangeInputComponent, TimeRangeInputComponent, FormField],
+})
+class RangeFieldStateTestHost {
+  hide = signal(false);
+  model = signal({ shift: { start: null as string | null, end: null as string | null } });
+  demoForm = form(this.model, (s) => {
+    hidden(s.shift, () => this.hide());
+  });
+}
+
 const FIELD_STATE_WRAPPERS = [
   { selector: 'et-select', component: SelectComponent },
   { selector: 'et-cascader', component: CascaderComponent },
@@ -211,6 +232,27 @@ describe('self-hosted control field state', () => {
     expect(host.querySelector('.tags-field')?.textContent).toContain('Tags advisory');
     expect(host.querySelector('et-checkbox-group')?.textContent).toContain('Group advisory');
     expect((host.querySelector('et-segmented-button-group') as HTMLElement).style.display).toBe('none');
+  });
+
+  it('hands warnings and hidden of a range input to its form field', async () => {
+    const fixture = mount(RangeFieldStateTestHost);
+    const host = fixture.nativeElement as HTMLElement;
+
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.range-warning-field')?.textContent).toContain('Range advisory');
+    expect((host.querySelector('.range-hidden-field') as HTMLElement).style.display).toBe('');
+
+    fixture.componentInstance.hide.set(true);
+    fixture.detectChanges();
+
+    expect((host.querySelector('.range-hidden-field') as HTMLElement).style.display).toBe('none');
+
+    fixture.componentInstance.hide.set(false);
+    fixture.detectChanges();
+
+    expect((host.querySelector('.range-hidden-field') as HTMLElement).style.display).toBe('');
   });
 });
 

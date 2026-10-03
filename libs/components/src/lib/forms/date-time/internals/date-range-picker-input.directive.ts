@@ -144,6 +144,8 @@ export abstract class DateRangePickerInputDirective
     required: this.required,
     disabled: this.disabled,
     readonly: this.readonly,
+    hidden: this.hidden,
+    warnings: this.warnings,
     describedBy: this.describedBy,
     // both are subclass fields, which initialize after this one - reading them through a computed
     // defers it past construction. Assigning them directly would register `undefined`.
