@@ -412,7 +412,7 @@ Each throws [`ET4300`](/components/error-codes#match-et43xx) in dev mode when us
   `"FC Berlin won"`, because the letters carry no meaning read aloud.
 - **Nothing a layout hides is lost.** The dense row drops the label and kick-off from the _drawing_ only; both
   are still in the card's composed name, which is what a screen reader reads. Same for `hideNames`. The
-  subtitle is not part of the default `matchName` - add it in your own `matchName` if it matters.
+  subtitle is the exception: it is drawn only, and never part of the composed name.
 - **The meta row is hidden** (`aria-hidden`) because the label, live badge and kick-off are all in the card's
   name already.
 - **The series breakdown stays exposed**, as a real list, with each game numbered (`"Game 2: 8 : 13"`) - a bare
