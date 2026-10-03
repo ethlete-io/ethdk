@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, Location } from '@angular/common';
 import { Injector, PLATFORM_ID, Signal, computed, inject, runInInjectionContext } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Data, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
@@ -47,7 +47,9 @@ const createInitialRoute = () => {
     return router.url;
   }
 
-  return window.location.pathname + window.location.search + window.location.hash;
+  const path = inject(Location).path(true);
+
+  return path.startsWith('/') ? path : `/${path}`;
 };
 
 /** Inject the current router event */
