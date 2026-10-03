@@ -35,14 +35,23 @@ export const parseCommandArgs = (command: string, argv: readonly string[]): Comm
 
     if (VALUE_FLAGS.includes(flag)) {
       const value = separator === -1 ? argv[++index] : argument.slice(separator + 1);
+      const targets = value
+        ?.split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0);
 
-      if (!value || value.startsWith('-')) {
+      if (!value || value.startsWith('-') || (flag === '--targets' && !targets?.length)) {
         args.problems.push(`${flag} needs a value.`);
         continue;
       }
 
       if (flag === '--root') args.root = value;
-      else args.targets = value.split(',').map((entry) => entry.trim()) as AgentTarget[];
+      else args.targets = targets as AgentTarget[];
+      continue;
+    }
+
+    if (separator !== -1) {
+      args.problems.push(`${flag} takes no value.`);
       continue;
     }
 
