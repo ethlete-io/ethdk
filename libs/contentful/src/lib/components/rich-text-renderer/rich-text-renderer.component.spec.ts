@@ -1,4 +1,5 @@
-import { Component, OnDestroy, input, signal } from '@angular/core';
+import { APP_BASE_HREF } from '@angular/common';
+import { Component, OnDestroy, Provider, input, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
@@ -172,6 +173,7 @@ type SetupOptions = {
   useStubAssetComponents?: boolean;
   withoutConfig?: boolean;
   withoutDefaultComponents?: boolean;
+  providers?: Provider[];
 };
 
 const setup = (options: SetupOptions = {}) => {
@@ -198,6 +200,7 @@ const setup = (options: SetupOptions = {}) => {
               customComponents: options.customComponents ?? {},
             }),
           ]),
+      ...(options.providers ?? []),
     ],
   });
 
@@ -603,6 +606,28 @@ describe('ContentfulRichTextRendererComponent', () => {
       fixture.detectChanges();
 
       expect(renderRoot(fixture).querySelector('a')?.getAttribute('href')).toBe(expected);
+    });
+
+    it('prefixes a route-relative href of a fallback anchor with the base href', async () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        providers: [{ provide: APP_BASE_HREF, useValue: '/app/' }],
+        richText: doc(block('paragraph', [hyperlink('#comments', 'Link')])),
+      });
+
+      await TestBed.inject(Router).navigateByUrl('/news/article-1');
+      fixture.detectChanges();
+
+      expect(renderRoot(fixture).querySelector('a')?.getAttribute('href')).toBe('/app/news/article-1#comments');
+    });
+
+    it('leaves a root-relative href of a fallback anchor untouched', () => {
+      const { fixture } = setup({
+        withoutConfig: true,
+        richText: doc(block('paragraph', [hyperlink('/about', 'Link')])),
+      });
+
+      expect(renderRoot(fixture).querySelector('a')?.getAttribute('href')).toBe('/about');
     });
 
     it('does not assign an unsafe href to a fallback anchor', () => {
