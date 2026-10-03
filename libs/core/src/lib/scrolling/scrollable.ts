@@ -156,6 +156,17 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
   };
 };
 
+const nearestAlignment = (elStart: number, elEnd: number, conStart: number, conEnd: number) => {
+  const startOutside = elStart < conStart;
+  const endOutside = elEnd > conEnd;
+  const fits = elEnd - elStart <= conEnd - conStart;
+
+  if (startOutside === endOutside) return null;
+  if (startOutside === fits) return 'start';
+
+  return 'end';
+};
+
 export const getElementScrollCoordinates = (options: ScrollToElementOptions): ScrollToOptions => {
   const {
     container,
@@ -167,7 +178,12 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
     scrollInlineMargin = 0,
   } = options;
 
-  if (!element || !container || !elementCanScroll(container)) {
+  if (
+    !element ||
+    !container ||
+    (container.isConnected && !container.contains(element)) ||
+    !elementCanScroll(container)
+  ) {
     return {
       behavior,
       left: undefined,
@@ -223,16 +239,14 @@ export const getElementScrollCoordinates = (options: ScrollToElementOptions): Sc
   };
 
   const calculateScrollToNearest = () => {
-    const isAbove = elTop < conTop;
-    const isBelow = !isAbove && elBottom > conBottom;
-    const isLeft = elLeft < conLeft;
-    const isRight = !isLeft && elRight > conRight;
+    const inline = nearestAlignment(elLeft, elRight, conLeft, conRight);
+    const block = nearestAlignment(elTop, elBottom, conTop, conBottom);
 
-    if (isLeft) calculateInlineStart();
-    else if (isRight) calculateInlineEnd();
+    if (inline === 'start') calculateInlineStart();
+    else if (inline === 'end') calculateInlineEnd();
 
-    if (isAbove) calculateBlockStart();
-    else if (isBelow) calculateBlockEnd();
+    if (block === 'start') calculateBlockStart();
+    else if (block === 'end') calculateBlockEnd();
   };
 
   switch (origin) {
