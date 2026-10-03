@@ -93,6 +93,6 @@ The dismiss button's accessible label comes from `injectBannerLabels()` / `provi
 
 ## Theming
 
-Public design tokens: `--et-banner-gap`, `--et-banner-padding`, `--et-banner-border-radius`, `--et-banner-icon-size`, `--et-banner-heading-size`, `--et-banner-heading-weight`, `--et-banner-description-size`.
+Public design tokens: `--et-banner-gap`, `--et-banner-padding`, `--et-banner-border-radius`, `--et-banner-icon-size`, `--et-banner-heading-size`, `--et-banner-heading-weight`, `--et-banner-description-size`. All of them inherit, so setting one on `et-banner` or any ancestor reaches the icon, heading and description that read it.
 
 There is no global "warning color" or "success color" variable - each is a theme your app registers with the matching `type`, the same theming model [query-error](/components/query-error#theming) uses for its error color. Inside the resolved color scope, `--et-theme-color-primary-*` **is** that color, so the panel's tint, border and icon all follow it, and any projected action inherits it without being told.

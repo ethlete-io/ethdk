@@ -1,43 +1,43 @@
 @layer components {
   @property --et-banner-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 
   @property --et-banner-padding {
     syntax: '*';
-    inherits: false;
+    inherits: true;
     initial-value: 16px;
   }
 
   @property --et-banner-border-radius {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 12px;
   }
 
   @property --et-banner-icon-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 20px;
   }
 
   @property --et-banner-heading-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-banner-heading-weight {
     syntax: '<number>';
-    inherits: false;
+    inherits: true;
     initial-value: 600;
   }
 
   @property --et-banner-description-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
