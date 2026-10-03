@@ -79,14 +79,14 @@ if (defined.length === 0) {
 const named = new Map();
 const duplicates = [];
 for (const d of defined.filter((d) => d.name !== '(bare literal)')) {
-  const key = `${d.lib}:${d.code}`;
+  const key = `${pages[d.lib]}:${d.code}`;
   const first = named.get(key);
-  if (first && first.name !== d.name) duplicates.push([first, d]);
+  if (first && (first.name !== d.name || first.file !== d.file)) duplicates.push([first, d]);
   else if (!first) named.set(key, d);
 }
 
 if (duplicates.length) {
-  console.error(`${duplicates.length} error code(s) are declared twice within one lib:\n`);
+  console.error(`${duplicates.length} error code(s) are declared twice for one docs page:\n`);
   for (const [a, b] of duplicates) {
     console.error(`  ET${a.code} ${a.name} (${a.file}) and ${b.name} (${b.file})`);
   }
