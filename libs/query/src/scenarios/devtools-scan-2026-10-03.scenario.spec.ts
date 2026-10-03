@@ -38,7 +38,7 @@ describe('devtools scan 2026-10-03', () => {
   const scenario = useScenario({
     name: CLIENT_NAME,
     clientOptions: { keepUnusedFor: 0 },
-    providers: () => [provideQueryDevtools({ schema: () => SCHEMA })],
+    providers: () => [provideQueryDevtools({ schema: () => SCHEMA, responseHistory: Number.NaN })],
   });
 
   beforeEach(() => {
@@ -135,6 +135,32 @@ describe('devtools scan 2026-10-03', () => {
     expect(standings.response()).toMatchObject({ items: [{ id: 1 }, { id: 2 }], total: 2, live: true });
 
     recorder.clearAll();
+    c.destroy();
+  });
+
+  it('keeps the default five bodies when responseHistory is not a number', async () => {
+    const s = scenario();
+    expect(isQueryDevtoolsEnabled()).toBe(true);
+
+    let n = 0;
+
+    s.api.on('GET', '/fixtures', () => ({ body: { run: ++n } }));
+
+    const getFixtures = s.get<{ response: { run: number } }>('/fixtures');
+    const c = s.consumer();
+    const fixtures = c.run(() => getFixtures());
+    await s.settle();
+
+    fixtures.execute();
+    await s.settle();
+
+    const runs =
+      queryDevtoolsEntries()
+        .find((entry) => entry.handle === fixtures)
+        ?.stats?.runs() ?? [];
+
+    expect(runs.map((run) => run.response)).toEqual([{ run: 1 }, { run: 2 }]);
+
     c.destroy();
   });
 });

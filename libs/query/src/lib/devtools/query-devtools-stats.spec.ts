@@ -378,6 +378,16 @@ describe('query devtools stats', () => {
       expect(queryDevtoolsResponseHistory()).toBe(5);
     });
 
+    it('should fall back to the default retention for a count that is not a number', () => {
+      setQueryDevtoolsResponseHistory(Number.NaN);
+
+      try {
+        expect(queryDevtoolsResponseHistory()).toBe(5);
+      } finally {
+        setQueryDevtoolsResponseHistory(undefined);
+      }
+    });
+
     it('should not count a run without a body against the retained window', () => {
       const recorder = createQueryDevtoolsStats();
 

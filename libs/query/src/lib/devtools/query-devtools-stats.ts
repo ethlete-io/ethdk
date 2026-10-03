@@ -278,7 +278,8 @@ export const queryDevtoolsResponseHistory = () => queryDevtoolsSettings().respon
  * @internal
  */
 export const setQueryDevtoolsResponseHistory = (count: number | undefined) => {
-  providedResponseHistory = count === undefined ? DEFAULT_RESPONSE_HISTORY : Math.max(1, Math.floor(count));
+  providedResponseHistory =
+    count === undefined || Number.isNaN(count) ? DEFAULT_RESPONSE_HISTORY : Math.max(1, Math.floor(count));
 };
 
 /** The index of the newest run still in flight, or -1 when none is. */
