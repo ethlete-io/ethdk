@@ -195,12 +195,15 @@ export const formatFileSize = (bytes: number) => {
   let size = bytes;
   let unitIndex = 0;
 
-  while (size >= 1024 && unitIndex < FILE_SIZE_UNITS.length - 1) {
+  const lastUnitIndex = FILE_SIZE_UNITS.length - 1;
+  const roundedSize = () => (unitIndex === 0 ? size : Math.round(size * 10) / 10);
+
+  while (roundedSize() >= 1024 && unitIndex < lastUnitIndex) {
     size /= 1024;
     unitIndex++;
   }
 
-  const rounded = unitIndex === 0 ? size : Math.round(size * 10) / 10;
+  const rounded = roundedSize();
 
   return `${rounded} ${FILE_SIZE_UNITS[unitIndex]}`;
 };
