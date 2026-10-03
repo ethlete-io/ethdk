@@ -165,7 +165,8 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
     const id = createComponentId('ovr');
     let syncUrl = config.syncUrl ?? false;
     let ownHistoryEntries = 0;
-    let closedByNavigation = false;
+    let closingNavigation: 'pending' | 'navigated' | 'stayed' | null = null;
+    let destroyed = false;
 
     let router: Router | null = null;
     let route: Signal<string> | null = null;
@@ -462,7 +463,10 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
           take(1),
           tap(({ source }) => {
             isClosing = true;
-            closedByNavigation = source === 'navigation';
+
+            if (source === 'navigation') {
+              watchClosingNavigation(angularRouter);
+            }
           }),
         )
         .subscribe();
@@ -542,18 +546,14 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
       }
     };
 
-    inject(DestroyRef).onDestroy(() => {
-      if (!syncUrl) return;
+    const pathOf = (url: string) => url.split(/[?#]/, 1)[0];
 
-      if (!closedByNavigation || !router) {
-        clearUrlParam();
+    // Touching the history while the navigation that closed the overlay is in flight would cancel it.
+    // Once it settles, only a navigation that stayed on this page (a guard cancelled it) leaves the param behind.
+    const watchClosingNavigation = (angularRouter: Router) => {
+      const pathAtClose = pathOf(angularRouter.url);
 
-        return;
-      }
-
-      // Touching the history while the navigation that closed the overlay is in flight would cancel it.
-      // A guard can still cancel it, which leaves the page on its old URL with this param in it.
-      const angularRouter = router;
+      closingNavigation = 'pending';
 
       angularRouter.events
         .pipe(
@@ -568,9 +568,21 @@ const OVERLAY_ROUTER_DEF = /* @__PURE__ */ defineProvider(
           observeOn(asapScheduler),
           filter(() => angularRouter.currentNavigation() === null),
           take(1),
-          tap(() => clearUrlParam()),
+          tap(() => {
+            closingNavigation = pathOf(angularRouter.url) === pathAtClose ? 'stayed' : 'navigated';
+
+            if (destroyed && closingNavigation === 'stayed') clearUrlParam();
+          }),
         )
         .subscribe();
+    };
+
+    inject(DestroyRef).onDestroy(() => {
+      destroyed = true;
+
+      if (!syncUrl || closingNavigation === 'pending' || closingNavigation === 'navigated') return;
+
+      clearUrlParam();
     });
 
     return {

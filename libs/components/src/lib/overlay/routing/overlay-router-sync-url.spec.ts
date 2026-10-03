@@ -5,7 +5,9 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import '../../../test-helpers';
 import { injectOverlayManager } from '../overlay-manager';
+import { OverlayConfig } from '../overlay-config';
 import { OverlayRef } from '../overlay-ref';
+import { dialogOverlayStrategy } from '../strategies';
 import { OverlayRouter, injectOverlayRouter, provideOverlayRouter } from './overlay-router';
 
 @Component({ template: 'page' })
@@ -40,6 +42,7 @@ describe('OverlayRouter with syncUrl', () => {
       providers: [
         provideRouter([
           { path: 'guarded', canActivate: [guard], children: [] },
+          { path: 'blocked', canActivate: [() => false], children: [] },
           { path: '**', children: [] },
         ]),
         provideLocationMocks(),
@@ -47,7 +50,7 @@ describe('OverlayRouter with syncUrl', () => {
     });
   });
 
-  const open = async () => {
+  const open = async (config: OverlayConfig = {}) => {
     router = TestBed.inject(Router);
     location = TestBed.inject(Location);
     router.setUpLocationChangeListener();
@@ -56,6 +59,7 @@ describe('OverlayRouter with syncUrl', () => {
     const manager = TestBed.runInInjectionContext(() => injectOverlayManager());
 
     ref = manager.open<RoutedOverlayComponent>(RoutedOverlayComponent, {
+      ...config,
       providers: [
         provideOverlayRouter({
           routes: [
@@ -206,5 +210,59 @@ describe('OverlayRouter with syncUrl', () => {
     await browser('back');
 
     expect(router.url).toBe('/');
+  });
+
+  it('clears its url param when a guard cancels the closing navigation before the overlay is destroyed', async () => {
+    const overlayRouter = await open({ strategies: dialogOverlayStrategy() });
+
+    await goTo(overlayRouter, '/two');
+
+    let finishLeave!: () => void;
+    const leave = {
+      playState: 'running',
+      effect: { pseudoElement: null, getComputedTiming: () => ({ iterations: 1 }) },
+      finished: new Promise<void>((resolve) => (finishLeave = resolve)),
+    } as unknown as Animation;
+    let running = [leave];
+    Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => running });
+    onTestFinished(() => {
+      delete (Element.prototype as Partial<Element>).getAnimations;
+    });
+
+    let closed = false;
+    ref.afterClosedEvent().subscribe(() => (closed = true));
+
+    await expect(router.navigateByUrl('/blocked')).resolves.toBe(false);
+    await settle();
+
+    expect(closed).toBe(false);
+
+    running = [];
+    finishLeave();
+    await settle();
+
+    expect(closed).toBe(true);
+    expect(router.url).toBe('/page');
+
+    await browser('back');
+
+    expect(router.url).toBe('/');
+  });
+
+  it('leaves the url alone when the navigation that closed the overlay keeps its param', async () => {
+    const overlayRouter = await open();
+
+    await goTo(overlayRouter, '/two');
+
+    const navigation = router.navigateByUrl(router.createUrlTree(['/guarded'], { queryParamsHandling: 'preserve' }));
+    await settle();
+
+    releaseGuard(true);
+
+    await expect(navigation).resolves.toBe(true);
+    await settle();
+
+    expect(router.url).toMatch(/^\/guarded\?/);
+    expect(location.path()).toBe(router.url);
   });
 });
