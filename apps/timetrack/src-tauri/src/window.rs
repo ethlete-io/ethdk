@@ -18,7 +18,9 @@ pub enum WindowEventPayload {
     IdleStart,
     IdleEnd,
     /// Input stopped a minute ago. Says only that the seat went untouched, never what was touched.
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     InputIdle,
+    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
     InputActive,
 }
 
