@@ -30,3 +30,9 @@ describe('isQueryDevtoolsShortcut', () => {
     expect(isQueryDevtoolsShortcut(keydown({ modifierAltGraph: true, code: 'KeyQ', key: '@' }))).toBe(false);
   });
 });
+
+describe('isQueryDevtoolsShortcut with a held key', () => {
+  it('should ignore the auto-repeated keydowns of a held shortcut', () => {
+    expect(isQueryDevtoolsShortcut(keydown({ code: 'KeyQ', key: 'q', repeat: true }))).toBe(false);
+  });
+});

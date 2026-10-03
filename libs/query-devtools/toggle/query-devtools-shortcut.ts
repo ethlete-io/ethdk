@@ -9,9 +9,11 @@ export const queryDevtoolsShortcutLabel = () => (detectKbdPlatform() === 'apple'
 
 /**
  * Whether a `keydown` is the devtools toggle shortcut (`Ctrl/Cmd + Alt + Q`). AltGr is rejected: Windows
- * reports it as Ctrl+Alt, and AltGr+Q types `@` on a German layout.
+ * reports it as Ctrl+Alt, and AltGr+Q types `@` on a German layout. Auto-repeat is rejected so a held
+ * shortcut toggles once.
  */
 export const isQueryDevtoolsShortcut = (e: KeyboardEvent) =>
+  !e.repeat &&
   (e.ctrlKey || e.metaKey) &&
   e.altKey &&
   !e.getModifierState('AltGraph') &&
