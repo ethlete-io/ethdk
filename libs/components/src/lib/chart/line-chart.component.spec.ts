@@ -595,6 +595,24 @@ describe('LineChartComponent series colors', () => {
     expect(accentMixOf(element.querySelector('.et-line-chart-series'))).toBe('');
   });
 
+  it('warns in dev mode when the data does not match the series', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { host, fixture } = setupThree();
+
+    expect(warn).not.toHaveBeenCalledWith(expect.stringContaining('[LineChartDirective]'));
+
+    host.series.set([...THREE_SERIES, { key: 'league', label: 'League' }]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"league"'));
+
+    host.data.set([{ x: 'W1', value: 1 }]);
+    fixture.detectChanges();
+
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('carries no `values`'));
+    warn.mockRestore();
+  });
+
   it('warns in dev mode only when two series share a colorToken', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const { host, fixture } = setupThree();
