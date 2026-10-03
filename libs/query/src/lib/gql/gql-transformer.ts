@@ -1,7 +1,7 @@
 import { isDevMode } from '@angular/core';
 import { GqlQueryTransport } from './gql-query-creator';
 
-const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?\s*\{/;
+const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?(?:\s*@\w+(?:\s*\([^)]*\))?)*\s*\{/;
 
 const STRING_LITERAL = '"""[\\s\\S]*?"""|"(?:[^"\\\\\\n]|\\\\.)*"';
 const commentOutsideString = /* @__PURE__ */ new RegExp(`(${STRING_LITERAL})|#[^\\n\\r]*`, 'g');

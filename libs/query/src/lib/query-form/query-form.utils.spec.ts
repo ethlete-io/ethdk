@@ -79,7 +79,15 @@ describe('query form transforms', () => {
     expect(transformToSort('name:desc')).toEqual({ active: 'name', direction: 'desc' });
     expect(transformToSort('name:up')).toEqual({ active: 'name', direction: '' });
     expect(transformToSort(':asc')).toBeNull();
+    expect(transformToSort('name')).toEqual({ active: 'name', direction: '' });
+    expect(transformToSort('meta:created:desc')).toEqual({ active: 'meta:created', direction: 'desc' });
     expect(transformToSort({ active: 'name', direction: 'asc' })).toBeNull();
+  });
+
+  it('round-trips a sort whose field contains a colon', () => {
+    const sort = { active: 'meta:created', direction: 'asc' } as const;
+
+    expect(transformToSort(transformToSortQueryParam(sort))).toEqual(sort);
   });
 
   it('writes a sort as active:direction, and nothing for a sort without a direction', () => {

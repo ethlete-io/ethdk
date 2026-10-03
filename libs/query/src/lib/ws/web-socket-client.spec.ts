@@ -73,6 +73,87 @@ describe('createWebSocketClient', () => {
     expect(instance.isConnected()).toBe(false);
   });
 
+  describe('reconnect backoff', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    const connectCallsAfter = (double: ReturnType<typeof setup>['double'], ms: number) => {
+      vi.advanceTimersByTime(ms);
+
+      return double.state().connectCalls;
+    };
+
+    it('doubles the delay after every rejected handshake and caps it at 30 seconds', () => {
+      const { double } = provided();
+      const delays: number[] = [];
+
+      for (let attempt = 0; attempt < 7; attempt++) {
+        const before = double.state().connectCalls;
+        double.serverRejectHandshake();
+
+        let waited = 0;
+        while (double.state().connectCalls === before) {
+          vi.advanceTimersByTime(500);
+          waited += 500;
+        }
+        delays.push(waited);
+      }
+
+      expect(delays).toEqual([1000, 2000, 4000, 8000, 16000, 30000, 30000]);
+    });
+
+    it('keeps backing off when the server kicks a fresh connection, and starts over after a stable one', () => {
+      const { double } = provided();
+      const initial = double.state().connectCalls;
+
+      double.serverConnect();
+      double.serverDisconnect({ reason: 'io server disconnect' });
+      expect(connectCallsAfter(double, 1000)).toBe(initial + 1);
+
+      double.serverConnect();
+      vi.advanceTimersByTime(500);
+      double.serverDisconnect({ reason: 'io server disconnect' });
+      expect(connectCallsAfter(double, 1999)).toBe(initial + 1);
+      expect(connectCallsAfter(double, 1)).toBe(initial + 2);
+
+      double.serverConnect();
+      vi.advanceTimersByTime(10_000);
+      double.serverDisconnect({ reason: 'io server disconnect' });
+      expect(connectCallsAfter(double, 1000)).toBe(initial + 3);
+    });
+
+    it('leaves a transport close to socket.io', () => {
+      const { double } = provided();
+      const initial = double.state().connectCalls;
+
+      double.serverConnect();
+      double.serverDisconnect({ reason: 'transport close' });
+
+      expect(connectCallsAfter(double, 60_000)).toBe(initial);
+    });
+
+    it('schedules one reconnect for a burst of rejections', () => {
+      const { double } = provided();
+      const initial = double.state().connectCalls;
+
+      double.serverRejectHandshake();
+      double.serverRejectHandshake();
+
+      expect(connectCallsAfter(double, 1000)).toBe(initial + 1);
+      expect(connectCallsAfter(double, 60_000)).toBe(initial + 1);
+    });
+
+    it('cancels a pending reconnect when destroyed', () => {
+      const { double } = provided();
+      const initial = double.state().connectCalls;
+
+      double.serverRejectHandshake();
+      TestBed.resetTestingModule();
+
+      expect(connectCallsAfter(double, 60_000)).toBe(initial);
+    });
+  });
+
   it('should re-join every room on a reconnect, but not on the first connect', () => {
     const { double, instance } = provided();
 

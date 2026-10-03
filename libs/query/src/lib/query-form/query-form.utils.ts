@@ -109,7 +109,9 @@ export type Sort = {
 
 export const transformToSort = (value: unknown): Sort | null => {
   if (typeof value === 'string') {
-    const [active, direction] = value.split(':');
+    const separator = value.lastIndexOf(':');
+    const active = separator === -1 ? value : value.slice(0, separator);
+    const direction = separator === -1 ? '' : value.slice(separator + 1);
 
     if (!active) {
       return null;

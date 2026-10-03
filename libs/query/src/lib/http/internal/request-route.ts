@@ -221,7 +221,7 @@ export const buildRoute = (options: {
     const queryString = buildQueryString(options.queryParams, options.queryParamConfig);
 
     if (queryString) {
-      route = route ? `${route}?${queryString}` : `/?${queryString}`;
+      route = route ? `${route}${route.includes('?') ? '&' : '?'}${queryString}` : `/?${queryString}`;
     }
   }
 

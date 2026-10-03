@@ -115,6 +115,17 @@ describe('transformGql', () => {
       expect(result.operationName).toBe('CreateUser');
     });
 
+    it('extracts the operation name of an operation with directives', () => {
+      expect(transformGql('query GetUser @cached(ttl: 60) { user { id } }')(null).operationName).toBe('GetUser');
+      expect(transformGql('query GetUser($id: ID!) @live { user(id: $id) { id } }')(null).operationName).toBe(
+        'GetUser',
+      );
+    });
+
+    it('extracts the operation name when a variable default is an object', () => {
+      expect(transformGql('query Find($f: Filter = { a: 1 }) { find(f: $f) { id } }')(null).operationName).toBe('Find');
+    });
+
     it('should extract operation name from query with parameters', () => {
       const query = 'query GetUser($id: ID!) { user(id: $id) { name } }';
       const transformer = transformGql(query);
