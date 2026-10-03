@@ -247,6 +247,9 @@ chrome and no label. Lower it per column where that's genuinely fine:
 status: { header: '', value: (o) => o.status, minWidth: 40 },
 ```
 
+A fixed `width` such as `'40px'` renders as written, but [resizing](#resizable-columns) it
+still stops at `minWidth` - give a narrow fixed column a matching `minWidth` too.
+
 Past the floor the table scrolls horizontally rather than squeezing further, which the
 edge gradients advertise. **A flexible `width` you write yourself needs its own floor**
 

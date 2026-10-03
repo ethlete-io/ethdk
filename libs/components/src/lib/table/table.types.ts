@@ -275,8 +275,8 @@ export type TableColumn<T, TValue = unknown> = {
   /**
    * Narrowest this column may get (px), whether it is dragged there or squeezed there by a wider
    * neighbour. Lower it for a column that genuinely reads at a glance - a two-character status, an
-   * icon - where the default would waste space. Ignored when `width` is a fixed length, which is
-   * already the column saying exactly how wide it is.
+   * icon - where the default would waste space. A fixed-length `width` renders as written, but a
+   * resize or autosize of that column still stops at `minWidth`.
    * @default 96
    */
   minWidth?: number;

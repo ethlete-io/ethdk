@@ -124,6 +124,18 @@ describe('TableComponent', () => {
     expect(table.templateColumns()).toBe('96px 32px minmax(0, 1fr)');
   });
 
+  it('renders a fixed width as written, but still floors a resize of it at minWidth', () => {
+    const { componentInstance: table } = create({
+      name: { header: 'Name', value: (person) => person.name },
+      role: { header: 'Role', value: (person) => person.role, width: '40px' },
+    } satisfies TableColumns<Person>);
+
+    expect(table.templateColumns()).toBe('minmax(96px, 1fr) 40px');
+
+    table.setColumnWidth('role', 30);
+    expect(table.templateColumns()).toBe('minmax(96px, 1fr) 96px');
+  });
+
   describe('setSort', () => {
     const sortable = () =>
       ({
