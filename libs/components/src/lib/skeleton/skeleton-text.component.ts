@@ -30,7 +30,8 @@ export class SkeletonTextComponent {
   public lastLineWidth = input(60, { transform: numberAttribute });
 
   protected lineList = computed(() => {
-    const lines = Math.max(1, this.lines());
+    const requested = Math.floor(this.lines());
+    const lines = Number.isNaN(requested) ? 3 : Math.max(1, requested);
 
     return Array.from({ length: lines }, (_, index) => (index === lines - 1 ? this.lastLineWidth() : 100));
   });

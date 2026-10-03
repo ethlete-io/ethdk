@@ -116,6 +116,24 @@ describe('SkeletonTextComponent', () => {
     expect(driver.textLineWidths()).toEqual(['60%']);
   });
 
+  it('draws whole lines with the short one last for a fractional count', () => {
+    const driver = mountSkeleton(SkeletonTestHost);
+
+    driver.host.lines.set(2.5);
+    driver.detectChanges();
+
+    expect(driver.textLineWidths()).toEqual(['100%', '60%']);
+  });
+
+  it('falls back to the default line count for a value that is not a number', () => {
+    const driver = mountSkeleton(SkeletonTestHost);
+
+    driver.host.lines.set(Number.NaN);
+    driver.detectChanges();
+
+    expect(driver.textLineWidths()).toEqual(['100%', '100%', '60%']);
+  });
+
   it('changes the line count reactively', () => {
     const driver = mountSkeleton(SkeletonTestHost);
 
