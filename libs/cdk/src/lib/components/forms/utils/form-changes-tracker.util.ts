@@ -72,9 +72,9 @@ export const createFormChangesTracker = <T extends AbstractControl>(
   const hasChanges = computed(() => {
     const formValue = currentFormValue();
 
-    if (!formValue) return false;
+    if (formValue === null || formValue === undefined) return false;
 
-    return compareFn ? compareFn(formValue, defaultFormValue()) : equal(formValue, defaultFormValue());
+    return !(compareFn ? compareFn(formValue, defaultFormValue()) : equal(formValue, defaultFormValue()));
   });
 
   const defaultFormValue = signal(config.defaultValue ?? form.getRawValue());
