@@ -22,10 +22,15 @@ export const latestPane = () =>
 export const hostDirective = <T>(fixture: ComponentFixture<unknown>, type: Type<T>) =>
   fixture.debugElement.children[0]!.injector.get(type);
 
-export const directiveAt = <T>(fixture: ComponentFixture<unknown>, type: Type<T>, selector: string) =>
-  fixture.debugElement
-    .query((node) => (node.nativeElement as Element | null)?.matches?.(selector) ?? false)
-    .injector.get(type);
+export const directiveAt = <T>(fixture: ComponentFixture<unknown>, type: Type<T>, selector: string) => {
+  const node = fixture.debugElement.query(
+    (candidate) => (candidate.nativeElement as Element | null)?.matches?.(selector) ?? false,
+  );
+
+  if (!node) throw new Error(`No element in the fixture matches "${selector}"`);
+
+  return node.injector.get(type);
+};
 
 export const hostElement = (fixture: ComponentFixture<unknown>) =>
   fixture.debugElement.children[0]!.nativeElement as HTMLElement;

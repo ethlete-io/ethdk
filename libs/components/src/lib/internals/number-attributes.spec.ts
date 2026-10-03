@@ -19,6 +19,11 @@ describe('positiveIntegerAttribute', () => {
     expect(positiveIntegerAttribute(Number.NaN)).toBe(1);
     expect(positiveIntegerAttribute(null)).toBe(1);
   });
+
+  it('falls back to one for infinity', () => {
+    expect(positiveIntegerAttribute(Number.POSITIVE_INFINITY)).toBe(1);
+    expect(positiveIntegerAttribute('Infinity')).toBe(1);
+  });
 });
 
 describe('positiveNumberAttribute', () => {
