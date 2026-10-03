@@ -121,6 +121,14 @@ describe('QueryButtonDirective', () => {
       expect(spinner()?.getAttribute('aria-valuenow')).toBe('40');
     });
 
+    it('keeps the spinner indeterminate for a progress that is not a number, as an empty transfer reports', () => {
+      loading.set(loadingState(NaN));
+      fixture.detectChanges();
+
+      expect(button.getAttribute('data-loading')).toBe('true');
+      expect(spinner()?.classList.contains('et-spinner--determinate')).toBe(false);
+    });
+
     it('keeps the spinner indeterminate when showProgress is off', () => {
       host.showProgress.set(false);
       loading.set(loadingState(40));

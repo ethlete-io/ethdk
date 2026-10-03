@@ -21,6 +21,8 @@ export const BUTTON_TYPES = {
 
 export type ButtonType = (typeof BUTTON_TYPES)[keyof typeof BUTTON_TYPES];
 
+const finiteOrNull = (value: number | null) => (value !== null && Number.isFinite(value) ? value : null);
+
 /** @internal */
 export type ButtonLoadingSource = {
   loading: Signal<boolean>;
@@ -62,7 +64,8 @@ export class ButtonDirective {
    * of unknown length - the loading spinner then stays indeterminate.
    */
   public progress = input<number | null, number | string | null | undefined>(null, {
-    transform: (value) => (value === null || value === undefined || value === '' ? null : numberAttribute(value)),
+    transform: (value) =>
+      value === null || value === undefined || value === '' ? null : finiteOrNull(numberAttribute(value)),
   });
 
   // Without this the host binding would write `null` over a `tabindex` the consumer put on the
@@ -86,7 +89,7 @@ export class ButtonDirective {
     () =>
       this.progress() ??
       this.loadingSources()
-        .map((source) => source.progress())
+        .map((source) => finiteOrNull(source.progress()))
         .find((progress) => progress !== null) ??
       null,
   );

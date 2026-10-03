@@ -41,6 +41,14 @@ class UntabbableButtonTestHost {
   disabled = false;
 }
 
+@Component({
+  template: `<button [loading]="true" [progress]="progress" etButton>Test</button>`,
+  imports: [ButtonDirective],
+})
+class ProgressButtonTestHost {
+  progress: number | string | null = null;
+}
+
 describe('ButtonDirective', () => {
   describe('on a <button> element', () => {
     let fixture: ComponentFixture<ButtonTestHost>;
@@ -272,6 +280,32 @@ describe('ButtonDirective', () => {
       anchor.dispatchEvent(event);
 
       expect(event.defaultPrevented).toBe(false);
+    });
+  });
+
+  describe('with a progress', () => {
+    let fixture: ComponentFixture<ProgressButtonTestHost>;
+    let directive: ButtonDirective;
+
+    beforeEach(() => {
+      TestBed.configureTestingModule({ imports: [ProgressButtonTestHost] });
+      fixture = TestBed.createComponent(ProgressButtonTestHost);
+      directive = fixture.debugElement.children[0]!.injector.get(ButtonDirective);
+    });
+
+    it('reports a numeric progress', () => {
+      fixture.componentInstance.progress = '40';
+      fixture.detectChanges();
+
+      expect(directive.currentProgress()).toBe(40);
+    });
+
+    it('reports no progress for a value that is not a number', () => {
+      fixture.componentInstance.progress = 'abc';
+      fixture.detectChanges();
+
+      expect(directive.currentProgress()).toBeNull();
+      expect(directive.hasProgress()).toBe(false);
     });
   });
 });
