@@ -12,6 +12,7 @@ import {
   PicturePlaceholderDirective,
   PictureSource,
   providePictureConfig,
+  toPictureDimension,
   withPictureBaseUrl,
 } from '../index';
 import '../test-helpers';
@@ -216,6 +217,10 @@ describe('picture scenarios', () => {
     expect(normalizePictureSizes(['(min-width: 600px) 33vw', '100vw'])).toBe('(min-width: 600px) 33vw, 100vw');
     expect(normalizePictureSizes('100vw')).toBe('100vw');
     expect(normalizePictureSizes([])).toBeNull();
+
+    expect(toPictureDimension('1200')).toBe(1200);
+    expect(toPictureDimension(null)).toBeNull();
+    expect(toPictureDimension('auto')).toBeNull();
 
     expect(withPictureBaseUrl({ srcset: '/a.jpg 1x, b.jpg 2x' }, { baseUrl: 'https://cdn.example.com//' }).srcset).toBe(
       'https://cdn.example.com/a.jpg 1x, https://cdn.example.com/b.jpg 2x',

@@ -31,6 +31,7 @@ import {
   TableResizeGripComponent,
   TableSort,
   TableStickyColumnsDirective,
+  TableStickyColumnsStylesComponent,
 } from '../index';
 import { Scenario, useScenario } from './harness';
 
@@ -306,6 +307,7 @@ describe('table feature scenarios: columns', () => {
     expect(headerKeys(host)).toEqual(['category', 'stock', 'name']);
     expect(headerCell(host, 'name').classList).toContain('et-table-sticky-end');
     expect(fixture.componentInstance.pinning().hasStickyEnd()).toBe(true);
+    expect(mountedStyles(TableStickyColumnsStylesComponent)).toBe(1);
     expect(table.state().features?.['pinning']).toEqual({ name: 'end' });
 
     openMenu(s, query(headerCell(host, 'name'), '.et-table-column-menu-trigger'));
