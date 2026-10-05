@@ -627,7 +627,8 @@ const createdIssueKeyOf = (result: unknown) => {
 /**
  * The apply a match queues where the user made `autoMode.apply` stricter than `local`, and `null`
  * for any other answer or class. A stand-in's match on a done issue queues at `local` too, marked
- * `done`, since only an approval writes it; a band's stays the user's.
+ * `done`, since only an approval writes it; a band's stays the user's. A match on a parent issue queues
+ * at `local` too, marked `parent`.
  */
 export const autoModeApplyRequest = (options: {
   day: string;
@@ -642,10 +643,14 @@ export const autoModeApplyRequest = (options: {
   const opClass = actionClassOf('autoMode.apply', options.classes);
   const request = { op: 'autoMode.apply' as const, day: options.day, subject, label: options.label };
 
-  if (outcome.done) {
-    return subject.kind === 'stand-in' && opClass !== 'human-only'
-      ? { ...request, issueKey: outcome.issueKey, done: true }
-      : null;
+  const marks = {
+    ...(outcome.done ? { done: true as const } : {}),
+    ...(outcome.parent ? { parent: true as const } : {}),
+  };
+
+  if (outcome.done && subject.kind !== 'stand-in') return null;
+  if (outcome.done || outcome.parent) {
+    return opClass === 'human-only' ? null : { ...request, issueKey: outcome.issueKey, ...marks };
   }
 
   return opClass === 'external' ? { ...request, issueKey: outcome.issueKey } : null;
@@ -674,7 +679,7 @@ export const autoModeApplies = (options: {
 
   const opClass = actionClassOf('autoMode.apply', options.classes);
 
-  if (opClass === 'local') return true;
+  if (opClass === 'local' && !outcome.parent) return true;
   if (opClass === 'human-only') return false;
 
   return approval?.state === 'approved' && approval.error === undefined;

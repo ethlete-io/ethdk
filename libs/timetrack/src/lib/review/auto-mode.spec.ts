@@ -803,6 +803,55 @@ describe('a match Jira had done', () => {
   });
 });
 
+describe('a match on a parent issue', () => {
+  const parentMatch = (subject: AutoModeAnswer['subject']): AutoModeAnswer => ({
+    ...matched('FOO-1'),
+    subject,
+    outcome: { kind: 'match', issueKey: 'FOO-1', parent: true },
+  });
+
+  it('queues for approval marked parent at local, never writes before it, and never at human-only', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const answer = parentMatch({ kind: 'stand-in', standInId: standIn.id });
+    const request = (classes: ActionClasses) => autoModeApplyRequest({ day: TODAY, answer, label: 'Journey', classes });
+
+    expect(request({})).toEqual(expect.objectContaining({ issueKey: 'FOO-1', parent: true }));
+    expect(request({})).not.toHaveProperty('done');
+    expect(request({ 'autoMode.apply': 'external' })).toEqual(expect.objectContaining({ parent: true }));
+    expect(request({ 'autoMode.apply': 'human-only' })).toBeNull();
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: [] })).toBe(false);
+
+    const local = request({});
+
+    if (!local) throw new Error('nothing to queue');
+
+    const queue = enqueueApproval([], {
+      id: 'apply-1',
+      request: local,
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApplyTarget(TODAY, answer.subject),
+      at: at('10:00'),
+      day: TODAY,
+    });
+
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: queue })).toBe(false);
+    expect(
+      autoModeApplies({
+        day: TODAY,
+        answer,
+        classes: {},
+        approvals: markApproval(queue, { id: 'apply-1', state: 'approved' }),
+      }),
+    ).toBe(true);
+  });
+
+  it('still writes a match that is not a parent at local', () => {
+    const answer = matched('FOO-1');
+
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: [] })).toBe(true);
+  });
+});
+
 describe('autoModeContextLabel', () => {
   it('names a checkout by its folder and branch, and an application by its id', () => {
     expect(autoModeContextLabel(CONTEXT.id)).toBe('shop · feature/export');

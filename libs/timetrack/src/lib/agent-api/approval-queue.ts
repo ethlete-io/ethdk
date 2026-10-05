@@ -17,6 +17,8 @@ export type AutoModeApplyRequest = {
   issueKey: string;
   /** Jira has the issue done: auto mode never writes the match without this approval. */
   done?: true;
+  /** The issue is a parent of other issues: auto mode never writes the match without this approval. */
+  parent?: true;
 };
 
 /**
@@ -240,6 +242,7 @@ const parseAutoModeApply = (value: unknown): AutoModeApplyRequest | undefined =>
     label: textOf(raw['label']),
     issueKey,
     ...(raw['done'] === true ? { done: true as const } : {}),
+    ...(raw['parent'] === true ? { parent: true as const } : {}),
   };
 };
 
@@ -357,7 +360,7 @@ export const describeApproval = (request: AgentApprovalRequest) => {
     case 'autoMode.apply':
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${request.issueKey}`
-        : `Resolves stand-in ${request.label} with ${request.issueKey}${request.done ? ', which Jira has done' : ''}`;
+        : `Resolves stand-in ${request.label} with ${request.issueKey}${request.done ? ', which Jira has done' : ''}${request.parent ? ', a parent issue' : ''}`;
     case 'autoMode.resolve':
       return `${request.choice === 'keep' ? `Keeps ${request.booked}` : `Takes ${disputedTargetLabel(request.other)} instead of ${request.booked}`} on today's ${request.label} band: ${request.reason}`;
     case 'autoMode.hide':

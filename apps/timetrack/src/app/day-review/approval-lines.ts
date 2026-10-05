@@ -50,7 +50,10 @@ export const approvalLinesOf = (
     }
     case 'autoMode.apply':
       return [
-        { label: 'Ticket', value: `${request.label} → ${named(request.issueKey)}${request.done ? ' (done)' : ''}` },
+        {
+          label: 'Ticket',
+          value: `${request.label} → ${named(request.issueKey)}${request.done ? ' (done)' : ''}${request.parent ? ' (parent)' : ''}`,
+        },
         asked,
       ];
     case 'standIn.resolve':

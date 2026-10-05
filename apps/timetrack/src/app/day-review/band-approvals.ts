@@ -27,7 +27,7 @@ export const approvalChipOf = (item: AgentApproval) => {
     case 'worklog.add':
       return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
     case 'autoMode.apply':
-      return `${who} · Name ${request.issueKey}${request.done ? ' (done)' : ''}`;
+      return `${who} · Name ${request.issueKey}${request.done ? ' (done)' : ''}${request.parent ? ' (parent)' : ''}`;
     case 'standIn.resolve':
       return `${who} · Resolve to ${request.issueKey}`;
     case 'autoMode.resolve':

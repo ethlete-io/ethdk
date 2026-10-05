@@ -118,6 +118,8 @@ export type AutoModeOutcome =
       reason?: string;
       /** Jira had the issue in its done category when the answer came, so auto mode never applies it. */
       done?: boolean;
+      /** The issue is a parent in the project's issues, so auto mode never applies it without an approval. */
+      parent?: boolean;
     }
   | {
       kind: 'draft';

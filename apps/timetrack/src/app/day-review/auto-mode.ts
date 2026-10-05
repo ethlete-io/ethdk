@@ -127,16 +127,33 @@ export type AutoModeActivity = {
 const ACTIVITY_LIMIT = 50;
 
 /** What one ask sends: the payload, and the project a new ticket would be filed in. */
-type Prepared = { request: TicketWritingRequest; projectKey?: string };
+type Prepared = { request: TicketWritingRequest; projectKey?: string; parentKeys: ReadonlySet<string> };
 
-const outcomeOf = (options: { wording: TicketWording | null; projectKey?: string }): AutoModeOutcome => {
-  const { wording, projectKey } = options;
+const parentKeysOf = (issues: ProjectIssues | null): ReadonlySet<string> => {
+  if (!issues) return new Set();
+
+  const keys = new Set(issues.parents.map((issue) => issue.key));
+
+  for (const issue of matchCandidatesOf(issues)) {
+    if (issue.parentKey) keys.add(issue.parentKey);
+  }
+
+  return keys;
+};
+
+const outcomeOf = (options: {
+  wording: TicketWording | null;
+  projectKey?: string;
+  parentKeys: ReadonlySet<string>;
+}): AutoModeOutcome => {
+  const { wording, projectKey, parentKeys } = options;
 
   if (!wording) return { kind: 'failed' };
   if (wording.existingKey) {
     return {
       kind: 'match',
       issueKey: wording.existingKey,
+      ...(parentKeys.has(wording.existingKey) ? { parent: true } : {}),
       ...(wording.existingReason ? { reason: wording.existingReason } : {}),
     };
   }
@@ -406,7 +423,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       map((issues) => {
         const request = requestOf({ subject, evidence, issues });
 
-        return request ? { request, ...(projectKey ? { projectKey } : {}) } : null;
+        return request ? { request, parentKeys: parentKeysOf(issues), ...(projectKey ? { projectKey } : {}) } : null;
       }),
     );
   };
@@ -523,7 +540,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             subject: ask.subject,
             askedAtMs: Date.now(),
             request: prepared.request,
-            outcome: outcomeOf({ wording, projectKey: prepared.projectKey }),
+            outcome: outcomeOf({ wording, projectKey: prepared.projectKey, parentKeys: prepared.parentKeys }),
           })),
         );
       }),
