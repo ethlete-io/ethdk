@@ -1,4 +1,6 @@
+import { AgentApiNaming } from '@ethlete/timetrack';
 import {
+  E2E_ISSUE_ID,
   E2E_KEYLESS_BRANCH,
   E2E_PARENT_ID,
   E2E_PARENT_KEY,
@@ -6,7 +8,7 @@ import {
   defaultSettings,
   tempoWorklogOn,
 } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_DAY_KEY, E2E_NOW, askAgent, expect, seedWorld, test } from './support';
 
 /** The branch rule that hands the keyless stretch's time to whatever else was open. */
 const DONATING = {
@@ -104,15 +106,21 @@ test.describe('the checkout-wide answer the record already holds', () => {
       settings: { ...defaultSettings(), attributionRules: [DONATING], projectLinks: [LINKED_TO_ABC] },
       tempo: {
         worklogs: [
-          ...HISTORY.slice(0, 2),
+          ...HISTORY,
           ...['2026-08-06', '2026-08-07', '2026-08-11'].map((day, index) =>
-            tempoWorklogOn({ day, minutes: 180, id: `w-other-${index}` }),
+            tempoWorklogOn({ day, minutes: 180, issueId: E2E_ISSUE_ID, id: `w-other-${index}` }),
           ),
         ],
       },
     });
     await page.goto('/day');
 
+    const naming = await askAgent<AgentApiNaming>(page, { op: 'naming.offers', day: E2E_DAY_KEY });
+
+    expect(naming).toMatchObject({
+      ok: true,
+      value: { offers: [], declines: [{ repoPath: E2E_REPO, reason: 'share-too-low', issueKey: E2E_PARENT_KEY }] },
+    });
     await expect(offer(page)).toHaveCount(0);
   });
 
