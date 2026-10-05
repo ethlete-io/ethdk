@@ -2,6 +2,7 @@ import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent, createOverlayOpener } from '@ethlete/components';
 import { DEFAULT_ROUND_OPTIONS, describeApproval, formatDurationMs, localDayRange } from '@ethlete/timetrack';
 import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectBandApprovals } from './band-approvals';
 import { injectDayReview } from './day-review';
 import { DayConcurrencyComponent } from './day-concurrency.component';
@@ -79,6 +80,12 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           </div>
         }
 
+        @if (historyFailure(); as failure) {
+          <p class="shrink-0 px-6 pb-3 text-small text-et-warning-ink" data-tempo-history-failed>
+            Tempo history could not be read, so tickets are matched without it: {{ failure }}
+          </p>
+        }
+
         @if (day.check.warnings.length) {
           <div
             class="flex shrink-0 flex-wrap items-baseline gap-x-8 gap-y-2 border-b border-et-surface-border px-6 pb-3"
@@ -133,7 +140,14 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
 export class DayReviewViewComponent {
   protected store = injectDayReview();
   private surface = injectRowEditSurface();
+  private recurring = injectRecurringPatterns();
+
   protected placed = injectBandApprovals();
+  protected historyFailure = computed(() => {
+    const read = this.recurring.state();
+
+    return read.state === 'failed' ? read.message : null;
+  });
   protected debug = createOverlayOpener(DAY_DEBUG_OVERLAY);
   protected approvals = createOverlayOpener(APPROVAL_QUEUE_OVERLAY);
 

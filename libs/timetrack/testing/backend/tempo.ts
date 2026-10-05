@@ -139,6 +139,9 @@ export const respondTempo = (backend: FakeBackend, request: FakeRoutedRequest): 
 
   const forUser = /^\/worklogs\/user\/(.+)$/.exec(path);
 
+  if (forUser && backend.tempo.readStatus)
+    return { status: backend.tempo.readStatus, body: { errors: [{ message: 'Tempo refused the read.' }] } };
+
   if (forUser) return readWorklogs({ backend, accountId: decodeURIComponent(forUser[1] ?? ''), request });
 
   if (path === '/worklogs' && method === 'POST') return createWorklog(backend, request);

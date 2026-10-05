@@ -114,6 +114,8 @@ export type FakeTempoState = {
   writes: FakeTempoWrite[];
   /** Caps the worklogs one page answers below the requested `limit`, so a spec can make a short span page. */
   pageSize?: number;
+  /** Makes every worklog read answer this status, so a spec can fail the history read. */
+  readStatus?: number;
 };
 
 export type FakeGitLabMergeRequest = {
