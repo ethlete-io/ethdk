@@ -1,16 +1,21 @@
 import {
+  DEFAULT_PATTERN_WEEKS,
   JiraCreatableType,
   JiraIssue,
   JiraIssueType,
   TimetrackPorts,
   TimetrackSettings,
   childTypeNameFor,
+  dayBoundaryOf,
   describeJiraHierarchy$,
   fetchJiraCreatableTypes$,
   fetchJiraLoggedIssues$,
   fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
+  localDayKey,
   readJiraCredentials$,
+  shiftDayKey,
+  userNamedIssueKeys,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, of, switchMap, throwError } from 'rxjs';
 
@@ -20,7 +25,7 @@ export const NO_JIRA = 'Jira needs a host, an account email and a token in Setti
 export type ProjectIssues = {
   parents: JiraIssue[];
   open: JiraIssue[];
-  /** The issues the user's Tempo history logged on that `open` lacks, done ones included. */
+  /** The issues the user logged or named rows with that `open` lacks, done ones included. */
   logged: JiraIssue[];
   /** What this account may create here. Empty until the read lands, which offers no type at all. */
   creatable: JiraCreatableType[];
@@ -66,7 +71,7 @@ export const readProjectIssues$ = (options: {
   ports: Pick<TimetrackPorts, 'secrets' | 'transport'>;
   settings: TimetrackSettings;
   projectKey: string;
-  /** The keys the user's own Tempo history logged on, newest first. Any project's. */
+  /** The keys the user logged on or named rows with, most relevant first. Any project's. */
   loggedKeys?: readonly string[];
 }): Observable<ProjectIssues> => {
   const { ports, settings, projectKey } = options;
@@ -122,3 +127,30 @@ export const readProjectIssues$ = (options: {
 
 /** Every issue the work could already be: the open ones, then the ones the user logged on. */
 export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'open' | 'logged'>) => [...issues.open, ...issues.logged];
+
+/**
+ * The keys the work could already be, from the user's own record: the keys the user named rows of
+ * `standInDays` with, then `tempoKeys`, then the keys the user named rows of the last
+ * `DEFAULT_PATTERN_WEEKS` with. Each key once. A store that will not answer leaves `tempoKeys`.
+ */
+export const readLoggedKeys$ = (options: {
+  ports: Pick<TimetrackPorts, 'review'>;
+  settings: TimetrackSettings;
+  tempoKeys: readonly string[];
+  standInDays?: readonly string[];
+}): Observable<string[]> => {
+  const standInDays = new Set(options.standInDays ?? []);
+  const today = localDayKey(new Date(), dayBoundaryOf(options.settings));
+  const from = [shiftDayKey(today, -DEFAULT_PATTERN_WEEKS * 7), ...standInDays].sort()[0] ?? today;
+
+  return options.ports.review.editsBetween$(from, today).pipe(
+    map((days) => [
+      ...new Set([
+        ...userNamedIssueKeys(days.filter(({ day }) => standInDays.has(day))),
+        ...options.tempoKeys.map((key) => key.trim().toUpperCase()),
+        ...userNamedIssueKeys(days),
+      ]),
+    ]),
+    catchError(() => of([...options.tempoKeys])),
+  );
+};

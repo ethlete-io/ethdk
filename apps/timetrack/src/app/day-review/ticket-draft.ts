@@ -50,7 +50,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 import { injectProjectLinks } from '../project-links';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
-import { NO_JIRA, ProjectIssues, matchCandidatesOf, readProjectIssues$ } from './project-issues';
+import { NO_JIRA, ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
 const IDLE = { kind: 'idle' } as const;
 
@@ -187,13 +187,14 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const candidates$ = (projectKey: string): Observable<CandidateStatus> =>
     recurring.settled$.pipe(
       switchMap(() =>
-        readProjectIssues$({
+        readLoggedKeys$({
           ports,
           settings: settings.settings(),
-          projectKey,
-          loggedKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
+          tempoKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
+          standInDays: standIn()?.days,
         }),
       ),
+      switchMap((loggedKeys) => readProjectIssues$({ ports, settings: settings.settings(), projectKey, loggedKeys })),
       map((issues): CandidateStatus => ({ kind: 'ready', ...issues })),
       catchError((error: unknown) => of<CandidateStatus>({ kind: 'failed', message: messageOf(error) })),
     );

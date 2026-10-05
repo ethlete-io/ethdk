@@ -333,6 +333,34 @@ test.describe('an agent asking auto mode again about a stand-in whose create was
   });
 });
 
+test.describe('auto mode on a stand-in whose day names a done issue Tempo does not hold', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+      reviewOverrides: { [E2E_DAY_KEY]: { 'unnamed:@named-by-hand': { issueKey: E2E_ISSUE_KEY } } },
+    });
+    await page.goto('/day');
+  });
+
+  test('offers the issue the user named the day with and queues the match for approval', async ({ page }) => {
+    await expect(page.locator('[data-band-approval][data-op="autoMode.apply"]')).toContainText(
+      `Auto · Name ${E2E_ISSUE_KEY} (done)`,
+    );
+
+    const listed = await askAgent(page, { op: 'approvals.list' });
+
+    expect(listed).toEqual({ ok: true, value: [expect.objectContaining({ op: 'autoMode.apply' })] });
+    expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+});
+
 test.describe('a class the settings make stricter', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/day');

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CALL_LANE_KEY } from '../rows/lane';
-import { setRowIssue } from './edits';
-import { laneIssueUses, laneIssueUsesFor } from './lane-issues';
+import { hideRow, setRowIssue, setRowState } from './edits';
+import { laneIssueUses, laneIssueUsesFor, userNamedIssueKeys } from './lane-issues';
 import { DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 
 const row = (options: { id: string; laneKey?: string }): ReviewedRow => ({
@@ -119,5 +119,44 @@ describe('laneIssueUses', () => {
       'ABC-2',
       'ABC-1',
     ]);
+  });
+});
+
+describe('userNamedIssueKeys', () => {
+  it('reads the keys the user named, newest day first and each once', () => {
+    const older = named({ id: 'a', issueKey: 'ABC-1' });
+    const newer = named({ id: 'b', issueKey: 'abc-2' });
+
+    expect(
+      userNamedIssueKeys([
+        day('2026-09-01', older),
+        day('2026-09-03', newer),
+        day('2026-09-02', named({ id: 'c', issueKey: 'ABC-1' })),
+      ]),
+    ).toEqual(['ABC-2', 'ABC-1']);
+  });
+
+  it('counts a key auto mode set only once the user accepted the row', () => {
+    const guessed = setRowIssue({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: row({ id: 'a' }),
+      issueKey: 'ABC-1',
+      source: 'auto',
+    });
+    const accepted = setRowState({ edits: guessed, row: row({ id: 'a' }), state: 'accepted' });
+
+    expect(userNamedIssueKeys([day('2026-09-01', guessed)])).toEqual([]);
+    expect(userNamedIssueKeys([day('2026-09-01', accepted)])).toEqual(['ABC-1']);
+  });
+
+  it('counts nothing a rejected or hidden row carries', () => {
+    const rejected = setRowState({
+      edits: named({ id: 'a', issueKey: 'ABC-1' }),
+      row: row({ id: 'a' }),
+      state: 'rejected',
+    });
+    const hidden = hideRow({ edits: named({ id: 'b', issueKey: 'ABC-2' }), row: row({ id: 'b' }) });
+
+    expect(userNamedIssueKeys([day('2026-09-01', rejected), day('2026-09-02', hidden)])).toEqual([]);
   });
 });

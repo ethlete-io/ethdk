@@ -1,4 +1,5 @@
 import { storedLaneKey } from '../rows/lane';
+import { RowFieldSources } from '../model/field-source';
 import { DayReviewEdits } from './model';
 
 /** One day's stored edits, as the store hands a range of days back. */
@@ -77,4 +78,29 @@ export const laneIssueUsesFor = (options: {
   const found = options.uses.filter((use) => use.laneKey === lane);
 
   return options.limit === undefined ? found : found.slice(0, options.limit);
+};
+
+const userNamedKeyOf = (entry: Named & { sources?: RowFieldSources }) => {
+  if (entry.state === 'rejected' || entry.hidden) return undefined;
+  if (entry.sources?.issue === 'auto' && entry.state !== 'accepted') return undefined;
+
+  return entry.issueKey?.trim().toUpperCase() || undefined;
+};
+
+/**
+ * The issue keys the user named rows with over `days`, newest day first, each key once.
+ *
+ * A key auto mode set counts only once the user accepted the row, so auto mode never feeds on its
+ * own guesses. A rejected or hidden row counts nothing.
+ */
+export const userNamedIssueKeys = (days: readonly StoredDayEdits[]): string[] => {
+  const keys = [...days]
+    .sort((a, b) => b.day.localeCompare(a.day))
+    .flatMap(({ edits }) =>
+      [...Object.values(edits.overrides ?? {}), ...(edits.pinned ?? [])].flatMap(
+        (entry) => userNamedKeyOf(entry) ?? [],
+      ),
+    );
+
+  return [...new Set(keys)];
 };

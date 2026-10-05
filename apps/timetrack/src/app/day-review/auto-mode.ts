@@ -94,7 +94,7 @@ import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 import { injectDayReview } from './day-review';
-import { ProjectIssues, matchCandidatesOf, readProjectIssues$ } from './project-issues';
+import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
 /** How often a row's settle time is checked again: a row settles by the clock, not by a change. */
 const DESCRIPTION_TICK_MS = 60_000;
@@ -332,20 +332,27 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }),
       );
 
-  const issues$ = (projectKey: string | undefined): Observable<ProjectIssues | null> =>
-    projectKey
-      ? recurring.settled$.pipe(
-          switchMap(() =>
-            readProjectIssues$({
-              ports,
-              settings: settings.settings(),
-              projectKey,
-              loggedKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
-            }),
-          ),
-          catchError(() => of(null)),
-        )
-      : of(null);
+  const issues$ = (subject: AutoModeSubject, projectKey: string | undefined): Observable<ProjectIssues | null> => {
+    if (!projectKey) return of(null);
+
+    const standInDays =
+      subject.kind === 'stand-in'
+        ? settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.days
+        : undefined;
+
+    return recurring.settled$.pipe(
+      switchMap(() =>
+        readLoggedKeys$({
+          ports,
+          settings: settings.settings(),
+          tempoKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
+          standInDays,
+        }),
+      ),
+      switchMap((loggedKeys) => readProjectIssues$({ ports, settings: settings.settings(), projectKey, loggedKeys })),
+      catchError(() => of(null)),
+    );
+  };
 
   const projectKeyOf = (subject: AutoModeSubject, evidence: AskEvidence) => {
     const current = settings.settings();
@@ -392,7 +399,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     const projectKey = projectKeyOf(subject, evidence);
 
-    return issues$(projectKey).pipe(
+    return issues$(subject, projectKey).pipe(
       map((issues) => {
         const request = requestOf({ subject, evidence, issues });
 
