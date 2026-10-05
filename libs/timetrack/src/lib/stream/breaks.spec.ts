@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CollectedEvent } from '../model/event';
 import { TimeWindow } from '../model/time-window';
-import { breakGaps, breakMs, breakWindows, bookedRemoteWindows, breaksBetweenRows } from './breaks';
+import { breakGaps, breakMs, breakWindows, bookedRemoteWindows, breaksBetweenRows, remoteWorkWindows } from './breaks';
 
 const at = (hour: number, minute = 0) => new Date(2026, 8, 10, hour, minute);
 
@@ -99,19 +99,32 @@ describe('breakWindows', () => {
     expect(breaks).toEqual([{ from: at(11, 0), to: at(11, 5), locked: true }]);
   });
 
-  it('counts the stretch from the first remote prompt to the last as work, past the half-break cap', () => {
+  it('counts a stretch of remote prompts as work, past the half-break cap', () => {
     const breaks = breakWindows({
       presence: [MORNING, window([14, 0], [17, 0])],
-      remotePrompts: [at(11, 20), at(12, 10), at(13, 40)],
+      remotePrompts: [11, 12, 13].flatMap((hour) => [at(hour, 0), at(hour, 15), at(hour, 30), at(hour, 45)]),
     });
 
-    expect(breaks).toEqual([{ from: at(13, 40), to: at(14, 0), locked: false }]);
+    expect(breaks).toEqual([{ from: at(13, 45), to: at(14, 0), locked: false }]);
+  });
+
+  it('gives back to the break a gap between two remote prompts of more than a quarter hour', () => {
+    const breaks = breakWindows({
+      presence: [MORNING, window([14, 0], [17, 0])],
+      remotePrompts: [at(11, 30), at(12, 30)],
+    });
+
+    expect(breaks).toEqual([
+      { from: at(11, 0), to: at(11, 15), locked: false },
+      { from: at(11, 30), to: at(12, 15), locked: false },
+      { from: at(12, 30), to: at(14, 0), locked: false },
+    ]);
   });
 
   it('splits a break a remote stretch sits in the middle of', () => {
     const breaks = breakWindows({
       presence: [MORNING, window([14, 0], [17, 0])],
-      remotePrompts: [at(12, 0), at(12, 30)],
+      remotePrompts: [at(12, 0), at(12, 15), at(12, 30)],
     });
 
     expect(breaks).toEqual([
@@ -123,7 +136,7 @@ describe('breakWindows', () => {
   it('drops what a remote stretch leaves of a break under the limit', () => {
     const breaks = breakWindows({
       presence: [MORNING, window([12, 0], [17, 0])],
-      remotePrompts: [at(11, 20), at(11, 50)],
+      remotePrompts: [at(11, 20), at(11, 35), at(11, 50)],
     });
 
     expect(breaks).toEqual([]);
@@ -133,7 +146,7 @@ describe('breakWindows', () => {
     const breaks = breakWindows({
       presence: [MORNING, window([14, 0], [17, 0])],
       events: [lock(11, 1)],
-      remotePrompts: [at(12, 0), at(12, 30)],
+      remotePrompts: [at(12, 0), at(12, 15), at(12, 30)],
     });
 
     expect(breaks).toEqual([
@@ -216,55 +229,54 @@ describe('breakGaps, on a day still being collected', () => {
   });
 });
 
+describe('remoteWorkWindows', () => {
+  it('draws a stretch of prompts at most a quarter hour apart in full, however long it runs', () => {
+    const stretch = remoteWorkWindows({
+      breaks: [window([8, 0], [11, 0])],
+      remotePrompts: [at(8, 52), at(9, 5), at(9, 20), at(9, 35), at(9, 50), at(10, 5), at(10, 17)],
+    });
+
+    expect(stretch).toEqual([window([8, 37], [10, 17])]);
+  });
+
+  it('ends a stretch at a gap between two prompts of more than a quarter hour', () => {
+    const stretch = remoteWorkWindows({
+      breaks: [window([11, 0], [14, 0])],
+      remotePrompts: [at(11, 30), at(11, 45), at(12, 20)],
+    });
+
+    expect(stretch).toEqual([window([11, 15], [11, 45]), window([12, 5], [12, 20])]);
+  });
+});
+
 describe('bookedRemoteWindows', () => {
   const prompts = (...instants: Date[]) => instants.map((instant) => ({ at: instant }));
 
-  it('books each remote prompt its allowance and leaves the stretch between them unbooked', () => {
+  it('books an hour and three quarters of prompts in full, overlapping allowances once', () => {
+    const booked = bookedRemoteWindows({
+      breaks: [window([8, 0], [11, 0])],
+      remotePrompts: prompts(at(9, 15), at(9, 20), at(9, 30), at(9, 45), at(10, 0), at(10, 15), at(10, 30), at(10, 45)),
+    });
+
+    expect(booked).toEqual([
+      window([9, 0], [9, 15]),
+      window([9, 15], [9, 20]),
+      window([9, 20], [9, 30]),
+      window([9, 30], [9, 45]),
+      window([9, 45], [10, 0]),
+      window([10, 0], [10, 15]),
+      window([10, 15], [10, 30]),
+      window([10, 30], [10, 45]),
+    ]);
+  });
+
+  it('books nothing of a gap between two prompts of more than a quarter hour', () => {
     const booked = bookedRemoteWindows({
       breaks: [window([11, 0], [14, 0])],
       remotePrompts: prompts(at(11, 30), at(12, 0), at(12, 30)),
     });
 
     expect(booked).toEqual([window([11, 15], [11, 30]), window([11, 45], [12, 0]), window([12, 15], [12, 30])]);
-  });
-
-  it('gives the hour to the earliest prompts, counts overlapping allowances once, and leaves the rest unbooked', () => {
-    const booked = bookedRemoteWindows({
-      breaks: [window([11, 0], [14, 0])],
-      remotePrompts: prompts(at(11, 30), at(11, 35), at(11, 50), at(12, 5), at(12, 20), at(12, 50)),
-    });
-
-    expect(booked).toEqual([
-      window([11, 15], [11, 30]),
-      window([11, 30], [11, 35]),
-      window([11, 35], [11, 50]),
-      window([11, 50], [12, 5]),
-      window([12, 10], [12, 20]),
-    ]);
-  });
-
-  it('counts the hour across every break of the day', () => {
-    const booked = bookedRemoteWindows({
-      breaks: [window([11, 0], [12, 30]), window([13, 0], [15, 0])],
-      remotePrompts: prompts(at(11, 30), at(11, 45), at(12, 0), at(13, 30), at(13, 45), at(14, 0)),
-    });
-
-    expect(booked).toEqual([
-      window([11, 15], [11, 30]),
-      window([11, 30], [11, 45]),
-      window([11, 45], [12, 0]),
-      window([13, 15], [13, 30]),
-    ]);
-  });
-
-  it('takes the daily limit from the options', () => {
-    const booked = bookedRemoteWindows({
-      breaks: [window([11, 0], [14, 0])],
-      remotePrompts: prompts(at(11, 30), at(12, 0), at(12, 30)),
-      maxRemoteAttentionMs: 30 * 60_000,
-    });
-
-    expect(booked).toEqual([window([11, 15], [11, 30]), window([11, 45], [12, 0])]);
   });
 
   it('keeps the lane of the prompt that bought each part', () => {

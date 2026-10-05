@@ -43,12 +43,6 @@ export const DEFAULT_PROMPT_ATTENTION_MS = 15 * 60_000;
  */
 export const DEFAULT_MAX_ATTENTION_SHARE = 0.5;
 
-/**
- * The most a day books of what its remote prompts bought back, over every break together. See ADR
- * 0033: the stretch is drawn as work, and only this much of it reaches Tempo.
- */
-export const DEFAULT_MAX_REMOTE_ATTENTION_MS = 60 * 60_000;
-
 /** A stretch of a day nobody was at the machine. */
 export type BreakWindow = TimeWindow & {
   /** Whether the screen was locked in it. A lock is a person saying they are leaving, so it needs no length. */
@@ -154,8 +148,9 @@ export const breakGaps = (options: {
 };
 
 /**
- * The stretches of each break the user worked from another device: from the first remote prompt's
- * allowance to the last remote prompt, inside the break. See ADR 0033.
+ * The stretches of each break the user worked from another device. Each remote prompt claims its
+ * allowance backwards from itself, inside its break, and allowances that touch join one stretch, so
+ * a stretch runs on while the prompts in it are at most `promptAttentionMs` apart. See ADR 0033.
  */
 export const remoteWorkWindows = (options: {
   breaks: readonly TimeWindow[];
@@ -164,40 +159,32 @@ export const remoteWorkWindows = (options: {
 }): TimeWindow[] => {
   const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
 
-  return options.breaks.flatMap((window) => {
-    const from = window.from.getTime();
-    const to = window.to.getTime();
-    const inside = options.remotePrompts.map((at) => at.getTime()).filter((at) => at >= from && at <= to);
-
-    if (!inside.length) return [];
-
-    const first = inside.reduce((earliest, at) => Math.min(earliest, at), Infinity);
-    const last = inside.reduce((latest, at) => Math.max(latest, at), -Infinity);
-
-    return [{ from: new Date(Math.max(from, first - attentionMs)), to: new Date(last) }];
-  });
+  return options.breaks.flatMap((window) =>
+    mergeWindows(
+      clipWindows({
+        windows: options.remotePrompts.map((at) => ({ from: new Date(at.getTime() - attentionMs), to: at })),
+        within: [window],
+      }),
+    ),
+  );
 };
 
 /** A prompt `promptOriginAt` read as `remote`, with the lane of the checkout its session ran in. */
 export type RemotePrompt = { at: Date; laneKey?: string };
 
 /**
- * The parts of the remote stretches of `remoteWorkWindows` the day books. The rest of each stretch is
- * drawn as work and never booked.
+ * The remote stretches of `remoteWorkWindows`, each part with the lane of the prompt that bought it.
  *
- * Each remote prompt books its allowance, backwards from the prompt and inside its break; allowances
- * that overlap count once. The day books at most `maxRemoteAttentionMs` of them, earliest prompt
- * first, and the prompt that reaches the limit keeps the part nearest itself. See ADR 0033.
+ * Each remote prompt books its allowance, backwards from the prompt and inside its break; where
+ * allowances overlap, the earlier prompt keeps the overlap. See ADR 0033.
  */
 export const bookedRemoteWindows = (options: {
   breaks: readonly TimeWindow[];
   remotePrompts: readonly RemotePrompt[];
   promptAttentionMs?: number;
-  maxRemoteAttentionMs?: number;
 }): BookedRemoteWindow[] => {
   const attentionMs = options.promptAttentionMs ?? DEFAULT_PROMPT_ATTENTION_MS;
   const booked: BookedRemoteWindow[] = [];
-  let leftMs = options.maxRemoteAttentionMs ?? DEFAULT_MAX_REMOTE_ATTENTION_MS;
 
   for (const prompt of [...options.remotePrompts].sort((a, b) => a.at.getTime() - b.at.getTime())) {
     const allowance = clipWindows({
@@ -205,13 +192,8 @@ export const bookedRemoteWindows = (options: {
       within: options.breaks,
     });
 
-    for (const part of subtractWindows({ windows: allowance, without: booked }).reverse()) {
-      const takenMs = Math.min(leftMs, part.to.getTime() - part.from.getTime());
-
-      if (takenMs <= 0) continue;
-
-      booked.push({ from: new Date(part.to.getTime() - takenMs), to: part.to, laneKey: prompt.laneKey });
-      leftMs -= takenMs;
+    for (const part of subtractWindows({ windows: allowance, without: booked })) {
+      booked.push({ ...part, laneKey: prompt.laneKey });
     }
   }
 

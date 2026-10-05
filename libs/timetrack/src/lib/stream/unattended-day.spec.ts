@@ -337,25 +337,32 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
     expect(day.rows.unnamed.filter((row) => row.unattended)).toEqual([]);
   });
 
-  it('draws the whole remote stretch as work, past the hour it books', () => {
+  it('books the whole remote stretch, past the hour it once capped it at', () => {
     const day = steeredDay(EVERY_TEN, DESK_STOPPED);
     const phone = day.rows.proposals.filter((row) => row.issueKey === 'ET-900');
 
     expect(day.rows.unnamed.filter((row) => row.unattended)).toEqual([]);
     expect(day.breaks.filter((window) => window.from < AT(220) && window.to > AT(105))).toEqual([]);
     expect(phone.map((row) => [row.from, row.to])).toEqual([[AT(120), AT(225)]]);
-    expect(phone.map((row) => row.durationMs)).toEqual([45 * MINUTE]);
+    expect(phone.map((row) => row.durationMs)).toEqual([105 * MINUTE]);
   });
 
-  it('keeps the booking a reviewer reads under the hour of remote allowance', () => {
+  it('gives a gap of more than a quarter hour between two remote prompts back to the break', () => {
+    const day = steeredDay([120, 130, 140, 180, 190], DESK_STOPPED);
+    const minutes = (at: Date) => (at.getTime() - AT(0).getTime()) / MINUTE;
+
+    expect(day.breaks.map((window) => [minutes(window.from), minutes(window.to)])).toContainEqual([140, 165]);
+  });
+
+  it('leaves a reviewer no remote time the row does not book', () => {
     const review = reviewDay({ rows: steeredDay(EVERY_TEN, DESK_STOPPED).rows });
     const phone = review.rows.filter((row) => row.issueKey === 'ET-900');
 
-    expect(phone.map((row) => [row.from, row.to, row.durationMs])).toEqual([[AT(120), AT(225), 45 * MINUTE]]);
-    expect(phone.map((row) => row.unbookedMs)).toEqual([60 * MINUTE]);
+    expect(phone.map((row) => [row.from, row.to, row.durationMs])).toEqual([[AT(120), AT(225), 105 * MINUTE]]);
+    expect(phone.map((row) => row.unbookedMs)).toEqual([undefined]);
   });
 
-  it('books the hour only on the row of the session the prompts were sent to', () => {
+  it('books the stretch only on the row of the session the prompts were sent to', () => {
     const STRETCH = { from: AT(105), to: AT(225) };
     const insideMs = (row: { from: Date; to: Date }) =>
       Math.max(
@@ -369,7 +376,7 @@ describe('streamDay, on prompts the short input idleness reads as remote', () =>
 
     expect(parallel.map((row) => row.issueKey)).toContain('ET-772');
     expect(parallel.map(bookedInsideMs)).toEqual(parallel.map(() => 0));
-    expect(review.rows.reduce((sum, row) => sum + bookedInsideMs(row), 0)).toBe(45 * MINUTE);
+    expect(review.rows.reduce((sum, row) => sum + bookedInsideMs(row), 0)).toBe(105 * MINUTE);
   });
 
   it('books the whole span of every row on a day without the signal', () => {

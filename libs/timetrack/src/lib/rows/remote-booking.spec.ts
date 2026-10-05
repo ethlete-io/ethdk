@@ -60,13 +60,13 @@ describe('unbookedRemoteByRow', () => {
 });
 
 describe('remoteBookingOnGrid', () => {
-  it('never lets rounding book more than the cap', () => {
+  it('books the whole drawn stretch once both are on the grid', () => {
     const remote = remoteBookingOnGrid({
-      drawn: [span(600, 780)],
-      booked: [span(607, 623), span(637, 653), span(667, 683)],
-      maxBookedMs: 60 * MINUTE,
+      drawn: [span(607, 637)],
+      booked: [span(607, 622), span(622, 637)],
     });
 
-    expect(remote.booked.reduce((sum, part) => sum + part.to.getTime() - part.from.getTime(), 0)).toBe(60 * MINUTE);
+    expect(remote.drawn).toEqual([span(600, 630)]);
+    expect(remote.booked).toEqual([span(600, 615), span(615, 630)]);
   });
 });

@@ -14,29 +14,16 @@ type BookingRow = TimeWindow & { id: string; laneKey?: string; issueKey?: string
 export const bookedSpanMs = (row: TimeWindow, unbooked: readonly TimeWindow[] = []) =>
   Math.max(0, row.to.getTime() - row.from.getTime() - windowsMs(clipWindows({ windows: unbooked, within: [row] })));
 
-/**
- * Puts a day's remote stretches on the row grid, each end to the nearest boundary as a drawn break is.
- * Rounding never lets `booked` grow past `maxBookedMs`: the latest parts give up the excess.
- */
+/** Puts a day's remote stretches on the row grid, each end to the nearest boundary as a drawn break is. */
 export const remoteBookingOnGrid = (options: {
   drawn: readonly TimeWindow[];
   booked: readonly BookedRemoteWindow[];
-  maxBookedMs?: number;
   round?: Partial<RoundOptions>;
 }): RemoteBooking => {
   const { incrementMs } = { ...DEFAULT_ROUND_OPTIONS, ...options.round };
   const nearest = (at: Date) => new Date(nearestOnGrid(at.getTime(), incrementMs));
-  let leftMs = options.maxBookedMs ?? Infinity;
   const booked = options.booked
     .map((part) => ({ ...part, from: nearest(part.from), to: nearest(part.to) }))
-    .filter((part) => part.to.getTime() > part.from.getTime())
-    .map((part) => {
-      const keptMs = Math.min(leftMs, part.to.getTime() - part.from.getTime());
-
-      leftMs -= keptMs;
-
-      return { ...part, from: new Date(part.to.getTime() - keptMs) };
-    })
     .filter((part) => part.to.getTime() > part.from.getTime());
 
   return {

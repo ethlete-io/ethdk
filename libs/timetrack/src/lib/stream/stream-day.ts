@@ -20,15 +20,7 @@ import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/wor
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
-import {
-  BreakWindow,
-  DEFAULT_MAX_REMOTE_ATTENTION_MS,
-  bookedRemoteWindows,
-  breakGaps,
-  breakMs,
-  breakWindows,
-  remoteWorkWindows,
-} from './breaks';
+import { BreakWindow, bookedRemoteWindows, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
 import { classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
@@ -79,11 +71,6 @@ export type StreamDayOptions = {
    * How much of a break one prompt the user sent buys back. Defaults to `DEFAULT_PROMPT_ATTENTION_MS`.
    */
   promptAttentionMs?: number;
-  /**
-   * The most a day books of what its remote prompts bought back. Defaults to
-   * `DEFAULT_MAX_REMOTE_ATTENTION_MS`.
-   */
-  maxRemoteAttentionMs?: number;
   /**
    * The repository roots the host discovered. An agent session reports the directory it was started in,
    * which is often a subdirectory of a checkout, and without these each subdirectory becomes a stream.
@@ -1575,7 +1562,6 @@ export const streamDay = (options: {
 
     return { at: prompt.at, laneKey: repoPath ? streamKey({ repoPath }) : undefined };
   });
-  const maxRemoteAttentionMs = config.maxRemoteAttentionMs ?? DEFAULT_MAX_REMOTE_ATTENTION_MS;
   // `work` above must stay the spans presence alone allows, because the agent's spans are then clipped
   // to the gaps read off it. Clipping first would let a break widen the work span and so itself.
   const blocks = blocksFromSpans({
@@ -1610,8 +1596,7 @@ export const streamDay = (options: {
     breaks,
     gaps,
     remoteWork: remoteWorkWindows(remoteOptions),
-    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts, maxRemoteAttentionMs }),
-    maxRemoteAttentionMs,
+    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts }),
     cut: { ...config.rows?.cut, focusMsByStream, focusByStream },
   });
 

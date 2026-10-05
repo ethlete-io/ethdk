@@ -432,8 +432,8 @@ const onEditedIds = (options: {
 /**
  * A row books the time its band covers. One number reaches the reviewer, so a band drawn 13:15 to
  * 13:45 logs 30 minutes and never a shorter time the label would then have to explain. See ADR 0019.
- * The exceptions are remote time past the day's allowance, which ADR 0033 draws and never books, and
- * the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
+ * The exceptions are remote time a prompt in another lane bought, which ADR 0033 draws and never books
+ * on this row, and the rows of two agent sessions on one ticket, which share their observed minutes out (`siblingBookingsOf`);
  * a row the reviewer wrote by hand books its span regardless.
  *
  * Run after `snapRowBounds`, whose bounds are whole increments, so this books whole increments too.

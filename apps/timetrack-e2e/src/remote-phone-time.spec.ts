@@ -1,5 +1,6 @@
 import { CollectedEvent } from '@ethlete/timetrack';
 import { E2E_ISSUE_BRANCH, E2E_ISSUE_KEY, E2E_REPO } from '@ethlete/timetrack/testing';
+import { Page } from '@playwright/test';
 import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
 const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
@@ -34,29 +35,43 @@ const phone = (minutes: number): CollectedEvent[] => [
   },
 ];
 
-/** A morning at the desk, two and a half hours away from it steering an agent from the phone, then back. */
-const aDaySteeredFromThePhone = (): CollectedEvent[] => [
+/** A morning at the desk, a stretch away from it steering an agent from the phone, then back. */
+const aDaySteeredFromThePhone = (prompts: number[]): CollectedEvent[] => [
   { at: at(0), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_ISSUE_BRANCH },
   { at: at(0), source: 'input', kind: 'input-active' },
   ...[0, 15, 30, 45, 60, 75, 90].map(editing),
   { at: at(89), source: 'input', kind: 'input-idle' },
   { at: at(90), source: 'idle', kind: 'idle-start' },
-  ...[120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220].flatMap(phone),
+  ...prompts.flatMap(phone),
   { at: at(240), source: 'idle', kind: 'idle-end' },
   { at: at(240), source: 'input', kind: 'input-active' },
   ...[240, 255, 270].map(editing),
 ];
 
-test.describe('a band that draws remote work past the hour the day books', () => {
+const titles = (page: Page, selector: string) =>
+  page.locator(selector).evaluateAll((elements) => elements.map((element) => element.getAttribute('title')).sort());
+
+test.describe('an hour and three quarters steered from the phone without a pause', () => {
   test.beforeEach(async ({ page }) => {
-    await seedWorld(page, { now: E2E_NOW, events: aDaySteeredFromThePhone() });
+    await seedWorld(page, { now: E2E_NOW, events: aDaySteeredFromThePhone([120, 135, 150, 165, 180, 195, 210]) });
     await page.goto('/day');
   });
 
-  test('says quietly how much phone time it does not count', async ({ page }) => {
-    const band = page.locator(`[data-kind="row"][title^="${E2E_ISSUE_KEY}"][title*="phone time not counted"]`);
+  test('books every minute the band draws', async ({ page }) => {
+    await expect
+      .poll(() => titles(page, `[data-kind="row"][title^="${E2E_ISSUE_KEY}"]`))
+      .toEqual([`${E2E_ISSUE_KEY} · 1h 30m`, `${E2E_ISSUE_KEY} · 1h 30m`, `${E2E_ISSUE_KEY} · 30m`]);
+    await expect(page.locator('[data-unbooked]')).toHaveCount(0);
+  });
+});
 
-    await expect(band).toHaveCount(1);
-    await expect(band.locator('[data-unbooked]')).toHaveText('· 1h 0m phone time not counted');
+test.describe('phone prompts with a pause of more than a quarter hour between them', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, events: aDaySteeredFromThePhone([120, 135, 150, 195, 210, 225]) });
+    await page.goto('/day');
+  });
+
+  test('draw the pause as a break', async ({ page }) => {
+    await expect.poll(() => titles(page, '[data-break]')).toContain('11:30 AM - 12:15 PM');
   });
 });

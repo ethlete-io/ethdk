@@ -106,10 +106,8 @@ export type BuildRowsOptions = {
   gaps?: readonly TimeWindow[];
   /** The stretches the user worked from another device, from `remoteWorkWindows`. A band in one is attended. */
   remoteWork?: readonly TimeWindow[];
-  /** The part of `remoteWork` the day books, from `bookedRemoteWindows`. The rest is drawn and never booked. */
+  /** `remoteWork` split by the lane of the prompt that bought each part, from `bookedRemoteWindows`. */
   bookedRemote?: readonly BookedRemoteWindow[];
-  /** The most `bookedRemote` may book once it is on the row grid. */
-  maxRemoteAttentionMs?: number;
 };
 
 export type DayRows = {
@@ -323,7 +321,6 @@ export const buildRows = (
   const remote = remoteBookingOnGrid({
     drawn: options.remoteWork ?? [],
     booked: options.bookedRemote ?? [],
-    maxBookedMs: options.maxRemoteAttentionMs,
     round: options.round,
   });
   const unbooked = unbookedRemoteByRow({ rows: [...proposals, ...unnamed], remote });
