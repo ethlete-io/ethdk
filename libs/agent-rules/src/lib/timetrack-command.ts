@@ -33,6 +33,7 @@ import {
   timetrackSearch,
   timetrackRemoveStandIn,
   timetrackRenameStandIn,
+  timetrackResolveStandIn,
   timetrackMergeStandIn,
   timetrackResyncAgentSessions,
   timetrackSplitStandIn,
@@ -78,6 +79,7 @@ const FLAGS_WITH_VALUE = [
   '--rename',
   '--merge',
   '--into',
+  '--resolve',
   '--compare',
   '--stand-in',
   '--context',
@@ -717,6 +719,8 @@ A waiting write can be rejected from here; only the user approves one, in the ap
                                 Give one placeholder another name, keeping its days and its rules
   timetrack standins --merge <id> --into <id>
                                 Fold one open placeholder into another, with its days and its rules
+  timetrack standins --resolve <id> --issue <KEY>
+                                Resolve one placeholder to an issue, or move a resolved one to another
   timetrack standins --split <id> [--repo <dir>] [--paths <dir>,<dir>] [--claim <dir>] [--author <email>]
                                 [--force]
                                 Cut one that covered a whole checkout into one per directory
@@ -1234,6 +1238,21 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       const queued = await timetrackMergeStandIn({ id: merge, into });
 
       return printedQueued({ queued, what: `merge ${merge} into ${into}`, json });
+    }
+
+    const resolve = flagValue(argv, '--resolve');
+    const issue = flagValue(argv, '--issue');
+
+    if (resolve && !issue) {
+      say(`A resolve needs the issue. Pass --issue <KEY> with --resolve ${resolve}.`);
+
+      return 1;
+    }
+
+    if (resolve && issue) {
+      const queued = await timetrackResolveStandIn({ id: resolve, issueKey: issue });
+
+      return printedQueued({ queued, what: `resolve ${resolve} to ${issue.toUpperCase()}`, json });
     }
 
     const remove = flagValue(argv, '--remove');

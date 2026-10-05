@@ -605,6 +605,14 @@ export const timetrackMergeStandIn = (options: { id: string; into: string }) =>
   askTimetrack<TimetrackQueued>({ op: 'standIn.merge', ...options });
 
 /**
+ * Queues the resolve of one placeholder to a Jira issue, as the user's pick in the app does. A resolved
+ * one moves to the new issue. The app checks both exist before it queues; once approved, the result is
+ * the list as it reads afterwards.
+ */
+export const timetrackResolveStandIn = (options: { id: string; issueKey: string }) =>
+  askTimetrack<TimetrackQueued>({ op: 'standIn.resolve', ...options });
+
+/**
  * Plans the cut of one placeholder into one per directory it turned out to cover, and writes nothing.
  *
  * The commits come from the caller: one

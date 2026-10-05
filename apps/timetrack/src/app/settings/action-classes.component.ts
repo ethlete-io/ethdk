@@ -18,6 +18,7 @@ const ACTION_LABELS: Partial<Record<ClassedAction, string>> = {
   'worklog.add': 'A CLI adds a worklog row',
   'day.edits': 'A CLI edits the rows of a day',
   'standIn.rename': 'A CLI renames a stand-in',
+  'standIn.resolve': 'A CLI resolves a stand-in to an issue',
   'standIn.split': 'A CLI splits a stand-in',
   'agentSessions.resync': 'A CLI reads the agent sessions again',
 };

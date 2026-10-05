@@ -499,6 +499,7 @@ export type AgentApiRequest =
   | { op: 'standIn.remove'; id: string }
   | { op: 'standIn.rename'; id: string; name: string }
   | { op: 'standIn.merge'; id: string; into: string }
+  | AgentApiStandInResolve
   | {
       op: 'standIn.split';
       id: string;
@@ -528,6 +529,20 @@ export type AgentApiRequest =
       /** Overwrites what the store holds for the re-read sessions instead of keeping the first read. */
       replace?: true;
     };
+
+/**
+ * Resolves one stand-in to a Jira issue as the user's pick does, or moves a resolved one to another
+ * issue. The endpoint fills `name`, `fromIssueKey` and `summary` from the stand-in and Jira before it
+ * queues the request, overwriting whatever a caller sent, so the approval card shows what it changes.
+ */
+export type AgentApiStandInResolve = {
+  op: 'standIn.resolve';
+  id: string;
+  issueKey: string;
+  name?: string;
+  fromIssueKey?: string;
+  summary?: string;
+};
 
 /**
  * One commit a split reads a directory out of: the local day it counts toward, and its changed files.
@@ -604,6 +619,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'standIn.remove': 'human-only',
   'standIn.rename': 'local',
   'standIn.merge': 'human-only',
+  'standIn.resolve': 'local',
   'standIn.split': 'local',
   'naming.offers': 'read',
   'tempo.worklogs': 'read',

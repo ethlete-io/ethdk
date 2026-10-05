@@ -374,6 +374,8 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       return `Renames stand-in ${request.id} to ${request.name}`;
     case 'standIn.merge':
       return `Merges stand-in ${request.id} into ${request.into}`;
+    case 'standIn.resolve':
+      return `Resolves stand-in ${request.name ?? request.id}: ${request.fromIssueKey ? `${request.fromIssueKey} → ` : ''}${`${request.issueKey} ${request.summary ?? ''}`.trim()}`;
     case 'standIn.split':
       return `Splits stand-in ${request.id} into one per directory`;
     case 'tempo.sync':

@@ -14,6 +14,7 @@ export const approvalIssueKeysOf = (item: AgentApproval): string[] => {
       return request.parentKey ? [request.parentKey] : [];
     case 'worklog.add':
     case 'autoMode.apply':
+    case 'standIn.resolve':
       return [request.issueKey];
     default:
       return [];
@@ -50,6 +51,14 @@ export const approvalLinesOf = (
     case 'autoMode.apply':
       return [
         { label: 'Ticket', value: `${request.label} → ${named(request.issueKey)}${request.done ? ' (done)' : ''}` },
+        asked,
+      ];
+    case 'standIn.resolve':
+      return [
+        {
+          label: 'Ticket',
+          value: `${request.name ?? request.id}: ${request.fromIssueKey ? `${request.fromIssueKey} → ` : ''}${`${request.issueKey} ${request.summary ?? summaryOf(request.issueKey) ?? ''}`.trim()}`,
+        },
         asked,
       ];
     case 'autoMode.resolve':

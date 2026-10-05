@@ -11,6 +11,7 @@ import {
   withRenamedStandIn,
   withStandIn,
   withStandInDay,
+  withStandInIssue,
   withStandInCheckoutAllowed,
   withStandInParent,
   withStandInResolutionReset,
@@ -442,6 +443,43 @@ describe('reopenStandIn', () => {
     const settings = settingsWith();
 
     expect(reopenStandIn({ settings, id: 'stand-in-1' })).toBe(settings);
+  });
+});
+
+describe('withStandInIssue', () => {
+  it('resolves an open stand-in as the user', () => {
+    const settings = withStandInIssue({ settings: settingsWith(), id: 'stand-in-1', issueKey: 'fip-100' });
+
+    expect(settings.standIns[0]).toMatchObject({ state: 'resolved', issueKey: 'FIP-100', resolutionSource: 'human' });
+    expect(settings.attributionRules[0]?.target).toEqual({ kind: 'issue', issueKey: 'FIP-100' });
+  });
+
+  it('moves a resolved stand-in and the rules it rewrote to the new issue', () => {
+    const resolved = resolveStandIn({
+      settings: settingsWith(),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+      source: 'auto',
+    });
+    const settings = withStandInIssue({ settings: resolved, id: 'stand-in-1', issueKey: 'FIP-200' });
+
+    expect(settings.standIns[0]).toMatchObject({ state: 'resolved', issueKey: 'FIP-200', resolutionSource: 'human' });
+    expect(settings.attributionRules.map((entry) => entry.target)).toEqual([{ kind: 'issue', issueKey: 'FIP-200' }]);
+  });
+
+  it('leaves a rule the user wrote against the old issue alone', () => {
+    const own = rule({ id: 'rule-2', branch: 'next', target: { kind: 'issue', issueKey: 'FIP-100' } });
+    const resolved = resolveStandIn({
+      settings: settingsWith({ rules: [rule(), own] }),
+      id: 'stand-in-1',
+      issueKey: 'FIP-100',
+    });
+    const settings = withStandInIssue({ settings: resolved, id: 'stand-in-1', issueKey: 'FIP-200' });
+
+    expect(settings.attributionRules.map((entry) => entry.target)).toEqual([
+      { kind: 'issue', issueKey: 'FIP-200' },
+      { kind: 'issue', issueKey: 'FIP-100' },
+    ]);
   });
 });
 

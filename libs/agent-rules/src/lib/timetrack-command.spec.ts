@@ -365,6 +365,50 @@ describe('timetrack standins', () => {
   });
 });
 
+describe('timetrack standins --resolve', () => {
+  const bodies = () => {
+    const sent: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        sent.push(JSON.parse(body || '{}') as Record<string, unknown>);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ ok: true, value: { status: 'queued', approvalId: 'ap-1' } }));
+      });
+    };
+
+    return { handler, sent };
+  };
+
+  it('asks for the resolve with the stand-in and the key, and prints the approval id', async () => {
+    const { handler, sent } = bodies();
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['standins', '--resolve', 'stand-in:1:repo', '--issue', 'fifagg-12624'])).resolves.toBe(0);
+    expect(sent).toEqual([
+      expect.objectContaining({ op: 'standIn.resolve', id: 'stand-in:1:repo', issueKey: 'fifagg-12624' }),
+    ]);
+    expect(lines.join('\n')).toContain('ap-1');
+  });
+
+  it('refuses a resolve without an issue, and asks nothing of the endpoint', async () => {
+    const { handler, sent } = bodies();
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['standins', '--resolve', 'stand-in:1:repo'])).resolves.toBe(1);
+    expect(sent).toEqual([]);
+    expect(lines.join('\n')).toContain('Pass --issue <KEY>');
+  });
+});
+
 describe('timetrack worklogs', () => {
   const worklog = (over: Record<string, unknown>) => ({
     id: '1',

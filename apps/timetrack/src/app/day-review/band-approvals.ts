@@ -27,6 +27,8 @@ export const approvalChipOf = (item: AgentApproval) => {
       return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
     case 'autoMode.apply':
       return `${who} · Name ${request.issueKey}${request.done ? ' (done)' : ''}`;
+    case 'standIn.resolve':
+      return `${who} · Resolve to ${request.issueKey}`;
     case 'autoMode.resolve':
       return `${who} · ${request.choice === 'keep' ? `Keep ${request.booked}` : `Use ${disputedTargetLabel(request.other)}`}`;
     case 'autoMode.hide':

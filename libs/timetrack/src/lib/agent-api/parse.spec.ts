@@ -179,6 +179,30 @@ describe('parseAgentRequest', () => {
     });
   });
 
+  it('reads a stand-in resolve with its key in capitals, and refuses one without a key', () => {
+    expect(parseAgentRequest({ op: 'standIn.resolve', id: 'stand-in:1', issueKey: ' abc-7 ' })).toEqual({
+      ok: true,
+      request: { op: 'standIn.resolve', id: 'stand-in:1', issueKey: 'ABC-7' },
+    });
+    expect(parseAgentRequest({ op: 'standIn.resolve', id: 'stand-in:1' })).toEqual({
+      ok: false,
+      message: 'standIn.resolve needs a issueKey.',
+    });
+  });
+
+  it('keeps what the endpoint stored about a resolve, so the queue reads it back', () => {
+    const stored = {
+      op: 'standIn.resolve',
+      id: 'stand-in:1',
+      issueKey: 'ABC-8',
+      name: 'Bracket challenge',
+      fromIssueKey: 'ABC-7',
+      summary: 'Umsetzung',
+    };
+
+    expect(parseAgentRequest(stored)).toEqual({ ok: true, request: stored });
+  });
+
   it('takes the stand-in split op, and drops a commit that names no day or no file', () => {
     expect(
       parseAgentRequest({

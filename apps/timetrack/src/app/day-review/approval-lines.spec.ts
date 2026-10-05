@@ -27,3 +27,35 @@ describe('approvalLinesOf parent', () => {
     expect(parentOf(createOf())).toBeUndefined();
   });
 });
+
+describe('approvalLinesOf stand-in resolve', () => {
+  const resolveOf = (request: Record<string, unknown>) =>
+    ({
+      id: 'a2',
+      client: 'Claude Code',
+      askedAtMs: Date.UTC(2026, 0, 5, 9),
+      state: 'queued',
+      request: { op: 'standIn.resolve', id: 's1', ...request },
+    }) as unknown as AgentApproval;
+
+  const ticketOf = (item: AgentApproval, summaryOf?: (key: string) => string | undefined) =>
+    approvalLinesOf(item, summaryOf).find((line) => line.label === 'Ticket')?.value;
+
+  it('shows the stand-in, the issue it leaves and the new key with its summary', () => {
+    const item = resolveOf({
+      issueKey: 'FIFAGG-12624',
+      name: 'Bracket challenge',
+      fromIssueKey: 'FIFAGG-12605',
+      summary: 'Umsetzung',
+    });
+
+    expect(ticketOf(item)).toBe('Bracket challenge: FIFAGG-12605 → FIFAGG-12624 Umsetzung');
+  });
+
+  it('reads the summary from the catalog when the item stored none', () => {
+    const item = resolveOf({ issueKey: 'ABC-7', name: 'Pdf export' });
+
+    expect(ticketOf(item, () => 'Export')).toBe('Pdf export: ABC-7 Export');
+    expect(ticketOf(item)).toBe('Pdf export: ABC-7');
+  });
+});

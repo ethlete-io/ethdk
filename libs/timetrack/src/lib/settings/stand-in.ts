@@ -486,6 +486,22 @@ export const reopenStandIn = (options: {
 };
 
 /**
+ * Resolves a stand-in to `issueKey` as the user, the way the list's pick does. A resolved one is
+ * reopened first, as the list's Undo does, and then resolved to the new key in the same write.
+ */
+export const withStandInIssue = (options: {
+  settings: TimetrackSettings;
+  id: string;
+  issueKey: string;
+}): TimetrackSettings => {
+  const { id, issueKey } = options;
+  const standIn = options.settings.standIns.find((entry) => entry.id === id);
+  const reopened = standIn?.state === 'resolved' ? reopenStandIn({ settings: options.settings, id }) : options.settings;
+
+  return resolveStandIn({ settings: reopened, id, issueKey, source: 'human' });
+};
+
+/**
  * Hands a stand-in the user reopened back to auto mode: its resolution reads as untouched again. Only
  * an open one; a resolved one goes back through `reopenStandIn`.
  */

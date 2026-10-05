@@ -151,6 +151,29 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return into ? { ok: true, request: { op, id, into } } : missing(op, 'into');
   }
 
+  if (op === 'standIn.resolve') {
+    const id = asText(raw['id']);
+    const issueKey = asText(raw['issueKey']).toUpperCase();
+    const name = asText(raw['name']);
+    const fromIssueKey = asText(raw['fromIssueKey']).toUpperCase();
+    const summary = asText(raw['summary']);
+
+    if (!id) return missing(op, 'id');
+    if (!issueKey) return missing(op, 'issueKey');
+
+    return {
+      ok: true,
+      request: {
+        op,
+        id,
+        issueKey,
+        ...(name ? { name } : {}),
+        ...(fromIssueKey ? { fromIssueKey } : {}),
+        ...(summary ? { summary } : {}),
+      },
+    };
+  }
+
   if (op === 'standIn.split') {
     const id = asText(raw['id']);
     const branch = asText(raw['branch']);

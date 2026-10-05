@@ -57,6 +57,7 @@ import {
   withStandInParent,
   withStandInResolutionReset,
   withStandInsHidden,
+  withStandInIssue,
   WriteSource,
   ClassedAction,
   ModelPrice,
@@ -409,6 +410,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       if (next !== current) apply(next);
     },
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
+    setStandInIssue: (options: { id: string; issueKey: string }) =>
+      apply(withStandInIssue({ settings: settings(), ...options })),
     /** Hands a stand-in the user reopened back to auto mode. */
     resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),
     /** Hides stand-ins as of `day`, or shows them again when `day` is empty. */

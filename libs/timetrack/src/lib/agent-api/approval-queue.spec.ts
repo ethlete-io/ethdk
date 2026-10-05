@@ -200,6 +200,37 @@ describe('agentApiClientOf', () => {
   });
 });
 
+describe('a stand-in resolve in the queue', () => {
+  const RESOLVE: AgentApiRequest = {
+    op: 'standIn.resolve',
+    id: 's1',
+    issueKey: 'FIFAGG-12624',
+    name: 'Bracket challenge',
+    fromIssueKey: 'FIFAGG-12605',
+    summary: 'Umsetzung',
+  };
+
+  it('waits as local and reads back the stand-in, the old issue and the new one it stored', () => {
+    const queue = enqueueApproval([], { id: 'a0', request: RESOLVE, client: 'Claude Code', at: AT, day: '2026-09-28' });
+
+    expect(routesThroughApproval(RESOLVE)).toBe(true);
+    expect(queue[0]?.opClass).toBe('local');
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+  });
+
+  it('names the stand-in, the old issue and the new key with its summary', () => {
+    expect(describeApproval(RESOLVE)).toBe(
+      'Resolves stand-in Bracket challenge: FIFAGG-12605 → FIFAGG-12624 Umsetzung',
+    );
+  });
+
+  it('names no old issue for an open stand-in, and the key alone without a summary', () => {
+    expect(describeApproval({ op: 'standIn.resolve', id: 's1', issueKey: 'ABC-7', name: 'Pdf export' })).toBe(
+      'Resolves stand-in Pdf export: ABC-7',
+    );
+  });
+});
+
 const APPLY: AutoModeApplyRequest = {
   op: 'autoMode.apply',
   day: '2026-09-28',

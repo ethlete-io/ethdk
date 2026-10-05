@@ -22,7 +22,7 @@ npx ethlete-agents timetrack standins               # work the user named that J
 Add `--json` to any of them when you need to read a field rather than a line.
 
 **Every write waits for the user's approval in the app.** `create`, `log`, `edit`, `standins
---remove | --rename | --merge | --split --force`, `sync --write`, `worklog --delete` and `resync` answer at
+--remove | --rename | --merge | --resolve | --split --force`, `sync --write`, `worklog --delete` and `resync` answer at
 once with an approval id and write nothing yet. The user approves or rejects the request in
 Timetrack; `approval <id>` reads the outcome:
 
@@ -78,6 +78,7 @@ nobody can rotate.
 | `standins --remove <id>`                   | A placeholder is wrong or too wide, and the user asked you to delete it     |
 | `standins --rename <id> --name <text>`     | The name a placeholder carries is wrong, and the user asked you to fix it   |
 | `standins --merge <id> --into <id>`        | Two placeholders are one piece of work, and the user asked you to join them |
+| `standins --resolve <id> --issue <KEY>`    | The user named the issue a placeholder is, or the one a resolved one is now |
 | `naming [YYYY-MM-DD]`                      | A checkout was never offered a name and you need the step that stopped      |
 | `worklogs [from] [to]`                     | You need what the user already booked in Tempo over a span of days          |
 | `calendar [from] [to]`                     | You need the user's meetings and calendar entries over a span of days       |
@@ -199,6 +200,21 @@ npx ethlete-agents timetrack standins --rename <id> --name '20260921 competition
 The days it holds and the rules that name it stay, which is what a delete and a fresh record would
 lose. Rename one only when the user asks. The name is their own word for their work, so a name you
 find unclear is not a fault to correct.
+
+### Resolve one to its issue
+
+The user told you which Jira issue a placeholder is:
+
+```bash
+npx ethlete-agents timetrack standins --resolve <id> --issue <KEY>
+```
+
+It resolves the placeholder as the user's own pick in the app does, so every band on every day it
+held takes the key. One that is resolved already moves to the new key, as the app's Undo and a new
+pick would. It writes nothing to Tempo, so a day of it already booked keeps the old key there. The
+app reads the issue from Jira before it queues anything, so an unknown key or placeholder answers an
+error and nothing waits. A done issue is fine. The approval card shows the name, the old key and the
+new one with its summary.
 
 ### Re-cut one that named two pieces of work
 

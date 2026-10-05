@@ -14,6 +14,7 @@ import {
   AgentApiReviewedRow,
   AgentApiRules,
   AgentApiStandIn,
+  AgentApiStandInResolve,
   AgentApiStandInSplit,
   AgentApiStatus,
   AgentApiTempoDelete,
@@ -689,6 +690,42 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return merge.problem ? throwError(() => new Error(merge.problem)) : standIns$();
   };
 
+  const resolveRequestOf$ = (request: AgentApiStandInResolve): Observable<AgentApiStandInResolve> => {
+    const standIn = settings.settings().standIns.find((entry) => entry.id === request.id);
+
+    if (!standIn) return throwError(() => new Error(`Timetrack holds no stand-in ${request.id}. Nothing was queued.`));
+    if (standIn.state === 'resolved' && standIn.issueKey === request.issueKey) {
+      return throwError(
+        () => new Error(`Stand-in ${standIn.name} is resolved to ${request.issueKey} already. Nothing was queued.`),
+      );
+    }
+
+    return issue$(request.issueKey).pipe(
+      map(({ issue }) => ({
+        op: request.op,
+        id: request.id,
+        issueKey: issue.key,
+        name: standIn.name,
+        ...(standIn.state === 'resolved' && standIn.issueKey ? { fromIssueKey: standIn.issueKey } : {}),
+        ...(issue.summary ? { summary: issue.summary } : {}),
+      })),
+    );
+  };
+
+  const resolveStandIn$ = (request: AgentApiStandInResolve): Observable<{ standIns: AgentApiStandIn[] }> => {
+    if (!settings.settings().standIns.some((standIn) => standIn.id === request.id))
+      return throwError(() => new Error(`Timetrack holds no stand-in ${request.id}.`));
+
+    settings.setStandInIssue({ id: request.id, issueKey: request.issueKey });
+
+    const resolved = settings.settings().standIns.find((standIn) => standIn.id === request.id);
+
+    if (resolved?.state !== 'resolved' || resolved.issueKey !== request.issueKey)
+      return throwError(() => new Error(`Timetrack could not resolve stand-in ${request.id} to ${request.issueKey}.`));
+
+    return standIns$();
+  };
+
   /**
    * Cuts one placeholder into one per directory it turned out to cover.
    *
@@ -790,6 +827,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return renameStandIn$(request);
       case 'standIn.merge':
         return mergeStandIn$(request);
+      case 'standIn.resolve':
+        return resolveStandIn$(request);
       case 'standIn.split':
         return splitStandIn$(request);
       case 'naming.offers':
@@ -833,6 +872,14 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!parsed.ok) return of({ ok: false, message: parsed.message });
 
     const { request } = parsed;
+
+    if (request.op === 'standIn.resolve') {
+      return answered(
+        resolveRequestOf$(request).pipe(
+          switchMap((resolve) => approvals.enqueue$({ request: resolve, client: agentApiCallerOf(body) })),
+        ),
+      );
+    }
 
     if (routesThroughApproval(request)) {
       return answered(approvals.enqueue$({ request, client: agentApiCallerOf(body) }));

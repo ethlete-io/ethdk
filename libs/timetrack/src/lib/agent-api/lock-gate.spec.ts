@@ -29,6 +29,7 @@ describe('AGENT_API_OP_CLASSES', () => {
       'agentSessions.resync',
       'day.edits',
       'standIn.rename',
+      'standIn.resolve',
       'standIn.split',
       'worklog.add',
     ]);
