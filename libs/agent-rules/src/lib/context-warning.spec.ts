@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 type RunHookOptions = {
   model: string;
+  prompt?: string;
   sessionId?: string;
   threadId?: string;
   threadSource?: 'subagent' | 'user';
@@ -17,7 +18,15 @@ type RunHookOptions = {
 const hookPath = resolve(__dirname, '../../content/hooks/context-warning.py');
 
 const runHook = (options: RunHookOptions) => {
-  const { model, sessionId = randomUUID(), threadId = randomUUID(), threadSource = 'user', tokens, window } = options;
+  const {
+    model,
+    prompt,
+    sessionId = randomUUID(),
+    threadId = randomUUID(),
+    threadSource = 'user',
+    tokens,
+    window,
+  } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-context-warning-'));
   const transcriptPath = join(root, 'rollout.jsonl');
   const transcript = [
@@ -40,7 +49,7 @@ const runHook = (options: RunHookOptions) => {
 
   return execFileSync('python3', [hookPath, '--agent', 'codex'], {
     encoding: 'utf8',
-    input: JSON.stringify({ cwd: root, session_id: sessionId, transcript_path: transcriptPath }),
+    input: JSON.stringify({ cwd: root, prompt, session_id: sessionId, transcript_path: transcriptPath }),
   });
 };
 
@@ -49,8 +58,10 @@ type RunClaudeHookOptions = {
   event?: string;
   model?: string;
   permissionMode?: string;
+  prompt?: string;
   sessionId?: string;
   tokens: number;
+  turn?: object[];
   withTranscript?: boolean;
 };
 
@@ -60,8 +71,10 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
     event,
     model = 'claude-opus-5',
     permissionMode = 'auto',
+    prompt,
     sessionId = randomUUID(),
     tokens,
+    turn = [],
     withTranscript = true,
   } = options;
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-context-warning-'));
@@ -70,7 +83,9 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
   if (withTranscript) {
     writeFileSync(
       transcriptPath,
-      `${JSON.stringify({ type: 'assistant', message: { model, usage: { input_tokens: tokens } } })}\n`,
+      [...turn, { type: 'assistant', message: { model, usage: { input_tokens: tokens } } }]
+        .map((entry) => `${JSON.stringify(entry)}\n`)
+        .join(''),
       'utf8',
     );
   }
@@ -82,6 +97,7 @@ const runClaudeHook = (options: RunClaudeHookOptions) => {
       ...(agentId ? { agent_id: agentId } : {}),
       ...(event ? { hook_event_name: event } : {}),
       permission_mode: permissionMode,
+      ...(prompt ? { prompt } : {}),
       session_id: sessionId,
       transcript_path: transcriptPath,
     }),
@@ -295,8 +311,99 @@ describe('context-warning end of turn', () => {
   it('still demands a choice at the end of a turn that a tool batch already warned about', () => {
     const sessionId = randomUUID();
 
-    runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 175_000 });
+    runClaudeHook({ event: 'PostToolBatch', permissionMode: 'default', sessionId, tokens: 175_000 });
 
-    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 176_000 })).not.toBeNull();
+    expect(runClaudeHook({ event: 'Stop', permissionMode: 'default', sessionId, tokens: 176_000 })).not.toBeNull();
+  });
+});
+
+const humanPrompt = (content: string) => ({
+  type: 'user',
+  origin: { kind: 'human' },
+  message: { role: 'user', content },
+});
+const toolUse = (name: string, input: object) => ({
+  type: 'assistant',
+  message: { content: [{ type: 'tool_use', name, input }] },
+});
+const slashCommand = (args: string) =>
+  humanPrompt(
+    `<command-message>handoff</command-message>\n<command-name>/handoff</command-name>\n<command-args>${args}</command-args>`,
+  );
+
+describe('context-warning during a handoff', () => {
+  it('stays silent on the prompt and at the end of a turn that requested a handoff', () => {
+    const sessionId = randomUUID();
+
+    expect(
+      runClaudeHook({ event: 'UserPromptSubmit', prompt: '/handoff my-task', sessionId, tokens: 175_000 }),
+    ).toBeNull();
+    expect(runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 176_000 })).toBeNull();
+    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 195_000 })).toBeNull();
+  });
+
+  it('re-arms on the next prompt', () => {
+    const sessionId = randomUUID();
+    const permissionMode = 'default';
+
+    runClaudeHook({ event: 'UserPromptSubmit', prompt: '/handoff', permissionMode, sessionId, tokens: 175_000 });
+    runClaudeHook({ event: 'UserPromptSubmit', prompt: 'next task', permissionMode, sessionId, tokens: 176_000 });
+
+    expect(runClaudeHook({ event: 'Stop', permissionMode, sessionId, tokens: 177_000 })).not.toBeNull();
+  });
+
+  it('keeps warning a session that resumes from a handoff', () => {
+    const sessionId = randomUUID();
+    const permissionMode = 'default';
+
+    expect(
+      runClaudeHook({
+        event: 'UserPromptSubmit',
+        prompt: '/handoff resume my-task',
+        permissionMode,
+        sessionId,
+        tokens: 175_000,
+      }),
+    ).not.toBeNull();
+    expect(
+      runClaudeHook({
+        event: 'Stop',
+        permissionMode,
+        sessionId,
+        tokens: 176_000,
+        turn: [slashCommand('resume my-task')],
+      }),
+    ).not.toBeNull();
+  });
+
+  it('reads the handoff request from the transcript', () => {
+    expect(runClaudeHook({ event: 'Stop', tokens: 175_000, turn: [slashCommand('my-task')] })).toBeNull();
+  });
+
+  it('stays silent for the rest of a turn that invoked the skill or wrote a handoff file', () => {
+    const skill = toolUse('Skill', { skill: 'handoff', args: 'my-task' });
+    const write = toolUse('Write', { file_path: '/repo/.claude/handoffs/my-task.md', content: '' });
+
+    expect(runClaudeHook({ event: 'Stop', tokens: 175_000, turn: [humanPrompt('fix it'), skill] })).toBeNull();
+    expect(runClaudeHook({ event: 'Stop', tokens: 175_000, turn: [humanPrompt('fix it'), write] })).toBeNull();
+    expect(
+      runClaudeHook({ event: 'Stop', tokens: 175_000, turn: [humanPrompt('fix it'), write, humanPrompt('go on')] }),
+    ).not.toBeNull();
+  });
+
+  it('stays silent at the end of a turn whose auto-mode save it ordered', () => {
+    const sessionId = randomUUID();
+
+    expect(runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 175_000 })?.systemMessage).toContain(
+      'saving a handoff',
+    );
+    expect(runClaudeHook({ event: 'Stop', sessionId, tokens: 195_000 })).toBeNull();
+  });
+
+  it('stays silent on a Codex handoff prompt', () => {
+    const options = { model: 'gpt-5.6-sol', tokens: 240_000, window: 1_050_000 } as const;
+
+    expect(runHook({ ...options, prompt: 'handoff my-task' })).toBe('');
+    expect(runHook({ ...options, prompt: 'handoff resume my-task' })).toContain('Tell the user:');
   });
 });

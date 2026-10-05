@@ -61,6 +61,11 @@ one it took: finish, hand off, or continue past the boundary for a reason it
 states in one sentence. A third tier at 95% withdraws only the "finish" option,
 because a budget that small covers no task.
 
+Goes quiet while a handoff is being saved: from a prompt that requests save mode, or the
+auto-mode save this hook ordered, until the next prompt; and for the rest of a turn in
+which the agent invoked the handoff skill or wrote a handoff file. A save that is told to
+choose between finishing and handing off again never ends. `resume` is not a save.
+
 Warns once per tier per session (state kept in a temp file); re-arms itself
 if the context shrinks again (e.g. after a compaction). The Stop event keeps its
 own per-tier counter, so crossing a tier mid-run costs at most one notice while
@@ -81,6 +86,7 @@ a tool batch or the end of a turn.
 
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -435,6 +441,67 @@ def codex_context_state(transcript_path):
 CONTEXT_READERS = {"claude": claude_context_state, "codex": codex_context_state}
 
 
+HANDOFF_SKILLS = ("handoff", "ethlete-handoff")
+COMMAND_PATTERN = re.compile(r"<command-name>/?([^<]*)</command-name>")
+ARGS_PATTERN = re.compile(r"<command-args>([^<]*)</command-args>")
+
+
+def is_handoff_save(skill, args):
+    return skill in HANDOFF_SKILLS and not (args or "").strip().lower().startswith("resume")
+
+
+def handoff_save_requested(prompt):
+    """True for a prompt that runs the handoff skill in save mode - a slash command or a plain one."""
+    if not isinstance(prompt, str):
+        return False
+    command = COMMAND_PATTERN.search(prompt)
+    if command:
+        args = ARGS_PATTERN.search(prompt)
+        return is_handoff_save(command.group(1).strip(), args.group(1) if args else "")
+    words = prompt.strip().split(None, 1)
+    return bool(words) and is_handoff_save(words[0].lstrip("/").lower(), words[1] if len(words) > 1 else "")
+
+
+def is_turn_start(obj):
+    if obj.get("type") != "user" or obj.get("isSidechain") or obj.get("isMeta"):
+        return False
+    origin = obj.get("origin")
+    if isinstance(origin, dict):
+        return origin.get("kind") == "human"
+    content = (obj.get("message") or {}).get("content")
+    return isinstance(content, str)
+
+
+def starts_handoff(block):
+    if not isinstance(block, dict) or block.get("type") != "tool_use":
+        return False
+    tool_input = block.get("input") or {}
+    if block.get("name") == "Skill":
+        return is_handoff_save(tool_input.get("skill"), tool_input.get("args"))
+    path = tool_input.get("file_path")
+    return isinstance(path, str) and path.endswith(".md") and "handoffs" in path.replace("\\", "/").split("/")
+
+
+def handoff_under_way_in_turn(transcript_path):
+    """True when the current Claude turn requested, invoked or wrote a handoff save."""
+    lines, _ = tail_lines(transcript_path, TAIL_BYTES)
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            continue
+        if obj.get("isSidechain"):
+            continue
+        content = (obj.get("message") or {}).get("content")
+        if is_turn_start(obj):
+            return handoff_save_requested(content if isinstance(content, str) else None)
+        if obj.get("type") == "assistant" and isinstance(content, list) and any(map(starts_handoff, content)):
+            return True
+    return False
+
+
 def headroom(tokens, budget):
     """How much budget is left, as a short human string."""
     left = max(budget - tokens, 0)
@@ -653,22 +720,27 @@ def emit(event, additional_context, system_message=None):
 
 
 def read_state(path):
-    """{"tier": n, "stop_tier": n} from the state file; zeroes when absent or unreadable."""
+    """{"tier": n, "stop_tier": n, "saving": bool} from the state file; zeroes when absent or unreadable."""
+    empty = {"tier": 0, "stop_tier": 0, "saving": False}
     try:
         with open(path, encoding="utf-8") as f:
             raw = f.read().strip()
     except OSError:
-        return {"tier": 0, "stop_tier": 0}
+        return empty
     try:
         state = json.loads(raw)
         if isinstance(state, dict):
-            return {"tier": int(state.get("tier", 0)), "stop_tier": int(state.get("stop_tier", 0))}
+            return {
+                "tier": int(state.get("tier", 0)),
+                "stop_tier": int(state.get("stop_tier", 0)),
+                "saving": state.get("saving") is True,
+            }
     except (ValueError, TypeError):
         pass
     try:
-        return {"tier": int(raw or 0), "stop_tier": 0}
+        return {**empty, "tier": int(raw or 0)}
     except ValueError:
-        return {"tier": 0, "stop_tier": 0}
+        return empty
 
 
 def write_state(path, state):
@@ -734,6 +806,16 @@ def main():
     state = read_state(state_file)
     prev_tier = state["tier"]
 
+    if event == "UserPromptSubmit":
+        saving = handoff_save_requested(data.get("prompt"))
+        if saving != state["saving"]:
+            state = {**state, "saving": saving}
+            write_state(state_file, state)
+        if saving:
+            return
+    elif tier and (state["saving"] or (agent == "claude" and handoff_under_way_in_turn(transcript_path))):
+        return
+
     if event == "Stop":
         # Below the critical tier the mid-run notice is enough; interrupting the end of a turn
         # at 70% costs more than it saves.
@@ -747,8 +829,12 @@ def main():
             emit(event, additional_context)
         return
 
-    if tier != prev_tier:
-        write_state(state_file, {**state, "tier": tier, "stop_tier": min(state["stop_tier"], tier)})
+    orders_save = auto_mode and tier >= 2 and tier > prev_tier and not is_subagent
+    if tier != prev_tier or orders_save:
+        write_state(
+            state_file,
+            {**state, "tier": tier, "stop_tier": min(state["stop_tier"], tier), "saving": state["saving"] or orders_save},
+        )
 
     if tier <= prev_tier:
         # Below the first threshold, or the context shrank - the state was re-armed above.

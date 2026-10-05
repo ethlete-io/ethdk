@@ -63,7 +63,8 @@ you can act. It adds a third option to the two above:
 
 Option 3 is a judgment call, not a way out of the other two. Naming a reason you cannot
 state plainly is the same as taking option 2 late and expensively. The hook asks once per
-tier, so it will not block the end of a turn twice for the same budget.
+tier, so it will not block the end of a turn twice for the same budget. It stays quiet while a
+handoff is being saved, until the user's next prompt.
 
 ## Save mode
 
