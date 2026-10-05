@@ -4,6 +4,7 @@ import {
   AUTO_MODE_CLIENT,
   AgentApproval,
   approvalRowIdsOf,
+  autoModeTargetOf,
   disputedTargetLabel,
   formatDurationMs,
   localDayKey,
@@ -87,13 +88,40 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return { byRow, previews, unplaced, first };
   });
 
-  const revealing = signal<string | null>(null);
+  const revealing = signal<{ itemId: string; day: string } | null>(null);
+
+  const dayOf = (item: AgentApproval) => {
+    const { request } = item;
+
+    switch (request.op) {
+      case 'autoMode.apply':
+      case 'autoMode.hide':
+      case 'autoMode.resolve':
+        return request.day;
+      case 'worklog.add':
+        return localDayKey(new Date(request.fromMs), store.boundary());
+      case 'jira.create': {
+        const target = autoModeTargetOf(item.target);
+
+        return target?.subject.kind === 'context' ? target.day : null;
+      }
+      default:
+        return null;
+    }
+  };
 
   return {
     /** The earliest band of the day in view the item previews on, or null when it touches none. */
     firstRowOf: (itemId: string) => placed().first.get(itemId) ?? null,
+    /** The day other than the one in view whose bands the item is for, or null. */
+    otherDayOf: (item: AgentApproval) => {
+      const day = dayOf(item);
+
+      return day && day !== store.dayKey() ? day : null;
+    },
     revealing: revealing.asReadonly(),
-    reveal: (rowId: string) => revealing.set(rowId),
+    /** Opens the item's band once the day in view draws it. Call it after the day is set. */
+    reveal: (itemId: string) => revealing.set({ itemId, day: store.dayKey() }),
     revealed: () => revealing.set(null),
     forRow: (rowId: string) => placed().byRow.get(rowId) ?? [],
     previews: computed(() => placed().previews),

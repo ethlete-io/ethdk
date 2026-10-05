@@ -1042,7 +1042,15 @@ export class DayTimelineComponent {
     });
 
     afterRenderEffect(() => {
-      const rowId = this.bandApprovals.revealing();
+      const reveal = this.bandApprovals.revealing();
+
+      if (reveal && reveal.day !== this.store.dayKey()) {
+        this.bandApprovals.revealed();
+
+        return;
+      }
+
+      const rowId = reveal ? this.bandApprovals.firstRowOf(reveal.itemId) : null;
       const row = rowId ? this.rows().find((entry) => entry.id === rowId) : undefined;
       const band = this.bands()
         .map((entry) => entry.nativeElement)

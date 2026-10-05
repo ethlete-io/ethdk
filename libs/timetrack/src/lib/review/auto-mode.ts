@@ -39,6 +39,14 @@ const subjectOfTarget = (target: string | undefined, day: string): AutoModeSubje
   return null;
 };
 
+/** The day and subject auto mode queued a create or apply for, read from its target. `null` for any other target. */
+export const autoModeTargetOf = (target: string | undefined) => {
+  const day = /^(\d{4}-\d{2}-\d{2})\|/.exec(target ?? '')?.[1];
+  const subject = day ? subjectOfTarget(target?.replace(/\|apply$/, ''), day) : null;
+
+  return day && subject ? { day, subject } : null;
+};
+
 const subjectRowIds = (options: {
   subject: AutoModeSubject;
   rows: readonly ReviewedRow[];

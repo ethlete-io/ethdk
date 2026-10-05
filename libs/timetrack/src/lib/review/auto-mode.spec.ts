@@ -22,6 +22,7 @@ import {
   autoModeReadout,
   autoModeAsks,
   autoModeSubjectRequest,
+  autoModeTargetOf,
   autoModeCreateRequest,
   autoModeCreatedKeys,
   autoModeQueuedAnswer,
@@ -1055,6 +1056,20 @@ describe('approvalRowIdsOf', () => {
 
   it('previews nothing for a tempo sync', () => {
     expect(idsOf({ request: { op: 'tempo.sync', day: TODAY, planHash: 'x' } })).toEqual([]);
+  });
+});
+
+describe('autoModeTargetOf', () => {
+  it('reads the day and subject of a create and of an apply', () => {
+    const subject: AutoModeSubject = { kind: 'context', contextId: 'repo:x|branch:y' };
+
+    expect(autoModeTargetOf(autoModeApprovalTarget('2026-08-12', subject))).toEqual({ day: '2026-08-12', subject });
+    expect(autoModeTargetOf(autoModeApplyTarget('2026-08-12', subject))).toEqual({ day: '2026-08-12', subject });
+  });
+
+  it('reads nothing from a target auto mode did not write', () => {
+    expect(autoModeTargetOf(undefined)).toBeNull();
+    expect(autoModeTargetOf('2026-08-12|hide:row-1')).toBeNull();
   });
 });
 

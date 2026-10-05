@@ -11,8 +11,9 @@ import {
 } from '@ethlete/components';
 import { Router } from '@angular/router';
 import { ProvideColorDirective } from '@ethlete/core';
-import { AgentApproval, approvalClassOf, describeApproval } from '@ethlete/timetrack';
+import { AgentApproval, approvalClassOf, autoModeTargetOf, describeApproval } from '@ethlete/timetrack';
 import { injectBandApprovals } from '../day-review/band-approvals';
+import { injectDayReview } from '../day-review/day-review';
 import { formatClockTime } from '../day-review/format';
 import { injectTimetrackSettings } from '../settings/settings';
 import { STAND_INS_OVERLAY } from '../stand-ins';
@@ -88,28 +89,37 @@ export class ApprovalQueueComponent {
   private router = inject(Router);
   private placed = injectBandApprovals();
   private tickets = injectTicketDraft();
+  private dayReview = injectDayReview();
   private overlayRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
   private standIns = runInInjectionContext(inject(EnvironmentInjector), () => createOverlayOpener(STAND_INS_OVERLAY));
 
   protected locatorOf(item: AgentApproval) {
     if (this.placed.firstRowOf(item.id)) return 'Show on the day';
+    if (this.standInOf(item)) return 'Show in stand-ins';
 
-    return this.standInOf(item) ? 'Show in stand-ins' : null;
+    return this.placed.otherDayOf(item) ? 'Show on the day' : null;
   }
 
   protected show(item: AgentApproval) {
-    const rowId = this.placed.firstRowOf(item.id);
-    const standIn = this.standInOf(item);
+    const onScreen = !!this.placed.firstRowOf(item.id);
+    const standIn = onScreen ? null : this.standInOf(item);
+    const day = onScreen || standIn ? null : this.placed.otherDayOf(item);
 
     this.overlayRef?.close();
 
-    if (rowId) {
-      this.placed.reveal(rowId);
-      void this.router.navigateByUrl('/day');
-    } else if (standIn) {
+    if (standIn) {
       this.tickets.openForStandIn(standIn);
       this.standIns.open();
+
+      return;
     }
+
+    if (!onScreen && !day) return;
+
+    if (day) this.dayReview.goToDay(day);
+
+    this.placed.reveal(item.id);
+    void this.router.navigateByUrl('/day');
   }
 
   protected classOf(item: AgentApproval) {
@@ -126,10 +136,13 @@ export class ApprovalQueueComponent {
 
   private standInOf(item: AgentApproval) {
     const { request } = item;
+    const subject = request.op === 'jira.create' ? autoModeTargetOf(item.target)?.subject : undefined;
     const id =
       request.op === 'standIn.resolve' || request.op === 'standIn.remove' || request.op === 'standIn.rename'
         ? request.id
-        : null;
+        : subject?.kind === 'stand-in'
+          ? subject.standInId
+          : null;
 
     return this.settings.settings().standIns.find((entry) => entry.id === id) ?? null;
   }
