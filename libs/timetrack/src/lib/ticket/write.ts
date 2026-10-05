@@ -54,7 +54,7 @@ export type TicketWritingRequest = {
   spec?: SpecHeader;
   /** The issues that may be the parent of a new ticket. */
   parents: TicketWritingIssue[];
-  /** The project's open issues, so the work already tracked is found instead of filed twice. */
+  /** The project's open issues and the ones the user logged on, so tracked work is not filed twice. */
   issues: TicketWritingIssue[];
 };
 
@@ -71,7 +71,8 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '',
   'The user message is JSON with the repository, the branch, the application, how many minutes the',
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
-  '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project.',
+  '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project,',
+  'then the issues the user recently logged time on, done ones included.',
   '`minutes` is absent when nothing measured how long the work took.',
   '',
   '`spec` is present when the work sits in a repository that holds a written specification: its',
@@ -110,7 +111,8 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '  `parents`. Answer null unless the notes or the branch actually say it belongs there.',
   '- `existingKey` is an issue from `issues` that already tracks this very work, or null. Answer it',
   '  only when the same work is meant, not when the subject is merely related — a second ticket is',
-  '  a nuisance, and time logged on the wrong existing issue is worse. Choose only from `issues`.',
+  '  a nuisance, and time logged on the wrong existing issue is worse. Choose only from `issues`. A',
+  '  done issue the user logs time on is still a valid `existingKey`.',
   '- `existingReason` is one sentence naming the wording that decided `existingKey`. Empty otherwise.',
   '- Write `summary` and `description` in every answer, including one that names an `existingKey`.',
 ].join('\n');

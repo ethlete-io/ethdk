@@ -3,11 +3,11 @@ import { FakeJiraIssue } from './types';
 /**
  * The clauses `libs/timetrack/src/lib/jira` actually builds, and nothing else: `key`/`id`/`project`/
  * `issuetype`/`parent` membership, `text ~`, `issuekey in updatedBy(...)`, `statusCategory = Done`
- * (an issue whose status is named `Done`), and `ORDER BY updated`.
+ * and `!= Done` (by an issue whose status is named `Done`), and `ORDER BY updated`.
  *
  * A clause this does not know is ignored rather than refused, so a new one narrows nothing instead of
- * emptying the result. `statusCategory != Done` and `assignee = currentUser()` are two such: every
- * issue in the fake is open and belongs to the fixture's account.
+ * emptying the result. `assignee = currentUser()` is one such: every issue in the fake belongs to the
+ * fixture's account.
  */
 export const filterByJql = (issues: readonly FakeJiraIssue[], jql: string): FakeJiraIssue[] => {
   const clauses = clausesOf(jql);
@@ -28,6 +28,7 @@ const applyClause = (issues: FakeJiraIssue[], clause: string): FakeJiraIssue[] =
   if (updated) return byUpdatedWindow(issues, { from: updated[1], to: updated[2] });
 
   if (/^statusCategory\s*=\s*Done$/i.test(trimmed)) return issues.filter((issue) => issue.status === 'Done');
+  if (/^statusCategory\s*!=\s*Done$/i.test(trimmed)) return issues.filter((issue) => issue.status !== 'Done');
 
   const text = /^(?:text|summary)\s*~\s*(.+)$/i.exec(trimmed);
 

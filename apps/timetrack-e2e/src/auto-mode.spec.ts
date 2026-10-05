@@ -7,6 +7,7 @@ import {
   E2E_PARENT_KEY,
   E2E_REPO,
   defaultSettings,
+  tempoWorklogOn,
 } from '@ethlete/timetrack/testing';
 import { CollectedEvent, TimetrackSettings } from '@ethlete/timetrack';
 import {
@@ -129,6 +130,35 @@ test.describe('auto mode on a stand-in of today', () => {
     await expect(
       activity.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
     ).toHaveCount(1);
+  });
+});
+
+test.describe('auto mode on a stand-in whose issue is done but still logged on', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+      tempo: { worklogs: [tempoWorklogOn({ day: '2026-08-05', minutes: 60, issueId: E2E_ISSUE_ID })] },
+    });
+    await page.goto('/day');
+  });
+
+  test('offers the done issue to the match and leaves the match to the user', async ({ page }) => {
+    const readout = await openAutoModeReadout(page);
+    const entry = readout.locator('[data-auto-entry^="stand-in:"]');
+
+    await expect(entry).toHaveAttribute('data-status', 'done');
+    await expect(entry).toContainText(`${E2E_ISSUE_KEY} is done, left to you`);
+    expect((await readBackend(page)).jira.created).toEqual([]);
+
+    await openStandIns(page);
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
   });
 });
 

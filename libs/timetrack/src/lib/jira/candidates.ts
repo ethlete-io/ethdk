@@ -1,7 +1,8 @@
 import { Observable, map } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { JiraIssue, toJiraIssue } from './issue';
+import { projectKeyOf } from '../ticket/project';
+import { JiraIssue, fetchJiraIssues$, toJiraIssue } from './issue';
 import { searchJiraTopIssues$ } from './search';
 
 /** How many parents a picker offers. A list nobody scrolls is a list nobody reads. */
@@ -16,9 +17,10 @@ const quoted = (value: string) => `"${value.replace(/\\/g, '\\\\').replace(/"/g,
 /**
  * The open issues in one project, most recently active first.
  *
- * Only open ones: a done issue is not something today's work belongs to, and offering it is how a
- * closed epic quietly reopens. The ordering carries the recency the ranking then re-sorts by wording,
- * so a project with no textual match still offers what the user was last working in.
+ * Only open ones: offering a done issue as a parent is how a closed epic quietly reopens. The done
+ * issues the user still logs on come from `fetchJiraLoggedIssues$`. The ordering carries the recency
+ * the ranking then re-sorts by wording, so a project with no textual match still offers what the
+ * user was last working in.
  */
 export const fetchJiraOpenIssues$ = (options: {
   transport: TimetrackTransport;
@@ -44,6 +46,33 @@ export const fetchJiraOpenIssues$ = (options: {
     describe: `open issues in ${options.projectKey}`,
     limit: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT,
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
+};
+
+/**
+ * The issues of one project among `loggedKeys`, whatever their status, in the order the keys came.
+ *
+ * Feed it the keys of the user's own Tempo history, newest first. An issue the user still logs time
+ * on is work they hold to be open, even after Jira moved it to done.
+ */
+export const fetchJiraLoggedIssues$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  projectKey: string;
+  loggedKeys: readonly string[];
+  subjectField?: string;
+}): Observable<JiraIssue[]> => {
+  const projectKey = options.projectKey.trim().toUpperCase();
+  const keys = [...new Set(options.loggedKeys.map((key) => key.trim().toUpperCase()))].filter(
+    (key) => projectKeyOf(key) === projectKey,
+  );
+
+  return fetchJiraIssues$({ ...options, keys }).pipe(
+    map((issues) => {
+      const byKey = new Map(issues.map((issue) => [issue.key.toUpperCase(), issue]));
+
+      return keys.flatMap((key) => byKey.get(key) ?? []);
+    }),
+  );
 };
 
 /**

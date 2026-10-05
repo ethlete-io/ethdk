@@ -83,11 +83,12 @@ import {
 import { injectHostPorts } from '../../host';
 import { injectAgentDay } from '../agent/agent-day';
 import { injectApprovalQueue } from '../agent/approval-queue';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 import { injectDayReview } from './day-review';
-import { ProjectIssues, readProjectIssues$ } from './project-issues';
+import { ProjectIssues, matchCandidatesOf, readProjectIssues$ } from './project-issues';
 
 /** How often a row's settle time is checked again: a row settles by the clock, not by a change. */
 const DESCRIPTION_TICK_MS = 60_000;
@@ -162,6 +163,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const approvals = injectApprovalQueue();
   const projectLinks = injectProjectLinks();
   const windowLock = injectWindowLock();
+  const recurring = injectRecurringPatterns();
   const jobs$ = new Subject<Job>();
   const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
@@ -324,7 +326,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const issues$ = (projectKey: string | undefined): Observable<ProjectIssues | null> =>
     projectKey
-      ? readProjectIssues$({ ports, settings: settings.settings(), projectKey }).pipe(catchError(() => of(null)))
+      ? recurring.settled$.pipe(
+          switchMap(() =>
+            readProjectIssues$({
+              ports,
+              settings: settings.settings(),
+              projectKey,
+              loggedKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
+            }),
+          ),
+          catchError(() => of(null)),
+        )
       : of(null);
 
   const projectKeyOf = (subject: AutoModeSubject) => {
@@ -364,7 +376,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       config: gitFlowConfigFor(current),
       maskedNames: current.reasoning.maskedNames,
       parents: issues?.parents ?? [],
-      issues: issues?.open ?? [],
+      issues: issues ? matchCandidatesOf(issues) : [],
     });
   };
 

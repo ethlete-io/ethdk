@@ -23,7 +23,7 @@ export type TicketMatch = {
  */
 export const TICKET_MATCH_SYSTEM_PROMPT = [
   'You read a stretch of work a developer already did, and you answer two questions about it: is it',
-  'already tracked by an open issue, and which wider issue does it belong under.',
+  'already tracked by an issue, and which wider issue does it belong under.',
   '',
   'You write nothing. No summary, no description, no new ticket. The user already wrote the words for',
   'this work and is keeping them.',
@@ -31,7 +31,8 @@ export const TICKET_MATCH_SYSTEM_PROMPT = [
   'The user message is JSON. `standIn` is the name the user gave the work themselves, their own draft',
   'description, and how many days it has run across. `notes` is taken from commit subjects, merge',
   'request titles and agent session titles. `parents` is the issues the work could roll up to.',
-  '`issues` is every open issue in the project.',
+  '`issues` is every open issue in the project, then the issues the user recently logged time on,',
+  'done ones included.',
   '',
   '`spec` is present when the work sits in a repository that holds a written specification: its',
   'title, what kind of work it is, its tags, the parent issue it already names, and the section it',
@@ -41,7 +42,8 @@ export const TICKET_MATCH_SYSTEM_PROMPT = [
   'Rules:',
   '- `existingKey` is an issue from `issues` that already tracks this very work, or null. Answer it',
   '  only when the same work is meant, not when the subject is merely related. Time logged on the',
-  '  wrong issue is worse than a second ticket. Choose only from `issues`.',
+  '  wrong issue is worse than a second ticket. Choose only from `issues`. A done issue the user',
+  '  logs time on is still a valid `existingKey`.',
   '- `existingReason` is one sentence naming the wording that decided `existingKey`. Empty otherwise.',
   '- `parentKey` is the issue from `parents` this work belongs under, or null. Choose only from',
   '  `parents`. Answer null unless the notes, the branch or the specification say it belongs there.',

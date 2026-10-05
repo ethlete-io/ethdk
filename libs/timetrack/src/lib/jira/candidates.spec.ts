@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { fetchJiraParentCandidates$ } from './candidates';
+import { fetchJiraLoggedIssues$, fetchJiraParentCandidates$ } from './candidates';
 import { JiraCredentials } from './client';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
@@ -121,5 +121,38 @@ describe('fetchJiraParentCandidates$', () => {
     }).subscribe(seen);
 
     expect(seen.mock.calls[0]?.[0]?.map((issue: { key: string }) => issue.key)).toEqual(['FIP-1']);
+  });
+});
+
+describe('fetchJiraLoggedIssues$', () => {
+  it('reads the logged keys of the project by key, so a done issue is read like an open one', () => {
+    const { transport, requests } = fakeTransport([
+      { id: '2', key: 'FIP-2', fields: { summary: 'Bracket challenge', issuetype: { name: 'Story' } } },
+      { id: '1', key: 'FIP-1', fields: { summary: 'User management', issuetype: { name: 'Task' } } },
+    ]);
+    const seen = vi.fn();
+
+    fetchJiraLoggedIssues$({
+      transport,
+      credentials: CREDENTIALS,
+      projectKey: 'FIP',
+      loggedKeys: ['FIP-1', 'ABC-9', 'fip-2', 'FIP-1'],
+    }).subscribe(seen);
+
+    expect(jqlOf(requests[0])).toBe('key in (FIP-1,FIP-2)');
+    expect(seen.mock.calls[0]?.[0]?.map((issue: { key: string }) => issue.key)).toEqual(['FIP-1', 'FIP-2']);
+  });
+
+  it('asks Jira nothing when the history logged nothing in the project', () => {
+    const { transport, requests } = fakeTransport([]);
+
+    fetchJiraLoggedIssues$({
+      transport,
+      credentials: CREDENTIALS,
+      projectKey: 'FIP',
+      loggedKeys: ['ABC-9'],
+    }).subscribe();
+
+    expect(requests).toEqual([]);
   });
 });

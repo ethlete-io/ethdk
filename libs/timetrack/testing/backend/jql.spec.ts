@@ -66,8 +66,12 @@ describe('filterByJql', () => {
     ]);
   });
 
+  it('leaves an issue whose status is named Done out of the open category', () => {
+    expect(keysOf('statusCategory != Done', [{ ...TASK, status: 'Done' }, STORY])).toEqual(['ABC-2']);
+  });
+
   it('narrows nothing on a clause it does not know', () => {
-    expect(keysOf('statusCategory != Done AND assignee = currentUser()')).toEqual(['ABC-1', 'ABC-2', 'XYZ-3']);
+    expect(keysOf('assignee = currentUser()')).toEqual(['ABC-1', 'ABC-2', 'XYZ-3']);
   });
 
   it('narrows nothing on an empty value list, rather than emptying the result', () => {

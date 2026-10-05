@@ -7,18 +7,21 @@ import {
   childTypeNameFor,
   describeJiraHierarchy$,
   fetchJiraCreatableTypes$,
+  fetchJiraLoggedIssues$,
   fetchJiraOpenIssues$,
   fetchJiraParentCandidates$,
   readJiraCredentials$,
 } from '@ethlete/timetrack';
-import { Observable, forkJoin, map, of, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, forkJoin, map, of, switchMap, throwError } from 'rxjs';
 
 export const NO_JIRA = 'Jira needs a host, an account email and a token in Settings.';
 
-/** The project's open issues: the ones a ticket may roll up to, and every one it could already be. */
+/** The project's issues: the open ones a ticket may roll up to, and every one it could already be. */
 export type ProjectIssues = {
   parents: JiraIssue[];
   open: JiraIssue[];
+  /** The issues the user's Tempo history logged on that `open` lacks, done ones included. */
+  logged: JiraIssue[];
   /** What this account may create here. Empty until the read lands, which offers no type at all. */
   creatable: JiraCreatableType[];
   /** The types a parent may be: the ones settings name that something can be filed under. */
@@ -63,6 +66,8 @@ export const readProjectIssues$ = (options: {
   ports: Pick<TimetrackPorts, 'secrets' | 'transport'>;
   settings: TimetrackSettings;
   projectKey: string;
+  /** The keys the user's own Tempo history logged on, newest first. Any project's. */
+  loggedKeys?: readonly string[];
 }): Observable<ProjectIssues> => {
   const { ports, settings, projectKey } = options;
   const subjectField = settings.ticket.subjectField || undefined;
@@ -89,7 +94,23 @@ export const readProjectIssues$ = (options: {
                         })
                       : of<JiraIssue[]>([]),
                     open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
-                  }).pipe(map((issues) => ({ ...issues, creatable, parentTypes, issueTypes: hierarchy.issueTypes })));
+                    logged: fetchJiraLoggedIssues$({
+                      transport: ports.transport,
+                      credentials,
+                      projectKey,
+                      loggedKeys: options.loggedKeys ?? [],
+                      subjectField,
+                    }).pipe(catchError(() => of<JiraIssue[]>([]))),
+                  }).pipe(
+                    map(({ parents, open, logged }) => ({
+                      parents,
+                      open,
+                      logged: logged.filter((issue) => !open.some((held) => held.key === issue.key)),
+                      creatable,
+                      parentTypes,
+                      issueTypes: hierarchy.issueTypes,
+                    })),
+                  );
                 }),
               ),
             ),
@@ -98,3 +119,6 @@ export const readProjectIssues$ = (options: {
     ),
   );
 };
+
+/** Every issue the work could already be: the open ones, then the ones the user logged on. */
+export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'open' | 'logged'>) => [...issues.open, ...issues.logged];

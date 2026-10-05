@@ -49,7 +49,8 @@ import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 import { injectProjectLinks } from '../project-links';
-import { NO_JIRA, ProjectIssues, readProjectIssues$ } from './project-issues';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
+import { NO_JIRA, ProjectIssues, matchCandidatesOf, readProjectIssues$ } from './project-issues';
 
 const IDLE = { kind: 'idle' } as const;
 
@@ -112,6 +113,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const projectLinks = injectProjectLinks();
   const dayReview = injectDayReview();
+  const recurring = injectRecurringPatterns();
 
   const context = signal<UnnamedContext | null>(null);
   /**
@@ -183,7 +185,15 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   const candidates$ = (projectKey: string): Observable<CandidateStatus> =>
-    readProjectIssues$({ ports, settings: settings.settings(), projectKey }).pipe(
+    recurring.settled$.pipe(
+      switchMap(() =>
+        readProjectIssues$({
+          ports,
+          settings: settings.settings(),
+          projectKey,
+          loggedKeys: recurring.loggedIssues().map((issue) => issue.issueKey),
+        }),
+      ),
       map((issues): CandidateStatus => ({ kind: 'ready', ...issues })),
       catchError((error: unknown) => of<CandidateStatus>({ kind: 'failed', message: messageOf(error) })),
     );
@@ -254,7 +264,8 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const matchFor = (issueKey: string): AgentMatch => {
     const status = candidateStatus();
-    const found = status.kind === 'ready' ? status.open.find((issue) => issue.key === issueKey) : undefined;
+    const found =
+      status.kind === 'ready' ? matchCandidatesOf(status).find((issue) => issue.key === issueKey) : undefined;
 
     return { issueKey, summary: found?.summary ?? '', reason: '' };
   };
@@ -578,8 +589,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const unnamed = context();
     const waiting = standIn();
     const status = candidateStatus();
-    const issues = status.kind === 'ready' ? status : { parents: [], open: [] };
-    const offered = { parents: issues.parents, issues: issues.open };
+    const offered = status.kind === 'ready' ? { parents: status.parents, issues: matchCandidatesOf(status) } : {};
     const maskedNames = settings.settings().reasoning.maskedNames;
 
     const found = spec();
