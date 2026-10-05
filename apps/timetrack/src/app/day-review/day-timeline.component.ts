@@ -12,6 +12,7 @@ import {
   output,
   signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -317,7 +318,9 @@ type RowDrag = {
 
                   @for (laid of lane.blocks; track laid.key) {
                     <div
+                      #band
                       [attr.data-kind]="kindOf(laid.block.node.appointment)"
+                      [attr.data-row-id]="rowOf(laid.block.node.appointment)?.id"
                       [attr.data-compact]="compact(laid.block.span) || null"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
                       [attr.data-excluded]="excluded(laid.block.node.appointment) || null"
@@ -804,6 +807,7 @@ export class DayTimelineComponent {
   public breakDraw = output<TimeWindow>();
 
   private body = viewChild.required<ElementRef<HTMLElement>>('body');
+  private bands = viewChildren<ElementRef<HTMLElement>>('band');
   private dayColumn = viewChild<ElementRef<HTMLElement>>('dayColumn');
   public grid = viewChild(SchedulerTimeGridDirective);
   private scheduler = viewChild.required<SchedulerDirective<TimelineEntry>>(SchedulerDirective);
@@ -1035,6 +1039,21 @@ export class DayTimelineComponent {
       }
 
       if (this.rows().length) this.scrollTarget.set(null);
+    });
+
+    afterRenderEffect(() => {
+      const rowId = this.bandApprovals.revealing();
+      const row = rowId ? this.rows().find((entry) => entry.id === rowId) : undefined;
+      const band = this.bands()
+        .map((entry) => entry.nativeElement)
+        .find((element) => element.dataset['rowId'] === rowId);
+
+      if (!row || !band) return;
+
+      this.scrollTarget.set(null);
+      band.scrollIntoView({ block: 'center', inline: 'nearest' });
+      this.openFor(row, band);
+      this.bandApprovals.revealed();
     });
 
     afterNextRender(() => {

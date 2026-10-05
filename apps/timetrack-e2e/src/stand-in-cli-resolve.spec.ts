@@ -77,6 +77,20 @@ test.describe('a resolve of a resolved stand-in a CLI asks for', () => {
     });
   });
 
+  test('shows on the stand-in band, and the panel locates it', async ({ page }) => {
+    const id = queuedId(await askAgent(page, RESOLVE));
+    const band = bandOf(page, E2E_PARENT_KEY);
+
+    await expect(band).toHaveAttribute('data-pending', 'true');
+
+    const dialog = await openApprovals(page);
+
+    await dialog.locator(`[data-approval="${id}"]`).getByRole('button', { name: 'Show on the day' }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-row-approval]')).toContainText(E2E_EPIC_KEY);
+  });
+
   test('leaves the stand-in as it was once rejected', async ({ page }) => {
     const heading = page.locator('ethlete-day-review header h2');
     const shown = await heading.textContent();

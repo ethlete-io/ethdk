@@ -71,9 +71,20 @@ export const approvalRowIdsOf = (options: {
   rows: readonly ReviewedRow[];
   /** The day's unattributed groups, which say which context each unnamed row came from. */
   unattributed: readonly WorkGroup[];
+  /** The stand-ins, which say what a resolved one's rows are keyed by now. */
+  standIns?: readonly Pick<StandIn, 'id' | 'state' | 'issueKey'>[];
 }): string[] => {
   const { item, day, rows } = options;
   const { request } = item;
+
+  if (request.op === 'standIn.resolve' || request.op === 'standIn.remove' || request.op === 'standIn.rename') {
+    const standIn = options.standIns?.find((entry) => entry.id === request.id);
+    const issueKey = standIn?.state === 'resolved' ? standIn.issueKey : undefined;
+
+    return rows
+      .filter((row) => row.standInId === request.id || (!!issueKey && row.issueKey === issueKey))
+      .map((row) => row.id);
+  }
 
   if (request.op === 'autoMode.apply') {
     return request.day === day

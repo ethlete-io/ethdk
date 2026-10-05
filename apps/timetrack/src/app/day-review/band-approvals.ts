@@ -1,4 +1,4 @@
-import { computed } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AUTO_MODE_CLIENT,
@@ -9,6 +9,7 @@ import {
   localDayKey,
 } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../agent/approval-queue';
+import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
 
 export { askerOf, approvalIssueKeysOf, approvalLinesOf } from './approval-lines';
@@ -51,6 +52,7 @@ export const approvalDescriptionOf = (item: AgentApproval) =>
 const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const queue = injectApprovalQueue();
   const store = injectDayReview();
+  const settings = injectTimetrackSettings();
 
   const placed = computed(() => {
     const day = store.dayKey();
@@ -59,10 +61,17 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const byRow = new Map<string, AgentApproval[]>();
     const previews: ApprovalPreview[] = [];
     const unplaced: AgentApproval[] = [];
+    const first = new Map<string, string>();
 
     for (const item of queue.waiting()) {
       const { request } = item;
-      const ids = approvalRowIdsOf({ item, day, rows, unattributed });
+      const ids = approvalRowIdsOf({ item, day, rows, unattributed, standIns: settings.settings().standIns });
+
+      const earliest = rows
+        .filter((row) => ids.includes(row.id))
+        .sort((a, b) => a.from.getTime() - b.from.getTime())[0];
+
+      if (earliest) first.set(item.id, earliest.id);
 
       for (const id of ids) byRow.set(id, [...(byRow.get(id) ?? []), item]);
 
@@ -75,10 +84,17 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }
     }
 
-    return { byRow, previews, unplaced };
+    return { byRow, previews, unplaced, first };
   });
 
+  const revealing = signal<string | null>(null);
+
   return {
+    /** The earliest band of the day in view the item previews on, or null when it touches none. */
+    firstRowOf: (itemId: string) => placed().first.get(itemId) ?? null,
+    revealing: revealing.asReadonly(),
+    reveal: (rowId: string) => revealing.set(rowId),
+    revealed: () => revealing.set(null),
     forRow: (rowId: string) => placed().byRow.get(rowId) ?? [],
     previews: computed(() => placed().previews),
     unplaced: computed(() => placed().unplaced),
