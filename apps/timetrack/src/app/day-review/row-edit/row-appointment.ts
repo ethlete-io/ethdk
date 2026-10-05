@@ -215,7 +215,7 @@ export const appointmentLabel = (appointment: Appointment) => {
 export const unbookedLabel = (appointment: Appointment) => {
   const unbookedMs = rowEntryOf(appointment)?.row.unbookedMs;
 
-  return unbookedMs ? ` · ${formatDurationMs(unbookedMs)} not booked` : '';
+  return unbookedMs ? ` · ${formatDurationMs(unbookedMs)} phone time not counted` : '';
 };
 
 /** Whether a band is waiting on a ticket, so the timeline can mark it as provisional. */

@@ -53,10 +53,10 @@ test.describe('a band that draws remote work past the hour the day books', () =>
     await page.goto('/day');
   });
 
-  test('says quietly how much of it is not booked', async ({ page }) => {
-    const band = page.locator(`[data-kind="row"][title^="${E2E_ISSUE_KEY}"][title*="not booked"]`);
+  test('says quietly how much phone time it does not count', async ({ page }) => {
+    const band = page.locator(`[data-kind="row"][title^="${E2E_ISSUE_KEY}"][title*="phone time not counted"]`);
 
     await expect(band).toHaveCount(1);
-    await expect(band.locator('[data-unbooked]')).toHaveText('· 1h 0m not booked');
+    await expect(band.locator('[data-unbooked]')).toHaveText('· 1h 0m phone time not counted');
   });
 });
