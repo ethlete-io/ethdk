@@ -37,6 +37,14 @@ const offer = (page: import('@playwright/test').Page) => page.locator(`[data-off
 const accept = (page: import('@playwright/test').Page) =>
   page.getByRole('button', { name: `Always log fut-frontend on ${E2E_PARENT_KEY}` });
 
+const askNaming = (page: import('@playwright/test').Page) =>
+  askAgent<AgentApiNaming>(page, { op: 'naming.offers', day: E2E_DAY_KEY });
+
+const declined = (decline: Record<string, unknown>) => ({
+  ok: true,
+  value: { offers: [], declines: [{ repoPath: E2E_REPO, ...decline }] },
+});
+
 /**
  * The offer a checkout's own record makes: the user linked the checkout to a project and logged nearly
  * every hour of that project against one task, so the answer for the whole checkout is already written
@@ -97,6 +105,7 @@ test.describe('the checkout-wide answer the record already holds', () => {
     });
     await page.goto('/day');
 
+    expect(await askNaming(page)).toMatchObject(declined({ reason: 'no-project-link' }));
     await expect(offer(page)).toHaveCount(0);
   });
 
@@ -115,12 +124,7 @@ test.describe('the checkout-wide answer the record already holds', () => {
     });
     await page.goto('/day');
 
-    const naming = await askAgent<AgentApiNaming>(page, { op: 'naming.offers', day: E2E_DAY_KEY });
-
-    expect(naming).toMatchObject({
-      ok: true,
-      value: { offers: [], declines: [{ repoPath: E2E_REPO, reason: 'share-too-low', issueKey: E2E_PARENT_KEY }] },
-    });
+    expect(await askNaming(page)).toMatchObject(declined({ reason: 'share-too-low', issueKey: E2E_PARENT_KEY }));
     await expect(offer(page)).toHaveCount(0);
   });
 
@@ -154,6 +158,7 @@ test.describe('the checkout-wide answer the record already holds', () => {
     });
     await page.goto('/day');
 
+    expect(await askNaming(page)).toMatchObject(declined({ reason: 'already-named' }));
     await expect(offer(page)).toHaveCount(0);
   });
 });
