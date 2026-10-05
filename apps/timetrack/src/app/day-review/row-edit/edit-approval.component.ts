@@ -5,14 +5,17 @@ import {
   ViewEncapsulation,
   WritableSignal,
   computed,
+  effect,
   inject,
   input,
+  untracked,
 } from '@angular/core';
 import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { AgentApproval, describeApproval } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../../agent/approval-queue';
-import { approvalDescriptionOf, approvalLinesOf, injectBandApprovals } from '../band-approvals';
+import { injectJiraCatalog } from '../../jira';
+import { approvalDescriptionOf, approvalIssueKeysOf, approvalLinesOf, injectBandApprovals } from '../band-approvals';
 import { rowEntryOf } from './row-appointment';
 
 /** What a waiting approval would change on this row, with the presses that decide it. */
@@ -28,7 +31,7 @@ import { rowEntryOf } from './row-appointment';
         <span class="text-small">{{ describe(item) }}</span>
 
         <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-small">
-          @for (line of LINES_OF(item); track line.label) {
+          @for (line of linesOf(item); track line.label) {
             <dt class="text-et-surface-muted">{{ line.label }}</dt>
             <dd class="min-w-0 break-words">{{ line.value }}</dd>
           }
@@ -56,8 +59,8 @@ export class EditApprovalComponent {
   protected queue = injectApprovalQueue();
   private placed = injectBandApprovals();
 
+  private catalog = injectJiraCatalog();
   public draft = input.required<WritableSignal<Appointment>>();
-  protected readonly LINES_OF = approvalLinesOf;
   protected readonly DESCRIPTION_OF = approvalDescriptionOf;
 
   protected items = computed(() => {
@@ -65,6 +68,18 @@ export class EditApprovalComponent {
 
     return id ? this.placed.forRow(id) : [];
   });
+
+  constructor() {
+    effect(() => {
+      const keys = this.items().flatMap(approvalIssueKeysOf);
+
+      if (keys.length) untracked(() => this.catalog.askForIssueKeys(keys));
+    });
+  }
+
+  protected linesOf(item: AgentApproval) {
+    return approvalLinesOf(item, (key) => this.catalog.issueForKey(key)?.summary || undefined);
+  }
 
   protected describe(item: AgentApproval) {
     return describeApproval(item.request);

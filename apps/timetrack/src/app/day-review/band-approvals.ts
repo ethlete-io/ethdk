@@ -10,11 +10,10 @@ import {
 } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectDayReview } from './day-review';
-import { formatClockTime } from './format';
 
-export type ApprovalLine = { label: string; value: string };
-
-export const askerOf = (item: AgentApproval) => item.client ?? 'CLI';
+export { askerOf, approvalIssueKeysOf, approvalLinesOf } from './approval-lines';
+export type { ApprovalLine } from './approval-lines';
+import { askerOf } from './approval-lines';
 
 /** The few words a band's inline chip says about the item it previews. */
 export const approvalChipOf = (item: AgentApproval) => {
@@ -34,56 +33,6 @@ export const approvalChipOf = (item: AgentApproval) => {
       return `${who} · Hide, off topic`;
     default:
       return `${who} · ${request.op}`;
-  }
-};
-
-/** What an item changes, one field a line, for the edit surface of the row it previews on. */
-export const approvalLinesOf = (item: AgentApproval): ApprovalLine[] => {
-  const { request } = item;
-  const asked = { label: 'Asked by', value: `${askerOf(item)} at ${formatClockTime(new Date(item.askedAtMs))}` };
-
-  switch (request.op) {
-    case 'jira.create':
-      return [
-        { label: 'New issue', value: request.summary },
-        { label: 'Project', value: request.projectKey ?? 'the picked project' },
-        ...(request.parentKey ? [{ label: 'Parent', value: request.parentKey }] : []),
-        asked,
-      ];
-    case 'worklog.add': {
-      const from = new Date(request.fromMs);
-      const to = new Date(request.fromMs + request.durationMs);
-
-      return [
-        { label: 'Ticket', value: request.issueKey },
-        { label: 'Span', value: `${formatClockTime(from)} – ${formatClockTime(to)}` },
-        asked,
-      ];
-    }
-    case 'autoMode.apply':
-      return [{ label: 'Ticket', value: `${request.label} → ${request.issueKey}` }, asked];
-    case 'autoMode.resolve':
-      return [
-        {
-          label: 'Dispute',
-          value:
-            request.choice === 'keep'
-              ? `Keep ${request.booked}`
-              : `${request.booked} → ${disputedTargetLabel(request.other)}`,
-        },
-        { label: 'Why', value: request.reason },
-        asked,
-      ];
-    case 'autoMode.hide':
-      return [
-        {
-          label: 'Hide',
-          value: `The rest of ${request.label || 'the call'} from ${formatClockTime(new Date(request.fromMs))}`,
-        },
-        asked,
-      ];
-    default:
-      return [asked];
   }
 };
 
