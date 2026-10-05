@@ -1,5 +1,5 @@
-import { computed, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   TempoSyncOutcome,
@@ -21,6 +21,7 @@ import {
   catchError,
   combineLatest,
   concat,
+  concatMap,
   defer,
   exhaustMap,
   filter,
@@ -35,6 +36,7 @@ import {
   toArray,
 } from 'rxjs';
 import { SyncRunRecord, injectHostPorts } from '../../host';
+import { injectAgentDay } from '../agent/agent-day';
 import { injectDayReview } from '../day-review/day-review';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -84,6 +86,8 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const dayReview = injectDayReview();
   const settings = injectTimetrackSettings();
+  const agentDay = injectAgentDay();
+  const destroyRef = inject(DestroyRef);
 
   const requests$ = new Subject<void>();
 
@@ -211,6 +215,14 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
     share(),
   );
   const runStatus = toSignal(runStates$, { initialValue: IDLE as SyncRunStatus });
+
+  runStates$
+    .pipe(
+      filter((state) => state.kind === 'written'),
+      concatMap((state) => agentDay.freeze$(state.day).pipe(catchError(() => EMPTY))),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
 
   const run = computed((): SyncRunStatus => {
     const value = runStatus();

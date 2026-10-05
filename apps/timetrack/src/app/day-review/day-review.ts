@@ -70,6 +70,8 @@ import {
   resetRow,
   reviewDay,
   settingsOnDay,
+  isDayHeldByTempo,
+  withFrozenRows,
   runReasoning$,
   setRowDescription,
   setRowDuration,
@@ -171,8 +173,8 @@ const loadedFor = <T>(options: { key: string; load$: Observable<T> }): Observabl
  * One day of work as the review UI reads it: the engine re-run over the day's stored events, with the
  * reviewer's own edits on top.
  *
- * The engine's rows are never stored — only the edits are. So a day whose evidence grew since it was
- * reviewed shows the new evidence, and the reviewer's decisions still win over it.
+ * The engine's rows are stored only once Tempo holds the finished day. Until then a day whose evidence
+ * grew since it was reviewed shows the new evidence, and the reviewer's decisions still win over it.
  */
 const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -428,7 +430,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       : null;
   });
 
-  const deterministicRows = computed(() => streamed()?.rows ?? null);
+  const deterministicRows = computed(() => edits().frozenRows ?? streamed()?.rows ?? null);
 
   const unnamed = computed(() => unnamedContexts({ unattributed: deterministicRows()?.unattributed ?? [] }));
 
@@ -516,6 +518,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const proposed = inferred();
 
     if (!current || !collected) return null;
+
+    const frozen = edits().frozenRows;
+
+    if (frozen) return frozen;
     if (!proposed.length) return current.rows;
 
     return buildRows({
@@ -688,16 +694,23 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
   // and a read by row id can never return it. The failure stays inside the switch, or one failed read
   // would end the subscription and no later day would be read at all.
-  const ledger = toSignal(
+  const loadedLedger = toSignal(
     toObservable(day).pipe(
       switchMap((key) =>
         ledgerEntriesForRange$({ ledger: ports.ledger, day: key, boundary: boundary() }).pipe(
           catchError(() => of<SyncedWorklog[]>([])),
+          map((entries) => ({ key, entries })),
         ),
       ),
     ),
-    { initialValue: [] as SyncedWorklog[] },
+    { initialValue: null },
   );
+
+  const ledger = computed(() => {
+    const loaded = loadedLedger();
+
+    return loaded?.key === day() ? loaded.entries : [];
+  });
 
   const syncedIds = computed(() => new Set(ledger().map((entry) => entry.proposalId)));
 
@@ -731,6 +744,24 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const load = editsLoad();
 
     return !!load && !load.failure;
+  });
+
+  effect(() => {
+    const rows = reasonedRows();
+    const load = evidenceLoad();
+    const loaded = loadedLedger();
+
+    if (!rows || !load || load.failure || !editsReady() || loaded?.key !== day()) return;
+    if (recurring.state().state === 'loading' || !epics.settledFor(day())) return;
+
+    const next = withFrozenRows({
+      edits: edits(),
+      rows,
+      held: isDayHeldByTempo({ ledger: loaded.entries, coverage: coverage() }),
+      finished: !isToday(),
+    });
+
+    if (next) apply(next);
   });
 
   /**

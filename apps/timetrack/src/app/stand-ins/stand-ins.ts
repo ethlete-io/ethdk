@@ -7,6 +7,7 @@ import {
   StandInAge,
   canReopenStandIn,
   dayBoundaryOf,
+  isDayHeldByTempo,
   isStandInBooked,
   isStandInHidden,
   isStandInStale,
@@ -116,7 +117,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
                     boundary: dayBoundaryOf(settings.settings()),
                   }).pipe(catchError(() => of([]))),
                   coverage: ports.coverage.forDay$(day).pipe(catchError(() => of(null))),
-                }).pipe(map(({ ledger, coverage }) => (ledger.length || coverage?.issues.length ? day : null))),
+                }).pipe(map(({ ledger, coverage }) => (isDayHeldByTempo({ ledger, coverage }) ? day : null))),
               ),
             ).pipe(map((answers) => new Set(answers.filter((day): day is string => !!day))))
           : of(new Set<string>()),

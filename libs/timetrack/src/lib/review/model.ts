@@ -1,3 +1,4 @@
+import { DayRows } from '../rows/build-rows';
 import { BehindStretch } from '../rows/cut';
 import { DayCheck } from '../rows/round';
 import { Confidence, Evidence } from '../model/evidence';
@@ -90,7 +91,10 @@ export type PinnedRow = {
   sources?: RowFieldSources;
 };
 
-/** Everything a reviewer changed about one day. The engine's own output is never stored alongside it. */
+/**
+ * Everything a reviewer changed about one day. The engine's own output is stored alongside it only once
+ * Tempo holds the day: see {@link DayReviewEdits.frozenRows}.
+ */
 export type DayReviewEdits = {
   overrides: Record<string, ProposalOverride>;
   pinned: PinnedRow[];
@@ -102,6 +106,11 @@ export type DayReviewEdits = {
   autoDescriptions?: AutoModeDescription[];
   /** What auto mode answered for this day's disputed bands, one entry per band and pair of answers. */
   autoDisputes?: AutoModeDispute[];
+  /**
+   * The engine's rows as they stood when Tempo first held the finished day, from `withFrozenRows`.
+   * `reviewDay` reads these instead of the rows it is handed, so a model change never re-cuts a booked day.
+   */
+  frozenRows?: DayRows;
 };
 
 /** What auto mode asks about: an unnamed context of the day, or an open stand-in the day holds. */

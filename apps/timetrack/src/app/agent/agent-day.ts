@@ -17,6 +17,8 @@ import {
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
   hideRow,
+  isDayHeldByTempo,
+  ledgerEntriesForRange$,
   localDayKey,
   matchAttributionRule,
   namedIssueKeys,
@@ -31,6 +33,7 @@ import {
   showRow,
   unnamedContexts,
   withAutoModeRowNames,
+  withFrozenRows,
 } from '@ethlete/timetrack';
 import { Observable, catchError, concatMap, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { injectGitCollector, injectWindowCollector } from '../../collectors';
@@ -122,7 +125,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
         )
       : of(new Map<string, Date>());
 
-  const read$ = (day: string): Observable<DayRead> =>
+  const liveRead$ = (day: string): Observable<DayRead> =>
     settings.ready$.pipe(
       switchMap((current) =>
         forkJoin({
@@ -164,6 +167,43 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const editsOf = (read: DayRead) => review.heldEditsOf(read.key) ?? read.edits;
+
+  const heldByTempo$ = (day: string) =>
+    forkJoin({
+      ledger: ledgerEntriesForRange$({ ledger: ports.ledger, day, boundary: dayBoundaryOf(settings.settings()) }).pipe(
+        take(1),
+        catchError(() => of([])),
+      ),
+      coverage: ports.coverage.forDay$(day).pipe(
+        take(1),
+        catchError(() => of(null)),
+      ),
+    }).pipe(map(isDayHeldByTempo));
+
+  const read$ = (day: string): Observable<DayRead> =>
+    liveRead$(day).pipe(
+      switchMap((read) =>
+        heldByTempo$(day).pipe(
+          switchMap((held) => {
+            const finished = day !== localDayKey(new Date(), dayBoundaryOf(settings.settings()));
+            const freeze = (edits: DayReviewEdits) => withFrozenRows({ edits, rows: read.day.rows, held, finished });
+
+            if (!freeze(editsOf(read))) return of(read);
+
+            return review
+              .changeDay$(day, (edits) => freeze(edits) ?? edits)
+              .pipe(
+                take(1),
+                map(() => {
+                  const edits = editsOf(read);
+
+                  return { ...read, edits, review: read.reviewWith(edits) };
+                }),
+              );
+          }),
+        ),
+      ),
+    );
 
   const askEvidenceOf = (read: DayRead) => {
     const { unattributed } = read.day.rows;
@@ -285,7 +325,9 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const addRow$ = (options: { day: string; row: ManualRow }): Observable<void> =>
     review.changeDay$(options.day, (edits) => addManualRow({ edits, row: options.row })).pipe(take(1));
 
-  return { review$, inputs$, namingDecisions$, editRows$, addRow$, askEvidence$, applyAutoModeNames$ };
+  const freeze$ = (day: string): Observable<void> => read$(day).pipe(map(() => undefined));
+
+  return { review$, inputs$, namingDecisions$, editRows$, addRow$, askEvidence$, applyAutoModeNames$, freeze$ };
 });
 
 export const injectAgentDay = /* @__PURE__ */ toInjectFn(AGENT_DAY_DEF);

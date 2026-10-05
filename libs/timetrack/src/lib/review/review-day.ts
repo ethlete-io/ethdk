@@ -464,16 +464,7 @@ const bookTheSpan = (options: {
   });
 };
 
-/**
- * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
- *
- * Edits always win. A proposal a split or a merge consumed is dropped rather than re-appearing beside
- * the row the reviewer built from it, so re-running the engine over a day — which happens on every
- * collector tick — can never resurrect a row somebody has already dealt with. What it can do is
- * observe *more* time under such a row, and that surplus is reported as `unreconciledMs` instead of
- * being folded in silently: the reviewer's numbers are theirs, but the day should still say so.
- */
-export const reviewDay = (options: {
+type ReviewDayOptions = {
   rows: DayRows;
   edits?: DayReviewEdits;
   check?: CheckDayOptions;
@@ -484,7 +475,23 @@ export const reviewDay = (options: {
   standIns?: readonly StandIn[];
   /** The standing rules, so a row the reviewer built still follows the one that covers its checkout. */
   rules?: readonly AttributionRule[];
-}): DayReview => {
+};
+
+/**
+ * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
+ *
+ * Edits always win. A proposal a split or a merge consumed is dropped rather than re-appearing beside
+ * the row the reviewer built from it, so re-running the engine over a day — which happens on every
+ * collector tick — can never resurrect a row somebody has already dealt with. What it can do is
+ * observe *more* time under such a row, and that surplus is reported as `unreconciledMs` instead of
+ * being folded in silently: the reviewer's numbers are theirs, but the day should still say so.
+ *
+ * Edits that hold `frozenRows` are reviewed over those rather than over `rows`.
+ */
+export const reviewDay = (options: ReviewDayOptions): DayReview =>
+  reviewRows({ ...options, rows: options.edits?.frozenRows ?? options.rows });
+
+const reviewRows = (options: ReviewDayOptions): DayReview => {
   const { edits, ended } = foldEndedRests(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
   const standIns = options.standIns ?? [];
   const rules = options.rules ?? [];
