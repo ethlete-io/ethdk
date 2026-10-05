@@ -11,8 +11,11 @@ export type TempoCredentials = {
 
 export const TEMPO_API_BASE = 'https://api.tempo.io/4';
 
-/** The only origin a request carrying the Tempo token may reach. */
-const TEMPO_API_ORIGIN = new URL(TEMPO_API_BASE).origin;
+/**
+ * The hosts a request carrying the Tempo token may reach: the global API, and the regional one
+ * (`api.eu.tempo.io`) Tempo hands back as `metadata.next` for an account hosted in that region.
+ */
+const TEMPO_API_HOST = /^api(\.[a-z0-9-]+)?\.tempo\.io$/;
 
 export class TempoRequestError extends Error {
   readonly status: number;
@@ -102,7 +105,7 @@ export class TempoCursorError extends Error {
   readonly url: string;
 
   constructor(url: string) {
-    super(`Tempo offered a next page outside ${TEMPO_API_ORIGIN}. It was not followed.`);
+    super(`Tempo offered a next page outside its own API hosts. It was not followed.`);
     this.name = 'TempoCursorError';
     this.url = url;
   }
@@ -110,7 +113,7 @@ export class TempoCursorError extends Error {
 
 /**
  * The URL one call goes to. A path is resolved against {@link TEMPO_API_BASE}; an absolute URL is a
- * `metadata.next` cursor and has to be Tempo's own origin over HTTPS.
+ * `metadata.next` cursor and has to be one of Tempo's own API hosts over HTTPS.
  *
  * Tempo hands the cursor back as an absolute URL, and the call that follows it carries the bearer
  * token. A compromised or malicious Tempo could therefore name any host and be sent the token, so the
@@ -128,7 +131,9 @@ const urlFor = (path: string) => {
     }
   })();
 
-  if (url.origin !== TEMPO_API_ORIGIN || url.username || url.password) throw new TempoCursorError(path);
+  if (url.protocol !== 'https:' || url.port || !TEMPO_API_HOST.test(url.hostname) || url.username || url.password) {
+    throw new TempoCursorError(path);
+  }
 
   return path;
 };

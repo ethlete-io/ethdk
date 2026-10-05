@@ -56,6 +56,17 @@ test.describe('the checkout-wide answer the record already holds', () => {
     await expect(offer(page)).toContainText('10h 0m over 5 days');
   });
 
+  test('reads the record across the regional pages Tempo splits it into', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), attributionRules: [DONATING], projectLinks: [LINKED_TO_ABC] },
+      tempo: { worklogs: HISTORY, pageSize: 2 },
+    });
+    await page.goto('/day');
+
+    await expect(offer(page)).toContainText('10h 0m over 5 days');
+  });
+
   test('says that taking it replaces the rule that donates the time away', async ({ page }) => {
     await expect(offer(page)).toContainText('Taking this replaces the rule that donates its time.');
   });

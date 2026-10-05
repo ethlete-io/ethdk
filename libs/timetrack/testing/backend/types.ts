@@ -112,6 +112,8 @@ export type FakeTempoState = {
   worklogs: FakeTempoWorklog[];
   workAttributes: FakeTempoWorkAttribute[];
   writes: FakeTempoWrite[];
+  /** Caps the worklogs one page answers below the requested `limit`, so a spec can make a short span page. */
+  pageSize?: number;
 };
 
 export type FakeGitLabMergeRequest = {

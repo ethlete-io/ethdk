@@ -169,6 +169,11 @@ describe('the origin a tempo call may reach', () => {
   it.each([
     ['another origin', 'https://attacker.example/4/things'],
     ['a host that only starts with tempo', 'https://api.tempo.io.attacker.example/4/things'],
+    ['a regional-looking host on another domain', 'https://api.eu.tempo.io.attacker.example/4/things'],
+    ['a tempo.io host outside the api', 'https://attacker.tempo.io/4/things'],
+    ['a host that only ends in tempo.io', 'https://api.eu.evil-tempo.io/4/things'],
+    ['http on a regional host', 'http://api.eu.tempo.io/4/things'],
+    ['a non-default port', 'https://api.eu.tempo.io:8443/4/things'],
     ['http rather than https', 'http://api.tempo.io/4/things'],
     ['user info in the url', 'https://user:secret@api.tempo.io/4/things'],
     ['a url that does not parse', 'https://['],
@@ -185,6 +190,16 @@ describe('the origin a tempo call may reach', () => {
 
     expect(error.message).not.toContain(CREDENTIALS.token);
     expect(error.url).toBe('https://attacker.example/4/things');
+  });
+
+  it('follows the regional next cursor Tempo answers an EU account with', () => {
+    const next =
+      'https://api.eu.tempo.io/4/worklogs/user/712020:account?from=2026-08-10&to=2026-10-05&offset=200&limit=200';
+    const { requests, failed } = followed(next);
+
+    expect(requests[1]?.url).toBe(next);
+    expect(requests[1]?.headers?.['authorization']).toBe(`Bearer ${CREDENTIALS.token}`);
+    expect(failed).not.toHaveBeenCalled();
   });
 
   it("still follows a next cursor on tempo's own origin", () => {

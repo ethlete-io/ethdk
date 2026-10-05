@@ -6,7 +6,7 @@ import { FakeAnswer, FakeRoutedRequest, notFound } from './route';
 import { respondTempo } from './tempo';
 import { FakeBackend, FakeFault } from './types';
 
-const TEMPO_BASE = 'https://api.tempo.io/4';
+const TEMPO_API_HOST = /^api(\.[a-z0-9-]+)?\.tempo\.io$/;
 const GOOGLE_OAUTH_BASE = 'https://oauth2.googleapis.com';
 
 const faultFor = (backend: FakeBackend, request: TimetrackRequest): FakeFault | undefined =>
@@ -28,7 +28,7 @@ const answerFor = (backend: FakeBackend, request: TimetrackRequest): FakeAnswer 
 
   if (url.pathname.startsWith('/rest/api/3')) return respondJira(backend, routed(request, url.pathname));
   if (url.pathname.includes('/api/v4')) return respondGitLab(backend, routed(request, url.pathname));
-  if (request.url.startsWith(TEMPO_BASE)) {
+  if (url.protocol === 'https:' && TEMPO_API_HOST.test(url.hostname) && url.pathname.startsWith('/4/')) {
     return respondTempo(backend, routed(request, url.pathname.replace(/^\/4/, '')));
   }
   if (request.url.startsWith(GOOGLE_OAUTH_BASE)) return respondGoogle(routed(request, url.pathname));

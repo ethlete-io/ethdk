@@ -56,6 +56,25 @@ describe('respondTempo', () => {
     expect(read(backendOf()).body).toEqual({ results: [], metadata: {} });
   });
 
+  it('pages a read past its page size with the regional next url Tempo answers', () => {
+    const worklogs = [0, 1, 2].map((index) => tempoWorklogOn({ day: DAY, minutes: 30, id: `w-${index}` }));
+    const backend = backendOf({ tempo: { worklogs, pageSize: 2 } });
+
+    const first = read(backend, { from: DAY, to: DAY, limit: '200' }).body as {
+      results: WorklogResource[];
+      metadata: { next?: string };
+    };
+
+    expect(first.results.map((worklog) => worklog.tempoWorklogId)).toEqual(['w-0', 'w-1']);
+    expect(first.metadata.next).toBe(
+      `https://api.eu.tempo.io/4/worklogs/user/${encodeURIComponent(E2E_ACCOUNT_ID)}?from=${DAY}&to=${DAY}&offset=2&limit=200`,
+    );
+    expect(read(backend, { from: DAY, to: DAY, offset: '2', limit: '200' }).body).toEqual({
+      results: [expect.objectContaining({ tempoWorklogId: 'w-2' })],
+      metadata: {},
+    });
+  });
+
   it('reads back a worklog it accepted', () => {
     const backend = backendOf();
 

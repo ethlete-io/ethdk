@@ -40,6 +40,15 @@ const worklogResource = (worklog: FakeTempoWorklog) => ({
 /** `page.metadata` must be present with no `next`, or `tempoPaged$` asks for a second page forever. */
 const page = (results: unknown[]) => ok({ results, metadata: {} });
 
+/** Tempo names the next page on the account's regional host, not on the `api.tempo.io` the read went to. */
+const TEMPO_REGIONAL_BASE = 'https://api.eu.tempo.io/4';
+
+const queryNumber = (query: URLSearchParams, key: string) => {
+  const value = Number(query.get(key));
+
+  return Number.isFinite(value) && value > 0 ? value : undefined;
+};
+
 const readWorklogs = (options: { backend: FakeBackend; accountId: string; request: FakeRoutedRequest }): FakeAnswer => {
   const { backend, accountId, request } = options;
   const from = request.query.get('from') ?? '';
@@ -50,7 +59,16 @@ const readWorklogs = (options: { backend: FakeBackend; accountId: string; reques
       worklog.authorAccountId === accountId && (!from || worklog.startDate >= from) && (!to || worklog.startDate <= to),
   );
 
-  return page(matched.map(worklogResource));
+  const limit = queryNumber(request.query, 'limit') ?? matched.length;
+  const size = Math.min(limit, backend.tempo.pageSize ?? limit);
+  const offset = queryNumber(request.query, 'offset') ?? 0;
+  const rest = offset + size;
+
+  if (rest >= matched.length) return page(matched.slice(offset).map(worklogResource));
+
+  const next = `${TEMPO_REGIONAL_BASE}/worklogs/user/${encodeURIComponent(accountId)}?from=${from}&to=${to}&offset=${rest}&limit=${limit}`;
+
+  return ok({ results: matched.slice(offset, rest).map(worklogResource), metadata: { offset, limit, next } });
 };
 
 const worklogFrom = (request: FakeRoutedRequest, id: string): FakeTempoWorklog => {
