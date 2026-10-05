@@ -6,6 +6,7 @@ import { WorklogProposalState } from '../model/proposal';
 import { StandInState } from '../model/stand-in';
 import { DayWarning } from '../rows/round';
 import { RepoNamingDeclineReason } from '../rows/repo-naming';
+import { AutoModeSubject } from '../review/model';
 
 /**
  * The contract between the app and a coding agent's CLI, spoken over the host's loopback endpoint.
@@ -357,6 +358,11 @@ export type AgentApiReviewedRow = {
   sources: { issue: FieldSource; description: FieldSource };
   /** Whether the row is off the timeline. A hidden row is neither written nor waiting for a name. */
   hidden: boolean;
+  /**
+   * What "Ask auto mode again" on the row asks about, and what `autoMode.ask` takes. Absent where the
+   * press is not offered: a row the user named by hand, or one a rule or a resolved stand-in names.
+   */
+  autoModeSubject?: AutoModeSubject;
 };
 
 /** A day as its review draws it: the rows on the timeline, the ones taken off it, and its totals. */
@@ -515,6 +521,7 @@ export type AgentApiRequest =
   | { op: 'approval.status'; id: string }
   | { op: 'approvals.list' }
   | { op: 'approval.reject'; id: string }
+  | { op: 'autoMode.ask'; day: string; subject: AutoModeSubject }
   | {
       op: 'agentSessions.resync';
       paths: string[];
@@ -558,11 +565,23 @@ export type AgentApiLaneIssues = {
   uses: { laneKey: string; issueKey: string; count: number; lastUsedDay: string }[];
 };
 
+/**
+ * What `autoMode.ask` queued. `asking` means an ask about the same subject and day already waited or
+ * ran, so no second one was queued. The answer lands later, the way the press's does.
+ */
+export type AgentApiAutoModeAsk = {
+  status: 'queued' | 'asking';
+  day: string;
+  subject: AutoModeSubject;
+  label: string;
+};
+
 export type AgentApiOp = AgentApiRequest['op'];
 
 /**
  * How much consent an op needs: `read` answers at once while unlocked and writes nothing to Jira,
- * Tempo or a day (`approval.reject` only drops a waiting write), `local` changes only this machine's
+ * Tempo or a day (`approval.reject` only drops a waiting write, and `autoMode.ask` only starts a model
+ * run whose answer waits for approval as auto mode's own does), `local` changes only this machine's
  * day or settings, `external` writes to Jira, and `human-only` waits for the user's own press.
  */
 export type OpClass = 'read' | 'local' | 'external' | 'human-only';
@@ -595,6 +614,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'approval.status': 'read',
   'approvals.list': 'read',
   'approval.reject': 'read',
+  'autoMode.ask': 'read',
   'agentSessions.resync': 'local',
 };
 

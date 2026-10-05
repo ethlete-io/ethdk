@@ -222,6 +222,117 @@ test.describe('auto mode on a stand-in whose issue is done but still logged on',
   });
 });
 
+test.describe('an agent asking auto mode again about a stand-in whose create was rejected', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+      jira: {
+        issues: [
+          { id: E2E_ISSUE_ID, key: E2E_ISSUE_KEY, summary: 'User management', issueType: 'Task', status: 'Done' },
+          { id: E2E_PARENT_ID, key: E2E_PARENT_KEY, summary: 'Member onboarding', issueType: 'Story', status: 'Done' },
+        ],
+      },
+    });
+    await page.goto('/day');
+  });
+
+  type Waiting = { approvalId: string; op: string; client?: string };
+
+  const waitingCreates = async (page: Page) => {
+    const answer = await askAgent<Waiting[]>(page, { op: 'approvals.list' });
+
+    return answer.ok ? answer.value.filter((item) => item.op === 'jira.create' && item.client === 'auto mode') : [];
+  };
+
+  const rejectTheCreate = async (page: Page) => {
+    await expect.poll(async () => (await waitingCreates(page)).length).toBe(1);
+
+    const [create] = await waitingCreates(page);
+
+    expect(await askAgent(page, { op: 'approval.reject', id: create?.approvalId })).toMatchObject({ ok: true });
+
+    return create?.approvalId;
+  };
+
+  const standInId = async (page: Page) => {
+    const answer = await askAgent<{ standIns: { id: string }[] }>(page, { op: 'standIn.list' });
+
+    return answer.ok ? answer.value.standIns[0]?.id : undefined;
+  };
+
+  const askedFor = (id: string | undefined) => ({
+    ok: true,
+    value: {
+      status: 'queued',
+      day: E2E_DAY_KEY,
+      subject: { kind: 'stand-in', standInId: id },
+      label: expect.stringMatching(/^Asks about /),
+    },
+  });
+
+  test('queues a new answer through the endpoint, and the day heading does not move', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+
+    await expect(heading).toBeVisible();
+
+    const shown = await heading.textContent();
+    const rejected = await rejectTheCreate(page);
+    const id = await standInId(page);
+    const rows = await askAgent<{ rows: { autoModeSubject?: unknown }[] }>(page, { op: 'day.rows', day: E2E_DAY_KEY });
+
+    expect(rows.ok && rows.value.rows.map((row) => row.autoModeSubject)).toContainEqual({
+      kind: 'stand-in',
+      standInId: id,
+    });
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: id })).toEqual(askedFor(id));
+    await expect.poll(async () => (await waitingCreates(page)).map((item) => item.approvalId)).not.toEqual([]);
+    expect((await waitingCreates(page)).map((item) => item.approvalId)).not.toContain(rejected);
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'waiting');
+    await expect(heading).toHaveText(shown ?? '');
+    expect((await readBackend(page)).jira.created).toEqual([]);
+  });
+
+  test('asks about the day while another one is on screen, and leaves that one there', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+    const rejected = await rejectTheCreate(page);
+    const id = await standInId(page);
+    const today = await heading.textContent();
+
+    await page.getByRole('button', { name: 'Previous day' }).click();
+    await expect(heading).not.toHaveText(today ?? '');
+
+    const shown = await heading.textContent();
+
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: id })).toEqual(askedFor(id));
+    await expect.poll(async () => (await waitingCreates(page)).map((item) => item.approvalId)).not.toEqual([]);
+    expect((await waitingCreates(page)).map((item) => item.approvalId)).not.toContain(rejected);
+    await expect(heading).toHaveText(shown ?? '');
+  });
+
+  test('refuses a stand-in it does not hold, and one the day holds no time of', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+
+    await expect(heading).toBeVisible();
+
+    const shown = await heading.textContent();
+    const id = await standInId(page);
+
+    expect(await askAgent(page, { op: 'autoMode.ask', day: E2E_DAY_KEY, standInId: 'nope' })).toEqual({
+      ok: false,
+      message: 'Timetrack holds no stand-in nope. Nothing was asked.',
+    });
+    expect(await askAgent(page, { op: 'autoMode.ask', day: '2026-08-11', standInId: id })).toEqual({
+      ok: false,
+      message: `Stand-in ${id} holds no time on 2026-08-11. Nothing was asked.`,
+    });
+    await expect(heading).toHaveText(shown ?? '');
+  });
+});
+
 test.describe('a class the settings make stricter', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/day');

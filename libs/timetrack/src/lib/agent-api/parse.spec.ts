@@ -99,6 +99,29 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest({ op: 'approval.reject' })).toEqual({ ok: false, message: 'approval.reject needs a id.' });
   });
 
+  it('takes the auto mode ask with the day and the one subject it names', () => {
+    expect(parseAgentRequest({ op: 'autoMode.ask', day: '2026-10-05', standInId: ' s1 ' })).toEqual({
+      ok: true,
+      request: { op: 'autoMode.ask', day: '2026-10-05', subject: { kind: 'stand-in', standInId: 's1' } },
+    });
+    expect(parseAgentRequest({ op: 'autoMode.ask', day: '2026-10-05', contextId: 'repo:/a' })).toEqual({
+      ok: true,
+      request: { op: 'autoMode.ask', day: '2026-10-05', subject: { kind: 'context', contextId: 'repo:/a' } },
+    });
+    expect(parseAgentRequest({ op: 'autoMode.ask', day: '2026-10-05' })).toEqual({
+      ok: false,
+      message: 'autoMode.ask needs a standInId or contextId.',
+    });
+    expect(parseAgentRequest({ op: 'autoMode.ask', day: '2026-10-05', standInId: 's1', contextId: 'c' })).toEqual({
+      ok: false,
+      message: 'autoMode.ask asks about a standInId or a contextId, not both.',
+    });
+    expect(parseAgentRequest({ op: 'autoMode.ask', standInId: 's1' })).toEqual({
+      ok: false,
+      message: 'autoMode.ask needs a day as YYYY-MM-DD.',
+    });
+  });
+
   it('takes the agent session resync op with its checkouts', () => {
     expect(parseAgentRequest({ op: 'agentSessions.resync', paths: [' /home/a ', '', 3] })).toEqual({
       ok: true,

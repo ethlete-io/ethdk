@@ -22,6 +22,7 @@ import {
   AgentApiCalendarEvents,
   agentApiCallerOf,
   agentApiLockRefusal,
+  AutoModeSubject,
   DayReview,
   JiraCredentials,
   JiraIssue,
@@ -87,6 +88,7 @@ import {
 } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectGoogleAccount } from '../google';
+import { injectAutoMode } from '../day-review/auto-mode';
 import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -137,6 +139,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const googleAccount = injectGoogleAccount();
   const windowLock = injectWindowLock();
   const approvals = injectApprovalQueue();
+  const autoMode = injectAutoMode();
   const destroyRef = inject(DestroyRef);
   const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
   const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
@@ -321,7 +324,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    * day screen drew has nothing to read but a screenshot of it.
    */
   /** The wire shape of a row. A caller in another repository names this `id` in every edit it sends. */
-  const toApiRow = (row: ReviewedRow): AgentApiReviewedRow => ({
+  const toApiRow = (
+    row: ReviewedRow,
+    askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined,
+  ): AgentApiReviewedRow => ({
     id: row.id,
     issueKey: row.issueKey,
     standInId: row.standInId,
@@ -340,28 +346,37 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     edited: row.edited,
     sources: { issue: rowFieldSourceOf(row, 'issue'), description: rowFieldSourceOf(row, 'description') },
     hidden: row.hidden,
+    autoModeSubject: askSubjectOf(row),
   });
 
-  const toApiDay = (day: string, current: DayReview): AgentApiDayRows => ({
-    day,
-    rows: current.rows.map(toApiRow),
-    hidden: current.hidden.map(toApiRow),
-    proposedMs: current.check.proposedMs,
-    loggedMs: current.check.loggedMs,
-    targetMs: current.check.targetMs ?? 0,
-    unattributedMs: current.check.unattributedMs,
-    warnings: current.check.warnings,
-    behind: current.behind.map((stretch) => ({
-      fromMs: stretch.from.getTime(),
-      toMs: stretch.to.getTime(),
-      issueKey: stretch.issueKey,
-      laneKey: stretch.laneKey,
-      durationMs: stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime(),
-    })),
-  });
+  const toApiDay = (options: {
+    day: string;
+    review: DayReview;
+    askSubjectOf: (row: ReviewedRow) => AutoModeSubject | undefined;
+  }): AgentApiDayRows => {
+    const { day, review: current, askSubjectOf } = options;
+
+    return {
+      day,
+      rows: current.rows.map((row) => toApiRow(row, askSubjectOf)),
+      hidden: current.hidden.map((row) => toApiRow(row, askSubjectOf)),
+      proposedMs: current.check.proposedMs,
+      loggedMs: current.check.loggedMs,
+      targetMs: current.check.targetMs ?? 0,
+      unattributedMs: current.check.unattributedMs,
+      warnings: current.check.warnings,
+      behind: current.behind.map((stretch) => ({
+        fromMs: stretch.from.getTime(),
+        toMs: stretch.to.getTime(),
+        issueKey: stretch.issueKey,
+        laneKey: stretch.laneKey,
+        durationMs: stretch.durationMs ?? stretch.to.getTime() - stretch.from.getTime(),
+      })),
+    };
+  };
 
   const dayRows$ = (day: string): Observable<AgentApiDayRows> =>
-    agentDay.review$(day).pipe(map((current) => toApiDay(day, current)));
+    agentDay.review$(day).pipe(map((read) => toApiDay({ day, ...read })));
 
   /**
    * Makes the edits a caller stated, then answers the day as it reads afterwards.
@@ -372,7 +387,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const editDay$ = (request: Extract<AgentApiRequest, { op: 'day.edits' }>): Observable<AgentApiEditedDay> =>
     agentDay
       .editRows$({ day: request.day, edits: request.edits })
-      .pipe(map(({ applied, review }) => ({ ...toApiDay(request.day, review), applied })));
+      .pipe(map(({ applied, ...read }) => ({ ...toApiDay({ day: request.day, ...read }), applied })));
 
   const dayEvents$ = (request: Extract<AgentApiRequest, { op: 'day.events' }>) => {
     const { from, to } = localDayRange(request.day, dayBoundaryOf(settings.settings()));
@@ -465,7 +480,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
    */
   const tempoSync$ = (request: Extract<AgentApiRequest, { op: 'tempo.sync' }>): Observable<AgentApiTempoSync> =>
     agentDay.review$(request.day).pipe(
-      switchMap((current) => tempoSync.preview$({ day: request.day, proposals: current.rows.filter(isNamedRow) })),
+      switchMap(({ review }) => tempoSync.preview$({ day: request.day, proposals: review.rows.filter(isNamedRow) })),
       switchMap((preview) => {
         const plan = toAgentApiTempoSyncPlan({ day: request.day, preview });
 
@@ -797,6 +812,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return approvals.waitingList$();
       case 'approval.reject':
         return approvals.reject$(request.id);
+      case 'autoMode.ask':
+        return autoMode.askFor$(request);
     }
   };
 

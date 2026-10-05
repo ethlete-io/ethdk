@@ -211,6 +211,8 @@ export type TimetrackRow = {
   confidence: string;
   edited: boolean;
   hidden: boolean;
+  /** What `timetrackAskAutoMode` takes to ask about the row again. Absent where the app offers no ask. */
+  autoModeSubject?: TimetrackAutoModeSubject;
 };
 
 /** A day as the screen draws it: the rows, the ones taken off the timeline, and its totals. */
@@ -651,3 +653,28 @@ export const timetrackApprovals = () => askTimetrack<TimetrackWaitingApproval[]>
  */
 export const timetrackRejectApproval = (id: string) =>
   askTimetrack<TimetrackApprovalStatus>({ op: 'approval.reject', id });
+
+/** What an auto mode ask is about: an open stand-in, or the unnamed context behind a band. */
+export type TimetrackAutoModeSubject = { kind: 'stand-in'; standInId: string } | { kind: 'context'; contextId: string };
+
+/** What `timetrackAskAutoMode` queued. `asking` means an ask about it already waited or ran. */
+export type TimetrackAutoModeAsk = {
+  status: 'queued' | 'asking';
+  day: string;
+  subject: TimetrackAutoModeSubject;
+  label: string;
+};
+
+/**
+ * Asks auto mode about one subject of a day again, as the app's "Ask auto mode again" does, and answers
+ * at once with what it queued. The new answer replaces the stored one later; it writes nothing to Jira or
+ * Tempo, and whatever it queues waits for the user's approval as auto mode's own does.
+ */
+export const timetrackAskAutoMode = (options: { day: string; subject: TimetrackAutoModeSubject }) =>
+  askTimetrack<TimetrackAutoModeAsk>({
+    op: 'autoMode.ask',
+    day: options.day,
+    ...(options.subject.kind === 'stand-in'
+      ? { standInId: options.subject.standInId }
+      : { contextId: options.subject.contextId }),
+  });

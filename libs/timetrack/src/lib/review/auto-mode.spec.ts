@@ -2,7 +2,7 @@ import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { describe, expect, it } from 'vitest';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
-import { openStandIn } from '../model/stand-in';
+import { StandIn, openStandIn } from '../model/stand-in';
 import { DayRows } from '../rows/build-rows';
 import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
@@ -17,6 +17,7 @@ import {
   autoModeApplyRequest,
   autoModeApplyTarget,
   autoModeApprovalTarget,
+  autoModeAskRefusal,
   autoModeContextLabel,
   autoModeReadout,
   autoModeAsks,
@@ -34,7 +35,7 @@ import {
 } from './auto-mode';
 import { autoDescriptionRowId, withAutoModeDescription } from './auto-description';
 import { setRowDescription, setRowIssue } from './edits';
-import { AutoModeAnswer, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
+import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 import { reviewDay } from './review-day';
 
 const TODAY = '2026-08-11';
@@ -1035,5 +1036,59 @@ describe('withStaleStandInCreatesExpired', () => {
 
     expect(states).toEqual(['queued', 'queued', 'queued']);
     expect(withStaleStandInCreatesExpired([fromCli], [])[0]?.state).toBe('queued');
+  });
+});
+
+describe('autoModeAskRefusal', () => {
+  const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+  const settings = { ...DEFAULT_TIMETRACK_SETTINGS, standIns: [standIn] };
+  const refusalOf = (
+    subject: AutoModeSubject,
+    options: { day?: string; standIns?: StandIn[]; ruled?: boolean; edits?: DayReviewEdits } = {},
+  ) =>
+    autoModeAskRefusal({
+      subject,
+      day: options.day ?? TODAY,
+      contexts: [CONTEXT],
+      ...(options.ruled ? { ruledContextIds: new Set([CONTEXT.id]) } : {}),
+      unattributed: DAY.unattributed,
+      rows: rowsOf(options.edits ?? EMPTY_DAY_REVIEW_EDITS),
+      standIns: options.standIns ?? [standIn],
+    });
+  const STAND_IN = { kind: 'stand-in' as const, standInId: standIn.id };
+  const CONTEXT_SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };
+
+  it('lets an agent ask about an open stand-in of the day and an unnamed context of it', () => {
+    expect(refusalOf(STAND_IN)).toBeNull();
+    expect(refusalOf(CONTEXT_SUBJECT)).toBeNull();
+  });
+
+  it('refuses a stand-in it does not hold, one off the day, a resolved one and one the user reopened', () => {
+    const resolved = resolveStandIn({ settings, id: standIn.id, issueKey: 'ABC-1' });
+    const reopened = reopenStandIn({ settings: resolved, id: standIn.id });
+
+    expect(refusalOf({ kind: 'stand-in', standInId: 'nope' })).toBe('Timetrack holds no stand-in nope.');
+    expect(refusalOf(STAND_IN, { day: '2026-08-10' })).toBe(`Stand-in ${standIn.id} holds no time on 2026-08-10.`);
+    expect(refusalOf(STAND_IN, { standIns: resolved.standIns })).toBe(
+      `Stand-in ${standIn.id} is resolved already, so auto mode has nothing to ask.`,
+    );
+    expect(refusalOf(STAND_IN, { standIns: reopened.standIns })).toBe(
+      `The user reopened stand-in ${standIn.id}, so auto mode leaves it to them.`,
+    );
+  });
+
+  it('refuses a context the day holds no unnamed work of, a ruled one and one the user named by hand', () => {
+    const row = rowsOf(EMPTY_DAY_REVIEW_EDITS)[0]!;
+    const named = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row, issueKey: 'ABC-7', source: 'human' });
+
+    expect(refusalOf({ kind: 'context', contextId: 'repo:/elsewhere' })).toBe(
+      `${TODAY} holds no unnamed work of context repo:/elsewhere.`,
+    );
+    expect(refusalOf(CONTEXT_SUBJECT, { ruled: true })).toBe(
+      `A standing rule names context ${CONTEXT.id}, so auto mode is not asked.`,
+    );
+    expect(refusalOf(CONTEXT_SUBJECT, { edits: named })).toBe(
+      `The user named context ${CONTEXT.id} by hand on ${TODAY}, so auto mode leaves it to them.`,
+    );
   });
 });

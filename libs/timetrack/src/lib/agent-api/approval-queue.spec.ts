@@ -46,6 +46,17 @@ describe('routesThroughApproval', () => {
     expect(actionClassChoices('approvals.list')).toEqual([]);
   });
 
+  it("answers an auto mode ask at once, and offers it no stricter class, since what its answer writes waits as auto mode's own", () => {
+    const ask = {
+      op: 'autoMode.ask' as const,
+      day: '2026-10-05',
+      subject: { kind: 'stand-in' as const, standInId: 's1' },
+    };
+
+    expect(routesThroughApproval(ask)).toBe(false);
+    expect(actionClassChoices('autoMode.ask')).toEqual([]);
+  });
+
   it('queues every write', () => {
     expect(routesThroughApproval(CREATE)).toBe(true);
     expect(routesThroughApproval(SYNC)).toBe(true);

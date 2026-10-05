@@ -921,3 +921,127 @@ describe('timetrack approvals', () => {
     expect(lines.join('\n')).not.toMatch(/--approve/);
   });
 });
+
+describe('timetrack ask', () => {
+  const recordingBodies = (value: unknown) => {
+    const bodies: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body) as Record<string, unknown>);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify(value));
+      });
+    };
+
+    return { handler, bodies };
+  };
+
+  const localToday = () => {
+    const now = new Date();
+
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  };
+
+  it('asks auto mode about a stand-in of today, and prints what it queued', async () => {
+    const day = localToday();
+    const { handler, bodies } = recordingBodies({
+      ok: true,
+      value: { status: 'queued', day, subject: { kind: 'stand-in', standInId: 's1' }, label: 'Asks about Journey' },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['ask', '--stand-in', 's1'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'autoMode.ask', day, standInId: 's1' }]);
+    expect(lines).toEqual([
+      `Asks about Journey on ${day}: queued. The new answer replaces the stored one; what it queues waits for the user's approval.`,
+    ]);
+  });
+
+  it('asks about a context of the day it names, and says when an ask already waits', async () => {
+    const { handler, bodies } = recordingBodies({
+      ok: true,
+      value: {
+        status: 'asking',
+        day: '2026-10-02',
+        subject: { kind: 'context', contextId: 'repo:/a' },
+        label: 'Asks about a',
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['ask', '--context', 'repo:/a', '--day', '2026-10-02'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'autoMode.ask', day: '2026-10-02', contextId: 'repo:/a' }]);
+    expect(lines).toEqual(['Asks about a on 2026-10-02: already waiting or running, so nothing more was queued.']);
+  });
+
+  it('needs exactly one subject and a day as YYYY-MM-DD, and asks nothing otherwise', async () => {
+    const { handler, bodies } = recordingBodies({ ok: true, value: {} });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['ask'])).rejects.toThrow(/Pass one subject/);
+    await expect(run(['ask', '--stand-in', 's1', '--context', 'repo:/a'])).rejects.toThrow(/Pass one subject/);
+    await expect(run(['ask', '--stand-in', 's1', '--day', 'friday'])).rejects.toThrow(/YYYY-MM-DD/);
+    expect(bodies).toEqual([]);
+  });
+
+  it('prints the context an unnamed row asks about, so `ask --context` can name it', async () => {
+    const fromMs = new Date(2026, 9, 2, 9, 0).getTime();
+    const row = {
+      id: 'r1',
+      description: 'pdf export',
+      fromMs,
+      toMs: fromMs + 30 * 60_000,
+      durationMs: 30 * 60_000,
+      observedMs: 30 * 60_000,
+      laneKey: 'repo:/a',
+      state: 'suggested',
+      confidence: 'weak',
+      edited: false,
+      hidden: false,
+    };
+    const { handler } = recordingBodies({
+      ok: true,
+      value: {
+        day: '2026-10-02',
+        rows: [{ ...row, autoModeSubject: { kind: 'context', contextId: 'repo:/a|feature/pdf' } }],
+        hidden: [],
+        proposedMs: 0,
+        loggedMs: 0,
+        targetMs: 0,
+        unattributedMs: 0,
+        warnings: [],
+        behind: [],
+      },
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['rows', '2026-10-02'])).resolves.toBe(0);
+    expect(lines[1]).toBe('  r1  09:00-09:30  30m  unnamed  suggested  repo:/a  context repo:/a|feature/pdf');
+  });
+
+  it('fails with the app refusal for a subject the day does not hold', async () => {
+    const { handler } = recordingBodies({
+      ok: false,
+      message: 'Timetrack holds no stand-in nope. Nothing was asked.',
+    });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['ask', '--stand-in', 'nope'])).rejects.toThrow(/holds no stand-in nope/);
+  });
+});

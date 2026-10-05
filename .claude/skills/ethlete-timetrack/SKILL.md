@@ -36,6 +36,19 @@ A reject answers at once and writes nothing to Jira or Tempo; an item that no lo
 refused and stays as it is. Reject only what the user asked you to, or a write you queued by
 mistake. **There is no approve command and never will be: only the user approves, in the app.**
 
+`ask` does what the app's "Ask auto mode again" does, on any day, without moving the day on
+screen. It answers at once with what it queued; the model runs on the user's machine, and its new
+answer replaces the stored one. It writes nothing to Jira or Tempo itself: a ticket or a name the
+answer proposes waits for the user's approval as auto mode's own does.
+
+```bash
+npx ethlete-agents timetrack ask --stand-in <id> [--day YYYY-MM-DD]       # an open stand-in, ids from `standins`
+npx ethlete-agents timetrack ask --context <context-id> [--day YYYY-MM-DD] # an unnamed band, ids from `rows`
+```
+
+A subject the app does not offer the press on is refused: an unknown or resolved stand-in, one
+the day holds no time of, a context a rule names or the user named by hand.
+
 Tell the user a request waits in Timetrack, then read `approval` once they say they decided -
 do not poll in a loop. A request that is still waiting at the end of the day it was asked on
 expires; ask again rather than assuming it landed. Set `TIMETRACK_CLIENT` to name yourself in the
@@ -73,6 +86,7 @@ nobody can rotate.
 | `approval <id>`                            | A write you queued: whether the user approved it, and what it answered      |
 | `approvals`                                | You need what waits in the queue, from every caller                         |
 | `approval <id> --reject`                   | The user asked you to drop a waiting write, or you queued one by mistake    |
+| `ask --stand-in <id>` / `--context <id>`   | The user asks auto mode to look at a stand-in or an unnamed band again      |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.

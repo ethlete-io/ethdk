@@ -11,10 +11,12 @@ import {
   TimetrackTempoWorklog,
   TimetrackCalendarEvent,
   TimetrackWaitingApproval,
+  TimetrackAutoModeSubject,
   timetrackAddWorklog,
   timetrackApplyStandInSplit,
   timetrackApprovalStatus,
   timetrackApprovals,
+  timetrackAskAutoMode,
   timetrackRejectApproval,
   timetrackCreateIssue,
   TimetrackRow,
@@ -77,6 +79,8 @@ const FLAGS_WITH_VALUE = [
   '--merge',
   '--into',
   '--compare',
+  '--stand-in',
+  '--context',
 ];
 
 /** Every human-readable line, with anything a terminal would act on printed rather than obeyed. */
@@ -290,6 +294,7 @@ const rowLine = (row: TimetrackRow) =>
     ...(row.edited ? ['edited'] : []),
     ...(row.hidden ? ['hidden'] : []),
     row.laneKey ?? 'no lane',
+    ...(row.autoModeSubject?.kind === 'context' ? [`context ${row.autoModeSubject.contextId}`] : []),
   ].join('  ');
 
 const shiftDay = (day: string, days: number) => {
@@ -728,6 +733,9 @@ A waiting write can be rejected from here; only the user approves one, in the ap
   timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
   timetrack approval <id>       Where a queued write stands, and what it answered once approved
   timetrack approvals           The writes that wait for the user's approval now, from every caller
+  timetrack ask --stand-in <id> | --context <context-id> [--day YYYY-MM-DD]
+                                Ask auto mode about one subject of a day again, as "Ask auto mode
+                                again" does (default: today). Writes nothing to Jira or Tempo
   timetrack approval <id> --reject
                                 Reject one waiting write, as the app's Reject button does. Nothing here
                                 approves one: only the user does, in the app
@@ -1135,6 +1143,34 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     }
 
     return printed(naming, json);
+  }
+
+  if (subcommand === 'ask') {
+    const standInId = flagValue(argv, '--stand-in');
+    const contextId = flagValue(argv, '--context');
+    const day = flagValue(argv, '--day') ?? today();
+    const subject: TimetrackAutoModeSubject | undefined = standInId
+      ? { kind: 'stand-in', standInId }
+      : contextId
+        ? { kind: 'context', contextId }
+        : undefined;
+
+    if (!subject || (standInId && contextId)) {
+      throw new Error('Pass one subject: `timetrack ask --stand-in <id>` or `timetrack ask --context <context-id>`.');
+    }
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    const asked = await timetrackAskAutoMode({ day, subject });
+
+    if (!json) {
+      say(
+        asked.status === 'queued'
+          ? `${asked.label} on ${asked.day}: queued. The new answer replaces the stored one; what it queues waits for the user's approval.`
+          : `${asked.label} on ${asked.day}: already waiting or running, so nothing more was queued.`,
+      );
+    }
+
+    return printed(asked, json);
   }
 
   if (subcommand === 'approvals') {

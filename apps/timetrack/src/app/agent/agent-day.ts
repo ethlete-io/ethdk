@@ -2,6 +2,8 @@ import { toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentApiRowEdit,
+  AutoModeAnswer,
+  AutoModeSubject,
   DayReview,
   DayReviewEdits,
   ManualRow,
@@ -9,12 +11,14 @@ import {
   ReviewedRow,
   TempoDayCoverage,
   addManualRow,
+  autoModeReaskSubjectOf,
   agedNamings,
   dayBoundaryOf,
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
   hideRow,
   localDayKey,
+  matchAttributionRule,
   namedIssueKeys,
   readJiraCredentials$,
   readTempoCredentials$,
@@ -25,6 +29,8 @@ import {
   setRowRange,
   setRowState,
   showRow,
+  unnamedContexts,
+  withAutoModeRowNames,
 } from '@ethlete/timetrack';
 import { Observable, catchError, concatMap, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
 import { injectGitCollector, injectWindowCollector } from '../../collectors';
@@ -36,6 +42,8 @@ import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 import { DayRead, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+
+type AgentDaySubjectOf = (row: ReviewedRow) => AutoModeSubject | undefined;
 
 const applyRowEdit = ({
   edits,
@@ -157,8 +165,37 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const editsOf = (read: DayRead) => review.heldEditsOf(read.key) ?? read.edits;
 
-  const review$ = (day: string): Observable<DayReview> =>
-    read$(day).pipe(map((read) => read.reviewWith(editsOf(read))));
+  const askEvidenceOf = (read: DayRead) => {
+    const { unattributed } = read.day.rows;
+    const contexts = unnamedContexts({ unattributed });
+    const rules = settings.settings().attributionRules;
+
+    return {
+      dayRows: read.day.rows,
+      contexts,
+      unattributed,
+      ruledContextIds: new Set(
+        contexts.filter((context) => matchAttributionRule({ context: context.context, rules })).map(({ id }) => id),
+      ),
+    };
+  };
+
+  const askSubjectsOf = (read: DayRead): AgentDaySubjectOf => {
+    const evidence = askEvidenceOf(read);
+
+    return (row) =>
+      autoModeReaskSubjectOf({
+        row,
+        day: read.key,
+        contexts: evidence.contexts,
+        ruledContextIds: evidence.ruledContextIds,
+        unattributed: evidence.unattributed,
+        standIns: settings.settings().standIns,
+      }) ?? undefined;
+  };
+
+  const review$ = (day: string): Observable<{ review: DayReview; askSubjectOf: AgentDaySubjectOf }> =>
+    read$(day).pipe(map((read) => ({ review: read.reviewWith(editsOf(read)), askSubjectOf: askSubjectsOf(read) })));
 
   const inputs$ = (day: string) =>
     read$(day).pipe(map((read) => ({ day, rows: read.day.rows, edits: editsOf(read), cut: read.cut })));
@@ -189,7 +226,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const editRows$ = (options: {
     day: string;
     edits: readonly AgentApiRowEdit[];
-  }): Observable<{ applied: number; review: DayReview }> =>
+  }): Observable<{ applied: number; review: DayReview; askSubjectOf: AgentDaySubjectOf }> =>
     read$(options.day).pipe(
       switchMap((read) => {
         let applied = 0;
@@ -219,15 +256,36 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
             tap(() => {
               if (named) laneIssues.reload();
             }),
-            map(() => ({ applied, review: read.reviewWith(after) })),
+            map(() => ({ applied, review: read.reviewWith(after), askSubjectOf: askSubjectsOf(read) })),
           );
       }),
+    );
+
+  const askEvidence$ = (day: string) =>
+    read$(day).pipe(map((read) => ({ ...askEvidenceOf(read), rows: read.reviewWith(editsOf(read)).rows })));
+
+  const applyAutoModeNames$ = (options: {
+    day: string;
+    applies: (answer: AutoModeAnswer) => boolean;
+  }): Observable<void> =>
+    read$(options.day).pipe(
+      switchMap((read) =>
+        review.changeDay$(options.day, (held) =>
+          withAutoModeRowNames({
+            edits: held,
+            rows: read.reviewWith(held).rows,
+            unattributed: read.day.rows.unattributed,
+            applies: options.applies,
+          }),
+        ),
+      ),
+      take(1),
     );
 
   const addRow$ = (options: { day: string; row: ManualRow }): Observable<void> =>
     review.changeDay$(options.day, (edits) => addManualRow({ edits, row: options.row })).pipe(take(1));
 
-  return { review$, inputs$, namingDecisions$, editRows$, addRow$ };
+  return { review$, inputs$, namingDecisions$, editRows$, addRow$, askEvidence$, applyAutoModeNames$ };
 });
 
 export const injectAgentDay = /* @__PURE__ */ toInjectFn(AGENT_DAY_DEF);

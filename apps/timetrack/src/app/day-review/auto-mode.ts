@@ -9,7 +9,10 @@ import {
   AutoModeHideRequest,
   AutoModeOutcome,
   AutoModeSubject,
+  AgentApiAutoModeAsk,
+  DayRows,
   TicketWording,
+  UnnamedContext,
   ReviewedRow,
   TicketWritingRequest,
   actionClassOf,
@@ -18,6 +21,7 @@ import {
   autoModeApplyRequest,
   autoModeApplyTarget,
   autoModeApprovalTarget,
+  autoModeAskRefusal,
   autoModeAsks,
   autoModeCreateRequest,
   autoModeContextLabel,
@@ -78,7 +82,9 @@ import {
   map,
   of,
   switchMap,
+  take,
   tap,
+  throwError,
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectAgentDay } from '../agent/agent-day';
@@ -93,7 +99,9 @@ import { ProjectIssues, matchCandidatesOf, readProjectIssues$ } from './project-
 /** How often a row's settle time is checked again: a row settles by the clock, not by a change. */
 const DESCRIPTION_TICK_MS = 60_000;
 
-type Ask = { day: string; subject: AutoModeSubject };
+type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows } | null;
+
+type Ask = { day: string; subject: AutoModeSubject; evidence$: Observable<AskEvidence> };
 
 type Job = {
   key: string;
@@ -339,39 +347,38 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         )
       : of(null);
 
-  const projectKeyOf = (subject: AutoModeSubject) => {
+  const projectKeyOf = (subject: AutoModeSubject, evidence: AskEvidence) => {
     const current = settings.settings();
 
     if (subject.kind === 'stand-in') {
       return current.standIns.find((entry) => entry.id === subject.standInId)?.projectKey;
     }
 
-    const context = dayReview.unnamed().find((entry) => entry.id === subject.contextId);
-    const deterministic = dayReview.deterministic();
+    const context = evidence?.contexts.find((entry) => entry.id === subject.contextId);
 
-    if (!context || !deterministic) return undefined;
+    if (!context) return undefined;
 
     return (
       inferTicketProjectKey({
         context: context.context,
         rules: current.attributionRules,
-        proposals: deterministic.proposals,
+        proposals: evidence?.rows.proposals ?? [],
         projectKeys: favoriteProjectKeys(current),
         links: projectLinks(),
       }) ?? undefined
     );
   };
 
-  const requestOf = (subject: AutoModeSubject, issues: ProjectIssues | null) => {
+  const requestOf = (options: { subject: AutoModeSubject; evidence: AskEvidence; issues: ProjectIssues | null }) => {
+    const { subject, evidence, issues } = options;
     const current = settings.settings();
-    const deterministic = dayReview.deterministic();
 
-    if (subject.kind === 'context' && !deterministic) return null;
+    if (subject.kind === 'context' && !evidence) return null;
 
     return autoModeSubjectRequest({
       subject,
-      contexts: dayReview.unnamed(),
-      unattributed: deterministic?.unattributed ?? [],
+      contexts: evidence?.contexts ?? [],
+      unattributed: evidence?.rows.unattributed ?? [],
       standIns: current.standIns,
       config: gitFlowConfigFor(current),
       maskedNames: current.reasoning.maskedNames,
@@ -380,14 +387,14 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     });
   };
 
-  const prepare$ = (subject: AutoModeSubject): Observable<Prepared | null> => {
-    if (!requestOf(subject, null)) return of(null);
+  const prepare$ = (subject: AutoModeSubject, evidence: AskEvidence): Observable<Prepared | null> => {
+    if (!requestOf({ subject, evidence, issues: null })) return of(null);
 
-    const projectKey = projectKeyOf(subject);
+    const projectKey = projectKeyOf(subject, evidence);
 
     return issues$(projectKey).pipe(
       map((issues) => {
-        const request = requestOf(subject, issues);
+        const request = requestOf({ subject, evidence, issues });
 
         return request ? { request, ...(projectKey ? { projectKey } : {}) } : null;
       }),
@@ -433,13 +440,15 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
   };
 
-  const applyAnswer = (day: string, answer: AutoModeAnswer) => {
+  const applyAnswer$ = (day: string, answer: AutoModeAnswer): Observable<void> => {
     const { subject, outcome } = answer;
 
     if (subject.kind === 'context') {
-      dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey()));
+      if (dayReview.dayKey() !== day) return agentDay.applyAutoModeNames$({ day, applies: appliesOn(day) });
 
-      return;
+      dayReview.applyAutoModeNames(appliesOn(day));
+
+      return of(undefined);
     }
 
     if (outcome.kind === 'match') {
@@ -453,6 +462,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     ) {
       settings.setStandInParent({ id: subject.standInId, parentKey: outcome.parentKey, source: 'auto' });
     }
+
+    return of(undefined);
   };
 
   const withDone$ = (answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
@@ -465,8 +476,28 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
+  const screenEvidence$ = defer(() => {
+    const rows = dayReview.deterministic();
+
+    return of<AskEvidence>(rows ? { contexts: dayReview.unnamed(), rows } : null);
+  });
+
+  const heldAnswers$ = (day: string): Observable<readonly AutoModeAnswer[]> =>
+    defer(() => {
+      const held = dayReview.heldEditsOf(day);
+
+      return held
+        ? of(held.auto ?? [])
+        : ports.review.editsFor$(day).pipe(
+            take(1),
+            map((stored) => stored?.auto ?? []),
+          );
+    });
+
   const answer$ = (ask: Ask): Observable<string | void> =>
-    prepare$(ask.subject).pipe(
+    ask.evidence$.pipe(
+      take(1),
+      switchMap((evidence) => prepare$(ask.subject, evidence)),
       switchMap((prepared) => {
         if (!prepared) return EMPTY;
 
@@ -487,24 +518,26 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         );
       }),
       switchMap((answer) => withDone$(answer)),
-      tap(() => {
-        if (dayReview.dayKey() !== ask.day) return;
+      switchMap((answer) =>
+        heldAnswers$(ask.day).pipe(
+          tap((held) => {
+            const key = autoModeSubjectKey(ask.subject);
 
-        const key = autoModeSubjectKey(ask.subject);
-
-        if (dayReview.autoAnswers()?.some((held) => autoModeSubjectKey(held.subject) === key)) {
-          approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, ask));
-        }
-      }),
+            if (held.some((entry) => autoModeSubjectKey(entry.subject) === key)) {
+              approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, ask));
+            }
+          }),
+          map(() => answer),
+        ),
+      ),
       switchMap((answer) => queued$(ask.day, answer)),
       switchMap((answer) => queuedApply$(ask.day, answer).pipe(map((queued) => ({ answer, queued })))),
       switchMap(({ answer, queued }) =>
         dayReview
           .changeDay$(ask.day, (edits) => withAutoModeAnswer(edits, answer))
           .pipe(
+            switchMap(() => applyAnswer$(ask.day, answer)),
             map(() => {
-              applyAnswer(ask.day, answer);
-
               if (answer.outcome.kind !== 'match' || !answer.outcome.done) return undefined;
 
               return `${answer.outcome.issueKey} is done, ${queued ? 'waits for your approval' : 'left to you'}`;
@@ -652,24 +685,62 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const queue = (job: Job) => {
-    if (pending().has(job.key)) return;
+    if (pending().has(job.key)) return false;
 
     pending.update((keys) => new Set([...keys, job.key]));
     jobs$.next(job);
+
+    return true;
   };
 
   const askKeyOf = (day: string, subject: AutoModeSubject) => `${day}|${autoModeSubjectKey(subject)}`;
 
-  const queueAsk = (options: { day: string; subject: AutoModeSubject; stillNeeded: () => boolean }) => {
-    const { day, subject } = options;
+  const askLabelOf = (subject: AutoModeSubject) => `Asks about ${labelOf(subject) || 'unnamed work'}`;
 
-    queue({
+  const queueAsk = (options: {
+    day: string;
+    subject: AutoModeSubject;
+    stillNeeded: () => boolean;
+    evidence$?: Observable<AskEvidence>;
+  }) => {
+    const { day, subject } = options;
+    const evidence$ = options.evidence$ ?? screenEvidence$;
+
+    return queue({
       key: askKeyOf(day, subject),
       day,
-      label: `Asks about ${labelOf(subject) || 'unnamed work'}`,
+      label: askLabelOf(subject),
       stillNeeded: options.stillNeeded,
-      work: () => answer$({ day, subject }),
+      work: () => answer$({ day, subject, evidence$ }),
     });
+  };
+
+  const askFor$ = (options: { day: string; subject: AutoModeSubject }): Observable<AgentApiAutoModeAsk> => {
+    const { day, subject } = options;
+
+    if (!settings.settings().reasoning.enabled) {
+      return throwError(() => new Error('The model is switched off in Timetrack Settings, so auto mode cannot ask.'));
+    }
+
+    return agentDay.askEvidence$(day).pipe(
+      take(1),
+      map((evidence) => {
+        const refusal = autoModeAskRefusal({ subject, day, standIns: settings.settings().standIns, ...evidence });
+
+        if (refusal) throw new Error(`${refusal} Nothing was asked.`);
+
+        const queued = queueAsk({
+          day,
+          subject,
+          stillNeeded: () => true,
+          evidence$: agentDay
+            .askEvidence$(day)
+            .pipe(map((current): AskEvidence => ({ contexts: current.contexts, rows: current.dayRows }))),
+        });
+
+        return { status: queued ? 'queued' : 'asking', day, subject, label: askLabelOf(subject) };
+      }),
+    );
   };
 
   // `concatMap`: one CLI at a time, the same guard the press has against spawning a second one.
@@ -903,6 +974,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
       queueAsk({ day, subject, stillNeeded: () => dayReview.dayKey() === day });
     },
+    askFor$,
     /** The jobs auto mode ran in this app session, newest first. */
     activity: activity.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */

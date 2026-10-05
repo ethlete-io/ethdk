@@ -275,6 +275,19 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return isDayKey(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');
   }
 
+  if (op === 'autoMode.ask') {
+    const day = asText(raw['day']);
+    const standInId = asText(raw['standInId']);
+    const contextId = asText(raw['contextId']);
+
+    if (!isDayKey(day)) return missing(op, 'day as YYYY-MM-DD');
+    if (standInId && contextId) return failed(`${op} asks about a standInId or a contextId, not both.`);
+    if (standInId) return { ok: true, request: { op, day, subject: { kind: 'stand-in', standInId } } };
+    if (contextId) return { ok: true, request: { op, day, subject: { kind: 'context', contextId } } };
+
+    return missing(op, 'standInId or contextId');
+  }
+
   if (op === 'day.edits') {
     const day = asText(raw['day']);
     const listed = raw['edits'];

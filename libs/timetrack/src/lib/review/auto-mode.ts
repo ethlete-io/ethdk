@@ -316,6 +316,48 @@ export const autoModeReaskSubjectOf = (options: {
 };
 
 /**
+ * Why an agent may not ask auto mode about a subject of a day, or `null` where it may. It refuses what
+ * "Ask auto mode again" is never offered on: a stand-in Timetrack does not hold, one the day holds no
+ * time of, a resolved one or one the user reopened, and a context the day holds no unnamed work of,
+ * one a standing rule answers or one the user named by hand.
+ */
+export const autoModeAskRefusal = (options: {
+  subject: AutoModeSubject;
+  day: string;
+  contexts: readonly Pick<UnnamedContext, 'id'>[];
+  ruledContextIds?: ReadonlySet<string>;
+  unattributed: readonly WorkGroup[];
+  rows: readonly AskRow[];
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
+}): string | null => {
+  const { subject, day } = options;
+
+  if (subject.kind === 'stand-in') {
+    const id = subject.standInId;
+    const standIn = options.standIns.find((entry) => entry.id === id);
+
+    if (!standIn) return `Timetrack holds no stand-in ${id}.`;
+    if (!standIn.days.includes(day)) return `Stand-in ${id} holds no time on ${day}.`;
+    if (standIn.state !== 'open') return `Stand-in ${id} is resolved already, so auto mode has nothing to ask.`;
+    if (!mayAutoWrite(standInResolutionSourceOf(standIn))) {
+      return `The user reopened stand-in ${id}, so auto mode leaves it to them.`;
+    }
+
+    return null;
+  }
+
+  const id = subject.contextId;
+
+  if (!options.contexts.some((context) => context.id === id)) return `${day} holds no unnamed work of context ${id}.`;
+  if (options.ruledContextIds?.has(id)) return `A standing rule names context ${id}, so auto mode is not asked.`;
+  if (handNamedContextIds({ rows: options.rows, unattributed: options.unattributed }).has(id)) {
+    return `The user named context ${id} by hand on ${day}, so auto mode leaves it to them.`;
+  }
+
+  return null;
+};
+
+/**
  * What auto mode still has to ask about on a day: each unnamed context and each open stand-in the day
  * holds that holds no answer yet, or whose answer is still auto mode's and was built from evidence the
  * day no longer holds. Nothing on any day but today, and nothing while auto mode is off. A stand-in the
