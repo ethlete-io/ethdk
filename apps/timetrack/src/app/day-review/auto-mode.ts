@@ -415,7 +415,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       );
   };
 
-  const queuedApply$ = (day: string, answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
+  const queuedApply$ = (day: string, answer: AutoModeAnswer): Observable<boolean> => {
     const request = autoModeApplyRequest({
       day,
       answer,
@@ -423,13 +423,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       classes: settings.settings().actionClasses,
     });
 
-    if (!request) return of(answer);
+    if (!request) return of(false);
 
     return approvals
       .enqueue$({ request, client: AUTO_MODE_CLIENT, target: autoModeApplyTarget(day, answer.subject) })
       .pipe(
-        map(() => answer),
-        catchError(() => of(answer)),
+        map(() => true),
+        catchError(() => of(false)),
       );
   };
 
@@ -497,17 +497,17 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }
       }),
       switchMap((answer) => queued$(ask.day, answer)),
-      switchMap((answer) => queuedApply$(ask.day, answer)),
-      switchMap((answer) =>
+      switchMap((answer) => queuedApply$(ask.day, answer).pipe(map((queued) => ({ answer, queued })))),
+      switchMap(({ answer, queued }) =>
         dayReview
           .changeDay$(ask.day, (edits) => withAutoModeAnswer(edits, answer))
           .pipe(
             map(() => {
               applyAnswer(ask.day, answer);
 
-              return answer.outcome.kind === 'match' && answer.outcome.done
-                ? `${answer.outcome.issueKey} is done, left to you`
-                : undefined;
+              if (answer.outcome.kind !== 'match' || !answer.outcome.done) return undefined;
+
+              return `${answer.outcome.issueKey} is done, ${queued ? 'waits for your approval' : 'left to you'}`;
             }),
           ),
       ),

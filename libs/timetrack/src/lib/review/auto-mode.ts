@@ -571,7 +571,8 @@ const createdIssueKeyOf = (result: unknown) => {
 
 /**
  * The apply a match queues where the user made `autoMode.apply` stricter than `local`, and `null`
- * for any other answer or class.
+ * for any other answer or class. A stand-in's match on a done issue queues at `local` too, marked
+ * `done`, since only an approval writes it; a band's stays the user's.
  */
 export const autoModeApplyRequest = (options: {
   day: string;
@@ -581,17 +582,25 @@ export const autoModeApplyRequest = (options: {
 }): AutoModeApplyRequest | null => {
   const { outcome, subject } = options.answer;
 
-  if (outcome.kind !== 'match' || outcome.done || actionClassOf('autoMode.apply', options.classes) !== 'external') {
-    return null;
+  if (outcome.kind !== 'match') return null;
+
+  const opClass = actionClassOf('autoMode.apply', options.classes);
+  const request = { op: 'autoMode.apply' as const, day: options.day, subject, label: options.label };
+
+  if (outcome.done) {
+    return subject.kind === 'stand-in' && opClass !== 'human-only'
+      ? { ...request, issueKey: outcome.issueKey, done: true }
+      : null;
   }
 
-  return { op: 'autoMode.apply', day: options.day, subject, label: options.label, issueKey: outcome.issueKey };
+  return opClass === 'external' ? { ...request, issueKey: outcome.issueKey } : null;
 };
 
 /**
  * Whether auto mode may write what an answer found now. A match writes at `local`, at `external` once
  * its queued apply is approved, and never at `human-only` or after a rejected apply. The key an
- * approved create filed is written whatever the class. A match Jira had done is never written.
+ * approved create filed is written whatever the class. A match Jira had done is never written here:
+ * only the approval of its queued apply writes it.
  */
 export const autoModeApplies = (options: {
   day: string;
@@ -803,8 +812,6 @@ const ticketReadout = (options: {
 
     if (applied) return { ...found, status: 'applied' };
     if (standIn && standInResolutionSourceOf(standIn) === 'human') return { ...found, status: 'overruled' };
-    if (outcome.done) return { ...found, status: 'done' };
-
     if (approval) {
       const waiting = approvalStatusFor(approval);
 
@@ -812,6 +819,8 @@ const ticketReadout = (options: {
 
       return { ...found, status: 'approved' };
     }
+
+    if (outcome.done) return { ...found, status: 'done' };
 
     if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };
 

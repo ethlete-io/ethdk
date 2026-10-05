@@ -48,7 +48,10 @@ export const approvalLinesOf = (
       ];
     }
     case 'autoMode.apply':
-      return [{ label: 'Ticket', value: `${request.label} → ${named(request.issueKey)}` }, asked];
+      return [
+        { label: 'Ticket', value: `${request.label} → ${named(request.issueKey)}${request.done ? ' (done)' : ''}` },
+        asked,
+      ];
     case 'autoMode.resolve':
       return [
         {

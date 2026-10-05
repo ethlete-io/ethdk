@@ -762,6 +762,44 @@ describe('a match Jira had done', () => {
       expect.objectContaining({ status: 'done', issueKey: 'FOO-1', namedRows: 0 }),
     ]);
   });
+
+  it('queues a stand-in’s match for approval at local and external, marked done, and never at human-only', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const answer: AutoModeAnswer = { ...done(), subject: { kind: 'stand-in', standInId: standIn.id } };
+    const request = (classes: ActionClasses) => autoModeApplyRequest({ day: TODAY, answer, label: 'Journey', classes });
+
+    expect(request({})).toEqual({
+      op: 'autoMode.apply',
+      day: TODAY,
+      subject: answer.subject,
+      label: 'Journey',
+      issueKey: 'FOO-1',
+      done: true,
+    });
+    expect(request({ 'autoMode.apply': 'external' })).toEqual(expect.objectContaining({ done: true }));
+    expect(request({ 'autoMode.apply': 'human-only' })).toBeNull();
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: [] })).toBe(false);
+
+    const local = request({});
+
+    if (!local) throw new Error('nothing to queue');
+
+    const queue = enqueueApproval([], {
+      id: 'apply-1',
+      request: local,
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApplyTarget(TODAY, answer.subject),
+      at: at('10:00'),
+      day: TODAY,
+    });
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, answer);
+    const statusOf = (approvals: AgentApproval[]) =>
+      autoModeReadout({ day: TODAY, edits, approvals, classes: {}, standIns: [standIn] })[0]?.status;
+
+    expect(statusOf([])).toBe('done');
+    expect(statusOf(queue)).toBe('waiting');
+    expect(statusOf(markApproval(queue, { id: 'apply-1', state: 'rejected' }))).toBe('rejected');
+  });
 });
 
 describe('autoModeContextLabel', () => {

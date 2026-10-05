@@ -26,7 +26,7 @@ export const approvalChipOf = (item: AgentApproval) => {
     case 'worklog.add':
       return `${who} · +${formatDurationMs(request.durationMs)} on ${request.issueKey}`;
     case 'autoMode.apply':
-      return `${who} · Name ${request.issueKey}`;
+      return `${who} · Name ${request.issueKey}${request.done ? ' (done)' : ''}`;
     case 'autoMode.resolve':
       return `${who} · ${request.choice === 'keep' ? `Keep ${request.booked}` : `Use ${disputedTargetLabel(request.other)}`}`;
     case 'autoMode.hide':

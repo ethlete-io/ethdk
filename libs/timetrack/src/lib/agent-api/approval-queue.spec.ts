@@ -198,6 +198,14 @@ describe('an auto mode apply in the queue', () => {
     expect(describeApproval(APPLY)).toBe('Resolves stand-in Pdf export with ABC-7');
   });
 
+  it('keeps the done mark of a done issue it stored, and says the issue is done', () => {
+    const done: AutoModeApplyRequest = { ...APPLY, done: true };
+    const queue = enqueueApproval([], { id: 'a0', request: done, client: 'auto mode', at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+    expect(describeApproval(done)).toBe('Resolves stand-in Pdf export with ABC-7, which Jira has done');
+  });
+
   it('drops a stored apply that names no subject', () => {
     const [stored] = enqueueApproval([], { id: 'a0', request: APPLY, at: AT, day: '2026-09-28' });
 

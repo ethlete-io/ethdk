@@ -11,8 +11,9 @@ an existing issue, auto mode applies it as a `local` action, at the confidence t
 capped at `weak`. Where nothing matches, it drafts a ticket and picks its epic, and the create waits
 in the approval queue as an `external` action. A band two rungs disagree about (ADR 0012) is settled
 the same way a match is applied, once per pair of answers, and an unsure answer leaves it. An issue
-Jira has in its done category is never applied or queued: a match or a dispute choice that names one
-leaves the band to the user. A band or stand-in is asked again when the evidence its answer was built
+Jira has in its done category is never applied by itself: a match or a dispute choice that names one
+leaves the band to the user, and a stand-in's match on one waits in the approval queue, marked done,
+whatever the class short of `human-only`. A band or stand-in is asked again when the evidence its answer was built
 from changes (a new commit, merge request or session title, not a band that only grew longer), while
 that answer is still auto mode's: no create of it approved, no apply of it approved or rejected, and
 no row of the band named by hand. The new answer expires what the old one left waiting, and so does a

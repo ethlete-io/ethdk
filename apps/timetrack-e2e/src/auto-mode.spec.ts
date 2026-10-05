@@ -149,16 +149,55 @@ test.describe('auto mode on a stand-in whose issue is done but still logged on',
     await page.goto('/day');
   });
 
-  test('offers the done issue to the match and leaves the match to the user', async ({ page }) => {
+  const doneApply = (page: Page) => page.locator('[data-band-approval][data-op="autoMode.apply"]');
+
+  const standInState = async (page: Page) => {
+    await openStandIns(page);
+
+    return page.locator('ethlete-stand-ins-list [data-stand-in]').first();
+  };
+
+  test('offers the done issue to the match and queues the match for the user’s approval', async ({ page }) => {
+    await expect(doneApply(page)).toContainText(`Auto · Name ${E2E_ISSUE_KEY} (done)`);
+
     const readout = await openAutoModeReadout(page);
     const entry = readout.locator('[data-auto-entry^="stand-in:"]');
 
-    await expect(entry).toHaveAttribute('data-status', 'done');
-    await expect(entry).toContainText(`${E2E_ISSUE_KEY} is done, left to you`);
+    await expect(entry).toHaveAttribute('data-status', 'waiting');
+    await expect(entry).toContainText(`${E2E_ISSUE_KEY} waits for your approval`);
+    await expect(
+      readout.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
+    ).toContainText(`${E2E_ISSUE_KEY} is done, waits for your approval`);
     expect((await readBackend(page)).jira.created).toEqual([]);
 
-    await openStandIns(page);
-    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
+
+  test('resolves the stand-in to the done issue once the card on its band is approved', async ({ page }) => {
+    await page.locator('[data-kind="row"][data-stand-in][data-pending]').click();
+
+    const section = editSurface(page).locator('[data-row-approval]');
+
+    await expect(section).toContainText(`${E2E_ISSUE_KEY} User management (done)`);
+    await section.getByRole('button', { name: 'Approve' }).click();
+    await expect(section).toBeHidden();
+
+    const standIn = await standInState(page);
+
+    await expect(standIn).toHaveAttribute('data-state', 'resolved');
+    await expect(standIn).toContainText(E2E_ISSUE_KEY);
+  });
+
+  test('leaves the stand-in open once the card is rejected', async ({ page }) => {
+    await doneApply(page)
+      .getByRole('button', { name: /^Reject:/ })
+      .click();
+    await expect(doneApply(page)).toBeHidden();
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'rejected');
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
   });
 });
 

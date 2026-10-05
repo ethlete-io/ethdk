@@ -15,6 +15,8 @@ export type AutoModeApplyRequest = {
   /** The band's or the stand-in's name, as the queue panel shows it. */
   label: string;
   issueKey: string;
+  /** Jira has the issue done: auto mode never writes the match without this approval. */
+  done?: true;
 };
 
 /**
@@ -231,7 +233,14 @@ const parseAutoModeApply = (value: unknown): AutoModeApplyRequest | undefined =>
 
   if (raw['op'] !== 'autoMode.apply' || !DAY_KEY.test(day) || !subject || !issueKey) return undefined;
 
-  return { op: 'autoMode.apply', day, subject, label: textOf(raw['label']), issueKey };
+  return {
+    op: 'autoMode.apply',
+    day,
+    subject,
+    label: textOf(raw['label']),
+    issueKey,
+    ...(raw['done'] === true ? { done: true as const } : {}),
+  };
 };
 
 const parseAutoModeHide = (value: unknown): AutoModeHideRequest | undefined => {
@@ -348,7 +357,7 @@ export const describeApproval = (request: AgentApprovalRequest) => {
     case 'autoMode.apply':
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${request.issueKey}`
-        : `Resolves stand-in ${request.label} with ${request.issueKey}`;
+        : `Resolves stand-in ${request.label} with ${request.issueKey}${request.done ? ', which Jira has done' : ''}`;
     case 'autoMode.resolve':
       return `${request.choice === 'keep' ? `Keeps ${request.booked}` : `Takes ${disputedTargetLabel(request.other)} instead of ${request.booked}`} on today's ${request.label} band: ${request.reason}`;
     case 'autoMode.hide':
