@@ -14,9 +14,12 @@ import {
   markApproval,
   openApprovalFor,
   parseApprovalQueue,
+  rejectApproval,
   routesThroughApproval,
   settleApprovalQueue,
+  waitingApprovalsOf,
 } from './approval-queue';
+import { actionClassChoices } from './action-classes';
 import { AgentApiRequest } from './model';
 import { parseAgentRequest } from './parse';
 
@@ -34,6 +37,13 @@ describe('routesThroughApproval', () => {
   it('answers a read directly', () => {
     expect(routesThroughApproval({ op: 'day.rows', day: '2026-09-28' })).toBe(false);
     expect(routesThroughApproval({ op: 'approval.status', id: 'a0' })).toBe(false);
+    expect(routesThroughApproval({ op: 'approvals.list' })).toBe(false);
+  });
+
+  it('answers a reject at once, and offers it no stricter class, since it writes nothing to Jira or Tempo', () => {
+    expect(routesThroughApproval({ op: 'approval.reject', id: 'a0' })).toBe(false);
+    expect(actionClassChoices('approval.reject')).toEqual([]);
+    expect(actionClassChoices('approvals.list')).toEqual([]);
   });
 
   it('queues every write', () => {
@@ -251,5 +261,79 @@ describe('an auto mode hide in the queue', () => {
 
   it('is never read from a CLI request', () => {
     expect(parseAgentRequest(HIDE).ok).toBe(false);
+  });
+});
+
+describe('waitingApprovalsOf', () => {
+  it('lists the items that wait, with what the queue panel says of each', () => {
+    const queue = markApproval(
+      markApproval(
+        enqueueApproval(queueOf(CREATE, SYNC, CREATE), {
+          id: 'a3',
+          request: { op: 'worklog.add', issueKey: 'ABC-1', description: '', fromMs: 0, durationMs: 900_000 },
+          client: 'Claude Code',
+          at: AT,
+          day: '2026-09-28',
+        }),
+        { id: 'a1', state: 'running' },
+      ),
+      { id: 'a2', state: 'rejected' },
+    );
+
+    expect(waitingApprovalsOf(queue)).toEqual([
+      {
+        approvalId: 'a0',
+        state: 'queued',
+        op: 'jira.create',
+        askedAtMs: AT.getTime(),
+        summary: 'Files a Jira issue in ABC: Pdf export',
+      },
+      {
+        approvalId: 'a1',
+        state: 'running',
+        op: 'tempo.sync',
+        askedAtMs: AT.getTime(),
+        summary: 'Writes the plan of 2026-09-28 to Tempo',
+      },
+      {
+        approvalId: 'a3',
+        state: 'queued',
+        op: 'worklog.add',
+        client: 'Claude Code',
+        askedAtMs: AT.getTime(),
+        summary: 'Adds a 15m row for ABC-1 to the day',
+      },
+    ]);
+  });
+});
+
+describe('rejectApproval', () => {
+  it('rejects a waiting item the way the Reject press does', () => {
+    const rejected = rejectApproval(queueOf(CREATE, SYNC), { id: 'a1', decidedAtMs: 42 });
+
+    expect(rejected.ok && rejected.queue.map(({ id, state, decidedAtMs }) => ({ id, state, decidedAtMs }))).toEqual([
+      { id: 'a0', state: 'queued', decidedAtMs: undefined },
+      { id: 'a1', state: 'rejected', decidedAtMs: 42 },
+    ]);
+  });
+
+  it('refuses an item that does not wait for the press, and names why', () => {
+    const queue = markApproval(markApproval(queueOf(CREATE, SYNC, CREATE), { id: 'a1', state: 'running' }), {
+      id: 'a2',
+      state: 'expired',
+    });
+
+    expect(rejectApproval(queue, { id: 'a1', decidedAtMs: 1 })).toEqual({
+      ok: false,
+      message: 'Approval a1 was approved and is being carried out. Nothing changed.',
+    });
+    expect(rejectApproval(queue, { id: 'a2', decidedAtMs: 1 })).toEqual({
+      ok: false,
+      message: 'Approval a2 is expired already, so it waits for nothing. Nothing changed.',
+    });
+    expect(rejectApproval(queue, { id: 'nope', decidedAtMs: 1 })).toEqual({
+      ok: false,
+      message: 'Timetrack holds no approval nope. Nothing changed.',
+    });
   });
 });

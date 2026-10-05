@@ -10,9 +10,12 @@ import {
   TimetrackTempoSync,
   TimetrackTempoWorklog,
   TimetrackCalendarEvent,
+  TimetrackWaitingApproval,
   timetrackAddWorklog,
   timetrackApplyStandInSplit,
   timetrackApprovalStatus,
+  timetrackApprovals,
+  timetrackRejectApproval,
   timetrackCreateIssue,
   TimetrackRow,
   TimetrackRowEdit,
@@ -532,6 +535,26 @@ const approvalLines = (found: TimetrackApprovalStatus) => {
   ];
 };
 
+const askedAtOf = (ms: number) => {
+  const at = new Date(ms);
+
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+};
+
+const waitingLines = (waiting: readonly TimetrackWaitingApproval[]) => {
+  if (!waiting.length) return ["Nothing waits for the user's approval in Timetrack."];
+
+  return [
+    `${waiting.length} wait(s) for the user's approval in Timetrack. Only the user approves one, in the app.`,
+    ...waiting.map(
+      (item) =>
+        `  ${item.approvalId}  ${item.client ?? 'CLI'}  ${item.op}  asked ${askedAtOf(item.askedAtMs)}  ${item.summary}${
+          item.state === 'running' ? '  (approved, carrying it out)' : ''
+        }`,
+    ),
+  ];
+};
+
 const unrecordedOf = (value: unknown) =>
   typeof value === 'object' && value !== null && 'unrecorded' in value && typeof value.unrecorded === 'string'
     ? value.unrecorded
@@ -664,6 +687,7 @@ const USAGE = `ethlete-agents timetrack — ask the running Timetrack app about 
 
 The app holds this machine's Jira credentials, so no repository needs a token of its own.
 Every write waits in the app until the user approves it there, and prints an approval id.
+A waiting write can be rejected from here; only the user approves one, in the app.
 
   timetrack status              Whether the app is reachable, and which projects it holds
   timetrack instance            The instance's own levels and its branch-subject candidates
@@ -703,6 +727,10 @@ Every write waits in the app until the user approves it there, and prints an app
   timetrack naming [YYYY-MM-DD] Which checkouts the day offers a name for, and why the rest do not
   timetrack resync [path…]      Read the agent session logs of checkouts again, after they got a link
   timetrack approval <id>       Where a queued write stands, and what it answered once approved
+  timetrack approvals           The writes that wait for the user's approval now, from every caller
+  timetrack approval <id> --reject
+                                Reject one waiting write, as the app's Reject button does. Nothing here
+                                approves one: only the user does, in the app
 
 Options for search
   --project <KEY>     Search this project instead of the picked ones
@@ -1109,8 +1137,24 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
     return printed(naming, json);
   }
 
+  if (subcommand === 'approvals') {
+    const waiting = await timetrackApprovals();
+
+    if (!json) waitingLines(waiting).forEach(say);
+
+    return printed(waiting, json);
+  }
+
   if (subcommand === 'approval') {
     if (!value) throw new Error('Pass the approval id a write printed, e.g. `timetrack approval <id>`.');
+
+    if (argv.includes('--reject')) {
+      const rejected = await timetrackRejectApproval(value);
+
+      if (!json) say(`${rejected.approvalId}  rejected. Nothing was written.`);
+
+      return printed(rejected, json);
+    }
 
     const found = await timetrackApprovalStatus(value);
 

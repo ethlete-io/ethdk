@@ -28,7 +28,13 @@ Timetrack; `approval <id>` reads the outcome:
 
 ```bash
 {%packageRunner%} ethlete-agents timetrack approval <id>          # queued, approved (with the result), rejected or expired
+{%packageRunner%} ethlete-agents timetrack approvals              # every write that waits now: id, asker, op, asked at, what it writes
+{%packageRunner%} ethlete-agents timetrack approval <id> --reject # reject one that waits, as the app's Reject button does
 ```
+
+A reject answers at once and writes nothing to Jira or Tempo; an item that no longer waits is
+refused and stays as it is. Reject only what the user asked you to, or a write you queued by
+mistake. **There is no approve command and never will be: only the user approves, in the app.**
 
 Tell the user a request waits in Timetrack, then read `approval` once they say they decided -
 do not poll in a loop. A request that is still waiting at the end of the day it was asked on
@@ -65,6 +71,8 @@ nobody can rotate.
 | `sync <YYYY-MM-DD>`                        | The user asks what a Tempo sync of a day would write, or asks to sync it    |
 | `worklog --delete <id> --day <YYYY-MM-DD>` | The user asked you to delete one of their own Tempo worklogs                |
 | `approval <id>`                            | A write you queued: whether the user approved it, and what it answered      |
+| `approvals`                                | You need what waits in the queue, from every caller                         |
+| `approval <id> --reject`                   | The user asked you to drop a waiting write, or you queued one by mistake    |
 
 `git-flow start` uses the same channel, so a branch is named from the real issue rather than
 from a key you typed. Follow the repository's branch workflow when creating a branch.

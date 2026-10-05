@@ -5,6 +5,7 @@ import {
   AgentApiAnswer,
   AgentApiApprovalStatus,
   AgentApiQueued,
+  AgentApiWaitingApproval,
   AgentApproval,
   AgentApprovalRequest,
   approvableByAll,
@@ -14,7 +15,9 @@ import {
   localDayKey,
   markApproval,
   openApprovalFor,
+  rejectApproval,
   settleApprovalQueue,
+  waitingApprovalsOf,
   withStaleStandInCreatesExpired,
 } from '@ethlete/timetrack';
 import {
@@ -217,9 +220,34 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     reject: (id: string) => {
       settle();
 
-      if (find(id)?.state === 'queued')
-        change(markApproval(queue(), { id, state: 'rejected', decidedAtMs: Date.now() }));
+      const rejected = rejectApproval(queue(), { id, decidedAtMs: Date.now() });
+
+      if (rejected.ok) change(rejected.queue);
     },
+
+    waitingList$: (): Observable<AgentApiWaitingApproval[]> =>
+      whenLoaded$.pipe(
+        map(() => {
+          settle();
+
+          return waitingApprovalsOf(queue());
+        }),
+      ),
+
+    reject$: (id: string): Observable<AgentApiApprovalStatus> =>
+      whenLoaded$.pipe(
+        map(() => {
+          settle();
+
+          const rejected = rejectApproval(queue(), { id, decidedAtMs: Date.now() });
+
+          if (!rejected.ok) throw new Error(rejected.message);
+
+          change(rejected.queue);
+
+          return { status: 'rejected', approvalId: id };
+        }),
+      ),
 
     finish: (id: string, answer: AgentApiAnswer) =>
       change(

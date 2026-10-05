@@ -60,6 +60,46 @@ test.describe('a write an agent asks for', () => {
     });
   });
 
+  test('lists a waiting write and rejects it through the endpoint, as the Reject press does', async ({ page }) => {
+    const heading = page.locator('ethlete-day-review header h2');
+
+    await expect(heading).toBeVisible();
+
+    const shown = await heading.textContent();
+    const id = queuedId(await askAgent(page, CREATE));
+
+    expect(await askAgent(page, { op: 'approvals.list' })).toEqual({
+      ok: true,
+      value: [
+        {
+          approvalId: id,
+          state: 'queued',
+          op: 'jira.create',
+          client: 'Claude Code',
+          askedAtMs: expect.any(Number),
+          summary: 'Files a Jira issue in ABC: Pdf export',
+        },
+      ],
+    });
+    expect(await askAgent(page, { op: 'approval.reject', id })).toEqual({
+      ok: true,
+      value: { status: 'rejected', approvalId: id },
+    });
+    expect(await askAgent(page, { op: 'approval.status', id })).toEqual({
+      ok: true,
+      value: { status: 'rejected', approvalId: id },
+    });
+    expect(await askAgent(page, { op: 'approvals.list' })).toEqual({ ok: true, value: [] });
+    await expect(page.getByRole('button', { name: 'Review requests' })).toBeHidden();
+    await expect(heading).toHaveText(shown ?? '');
+    expect((await readBackend(page)).jira.created).toEqual([]);
+
+    expect(await askAgent(page, { op: 'approval.reject', id })).toEqual({
+      ok: false,
+      message: `Approval ${id} is rejected already, so it waits for nothing. Nothing changed.`,
+    });
+  });
+
   test('approve all skips the tempo sync', async ({ page }) => {
     const created = queuedId(await askAgent(page, CREATE));
     const synced = queuedId(await askAgent(page, { op: 'tempo.sync', day: E2E_DAY_KEY, planHash: 'confirmed' }));

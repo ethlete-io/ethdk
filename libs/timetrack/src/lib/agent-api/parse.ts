@@ -108,7 +108,8 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     op === 'jira.instance' ||
     op === 'settings.rules' ||
     op === 'standIn.list' ||
-    op === 'lane.issues'
+    op === 'lane.issues' ||
+    op === 'approvals.list'
   )
     return { ok: true, request: { op } };
 
@@ -126,7 +127,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return id ? { ok: true, request: { op, id } } : missing(op, 'id');
   }
 
-  if (op === 'approval.status') {
+  if (op === 'approval.status' || op === 'approval.reject') {
     const id = asText(raw['id']);
 
     return id ? { ok: true, request: { op, id } } : missing(op, 'id');

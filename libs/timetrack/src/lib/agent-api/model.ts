@@ -513,6 +513,8 @@ export type AgentApiRequest =
   | { op: 'calendar.events'; from: string; to: string }
   | { op: 'lane.issues' }
   | { op: 'approval.status'; id: string }
+  | { op: 'approvals.list' }
+  | { op: 'approval.reject'; id: string }
   | {
       op: 'agentSessions.resync';
       paths: string[];
@@ -559,7 +561,8 @@ export type AgentApiLaneIssues = {
 export type AgentApiOp = AgentApiRequest['op'];
 
 /**
- * How much consent an op needs: `read` answers while unlocked, `local` changes only this machine's
+ * How much consent an op needs: `read` answers at once while unlocked and writes nothing to Jira,
+ * Tempo or a day (`approval.reject` only drops a waiting write), `local` changes only this machine's
  * day or settings, `external` writes to Jira, and `human-only` waits for the user's own press.
  */
 export type OpClass = 'read' | 'local' | 'external' | 'human-only';
@@ -590,6 +593,8 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'calendar.events': 'read',
   'lane.issues': 'read',
   'approval.status': 'read',
+  'approvals.list': 'read',
+  'approval.reject': 'read',
   'agentSessions.resync': 'local',
 };
 

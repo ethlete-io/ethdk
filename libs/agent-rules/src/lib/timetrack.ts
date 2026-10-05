@@ -631,3 +631,23 @@ export const timetrackApplyStandInSplit = (options: Parameters<typeof timetrackS
 /** Where a write this caller queued stands, and what it answered once the user approved it. */
 export const timetrackApprovalStatus = (id: string) =>
   askTimetrack<TimetrackApprovalStatus>({ op: 'approval.status', id });
+
+/** One write that still waits in the app. `running` was approved and is being carried out. */
+export type TimetrackWaitingApproval = {
+  approvalId: string;
+  state: 'queued' | 'running';
+  op: string;
+  client?: string;
+  askedAtMs: number;
+  summary: string;
+};
+
+/** The writes that wait in the app now, from every caller, in the order its queue panel lists them. */
+export const timetrackApprovals = () => askTimetrack<TimetrackWaitingApproval[]>({ op: 'approvals.list' });
+
+/**
+ * Rejects one write that waits, as the user's Reject press does, and answers at once. The app refuses an
+ * item that no longer waits. There is no approving counterpart: only the user approves, in the app.
+ */
+export const timetrackRejectApproval = (id: string) =>
+  askTimetrack<TimetrackApprovalStatus>({ op: 'approval.reject', id });

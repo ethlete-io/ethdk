@@ -793,6 +793,10 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return resyncAgentSessions$(request);
       case 'approval.status':
         return approvals.status$(request.id);
+      case 'approvals.list':
+        return approvals.waitingList$();
+      case 'approval.reject':
+        return approvals.reject$(request.id);
     }
   };
 

@@ -386,3 +386,48 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       return request.op;
   }
 };
+
+/** One item that still waits, as `approvals.list` answers it. `running` was approved and is being carried out. */
+export type AgentApiWaitingApproval = {
+  approvalId: string;
+  state: 'queued' | 'running';
+  op: AgentApprovalRequest['op'];
+  client?: string;
+  askedAtMs: number;
+  /** What it writes once approved, in the words of the queue panel. */
+  summary: string;
+};
+
+/** The items that still wait, in the order the queue panel lists them. */
+export const waitingApprovalsOf = (queue: readonly AgentApproval[]): AgentApiWaitingApproval[] =>
+  queue
+    .filter((item) => item.state === 'queued' || item.state === 'running')
+    .map((item) => ({
+      approvalId: item.id,
+      state: item.state === 'running' ? 'running' : 'queued',
+      op: item.request.op,
+      ...(item.client ? { client: item.client } : {}),
+      askedAtMs: item.askedAtMs,
+      summary: describeApproval(item.request),
+    }));
+
+export type AgentApprovalRejection = { ok: true; queue: AgentApproval[] } | { ok: false; message: string };
+
+/** Rejects one item that waits for the user's press. Any other item is refused, and the queue stays as it is. */
+export const rejectApproval = (
+  queue: readonly AgentApproval[],
+  options: { id: string; decidedAtMs: number },
+): AgentApprovalRejection => {
+  const { id } = options;
+  const item = queue.find((entry) => entry.id === id);
+
+  if (!item) return { ok: false, message: `Timetrack holds no approval ${id}. Nothing changed.` };
+  if (item.state === 'running') {
+    return { ok: false, message: `Approval ${id} was approved and is being carried out. Nothing changed.` };
+  }
+  if (item.state !== 'queued') {
+    return { ok: false, message: `Approval ${id} is ${item.state} already, so it waits for nothing. Nothing changed.` };
+  }
+
+  return { ok: true, queue: markApproval(queue, { id, state: 'rejected', decidedAtMs: options.decidedAtMs }) };
+};

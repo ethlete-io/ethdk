@@ -199,6 +199,27 @@ test.describe('auto mode on a stand-in whose issue is done but still logged on',
     await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'rejected');
     await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
   });
+
+  test('reads rejected once an agent rejects the card through the endpoint', async ({ page }) => {
+    await expect(doneApply(page)).toBeVisible();
+
+    const listed = await askAgent(page, { op: 'approvals.list' });
+
+    expect(listed).toEqual({
+      ok: true,
+      value: [expect.objectContaining({ op: 'autoMode.apply', client: 'auto mode' })],
+    });
+
+    const [apply] = (listed as { value: { approvalId: string }[] }).value;
+
+    expect(await askAgent(page, { op: 'approval.reject', id: apply?.approvalId })).toMatchObject({ ok: true });
+    await expect(doneApply(page)).toBeHidden();
+
+    const readout = await openAutoModeReadout(page);
+
+    await expect(readout.locator('[data-auto-entry^="stand-in:"]')).toHaveAttribute('data-status', 'rejected');
+    await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
 });
 
 test.describe('a class the settings make stricter', () => {

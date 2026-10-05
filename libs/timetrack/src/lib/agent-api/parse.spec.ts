@@ -90,6 +90,15 @@ describe('parseAgentRequest', () => {
     expect(parseAgentRequest({ op: 'approval.status' })).toEqual({ ok: false, message: 'approval.status needs a id.' });
   });
 
+  it('takes the approval list op, and the reject op with the id it names', () => {
+    expect(parseAgentRequest({ op: 'approvals.list' })).toEqual({ ok: true, request: { op: 'approvals.list' } });
+    expect(parseAgentRequest({ op: 'approval.reject', id: ' a1 ' })).toEqual({
+      ok: true,
+      request: { op: 'approval.reject', id: 'a1' },
+    });
+    expect(parseAgentRequest({ op: 'approval.reject' })).toEqual({ ok: false, message: 'approval.reject needs a id.' });
+  });
+
   it('takes the agent session resync op with its checkouts', () => {
     expect(parseAgentRequest({ op: 'agentSessions.resync', paths: [' /home/a ', '', 3] })).toEqual({
       ok: true,

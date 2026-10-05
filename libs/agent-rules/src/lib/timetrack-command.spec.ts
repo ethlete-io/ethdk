@@ -822,3 +822,102 @@ describe('timetrack project', () => {
     expect(bodies.find((body) => body['op'] === 'repo.project')?.['repoPath']).toBe('/api');
   });
 });
+
+describe('timetrack approvals', () => {
+  const recordingBodies = (value: unknown) => {
+    const bodies: Record<string, unknown>[] = [];
+    const handler: Handler = (request, response) => {
+      let body = '';
+
+      request.on('data', (chunk) => (body += chunk));
+      request.on('end', () => {
+        bodies.push(JSON.parse(body) as Record<string, unknown>);
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify(value));
+      });
+    };
+
+    return { handler, bodies };
+  };
+
+  const askedAtMs = new Date(2026, 9, 5, 9, 7).getTime();
+
+  it('lists what waits, with the asker, the op, when it was asked and what it writes', async () => {
+    const { handler, bodies } = recordingBodies({
+      ok: true,
+      value: [
+        {
+          approvalId: 'a1',
+          state: 'queued',
+          op: 'jira.create',
+          client: 'Claude Code',
+          askedAtMs,
+          summary: 'Files a Jira issue in ABC: Pdf export',
+        },
+        {
+          approvalId: 'a2',
+          state: 'running',
+          op: 'tempo.sync',
+          askedAtMs,
+          summary: 'Writes the plan of 2026-10-05 to Tempo',
+        },
+      ],
+    });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['approvals'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'approvals.list' }]);
+    expect(lines).toEqual([
+      "2 wait(s) for the user's approval in Timetrack. Only the user approves one, in the app.",
+      '  a1  Claude Code  jira.create  asked 2026-10-05 09:07  Files a Jira issue in ABC: Pdf export',
+      '  a2  CLI  tempo.sync  asked 2026-10-05 09:07  Writes the plan of 2026-10-05 to Tempo  (approved, carrying it out)',
+    ]);
+  });
+
+  it('says so when nothing waits', async () => {
+    const { handler } = recordingBodies({ ok: true, value: [] });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['approvals'])).resolves.toBe(0);
+    expect(lines).toEqual(["Nothing waits for the user's approval in Timetrack."]);
+  });
+
+  it('asks the app to reject the one item, and prints that nothing was written', async () => {
+    const { handler, bodies } = recordingBodies({ ok: true, value: { status: 'rejected', approvalId: 'a1' } });
+
+    await withEndpoint(handler);
+
+    const lines = printedLines();
+
+    await expect(run(['approval', 'a1', '--reject'])).resolves.toBe(0);
+    expect(bodies).toEqual([{ op: 'approval.reject', id: 'a1' }]);
+    expect(lines).toEqual(['a1  rejected. Nothing was written.']);
+  });
+
+  it('fails with the app refusal for an item that no longer waits', async () => {
+    const { handler } = recordingBodies({
+      ok: false,
+      message: 'Approval a1 is approved already, so it waits for nothing. Nothing changed.',
+    });
+
+    await withEndpoint(handler);
+    printedLines();
+
+    await expect(run(['approval', 'a1', '--reject'])).rejects.toThrow(/waits for nothing/);
+  });
+
+  it('names the reject and no approve in its help', async () => {
+    const lines = printedLines();
+
+    await expect(run(['--help'])).resolves.toBe(0);
+    expect(lines.join('\n')).toContain('timetrack approval <id> --reject');
+    expect(lines.join('\n')).toContain('only the user approves one, in the app');
+    expect(lines.join('\n')).not.toMatch(/--approve/);
+  });
+});
