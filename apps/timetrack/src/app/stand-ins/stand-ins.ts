@@ -13,6 +13,8 @@ import {
   localDayKey,
   standInAge,
   standInHeldMs,
+  standInWaitingDays,
+  WriteSource,
   ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
 import { catchError, combineLatest, forkJoin, map, of, switchMap, tap, timer } from 'rxjs';
@@ -96,8 +98,35 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   /** The days an open stand-in holds bands on, which is the only work the held time has to total. */
   const daysToTotal = computed(() => [...new Set(open().flatMap((standIn) => standIn.days))].sort());
 
+  /**
+   * The days an open stand-in holds that Tempo already holds work on: written by this app, or read
+   * from Tempo when the day was last opened. The stored coverage is read, not Tempo itself, so the list
+   * costs no network call per day.
+   */
+  const bookedDays = toSignal(
+    toObservable(daysToTotal).pipe(
+      switchMap((days) =>
+        days.length
+          ? forkJoin(
+              days.map((day) =>
+                forkJoin({
+                  ledger: ledgerEntriesForRange$({
+                    ledger: ports.ledger,
+                    day: day,
+                    boundary: dayBoundaryOf(settings.settings()),
+                  }).pipe(catchError(() => of([]))),
+                  coverage: ports.coverage.forDay$(day).pipe(catchError(() => of(null))),
+                }).pipe(map(({ ledger, coverage }) => (ledger.length || coverage?.issues.length ? day : null))),
+              ),
+            ).pipe(map((answers) => new Set(answers.filter((day): day is string => !!day))))
+          : of(new Set<string>()),
+      ),
+    ),
+    { initialValue: new Set<string>() },
+  );
+
   const heldProbe = computed(() => ({
-    days: daysToTotal(),
+    days: daysToTotal().filter((day) => !bookedDays().has(day)),
     settings: settings.settings(),
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
@@ -137,6 +166,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const ages = computed(() => {
     const rows = heldRows();
+    const booked = bookedDays();
     const limits = settings.settings().standIn;
     const at = now();
 
@@ -145,6 +175,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
         standIn.id,
         standInAge({
           standIn,
+          bookedDays: booked,
           heldMs: standInHeldMs({ id: standIn.id, rows }),
           now: at,
           overdueAfterWorkdays: limits.overdueAfterWorkdays,
@@ -153,33 +184,6 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ]),
     );
   });
-
-  /**
-   * The days an open stand-in holds that Tempo already holds work on: written by this app, or read
-   * from Tempo when the day was last opened. The stored coverage is read, not Tempo itself, so the list
-   * costs no network call per day.
-   */
-  const bookedDays = toSignal(
-    toObservable(daysToTotal).pipe(
-      switchMap((days) =>
-        days.length
-          ? forkJoin(
-              days.map((day) =>
-                forkJoin({
-                  ledger: ledgerEntriesForRange$({
-                    ledger: ports.ledger,
-                    day: day,
-                    boundary: dayBoundaryOf(settings.settings()),
-                  }).pipe(catchError(() => of([]))),
-                  coverage: ports.coverage.forDay$(day).pipe(catchError(() => of(null))),
-                }).pipe(map(({ ledger, coverage }) => (ledger.length || coverage?.issues.length ? day : null))),
-              ),
-            ).pipe(map((answers) => new Set(answers.filter((day): day is string => !!day))))
-          : of(new Set<string>()),
-      ),
-    ),
-    { initialValue: new Set<string>() },
-  );
 
   const booked = computed(() => {
     const days = bookedDays();
@@ -222,6 +226,8 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     stale,
     /** The ids of the open stand-ins whose every day is already in Tempo. The list files them as hidden. */
     booked,
+    bookedDays,
+    waitingDays: (standIn: Pick<StandIn, 'days'>) => standInWaitingDays({ standIn, bookedDays: bookedDays() }),
     hide: (id: string) => hide([id]),
     show: (id: string) => settings.setStandInsHidden([id], ''),
     hideStale: () => hide([...stale()].filter((id) => !hidden().has(id))),
@@ -232,15 +238,21 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     /**
      * Names the issue the work turned out to be. Every rule that pointed at the stand-in takes the key,
-     * so every band on every day it held follows without a stored day being rewritten.
+     * so its bands on every day Tempo does not hold yet follow without a stored day being rewritten.
      */
-    resolve: (options: { id: string; issueKey: string }) => {
+    resolve: (options: { id: string; issueKey: string; source?: WriteSource }) => {
       const issueKey = options.issueKey.trim().toUpperCase();
 
       if (!issueKey) return;
 
-      settings.resolveStandIn({ id: options.id, issueKey });
+      settings.resolveStandIn({ ...options, issueKey, bookedDays: bookedDays() });
     },
+
+    setIssue: (options: { id: string; issueKey: string }) =>
+      settings.setStandInIssue({ ...options, bookedDays: bookedDays() }),
+
+    resolveKeyedByHand: (rows: Parameters<typeof settings.resolveStandInsKeyedByHand>[0]) =>
+      settings.resolveStandInsKeyedByHand(rows, bookedDays()),
 
     reopen: (id: string) => settings.reopenStandIn(id),
 

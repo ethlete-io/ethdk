@@ -6,6 +6,7 @@ import { catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectStandIns } from './stand-ins';
 
 const keyedRowsOf = (edits: DayReviewEdits | null) =>
   edits ? [...edits.pinned, ...Object.values(edits.overrides)] : [];
@@ -18,6 +19,7 @@ const STAND_IN_PINS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const dayReview = injectDayReview();
+  const standIns = injectStandIns();
 
   const openDays = computed(() =>
     [
@@ -41,7 +43,7 @@ const STAND_IN_PINS_DEF = /* @__PURE__ */ defineRootProvider(() => {
             )
           : of([]),
       ),
-      tap((rows) => settings.resolveStandInsKeyedByHand(rows)),
+      tap((rows) => standIns.resolveKeyedByHand(rows)),
       takeUntilDestroyed(),
     )
     .subscribe();
@@ -51,7 +53,7 @@ const STAND_IN_PINS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     const rows = dayReview.rows();
 
-    untracked(() => settings.resolveStandInsKeyedByHand(rows));
+    untracked(() => standIns.resolveKeyedByHand(rows));
   });
 
   return {};

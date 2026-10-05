@@ -69,6 +69,7 @@ import {
   removeManualRow,
   resetRow,
   reviewDay,
+  settingsOnDay,
   runReasoning$,
   setRowDescription,
   setRowDuration,
@@ -384,9 +385,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
   const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
 
+  const daySettings = computed(() => settingsOnDay({ settings: settings.settings(), day: day() }));
+
   const rowOptions = computed(() => ({
     ...dayRowsOptionsOf({
-      settings: settings.settings(),
+      settings: daySettings(),
       patterns: recurring.patterns(),
       epics: epics.optionsFor(day()),
       through: evidence()?.through,
@@ -412,7 +415,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           events: collected.events,
           options: streamDayOptionsOf({
             repoRoots: discovery.repos,
-            settings: settings.settings(),
+            settings: daySettings(),
             links: projectLinks(),
             worktrees: git.worktrees(),
             patterns: recurring.patterns(),
@@ -565,8 +568,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           rows,
           edits: edits(),
           cut: rowOptions().cut,
-          standIns: settings.settings().standIns,
-          rules: settings.settings().attributionRules,
+          standIns: daySettings().standIns,
+          rules: daySettings().attributionRules,
           check: {
             targetMs: targetMs(),
             coveredMs: coveredMsOf(coverage()),

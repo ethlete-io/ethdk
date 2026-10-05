@@ -93,6 +93,7 @@ import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
+import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectDayReview } from './day-review';
 import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
@@ -172,6 +173,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const windowLock = injectWindowLock();
   const recurring = injectRecurringPatterns();
+  const standInStore = injectStandIns();
   const jobs$ = new Subject<Job>();
   const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
@@ -391,6 +393,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       maskedNames: current.reasoning.maskedNames,
       parents: issues?.parents ?? [],
       issues: issues ? matchCandidatesOf(issues) : [],
+      bookedDays: standInStore.bookedDays(),
     });
   };
 
@@ -460,7 +463,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (outcome.kind === 'match') {
       if (appliesOn(day)(answer)) {
-        settings.resolveStandIn({ id: subject.standInId, issueKey: outcome.issueKey, source: 'auto' });
+        standInStore.resolve({ id: subject.standInId, issueKey: outcome.issueKey, source: 'auto' });
       }
     } else if (
       outcome.kind === 'draft' &&
@@ -909,7 +912,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
 
         if (request.subject.kind === 'stand-in') {
-          settings.resolveStandIn({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
+          standInStore.resolve({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
         }
 
         return EMPTY;
@@ -939,7 +942,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               const { subject } = entry.answer;
 
               if (subject.kind === 'stand-in') {
-                settings.resolveStandIn({ id: subject.standInId, issueKey: entry.issueKey, source: 'auto' });
+                standInStore.resolve({ id: subject.standInId, issueKey: entry.issueKey, source: 'auto' });
               } else if (enabled() && dayReview.isToday()) {
                 dayReview.applyAutoModeNames(appliesOn(dayReview.dayKey()));
               }

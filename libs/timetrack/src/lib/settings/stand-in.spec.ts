@@ -7,6 +7,7 @@ import {
   reopenStandIn,
   splitStandIn,
   resolveStandIn,
+  settingsOnDay,
   withNamedStandIn,
   withRenamedStandIn,
   withStandIn,
@@ -480,6 +481,58 @@ describe('withStandInIssue', () => {
       { kind: 'issue', issueKey: 'FIP-200' },
       { kind: 'issue', issueKey: 'FIP-100' },
     ]);
+  });
+});
+
+describe('a resolve of a stand-in with days Tempo already holds', () => {
+  const BOOKED = new Set(['2026-09-02', '2026-09-03']);
+  const held = () => settingsWith({ standIns: [standIn({ days: ['2026-09-02', '2026-09-03', '2026-10-05'] })] });
+
+  it('records the booked days it covers', () => {
+    const settings = resolveStandIn({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-100', bookedDays: BOOKED });
+
+    expect(settings.standIns[0]?.bookedDays).toEqual(['2026-09-02', '2026-09-03']);
+  });
+
+  it('records none when Tempo holds none of its days', () => {
+    const settings = resolveStandIn({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-100', bookedDays: new Set() });
+
+    expect(settings.standIns[0]?.bookedDays).toBeUndefined();
+  });
+
+  it('reads as open with its rule on a booked day, and as the issue on any other', () => {
+    const settings = resolveStandIn({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-100', bookedDays: BOOKED });
+    const booked = settingsOnDay({ settings, day: '2026-09-02' });
+    const waiting = settingsOnDay({ settings, day: '2026-10-05' });
+
+    expect(booked.standIns[0]).toMatchObject({ state: 'open', issueKey: undefined });
+    expect(booked.attributionRules[0]?.target).toEqual({ kind: 'stand-in', standInId: 'stand-in-1' });
+    expect(waiting).toBe(settings);
+    expect(waiting.attributionRules[0]?.target).toEqual({ kind: 'issue', issueKey: 'FIP-100' });
+  });
+
+  it('forgets the booked days once undone', () => {
+    const resolved = resolveStandIn({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-100', bookedDays: BOOKED });
+
+    expect(reopenStandIn({ settings: resolved, id: 'stand-in-1' }).standIns[0]?.bookedDays).toBeUndefined();
+  });
+
+  it('keeps the booked days of the first resolve when moved to another issue', () => {
+    const resolved = resolveStandIn({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-100', bookedDays: BOOKED });
+    const settings = withStandInIssue({
+      settings: resolved,
+      id: 'stand-in-1',
+      issueKey: 'FIP-200',
+      bookedDays: new Set([...BOOKED, '2026-10-05']),
+    });
+
+    expect(settings.standIns[0]).toMatchObject({ issueKey: 'FIP-200', bookedDays: ['2026-09-02', '2026-09-03'] });
+  });
+
+  it('records the booked days when an open one is resolved by its issue', () => {
+    const settings = withStandInIssue({ settings: held(), id: 'stand-in-1', issueKey: 'FIP-200', bookedDays: BOOKED });
+
+    expect(settings.standIns[0]?.bookedDays).toEqual(['2026-09-02', '2026-09-03']);
   });
 });
 

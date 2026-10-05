@@ -4,7 +4,7 @@ import { ReasoningOptions } from '../reason/model';
 import { PseudonymMap, maskIssueKey, maskNames, pseudonymMap, unmaskNames } from '../reason/pseudonym';
 import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../model/attribution';
-import { StandIn } from '../model/stand-in';
+import { StandIn, standInWaitingDays } from '../model/stand-in';
 import { JiraIssue } from '../jira/issue';
 import { SpecHeader } from './spec';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
@@ -286,16 +286,19 @@ export const standInWritingRequest = (options: {
   spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
   maskedNames?: readonly string[];
+  /** The days Tempo already holds. Only the days it does not hold are counted as waiting. */
+  bookedDays?: ReadonlySet<string>;
 }): TicketWritingRequest => {
   const map = pseudonymMap(options.maskedNames ?? []);
   const description = masked({ text: options.standIn.description, map });
+  const days = standInWaitingDays({ standIn: options.standIn, bookedDays: options.bookedDays ?? new Set() });
   const spec = maskedSpec({ spec: options.spec, map });
 
   return {
     standIn: {
       name: maskNames({ text: options.standIn.name, map }),
       ...(description ? { description } : {}),
-      days: options.standIn.days.length,
+      days: days.length,
     },
     notes: [],
     ...(spec ? { spec } : {}),

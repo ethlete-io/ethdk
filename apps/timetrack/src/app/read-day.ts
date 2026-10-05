@@ -18,6 +18,7 @@ import {
   pauseWindows,
   pausedMs,
   reviewDay,
+  settingsOnDay,
   streamDay,
 } from '@ethlete/timetrack';
 import { Observable, combineLatest, map } from 'rxjs';
@@ -67,7 +68,8 @@ export type DayReadOptions = {
  * subscription would make each of them wait for the others.
  */
 export const readDay$ = (options: DayReadOptions & { day: string }): Observable<DayRead> => {
-  const { ports, settings, day: key } = options;
+  const { ports, day: key } = options;
+  const settings = settingsOnDay({ settings: options.settings, day: key });
   const boundary = dayBoundaryOf(settings);
   const { from, to } = localDayRange(key, boundary);
 

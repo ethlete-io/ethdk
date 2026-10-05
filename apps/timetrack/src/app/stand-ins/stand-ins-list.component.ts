@@ -1,7 +1,14 @@
 import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { BUTTON_IMPORTS, EMPTY_STATE_IMPORTS, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { StandIn, formatDurationMs, standInDuplicateOf, standInJoinTargets, standInWhere } from '@ethlete/timetrack';
+import {
+  StandIn,
+  formatDurationMs,
+  standInDuplicateOf,
+  standInJoinTargets,
+  standInWaitingDays,
+  standInWhere,
+} from '@ethlete/timetrack';
 import { CreateTicketComponent } from '../day-review/create-ticket.component';
 import { formatDayRangeLabel, formatWeekdayLabel } from '../day-review/format';
 import { injectTicketDraft } from '../day-review/ticket-draft';
@@ -257,7 +264,11 @@ export class StandInsListComponent {
           id: standIn.id,
           standIn,
           projectKey: standIn.projectKey ?? '',
-          meta: [standIn.projectKey, age?.heldMs ? `${formatDurationMs(age.heldMs)} held` : '', daysLabel(standIn)]
+          meta: [
+            standIn.projectKey,
+            age?.heldMs ? `${formatDurationMs(age.heldMs)} held` : '',
+            daysLabel(this.labelledDays(standIn, booked)),
+          ]
             .filter(Boolean)
             .join(' · '),
           where: standInWhere(standIn),
@@ -296,19 +307,27 @@ export class StandInsListComponent {
   protected resolve(id: string, issueKey: string) {
     if (issueKey) this.store.resolve({ id, issueKey });
   }
+
+  private labelledDays(standIn: StandIn, booked: ReadonlySet<string>) {
+    if (standIn.state === 'resolved') {
+      return standInWaitingDays({ standIn, bookedDays: new Set(standIn.bookedDays ?? []) });
+    }
+
+    return booked.has(standIn.id) ? standIn.days : this.store.waitingDays(standIn);
+  }
 }
 
-/** The days a stand-in holds bands on, which are the days a resolve makes bookable. */
-const daysLabel = (standIn: StandIn) => {
-  const count = standIn.days.length;
+/** The days a stand-in holds bands on that Tempo does not hold, which are the days a resolve makes bookable. */
+const daysLabel = (days: readonly string[]) => {
+  const count = days.length;
 
   if (!count) return 'no day yet';
 
-  const first = standIn.days[0] as string;
+  const first = days[0] as string;
 
   return count === 1
     ? `on ${formatWeekdayLabel(first)}`
-    : `${count} days, ${formatDayRangeLabel(first, standIn.days[count - 1] as string)}`;
+    : `${count} days, ${formatDayRangeLabel(first, days[count - 1] as string)}`;
 };
 
 const staleLabel = (standIn: StandIn) => {

@@ -94,6 +94,7 @@ import { LANE_ISSUE_WINDOW_DAYS } from '../jira';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectProjectLinks } from '../project-links';
+import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectTempoSync } from '../sync/sync';
 import { injectWindowLock } from '../window-lock';
 import { injectAgentDay } from './agent-day';
@@ -141,6 +142,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windowLock = injectWindowLock();
   const approvals = injectApprovalQueue();
   const autoMode = injectAutoMode();
+  const standInStore = injectStandIns();
   const destroyRef = inject(DestroyRef);
   const agentSessionCollectors = [injectAgentSessionCollector(), injectCodexSessionCollector()];
   const agentSpendBackfills = [injectAgentSpendBackfill(), injectCodexSpendBackfill()];
@@ -641,7 +643,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         projectKey: standIn.projectKey,
         state: standIn.state,
         issueKey: standIn.issueKey,
-        days: [...standIn.days],
+        days: standIn.state === 'open' ? standInStore.waitingDays(standIn) : [...standIn.days],
         author: standIn.author,
         createdAtMs: standIn.createdAt.getTime(),
         openedFor: standIn.openedFor,
@@ -716,7 +718,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!settings.settings().standIns.some((standIn) => standIn.id === request.id))
       return throwError(() => new Error(`Timetrack holds no stand-in ${request.id}.`));
 
-    settings.setStandInIssue({ id: request.id, issueKey: request.issueKey });
+    standInStore.setIssue({ id: request.id, issueKey: request.issueKey });
 
     const resolved = settings.settings().standIns.find((standIn) => standIn.id === request.id);
 

@@ -63,7 +63,8 @@ export class EditStandInWaitingComponent {
   });
 
   protected days = computed(() => {
-    const count = this.standIn()?.days.length ?? 0;
+    const standIn = this.standIn();
+    const count = standIn ? this.store.waitingDays(standIn).length : 0;
 
     return count === 1 ? '1 day' : `${count} days`;
   });

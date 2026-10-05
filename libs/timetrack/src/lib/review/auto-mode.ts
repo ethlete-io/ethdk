@@ -192,6 +192,8 @@ export const autoModeSubjectRequest = (options: {
   maskedNames: readonly string[];
   parents?: readonly JiraIssue[];
   issues?: readonly JiraIssue[];
+  /** The days Tempo already holds, which a stand-in's request does not count. */
+  bookedDays?: ReadonlySet<string>;
 }): TicketWritingRequest | null => {
   const { subject, maskedNames } = options;
   const jira = { parents: options.parents ?? [], issues: options.issues ?? [] };
@@ -199,7 +201,7 @@ export const autoModeSubjectRequest = (options: {
   if (subject.kind === 'stand-in') {
     const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
 
-    return standIn ? standInWritingRequest({ standIn, maskedNames, ...jira }) : null;
+    return standIn ? standInWritingRequest({ standIn, maskedNames, bookedDays: options.bookedDays, ...jira }) : null;
   }
 
   const context = options.contexts.find((entry) => entry.id === subject.contextId);

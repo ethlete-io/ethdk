@@ -251,6 +251,12 @@ describe('standInWritingRequest', () => {
     });
   });
 
+  it('counts only the days Tempo does not hold yet', () => {
+    const request = standInWritingRequest({ standIn: WAITING, bookedDays: new Set(['2026-09-10', '2026-09-11']) });
+
+    expect(request.standIn?.days).toBe(1);
+  });
+
   it('leaves out a description the stand-in never carried', () => {
     const request = standInWritingRequest({ standIn: { name: 'Invoice export', days: ['2026-09-10'] } });
 

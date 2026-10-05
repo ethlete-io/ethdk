@@ -399,12 +399,16 @@ const narrowedRules = (options: {
  * rules, so none of them is visited and no stored day is rewritten. An unknown id changes nothing.
  *
  * A rule the app opened for a whole checkout is narrowed as it is rewritten. See `narrowedRules`.
+ *
+ * `bookedDays` are the days Tempo already holds. The record keeps the ones it covers, and on those
+ * days `settingsOnDay` still reads it as open, so the resolve books none of them a second time.
  */
 export const resolveStandIn = (options: {
   settings: TimetrackSettings;
   id: string;
   issueKey: string;
   source?: WriteSource;
+  bookedDays?: ReadonlySet<string>;
 }): TimetrackSettings => {
   const { settings, id } = options;
   const source = options.source ?? 'human';
@@ -421,11 +425,21 @@ export const resolveStandIn = (options: {
       .map((rule) => [rule.id, narrowedRules({ rule, branches, issueKey })] as const),
   );
   const resolvedRuleIds = [...replacements.values()].flat().map((rule) => rule.id);
+  const bookedDays = standIn.days.filter((day) => options.bookedDays?.has(day));
 
   return {
     ...settings,
     standIns: settings.standIns.map((entry) =>
-      entry.id === id ? { ...entry, state: 'resolved', issueKey, resolvedRuleIds, resolutionSource: source } : entry,
+      entry.id === id
+        ? {
+            ...entry,
+            state: 'resolved',
+            issueKey,
+            resolvedRuleIds,
+            resolutionSource: source,
+            bookedDays: bookedDays.length ? bookedDays : undefined,
+          }
+        : entry,
     ),
     attributionRules: settings.attributionRules.flatMap((rule) => replacements.get(rule.id) ?? rule),
   };
@@ -438,6 +452,7 @@ export const resolveStandIn = (options: {
 export const withStandInsKeyedByHand = (options: {
   settings: TimetrackSettings;
   rows: readonly { standInId?: string; issueKey?: string; sources?: RowFieldSources }[];
+  bookedDays?: ReadonlySet<string>;
 }): TimetrackSettings =>
   options.rows.reduce((settings, row) => {
     const standIn = row.standInId ? findStandIn({ id: row.standInId, standIns: settings.standIns }) : undefined;
@@ -446,7 +461,13 @@ export const withStandInsKeyedByHand = (options: {
       return settings;
     if (!mayAutoWrite(standInResolutionSourceOf(standIn))) return settings;
 
-    return resolveStandIn({ settings, id: standIn.id, issueKey: row.issueKey, source: 'human' });
+    return resolveStandIn({
+      settings,
+      id: standIn.id,
+      issueKey: row.issueKey,
+      source: 'human',
+      bookedDays: options.bookedDays,
+    });
   }, options.settings);
 
 /**
@@ -476,7 +497,14 @@ export const reopenStandIn = (options: {
     ...settings,
     standIns: settings.standIns.map((entry) =>
       entry.id === id
-        ? { ...entry, state: 'open', issueKey: undefined, resolvedRuleIds: undefined, resolutionSource: source }
+        ? {
+            ...entry,
+            state: 'open',
+            issueKey: undefined,
+            resolvedRuleIds: undefined,
+            resolutionSource: source,
+            bookedDays: undefined,
+          }
         : entry,
     ),
     attributionRules: settings.attributionRules.map((rule) =>
@@ -488,17 +516,54 @@ export const reopenStandIn = (options: {
 /**
  * Resolves a stand-in to `issueKey` as the user, the way the list's pick does. A resolved one is
  * reopened first, as the list's Undo does, and then resolved to the new key in the same write.
+ *
+ * A resolved one keeps the booked days its first resolve recorded and ignores `bookedDays`: a day its
+ * old key reached Tempo on through this app is one the sync moves to the new key.
  */
 export const withStandInIssue = (options: {
   settings: TimetrackSettings;
   id: string;
   issueKey: string;
+  bookedDays?: ReadonlySet<string>;
 }): TimetrackSettings => {
   const { id, issueKey } = options;
   const standIn = options.settings.standIns.find((entry) => entry.id === id);
-  const reopened = standIn?.state === 'resolved' ? reopenStandIn({ settings: options.settings, id }) : options.settings;
+  const isResolved = standIn?.state === 'resolved';
+  const reopened = isResolved ? reopenStandIn({ settings: options.settings, id }) : options.settings;
+  const bookedDays = isResolved ? new Set(standIn.bookedDays ?? []) : options.bookedDays;
 
-  return resolveStandIn({ settings: reopened, id, issueKey, source: 'human' });
+  return resolveStandIn({ settings: reopened, id, issueKey, source: 'human', bookedDays });
+};
+
+/**
+ * The settings as one day reads them: a resolved stand-in reads as open on a day it recorded as booked,
+ * and the rules its resolve rewrote name it again there. Every reader that builds a day's rows passes
+ * its settings through this, or a resolve would hand time Tempo already holds to the new key.
+ */
+export const settingsOnDay = (options: { settings: TimetrackSettings; day: string }): TimetrackSettings => {
+  const { settings, day } = options;
+  const kept = settings.standIns.filter(
+    (standIn) => standIn.state === 'resolved' && !!standIn.bookedDays?.includes(day),
+  );
+
+  if (!kept.length) return settings;
+
+  const keptIds = new Set(kept.map((standIn) => standIn.id));
+  const ruleOwners = new Map(
+    kept.flatMap((standIn) => (standIn.resolvedRuleIds ?? []).map((rule) => [rule, standIn.id])),
+  );
+
+  return {
+    ...settings,
+    standIns: settings.standIns.map((standIn) =>
+      keptIds.has(standIn.id) ? { ...standIn, state: 'open', issueKey: undefined } : standIn,
+    ),
+    attributionRules: settings.attributionRules.map((rule) => {
+      const standInId = ruleOwners.get(rule.id);
+
+      return standInId ? { ...rule, target: { kind: 'stand-in', standInId } } : rule;
+    }),
+  };
 };
 
 /**

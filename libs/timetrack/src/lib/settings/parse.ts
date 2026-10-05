@@ -172,6 +172,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
   const resolvedRuleIds = asTextList(raw['resolvedRuleIds']);
   const heldOn = asTextList(raw['heldOn']);
   const mergedIds = asTextList(raw['mergedIds']);
+  const bookedDays = raw['state'] === 'resolved' && issueKey ? asTextList(raw['bookedDays']).sort() : [];
 
   return {
     id: asText(raw['id']) || `stand-in-${index}`,
@@ -190,6 +191,7 @@ const asStandIn = (value: unknown, index: number): StandIn | null => {
     resolutionSource: asFieldSource(raw['resolutionSource']),
     ...(parentKey ? { parentKey, parentSource: asFieldSource(raw['parentSource']) } : {}),
     days: asTextList(raw['days']).sort(),
+    bookedDays: bookedDays.length ? bookedDays : undefined,
     hiddenOn: asText(raw['hiddenOn']) || undefined,
     mergedIds: mergedIds.length ? mergedIds : undefined,
     author: asAuthor(raw['author']),

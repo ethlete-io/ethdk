@@ -364,6 +364,23 @@ describe('parseTimetrackSettings', () => {
     expect(settings.standIns.map((standIn) => standIn.resolutionSource)).toEqual(['auto', undefined]);
   });
 
+  it('reads back the booked days a resolve kept, and none on an open stand-in', () => {
+    const settings = parseTimetrackSettings({
+      standIns: [
+        {
+          id: 'stand-in-1',
+          name: 'Journey',
+          state: 'resolved',
+          issueKey: 'ABC-1',
+          bookedDays: ['2026-09-03', '2026-09-02'],
+        },
+        { id: 'stand-in-2', name: 'Ranking', state: 'open', bookedDays: ['2026-09-02'] },
+      ],
+    });
+
+    expect(settings.standIns.map((standIn) => standIn.bookedDays)).toEqual([['2026-09-02', '2026-09-03'], undefined]);
+  });
+
   it('reads back the day a stand-in was hidden on', () => {
     const settings = parseTimetrackSettings({
       standIns: [{ id: 'stand-in-1', name: 'Journey', state: 'open', hiddenOn: '2026-09-29' }],

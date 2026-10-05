@@ -48,6 +48,7 @@ import { Observable, Subject, catchError, exhaustMap, map, of, startWith, switch
 import { injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectDayReview } from './day-review';
+import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectProjectLinks } from '../project-links';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { NO_JIRA, ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
@@ -114,6 +115,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectLinks = injectProjectLinks();
   const dayReview = injectDayReview();
   const recurring = injectRecurringPatterns();
+  const standInStore = injectStandIns();
 
   const context = signal<UnnamedContext | null>(null);
   /**
@@ -537,7 +539,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ).pipe(
           map(({ created, move }): CreateStatus => {
             if (named) dayReview.nameContext(named, { kind: 'issue', issueKey: created.issueKey });
-            else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey: created.issueKey });
+            else if (waiting) standInStore.resolve({ id: waiting.id, issueKey: created.issueKey });
 
             return created.duplicate
               ? { kind: 'duplicate', issueKey: created.issueKey }
@@ -598,7 +600,15 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (unnamed) return ticketWritingRequest({ context: unnamed, notes: notes(), ...offered, ...framed, maskedNames });
 
-    return waiting ? standInWritingRequest({ standIn: waiting, ...offered, ...framed, maskedNames }) : null;
+    return waiting
+      ? standInWritingRequest({
+          standIn: waiting,
+          ...offered,
+          ...framed,
+          maskedNames,
+          bookedDays: standInStore.bookedDays(),
+        })
+      : null;
   };
 
   return {
@@ -832,7 +842,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       const waiting = standIn();
 
       if (named) dayReview.nameContext(named, { kind: 'issue', issueKey });
-      else if (waiting) settings.resolveStandIn({ id: waiting.id, issueKey });
+      else if (waiting) standInStore.resolve({ id: waiting.id, issueKey });
       else return;
 
       close();

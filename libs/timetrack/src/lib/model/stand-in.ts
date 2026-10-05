@@ -90,6 +90,12 @@ export type StandIn = {
    */
   days: string[];
   /**
+   * The days of `days` Tempo already held when it was resolved. The resolve made them no more bookable
+   * than they were: on them it still reads as open, so time the user booked by hand is not booked again.
+   * Written by the resolve and cleared by the undo.
+   */
+  bookedDays?: string[];
+  /**
    * The local day key the user hid it on. It stays hidden until it holds a band on a later day.
    * Only the pickers and the list read it: a hidden stand-in still names its bands.
    */
@@ -246,6 +252,10 @@ export const isStandInStale = (options: {
   return standIn.state === 'open' && workdaysBetween({ from, to: options.now }) >= options.afterWorkdays;
 };
 
+/** The days a stand-in holds bands on that Tempo does not hold yet, which are the only ones still waiting. */
+export const standInWaitingDays = (options: { standIn: Pick<StandIn, 'days'>; bookedDays: ReadonlySet<string> }) =>
+  options.standIn.days.filter((day) => !options.bookedDays.has(day));
+
 /**
  * Whether every day an open stand-in holds bands on is already booked in Tempo, so nothing waits on
  * its ticket. One with no day yet is never booked, and a band on a later, unbooked day brings it back.
@@ -253,10 +263,7 @@ export const isStandInStale = (options: {
 export const isStandInBooked = (options: {
   standIn: Pick<StandIn, 'state' | 'days'>;
   bookedDays: ReadonlySet<string>;
-}) =>
-  options.standIn.state === 'open' &&
-  options.standIn.days.length > 0 &&
-  options.standIn.days.every((day) => options.bookedDays.has(day));
+}) => options.standIn.state === 'open' && options.standIn.days.length > 0 && !standInWaitingDays(options).length;
 
 /**
  * Where a placeholder the app opened stands for its work: the checkout, then the narrowest thing the
@@ -333,8 +340,12 @@ export const standInBranches = (options: {
  */
 export const canReopenStandIn = (options: { standIn: StandIn; syncedDays: readonly string[] }) => {
   const synced = new Set(options.syncedDays);
+  const resolvedDays = standInWaitingDays({
+    standIn: options.standIn,
+    bookedDays: new Set(options.standIn.bookedDays ?? []),
+  });
 
-  return options.standIn.state === 'resolved' && !options.standIn.days.some((day) => synced.has(day));
+  return options.standIn.state === 'resolved' && !resolvedDays.some((day) => synced.has(day));
 };
 
 const DAY_MS = 86_400_000;
@@ -383,14 +394,22 @@ export type StandInAge = {
  * less is the user turning that one test off.
  */
 export const standInAge = (options: {
-  standIn: Pick<StandIn, 'state' | 'createdAt'>;
+  standIn: Pick<StandIn, 'state' | 'createdAt' | 'days'>;
   /** From `standInHeldMs`, totalled on demand. Nothing stores a running total — see ADR 0021. */
   heldMs: number;
   now: Date;
   overdueAfterWorkdays: number;
   overdueAfterMs: number;
+  /** The days Tempo already holds. A stand-in waits from its first day Tempo does not hold. */
+  bookedDays?: ReadonlySet<string>;
 }): StandInAge => {
-  const workdays = workdaysBetween({ from: options.standIn.createdAt, to: options.now });
+  const { standIn } = options;
+  const bookedDays = options.bookedDays ?? new Set<string>();
+  const firstWaiting = standIn.days.some((day) => bookedDays.has(day))
+    ? standInWaitingDays({ standIn, bookedDays })[0]
+    : undefined;
+  const from = firstWaiting ? new Date(`${firstWaiting}T12:00:00`) : standIn.createdAt;
+  const workdays = workdaysBetween({ from, to: options.now });
   const tooOld = options.overdueAfterWorkdays > 0 && workdays >= options.overdueAfterWorkdays;
   const tooLong = options.overdueAfterMs > 0 && options.heldMs >= options.overdueAfterMs;
 

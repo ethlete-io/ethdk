@@ -401,16 +401,23 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       branches?: readonly string[];
       baseBranches?: readonly string[];
     }) => apply(withStandInDay({ settings: settings(), ...options })),
-    resolveStandIn: (options: { id: string; issueKey: string; source?: WriteSource }) =>
-      apply(resolveStandIn({ settings: settings(), ...options })),
-    resolveStandInsKeyedByHand: (rows: Parameters<typeof withStandInsKeyedByHand>[0]['rows']) => {
+    resolveStandIn: (options: {
+      id: string;
+      issueKey: string;
+      source?: WriteSource;
+      bookedDays?: ReadonlySet<string>;
+    }) => apply(resolveStandIn({ settings: settings(), ...options })),
+    resolveStandInsKeyedByHand: (
+      rows: Parameters<typeof withStandInsKeyedByHand>[0]['rows'],
+      bookedDays?: ReadonlySet<string>,
+    ) => {
       const current = settings();
-      const next = withStandInsKeyedByHand({ settings: current, rows });
+      const next = withStandInsKeyedByHand({ settings: current, rows, bookedDays });
 
       if (next !== current) apply(next);
     },
     reopenStandIn: (id: string) => apply(reopenStandIn({ settings: settings(), id })),
-    setStandInIssue: (options: { id: string; issueKey: string }) =>
+    setStandInIssue: (options: { id: string; issueKey: string; bookedDays?: ReadonlySet<string> }) =>
       apply(withStandInIssue({ settings: settings(), ...options })),
     /** Hands a stand-in the user reopened back to auto mode. */
     resetStandInResolution: (id: string) => apply(withStandInResolutionReset({ settings: settings(), id })),

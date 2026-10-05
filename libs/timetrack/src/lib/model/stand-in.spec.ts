@@ -16,6 +16,7 @@ import {
   standInDuplicateOf,
   standInHeldMs,
   standInJoinTargets,
+  standInWaitingDays,
   standInWhere,
   workdaysBetween,
 } from './stand-in';
@@ -208,6 +209,13 @@ describe('canReopenStandIn', () => {
     expect(canReopenStandIn({ standIn: resolved, syncedDays: ['2026-09-15'] })).toBe(false);
   });
 
+  it('ignores a day Tempo held before the resolve, which the resolve never made bookable', () => {
+    const kept = { ...resolved, bookedDays: ['2026-09-14'] };
+
+    expect(canReopenStandIn({ standIn: kept, syncedDays: ['2026-09-14'] })).toBe(true);
+    expect(canReopenStandIn({ standIn: kept, syncedDays: ['2026-09-15'] })).toBe(false);
+  });
+
   it('refuses for a stand-in that was never resolved, because there is nothing to undo', () => {
     expect(canReopenStandIn({ standIn: standIn({ days: ['2026-09-14'] }), syncedDays: [] })).toBe(false);
   });
@@ -278,6 +286,19 @@ describe('standInAge', () => {
     expect(age({ standIn: { state: 'resolved' }, now: on(28) }).isOverdue).toBe(false);
   });
 
+  it('counts from the first day Tempo does not hold yet', () => {
+    const waiting = standInAge({
+      standIn: standIn({ createdAt: on(1), days: ['2026-09-01', '2026-09-02', '2026-09-14'] }),
+      bookedDays: new Set(['2026-09-01', '2026-09-02']),
+      heldMs: 0,
+      now: on(15),
+      overdueAfterWorkdays: 5,
+      overdueAfterMs: 0,
+    });
+
+    expect(waiting).toMatchObject({ workdays: 1, isOverdue: false });
+  });
+
   it('turns a limit off when it is zero', () => {
     const off = standInAge({
       standIn: standIn({ createdAt: MONDAY }),
@@ -319,6 +340,16 @@ describe('isStandInBooked', () => {
   it('never reads a stand-in with no day, or a resolved one, as booked', () => {
     expect(isStandInBooked({ standIn: standIn(), bookedDays })).toBe(false);
     expect(isStandInBooked({ standIn: standIn({ state: 'resolved', days: ['2026-09-23'] }), bookedDays })).toBe(false);
+  });
+});
+
+describe('standInWaitingDays', () => {
+  it('keeps only the days Tempo does not hold', () => {
+    const held = standIn({ days: ['2026-09-02', '2026-09-03', '2026-10-05'] });
+
+    expect(standInWaitingDays({ standIn: held, bookedDays: new Set(['2026-09-02', '2026-09-03']) })).toEqual([
+      '2026-10-05',
+    ]);
   });
 });
 
