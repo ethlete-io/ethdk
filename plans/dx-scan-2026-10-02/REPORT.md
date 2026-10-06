@@ -18,7 +18,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (38)
+## 2. Open user decisions (37)
 
 The domain file of each ID has the full problem and the proposed fix.
 
@@ -31,7 +31,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | QA-09   | Each query creates 10 `toObservable` effects. A lazy variant changes the first-emission timing. Needs a design (one shared watcher in place of one effect per signal).                                                    |
 | QA-13   | Move about 165 devtools-contract exports from `@ethlete/query` to a new entry point such as `@ethlete/query/devtools-contract`?                                                                                           |
 | QB-02   | The ws client does not follow the auth session. Add an `authProvider` option? Must a token rotation force a reconnect?                                                                                                    |
-| QB-12   | `latestExecutedQuery` / `latestNonInternalQuery`: move to the `subtle` namespace, or document them?                                                                                                                       |
 | TG-01   | `tableRowsFromQuery` owns its state. Accept external writable signals (`sort`, `filters`, `page`, `quickFilter`) and add `pageSize`? How does it interact with `isResetBy`?                                               |
 | TG-03   | Server sort/filter state is untyped. Options: (a) generic column key, (b) `sortKey`/`filterKey` on `TableColumn`, (c) a `filterValues<V>()` helper.                                                                       |
 | TG-04   | Add `CHART_LABELS` / `provideChartLabels` for the 15 English chart defaults? Which keys, and which key-hint signature?                                                                                                    |

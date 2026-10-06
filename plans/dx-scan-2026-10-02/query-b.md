@@ -272,7 +272,7 @@ setupAuthTest` in `libs/query/src/lib/auth/features/bearer-auth-persistent-auth.
 
 ## QB-12 `latestExecutedQuery` / `latestNonInternalQuery` are public, undocumented, and overlap newer APIs
 
-- Status: open: user decision.
+- Status: fixed (2026-10-06: documented in the JSDoc and the `auth.md` member table; not moved, a move is breaking)
 
 - Where: `libs/query/src/lib/auth/bearer-auth-provider.ts:406-417, 1026-1027`; absent from the member table in
   `apps/docs/query/auth.md:70-84`. Used by `libs/query-devtools/src/lib/query-devtools-auth-tab.component.html`.

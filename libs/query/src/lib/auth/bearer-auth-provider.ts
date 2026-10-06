@@ -407,12 +407,15 @@ export type BearerAuthProvider<
   isAccessTokenExpired: () => boolean;
 
   /**
-   * The latest executed query (including internal triggers like auto-refresh)
+   * The key and snapshot of the latest auth query run, including the provider's own runs (auto-login,
+   * token refresh). A token revocation does not count. `null` before the first run and after a logout.
+   * To follow one query, prefer `queries.<key>.snapshot()`; for progress, `executionState()`.
    */
   latestExecutedQuery: Signal<{ key: ExtractQueryKey<TBuilders[number]>; snapshot: QuerySnapshot<QueryArgs> } | null>;
 
   /**
-   * The latest non-internal query (user-triggered only)
+   * Like {@link latestExecutedQuery}, but only for runs the app started: an `execute()` without a
+   * `triggeredBy`. `null` before the first such run and after a logout.
    */
   latestNonInternalQuery: Signal<{
     key: ExtractQueryKey<TBuilders[number]>;
