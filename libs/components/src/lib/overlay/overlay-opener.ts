@@ -136,7 +136,7 @@ export type OverlaySingleOpenerConfig<TResult = unknown> = OverlayOpenerConfig<T
 };
 
 export type QueryParamOverlayOpener<TQueryParam extends string = string> = {
-  /** Open the overlay by writing the given value to the query param. */
+  /** Open the overlay by writing the given value to the query param. Replaces the entry while the param is already set. */
   open: (value: TQueryParam) => void;
 
   /** Close the overlay by removing the query param. Steps back over the entry `open()` added, else replaces the entry. */
@@ -409,7 +409,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   });
 
   return {
-    open: (value) => updateQueryParam(value),
+    open: (value) => updateQueryParam(value, untracked(queryParamValue) !== null),
     close: clearQueryParam,
   };
 };

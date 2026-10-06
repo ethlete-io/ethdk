@@ -142,7 +142,7 @@ To unit-test an overlay component without opening it, provide a fake ref with `p
 
 `defineQueryParamOverlay` creates an overlay whose lifecycle is driven by a URL query param: it opens while the param is present, closes (clearing the param) when dismissed, and survives deep links and browser back/forward. A browser Back that a close guard vetoes puts the param back, so the URL keeps naming the open overlay.
 
-The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) - this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model. A model write replaces the current history entry instead of adding one, so switching tabs inside the overlay costs no Back presses and one Back closes it.
+The component **must** expose an `overlayQueryParam` [model](https://angular.dev/api/core/model) - this is enforced at compile time. It receives the param value and is kept in two-way sync with the URL: writing to the model updates the URL, external URL changes are pushed into the model. A model write replaces the current history entry instead of adding one, so switching tabs inside the overlay costs no Back presses and one Back closes it. `open()` while the param is already set does the same.
 
 A close never adds a history entry. If `open()` added the entry, the close steps back over it, as the overlay router does with `syncUrl`; otherwise (a deep link, or another navigation came after the open) the close replaces the entry. Either way, the next Back does not reopen the overlay.
 

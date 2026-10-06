@@ -437,6 +437,7 @@ describe('overlay routing scenarios', () => {
       const location = TestBed.inject(Location);
 
       router.setUpLocationChangeListener();
+      await router.navigateByUrl('/start');
       await s.settle();
 
       fixture.componentInstance.product.open('42');
@@ -450,14 +451,14 @@ describe('overlay routing scenarios', () => {
       location.back();
       await s.settle();
 
-      expect(router.url).toBe('/?product=42');
+      expect(router.url).toBe('/start?product=42');
       expect(query('.product').textContent).toBe('42');
 
       vetoing = false;
       fixture.componentInstance.product.close();
       await s.settle();
 
-      expect(router.url).toBe('/');
+      expect(router.url).toBe('/start');
       expect(document.querySelector('.et-overlay-runtime-root')).toBeNull();
     });
   });
