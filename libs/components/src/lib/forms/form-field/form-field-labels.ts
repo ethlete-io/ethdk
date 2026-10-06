@@ -21,6 +21,20 @@ export type FormFieldLabels = {
   counterLimitReached: (max: number) => string;
   /** The `et-counter` announcement past the limit. */
   counterOverLimit: (over: number, max: number) => string;
+  /** Error text for a `required` validator without a `message`. */
+  errorRequired: string;
+  /** Error text for a `min` validator without a `message`. */
+  errorMin: (error: { min: number }) => string;
+  /** Error text for a `max` validator without a `message`. */
+  errorMax: (error: { max: number }) => string;
+  /** Error text for a `minLength` validator without a `message`. */
+  errorMinLength: (error: { minLength: number }) => string;
+  /** Error text for a `maxLength` validator without a `message`. */
+  errorMaxLength: (error: { maxLength: number }) => string;
+  /** Error text for a `pattern` validator without a `message`. */
+  errorPattern: (error: { pattern: RegExp }) => string;
+  /** Error text for an `email` validator without a `message`. */
+  errorEmail: string;
 };
 
 /** The built-in English labels. */
@@ -33,6 +47,13 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   counterRemaining: (remaining) => `${remaining} characters remaining`,
   counterLimitReached: (max) => `Character limit of ${max} reached`,
   counterOverLimit: (over, max) => `${over} characters over the limit of ${max}`,
+  errorRequired: 'This field is required',
+  errorMin: (error) => `Must be at least ${error.min}`,
+  errorMax: (error) => `Must be at most ${error.max}`,
+  errorMinLength: (error) => `Must be at least ${error.minLength} characters`,
+  errorMaxLength: (error) => `Must be at most ${error.maxLength} characters`,
+  errorPattern: () => 'Invalid format',
+  errorEmail: 'Enter a valid email address',
 };
 
 const FORM_FIELD_LABELS_DEF = /* @__PURE__ */ defineLabels<FormFieldLabels>(

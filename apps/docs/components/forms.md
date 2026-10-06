@@ -643,12 +643,17 @@ shapes are documented in the
 
 ### Custom error messages
 
-`et-form-error` renders each error's `message` verbatim; a validator without a
-`message` renders an empty row, and dev mode warns once per error `kind` when that
-happens. To centralize or localize error texts, provide a
-resolver - it sees every `ValidationError` (including the bridge's
-`etServerViolation` kind) and returns the text to show, or `null` to fall back to
-the error's own message:
+`et-form-error` shows, in order: the text a resolver returns, the error's own
+`message`, then a built-in English default for the `required`, `min`, `max`,
+`minLength`, `maxLength`, `pattern` and `email` kinds. Those defaults are the
+`errorRequired`, `errorMin`, `errorMax`, `errorMinLength`, `errorMaxLength`,
+`errorPattern` and `errorEmail` entries of
+[`FORM_FIELD_LABELS`](/components/localization); the parameterized ones are
+functions of the error (`errorMin: (error) => \`Must be at least ${error.min}\``),
+so `provideFormFieldLabels({ errorRequired: 'Pflichtfeld' })`localizes them. Any
+other kind without a message renders an empty row, and dev mode warns once per
+error`kind`when that happens. To centralize or override texts per kind, provide a
+resolver - it sees every`ValidationError`(including the bridge's`etServerViolation`kind) and returns the text to show, or`null` to fall back:
 
 ```ts
 import { provideFormErrorMessageResolver } from '@ethlete/components';
