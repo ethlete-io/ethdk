@@ -18,7 +18,7 @@ Scope: `libs/components/src/lib/forms/{form-field,form,input,textarea,checkbox,s
 
 ## FI-01 A validator without `message` renders an empty error row, with no dev warning
 
-- Status: fixed (dev-mode warning only); open: default texts need a decision
+- Status: fixed (dev-mode warning; 2026-10-06 English default texts for the built-in kinds in `FORM_FIELD_LABELS`, 8ee858bee)
 - Review: fixed (scenarios for RTE, phone input and rating now pass a `message`; the warning was correct)
 
 - Where: `libs/components/src/lib/forms/form-field/form-error.component.ts:31`,

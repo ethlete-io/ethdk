@@ -206,7 +206,7 @@ Scope: `libs/contentful`, `libs/types`, `libs/query-devtools` (`.`, `/lazy`, `/t
 
 ## MISC-13 Contentful asset components disagree on class inputs
 
-- Status: open: needs a decision
+- Status: fixed (2026-10-06, static classes, inputs dropped, et update migration `contentful-asset-classes`; link gained `marks`/`richText` inputs for the renderer; 8faa5f989)
 
 - Where: `contentful-video.component.ts:24` (`videoClass: NgClassType`), `contentful-audio.component.ts:25-27`
   (three `NgClassType` inputs), `contentful-file.component.ts:30` (`fileClass`), `contentful-link.component.ts:38-39`

@@ -18,14 +18,12 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (34)
+## 2. Open user decisions (26)
 
 The domain file of each ID has the full problem and the proposed fix.
 
 | ID      | Question                                                                                                                                                                                                                  |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SEL-04  | `et-select` has `error` (panel load error) and `errors` (validation). Rename `error` to `loadError` or `optionsError`?                                                                                                    |
-| SEL-06  | Which one vocabulary for the select and the tag input: `maxSelection`/`maxTags`, `normalizeCustomValue`/`normalizeTag`, `separators`? Add `afterOpen`/`afterClose` to the select?                                         |
 | QA-03   | Creators that share a cache entry use the options of the first one. Hash `responseType`/`withCredentials` into the key; and policy options (`retryFn`, `reportErrors`, `reportProgress`): split, or resolve per consumer? |
 | QA-09   | Each query creates 10 `toObservable` effects. A lazy variant changes the first-emission timing. Needs a design (one shared watcher in place of one effect per signal).                                                    |
 | QA-13   | Move about 165 devtools-contract exports from `@ethlete/query` to a new entry point such as `@ethlete/query/devtools-contract`?                                                                                           |
@@ -37,27 +35,21 @@ The domain file of each ID has the full problem and the proposed fix.
 | SS-02   | How does `<et-scheduler>` take custom edit-surface fields: a `directives` option on `provideSchedulerEditSurface()`, or an `editSurfaceDirectives` input?                                                                 |
 | SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                                                |
 | SS-04   | `TExtra` is lost at `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it?                                                  |
-| SS-05   | The stream PiP slot placeholder is off by default. Options: (a) `provideStreamPip()` defaults it, (b) add it to `STREAM_DEFAULT_COMPONENTS`.                                                                              |
 | BR-06   | `BracketRuntimeError` is now exported with a `code`. Is a soft-fail mode on `<et-bracket>` or a `validateBracketSource()` API wanted?                                                                                     |
 | BR-08   | Add `bracketSlot.*` constructors for `BracketSlotSource`? Make it a discriminated union per `kind` (breaking)?                                                                                                            |
 | RTE-05  | Give the multi-language editor a `triggers` input and expose the inner editor (`insertToken`, palette)?                                                                                                                   |
 | RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                                                   |
 | MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable.                            |
 | MISC-08 | The rich-text renderer cannot render a GraphQL rich-text field. Input shape: a `[gqlRichText]` input with `{ json, links }`, or a `createContentfulIncludeMapFromGqlLinks()` helper?                                      |
-| MISC-13 | Contentful asset components: static `et-contentful-*` classes everywhere (drop the inputs), or string class inputs everywhere?                                                                                            |
 | CR-05   | Spinner and progress bar invert the determinate flag and differ in `color`. One shape: `mode: 'determinate' \| 'indeterminate'`, or "determinate when `value` is bound"?                                                  |
 | CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                                               |
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                                               |
 | CORE-16 | Pointer capture is fixed. Rename `ResizeMoveEvent` fields to `totalDx`/`totalDy` and make `resizeEnded` emit the final event (breaking)?                                                                                  |
-| FI-01   | The dev-mode warning for an empty error message shipped. Ship default texts for the built-in signal-forms kinds through `FORM_FIELD_LABELS`?                                                                              |
 | OV-06   | Typed overlay data: (a) a result marker `overlayResult<T>()`, (b) a typed `inputs` option on `open()`?                                                                                                                    |
 | OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                                                     |
 | EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                                                  |
-| EA-02   | Overlay busy state: an `overlayRef.busy` signal or `setBusy(boolean)`, which blocks close sources and disables `etOverlayClose`?                                                                                          |
-| EA-04   | Add `provideDateTimeZone(zone)` as an app-wide default for date controls? It was not part of the DT-01/04 token split.                                                                                                    |
 | FG-05   | Reactive forms to signal forms: the report section and the guide are proposed. Is the reactive/signal forms interop of Angular a supported bridge?                                                                        |
 | FG-13   | Add `standingRankSides()` / `swapStandingRank()` to `@ethlete/bracket`? Does the swap UI belong in components?                                                                                                            |
-| FG-14   | Deprecate `createDestroy`, with an `auto` migration to `takeUntilDestroyed`?                                                                                                                                              |
 
 ## 3. Calls the coordinator made
 

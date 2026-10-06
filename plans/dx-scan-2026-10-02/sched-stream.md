@@ -121,7 +121,7 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   renders, with `pipSlotPlaceholderComponent: null` to opt out. (b) Add it to `STREAM_DEFAULT_COMPONENTS`. Either
   way, document the option in the PiP section.
 - Breaking: no for (a)/(b) (visual change). Decision: yes (which default).
-- Status: open: user decision.
+- Status: fixed (2026-10-06, option a: `provideStreamPip()` defaults the placeholder, `null` opts out; 6225a8ff0)
 - Review: open (user decision).
 
 ## SS-06 A missing or unparseable source (SOOP, Twitch) gives a shared `…-null` player and a loading overlay that never ends

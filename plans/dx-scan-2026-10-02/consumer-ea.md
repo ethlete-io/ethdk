@@ -68,6 +68,7 @@ disables). The friction sits in hand-written wrappers and CSS overrides.
   every close source except `api`, set `aria-busy="true"` on the pane, and have `etOverlayClose`
   render disabled. Document it in `apps/docs/components/overlays.md`.
 - Breaking: no. Decision: yes (new public API shape).
+- Status: fixed (2026-10-06, `OverlayRef.busy` writable signal; d0f2410b9; e2e case in `dialog.e2e.ts`)
 
 ## EA-03 No public URL on a query
 
@@ -108,6 +109,7 @@ disables). The friction sits in hand-written wrappers and CSS overrides.
   zone-aware wall clock too. This overlaps with the DT-01/DT-04 decision (date-only wire format by
   default). Fold it into that work rather than adding it separately.
 - Breaking: no on its own. Decision: yes (it lands with the DT-01/DT-04 token split).
+- Status: fixed (2026-10-06, `provideDateTimeZone()`; date-only controls follow the zone when the value format carries a time; 2a2190f7c; open: `dateBounds`/`dateRangeBounds` still compare on the runtime calendar)
 
 ## EA-05 Tri-state boolean inputs have no transform
 

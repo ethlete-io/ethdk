@@ -281,6 +281,7 @@ candidates }`). SDK `libs/bracket/src/lib/linked/resolve-bracket-slot.ts` resolv
   rewrites `private _destroy$ = createDestroy()` + `takeUntil(this._destroy$)` into `takeUntilDestroyed(this._destroyRef)`
   (field-initializer uses become plain `takeUntilDestroyed()`), reporting non-`takeUntil` uses.
 - Breaking: no (deprecation only). Decision: yes.
+- Status: fixed (2026-10-06, deprecated; hand-run generator `@ethlete/core:migrate-create-destroy`, not in et update; e01928e6d)
 
 ## FG-15 `JsonLD` moved from `@ethlete/types` to `@ethlete/core` with no codemod
 

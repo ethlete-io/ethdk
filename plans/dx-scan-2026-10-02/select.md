@@ -101,6 +101,7 @@ Scope: `libs/components/src/lib/forms/select`, `forms/cascader`, `forms/selectio
   bundle field, or rename it to match. Update `select.md:49`, `:226`, `:248` and the
   `selectOptionsFromQuery` JSDoc.
 - Breaking: yes. Decision: yes (name choice).
+- Status: fixed (2026-10-06, user chose `loadError`, bundle keeps `error`; e175fc005, c84a77652; et update migration `select-input-renames`)
 
 ## SEL-05 `et-radio` / `et-checkbox-option` outside a group fail silently (no dev-mode error)
 
@@ -139,6 +140,7 @@ Scope: `libs/components/src/lib/forms/select`, `forms/cascader`, `forms/selectio
   `afterOpen` / `afterClose` to `SelectDirective` (the anchored-panel controller already has
   `onMounted` / `onAfterClosed`).
 - Breaking: yes, for any rename. Decision: yes.
+- Status: fixed (2026-10-06, user chose one vocabulary: `maxSelection`, `normalizeValue`, `separators`; `afterOpen`/`afterClose` on et-select; a228527ab; et update migration `select-input-renames`; open: a full cascader does not grey out unselected nodes)
 
 ## SEL-07 Output tables in the select and cascader guides are incomplete
 
