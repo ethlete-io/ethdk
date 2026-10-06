@@ -11,6 +11,11 @@
       "schema": "./migrate-provider-shape/schema.json",
       "description": "Rewrite destructured provider tuples into the tree-shakeable definition shape"
     },
+    "migrate-create-destroy": {
+      "implementation": "./migrate-create-destroy/migration",
+      "schema": "./migrate-create-destroy/schema.json",
+      "description": "Rewrite takeUntil(this.destroy$) on a createDestroy() field into takeUntilDestroyed()"
+    },
     "migrate-surface-interaction-swatch": {
       "implementation": "./migrate-surface-interaction-swatch/migration",
       "schema": "./migrate-surface-interaction-swatch/schema.json",
