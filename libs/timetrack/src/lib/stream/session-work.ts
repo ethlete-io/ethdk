@@ -3,7 +3,7 @@ import { Evidence } from '../model/evidence';
 import { namedWorkFileOf } from '../model/session-piece';
 
 /** One observation of what an agent session produced, to be filed under that session's own stretch. */
-export type SessionWork = { repoPath: string; sessionId: string; gitBranch?: string; evidence: Evidence };
+export type SessionWork = { repoPath: string; sessionId: string; gitBranch?: string; cwd?: string; evidence: Evidence };
 
 const WORK_FILE_LABELS: readonly { prefix: string; label: string }[] = [
   { prefix: '.claude/handoffs/', label: 'handoff' },
@@ -86,6 +86,7 @@ export const sessionWork = (options: {
         repoPath,
         sessionId: turn.sessionId,
         gitBranch: turn.gitBranch,
+        cwd: turn.cwd,
         evidence: {
           kind: 'work-file',
           at: turn.at,

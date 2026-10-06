@@ -477,13 +477,17 @@ const repoStateFor = (sample: ActivityEvent, roots: readonly string[]): RepoStat
  * first branch it can find: that event says the branch changed here, so it is the one fact that says
  * the minutes before it were on a different branch. Those stay unnamed, which is what they are.
  */
-const firstBranches = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+const firstBranches = (options: {
+  samples: readonly ActivityEvent[];
+  roots: readonly string[];
+  nested: readonly string[];
+}) => {
   const found = new Map<string, string | undefined>();
 
-  for (const sample of samples) {
-    const state = repoStateFor(sample, roots);
+  for (const sample of options.samples) {
+    const state = repoStateFor(sample, options.roots);
 
-    if (!state?.branch || found.has(state.repoPath)) continue;
+    if (!state?.branch || found.has(state.repoPath) || within(samplePathOf(sample), options.nested)) continue;
 
     found.set(state.repoPath, sample.kind === 'git-checkout' ? undefined : state.branch);
   }
@@ -652,6 +656,23 @@ const sessionAt = (options: { runs: readonly SessionRun[] | undefined; at: Date 
   return (running ?? runs[runs.length - 1])?.sessionId;
 };
 
+/**
+ * The linked worktrees inside another checkout's directory, which `repoRootOf` files under that checkout.
+ *
+ * Such a worktree has a HEAD of its own, so a branch the enclosing checkout was seen on says nothing
+ * about it, and a branch it reports says nothing about the enclosing checkout.
+ */
+const nestedWorktreesOf = (options: {
+  worktrees: Readonly<Record<string, string>> | undefined;
+  roots: readonly string[];
+}) => Object.keys(options.worktrees ?? {}).filter((path) => repoRootOf({ path, roots: options.roots }) !== path);
+
+const within = (path: string | undefined, directories: readonly string[]) =>
+  !!path && directories.some((directory) => path === directory || path.startsWith(`${directory}/`));
+
+const samplePathOf = (sample: ActivityEvent) =>
+  sample.kind === 'agent-session' ? sample.cwd : sample.kind === 'editor-heartbeat' ? sample.repoPath : undefined;
+
 /** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
 type BranchMark = { at: Date; branch: string };
 
@@ -686,15 +707,19 @@ const branchMarks = (samples: readonly ActivityEvent[], roots: readonly string[]
  * These outrank the branch an agent session reports, which can be a stale one it started on. An
  * agent's branch names a stretch only where neither had spoken yet.
  */
-const witnessedBranches = (samples: readonly ActivityEvent[], roots: readonly string[]) => {
+const witnessedBranches = (options: {
+  samples: readonly ActivityEvent[];
+  roots: readonly string[];
+  nested: readonly string[];
+}) => {
   const found = new Map<string, BranchMark[]>();
 
-  for (const sample of samples) {
+  for (const sample of options.samples) {
     if (sample.kind !== 'git-checkout' && sample.kind !== 'editor-heartbeat') continue;
 
-    const state = repoStateFor(sample, roots);
+    const state = repoStateFor(sample, options.roots);
 
-    if (!state?.branch) continue;
+    if (!state?.branch || within(samplePathOf(sample), options.nested)) continue;
 
     const held = found.get(state.repoPath) ?? [];
 
@@ -1103,7 +1128,8 @@ export const streamDay = (options: {
    * session alike, and seeded with the first branch of the day so the minutes before it are not
    * stranded on no branch.
    */
-  const branches = firstBranches(samples, roots);
+  const nested = nestedWorktreesOf({ worktrees: config.rows?.worktrees, roots });
+  const branches = firstBranches({ samples, roots, nested });
   /**
    * The checkouts a directory says the piece of work for, and the branches that cannot say it
    * themselves. A feature branch is one piece of work already, so its directories never split it.
@@ -1187,9 +1213,11 @@ export const streamDay = (options: {
 
     return runs.get(options.repoPath)?.some((run) => run.sessionId === sessionId) ? sessionId : undefined;
   };
-  const witnessed = witnessedBranches(samples, roots);
-  const branchAt = (options: { repoPath: string; at: Date; reported: string | undefined }) =>
-    witnessedAt({ marks: witnessed.get(options.repoPath), at: options.at }) ?? options.reported;
+  const witnessed = witnessedBranches({ samples, roots, nested });
+  const branchAt = (options: { repoPath: string; at: Date; reported: string | undefined; cwd?: string }) =>
+    (within(options.cwd, nested)
+      ? undefined
+      : witnessedAt({ marks: witnessed.get(options.repoPath), at: options.at })) ?? options.reported;
   const lastAgentSample = new Map<string, Date>();
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
@@ -1260,7 +1288,8 @@ export const streamDay = (options: {
 
     // A branch is only ever learned from git, an agent session or an editor. Focusing a window says
     // which checkout is in front of you, not what is checked out in it.
-    if (observed) branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
+    if (observed && !within(samplePathOf(sample), nested))
+      branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
 
     // A window title and an editor heartbeat may set the sticky; a commit and an agent session may not,
     // or the minutes after a commit go to its checkout whatever window is in front. A heartbeat only
@@ -1318,6 +1347,7 @@ export const streamDay = (options: {
         repoPath: cwd,
         at: sample.at,
         reported: branchOf(sample.gitBranch) ?? branches.get(cwd),
+        cwd: sample.cwd,
       });
       const ran: ActivityContext = {
         repoPath: cwd,
@@ -1354,7 +1384,7 @@ export const streamDay = (options: {
         const reported = observed.branch ?? branches.get(observed.repoPath);
         const on =
           sample.kind === 'agent-session'
-            ? branchAt({ repoPath: observed.repoPath, at: sample.at, reported })
+            ? branchAt({ repoPath: observed.repoPath, at: sample.at, reported, cwd: sample.cwd })
             : reported;
 
         return {
@@ -1391,7 +1421,9 @@ export const streamDay = (options: {
 
   for (const prompt of prompts) {
     const repoPath = checkoutOf(prompt.cwd);
-    const on = repoPath ? branchAt({ repoPath, at: prompt.at, reported: branchOf(prompt.gitBranch) }) : undefined;
+    const on = repoPath
+      ? branchAt({ repoPath, at: prompt.at, reported: branchOf(prompt.gitBranch), cwd: prompt.cwd })
+      : undefined;
     const state: RepoState | null = repoPath
       ? {
           repoPath,
@@ -1411,7 +1443,7 @@ export const streamDay = (options: {
   for (const work of sessionWork({ turns, commits, checkoutOf })) {
     const { repoPath, evidence } = work;
     const session = runs.get(repoPath)?.some((run) => run.sessionId === work.sessionId) ? work.sessionId : undefined;
-    const on = branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch) });
+    const on = branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch), cwd: work.cwd });
     const state: RepoState = { repoPath, ...workedOn({ repoPath, branch: on, at: evidence.at, session }) };
 
     addEvidence(draftFor(drafts, state), evidence);
@@ -1421,7 +1453,9 @@ export const streamDay = (options: {
   for (const turn of turns) {
     const repoPath = checkoutOf(turn.cwd);
 
-    const on = repoPath ? branchAt({ repoPath, at: turn.at, reported: branchOf(turn.gitBranch) }) : undefined;
+    const on = repoPath
+      ? branchAt({ repoPath, at: turn.at, reported: branchOf(turn.gitBranch), cwd: turn.cwd })
+      : undefined;
 
     marks.push({
       at: turn.at,

@@ -33,13 +33,19 @@ const heartbeats = (options: { from: number; to: number; branch: string }): Coll
     editing: true,
   }));
 
-const sessionRun = (options: { sessionId: string; from: number; to: number; branch: string }): CollectedEvent[] =>
+const sessionRun = (options: {
+  sessionId: string;
+  from: number;
+  to: number;
+  branch: string;
+  cwd?: string;
+}): CollectedEvent[] =>
   everyMinute(options).map((minutes) => ({
     at: AT(minutes),
     source: 'agent-session',
     kind: 'agent-session',
     sessionId: options.sessionId,
-    cwd: REPO,
+    cwd: options.cwd ?? REPO,
     gitBranch: options.branch,
   }));
 
@@ -51,13 +57,14 @@ const checkout = (options: { minutes: number; branch: string }): CollectedEvent 
   branch: options.branch,
 });
 
-const dayOf = (events: CollectedEvent[]) =>
+const dayOf = (events: CollectedEvent[], worktrees: Record<string, string> = {}) =>
   streamDay({
     events: [...events].sort((a, b) => a.at.getTime() - b.at.getTime()),
-    options: { repoRoots: [REPO], baseBranches: ['main', 'next'] },
+    options: { repoRoots: [REPO], baseBranches: ['main', 'next'], rows: { worktrees } },
   });
 
-const blocksOf = (events: CollectedEvent[]) => dayOf(events).blocks.filter((block) => block.context.repoPath === REPO);
+const blocksOf = (events: CollectedEvent[], worktrees: Record<string, string> = {}) =>
+  dayOf(events, worktrees).blocks.filter((block) => block.context.repoPath === REPO);
 
 const branchesBetween = (blocks: ReturnType<typeof blocksOf>, from: number, to: number) => [
   ...new Set(
@@ -102,5 +109,29 @@ describe('streamDay branch precedence', () => {
     ]);
 
     expect(branchesBetween(blocks, 0, 60)).toEqual(['fix/other']);
+  });
+
+  it("keeps the branch a session in a worktree inside the checkout reports over the checkout's own switch", () => {
+    const worktree = `${REPO}/.claude/worktrees/bracket`;
+    const blocks = blocksOf(
+      [
+        checkout({ minutes: 0, branch: FEATURE }),
+        ...sessionRun({ sessionId: 'main', from: 0, to: 30, branch: FEATURE }),
+        ...sessionRun({
+          sessionId: 'worktree',
+          from: 0,
+          to: 30,
+          branch: 'fix/bracket',
+          cwd: `${worktree}/libs/bracket`,
+        }),
+      ],
+      { [worktree]: REPO },
+    );
+    const sessionBranches = (session: string) => [
+      ...new Set(blocks.filter((block) => block.context.session === session).map((block) => block.context.branch)),
+    ];
+
+    expect(sessionBranches('worktree')).toEqual(['fix/bracket']);
+    expect(sessionBranches('main')).toEqual([FEATURE]);
   });
 });
