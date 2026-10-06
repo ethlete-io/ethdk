@@ -10,6 +10,7 @@ import { OVERLAY_REF } from '../overlay-ref';
 import { OVERLAY_CONTENT_IMPORTS, provideOverlay } from '../overlay.imports';
 import { dialogOverlayStrategy } from '../strategies';
 import { createOverlayUnsavedChangesGuard } from '../utils/overlay-unsaved-changes-guard';
+import { OverlayStoryPanelStylesComponent } from './components/overlay-story-panel-styles.component';
 
 @Component({
   selector: 'et-sb-confirm-discard',
@@ -129,6 +130,7 @@ class EditItemOverlayComponent {
       <p class="text-medium text-white/70">
         An overlay hosting a form guards itself against accidental dismissal while it has unsaved changes.
       </p>
+      <et-sb-overlay-panel-styles />
       <button (click)="open()" et-button>Edit item</button>
       @if (lastResult() !== undefined) {
         <p class="text-small text-white/50">Last close result: {{ lastResult() }}</p>
@@ -148,14 +150,7 @@ class EditItemOverlayComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS],
-  styles: `
-    .et-overlay--dialog.et-sb-overlay-panel {
-      background-color: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
-      border-radius: 12px;
-    }
-  `,
+  imports: [BUTTON_IMPORTS, OverlayStoryPanelStylesComponent],
 })
 class OverlayUnsavedChangesStorybookComponent {
   private overlays = injectOverlayManager();

@@ -7,6 +7,7 @@ import { injectOverlayManager } from '../overlay-manager';
 import { OVERLAY_REF } from '../overlay-ref';
 import { OVERLAY_CONTENT_IMPORTS, provideOverlay } from '../overlay.imports';
 import { dialogOverlayStrategy } from '../strategies';
+import { OverlayStoryPanelStylesComponent } from './components/overlay-story-panel-styles.component';
 
 @Component({
   selector: 'et-sb-busy-overlay',
@@ -57,6 +58,7 @@ class BusyOverlayComponent {
   selector: 'et-sb-overlay-busy',
   template: `
     <div class="flex flex-col items-start gap-4 p-8 font-sans">
+      <et-sb-overlay-panel-styles />
       <button (click)="open()" et-button>Open dialog</button>
       @if (lastResult() !== undefined) {
         <p class="text-small text-white/50">Last close result: {{ lastResult() }}</p>
@@ -64,14 +66,7 @@ class BusyOverlayComponent {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS],
-  styles: `
-    .et-overlay--dialog.et-sb-overlay-panel {
-      background-color: var(--et-surface-background-solid);
-      color: var(--et-surface-color-solid);
-      border-radius: 12px;
-    }
-  `,
+  imports: [BUTTON_IMPORTS, OverlayStoryPanelStylesComponent],
 })
 class OverlayBusyStorybookComponent {
   private overlays = injectOverlayManager();
