@@ -134,4 +134,63 @@ describe('streamDay branch precedence', () => {
     expect(sessionBranches('worktree')).toEqual(['fix/bracket']);
     expect(sessionBranches('main')).toEqual([FEATURE]);
   });
+
+  describe('a commit made in a worktree inside the checkout', () => {
+    const worktree = `${REPO}/.claude/worktrees/gallery`;
+    const commit: CollectedEvent = {
+      at: AT(20),
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: REPO,
+      branch: 'tooling/gallery',
+      sha: '5c20c10aaaaaaaaa',
+      subject: 'feat(tooling): Show the run progress',
+      paths: ['tools/gallery/record.mjs'],
+    };
+    const turn: CollectedEvent = {
+      at: AT(10),
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: 'claude-code',
+      sessionId: 'lead',
+      turnId: 'lead-10',
+      cwd: REPO,
+      gitBranch: FEATURE,
+      workedIn: `${REPO}/tools/gallery/record.mjs`,
+      model: 'claude-opus-5',
+      usage: { input: 2, output: 289, cacheWrite: 0, cacheRead: 0, thinking: 0 },
+    };
+
+    it("is not filed on the checkout's own branch through the session that wrote its files", () => {
+      const blocks = blocksOf(
+        [
+          checkout({ minutes: 0, branch: FEATURE }),
+          ...focusRun({ from: 0, to: 40 }),
+          ...heartbeats({ from: 0, to: 40, branch: FEATURE }),
+          turn,
+          commit,
+        ],
+        { [worktree]: REPO },
+      );
+      const committedOn = blocks
+        .filter((block) => block.evidence.some((evidence) => evidence.summary === commit.subject))
+        .map((block) => block.context.branch);
+
+      expect(committedOn).not.toContain(FEATURE);
+    });
+
+    it("does not move the checkout's own branch", () => {
+      const blocks = blocksOf(
+        [
+          ...focusRun({ from: 0, to: 40 }),
+          { ...turn, at: AT(0), workedIn: undefined },
+          { ...commit, at: AT(1), branch: FEATURE, sha: 'd768928aaaaaaaaa', subject: 'fix(tooling): Load a review' },
+          commit,
+        ],
+        { [worktree]: REPO },
+      );
+
+      expect(branchesBetween(blocks, 0, 40)).toEqual([FEATURE]);
+    });
+  });
 });

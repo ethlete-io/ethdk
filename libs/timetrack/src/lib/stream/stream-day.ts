@@ -481,6 +481,7 @@ const firstBranches = (options: {
   samples: readonly ActivityEvent[];
   roots: readonly string[];
   nested: readonly string[];
+  unsighted: (commit: GitCommitEvent) => boolean;
 }) => {
   const found = new Map<string, string | undefined>();
 
@@ -488,6 +489,7 @@ const firstBranches = (options: {
     const state = repoStateFor(sample, options.roots);
 
     if (!state?.branch || found.has(state.repoPath) || within(samplePathOf(sample), options.nested)) continue;
+    if (sample.kind === 'git-commit' && options.unsighted(sample)) continue;
 
     found.set(state.repoPath, sample.kind === 'git-checkout' ? undefined : state.branch);
   }
@@ -672,6 +674,41 @@ const within = (path: string | undefined, directories: readonly string[]) =>
 
 const samplePathOf = (sample: ActivityEvent) =>
   sample.kind === 'agent-session' ? sample.cwd : sample.kind === 'editor-heartbeat' ? sample.repoPath : undefined;
+
+/**
+ * Whether a commit's branch could be a nested worktree's. A commit names its branch but not the
+ * worktree it was made in, so this holds for a commit whose checkout encloses a nested worktree and on
+ * whose branch nothing outside those worktrees ever saw the checkout.
+ */
+const unsightedCommitReader = (options: {
+  samples: readonly ActivityEvent[];
+  sightings: readonly { path: string | undefined; branch: string | undefined }[];
+  roots: readonly string[];
+  nested: readonly string[];
+}) => {
+  const enclosing = new Set(options.nested.map((path) => repoRootOf({ path, roots: options.roots })));
+  const seenOutside = new Set<string>();
+  const keyOf = (repoPath: string, branch: string) => `${repoPath}\u0000${branch}`;
+
+  for (const sample of options.samples) {
+    const state = sample.kind === 'git-commit' ? null : repoStateFor(sample, options.roots);
+
+    if (state?.branch && !within(samplePathOf(sample), options.nested))
+      seenOutside.add(keyOf(state.repoPath, state.branch));
+  }
+  for (const sighting of options.sightings) {
+    const branch = branchOf(sighting.branch);
+
+    if (sighting.path && branch && !within(sighting.path, options.nested))
+      seenOutside.add(keyOf(repoRootOf({ path: sighting.path, roots: options.roots }), branch));
+  }
+
+  return (commit: GitCommitEvent) => {
+    const branch = branchOf(commit.branch);
+
+    return !!branch && enclosing.has(commit.repoPath) && !seenOutside.has(keyOf(commit.repoPath, branch));
+  };
+};
 
 /** One `git-checkout`'s answer to which branch a checkout was moved onto, at the instant it moved. */
 type BranchMark = { at: Date; branch: string };
@@ -1129,7 +1166,14 @@ export const streamDay = (options: {
    * stranded on no branch.
    */
   const nested = nestedWorktreesOf({ worktrees: config.rows?.worktrees, roots });
-  const branches = firstBranches({ samples, roots, nested });
+  const unsighted = unsightedCommitReader({
+    samples,
+    sightings: [...turns, ...prompts].map((event) => ({ path: event.cwd, branch: event.gitBranch })),
+    roots,
+    nested,
+  });
+  const branches = firstBranches({ samples, roots, nested, unsighted });
+  const nestedCommits = new Set<GitCommitEvent>();
   /**
    * The checkouts a directory says the piece of work for, and the branches that cannot say it
    * themselves. A feature branch is one piece of work already, so its directories never split it.
@@ -1288,8 +1332,12 @@ export const streamDay = (options: {
 
     // A branch is only ever learned from git, an agent session or an editor. Focusing a window says
     // which checkout is in front of you, not what is checked out in it.
-    if (observed && !within(samplePathOf(sample), nested))
-      branches.set(observed.repoPath, observed.branch ?? branches.get(observed.repoPath));
+    const known = observed ? branches.get(observed.repoPath) : undefined;
+    const nestedCommit = sample.kind === 'git-commit' && unsighted(sample) && !!known && known !== observed?.branch;
+
+    if (nestedCommit) nestedCommits.add(sample);
+    if (observed && !nestedCommit && !within(samplePathOf(sample), nested))
+      branches.set(observed.repoPath, observed.branch ?? known);
 
     // A window title and an editor heartbeat may set the sticky; a commit and an agent session may not,
     // or the minutes after a commit go to its checkout whatever window is in front. A heartbeat only
@@ -1443,7 +1491,10 @@ export const streamDay = (options: {
   for (const work of sessionWork({ turns, commits, checkoutOf })) {
     const { repoPath, evidence } = work;
     const session = runs.get(repoPath)?.some((run) => run.sessionId === work.sessionId) ? work.sessionId : undefined;
-    const on = branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch), cwd: work.cwd });
+    const on =
+      work.commit && nestedCommits.has(work.commit)
+        ? branchOf(work.gitBranch)
+        : branchAt({ repoPath, at: evidence.at, reported: branchOf(work.gitBranch), cwd: work.cwd });
     const state: RepoState = { repoPath, ...workedOn({ repoPath, branch: on, at: evidence.at, session }) };
 
     addEvidence(draftFor(drafts, state), evidence);
