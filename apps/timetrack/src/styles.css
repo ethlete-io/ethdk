@@ -60,7 +60,8 @@ body {
  * button in the app starts on.
  */
 et-form-field {
-  .et-form-field-label-area:not(.et-form-field-label-area--floating) {
+  &:not([data-appearance='underline'][data-fill='transparent'])
+    .et-form-field-label-area:not(.et-form-field-label-area--floating) {
     margin-inline-start: calc(
       -1 * (var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
     );
