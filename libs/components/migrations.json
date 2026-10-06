@@ -158,7 +158,7 @@
       "version": "1.0.0-next.67",
       "kind": "auto",
       "level": "required",
-      "description": "Rename the et-select error input to loadError in templates.",
+      "description": "Rename the et-select inputs error, customValueSeparators and normalizeCustomValue, and the tag input inputs maxTags and normalizeTag, in templates.",
       "generator": "@ethlete/components:migrate-select-input-renames",
       "docs": "/components/select"
     }

@@ -446,8 +446,8 @@ inside the regular `et-form-field` shell. Value is `string[]`. For tags **with
 suggestions**, use the [select](/components/select) instead (`multiple` +
 `etSelectSearch` + `allowCustomValues`) - its custom-value mode covers the full
 tag-input ergonomics on top of an option list: a "Create …" row, separator commit
-(`customValueSeparators`), paste splitting, commit-on-close
-(`commitCustomValueOnClose`), `normalizeCustomValue` and `maxSelection`. The tag
+(`separators`), paste splitting, commit-on-close
+(`commitCustomValueOnClose`), `normalizeValue` and `maxSelection`, under the same names. The tag
 input remains the deliberately minimal variant for pure free-text entry with no
 panel at all.
 
@@ -464,8 +464,8 @@ panel at all.
 | ----------------- | --------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `separators`      | `string[]`                        | `['Enter', ',']`     | What commits the pending text: multi-character entries are key names, single characters commit as typed and split pastes. |
 | `allowDuplicates` | `boolean`                         | `false`              | Rejected duplicates keep the text in the field for editing.                                                               |
-| `normalizeTag`    | `(raw: string) => string \| null` | trim, empty → `null` | Maps raw text to the stored tag - return `null` to reject.                                                                |
-| `maxTags`         | `number \| undefined`             | `undefined`          | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
+| `normalizeValue`  | `(raw: string) => string \| null` | trim, empty → `null` | Maps raw text to the stored tag - return `null` to reject.                                                                |
+| `maxSelection`    | `number \| undefined`             | `undefined`          | Further adds are ignored once reached, and the field locks - unless it still holds text.                                  |
 | `placeholder`     | `string`                          | `''`                 | Placeholder of the inline text field, shown while no tag is being typed.                                                  |
 | `mixedLabel`      | `string \| null`                  | `null`               | Placeholder shown in place of the value while `mixed` - see [Bulk editing](#bulk-editing).                                |
 
@@ -482,12 +482,15 @@ remove, so a no-op keystroke never dirties the bound field. A paste splits on
 separator characters and newlines, spliced into the pending text at the caret
 the way the browser would insert it: field text `pre` plus a pasted `one,two`
 commits `preone` and `two`; the pieces it refuses (duplicates, or those past
-`maxTags`) stay in the field, as typed ones do. Once `maxTags` is reached the field goes read-only,
+`maxSelection`) stay in the field, as typed ones do. Once `maxSelection` is reached the field goes read-only,
 but never while it still holds text - text a full input refused stays editable
 instead of stranding the keyboard. The chips are pointer-removable (`×`, out of
 the tab order) - see the [chip](/components/chip) guide.
 
-An [`<et-counter />`](/components/forms#character-counter) counts tags rather than characters here, since the default measure is the array's length. Note the two limits differ in kind: `maxTags` **refuses** further tags, while a schema `maxLength()` lets them through and reports a validation error - pair the counter with the latter when you want the user to see they've gone over.
+Upgrading from a version with `maxTags` and `normalizeTag`? `et update` renames them to `maxSelection`
+and `normalizeValue` in templates (`yarn nx g @ethlete/components:migrate-select-input-renames`).
+
+An [`<et-counter />`](/components/forms#character-counter) counts tags rather than characters here, since the default measure is the array's length. Note the two limits differ in kind: `maxSelection` **refuses** further tags, while a schema `maxLength()` lets them through and reports a validation error - pair the counter with the latter when you want the user to see they've gone over.
 
 ## Phone input - `et-phone-input` {#phone-input}
 

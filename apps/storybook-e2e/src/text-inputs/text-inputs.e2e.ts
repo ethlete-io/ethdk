@@ -133,7 +133,7 @@ test.describe('text-inputs / tag input keyboard', () => {
     await expect(root.locator('et-chip')).toHaveText(['angular']);
   });
 
-  test('maxTags refuses further tags and locks the empty field', async ({ page }) => {
+  test('maxSelection refuses further tags and locks the empty field', async ({ page }) => {
     const root = await openStory(page, TAG_MAX_TAGS_ID);
     const field = root.locator('.et-tag-input-field');
 

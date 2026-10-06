@@ -216,7 +216,7 @@ export class SelectSearchDirective {
     if (select?.allowCustomValues()) {
       const lastChar = value.at(-1);
 
-      if (lastChar !== undefined && select.customValueSeparators().includes(lastChar)) {
+      if (lastChar !== undefined && select.characterSeparators().includes(lastChar)) {
         const pending = value.slice(0, -1);
 
         this.edited.set(true);
@@ -248,9 +248,25 @@ export class SelectSearchDirective {
   }
 
   protected handleKeydown(event: KeyboardEvent) {
-    if (event.key === 'Backspace' && !this.elementRef.nativeElement.value) {
-      const select = this.select;
+    const select = this.select;
 
+    // Enter keeps its own path, which commits the active option before any custom value
+    if (
+      select?.allowCustomValues() &&
+      !event.isComposing &&
+      event.key !== 'Enter' &&
+      select.keySeparators().includes(event.key)
+    ) {
+      // an empty field keeps the key's default (Tab still moves focus)
+      if (this.query()) {
+        event.preventDefault();
+        select.commitCustomValue(this.query());
+      }
+
+      return;
+    }
+
+    if (event.key === 'Backspace' && !this.elementRef.nativeElement.value) {
       if (!select || select.disabled() || select.readonly()) {
         return;
       }
@@ -270,7 +286,7 @@ export class SelectSearchDirective {
     }
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === 'Tab') {
-      this.select?.handleTriggerKeydown(event);
+      select?.handleTriggerKeydown(event);
     }
   }
 
@@ -286,7 +302,7 @@ export class SelectSearchDirective {
     const selectionStart = element.selectionStart ?? element.value.length;
     const selectionEnd = element.selectionEnd ?? selectionStart;
     const merged = element.value.slice(0, selectionStart) + text + element.value.slice(selectionEnd);
-    const parts = merged.split(separatorPattern(select.customValueSeparators()));
+    const parts = merged.split(separatorPattern(select.characterSeparators()));
 
     if (parts.length < 2) {
       return;

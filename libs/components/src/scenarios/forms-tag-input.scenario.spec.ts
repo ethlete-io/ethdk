@@ -23,8 +23,8 @@ import { Scenario, useScenario } from './harness';
         <et-label>Tags</et-label>
         <et-tag-input
           [formField]="team.tags"
-          [maxTags]="maxTags()"
-          [normalizeTag]="lowercase"
+          [maxSelection]="maxSelection()"
+          [normalizeValue]="lowercase"
           [separators]="separators()"
           placeholder="Add a tag"
         />
@@ -35,7 +35,7 @@ import { Scenario, useScenario } from './harness';
 class TeamTagsComponent {
   model = signal({ tags: ['team-a'] });
   team = form(this.model, (path) => maxLength(path.tags, 4, { message: 'Pick up to 4 tags' }));
-  maxTags = signal<number | undefined>(undefined);
+  maxSelection = signal<number | undefined>(undefined);
   separators = signal(['Enter', ',']);
   submits = 0;
   lowercase = (raw: string) => raw.trim().toLowerCase() || null;
@@ -53,7 +53,7 @@ class StrayTagFieldComponent {}
   imports: [TagInputComponent, TagInputDirective, TagInputFieldDirective],
   template: `
     <et-tag-input [(value)]="labels" [readonly]="readonly()" class="labels" aria-label="Labels" />
-    <div #tags="etTagInput" [(value)]="skills" [separators]="[';']" [maxTags]="2" class="skills" etTagInput>
+    <div #tags="etTagInput" [(value)]="skills" [separators]="[';']" [maxSelection]="2" class="skills" etTagInput>
       @for (skill of tags.effectiveValues(); track skill) {
         <button (click)="tags.remove(skill)" class="skill" type="button">{{ skill }}</button>
       }
@@ -176,12 +176,12 @@ describe('tag input scenarios', () => {
     expect(document.activeElement).toBe(field());
   });
 
-  it('locks the field once maxTags is reached', () => {
+  it('locks the field once maxSelection is reached', () => {
     const s = scenario();
     const fixture = render(s);
     const page = fixture.componentInstance;
 
-    page.maxTags.set(2);
+    page.maxSelection.set(2);
     s.tick();
 
     type(s, 'one,');

@@ -84,6 +84,7 @@ const deepSource: CascaderDataSource<string> = {
       [disabled]="disabled()"
       [multiple]="multiple()"
       [maxVisibleColumns]="maxVisibleColumns()"
+      [maxSelection]="maxSelection()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
       (touchedChange)="touched.set($event)"
@@ -99,6 +100,7 @@ class CascaderTestHost {
   disabled = signal(false);
   multiple = signal(false);
   maxVisibleColumns = signal(3);
+  maxSelection = signal<number | undefined>(undefined);
   selectableLevels = signal<'leaf' | 'any'>('leaf');
   dataSource = signal<CascaderDataSource<string>>(syncSource);
 }
@@ -364,6 +366,23 @@ describe('CascaderDirective', () => {
       expect(driver.host.value()).toEqual(['euro-group-a', 'euro-group-b']);
 
       driver.clickNode('Group A');
+
+      expect(driver.host.value()).toEqual(['euro-group-b']);
+    });
+
+    it('refuses adds past maxSelection but still removes', async () => {
+      driver.host.maxSelection.set(1);
+      driver.detectChanges();
+      await driver.open();
+      driver.clickNode('Euro');
+      driver.clickNode('Group stage');
+      driver.clickNode('Group A');
+      driver.clickNode('Group B');
+
+      expect(driver.host.value()).toEqual(['euro-group-a']);
+
+      driver.clickNode('Group A');
+      driver.clickNode('Group B');
 
       expect(driver.host.value()).toEqual(['euro-group-b']);
     });

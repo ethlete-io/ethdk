@@ -13,6 +13,10 @@ export type InputRename = {
 
 export const SELECT_INPUT_RENAMES: readonly InputRename[] = [
   { hosts: ['et-select', 'etSelect'], from: 'error', to: 'loadError' },
+  { hosts: ['et-select', 'etSelect'], from: 'customValueSeparators', to: 'separators' },
+  { hosts: ['et-select', 'etSelect'], from: 'normalizeCustomValue', to: 'normalizeValue' },
+  { hosts: ['et-tag-input', 'etTagInput'], from: 'maxTags', to: 'maxSelection' },
+  { hosts: ['et-tag-input', 'etTagInput'], from: 'normalizeTag', to: 'normalizeValue' },
 ];
 
 export const importsEthleteComponents = (content: string) => COMPONENTS_IMPORT.test(content);

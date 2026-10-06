@@ -12,7 +12,7 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
     <et-tag-input
       [value]="value()"
       [allowDuplicates]="allowDuplicates()"
-      [maxTags]="maxTags()"
+      [maxSelection]="maxSelection()"
       [disabled]="disabled()"
       [mixed]="mixed()"
       (valueChange)="writeValue($event)"
@@ -25,7 +25,7 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
 class TagInputTestHost {
   value = signal<string[]>([]);
   allowDuplicates = signal(false);
-  maxTags = signal<number | undefined>(undefined);
+  maxSelection = signal<number | undefined>(undefined);
   disabled = signal(false);
   mixed = signal(false);
 
@@ -105,8 +105,8 @@ describe('TagInputDirective', () => {
     expect(driver.host.value()).toEqual(['alpha', 'alpha']);
   });
 
-  it('stops adding at maxTags', () => {
-    driver.host.maxTags.set(2);
+  it('stops adding at maxSelection', () => {
+    driver.host.maxSelection.set(2);
     driver.tick();
 
     driver.typeAndPress('one', 'Enter');
@@ -117,7 +117,7 @@ describe('TagInputDirective', () => {
   });
 
   it('keeps the pasted text a full field rejected instead of dropping it', () => {
-    driver.host.maxTags.set(2);
+    driver.host.maxSelection.set(2);
     driver.tick();
 
     driver.paste('one,two,three');
@@ -211,7 +211,7 @@ describe('TagInputDirective', () => {
 
   it('keeps a full field editable while it still holds text', () => {
     driver.host.value.set(['one']);
-    driver.host.maxTags.set(2);
+    driver.host.maxSelection.set(2);
     driver.tick();
 
     driver.typeAndPress('one', 'Enter');
@@ -294,8 +294,8 @@ describe('TagInputDirective', () => {
       expect(driver.host.mixed()).toBe(true);
     });
 
-    it('evaluates maxTags against the effective (empty) selection while mixed', () => {
-      driver.host.maxTags.set(2);
+    it('evaluates maxSelection against the effective (empty) selection while mixed', () => {
+      driver.host.maxSelection.set(2);
       enterMixed(['one', 'two']);
 
       expect(driver.tagInput.isFull()).toBe(false);

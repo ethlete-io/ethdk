@@ -144,8 +144,8 @@ class SearchableCustomValueTestHost {
     <et-select
       [value]="value()"
       [allowCustomValues]="allowCustom()"
-      [customValueSeparators]="separators()"
-      [normalizeCustomValue]="normalize()"
+      [separators]="separators()"
+      [normalizeValue]="normalize()"
       [commitCustomValueOnClose]="commitOnClose()"
       [maxSelection]="maxSelection()"
       [allowAddNew]="allowAddNew()"
@@ -160,6 +160,8 @@ class SearchableCustomValueTestHost {
       (queryChange)="queries.push($event)"
       (loadMore)="loadMoreCount = loadMoreCount + 1"
       (addNew)="addNewQueries.push($event)"
+      (afterOpen)="afterOpenCount = afterOpenCount + 1"
+      (afterClose)="afterCloseCount = afterCloseCount + 1"
       class="select"
       placeholder="Pick a fruit"
     >
@@ -192,6 +194,8 @@ class SearchSelectTestHost {
   queries: string[] = [];
   addNewQueries: string[] = [];
   loadMoreCount = 0;
+  afterOpenCount = 0;
+  afterCloseCount = 0;
 }
 
 @Component({
@@ -953,9 +957,7 @@ describe('SelectDirective (search)', () => {
     expect(driver.host.value()).toEqual(['a1b', 'c', 'd']);
   });
 
-  it('splits a paste on the single-character entries of tag-input style separators', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
+  it('splits a paste on the single-character entries of separators that also hold key names', async () => {
     driver.host.allowCustom.set(true);
     driver.host.multiple.set(true);
     driver.host.separators.set(['Enter', ',']);
@@ -966,9 +968,34 @@ describe('SelectDirective (search)', () => {
     driver.paste('Peter, Anne');
 
     expect(driver.host.value()).toEqual(['Peter', 'Anne']);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"Enter" is ignored'));
+  });
 
-    warn.mockRestore();
+  it('commits the pending query on a key-name separator', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.separators.set(['Tab']);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('kiwi');
+    const event = driver.pressInSearch('Tab');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(driver.host.value()).toEqual(['kiwi']);
+    expect(driver.searchInput().value).toBe('');
+  });
+
+  it('emits afterOpen once the panel is mounted and afterClose once it has closed', async () => {
+    await driver.open();
+
+    expect(driver.host.afterOpenCount).toBe(1);
+    expect(driver.host.afterCloseCount).toBe(0);
+
+    await driver.close();
+
+    expect(driver.host.afterOpenCount).toBe(1);
+    expect(driver.host.afterCloseCount).toBe(1);
   });
 
   it('splices a paste into the pending query at the caret', async () => {
@@ -1077,7 +1104,7 @@ describe('SelectDirective (search)', () => {
     expect(driver.optionByLabel('Cherry')!.hasAttribute('aria-disabled')).toBe(false);
   });
 
-  it('runs custom values through the normalizeCustomValue hook', async () => {
+  it('runs custom values through the normalizeValue hook', async () => {
     driver.host.allowCustom.set(true);
     driver.host.multiple.set(true);
     driver.host.normalize.set((raw: string) => {

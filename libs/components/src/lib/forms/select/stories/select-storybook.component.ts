@@ -40,7 +40,7 @@ const FRUIT_OPTIONS = [
           [placeholder]="placeholder()"
           [multiple]="multiple()"
           [allowCustomValues]="allowCustomValues()"
-          [customValueSeparators]="customValueSeparators()"
+          [separators]="separators()"
           [commitCustomValueOnClose]="commitCustomValueOnClose()"
           [maxSelection]="maxSelection()"
           [selectAll]="selectAll()"
@@ -90,7 +90,7 @@ export class FormFieldSelectStorybookComponent {
   public multiple = input(false);
   public withSearch = input(false);
   public allowCustomValues = input(false);
-  public customValueSeparators = input<string[]>([]);
+  public separators = input<string[]>([]);
   public commitCustomValueOnClose = input(false);
   public maxSelection = input<number | undefined>(undefined);
   public selectAll = input(false);

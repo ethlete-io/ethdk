@@ -28,6 +28,28 @@ describe('migrate-select-input-renames', () => {
     );
   });
 
+  it('renames the custom value inputs on et-select and the tag input inputs', () => {
+    expect(
+      renameSelectInputs(
+        [
+          '<et-select [customValueSeparators]="[\',\']" [normalizeCustomValue]="lower" multiple>',
+          '<et-tag-input [maxTags]="3" [normalizeTag]="lower" />',
+          '<div etTagInput maxTags="2"></div>',
+        ].join('\n'),
+      ),
+    ).toBe(
+      [
+        '<et-select [separators]="[\',\']" [normalizeValue]="lower" multiple>',
+        '<et-tag-input [maxSelection]="3" [normalizeValue]="lower" />',
+        '<div etTagInput maxSelection="2"></div>',
+      ].join('\n'),
+    );
+  });
+
+  it('does not cross the renames between the select and the tag input', () => {
+    expect(renameSelectInputs('<et-tag-input [error]="x" /><et-select [maxTags]="2" [normalizeTag]="f" />')).toBeNull();
+  });
+
   it('leaves error on other elements alone', () => {
     expect(
       renameSelectInputs(

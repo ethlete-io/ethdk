@@ -16,7 +16,7 @@ export default {
     mixedLabel: { control: 'text' },
     showMixedState: { control: false, table: { disable: true } },
     allowDuplicates: { control: 'boolean' },
-    maxTags: { control: 'number' },
+    maxSelection: { control: 'number' },
     disabled: { control: 'boolean' },
     readonly: { control: 'boolean' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
@@ -57,5 +57,5 @@ export const Mixed: Story = {
 };
 
 export const MaxTags: Story = {
-  args: { value: ['one', 'two'], maxTags: 3, hint: 'At most 3 tags' },
+  args: { value: ['one', 'two'], maxSelection: 3, hint: 'At most 3 tags' },
 };

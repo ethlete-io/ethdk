@@ -25,7 +25,7 @@ import { TAG_INPUT_IMPORTS } from '../tag-input.imports';
           [mixedLabel]="mixedLabel()"
           [placeholder]="placeholder()"
           [allowDuplicates]="allowDuplicates()"
-          [maxTags]="maxTags()"
+          [maxSelection]="maxSelection()"
         />
         @if (hint()) {
           <et-hint>{{ hint() }}</et-hint>
@@ -57,7 +57,7 @@ export class TagInputStorybookComponent {
   public mixedLabel = input('Mixed');
   public showMixedState = input(false);
   public allowDuplicates = input(false);
-  public maxTags = input<number | undefined>(undefined);
+  public maxSelection = input<number | undefined>(undefined);
   public disabled = input(false);
   public readonly = input(false);
   public color = input('brand');

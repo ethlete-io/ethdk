@@ -145,6 +145,8 @@ export class CascaderDirective<T = unknown>
    * `maxLength()` and shown by `<et-counter />`. Display only: picks past it are not refused.
    */
   public maxLength = input<number | undefined>(undefined);
+  /** Maximum number of selected values (multi cascader) - further adds are ignored. */
+  public maxSelection = input<number | undefined>(undefined);
   /** True while an async validator runs on the bound field (bound by signal forms); the field shows it as busy. */
   public pending = input(false, { transform: booleanAttribute });
 
@@ -196,6 +198,17 @@ export class CascaderDirective<T = unknown>
   });
 
   public hasValue = computed(() => this.mixed() || this.values().length > 0);
+
+  /** True once `maxSelection` is reached (multi cascader). Mixed counts as no values. */
+  public isFull = computed(() => {
+    const maxSelection = this.maxSelection();
+
+    if (maxSelection === undefined || !this.multiple()) {
+      return false;
+    }
+
+    return (this.mixed() ? 0 : this.values().length) >= maxSelection;
+  });
 
   public describedBy = signal<string | null>(null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.CASCADER);
@@ -842,6 +855,10 @@ export class CascaderDirective<T = unknown>
     // the first commit over a mixed value REPLACES: a fresh array around the toggled node,
     // never a toggle against the hidden raw selection
     if (this.mixed()) {
+      if (this.isFull()) {
+        return;
+      }
+
       this.value.set([node.value]);
       this.selectedPaths.set([[...chain]]);
       this.mixed.set(false);
@@ -863,6 +880,10 @@ export class CascaderDirective<T = unknown>
         }),
       );
 
+      return;
+    }
+
+    if (this.isFull()) {
       return;
     }
 

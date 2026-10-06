@@ -4,7 +4,7 @@ import { FORM_FIELD_CONTROL_TYPES } from '../../form-field/headless';
 import { TagInputFieldDirective } from './tag-input-field.directive';
 import { TextShellControlDirective } from '../../form-field/headless/text-shell-control.directive';
 
-const defaultNormalizeTag = (raw: string) => {
+const defaultNormalizeValue = (raw: string) => {
   const trimmed = raw.trim();
 
   return trimmed.length ? trimmed : null;
@@ -44,8 +44,9 @@ export class TagInputDirective extends TextShellControlDirective implements Form
   public separators = input<string[]>(['Enter', ',']);
   public allowDuplicates = input(false, { transform: booleanAttribute });
   /** Maps raw text to the stored tag - return `null` to reject. Defaults to trimming. */
-  public normalizeTag = input<(raw: string) => string | null>(defaultNormalizeTag);
-  public maxTags = input<number | undefined>(undefined);
+  public normalizeValue = input<(raw: string) => string | null>(defaultNormalizeValue);
+  /** Maximum number of tags - further adds are ignored. */
+  public maxSelection = input<number | undefined>(undefined);
 
   /** The raw value normalized to the tags the control currently shows. Mixed has no effective tags. */
   public effectiveValues = computed<readonly string[]>(() => (this.mixed() ? [] : this.value()));
@@ -62,11 +63,11 @@ export class TagInputDirective extends TextShellControlDirective implements Form
 
   public interactive = computed(() => !this.disabled() && !this.readonly());
 
-  /** True once `maxTags` is reached - further adds are ignored. Mixed counts as no tags. */
+  /** True once `maxSelection` is reached - further adds are ignored. Mixed counts as no tags. */
   public isFull = computed(() => {
-    const maxTags = this.maxTags();
+    const maxSelection = this.maxSelection();
 
-    return maxTags !== undefined && this.effectiveValues().length >= maxTags;
+    return maxSelection !== undefined && this.effectiveValues().length >= maxSelection;
   });
 
   /** @internal Single-character separators - they split pastes and commit while typing. */
@@ -87,7 +88,7 @@ export class TagInputDirective extends TextShellControlDirective implements Form
       return false;
     }
 
-    const tag = this.normalizeTag()(raw);
+    const tag = this.normalizeValue()(raw);
 
     if (tag === null) {
       return false;

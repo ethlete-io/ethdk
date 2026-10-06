@@ -94,7 +94,7 @@ export type SelectAsyncOptions = {
 
 const referenceEquality: SelectCompareWith = (a, b) => a === b;
 
-const defaultNormalizeCustomValue = (raw: string) => {
+const defaultNormalizeValue = (raw: string) => {
   const trimmed = raw.trim();
 
   return trimmed.length ? trimmed : null;
@@ -163,13 +163,13 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
   /** Enter with a search query that matches no option commits the raw query string as the value. */
   public allowCustomValues = input(false, { transform: booleanAttribute });
   /**
-   * Single characters that commit the pending search query as a custom value the moment they
-   * are typed (e.g. `[',']`), and split pasted text in multi mode. Only with `allowCustomValues`.
-   * Longer entries such as `'Enter'` are ignored - Enter always commits.
+   * What commits the pending search query as a custom value: multi-character entries are key
+   * names (`'Tab'`), single characters commit as soon as they are typed and split pasted text in
+   * multi mode. Enter always commits. Only with `allowCustomValues`.
    */
-  public customValueSeparators = input<string[]>([]);
+  public separators = input<string[]>([]);
   /** Maps raw text to the stored custom value - return `null` to reject. Defaults to trimming. */
-  public normalizeCustomValue = input<(raw: string) => string | null>(defaultNormalizeCustomValue);
+  public normalizeValue = input<(raw: string) => string | null>(defaultNormalizeValue);
   /**
    * Commits a pending search query as a custom value when the panel closes (Tab, outside
    * click) instead of discarding it. An Escape close never commits - it clears the query first.
@@ -215,6 +215,8 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
    * otherwise it fires alongside the normal value selection.
    */
   public pickOption = output<unknown>();
+  public afterOpen = output<void>();
+  public afterClose = output<void>();
 
   private valuesMatch = computed<SelectCompareWith>(() => {
     const valueKey = this.valueKey() as SelectValueKey | null;
@@ -373,9 +375,14 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
         }),
       };
     },
-    onMounted: (overlayRef) => this.handlePanelMounted(overlayRef),
+    onMounted: (overlayRef) => {
+      this.handlePanelMounted(overlayRef);
+      this.afterOpen.emit();
+    },
     onBeforeClosed: () => this.handlePanelBeforeClosed(),
     onAfterClosed: ({ byOutsidePointer, byFocusLeave }) => {
+      this.afterClose.emit();
+
       if (byOutsidePointer || byFocusLeave) {
         this.touched.set(true);
       }
@@ -524,6 +531,11 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
 
   private pendingActiveScrollItem: SelectItem | null = null;
 
+  /** @internal */
+  public characterSeparators = computed(() => this.separators().filter((separator) => separator.length === 1));
+  /** @internal */
+  public keySeparators = computed(() => this.separators().filter((separator) => separator.length > 1));
+
   /** True once `maxSelection` is reached (multi select) - further adds are ignored. */
   public isFull = computed(() => {
     const maxSelection = this.maxSelection();
@@ -551,7 +563,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       return null;
     }
 
-    const candidate = this.normalizeCustomValue()(this.query());
+    const candidate = this.normalizeValue()(this.query());
 
     if (candidate === null) {
       return null;
@@ -621,18 +633,6 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
 
     mountTextFieldShellStyles();
     mountFloatingPanelStyles();
-
-    if (ngDevMode) {
-      effect(() => {
-        const ignored = this.customValueSeparators().filter((separator) => separator.length !== 1);
-
-        if (ignored.length) {
-          console.warn(
-            `[SelectDirective] customValueSeparators only takes single characters, so ${ignored.map((separator) => `"${separator}"`).join(', ')} is ignored. Enter already commits a custom value.`,
-          );
-        }
-      });
-    }
 
     const styleManager = injectStyleManager();
     let hasMountedExtrasStyles = false;
@@ -1213,7 +1213,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
   }
 
   /**
-   * Commits raw text as a custom value: normalized via `normalizeCustomValue`, appended in
+   * Commits raw text as a custom value: normalized via `normalizeValue`, appended in
    * multi mode (duplicates and adds beyond `maxSelection` are rejected), set and closed in
    * single mode. Returns whether the value was committed.
    */
@@ -1393,7 +1393,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       return false;
     }
 
-    const value = this.normalizeCustomValue()(raw);
+    const value = this.normalizeValue()(raw);
 
     if (value === null) {
       return false;

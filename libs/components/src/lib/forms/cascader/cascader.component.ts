@@ -73,6 +73,7 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'required',
         'name',
         'maxLength',
+        'maxSelection',
         'pending',
         ...ACCESSIBLE_NAME_INPUTS,
         ...FIELD_STATE_INPUTS,
