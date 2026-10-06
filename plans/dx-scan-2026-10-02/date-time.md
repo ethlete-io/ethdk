@@ -109,6 +109,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 
 ## DT-05 `timeRangeOrder` rejects the overnight ranges `et-time-range-input` presents as valid
 
+- Status: fixed (2026-10-06: opt-in `allowOvernight` on `timeRangeOrder`, default unchanged)
 - Where: `forms/date-time/date-time-range-validators.ts:78-91,118-119`;
   `time-picker/time-picker.component.ts:171-177,189-201` (duration readout and "ends next day");
   `apps/docs/components/date-time-inputs.md:476-479` (recommends `timeRangeOrder(s.hours)` for this control),

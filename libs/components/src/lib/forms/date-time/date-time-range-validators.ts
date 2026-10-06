@@ -34,6 +34,15 @@ export type RangeOrderOptions = {
   message?: string;
 };
 
+export type TimeRangeOrderOptions = Omit<RangeOrderOptions, 'timeZone'> & {
+  /**
+   * Accept an end before the start as a range across midnight (`22:00`-`06:00`), the way the time
+   * picker draws it. Then only equal ends fail, and only with `strict`.
+   * @default false
+   */
+  allowOvernight?: boolean;
+};
+
 export type DateRangeBoundsOptions = {
   /** The earliest date either end may name, or a function returning it. */
   min?: Bound<DateRangeValue>;
@@ -112,9 +121,17 @@ const parseSide = (value: string | null, { valueFormat, timeZone }: SideReading)
     ? null
     : parseDateValue(value, { format: valueFormat, referenceDate: startOfDay(new Date()), timeZone });
 
-type RangeOrderConfig = { path: RangeFieldPath; valueFormat: string; options: RangeOrderOptions };
+type RangeOrderConfig = {
+  path: RangeFieldPath;
+  valueFormat: string;
+  options: RangeOrderOptions & TimeRangeOrderOptions;
+};
 
-const rangeOrder = ({ path, valueFormat, options: { strict, message, timeZone } }: RangeOrderConfig) => {
+const rangeOrder = ({
+  path,
+  valueFormat,
+  options: { strict, message, timeZone, allowOvernight },
+}: RangeOrderConfig) => {
   const labels = injectDateTimeLabels();
   const reading = { valueFormat, timeZone: knownTimeZone(timeZone) };
 
@@ -124,7 +141,11 @@ const rangeOrder = ({ path, valueFormat, options: { strict, message, timeZone } 
 
     if (start === null || end === null) return undefined;
 
-    const outOfOrder = strict ? start.getTime() >= end.getTime() : start.getTime() > end.getTime();
+    const outOfOrder = allowOvernight
+      ? strict && start.getTime() === end.getTime()
+      : strict
+        ? start.getTime() >= end.getTime()
+        : start.getTime() > end.getTime();
 
     return outOfOrder ? { kind: 'rangeOrder', message: message ?? labels().rangeOrder } : undefined;
   });
@@ -160,7 +181,8 @@ export const dateTimeRangeOrder = (path: RangeFieldPath, options: RangeOrderOpti
 
 /**
  * Signal-forms validator for `et-time-range-input`: fails the range while its start time lies after
- * its end time. Same contract as {@link dateRangeOrder}, read against the `TIME_FORMAT` token.
+ * its end time. Same contract as {@link dateRangeOrder}, read against the `TIME_FORMAT` token. Pass
+ * `allowOvernight` to accept a range across midnight.
  *
  * ```ts
  * form(model, (s) => {
@@ -168,7 +190,7 @@ export const dateTimeRangeOrder = (path: RangeFieldPath, options: RangeOrderOpti
  * });
  * ```
  */
-export const timeRangeOrder = (path: RangeFieldPath, options: Omit<RangeOrderOptions, 'timeZone'> = {}) =>
+export const timeRangeOrder = (path: RangeFieldPath, options: TimeRangeOrderOptions = {}) =>
   rangeOrder({ path, valueFormat: options.valueFormat ?? inject(TIME_FORMAT), options });
 
 type BoundsConfig<TValue> = {

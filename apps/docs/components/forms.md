@@ -472,21 +472,21 @@ Signal forms bring their own (`required`, `min`, `pattern`, …); these fill gap
 documents a value format that nothing was actually checking. Add them to a `form()` schema like any
 other validator.
 
-| Validator                                      | From                       | Reports unless the value is                                        |
-| ---------------------------------------------- | -------------------------- | ------------------------------------------------------------------ |
-| `hexColor(path, options?)`                     | `et-color-input`           | a hex color - strict `#rrggbb` by default                          |
-| `rgbColor(path, options?)`                     | `et-color-input`           | a functional `rgb()` color, comma or space form, channels in 0-255 |
-| `colorContrast(path, { against, … })`          | `et-color-input`           | far enough from another color to be readable on it                 |
-| `requiredLanguages(path, { codes, message? })` | the multi-language RTE     | non-empty for every listed language code                           |
-| `dateRangeOrder(path, options?)`               | `et-date-range-input`      | a range whose start is not after its end                           |
-| `dateTimeRangeOrder(path, options?)`           | `et-date-time-range-input` | a range whose start is not after its end, to the millisecond       |
-| `timeRangeOrder(path, options?)`               | `et-time-range-input`      | a range whose start time is not after its end time                 |
-| `dateRangeBounds(path, { min?, max?, … })`     | `et-date-range-input`      | a range whose ends both lie within `min`/`max`, in whole days      |
-| `dateTimeRangeBounds(path, { min?, max?, … })` | `et-date-time-range-input` | a range whose ends both lie within `min`/`max`, to the millisecond |
-| `dateBounds(path, { min?, max?, … })`          | `et-date-input`            | a date within `min`/`max`, in whole days                           |
-| `dateTimeBounds(path, { min?, max?, … })`      | `et-date-time-input`       | a date-time within `min`/`max`, to the millisecond                 |
-| `timeBounds(path, { min?, max?, … })`          | `et-time-input`            | a time of day within `min`/`max`, across midnight if `min > max`   |
-| `timeRangeBounds(path, { min?, max?, … })`     | `et-time-range-input`      | a range whose ends both lie within the `min`/`max` time of day     |
+| Validator                                      | From                       | Reports unless the value is                                                                          |
+| ---------------------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `hexColor(path, options?)`                     | `et-color-input`           | a hex color - strict `#rrggbb` by default                                                            |
+| `rgbColor(path, options?)`                     | `et-color-input`           | a functional `rgb()` color, comma or space form, channels in 0-255                                   |
+| `colorContrast(path, { against, … })`          | `et-color-input`           | far enough from another color to be readable on it                                                   |
+| `requiredLanguages(path, { codes, message? })` | the multi-language RTE     | non-empty for every listed language code                                                             |
+| `dateRangeOrder(path, options?)`               | `et-date-range-input`      | a range whose start is not after its end                                                             |
+| `dateTimeRangeOrder(path, options?)`           | `et-date-time-range-input` | a range whose start is not after its end, to the millisecond                                         |
+| `timeRangeOrder(path, options?)`               | `et-time-range-input`      | a range whose start time is not after its end time; `allowOvernight` accepts a range across midnight |
+| `dateRangeBounds(path, { min?, max?, … })`     | `et-date-range-input`      | a range whose ends both lie within `min`/`max`, in whole days                                        |
+| `dateTimeRangeBounds(path, { min?, max?, … })` | `et-date-time-range-input` | a range whose ends both lie within `min`/`max`, to the millisecond                                   |
+| `dateBounds(path, { min?, max?, … })`          | `et-date-input`            | a date within `min`/`max`, in whole days                                                             |
+| `dateTimeBounds(path, { min?, max?, … })`      | `et-date-time-input`       | a date-time within `min`/`max`, to the millisecond                                                   |
+| `timeBounds(path, { min?, max?, … })`          | `et-time-input`            | a time of day within `min`/`max`, across midnight if `min > max`                                     |
+| `timeRangeBounds(path, { min?, max?, … })`     | `et-time-range-input`      | a range whose ends both lie within the `min`/`max` time of day                                       |
 
 ```ts
 import { hexColor, rgbColor } from '@ethlete/components';

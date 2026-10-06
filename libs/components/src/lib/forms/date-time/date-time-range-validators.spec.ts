@@ -97,6 +97,15 @@ describe('timeRangeOrder', () => {
     expect(errorsFor(range('09:00', '17:00'), (path) => timeRangeOrder(path))).toEqual([]);
   });
 
+  it('accepts a range across midnight with allowOvernight and fails only equal ends under strict', () => {
+    const overnight = (value: DateRangeValue, strict = false) =>
+      errorsFor(value, (path) => timeRangeOrder(path, { allowOvernight: true, strict }));
+
+    expect(overnight(range('22:00', '06:00'))).toEqual([]);
+    expect(overnight(range('08:00', '08:00'))).toEqual([]);
+    expect(overnight(range('08:00', '08:00'), true)).toMatchObject([{ kind: 'rangeOrder' }]);
+  });
+
   it('follows the TIME_FORMAT token', () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideTimeFormat('h:mm a')] });
