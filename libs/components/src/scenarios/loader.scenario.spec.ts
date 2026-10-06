@@ -5,6 +5,7 @@ import {
   BrandLoaderComponent,
   DEFAULT_LOADER_LABELS,
   injectLoaderLabels,
+  LOADER_IMPORTS,
   LOADER_LABELS,
   provideLoaderLabels,
   ProgressBarComponent,
@@ -130,6 +131,10 @@ describe('loader scenarios', () => {
     page.uploaded.set(-5);
     s.tick();
     expect(bar.getAttribute('aria-valuenow')).toBe('0');
+  });
+
+  it('bundles the spinner and the progress bar in LOADER_IMPORTS', () => {
+    expect(LOADER_IMPORTS).toEqual(expect.arrayContaining([SpinnerComponent, ProgressBarComponent]));
   });
 
   it('inherits the context colour until a colour is set on the spinner or the bar', () => {
