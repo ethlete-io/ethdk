@@ -14,6 +14,7 @@ import {
   recordExecutionArgs,
   resetExecuteState,
   setupQueryExecuteState,
+  skipParkedExecution,
 } from './query-execute-utils';
 import { QueryState } from './query-state';
 
@@ -30,6 +31,7 @@ export type SecureExecuteFactoryOptions<TArgs extends QueryArgs> = {
   authProvider: AnyBearerAuthProvider;
   deps: QueryDependencies;
   state: QueryState<TArgs>;
+  route?: unknown;
   /**
    * Whether the query runs itself rather than only on an explicit `execute()` - the same condition
    * `maybeExecute` and the `withArgs` feature use. Only those are re-run once a new session starts;
@@ -213,6 +215,8 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       args: executeArgs?.args ?? options.state.args(),
       options: executeArgs?.options,
     };
+
+    if (skipParkedExecution(options.state, execArgsWithDefaults.args, options.route)) return;
 
     circularChecker.check(execArgsWithDefaults.args);
 

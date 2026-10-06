@@ -139,6 +139,7 @@ Not covered: auth, ws, query-form, testing utilities (query-b), legacy.
   "the withArgs source returned null (parked)", or throw a new `ET1xx`. Document the result under `withArgs`.
 - Breaking: only if it throws. Decision: yes. No-op + warn, or throw?
 - Note: since the QA-04 fix, the path-params error this finding calls `ET003` is `ET012`; `ET003` now means a query created outside an injection context.
+- Status: fixed (2026-10-06: no-op with a dev-mode warning on all four execute paths; documented under `withArgs`)
 
 ## QA-07 Docs and JSDoc examples that do not compile (`await q.execute({ body })`, `withResponseUpdate`)
 

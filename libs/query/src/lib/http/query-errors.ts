@@ -290,6 +290,12 @@ export const queryExecutedAfterDestroyMessage = (route: unknown) => {
   return `${target} was executed after the scope that created it was destroyed. The call was ignored - drop the reference to the query when its component or injector goes away.`;
 };
 
+export const queryExecutedWhileParkedMessage = (route: unknown) => {
+  const target = typeof route === 'string' ? `The query for "${route}"` : 'A query with a function route';
+
+  return `${target} was executed while its withArgs source returned null (parked). The call was ignored - pass args to execute(), or let the source return them.`;
+};
+
 export const legacyPrepareWithoutInjectionContext = (
   creatorName: string | undefined,
   method: 'prepare' | 'createSubject' | 'createSignal' = 'prepare',

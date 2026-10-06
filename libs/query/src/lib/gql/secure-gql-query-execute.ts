@@ -32,6 +32,7 @@ export const createSecureGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     authProvider,
     deps: executeOptions.deps,
     state: executeOptions.state,
+    route: executeOptions.creator?.route,
     autoExecutes:
       shouldAutoExecuteGqlQuery(executeOptions.creatorInternals.method) &&
       !executeOptions.queryConfig.onlyManualExecution,

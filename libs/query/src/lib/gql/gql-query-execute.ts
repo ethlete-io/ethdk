@@ -14,6 +14,7 @@ import {
   resetExecuteState,
   RouteType,
   setupQueryExecuteState,
+  skipParkedExecution,
 } from '../http';
 import { createQueryExecutionAborter } from '../http/internal/query-execution-aborter';
 import { GqlQueryArgs } from './gql-query';
@@ -41,6 +42,8 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
     untracked(() => {
       const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+      if (skipParkedExecution(executeOptions.state, args, executeOptions.creator?.route)) return;
 
       circularChecker.check(args);
 

@@ -18,7 +18,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (36)
+## 2. Open user decisions (35)
 
 The domain file of each ID has the full problem and the proposed fix.
 
@@ -27,7 +27,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | SEL-04  | `et-select` has `error` (panel load error) and `errors` (validation). Rename `error` to `loadError` or `optionsError`?                                                                                                    |
 | SEL-06  | Which one vocabulary for the select and the tag input: `maxSelection`/`maxTags`, `normalizeCustomValue`/`normalizeTag`, `separators`? Add `afterOpen`/`afterClose` to the select?                                         |
 | QA-03   | Creators that share a cache entry use the options of the first one. Hash `responseType`/`withCredentials` into the key; and policy options (`retryFn`, `reportErrors`, `reportProgress`): split, or resolve per consumer? |
-| QA-06   | A bare `execute()` on a parked `withArgs` query: no-op with a dev-mode warning, or throw a new code (breaking)?                                                                                                           |
 | QA-09   | Each query creates 10 `toObservable` effects. A lazy variant changes the first-emission timing. Needs a design (one shared watcher in place of one effect per signal).                                                    |
 | QA-13   | Move about 165 devtools-contract exports from `@ethlete/query` to a new entry point such as `@ethlete/query/devtools-contract`?                                                                                           |
 | QB-02   | The ws client does not follow the auth session. Add an `authProvider` option? Must a token rotation force a reconnect?                                                                                                    |

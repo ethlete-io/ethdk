@@ -1,7 +1,11 @@
 import { isDevMode, signal, WritableSignal } from '@angular/core';
 import { QueryArgs, RequestArgs } from './query';
 import { buildQueryCacheKey } from './query-cache-utils';
-import { circularQueryDependency, queryExecutedAfterDestroyMessage } from './query-errors';
+import {
+  circularQueryDependency,
+  queryExecutedAfterDestroyMessage,
+  queryExecutedWhileParkedMessage,
+} from './query-errors';
 import { CreateQueryExecuteOptions } from './query-execute';
 import { resolveQueryTags } from './query-invalidation';
 import { QueryState } from './query-state';
@@ -103,6 +107,22 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
   onRequest?.(request);
   state.subtle.bindRequestEvents(request);
   state.subtle.devtoolsStats?.recordExecution({ didRequest: executed, body: args?.body, url: request.url });
+};
+
+/**
+ * A query over a `withArgs` source that returns `null` is parked. Running it would send `null` args, so the
+ * call is dropped with a dev-mode warning.
+ */
+export const skipParkedExecution = <TArgs extends QueryArgs>(
+  state: QueryState<TArgs>,
+  args: RequestArgs<TArgs> | null | undefined,
+  route: unknown,
+) => {
+  if ((args !== null && args !== undefined) || !state.subtle.hasArgsSource()) return false;
+
+  if (isDevMode()) console.warn(queryExecutedWhileParkedMessage(route));
+
+  return true;
 };
 
 /**

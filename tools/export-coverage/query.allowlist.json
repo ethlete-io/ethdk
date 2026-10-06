@@ -284,5 +284,7 @@
   "withQueryDevtoolsOverridePersistence": "spec: libs/query/src/lib/devtools/query-devtools-override-persistence.spec.ts",
   "wrapAsObservableSignal": "spec: libs/query/src/lib/http/observable-signal.spec.ts",
   "wrapQuerySyncMessage": "internal: multi-tab sync plumbing, covered by multi-tab.scenario",
-  "writeQueryDevtoolsStore": "spec: libs/query/src/lib/devtools/query-devtools-settings.spec.ts"
+  "writeQueryDevtoolsStore": "spec: libs/query/src/lib/devtools/query-devtools-settings.spec.ts",
+  "queryExecutedWhileParkedMessage": "constant: error factory",
+  "skipParkedExecution": "internal: query execute plumbing, reached through query-parked-execute.scenario"
 }

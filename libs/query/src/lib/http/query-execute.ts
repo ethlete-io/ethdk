@@ -11,6 +11,7 @@ import {
   resetExecuteState,
   RunQueryExecuteOptions,
   setupQueryExecuteState,
+  skipParkedExecution,
 } from './query-execute-utils';
 import { QueryKey } from './query-repository';
 import { QueryState } from './query-state';
@@ -50,6 +51,8 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
   const exec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
     untracked(() => {
       const { args = executeOptions.state.args(), options } = executeArgs ?? {};
+
+      if (skipParkedExecution(executeOptions.state, args, executeOptions.creatorInternals.route)) return;
 
       circularChecker.check(args);
 

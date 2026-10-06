@@ -21,6 +21,7 @@ export const createSecureExecuteFn = <TArgs extends QueryArgs>(
     authProvider,
     deps: executeOptions.deps,
     state: executeOptions.state,
+    route: executeOptions.creatorInternals.route,
     autoExecutes:
       shouldAutoExecuteQuery(executeOptions.creatorInternals.method) && !executeOptions.queryConfig.onlyManualExecution,
     transformAuthAndExec: (executeArgs, executeState) => {
