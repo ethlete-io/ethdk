@@ -207,6 +207,71 @@ describe('query param overlay opener', () => {
     fixture.destroy();
   });
 
+  const nextNavigationEnd = () =>
+    firstValueFrom(TestBed.inject(Router).events.pipe(filter((event) => event instanceof NavigationEnd)));
+
+  const backAndSettle = async () => {
+    TestBed.inject(Location).back();
+    await new Promise((resolve) => setTimeout(resolve));
+    TestBed.tick();
+    await flushFrames();
+  };
+
+  for (const closeVia of ['the overlay', 'the opener'] as const) {
+    it(`steps back over its own history entry when ${closeVia} closes it`, async () => {
+      TestBed.inject(Router).setUpLocationChangeListener();
+      const fixture = await createHost();
+      const location = TestBed.inject(Location);
+
+      await TestBed.inject(Router).navigateByUrl('/start');
+      const opened = nextNavigationEnd();
+      fixture.componentInstance.product.open('42');
+      await opened;
+      TestBed.tick();
+
+      expect(openOverlayCount()).toBe(1);
+
+      if (closeVia === 'the overlay') {
+        openRef()?.close();
+      } else {
+        fixture.componentInstance.product.close();
+      }
+
+      TestBed.tick();
+      await fixture.whenStable();
+      await waitForClose();
+
+      expect(location.path()).toBe('/start');
+
+      await backAndSettle();
+
+      expect(openOverlayCount()).toBe(0);
+
+      fixture.destroy();
+    });
+  }
+
+  it('replaces a deep-linked entry on close, so Back does not reopen the overlay', async () => {
+    TestBed.inject(Router).setUpLocationChangeListener();
+    const fixture = await createHost();
+    const location = TestBed.inject(Location);
+
+    await setParam('42');
+
+    openRef()?.close();
+    TestBed.tick();
+    await fixture.whenStable();
+    await waitForClose();
+
+    expect(location.path()).toBe('/');
+
+    await backAndSettle();
+
+    expect(openOverlayCount()).toBe(0);
+
+    fixture.destroy();
+  });
+
   it('replaces the history entry on a model change, so one Back closes the overlay', async () => {
     TestBed.inject(Router).setUpLocationChangeListener();
     const fixture = await createHost();

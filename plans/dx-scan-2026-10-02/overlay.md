@@ -66,6 +66,7 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
 
 ## OV-03 Closing a query-param overlay pushes a history entry, so Back reopens it
 
+- Status: fixed (2026-10-06, user chose to match the overlay router; specs in `overlay-opener.spec.ts`)
 - Where: `libs/components/src/lib/overlay/overlay-opener.ts:266-271`, `:304-310`
 - Problem: `beforeClosed` calls `updateQueryParam(null)` without `replaceUrl`. Open via `open('42')` (push
   `?product=42`), close with the X / Escape / backdrop → push `/` again. History is `[/, /?product=42, /]`; the next

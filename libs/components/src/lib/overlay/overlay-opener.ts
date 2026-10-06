@@ -10,9 +10,10 @@ import {
   isSignal,
   untracked,
 } from '@angular/core';
+import { Location } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { injectQueryParam } from '@ethlete/core';
+import { injectQueryParam, injectUrl } from '@ethlete/core';
 import { take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 import { mergeOverlayConfigs } from './overlay-config-merger';
@@ -138,7 +139,7 @@ export type QueryParamOverlayOpener<TQueryParam extends string = string> = {
   /** Open the overlay by writing the given value to the query param. */
   open: (value: TQueryParam) => void;
 
-  /** Close the overlay by removing the query param. */
+  /** Close the overlay by removing the query param. Steps back over the entry `open()` added, else replaces the entry. */
   close: () => void;
 };
 
@@ -264,22 +265,53 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 ): QueryParamOverlayOpener => {
   const overlayManager = injectOverlayManager();
   const router = inject(Router);
+  const location = inject(Location);
   const destroyRef = inject(DestroyRef);
   const injector = inject(Injector);
   const fallbackViewContainerRef = inject(ViewContainerRef, { optional: true }) ?? undefined;
   const queryParamValue = injectQueryParam(definition.queryParamKey);
+  const url = injectUrl();
   const { lifecycle, overlayConfig } = splitOpenerConfig(openerConfig);
 
   let overlayRef: OverlayRef<TComponent, TResult> | null = null;
   let modelSyncEffect: EffectRef | null = null;
   let openValue: string | null = null;
+  let ownEntryUrl: string | null = null;
 
-  const updateQueryParam = (value: string | null, replaceUrl = false) =>
-    router.navigate([], {
-      queryParams: { [definition.queryParamKey]: value },
-      queryParamsHandling: 'merge',
-      replaceUrl,
-    });
+  const ownsTopEntry = () => ownEntryUrl !== null && untracked(url) === ownEntryUrl;
+
+  const updateQueryParam = (value: string | null, replaceUrl = false) => {
+    const urlBefore = untracked(url);
+    const keepsOwnership = replaceUrl && ownsTopEntry();
+
+    router
+      .navigate([], {
+        queryParams: { [definition.queryParamKey]: value },
+        queryParamsHandling: 'merge',
+        replaceUrl,
+      })
+      .then((committed) => {
+        if (!committed || value === null) return;
+
+        if (keepsOwnership || (!replaceUrl && untracked(url) !== urlBefore)) {
+          ownEntryUrl = untracked(url);
+        }
+      });
+  };
+
+  const clearQueryParam = () => {
+    if (untracked(queryParamValue) === null) return;
+
+    const stepBack = ownsTopEntry();
+
+    ownEntryUrl = null;
+
+    if (stepBack) {
+      location.back();
+    } else {
+      updateQueryParam(null, true);
+    }
+  };
 
   const queryParamModel = () => {
     const instance = overlayRef?.componentInstance() as Record<string, unknown> | null;
@@ -317,7 +349,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 
       teardown();
       overlayRef = null;
-      updateQueryParam(null);
+      clearQueryParam();
     },
   };
 
@@ -378,7 +410,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
 
   return {
     open: (value) => updateQueryParam(value),
-    close: () => updateQueryParam(null),
+    close: clearQueryParam,
   };
 };
 

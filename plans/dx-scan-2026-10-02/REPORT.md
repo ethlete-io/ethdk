@@ -18,7 +18,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (40)
+## 2. Open user decisions (39)
 
 The domain file of each ID has the full problem and the proposed fix.
 
@@ -54,7 +54,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | DT-06   | Add `timeBounds()` / `timeRangeBounds()` validators?                                                                                                                                                                      |
 | CORE-16 | Pointer capture is fixed. Rename `ResizeMoveEvent` fields to `totalDx`/`totalDy` and make `resizeEnded` emit the final event (breaking)?                                                                                  |
 | FI-01   | The dev-mode warning for an empty error message shipped. Ship default texts for the built-in signal-forms kinds through `FORM_FIELD_LABELS`?                                                                              |
-| OV-03   | Closing a query-param overlay pushes a history entry. Match the overlay router (`location.back()` when the open was ours, else `replaceUrl`)?                                                                             |
 | OV-05   | Add `component` to `NotificationManagerConfig` for custom toast UI, or cut the guide section?                                                                                                                             |
 | OV-06   | Typed overlay data: (a) a result marker `overlayResult<T>()`, (b) a typed `inputs` option on `open()`?                                                                                                                    |
 | OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                                                     |
