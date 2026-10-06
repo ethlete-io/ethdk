@@ -2,7 +2,7 @@ import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { AgentApproval, AutoModeResolveRequest } from '../agent-api/approval-queue';
 import { streamKeyLabel } from '../model/block';
 import { EvidenceKind } from '../model/evidence';
-import { storedSourceOf } from '../model/field-source';
+import { rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 import { StandIn } from '../model/stand-in';
 import { maskIssueKey, maskNames, pseudonymMap } from '../reason/pseudonym';
 import { DisputeCandidate, DisputeResolvingRequest } from '../ticket/dispute';
@@ -245,6 +245,14 @@ export const autoDisputeApplies = (options: {
 };
 
 /**
+ * Writing an answer the row already holds would still hand back new edits, and the app applies dispute
+ * answers on every change of the rows, so it would never come to rest.
+ */
+const writtenByAuto = (row: ReviewedRow, target: DisputedTarget) =>
+  rowFieldSourceOf(row, 'issue') === 'auto' &&
+  (target.kind === 'issue' ? row.issueKey === target.issueKey && !row.standInId : row.standInId === target.standInId);
+
+/**
  * Writes each dispute answer that may be written now onto its row, stamped `auto`: a keep pins the key
  * the row books, a use names the row with the other answer. Only a row that still holds the same pair
  * of answers and that the user left alone is written. An `auto` name settles the dispute, and a reset
@@ -269,6 +277,7 @@ export const withAutoModeDisputeResolutions = (options: {
     const choice = dispute ? chosenOf(dispute) : undefined;
 
     if (!dispute || !choice || !options.applies(dispute)) return edits;
+    if (writtenByAuto(row, choice === 'keep' ? { kind: 'issue', issueKey: row.issueKey } : other)) return edits;
     if (choice === 'keep') return setRowIssue({ edits, row, issueKey: row.issueKey, source: 'auto' });
     if (other.kind === 'issue') return setRowIssue({ edits, row, issueKey: other.issueKey, source: 'auto' });
 

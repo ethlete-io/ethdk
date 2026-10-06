@@ -253,6 +253,31 @@ describe('withAutoModeDisputeResolutions', () => {
   });
 });
 
+describe('a band auto mode named with its rival', () => {
+  const renamed = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowOf(), issueKey: OTHER, source: 'auto' });
+
+  it('is no dispute: both answers name the same issue', () => {
+    const review = reviewOf(renamed);
+
+    expect(review.rows[0]?.issueKey).toBe(OTHER);
+    expect(review.rows[0]?.disputedIssueKey).toBeUndefined();
+    expect(review.check.warnings.map((warning) => warning.kind)).not.toContain('naming-disagreement');
+    expect(asks({ edits: renamed })).toEqual([]);
+  });
+});
+
+describe('applying a dispute answer the row already holds', () => {
+  it('hands back the same edits, so applying on every change of the rows comes to rest', () => {
+    const named = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: rowOf(), issueKey: 'ABC-20', source: 'auto' });
+    const edits = withAutoModeDispute(named, disputeOf(KEEP, rowOf(named)));
+    const apply = (current: DayReviewEdits) =>
+      withAutoModeDisputeResolutions({ edits: current, rows: reviewOf(current).rows, applies: () => true });
+    const once = apply(edits);
+
+    expect(apply(once)).toBe(once);
+  });
+});
+
 describe('autoDisputeApplies', () => {
   const applies = (options: { classes?: ActionClasses; approvals?: AgentApproval[]; answer?: DisputeAnswer }) =>
     autoDisputeApplies({

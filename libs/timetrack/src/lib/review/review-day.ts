@@ -156,6 +156,18 @@ const readStandIn = (row: ReviewedRow, standIns: readonly StandIn[]): ReviewedRo
   return { ...row, standInId: undefined, issueKey: standIn.issueKey };
 };
 
+const withoutSelfDispute = (row: ReviewedRow): ReviewedRow => {
+  const same =
+    (!!row.disputedIssueKey && row.disputedIssueKey === row.issueKey) ||
+    (!!row.disputedStandInId && row.disputedStandInId === row.standInId);
+
+  if (!same) return row;
+
+  const { disputedIssueKey: _disputedIssueKey, disputedStandInId: _disputedStandInId, ...undisputed } = row;
+
+  return undisputed;
+};
+
 /**
  * Names a row the reviewer built with the stand-in covering the checkout it sits in.
  *
@@ -557,7 +569,7 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
       withOverride(settledRow(describeCallPiece({ row, calls })), edits.overrides[row.id]),
     ),
   ]
-    .map((row) => readStandIn(row, standIns))
+    .map((row) => withoutSelfDispute(readStandIn(row, standIns)))
     .sort((a, b) => a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? ''));
 
   const hidden = reviewed.filter((row) => row.hidden);
