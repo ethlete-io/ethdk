@@ -3,17 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  QueryDevtoolsFormHandle,
   QueryField,
   QueryFieldDef,
   QueryForm,
   SortQueryField,
-  clearQueryDevtoolsTombstones,
   defineQueryForm,
-  isQueryDevtoolsEnabled,
   numberArrayQueryField,
   provideQueryDevtools,
-  queryDevtoolsEntries,
   queryField,
   searchQueryField,
   sortQueryField,
@@ -21,6 +17,12 @@ import {
   withArgs,
   withPageResetOnError,
 } from '../index';
+import {
+  QueryDevtoolsFormHandle,
+  clearQueryDevtoolsTombstones,
+  isQueryDevtoolsEnabled,
+  queryDevtoolsEntries,
+} from '../../devtools-contract';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
 

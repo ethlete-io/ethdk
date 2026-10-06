@@ -1,5 +1,5 @@
 import { Component, input, output, ViewEncapsulation } from '@angular/core';
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { AnyQuery } from './query-devtools-types';

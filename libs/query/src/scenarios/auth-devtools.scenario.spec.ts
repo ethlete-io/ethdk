@@ -11,15 +11,21 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   BearerAuthMultiTabSyncFeature,
   BearerAuthProviderFeatureContext,
-  clearQueryDevtoolsAuthSessions,
   createBearerAuthProvider,
   createGetQuery,
   createPostQuery,
   createQueryClient,
   createSecureGetQuery,
+  provideQueryDevtools,
+  withAuthenticationQuery,
+  withBearerAuthMultiTabSync,
+  withPersistentAuth,
+  withRefreshQuery,
+} from '../index';
+import {
+  clearQueryDevtoolsAuthSessions,
   isQueryDevtoolsEnabled,
   loginQueryDevtoolsAuthAccount,
-  provideQueryDevtools,
   queryDevtoolsAuthAccountsFor,
   queryDevtoolsAuthActive,
   queryDevtoolsAuthSessionsFor,
@@ -27,11 +33,7 @@ import {
   setQueryDevtoolsAuthCredentials,
   setQueryDevtoolsAuthTabLocal,
   switchQueryDevtoolsAuthSession,
-  withAuthenticationQuery,
-  withBearerAuthMultiTabSync,
-  withPersistentAuth,
-  withRefreshQuery,
-} from '../index';
+} from '../../devtools-contract';
 import { decodeToken, mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';

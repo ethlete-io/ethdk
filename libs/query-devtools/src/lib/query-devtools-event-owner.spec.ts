@@ -1,4 +1,4 @@
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { describe, expect, it } from 'vitest';
 import { resolveQueryDevtoolsEventOwner } from './query-devtools-event-owner';
 import { EventLogItem } from './query-devtools-types';

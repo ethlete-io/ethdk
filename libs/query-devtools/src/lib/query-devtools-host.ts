@@ -6,12 +6,6 @@ import {
   AnyQuerySnapshot,
   AnyQueryStack,
   QueryClient,
-  QueryDevtoolsEntry,
-  QueryDevtoolsFault,
-  QueryDevtoolsFeature,
-  QueryDevtoolsFormHandle,
-  QueryDevtoolsRun,
-  QueryDevtoolsRunError,
   QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
@@ -20,6 +14,14 @@ import {
   WebSocketDevtoolsHandle,
   WebSocketDevtoolsMessage,
 } from '@ethlete/query';
+import {
+  QueryDevtoolsEntry,
+  QueryDevtoolsFault,
+  QueryDevtoolsFeature,
+  QueryDevtoolsFormHandle,
+  QueryDevtoolsRun,
+  QueryDevtoolsRunError,
+} from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { QueryDevtoolsDiff } from './query-devtools-diff';
 import { DevtoolsLockRow } from './query-devtools-locks';

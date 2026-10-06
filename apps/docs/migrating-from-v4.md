@@ -44,7 +44,7 @@ inside one version:
 
 The later required migrations of each package run in the same pass: core `provider-shape`,
 `surface-interaction-swatch` and the tasks `seo-directive-removed` and `surface-theme-regenerate`; query
-`query-client-features`, `query-opt-in-features` and the tasks `search-query-field-string` and
+`query-client-features`, `query-opt-in-features`, `devtools-contract-entry-point` and the tasks `search-query-field-string` and
 `query-field-default-types`; contentful `contentful-default-components`; and the required migrations of
 `@ethlete/components` and `@ethlete/eslint-plugin` once they are installed.
 

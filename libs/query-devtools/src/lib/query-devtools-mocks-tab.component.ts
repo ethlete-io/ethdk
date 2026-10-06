@@ -21,7 +21,7 @@ import {
   saveQueryDevtoolsMock,
   seedQueryDevtoolsSchemaBody,
   seedQueryDevtoolsSchemaRoute,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { injectQueryDevtoolsHost } from './query-devtools-host';

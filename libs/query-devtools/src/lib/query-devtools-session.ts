@@ -1,4 +1,4 @@
-import { QueryDevtoolsAbout } from '@ethlete/query';
+import { QueryDevtoolsAbout } from '@ethlete/query/devtools-contract';
 
 /**
  * How deep a value is walked before it is replaced by a marker, and how much of a long string or a long

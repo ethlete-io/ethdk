@@ -15,7 +15,9 @@ import { QueryDevtoolsFormHandle } from './query-devtools-form';
 const load = async () => {
   vi.resetModules();
 
-  return import('../../index');
+  const [lib, registry] = await Promise.all([import('../../index'), import('./query-devtools-registry')]);
+
+  return { ...lib, queryDevtoolsEntries: registry.queryDevtoolsEntries };
 };
 
 const setup = async () => {

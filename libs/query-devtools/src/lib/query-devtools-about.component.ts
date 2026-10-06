@@ -1,5 +1,5 @@
 import { Component, ElementRef, inject, ViewEncapsulation } from '@angular/core';
-import { queryDevtoolsAbout } from '@ethlete/query';
+import { queryDevtoolsAbout } from '@ethlete/query/devtools-contract';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 

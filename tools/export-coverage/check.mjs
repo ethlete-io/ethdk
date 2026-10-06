@@ -3,6 +3,8 @@
  * Export coverage gate: every runtime export of a lib's public entry points must be referenced by
  * one of its scenario specs, or be listed in the lib's allowlist with a reason.
  *
+ * `ɵ`-prefixed exports are private transport for another entry point and are not counted.
+ *
  * Fails when an export is neither covered nor allowlisted, and when an allowlist entry is stale
  * (the export is covered now, or no longer exists), so the allowlist only shrinks.
  * `--update` rewrites the allowlist: stale entries are dropped, new gaps are added as "uncovered".
@@ -105,6 +107,7 @@ const checkLib = (name, libConfig) => {
     const sourceFile = program.getSourceFile(file);
     if (!sourceFile) throw new Error(`${name}: entry point ${file} is not in the program`);
     for (const [exportName, symbol] of runtimeExports(checker, sourceFile)) {
+      if (exportName.startsWith('ɵ')) continue;
       const key = id === name ? exportName : `${id}:${exportName}`;
       exports.set(key, symbol);
     }

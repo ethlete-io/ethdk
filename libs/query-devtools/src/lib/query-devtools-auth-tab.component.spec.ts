@@ -1,11 +1,11 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { clearQueryDevtoolsTokenTtl } from '@ethlete/query';
 import {
-  clearQueryDevtoolsTokenTtl,
   QUERY_DEVTOOLS_TOKEN_TTL_LIMIT,
   QueryDevtoolsAuthSession,
   QueryDevtoolsEntry,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { describe, expect, it } from 'vitest';
 import { QueryDevtoolsAuthTabComponent } from './query-devtools-auth-tab.component';
 import { QUERY_DEVTOOLS_HOST } from './query-devtools-host';

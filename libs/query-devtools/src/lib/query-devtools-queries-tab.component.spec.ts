@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { describe, expect, it } from 'vitest';
 import { QUERY_DEVTOOLS_HOST, QueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsQueriesTabComponent } from './query-devtools-queries-tab.component';

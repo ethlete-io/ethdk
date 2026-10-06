@@ -1,5 +1,5 @@
 import { Component, computed, input, linkedSignal, output, signal, ViewEncapsulation } from '@angular/core';
-import { applyQueryDevtoolsOverrides, createQueryDevtoolsOverrides } from '@ethlete/query';
+import { applyQueryDevtoolsOverrides, createQueryDevtoolsOverrides } from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 
 /** Which editor the designed body is being changed through. */

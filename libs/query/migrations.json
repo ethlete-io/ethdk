@@ -72,6 +72,15 @@
       "generator": "@ethlete/query:report-legacy-query-apis",
       "scan": "@ethlete/query:report-legacy-query-apis",
       "docs": "/query/migrating-from-v2"
+    },
+    {
+      "name": "devtools-contract-entry-point",
+      "version": "6.0.0-next.55",
+      "kind": "auto",
+      "level": "required",
+      "description": "Import the devtools contract (the names @ethlete/query-devtools reads) from @ethlete/query/devtools-contract instead of @ethlete/query.",
+      "generator": "@ethlete/query:move-devtools-contract-imports",
+      "docs": "/query-devtools/#the-devtools-contract"
     }
   ]
 }

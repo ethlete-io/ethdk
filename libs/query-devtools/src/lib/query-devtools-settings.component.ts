@@ -1,12 +1,12 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal, ViewEncapsulation } from '@angular/core';
+import { QueryDevtoolsApiEnvSwitch } from '@ethlete/query';
 import {
   armAllQueryDevtoolsMocks,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsAuthSessions,
   clearQueryDevtoolsFaults,
   queryDevtoolsAllowsLocalAuthSessions,
-  QueryDevtoolsApiEnvSwitch,
   queryDevtoolsApiEnvs,
   queryDevtoolsApiEnvValues,
   queryDevtoolsArmedMocks,
@@ -20,7 +20,7 @@ import {
   setQueryDevtoolsFaultsScope,
   setQueryDevtoolsOverridesScope,
   setQueryDevtoolsSettings,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { queryDevtoolsEventClients } from './query-devtools-types';
 

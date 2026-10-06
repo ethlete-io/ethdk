@@ -2,6 +2,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { createEnvironmentInjector, EnvironmentInjector, inject } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  createBearerAuthProvider,
+  createGetQuery,
+  createPostQuery,
+  createQueryClient,
+  createSecureGetQuery,
+  provideQueryDevtools,
+  withArgs,
+  withAuthenticationQuery,
+  withDefaultRetry,
+  withRefreshQuery,
+} from '../index';
+import {
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsAuthSessions,
@@ -9,14 +21,8 @@ import {
   clearQueryDevtoolsMockStore,
   clearQueryDevtoolsOverrideStore,
   clearQueryDevtoolsTombstones,
-  createBearerAuthProvider,
-  createGetQuery,
-  createPostQuery,
-  createQueryClient,
-  createSecureGetQuery,
   isQueryDevtoolsEnabled,
   isQueryDevtoolsRepositoryLive,
-  provideQueryDevtools,
   QUERY_DEVTOOLS_FAULT_STATUSES,
   queryDevtoolsApiEnvIsProduction,
   queryDevtoolsApiEnvValues,
@@ -32,11 +38,7 @@ import {
   setQueryDevtoolsFault,
   setQueryDevtoolsOverridePersistence,
   setQueryDevtoolsSettings,
-  withArgs,
-  withAuthenticationQuery,
-  withDefaultRetry,
-  withRefreshQuery,
-} from '../index';
+} from '../../devtools-contract';
 import { mintToken, Scenario, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';

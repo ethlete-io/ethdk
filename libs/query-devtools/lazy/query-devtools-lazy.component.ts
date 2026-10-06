@@ -1,14 +1,14 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal, ViewEncapsulation } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { setQueryDevtoolsUiMounted } from '@ethlete/query';
 import {
   isQueryDevtoolsEnabled,
   queryDevtoolsArmedMocks,
   queryDevtoolsEntries,
   queryDevtoolsFaults,
   queryDevtoolsTokenTtls,
-  setQueryDevtoolsUiMounted,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { filter, fromEvent, tap } from 'rxjs';
 import { QueryDevtoolsComponent } from '@ethlete/query-devtools';
 import {

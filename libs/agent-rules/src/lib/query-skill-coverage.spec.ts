@@ -56,7 +56,6 @@ const IGNORED = new Set([
   'withLongPollingUsedWithPolling',
   'withOptimisticUpdateUsedOnRead',
   'withPollingUsedOnUnsupportedHttpMethod',
-  'withQueryDevtoolsOverridePersistence',
 ]);
 
 const IGNORED_PATTERNS = [/^queryDevtools/, /^createQueryDevtools/];

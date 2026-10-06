@@ -1,6 +1,6 @@
 import { Component, computed, ViewEncapsulation } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
-import { QueryDevtoolsEntry, QueryDevtoolsRun } from '@ethlete/query';
+import { QueryDevtoolsEntry, QueryDevtoolsRun } from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsDrawerComponent } from './query-devtools-drawer.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsTimelineStylesComponent } from './query-devtools-timeline-styles.component';

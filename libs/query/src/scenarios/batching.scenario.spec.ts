@@ -1,21 +1,23 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   AnyQueryBatch,
-  clearQueryDevtoolsTombstones,
   createQueryBatch,
-  isQueryDevtoolsEnabled,
-  MAX_QUERY_BATCH_TOMBSTONES,
   provideQueryDevtools,
   QueryArgsOf,
   QueryBatchDevtoolsHandle,
   QueryBatchItemResult,
   QueryBatchResult,
-  queryDevtoolsEntries,
   queryErrorMessage,
   querySequence,
   withArgs,
   withDefaultRetry,
 } from '../index';
+import {
+  clearQueryDevtoolsTombstones,
+  isQueryDevtoolsEnabled,
+  MAX_QUERY_BATCH_TOMBSTONES,
+  queryDevtoolsEntries,
+} from '../../devtools-contract';
 import { Observable } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario, sequence, useScenario } from './harness';

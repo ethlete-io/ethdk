@@ -6,7 +6,7 @@ import {
   QueryDevtoolsMock,
   queryDevtoolsMockId,
   saveQueryDevtoolsMock,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QUERY_DEVTOOLS_HOST, QueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsMocksTabComponent } from './query-devtools-mocks-tab.component';

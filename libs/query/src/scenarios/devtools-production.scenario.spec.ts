@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isQueryDevtoolsEnabled, provideQueryDevtools, queryDevtoolsEntries } from '../index';
+import { provideQueryDevtools } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { inProductionMode, useScenario } from './harness';
 
 describe('devtools provided in a production build', () => {

@@ -1,7 +1,7 @@
 import { Component, provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
-import { QueryDevtoolsOverridesRecorder } from '@ethlete/query';
+import { QueryDevtoolsOverridesRecorder } from '@ethlete/query/devtools-contract';
 import { describe, expect, it } from 'vitest';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';
 

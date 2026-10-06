@@ -1,4 +1,4 @@
-import { queryDevtoolsSettings, readQueryDevtoolsStore } from '@ethlete/query';
+import { queryDevtoolsSettings, readQueryDevtoolsStore } from '@ethlete/query/devtools-contract';
 
 /**
  * Where the panel's own view state lives - open/closed, dock, sizes, selection, filters. Bumped

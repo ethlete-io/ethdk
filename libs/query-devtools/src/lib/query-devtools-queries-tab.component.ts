@@ -1,6 +1,10 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, untracked, ViewEncapsulation } from '@angular/core';
-import { clearQueryDevtoolsTombstones, isQueryDevtoolsEnabled, QueryDevtoolsEntry } from '@ethlete/query';
+import {
+  clearQueryDevtoolsTombstones,
+  isQueryDevtoolsEnabled,
+  QueryDevtoolsEntry,
+} from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsDetailComponent } from './query-devtools-detail.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { buildQueryPathTree, flattenQueryPathTree, queryRoutePathSegments } from './query-devtools-query-tree';

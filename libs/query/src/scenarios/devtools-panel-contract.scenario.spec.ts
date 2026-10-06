@@ -1,15 +1,19 @@
 import { createEnvironmentInjector, EnvironmentInjector, inject, VERSION } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
-  addQueryDevtoolsAuthAccount,
-  clearQueryDevtoolsAuthCredentials,
-  clearQueryDevtoolsAuthSessions,
   createBearerAuthProvider,
   createPostQuery,
   createQueryClient,
+  provideQueryDevtools,
+  withAuthenticationQuery,
+  withRefreshQuery,
+} from '../index';
+import {
+  addQueryDevtoolsAuthAccount,
+  clearQueryDevtoolsAuthCredentials,
+  clearQueryDevtoolsAuthSessions,
   isQueryDevtoolsEnabled,
   logoutQueryDevtoolsAuthSession,
-  provideQueryDevtools,
   queryDevtoolsAbout,
   queryDevtoolsAllowsLocalAuthSessions,
   queryDevtoolsApiEnvIds,
@@ -21,9 +25,7 @@ import {
   setQueryDevtoolsApiEnv,
   setQueryDevtoolsAppInfo,
   setQueryDevtoolsAuthCredentials,
-  withAuthenticationQuery,
-  withRefreshQuery,
-} from '../index';
+} from '../../devtools-contract';
 import { inProductionMode, mintToken, Scenario, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';

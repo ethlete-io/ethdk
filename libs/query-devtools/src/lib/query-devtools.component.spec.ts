@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { QUERY_DEVTOOLS_VIEW_STATE_KEY } from '@ethlete/query-devtools/toggle';
 import { QueryDevtoolsComponent } from './query-devtools.component';
 import { AnyQuery } from './query-devtools-types';

@@ -4,6 +4,7 @@
     "entryPoints": {
       "query": "libs/query/src/index.ts",
       "query/testing": "libs/query/testing/index.ts",
+      "query/devtools-contract": "libs/query/devtools-contract/index.ts",
       "query/ngrx-toolkit": "libs/query/ngrx-toolkit/index.ts"
     },
     "scenarios": ["libs/query/src/scenarios/**/*.scenario.spec.ts"],

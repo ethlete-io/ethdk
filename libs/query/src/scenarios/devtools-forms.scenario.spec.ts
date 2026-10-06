@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  defineQueryForm,
-  isQueryDevtoolsEnabled,
-  provideQueryDevtools,
-  queryDevtoolsEntries,
-  searchQueryField,
-  withArgs,
-} from '../index';
+import { defineQueryForm, provideQueryDevtools, searchQueryField, withArgs } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { useScenario } from './harness';
 
 type Listing = { response: { items: unknown[] }; queryParams: { search: string | null } };

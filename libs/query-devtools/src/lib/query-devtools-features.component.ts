@@ -1,5 +1,5 @@
 import { Component, input, ViewEncapsulation } from '@angular/core';
-import { QueryDevtoolsFeature } from '@ethlete/query';
+import { QueryDevtoolsFeature } from '@ethlete/query/devtools-contract';
 
 /** A feature list: the feature's name, followed by the options it was configured with. */
 @Component({

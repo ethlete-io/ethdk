@@ -16,7 +16,6 @@ import {
   createQuerySubmission,
   gql,
   isPageOutOfRangeError,
-  isQueryDevtoolsEnabled,
   nestedEffect,
   provideQueryDevtools,
   QueryArgs,
@@ -37,6 +36,7 @@ import {
   withSuccessHandling,
   validateWithQuery,
 } from '../index';
+import { isQueryDevtoolsEnabled } from '../../devtools-contract';
 import { form, schema, submit } from '@angular/forms/signals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Scenario, sequence, useScenario } from './harness';

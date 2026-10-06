@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { provideQueryDevtools, withArgs } from '../index';
 import {
   armQueryDevtoolsMock,
   armQueryDevtoolsOverrideTransfer,
@@ -7,14 +8,12 @@ import {
   isQueryDevtoolsEnabled,
   loadQueryDevtoolsSchema,
   parseQueryDevtoolsOverrideTransfer,
-  provideQueryDevtools,
   queryDevtoolsEntries,
   queryDevtoolsMockId,
   queryDevtoolsSchemaState,
   saveQueryDevtoolsMock,
   seedQueryDevtoolsSchemaBody,
-  withArgs,
-} from '../index';
+} from '../../devtools-contract';
 import { useScenario } from './harness';
 
 const CLIENT_NAME = 'devtools-scan-2026-10-03';

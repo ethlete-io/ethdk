@@ -19,7 +19,7 @@ import {
   isDateShapedLeaf,
   JsonPath,
   QueryDevtoolsOverridesRecorder,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import {
   MenuComponent,
   MenuDirective,

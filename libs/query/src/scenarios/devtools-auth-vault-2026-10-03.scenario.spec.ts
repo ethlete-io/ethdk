@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { isQueryDevtoolsEnabled, provideQueryDevtools, queryDevtoolsAuthAccountsFor } from '../index';
+import { provideQueryDevtools } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsAuthAccountsFor } from '../../devtools-contract';
 import { useScenario } from './harness';
 
 const PROVIDER_NAME = 'devtools-auth-vault-2026-10-03';

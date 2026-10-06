@@ -16,9 +16,7 @@ import {
   ethletePaginationAdapter,
   fakePaginationAdapter,
   ggLikePaginationAdapter,
-  isQueryDevtoolsEnabled,
   provideQueryDevtools,
-  queryDevtoolsEntries,
   querySequence,
   transformArrayResponse,
   transformPaginatedResponse,
@@ -26,6 +24,7 @@ import {
   withResponseUpdate,
   withSuccessHandling,
 } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { ObservedValueOf } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { inProductionMode, Scenario, useScenario } from './harness';

@@ -34,6 +34,11 @@
       "factory": "./report-legacy-query-apis/migration",
       "schema": "./report-legacy-query-apis/schema.json",
       "description": "Write a task to query-v3-migration-tasks.md for every legacy query collection, infinity query, *etQuery template and entity store"
+    },
+    "move-devtools-contract-imports": {
+      "factory": "./move-devtools-contract-imports/migration",
+      "schema": "./move-devtools-contract-imports/schema.json",
+      "description": "Import the devtools contract from @ethlete/query/devtools-contract instead of @ethlete/query"
     }
   }
 }

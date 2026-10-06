@@ -6,16 +6,18 @@ import {
   HttpRequestRetryState,
   Query,
   QueryClient,
-  QueryDevtoolsEntry,
-  QueryDevtoolsRun,
-  QueryDevtoolsStats,
-  QueryDevtoolsStatsHandle,
   QueryKeyLockState,
   QueryRefreshCause,
   QueryRepository,
   QueryRepositoryCacheEntry,
   QueryRepositoryEntryDestroyedCause,
 } from '@ethlete/query';
+import {
+  QueryDevtoolsEntry,
+  QueryDevtoolsRun,
+  QueryDevtoolsStats,
+  QueryDevtoolsStatsHandle,
+} from '@ethlete/query/devtools-contract';
 
 // The registry stores queries type-erased; the panel reads them structurally.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

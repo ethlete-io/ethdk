@@ -16,7 +16,7 @@ import {
   parseQueryDevtoolsOverrideTransfer,
   QueryDevtoolsOverridesRecorder,
   serializeQueryDevtoolsOverrideTransfer,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { MenuComponent, MenuDirective, MenuItemComponent, MenuItemShortcutComponent } from '@ethlete/components';
 import { MenuSearchDirective, MenuSurfaceDirective, MenuTriggerDirective } from '@ethlete/components';
 import {

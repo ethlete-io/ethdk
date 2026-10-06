@@ -1,6 +1,10 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { clamp } from '@ethlete/core';
-import { clearQueryDevtoolsFaults, QUERY_DEVTOOLS_FAULT_STATUSES, setQueryDevtoolsFault } from '@ethlete/query';
+import {
+  clearQueryDevtoolsFaults,
+  QUERY_DEVTOOLS_FAULT_STATUSES,
+  setQueryDevtoolsFault,
+} from '@ethlete/query/devtools-contract';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { NumericFaultField } from './query-devtools-types';
 

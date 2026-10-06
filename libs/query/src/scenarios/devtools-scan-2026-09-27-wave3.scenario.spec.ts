@@ -1,19 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createQueryBatch, provideQueryDevtools, withArgs } from '../index';
 import {
   armQueryDevtoolsMock,
   clearQueryDevtoolsArmedMocks,
   clearQueryDevtoolsMockStore,
   clearQueryDevtoolsTombstones,
-  createQueryBatch,
   isQueryDevtoolsEnabled,
   MAX_QUERY_BATCH_TOMBSTONE_BUCKETS,
   MAX_QUERY_BATCH_TOMBSTONES,
-  provideQueryDevtools,
   queryDevtoolsEntries,
   queryDevtoolsMockId,
   saveQueryDevtoolsMock,
-  withArgs,
-} from '../index';
+} from '../../devtools-contract';
 import { useScenario } from './harness';
 
 describe('devtools scan 2026-09-27 wave 3: a mock on a client whose baseUrl has a path', () => {

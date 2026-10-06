@@ -20,10 +20,8 @@ import {
   createQueryClient,
   createSecureGetQuery,
   EntityStore,
-  isQueryDevtoolsEnabled,
   provideLegacyPrepareFallback,
   provideQueryDevtools,
-  queryDevtoolsEntries,
   queryErrorMessage,
   queryErrorMessages,
   QueryStateType,
@@ -32,6 +30,7 @@ import {
   withPersistentAuth,
   withRefreshQuery,
 } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { mintToken, Scenario, ScenarioAuthBuilders, sequence, useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';

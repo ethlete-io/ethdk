@@ -3,13 +3,12 @@ import {
   SocketMessageView,
   WebSocketDevtoolsHandle,
   createWebSocketClient,
-  isQueryDevtoolsEnabled,
   provideQueryDevtools,
-  queryDevtoolsEntries,
   withArgs,
   withPersistentAuth,
   withResponseUpdate,
 } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { createWebSocketTestDouble } from '@ethlete/query/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';

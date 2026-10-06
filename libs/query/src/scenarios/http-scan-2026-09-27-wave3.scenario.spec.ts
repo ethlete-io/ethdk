@@ -1,15 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  clearQueryDevtoolsOverrideStore,
-  isQueryDevtoolsEnabled,
-  provideQueryDevtools,
-  queryDevtoolsEntries,
-  withArgs,
-  withDefaultRetry,
-  withPolling,
-} from '../index';
+import { provideQueryDevtools, withArgs, withDefaultRetry, withPolling } from '../index';
+import { clearQueryDevtoolsOverrideStore, isQueryDevtoolsEnabled, queryDevtoolsEntries } from '../../devtools-contract';
 import { sequence, useScenario } from './harness';
 
 const FIRST = new Date('2026-01-02T03:04:05.000Z');

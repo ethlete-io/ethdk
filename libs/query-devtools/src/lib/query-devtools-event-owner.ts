@@ -1,4 +1,4 @@
-import { QueryDevtoolsEntry } from '@ethlete/query';
+import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { AnyQuery, EventLogItem } from './query-devtools-types';
 
 const requestOf = (entry: QueryDevtoolsEntry) => (entry.handle as AnyQuery).subtle.request();

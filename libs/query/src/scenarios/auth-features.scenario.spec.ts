@@ -14,10 +14,7 @@ import {
   createQueryClient,
   createSecureGetQuery,
   createTrackingFeature,
-  isQueryDevtoolsEnabled,
   provideQueryDevtools,
-  queryDevtoolsEntries,
-  queryDevtoolsTokenTtls,
   setQueryDevtoolsTokenTtl,
   withAuthenticationQuery,
   withBearerAuthMultiTabSync,
@@ -28,6 +25,7 @@ import {
   withTokenRevocation,
   withTracking,
 } from '../index';
+import { isQueryDevtoolsEnabled, queryDevtoolsEntries, queryDevtoolsTokenTtls } from '../../devtools-contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 

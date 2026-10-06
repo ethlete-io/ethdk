@@ -9,7 +9,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { injectStyleManager } from '@ethlete/core';
-import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query';
+import { JsonPath, QueryDevtoolsOverridesRecorder } from '@ethlete/query/devtools-contract';
 import { writeQueryDevtoolsClipboard } from './query-devtools-clipboard';
 import { createQueryDevtoolsCopiedTick } from './query-devtools-copied-tick';
 import { QueryDevtoolsCopyMenuComponent, QueryDevtoolsCopyPayload } from './query-devtools-copy-menu.component';

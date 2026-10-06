@@ -1,11 +1,10 @@
 import { Component, computed, signal, ViewEncapsulation } from '@angular/core';
+import { QueryDevtoolsAuthField, clearQueryDevtoolsTokenTtl, setQueryDevtoolsTokenTtl } from '@ethlete/query';
 import {
   addQueryDevtoolsAuthAccount,
-  QueryDevtoolsAuthField,
   queryDevtoolsAuthFieldsFor,
   clearQueryDevtoolsAuthCredentials,
   clearQueryDevtoolsAuthSessions,
-  clearQueryDevtoolsTokenTtl,
   forgetQueryDevtoolsAuthSession,
   forgetQueryDevtoolsAuthSessionsFor,
   loginQueryDevtoolsAuthAccount,
@@ -26,10 +25,9 @@ import {
   setQueryDevtoolsAuthCredentials,
   setQueryDevtoolsAuthTabLocal,
   setQueryDevtoolsSettings,
-  setQueryDevtoolsTokenTtl,
   switchQueryDevtoolsAuthSession,
   queryDevtoolsTokenTtls,
-} from '@ethlete/query';
+} from '@ethlete/query/devtools-contract';
 import { QueryDevtoolsFeaturesComponent } from './query-devtools-features.component';
 import { injectQueryDevtoolsHost } from './query-devtools-host';
 import { QueryDevtoolsJsonComponent } from './query-devtools-json.component';

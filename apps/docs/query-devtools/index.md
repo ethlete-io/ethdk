@@ -119,6 +119,22 @@ and `QUERY_DEVTOOLS_VERSION`; the panel's tabs and helpers are not public API. T
 entry point also exports the bare `QueryDevtoolsToggleComponent` (`<et-query-devtools-toggle>`)
 and the shortcut helpers `queryDevtoolsShortcutLabel` and `isQueryDevtoolsShortcut`.
 
+### The devtools contract
+
+What the panel reads from the query system - the registry, the fault, mock and override
+stores, the auth sessions - is exported from `@ethlete/query/devtools-contract`, not from
+`@ethlete/query`. It is tooling plumbing, not application API, and can change with the panel.
+An application only needs what configures the panel, and that stays in `@ethlete/query`:
+`provideQueryDevtools` with its option types (`QueryDevtoolsOptions`, `QueryDevtoolsAppInfo`,
+`QueryDevtoolsSchemaLoader(s)`, `QueryDevtoolsApiEnv(Switch)`, `QueryDevtoolsAuthAccount`,
+`QueryDevtoolsAuthField`), the feature describer types `QueryDevtoolsFeatureDescriber` and
+`QueryDevtoolsFeatureDetail`, `setQueryDevtoolsTokenTtl` / `clearQueryDevtoolsTokenTtl` and
+`setQueryDevtoolsUiMounted`.
+
+Code that imported a contract name from `@ethlete/query` is moved by the required
+`devtools-contract-entry-point` migration that `et update` runs (`6.0.0-next.55`). It splits a
+mixed import and leaves every other name where it was.
+
 If you would rather own the trigger yourself - a dev-only route, a feature flag, a
 button of your own - defer the panel directly and hand it `startOpen`, which opens
 it on arrival rather than waiting for a second click:
