@@ -460,3 +460,25 @@ test.describe('dialog / full-screen morph', () => {
     await expectOriginRestored(page, trigger);
   });
 });
+
+test.describe('dialog / busy', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard Escape');
+
+  test('Escape does not close a busy dialog, and the close button is disabled until the submit finishes', async ({
+    page,
+  }) => {
+    const root = await openStory(page, 'components-overlays-overlay-busy-state--default');
+    await root.getByRole('button', { name: 'Open dialog' }).click();
+    await waitForEntered(page);
+
+    await page.locator(PANE).getByRole('button', { name: 'Submit' }).click();
+    await expect(page.locator(PANE)).toHaveAttribute('aria-busy', 'true');
+    await expect(page.locator(PANE).getByRole('button', { name: 'Close' })).toBeDisabled();
+
+    await pressKey(page, 'Escape');
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(1);
+
+    await expect(page.locator(DIALOG_ROOT)).toHaveCount(0, { timeout: 5000 });
+    await expect(root.getByText('Last close result: submitted')).toBeVisible();
+  });
+});

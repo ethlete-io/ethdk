@@ -27,6 +27,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
   const closeCalls: { result: TResult | undefined; source: OverlayRuntimeCloseSource; forced: boolean }[] = [];
   const closeGuards = new Set<OverlayCloseGuard<TResult>>();
   const closed = signal(false);
+  const busy = signal(false);
   const afterOpened$ = new ReplaySubject<void>(1);
   const beforeClosed$ = new ReplaySubject<OverlayRuntimeCloseEvent<TResult | undefined>>(1);
   const afterClosed$ = new ReplaySubject<OverlayRuntimeCloseEvent<TResult | undefined>>(1);
@@ -60,6 +61,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
     headerTemplate: signal(null).asReadonly(),
     componentInstance: () => null,
     close: (result) => requestClose(result, 'api', false),
+    busy,
     forceClose: (result, source = 'api') => requestClose(result, source, true),
     registerCloseGuard: (guard) => {
       closeGuards.add(guard);

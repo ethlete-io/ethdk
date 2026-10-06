@@ -87,6 +87,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
   (`'api' | 'escape' | 'outside-pointer' | 'drag' | 'reference-detached' | 'replace' | 'navigation'`) - e.g. to restore focus
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` - the content component instance
+- `busy` - a writable signal that blocks every non-`api` close while `true`, see [Busy state](#busy-state)
 - `updatePositionStrategy(strategy)` - reposition without remounting
 - `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(result?, source?)` commits a close bypassing all guards (same argument order as the core runtime ref). These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement()`) - identity and DOM access. `backdropElement` is a signal because a strategy switch can add or remove the backdrop
@@ -137,6 +138,28 @@ export class EditItemOverlayComponent {
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.
 
 <StoryEmbed id="components-overlays-overlay-unsaved-changes--default" height="520px" />
+
+## Busy state
+
+An overlay that runs a mutation must not be dismissed halfway through. Set `overlayRef.busy` (a `WritableSignal<boolean>`, `false` by default) while the work runs:
+
+```ts
+protected submit() {
+  this.overlayRef.busy.set(true);
+
+  this.save$
+    .pipe(finalize(() => this.overlayRef.busy.set(false)))
+    .subscribe((result) => this.overlayRef.close(result));
+}
+```
+
+While it is `true`:
+
+- every close source except `api` is blocked - <kbd>Escape</kbd>, a backdrop or outside press, drag-to-dismiss, `replace`, `navigation`, and the `etOverlayClose` buttons. `overlayRef.close()` and `forceClose()` from code still close.
+- the pane carries `aria-busy="true"`.
+- every `etOverlayClose` inside the overlay renders disabled: a native `<button>` gets `disabled`, any other element `aria-disabled="true"`. A `disabled` you set yourself stays when `busy` ends.
+
+<StoryEmbed id="components-overlays-overlay-busy-state--default" height="420px" />
 
 ## Live demo
 

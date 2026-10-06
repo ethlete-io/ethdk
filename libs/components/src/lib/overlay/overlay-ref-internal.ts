@@ -1,11 +1,11 @@
-import { TemplateRef, computed, signal } from '@angular/core';
-import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef } from '@ethlete/core';
+import { Injector, TemplateRef, computed, effect, runInInjectionContext, signal } from '@angular/core';
+import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef, injectRenderer } from '@ethlete/core';
 import { Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
 import { OverlayCloseGuard, OverlayRef } from './overlay-ref';
 
 export type OverlayRefInternals<TComponent extends object = object, TResult = unknown> = {
-  attachRuntime: (runtimeRef: OverlayRuntimeRef<TComponent, TResult>) => void;
+  attachRuntime: (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => void;
   attachComponentInstanceOverride: (getter: () => TComponent | null) => void;
   closeVia: (source: OverlayRuntimeCloseSource, result?: TResult) => void;
   registerHeaderTemplate: (template: TemplateRef<unknown>) => () => void;
@@ -26,6 +26,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   let _componentInstanceOverride: (() => TComponent | null) | null = null;
   let dismissResult: TResult | undefined;
 
+  const busy = signal(false);
   const _headerTemplates = signal<TemplateRef<unknown>[]>([]);
   const headerTemplate = computed(() => _headerTemplates().at(-1) ?? null);
 
@@ -39,11 +40,22 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const withDismissResult = (event: OverlayRuntimeCloseEvent<TResult | undefined>) =>
     event.result === undefined && dismissResult !== undefined ? { ...event, result: dismissResult } : event;
 
-  const attachRuntime = (runtimeRef: OverlayRuntimeRef<TComponent, TResult>) => {
+  const attachRuntime = (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => {
     _runtimeRef = runtimeRef;
     id = runtimeRef.id;
 
+    const paneElement = runtimeRef.elements.paneElement;
+    const renderer = runInInjectionContext(injector, () => injectRenderer());
+    const busyAttributeEffect = effect(() => renderer.setAttribute(paneElement, 'aria-busy', busy() ? 'true' : null), {
+      injector,
+      manualCleanup: true,
+    });
+
     runtimeRef.registerCloseGuard((event) => {
+      if (busy() && event.source !== 'api') {
+        return false;
+      }
+
       for (const guard of closeGuards) {
         if (!guard(event)) {
           return false;
@@ -86,6 +98,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
         tap((rawEvent) => {
           const event = withDismissResult(rawEvent);
 
+          busyAttributeEffect.destroy();
           afterClosed$.next(event.result);
           afterClosed$.complete();
           afterClosedEvent$.next(event);
@@ -112,6 +125,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
       return _runtimeRef?.componentInstance() ?? null;
     },
     close: (result) => _runtimeRef?.close(result),
+    busy,
     registerCloseGuard: (guard) => {
       closeGuards.add(guard);
 

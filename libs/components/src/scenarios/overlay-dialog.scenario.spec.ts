@@ -40,6 +40,7 @@ import {
   resolveOverlayHasBackdrop,
 } from '../index';
 import { createTestOverlayRef } from '../../testing/fake-overlay-ref';
+import { getOverlayRefInternals } from '../lib/overlay/overlay-ref-internal';
 import { Scenario, useScenario } from './harness';
 
 @Component({
@@ -64,6 +65,18 @@ class RenameOverlayComponent {
   title = viewChild.required(OverlayTitleDirective);
   closers = viewChildren(OverlayCloseDirective);
 }
+
+@Component({
+  selector: 'et-scenario-busy-closers-overlay',
+  imports: [OVERLAY_CONTENT_IMPORTS],
+  template: `
+    <div etOverlayMain>
+      <button class="own-disabled" etOverlayClose type="button" disabled>Close</button>
+      <a class="link-close" etOverlayClose href="#">Close</a>
+    </div>
+  `,
+})
+class BusyClosersOverlayComponent {}
 
 const renameOverlay = defineOverlay<RenameOverlayComponent, string>({
   component: RenameOverlayComponent,
@@ -354,6 +367,89 @@ describe('overlay dialog scenarios', () => {
     ref.close('done');
     s.flush();
     expect(results).toEqual(['done']);
+  });
+
+  it.each<[string, (ref: OverlayRef<RenameOverlayComponent, string>, s: Scenario) => void]>([
+    ['escape', (_, s) => s.keydown('Escape')],
+    ['outside-pointer', (ref) => pointerDown(backdropOf(ref))],
+    ['drag', (ref) => getOverlayRefInternals(ref)?.closeVia('drag')],
+    ['navigation', (ref) => getOverlayRefInternals(ref)?.closeVia('navigation')],
+    ['replace', (ref) => getOverlayRefInternals(ref)?.closeVia('replace')],
+    ['etOverlayClose', () => query('.cancel').dispatchEvent(new MouseEvent('click', { bubbles: true }))],
+  ])('blocks a %s close while busy', (_, close) => {
+    const s = scenario();
+    const { page, ref } = openRename(s);
+
+    ref.busy.set(true);
+    s.flush();
+    close(ref, s);
+    s.flush();
+
+    expect(page.results()).toEqual([]);
+    expect(overlayRoots()).toBe(1);
+
+    ref.busy.set(false);
+    close(ref, s);
+    s.flush();
+
+    expect(overlayRoots()).toBe(0);
+  });
+
+  it('reports aria-busy, disables etOverlayClose while busy and still closes through the api', () => {
+    const s = scenario();
+    const { page, ref } = openRename(s);
+    const pane = elementsOf(ref).paneElement;
+    const cancel = query<HTMLButtonElement>('.cancel');
+
+    expect(pane.hasAttribute('aria-busy')).toBe(false);
+    expect(cancel.disabled).toBe(false);
+
+    ref.busy.set(true);
+    s.flush();
+
+    expect(pane.getAttribute('aria-busy')).toBe('true');
+    expect(cancel.disabled).toBe(true);
+
+    ref.busy.set(false);
+    s.flush();
+
+    expect(pane.hasAttribute('aria-busy')).toBe(false);
+    expect(cancel.disabled).toBe(false);
+
+    ref.busy.set(true);
+    s.flush();
+    ref.close('saved');
+    s.flush();
+
+    expect(page.results()).toEqual(['saved']);
+    expect(overlayRoots()).toBe(0);
+  });
+
+  it('keeps a consumer-set disabled on etOverlayClose after busy ends, and marks a non-button aria-disabled', () => {
+    const s = scenario();
+    const ref = s.run(() =>
+      injectOverlayManager().open(BusyClosersOverlayComponent, { strategies: dialogOverlayStrategy() }),
+    );
+
+    s.flush();
+
+    const ownDisabled = query<HTMLButtonElement>('.own-disabled');
+    const link = query('.link-close');
+
+    ref.busy.set(true);
+    s.flush();
+
+    expect(ownDisabled.disabled).toBe(true);
+    expect(link.getAttribute('aria-disabled')).toBe('true');
+
+    ref.busy.set(false);
+    s.flush();
+
+    expect(ownDisabled.disabled).toBe(true);
+    expect(link.hasAttribute('aria-disabled')).toBe(false);
+
+    ref.close();
+    s.flush();
   });
 
   it('stacks a nested dialog above its parent and closes the topmost first on Escape', () => {

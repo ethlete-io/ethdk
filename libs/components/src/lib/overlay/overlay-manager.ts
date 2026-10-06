@@ -163,7 +163,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         paneClass: normalizeClassList(config.panelClass),
       });
 
-      internals.attachRuntime(runtimeRef);
+      internals.attachRuntime(runtimeRef, injector);
       runtimeToOverlayRef.set(
         runtimeRef as OverlayRuntimeRef<object, unknown>,
         overlayRef as OverlayRef<object, unknown>,
@@ -238,7 +238,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
       const typedRuntimeRef = runtimeRef as unknown as OverlayRuntimeRef<TComponent, TResult>;
 
-      internals.attachRuntime(typedRuntimeRef);
+      internals.attachRuntime(typedRuntimeRef, injector);
       internals.attachComponentInstanceOverride(
         () => (runtimeRef.componentInstance()?.contentComponentRef()?.instance as TComponent | null) ?? null,
       );

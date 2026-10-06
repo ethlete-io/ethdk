@@ -1,4 +1,4 @@
-import { InjectionToken, Signal, TemplateRef } from '@angular/core';
+import { InjectionToken, Signal, TemplateRef, WritableSignal } from '@angular/core';
 import {
   OverlayRuntimeCloseEvent,
   OverlayRuntimeCloseGuard,
@@ -21,6 +21,11 @@ export type OverlayRef<TComponent extends object = object, TResult = unknown> = 
   readonly headerTemplate: Signal<TemplateRef<unknown> | null>;
   componentInstance: () => TComponent | null;
   close: (result?: TResult) => void;
+  /**
+   * While `true`, every close source except `api` (`close()` / `forceClose()` from code) is blocked,
+   * the pane reports `aria-busy="true"` and every `etOverlayClose` inside renders disabled.
+   */
+  busy: WritableSignal<boolean>;
   /**
    * Register a synchronous veto for pending closes. Return `false` from the guard to keep the
    * overlay open. An async decision (e.g. a confirm dialog) belongs in the guard's owner, which

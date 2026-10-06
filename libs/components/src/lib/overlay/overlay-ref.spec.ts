@@ -18,4 +18,9 @@ describe('createOverlayRef', () => {
     const { ref } = createOverlayRef(config);
     expect(ref.config).toEqual(config);
   });
+
+  it('starts not busy', () => {
+    const { ref } = createOverlayRef({});
+    expect(ref.busy()).toBe(false);
+  });
 });
