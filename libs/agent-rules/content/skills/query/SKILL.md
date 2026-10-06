@@ -185,6 +185,8 @@ injection context of your own (it emits `null` first).
 
 - **`withArgs(() => ({ pathParams, queryParams, body }))`** runs like a `computed` and
   re-executes on change. Return `null` to park the query (pauses polling/auto-refresh).
+  Calling `.execute()` on a parked query is ignored and warns in dev mode
+  (`queryExecutedWhileParkedMessage`); pass `execute({ args })` or let the source return args.
 - **Prefer `withArgs` over `execute({ args })`.** Declared args keep a `GET` re-executing and
   polling/auto-refresh restarting off the same signal; a function route throws without it. A
   mutation with `withArgs` is just `.execute()`. Reserve `execute({ args })` for a one-off
