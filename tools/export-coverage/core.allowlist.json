@@ -241,9 +241,5 @@
   "toArrayTrackByFn": "constant: value",
   "toStringBinding": "internal: plumbing of seo/meta-binding.ts, no app or lib imports it",
   "transformOrReturn": "unused: no app or other lib imports it",
-  "typedBreakpointTransform": "spec: libs/core/src/lib/signals/breakpoint-input.spec.ts",
-  "ɵProvideColorThemes": "internal: reached through the provide*ThemesWithTailwind4 call, covered by theming-directives.scenario",
-  "ɵProvideColorThemesPrefix": "internal: reached through the provide*ThemesWithTailwind4 call, covered by theming-directives.scenario",
-  "ɵProvideSurfaceThemes": "internal: reached through the provide*ThemesWithTailwind4 call, covered by theming-directives.scenario",
-  "ɵProvideSurfaceThemesPrefix": "internal: reached through the provide*ThemesWithTailwind4 call, covered by theming-directives.scenario"
+  "typedBreakpointTransform": "spec: libs/core/src/lib/signals/breakpoint-input.spec.ts"
 }
