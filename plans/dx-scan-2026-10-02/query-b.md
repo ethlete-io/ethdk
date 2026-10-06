@@ -50,7 +50,7 @@ Scope: `libs/query/src/lib/auth`, `libs/query/src/lib/ws`, `libs/query/src/lib/q
 
 ## QB-02 The ws client cannot follow the auth session: no reconnect on login, rotation or logout
 
-- Status: open: user decision.
+- Status: fixed (2026-10-07, 85d9d3f06: `authProvider` option; reconnect on login, disconnect on logout, no reconnect on token rotation)
 
 - Where: `libs/query/src/lib/ws/web-socket-client.ts:205-211, 452`; JSDoc example at `:128-131`;
   `apps/docs/query/ws.md:63-80`.

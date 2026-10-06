@@ -87,6 +87,7 @@ Not covered: auth, ws, query-form, testing utilities (query-b), legacy.
   by them too or resolve them per consumer at settle time. At least document the rule in `caching.md`
   ("Deduplication") and on `clone()`.
 - Breaking: no (a cache-key change only). Decision: yes. Should policy options split the entry or stay shared?
+- Status: fixed (2026-10-07, 84917bbf2: `withCredentials`, `responseType`, `reportErrors`, `reportProgress` and `retryFn` by reference are in the cache key)
 
 ## QA-04 Route error codes `ET001`/`ET002` collide with query core codes; four ranges are undocumented
 
@@ -191,7 +192,7 @@ injection context…`. The stack trace points into `@ethlete/query` internals. T
   does this), and memoize it. The existing `observable-signal.spec.ts` cases still apply. Add one asserting that no
   effect is created until `asObservable()` is called.
 - Breaking: no. Decision: no.
-- Status: open: lazy `toObservable` changes the first emission from a synchronous replay to "after the next effect flush" for anyone subscribing after creation (e.g. in `ngOnInit`); a `startWith(current)` variant reorders values when the signal changed after the last effect run. Needs a design of its own (a shared watcher instead of one effect per signal), not a contained change.
+- Status: fixed (2026-10-07, 226d38005: one lazy watcher per query and snapshot, created on the first `asObservable()`, with a synchronous replay)
 
 ## QA-10 Duplicate client `name`s are not detected, though the name keys sync, persistence and devtools
 
@@ -244,6 +245,7 @@ injection context…`. The stack trace points into `@ethlete/query` internals. T
 - Fix: move the contract to a secondary entry point (e.g. `@ethlete/query/devtools-contract`) that only
   `@ethlete/query-devtools` imports. Keep `provideQueryDevtools`-facing types in the main barrel.
 - Breaking: yes, for direct importers (in practice only `query-devtools`). Decision: yes (a new entry point).
+- Status: fixed (2026-10-07, f5c683f45: `@ethlete/query/devtools-contract` re-exports 150 names; app-facing names stay; `et update` migration `devtools-contract-entry-point`)
 
 ## QA-14 Docs drift: `ReadonlyQuery` also omits `abort`; polling features are allowed on GQL queries
 
