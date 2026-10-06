@@ -37,7 +37,10 @@ import {
   thisWeekPreset,
   thisYearPreset,
   TIME_RANGE_INPUT_ERROR_CODES,
+  TIME_INPUT_IMPORTS,
   TIME_RANGE_INPUT_IMPORTS,
+  timeBounds,
+  timeRangeBounds,
   timeRangeOrder,
   TimeRangeInputComponent,
   TimeRangeInputDirective,
@@ -115,9 +118,10 @@ class HeadlessStayComponent {
 
 @Component({
   selector: 'et-scenario-shift',
-  imports: [TIME_RANGE_INPUT_IMPORTS, FormField],
+  imports: [TIME_INPUT_IMPORTS, TIME_RANGE_INPUT_IMPORTS, FormField],
   template: `
     <et-time-range-input [formField]="shiftForm.shift" aria-label="Shift" displayFormat="HH:mm" />
+    <et-time-input [formField]="shiftForm.handover" class="handover" aria-label="Handover" displayFormat="HH:mm" />
     <div #breakRange="etTimeRangeInput" [(value)]="breakTime" etTimeRangeInput displayFormat="HH:mm">
       <input class="break-start" etTimeRangeInputField side="start" />
       <input class="break-end" etTimeRangeInputField side="end" />
@@ -125,8 +129,15 @@ class HeadlessStayComponent {
   `,
 })
 class ShiftComponent {
-  model = signal<{ shift: DateRangeValue }>({ shift: { start: null, end: null } });
-  shiftForm = form(this.model, (path) => timeRangeOrder(path.shift, { strict: true }));
+  model = signal<{ shift: DateRangeValue; handover: string | null }>({
+    shift: { start: null, end: null },
+    handover: null,
+  });
+  shiftForm = form(this.model, (path) => {
+    timeRangeOrder(path.shift, { strict: true });
+    timeRangeBounds(path.shift, { min: new Date(2000, 0, 1, 6), max: new Date(2000, 0, 1, 22) });
+    timeBounds(path.handover, { min: new Date(2000, 0, 1, 22), max: new Date(2000, 0, 1, 6) });
+  });
   breakTime = signal<DateRangeValue>({ start: null, end: null });
   input = viewChild.required(TimeRangeInputComponent);
   breakControl = viewChild.required<TimeRangeInputDirective>('breakRange');
@@ -483,6 +494,24 @@ describe('forms date-time range scenarios', () => {
         .errors()
         .map((error) => error.kind),
     ).toEqual(['rangeOrder']);
+
+    typeAndBlur(s, end!, '23:00');
+    expect(
+      shift.shiftForm
+        .shift()
+        .errors()
+        .map((error) => error.kind),
+    ).toEqual(['rangeMax']);
+
+    const handover = query<HTMLInputElement>('et-time-input.handover input', host);
+
+    typeAndBlur(s, handover, '02:00');
+    expect(shift.shiftForm.handover().valid()).toBe(true);
+
+    typeAndBlur(s, handover, '20:00');
+    expect(shift.shiftForm.handover().errors()).toMatchObject([
+      { kind: 'rangeMin', message: 'Choose a time at or after 10:00 PM' },
+    ]);
 
     typeAndBlur(s, query<HTMLInputElement>('.break-start', host), '12:00');
     typeAndBlur(s, query<HTMLInputElement>('.break-end', host), '12:45');

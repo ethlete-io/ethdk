@@ -95,6 +95,10 @@ export type DateTimeLabels = {
   rangeMin: (min: string) => string;
   /** `dateRangeBounds`/`dateTimeRangeBounds`' message for an end after `max`, given the formatted bound. */
   rangeMax: (max: string) => string;
+  /** `timeBounds`/`timeRangeBounds`' message for a time before `min`, given the formatted bound. */
+  timeMin: (min: string) => string;
+  /** `timeBounds`/`timeRangeBounds`' message for a time after `max`, given the formatted bound. */
+  timeMax: (max: string) => string;
 };
 
 /** The built-in English labels. */
@@ -146,6 +150,8 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   rangeOrder: 'The start must be before the end',
   rangeMin: (min) => `Choose dates on or after ${min}`,
   rangeMax: (max) => `Choose dates on or before ${max}`,
+  timeMin: (min) => `Choose a time at or after ${min}`,
+  timeMax: (max) => `Choose a time at or before ${max}`,
 };
 
 const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_TIME_LABELS', DEFAULT_DATE_TIME_LABELS);

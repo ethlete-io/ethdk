@@ -121,9 +121,13 @@ Every validator takes a `valueFormat` (defaulting to the token of its control) a
 | `dateRangeOrder(path, options?)`     | `et-date-range-input`      | `strict`                  |
 | `dateTimeRangeOrder(path, options?)` | `et-date-time-range-input` | `strict`, `timeZone`      |
 | `timeRangeOrder(path, options?)`     | `et-time-range-input`      | `strict`                  |
+| `timeBounds(path, options?)`         | `et-time-input`            | `min`, `max`              |
+| `timeRangeBounds(path, options?)`    | `et-time-range-input`      | `min`, `max`              |
 
 `min` and `max` are a `Date` or a function of the field context returning one. Failures report
-`kind: 'rangeMin'` / `'rangeMax'` / `'rangeOrder'`. There is no time-only bounds validator.
+`kind: 'rangeMin'` / `'rangeMax'` / `'rangeOrder'`. `timeBounds` and `timeRangeBounds` read only the
+time of day of `min` and `max`. Like the time picker, they read a `min` later than `max` as a window
+across midnight, and a time outside that window reports the nearer bound.
 
 ### The shared contract set {#shared-contract}
 
@@ -462,8 +466,14 @@ sets hours and minutes; seconds are typed. See the `Default` and `With seconds` 
 [bounds and filtering](/components/time-picker#bounds-and-filtering) rules - only the
 bounds' time of day is read, and unselectable times show as a dotted span on the ring that a drag cannot enter. They shape
 the **picker** only: typed entry is not gated by them (the same split the date inputs make
-with `minDate`/`maxDate`), so pair them with a schema validator when the form must reject
-out-of-range times.
+with `minDate`/`maxDate`), so pair them with `timeBounds` when the form must reject
+out-of-range times:
+
+```ts
+form(model, (s) => {
+  timeBounds(s.start, { min: openingTime, max: closingTime });
+});
+```
 
 <StoryEmbed id="components-forms-time-input--opening-hours" height="560px" />
 

@@ -14,6 +14,8 @@ import {
   dateTimeRangeBounds,
   dateTimeRangeOrder,
   RangeOrderOptions,
+  timeBounds,
+  timeRangeBounds,
   timeRangeOrder,
 } from './date-time-range-validators';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
@@ -345,5 +347,66 @@ describe('dateBounds and dateTimeBounds', () => {
     );
 
     expect(errors).toMatchObject([{ kind: 'rangeOrder' }]);
+  });
+});
+
+describe('timeBounds and timeRangeBounds', () => {
+  beforeEach(() => TestBed.configureTestingModule({}));
+
+  const at = (hours: number, minutes = 0) => new Date(2001, 0, 1, hours, minutes);
+
+  const timeErrors = (value: string | null, options: Parameters<typeof timeBounds>[1]) => {
+    const model = signal({ time: value });
+    const timeForm = form(model, (s) => timeBounds(s.time, options), { injector: TestBed.inject(Injector) });
+
+    return timeForm
+      .time()
+      .errors()
+      .map(({ kind, message }) => ({ kind, message }));
+  };
+
+  it('reads HH:mm by default and fails a time before min or after max', () => {
+    const options = { min: at(8), max: at(18) };
+
+    expect(timeErrors('07:59', options)).toEqual([{ kind: 'rangeMin', message: 'Choose a time at or after 8:00 AM' }]);
+    expect(timeErrors('18:01', options)).toEqual([{ kind: 'rangeMax', message: 'Choose a time at or before 6:00 PM' }]);
+    expect(timeErrors('08:00', options)).toEqual([]);
+    expect(timeErrors('18:00', options)).toEqual([]);
+  });
+
+  it('compares the time of day only, whatever the date of the bound', () => {
+    expect(timeErrors('09:00', { min: new Date(2099, 5, 1, 8) })).toEqual([]);
+    expect(timeErrors('07:00', { min: new Date(1990, 5, 1, 8) })).toHaveLength(1);
+  });
+
+  it('reads a min later than max as a window across midnight and names the nearer bound', () => {
+    const night = { min: at(22), max: at(6) };
+
+    expect(timeErrors('23:30', night)).toEqual([]);
+    expect(timeErrors('05:00', night)).toEqual([]);
+    expect(timeErrors('07:00', night)).toMatchObject([{ kind: 'rangeMax' }]);
+    expect(timeErrors('21:00', night)).toMatchObject([{ kind: 'rangeMin' }]);
+  });
+
+  it('passes an empty or unparseable value and honours the format token and a custom message', () => {
+    expect(timeErrors(null, { min: at(8) })).toEqual([]);
+    expect(timeErrors('nope', { min: at(8) })).toEqual([]);
+    expect(timeErrors('07:00', { min: () => at(8), message: 'Too early' })).toEqual([
+      { kind: 'rangeMin', message: 'Too early' },
+    ]);
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideTimeFormat('HH:mm:ss')] });
+
+    expect(timeErrors('07:59:59', { min: at(8) })).toHaveLength(1);
+  });
+
+  it('checks both ends of a time range and skips an empty end', () => {
+    const options = { min: at(8), max: at(18) };
+
+    expect(errorsFor(range('09:00', '19:00'), (path) => timeRangeBounds(path, options))).toEqual([
+      { kind: 'rangeMax', message: 'Choose a time at or before 6:00 PM' },
+    ]);
+    expect(errorsFor(range(null, '17:00'), (path) => timeRangeBounds(path, options))).toEqual([]);
   });
 });

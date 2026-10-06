@@ -34,7 +34,7 @@ export class TimeInputDirective extends DatePickerInputDirective implements Form
   /**
    * Forwarded to the picker's time picker. (`min`/`max` are reserved by signal forms.)
    * Only the time of day of `minTime`/`maxTime` is read; `timeFilter` receives the full
-   * candidate timestamp. Bounds shape the picker - validate typed entry with a schema validator.
+   * candidate timestamp. Bounds shape the picker - validate typed entry with `timeBounds`.
    */
   public minTime = input<Date | null>(null);
   public maxTime = input<Date | null>(null);

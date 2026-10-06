@@ -485,6 +485,8 @@ other validator.
 | `dateTimeRangeBounds(path, { min?, max?, … })` | `et-date-time-range-input` | a range whose ends both lie within `min`/`max`, to the millisecond |
 | `dateBounds(path, { min?, max?, … })`          | `et-date-input`            | a date within `min`/`max`, in whole days                           |
 | `dateTimeBounds(path, { min?, max?, … })`      | `et-date-time-input`       | a date-time within `min`/`max`, to the millisecond                 |
+| `timeBounds(path, { min?, max?, … })`          | `et-time-input`            | a time of day within `min`/`max`, across midnight if `min > max`   |
+| `timeRangeBounds(path, { min?, max?, … })`     | `et-time-range-input`      | a range whose ends both lie within the `min`/`max` time of day     |
 
 ```ts
 import { hexColor, rgbColor } from '@ethlete/components';

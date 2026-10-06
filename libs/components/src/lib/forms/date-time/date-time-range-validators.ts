@@ -78,6 +78,24 @@ export type DateOnlyBoundsOptions = Omit<DateBoundsOptions, 'timeZone'> & {
   precision?: CalendarPrecision;
 };
 
+export type TimeBoundsOptions = {
+  /** The earliest time of day the value may name, or a function returning it. Only its time of day is read. */
+  min?: Bound<DateValue>;
+  /** The latest time of day the value may name, or a function returning it. Only its time of day is read. */
+  max?: Bound<DateValue>;
+  /** date-fns format of the wire string - the control's `valueFormat`. Defaults to `TIME_FORMAT`. */
+  valueFormat?: string;
+  /** Overrides the default "Choose a time at or after …" / "… at or before …" message. */
+  message?: string;
+};
+
+export type TimeRangeBoundsOptions = Omit<TimeBoundsOptions, 'min' | 'max'> & {
+  /** The earliest time of day either end may name, or a function returning it. Only its time of day is read. */
+  min?: Bound<DateRangeValue>;
+  /** The latest time of day either end may name, or a function returning it. Only its time of day is read. */
+  max?: Bound<DateRangeValue>;
+};
+
 export type RangeOrderError = ValidationError & { kind: 'rangeOrder' };
 
 export type RangeMinError = ValidationError & { kind: 'rangeMin'; min: Date };
@@ -286,3 +304,99 @@ export const dateTimeBounds = (path: DateFieldPath, options: DateBoundsOptions =
     unit: (date) => date,
     label: 'Pp',
   });
+
+type TimeOfDayBoundsConfig<TValue> = {
+  path: Parameters<typeof validate<TValue>>[0];
+  sidesOf: (value: TValue) => (string | null)[];
+  options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string; valueFormat?: string };
+};
+
+const secondsOfDay = (date: Date) => date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+
+const timeOfDayBounds = <TValue>({ path, sidesOf, options }: TimeOfDayBoundsConfig<TValue>) => {
+  const labels = injectDateTimeLabels();
+  const locale = inject(DATE_LOCALE);
+  const valueFormat = options.valueFormat ?? inject(TIME_FORMAT);
+  const formatBound = (bound: Date) => formatInZone(bound, { format: 'p', locale, timeZone: null }) ?? '';
+  const minError = (min: Date): RangeMinError => ({
+    kind: 'rangeMin',
+    min,
+    message: options.message ?? labels().timeMin(formatBound(min)),
+  });
+  const maxError = (max: Date): RangeMaxError => ({
+    kind: 'rangeMax',
+    max,
+    message: options.message ?? labels().timeMax(formatBound(max)),
+  });
+
+  const outsideWindow = (seconds: number, { min, max }: { min: Date; max: Date }) => {
+    const minSeconds = secondsOfDay(min);
+    const maxSeconds = secondsOfDay(max);
+
+    if (minSeconds <= maxSeconds) {
+      if (seconds < minSeconds) return minError(min);
+
+      return seconds > maxSeconds ? maxError(max) : undefined;
+    }
+
+    if (seconds >= minSeconds || seconds <= maxSeconds) return undefined;
+
+    return seconds - maxSeconds <= minSeconds - seconds ? maxError(max) : minError(min);
+  };
+
+  validate(path, (ctx): RangeMinError | RangeMaxError | undefined => {
+    const min = resolveBound(options.min, ctx);
+    const max = resolveBound(options.max, ctx);
+
+    for (const side of sidesOf(ctx.value())) {
+      const parsed = parseSide(side, { valueFormat, timeZone: null });
+
+      if (parsed === null) continue;
+
+      const seconds = secondsOfDay(parsed);
+      const error =
+        min !== null && max !== null
+          ? outsideWindow(seconds, { min, max })
+          : min !== null && seconds < secondsOfDay(min)
+            ? minError(min)
+            : max !== null && seconds > secondsOfDay(max)
+              ? maxError(max)
+              : undefined;
+
+      if (error) return error;
+    }
+
+    return undefined;
+  });
+};
+
+/**
+ * Signal-forms validator for `et-time-input`: fails the value while its time of day lies before
+ * `min` or after `max`. The control's `minTime`/`maxTime` only shape the picker, so a typed or
+ * patched value needs this to be rejected.
+ *
+ * Like the picker, a `min` later than `max` is a window across midnight (`22:00`-`06:00`). Reports
+ * `kind: 'rangeMin'` (with `min`) or `kind: 'rangeMax'` (with `max`); outside a window across
+ * midnight, the nearer bound wins. An empty or unparseable value passes; pair it with `required()`.
+ *
+ * ```ts
+ * form(model, (s) => {
+ *   timeBounds(s.start, { min: openingTime, max: closingTime });
+ * });
+ * ```
+ */
+export const timeBounds = (path: DateFieldPath, options: TimeBoundsOptions = {}) =>
+  timeOfDayBounds<DateValue>({ path, sidesOf: (value) => [value], options });
+
+/**
+ * Signal-forms validator for `et-time-range-input`: fails the range while the time of day of either
+ * end lies before `min` or after `max`. Same contract as {@link timeBounds}; an empty end is skipped.
+ *
+ * ```ts
+ * form(model, (s) => {
+ *   timeRangeBounds(s.openingHours, { min: openingTime, max: closingTime });
+ * });
+ * ```
+ */
+export const timeRangeBounds = (path: RangeFieldPath, options: TimeRangeBoundsOptions = {}) =>
+  timeOfDayBounds<DateRangeValue>({ path, sidesOf: (value) => [value.start, value.end], options });

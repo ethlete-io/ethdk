@@ -124,6 +124,7 @@ Paths below are relative to `libs/components/src/lib/` unless they start with `a
 
 ## DT-06 No time bounds validator, while the docs tell time-input users to "pair with a schema validator"
 
+- Status: fixed (2026-10-06: `timeBounds` / `timeRangeBounds`, wrap across midnight reports the nearer bound; labels `timeMin` / `timeMax`)
 - Where: `forms/date-time/date-time-range-validators.ts` (ships `dateBounds`, `dateTimeBounds`,
   `dateRangeBounds`, `dateTimeRangeBounds`, `dateRangeOrder`, `timeRangeOrder`; no `timeBounds` /
   `timeRangeBounds`); `apps/docs/components/date-time-inputs.md:417-422`;
