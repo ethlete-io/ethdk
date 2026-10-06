@@ -292,7 +292,7 @@ export const parseAgentRequest = (value: unknown): AgentApiRequestParse => {
     return { ok: true, request: { op, day, worklogId } };
   }
 
-  if (op === 'day.events' || op === 'day.rows' || op === 'day.inputs') {
+  if (op === 'day.events' || op === 'day.rows' || op === 'day.inputs' || op === 'transcript.day') {
     const day = asText(raw['day']);
 
     return isDayKey(day) ? { ok: true, request: { op, day } } : missing(op, 'day as YYYY-MM-DD');

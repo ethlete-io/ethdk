@@ -109,6 +109,14 @@ only the counts, which is what tells you whether a day holds the source you are 
 refused until you pass `--overwrite`, and a symlink is never written through. The file holds the
 day as it was observed - window titles, paths and messages - so delete it when you are done.
 
+`transcript` prints what the app transcribed of the user's own microphone during the day's calls,
+one 30-second chunk per line. It exists only where the user turned call transcription on, and the
+app deletes a chunk after seven days. Read it only when the task needs what was said.
+
+```bash
+npx ethlete-agents timetrack transcript [YYYY-MM-DD]
+```
+
 ## Reading and correcting the rows a day drew
 
 `day` answers what the collectors saw. `rows` answers what the app made of it - the bands on the

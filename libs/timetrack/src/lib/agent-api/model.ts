@@ -493,6 +493,7 @@ export type AgentApiRequest =
   | { op: 'day.events'; day: string }
   | { op: 'day.rows'; day: string }
   | { op: 'day.inputs'; day: string }
+  | { op: 'transcript.day'; day: string }
   | { op: 'day.edits'; day: string; edits: AgentApiRowEdit[] }
   | { op: 'settings.rules' }
   | { op: 'standIn.list' }
@@ -613,6 +614,7 @@ export const AGENT_API_OP_CLASSES: Record<AgentApiOp, OpClass> = {
   'day.events': 'read',
   'day.rows': 'read',
   'day.inputs': 'read',
+  'transcript.day': 'read',
   'day.edits': 'local',
   'settings.rules': 'read',
   'standIn.list': 'read',

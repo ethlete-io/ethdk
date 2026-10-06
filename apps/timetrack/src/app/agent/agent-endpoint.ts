@@ -817,6 +817,8 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
         return dayRows$(request.day);
       case 'day.inputs':
         return agentDay.inputs$(request.day);
+      case 'transcript.day':
+        return ports.transcription.day$(request.day).pipe(map((chunks) => ({ day: request.day, chunks })));
       case 'day.edits':
         return editDay$(request);
       case 'settings.rules':

@@ -295,7 +295,7 @@ describe('parseAgentRequest, over a day', () => {
     });
   });
 
-  it.each(['day.events', 'day.rows', 'day.inputs', 'naming.offers', 'tempo.sync'])(
+  it.each(['day.events', 'day.rows', 'day.inputs', 'transcript.day', 'naming.offers', 'tempo.sync'])(
     'refuses a %s day key that names no calendar day',
     (op) => {
       for (const day of ['2026-02-30', '2026-13-01', '2026-00-10']) {

@@ -2,7 +2,6 @@ use crate::error::TimetrackResult;
 use crate::state::Db;
 #[cfg(any(test, feature = "transcribe"))]
 use chrono::{Local, TimeZone};
-#[cfg(any(test, feature = "transcribe"))]
 use rusqlite::params;
 use rusqlite::Connection;
 use serde::Serialize;
@@ -12,9 +11,9 @@ use tauri::State;
 
 pub const MAX_AGE_MS: i64 = 7 * 24 * 60 * 60 * 1000;
 
-#[cfg(any(test, feature = "transcribe"))]
 /// One transcribed stretch of the user's own microphone. Text only: there is no field for audio.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TranscriptChunk {
     pub at_ms: i64,
     pub call_started_at_ms: i64,
@@ -52,7 +51,6 @@ pub fn append(connection: &Connection, chunk: &TranscriptChunk) -> TimetrackResu
     Ok(())
 }
 
-#[cfg(test)]
 pub fn chunks_for_day(connection: &Connection, day: &str) -> TimetrackResult<Vec<TranscriptChunk>> {
     let mut statement = connection.prepare(
         "SELECT at_ms, call_started_at_ms, app_id, model, language, text FROM transcript_chunk
@@ -157,6 +155,12 @@ impl TranscriptionState {
 #[tauri::command]
 pub async fn transcription_status(state: State<'_, TranscriptionState>) -> TimetrackResult<TranscriptionStatus> {
     Ok(state.status())
+}
+
+/// Every transcript chunk of one local calendar day (`YYYY-MM-DD`), oldest first.
+#[tauri::command]
+pub async fn transcript_day(db: State<'_, Db>, day: String) -> TimetrackResult<Vec<TranscriptChunk>> {
+    db.run(move |connection| chunks_for_day(connection, &day)).await
 }
 
 /// Deletes every transcript chunk of one local calendar day (`YYYY-MM-DD`) and says how many went.

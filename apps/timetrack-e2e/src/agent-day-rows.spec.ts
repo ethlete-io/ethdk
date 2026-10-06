@@ -6,6 +6,7 @@ const readsOf = (day: string) => [
   { op: 'day.rows', day },
   { op: 'day.events', day },
   { op: 'day.inputs', day },
+  { op: 'transcript.day', day },
   { op: 'naming.offers', day },
   { op: 'tempo.sync', day },
 ];

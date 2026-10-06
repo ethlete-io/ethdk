@@ -196,6 +196,21 @@ export type TimetrackDayEvents = {
   events: unknown[];
 };
 
+/** One transcribed stretch of the user's own microphone during a call. */
+export type TimetrackTranscriptChunk = {
+  atMs: number;
+  callStartedAtMs: number;
+  appId: string;
+  model: string;
+  language: string | null;
+  text: string;
+};
+
+export type TimetrackTranscriptDay = {
+  day: string;
+  chunks: TimetrackTranscriptChunk[];
+};
+
 /** One row of a day as the app's own review drew it. Every edit names a row by this `id`. */
 export type TimetrackRow = {
   id: string;
@@ -523,6 +538,9 @@ export const timetrackAddWorklog = (options: {
 }) => askTimetrack<TimetrackQueued>({ op: 'worklog.add', ...options });
 
 export const timetrackDayEvents = (day: string) => askTimetrack<TimetrackDayEvents>({ op: 'day.events', day });
+
+export const timetrackTranscriptDay = (day: string) =>
+  askTimetrack<TimetrackTranscriptDay>({ op: 'transcript.day', day });
 
 export const timetrackDayRows = (day: string) => askTimetrack<TimetrackDayRows>({ op: 'day.rows', day });
 

@@ -64,6 +64,7 @@
     "allow-timer-runs-between",
     "allow-timer-start",
     "allow-timer-stop",
+    "allow-transcript-day",
     "allow-transcript-delete-day",
     "allow-transcription-status",
     "allow-tray-set-readout",

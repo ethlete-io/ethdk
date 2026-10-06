@@ -22,6 +22,7 @@ import {
   TimetrackRow,
   TimetrackRowEdit,
   timetrackDayEvents,
+  timetrackTranscriptDay,
   timetrackDayRows,
   timetrackDiscoveryPath,
   timetrackEditDay,
@@ -705,6 +706,8 @@ A waiting write can be rejected from here; only the user approves one, in the ap
   timetrack log --issue <KEY> --minutes <n>
                                 Add a row nothing observed to the day it belongs to
   timetrack day [YYYY-MM-DD]    The evidence a day holds, which the encrypted store hides otherwise
+  timetrack transcript [YYYY-MM-DD]
+                                What the app transcribed of your own microphone during the day's calls
   timetrack rows [YYYY-MM-DD]   The rows the day drew, with the ids an edit names them by
   timetrack snapshot [from] [to] [--out <file>]
                                 Record the rows of the last 7 days (default) before a change
@@ -933,6 +936,21 @@ export const timetrackCommand = async (options: { root: string; argv: string[] }
       say(`${found.day}  ${found.events.length} events`);
       countByKind(found.events).forEach(([kind, count]) => say(`  ${kind}  ${count}`));
       say('Pass --out <path> to write the events themselves, which are far too many to read.');
+    }
+
+    return printed(found, json);
+  }
+
+  if (subcommand === 'transcript') {
+    const day = value ?? today();
+
+    if (!DAY.test(day)) throw new Error(`Pass a day as YYYY-MM-DD, not ${day}.`);
+
+    const found = await timetrackTranscriptDay(day);
+
+    if (!json) {
+      say(`${found.day}  ${found.chunks.length} transcript chunks`);
+      found.chunks.forEach((chunk) => say(`  ${clock(chunk.atMs)}  ${chunk.appId}  ${chunk.text}`));
     }
 
     return printed(found, json);

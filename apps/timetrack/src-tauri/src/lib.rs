@@ -208,6 +208,7 @@ pub fn run() {
             timer::timer_runs_between,
             timer::timer_start,
             timer::timer_stop,
+            transcript::transcript_day,
             transcript::transcript_delete_day,
             transcript::transcription_status,
             tray::tray_set_readout,

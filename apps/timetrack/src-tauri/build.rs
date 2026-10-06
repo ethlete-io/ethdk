@@ -59,6 +59,7 @@ const COMMANDS: &[&str] = &[
     "timer_runs_between",
     "timer_start",
     "timer_stop",
+    "transcript_day",
     "transcript_delete_day",
     "transcription_status",
     "tray_set_readout",
