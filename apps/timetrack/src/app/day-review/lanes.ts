@@ -65,7 +65,25 @@ export type BehindBand = {
   stretch: BehindStretch;
   offset: number;
   span: number;
+  /**
+   * The key of the block drawn over the band's label, which then reads the label as a line of its own.
+   * A row is translucent, so a label left under it would show through the row's own text.
+   */
+  carrier: string | null;
 };
+
+/** How far a row may overrun a stretch and not carry its label: a snapped row overruns by the odd minute. */
+const CARRY_SLACK = ((5 * 60_000) / DAY_MS) * 100;
+
+const carrierOf = (band: Omit<BehindBand, 'carrier'>, blocks: readonly LaneBlock[]) =>
+  blocks.find(({ block }) => {
+    const end = block.offset + block.span;
+    const covered = Math.min(end, band.offset + band.span) - Math.max(block.offset, band.offset);
+
+    return (
+      block.offset - CARRY_SLACK <= band.offset && band.offset < end && covered >= Math.min(band.span, CARRY_SLACK)
+    );
+  })?.key ?? null;
 
 /** A stretch of a block drawn at one width. `from` and `to` are fractions of the block's own length. */
 export type LaneSegment = {
@@ -333,7 +351,7 @@ export const lanesOf = (options: {
     byLane.set(key, [...(byLane.get(key) ?? []), block]);
   }
 
-  const behindByLane = new Map<string, BehindBand[]>();
+  const behindByLane = new Map<string, Omit<BehindBand, 'carrier'>[]>();
 
   for (const stretch of options.behind ?? []) {
     const key = columnOf(stretch.laneKey);
@@ -361,13 +379,17 @@ export const lanesOf = (options: {
       ([aKey, a], [bKey, b]) =>
         rankOf(aKey) - rankOf(bKey) || startOf(aKey, a) - startOf(bKey, b) || aKey.localeCompare(bKey),
     )
-    .map(([key, laneBlocks]) => ({
-      key,
-      label: labelOf(key),
-      blocks: packLane(laneBlocks),
-      breaks: [],
-      behind: behindByLane.get(key) ?? [],
-    }));
+    .map(([key, laneBlocks]) => {
+      const blocks = packLane(laneBlocks);
+
+      return {
+        key,
+        label: labelOf(key),
+        blocks,
+        breaks: [],
+        behind: (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) })),
+      };
+    });
 
   if (!work.length) return work;
 

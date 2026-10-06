@@ -112,6 +112,10 @@ const COMPACT_MIN_REM = 1.9;
 /** Two lines of text plus the block's own padding. Below this the description would clip mid-line. */
 const DETAIL_MIN_REM = 5;
 
+/** One line of `text-small`, and the vertical padding of a block that is not compact. */
+const LINE_REM = 1.95;
+const BLOCK_PADDING_REM = 0.8;
+
 /** How tall one row of the all-day strip is, and the least it reserves when nothing is in it. */
 const STRIP_ROW_REM = 2;
 
@@ -310,7 +314,7 @@ type RowDrag = {
                       class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
                       data-behind
                     >
-                      @if (labelled(band.span)) {
+                      @if (labelled(band.span) && !band.carrier) {
                         <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
                       }
                     </div>
@@ -449,6 +453,13 @@ type RowDrag = {
                         <span
                           class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
                           >{{ description }}</span
+                        >
+                      }
+                      @for (label of carriedLabelsOf(laid, lane); track $index) {
+                        <span
+                          class="relative block w-fit max-w-full truncate bg-[var(--tt-card-bg)] text-et-surface-muted"
+                          data-carried-behind
+                          >{{ label }}</span
                         >
                       }
                     </div>
@@ -1098,6 +1109,21 @@ export class DayTimelineComponent {
 
   protected detailed(span: number) {
     return remOf(span) >= DETAIL_MIN_REM;
+  }
+
+  /**
+   * The labels of the lost stretches drawn under a block, one line each, as many as fit below its title
+   * and description. A block too short for them drops them rather than letting them overlap.
+   */
+  protected carriedLabelsOf(laid: LaneBlock, lane: DayLane) {
+    const carried = lane.behind.filter((band) => band.carrier === laid.key);
+
+    if (!carried.length) return [];
+
+    const described = this.detailed(laid.block.span) && !!this.descriptionOf(laid.block.node.appointment);
+    const room = Math.floor((remOf(laid.block.span) - BLOCK_PADDING_REM) / LINE_REM) - 1 - (described ? 1 : 0);
+
+    return carried.slice(0, Math.max(0, room)).map((band) => behindLabel(band.stretch));
   }
 
   /**
