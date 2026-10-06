@@ -162,10 +162,11 @@ A slot's player can detach into a floating, draggable PiP window and hand back l
 `provideStreamPip()` in scope, no player yet (consent gate still up), or the player is already in (or not in) PiP.
 Register `provideStreamPip()` where the slots are provided, alongside `STREAM_PIP_IMPORTS`; without it, slots
 still play normally, and a PiP call reports `ET1612` in development.
-While the player floats, the slot it left shows a placeholder (a "playing in picture-in-picture" message with a back button). It is off by default - register `PipSlotPlaceholderComponent` to get it, otherwise the slot is an empty box:
+While the player floats, the slot it left shows a placeholder (a "playing in picture-in-picture" message with a back button). `provideStreamPip()` registers `PipSlotPlaceholderComponent` for it by default, whatever the order of the providers. Set `pipSlotPlaceholderComponent` in `provideStreamConfig()` to change that: `null` opts out and leaves the slot an empty box, a component replaces the default. Without `provideStreamPip()` no placeholder renders unless you set one:
 
 ```ts
-provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent });
+provideStreamConfig({ pipSlotPlaceholderComponent: null });
+provideStreamConfig({ pipSlotPlaceholderComponent: MyPipPlaceholderComponent });
 ```
 
 Configure the PiP chrome and window through the PiP provider:

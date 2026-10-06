@@ -21,7 +21,7 @@ import {
 import { injectPipManager } from '../pip-manager';
 import { provideStreamConfig } from '../stream-config';
 import { injectStreamManager } from '../stream-manager';
-import { StreamPlayerId, StreamSlotEntry } from '../stream-manager.types';
+import { STREAM_SLOT_PLAYER_ID_TOKEN, StreamPlayerId, StreamSlotEntry } from '../stream-manager.types';
 import { STREAM_PLAYER_TOKEN, StreamPlayer } from '../stream-player';
 import { createStreamPlayerSlot } from '../stream-player-slot';
 import { DEFAULT_STREAM_PLAYER_STATE, StreamPlayerCapabilities, StreamPlayerState } from '../stream.types';
@@ -205,7 +205,15 @@ export type StreamSlotDriverOptions = {
 
 const STREAM_SLOT_TEST_OPTIONS = new InjectionToken<StreamSlotDriverOptions>('STREAM_SLOT_TEST_OPTIONS');
 
-@Directive({ selector: '[etTestStreamSlot]' })
+@Directive({
+  selector: '[etTestStreamSlot]',
+  providers: [
+    {
+      provide: STREAM_SLOT_PLAYER_ID_TOKEN,
+      useFactory: () => inject(StreamSlotTestDirective).slot.currentPlayerId,
+    },
+  ],
+})
 class StreamSlotTestDirective {
   private readonly options = inject(STREAM_SLOT_TEST_OPTIONS);
 

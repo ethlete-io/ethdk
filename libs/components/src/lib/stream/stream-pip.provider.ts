@@ -1,11 +1,13 @@
 import { Provider } from '@angular/core';
 import { injectPipChromeManager, providePipChromeManager } from './pip-chrome-manager';
 import { DEFAULT_PIP_CHROME_CONFIG } from './pip/pip-chrome.config';
+import { PipSlotPlaceholderComponent } from './pip/pip-slot-placeholder.component';
 import { providePipManager, injectPipManager } from './pip-manager';
 import { StreamPipOptions, STREAM_PIP_TOKEN } from './stream-pip.token';
 
 const DEFAULT_STREAM_PIP_OPTIONS: StreamPipOptions = {
   pipChromeComponent: null,
+  pipSlotPlaceholderComponent: PipSlotPlaceholderComponent,
   pipChrome: DEFAULT_PIP_CHROME_CONFIG,
   pipWindow: {
     minWidth: 160,

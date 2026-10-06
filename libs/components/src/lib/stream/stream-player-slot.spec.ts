@@ -2,8 +2,16 @@ import { ApplicationRef, ErrorHandler } from '@angular/core';
 import { ReactiveNode, SIGNAL } from '@angular/core/primitives/signals';
 import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
+import { Component } from '@angular/core';
+import { PipSlotPlaceholderComponent } from './pip/pip-slot-placeholder.component';
+import { provideStreamConfig } from './stream-config';
 import { provideStreamPip } from './stream-pip.provider';
 import { FakeStreamConsentComponent, createStreamSlotDriver } from './testing/stream-driver';
+
+@Component({ selector: 'et-test-pip-placeholder', template: '' })
+class TestPipPlaceholderComponent {}
+
+const placeholders = (tag: string) => document.querySelectorAll(tag).length;
 
 const fakePlayers = () => document.querySelectorAll('et-fake-stream-player').length;
 
@@ -197,5 +205,59 @@ describe('createStreamPlayerSlot', () => {
     TestBed.inject(ApplicationRef).tick();
 
     expect((driver.consentHandler.isGranted[SIGNAL] as ReactiveNode).consumers).toBeUndefined();
+  });
+});
+
+describe('PiP slot placeholder default', () => {
+  it('is rendered by provideStreamPip()', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true, providers: [provideStreamPip()] });
+    await driver.settle();
+
+    expect(placeholders('et-pip-slot-placeholder')).toBe(1);
+  });
+
+  it('is not rendered without provideStreamPip()', async () => {
+    const driver = createStreamSlotDriver({ consentGranted: true });
+    await driver.settle();
+
+    expect(placeholders('et-pip-slot-placeholder')).toBe(0);
+  });
+
+  it.each(['before', 'after'])('is opted out by an explicit null provided %s provideStreamPip()', async (order) => {
+    const optOut = provideStreamConfig({ pipSlotPlaceholderComponent: null });
+    const pip = provideStreamPip();
+    const driver = createStreamSlotDriver({
+      consentGranted: true,
+      providers: order === 'before' ? [...optOut, ...pip] : [...pip, ...optOut],
+    });
+    await driver.settle();
+
+    expect(placeholders('et-pip-slot-placeholder')).toBe(0);
+  });
+
+  it.each(['before', 'after'])(
+    'is overridden by an explicit component provided %s provideStreamPip()',
+    async (order) => {
+      const override = provideStreamConfig({ pipSlotPlaceholderComponent: TestPipPlaceholderComponent });
+      const pip = provideStreamPip();
+      const driver = createStreamSlotDriver({
+        consentGranted: true,
+        providers: order === 'before' ? [...override, ...pip] : [...pip, ...override],
+      });
+      await driver.settle();
+
+      expect(placeholders('et-test-pip-placeholder')).toBe(1);
+      expect(placeholders('et-pip-slot-placeholder')).toBe(0);
+    },
+  );
+
+  it('still honours an explicit placeholder without provideStreamPip()', async () => {
+    const driver = createStreamSlotDriver({
+      consentGranted: true,
+      providers: [...provideStreamConfig({ pipSlotPlaceholderComponent: PipSlotPlaceholderComponent })],
+    });
+    await driver.settle();
+
+    expect(placeholders('et-pip-slot-placeholder')).toBe(1);
   });
 });

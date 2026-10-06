@@ -246,7 +246,10 @@ export const createStreamPlayerSlot = (options: StreamPlayerSlotOptions): Stream
     hostedPlayerElement = playerEntry.element;
     currentPlayer.set(playerEntry.player ?? null);
 
-    const { pipSlotPlaceholderComponent } = streamConfig;
+    const pipSlotPlaceholderComponent =
+      streamConfig.pipSlotPlaceholderComponent !== undefined
+        ? streamConfig.pipSlotPlaceholderComponent
+        : (streamPip?.options.pipSlotPlaceholderComponent ?? null);
 
     if (pipSlotPlaceholderComponent && !pipPlaceholderComponentRef) {
       pipPlaceholderComponentRef = mountComponent(pipSlotPlaceholderComponent);

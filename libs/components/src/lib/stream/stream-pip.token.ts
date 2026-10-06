@@ -3,6 +3,7 @@ import { PipManager } from './stream-manager.types';
 
 export type StreamPipOptions = {
   pipChromeComponent: Type<unknown> | null;
+  pipSlotPlaceholderComponent: Type<unknown> | null;
   pipChrome: {
     controlsColor?: string;
   };

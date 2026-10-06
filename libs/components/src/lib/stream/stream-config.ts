@@ -12,9 +12,12 @@ export type StreamConfig = {
   consentComponent: Type<unknown> | null;
 
   /**
-   * An optional component to render inside every player slot as a PIP overlay.
+   * The component rendered inside a player slot while its player floats in picture-in-picture.
+   * `null` renders nothing, an explicit component overrides the default.
+   *
+   * @default undefined - `provideStreamPip()` supplies `PipSlotPlaceholderComponent`; without it, nothing renders
    */
-  pipSlotPlaceholderComponent: Type<unknown> | null;
+  pipSlotPlaceholderComponent: Type<unknown> | null | undefined;
 
   /**
    * A component shown while the player is initializing (before `isReady`).
@@ -43,7 +46,7 @@ export type StreamConfig = {
 
 const DEFAULT_STREAM_CONFIG: StreamConfig = {
   consentComponent: null,
-  pipSlotPlaceholderComponent: null,
+  pipSlotPlaceholderComponent: undefined,
   loadingComponent: null,
   errorComponent: null,
   facebookSdkVersion: 'v26.0',
