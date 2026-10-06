@@ -5,6 +5,7 @@ import {
   NotificationBottomCenterStorybookComponent,
   NotificationBottomEndStorybookComponent,
   NotificationBottomStartStorybookComponent,
+  NotificationCustomStorybookComponent,
   NotificationPromiseStorybookComponent,
   NotificationStorybookComponent,
   NotificationTopCenterStorybookComponent,
@@ -39,6 +40,12 @@ export const BottomEnd: { render: StoryFn } = {
 export const PromiseApi: { render: StoryFn; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-notification-promise />` }),
   decorators: [moduleMetadata({ imports: [NotificationPromiseStorybookComponent] })],
+};
+
+/** `component` in the manager config replaces `et-notification` with an app-owned toast built on the headless directives. */
+export const CustomComponent: { render: StoryFn; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-notification-custom />` }),
+  decorators: [moduleMetadata({ imports: [NotificationCustomStorybookComponent] })],
 };
 
 export const BottomCenter: { render: StoryFn; decorators: unknown[] } = {

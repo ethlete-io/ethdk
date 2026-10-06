@@ -1,3 +1,4 @@
+import { Type } from '@angular/core';
 import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export const NOTIFICATION_STATUS = {
@@ -108,6 +109,12 @@ export type NotificationManagerConfig = {
    * @default true
    */
   swipeToDismiss?: boolean;
+  /**
+   * The component the stack renders for each notification instead of `et-notification`. It receives the
+   * `NotificationRef` as its `ref` input and must host `NotificationDirective` with that input - without
+   * it, a dismissed notification never leaves the stack.
+   */
+  component?: Type<unknown>;
 };
 
 export const DEFAULT_NOTIFICATION_STATUS_ICONS: Record<NotificationStatus, string | null> = {

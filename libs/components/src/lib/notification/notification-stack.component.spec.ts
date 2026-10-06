@@ -1,8 +1,9 @@
-import { signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DEFAULT_OVERLAY_LAYER } from '@ethlete/core';
 import { vi } from 'vitest';
 import '../../test-helpers';
+import { NotificationDirective } from './headless/notification.directive';
 import { provideNotificationManagerConfig } from './notification-config';
 import { createNotificationRef, NotificationRef } from './notification-ref';
 import { NOTIFICATION_STACK_CONTEXT_TOKEN } from './notification-stack-context.token';
@@ -113,6 +114,43 @@ describe('NotificationStackComponent', () => {
 
     expect(host.getAttribute('data-position')).toBe('top-end');
     expect(titles).toEqual(['Second', 'First']);
+  });
+
+  it('renders the configured component in place of et-notification', async () => {
+    @Component({
+      selector: 'et-test-custom-toast',
+      template: `<p class="custom-title">{{ notification.title() }}</p>`,
+      hostDirectives: [{ directive: NotificationDirective, inputs: ['ref'] }],
+    })
+    class CustomToastComponent {
+      protected notification = inject(NotificationDirective);
+    }
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      imports: [NotificationStackComponent],
+      providers: [
+        provideNotificationManagerConfig({ component: CustomToastComponent }),
+        { provide: NOTIFICATION_STACK_CONTEXT_TOKEN, useValue: mockContext },
+      ],
+    });
+
+    fixture = TestBed.createComponent(NotificationStackComponent);
+    host = fixture.nativeElement;
+
+    const ref = createRef('Custom');
+    visibleNotifications.set([ref]);
+    fixture.detectChanges();
+
+    expect(host.querySelector('et-notification')).toBeNull();
+    expect(host.querySelector('[data-notification-id] et-test-custom-toast .custom-title')?.textContent).toBe('Custom');
+    expect(host.querySelector('et-test-custom-toast')?.getAttribute('role')).toBe('status');
+
+    ref.dismiss();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(ref.entry().isDismissed).toBe(true);
   });
 
   describe('resize FLIP', () => {

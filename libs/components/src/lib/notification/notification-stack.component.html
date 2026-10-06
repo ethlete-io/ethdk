@@ -1,5 +1,9 @@
 @for (ref of stackDirective.displayRefs(); track ref.id) {
   <div [etNotificationItem]="ref">
-    <et-notification [ref]="ref" />
+    @if (customComponent) {
+      <ng-container *ngComponentOutlet="customComponent; inputs: { ref }" />
+    } @else {
+      <et-notification [ref]="ref" />
+    }
   </div>
 }

@@ -108,6 +108,7 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
   instead of `et-notification`; add a "custom toast" story and update the guide. If not wanted, cut the guide section
   down to what is possible.
 - Breaking: no. Decision: yes (new API).
+- Status: fixed (2026-10-06, user chose the `component` option; stack spec, `CustomComponent` story, guide; the stack now gives pointer events to any toast element)
 
 ## OV-06 Data in is stringly typed; `TResult` forces restating `TComponent`
 

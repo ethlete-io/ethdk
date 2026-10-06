@@ -93,6 +93,10 @@
     }
   }
 
+  .et-notification-stack > [data-notification-id] > * {
+    pointer-events: auto;
+  }
+
   /* A corner card is the desktop shape. On a phone the stack spans both edges instead and the card
      fills it, which is what a toast looks like there - and what keeps it on screen at all: the card's
      300px minimum plus these insets already overflows a 320px viewport at a 16px rem base.

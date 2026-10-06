@@ -25,6 +25,7 @@ Without a mapping entry, an `error` toast takes the app's `type: 'error'` color 
 | `controlsColor`      | -                                                     | Color theme for control elements (e.g. dismiss); falls back to the status color |
 | `statusIcons`        | see [Status icons](#status-icons)                     | Per-status icon name; `null` opts a status out                                  |
 | `swipeToDismiss`     | `true`                                                | Whether a notification can be flicked away with a pointer or finger             |
+| `component`          | `et-notification`                                     | Your own toast component, see [Custom notification UI](#custom-notification-ui) |
 
 ## Opening notifications
 
@@ -216,11 +217,38 @@ At `480px` and below the stack spans both edges and every toast fills it, which 
 
 ## Custom notification UI
 
-The default `et-notification` covers icon/spinner/title/message/progress/actions/dismiss. For fully custom toasts, build on the headless pieces from `NOTIFICATION_IMPORTS`: `[etNotification]` (takes the `ref`, exposes status/content signals and handles the leave animation), `[etNotificationAction]` (runs the action, then dismisses - `etNotificationAction="secondary"` for the second one), `[etNotificationDismiss]` and `[etNotificationSwipeToDismiss]`.
+The default `et-notification` covers icon/spinner/title/message/progress/actions/dismiss. For a fully custom toast, write your own component and pass it as `component` to `provideNotificationManager()`. The stack then renders it in place of `et-notification` for every notification, with the `NotificationRef` as its `ref` input.
+
+Build the component on the headless pieces from `NOTIFICATION_IMPORTS`. It must host `NotificationDirective` with the `ref` input: the directive exposes the status/content signals, sets the `role`, and removes a dismissed toast from the stack. Without it, a dismissed toast never leaves. Inside it, use `[etNotificationAction]` (runs the action, then dismisses - `etNotificationAction="secondary"` for the second one) and `[etNotificationDismiss]`; add `NotificationSwipeToDismissDirective` as a host directive for swipe-to-dismiss.
 
 ```ts
-import { NOTIFICATION_IMPORTS } from '@ethlete/components';
+import { Component, inject } from '@angular/core';
+import {
+  NOTIFICATION_IMPORTS,
+  NotificationDirective,
+  NotificationSwipeToDismissDirective,
+  provideNotificationManager,
+} from '@ethlete/components';
+
+@Component({
+  selector: 'app-toast',
+  template: `
+    <strong>{{ notification.title() }}</strong>
+    <button etNotificationDismiss>Close</button>
+  `,
+  imports: [NOTIFICATION_IMPORTS],
+  hostDirectives: [{ directive: NotificationDirective, inputs: ['ref'] }, NotificationSwipeToDismissDirective],
+})
+export class AppToastComponent {
+  protected notification = inject(NotificationDirective);
+}
+
+provideNotificationManager({ component: AppToastComponent });
 ```
+
+The stack keeps its position, stacking, FLIP animation and `maxVisible` limit. A custom component gets no enter or leave animation, no status colour and no hover pause unless it adds them.
+
+<StoryEmbed id="components-feedback-notification--custom-component" />
 
 ## Theming
 
