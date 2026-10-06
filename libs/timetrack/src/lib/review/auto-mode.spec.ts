@@ -8,7 +8,7 @@ import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
 import { reopenStandIn, resolveStandIn } from '../settings/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from '../settings/model';
-import { TicketWritingRequest } from '../ticket/write';
+import { TicketWritingRequest, standInWritingRequest } from '../ticket/write';
 import { AUTO_MODE_CLIENT, ActionClasses } from '../agent-api/action-classes';
 import { AgentApproval, enqueueApproval, markApproval } from '../agent-api/approval-queue';
 import {
@@ -266,10 +266,11 @@ describe('autoModeAsks while a band still runs', () => {
     expect(asksAt('10:10', { rows })).toEqual([SUBJECT]);
   });
 
-  it('asks about a stand-in while a context still runs', () => {
+  it('asks about a stand-in whose rows are quiet while a context still runs', () => {
     const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+    const rows = [{ standInId: standIn.id, to: at('08:00') }];
 
-    expect(asksAt('09:00', { standIns: [standIn] })).toEqual([{ kind: 'stand-in', standInId: standIn.id }]);
+    expect(asksAt('09:00', { standIns: [standIn], rows })).toEqual([{ kind: 'stand-in', standInId: standIn.id }]);
   });
 
   it('asks a context again once it settles when its answer was asked while it ran, and the queued draft expires', () => {
@@ -290,6 +291,67 @@ describe('autoModeAsks while a band still runs', () => {
     const approvals = markApproval(queue, { id: 'a-1', state: 'approved' });
 
     expect(asksAt('12:00', { answers: [draftAskedAt('08:54')], approvals })).toEqual([]);
+  });
+});
+
+describe('autoModeAsks while a stand-in still runs', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const standIn = openStandIn({ name: 'Bracket challenge', day: TODAY, now: at('07:00') });
+  const SUBJECT: AutoModeSubject = { kind: 'stand-in', standInId: standIn.id };
+  const rows = [{ standInId: standIn.id, to: at('09:15'), activeUntil: at('09:40') }];
+  const request = standInWritingRequest({ standIn });
+  const draftAskedAt = (time: string): AutoModeAnswer => ({
+    ...drafted,
+    subject: SUBJECT,
+    askedAtMs: at(time).getTime(),
+    request,
+    outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
+  });
+  const queue = enqueueApproval([], {
+    id: 'a-1',
+    request: { op: 'jira.create', summary: 'Bracket challenge', description: 'A .gitignore.', projectKey: 'ABC' },
+    client: AUTO_MODE_CLIENT,
+    target: autoModeApprovalTarget(TODAY, SUBJECT),
+    at: at('09:10'),
+    day: TODAY,
+  });
+  const asksAt = (time: string, options: { answers?: AutoModeAnswer[]; approvals?: AgentApproval[] } = {}) =>
+    autoModeAsks({
+      enabled: true,
+      day: TODAY,
+      today: TODAY,
+      nowMs: at(time).getTime(),
+      contexts: [],
+      standIns: [standIn],
+      rows,
+      answers: options.answers ?? [],
+      evidence: { unattributed: DAY.unattributed, config: CONFIG, maskedNames: [] },
+      approvals: options.approvals ?? queue,
+    });
+
+  it('asks nothing about a stand-in until its rows have been quiet for the settle window', () => {
+    expect(asksAt('10:09')).toEqual([]);
+    expect(asksAt('10:10')).toEqual([SUBJECT]);
+  });
+
+  it('asks a stand-in again once it settles when its answer was asked while it ran, and the queued draft expires', () => {
+    const answers = [draftAskedAt('09:10')];
+
+    expect(asksAt('09:50', { answers })).toEqual([]);
+    expect(asksAt('10:10', { answers })).toEqual([SUBJECT]);
+    expect(withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: SUBJECT }).map((item) => item.state)).toEqual([
+      'expired',
+    ]);
+  });
+
+  it('leaves an answer asked after the stand-in settled', () => {
+    expect(asksAt('12:00', { answers: [draftAskedAt('10:11')] })).toEqual([]);
+  });
+
+  it('leaves a stand-in answer asked while it ran once its create was approved', () => {
+    const approvals = markApproval(queue, { id: 'a-1', state: 'approved' });
+
+    expect(asksAt('12:00', { answers: [draftAskedAt('09:10')], approvals })).toEqual([]);
   });
 });
 

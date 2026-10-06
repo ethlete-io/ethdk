@@ -270,7 +270,7 @@ const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals:
 };
 
 type AskRow = Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'> &
-  Partial<Pick<ReviewedRow, 'id' | 'recutOf' | 'activeUntil'>>;
+  Partial<Pick<ReviewedRow, 'id' | 'recutOf' | 'to' | 'activeUntil'>>;
 
 const contextIdsByRowId = (unattributed: readonly WorkGroup[]) => {
   const contextOfRow = new Map<string, string>();
@@ -296,33 +296,53 @@ const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: r
   );
 };
 
-const contextSettledAt = (options: {
+const subjectSettledAt = (options: {
   contexts: readonly UnnamedContext[];
   rows: readonly AskRow[];
   unattributed: readonly WorkGroup[];
 }) => {
-  const lastActivity = new Map(options.contexts.map((context) => [context.id, context.to.getTime()]));
-  const extend = (contextId: string | undefined, atMs: number) => {
-    const held = lastActivity.get(contextId ?? '');
+  const lastActivity = new Map(
+    options.contexts.map((context) => [
+      autoModeSubjectKey({ kind: 'context', contextId: context.id }),
+      context.to.getTime(),
+    ]),
+  );
+  const extendContext = (contextId: string | undefined, atMs: number) => {
+    const key = contextId && autoModeSubjectKey({ kind: 'context', contextId });
+    const held = lastActivity.get(key ?? '');
 
-    if (contextId && held !== undefined && atMs > held) lastActivity.set(contextId, atMs);
+    if (key && held !== undefined && atMs > held) lastActivity.set(key, atMs);
   };
+  const extendStandIn = (standInId: string, atMs: number) => {
+    const key = autoModeSubjectKey({ kind: 'stand-in', standInId });
+
+    lastActivity.set(key, Math.max(lastActivity.get(key) ?? atMs, atMs));
+  };
+  const groupEndOfRow = new Map<string, number>();
 
   for (const group of options.unattributed) {
     const context = dominantContext(group.blocks);
 
-    extend(context ? contextKey(context) : undefined, group.to.getTime());
+    groupEndOfRow.set(unnamedRowId(group), group.to.getTime());
+    extendContext(context ? contextKey(context) : undefined, group.to.getTime());
   }
 
   const contextOfRow = contextIdsByRowId(options.unattributed);
 
   for (const row of options.rows) {
-    if (row.activeUntil) {
-      extend(contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? ''), row.activeUntil.getTime());
+    if (row.standInId) {
+      const groupEnd = groupEndOfRow.get(row.id ?? '') ?? groupEndOfRow.get(row.recutOf ?? '') ?? 0;
+
+      extendStandIn(row.standInId, Math.max(row.to?.getTime() ?? 0, row.activeUntil?.getTime() ?? 0, groupEnd));
+    } else if (row.activeUntil) {
+      extendContext(contextOfRow.get(row.id ?? '') ?? contextOfRow.get(row.recutOf ?? ''), row.activeUntil.getTime());
     }
   }
 
-  return new Map([...lastActivity].map(([contextId, atMs]) => [contextId, atMs + AUTO_MODE_SETTLE_MS]));
+  const settledAt = new Map([...lastActivity].map(([key, atMs]) => [key, atMs + AUTO_MODE_SETTLE_MS]));
+
+  return (subject: AutoModeSubject) =>
+    settledAt.get(autoModeSubjectKey(subject)) ?? (subject.kind === 'stand-in' ? -Infinity : Infinity);
 };
 
 /**
@@ -411,8 +431,8 @@ export const autoModeAskRefusal = (options: {
 /**
  * What auto mode still has to ask about on a day: each unnamed context and each open stand-in the day
  * holds that holds no answer yet, or whose answer is still auto mode's and was built from evidence the
- * day no longer holds. A context is asked only once its work settled, {@link AUTO_MODE_SETTLE_MS} after
- * its last activity, and an answer asked before that counts as outdated once it has. Nothing on any day
+ * day no longer holds. A context or stand-in is asked only once its work settled, {@link AUTO_MODE_SETTLE_MS}
+ * after its last activity, and an answer asked before that counts as outdated once it has. Nothing on any day
  * but today, and nothing while auto mode is off. A stand-in the user reopened is theirs, so it is left
  * alone until a reset hands it back, and so is one whose row the user gave a ticket by hand today. A
  * context with a row the user named by hand is never asked again.
@@ -443,14 +463,13 @@ export const autoModeAsks = (options: {
       .filter((row) => row.standInId && row.issueKey && rowFieldSourceOf(row, 'issue') === 'human')
       .map((row) => row.standInId),
   );
-  const settledAt = contextSettledAt({
+  const settledAt = subjectSettledAt({
     contexts: options.contexts,
     rows: options.rows,
     unattributed: evidence?.unattributed ?? [],
   });
-  const settled = (contextId: string) => (settledAt.get(contextId) ?? Infinity) <= options.nowMs;
   const contexts = options.contexts
-    .filter((context) => !options.ruledContextIds?.has(context.id) && settled(context.id))
+    .filter((context) => !options.ruledContextIds?.has(context.id))
     .map((context): AutoModeSubject => ({ kind: 'context', contextId: context.id }));
   const standIns = options.standIns
     .filter(
@@ -466,10 +485,7 @@ export const autoModeAsks = (options: {
     if (!evidence || !approvals || !handNamed) return false;
     if (subject.kind === 'context' && handNamed.has(subject.contextId)) return false;
 
-    const askedUnsettled =
-      subject.kind === 'context' && answer.askedAtMs < (settledAt.get(subject.contextId) ?? Infinity);
-
-    if (askedUnsettled && autoModeOwns({ day: options.day, answer, approvals })) return true;
+    if (answer.askedAtMs < settledAt(subject) && autoModeOwns({ day: options.day, answer, approvals })) return true;
 
     const request = autoModeSubjectRequest({
       subject,
@@ -488,6 +504,8 @@ export const autoModeAsks = (options: {
   };
 
   return [...contexts, ...standIns].filter((subject) => {
+    if (settledAt(subject) > options.nowMs) return false;
+
     const answer = answers.get(autoModeSubjectKey(subject));
 
     return !answer || outdated(subject, answer);
