@@ -105,7 +105,7 @@ class CountrySearchComponent {
     <et-select
       [(value)]="coach"
       [loading]="loading()"
-      [error]="error()"
+      [loadError]="error()"
       [hasMoreItems]="hasMore()"
       (loadMore)="loadMoreCount = loadMoreCount + 1"
       (addNew)="addNewCount = addNewCount + 1"

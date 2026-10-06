@@ -94,7 +94,7 @@ const firstErrorMessage = (error: RequestError) => {
  * </et-select>
  * ```
  *
- * To intercept a single binding, wire `loading`, `error`, `hasMoreItems`, `queryChange`, `loadMore` and
+ * To intercept a single binding, wire `loading`, `loadError`, `hasMoreItems`, `queryChange`, `loadMore` and
  * `filterMode="external"` by hand instead - see the select guide's async options section.
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd use

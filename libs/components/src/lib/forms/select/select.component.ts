@@ -79,7 +79,7 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'maxSelection',
         'allowAddNew',
         'loading',
-        'error',
+        'loadError',
         'hasMoreItems',
         'pickOnly',
         'selectAll',

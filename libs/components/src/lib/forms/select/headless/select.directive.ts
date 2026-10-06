@@ -181,8 +181,11 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
   public allowAddNew = input(false, { transform: booleanAttribute });
   /** Async option state - rendered by `et-select` as a loading row inside the panel. */
   public loadingInput = input(false, { alias: 'loading', transform: booleanAttribute });
-  /** Async option state - rendered by `et-select` as an error row inside the panel. */
-  public errorInput = input<string | null>(null, { alias: 'error' });
+  /**
+   * Async option state - rendered by `et-select` as an error row inside the panel when the options
+   * fail to load. Validation messages come from `errors`, not from here.
+   */
+  public loadErrorInput = input<string | null>(null, { alias: 'loadError' });
   /** Async option state - `et-select` renders a load-more control emitting `loadMore`. */
   public hasMoreItemsInput = input(false, { alias: 'hasMoreItems', transform: booleanAttribute });
   /** Whether the panel mirrors the anchor's width. Off for compact triggers (e.g. a country picker). */
@@ -255,7 +258,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
    */
   public showLoadingIndicator = signalDeferredLoading(this.loading);
   /** Async option state - rendered by `et-select` as an error row. From `[etSelectOptions]` if set. */
-  public error = computed(() => this.asyncOptions()?.error() ?? this.errorInput());
+  public error = computed(() => this.asyncOptions()?.error() ?? this.loadErrorInput());
   /** Async option state - drives the load-more control. From `[etSelectOptions]` if set. */
   public hasMoreItems = computed(() => this.asyncOptions()?.hasMore() ?? this.hasMoreItemsInput());
 

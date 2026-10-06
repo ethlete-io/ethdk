@@ -9,7 +9,7 @@ import { SelectDirective } from './select.directive';
 /**
  * Wires an async options bundle - the return value of `selectOptionsFromQuery` or
  * `selectOptionsFromV2Query` - into a select with a single binding, replacing the manual
- * per-input wiring. Push the bundle in and it forwards `loading`, `error` and `hasMoreItems`,
+ * per-input wiring. Push the bundle in and it forwards `loading`, `loadError` and `hasMoreItems`,
  * forces `filterMode` to `external`, and drives the bundle's `setQuery`/`loadMore` from the
  * select's `(queryChange)`/`(loadMore)` outputs. Render `options` yourself as before:
  *

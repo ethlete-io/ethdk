@@ -45,7 +45,7 @@ export type SelectOptionsFromQuery<TOption> = {
   options: Signal<TOption[]>;
   /** Bind to the select's `loading` input. */
   loading: Signal<boolean>;
-  /** Bind to the select's `error` input. */
+  /** Bind to the select's `loadError` input. */
   error: Signal<string | null>;
   /** Bind to the select's `hasMoreItems` input (always false without `toHasMore`). */
   hasMore: Signal<boolean>;
@@ -91,7 +91,7 @@ const firstErrorMessage = (error: QueryErrorResponse) => {
  * </et-select>
  * ```
  *
- * To intercept a single binding, wire `loading`, `error`, `hasMoreItems`, `queryChange`, `loadMore` and
+ * To intercept a single binding, wire `loading`, `loadError`, `hasMoreItems`, `queryChange`, `loadMore` and
  * `filterMode="external"` by hand instead - see the select guide's async options section.
  *
  * Call it from a field initializer / constructor (injection context), the same place you'd create

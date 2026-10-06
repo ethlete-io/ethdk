@@ -153,7 +153,7 @@ class SearchableCustomValueTestHost {
       [mixed]="mixed()"
       [mixedLabel]="mixedLabel()"
       [loading]="loading()"
-      [error]="error()"
+      [loadError]="error()"
       [hasMoreItems]="hasMore()"
       (valueChange)="value.set($event)"
       (mixedChange)="mixed.set($event)"
@@ -1305,7 +1305,7 @@ describe('SelectDirective (search)', () => {
     expect(driver.paneEl('.et-select-load-more--loading')).toBeNull();
   });
 
-  it('renders the error and empty states', async () => {
+  it('renders the loadError and empty states', async () => {
     await driver.open();
 
     driver.host.error.set('Something broke');

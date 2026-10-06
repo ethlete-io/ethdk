@@ -90,6 +90,11 @@
       "schema": "./migrate-error-color-theme-signal/schema.json",
       "description": "Call the errorColorTheme signal of injectFormSupport() and TableComponent where it is read"
     },
+    "migrate-select-input-renames": {
+      "factory": "./migrate-select-input-renames/migration",
+      "schema": "./migrate-select-input-renames/schema.json",
+      "description": "Rename the select and tag input inputs that changed name in templates"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

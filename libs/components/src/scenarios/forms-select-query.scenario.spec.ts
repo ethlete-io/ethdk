@@ -60,7 +60,7 @@ type LegacyArgs = { queryParams: { q: string } };
     <et-select
       [(value)]="assignee"
       [loading]="members.loading()"
-      [error]="members.error()"
+      [loadError]="members.error()"
       [hasMoreItems]="members.hasMore()"
       [filterMode]="externalFilter"
       (queryChange)="members.setQuery($event)"

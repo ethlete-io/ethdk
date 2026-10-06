@@ -152,6 +152,15 @@
       "description": "Call errorColorTheme() where an injectFormSupport() result or a TableComponent reads it, now that it is a signal.",
       "generator": "@ethlete/components:migrate-error-color-theme-signal",
       "docs": "/components/forms"
+    },
+    {
+      "name": "select-input-renames",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Rename the et-select error input to loadError in templates.",
+      "generator": "@ethlete/components:migrate-select-input-renames",
+      "docs": "/components/select"
     }
   ]
 }

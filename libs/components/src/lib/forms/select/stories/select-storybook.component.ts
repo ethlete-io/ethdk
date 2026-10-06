@@ -125,7 +125,7 @@ export class FormFieldSelectStorybookComponent {
         <et-select
           [formField]="demoForm.value"
           [loading]="loading()"
-          [error]="error()"
+          [loadError]="error()"
           [hasMoreItems]="hasMore()"
           (queryChange)="search($event)"
           (loadMore)="loadMore()"

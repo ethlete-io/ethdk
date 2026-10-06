@@ -46,7 +46,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `selectAll`                | `boolean`                            | `false`      | Renders a tri-state "Select all" row as the first option of a multi select (not with `pickOnly`). See [select all](#select-all).                                                                                                 |
 | `allowAddNew`              | `boolean`                            | `false`      | Renders an "Add new" action row at the end of the panel that emits `addNew` (label via `addNewLabel`, else [`SELECT_LABELS.addNew`](/components/localization)).                                                                  |
 | `loading`                  | `boolean`                            | `false`      | Reports the wait: a spinner in the field while closed, and in the panel a loading row, a busy bar or a loading load-more row depending on what is on screen ([how a wait is reported](#how-a-wait-is-reported)).                 |
-| `error`                    | `string \| null`                     | `null`       | Shows an error row in the panel (override with `ng-template[etSelectError]`, error text as context).                                                                                                                             |
+| `loadError`                | `string \| null`                     | `null`       | Shows a failed-to-load row in the panel (override with `ng-template[etSelectError]`, error text as context). Validation messages come from the bound field's `errors`, not from here.                                            |
 | `hasMoreItems`             | `boolean`                            | `false`      | Shows a load-more control emitting `loadMore` (label via `loadMoreLabel`, else [`SELECT_LABELS.loadMore`](/components/localization)).                                                                                            |
 | `mirrorPanelWidth`         | `boolean`                            | `true`       | Panel matches the field's width. Set `false` for a compact trigger (page size, country code) whose option rows need more room than the field - the panel then sizes to its content, capped at `min(400px, 100vw - 24px)`.        |
 | `loadMoreLabel`            | `string \| null`                     | `null` ²     | Text of the load-more control.                                                                                                                                                                                                   |
@@ -228,7 +228,7 @@ Because the input replaces the trigger's value display, it also **inherits the s
 
 Try it live in Storybook: `Components/Forms/Select` → `Async options`.
 
-With `filterMode="external"` the select never hides options itself - react to `(queryChange)`, drive your data source and render the options with an `@for`. Bind `loading`, `error` and `hasMoreItems` for the panel's async states. `selectOptionsFromQuery` wires an `@ethlete/query` query up in one call:
+With `filterMode="external"` the select never hides options itself - react to `(queryChange)`, drive your data source and render the options with an `@for`. Bind `loading`, `loadError` and `hasMoreItems` for the panel's async states. `selectOptionsFromQuery` wires an `@ethlete/query` query up in one call:
 
 ```ts
 users = selectOptionsFromQuery({
@@ -239,7 +239,7 @@ users = selectOptionsFromQuery({
 });
 ```
 
-Bind the returned bundle with the `[etSelectOptions]` directive and it wires everything for you - `loading`, `error`, `hasMoreItems`, `filterMode="external"`, and the `setQuery`/`loadMore` plumbing - so you only render the options:
+Bind the returned bundle with the `[etSelectOptions]` directive and it wires everything for you - `loading`, `loadError`, `hasMoreItems`, `filterMode="external"`, and the `setQuery`/`loadMore` plumbing - so you only render the options:
 
 ```html
 <et-select [formField]="form.assignee" [etSelectOptions]="users">
@@ -256,7 +256,7 @@ Bind the returned bundle with the `[etSelectOptions]` directive and it wires eve
 <et-select
   [formField]="form.assignee"
   [loading]="users.loading()"
-  [error]="users.error()"
+  [loadError]="users.error()"
   [hasMoreItems]="users.hasMore()"
   (queryChange)="users.setQuery($event)"
   (loadMore)="users.loadMore()"
@@ -267,6 +267,12 @@ Bind the returned bundle with the `[etSelectOptions]` directive and it wires eve
   <et-select-option [value]="user.id">{{ user.name }}</et-select-option>
   }
 </et-select>
+```
+
+Upgrading from a version where this input was called `error`? `et update` renames it to `loadError` in templates, or run the migration yourself:
+
+```bash
+yarn nx g @ethlete/components:migrate-select-input-renames
 ```
 
 The factory debounces the query (`debounceTime`, default 300ms), skips requests below `minQueryLength`, and maps failures to the error row's text (`toErrorMessage`, default: the response's first error message, else `SELECT_LABELS.error`) instead of passing them to the app's `ErrorHandler`. **Pagination is built in:** `args` receives a `page` signal (starting at `initialPage`, default `1`) that resets on every query change and advances when you call `loadMore()`. Each page is its own query on a [paged query stack](/query/stacks#paged-queries): a query change drops the loaded pages and any page still in flight. Return only the current page's slice from `toOptions` - the factory appends each page to the accumulated `options`. Derive `hasMore` via `toHasMore` and wire `loadMore` to `(loadMore)`; it's a no-op while loading, when skipped, or once `hasMore` is false. To preload options so the panel isn't empty on first open, let `args` return request args for the empty query (return `null` instead to require a query first).
