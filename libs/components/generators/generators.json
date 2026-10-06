@@ -95,6 +95,11 @@
       "schema": "./migrate-select-input-renames/schema.json",
       "description": "Rename the select and tag input inputs that changed name in templates"
     },
+    "migrate-loader-determinate": {
+      "factory": "./migrate-loader-determinate/migration",
+      "schema": "./migrate-loader-determinate/schema.json",
+      "description": "Remove the spinner determinate and progress bar indeterminate inputs in templates"
+    },
     "icons": {
       "factory": "./icons/generator",
       "schema": "./icons/schema.json",

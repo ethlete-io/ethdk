@@ -16,7 +16,7 @@
   @if (entry().source.type === 'file') {
     <div [attr.data-active]="entry().status() === 'uploading' || null" class="et-dropzone-entry-progress">
       <div class="et-dropzone-entry-progress-inner">
-        <et-progress-bar [value]="entry().progress() ?? 0" [indeterminate]="entry().progress() === null" />
+        <et-progress-bar [value]="entry().progress()" />
       </div>
     </div>
   }

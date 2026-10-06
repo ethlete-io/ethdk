@@ -39,9 +39,8 @@ const WINDOW_CONTROL_BUTTON_SPINNER_CONFIG: Record<WindowControlButtonSize, { di
         <et-spinner
           [diameter]="spinnerConfig().diameter"
           [strokeWidth]="spinnerConfig().strokeWidth"
-          [determinate]="buttonDir.hasProgress()"
           [track]="buttonDir.hasProgress()"
-          [value]="buttonDir.currentProgress() ?? 0"
+          [value]="buttonDir.currentProgress()"
           class="et-button-loader-spinner"
         />
       </div>

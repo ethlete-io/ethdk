@@ -38,10 +38,9 @@ const ariaValues = (element: Element) =>
   selector: 'et-scenario-upload-progress',
   imports: [ProgressBarComponent, SpinnerComponent],
   template: `
-    <et-progress-bar [value]="uploaded()" [indeterminate]="preparing()" aria-label="Upload team-a roster" />
+    <et-progress-bar [value]="uploaded()" [color]="color()" aria-label="Upload team-a roster" />
     <et-spinner
       [value]="uploaded()"
-      [determinate]="!preparing()"
       [diameter]="48"
       [strokeWidth]="4"
       [color]="color()"
@@ -55,8 +54,7 @@ const ariaValues = (element: Element) =>
   `,
 })
 class UploadProgressComponent {
-  uploaded = signal(0);
-  preparing = signal(true);
+  uploaded = signal<number | null>(null);
   color = signal<string | undefined>(undefined);
 }
 
@@ -103,7 +101,6 @@ describe('loader scenarios', () => {
     expect(spinner.querySelector('.et-spinner-indeterminate-container')?.getAttribute('aria-hidden')).toBe('true');
     expect(ariaValues(spinner)).toEqual([null, null, null]);
 
-    page.preparing.set(false);
     page.uploaded.set(40);
     s.tick();
 
@@ -135,7 +132,7 @@ describe('loader scenarios', () => {
     expect(bar.getAttribute('aria-valuenow')).toBe('0');
   });
 
-  it('inherits the context colour until a colour is set on the spinner', () => {
+  it('inherits the context colour until a colour is set on the spinner or the bar', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(UploadProgressComponent);
 
@@ -143,7 +140,9 @@ describe('loader scenarios', () => {
 
     const spinner = query('et-spinner:not(.inline)');
     const inline = query('et-spinner.inline');
+    const bar = query('et-progress-bar');
 
+    expect(bar.classList).not.toContain('et-progress-bar--themed');
     expect(spinner.classList).not.toContain('et-spinner--themed');
     expect(inline.classList).not.toContain('et-spinner--themed');
     expect(inline.getAttribute('aria-label')).toBe(DEFAULT_LOADER_LABELS.loading);
@@ -154,6 +153,8 @@ describe('loader scenarios', () => {
 
     expect(spinner.classList).toContain('et-spinner--themed');
     expect(spinner.classList).toContain('et-color--accent');
+    expect(bar.classList).toContain('et-progress-bar--themed');
+    expect(bar.classList).toContain('et-color--accent');
     expect(inline.classList).not.toContain('et-spinner--themed');
   });
 

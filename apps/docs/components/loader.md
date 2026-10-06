@@ -1,19 +1,22 @@
 # Loaders
 
-Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Colors come from `currentColor` unless you say otherwise - the spinner takes a `color` input. There is no aggregate imports array - import the components directly:
+Three loading indicators, all exposing `role="progressbar"` with correct determinate/indeterminate aria values. Spinner and progress bar share one rule: they are determinate while `value` is bound to a number and indeterminate while it is `null` or `undefined` (or not bound at all) - the same convention as the button's `progress` input. Both take a `color` input; otherwise they inherit `currentColor`. `LOADER_IMPORTS` holds the spinner and the progress bar; import the brand loader directly:
 
 ```ts
-import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@ethlete/components';
+import { BrandLoaderComponent, LOADER_IMPORTS } from '@ethlete/components';
 ```
 
 ## Spinner
 
 ```html
-<!-- indeterminate (default) -->
+<!-- indeterminate: no value -->
 <et-spinner />
 
 <!-- determinate with background track -->
-<et-spinner [determinate]="true" [value]="65" [track]="true" [diameter]="45" [strokeWidth]="2" />
+<et-spinner [value]="65" [track]="true" [diameter]="45" [strokeWidth]="2" />
+
+<!-- determinate once the size is known, indeterminate before -->
+<et-spinner [value]="upload.progress()" />
 
 <!-- painted in a color theme the app registered -->
 <et-spinner color="brand" />
@@ -24,15 +27,15 @@ import { BrandLoaderComponent, ProgressBarComponent, SpinnerComponent } from '@e
 | `diameter`    | `18`    | Size in px                                                                   |
 | `strokeWidth` | `2.25`  |                                                                              |
 | `track`       | `false` | Renders a background ring                                                    |
-| `determinate` | `false` | Switches to value mode (`aria-valuenow` set)                                 |
-| `value`       | `0`     | 0–100, clamped                                                               |
+| `value`       | `null`  | 0–100, clamped; a number makes it determinate (`aria-valuenow` set)          |
 | `color`       | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
 
-`color` opens a color scope on the spinner itself and paints the strokes with that scope's
+`color` opens a color scope on the loader itself and paints the strokes with that scope's
 `--et-theme-color-primary-solid`. It only does so when you set it: an unset spinner keeps inheriting
 `currentColor` from its context even when it sits inside a color scope, so a spinner in a themed
 button or a tinted text block still matches the text next to it. Set `--et-spinner-color` directly
-when the color isn't a registered theme.
+when the color isn't a registered theme. The progress bar's `color` works the same way and paints
+its indicator (`--et-progress-bar-indicator-color`).
 
 <StoryEmbed id="components-feedback-loader-spinner--determinate" height="240px" />
 
@@ -48,12 +51,26 @@ chips and inputs are usually better off inheriting.
 ## Progress bar
 
 ```html
-<et-progress-bar [value]="42" class="w-full" /> <et-progress-bar [indeterminate]="true" class="w-full" />
+<et-progress-bar [value]="42" class="w-full" />
+<et-progress-bar class="w-full" />
+<et-progress-bar [value]="42" class="w-full" color="brand" />
 ```
 
-`value` (0–100, clamped) drives the determinate bar; `indeterminate` switches to the sweeping animation and drops the aria value attributes.
+| Input   | Default | Notes                                                                        |
+| ------- | ------- | ---------------------------------------------------------------------------- |
+| `value` | `null`  | 0–100, clamped; `null`/`undefined` shows the sweep and drops the aria values |
+| `color` | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
 
 <StoryEmbed id="components-feedback-loader-progress-bar--indeterminate" height="200px" />
+
+::: info Migrating from `determinate` / `indeterminate`
+The spinner's `determinate` and the progress bar's `indeterminate` inputs are gone. `et update` runs
+the `loader-determinate` migration: it drops a constant flag, folds a dynamic one into `value`
+(`[value]="busy ? progress : undefined"`), and lists the loaders it cannot rewrite with file and
+line - a determinate spinner without a `value`, a progress bar without a `value` (it used to show an
+empty bar, now it sweeps), and a spinner that bound `value` without `determinate` (the value used to
+be ignored). A `value` expression that can be `null` now means indeterminate rather than 0.
+:::
 
 ## Brand loader
 

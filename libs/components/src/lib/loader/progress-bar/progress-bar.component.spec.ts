@@ -21,8 +21,31 @@ describe('ProgressBarComponent', () => {
     });
   });
 
-  describe('determinate mode (default)', () => {
-    it('exposes aria-valuenow defaulting to 0', () => {
+  describe('indeterminate mode (value unbound)', () => {
+    it('does not expose aria-valuenow', () => {
+      expect(host.getAttribute('aria-valuenow')).toBeNull();
+    });
+
+    it('does not expose aria-valuemin', () => {
+      expect(host.getAttribute('aria-valuemin')).toBeNull();
+    });
+
+    it('does not expose aria-valuemax', () => {
+      expect(host.getAttribute('aria-valuemax')).toBeNull();
+    });
+
+    it('adds the indeterminate class', () => {
+      expect(host.classList.contains('et-progress-bar--indeterminate')).toBe(true);
+    });
+  });
+
+  describe('determinate mode (value bound)', () => {
+    beforeEach(() => {
+      fixture.componentRef.setInput('value', 0);
+      fixture.detectChanges();
+    });
+
+    it('exposes a bound 0 as aria-valuenow', () => {
       expect(host.getAttribute('aria-valuenow')).toBe('0');
     });
 
@@ -61,28 +84,31 @@ describe('ProgressBarComponent', () => {
     it('does not have the indeterminate class', () => {
       expect(host.classList.contains('et-progress-bar--indeterminate')).toBe(false);
     });
+
+    it.each([null, undefined])('turns indeterminate again when value is set to %s', (value) => {
+      fixture.componentRef.setInput('value', value);
+      fixture.detectChanges();
+
+      expect(host.getAttribute('aria-valuenow')).toBeNull();
+      expect(host.classList.contains('et-progress-bar--indeterminate')).toBe(true);
+    });
   });
 
-  describe('indeterminate mode', () => {
-    beforeEach(() => {
-      fixture.componentRef.setInput('indeterminate', true);
+  describe('color', () => {
+    it('does not add the themed class by default', () => {
+      expect(host.classList.contains('et-progress-bar--themed')).toBe(false);
+    });
+
+    it('adds the themed class once a color is set', () => {
+      fixture.componentRef.setInput('color', 'brand');
       fixture.detectChanges();
+      expect(host.classList.contains('et-progress-bar--themed')).toBe(true);
     });
 
-    it('removes aria-valuenow', () => {
-      expect(host.getAttribute('aria-valuenow')).toBeNull();
-    });
-
-    it('removes aria-valuemin', () => {
-      expect(host.getAttribute('aria-valuemin')).toBeNull();
-    });
-
-    it('removes aria-valuemax', () => {
-      expect(host.getAttribute('aria-valuemax')).toBeNull();
-    });
-
-    it('adds the indeterminate class', () => {
-      expect(host.classList.contains('et-progress-bar--indeterminate')).toBe(true);
+    it('does not add the themed class for an explicit null', () => {
+      fixture.componentRef.setInput('color', null);
+      fixture.detectChanges();
+      expect(host.classList.contains('et-progress-bar--themed')).toBe(false);
     });
   });
 });

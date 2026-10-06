@@ -161,6 +161,15 @@
       "description": "Rename the et-select inputs error, customValueSeparators and normalizeCustomValue, and the tag input inputs maxTags and normalizeTag, in templates.",
       "generator": "@ethlete/components:migrate-select-input-renames",
       "docs": "/components/select"
+    },
+    {
+      "name": "loader-determinate",
+      "version": "1.0.0-next.67",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove determinate from et-spinner and indeterminate from et-progress-bar, which now follow whether value is bound, and rewrite value where the mode was dynamic.",
+      "generator": "@ethlete/components:migrate-loader-determinate",
+      "docs": "/components/loader"
     }
   ]
 }

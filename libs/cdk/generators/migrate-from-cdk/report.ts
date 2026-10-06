@@ -417,8 +417,8 @@ export const renderReport = (report: MigrationReport, context: ReportContext) =>
       ? [
           '## Spinner `[mode]` bindings',
           '',
-          'A bound `mode` cannot be rewritten mechanically. `mode` split into the `determinate` boolean, so',
-          '`[mode]="expr"` becomes `[determinate]="expr === \'determinate\'"` (or whatever the expression meant).',
+          'A bound `mode` cannot be rewritten mechanically. The spinner is determinate while `value` is bound, so',
+          '`[mode]="expr" [value]="v"` becomes `[value]="expr === \'determinate\' ? v : undefined"`.',
           '',
           ...renderSites(report.spinnerModeBindings),
           '',

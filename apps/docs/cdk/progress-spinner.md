@@ -4,7 +4,7 @@ A circular progress indicator with a determinate (percentage) and an indetermina
 
 ::: warning Superseded by @ethlete/components
 New code should use the [components spinner](/components/loader#spinner) (`SpinnerComponent`). The `mode`
-input splits into a `determinate` boolean (default `false`, so `<et-spinner />` still means "endless"),
+input is gone: the spinner is determinate while `value` is bound and indeterminate otherwise (so `<et-spinner />` still means "endless"),
 `renderBackground` becomes `track`, `multiColor` is dropped, and the default stroke is `currentColor` rather
 than a hardcoded blue - pass `color` to paint it with an app-registered color theme. The
 `PROGRESS_SPINNER_DEFAULT_OPTIONS` token is gone too; set `diameter` and `strokeWidth` per instance. The

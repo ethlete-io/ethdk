@@ -112,13 +112,13 @@ const rewriteSpinnerTags = (template: string) =>
     .replace(new RegExp(`<${LEGACY_SPINNER_TAG}(?=[\\s/>])`, 'g'), `<${SPINNER_TAG}`)
     .replace(new RegExp(`</${LEGACY_SPINNER_TAG}\\s*>`, 'g'), `</${SPINNER_TAG}>`);
 
+const INDETERMINATE_MODE = /\s(?:mode\s*=\s*(["'])indeterminate\1|\[mode\]\s*=\s*(["'])'indeterminate'\2)/;
+
 const rewriteSpinnerAttributes = (template: string) =>
   mapOpeningTags(template, SPINNER_TAG, (tag) =>
-    tag
-      .replace(/\smode\s*=\s*(["'])indeterminate\1/g, '')
-      .replace(/\s\[mode\]\s*=\s*(["'])'indeterminate'\1/g, '')
-      .replace(/\smode\s*=\s*(["'])determinate\1/g, ' [determinate]="true"')
-      .replace(/\s\[mode\]\s*=\s*(["'])'determinate'\1/g, ' [determinate]="true"')
+    (INDETERMINATE_MODE.test(tag) ? tag.replace(/\s(?:\[value\]|bind-value|value)\s*=\s*("[^"]*"|'[^']*')/g, '') : tag)
+      .replace(/\smode\s*=\s*(["'])(in)?determinate\1/g, '')
+      .replace(/\s\[mode\]\s*=\s*(["'])'(in)?determinate'\1/g, '')
       .replace(/(\s)\[renderBackground\]/g, '$1[track]')
       .replace(/(\s)renderBackground(?=[\s=/>])/g, '$1track')
       .replace(/\s\[?multiColor\]?\s*=\s*("[^"]*"|'[^']*')/g, '')

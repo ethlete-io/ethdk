@@ -1954,7 +1954,7 @@
   "ProgressSpinnerComponent": {
     "docs": "/components/loader",
     "kind": "rename+reshape",
-    "note": "the mode input splits into a determinate boolean, renderBackground becomes track, multiColor is gone, and the default color is currentColor - set color for a theme",
+    "note": "the mode input is gone - a bound value makes it determinate, an unbound one indeterminate; renderBackground becomes track, multiColor is gone, and the default color is currentColor - set color for a theme",
     "package": "@ethlete/components",
     "since": "1.0.0-next.34",
     "to": "SpinnerComponent"
@@ -1965,7 +1965,7 @@
   },
   "ProgressSpinnerMode": {
     "kind": "removed",
-    "note": "determinate is a boolean input"
+    "note": "a bound value makes the spinner determinate"
   },
   "QUERY_ERROR_TOKEN": {
     "docs": "/components/query-error",

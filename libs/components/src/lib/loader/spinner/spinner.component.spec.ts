@@ -27,7 +27,7 @@ describe('SpinnerComponent', () => {
     });
   });
 
-  describe('indeterminate mode (default)', () => {
+  describe('indeterminate mode (value unbound)', () => {
     it('does not expose aria-valuenow', () => {
       expect(host.getAttribute('aria-valuenow')).toBeNull();
     });
@@ -53,13 +53,13 @@ describe('SpinnerComponent', () => {
     });
   });
 
-  describe('determinate mode', () => {
+  describe('determinate mode (value bound)', () => {
     beforeEach(() => {
-      fixture.componentRef.setInput('determinate', true);
+      fixture.componentRef.setInput('value', 0);
       fixture.detectChanges();
     });
 
-    it('exposes aria-valuenow defaulting to 0', () => {
+    it('exposes a bound 0 as aria-valuenow', () => {
       expect(host.getAttribute('aria-valuenow')).toBe('0');
     });
 
@@ -105,6 +105,15 @@ describe('SpinnerComponent', () => {
 
     it('does not render the indeterminate container', () => {
       expect(host.querySelector('.et-spinner-indeterminate-container')).toBeNull();
+    });
+
+    it.each([null, undefined])('turns indeterminate again when value is set to %s', (value) => {
+      fixture.componentRef.setInput('value', value);
+      fixture.detectChanges();
+
+      expect(host.getAttribute('aria-valuenow')).toBeNull();
+      expect(host.classList.contains('et-spinner--determinate')).toBe(false);
+      expect(host.querySelector('.et-spinner-indeterminate-container')).not.toBeNull();
     });
   });
 

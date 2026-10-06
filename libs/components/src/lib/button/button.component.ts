@@ -46,9 +46,8 @@ const PRESSED_VARIANT_MAP: Record<ButtonVariant, string> = {
         <et-spinner
           [diameter]="spinnerConfig().diameter"
           [strokeWidth]="spinnerConfig().strokeWidth"
-          [determinate]="buttonDir.hasProgress()"
           [track]="buttonDir.hasProgress()"
-          [value]="buttonDir.currentProgress() ?? 0"
+          [value]="buttonDir.currentProgress()"
           class="et-button-loader-spinner"
         />
       </div>

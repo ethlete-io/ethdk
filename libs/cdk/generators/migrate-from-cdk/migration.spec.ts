@@ -154,7 +154,7 @@ export const providers = [provideOverlay(), provideComponentsOverlay()];`,
     it('migrates the spinner tag, its inputs and its colour variable', async () => {
       tree.write(
         'src/app/spinner.component.html',
-        `<et-progress-spinner mode="indeterminate" renderBackground multiColor></et-progress-spinner>
+        `<et-progress-spinner mode="indeterminate" renderBackground multiColor [value]="progress()"></et-progress-spinner>
 <et-progress-spinner mode="determinate" [value]="progress()"></et-progress-spinner>`,
       );
       tree.write('src/app/spinner.component.css', '.loader { --et-progress-spinner-color: red; }');
@@ -163,7 +163,7 @@ export const providers = [provideOverlay(), provideComponentsOverlay()];`,
 
       expect(tree.read('src/app/spinner.component.html', 'utf-8')).toBe(
         `<et-spinner track></et-spinner>
-<et-spinner [determinate]="true" [value]="progress()"></et-spinner>`,
+<et-spinner [value]="progress()"></et-spinner>`,
       );
       expect(tree.read('src/app/spinner.component.css', 'utf-8')).toBe('.loader { --et-spinner-color: red; }');
     });

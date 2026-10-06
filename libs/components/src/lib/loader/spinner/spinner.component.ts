@@ -9,17 +9,18 @@ import {
   numberAttribute,
 } from '@angular/core';
 import { ProvideColorDirective } from '@ethlete/core';
-import { clampProgress } from '../clamp-progress';
+import { clampProgress, progressOrNull } from '../clamp-progress';
 import { injectLoaderName } from '../inject-loader-name';
 
 const BASE_STROKE_WIDTH = 10;
 
 /**
- * A circular loading indicator, indeterminate by default. Inherits `currentColor` unless `color` is set.
- * Its accessible name is the loader `loading` label; set an `aria-label` to name it more specifically.
+ * A circular loading indicator: determinate while `value` is bound, else indeterminate. Inherits `currentColor`
+ * unless `color` is set. Its accessible name is the loader `loading` label; set an `aria-label` to name it more
+ * specifically.
  *
  * @example
- * <et-spinner [determinate]="true" [value]="65" [track]="true" aria-label="Uploading" />
+ * <et-spinner [value]="65" [track]="true" aria-label="Uploading" />
  */
 @Component({
   selector: 'et-spinner',
@@ -132,11 +133,13 @@ export class SpinnerComponent {
   /** Render a background ring behind the stroke. @default false */
   public track = input(false, { transform: booleanAttribute });
 
-  /** The progress in determinate mode, 0-100 and clamped. @default 0 */
-  public value = input(0, { transform: numberAttribute });
+  /**
+   * The progress, 0-100 and clamped. Binding a number shows it instead of the indeterminate sweep and exposes it as
+   * `aria-valuenow`; `null` or `undefined` keeps the spinner indeterminate. @default null
+   */
+  public value = input<number | null, number | string | null | undefined>(null, { transform: progressOrNull });
 
-  /** Show `value` instead of the indeterminate sweep, and expose it as `aria-valuenow`. @default false */
-  public determinate = input(false, { transform: booleanAttribute });
+  protected determinate = computed(() => this.value() !== null);
 
   /**
    * Whether `color` was set on this spinner. The theme colour is deliberately gated on the input rather than
@@ -158,7 +161,7 @@ export class SpinnerComponent {
 
   protected strokeCircumference = computed(() => 2 * Math.PI * this.circleRadius());
 
-  protected clampedValue = computed(() => clampProgress(this.value()));
+  protected clampedValue = computed(() => clampProgress(this.value() ?? 0));
 
   protected determinateDashOffset = computed(() => {
     const circumference = this.strokeCircumference();

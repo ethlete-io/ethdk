@@ -17,8 +17,7 @@ import { SpinnerComponent } from '../../spinner.component';
             [diameter]="diameter()"
             [strokeWidth]="strokeWidth()"
             [track]="track()"
-            [determinate]="determinate()"
-            [value]="value()"
+            [value]="determinate() ? value() : null"
             [color]="color()"
           />
         </div>

@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { ProvideSurfaceDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { ProgressBarComponent } from '../../progress-bar.component';
 
 @Component({
@@ -15,7 +15,7 @@ import { ProgressBarComponent } from '../../progress-bar.component';
           etProvideSurface="dark-elevated"
           style="background: rgb(var(--et-surface-background)); border-color: rgb(var(--et-surface-border))"
         >
-          <et-progress-bar [value]="value()" [indeterminate]="indeterminate()" class="w-full text-et-brand" />
+          <et-progress-bar [value]="indeterminate() ? null : value()" [color]="color()" class="w-full text-et-brand" />
         </div>
       </div>
     </div>
@@ -26,4 +26,5 @@ import { ProgressBarComponent } from '../../progress-bar.component';
 export class ProgressBarStorybookComponent {
   public value = input(42);
   public indeterminate = input(false);
+  public color = input<RegisteredColorThemeName | null>(null);
 }

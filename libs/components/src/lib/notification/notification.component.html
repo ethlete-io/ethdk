@@ -26,7 +26,7 @@
   }
 
   @if (notification.progress() !== undefined) {
-    <et-progress-bar [value]="notification.progress()!" class="et-notification-progress-bar" />
+    <et-progress-bar [value]="notification.progress()" class="et-notification-progress-bar" />
   }
 
   @if (notification.action() || notification.secondaryAction()) {
