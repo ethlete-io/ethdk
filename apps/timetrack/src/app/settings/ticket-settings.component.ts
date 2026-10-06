@@ -48,7 +48,7 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
           <et-select
             [value]="settings().issueTypeName || null"
             [loading]="catalog.isLoadingIssueTypes()"
-            [error]="catalog.issueTypeFailure()"
+            [loadError]="catalog.issueTypeFailure()"
             (valueChange)="setIssueTypeName($event)"
             (openChange)="openedTypes($event)"
             placeholder="Pick a type"
@@ -67,7 +67,7 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
           <et-select
             [value]="settings().initialStatus || null"
             [loading]="catalog.isLoadingStatuses()"
-            [error]="catalog.statusFailure()"
+            [loadError]="catalog.statusFailure()"
             (valueChange)="setInitialStatus($event)"
             (openChange)="openedStatuses($event)"
             placeholder="Leave it where Jira files it"
@@ -134,7 +134,7 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
           <et-select
             [value]="settings().subjectField || null"
             [loading]="catalog.isLoadingFields()"
-            [error]="catalog.fieldFailure()"
+            [loadError]="catalog.fieldFailure()"
             (valueChange)="setSubjectField($event)"
             (openChange)="openedFields($event)"
             placeholder="Write no subject"

@@ -53,7 +53,7 @@ the work on the next.`;
         <et-select
           [value]="picked()"
           [loading]="catalog.isLoadingProjects()"
-          [error]="catalog.projectFailure()"
+          [loadError]="catalog.projectFailure()"
           (valueChange)="pick($event)"
           (openChange)="opened($event)"
           placeholder="Pick the projects you work in"

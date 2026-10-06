@@ -85,7 +85,7 @@ class SurfaceEmailComponent {
   imports: [SelectComponent, SelectOptionComponent, ProvideSurfaceDirective],
   template: `
     <section [etProvideSurface]="surface()">
-      <et-select [(value)]="coach" error="Coaches unavailable" aria-label="Coach">
+      <et-select [(value)]="coach" loadError="Coaches unavailable" aria-label="Coach">
         <et-select-option value="ana">Ana</et-select-option>
       </et-select>
     </section>
