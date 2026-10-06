@@ -96,6 +96,9 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    `StandIn.parentKey`/`parentSource` with `withStandInParent`; `withStandInResolutionReset` behind
    "Hand back to auto mode"; `day.rows` rows carry `sources`. Project read shared with the create
    form in `day-review/project-issues.ts`. e2e: `apps/timetrack-e2e/src/auto-mode.spec.ts`.
+   Settle gate (2026-10-06): a band is asked only once its context has been quiet for
+   `AUTO_MODE_SETTLE_MS` (30 minutes), and an answer still auto mode's that was asked before then is
+   asked again once it settles; "Ask auto mode again" stays immediate and stand-ins are not gated.
    Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
    minutes before now) that names an issue gets its description written as `auto`, once per row:
    `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription` in

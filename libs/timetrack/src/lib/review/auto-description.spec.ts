@@ -4,7 +4,7 @@ import { WorklogProposal } from '../model/proposal';
 import { DayRows } from '../rows/build-rows';
 import { CALL_LANE_KEY } from '../rows/lane';
 import {
-  AUTO_DESCRIPTION_SETTLE_MS,
+  AUTO_MODE_SETTLE_MS,
   autoDescriptionAsks,
   autoDescriptionRequest,
   withAutoModeDescription,
@@ -208,8 +208,8 @@ describe('autoDescriptionAsks', () => {
   it('waits until the row has settled', () => {
     const rows = rowsOf(EMPTY_DAY_REVIEW_EDITS);
 
-    expect(asks({ rows, nowMs: CODE.to.getTime() + AUTO_DESCRIPTION_SETTLE_MS - 1 })).toEqual([]);
-    expect(asks({ rows, nowMs: CODE.to.getTime() + AUTO_DESCRIPTION_SETTLE_MS })).toEqual([CODE.id]);
+    expect(asks({ rows, nowMs: CODE.to.getTime() + AUTO_MODE_SETTLE_MS - 1 })).toEqual([]);
+    expect(asks({ rows, nowMs: CODE.to.getTime() + AUTO_MODE_SETTLE_MS })).toEqual([CODE.id]);
   });
 
   it('asks nothing on another day, or where applying is stricter than local', () => {

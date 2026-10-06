@@ -10,10 +10,11 @@ import { setRowDescription } from './edits';
 import { AutoModeDescription, DayReviewEdits, ReviewedRow } from './model';
 
 /**
- * How long a row's session has to be quiet before auto mode writes its description: 30 minutes past the
- * row's end, or past the last activity of the row's own session where the row has a piece.
+ * How long work has to be quiet before auto mode asks about it: 30 minutes past a row's end, or past the
+ * last activity of its own session where it has a piece. It gates a row's description and an unnamed
+ * context's ticket alike.
  */
-export const AUTO_DESCRIPTION_SETTLE_MS = 30 * 60_000;
+export const AUTO_MODE_SETTLE_MS = 30 * 60_000;
 
 /** The id auto mode keys a row's description by: the id an edit to the row is written against. */
 export const autoDescriptionRowId = (row: Pick<ReviewedRow, 'id' | 'recutOf'>) => row.recutOf ?? row.id;
@@ -57,7 +58,7 @@ export const autoDescriptionAsks = (options: {
   if (!options.enabled || options.day !== options.today) return [];
   if (actionClassOf('autoMode.apply', options.classes) !== 'local') return [];
 
-  const settledBy = options.nowMs - (options.settleMs ?? AUTO_DESCRIPTION_SETTLE_MS);
+  const settledBy = options.nowMs - (options.settleMs ?? AUTO_MODE_SETTLE_MS);
   const answered = new Map(options.answers.map((answer) => [answer.rowId, answer.request.notes]));
   const asked = new Set<string>();
 

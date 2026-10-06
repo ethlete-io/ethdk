@@ -97,8 +97,8 @@ import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectDayReview } from './day-review';
 import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
-/** How often a row's settle time is checked again: a row settles by the clock, not by a change. */
-const DESCRIPTION_TICK_MS = 60_000;
+/** How often settle times are checked again: a row or a context settles by the clock, not by a change. */
+const SETTLE_TICK_MS = 60_000;
 
 type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows } | null;
 
@@ -213,7 +213,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     activity.update((entries) =>
       entries.map((entry) => (entry.id === id ? { ...entry, ...end, endedAtMs: Date.now() } : entry)),
     );
-  const minuteTick = toSignal(interval(DESCRIPTION_TICK_MS), { initialValue: -1 });
+  const minuteTick = toSignal(interval(SETTLE_TICK_MS), { initialValue: -1 });
 
   const enabled = computed(() => {
     const { reasoning } = settings.settings();
@@ -242,6 +242,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const askedNow = (day: string) => {
     const answers = dayReview.autoAnswers();
 
+    minuteTick();
+
     if (!answers || dayReview.isLoading() || !dayReview.deterministic() || !dayReview.namingSettled()) return [];
     if (dayReview.dayKey() !== day) return [];
 
@@ -251,6 +253,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       enabled: enabled(),
       day,
       today: today(),
+      nowMs: Date.now(),
       contexts: dayReview.unnamed(),
       ruledContextIds: new Set(dayReview.rulesByContext().keys()),
       standIns: current.standIns,
@@ -940,6 +943,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const created = computed(() => {
     const answers = dayReview.autoAnswers();
+
+    minuteTick();
 
     if (!answers) return [];
 

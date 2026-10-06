@@ -41,6 +41,7 @@ import { reviewDay } from './review-day';
 
 const TODAY = '2026-08-11';
 const at = (time: string) => new Date(`${TODAY}T${time}:00Z`);
+const NOW = at('12:00').getTime();
 
 const BLOCK: ActivityBlock = {
   from: at('08:00'),
@@ -130,6 +131,7 @@ const asks = (options: {
     enabled: true,
     day: options.day ?? TODAY,
     today: TODAY,
+    nowMs: NOW,
     contexts: [CONTEXT],
     standIns: options.standIns ?? [],
     rows: options.rows ?? [],
@@ -156,6 +158,7 @@ describe('autoModeAsks', () => {
         enabled: false,
         day: TODAY,
         today: TODAY,
+        nowMs: NOW,
         contexts: [CONTEXT],
         standIns: [],
         rows: [],
@@ -204,6 +207,92 @@ describe('autoModeAsks', () => {
   });
 });
 
+describe('autoModeAsks while a band still runs', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };
+  const request = autoModeSubjectRequest({
+    subject: SUBJECT,
+    contexts: [CONTEXT],
+    unattributed: DAY.unattributed,
+    standIns: [],
+    config: CONFIG,
+    maskedNames: [],
+  })!;
+  const draftAskedAt = (time: string): AutoModeAnswer => ({
+    ...drafted,
+    askedAtMs: at(time).getTime(),
+    request,
+    outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
+  });
+  const queue = enqueueApproval([], {
+    id: 'a-1',
+    request: { op: 'jira.create', summary: 'Export the month', description: 'One file.', projectKey: 'ABC' },
+    client: AUTO_MODE_CLIENT,
+    target: autoModeApprovalTarget(TODAY, SUBJECT),
+    at: at('08:55'),
+    day: TODAY,
+  });
+  const asksAt = (
+    time: string,
+    options: {
+      answers?: AutoModeAnswer[];
+      approvals?: AgentApproval[];
+      standIns?: ReturnType<typeof openStandIn>[];
+      rows?: Parameters<typeof autoModeAsks>[0]['rows'];
+    } = {},
+  ) =>
+    autoModeAsks({
+      enabled: true,
+      day: TODAY,
+      today: TODAY,
+      nowMs: at(time).getTime(),
+      contexts: [CONTEXT],
+      standIns: options.standIns ?? [],
+      rows: options.rows ?? [],
+      answers: options.answers ?? [],
+      evidence: { unattributed: DAY.unattributed, config: CONFIG, maskedNames: [] },
+      approvals: options.approvals ?? queue,
+    });
+
+  it('asks nothing about a context until its work has been quiet for the settle window', () => {
+    expect(asksAt('09:29')).toEqual([]);
+    expect(asksAt('09:30')).toEqual([SUBJECT]);
+  });
+
+  it('waits for the last activity of a row the context holds', () => {
+    const rows = [{ id: unnamedRowId(GROUP), activeUntil: at('09:40') }];
+
+    expect(asksAt('09:30', { rows })).toEqual([]);
+    expect(asksAt('10:10', { rows })).toEqual([SUBJECT]);
+  });
+
+  it('asks about a stand-in while a context still runs', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+
+    expect(asksAt('09:00', { standIns: [standIn] })).toEqual([{ kind: 'stand-in', standInId: standIn.id }]);
+  });
+
+  it('asks a context again once it settles when its answer was asked while it ran, and the queued draft expires', () => {
+    const answers = [draftAskedAt('08:54')];
+
+    expect(asksAt('09:20', { answers })).toEqual([]);
+    expect(asksAt('09:30', { answers })).toEqual([SUBJECT]);
+    expect(withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: SUBJECT }).map((item) => item.state)).toEqual([
+      'expired',
+    ]);
+  });
+
+  it('leaves an answer asked after the context settled', () => {
+    expect(asksAt('12:00', { answers: [draftAskedAt('09:31')] })).toEqual([]);
+  });
+
+  it('leaves an answer asked while the context ran once its create was approved', () => {
+    const approvals = markApproval(queue, { id: 'a-1', state: 'approved' });
+
+    expect(asksAt('12:00', { answers: [draftAskedAt('08:54')], approvals })).toEqual([]);
+  });
+});
+
 describe('autoModeAsks after new evidence', () => {
   const CONFIG = resolveGitFlowConfig({});
   const SUBJECT = { kind: 'context' as const, contextId: CONTEXT.id };
@@ -215,7 +304,7 @@ describe('autoModeAsks after new evidence', () => {
   });
   const answerFrom = (unattributed: WorkGroup[], outcome: AutoModeAnswer['outcome']): AutoModeAnswer => ({
     subject: SUBJECT,
-    askedAtMs: 0,
+    askedAtMs: NOW,
     request: autoModeSubjectRequest({
       subject: SUBJECT,
       contexts: [CONTEXT],
@@ -240,6 +329,7 @@ describe('autoModeAsks after new evidence', () => {
       enabled: true,
       day: TODAY,
       today: TODAY,
+      nowMs: NOW,
       contexts: options.contexts ?? [CONTEXT],
       standIns: [],
       rows: options.rows ?? [],
@@ -272,6 +362,7 @@ describe('autoModeAsks after new evidence', () => {
         enabled: true,
         day: TODAY,
         today: TODAY,
+        nowMs: NOW,
         contexts: [CONTEXT],
         standIns: [],
         rows: [],
@@ -460,6 +551,7 @@ describe('asking auto mode again for a row', () => {
     })!;
     const held: AutoModeAnswer = {
       ...drafted,
+      askedAtMs: NOW,
       request,
       outcome: { ...drafted.outcome, approvalId: 'a-1' } as AutoModeAnswer['outcome'],
     };
@@ -476,6 +568,7 @@ describe('asking auto mode again for a row', () => {
         enabled: true,
         day: TODAY,
         today: TODAY,
+        nowMs: NOW,
         contexts: [CONTEXT],
         standIns: [],
         rows: rowsOf(EMPTY_DAY_REVIEW_EDITS),
@@ -489,6 +582,7 @@ describe('asking auto mode again for a row', () => {
     const expired = withAutoModeSubjectItemsExpired(queue, { day: TODAY, subject: SUBJECT });
     const edits = withAutoModeAnswer(withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, held), {
       ...matched('ABC-2'),
+      askedAtMs: NOW,
       request,
     });
 
