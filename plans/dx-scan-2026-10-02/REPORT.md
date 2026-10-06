@@ -18,7 +18,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (26)
+## 2. Open user decisions (25)
 
 The domain file of each ID has the full problem and the proposed fix.
 
@@ -41,7 +41,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                                                   |
 | MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable.                            |
 | MISC-08 | The rich-text renderer cannot render a GraphQL rich-text field. Input shape: a `[gqlRichText]` input with `{ json, links }`, or a `createContentfulIncludeMapFromGqlLinks()` helper?                                      |
-| CR-05   | Spinner and progress bar invert the determinate flag and differ in `color`. One shape: `mode: 'determinate' \| 'indeterminate'`, or "determinate when `value` is bound"?                                                  |
 | CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                                               |
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                                               |
 | CORE-16 | Pointer capture is fixed. Rename `ResizeMoveEvent` fields to `totalDx`/`totalDy` and make `resizeEnded` emit the final event (breaking)?                                                                                  |

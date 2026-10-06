@@ -120,6 +120,7 @@ domain in scope has a suite in `apps/storybook-e2e`.
   (`button/headless/button.directive.ts`). Give the progress bar the same `color` host directive, and add
   `LOADER_IMPORTS`. Update `loader.md`.
 - Breaking: yes. Decision: yes (which shape).
+- Status: fixed (2026-10-06, determinate when `value` is bound; flags dropped; `color` on the progress bar; `LOADER_IMPORTS`; dd29e8e3a; et update migration `loader-determinate`)
 
 ## CR-06 Tree `value` is `T | T[] | null`, so `[(value)]` forces a widened signal type
 
