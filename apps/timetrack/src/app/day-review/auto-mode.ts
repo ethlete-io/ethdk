@@ -100,7 +100,7 @@ import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ }
 /** How often settle times are checked again: a row or a context settles by the clock, not by a change. */
 const SETTLE_TICK_MS = 60_000;
 
-type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows } | null;
+type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows; reviewed: readonly ReviewedRow[] } | null;
 
 type Ask = { day: string; subject: AutoModeSubject; evidence$: Observable<AskEvidence> };
 
@@ -409,6 +409,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       contexts: evidence?.contexts ?? [],
       unattributed: evidence?.rows.unattributed ?? [],
       standIns: current.standIns,
+      bands: evidence?.reviewed ?? [],
       config: gitFlowConfigFor(current),
       maskedNames: current.reasoning.maskedNames,
       parents: issues?.parents ?? [],
@@ -509,7 +510,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const screenEvidence$ = defer(() => {
     const rows = dayReview.deterministic();
 
-    return of<AskEvidence>(rows ? { contexts: dayReview.unnamed(), rows } : null);
+    return of<AskEvidence>(rows ? { contexts: dayReview.unnamed(), rows, reviewed: dayReview.rows() } : null);
   });
 
   const heldAnswers$ = (day: string): Observable<readonly AutoModeAnswer[]> =>
@@ -765,7 +766,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           stillNeeded: () => true,
           evidence$: agentDay
             .askEvidence$(day)
-            .pipe(map((current): AskEvidence => ({ contexts: current.contexts, rows: current.dayRows }))),
+            .pipe(
+              map((current): AskEvidence => ({
+                contexts: current.contexts,
+                rows: current.dayRows,
+                reviewed: current.rows,
+              })),
+            ),
         });
 
         return { status: queued ? 'queued' : 'asking', day, subject, label: askLabelOf(subject) };

@@ -8,7 +8,7 @@ import { StandIn, standInWaitingDays } from '../model/stand-in';
 import { JiraIssue } from '../jira/issue';
 import { SpecHeader } from './spec';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
-import { MAX_TICKET_SUMMARY_LENGTH } from './draft';
+import { MAX_TICKET_SUMMARY_LENGTH, StandInBand, standInNotes, standInObservedMs } from './draft';
 
 /** An issue the agent may choose from, offered so it picks rather than invents a key. */
 export type TicketWritingIssue = {
@@ -71,6 +71,7 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '',
   'The user message is JSON with the repository, the branch, the application, how many minutes the',
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
+  'The notes are ordered by how much of the work carried them, the most first.',
   '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project,',
   'then the issues the user recently logged time on, done ones included.',
   '`minutes` is absent when nothing measured how long the work took.',
@@ -84,6 +85,7 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '`standIn` is present when the user already named this work themselves, before Jira held a ticket:',
   'their own name for it, their own draft description, and how many days it has run across. Take it as',
   'the subject of the ticket. Sharpen the wording. Never write about different work than it names.',
+  'Its notes are from every band of it on the day, so they say what the work turned out to be.',
   '',
   'Write for the person who reads the backlog and was not there: a delivery lead, a product manager.',
   '',
@@ -95,6 +97,9 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '- `summary` is one line naming the one thing to do. Aim under 80 characters and never pass 255.',
   '  No issue key, no branch name, no ticket-type prefix such as "feat:" or "chore:". Do not join',
   '  two pieces of work with "and" — name the one that carries the rest.',
+  '- Name the outcome most of the work went into, read from the first notes. Never name a ticket',
+  '  after a small step on the way, such as an ignore file, a config tweak, a rename or a formatting',
+  '  pass, unless that step is all the notes hold.',
   '- Every word in `summary` must change what the reader understands. Drop an adjective or adverb',
   '  that only adds emphasis and names no constraint — "vollständig", "sauber", "umfassend",',
   '  "robust", "fully", "properly", "comprehensive" — including where it is joined to a second',
@@ -274,12 +279,16 @@ export const ticketWritingRequest = (options: {
  * Builds the redacted payload for a stand-in: work the user named in their own words before Jira
  * held a ticket for it.
  *
- * The name and the description are free text the user typed, so both go out in pseudonyms through the
- * same name list the day's reasoning call uses. `minutes` is left out rather than guessed — a stand-in
- * holds days, and no band on it measures how long the work took.
+ * The name and the description are free text, so both go out in pseudonyms through the same name list
+ * the day's reasoning call uses. `notes` and `minutes` come from the stand-in's bands on the day, so
+ * the ticket is written from all of its work rather than from the stretch that opened it. A description
+ * the app drafted is left out once the bands say more: it was written from that first stretch alone.
  */
 export const standInWritingRequest = (options: {
-  standIn: Pick<StandIn, 'name' | 'description' | 'days'>;
+  standIn: Pick<StandIn, 'name' | 'description' | 'days'> &
+    Partial<Pick<StandIn, 'id' | 'author' | 'openedFor' | 'openedForBranch'>>;
+  /** The day's bands. Only the ones the stand-in names are read. */
+  bands?: readonly StandInBand[];
   parents?: readonly JiraIssue[];
   issues?: readonly JiraIssue[];
   /** The spec the work was written against, from `specForCommits$`. */
@@ -289,18 +298,28 @@ export const standInWritingRequest = (options: {
   /** The days Tempo already holds. Only the days it does not hold are counted as waiting. */
   bookedDays?: ReadonlySet<string>;
 }): TicketWritingRequest => {
+  const { standIn } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
-  const description = masked({ text: options.standIn.description, map });
-  const days = standInWaitingDays({ standIn: options.standIn, bookedDays: options.bookedDays ?? new Set() });
+  const bands = { bands: options.bands ?? [], standInId: standIn.id ?? '' };
+  const notes = standIn.id ? standInNotes(bands) : [];
+  const observedMs = standIn.id ? standInObservedMs(bands) : 0;
+  const drafted = standIn.author === 'app' && notes.length > 0;
+  const description = drafted ? undefined : masked({ text: standIn.description, map });
+  const days = standInWaitingDays({ standIn, bookedDays: options.bookedDays ?? new Set() });
   const spec = maskedSpec({ spec: options.spec, map });
+  const repo = masked({ text: standIn.openedFor ? repoNameOf(standIn.openedFor) : undefined, map });
+  const branch = masked({ text: standIn.openedForBranch, map });
 
   return {
+    ...(repo ? { repo } : {}),
+    ...(branch ? { branch } : {}),
+    ...(observedMs ? { minutes: Math.round(observedMs / 60_000) } : {}),
     standIn: {
-      name: maskNames({ text: options.standIn.name, map }),
+      name: maskNames({ text: standIn.name, map }),
       ...(description ? { description } : {}),
       days: days.length,
     },
-    notes: [],
+    notes: notes.map((note) => maskNames({ text: note, map })),
     ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),

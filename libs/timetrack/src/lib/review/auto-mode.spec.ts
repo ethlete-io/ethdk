@@ -1312,3 +1312,67 @@ describe('autoModeAskRefusal', () => {
     );
   });
 });
+
+describe('autoModeSubjectRequest for a stand-in with several bands', () => {
+  const standIn = openStandIn({
+    name: 'Bracket challenge',
+    description: 'What the work says it was:\n\n- Gitignore update\n\nRecorded from 16m of work in shop.',
+    day: TODAY,
+    now: at('07:00'),
+    author: 'app',
+    openedFor: '/work/shop',
+    openedForBranch: 'fix/20260811_bracket-challenge',
+    key: 'shop-bracket-challenge',
+  });
+  const note = (kind: 'commit' | 'agent-session', summary: string, time: string) => ({
+    kind,
+    at: at(time),
+    detail: summary,
+    summary,
+  });
+  const bands = [
+    { standInId: standIn.id, observedMs: 4 * 60_000, evidence: [note('commit', 'Gitignore update', '14:00')] },
+    {
+      standInId: standIn.id,
+      observedMs: 45 * 60_000,
+      evidence: [
+        note('agent-session', 'Bracket challenge worktree debugging', '14:15'),
+        note('commit', 'fix(competition): Show a paper plane on the bracket challenge save', '14:40'),
+      ],
+    },
+    {
+      standInId: standIn.id,
+      observedMs: 30 * 60_000,
+      evidence: [
+        note('agent-session', 'Bracket challenge worktree debugging', '15:00'),
+        note('commit', 'fix(competition): Reorder the group prediction after a knockout change', '15:20'),
+      ],
+    },
+    { issueKey: 'ABC-1', observedMs: 60 * 60_000, evidence: [note('commit', 'feat(broadcast): Other work', '10:00')] },
+  ];
+
+  const request = autoModeSubjectRequest({
+    subject: { kind: 'stand-in', standInId: standIn.id },
+    contexts: [],
+    unattributed: [],
+    standIns: [standIn],
+    bands,
+    config: resolveGitFlowConfig({}),
+    maskedNames: [],
+  });
+
+  it('carries the notes of every band, the one that held the most time first', () => {
+    expect(request?.notes).toEqual([
+      'Bracket challenge worktree debugging',
+      'fix(competition): Show a paper plane on the bracket challenge save',
+      'fix(competition): Reorder the group prediction after a knockout change',
+      'Gitignore update',
+    ]);
+    expect(request?.minutes).toBe(79);
+    expect(request).toMatchObject({ repo: 'shop', branch: 'fix/20260811_bracket-challenge' });
+  });
+
+  it('leaves out the description the app drafted from the first band', () => {
+    expect(request?.standIn).toEqual({ name: 'Bracket challenge', days: 1 });
+  });
+});

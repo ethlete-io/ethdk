@@ -603,6 +603,7 @@ const TICKET_DRAFT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return waiting
       ? standInWritingRequest({
           standIn: waiting,
+          bands: dayReview.rows(),
           ...offered,
           ...framed,
           maskedNames,

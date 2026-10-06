@@ -100,6 +100,11 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    stand-in's rows) has been quiet for `AUTO_MODE_SETTLE_MS` (30 minutes), and an answer still auto
    mode's that was asked before then is asked again once it settles; "Ask auto mode again" stays
    immediate.
+   Stand-in evidence (2026-10-06): a stand-in's request carries the notes of all its bands on the day,
+   weighted by their observed time (`standInNotes` in `ticket/draft.ts`), with its checkout, branch and
+   minutes; an app-drafted description is dropped once the bands give notes, and the prompt asks for
+   the main outcome, never a minor step. Before, it sent only the name and the description frozen from
+   the first 16 minutes, so a day of bracket work drafted a ticket about a `.gitignore` commit.
    Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
    minutes before now) that names an issue gets its description written as `auto`, once per row:
    `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription` in

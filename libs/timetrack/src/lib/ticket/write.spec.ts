@@ -251,6 +251,25 @@ describe('standInWritingRequest', () => {
     });
   });
 
+  it('keeps the description the user wrote beside the notes of its bands', () => {
+    const request = standInWritingRequest({
+      standIn: { ...WAITING, id: 'stand-in:1', author: 'user' },
+      bands: [
+        {
+          standInId: 'stand-in:1',
+          observedMs: 20 * 60_000,
+          evidence: [{ kind: 'commit', at: new Date(), detail: 'x', summary: 'feat(export): Write the CSV' }],
+        },
+      ],
+    });
+
+    expect(request).toMatchObject({
+      minutes: 20,
+      notes: ['feat(export): Write the CSV'],
+      standIn: { description: 'The finance team needs the run as a CSV.' },
+    });
+  });
+
   it('counts only the days Tempo does not hold yet', () => {
     const request = standInWritingRequest({ standIn: WAITING, bookedDays: new Set(['2026-09-10', '2026-09-11']) });
 

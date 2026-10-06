@@ -3,7 +3,7 @@ import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../ag
 import { AgentApiRequest } from '../agent-api/model';
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
-import { draftTicket } from '../ticket/draft';
+import { StandInBand, draftTicket } from '../ticket/draft';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
@@ -202,11 +202,16 @@ export const withNamedContextItemsExpired = (
   });
 
 /** The payload an ask about a subject sends. `null` for a context or stand-in the day no longer holds. */
+type AskStandIn = Pick<StandIn, 'id' | 'name' | 'description' | 'days'> &
+  Partial<Pick<StandIn, 'author' | 'openedFor' | 'openedForBranch'>>;
+
 export const autoModeSubjectRequest = (options: {
   subject: AutoModeSubject;
   contexts: readonly UnnamedContext[];
   unattributed: readonly WorkGroup[];
-  standIns: readonly Pick<StandIn, 'id' | 'name' | 'description' | 'days'>[];
+  standIns: readonly AskStandIn[];
+  /** The day's bands, which say what a stand-in's work was. */
+  bands?: readonly StandInBand[];
   config: GitFlowConfig;
   maskedNames: readonly string[];
   parents?: readonly JiraIssue[];
@@ -220,7 +225,9 @@ export const autoModeSubjectRequest = (options: {
   if (subject.kind === 'stand-in') {
     const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
 
-    return standIn ? standInWritingRequest({ standIn, maskedNames, bookedDays: options.bookedDays, ...jira }) : null;
+    return standIn
+      ? standInWritingRequest({ standIn, bands: options.bands, maskedNames, bookedDays: options.bookedDays, ...jira })
+      : null;
   }
 
   const context = options.contexts.find((entry) => entry.id === subject.contextId);
@@ -270,7 +277,7 @@ const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals:
 };
 
 type AskRow = Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'> &
-  Partial<Pick<ReviewedRow, 'id' | 'recutOf' | 'to' | 'activeUntil'>>;
+  Partial<Pick<ReviewedRow, 'id' | 'recutOf' | 'to' | 'activeUntil' | 'observedMs' | 'evidence'>>;
 
 const contextIdsByRowId = (unattributed: readonly WorkGroup[]) => {
   const contextOfRow = new Map<string, string>();
@@ -445,7 +452,7 @@ export const autoModeAsks = (options: {
   contexts: readonly UnnamedContext[];
   /** The contexts a standing rule already answers, which the day still lists but never asks about. */
   ruledContextIds?: ReadonlySet<string>;
-  standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource' | 'name' | 'description'>[];
+  standIns: readonly (AskStandIn & Pick<StandIn, 'state' | 'resolutionSource'>)[];
   rows: readonly AskRow[];
   answers: readonly AutoModeAnswer[];
   /** What the day's evidence is built from now. Absent, an answered subject is never asked again. */
@@ -492,6 +499,7 @@ export const autoModeAsks = (options: {
       contexts: options.contexts,
       unattributed: evidence.unattributed,
       standIns: options.standIns,
+      bands: options.rows,
       config: evidence.config,
       maskedNames: evidence.maskedNames,
     });

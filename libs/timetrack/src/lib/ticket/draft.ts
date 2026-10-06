@@ -3,7 +3,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityContext, contextKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
-import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
+import { Evidence, QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 
 /** Jira refuses a longer summary, and a summary that long is a description anyway. */
 export const MAX_TICKET_SUMMARY_LENGTH = 255;
@@ -72,6 +72,48 @@ const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readon
 
   return notes;
 };
+
+/** A band of the day, as far as {@link standInNotes} reads one. */
+export type StandInBand = {
+  standInId?: string;
+  issueKey?: string;
+  observedMs?: number;
+  evidence?: readonly Evidence[];
+};
+
+/**
+ * What a stand-in's bands on the day say the work was, the wording that held the most time first.
+ *
+ * A note is weighed by the observed time of every band that carries it, so an agent session that ran
+ * through the whole afternoon outranks a commit that took four minutes. Only a band the stand-in still
+ * names counts: one that reached a real issue is no longer its work.
+ */
+export const standInNotes = (options: { bands: readonly StandInBand[]; standInId: string; max?: number }) => {
+  const weight = new Map<string, number>();
+
+  for (const band of options.bands) {
+    if (band.standInId !== options.standInId || band.issueKey) continue;
+
+    for (const note of new Set(
+      (band.evidence ?? [])
+        .filter((entry) => QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) && entry.summary)
+        .map((entry) => entry.summary as string),
+    )) {
+      weight.set(note, (weight.get(note) ?? 0) + (band.observedMs ?? 0));
+    }
+  }
+
+  return [...weight]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, options.max ?? DEFAULT_MAX_TICKET_NOTES)
+    .map(([note]) => note);
+};
+
+/** The observed time of a stand-in's bands on the day. */
+export const standInObservedMs = (options: { bands: readonly StandInBand[]; standInId: string }) =>
+  options.bands
+    .filter((band) => band.standInId === options.standInId && !band.issueKey)
+    .reduce((total, band) => total + (band.observedMs ?? 0), 0);
 
 /**
  * The subject a branch already carries, even when the branch names no issue key — which is the only
