@@ -1,6 +1,4 @@
-import { NgClass } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulRestAsset } from '../../types';
 
@@ -8,25 +6,21 @@ import { ContentfulRestAsset } from '../../types';
   selector: 'et-contentful-audio',
   template: `
     @if (data(); as data) {
-      <figure [ngClass]="figureClass()">
+      <figure class="et-contentful-audio-figure">
         @if (data.title) {
-          <figcaption [ngClass]="figcaptionClass()">{{ data.title }}</figcaption>
+          <figcaption class="et-contentful-audio-figcaption">{{ data.title }}</figcaption>
         }
-        <audio [ngClass]="audioClass()" [src]="data.url" controls></audio>
+        <audio [src]="data.url" class="et-contentful-audio-audio" controls></audio>
       </figure>
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgClass],
   host: {
     class: 'et-contentful-audio',
   },
 })
 export class ContentfulAudioComponent {
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
-  audioClass = input<NgClassType>(null);
-  figureClass = input<NgClassType>(null);
-  figcaptionClass = input<NgClassType>(null);
 
   protected data = computed(() => {
     const asset = this.asset();

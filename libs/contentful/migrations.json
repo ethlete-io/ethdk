@@ -17,6 +17,15 @@
       "description": "Spread CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig, and report the calls that need it by hand.",
       "generator": "@ethlete/contentful:migrate-contentful-default-components",
       "docs": "/contentful/"
+    },
+    {
+      "name": "contentful-asset-classes",
+      "version": "4.0.0-next.13",
+      "kind": "auto",
+      "level": "required",
+      "description": "Remove the dropped video, audio, file and link class inputs, and report each removal with the static class that replaces it.",
+      "generator": "@ethlete/contentful:migrate-contentful-asset-classes",
+      "docs": "/contentful/"
     }
   ]
 }

@@ -9,6 +9,11 @@
       "factory": "./migrate-contentful-default-components/migration",
       "schema": "./migrate-contentful-default-components/schema.json",
       "description": "Spread CONTENTFUL_DEFAULT_COMPONENTS into provideContentfulConfig, and report the calls that need it by hand"
+    },
+    "migrate-contentful-asset-classes": {
+      "factory": "./migrate-contentful-asset-classes/migration",
+      "schema": "./migrate-contentful-asset-classes/schema.json",
+      "description": "Remove the class inputs of the Contentful video, audio, file and link components, and report each removal with the static class that replaces it"
     }
   }
 }

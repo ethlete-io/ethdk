@@ -23,8 +23,8 @@ export type ComponentLikeWithAsset = Type<{
 export type ComponentLikeWithLink = Type<{
   href: InputSignal<string>;
   text: InputSignal<string>;
-  textClass: InputSignal<string>;
-  anchorClass?: InputSignal<string>;
+  marks?: InputSignal<readonly string[]>;
+  richText?: InputSignal<boolean>;
 }>;
 export type ComponentLikeWithContentfulRendererInputs = Type<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

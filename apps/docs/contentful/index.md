@@ -113,7 +113,7 @@ When `content` changes, the renderer **diffs** the new document against the prev
 
 Marks on text nodes are rendered as nested semantic elements inside the text span, in mark order: `bold` → `<strong>`, `italic` → `<em>`, `underline` → `<u>`, `code` → `<code>`, `strikethrough` → `<s>`, `subscript` → `<sub>`, `superscript` → `<sup>`. Text with `bold` + `italic` therefore renders as `<span class="…"><strong><em>text</em></strong></span>`. Unknown mark types are ignored (with a dev-mode warning).
 
-Marks inside a hyperlink rendered by the link component are the exception: it receives its text as a plain string, so the marks every text of the link shares are passed as classes on its `textClass` input - `et-contentful-rich-text-mark-<mark type>` (e.g. `et-contentful-rich-text-mark-bold`). Style those yourself. A mark on only part of the link text is dropped there; the fallback anchor keeps each text's own marks.
+Marks inside a hyperlink rendered by the link component are the exception: it receives its text as a plain string, so the marks every text of the link shares are passed as mark types on its `marks` input and rendered as classes on the anchor - `et-contentful-rich-text-mark-<mark type>` (e.g. `et-contentful-rich-text-mark-bold`). Style those yourself. A mark on only part of the link text is dropped there; the fallback anchor keeps each text's own marks.
 
 ## Embedded entries (custom components)
 
@@ -161,17 +161,21 @@ The source-generation helpers (`generateContentfulImageSources`, `generateDefaul
 
 ### Video, audio, file
 
-- `<et-contentful-video>` - native `<video controls>` with one `<source>`; `videoClass` input.
-- `<et-contentful-audio>` - `<figure>` with the asset title (or its file name) as `<figcaption>`, left out when the asset has neither, and a native `<audio controls>`; `audioClass`, `figureClass`, `figcaptionClass` inputs.
-- `<et-contentful-file>` - a download link (`target="_blank"`, `rel="noopener noreferrer"`) showing the file's title (or its file name when the title is empty) and size, scaled with `formatFileSize` from `@ethlete/components` (e.g. `(1.5 MB)`); `fileClass` input. Reword the size with `provideContentfulFileLabels`, the same label system every `@ethlete/components` domain uses:
+- `<et-contentful-video>` - native `<video controls>` (`et-contentful-video-video`) with one `<source>` (`et-contentful-video-source`).
+- `<et-contentful-audio>` - `<figure>` (`et-contentful-audio-figure`) with the asset title (or its file name) as `<figcaption>` (`et-contentful-audio-figcaption`), left out when the asset has neither, and a native `<audio controls>` (`et-contentful-audio-audio`).
+- `<et-contentful-file>` - a download link (`et-contentful-file-anchor`, `target="_blank"`, `rel="noopener noreferrer"`) showing the file's title (or its file name when the title is empty) and size, scaled with `formatFileSize` from `@ethlete/components` (e.g. `(1.5 MB)`). Reword the size with `provideContentfulFileLabels`, the same label system every `@ethlete/components` domain uses:
 
 ```ts
 provideContentfulFileLabels({ fileSize: (bytes) => `(${formatFileSize(bytes).replace('.', ',')})` });
 ```
 
+There are no class inputs - target the static classes in parentheses with CSS instead. `et update` removes the old `videoClass`, `audioClass`, `figureClass`, `figcaptionClass` and `fileClass` bindings and lists each with the class that replaces it.
+
 ### Links
 
-`<et-contentful-link>` (inputs: `href`, `text` required; `textClass` and `anchorClass` default `''`, both placed on the anchor) renders hyperlink nodes and decides between router navigation and a plain anchor. The renderer passes the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`) through `anchorClass`, so a standalone link carries none of them; a custom `components.link` receives them too if it declares an `anchorClass` input:
+`<et-contentful-link>` (inputs: `href`, `text` required; `marks` default `[]`, `richText` default `false`) renders hyperlink nodes. Its anchor always carries the static class `et-contentful-link-anchor`; there are no class inputs. The renderer sets `richText` to `true`, which adds the rich-text classes (`et-contentful-rich-text-default-element et-contentful-rich-text-default-a`), so a standalone link carries none of them. A custom `components.link` receives `marks` and `richText` if it declares them. `et update` removes the old `textClass` and `anchorClass` bindings.
+
+The link decides between router navigation and a plain anchor:
 
 - Application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
 - Native destinations such as `mailto:`, `tel:` and `ftp:` use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.

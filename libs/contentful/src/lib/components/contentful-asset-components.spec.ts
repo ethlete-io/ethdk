@@ -121,4 +121,38 @@ describe('Contentful asset components', () => {
     expect(fixture.nativeElement.querySelector('audio')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('figcaption')).toBeNull();
   });
+
+  it.each([
+    [
+      'video',
+      ContentfulVideoComponent,
+      'video/mp4',
+      { video: 'et-contentful-video-video', source: 'et-contentful-video-source' },
+    ],
+    [
+      'audio',
+      ContentfulAudioComponent,
+      'audio/mpeg',
+      {
+        figure: 'et-contentful-audio-figure',
+        figcaption: 'et-contentful-audio-figcaption',
+        audio: 'et-contentful-audio-audio',
+      },
+    ],
+    ['file', ContentfulFileComponent, 'application/pdf', { a: 'et-contentful-file-anchor' }],
+  ] as const)('puts only a static class on each inner element of the %s', (_, component, contentType, classes) => {
+    TestBed.configureTestingModule({ imports: [component] });
+
+    const fixture = createAssetFixture<ContentfulVideoComponent | ContentfulAudioComponent | ContentfulFileComponent>(
+      component,
+      gqlAsset({ contentType }),
+    );
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelectorAll('*')).toHaveLength(Object.keys(classes).length);
+
+    for (const [selector, className] of Object.entries(classes)) {
+      expect(host.querySelector(selector)?.getAttribute('class')).toBe(className);
+    }
+  });
 });

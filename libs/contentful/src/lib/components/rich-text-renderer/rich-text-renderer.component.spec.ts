@@ -108,13 +108,13 @@ class StubFileComponent {
   asset = input<ContentfulRestAsset | null>(null);
 }
 
-@Component({ selector: 'et-stub-link', template: `<span [class]="textClass()">{{ text() }}</span>` })
+@Component({ selector: 'et-stub-link', template: `<span>{{ text() }}</span>` })
 class StubLinkComponent {
   static instances: StubLinkComponent[] = [];
 
   href = input('');
   text = input('');
-  textClass = input('');
+  marks = input<readonly string[]>([]);
 
   constructor() {
     StubLinkComponent.instances.push(this);
@@ -578,7 +578,7 @@ describe('ContentfulRichTextRendererComponent', () => {
   });
 
   describe('hyperlinks', () => {
-    it('renders the link component with href, text and textClass', () => {
+    it('renders the link component with href, text and marks', () => {
       const { fixture } = setup({
         useStubAssetComponents: true,
         richText: doc(block('paragraph', [hyperlink('https://example.com', 'Example', ['bold'])])),
@@ -589,7 +589,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(link).not.toBeNull();
       expect(link?.textContent).toBe('Example');
       expect(StubLinkComponent.instances[0]?.href()).toBe('https://example.com');
-      expect(StubLinkComponent.instances[0]?.textClass()).toBe('et-contentful-rich-text-mark-bold');
+      expect(StubLinkComponent.instances[0]?.marks()).toEqual(['bold']);
     });
 
     it('renders a plain anchor when no config provides a link component', () => {
@@ -686,6 +686,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(anchor?.getAttribute('href')).toBe('https://example.com');
       expect(anchor?.textContent).toBe('Example');
       expect([...(anchor?.classList ?? [])].sort()).toEqual([
+        'et-contentful-link-anchor',
         'et-contentful-rich-text-default-a',
         'et-contentful-rich-text-default-element',
       ]);
@@ -708,7 +709,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(anchor?.querySelector('strong')?.textContent).toBe('here');
     });
 
-    it('passes only the marks every link text shares as the textClass', () => {
+    it('passes only the marks every link text shares', () => {
       const { fixture } = setup({
         useStubAssetComponents: true,
         richText: doc(
@@ -721,7 +722,7 @@ describe('ContentfulRichTextRendererComponent', () => {
       });
 
       expect(renderRoot(fixture).querySelector('et-stub-link')?.textContent).toBe('see here');
-      expect(StubLinkComponent.instances[0]?.textClass()).toBe('et-contentful-rich-text-mark-italic');
+      expect(StubLinkComponent.instances[0]?.marks()).toEqual(['italic']);
     });
 
     it('opens an external fallback anchor in a new tab', () => {
@@ -755,16 +756,20 @@ describe('ContentfulRichTextRendererComponent', () => {
       warn.mockRestore();
     });
 
-    it('passes the collected marks as the textClass', () => {
+    it('renders the collected marks as classes on the link anchor', () => {
       const { fixture } = setup({
         richText: doc(block('paragraph', [hyperlink('/internal', 'Example', ['bold', 'italic'])])),
       });
 
       const anchor = renderRoot(fixture).querySelector('et-contentful-link a');
 
-      expect(anchor?.getAttribute('class')).toContain(
-        'et-contentful-rich-text-mark-bold et-contentful-rich-text-mark-italic',
-      );
+      expect([...(anchor?.classList ?? [])].sort()).toEqual([
+        'et-contentful-link-anchor',
+        'et-contentful-rich-text-default-a',
+        'et-contentful-rich-text-default-element',
+        'et-contentful-rich-text-mark-bold',
+        'et-contentful-rich-text-mark-italic',
+      ]);
     });
   });
 

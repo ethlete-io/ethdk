@@ -706,7 +706,6 @@ export class ContentfulRichTextRendererComponent {
             linkTexts[0]?.marks.filter((mark) =>
               linkTexts.every((child) => child.marks.some((other) => other.type === mark.type)),
             ) ?? [];
-          const textClass = marksToClass(sharedMarks);
 
           let linkComponentId = componentIdMap.get(LINK_COMPONENT_TYPE) ?? -1;
           const linkId = LINK_COMPONENT_TYPE + ++linkComponentId;
@@ -718,7 +717,7 @@ export class ContentfulRichTextRendererComponent {
             domPosition,
             parentId: openElementIds.at(-1) ?? null,
             component: linkComponent,
-            inputs: { href, text: linkText, textClass, anchorClass: DEFAULT_ANCHOR_CLASS },
+            inputs: { href, text: linkText, marks: sharedMarks.map((mark) => mark.type), richText: true },
             id: linkId,
           });
 

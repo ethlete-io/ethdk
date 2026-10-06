@@ -104,17 +104,27 @@ describe('ContentfulLinkComponent', () => {
     expect(anchor.rel).toBe('noopener noreferrer');
   });
 
-  it('renders a standalone anchor without the rich-text classes', () => {
-    const anchor = setup('https://example.com').nativeElement.querySelector('a') as HTMLAnchorElement;
-
-    expect(anchor.getAttribute('class')).toBeNull();
+  it.each([
+    ['a plain anchor', 'https://example.com'],
+    ['a router link', '/news'],
+  ])('puts only the static anchor class on %s', (_, href) => {
+    const anchor = setup(href).nativeElement.querySelector('a') as HTMLAnchorElement;
+    expect(anchor.getAttribute('class')).toBe('et-contentful-link-anchor');
   });
 
-  it('puts anchorClass and textClass on the anchor', () => {
-    const fixture = setup('https://example.com', [], { anchorClass: 'rich', textClass: 'mark' });
+  it('adds the rich-text and mark classes next to the static anchor class', () => {
+    const fixture = setup('https://example.com');
+    fixture.componentRef.setInput('richText', true);
+    fixture.componentRef.setInput('marks', ['bold', 'italic']);
+    fixture.detectChanges();
     const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
-
-    expect([...anchor.classList].sort()).toEqual(['mark', 'rich']);
+    expect([...anchor.classList].sort()).toEqual([
+      'et-contentful-link-anchor',
+      'et-contentful-rich-text-default-a',
+      'et-contentful-rich-text-default-element',
+      'et-contentful-rich-text-mark-bold',
+      'et-contentful-rich-text-mark-italic',
+    ]);
   });
 
   it.each([

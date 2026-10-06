@@ -1,6 +1,4 @@
-import { NgClass } from '@angular/common';
 import { Component, ViewEncapsulation, computed, input } from '@angular/core';
-import { NgClassType } from '@ethlete/core';
 import { ContentfulGqlAsset, isContentfulGqlAsset } from '../../gql';
 import { ContentfulRestAsset } from '../../types';
 
@@ -8,20 +6,18 @@ import { ContentfulRestAsset } from '../../types';
   selector: 'et-contentful-video',
   template: `
     @if (data(); as data) {
-      <video [ngClass]="videoClass()" controls>
-        <source [src]="data.url" [attr.type]="data.contentType || null" />
+      <video class="et-contentful-video-video" controls>
+        <source [src]="data.url" [attr.type]="data.contentType || null" class="et-contentful-video-source" />
       </video>
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgClass],
   host: {
     class: 'et-contentful-video',
   },
 })
 export class ContentfulVideoComponent {
   asset = input.required<ContentfulRestAsset | ContentfulGqlAsset | null | undefined>();
-  videoClass = input<NgClassType>(null);
 
   protected data = computed(() => {
     const asset = this.asset();

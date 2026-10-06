@@ -5,17 +5,20 @@ import { injectUrl } from '@ethlete/core';
 import { injectContentfulConfig } from '../../utils/contentful-config';
 import { hasUrlScheme, isInternalWebUrl, parseWebUrl, resolveHrefAgainstRoute } from './contentful-link.util';
 
+const RICH_TEXT_ANCHOR_CLASSES = ['et-contentful-rich-text-default-element', 'et-contentful-rich-text-default-a'];
+
 @Component({
   selector: 'et-contentful-link',
   template: `
     @if (usesRouterLink()) {
-      <a [class]="linkClass()" [routerLink]="internalUrlTree()">{{ text() }}</a>
+      <a [class]="modifierClasses()" [routerLink]="internalUrlTree()" class="et-contentful-link-anchor">{{ text() }}</a>
     } @else {
       <a
-        [class]="linkClass()"
+        [class]="modifierClasses()"
         [href]="anchorHref()"
         [attr.target]="openInNewTab() ? '_blank' : null"
         [attr.rel]="openInNewTab() ? 'noopener noreferrer' : null"
+        class="et-contentful-link-anchor"
         >{{ text() }}</a
       >
     }
@@ -36,8 +39,8 @@ export class ContentfulLinkComponent {
 
   href = input.required<string>();
   text = input.required<string>();
-  textClass = input('');
-  anchorClass = input('');
+  marks = input<readonly string[]>([]);
+  richText = input(false);
 
   protected usesRouterLink = computed(() => {
     const href = this.href();
@@ -78,5 +81,8 @@ export class ContentfulLinkComponent {
 
   protected internalUrlTree = computed(() => this.router.parseUrl(this.internalPath()));
 
-  protected linkClass = computed(() => [this.anchorClass(), this.textClass()].filter(Boolean).join(' ') || null);
+  protected modifierClasses = computed(() => [
+    ...(this.richText() ? RICH_TEXT_ANCHOR_CLASSES : []),
+    ...this.marks().map((mark) => `et-contentful-rich-text-mark-${mark}`),
+  ]);
 }
