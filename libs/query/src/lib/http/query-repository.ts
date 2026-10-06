@@ -137,6 +137,20 @@ export type QueryRepositoryEvent =
       type: 'unbind-all-secure';
     };
 
+const functionIds = /* @__PURE__ */ new WeakMap<object, number>();
+let nextFunctionId = 1;
+
+const functionId = (fn: object) => {
+  let id = functionIds.get(fn);
+
+  if (id === undefined) {
+    id = nextFunctionId++;
+    functionIds.set(fn, id);
+  }
+
+  return id;
+};
+
 export type QueryRepositoryRequestOptions<TArgs extends QueryArgs> = {
   /**
    * The route of the request.
@@ -530,6 +544,9 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
     const wireKey = [
       creatorOptions?.responseType && creatorOptions.responseType !== 'json' ? creatorOptions.responseType : '',
       creatorOptions?.withCredentials ? 'credentials' : '',
+      creatorOptions?.reportErrors === false ? 'silent' : '',
+      creatorOptions?.reportProgress ? 'progress' : '',
+      options.retryFn ? `retry${functionId(options.retryFn)}` : '',
     ]
       .filter(Boolean)
       .join('_');

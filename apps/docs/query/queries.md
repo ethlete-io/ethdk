@@ -126,7 +126,7 @@ const query = getPost(
 
 Never call a creator inside a `computed`, an `effect` or a template: every re-run would build another query, so it throws `ET001`. Create the query once and drive it through `withArgs` or `.execute({ args })`. Reading, executing, `createSnapshot()` and `.asObservable({ injector })` are fine there. A creator called outside an injection context (in `ngOnInit`, a click handler, a timer) throws `ET003`; create the query in a field initializer or constructor, or pass `{ injector }` as its first argument. `createQueryStack`, `createPagedQueryStack` and `createQueryGroup` throw the same code.
 
-Creators expose `.clone(additionalOptions)` to derive a variant with merged options (e.g. a custom `retryFn`).
+Creators expose `.clone(additionalOptions)` to derive a variant with merged options (e.g. a custom `retryFn`). A clone that changes `responseType`, `withCredentials`, `reportErrors`, `reportProgress` or `retryFn` gets its own cache entry; a clone that changes none of them shares the original's.
 
 ## Auto-execution
 

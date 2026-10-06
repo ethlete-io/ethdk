@@ -623,7 +623,7 @@ describe('dependent queries scenario', () => {
   describe('shared-key retryFn', () => {
     const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
 
-    it('the retryFn of whichever consumer first creates the shared cache entry governs it - a later consumer bound to the same key cannot change it', () => {
+    it('gives creators with different retryFns their own cache entries, each governed by its own retryFn', () => {
       const s = scenario();
       s.api.on('GET', '/shared-flaky', sequence([{ status: 503 }, { body: { ok: true } }]));
 
@@ -639,15 +639,10 @@ describe('dependent queries scenario', () => {
 
       s.tick();
 
-      expect(s.api.requestCount('GET', '/shared-flaky')).toBe(1);
+      expect(queryA.id()).not.toBe(queryB.id());
+      expect(s.api.requestCount('GET', '/shared-flaky')).toBe(2);
       expect(queryA.error()?.code).toBe(503);
-      expect(queryB.error()?.code).toBe(503);
-
-      s.tick(30_000);
-
-      expect(s.api.requestCount('GET', '/shared-flaky')).toBe(1);
-      expect(queryA.error()?.code).toBe(503);
-      expect(queryB.error()?.code).toBe(503);
+      expect(queryB.response()).toEqual({ ok: true });
 
       s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
 

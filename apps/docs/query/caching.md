@@ -8,7 +8,7 @@ All [queries](/query/queries) of a client share one **query repository** - an in
 
 ## Deduplication
 
-Two queries with the same key share one in-flight request and one response - ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the entry is released - either kept for a while (see below) or aborted and evicted straight away.
+The key also covers the creator's `responseType`, `withCredentials`, `reportErrors`, `reportProgress` and `retryFn` (by function identity), so creators that differ in any of them never share an entry; identical creators, and a `.clone()` that changes nothing, still do. Two queries with the same key share one in-flight request and one response - ten components rendering the same `getUser` query cause exactly one HTTP request. Entries are reference-counted: when the last consumer is destroyed, the entry is released - either kept for a while (see below) or aborted and evicted straight away.
 
 Deduplication can reach across tabs too: with the [multi-tab sync](/query/multi-tab) client feature a response fetched in one tab updates the same cache key in the others, and a polled key is polled by one tab on behalf of all of them.
 

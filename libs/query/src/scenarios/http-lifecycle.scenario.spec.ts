@@ -650,7 +650,7 @@ describe('http lifecycle scenario: two retry policies on one cache key', () => {
 
   type SharedRetryArgs = { response: { ok: boolean } };
 
-  it("retries under the first consumer's policy and never consults the second one", () => {
+  it('keeps creators with different retry policies on separate entries, each under its own policy', () => {
     const s = scenario();
     s.api.on('GET', '/shared-retry', sequence([{ status: 503, body: { message: 'boom' } }, { body: { ok: true } }]));
 
@@ -677,13 +677,13 @@ describe('http lifecycle scenario: two retry policies on one cache key', () => {
     const b = s.consumer();
     const qb = b.run(() => getPassive());
 
-    expect(qa.id()).toBe(qb.id());
+    expect(qa.id()).not.toBe(qb.id());
 
     s.tick(50);
 
     expect(passiveAttempts).toHaveLength(0);
     expect(retryingAttempts.length).toBeGreaterThan(0);
-    expect(s.api.requestCount('GET', '/shared-retry')).toBe(2);
+    expect(s.api.requestCount('GET', '/shared-retry')).toBe(3);
     expect(qa.response()).toEqual({ ok: true });
     expect(qb.response()).toEqual({ ok: true });
     expect(qa.error()).toBeNull();
@@ -693,7 +693,7 @@ describe('http lifecycle scenario: two retry policies on one cache key', () => {
     b.destroy();
   });
 
-  it('leaves a shared request unretried when the first consumer brought no retry policy', () => {
+  it('does not retry the entry of a creator without a retry policy when another creator on the route has one', () => {
     const s = scenario();
     s.api.on('GET', '/shared-no-retry', sequence([{ status: 503, body: { message: 'boom' } }, { body: { ok: true } }]));
 
@@ -713,16 +713,16 @@ describe('http lifecycle scenario: two retry policies on one cache key', () => {
     const b = s.consumer();
     const qb = b.run(() => getRetrying());
 
-    expect(qa.id()).toBe(qb.id());
+    expect(qa.id()).not.toBe(qb.id());
 
     s.tick(50);
 
     expect(retryingAttempts).toHaveLength(0);
-    expect(s.api.requestCount('GET', '/shared-no-retry')).toBe(1);
+    expect(s.api.requestCount('GET', '/shared-no-retry')).toBe(2);
     expect(qa.error()?.code).toBe(503);
-    expect(qb.error()?.code).toBe(503);
     expect(qa.response()).toBeNull();
-    expect(qb.response()).toBeNull();
+    expect(qb.error()).toBeNull();
+    expect(qb.response()).toEqual({ ok: true });
 
     s.expectError((entry) => entry.error instanceof HttpErrorResponse && entry.error.status === 503);
 

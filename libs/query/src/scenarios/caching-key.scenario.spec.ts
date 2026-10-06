@@ -138,4 +138,32 @@ describe('cache key scenario', () => {
     client._store.forEach((_query, key) => client._store.remove(key));
     owner.destroy();
   });
+
+  it('keeps creators with different wire or retry options apart and shares identical ones', () => {
+    const s = scenario();
+    s.api.on('GET', '/file', () => ({ body: { ok: true } }));
+
+    const getJson = s.get<{ response: unknown }>('/file');
+    const getJsonAgain = s.get<{ response: unknown }>('/file');
+    const getBlob = s.get<{ response: unknown }>('/file', { responseType: 'blob' });
+    const getSilent = s.get<{ response: unknown }>('/file', { reportErrors: false });
+    const getRetrying = getJson.clone({ retryFn: () => ({ retry: false }) });
+    const getPlainClone = getJson.clone({});
+
+    const consumers = [getJson, getJsonAgain, getBlob, getSilent, getRetrying, getPlainClone].map((creator) => {
+      const consumer = s.consumer();
+
+      return { consumer, query: consumer.run(() => creator()) };
+    });
+
+    s.tick();
+
+    const [json, jsonAgain, blob, silent, retrying, plainClone] = consumers.map((c) => c.query.id());
+
+    expect(jsonAgain).toBe(json);
+    expect(plainClone).toBe(json);
+    expect(new Set([json, blob, silent, retrying]).size).toBe(4);
+
+    consumers.forEach((c) => c.consumer.destroy());
+  });
 });
