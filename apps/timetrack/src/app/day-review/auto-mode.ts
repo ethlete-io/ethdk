@@ -764,15 +764,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           day,
           subject,
           stillNeeded: () => true,
-          evidence$: agentDay
-            .askEvidence$(day)
-            .pipe(
-              map((current): AskEvidence => ({
-                contexts: current.contexts,
-                rows: current.dayRows,
-                reviewed: current.rows,
-              })),
-            ),
+          evidence$: agentDay.askEvidence$(day).pipe(
+            map((current): AskEvidence => ({
+              contexts: current.contexts,
+              rows: current.dayRows,
+              reviewed: current.rows,
+            })),
+          ),
         });
 
         return { status: queued ? 'queued' : 'asking', day, subject, label: askLabelOf(subject) };
