@@ -80,7 +80,7 @@ test.describe('the work waiting on a ticket', () => {
 
     await expect(details.locator('pre')).toContainText(STAND_IN.name);
     await expect(details.locator('pre')).toContainText('"days": 1');
-    await expect(details.locator('pre')).not.toContainText('minutes');
+    await expect(details.locator('pre')).toContainText('"minutes": ');
   });
 
   test('puts its band back to waiting for a name once it is deleted', async ({ page }) => {
