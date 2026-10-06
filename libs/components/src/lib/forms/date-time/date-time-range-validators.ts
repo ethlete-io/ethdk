@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { FieldContext, LogicFn, validate, ValidationError } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
 import { CalendarPrecision, startOfCalendarUnit } from '../../calendar/headless';
-import { DATE_FORMAT, DATE_LOCALE, DATE_TIME_FORMAT, TIME_FORMAT } from './date-time-formats';
+import { DATE_FORMAT, DATE_LOCALE, DATE_TIME_FORMAT, injectDateTimeZone, TIME_FORMAT } from './date-time-formats';
 import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
@@ -27,7 +27,7 @@ export type RangeOrderOptions = {
   strict?: boolean;
   /**
    * The `timeZone` of the date-time control, so an offset-less wire value is read in that zone's
-   * wall clock, as the control writes it.
+   * wall clock, as the control writes it. Unset, it follows `provideDateTimeZone()`.
    */
   timeZone?: string | null;
   /** Overrides the default "The start must be before the end" message. */
@@ -55,7 +55,7 @@ export type DateRangeBoundsOptions = {
   valueFormat?: string;
   /**
    * The `timeZone` of the date-time control: offset-less wire values are read in that zone's wall
-   * clock, and the message names the bound in it.
+   * clock, and the message names the bound in it. Unset, it follows `provideDateTimeZone()`.
    */
   timeZone?: string | null;
   /** Overrides the default "Choose dates on or after …" / "… on or before …" message. */
@@ -113,6 +113,11 @@ export type RangeMaxError = ValidationError & { kind: 'rangeMax'; max: Date };
 
 const knownTimeZone = (timeZone: string | null | undefined) =>
   timeZone && isValidTimeZone(timeZone) ? timeZone : null;
+
+const withControlTimeZone = <TOptions extends { timeZone?: string | null }>(options: TOptions): TOptions => ({
+  ...options,
+  timeZone: options.timeZone === undefined ? injectDateTimeZone() : options.timeZone,
+});
 
 type SideReading = { valueFormat: string; timeZone: string | null };
 
@@ -177,7 +182,11 @@ export const dateRangeOrder = (path: RangeFieldPath, options: Omit<RangeOrderOpt
  * ```
  */
 export const dateTimeRangeOrder = (path: RangeFieldPath, options: RangeOrderOptions = {}) =>
-  rangeOrder({ path, valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT), options });
+  rangeOrder({
+    path,
+    valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
+    options: withControlTimeZone(options),
+  });
 
 /**
  * Signal-forms validator for `et-time-range-input`: fails the range while its start time lies after
@@ -275,7 +284,7 @@ export const dateTimeRangeBounds = (path: RangeFieldPath, options: DateRangeBoun
   rangeBounds({
     path,
     valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
-    options,
+    options: withControlTimeZone(options),
     unit: (date) => date,
     label: 'Pp',
   });
@@ -322,7 +331,7 @@ export const dateTimeBounds = (path: DateFieldPath, options: DateBoundsOptions =
     path,
     sidesOf: (value) => [value],
     valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
-    options,
+    options: withControlTimeZone(options),
     unit: (date) => date,
     label: 'Pp',
   });

@@ -19,6 +19,8 @@ import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { DateRangePreset } from '../../date-range-presets';
 import { createDateRangePresets } from '../../internals/date-range-presets-state';
 import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
+import { reinterpretInZone, toZoneCalendar } from '../../internals/time-zone';
+import { effectiveTimeZoneOf } from '../../internals/time-zone-state';
 
 export type { DateRangeSide, DateRangeValue } from '../../internals/date-range-picker-input.directive';
 
@@ -55,6 +57,14 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   public precision = input<CalendarPrecision>('day');
 
   /**
+   * IANA name of the zone whose calendar both fields read and write. A `valueFormat` with a time or
+   * offset is read in that zone, and each end is written as its day's midnight there; the default
+   * `yyyy-MM-dd` names the same day in every zone. Unset, it follows `provideDateTimeZone()`; `null`
+   * keeps the runtime's own zone.
+   */
+  public timeZone = input<string | null | undefined>(undefined);
+
+  /**
    * What a pick means in the picker calendar - snap to whole weeks, take a fixed number of days.
    * Unset, the usual open-then-close rule applies.
    */
@@ -67,7 +77,10 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   public comparisonStart = input<Date | null>(null);
   public comparisonEnd = input<Date | null>(null);
 
-  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  /**
+   * Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) With a
+   * {@link timeZone}, the bounds are read on the zone's calendar.
+   */
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
@@ -94,6 +107,18 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
   public presets = input<readonly DateRangePreset[]>([]);
 
   public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.dateTimeLabels().invalidDateRange);
+
+  /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
+  public override effectiveTimeZone = effectiveTimeZoneOf(this.timeZone, 'et-date-range-input');
+
+  /** The range the picker calendar highlights: both ends on the zone's calendar. */
+  public pickerDateRange = computed(() => ({ start: this.pickerSideDate('start'), end: this.pickerSideDate('end') }));
+
+  /** {@link minDate} on the calendar the picker shows. */
+  public pickerMinDate = computed(() => toZoneCalendar(this.minDate(), this.effectiveTimeZone()));
+
+  /** {@link maxDate} on the calendar the picker shows. */
+  public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
 
   /** @internal */
   public presetList = createDateRangePresets({
@@ -134,8 +159,7 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
       return;
     }
 
-    const precision = this.precision();
-    const unitStart = (date: Date | null) => (date === null ? null : startOfCalendarUnit(date, precision));
+    const unitStart = (date: Date | null) => (date === null ? null : this.toZonedUnitStart(date));
 
     this.writeRange({ start: unitStart(range.start), end: unitStart(range.end) });
 
@@ -159,10 +183,11 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
       referenceDate: startOfDay(new Date()),
     });
 
-    if (parsed === null) {
-      return null;
-    }
+    return parsed === null ? null : this.toZonedUnitStart(parsed);
+  }
 
-    return startOfCalendarUnit(parsed, this.precision());
+  /** A day on the picker's calendar as the start of its `precision` unit in the zone. */
+  private toZonedUnitStart(date: Date) {
+    return reinterpretInZone(startOfCalendarUnit(date, this.precision()), this.effectiveTimeZone());
   }
 }

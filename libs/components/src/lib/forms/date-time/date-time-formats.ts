@@ -1,5 +1,5 @@
 import { effect, InjectionToken, Provider, inject } from '@angular/core';
-import { injectLocale } from '@ethlete/core';
+import { defineStaticRootProvider, injectLocale, toInjectFn, toProvideFn } from '@ethlete/core';
 import { Locale } from 'date-fns';
 
 /**
@@ -45,6 +45,20 @@ export const provideDateTimeFormat = (format: string): Provider => ({ provide: D
 export const provideTimeFormat = (format: string): Provider => ({ provide: TIME_FORMAT, useValue: format });
 
 export const provideDateLocale = (locale: Locale): Provider => ({ provide: DATE_LOCALE, useValue: locale });
+
+const DATE_TIME_ZONE_DEF = /* @__PURE__ */ defineStaticRootProvider<string | null>(null, { name: 'DateTimeZone' });
+
+const provideDateTimeZoneValue = /* @__PURE__ */ toProvideFn(DATE_TIME_ZONE_DEF);
+
+/**
+ * The IANA zone (`'UTC'`, `'Europe/Berlin'`) every `et-date-input`, `et-date-range-input`,
+ * `et-date-time-input` and `et-date-time-range-input` reads and writes its wall clock in. A control's
+ * own `timeZone` input wins; `[timeZone]="null"` keeps the runtime's zone.
+ */
+export const provideDateTimeZone = (zone: string) => provideDateTimeZoneValue(zone);
+
+/** The zone {@link provideDateTimeZone} set, or `null` for the runtime's own zone. */
+export const injectDateTimeZone = /* @__PURE__ */ toInjectFn(DATE_TIME_ZONE_DEF);
 
 export const injectDateFormat = () => inject(DATE_FORMAT);
 

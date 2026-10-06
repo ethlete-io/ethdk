@@ -53,6 +53,7 @@ import { FIELD_STATE_INPUTS } from '../../form-field/headless/field-state-contro
         'dateFilter',
         'startAt',
         'precision',
+        'timeZone',
         'startView',
         'dateClass',
         'weekNumbers',

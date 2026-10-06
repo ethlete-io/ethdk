@@ -53,9 +53,9 @@ export class DateTimeInputDirective extends DatePickerInputDirective implements 
   /**
    * IANA name of the zone the field's wall clock stands for - `'Asia/Tokyo'` makes the field, the
    * calendar and the time picker all read in Tokyo, and writes the value with Tokyo's offset.
-   * `null` keeps the runtime's own zone.
+   * Unset, it follows `provideDateTimeZone()`; `null` keeps the runtime's own zone.
    */
-  public timeZone = input<string | null>(null);
+  public timeZone = input<string | null | undefined>(undefined);
 
   /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
   public timeZoneLabel = input<string | null>(null);

@@ -57,6 +57,7 @@ import { mountRangeInputShellStyles } from '../range-input-shell-styles.componen
         'dateFilter',
         'startAt',
         'precision',
+        'timeZone',
         'startView',
         'dateClass',
         'weekNumbers',

@@ -60,9 +60,9 @@ export class DateTimeRangeInputDirective
   /**
    * IANA name of the zone both fields' wall clock stands for - `'Asia/Tokyo'` makes the fields, the
    * calendar and the time pickers all read in Tokyo, and writes both ends with Tokyo's offset.
-   * `null` keeps the runtime's own zone.
+   * Unset, it follows `provideDateTimeZone()`; `null` keeps the runtime's own zone.
    */
-  public timeZone = input<string | null>(null);
+  public timeZone = input<string | null | undefined>(undefined);
 
   /** A name for {@link timeZone} in the second reading. Defaults to the IANA name's last segment. */
   public timeZoneLabel = input<string | null>(null);

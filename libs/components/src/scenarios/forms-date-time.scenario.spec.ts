@@ -36,11 +36,13 @@ import {
   injectDateLocale,
   injectDateTimeFormat,
   injectDateTimeLabels,
+  injectDateTimeZone,
   injectTimeFormat,
   provideDateFormat,
   provideDateLocale,
   provideDateTimeFormat,
   provideDateTimeLabels,
+  provideDateTimeZone,
   provideOverlay,
   provideTimeFormat,
   TIME_FORMAT,
@@ -810,6 +812,7 @@ describe('forms date-time scenarios', () => {
     expect(s.run(injectDateTimeFormat)).toBe("yyyy-MM-dd'T'HH:mm:ssxxx");
     expect(s.run(injectTimeFormat)).toBe('HH:mm');
     expect(s.run(injectDateLocale)).toBeNull();
+    expect(s.run(injectDateTimeZone)).toBeNull();
     expect(s.run(injectDateTimeLabels)().openCalendar).toBe(DEFAULT_DATE_TIME_LABELS.openCalendar);
   });
 });
@@ -877,5 +880,37 @@ describe('forms date-time scenarios with app-wide formats, locale and labels', (
 
     expect(fixture.componentInstance.day()).toBe('16.07.2026');
     expect(fixture.componentInstance.startsAt()).toBe('2026-07-16T21:30');
+  });
+});
+
+describe('forms date-time scenarios with an app-wide UTC time zone', () => {
+  const scenario = useScenario({
+    providers: [
+      provideOverlay(),
+      provideColorThemesWithTailwind4(COLOR_THEMES),
+      provideDateFormat("yyyy-MM-dd'T'HH:mm:ssxxx"),
+      provideDateTimeZone('UTC'),
+    ],
+  });
+
+  it('reads and writes the UTC wall clock in the date and the date-time input', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(TokenFormatsComponent);
+    const [dayField, startsAtField] = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('input'));
+
+    s.flush();
+
+    expect(s.run(injectDateTimeZone)).toBe('UTC');
+
+    typeAndBlur(s, dayField!, '16.07.2026');
+    typeAndBlur(s, startsAtField!, '16.07.2026 23:30');
+
+    expect(fixture.componentInstance.day()).toBe('2026-07-16T00:00:00+00:00');
+    expect(fixture.componentInstance.startsAt()).toBe('2026-07-16T23:30:00+00:00');
+
+    fixture.componentInstance.day.set('2026-07-20T23:30:00+00:00');
+    s.flush();
+
+    expect(dayField!.value).toBe('20.07.2026');
   });
 });

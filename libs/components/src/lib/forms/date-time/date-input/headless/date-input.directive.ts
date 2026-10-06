@@ -4,7 +4,7 @@ import { startOfDay } from 'date-fns';
 import { FORM_FIELD_CONTROL_TYPES } from '../../../form-field/headless';
 import { injectDateFormat } from '../../date-time-formats';
 import { DatePickerInputDirective } from '../../internals/date-picker-input.directive';
-import { formatDateValue, parseDateValue } from '../../internals/date-value';
+import { parseDateValue } from '../../internals/date-value';
 import { DATE_PICKER_HOST } from '../../picker/date-picker-host';
 import { injectDateTimeLabels } from '../../../../forms/date-time/date-time-labels';
 import {
@@ -16,6 +16,8 @@ import {
 } from '../../../../calendar/headless';
 import { displayFormatForPrecision } from '../../internals/precision-format';
 import { warnOnUnparsedValue } from '../../internals/unparsed-value-warning';
+import { formatInZone, reinterpretInZone, toZoneCalendar } from '../../internals/time-zone';
+import { effectiveTimeZoneOf } from '../../internals/time-zone-state';
 
 /**
  * A date form control with a `string | null` value (a date-fns `valueFormat`
@@ -51,7 +53,18 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
    */
   public precision = input<CalendarPrecision>('day');
 
-  /** Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) */
+  /**
+   * IANA name of the zone whose calendar the field reads and writes. A `valueFormat` with a time or
+   * offset is read in that zone, and a picked day is written as its midnight there; the default
+   * `yyyy-MM-dd` names the same day in every zone. Unset, it follows `provideDateTimeZone()`; `null`
+   * keeps the runtime's own zone.
+   */
+  public timeZone = input<string | null | undefined>(undefined);
+
+  /**
+   * Forwarded to the picker calendar. (`min`/`max` are reserved by signal forms.) With a
+   * {@link timeZone}, the bounds are read on the zone's calendar.
+   */
   public minDate = input<Date | null>(null);
   public maxDate = input<Date | null>(null);
   public dateFilter = input<((date: Date) => boolean) | null>(null);
@@ -79,7 +92,10 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.DATE_INPUT);
 
-  /** The current value as a `Date` (what the picker calendar binds to). */
+  /** The zone in effect, or `null` when none is set or the name is not one `Intl` knows. */
+  public effectiveTimeZone = effectiveTimeZoneOf(this.timeZone, 'et-date-input');
+
+  /** The current value as a `Date`. */
   public date = computed(() => {
     if (this.mixed()) {
       return null;
@@ -91,8 +107,21 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       return null;
     }
 
-    return parseDateValue(value, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() });
+    return parseDateValue(value, {
+      format: this.effectiveValueFormat(),
+      locale: this.effectiveLocale(),
+      timeZone: this.effectiveTimeZone(),
+    });
   });
+
+  /** The day the picker calendar highlights: {@link date} on the zone's calendar. */
+  public pickerDate = computed(() => toZoneCalendar(this.date(), this.effectiveTimeZone()));
+
+  /** {@link minDate} on the calendar the picker shows. */
+  public pickerMinDate = computed(() => toZoneCalendar(this.minDate(), this.effectiveTimeZone()));
+
+  /** {@link maxDate} on the calendar the picker shows. */
+  public pickerMaxDate = computed(() => toZoneCalendar(this.maxDate(), this.effectiveTimeZone()));
 
   /** The committed value rendered in the format in effect. */
   public displayValue = computed(() => {
@@ -102,7 +131,13 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
       return '';
     }
 
-    return formatDateValue(date, { format: this.effectiveDisplayFormat(), locale: this.effectiveLocale() }) ?? '';
+    return (
+      formatInZone(date, {
+        format: this.effectiveDisplayFormat(),
+        locale: this.effectiveLocale(),
+        timeZone: this.effectiveTimeZone(),
+      }) ?? ''
+    );
   });
 
   constructor() {
@@ -141,12 +176,20 @@ export class DateInputDirective extends DatePickerInputDirective implements Form
 
   /**
    * Writes the wire value, at the start of `precision`'s unit - a coarse format cannot say which day
-   * it meant, so normalizing here makes a typed month and a picked month the same value.
+   * it meant, so normalizing here makes a typed month and a picked month the same value. `date` is a
+   * day on the picker's calendar, so with a zone it becomes that day's start in the zone.
    */
   public writeCommitted(date: Date) {
-    const unitStart = startOfCalendarUnit(date, this.precision());
+    const timeZone = this.effectiveTimeZone();
+    const unitStart = reinterpretInZone(startOfCalendarUnit(date, this.precision()), timeZone);
 
-    this.value.set(formatDateValue(unitStart, { format: this.effectiveValueFormat(), locale: this.effectiveLocale() }));
+    this.value.set(
+      formatInZone(unitStart, {
+        format: this.effectiveValueFormat(),
+        locale: this.effectiveLocale(),
+        timeZone,
+      }),
+    );
     this.mixed.set(false);
   }
 }

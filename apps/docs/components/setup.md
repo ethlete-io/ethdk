@@ -90,6 +90,8 @@ only ever looks up the `type`.
   `provideDateTimeFormat(format)` does the same for the date-time controls (default
   `yyyy-MM-dd'T'HH:mm:ssxxx`), and `provideTimeFormat(format)` for the time controls (default
   `HH:mm`).
+- **`provideDateTimeZone(zone)`** - only if every date should read as one zone's wall clock (e.g.
+  `'UTC'`) rather than the browser's ([Date & time inputs](/components/date-time-inputs#app-time-zone)).
 - **`provide<Domain>Labels(...)`** - one call per domain you use in a non-English app, e.g.
   `provideTableLabels`, `providePaginationLabels`, `provideFormFieldLabels`,
   `provideSelectLabels`. Every label is partial; omitted keys keep their English default. The

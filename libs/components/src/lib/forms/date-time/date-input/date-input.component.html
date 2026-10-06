@@ -32,9 +32,9 @@
 <ng-template etDatePickerSurface>
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-calendar
-      [value]="dateInput.date()"
-      [min]="dateInput.minDate()"
-      [max]="dateInput.maxDate()"
+      [value]="dateInput.pickerDate()"
+      [min]="dateInput.pickerMinDate()"
+      [max]="dateInput.pickerMaxDate()"
       [dateFilter]="dateInput.dateFilter()"
       [startAt]="dateInput.startAt()"
       [precision]="dateInput.precision()"
