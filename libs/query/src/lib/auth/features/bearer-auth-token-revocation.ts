@@ -2,14 +2,8 @@ import { HttpHeaders } from '@angular/common/http';
 import { computed, effect, Signal, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, take } from 'rxjs';
-import {
-  AnyQuerySnapshot,
-  QueryArgs,
-  QuerySnapshot,
-  RequestArgs,
-  resolveQueryHeaders,
-  wrapAsObservableSignal,
-} from '../../http';
+import { AnyQuerySnapshot, QueryArgs, QuerySnapshot, RequestArgs, resolveQueryHeaders } from '../../http';
+import { createObservableSignalWatcher } from '../../http/observable-signal-watcher';
 import {
   AnyQueryBuilder,
   BearerAuthFeatureType,
@@ -134,14 +128,14 @@ export const withTokenRevocation = <
     const queueRevocation = (tokens: RevocationTokens, fromLogout: boolean): QueuedRevocation => {
       const target = signal<RevocationSnapshot | null>(null);
       const dropped = signal(false);
+      const watcher = createObservableSignalWatcher(context.injector);
       const follow = <T>(read: (snapshot: RevocationSnapshot) => T) =>
-        wrapAsObservableSignal(
+        watcher.wrap(
           computed(() => {
             const snapshot = target();
 
             return snapshot ? read(snapshot) : null;
           }),
-          context.injector,
         );
 
       const snapshot: RevocationSnapshot = {
@@ -154,10 +148,7 @@ export const withTokenRevocation = <
         triggeredBy: follow((s) => s.triggeredBy()),
         id: follow((s) => s.id()),
         executionState: follow((s) => s.executionState()),
-        isAlive: wrapAsObservableSignal(
-          computed(() => target()?.isAlive() ?? !(dropped() || queueDropped())),
-          context.injector,
-        ),
+        isAlive: watcher.wrap(computed(() => target()?.isAlive() ?? !(dropped() || queueDropped()))),
       };
 
       const queued: QueuedRevocation = {

@@ -1,6 +1,6 @@
-import { computed, DestroyRef, Injector, Signal, untracked } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { Injector, Signal } from '@angular/core';
 import { Observable } from 'rxjs';
+import { createObservableSignalWatcher } from './observable-signal-watcher';
 
 export type ObservableSignal<T> = Signal<T> & {
   /**
@@ -13,29 +13,5 @@ export type ObservableSignal<T> = Signal<T> & {
   asObservable(options?: { injector?: Injector }): Observable<T>;
 };
 
-export const wrapAsObservableSignal = <T>(source: Signal<T>, defaultInjector: Injector): ObservableSignal<T> => {
-  const default$ = toObservable(source, { injector: defaultInjector });
-  const overrides = new WeakMap<Injector, Observable<T>>();
-
-  const asObservable = (options?: { injector?: Injector }): Observable<T> => {
-    const injector = options?.injector;
-
-    if (!injector) return default$;
-
-    const existing = overrides.get(injector);
-
-    if (existing) return existing;
-
-    const override$ = untracked(() =>
-      toObservable(source, { injector }).pipe(takeUntilDestroyed(defaultInjector.get(DestroyRef))),
-    );
-    overrides.set(injector, override$);
-
-    return override$;
-  };
-
-  return Object.assign(
-    computed(() => source()),
-    { asObservable },
-  );
-};
+export const wrapAsObservableSignal = <T>(source: Signal<T>, defaultInjector: Injector): ObservableSignal<T> =>
+  createObservableSignalWatcher(defaultInjector).wrap(source);

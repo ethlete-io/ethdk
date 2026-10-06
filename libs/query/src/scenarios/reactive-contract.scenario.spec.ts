@@ -12,6 +12,7 @@ import {
   OnInit,
   Provider,
   signal,
+  ɵEffectScheduler as EffectScheduler,
 } from '@angular/core';
 import {
   AnyLegacyQuery,
@@ -32,7 +33,7 @@ import {
   withArgs,
 } from '../index';
 import { Paginated } from '@ethlete/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useScenario } from './harness';
 
 const BASE_URL = 'https://api.test';
@@ -713,6 +714,61 @@ describe('reactive contract scenario: stacks and auth inside an effect', () => {
     expect(s.api.requestCount('POST', '/auth/login')).toBe(3);
 
     c.destroy();
+  });
+});
+
+describe('reactive contract scenario: asObservable() on a query', () => {
+  const scenario = useScenario({ baseUrl: BASE_URL, clientOptions: { keepUnusedFor: 0 } });
+
+  type UserArgs = { response: User; pathParams: { id: string } };
+
+  it('creates one watcher on demand, replays synchronously, emits in order and completes with the consumer', () => {
+    const s = scenario();
+    s.api.on('GET', '/users/:id', ({ params }) => ({ body: { id: params['id'], name: 'Ada' }, delay: 50 }));
+
+    const getUser = s.get<UserArgs>((p) => `/users/${p.id}`);
+    const id = signal('1');
+    const addedEffects = vi.spyOn(
+      s.run(() => inject(EffectScheduler)),
+      'add',
+    );
+
+    const c = s.consumer();
+    const query = c.run(() => getUser(withArgs(() => ({ pathParams: { id: id() } }))));
+    s.tick(100);
+
+    const effectsBeforeObserving = addedEffects.mock.calls.length;
+    const response$ = query.response.asObservable();
+    const loading$ = query.loading.asObservable();
+
+    expect(addedEffects.mock.calls.length - effectsBeforeObserving).toBe(1);
+
+    const responses: (string | undefined)[] = [];
+    const loadingStates: boolean[] = [];
+    let completed = false;
+    const responseSubscription = response$.subscribe({
+      next: (response) => responses.push(response?.id),
+      complete: () => (completed = true),
+    });
+    const loadingSubscription = loading$.subscribe((loading) => loadingStates.push(!!loading));
+
+    expect(responses).toEqual(['1']);
+    expect(loadingStates).toEqual([false]);
+
+    for (const next of ['2', '3', '4']) {
+      id.set(next);
+      s.tick(100);
+    }
+
+    expect(s.api.requestCount('GET', '/users/4')).toBe(1);
+    expect(responses).toEqual(['1', '2', '3', '4']);
+    expect(loadingStates).toEqual([false, true, false, true, false, true, false]);
+
+    c.destroy();
+
+    expect(completed).toBe(true);
+    expect(responseSubscription.closed).toBe(true);
+    expect(loadingSubscription.closed).toBe(true);
   });
 });
 

@@ -2,7 +2,8 @@ import { HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { effect, signal, untracked } from '@angular/core';
 import { filter, of, Subscription } from 'rxjs';
 import { HttpCancelEvent } from './http-request';
-import { ObservableSignal, wrapAsObservableSignal } from './observable-signal';
+import { ObservableSignal } from './observable-signal';
+import { createObservableSignalWatcher } from './observable-signal-watcher';
 import { QueryArgs, QuerySnapshot } from './query';
 import { injectQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
@@ -139,20 +140,18 @@ export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQu
       // reporting the execution as loading.
       unregisterScopeListener = context.deps.destroyRef.onDestroy(cancel);
 
+      const watcher = createObservableSignalWatcher(context.deps.injector);
       const snapshot: QuerySnapshot<TArgs> = {
-        args: wrapAsObservableSignal(snapshotState.args.asReadonly(), context.deps.injector),
-        response: wrapAsObservableSignal(snapshotState.response, context.deps.injector),
-        latestHttpEvent: wrapAsObservableSignal(snapshotState.latestHttpEvent.asReadonly(), context.deps.injector),
-        loading: wrapAsObservableSignal(snapshotState.loading.asReadonly(), context.deps.injector),
-        error: wrapAsObservableSignal(snapshotState.error.asReadonly(), context.deps.injector),
-        lastTimeExecutedAt: wrapAsObservableSignal(
-          snapshotState.lastTimeExecutedAt.asReadonly(),
-          context.deps.injector,
-        ),
-        triggeredBy: wrapAsObservableSignal(snapshotState.lastTriggeredBy.asReadonly(), context.deps.injector),
-        isAlive: wrapAsObservableSignal(isAlive.asReadonly(), context.deps.injector),
-        id: wrapAsObservableSignal(options.execute.currentRepositoryKey, context.deps.injector),
-        executionState: wrapAsObservableSignal(snapshotState.executionState, context.deps.injector),
+        args: watcher.wrap(snapshotState.args.asReadonly()),
+        response: watcher.wrap(snapshotState.response),
+        latestHttpEvent: watcher.wrap(snapshotState.latestHttpEvent.asReadonly()),
+        loading: watcher.wrap(snapshotState.loading.asReadonly()),
+        error: watcher.wrap(snapshotState.error.asReadonly()),
+        lastTimeExecutedAt: watcher.wrap(snapshotState.lastTimeExecutedAt.asReadonly()),
+        triggeredBy: watcher.wrap(snapshotState.lastTriggeredBy.asReadonly()),
+        isAlive: watcher.wrap(isAlive.asReadonly()),
+        id: watcher.wrap(options.execute.currentRepositoryKey),
+        executionState: watcher.wrap(snapshotState.executionState),
       };
 
       return snapshot;

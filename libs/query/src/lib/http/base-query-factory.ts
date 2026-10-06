@@ -12,7 +12,7 @@ import { CreateGqlQueryOptions } from '../gql/gql-query';
 import { isCreateGqlQueryOptions } from './internal/gql-options-guard';
 import { AnyCreateGqlQueryCreatorOptions, GqlQueryMethod } from '../gql/gql-query-creator';
 import { HttpRequest, HttpRequestLoadingState } from './http-request';
-import { wrapAsObservableSignal } from './observable-signal';
+import { createObservableSignalWatcher } from './observable-signal-watcher';
 import { CreateQueryOptions, Query, QueryArgs, ReadonlyQuery, ResponseType } from './query';
 import { QueryErrorResponse } from './query-error-response';
 import { AnyCreateQueryClientResult } from './query-client';
@@ -154,20 +154,18 @@ export const createQueryObject = <TArgs extends QueryArgs>(options: CreateQueryO
   const createSnapshot = createQuerySnapshotFn({ state, execute, deps });
 
   // Pre-wrap all public signals once so both `query` and `roQuery` share the same instances.
-  const wrappedArgs = wrapAsObservableSignal(state.args.asReadonly(), deps.injector);
-  const wrappedResponse = wrapAsObservableSignal(state.response, deps.injector);
-  const wrappedLatestHttpEvent = wrapAsObservableSignal(state.latestHttpEvent.asReadonly(), deps.injector);
-  const wrappedLoading = wrapAsObservableSignal(state.loading.asReadonly(), deps.injector);
-  const wrappedError = wrapAsObservableSignal(state.error.asReadonly(), deps.injector);
-  const wrappedLastTimeExecutedAt = wrapAsObservableSignal(state.lastTimeExecutedAt.asReadonly(), deps.injector);
-  const wrappedTriggeredBy = wrapAsObservableSignal(state.lastTriggeredBy.asReadonly(), deps.injector);
-  const wrappedId = wrapAsObservableSignal(execute.currentRepositoryKey, deps.injector);
-  const wrappedExecutionState = wrapAsObservableSignal(state.executionState, deps.injector);
-  const wrappedRequest = wrapAsObservableSignal(state.subtle.request.asReadonly(), deps.injector);
-  const wrappedUrl = wrapAsObservableSignal(
-    computed(() => state.subtle.request()?.url ?? null),
-    deps.injector,
-  );
+  const watcher = createObservableSignalWatcher(deps.injector);
+  const wrappedArgs = watcher.wrap(state.args.asReadonly());
+  const wrappedResponse = watcher.wrap(state.response);
+  const wrappedLatestHttpEvent = watcher.wrap(state.latestHttpEvent.asReadonly());
+  const wrappedLoading = watcher.wrap(state.loading.asReadonly());
+  const wrappedError = watcher.wrap(state.error.asReadonly());
+  const wrappedLastTimeExecutedAt = watcher.wrap(state.lastTimeExecutedAt.asReadonly());
+  const wrappedTriggeredBy = watcher.wrap(state.lastTriggeredBy.asReadonly());
+  const wrappedId = watcher.wrap(execute.currentRepositoryKey);
+  const wrappedExecutionState = watcher.wrap(state.executionState);
+  const wrappedRequest = watcher.wrap(state.subtle.request.asReadonly());
+  const wrappedUrl = watcher.wrap(computed(() => state.subtle.request()?.url ?? null));
 
   const asReadonly = () => {
     const roQuery: ReadonlyQuery<TArgs> = {
