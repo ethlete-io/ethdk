@@ -11,11 +11,17 @@ pub struct Whisper {
     state: WhisperState,
     model: String,
     threads: i32,
+    language: Box<dyn Fn() -> &'static str>,
     prompt: Option<String>,
 }
 
 impl Whisper {
-    pub fn load(path: &Path, model: &str, threads: i32) -> TimetrackResult<Self> {
+    pub fn load(
+        path: &Path,
+        model: &str,
+        threads: i32,
+        language: impl Fn() -> &'static str + 'static,
+    ) -> TimetrackResult<Self> {
         // whisper.cpp prints to stderr by default; without a log backend these hooks drop every line.
         whisper_rs::install_logging_hooks();
 
@@ -29,6 +35,7 @@ impl Whisper {
             state,
             model: model.to_string(),
             threads,
+            language: Box::new(language),
             prompt: None,
         })
     }
@@ -49,7 +56,7 @@ impl Transcribe for Whisper {
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
 
         params.set_n_threads(self.threads);
-        params.set_language(Some("auto"));
+        params.set_language(Some((self.language)()));
         params.set_no_context(true);
         params.set_suppress_blank(true);
         params.set_print_special(false);

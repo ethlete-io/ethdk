@@ -96,7 +96,34 @@ pub fn prune(connection: &Connection, now_ms: i64) -> TimetrackResult<usize> {
 #[derive(Clone, Default)]
 pub struct TranscriptionState {
     enabled: Arc<AtomicBool>,
+    language: Arc<Mutex<Option<&'static str>>>,
     status: Arc<Mutex<TranscriptionStatus>>,
+}
+
+const LANGUAGES: [&str; 3] = ["de", "en", "auto"];
+const DEFAULT_LANGUAGE: &str = "de";
+
+/// What the settings document says about transcription, read the way the webview's parser reads it.
+#[derive(Debug, PartialEq)]
+pub struct TranscriptionSettings {
+    pub enabled: bool,
+    pub language: &'static str,
+}
+
+impl TranscriptionSettings {
+    pub fn read(document: &serde_json::Value) -> Self {
+        Self {
+            enabled: document
+                .get("transcribeCalls")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            language: document
+                .get("transcribeLanguage")
+                .and_then(serde_json::Value::as_str)
+                .and_then(|language| LANGUAGES.into_iter().find(|known| *known == language))
+                .unwrap_or(DEFAULT_LANGUAGE),
+        }
+    }
 }
 
 #[derive(Clone, Default, Serialize)]
@@ -111,23 +138,22 @@ pub struct TranscriptionStatus {
 }
 
 impl TranscriptionState {
-    pub fn new(enabled: bool) -> Self {
-        let state = Self::default();
+    pub fn apply(&self, settings: &TranscriptionSettings) {
+        self.enabled.store(settings.enabled, Ordering::SeqCst);
 
-        state.set_enabled(enabled);
-
-        state
+        if let Ok(mut language) = self.language.lock() {
+            *language = Some(settings.language);
+        }
     }
 
-    pub fn read_enabled(document: &serde_json::Value) -> bool {
-        document
-            .get("transcribeCalls")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(false)
-    }
-
-    pub fn set_enabled(&self, enabled: bool) {
-        self.enabled.store(enabled, Ordering::SeqCst);
+    /// The language whisper is told to hear, or `auto` to let it guess for each chunk.
+    #[cfg(feature = "transcribe")]
+    pub fn language(&self) -> &'static str {
+        self.language
+            .lock()
+            .ok()
+            .and_then(|language| *language)
+            .unwrap_or(DEFAULT_LANGUAGE)
     }
 
     #[cfg(feature = "transcribe")]
@@ -318,12 +344,20 @@ mod tests {
 
     #[test]
     fn is_off_unless_the_settings_turn_it_on() {
-        assert!(!TranscriptionState::read_enabled(&serde_json::json!({})));
-        assert!(!TranscriptionState::read_enabled(
-            &serde_json::json!({ "transcribeCalls": "yes" })
-        ));
-        assert!(TranscriptionState::read_enabled(
-            &serde_json::json!({ "transcribeCalls": true })
-        ));
+        let enabled = |document| TranscriptionSettings::read(&document).enabled;
+
+        assert!(!enabled(serde_json::json!({})));
+        assert!(!enabled(serde_json::json!({ "transcribeCalls": "yes" })));
+        assert!(enabled(serde_json::json!({ "transcribeCalls": true })));
+    }
+
+    #[test]
+    fn hears_german_unless_the_settings_name_another_known_language() {
+        let language = |document| TranscriptionSettings::read(&document).language;
+
+        assert_eq!(language(serde_json::json!({})), "de");
+        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "sv" })), "de");
+        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "en" })), "en");
+        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "auto" })), "auto");
     }
 }

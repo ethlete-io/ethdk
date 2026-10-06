@@ -264,6 +264,10 @@ export const clampLockAfterIdleMs = (value: number) => Math.min(MAX_LOCK_AFTER_I
  * about it costs the user something. Everything derived — a repository's author, the Jira account id —
  * is read from the source that owns it instead.
  */
+export const TRANSCRIBE_LANGUAGES = ['de', 'en', 'auto'] as const;
+
+export type TranscribeLanguage = (typeof TRANSCRIBE_LANGUAGES)[number];
+
 export type TimetrackSettings = {
   dayTargetMs: number;
   /**
@@ -398,6 +402,8 @@ export type TimetrackSettings = {
    * store. Off by default, and only a build with the host's `transcribe` feature acts on it.
    */
   transcribeCalls: boolean;
+  /** The language whisper transcribes a call in. `auto` lets it guess again for each 30-second chunk. */
+  transcribeLanguage: TranscribeLanguage;
   /** What each agent model costs, which turns a day's spend into a cost. Empty until the user writes a price. */
   priceTable: PriceTable;
 };
@@ -450,5 +456,6 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   lockWindow: true,
   lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
   transcribeCalls: false,
+  transcribeLanguage: 'de',
   priceTable: { currency: DEFAULT_PRICE_CURRENCY, prices: [] },
 };

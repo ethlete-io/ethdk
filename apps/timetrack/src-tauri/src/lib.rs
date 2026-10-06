@@ -87,11 +87,11 @@ pub fn run() {
                 }
             };
             let paused = pause::paused_at(&connection)?.is_some();
-            let transcription = transcript::TranscriptionState::new(
-                store::settings_document(&connection)?
-                    .as_ref()
-                    .is_some_and(transcript::TranscriptionState::read_enabled),
-            );
+            let transcription = transcript::TranscriptionState::default();
+
+            if let Some(document) = store::settings_document(&connection)? {
+                transcription.apply(&transcript::TranscriptionSettings::read(&document));
+            }
 
             transcript::prune(&connection, chrono::Utc::now().timestamp_millis())?;
 

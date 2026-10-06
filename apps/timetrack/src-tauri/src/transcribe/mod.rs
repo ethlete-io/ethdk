@@ -73,7 +73,8 @@ fn listen(listener: &Listener, app_id: String) -> TimetrackResult<()> {
     });
 
     let path = tauri::async_runtime::block_on(model::ensure(&listener.data_dir, &model))?;
-    let mut whisper = whisper::Whisper::load(&path, model.name, THREADS)?;
+    let language = listener.state.clone();
+    let mut whisper = whisper::Whisper::load(&path, model.name, THREADS, move || language.language())?;
     let call = Call {
         app_id,
         started_at_ms: chrono::Utc::now().timestamp_millis(),

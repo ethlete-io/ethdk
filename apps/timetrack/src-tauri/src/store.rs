@@ -573,7 +573,7 @@ pub async fn set_app_settings(
     }
 
     let lock_settings = crate::lock::LockSettings::read(&settings);
-    let transcribe = crate::transcript::TranscriptionState::read_enabled(&settings);
+    let transcribe = crate::transcript::TranscriptionSettings::read(&settings);
 
     db.run(move |connection| {
         connection.execute(
@@ -590,7 +590,7 @@ pub async fn set_app_settings(
     // reads neither the webview nor the database again, so a wait the user just changed would
     // otherwise not apply until the next start.
     lock.apply(&lock_settings);
-    transcription.set_enabled(transcribe);
+    transcription.apply(&transcribe);
 
     Ok(())
 }

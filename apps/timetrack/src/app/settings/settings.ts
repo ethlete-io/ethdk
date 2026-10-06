@@ -21,6 +21,7 @@ import {
   TimetrackGoogleSettings,
   TimetrackJiraSettings,
   TimetrackSettings,
+  TranscribeLanguage,
   TimetrackCallRules,
   TimetrackTicketSettings,
   clampDayTargetMs,
@@ -244,6 +245,7 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     setLockWindow: (lockWindow: boolean) => patch({ lockWindow }),
     setLockAfterIdleMs: (lockAfterIdleMs: number) => patch({ lockAfterIdleMs: clampLockAfterIdleMs(lockAfterIdleMs) }),
     setTranscribeCalls: (transcribeCalls: boolean) => patch({ transcribeCalls }),
+    setTranscribeLanguage: (transcribeLanguage: TranscribeLanguage) => patch({ transcribeLanguage }),
     setPriceCurrency: (currency: string) =>
       patch({ priceTable: { ...settings().priceTable, currency: currency.trim().toUpperCase() } }),
     addModelPrice: (price: ModelPrice) =>

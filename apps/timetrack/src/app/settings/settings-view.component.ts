@@ -14,6 +14,8 @@ import {
   TAB_IMPORTS,
 } from '@ethlete/components';
 import {
+  TRANSCRIBE_LANGUAGES,
+  TranscribeLanguage,
   callNamingKey,
   carriesCredentialsSafely,
   findStandIn,
@@ -654,6 +656,22 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                     <ethlete-explain [text]="TRANSCRIBE_WHY" label="call transcription" />
                   </div>
 
+                  @if (store.settings().transcribeCalls) {
+                    <et-form-field class="w-48" appearance="underline" size="sm">
+                      <et-label>Language</et-label>
+                      <et-select
+                        [value]="store.settings().transcribeLanguage"
+                        (valueChange)="setTranscribeLanguage($event)"
+                      >
+                        @for (option of TRANSCRIBE_LANGUAGE_OPTIONS; track option.value) {
+                          <et-select-option [value]="option.value" [label]="option.label">
+                            {{ option.label }}
+                          </et-select-option>
+                        }
+                      </et-select>
+                    </et-form-field>
+                  }
+
                   @if (transcription()?.listening) {
                     <p class="text-small" data-transcription-listening>Listening to your microphone</p>
                   } @else if (transcription()?.detail; as detail) {
@@ -834,6 +852,11 @@ export class SettingsViewComponent {
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
   protected readonly TRANSCRIBE_WHY = TRANSCRIBE_WHY;
+  protected readonly TRANSCRIBE_LANGUAGE_OPTIONS: { value: TranscribeLanguage; label: string }[] = [
+    { value: 'de', label: 'German' },
+    { value: 'en', label: 'English' },
+    { value: 'auto', label: 'Detect per chunk' },
+  ];
 
   protected repoPaths = computed(() => this.git.discovery()?.repos ?? []);
 
@@ -903,6 +926,12 @@ export class SettingsViewComponent {
         label: workdays === 0 ? 'Never by age' : `${workdays} workday${workdays === 1 ? '' : 's'}`,
       })),
   );
+
+  protected setTranscribeLanguage(value: unknown) {
+    const language = TRANSCRIBE_LANGUAGES.find((known) => known === value);
+
+    if (language) this.store.setTranscribeLanguage(language);
+  }
 
   /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {

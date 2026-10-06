@@ -91,6 +91,7 @@ describe('parseTimetrackSettings', () => {
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
       transcribeCalls: false,
+      transcribeLanguage: 'de',
       priceTable: { currency: 'USD', prices: [] },
     });
   });
@@ -104,6 +105,13 @@ describe('parseTimetrackSettings', () => {
     expect(parseTimetrackSettings({}).transcribeCalls).toBe(false);
     expect(parseTimetrackSettings({ transcribeCalls: 'yes' }).transcribeCalls).toBe(false);
     expect(parseTimetrackSettings({ transcribeCalls: true }).transcribeCalls).toBe(true);
+  });
+
+  it('transcribes in German unless the document names another known language', () => {
+    expect(parseTimetrackSettings({}).transcribeLanguage).toBe('de');
+    expect(parseTimetrackSettings({ transcribeLanguage: 'sv' }).transcribeLanguage).toBe('de');
+    expect(parseTimetrackSettings({ transcribeLanguage: 'en' }).transcribeLanguage).toBe('en');
+    expect(parseTimetrackSettings({ transcribeLanguage: 'auto' }).transcribeLanguage).toBe('auto');
   });
 
   it('reads a price table, and drops a price that could price a turn wrongly', () => {
@@ -169,6 +177,7 @@ describe('parseTimetrackSettings', () => {
       lockWindow: true,
       lockAfterIdleMs: DEFAULT_LOCK_AFTER_IDLE_MS,
       transcribeCalls: false,
+      transcribeLanguage: 'de',
       priceTable: { currency: 'USD', prices: [] },
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);

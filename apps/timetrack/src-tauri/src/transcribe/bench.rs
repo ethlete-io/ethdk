@@ -1,6 +1,6 @@
 //! Measures a model on a WAV through the same chunk path the listener uses:
 //! `TT_MODEL=<path> TT_WAV=<16 kHz mono s16 wav> cargo test --release --features transcribe
-//! transcribe::bench -- --ignored --nocapture`. `TT_THREADS`, `TT_PROMPT` and `TT_NO_GATE=1` vary it.
+//! transcribe::bench -- --ignored --nocapture`. `TT_THREADS`, `TT_PROMPT`, `TT_LANGUAGE` and `TT_NO_GATE=1` vary it.
 
 use super::pipeline::{is_silent, Chunker, Transcribe};
 use super::whisper::Whisper;
@@ -67,7 +67,8 @@ fn bench() {
         .into_owned();
 
     let loading = Instant::now();
-    let mut whisper = Whisper::load(std::path::Path::new(&model), &name, threads)
+    let language: &'static str = std::env::var("TT_LANGUAGE").map_or("auto", |language| language.leak());
+    let mut whisper = Whisper::load(std::path::Path::new(&model), &name, threads, move || language)
         .unwrap()
         .with_prompt(std::env::var("TT_PROMPT").ok());
     let loaded_in = loading.elapsed().as_secs_f64();
