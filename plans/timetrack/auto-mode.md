@@ -151,6 +151,19 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
        classed op shows its op name until it gets a label.
      - No e2e drives `autoMode.apply` at `external` through the queue (the unit specs cover it).
 
+- Call transcripts help name a call. Not started.
+  - Decided (2026-10-06): a second Settings switch, "Let auto mode read call transcripts", off by
+    default and shown only while transcription is on. Only the transcript of the call auto mode
+    asks about goes into the prompt, never other calls. `TRANSCRIBE_WHY` must then stop saying
+    "Nothing is sent anywhere" and say the text goes to the reasoning command.
+  - Read side exists: the `transcript_day` host command (`transcript.rs`), the
+    `ports.transcription.day$` port and the `transcript.day` agent op. Chunks carry
+    `callStartedAtMs` and `appId`, which pick one call's chunks.
+  - Start at the call-naming prompt in `libs/timetrack/src/lib/reason` (`prompt.ts`, `payload.ts`)
+    and check whether `pseudonym.ts` must run over transcript text too.
+  - Known noise: whisper invents text on near-silence at a call's start ("Hallå … Upp dum dum").
+    Cap the excerpt length and say in the prompt that the text is a raw machine transcript.
+
 ## Open questions
 
 - Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires
