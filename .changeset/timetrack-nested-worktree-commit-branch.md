@@ -3,4 +3,4 @@
 'timetrack-app': patch
 ---
 
-A commit made in a worktree that lives inside another checkout's directory keeps its own branch when it is filed to the session that wrote its files, and it no longer moves the enclosing checkout's branch.
+A commit records the worktree it was made in, so a commit from a worktree inside another checkout keeps its own branch and no longer moves that checkout's branch.

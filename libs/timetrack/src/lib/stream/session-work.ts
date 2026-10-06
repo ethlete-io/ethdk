@@ -3,14 +3,7 @@ import { Evidence } from '../model/evidence';
 import { namedWorkFileOf } from '../model/session-piece';
 
 /** One observation of what an agent session produced, to be filed under that session's own stretch. */
-export type SessionWork = {
-  repoPath: string;
-  sessionId: string;
-  gitBranch?: string;
-  cwd?: string;
-  commit?: GitCommitEvent;
-  evidence: Evidence;
-};
+export type SessionWork = { repoPath: string; sessionId: string; gitBranch?: string; cwd?: string; evidence: Evidence };
 
 const WORK_FILE_LABELS: readonly { prefix: string; label: string }[] = [
   { prefix: '.claude/handoffs/', label: 'handoff' },
@@ -125,7 +118,7 @@ export const sessionWork = (options: {
         repoPath: session.repoPath,
         sessionId: session.sessionId,
         gitBranch: commit.branch,
-        commit,
+        cwd: commit.worktree,
         evidence: {
           kind: 'commit',
           at: commit.at,

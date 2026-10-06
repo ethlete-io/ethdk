@@ -122,21 +122,26 @@ const groupsOf = (probes: RepoProbe[]): RepoGroup[] => {
 };
 
 /**
- * Which configured checkout holds each branch. A branch checked out in a worktree the user never
- * configured is left out, so its commits stay on the checkout the log was read from rather than
- * opening a row for a repository nobody asked about.
+ * Which configured checkout holds each branch, and which other worktree holds the rest. A branch
+ * checked out in a worktree the user never configured keeps its commits on the checkout the log was
+ * read from rather than opening a row for a repository nobody asked about, but the commit still names
+ * that worktree.
  */
-const ownersOf = (group: RepoGroup): ReadonlyMap<string, string> => {
+const holdersOf = (group: RepoGroup) => {
   const configured = new Map(group.members.map((member) => [trimmedPath(member.repo.path), member.repo.path]));
   const owners = new Map<string, string>();
+  const worktrees = new Map<string, string>();
 
   for (const worktree of worktreesOf(group.scanner)) {
-    const owner = worktree.branch ? configured.get(trimmedPath(worktree.path)) : undefined;
+    if (!worktree.branch) continue;
 
-    if (worktree.branch && owner) owners.set(worktree.branch, owner);
+    const owner = configured.get(trimmedPath(worktree.path));
+
+    if (owner) owners.set(worktree.branch, owner);
+    else worktrees.set(worktree.branch, trimmedPath(worktree.path));
   }
 
-  return owners;
+  return { owners, worktrees };
 };
 
 const probeOf = (options: { processes: TimetrackProcessRunner; repo: GitRepoScan }): Observable<RepoProbe> => {
@@ -163,13 +168,13 @@ const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult =>
   const { group, log } = options;
   const repo = group.scanner.repo;
   const failure = failureOf({ repoPath: repo.path, run: log });
-  const owners = ownersOf(group);
+  const { owners, worktrees } = holdersOf(group);
   const reflog = group.scanner.reflog.result;
 
   return {
     events: [
       ...(log.result.code === 0
-        ? parseGitLog({ repoPath: repo.path, output: log.result.stdout, window: repo.window, owners })
+        ? parseGitLog({ repoPath: repo.path, output: log.result.stdout, window: repo.window, owners, worktrees })
         : []),
       ...(reflog.code === 0
         ? parseGitBranchReflog({ repoPath: repo.path, output: reflog.stdout, window: repo.window, owners })

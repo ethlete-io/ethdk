@@ -193,9 +193,17 @@ fn append_replacing(
     {
         let mut insert = transaction.prepare(
             "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT (dedupe_key) DO UPDATE SET payload = excluded.payload
-             WHERE collected_event.kind IN ('calendar-event', 'agent-session', 'agent-usage', 'agent-prompt')
-               AND collected_event.payload IS NOT excluded.payload",
+             ON CONFLICT (dedupe_key) DO UPDATE SET payload = CASE collected_event.kind
+               WHEN 'git-commit'
+                 THEN json_set(collected_event.payload, '$.worktree', json_extract(excluded.payload, '$.worktree'))
+               ELSE excluded.payload
+             END
+             WHERE (collected_event.kind IN ('calendar-event', 'agent-session', 'agent-usage', 'agent-prompt')
+                 AND collected_event.payload IS NOT excluded.payload)
+               OR (collected_event.kind = 'git-commit'
+                 AND json_extract(collected_event.payload, '$.worktree') IS NULL
+                 AND json_extract(excluded.payload, '$.worktree') IS NOT NULL
+                 AND json_extract(collected_event.payload, '$.branch') IS json_extract(excluded.payload, '$.branch'))",
         )?;
         for event in events {
             if crate::pause::is_paused_at(&paused, event.at_ms) {
@@ -1072,6 +1080,61 @@ mod tests {
                 .unwrap(),
             None
         );
+    }
+
+    fn commit_on(branch: &str, worktree: Option<&str>) -> StoredEvent {
+        let mut event = commit(1_000);
+
+        event.payload = serde_json::json!({ "sha": "sha-1000", "branch": branch, "subject": "first" });
+        if let Some(worktree) = worktree {
+            event.payload["worktree"] = serde_json::json!(worktree);
+        }
+
+        event
+    }
+
+    fn commit_payload(connection: &Connection) -> serde_json::Value {
+        let payload: String = connection
+            .query_row("SELECT payload FROM collected_event", [], |row| row.get(0))
+            .unwrap();
+
+        serde_json::from_str(&payload).unwrap()
+    }
+
+    #[test]
+    fn adds_the_worktree_a_later_scan_names_to_a_stored_commit_and_nothing_else() {
+        let mut connection = store();
+        let mut later = commit_on("wt/gallery", Some("/repo/.claude/worktrees/gallery"));
+
+        later.payload["subject"] = serde_json::json!("reworded");
+        append(&mut connection, &[commit_on("wt/gallery", None)], &[], None).unwrap();
+        append(&mut connection, &[later], &[], None).unwrap();
+
+        assert_eq!(
+            commit_payload(&connection),
+            serde_json::json!({
+                "sha": "sha-1000",
+                "branch": "wt/gallery",
+                "subject": "first",
+                "worktree": "/repo/.claude/worktrees/gallery"
+            })
+        );
+    }
+
+    #[test]
+    fn names_no_worktree_a_later_scan_found_on_another_branch() {
+        let mut connection = store();
+
+        append(&mut connection, &[commit_on("next", None)], &[], None).unwrap();
+        append(
+            &mut connection,
+            &[commit_on("wt/gallery", Some("/repo/.claude/worktrees/gallery"))],
+            &[],
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(commit_payload(&connection).get("worktree"), None);
     }
 
     #[test]

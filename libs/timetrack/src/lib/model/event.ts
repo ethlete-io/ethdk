@@ -64,6 +64,11 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
    * rescan of a week of git history.
    */
   paths?: string[];
+  /**
+   * The checkout that held `branch` when the scan read the commit, where that checkout is a worktree
+   * no configured checkout stands for. `repoPath` is then only the checkout the log was read from.
+   */
+  worktree?: string;
 };
 
 /**

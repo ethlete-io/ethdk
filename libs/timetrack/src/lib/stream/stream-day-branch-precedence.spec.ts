@@ -146,6 +146,7 @@ describe('streamDay branch precedence', () => {
       sha: '5c20c10aaaaaaaaa',
       subject: 'feat(tooling): Show the run progress',
       paths: ['tools/gallery/record.mjs'],
+      worktree,
     };
     const turn: CollectedEvent = {
       at: AT(10),
@@ -184,7 +185,14 @@ describe('streamDay branch precedence', () => {
         [
           ...focusRun({ from: 0, to: 40 }),
           { ...turn, at: AT(0), workedIn: undefined },
-          { ...commit, at: AT(1), branch: FEATURE, sha: 'd768928aaaaaaaaa', subject: 'fix(tooling): Load a review' },
+          {
+            ...commit,
+            at: AT(1),
+            branch: FEATURE,
+            sha: 'd768928aaaaaaaaa',
+            subject: 'fix(tooling): Load a review',
+            worktree: undefined,
+          },
           commit,
         ],
         { [worktree]: REPO },

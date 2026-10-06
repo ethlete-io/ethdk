@@ -244,6 +244,42 @@ describe('collectGitEvents$', () => {
     expect(result?.events.map((event) => (event.kind === 'git-commit' ? event.repoPath : null))).toEqual([REPO, REPO]);
   });
 
+  it('names the unconfigured worktree that holds a commit branch', () => {
+    const worktree = `${REPO}/.claude/worktrees/components-e2e`;
+    const { result } = scan({
+      repos: [{ path: REPO, window: WINDOW }],
+      outputs: (spec) =>
+        spec.args[0] === 'worktree'
+          ? { stdout: WORKTREES(worktree) }
+          : spec.args[0] === 'log'
+            ? { stdout: SHARED_LOG }
+            : { stdout: '' },
+    });
+
+    expect(result?.events.map((event) => (event.kind === 'git-commit' ? event.worktree : null))).toEqual([
+      undefined,
+      worktree,
+    ]);
+  });
+
+  it('names no worktree for a branch a configured checkout holds', () => {
+    const worktree = `${REPO}-e2e`;
+    const { result } = scan({
+      repos: [
+        { path: REPO, window: WINDOW },
+        { path: worktree, window: WINDOW },
+      ],
+      outputs: (spec) =>
+        spec.args[0] === 'worktree'
+          ? { stdout: WORKTREES(worktree) }
+          : spec.args[0] === 'log'
+            ? { stdout: SHARED_LOG }
+            : { stdout: '' },
+    });
+
+    expect(result?.events.some((event) => event.kind === 'git-commit' && 'worktree' in event)).toBe(false);
+  });
+
   it('scans a checkout on its own when the worktree list fails', () => {
     const { result, specs } = scan({
       repos: REPOS,

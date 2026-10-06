@@ -28,6 +28,9 @@ const branchOf = (ref: string) => {
  * `refs/heads/`, so one log covers all of them and the ref a commit was reached from is what says which
  * checkout it belongs to. A branch no checkout holds falls back to `repoPath`.
  *
+ * `worktrees` names the checkout that holds a branch none of `owners` holds, which the commit carries
+ * as its `worktree`.
+ *
  * The paths `--name-only` prints follow their own commit's header, so a commit this drops has to stay
  * the current one until the next header arrives. Otherwise its files join the commit before it.
  */
@@ -36,6 +39,7 @@ export const parseGitLog = (options: {
   output: string;
   window?: GitScanWindow;
   owners?: ReadonlyMap<string, string>;
+  worktrees?: ReadonlyMap<string, string>;
 }): GitCommitEvent[] => {
   const events: GitCommitEvent[] = [];
   const seen = new Set<string>();
@@ -64,14 +68,19 @@ export const parseGitLog = (options: {
     if (options.window && (at < options.window.from || at > options.window.to)) continue;
 
     seen.add(sha);
+
+    const owner = options.owners?.get(branch);
+    const worktree = owner ? undefined : options.worktrees?.get(branch);
+
     current = {
       at,
       source: 'git',
       kind: 'git-commit',
-      repoPath: options.owners?.get(branch) ?? options.repoPath,
+      repoPath: owner ?? options.repoPath,
       branch,
       sha,
       subject,
+      ...(worktree ? { worktree } : {}),
     };
     events.push(current);
   }
