@@ -14,7 +14,8 @@ import {
 import { defineRootProvider, ProviderDefinition } from '@ethlete/core';
 import { Observable, Subject } from 'rxjs';
 import { isQueryDevtoolsEnabled, registerQueryDevtoolsEntry } from '../devtools/query-devtools-hook';
-import { messageMalformed, roomNotJoined } from './web-socket-errors';
+import { AnyCreateBearerAuthProviderResult } from '../auth';
+import { authAndAuthProvider, messageMalformed, roomNotJoined } from './web-socket-errors';
 
 /** A single message captured for the devtools web socket inspector. */
 export type WebSocketDevtoolsMessage = {
@@ -122,15 +123,30 @@ export type CreateWebSocketClientConfigOptions = {
 
   /**
    * The handshake payload, sent on every connect and reconnect. Pass a function to read a fresh value
-   * each time; it runs outside an injection context, so read the token from your app's own store, not
-   * `injectAuthProvider()`.
+   * each time; it runs outside an injection context, so it cannot call `injectAuthProvider()`. For a
+   * bearer auth provider use {@link authProvider} instead. Setting both is a dev-mode error and
+   * `authProvider` wins.
    *
    * @example
    * ```ts
-   * createWebSocketClient({ name: 'match', url, io, auth: () => ({ token: readAccessToken() }) });
+   * createWebSocketClient({ name: 'match', url, io, auth: () => ({ token: readCookieToken() }) });
    * ```
    */
   auth?: WebSocketClientAuth | (() => WebSocketClientAuth);
+
+  /**
+   * A bearer auth provider whose session the socket follows. The handshake carries
+   * `{ token: accessToken() }`. The socket does not connect while the session is `'unknown'` or
+   * `'restoring'`, reconnects when a session starts (a login, or a different user), and disconnects and
+   * completes its rooms on logout. A token rotation within a session does not reconnect; the next
+   * reconnect reads the fresh token.
+   *
+   * @example
+   * ```ts
+   * createWebSocketClient({ name: 'match', url, io, authProvider: myAuthProviderRef });
+   * ```
+   */
+  authProvider?: AnyCreateBearerAuthProviderResult;
 };
 
 /** A default socket io message view */
@@ -202,7 +218,10 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
     () => {
       if (isPlatformServer(inject(PLATFORM_ID))) return createServerWebSocketClient<TMessageData>();
 
-      const auth = options.auth;
+      if (options.auth && options.authProvider && isDevMode()) throw authAndAuthProvider(options.name);
+
+      const authProvider = options.authProvider?.inject();
+      const auth = authProvider ? () => ({ token: authProvider.accessToken() }) : options.auth;
       const socket = options.io(options.url, {
         withCredentials: options.withCredentials ?? true,
         autoConnect: false,
@@ -211,6 +230,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       });
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
+      const endedRoomHolders = new Map<string, number>();
       const joinsDeliveredThisConnection = new Set<string>();
       const joinsDeliveredToClosedConnection = new Set<string>();
       const isConnected = signal(false);
@@ -322,6 +342,15 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       };
 
       const leaveRoom = (room: string) => {
+        const endedHolders = endedRoomHolders.get(room);
+
+        if (endedHolders !== undefined) {
+          if (endedHolders > 1) endedRoomHolders.set(room, endedHolders - 1);
+          else endedRoomHolders.delete(room);
+
+          return;
+        }
+
         const joinedRoom = rooms.get(room);
 
         if (!joinedRoom) {
@@ -346,10 +375,11 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       let connectedAt: number | null = null;
       let destroyed = false;
+      let suspended = false;
 
       /** socket.io stops reconnecting after a server disconnect or a rejected handshake, so the client takes over. */
       const scheduleReconnect = () => {
-        if (reconnectTimer !== null || destroyed) return;
+        if (reconnectTimer !== null || destroyed || suspended) return;
 
         const delay = Math.min(RECONNECT_BASE_DELAY * 2 ** reconnectAttempt, RECONNECT_MAX_DELAY);
         reconnectAttempt++;
@@ -454,7 +484,72 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
 
       setupWebSocketConnectionListener();
       setupWebSocketListener();
-      socket.connect();
+
+      const endSession = () => {
+        suspended = true;
+
+        if (reconnectTimer !== null) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+
+        socket.disconnect();
+
+        for (const [name, room] of rooms) {
+          endedRoomHolders.set(name, (endedRoomHolders.get(name) ?? 0) + room.joinCount);
+          room.messages.complete();
+        }
+
+        rooms.clear();
+        syncDevtoolsRooms();
+      };
+
+      const startConnection = () => {
+        suspended = false;
+        reconnectAttempt = 0;
+        socket.connect();
+      };
+
+      if (authProvider) {
+        let hasConnected = false;
+        let wasAuthenticated = false;
+        let handledLogin: unknown = null;
+
+        effect(() => {
+          const status = authProvider.sessionStatus();
+          const execution = authProvider.executionState();
+
+          untracked(() => {
+            if (destroyed || status === 'unknown' || status === 'restoring') return;
+
+            if (status === 'anonymous') {
+              if (wasAuthenticated) endSession();
+              else if (!hasConnected) startConnection();
+
+              wasAuthenticated = false;
+              hasConnected = true;
+
+              return;
+            }
+
+            const login = execution?.type === 'login' && execution.state === 'success' ? execution : null;
+            const startedSession = !wasAuthenticated || (login !== null && login !== handledLogin);
+
+            if (login) handledLogin = login;
+            wasAuthenticated = true;
+
+            if (!hasConnected) startConnection();
+            else if (startedSession) {
+              socket.disconnect();
+              startConnection();
+            }
+
+            hasConnected = true;
+          });
+        });
+      } else {
+        socket.connect();
+      }
 
       const client: WebSocketClient<TMessageData> = {
         joinRoom,

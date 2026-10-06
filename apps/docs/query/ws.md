@@ -59,20 +59,27 @@ The socket disconnects automatically when the providing scope is destroyed.
 
 `auth` becomes socket.io's handshake `auth` payload, which the server reads as
 `socket.handshake.auth`. Pass a function when the value changes over time - it is called on every
-connect and reconnect, so a rotated access token reaches the next handshake. The function runs outside
-an injection context, so it cannot call `injectAuthProvider()` - read the token from wherever your app
-keeps it:
+connect and reconnect. It runs outside an injection context, so it cannot call `injectAuthProvider()`.
+
+For a [bearer auth provider](/query/auth), pass `authProvider` instead of reading the token yourself:
 
 ```ts
-declare function readAccessToken(): string | null; // your app's own token store
-
 const MATCH_SOCKET = createWebSocketClient({
   name: 'match-events',
   url: 'https://ws.example.com',
   io,
-  auth: () => ({ token: readAccessToken() }),
+  authProvider: myAuthProviderRef, // the result of createBearerAuthProvider()
 });
 ```
+
+The handshake carries `{ token: accessToken() }`, and the socket follows the session:
+
+- It does not connect while `sessionStatus()` is `'unknown'` or `'restoring'`, so a page load never opens an anonymous socket just before the restore finishes.
+- When a session starts - a login after being anonymous, or a different user - it reconnects, so the handshake carries the new token.
+- On logout it disconnects and completes the joined rooms: `messages$` completes and the rooms are no longer joined. Join again after the next login.
+- A token rotation inside a session does **not** reconnect. The next natural reconnect reads the fresh token, so the server must accept a socket whose handshake token has since expired.
+
+Setting both `auth` and `authProvider` is a dev-mode error (`1002`); `authProvider` wins.
 
 ### Typing the messages
 
@@ -227,4 +234,4 @@ installed, and every capture call is a no-op after that.
 
 ## Error codes
 
-The WebSocket client throws dev-mode `RuntimeError`s with codes **1000–1999**: leaving a room that was never joined (`1000`) and malformed incoming messages (`1001`). Both degrade silently in production.
+The WebSocket client throws dev-mode `RuntimeError`s with codes **1000–1999**: leaving a room that was never joined (`1000`) and malformed incoming messages (`1001`), and setting both `auth` and `authProvider` (`1002`). All degrade silently in production.

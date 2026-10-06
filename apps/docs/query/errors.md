@@ -324,5 +324,6 @@ Misuse throws `RuntimeError`s with numeric codes in every build, grouped by area
 | `ET954`  | Legacy interop - a body that is not valid or not supported.                                                                                                                               |
 | `ET1000` | [WebSockets](/query/ws#error-codes) - leaving a room that was never joined. Dev mode only.                                                                                                |
 | `ET1001` | WebSockets - a malformed incoming message. Dev mode only.                                                                                                                                 |
+| `ET1002` | WebSockets - `auth` and `authProvider` set together. Dev mode only.                                                                                                                       |
 
 The error message names the problem and the fix; the codes exist so you can grep for them. Every code below `ET1000` is also a member of the exported `QueryRuntimeErrorCode` object (and of the union type of the same name), so a spec can assert on one by name rather than by number.

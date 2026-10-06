@@ -146,6 +146,8 @@ It is `null` before any session has ended, and cleared again as soon as tokens a
 
 A logout that arrives over [multi-tab sync](#multi-tab-sync) carries the cause it had in the tab it started in. A session that ended **on its own** ended for every tab, so `'inactivity'` and `'expired'` are reported as they are - only a deliberate `logout()` elsewhere reads as `'otherTab'` here, which is what keeps "someone signed out in another tab" distinguishable from "this session is over".
 
+A socket.io client follows the session when you pass the provider as [`authProvider`](/query/ws#authenticating-the-handshake): it waits out `'unknown'` and `'restoring'`, reconnects with the token when a session starts, and disconnects on logout.
+
 ## Route guards
 
 `createAuthGuard(providerRef, config)` returns the guards for a session **and** the redirect back once the visitor signs in. Both halves read the same return-URL param, so the guard and the login page cannot drift apart:

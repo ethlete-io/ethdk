@@ -7,11 +7,12 @@ import {
   provideQueryDevtools,
   queryDevtoolsEntries,
   withArgs,
+  withPersistentAuth,
   withResponseUpdate,
 } from '../index';
 import { createWebSocketTestDouble } from '@ethlete/query/testing';
-import { describe, expect, it } from 'vitest';
-import { Scenario, useScenario } from './harness';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mintToken, Scenario, ScenarioAuthBuilders, useScenario } from './harness';
 
 let socketCounter = 0;
 
@@ -995,5 +996,148 @@ describe('ws scenario: server render', () => {
 
     c.destroy();
     scope.destroy();
+  });
+});
+
+describe('ws scenario with an auth provider', () => {
+  const scenario = useScenario({ clientOptions: { keepUnusedFor: 0 } });
+
+  afterEach(() => {
+    document.cookie = 'etAuth=; max-age=0; path=/';
+  });
+
+  const boot = (s: Scenario, features: Parameters<Scenario['auth']>[0] = {}) => {
+    const auth = s.auth(features);
+    const double = createWebSocketTestDouble();
+    const client = createWebSocketClient({
+      name: `ws-scenario-${socketCounter++}`,
+      url: 'ws://localhost',
+      io: double.io,
+      authProvider: auth.ref,
+    });
+    const instance = s.run(() => client.inject());
+    const consumer = s.consumer();
+
+    const login = () => {
+      consumer.run(() => auth.queries.login.execute({ body: {} }));
+      s.tick();
+    };
+
+    return { auth, double, instance, consumer, login };
+  };
+
+  const tokenOf = (handshake: object | null) => (handshake as { token: string | null }).token;
+
+  it('connects once the session is restored, with the restored access token in the handshake', async () => {
+    const s = scenario();
+    const seed = boot(s, {
+      features: [withPersistentAuth<ScenarioAuthBuilders>({ autoLogin: { queryKey: 'refresh' } })],
+    });
+
+    seed.login();
+    await s.settle();
+    seed.consumer.destroy();
+
+    s.api.once('POST', '/auth/refresh', () => ({
+      body: { accessToken: mintToken(), refreshToken: mintToken({ expiresInMs: 3600000 }) },
+      delay: 500,
+    }));
+
+    const { auth, double, instance, consumer } = boot(s, {
+      features: [withPersistentAuth<ScenarioAuthBuilders>({ autoLogin: { queryKey: 'refresh' } })],
+    });
+    await s.settle();
+
+    expect(auth.sessionStatus()).toBe('restoring');
+    expect(double.state().connectCalls).toBe(0);
+
+    await s.settle(600);
+    double.serverConnect();
+
+    expect(auth.sessionStatus()).toBe('authenticated');
+    expect(double.state().connectCalls).toBe(1);
+    expect(double.handshakes()).toEqual([{ token: auth.accessToken() }]);
+    expect(instance.isConnected()).toBe(true);
+
+    consumer.destroy();
+  });
+
+  it('connects anonymously when there is nothing to restore, then reconnects with the token after a login', () => {
+    const s = scenario();
+    const { auth, double, instance, consumer, login } = boot(s);
+
+    s.tick();
+    expect(auth.sessionStatus()).toBe('anonymous');
+    expect(double.state().connectCalls).toBe(1);
+
+    double.serverConnect();
+    expect(tokenOf(double.handshakes()[0] ?? null)).toBeNull();
+
+    const room = consumer.run(() => instance.joinRoom('lobby'));
+    login();
+
+    expect(double.state().connectCalls).toBe(2);
+    expect(instance.isConnected()).toBe(false);
+
+    double.serverConnect();
+
+    expect(tokenOf(double.handshakes()[1] ?? null)).toBe(auth.accessToken());
+    expect(double.sent().filter((m) => m.event === 'join-room')).toHaveLength(2);
+    expect(room()).not.toBeNull();
+
+    consumer.destroy();
+  });
+
+  it('does not reconnect when the token rotates inside the session, and the next reconnect reads the fresh token', () => {
+    const s = scenario();
+    const { auth, double, instance, consumer, login } = boot(s, {
+      accessTokenExpiresInMs: 20_000,
+      refreshStrategy: 1000,
+    });
+
+    login();
+    double.serverConnect();
+
+    const first = auth.accessToken();
+    const callsBefore = double.state().connectCalls;
+
+    s.tick(19_500);
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(auth.accessToken()).not.toBe(first);
+    expect(double.state().connectCalls).toBe(callsBefore);
+    expect(instance.isConnected()).toBe(true);
+
+    double.serverDisconnect();
+    double.serverConnect();
+
+    expect(tokenOf(double.handshakes().at(-1) ?? null)).toBe(auth.accessToken());
+
+    consumer.destroy();
+  });
+
+  it('disconnects on logout and completes the joined rooms, and stays down', () => {
+    const s = scenario();
+    const { auth, double, instance, consumer, login } = boot(s);
+
+    login();
+    double.serverConnect();
+
+    const room = consumer.run(() => instance.joinRoom('lobby'));
+    let completed = false;
+    room()?.messages$.subscribe({ complete: () => (completed = true) });
+
+    auth.logout();
+    s.tick();
+
+    expect(completed).toBe(true);
+    expect(double.state().disconnected).toBe(true);
+    expect(instance.isConnected()).toBe(false);
+
+    const connectCalls = double.state().connectCalls;
+    s.tick(60_000);
+    expect(double.state().connectCalls).toBe(connectCalls);
+
+    consumer.destroy();
+    s.tick();
   });
 });
