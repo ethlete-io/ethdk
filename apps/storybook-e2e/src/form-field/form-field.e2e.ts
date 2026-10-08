@@ -121,6 +121,27 @@ async function supportTransitions(field: Locator): Promise<string[]> {
   );
 }
 
+async function supportHeightsPerFrameAfterClick(field: Locator, target: Locator, frames = 6): Promise<number[]> {
+  const targetHandle = await target.elementHandle();
+
+  return field.evaluate(
+    (el, { clicked, count }) =>
+      new Promise<number[]>((resolve) => {
+        const heights: number[] = [];
+        const sample = () => {
+          heights.push(Math.round(el.querySelector('.et-form-field-support')?.getBoundingClientRect().height ?? -1));
+
+          if (heights.length < count) requestAnimationFrame(sample);
+          else resolve(heights);
+        };
+
+        (clicked as HTMLElement | null)?.click();
+        requestAnimationFrame(sample);
+      }),
+    { clicked: targetHandle, count: frames },
+  );
+}
+
 async function expectSupportFitsActiveMessage(field: Locator): Promise<void> {
   await expect
     .poll(async () => {
@@ -285,6 +306,16 @@ test.describe('form-field / support region', () => {
 
     expect(await supportTransitions(projects)).toEqual([]);
     await expectSupportFitsActiveMessage(projects);
+  });
+
+  test('a hint in a hidden tab panel has its full height in the first frame its tab is shown', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const projects = root.locator('et-form-field').filter({ hasText: 'Projects' });
+
+    const heights = await supportHeightsPerFrameAfterClick(projects, root.getByRole('tab', { name: 'Projects' }));
+
+    expect(heights[0]).toBeGreaterThan(0);
+    expect(new Set(heights).size).toBe(1);
   });
 
   test('a hint does not animate in again when its tab is shown again', async ({ page }) => {

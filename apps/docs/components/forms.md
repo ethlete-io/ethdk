@@ -362,7 +362,8 @@ The field chrome handles error display and aria wiring uniformly:
 - Only a message that appears after the field first lays out animates in. A
   hint, warning or error that is there from the first render - also in a field
   mounted hidden and revealed later, or one shown again when its tab panel is
-  selected - shows without the transition.
+  selected - shows in place in its first frame, without the transition and
+  without pushing the content below it.
 - Every control emits a `touch` output whenever it marks itself touched - signal
   forms listens to it, so the bound field's `touched()` follows the user leaving
   the control. Outside signal forms, `[(touched)]` still works.

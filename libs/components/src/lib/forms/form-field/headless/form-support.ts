@@ -133,7 +133,11 @@ const formSupportFactory = () => {
     return supportPresentation().renderedWarnings;
   });
 
+  const supportCanAnimate = signal(false);
+
   const supportHeight = computed(() => {
+    if (!supportCanAnimate()) return null;
+
     const stackHeight = (() => {
       switch (semanticSupportState()) {
         case SUPPORT_CONTENT_STATE.ERROR:
@@ -165,11 +169,9 @@ const formSupportFactory = () => {
     }
   });
 
-  // support content that is already there when the control lays out - first, or again after a
-  // hidden ancestor (an inactive tab panel) shows it - must not animate in, so this waits a frame
-  // past that layout and re-arms whenever the host is hidden
-  const supportCanAnimate = signal(false);
-
+  // support content already there when the control lays out - first, or again after a hidden
+  // ancestor (an inactive tab panel) shows it - must sit in place in that frame without animating;
+  // the measured height lands a frame late, so the region keeps its natural height until this arms
   effect((onCleanup) => {
     if (!hostShown()) {
       supportCanAnimate.set(false);
