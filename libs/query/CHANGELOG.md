@@ -1,5 +1,54 @@
 # @ethlete/query
 
+## 6.0.0-next.55
+
+### Major Changes
+
+- The devtools contract moved from `@ethlete/query` to the new `@ethlete/query/devtools-contract` entry point, and `et update` rewrites the imports; `provideQueryDevtools` and its option types stay put.
+- `setupQueryTest` rethrows non-request errors, `setupAuthTest` retries 401s by default, `mintTestToken` is exported, `isExpiringSoon` ignores routine refreshes, and dates reach the URL as ISO strings.
+- Route errors are renumbered to `ET010`-`ET012` and invalidation URLs must start with `/`; `withResponseUpdate` now works on GraphQL and transformed queries, and misconfigured clients and creators fail early.
+
+### Minor Changes
+
+- Add `createQueryGroup`, a fixed set of queries of which the one executed last drives `loading()`, `error()`, `latest()`, the retry target `execute()` and `succeeded$`.
+- Add `invalidates` to mutation creators and `tags` to read creators, plus `invalidateQueries({ tag })`, so a mutation declares what it makes stale.
+- Add `withOptimisticUpdate`, which writes a mutation's expected result into the cached reads its `target` matches before the request and rolls it back on failure.
+- Add the optional, report-only `report-legacy-query-apis` generator (`nx g @ethlete/query:report-legacy-query-apis`; `et update` does not run it), which lists every query collection, infinity query and entity store in `query-v3-migration-tasks.md`, and point the entity follow-up of `migrate-to-query-v3` at `invalidates`, `tags` and `withOptimisticUpdate`.
+- Queries expose the resolved request URL as `url()` (interop queries as `query.url`), and `retryableStatusCodes` also takes a `(status, isRetryableByDefault) => boolean` predicate to add a status to the defaults.
+- `createWebSocketClient` accepts an `authProvider`: the handshake carries its access token, the socket waits for the session restore, reconnects on login, and disconnects and completes its rooms on logout.
+
+### Patch Changes
+
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. The test-only `vite` and `@analogjs/vite-plugin-angular` peers are gone. `report-legacy-query-apis` now lists every `*etQuery` / `[etQuery]` template site.
+- Queries and snapshots no longer create ten effects each up front: one shared effect starts on the first `asObservable()` call, and a late subscriber gets the current value synchronously.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- Fix bearer auth event handlers that end the session or create a query throwing NG0602. The handlers now run untracked. The query devtools also skip an invalid stored account, and the provider that registers no longer fails.
+- Document `latestExecutedQuery` and `latestNonInternalQuery` on the bearer auth provider.
+- `createQueryBatch`: a `concurrency` of `NaN` falls back to the default of 4 instead of leaving the run stuck forever.
+- Creators that differ in `responseType`, `withCredentials`, `reportErrors`, `reportProgress` or `retryFn` no longer share one cache entry on the same URL.
+- Keep queries that differ only in `responseType` or `withCredentials` in separate cache entries.
+- The `migrate-query-client-features` migration no longer records a "createQueryClient already has a features array" task for a client that has a `features` array and neither `multiTabSync` nor `persistence`, so running it again over its own output reports nothing.
+- `queryErrorMessages` and `queryErrorMessage` drop blank messages and fall back to the raw response message, and the devtools token TTL override honors a custom `expiresInPropertyName`.
+- Serve a devtools mock whose declared query parameter is one of several values the request repeats.
+- Skip a pasted or stored devtools override that lacks a field its type replays with, instead of arming it and corrupting the response.
+- Fall back to five retained bodies when `provideQueryDevtools({ responseHistory })` is `NaN`, instead of dropping every body.
+- Keep a placeholder or realistic devtools seed inside a schema's `maximum`, and a placeholder string inside its `minLength`/`maxLength`.
+- Keep the args, response and execution state of `execute({ args })` on a query whose `withArgs` returns `null`.
+- A query form now commits `undefined`, `NaN` or an invalid `Date` as the field default, and reads a repeated or non-finite URL param for a single-value field as the default.
+- Stop a GraphQL field named `query` or `mutation` inside an anonymous operation from being sent as its `operationName`.
+- Mark an unused entry waiting out `keepUnusedFor` stale on an invalidation, so an `allowCache` execution refetches it instead of serving pre-mutation data.
+- Legacy `*etQuery`: `scope` now holds the collection key when the directive is given a query collection, instead of always `null`.
+- Freshness: a `cache-control` carrying both `s-maxage` and `max-age` now takes its window from `max-age`.
+- Freshness: a `cacheAdapter` answering `NaN` no longer keeps the response fresh forever; it counts as no freshness window, like `null`.
+- `createPagedQueryStack`: `direction()` reads `'next'` again after an args change reloads the stack, as it already did after `reset()`.
+- A bare `execute()` on a query whose `withArgs` source returns `null` now does nothing and warns in dev mode, instead of a request with `null` args.
+- `et migrations` offers `report-legacy-query-apis` as an optional migration, with the number of files that still use a legacy query collection, infinity query or entity store.
+- Routes with an existing query string now append params with `&`, sort fields keep colons, and GraphQL operations with directives send their `operationName`.
+- Restart a read once when a mutation's refresh and its `invalidates` targets all match it, in the mutating tab and in the other tabs.
+- The JSDoc example of the `createWebSocketClient` `auth` option no longer reads the token from the auth provider: the function runs outside an injection context, so it reads the token from the app's own store.
+- Stop a reactive `joinRoom` from joining its room a second time when a signal it reads changes without changing the room name, which left the room joined after the consumer was destroyed.
+- `RawResponseType` resolves to the `response` type when the args declare no `rawResponse`, instead of `unknown`.
+
 ## 6.0.0-next.54
 
 ### Patch Changes

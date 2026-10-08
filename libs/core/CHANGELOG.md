@@ -1,5 +1,52 @@
 # @ethlete/core
 
+## 5.0.0-next.62
+
+### Major Changes
+
+- `AnimatedLifecycleDirective` gains a read-only `state` signal, and `state$` is now a read-only observable; read `state()` instead of `state$.value`.
+- `OverlayRuntimeRef` no longer exposes the runtime's internal state mutators, and the runtime's style helpers and ref factory are no longer exported; the `OverlayRuntime` type is.
+- Breaking: `ResizeMoveEvent` `dx`/`dy` are now `totalDx`/`totalDy`, and `resizeEnded` emits the final `ResizeMoveEvent` instead of `void`.
+
+### Minor Changes
+
+- `*etAnimatedIf` narrows its `as` value like `@if`, and throws `ET9000` naming the missing `[etAnimatedLifecycle]` ancestor instead of a bare NG0201.
+- `provideColorPalette` also takes one list per registered surface theme name plus a `default` list. The new `injectSurfaceColorPalette()` returns a signal of the list for the surface the caller sits on. `injectColorPalette()` returns the `default` list.
+- Deprecate `createDestroy` in favour of `takeUntilDestroyed()` and add the hand-run `migrate-create-destroy` generator that rewrites the common pattern.
+- Add the recommended assisted migration `legacy-color-themes`: `nx g @ethlete/core:migrate-legacy-color-themes` rewrites `provideColorThemes` into `provideColorThemesWithTailwind4` and lists the Tailwind 4 and surface theme setup that is left.
+- Add `optionalBooleanAttribute`, a `booleanAttribute` that keeps `null` and `undefined`, for tri-state inputs.
+- Adds `injectQueryParamAll` and an `injector` option on every router `inject*` helper; `injectQueryParam` now always returns the first value of a repeated param, and `KeyPressManager` is deprecated.
+- Add `SurfaceTheme.semanticColorThemes`, which names the color theme serving `success`, `warning` or `error` on that surface, and `injectSemanticColorTheme(type)`, a signal of that theme for the nearest surface, else of the theme with that `type`.
+- `OverlayRuntimeCloseSource` gains `'navigation'`, the source `@ethlete/components` overlays close with on a route change.
+- Add a shared `et-visually-hidden` class and `mountVisuallyHidden()` to core, replacing 16 per-component copies of the clip rule in components.
+- Add `colorTheme` to `SurfaceTheme`: an `[etProvideSurface]` that resolves the surface applies that color theme to its subtree, e.g. a darker `brand-on-light` on a light surface. An `[etProvideColor]` with a color on or above the surface element wins
+- Unsaved changes: `confirm` is optional now - set it once with `provideUnsavedChangesConfirm()`, or use `provideUnsavedChangesAlertDialog()` for a ready-made dialog worded by `UNSAVED_CHANGES_LABELS`.
+
+### Patch Changes
+
+- `*etAnimatedIf` no longer replays the enter animation when a shown value is swapped for another truthy value.
+- `signalAnimatedNumber` with `duration: 0` now jumps to the target instead of setting `NaN`, and a first frame stamped before `play()` no longer moves the value backwards. `*etRepeat` with a non-numeric count now renders nothing instead of keeping the previous views.
+- `writeViewportSizeToCssVariables()` and `writeScrollbarSizeToCssVariables()` keep updating their CSS variables after the component that first called them is destroyed. Before, the writer stopped with that component and every later call was skipped.
+- Deprecate `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` in favor of `injectSemanticColorTheme(type)`, which follows the surface.
+- Fixes unsaved-changes tracking of a `null` signal, `[etClickOutside]` misfires, cookies on `*.co.uk` hosts, 2D `nearest` scrolling and element swaps, and warns about missing breakpoint and color providers.
+- `equal` no longer treats two Maps as equal when their keys differ but their values are `undefined`. `isSafeUrl`, `isSafeLinkUrl` and Markdown rendering no longer throw on an out-of-range character reference such as `&#99999999;`. `getObjectProperty` follows chained array indexes like `a[0][1]`.
+- `applyFaviconOverlay` loads the base icon with a CORS request, so an overlay now shows over a favicon served from a CORS-enabled CDN instead of being dropped on a tainted canvas.
+- `injectUrl`, `injectRoute` and `injectRouterEvent` read the url before the first navigation through Angular's `Location`, so it no longer carries the base href or, under a hash location strategy, the `#`.
+- `initials()` and the `initials` pipe take a whole character from each word, so a name starting outside the basic multilingual plane no longer yields half a surrogate pair, and a decomposed accent stays on its letter.
+- The `legacy-color-themes` migration keeps the name a shorthand property or a local `export { provideColorThemes }` publishes, and also reports the Tailwind 3 helpers in a JavaScript Tailwind config.
+- `createLogger` now goes quiet on a bare `?et-logger-quiet` query param, not only on one with a value. The JSDoc of `TitleConfig.prefixPart` and `suffixPart` no longer describes each other, and `UnsavedChangesTabConfig.title` no longer names the removed `etSeo` directive.
+- A press on an anchored overlay's origin that closes it no longer swallows a later, unrelated click on that origin when the press ended without a click.
+- The overlay ref's lifecycle observables now replay their event, so `mount(...).beforeOpened()` or a subscribe after `close()` still emits.
+- `scrollToElement` with the `nearest` origin no longer hides the visible edge of an element larger than its container, and no longer scrolls toward an element that is not inside the container.
+- A static provider override no longer erases a default with a key set to `undefined`, so `provideXDefaults({ size: undefined })` keeps the default size; `null` still overrides.
+- The published typings no longer contain `@internal` members.
+- An `Observable` returned from an unsaved-changes `confirm` is now unsubscribed when the session ends while it is open (`abandonAll()`, e.g. on logout), so it no longer keeps running - and a confirm dialog opened through it closes.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. `migrate-to-v5` now reports every dropped 4.x export, such as `ObserveResizeDirective` and `LetDirective`, with its successor.
+- `signalElementIntersection` now takes its first reading after render instead of before layout, and a `rootMargin` or `threshold` signal re-creates the observer when it changes.
+- `htmlToMarkdown` and `markdownToHtml` keep the start number of an ordered list (`<ol start="3">` and `3.`) instead of renumbering from 1.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- An overlay opened from inside another overlay that closes first (a dialog opened from a menu item) now returns focus to that overlay's own restore target instead of `<body>`.
+
 ## 5.0.0-next.61
 
 ### Minor Changes

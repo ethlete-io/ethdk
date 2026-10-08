@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.0.0-next.27
+
+### Minor Changes
+
+- `recommendedSpec` also covers `*.test.ts`, stories and `e2e/`, `no-trivial-wrapper-method` allows public methods over private members, and two other rules get fixes.
+
+### Patch Changes
+
+- Angular metadata fixers (`no-legacy-angular-decorators`, `require-on-push-change-detection`, `require-view-encapsulation-none`) now insert properties with the surrounding comma style and no stray spaces.
+- `class-member-order`: the fixer keeps blank lines between members in place instead of leaving one after the opening brace.
+- `no-inject-chain` no longer reports a constructor called straight off `inject()`, as in `new (inject(Foo).Bar)()`.
+- `no-subscribe-in-pipe` no longer reports a `.subscribe()` inside a callback of the observable that `.pipe()` is called on, such as `defer(() => …).pipe(…)`.
+- `template-member-accessibility` now fixes an unneeded `protected` to `public` in one pass, instead of deleting it (and any comment after it) and leaving an implicitly public member to fix again.
+- The `no-unused-class-member` message now says the member is never referenced through `this`, matching what the rule checks: a member that is only written still counts as used.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- `enforce-routing-view-naming` only checks object literals that have a `path` key.
+
 ## 1.0.0-next.26
 
 ### Minor Changes

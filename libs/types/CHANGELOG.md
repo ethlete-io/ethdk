@@ -1,5 +1,12 @@
 # @ethlete/types
 
+## 2.0.0-next.10
+
+### Patch Changes
+
+- `JsonLD` is no longer exported from `@ethlete/types` since 2.0: import it from `@ethlete/core`.
+- Replace the generated README with a description of the package and a link to its guide.
+
 ## 2.0.0-next.9
 
 ### Patch Changes

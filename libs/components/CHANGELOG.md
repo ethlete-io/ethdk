@@ -1,5 +1,186 @@
 # Changelog
 
+## 1.0.0-next.67
+
+### Major Changes
+
+- Breaking: `BracketSlotSource` is now a union discriminated by `kind` that carries only the fields of its kind; build slots with the new `bracketSlot.*` constructors.
+- Breaking: stop exporting the cascader tree helpers `toChildrenObservable`, `toSearchObservable`, `toPathObservable`, `nodesEqual` and `indexOfNode`. The node and data source types, `canHaveChildren` and `defaultCompareWith` stay public. `et update` runs a migration that marks the uses.
+- Tab groups store their selection only with a `sessionMemoryKey`. Tree and skeleton take `labels`. Renamed `imgLoad`/`imgError`/`copySuccess` to `imageLoad`/`imageError`/`copySucceed`. Adds carousel `[(activeIndex)]`, `provideKbdLabels`, copy-failure feedback, a named initials avatar, NaN-safe pagination.
+- Breaking: every component takes its error, warning and success colors from the surface it renders on, so `injectFormSupport().errorColorTheme` and `TableComponent.errorColorTheme` are now signals; `et update` migrates their reads.
+- Breaking: the published typings no longer contain `@internal` members (`stripInternal`). `QueryErrorComponent.queryError`, `SelectDirective.requestLoadMore`, `InputMaskHost` hooks and the calendar template guards stay public.
+- Remove the no-op `secondStep` input of the time picker and time inputs (delete any binding). Date controls gain `firstDayOfWeek`, and a `valueFormat` mismatch warns in dev mode.
+- - **Breaking:** date-only controls and their validators now default to `yyyy-MM-dd`; the date-time controls read the new `DATE_TIME_FORMAT` token (`provideDateTimeFormat()`) instead of `DATE_FORMAT`.
+  - Add `dateTimeRangeOrder` for `et-date-time-range-input`; `dateRangeOrder` now reads `DATE_FORMAT` and takes no `timeZone`.
+- Breaking: stop exporting the duration input format helpers `UNIT_MS`, `deriveDurationFormatSpec`, `formatDuration` and `parseDuration`. The `DurationFormatSpec`, `DurationSegment` and `DurationUnit` types stay public. `et update` runs a migration that marks the uses.
+- Breaking: spinner and progress bar are determinate while `value` is bound, replacing `determinate` and `indeterminate` (`et update` migrates templates); the progress bar takes `color`, and `LOADER_IMPORTS` is exported.
+- Number input: `e`, `E` and `+` can no longer be typed or pasted, a new `decimals` input caps the fraction digits, and text that is not a number raises a parse error instead of a silent `null`.
+- Breaking: overlays close with the source `'navigation'` when a Router navigation to another path starts. Set `closeOnNavigation: false` to keep one open.
+- Breaking: `OverlayRef` no longer exposes `attachRuntime`, `attachComponentInstanceOverride`, `closeVia` or `registerHeaderTemplate`, `createOverlayRef` is no longer exported, and `forceClose` now takes `(result?, source?)` like `close`. Swap the arguments of every `forceClose(source, result)` call.
+- Overlay: opener `afterClosed`/`beforeClosed` callbacks receive `undefined` instead of `null` for a dismissed overlay, and `injectCommandPalette()` is now `createCommandPaletteOpener()` (the old name is a deprecated alias).
+- Rich text editor internals (setup functions, image upload helpers, styles components) are no longer exported, its state signals are read-only, and `toggleHeading` / `setHeading` take a level `1`-`6`.
+- Scheduler: an edit surface is now an app-owned component built from `SCHEDULER_EDIT_SURFACE_IMPORTS` and registered with `provideSchedulerEditSurface({ component })`; the field and action registry and its feature directives are removed.
+- Breaking: rename the `et-select` panel load-error input `error` to `loadError`, so it no longer reads like the validation `errors`. `et update` runs a migration that renames it in templates.
+- Breaking: the select and tag input share `maxSelection`, `normalizeValue` and `separators` (key names and characters), `et-cascader` gains `maxSelection`, and `et-select` emits `afterOpen`/`afterClose`. `et update` renames the old inputs.
+- `et-tree`, `et-select` and `et-cascader` (and their headless directives) type `value` and `valueChange` from the bound signal or field, and warn in dev mode when its shape does not match the selection mode.
+- Breaking: `et-*-player-slot` exposes its handle as `controls` instead of `slotDirective`, with a read-only `currentPlayerId`; `injectStreamPlayerSlot()` returns it. `pipActivate()` / `pipDeactivate()` return `false` when they could not act, and report `ET1612` without `provideStreamPip()`.
+
+### Minor Changes
+
+- - `generateBracketDataForEthlete` maps a stage before its draw and takes a `{ mode }` override.
+  - `<et-bracket>` and `<et-bracket-rounds-list>` take `previousMatchIds` and warn in dev mode about unlinked matches and unknown round ids.
+  - New `pickCardPredicted` bracket label.
+- Bracket: add `<et-bracket-skeleton>` (`BRACKET_SKELETON_IMPORTS`), a loading placeholder drawn with the real bracket layout.
+- Add `standingRankSides()` and `swapStandingRank()` for changing who fills a knockout side fed by a table position.
+- Add `validateBracketSource()`, which returns the `BracketRuntimeError` a source would throw, or `null`.
+- The bar, line, pie and Sankey charts emit `(markActivate)` when a mark is clicked or activated with Enter or Space, for drill-down.
+- Chart: bar and line series without a palette entry or `colorToken` now take distinct steps of the accent, like the pie chart.
+- Add `provideChartLabels` / `CHART_LABELS` to localize the charts' table headers, pie total and Sankey words and key hint; the per-chart inputs still override them.
+- Chart: every chart draws with the `provideColorPalette` list of the surface it sits on.
+- Tri-state inputs (`closeOnActivate`, `hasBackdrop`, `compact`, `interactive`) take a bare attribute as `true`, and `notification.promise()` follows legacy interop queries. New tokens: `--et-button-icon-size`, `--et-segmented-button-font-size` / `-height` / `-gap`, `--et-table-header-color`, `--et-table-row-min-block-size`, `--et-table-row-selected-tint`.
+- Add `provideFormFieldDefaults()` to set the default `appearance`, `fill`, `labelMode` and `size` of every `et-form-field` below an injector. The `size` also applies to `et-choice-field` and the selection groups. An input set on a component still wins.
+- Add `etQueryButton`, which shows a query's loading state and progress on any button, and `queryButtonSourceFromV2Query` for legacy queries; the cdk migration map now points the cdk query button at it.
+- A query-param overlay no longer adds a history entry when it closes. If `open()` added the entry, the close steps back over it; otherwise the close replaces it. The next Back no longer reopens the overlay.
+- Sankey nodes past the palette take steps of the accent, and link names read "Source to Target" with a new `linkSeparator` input.
+- Banner, progress step and stat tile take their success, warning and error colors from `injectSemanticColorTheme()`, so a surface's `semanticColorThemes` decides them.
+- Add the `@ethlete/components/testing` entry for app specs: `setupComponentsTestEnvironment()` installs the jsdom fakes, plus `createTestOverlayRef` and control drivers.
+- Add the `timeBounds()` and `timeRangeBounds()` validators, which reject a time of day outside `min` and `max`.
+- `timeRangeOrder()` takes `allowOvernight`, which accepts a time range across midnight.
+- Add `provideDateTimeZone(zone)`, an app-wide default `timeZone` for the date, date-range, date-time and date-time-range inputs; the date-only inputs now take `timeZone` too.
+- Validation errors of the built-in kinds (`required`, `min`, `max`, `minLength`, `maxLength`, `pattern`, `email`) now show a localizable English default text through `FORM_FIELD_LABELS` when they carry no message.
+- **Breaking:** `et-dropzone` drops `retryLabel`, `removeLabel`, `replaceLabel` and `uploadErrorLabel`; pass `[labels]` instead. Every form control takes `hidden` and `warnings`, and `accept()` is now `resolvedAccept()`.
+- The line chart's focus ring stays at least `--et-line-chart-focus-ring-min-width` (12px) wide, centred on the focused x, so it still reads as a ring on dense data.
+- The line chart has an `includeZero` input (default `true`); `false` fits the value axis to the data. An area chart always includes zero.
+- A stacked line chart band is an opaque mix of series color and surface, set by `--et-line-chart-stacked-area-mix`. `et update` migrates `--et-line-chart-stacked-area-opacity`.
+- Add a `component` option to the notification manager config, so the stack renders an app-owned toast component in place of `et-notification`.
+- Add `overlayRef.busy`, a writable signal that blocks every non-`api` close, sets `aria-busy` on the pane and disables `etOverlayClose` while `true`.
+- Filter overlays close with `{ didUpdate: false }` on any dismiss, blank tooltips stay closed, notifications fall back to semantic themes, and dev mode flags `ET1211` and a missing `provideOverlay()`.
+- Overlays take typed `inputs` (`{ productId: () => id }`) on `open()` and openers, and `result: overlayResult<T>()` types the close result without restating the component.
+- Paged query trigger: add `etPagedQueryTrigger`, infinite scroll for a `createPagedQueryStack` in a list, the page or an `et-scrollable` rail.
+- Phone input: a bound value with an unknown dial code (`+999…`) is shown and edited in full instead of being rewritten with the fallback country's dial code; `hasUnknownDialCode` reports it.
+- `provideStreamPip()` now registers `PipSlotPlaceholderComponent` as the default PiP slot placeholder. Set `pipSlotPlaceholderComponent` to `null` in `provideStreamConfig()` to opt out, or to a component to override it.
+- Add `provideRichTextEditorTool()`, an injectable factory form of `provideRichTextEditorImageTool()`, and reactive `requiredLanguages` options. The multi-language editor now shows field errors, honors `provideRichTextEditorTools()` and resets undo per language; dev mode catches misconfigured tools and triggers.
+- A headless `[etRichTextEditor]` now handles paste, drop, undo, autoformat, tool hooks and `touched` on the element passed to `attachEditable()`, so forwarding its `input` event is no longer needed.
+- `et-multi-language-rich-text-editor` takes `triggers` and `parsePastedTokens`, and exposes the embedded editor as `editor()` for `insertToken()` and `et-rich-text-editor-token-palette`.
+- A keyboard-focused Sankey chart link now shows a muted key hint in its tooltip, worded by the new `linkKeyHint` input.
+- Sankey chart: a middle-column node label now sits on a surface chip centred on its node. A node shorter than 24px keeps the label beside it. `SankeyChartLabelSide` gains `'center'`.
+- The sankey chart is one tab stop: arrow keys walk the nodes, Enter steps into a node's links. Custom templates need the new `etSankeyChartMark` directive.
+- The sankey chart turns its flow top to bottom below 480px of width; set it with the new `direction` and `verticalBelow` inputs.
+- An `<et-scheduler>` without `provideSchedulerEditSurface()` is now read-only: a badge click only selects, and there is no add button or drag-to-create. The new `createEnabled` signal on `[etScheduler]` turns drag-to-create off.
+- Radio, checkbox and segmented groups take `compareWith`, `et-select` and `et-cascader` take `pending` and `maxLength`, and a multi-select paste with `customValueSeparators` splits on single characters only.
+- Add a `valueKey` input to `et-select` that matches values by a derived key, so syncing thousands of data-driven object options stays linear.
+- Add `et-stat-tile` for a single headline value with a signed delta coloured by whether up is good, and `et-stat-tile-sparkline` for its trend.
+- The table throws `ET3512` and `ET3513` in dev mode for a flag without its feature and a CSV value with no text form, and `GridDirective.addItem()` returns the new id.
+- `tableRowsFromQuery` / `tableRowsFromV2Query` accept existing `sort`/`filters`/`page`/`pageSize`/`quickFilter` signals, add `pageSize`/`setPageSize`, and type their keys from `columns`; new `sortKey`/`filterKey` column options and a `filterValues` helper.
+- Unsaved changes: `confirm` is optional now - set it once with `provideUnsavedChangesConfirm()`, or use `provideUnsavedChangesAlertDialog()` for a ready-made dialog worded by `UNSAVED_CHANGES_LABELS`.
+
+### Patch Changes
+
+- Fix the banner's icon, heading and description tokens having no effect when set on `et-banner` or an ancestor, by registering every banner token as inheriting.
+- Fix the bracket rounds list's round and match gap tokens having no effect when set on `et-bracket-rounds-list` or an ancestor, by registering every rounds list token as inheriting.
+- `etBreadcrumbSegment` treats an `order` that is not a number (an empty attribute, a typo) as unset, instead of sorting the trail unpredictably.
+- A button's loading spinner stays indeterminate when its `progress` (or an `etQueryButton` query's progress, e.g. from an empty transfer) is not a finite number, instead of showing a stuck 0%.
+- Keep the calendar's focus in February when Home or End in the year grid moves a focused leap day to a common year, instead of rolling it over to March 1.
+- Calendar: hovering a day before an open range's start no longer previews a band, since picking it restarts the range.
+- Fix the carousel autoplay advancing at once when `duration` is NaN, Infinity or longer than the timer limit. Autoplay now treats such a duration as no duration.
+- Render the checkbox on the server, where getComputedStyle does not exist.
+- Pointing at a disabled command palette row no longer moves the highlight back to the first row.
+- The command palette's arrow-key highlight no longer jumps to the row a resting pointer ends up over when the list scrolls.
+- A headless `etSankeyChartMark` now sets `role="img"` itself, so a mark in a custom template is announced like the default ones.
+- The carousel's `goTo()` and `activeIndex` now ignore a fractional or `NaN` index instead of leaving the current slide as `NaN`.
+- `normalizeEthleteParticipant` falls back to the account `name` when a player's `gamertag` is blank.
+- Masked inputs no longer drop a digit when a cut removes only formatting, and sliders with an exponent-notation `step` (`1.5e-7`) round to the right number of decimals.
+- `et-match-score` no longer replays a value change made while `animate` was off once `animate` turns on.
+- An overlay opened with `disableClose` no longer closes when the router navigates to another path. Set `closeOnNavigation: true` alongside it to keep the old behavior.
+- Overlays outside a provided surface now match the light or dark surface of `:root`, and a long header or footer no longer widens the pane past its max width.
+- A `syncUrl` overlay router no longer closes an overlay opened while the previous one was leaving, and no longer carries its query param onto the next page.
+- `paginate` and `etPagination` now keep the current page, `siblingCount` and `boundaryCount` whole, non-negative numbers, so no page number like `3.5` appears.
+- A responsive `et-pagination` now trims its page window to the available width when `boundaryCount` is `0` or `NaN`, or `siblingCount` is `NaN`, instead of rendering the full window.
+- The Sankey chart `linkKeyHint` input type now includes `undefined`, matching its default.
+- Scheduler appointments draw their time, location and chain count in the full theme ink and their title at weight 600, so the secondary text clears WCAG AA.
+- Fix `etToolbar` focusing hidden or fieldset-disabled controls, `etCopyButton` missing `copyFail` on a throwing clipboard, `et-avatar` splitting astral initials, and duplicate ids for tied standings placements.
+- Correct the JSDoc of `focusedParticipantId`, the default range strategy's `preview`, `bracketFitsWidth` and `CommandPaletteComponent`.
+- `et-standings-pick` drops a drag in progress when the list locks, instead of leaving the cards shifted.
+- A selected table row keeps its accent over stripes and hover after a table mounts again.
+- `directiveAt` now names the unmatched selector in its error, and `monthsShown` and `minuteStep` fall back to 1 for `Infinity`.
+- A tooltip or toggletip that is open when its host is destroyed now closes with it, instead of staying on screen until the next layout change.
+- A tree level whose `loadChildren` observable completes without emitting now loads as empty instead of showing its spinner forever.
+- Tree type-ahead now keeps the focused row while it still matches a longer query, and a repeated letter walks through the matching rows.
+- A Space typed during tree type-ahead now extends the query, so labels with spaces can be matched, instead of selecting the focused row.
+- Draw calendar outside-month dates and week numbers, and the select and cascader placeholder, in the muted surface colour; draw form errors, warnings and the over-limit counter in the theme ink, so all of them clear AA contrast
+- `AnimatedLifecycleDirective` gains a read-only `state` signal, and `state$` is now a read-only observable; read `state()` instead of `state$.value`.
+- `et-description-list` keeps a term's second `<dd>` in the detail column and lays out `<div>`-wrapped `<dt>`/`<dd>` groups like flat ones, instead of shifting every following row.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. The test-only `@analogjs/vitest-angular` peer is gone.
+- Draw the error messages of the rich text editor token popup, the dropzone, the select, the cascader and the menu search in the theme ink, like the form field messages, so they clear AA contrast on a light surface
+- A floating action nested inside another one no longer floats its trigger when the outer one floats; each trigger follows its own floating action, published as `data-floating-action-state`.
+- Menu, select and cascader no longer ship the tooltip and toggletip styles.
+- Every form control now takes `hidden` and `warnings`: the tag input, date/time inputs, select, cascader, selection groups and both rich text editors gain the inputs, and a schema-hidden selection group hides itself.
+- Form field: a control inside an `@if` that is false at first render no longer throws `ET2200` in dev mode; its accessible name is checked once it appears.
+- Form fields inject the suffix overlap styles only once a clear button or busy spinner can render, so plain text inputs and textareas no longer carry them.
+- Fix edge cases in `et-otp-input` `length`, `et-rating` negative values and step snapping, `et-phone-input` trunk `0` pastes, `formatFileSize` unit rollover, and `provideFormFieldDefaults` keys set to `undefined`.
+- `LineChartDirective.baseline()` stays inside the plot with `includeZero` `false`: it sits on the value-axis edge nearest zero.
+- Weekly time ticks in the line chart start on the app locale's first day of the week, and on Monday where the browser reports no week info.
+- The line chart tooltip waits for its show delay only when the pointer first enters the plot; while it is open, it moves to the hovered x at once.
+- A disabled menu item that opens a submenu no longer opens it on click or hover.
+- Fix a menu item taking focus from keyboard navigation when the list scrolls under a resting pointer. The item now takes focus on a pointer move, not on `pointerenter`.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- Fix a notification that became sticky (`duration: 0` or an `error` status) while hovered or focused auto-dismissing anyway once the pointer or focus left it.
+- Fix the notification's header, icon, title, message and progress bar tokens having no effect when set on `.et-notification` or an ancestor, by registering every notification token as inheriting.
+- Fix the type error in the number input that broke the build of `@ethlete/components`.
+- Fix opening an overlay from an `effect` or `computed`, which threw NG0602 and left the overlay half-open.
+- A synced overlay router now removes its URL param when a route guard cancels the navigation that closed the overlay.
+- A url-synced overlay router that closes before its own navigation ends (a slow guard or resolver) now clears its query param once that navigation lands, instead of leaving it in the URL.
+- A url-synced overlay router whose closing navigation a guard cancelled no longer pops the history entries of another url-synced overlay opened meanwhile. It then removes only its own query param.
+- A url-synced overlay router now clears its query param also when a guard cancels the closing navigation before the leave animation ends, and no longer steps the history back after a navigation that kept the param on a new page.
+- An overlay router with `syncUrl` that is closed by a router navigation no longer steps the history back when it is destroyed. Before, the cleanup could cancel the navigation that closed the overlay.
+- `etPagedQueryTrigger` now observes through `signalElementIntersection` instead of a native `IntersectionObserver`.
+- Phone input: the country search field now uses a shared `et-select-panel-search` style from the select panel instead of its own copy.
+- `et-picture` treats a `width` or `height` bound to `null` (or to a non-number) as unset, instead of writing `NaN` and dropping the reserved `aspectRatio`.
+- `et-picture` keeps a comma inside a srcset URL (e.g. `img.jpg?rect=0,0,100,100 1x`) when picking the fallback `src` and applying the `baseUrl`, instead of cutting the URL at the comma.
+- A pie chart slice with a value above 0 that rounds to 0% now reads "<1%" in the tooltip, legend, table view and screen reader text.
+- Fix the `--et-pip-slot-placeholder-*` tokens having no effect when set on `et-pip-slot-placeholder` or an ancestor, by registering them as inheriting.
+- Fix `--et-pip-border-radius` and `--et-pip-title-bar-height` not reaching the PiP window's title bar and content, by registering the PiP window tokens as inheriting.
+- Fix the progress step tokens (`--et-progress-step-marker-size` and the label and description font sizes) having no effect when set on the step or the group, by registering them as inheriting.
+- `et-query-error` treats a blank message as no message, `etMasonry` lays out one column instead of NaN geometry for a non-numeric `columnWidth` or `gap`, and `et-scrollable` reads a non-numeric `scrollMargin` as `0`.
+- A query-param opener's `open()` replaces the history entry while the overlay is already open, so closing it no longer steps back onto the previous value.
+- The date, time and date-time range inputs now hand `hidden` and `warnings` to their form field.
+- Breaking: `ResizeMoveEvent` `dx`/`dy` are now `totalDx`/`totalDy`, and `resizeEnded` emits the final `ResizeMoveEvent` instead of `void`.
+- `et-rich-text-editor` and `et-multi-language-rich-text-editor` no longer throw when their bound value is `null` (e.g. an empty field from API data); both render it as an empty document.
+- Typing `3. ` in the rich text editor now starts the numbered list at 3 instead of 1.
+- The rich text editor test driver's `attachEditable` option now hands the element to `attachEditable()`, so a headless editor under test handles input, paste, keyboard and the other events.
+- The rich text editor no longer puts the invalid `aria-expanded` on its textbox, and drops `aria-controls` when the trigger popup closes.
+- Format scheduler times and the header date with the active date locale, so a 12-hour locale shows 12-hour times.
+- A time grid block moved past the top or bottom of its column now stops on that day instead of jumping to the day before or after.
+- Draw the scheduler month view's outside-month dates in the muted surface colour, so they clear AA contrast
+- Give each hour of the scheduler time grid its own row, so a screen reader no longer reports one row of 168 cells.
+- `et-scrollbar` reads a non-numeric `minThumbSize` as the default `24` instead of sizing its thumb `NaN`.
+- A horizontal `et-scrollbar` no longer throws during server-side rendering, where `getComputedStyle` does not exist.
+- Fix `--et-select-option-group-label-font-size` having no effect when set on the option group or an ancestor, by registering it as inheriting.
+- `selectOptionsFromQuery` now runs its pages on a `createPagedQueryStack`; its config and return type are unchanged.
+- Fix the select search box ignoring `--et-select-panel-padding` set on the panel or an ancestor, which misaligned it against the options, by registering the panel tokens as inheriting.
+- `et-radio-group`, `et-checkbox-group` and `et-segmented-button-group` set `aria-busy` while an async validator runs on the bound field.
+- Add a shared `et-visually-hidden` class and `mountVisuallyHidden()` to core, replacing 16 per-component copies of the clip rule in components.
+- Fix `et-skeleton-text` drawing no lines for a `lines` value that is not a number, and dropping the short last line for a fractional one.
+- Fix the `--et-stream-consent-*` tokens having no effect when set on `et-stream-consent` or an ancestor, by registering them as inheriting.
+- A SOOP or Twitch slot without a valid source now shows the error overlay and reports `ET1611` instead of loading forever.
+- Fix the `--et-stream-player-error-*` tokens having no effect when set on the error overlay or an ancestor, by registering them as inheriting.
+- Table: the error state's live region now exists before its message lands, so screen readers announce the error.
+- Correct the `minWidth` docs of the table: a fixed-length `width` renders as written, but a resize or autosize of that column still stops at `minWidth`.
+- Sink `NaN` and invalid dates to the bottom of a client-sorted table, like nullish values, instead of scrambling the order around them
+- A table without `etTableStickyColumns` no longer ships or injects the pinned-column styles.
+- Keep the pieces of a tag input paste that were refused (duplicates, or those past `maxTags`) in the field instead of dropping them, as a typed entry already did. Add specs for select typeahead and arrow navigation over disabled options.
+- Draw links, error labels, destructive menu items, the table sort priority and the current progress step in the theme ink, so they clear AA contrast on a light surface
+- `et-time-picker`: An empty ring now starts the keyboard on a ring stop when `minuteStep` does not divide an hour, so with a step of 90 the first arrow press from 10:07 lands on 10:30 instead of 12:00.
+- Time picker: Tab reaches an empty ring and its keys set a first time from now, and the empty hint reads "Pick a time".
+- Time range input: the bottom sheet focuses the active ring handle even while the range is empty, so focus stays in the sheet after the first tap.
+- Fix the toggletip's padding and gap tokens having no effect when set on `et-toggletip` or an ancestor, by registering every toggletip token as inheriting.
+- Closing a tooltip with Escape or `hide()` cancels a hover show still waiting for its delay, so the line chart tooltip no longer reopens after an early Escape.
+- `etTooltip`'s `showDelay` accepts a static attribute (`showDelay="500"`) and converts it to a number.
+- Tooltip and toggletip: share their common styles through the floating-panel stylesheet, without a visual change.
+- Fix the tooltip's padding tokens having no effect when set on `et-tooltip` or an ancestor, by registering every tooltip token as inheriting.
+- Updated dependencies:
+  - @ethlete/bracket@1.0.0-next.3
+
 ## 1.0.0-next.66
 
 ### Patch Changes

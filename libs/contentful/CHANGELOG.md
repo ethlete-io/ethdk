@@ -1,5 +1,28 @@
 # @ethlete/contentful
 
+## 4.0.0-next.13
+
+### Major Changes
+
+- Breaking: the video, audio, file and link components drop their class inputs for static `et-contentful-*` classes on every inner element; `et update` removes the old bindings and lists each replacement.
+
+### Minor Changes
+
+- Add a `[gqlRichText]` input to the rich-text renderer that takes a GraphQL rich-text field (`{ json, links }`) as-is, with the exported `ContentfulGqlRichText` type. `content` and `richTextPath` are now optional; setting `gqlRichText` together with either throws ET011 in dev mode.
+
+### Patch Changes
+
+- The rich text renderer skips an embedded asset whose file has a content type but no URL, instead of mounting an empty image, video, audio or file component for it.
+- `et-contentful-audio` leaves the `<figcaption>` out for an asset with neither a title nor a file name, instead of rendering an empty one.
+- `provideContentfulConfig()` falls back to the defaults for `internalHosts`, `customComponents` and image options passed as `undefined`, instead of crashing links and embedded entries.
+- Rich-text links resolve against the current page instead of `<base href>`, `imageOptions` accepts a partial object, and dev mode warns about a mistyped `richTextPath` or invalid image size.
+- The rich text renderer no longer renders an empty, unlabelled link for a hyperlink node without text.
+- `et-contentful-image` and `generateDefaultContentfulImageSource` keep the fallback `<img>` for an asset with a URL but no content type, instead of rendering no image.
+- `migrate-to-contentful-v5` now says it migrates to `@ethlete/contentful` 4, the major it actually targets.
+- `et-contentful-video` leaves the `type` off its `<source>` for an asset without a content type, instead of writing `type="null"`, which no browser plays.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
 ## 4.0.0-next.12
 
 ### Major Changes
