@@ -38,7 +38,6 @@ import { mountRichTextContentStyles } from './rich-text-content-styles.component
 import { RICH_TEXT_EDITOR_FLOATING_TOOLBAR } from './rich-text-editor-floating-toolbar.token';
 import { richTextEditorToolLabel } from './rich-text-editor-labels';
 import { RICH_TEXT_EDITOR_LINK_EDITOR } from './rich-text-editor-link-editor.token';
-import { injectRegisteredRichTextEditorTools } from './headless/internals/rich-text-editor-registered-tools';
 import { RICH_TEXT_EDITOR_TOOLS, RichTextEditorToolDefinition } from './rich-text-editor-tools';
 import { RICH_TEXT_EDITOR_TOOL_ICON } from './tools/rich-text-editor-tool-icons';
 import { ACCESSIBLE_NAME_INPUTS } from '../form-field/headless';
@@ -46,21 +45,6 @@ import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.d
 
 /** How often the docked toolbar re-checks where the keyboard is, to recover a missed viewport event. */
 const DOCKED_TOOLBAR_POLL_MS = 500;
-
-/** Caret-navigation / deletion keys that should drop any pending stored-mark toggle. */
-const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
-  'ArrowLeft',
-  'ArrowRight',
-  'ArrowUp',
-  'ArrowDown',
-  'Home',
-  'End',
-  'PageUp',
-  'PageDown',
-  'Escape',
-  'Delete',
-  'Backspace',
-]);
 
 const RICH_TEXT_EDITOR_ICONS = [
   BOLD_ICON,
@@ -135,7 +119,6 @@ export class RichTextEditorComponent {
 
   private linkEditorSetup = inject(RICH_TEXT_EDITOR_LINK_EDITOR, { optional: true });
   private floatingToolbarSetup = inject(RICH_TEXT_EDITOR_FLOATING_TOOLBAR, { optional: true });
-  private registeredTools = injectRegisteredRichTextEditorTools();
 
   public editable = viewChild.required<ElementRef<HTMLElement>>('editable');
 
@@ -164,210 +147,6 @@ export class RichTextEditorComponent {
   /** A tool button's accessible name, from the label set where this library owns the tool. */
   protected toolLabel(tool: RichTextEditorToolDefinition) {
     return richTextEditorToolLabel(this.labels(), tool);
-  }
-
-  protected syncValueFromDom() {
-    this.dir.syncFromDom();
-  }
-
-  protected interceptEditorKeydown(event: KeyboardEvent) {
-    // History first, and always prevented: the native contenteditable undo stack must never run,
-    // since paste normalization and autoformat rewrite the DOM behind its back and it would restore
-    // a state the value model never had. Ctrl/Cmd+Z undoes, Ctrl+Y and Ctrl/Cmd+Shift+Z redo.
-    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
-      const key = event.key.toLowerCase();
-
-      if (key === 'z' || key === 'y') {
-        event.preventDefault();
-
-        if (key === 'y' || event.shiftKey) this.dir.redo();
-        else this.dir.undo();
-
-        return;
-      }
-    }
-
-    // moving the caret (or deleting) without typing abandons a pending stored-mark toggle
-    if (NAVIGATION_KEYS.has(event.key)) {
-      this.dir.clearPendingMarks();
-    }
-
-    // Tab / Shift+Tab nest / un-nest the current list item, or change a quote's nesting depth.
-    // Outside both this falls through to the tool keydown hooks below (the table tool moves between
-    // cells) and only then to the default focus move.
-    if (event.key === 'Tab') {
-      const blockquote = this.dir.editorDom.blockquote;
-      const handled = event.shiftKey
-        ? this.dir.editorDom.outdentListItem() || blockquote?.outdentBlockquote()
-        : this.dir.editorDom.indentListItem() || blockquote?.indentBlockquote();
-
-      if (handled) {
-        event.preventDefault();
-        this.dir.syncFromDom({ boundary: true });
-
-        return;
-      }
-    }
-
-    // Escape inside a code block moves the caret to a paragraph after it - everything typed in
-    // there is literal, so there is no other way out with the keyboard alone.
-    if (event.key === 'Escape' && this.dir.codeBlockActive() && this.dir.editorDom.codeBlock?.exitCodeBlock()) {
-      event.preventDefault();
-      this.dir.syncFromDom({ boundary: true });
-
-      return;
-    }
-
-    // ArrowDown off the last line of a code block that ends the content - or ArrowUp off the first
-    // line of one that starts it - creates the line it would move to: the exit people reach for
-    // before they think of Escape, and at the top edge the only one there is.
-    if (
-      (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
-      this.dir.codeBlockActive() &&
-      this.dir.editorDom.codeBlock?.codeBlockArrowStep(event.key)
-    ) {
-      event.preventDefault();
-      this.dir.syncFromDom({ boundary: true });
-
-      return;
-    }
-
-    // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
-    // edge starts a plain paragraph. Shift+Enter stays native (soft line break).
-    if (event.key === 'Enter' && !event.shiftKey && this.dir.editorDom.handleEnter()) {
-      event.preventDefault();
-      this.dir.syncFromDom({ boundary: true });
-
-      return;
-    }
-
-    // opt-in tools can intercept keys for content they own (e.g. the table tool steps the caret
-    // cleanly across table boundaries instead of stranding it at the table's edge)
-    for (const tool of this.registeredTools) {
-      if (tool.keydown?.(this.dir, event)) {
-        event.preventDefault();
-        this.dir.syncFromDom({ boundary: true });
-
-        return;
-      }
-    }
-
-    // step out of an inline code span so the next typed text isn't code (caret move only, no edit)
-    if (event.key.startsWith('Arrow') && this.dir.editorDom.codeExit(event.key)) {
-      event.preventDefault();
-      this.dir.refreshActiveMarks();
-
-      return;
-    }
-
-    if (event.key === 'Backspace' && this.dir.handleBackspace()) {
-      event.preventDefault();
-    }
-  }
-
-  protected interceptPaste(event: ClipboardEvent) {
-    // Tools own their payloads first: the image tool takes the clipboard's image files, which the
-    // HTML/text branches below cannot represent.
-    for (const tool of this.registeredTools) {
-      if (tool.paste?.(this.dir, event)) {
-        event.preventDefault();
-
-        return;
-      }
-    }
-
-    // Files nobody claimed: the browser would insert them itself, and for an image that means a
-    // `blob:` URL in the value - one that dies with the tab. Provide the image tool to keep them.
-    if (event.clipboardData?.files.length && !event.clipboardData.getData('text/html')) {
-      event.preventDefault();
-
-      return;
-    }
-
-    const html = event.clipboardData?.getData('text/html');
-
-    if (html) {
-      event.preventDefault();
-      this.dir.pasteHtml(html);
-
-      return;
-    }
-
-    // A plain-text paste is already schema-safe - the browser inserts it as text. The exception is
-    // text spelling out a token (`#User Name`), which only the editor can turn back into a chip.
-    const text = event.clipboardData?.getData('text/plain');
-
-    if (text && this.dir.pasteText(text)) event.preventDefault();
-  }
-
-  /**
-   * Dropped content, in the same order as a paste: a tool that owns the payload takes it (the image
-   * tool uploads image files), and anything left that carries files is refused - dropping a file on a
-   * `contenteditable` otherwise has the browser embed it as a `blob:` URL, which outlives nothing.
-   */
-  protected interceptDrop(event: DragEvent) {
-    for (const tool of this.registeredTools) {
-      if (tool.drop?.(this.dir, event)) {
-        event.preventDefault();
-
-        return;
-      }
-    }
-
-    if (event.dataTransfer?.files.length) event.preventDefault();
-  }
-
-  /** Lets a tool act on the content it owns - clicking an image opens the image tool's popover. */
-  protected interceptClick(event: MouseEvent) {
-    for (const tool of this.registeredTools) {
-      if (tool.click?.(this.dir, event)) return;
-    }
-  }
-
-  protected interceptFormattingCommand(event: InputEvent) {
-    // Keep keyboard shortcuts (Ctrl/Cmd+B, …) running through our Selection/Range commands
-    // instead of the browser's deprecated execCommand-backed formatting.
-    switch (event.inputType) {
-      case 'formatBold':
-        event.preventDefault();
-        this.dir.toggleBold();
-        break;
-      case 'formatItalic':
-        event.preventDefault();
-        this.dir.toggleItalic();
-        break;
-      case 'formatStrikeThrough':
-        event.preventDefault();
-        this.dir.toggleStrikethrough();
-        break;
-      case 'formatUnderline':
-        event.preventDefault();
-        this.dir.toggleUnderline();
-        break;
-      // The platform's own undo affordances - the macOS Edit menu, iOS shake-to-undo, the Android
-      // keyboard's undo key - never produce a keydown, but do arrive here.
-      case 'historyUndo':
-        event.preventDefault();
-        this.dir.undo();
-        break;
-      case 'historyRedo':
-        event.preventDefault();
-        this.dir.redo();
-        break;
-      case 'insertText':
-        // markdown autoformat: a space may convert a line-start prefix (`- `, `1. `, `# `), a
-        // delimiter may close an inline run (`**bold**`, `` `code` ``, …) into its mark
-        if (event.data !== null && this.dir.handleAutoformat(event.data)) {
-          event.preventDefault();
-          break;
-        }
-
-        // apply any pending stored marks to the typed text (collapsed-caret formatting toggle)
-        if (event.data !== null && this.dir.consumePendingInsert(event.data)) {
-          event.preventDefault();
-        }
-        break;
-    }
   }
 
   public focus(options?: FocusOptions) {

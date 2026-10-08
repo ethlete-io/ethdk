@@ -1,4 +1,4 @@
-import { Component, inject, InjectionToken } from '@angular/core';
+import { afterNextRender, Component, ElementRef, inject, InjectionToken, signal, viewChild } from '@angular/core';
 import '../../../../test-helpers';
 import {
   caretIn,
@@ -10,6 +10,7 @@ import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '..
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { provideRichTextEditorTool, RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
+import { provideRichTextEditorAutoformat } from '../tools/rich-text-editor-autoformat.provider';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
 import { RichTextEditorDirective } from './rich-text-editor.directive';
@@ -74,7 +75,96 @@ class EditorWithFactoryToolTestHost {}
 })
 class EditorWithUnprovidedToolsTestHost {}
 
+@Component({
+  template: `
+    <div [(value)]="notes" etRichTextEditor aria-label="Notes">
+      <div #editable contenteditable="true" role="textbox" tabindex="0"></div>
+    </div>
+  `,
+  imports: [RichTextEditorDirective],
+  providers: [provideRichTextEditorAutoformat()],
+})
+class AttachedEditableTestHost {
+  notes = signal('');
+  editor = viewChild.required(RichTextEditorDirective);
+  editable = viewChild.required<ElementRef<HTMLElement>>('editable');
+
+  constructor() {
+    afterNextRender(() => this.editor().attachEditable(this.editable().nativeElement));
+  }
+}
+
 describe('RichTextEditorDirective', () => {
+  describe('an element handed to attachEditable', () => {
+    let driver: RichTextEditorDriver<AttachedEditableTestHost>;
+
+    beforeEach(() => {
+      driver = mountRichTextEditor(AttachedEditableTestHost);
+      driver.caretAtStart();
+    });
+
+    it('syncs typed text into the value', () => {
+      driver.type('hi');
+
+      expect(driver.value()).toBe('hi');
+      expect(driver.fixture.componentInstance.notes()).toBe('hi');
+    });
+
+    it('normalizes pasted HTML', () => {
+      const event = driver.paste({ html: '<p style="color: red"><b>bold</b> <span class="x">text</span></p>' });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(driver.value()).toBe('**bold** text');
+      expect(driver.editable().querySelector('[style], span.x')).toBeNull();
+    });
+
+    it('undoes with Ctrl+Z instead of the native undo stack', () => {
+      driver.type('one two');
+
+      const event = driver.press('z', { ctrlKey: true });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(driver.value()).toBe('one');
+    });
+
+    it('autoformats a line-start prefix', () => {
+      driver.type('- item');
+
+      expect(driver.editable().querySelector('ul li')).not.toBeNull();
+      expect(driver.value()).toBe('- item');
+    });
+
+    it('becomes touched on blur', () => {
+      driver.focus();
+
+      expect(driver.editor.focused()).toBe(true);
+
+      driver.blur();
+
+      expect(driver.editor.focused()).toBe(false);
+      expect(driver.editor.touched()).toBe(true);
+    });
+
+    it('stops handling the previous element once another one is attached', () => {
+      const previous = driver.editable();
+      const next = document.createElement('div');
+
+      document.body.appendChild(next);
+      onTestFinished(() => next.remove());
+
+      driver.editor.attachEditable(next);
+
+      const event = new Event('paste', { bubbles: true, cancelable: true });
+
+      Object.defineProperty(event, 'clipboardData', {
+        value: { files: [], getData: (type: string) => (type === 'text/html' ? '<b>x</b>' : '') },
+      });
+      previous.dispatchEvent(event);
+
+      expect(event.defaultPrevented).toBe(false);
+    });
+  });
+
   describe('tool lifecycle', () => {
     it('tells each registered tool when the editor is destroyed', () => {
       editorDestroyed.mockClear();

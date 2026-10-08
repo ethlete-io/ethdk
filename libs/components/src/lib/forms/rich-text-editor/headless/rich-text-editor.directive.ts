@@ -60,6 +60,20 @@ import { FieldStateControlDirective } from '../../form-field/headless/field-stat
 
 export type { RichTextEditorHeadingLevel };
 
+const NAVIGATION_KEYS = /* @__PURE__ */ new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+  'Escape',
+  'Delete',
+  'Backspace',
+]);
+
 const EMPTY_INLINE_SWEEP_SELECTOR = 'strong, em, del, u, code, a';
 
 const INERT_STYLE_ATTRIBUTE = 'data-et-paste-style';
@@ -314,6 +328,8 @@ export class RichTextEditorDirective
   /** @internal */
   public linkEditorOpen = signal(false);
 
+  private detachEditableListeners: (() => void) | null = null;
+
   constructor() {
     mountEasingTokens();
     super();
@@ -327,6 +343,7 @@ export class RichTextEditorDirective
     this.destroyRef.onDestroy(() => {
       for (const tool of this.registeredTools) tool.editorDestroyed?.(this);
     });
+    this.destroyRef.onDestroy(() => this.detachEditableListeners?.());
 
     fromEvent(this.document, 'selectionchange')
       .pipe(
@@ -351,13 +368,19 @@ export class RichTextEditorDirective
   }
 
   /**
-   * Attaches the `contenteditable` element this editor edits and renders the current value into it.
-   * A headless host calls it once its element exists, and forwards the element's `input` event to `syncFromDom()`.
+   * Attaches the `contenteditable` element this editor edits, renders the current value into it and
+   * handles its input, keyboard, clipboard, drop, click and focus events. A headless host calls it
+   * once its element exists; attaching another element (or `null`) releases the previous one.
    */
   public attachEditable(element: HTMLElement | null) {
+    this.detachEditableListeners?.();
+    this.detachEditableListeners = null;
     this.editorDom.root.set(element);
 
-    if (element) this.renderExternalValue();
+    if (!element) return;
+
+    this.detachEditableListeners = this.listenToEditable(element);
+    this.renderExternalValue();
   }
 
   public activate() {
@@ -775,6 +798,217 @@ export class RichTextEditorDirective
     if (ngDevMode) assertValidToken(type, item.id);
 
     this.insertChip({ ...codec.resolveChip(type, item.id), label: item.label }, { focus: opts?.focus, hydrate: false });
+  }
+
+  private listenToEditable(element: HTMLElement) {
+    const listeners = [
+      this.renderer.listen(element, 'input', () => this.syncFromDom()),
+      this.renderer.listen(element, 'beforeinput', (event) => this.interceptBeforeInput(event as InputEvent)),
+      this.renderer.listen(element, 'keydown', (event) => this.interceptKeydown(event as KeyboardEvent)),
+      this.renderer.listen(element, 'paste', (event) => this.interceptPaste(event as ClipboardEvent)),
+      this.renderer.listen(element, 'drop', (event) => this.interceptDrop(event as DragEvent)),
+      this.renderer.listen(element, 'click', (event) => this.interceptClick(event as MouseEvent)),
+      this.renderer.listen(element, 'pointerdown', () => this.clearPendingMarks()),
+      this.renderer.listen(element, 'focus', () => this.focused.set(true)),
+      this.renderer.listen(element, 'blur', () => {
+        this.focused.set(false);
+        this.touched.set(true);
+        this.touch.emit();
+      }),
+    ];
+
+    return () => listeners.forEach((off) => off());
+  }
+
+  private interceptKeydown(event: KeyboardEvent) {
+    // History first, and always prevented: the native contenteditable undo stack must never run,
+    // since paste normalization and autoformat rewrite the DOM behind its back and it would restore
+    // a state the value model never had. Ctrl/Cmd+Z undoes, Ctrl+Y and Ctrl/Cmd+Shift+Z redo.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey) {
+      const key = event.key.toLowerCase();
+
+      if (key === 'z' || key === 'y') {
+        event.preventDefault();
+
+        if (key === 'y' || event.shiftKey) this.redo();
+        else this.undo();
+
+        return;
+      }
+    }
+
+    // moving the caret (or deleting) without typing abandons a pending stored-mark toggle
+    if (NAVIGATION_KEYS.has(event.key)) {
+      this.clearPendingMarks();
+    }
+
+    // Tab / Shift+Tab nest / un-nest the current list item, or change a quote's nesting depth.
+    // Outside both this falls through to the tool keydown hooks below (the table tool moves between
+    // cells) and only then to the default focus move.
+    if (event.key === 'Tab') {
+      const blockquote = this.editorDom.blockquote;
+      const handled = event.shiftKey
+        ? this.editorDom.outdentListItem() || blockquote?.outdentBlockquote()
+        : this.editorDom.indentListItem() || blockquote?.indentBlockquote();
+
+      if (handled) {
+        event.preventDefault();
+        this.syncFromDom({ boundary: true });
+
+        return;
+      }
+    }
+
+    // Escape inside a code block moves the caret to a paragraph after it - everything typed in
+    // there is literal, so there is no other way out with the keyboard alone.
+    if (event.key === 'Escape' && this.codeBlockActive() && this.editorDom.codeBlock?.exitCodeBlock()) {
+      event.preventDefault();
+      this.syncFromDom({ boundary: true });
+
+      return;
+    }
+
+    // ArrowDown off the last line of a code block that ends the content - or ArrowUp off the first
+    // line of one that starts it - creates the line it would move to: the exit people reach for
+    // before they think of Escape, and at the top edge the only one there is.
+    if (
+      (event.key === 'ArrowDown' || event.key === 'ArrowUp') &&
+      this.codeBlockActive() &&
+      this.editorDom.codeBlock?.codeBlockArrowStep(event.key)
+    ) {
+      event.preventDefault();
+      this.syncFromDom({ boundary: true });
+
+      return;
+    }
+
+    // Enter on an empty list item steps out of the list one level at a time; Enter at a heading's
+    // edge starts a plain paragraph. Shift+Enter stays native (soft line break).
+    if (event.key === 'Enter' && !event.shiftKey && this.editorDom.handleEnter()) {
+      event.preventDefault();
+      this.syncFromDom({ boundary: true });
+
+      return;
+    }
+
+    for (const tool of this.registeredTools) {
+      if (tool.keydown?.(this, event)) {
+        event.preventDefault();
+        this.syncFromDom({ boundary: true });
+
+        return;
+      }
+    }
+
+    // step out of an inline code span so the next typed text isn't code (caret move only, no edit)
+    if (event.key.startsWith('Arrow') && this.editorDom.codeExit(event.key)) {
+      event.preventDefault();
+      this.refreshActiveMarks();
+
+      return;
+    }
+
+    if (event.key === 'Backspace' && this.handleBackspace()) {
+      event.preventDefault();
+    }
+  }
+
+  private interceptPaste(event: ClipboardEvent) {
+    // Tools own their payloads first: the image tool takes the clipboard's image files, which the
+    // HTML/text branches below cannot represent.
+    for (const tool of this.registeredTools) {
+      if (tool.paste?.(this, event)) {
+        event.preventDefault();
+
+        return;
+      }
+    }
+
+    // Files nobody claimed: the browser would insert them itself, and for an image that means a
+    // `blob:` URL in the value - one that dies with the tab. Provide the image tool to keep them.
+    if (event.clipboardData?.files.length && !event.clipboardData.getData('text/html')) {
+      event.preventDefault();
+
+      return;
+    }
+
+    const html = event.clipboardData?.getData('text/html');
+
+    if (html) {
+      event.preventDefault();
+      this.pasteHtml(html);
+
+      return;
+    }
+
+    // A plain-text paste is already schema-safe - the browser inserts it as text. The exception is
+    // text spelling out a token (`#User Name`), which only the editor can turn back into a chip.
+    const text = event.clipboardData?.getData('text/plain');
+
+    if (text && this.pasteText(text)) event.preventDefault();
+  }
+
+  // Dropping a file on a `contenteditable` has the browser embed it as a `blob:` URL that dies with
+  // the tab, so files no tool claims are refused.
+  private interceptDrop(event: DragEvent) {
+    for (const tool of this.registeredTools) {
+      if (tool.drop?.(this, event)) {
+        event.preventDefault();
+
+        return;
+      }
+    }
+
+    if (event.dataTransfer?.files.length) event.preventDefault();
+  }
+
+  private interceptClick(event: MouseEvent) {
+    for (const tool of this.registeredTools) {
+      if (tool.click?.(this, event)) return;
+    }
+  }
+
+  private interceptBeforeInput(event: InputEvent) {
+    // Keyboard shortcuts (Ctrl/Cmd+B, …) run through the Selection/Range commands instead of the
+    // browser's deprecated execCommand-backed formatting.
+    switch (event.inputType) {
+      case 'formatBold':
+        event.preventDefault();
+        this.toggleBold();
+        break;
+      case 'formatItalic':
+        event.preventDefault();
+        this.toggleItalic();
+        break;
+      case 'formatStrikeThrough':
+        event.preventDefault();
+        this.toggleStrikethrough();
+        break;
+      case 'formatUnderline':
+        event.preventDefault();
+        this.toggleUnderline();
+        break;
+      // The platform's own undo affordances - the macOS Edit menu, iOS shake-to-undo, the Android
+      // keyboard's undo key - never produce a keydown, but do arrive here.
+      case 'historyUndo':
+        event.preventDefault();
+        this.undo();
+        break;
+      case 'historyRedo':
+        event.preventDefault();
+        this.redo();
+        break;
+      case 'insertText':
+        if (event.data !== null && this.handleAutoformat(event.data)) {
+          event.preventDefault();
+          break;
+        }
+
+        if (event.data !== null && this.consumePendingInsert(event.data)) {
+          event.preventDefault();
+        }
+        break;
+    }
   }
 
   private warnAboutMissingTools() {

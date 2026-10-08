@@ -719,9 +719,13 @@ reports `ET2602`. See [`ET26xx`](/components/error-codes#multi-language-rich-tex
 ## Headless editor
 
 `[etRichTextEditor]` carries the value, history, tools and formatting commands without a template of
-its own. Render your own `contenteditable`, hand it to the directive with `attachEditable()` once it
-exists, and forward its `input` event to `syncFromDom()`. The directive renders the value into the
-element and keeps it in sync when the value changes from outside.
+its own. Render your own `contenteditable` and hand it to the directive with `attachEditable()` once
+it exists. The directive renders the value into the element, keeps it in sync when the value changes
+from outside, and handles the element's events the same way `et-rich-text-editor` does: undo and redo
+shortcuts, list indentation, leaving a code block, paste normalization, refusing dropped files, Markdown
+autoformat (`provideRichTextEditorAutoformat()`), the hooks of provided tools such as
+`provideRichTextEditorImageTool()`, and `touched` on blur. Attaching another element (or `null`)
+releases the previous one.
 
 ```ts
 @Component({
@@ -729,7 +733,7 @@ element and keeps it in sync when the value changes from outside.
   template: `
     <div #notesEditor="etRichTextEditor" [(value)]="notes" etRichTextEditor aria-label="Notes">
       <button (click)="notesEditor.toggleBold()" type="button">Bold</button>
-      <div #editable (input)="notesEditor.syncFromDom()" contenteditable="true" role="textbox"></div>
+      <div #editable contenteditable="true" role="textbox"></div>
     </div>
   `,
 })
@@ -744,9 +748,8 @@ export class NotesComponent {
 }
 ```
 
-The keyboard handling of `et-rich-text-editor` (undo shortcuts, list indentation, leaving a code
-block) belongs to the component, so a headless editor gets the browser's native `contenteditable`
-keys unless you bind them to the directive's commands yourself.
+The toolbar, the ARIA attributes on the editable element and the docked toolbar on touch devices are
+what the component adds on top.
 
 ## Localization
 

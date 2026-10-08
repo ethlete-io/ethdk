@@ -122,6 +122,7 @@ Scope: `libs/components/src/lib/forms/rich-text-editor`, `libs/components/src/li
   owned by the directive's `DestroyRef`), so the component only renders. Then the docs headless section shrinks to
   "attach the element". Until then, at least correct the docs to list what is missing.
 - Breaking: no. Decision: yes (where the event wiring lives).
+- Status: fixed (2026-10-08, every editable-element listener moved into `attachEditable()` on the directive; headless spec for paste, undo, autoformat, touched; docs headless section shrunk)
 
 ## RTE-07 Trigger popup puts `aria-expanded` on a `role="textbox"` and leaves `aria-controls` behind
 
