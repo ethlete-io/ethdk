@@ -31,6 +31,7 @@ const atClock = (day: Date, clock: string) => {
         <et-time-range-input
           [value]="range()"
           [displayFormat]="displayFormat()"
+          [minuteStep]="15"
           (valueChange)="setRange($event)"
           clearable="false"
           startAriaLabel="Start"
