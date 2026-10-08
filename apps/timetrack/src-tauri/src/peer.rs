@@ -17,6 +17,10 @@ use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::{TlsAcceptor, TlsConnector};
 
+mod mdns;
+
+pub use mdns::Discovered;
+
 /// The port the LAN listener binds unless `PORT_ENV` names another.
 pub const DEFAULT_PORT: u16 = 52741;
 pub const PORT_ENV: &str = "TIMETRACK_PEER_PORT";
@@ -466,6 +470,7 @@ pub struct PeerConfig {
     pub app_version: String,
     pub label: String,
     pub bind: SocketAddr,
+    pub mdns: bool,
     keys: KeySource,
 }
 
@@ -482,6 +487,7 @@ impl PeerConfig {
             app_version,
             label: gethostname::gethostname().to_string_lossy().into_owned(),
             bind: SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), port),
+            mdns: true,
             keys: Arc::new(|| crate::keychain::machine_key(generate_key)),
         }
     }
@@ -493,6 +499,7 @@ struct Inner {
     identity: tokio::sync::OnceCell<Arc<Identity>>,
     listening: tokio::sync::Mutex<Option<u16>>,
     offer: Mutex<Option<Offer>>,
+    discovery: Mutex<Option<mdns::Discovery>>,
 }
 
 /// The LAN side of the app: this machine's identity, the listener paired machines reach it on, and
@@ -508,6 +515,7 @@ impl Peers {
             identity: tokio::sync::OnceCell::new(),
             listening: tokio::sync::Mutex::new(None),
             offer: Mutex::new(None),
+            discovery: Mutex::new(None),
         }))
     }
 
@@ -582,7 +590,54 @@ impl Peers {
 
         *listening = Some(port);
 
+        let _ = self.discover(Some(port)).await;
+
         Ok(port)
+    }
+
+    /// Starts browsing for other machines and, given the listener's port, advertises this one. Browsing
+    /// also starts on a machine with no listener, so one that never paired can find an offer without
+    /// opening a LAN port.
+    async fn discover(&self, advertise: Option<u16>) -> TimetrackResult<Arc<Mutex<mdns::Directory>>> {
+        if !self.0.config.mdns {
+            return Err(rejected("discovery is off"));
+        }
+
+        let identity = self.identity().await?;
+        let mut discovery = self.0.discovery.lock().map_err(|_| TimetrackError::Poisoned)?;
+
+        if discovery.is_none() {
+            *discovery = Some(mdns::Discovery::start(&identity, self.0.db.clone())?);
+        }
+
+        let running = discovery.as_mut().expect("discovery was just started");
+
+        if let Some(port) = advertise {
+            running.advertise(&identity, port)?;
+        }
+
+        Ok(running.directory.clone())
+    }
+
+    /// The machines advertising on the LAN right now, other than this one.
+    pub async fn discovered(&self) -> TimetrackResult<Vec<Discovered>> {
+        let directory = self.discover(None).await?;
+        let paired = self.list().await?;
+        let found = directory.lock().map_err(|_| TimetrackError::Poisoned)?.list();
+
+        Ok(found.iter().map(|found| found.describe(&paired)).collect())
+    }
+
+    async fn locate(&self, machine_id: &str) -> TimetrackResult<(String, u16)> {
+        let directory = self.discover(None).await?;
+        let found = directory
+            .lock()
+            .map_err(|_| TimetrackError::Poisoned)?
+            .get(machine_id)
+            .cloned()
+            .ok_or_else(|| rejected(format!("no machine with the id {machine_id} has been discovered")))?;
+
+        Ok((found.addresses[0].to_string(), found.port))
     }
 
     async fn listening_port(&self) -> Option<u16> {
@@ -1055,14 +1110,23 @@ impl Peers {
         let answered = match op {
             "peers.list" => self.list().await.map(|rows| serde_json::json!(rows)),
             "pair.offer" => self.offer().await.map(|offer| serde_json::json!(offer)),
+            "peers.discovered" => self.discovered().await.map(|rows| serde_json::json!(rows)),
             "pair.accept" => {
-                let host = text("host")?;
                 let code = text("code")?;
-                let port = request
-                    .get("port")
-                    .and_then(serde_json::Value::as_u64)
-                    .and_then(|port| u16::try_from(port).ok())
-                    .unwrap_or(DEFAULT_PORT);
+                let (host, port) = match text("machineId") {
+                    Ok(machine_id) => match self.locate(&machine_id).await {
+                        Ok(located) => located,
+                        Err(error) => return Err(error.to_string()),
+                    },
+                    Err(_) => (
+                        text("host")?,
+                        request
+                            .get("port")
+                            .and_then(serde_json::Value::as_u64)
+                            .and_then(|port| u16::try_from(port).ok())
+                            .unwrap_or(DEFAULT_PORT),
+                    ),
+                };
 
                 self.accept(&host, port, &code)
                     .await
@@ -1134,6 +1198,7 @@ mod tests {
                 app_version: "0.0.0-test".to_string(),
                 label: label.to_string(),
                 bind: SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 0),
+                mdns: false,
                 keys: Arc::new(generate_key),
             },
         )
