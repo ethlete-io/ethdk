@@ -19,6 +19,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RuntimeError, injectHostElement } from '@ethlete/core';
 import { EMPTY, catchError, defaultIfEmpty, defer, merge, mergeMap, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../internals/typeahead';
+import { warnOnValueShapeMismatch } from '../../internals/value-shape';
 import { TREE_ERROR_CODES } from '../tree-errors';
 import { canExpand, defaultCompareWith, nodesEqual, toChildrenObservable } from './internals/tree-data';
 import {
@@ -82,7 +83,7 @@ type TreeNodeDefLike<T> = {
     '[attr.data-disabled]': 'disabled() || null',
   },
 })
-export class TreeDirective<T = unknown> {
+export class TreeDirective<T = unknown, TValue extends T | readonly T[] | null = T | readonly T[] | null> {
   private hostElement = injectHostElement();
 
   /** The hierarchical source the tree renders. Required. */
@@ -94,8 +95,11 @@ export class TreeDirective<T = unknown> {
   /** Whether rows select, and how many at a time. @default 'single' */
   public selectionMode = input<TreeSelectionMode>(TREE_SELECTION_MODES.SINGLE);
 
-  /** The selected value: `T | null` in single mode, `T[]` in multiple. Two-way bindable. */
-  public value = model<T | T[] | null>(null);
+  /**
+   * The selected value: `T | null` in single mode, an array of `T` in multiple. Two-way bindable; its type
+   * follows the bound signal or field, so `signal<string | null>` and `signal<string[]>` both bind as-is.
+   */
+  public value = model<TValue>(null as TValue);
 
   /**
    * The values of the expanded branches. Two-way bindable, and the tree's only expansion state - nothing
@@ -212,14 +216,14 @@ export class TreeDirective<T = unknown> {
   public rootError = computed(() => this.levelOf(null)?.error ?? null);
 
   /** The selected values, normalized to an array (empty for no selection). */
-  public values = computed<T[]>(() => {
-    const value = this.value();
+  public values = computed<readonly T[]>(() => {
+    const value: T | readonly T[] | null = this.value();
 
     if (Array.isArray(value)) {
-      return value;
+      return value as readonly T[];
     }
 
-    return value === null || value === undefined ? [] : [value];
+    return value === null || value === undefined ? [] : [value as T];
   });
 
   /**
@@ -293,6 +297,18 @@ export class TreeDirective<T = unknown> {
     });
 
     inject(DestroyRef).onDestroy(() => this.typeahead.destroy());
+
+    warnOnValueShapeMismatch({
+      value: this.value,
+      multiple: () => {
+        const mode = this.selectionMode();
+
+        return mode === TREE_SELECTION_MODES.NONE ? null : mode === TREE_SELECTION_MODES.MULTIPLE;
+      },
+      code: TREE_ERROR_CODES.VALUE_SHAPE_MISMATCH,
+      source: 'TreeDirective',
+      modeInput: "`selectionMode` 'multiple'",
+    });
 
     if (ngDevMode) {
       afterNextRender(() => {
@@ -392,12 +408,12 @@ export class TreeDirective<T = unknown> {
     if (this.selectionMode() === TREE_SELECTION_MODES.MULTIPLE) {
       if (this.isSelected(node)) return;
 
-      this.value.set([...this.values(), node.value]);
+      this.writeValue([...this.values(), node.value]);
 
       return;
     }
 
-    this.value.set(node.value);
+    this.writeValue(node.value);
   }
 
   public deselect(node: TreeNode<T>) {
@@ -406,12 +422,12 @@ export class TreeDirective<T = unknown> {
     const compareWith = this.compareWith();
 
     if (this.selectionMode() === TREE_SELECTION_MODES.MULTIPLE) {
-      this.value.set(this.values().filter((value) => !compareWith(value, node.value)));
+      this.writeValue(this.values().filter((value) => !compareWith(value, node.value)));
 
       return;
     }
 
-    this.value.set(null);
+    this.writeValue(null);
   }
 
   /** Multiple mode: add the node to the selection, or remove it when already selected. */
@@ -424,7 +440,7 @@ export class TreeDirective<T = unknown> {
   }
 
   public clearSelection() {
-    this.value.set(this.selectionMode() === TREE_SELECTION_MODES.MULTIPLE ? [] : null);
+    this.writeValue(this.selectionMode() === TREE_SELECTION_MODES.MULTIPLE ? [] : null);
   }
 
   /**
@@ -598,6 +614,10 @@ export class TreeDirective<T = unknown> {
       event.preventDefault();
       this.focusNode(match.node);
     }
+  }
+
+  private writeValue(value: T | readonly T[] | null) {
+    this.value.set(value as TValue);
   }
 
   private levelOf(parent: TreeNode<T> | null) {

@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
+import { Component, ViewEncapsulation, computed, input, linkedSignal, signal } from '@angular/core';
 import { AutoSurfaceDirective } from '@ethlete/core';
 import { Observable, map, of, switchMap, throwError, timer } from 'rxjs';
 import { FILE_ICON, ICON_IMPORTS, provideIcons } from '../../icon';
@@ -141,7 +141,10 @@ export class TreeStorybookComponent {
 
   public customRows = input(false);
 
-  protected value = signal<string | string[] | null>(null);
+  protected value = linkedSignal<TreeSelectionMode, string | readonly string[] | null>({
+    source: this.selectionMode,
+    computation: (mode) => (mode === 'multiple' ? [] : null),
+  });
 
   protected expandedValues = signal<readonly string[]>(['src']);
 

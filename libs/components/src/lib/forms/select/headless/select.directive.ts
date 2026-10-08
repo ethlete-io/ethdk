@@ -43,6 +43,7 @@ import {
   hitsInteractiveElement,
 } from '../../form-field/headless';
 import { createSelectionState } from '../../selection-list/headless/internals/selection-state';
+import { warnOnValueShapeMismatch } from '../../../internals/value-shape';
 import { SELECT_ERROR_CODES } from '../select-errors';
 import { SelectListboxDirective } from './select-listbox.directive';
 import { SelectOptionTemplateDirective } from './select-option-template.directive';
@@ -108,7 +109,10 @@ const defaultNormalizeValue = (raw: string) => {
     '[attr.data-mixed]': 'mixed() || null',
   },
 })
-export class SelectDirective extends FieldStateControlDirective implements FormValueControl<unknown>, FormFieldControl {
+export class SelectDirective<TValue = unknown>
+  extends FieldStateControlDirective
+  implements FormValueControl<TValue>, FormFieldControl
+{
   private formFieldLabels = injectFormFieldLabels();
 
   private formField = inject(FORM_FIELD_TOKEN, { optional: true });
@@ -116,7 +120,11 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
   private document = inject(DOCUMENT);
   private hostElement = injectHostElement();
 
-  public value = model<unknown | unknown[] | null>(null);
+  /**
+   * The selected value: a single value or `null`, or an array with `multiple`. Two-way bindable; its type
+   * follows the bound signal or field, so `signal<string | null>` and `signal<string[]>` both bind as-is.
+   */
+  public value = model<TValue>(null as TValue);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
   public touched = model(false);
@@ -336,7 +344,11 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
     surface: this.registeredSurface,
     anchor: () => this.resolveAnchorElement(),
     config: ({ origin }) => {
-      const context: SelectSurfaceContext = { $implicit: this, select: this, close: () => this.hide() };
+      const context: SelectSurfaceContext = {
+        $implicit: this as SelectDirective,
+        select: this as SelectDirective,
+        close: () => this.hide(),
+      };
 
       enableAnchoredOverlayPositionExtras();
 
@@ -633,6 +645,14 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
 
     mountTextFieldShellStyles();
     mountFloatingPanelStyles();
+
+    warnOnValueShapeMismatch({
+      value: this.value,
+      multiple: this.multiple,
+      code: SELECT_ERROR_CODES.VALUE_SHAPE_MISMATCH,
+      source: 'SelectDirective',
+      modeInput: '`multiple`',
+    });
 
     const styleManager = injectStyleManager();
     let hasMountedExtrasStyles = false;
@@ -931,7 +951,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
 
       const valuesMatch = this.valuesMatch();
 
-      this.value.set(
+      this.writeValue(
         adding ? [...values, itemValue] : values.filter((candidate) => !valuesMatch(itemValue, candidate)),
       );
 
@@ -963,7 +983,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
     const others = values.filter((value) => !targets.some((item) => valuesMatch(item.value(), value)));
 
     if (this.selectAllState() === 'all') {
-      this.value.set(others);
+      this.writeValue(others);
 
       return;
     }
@@ -979,7 +999,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       return room-- > 0 ? [item.value()] : [];
     });
 
-    this.value.set([...others, ...selected]);
+    this.writeValue([...others, ...selected]);
     this.mixed.set(false);
   }
 
@@ -1025,7 +1045,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       return;
     }
 
-    this.value.set(this.multiple() ? [] : null);
+    this.writeValue(this.multiple() ? [] : null);
     this.mixed.set(false);
 
     const search = this.registeredSearch();
@@ -1056,9 +1076,9 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       const current = this.value();
       const values = Array.isArray(current) ? current : [];
 
-      this.value.set(values.filter((candidate) => !valuesMatch(candidate, value)));
+      this.writeValue(values.filter((candidate) => !valuesMatch(candidate, value)));
     } else {
-      this.value.set(null);
+      this.writeValue(null);
     }
   }
 
@@ -1227,6 +1247,10 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
     return committed;
   }
 
+  private writeValue(value: unknown) {
+    this.value.set(value as TValue);
+  }
+
   private pickSingleOption(item: SelectItem) {
     this.pickOption.emit(item.value());
 
@@ -1240,7 +1264,7 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
       return false;
     }
 
-    this.value.set(this.multiple() ? [item.value()] : item.value());
+    this.writeValue(this.multiple() ? [item.value()] : item.value());
     this.mixed.set(false);
 
     return true;
@@ -1409,11 +1433,11 @@ export class SelectDirective extends FieldStateControlDirective implements FormV
         return false;
       }
 
-      this.value.set([...values, value]);
+      this.writeValue([...values, value]);
       this.mixed.set(false);
       this.registeredSearch()?.clear();
     } else {
-      this.value.set(value);
+      this.writeValue(value);
       this.mixed.set(false);
     }
 

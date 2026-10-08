@@ -20,6 +20,7 @@ import { FormValueControl, ValidationError } from '@angular/forms/signals';
 import { RuntimeError, enableAnchoredOverlayPositionExtras, injectHostElement, nextFrame } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, defer, fromEvent, merge, switchMap, take, tap } from 'rxjs';
 import { createTypeahead } from '../../../internals/typeahead';
+import { warnOnValueShapeMismatch } from '../../../internals/value-shape';
 import { mountFloatingPanelStyles } from '../../../overlay/floating-panel-styles.component';
 import { anchoredOverlayStrategy, injectBottomSheetStrategy } from '../../../overlay/strategies';
 import {
@@ -110,9 +111,9 @@ type CascaderSearchLike = {
     '[attr.data-readonly]': 'readonly() || null',
   },
 })
-export class CascaderDirective<T = unknown>
+export class CascaderDirective<T = unknown, TValue extends T | readonly T[] | null = T | readonly T[] | null>
   extends FieldStateControlDirective
-  implements FormValueControl<T | T[] | null>, FormFieldControl
+  implements FormValueControl<TValue>, FormFieldControl
 {
   private formFieldLabels = injectFormFieldLabels();
   private cascaderLabels = injectCascaderLabels();
@@ -123,8 +124,11 @@ export class CascaderDirective<T = unknown>
   private bottomSheetStrategy = injectBottomSheetStrategy();
   private hostElement = injectHostElement();
 
-  /** The committed value: `T | null` in single mode, `T[]` with `multiple`. */
-  public value = model<T | T[] | null>(null);
+  /**
+   * The committed value: `T | null` in single mode, an array of `T` with `multiple`. Its type follows the
+   * bound signal or field, so `signal<string | null>` and `signal<string[]>` both bind as-is.
+   */
+  public value = model<TValue>(null as TValue);
   /** View state for a field whose source values disagree. The raw form value stays untouched. */
   public mixed = model(false);
   public touched = model(false);
@@ -187,14 +191,14 @@ export class CascaderDirective<T = unknown>
   public shouldDisplayError = computed(() => this.touched() && this.invalid());
 
   /** The committed values, normalized to an array (one entry in single mode, empty for no value). */
-  public values = computed<T[]>(() => {
-    const value = this.value();
+  public values = computed<readonly T[]>(() => {
+    const value: T | readonly T[] | null = this.value();
 
     if (Array.isArray(value)) {
-      return value;
+      return value as readonly T[];
     }
 
-    return value === null || value === undefined ? [] : [value];
+    return value === null || value === undefined ? [] : [value as T];
   });
 
   public hasValue = computed(() => this.mixed() || this.values().length > 0);
@@ -503,6 +507,14 @@ export class CascaderDirective<T = unknown>
   constructor() {
     super();
 
+    warnOnValueShapeMismatch({
+      value: this.value,
+      multiple: this.multiple,
+      code: CASCADER_ERROR_CODES.VALUE_SHAPE_MISMATCH,
+      source: 'CascaderDirective',
+      modeInput: '`multiple`',
+    });
+
     mountTextFieldShellStyles();
     mountFloatingPanelStyles();
 
@@ -518,7 +530,7 @@ export class CascaderDirective<T = unknown>
     });
 
     effect(() => {
-      const value = this.value();
+      const value = this.value() as T | T[] | null;
 
       untracked(() => {
         if (this.multiple()) {
@@ -560,7 +572,7 @@ export class CascaderDirective<T = unknown>
 
     let resolvedWithSource: CascaderDataSource<T> | null | undefined;
 
-    toObservable(computed(() => ({ value: this.value(), source: this.dataSource() })))
+    toObservable(computed(() => ({ value: this.value() as T | T[] | null, source: this.dataSource() })))
       .pipe(
         switchMap(({ value, source }) => {
           const compareWith = this.compareWith();
@@ -628,7 +640,7 @@ export class CascaderDirective<T = unknown>
 
           return defer(() => toPathObservable(resolvePath(value))).pipe(
             tap((resolved) => {
-              const currentValue = this.value();
+              const currentValue = this.value() as T | T[] | null;
 
               if (
                 currentValue === null ||
@@ -859,7 +871,7 @@ export class CascaderDirective<T = unknown>
         return;
       }
 
-      this.value.set([node.value]);
+      this.writeValue([node.value]);
       this.selectedPaths.set([[...chain]]);
       this.mixed.set(false);
 
@@ -871,7 +883,7 @@ export class CascaderDirective<T = unknown>
     const selected = values.some((value) => compareWith(value, node.value));
 
     if (selected) {
-      this.value.set(values.filter((value) => !compareWith(value, node.value)));
+      this.writeValue(values.filter((value) => !compareWith(value, node.value)));
       this.selectedPaths.update((paths) =>
         paths.filter((path) => {
           const last = path[path.length - 1];
@@ -887,7 +899,7 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    this.value.set([...values, node.value]);
+    this.writeValue([...values, node.value]);
     this.selectedPaths.update((paths) => [...paths, [...chain]]);
   }
 
@@ -897,7 +909,7 @@ export class CascaderDirective<T = unknown>
       return;
     }
 
-    this.value.set(this.multiple() ? [] : null);
+    this.writeValue(this.multiple() ? [] : null);
     this.mixed.set(false);
     this.path.set([]);
     this.selectedPaths.set([]);
@@ -1100,7 +1112,7 @@ export class CascaderDirective<T = unknown>
     }
 
     this.path.set([...path]);
-    this.value.set(node.value);
+    this.writeValue(node.value);
     this.mixed.set(false);
     this.hide();
   }
@@ -1197,6 +1209,10 @@ export class CascaderDirective<T = unknown>
       this.focusedSearchIndex.set(-1);
       search.appendCharacter(event.key);
     }
+  }
+
+  private writeValue(value: T | readonly T[] | null) {
+    this.value.set(value as TValue);
   }
 
   private enabledSearchIndex(from: number, step: 1 | -1) {
@@ -1309,7 +1325,7 @@ export class CascaderDirective<T = unknown>
     const chain = [...this.openPath().slice(0, columnIndex), node];
 
     this.path.set(chain);
-    this.value.set(node.value);
+    this.writeValue(node.value);
     this.mixed.set(false);
 
     if (close) {

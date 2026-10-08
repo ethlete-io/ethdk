@@ -96,6 +96,7 @@ Codes below 1000 come from other packages: `@ethlete/query` (see [Query errors](
 | `ET1012` | `etSelectViewport` is not rendered inside the surface of an `[etSelect]` element.  | Move the viewport inside the surface template.                |
 | `ET1013` | `etSelectOptions` is not on an `[etSelect]` / `et-select` element.                 | Put `etSelectOptions` on the select element itself.           |
 | `ET1014` | `etSelectAllOption` is not inside an `[etSelect]` element.                         | Move the select-all row inside the select root.               |
+| `ET1015` | Dev-mode warning: `value` is an array without `multiple`, or a non-array with it.  | Bind `T \| null` in single mode and `T[]` with `multiple`.    |
 
 ## Tag input (ET27xx)
 
@@ -153,17 +154,18 @@ Checked in dev mode only. Every check throws while the directive is constructed,
 
 ## Cascader (ET33xx)
 
-| Code     | Cause                                                                | Fix                                                               |
-| -------- | -------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `ET3300` | An `[etCascader]` element has no trigger.                            | Add an element with `etCascaderTrigger` inside the cascader root. |
-| `ET3301` | An `[etCascader]` element has no surface template.                   | Add `<ng-template etCascaderSurface>` inside the cascader root.   |
-| `ET3302` | The cascader was opened without a `[dataSource]`.                    | Bind a `CascaderDataSource` to the cascader.                      |
-| `ET3303` | `etCascaderTrigger` is not inside an `[etCascader]` element.         | Move the trigger inside the cascader root.                        |
-| `ET3304` | `etCascaderSurface` is not inside an `[etCascader]` element.         | Move the surface template inside the cascader root.               |
-| `ET3305` | `etCascaderColumn` is not rendered inside an `[etCascader]` element. | Move the column inside the cascader surface.                      |
-| `ET3306` | `etCascaderNode` is not rendered inside an `[etCascader]` element.   | Move the node inside a cascader column.                           |
-| `ET3307` | `etCascaderSearch` is not inside an `[etCascader]` element.          | Move the search input inside the cascader surface.                |
-| `ET3308` | `etCascaderSearchOption` is not inside an `[etCascader]` element.    | Move the search option inside the cascader surface.               |
+| Code     | Cause                                                                             | Fix                                                               |
+| -------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `ET3300` | An `[etCascader]` element has no trigger.                                         | Add an element with `etCascaderTrigger` inside the cascader root. |
+| `ET3301` | An `[etCascader]` element has no surface template.                                | Add `<ng-template etCascaderSurface>` inside the cascader root.   |
+| `ET3302` | The cascader was opened without a `[dataSource]`.                                 | Bind a `CascaderDataSource` to the cascader.                      |
+| `ET3303` | `etCascaderTrigger` is not inside an `[etCascader]` element.                      | Move the trigger inside the cascader root.                        |
+| `ET3304` | `etCascaderSurface` is not inside an `[etCascader]` element.                      | Move the surface template inside the cascader root.               |
+| `ET3305` | `etCascaderColumn` is not rendered inside an `[etCascader]` element.              | Move the column inside the cascader surface.                      |
+| `ET3306` | `etCascaderNode` is not rendered inside an `[etCascader]` element.                | Move the node inside a cascader column.                           |
+| `ET3307` | `etCascaderSearch` is not inside an `[etCascader]` element.                       | Move the search input inside the cascader surface.                |
+| `ET3308` | `etCascaderSearchOption` is not inside an `[etCascader]` element.                 | Move the search option inside the cascader surface.               |
+| `ET3309` | Dev-mode warning: `value` is an array without `multiple`, or a non-array with it. | Bind `T \| null` in single mode and `T[]` with `multiple`.        |
 
 ## Masked input (ET32xx)
 
@@ -497,10 +499,11 @@ ET4500 and ET4502-ET4504 throw on creation in all builds. ET4501, ET4505 and ET4
 
 Checked in dev mode only, after the first render.
 
-| Code     | Cause                                                                      | Fix                                                  |
-| -------- | -------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `ET4600` | An `[etTree]` was rendered without a `[dataSource]`.                       | Bind an object with a `loadChildren(parent)` method. |
-| `ET4601` | A tree part (`etTreeNode`, `etTreeNodeDef`) is used outside an `[etTree]`. | Move it inside the tree root (e.g. `<et-tree>`).     |
+| Code     | Cause                                                                             | Fix                                                         |
+| -------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `ET4600` | An `[etTree]` was rendered without a `[dataSource]`.                              | Bind an object with a `loadChildren(parent)` method.        |
+| `ET4601` | A tree part (`etTreeNode`, `etTreeNodeDef`) is used outside an `[etTree]`.        | Move it inside the tree root (e.g. `<et-tree>`).            |
+| `ET4602` | Warning: `value` is an array in `single` mode, or a non-array in `multiple` mode. | Bind `T \| null` in single mode and `T[]` in multiple mode. |
 
 ## Color input (ET47xx)
 

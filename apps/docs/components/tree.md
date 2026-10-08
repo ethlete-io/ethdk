@@ -57,7 +57,7 @@ Two nodes sharing a value expand, select and focus as one. For a file tree that 
 | ---------------- | ---------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `dataSource`     | `TreeDataSource<T> \| null`        | `null`              | The hierarchy to render. Required - a tree without one throws in dev mode.                                                                        |
 | `selectionMode`  | `'none' \| 'single' \| 'multiple'` | `'single'`          | Whether rows select, and how many at a time.                                                                                                      |
-| `value`          | `T \| T[] \| null`                 | `null`              | Two-way bindable selection. `T \| null` in single mode, `T[]` in multiple.                                                                        |
+| `value`          | `T \| null` or `T[]`               | `null`              | Two-way bindable selection. `T \| null` in single mode, `T[]` in multiple; the type follows the bound signal or field ([below](#selection)).      |
 | `expandedValues` | `readonly T[]`                     | `[]`                | Two-way bindable set of expanded branch values - the tree's only expansion state.                                                                 |
 | `compareWith`    | `(a: T, b: T) => boolean`          | `(a, b) => a === b` | Value equality. Override when node values are objects.                                                                                            |
 | `disabled`       | `boolean`                          | `false`             | Nothing expands or selects; rows stay readable and reachable.                                                                                     |
@@ -86,7 +86,9 @@ Bind it to open a branch programmatically, or to restore a set from storage - a 
 | ------------ | ----------------------------------------------------------------------------------------------- |
 | `'single'`   | Activating a row selects it. `value` is `T \| null`.                                            |
 | `'multiple'` | Activating a row toggles it. `value` is `T[]`, and the host gets `aria-multiselectable="true"`. |
-| `'none'`     | Rows never select and emit no `aria-selected`. Expansion, focus and `nodeActivate` still work.  |
+
+`value` takes the type of the signal you bind, so `signal<string | null>(null)` binds as-is in single mode and `signal<string[]>([])` in multiple mode - no widened union, and no `Array.isArray` when you read it back. The mode is not checked at compile time; in dev mode the tree warns ([`ET4602`](/components/error-codes#tree-et46xx)) when an array arrives in single mode or a non-array in multiple mode.
+| `'none'` | Rows never select and emit no `aria-selected`. Expansion, focus and `nodeActivate` still work. |
 
 Selections are independent per node - a branch is not implied by its children, and checking every child does not fill in the parent. A tree with tri-state checkbox semantics is the [cascader](/components/cascader) in `multiple` mode, which tracks that explicitly.
 

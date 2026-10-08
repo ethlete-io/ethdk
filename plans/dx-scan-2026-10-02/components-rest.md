@@ -136,6 +136,7 @@ domain in scope has a suite in `apps/storybook-e2e`.
   following `selectionMode`, or add a generic mode parameter so the model type follows `selectionMode`. Apply the
   same rule as select/cascader (the `select.md` scope) so the libs agree.
 - Breaking: yes. Decision: yes (API shape, shared with select).
+- Status: fixed (2026-10-08, one `value` model generic in the bound type (`TValue extends T | readonly T[] | null` on tree/cascader, `TValue = unknown` on select), inferred by the template type-checker from `[(value)]`, `[value]`/`(valueChange)` and `[formField]`, host directives included; mode stays a runtime check: dev warnings ET4602/ET1015/ET3309; type specs per folder; guides + error codes updated)
 
 ## CR-07 An initials avatar has no accessible name
 
