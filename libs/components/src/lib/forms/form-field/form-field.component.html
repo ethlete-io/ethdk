@@ -38,7 +38,12 @@
 <ng-content select="et-description" />
 
 @if (support.shouldRenderSupport()) {
-  <div [style.block-size.px]="support.supportHeight()" class="et-form-field-support" etColorInteractiveExclude>
+  <div
+    [style.block-size.px]="support.supportHeight()"
+    [attr.data-can-animate]="support.supportCanAnimate() || null"
+    class="et-form-field-support"
+    etColorInteractiveExclude
+  >
     <div class="et-form-field-support-row">
       <div class="et-form-field-support-stack">
         @if (support.shouldRenderError()) {

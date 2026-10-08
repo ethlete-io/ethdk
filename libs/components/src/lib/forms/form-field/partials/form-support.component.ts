@@ -21,6 +21,7 @@ import { injectFormSupport, wireFormSupport } from '../headless';
   host: {
     class: 'et-form-support',
     '[style.block-size.px]': 'support.supportHeight()',
+    '[attr.data-can-animate]': 'support.supportCanAnimate() || null',
   },
 })
 export class FormSupportComponent {

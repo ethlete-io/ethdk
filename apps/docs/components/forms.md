@@ -359,6 +359,9 @@ The field chrome handles error display and aria wiring uniformly:
   (`aria-live="polite"`), replacing the hint with an animated transition. While
   erroring, the field forces the app's error color theme (the theme registered
   with `type: 'error'`).
+- Only a message that appears after the field first lays out animates in. A
+  hint, warning or error that is there from the first render - also in a field
+  mounted hidden and revealed later - shows without the transition.
 - Every control emits a `touch` output whenever it marks itself touched - signal
   forms listens to it, so the bound field's `touched()` follows the user leaving
   the control. Outside signal forms, `[(touched)]` still works.

@@ -82,6 +82,44 @@ async function supportHeights(field: Locator): Promise<{ region: number; active:
   });
 }
 
+const HIDDEN_ROOT_STYLE_ID = 'e2e-hidden-root';
+
+async function mountStoryHidden(page: Page): Promise<void> {
+  await page.addInitScript((styleId) => {
+    document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style');
+
+      style.id = styleId;
+      style.textContent = '#storybook-root { display: none; }';
+      document.head.append(style);
+    });
+  }, HIDDEN_ROOT_STYLE_ID);
+}
+
+async function revealStory(page: Page): Promise<void> {
+  await page.evaluate((styleId) => document.getElementById(styleId)?.remove(), HIDDEN_ROOT_STYLE_ID);
+}
+
+async function supportTransitions(field: Locator): Promise<string[]> {
+  return field.evaluate(
+    (el) =>
+      new Promise<string[]>((resolve) =>
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() =>
+            resolve(
+              el
+                .getAnimations({ subtree: true })
+                .filter((animation) =>
+                  (animation.effect as KeyframeEffect | null)?.target?.closest('.et-form-field-support'),
+                )
+                .map((animation) => (animation as CSSTransition).transitionProperty),
+            ),
+          ),
+        ),
+      ),
+  );
+}
+
 async function expectSupportFitsActiveMessage(field: Locator): Promise<void> {
   await expect
     .poll(async () => {
@@ -223,6 +261,28 @@ test.describe('form-field / support region', () => {
     await expect(field.locator('.et-form-field-support-content[data-active]')).toHaveCount(1);
     await expect(control).toHaveAttribute('aria-describedby', (await hint.getAttribute('id')) ?? '');
     await expectSupportFitsActiveMessage(field);
+  });
+
+  test('a message shown from the first render does not animate in when its hidden field is revealed', async ({
+    page,
+  }) => {
+    await mountStoryHidden(page);
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field } = fieldParts(root);
+
+    await revealStory(page);
+
+    expect(await supportTransitions(field)).toEqual([]);
+    await expectSupportFitsActiveMessage(field);
+  });
+
+  test('a message that replaces another later animates in', async ({ page }) => {
+    const root = await openStory(page, WARNING_STORY_ID);
+    const { field, control } = fieldParts(root);
+
+    await control.fill('correct-horse-battery');
+
+    expect(await supportTransitions(field)).toContain('opacity');
   });
 });
 

@@ -79,10 +79,8 @@
     }
   }
 
-  [data-can-animate] {
-    .et-form-support {
-      transition: block-size var(--et-form-support-duration) ease;
-    }
+  .et-form-support[data-can-animate] {
+    transition: block-size var(--et-form-support-duration) ease;
 
     .et-form-support-content {
       transition: opacity var(--et-form-support-duration) ease;

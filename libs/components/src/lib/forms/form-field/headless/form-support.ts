@@ -4,6 +4,7 @@ import {
   AnimatableDirective,
   defineProvider,
   injectSemanticColorTheme,
+  nextFrame,
   ProvideColorDirective,
   signalElementDimensions,
   toInjectFn,
@@ -149,6 +150,29 @@ const formSupportFactory = () => {
     return Math.max(stackHeight, counterHeight);
   });
 
+  const activeContentWidth = computed(() => {
+    switch (semanticSupportState()) {
+      case SUPPORT_CONTENT_STATE.ERROR:
+        return errorDimensions().offset?.width ?? 0;
+      case SUPPORT_CONTENT_STATE.WARNING:
+        return warningDimensions().offset?.width ?? 0;
+      case SUPPORT_CONTENT_STATE.HINT:
+        return hintDimensions().offset?.width ?? 0;
+      default:
+        return null;
+    }
+  });
+
+  // support content that is already there when the control first lays out (also one mounted
+  // hidden and revealed later) must not animate in, so this waits a frame past its first layout
+  const supportCanAnimate = signal(false);
+
+  effect((onCleanup) => {
+    if (supportCanAnimate() || activeContentWidth() === 0) return;
+
+    onCleanup(nextFrame(() => supportCanAnimate.set(true)));
+  });
+
   for (const [state, animatable] of [
     [SUPPORT_CONTENT_STATE.ERROR, errorAnimatable],
     [SUPPORT_CONTENT_STATE.WARNING, warningAnimatable],
@@ -217,6 +241,7 @@ const formSupportFactory = () => {
     visibleErrors,
     visibleWarnings,
     supportHeight,
+    supportCanAnimate: supportCanAnimate.asReadonly(),
   };
 };
 

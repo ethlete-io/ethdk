@@ -306,10 +306,8 @@
       );
     }
 
-    &[data-can-animate] {
-      .et-form-field-support {
-        transition: block-size var(--et-form-field-support-duration) ease;
-      }
+    .et-form-field-support[data-can-animate] {
+      transition: block-size var(--et-form-field-support-duration) ease;
 
       .et-form-field-support-content {
         transition: opacity var(--et-form-field-support-duration) ease;
