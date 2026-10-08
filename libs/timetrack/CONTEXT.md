@@ -239,6 +239,11 @@ The issue tracker and the timesheet the app books into. Jira and Tempo for now. 
 adapter-agnostic, so a later backbone can replace them.
 _Avoid_: integration, provider (a provider is an agent CLI)
 
+**Machine**:
+One store, named by the random id its first start wrote. The events it collected are its own; the
+events a paired machine sent it are received events, kept apart. See ADR 0039.
+_Avoid_: origin (that is a git remote), device, host, instance
+
 ### What leaves the machine
 
 **Name list**:

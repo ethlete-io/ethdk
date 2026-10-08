@@ -1,7 +1,9 @@
 # M7 sync: research and recommendations (2026-10-08)
 
 Tom decided all six on 2026-10-08, each as recommended in the table below, plus mDNS discovery with
-6-digit code pairing. Next: record the merge and event identity in an ADR, then slice 1.
+6-digit code pairing. ADR 0039 records event identity and the merge. It replaces the "Event
+identity" bullet below: a peer's events go into their own table, every key keeps its spelling, and
+copies of one fact fold when a day is read. Slice 1 is in progress.
 
 ## What made 2026-10-08 look wrong on this PC
 
