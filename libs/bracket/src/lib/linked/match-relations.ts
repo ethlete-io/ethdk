@@ -5,7 +5,7 @@ import {
   BracketWarning,
   COMMON_BRACKET_ROUND_TYPE,
 } from '../core';
-import { BracketMatchSource, BracketSlotSource } from '../integrations';
+import { BracketMatchOutcomeSlotSource, BracketMatchSource } from '../integrations';
 import { Bracket, BracketMatch, BracketRound } from './bracket';
 import { BracketRoundRelation } from './round-relations';
 import { BracketRuntimeError } from '../bracket-runtime-error';
@@ -516,7 +516,7 @@ export const generateMatchRelationsNew = <TRoundData, TMatchData>(
 
 const matchOutcomeSlots = <TMatchData>(match: BracketMatchSource<TMatchData>) =>
   [match.homeSource, match.awaySource].filter(
-    (slot): slot is BracketSlotSource & { matchId: string } => slot?.kind === 'match-outcome' && !!slot.matchId,
+    (slot): slot is BracketMatchOutcomeSlotSource => slot?.kind === 'match-outcome' && !!slot.matchId,
   );
 
 const defaultPreviousMatchIds = <TMatchData>(match: BracketMatchSource<TMatchData>): string[] =>

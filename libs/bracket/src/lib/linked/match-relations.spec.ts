@@ -5,18 +5,9 @@ import {
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
 } from '../core';
-import { BracketDataSource, BracketSlotSource } from '../integrations';
+import { BracketDataSource, BracketSlotSource, bracketSlot } from '../integrations';
 import { createBracket } from './bracket';
 import { BracketMatchRelation } from './match-relations';
-
-const matchOutcome = (matchId: string, role: 'winner' | 'loser'): BracketSlotSource => ({
-  kind: 'match-outcome',
-  role,
-  matchId,
-  standingId: null,
-  rank: null,
-  label: null,
-});
 
 // The third place match is listed before the final, and both declare the same two semi finals.
 const source: BracketDataSource<null, null> = {
@@ -39,8 +30,8 @@ const source: BracketDataSource<null, null> = {
       roundId: 'r3',
       home: null,
       away: null,
-      homeSource: matchOutcome('s1', 'loser'),
-      awaySource: matchOutcome('s2', 'loser'),
+      homeSource: bracketSlot.matchOutcome('s1', 'loser'),
+      awaySource: bracketSlot.matchOutcome('s2', 'loser'),
       winner: null,
       status: 'pending',
       data: null,
@@ -50,8 +41,8 @@ const source: BracketDataSource<null, null> = {
       roundId: 'r2',
       home: null,
       away: null,
-      homeSource: matchOutcome('s1', 'winner'),
-      awaySource: matchOutcome('s2', 'winner'),
+      homeSource: bracketSlot.matchOutcome('s1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('s2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -97,10 +88,10 @@ const doubleElimination: BracketDataSource<null, null> = {
   matches: [
     deMatch('u1a', 'u1'),
     deMatch('u1b', 'u1'),
-    deMatch('u2a', 'u2', matchOutcome('u1a', 'winner'), matchOutcome('u1b', 'winner')),
-    deMatch('l1a', 'l1', matchOutcome('u1a', 'loser'), matchOutcome('u1b', 'loser')),
-    deMatch('l2a', 'l2', matchOutcome('l1a', 'winner'), matchOutcome('u2a', 'loser')),
-    deMatch('gfa', 'gf', matchOutcome('u2a', 'winner'), matchOutcome('l2a', 'winner')),
+    deMatch('u2a', 'u2', bracketSlot.matchOutcome('u1a', 'winner'), bracketSlot.matchOutcome('u1b', 'winner')),
+    deMatch('l1a', 'l1', bracketSlot.matchOutcome('u1a', 'loser'), bracketSlot.matchOutcome('u1b', 'loser')),
+    deMatch('l2a', 'l2', bracketSlot.matchOutcome('l1a', 'winner'), bracketSlot.matchOutcome('u2a', 'loser')),
+    deMatch('gfa', 'gf', bracketSlot.matchOutcome('u2a', 'winner'), bracketSlot.matchOutcome('l2a', 'winner')),
   ],
 };
 
@@ -201,7 +192,7 @@ describe('generateMatchRelations, declared graph warnings', () => {
       deMatch('q4', 'q'),
       deMatch('s1', 's'),
       deMatch('s2', 's'),
-      deMatch('f1', 'f', matchOutcome('s1', 'winner'), matchOutcome('s2', 'winner')),
+      deMatch('f1', 'f', bracketSlot.matchOutcome('s1', 'winner'), bracketSlot.matchOutcome('s2', 'winner')),
     ],
   };
 
@@ -236,7 +227,7 @@ describe('generateMatchRelations, declared graph warnings', () => {
     const typo = {
       ...source,
       matches: source.matches.map((match) =>
-        match.id === 'f1' ? { ...match, awaySource: matchOutcome('s-2', 'winner') } : match,
+        match.id === 'f1' ? { ...match, awaySource: bracketSlot.matchOutcome('s-2', 'winner') } : match,
       ),
     };
 

@@ -118,7 +118,7 @@ Scope: `libs/bracket`, `libs/components/src/lib/bracket`, `libs/components/src/l
 catch (e) { if (e instanceof BracketRuntimeError) ... }`. Optionally export `validateBracketSource(source)`
   returning the error instead of throwing.
 - Breaking: no. Decision: yes (whether a `validateBracketSource` API is wanted).
-- Status: fixed (exported class with `code`, guide snippet); soft-fail mode on `<et-bracket>`: open
+- Status: fixed (exported class with `code`, guide snippet); soft-fail mode on `<et-bracket>`: not wanted; 2026-10-08 validateBracketSource()
 - Review: ok
 
 ## BR-07 The guide never says round and match order in the source is the bracket's structure
@@ -149,7 +149,7 @@ catch (e) { if (e instanceof BracketRuntimeError) ... }`. Optionally export `val
   stories and the specs. Separately decide whether `BracketSlotSource` becomes a discriminated union per
   `kind` (breaking).
 - Breaking: constructors no; union yes. Decision: yes (union).
-- Status: open (user decision)
+- Status: fixed (2026-10-08, constructors + union per kind)
 - Review: not reviewed (open)
 
 ## BR-09 `BracketPickCardComponent.predictedLabel` is a hardcoded English default outside the labels

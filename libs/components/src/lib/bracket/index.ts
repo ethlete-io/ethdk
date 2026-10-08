@@ -10,11 +10,15 @@ export {
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
   SWISS_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
+  bracketSlot,
   createBracket,
   createPlaceholderBracketSource,
   isBracketSlotPredictable,
   migrateBracketPicks,
   resolveBracketSlot,
+  standingRankSides,
+  swapStandingRank,
+  validateBracketSource,
 } from '@ethlete/bracket';
 export type {
   Bracket,
@@ -66,6 +70,7 @@ export type {
   BracketRoundSwissGroupMap,
   BracketRoundType,
   BracketSlotResolutionPolicy,
+  BracketStandingRankSide,
   BracketSwissColors,
   BracketSwissGroupColorType,
   BracketWarning,

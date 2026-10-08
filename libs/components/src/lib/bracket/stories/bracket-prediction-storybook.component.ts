@@ -17,6 +17,7 @@ import {
   BracketRoundSwissGroup,
   BracketSlotSource,
   MatchParticipantSide,
+  bracketSlot,
   createBracket,
   isBracketSlotPredictable,
   resolveBracketSlot,
@@ -28,15 +29,6 @@ import { BracketComponent } from '../bracket.component';
 import { BracketDefaultRoundHeaderComponent } from '../bracket-default-round-header.component';
 import { provideBracketConfig } from '../bracket.config';
 import { singleEliminationBracketLayout } from '../layouts';
-
-const matchOutcome = (matchId: string): BracketSlotSource => ({
-  kind: 'match-outcome',
-  role: 'winner',
-  matchId,
-  standingId: null,
-  rank: null,
-  label: null,
-});
 
 const PREDICTION_SOURCE: BracketDataSource<null, null> = {
   mode: 'single-elimination',
@@ -71,8 +63,8 @@ const PREDICTION_SOURCE: BracketDataSource<null, null> = {
       roundId: 'semi-finals',
       home: null,
       away: null,
-      homeSource: matchOutcome('qf-1'),
-      awaySource: matchOutcome('qf-2'),
+      homeSource: bracketSlot.matchOutcome('qf-1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('qf-2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -82,8 +74,8 @@ const PREDICTION_SOURCE: BracketDataSource<null, null> = {
       roundId: 'semi-finals',
       home: null,
       away: null,
-      homeSource: matchOutcome('qf-3'),
-      awaySource: matchOutcome('qf-4'),
+      homeSource: bracketSlot.matchOutcome('qf-3', 'winner'),
+      awaySource: bracketSlot.matchOutcome('qf-4', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -93,8 +85,8 @@ const PREDICTION_SOURCE: BracketDataSource<null, null> = {
       roundId: 'final',
       home: null,
       away: null,
-      homeSource: matchOutcome('semi-1'),
-      awaySource: matchOutcome('semi-2'),
+      homeSource: bracketSlot.matchOutcome('semi-1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('semi-2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -324,15 +316,6 @@ export class StorybookBracketPredictionComponent implements PredictionStoryState
   }
 }
 
-const slotSource = (overrides: Partial<BracketSlotSource> & Pick<BracketSlotSource, 'kind'>): BracketSlotSource => ({
-  role: null,
-  matchId: null,
-  standingId: null,
-  rank: null,
-  label: null,
-  ...overrides,
-});
-
 const finalOf = (awaySource: BracketSlotSource | null): BracketMatch<null, null> => {
   const bracket = createBracket<null, null>(
     {
@@ -356,7 +339,7 @@ const finalOf = (awaySource: BracketSlotSource | null): BracketMatch<null, null>
           roundId: 'final',
           home: 'red',
           away: null,
-          homeSource: matchOutcome('semi-1'),
+          homeSource: bracketSlot.matchOutcome('semi-1', 'winner'),
           awaySource,
           winner: null,
           status: 'pending',
@@ -435,7 +418,7 @@ const sourceCase = ({
 
 const unresolvedCase = ({ title, ...overrides }: Partial<PickCardCase> & { title: string }) =>
   pickCardCase(title, {
-    bracketMatch: finalOf(slotSource({ kind: 'match-outcome', role: 'winner' })),
+    bracketMatch: finalOf(bracketSlot.matchOutcome('semi-2', 'winner')),
     normalized: normalizedFinal({ awayState: 'unresolvable' }),
     ...overrides,
   });
@@ -443,24 +426,24 @@ const unresolvedCase = ({ title, ...overrides }: Partial<PickCardCase> & { title
 export const PICK_CARD_SLOT_SOURCE_CASES: PickCardCase[] = [
   sourceCase({
     title: "match-outcome, the earlier match's winner",
-    source: slotSource({ kind: 'match-outcome', role: 'winner' }),
+    source: bracketSlot.matchOutcome('semi-2', 'winner'),
   }),
   sourceCase({
     title: "match-outcome, the earlier match's loser",
-    source: slotSource({ kind: 'match-outcome', role: 'loser' }),
+    source: bracketSlot.matchOutcome('semi-2', 'loser'),
   }),
   sourceCase({
     title: 'standing-rank',
-    source: slotSource({ kind: 'standing-rank', standingName: 'Group A', rank: 2 }),
+    source: bracketSlot.standingRank('group-a', 2, 'Group A'),
   }),
-  sourceCase({ title: 'seed', source: slotSource({ kind: 'seed', seed: 3 }) }),
-  sourceCase({ title: 'swiss-bucket', source: slotSource({ kind: 'swiss-bucket' }) }),
-  sourceCase({ title: 'bye', source: slotSource({ kind: 'bye' }) }),
-  sourceCase({ title: 'external', source: slotSource({ kind: 'external' }) }),
+  sourceCase({ title: 'seed', source: bracketSlot.seed(3) }),
+  sourceCase({ title: 'swiss-bucket', source: bracketSlot.swissBucket() }),
+  sourceCase({ title: 'bye', source: bracketSlot.bye() }),
+  sourceCase({ title: 'external', source: { kind: 'external' } }),
   sourceCase({ title: 'no source at all', source: null }),
   sourceCase({
     title: "the competition's own wording, which always wins",
-    source: slotSource({ kind: 'seed', seed: 3, label: 'Host nation' }),
+    source: bracketSlot.seed(3, 'Host nation'),
   }),
   unresolvedCase({ title: 'a side a prediction could still name' }),
   unresolvedCase({ title: 'the same side, with no earlier round left to predict', earlierRoundsClosed: true }),

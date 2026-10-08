@@ -5,7 +5,7 @@ import { createDoubleEliminationGrid } from './drawing/grid/double-elimination';
 import { createStackedDoubleEliminationGrid } from './drawing/grid/double-elimination-stacked';
 import { createSingleEliminationGrid } from './drawing/grid/single-elimination';
 import { CreateBracketGridConfig } from './drawing/grid/types';
-import { BracketDataSource, BracketSlotSource } from './integrations';
+import { BracketDataSource, bracketSlot } from './integrations';
 import { createBracket, migrateBracketPicks, resolveBracketSlot } from './linked';
 
 const config = (layout: BracketDataLayout): CreateBracketGridConfig => ({
@@ -41,15 +41,7 @@ const DRAW_OPTIONS = {
   curve: { lineStartingCurveAmount: 10, lineEndingCurveAmount: 10 },
 };
 
-const outcome = (matchId: string, role: 'winner' | 'loser'): BracketSlotSource => ({
-  kind: 'match-outcome',
-  role,
-  matchId,
-  standingId: null,
-  rank: null,
-  label: null,
-});
-const bye: BracketSlotSource = { kind: 'bye', role: null, matchId: null, standingId: null, rank: null, label: 'Bye' };
+const bye = bracketSlot.bye('Bye');
 
 /** A seeded single elimination for n participants, byes in round one. */
 const singleElimination = (participants: number): BracketDataSource<null, null> => {
@@ -88,8 +80,8 @@ const singleElimination = (participants: number): BracketDataSource<null, null> 
           winner: null,
           status: 'pending',
           data: null,
-          homeSource: outcome(`r${r - 1}m${2 * m}`, 'winner'),
-          awaySource: outcome(`r${r - 1}m${2 * m + 1}`, 'winner'),
+          homeSource: bracketSlot.matchOutcome(`r${r - 1}m${2 * m}`, 'winner'),
+          awaySource: bracketSlot.matchOutcome(`r${r - 1}m${2 * m + 1}`, 'winner'),
         });
       }
     }

@@ -3,7 +3,7 @@ import { By } from '@angular/platform-browser';
 import { BracketComponent } from './bracket.component';
 import { BracketRoundsListComponent } from './bracket-rounds-list.component';
 import { queryAll } from '../testing/driver-core';
-import { BracketMatchId, COMMON_BRACKET_ROUND_TYPE } from '@ethlete/bracket';
+import { BracketMatchId, COMMON_BRACKET_ROUND_TYPE, bracketSlot } from '@ethlete/bracket';
 import { BracketDataSource } from './integrations';
 import { bracketTestDriver, testBracketLayouts } from './testing/bracket-driver';
 import { generateSingleEliminationBracket } from './stories/generate-bracket';
@@ -442,22 +442,8 @@ describe('BracketComponent source warnings', () => {
         match.id === 'se-r1-m0'
           ? {
               ...match,
-              homeSource: {
-                kind: 'match-outcome',
-                role: 'winner',
-                matchId: 'se-r0-m0',
-                standingId: null,
-                rank: null,
-                label: null,
-              },
-              awaySource: {
-                kind: 'match-outcome',
-                role: 'winner',
-                matchId: 'se-r0-m9',
-                standingId: null,
-                rank: null,
-                label: null,
-              },
+              homeSource: bracketSlot.matchOutcome('se-r0-m0', 'winner'),
+              awaySource: bracketSlot.matchOutcome('se-r0-m9', 'winner'),
             }
           : match,
       ),

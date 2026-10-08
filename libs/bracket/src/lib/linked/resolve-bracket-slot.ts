@@ -1,5 +1,5 @@
 import { BracketMatchId, MatchParticipantSide } from '../core';
-import { BracketSlotSource } from '../integrations';
+import { BracketMatchOutcomeSlotSource, BracketSlotSource } from '../integrations';
 import { Bracket, BracketMatch } from './bracket';
 
 export type BracketPickSet = {
@@ -56,10 +56,8 @@ type ResolveWalk = {
   shallowestCycleHit: number;
 };
 
-const resolveMatchOutcome = (options: { walk: ResolveWalk; source: BracketSlotSource }): string | null => {
+const resolveMatchOutcome = (options: { walk: ResolveWalk; source: BracketMatchOutcomeSlotSource }): string | null => {
   const { walk, source } = options;
-
-  if (!source.matchId || !source.role) return null;
 
   const feeder = walk.bracket.matches.get(source.matchId as BracketMatchId);
 
@@ -101,9 +99,7 @@ const resolveSource = (options: {
     case 'match-outcome':
       return resolveMatchOutcome({ walk, source });
     case 'standing-rank':
-      return source.standingId && source.rank !== null
-        ? walk.picks.standingRank({ standingId: source.standingId, rank: source.rank })
-        : null;
+      return walk.picks.standingRank({ standingId: source.standingId, rank: source.rank });
     case 'seed':
     case 'swiss-bucket':
     case 'external':

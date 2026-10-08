@@ -1,5 +1,5 @@
 import { BRACKET_DATA_LAYOUT, BracketDataLayout } from '../core';
-import { BracketDataSource } from '../integrations';
+import { BracketDataSource, bracketSlot } from '../integrations';
 import { createBracket } from '../linked';
 import { drawMan } from './draw-man';
 import { BracketComponents } from './grid/core';
@@ -152,8 +152,6 @@ describe('drawMan', () => {
   });
 
   it('bends a merge arm towards its card when the source names the lower feeder first', () => {
-    const winnerOf = (matchId: string) =>
-      ({ kind: 'match-outcome', role: 'winner', matchId, standingId: null, rank: null, label: null }) as const;
     const source: BracketDataSource<null, null> = {
       mode: 'single-elimination',
       rounds: [
@@ -163,7 +161,11 @@ describe('drawMan', () => {
       matches: [
         match('a', 'r0', 'p1', 'p2', null),
         match('b', 'r0', 'p3', 'p4', null),
-        { ...match('fm', 'f', null, null, null), homeSource: winnerOf('b'), awaySource: winnerOf('a') },
+        {
+          ...match('fm', 'f', null, null, null),
+          homeSource: bracketSlot.matchOutcome('b', 'winner'),
+          awaySource: bracketSlot.matchOutcome('a', 'winner'),
+        },
       ],
     };
     const layout = BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT;

@@ -1,5 +1,5 @@
 import { BRACKET_DATA_LAYOUT } from '../../core';
-import { BracketDataSource } from '../../integrations';
+import { BracketDataSource, bracketSlot } from '../../integrations';
 import { createBracket } from '../../linked';
 import { BracketComponents } from './core';
 import { createSingleEliminationGrid } from './single-elimination';
@@ -178,24 +178,20 @@ describe('createSingleEliminationGrid, a folded third place', () => {
   });
 
   it('keeps the grid height when a continue column follows the fold', () => {
-    const winnerOf = (matchId: string) => ({
-      kind: 'match-outcome' as const,
-      role: 'winner' as const,
-      matchId,
-      standingId: null,
-      rank: null,
-      label: null,
-    });
     const declared = source();
     declared.matches = declared.matches.map((match) =>
       match.id === 'r1m0' || match.id === 'r1m1'
         ? {
             ...match,
-            homeSource: winnerOf(`r0m${Number(match.id.at(-1)) * 2}`),
-            awaySource: winnerOf(`r0m${Number(match.id.at(-1)) * 2 + 1}`),
+            homeSource: bracketSlot.matchOutcome(`r0m${Number(match.id.at(-1)) * 2}`, 'winner'),
+            awaySource: bracketSlot.matchOutcome(`r0m${Number(match.id.at(-1)) * 2 + 1}`, 'winner'),
           }
         : match.id === 'r2m0'
-          ? { ...match, homeSource: winnerOf('r1m0'), awaySource: winnerOf('r1m1') }
+          ? {
+              ...match,
+              homeSource: bracketSlot.matchOutcome('r1m0', 'winner'),
+              awaySource: bracketSlot.matchOutcome('r1m1', 'winner'),
+            }
           : match,
     );
     const folded = leftToRightGrid(declared, { thirdPlaceTopOffset: 100 });

@@ -209,22 +209,19 @@ in - the invitation would otherwise ask for something that can no longer be give
 
 Every string is overridable app-wide through [`provideBracketLabels()`](/components/bracket#localization).
 
-### Two new fields on `BracketSlotSource`
+### Fields per kind
 
-`seed?: number | null` and `standingName?: string | null` - the numbers "Seed 3" and
-"Group A position 2" are written from. **Both are optional, while the older `rank` / `standingId` /
-`label` fields are required**, for two different reasons:
+`BracketSlotSource` is a union discriminated by `kind`: a `standing-rank` slot requires `standingId`
+and `rank`, a `match-outcome` slot requires `matchId` and `role`, and neither accepts the other's
+fields. Build slots with the [`bracketSlot` constructors](/components/bracket#data-source).
+`standingName` (on a standing rank) and `seed` (on any kind) are optional - the numbers "Group A
+position 2" and "Seed 3" are written from them, and `describeBracketSlot` treats a missing field and an
+explicit `null` identically. `generateBracketDataForEthlete` sets neither, because the Ethlete match
+views carry no seeding position and no source standing.
 
-- `rank` and the rest predate this: every source literal in the SDK, in its specs and in consumer
-  adapters already sets them. Adding a required field would break all of them at once, and a source
-  adapter that has no seeding to report would have to write `seed: null` for nothing.
-- They are genuinely absent, not merely unknown. `standingId` without a `standingName` is the normal
-  case for an API that returns ids and expects a lookup; `seed` is meaningless for a source that seeds
-  nothing. `describeBracketSlot` treats a missing field and an explicit `null` identically, so an
-  adapter may set either.
-
-`generateBracketDataForEthlete` sets neither, because the Ethlete match views carry no seeding
-position and no source standing. A source built by hand may set both.
+**Breaking change:** the flat shape with `null` for every field a kind does not use is gone. Replace a
+literal such as `{ kind: 'bye', role: null, matchId: null, standingId: null, rank: null, label: null }`
+with `bracketSlot.bye()`, and an adapter that maps an API slot by hand with the matching constructor.
 
 **Breaking change:** the pick card's `unresolvableLabel` and `unavailableLabel` inputs are gone. The
 first is now `slotPredictEarlierRound` / `slotNotPredicted` plus `earlierRoundsClosed`; the second is
@@ -295,7 +292,28 @@ const picks: BracketPickSet = {
 Use `strandedByMatchId` to drive the "this prediction can no longer be honoured" note and a reset
 action, and `movedFromByMatchId` to tell the viewer where a pick came from.
 
-## Accessibility
+## Changing who fills a standing-rank side
+
+A knockout side fed by a table position ("group A, 2nd") is changed by reordering that table.
+`standingRankSides()` lists the sides of a match whose source is a `standing-rank` slot, and
+`swapStandingRank()` returns the table order with a chosen participant moved onto that rank:
+
+```ts
+const sides = standingRankSides({ bracket, matchId });
+// [{ side: 'home', standingId: 'group-a', rank: 2, standingName: 'Group A', participantId: null }]
+
+for (const { standingId, rank } of sides) {
+  const order = groupOrder(standingId); // participant ids, rank 1 first
+  const next = swapStandingRank({ order, rank, participantId: chosenId });
+}
+```
+
+`participantId` is who really stands on the side, so a side that is already decided can be left out
+of a swap UI. `swapStandingRank` swaps the chosen participant with the one on the rank and always
+returns a new array, unchanged when the participant is not in the order or the rank is outside it.
+Apply several choices one after the other, each against the order the previous one returned, so two
+sides fed by the same table do not undo each other. The candidates (usually the participants who
+advance from the table) and the swap UI stay in the application.
 
 Only a **selectable** side is a `<button>`; every other side is a `<div>`. A partial matchup, a bye, a
 locked card and a read-only card therefore have no tab stop and no dead control, and a viewer tabbing

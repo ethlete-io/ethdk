@@ -11,6 +11,7 @@ import {
   BracketPickCardComponent,
   BracketPickSet,
   BracketSlotSource,
+  bracketSlot,
   COMMON_BRACKET_ROUND_TYPE,
   createBracket,
   DEFAULT_BRACKET_LABELS,
@@ -29,18 +30,6 @@ import {
 import '../test-helpers';
 import { useScenario } from './harness';
 
-const slot = (overrides: Partial<BracketSlotSource>): BracketSlotSource => ({
-  kind: 'seed',
-  role: null,
-  matchId: null,
-  standingId: null,
-  rank: null,
-  label: null,
-  ...overrides,
-});
-
-const winnerOf = (matchId: string) => slot({ kind: 'match-outcome', role: 'winner', matchId });
-
 const seeded = (
   id: string,
   home: string | null,
@@ -51,8 +40,8 @@ const seeded = (
   roundId: 'r1',
   home,
   away,
-  homeSource: sources.home ?? slot({ kind: 'seed' }),
-  awaySource: sources.away ?? slot({ kind: 'seed' }),
+  homeSource: sources.home ?? { kind: 'seed' },
+  awaySource: sources.away ?? { kind: 'seed' },
   winner: null,
   status: 'pending',
   data: null,
@@ -76,8 +65,8 @@ const sourceOf = (opening: BracketMatchSource<null>[]): BracketDataSource<null, 
       roundId: 'r2',
       home: null,
       away: null,
-      homeSource: winnerOf('semi-1'),
-      awaySource: winnerOf('semi-2'),
+      homeSource: bracketSlot.matchOutcome('semi-1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('semi-2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -87,7 +76,7 @@ const sourceOf = (opening: BracketMatchSource<null>[]): BracketDataSource<null, 
 
 const WITH_BYE = sourceOf([
   seeded('semi-1', 'team-a', 'team-b'),
-  seeded('semi-2', 'team-c', null, { away: slot({ kind: 'bye' }) }),
+  seeded('semi-2', 'team-c', null, { away: bracketSlot.bye() }),
 ]);
 
 const participant = (id: string) => ({
@@ -328,30 +317,29 @@ describe('bracket prediction scenarios', () => {
 
   it('describes every kind of empty slot in one line', () => {
     const labels = DEFAULT_BRACKET_LABELS;
-    const describe = (overrides: Partial<BracketSlotSource> | null) =>
-      describeBracketSlot(overrides ? slot(overrides) : null, labels);
+    const describe = (source: BracketSlotSource | null) => describeBracketSlot(source, labels);
 
     expect(describe(null)).toBe(labels.slotUnknown);
-    expect(describe({ kind: 'match-outcome', role: 'winner', matchId: 'm1' })).toBe(labels.slotMatchWinner);
-    expect(describe({ kind: 'match-outcome', role: 'loser', matchId: 'm1' })).toBe(labels.slotMatchLoser);
-    expect(describe({ kind: 'standing-rank', standingName: 'Group A', rank: 2 })).toBe('Group A position 2');
-    expect(describe({ kind: 'standing-rank', rank: 2 })).toBe('Standing position 2');
-    expect(describe({ kind: 'seed', seed: 3 })).toBe('Seed 3');
-    expect(describe({ kind: 'swiss-bucket' })).toBe(labels.slotSwissBucket);
-    expect(describe({ kind: 'bye' })).toBe(labels.slotBye);
+    expect(describe(bracketSlot.matchOutcome('m1', 'winner'))).toBe(labels.slotMatchWinner);
+    expect(describe(bracketSlot.matchOutcome('m1', 'loser'))).toBe(labels.slotMatchLoser);
+    expect(describe(bracketSlot.standingRank('a', 2, 'Group A'))).toBe('Group A position 2');
+    expect(describe(bracketSlot.standingRank('a', 2))).toBe('Standing position 2');
+    expect(describe(bracketSlot.seed(3))).toBe('Seed 3');
+    expect(describe(bracketSlot.swissBucket())).toBe(labels.slotSwissBucket);
+    expect(describe(bracketSlot.bye())).toBe(labels.slotBye);
     expect(describe({ kind: 'external' })).toBe(labels.slotExternal);
-    expect(describe({ kind: 'external', label: 'Qualifier 1' })).toBe('Qualifier 1');
+    expect(describe(bracketSlot.external('Qualifier 1'))).toBe('Qualifier 1');
 
-    expect(isBracketSlotPredictable(slot({ kind: 'match-outcome' }))).toBe(true);
-    expect(isBracketSlotPredictable(slot({ kind: 'standing-rank' }))).toBe(true);
-    expect(isBracketSlotPredictable(slot({ kind: 'bye' }))).toBe(false);
+    expect(isBracketSlotPredictable(bracketSlot.matchOutcome('m1', 'winner'))).toBe(true);
+    expect(isBracketSlotPredictable(bracketSlot.standingRank('a', 1))).toBe(true);
+    expect(isBracketSlotPredictable(bracketSlot.bye())).toBe(false);
     expect(isBracketSlotPredictable(null)).toBe(false);
   });
 
   it('resolves standing-rank slots from the viewer standings picks', () => {
     const source: BracketDataSource<null, null> = {
       ...sourceOf([
-        seeded('semi-1', null, 'team-b', { home: slot({ kind: 'standing-rank', standingId: 'group-a', rank: 1 }) }),
+        seeded('semi-1', null, 'team-b', { home: bracketSlot.standingRank('group-a', 1) }),
         seeded('semi-2', 'team-c', 'team-d'),
       ]),
     };

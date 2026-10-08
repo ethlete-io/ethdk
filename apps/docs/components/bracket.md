@@ -208,30 +208,18 @@ order (upper and lower rounds of a double elimination interleaved as they are pl
 of each round in bracket order, top to bottom - matches 1 and 2 of a round feed match 1 of the next.
 Declare `homeSource` / `awaySource` (or pass [`previousMatchIds`](#options)) and order stops mattering.
 
-Prediction sources may additionally set `homeSource` and `awaySource` to preserve where an empty or filled slot came from. A slot also takes an optional `seed` (the seeding position) and `standingName` (what `standingId` is called):
+Prediction sources may additionally set `homeSource` and `awaySource` to preserve where an empty or filled slot came from. Build a slot with `bracketSlot`:
 
 ```ts
+import { bracketSlot } from '@ethlete/components';
+
 {
   id: 'final',
   roundId: 'final',
   home: null,
   away: null,
-  homeSource: {
-    kind: 'match-outcome',
-    role: 'winner',
-    matchId: 'semi-final-1',
-    standingId: null,
-    rank: null,
-    label: null,
-  },
-  awaySource: {
-    kind: 'match-outcome',
-    role: 'winner',
-    matchId: 'semi-final-2',
-    standingId: null,
-    rank: null,
-    label: null,
-  },
+  homeSource: bracketSlot.matchOutcome('semi-final-1', 'winner'),
+  awaySource: bracketSlot.matchOutcome('semi-final-2', 'winner'),
   winner: null,
   status: 'pending',
   data: null,
@@ -243,9 +231,20 @@ linked from the declared slots alone, so a match without them draws no connector
 bracket warns in the console about every match left unlinked that way and every slot `matchId` that
 names no match (`createBracket`'s `onWarning` option reports the same as a `BracketWarning`).
 
-The source kinds are `match-outcome`, `standing-rank`, `seed`, `swiss-bucket`, `bye`, and
-`external`. `label` is optional competition wording for the empty slot; the library never invents
-one. A `bye` is never selectable and automatically advances the other resolved side.
+`BracketSlotSource` is a union discriminated by `kind`, so a slot carries only the fields of its kind:
+
+| Constructor                                                         | `kind`          | Fields                                 |
+| ------------------------------------------------------------------- | --------------- | -------------------------------------- |
+| `bracketSlot.matchOutcome(matchId, role, label?)`                   | `match-outcome` | `matchId`, `role: 'winner' \| 'loser'` |
+| `bracketSlot.standingRank(standingId, rank, standingName?, label?)` | `standing-rank` | `standingId`, `rank`, `standingName?`  |
+| `bracketSlot.seed(seed, label?)`                                    | `seed`          | `seed`                                 |
+| `bracketSlot.swissBucket(label?)`                                   | `swiss-bucket`  | -                                      |
+| `bracketSlot.bye(label?)`                                           | `bye`           | -                                      |
+| `bracketSlot.external(label)`                                       | `external`      | -                                      |
+
+Every kind also takes `label`, optional competition wording for the empty slot (the library never
+invents one), and `seed`, the seeding position. A `bye` is never selectable and automatically advances
+the other resolved side.
 
 A round whose matches are not drawn yet is not an error: it renders as an empty column and the rounds
 either side of it relate to each other, so a stage can be published before its later rounds are seeded.
@@ -534,8 +533,8 @@ export class AppMatchCardComponent {
 
 The bracket doubles as the thing a viewer picks the winners in: `resolveBracketSlot()` reads every
 slot through their own picks, and `<et-bracket-pick-card>` is the cell they pick in. Those two, the
-helper that follows a pick when a pairing changes, and the labels that word a slot nobody stands on,
-are all in [bracket prediction](/components/bracket-prediction).
+helper that follows a pick when a pairing changes, the helpers that swap who fills a standing-rank side,
+and the labels that word a slot nobody stands on, are all in [bracket prediction](/components/bracket-prediction).
 
 ## Double elimination
 
@@ -903,20 +902,16 @@ unusable `participantCount` - see
 Everything the data pipeline throws - the engine and `generateBracketDataForEthlete` - is a
 `BracketRuntimeError` with a numeric `code` from `BRACKET_ERROR_CODES`; the card and layout registration
 errors (`ET3412`-`ET3414`) are core `RuntimeError`s. `<et-bracket>` throws from inside its source
-computation and has no error state, so reject bad data before you hand it over:
+computation and has no error state, so reject bad data before you hand it over.
+`validateBracketSource(source, options)` takes the same options as `createBracket` and returns the
+`BracketRuntimeError` it would throw, or `null`:
 
 ```ts
 protected source = computed(() => {
   const source = generateBracketDataForEthlete(this.apiRounds());
+  const error = validateBracketSource(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 
-  try {
-    createBracket(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
-  } catch (error) {
-    if (error instanceof BracketRuntimeError) return null; // render "bracket unavailable"
-    throw error;
-  }
-
-  return source;
+  return error ? null : source; // null renders "bracket unavailable"
 });
 ```
 

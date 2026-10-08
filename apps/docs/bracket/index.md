@@ -24,6 +24,8 @@ import { createBracket } from '@ethlete/bracket';
 const bracket = createBracket(source, { layout: 'left-to-right' });
 ```
 
+Build slots with the `bracketSlot` constructors (`bracketSlot.matchOutcome('sf-1', 'winner')`,
+`bracketSlot.standingRank('group-a', 2)`, ...); `BracketSlotSource` is a union discriminated by `kind`.
 When slots carry `homeSource` / `awaySource`, `createBracket` uses their `match-outcome` references
 as the relation graph. A `role: 'loser'` slot is left out of it, so no connector is drawn along a loser's
 drop into the losers bracket. For a source that keeps graph metadata elsewhere, supply it directly:
@@ -42,7 +44,8 @@ with a `BracketWarning` for every match left unlinked that way and every feeder 
 
 Every error the engine throws is a `BracketRuntimeError` with a numeric `code` from
 `BRACKET_ERROR_CODES` (`ET34xx`), so `error instanceof BracketRuntimeError` tells malformed data apart
-from a bug of your own.
+from a bug of your own. `validateBracketSource(source, options)` returns that error, or `null`, instead
+of throwing it.
 
 A round whose matches are not drawn yet is linked over: its neighbours relate to each other, and the
 round still renders as an empty column. A `'mirrored'` layout folds up to the first round it cannot

@@ -270,6 +270,7 @@ candidates }`). SDK `libs/bracket/src/lib/linked/resolve-bracket-slot.ts` resolv
   `swapStandingRank({ order, rank, participantId })` that returns the new order; optionally surface it on
   `<et-bracket-pick-card>`. Needs a design call on whether the swap UI belongs in components.
 - Breaking: no. Decision: yes.
+- Status: fixed (2026-10-08, `standingRankSides()` + `swapStandingRank()` in `@ethlete/bracket`; no swap UI in components)
 
 ## FG-14 `createDestroy` is still exported undeprecated, with no codemod
 

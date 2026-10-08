@@ -1,5 +1,5 @@
 import { BRACKET_DATA_LAYOUT, BracketMatchId, SINGLE_ELIMINATION_BRACKET_ROUND_TYPE } from '../core';
-import { BracketDataSource, BracketSlotSource } from '../integrations';
+import { BracketDataSource, bracketSlot } from '../integrations';
 import { BracketMatch, createBracket } from './bracket';
 import { BracketPickSet, resolveBracketSlot } from './resolve-bracket-slot';
 
@@ -22,23 +22,14 @@ const source = (overrides: Partial<BracketDataSource<null, null>> = {}): Bracket
       roundId: 'r2',
       home: null,
       away: null,
-      homeSource: matchOutcome('m1', 'winner'),
-      awaySource: matchOutcome('m2', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
     },
   ],
   ...overrides,
-});
-
-const matchOutcome = (matchId: string, role: 'winner' | 'loser'): BracketSlotSource => ({
-  kind: 'match-outcome',
-  role,
-  matchId,
-  standingId: null,
-  rank: null,
-  label: null,
 });
 
 const picks = (winners: Record<string, string | null>): BracketPickSet => ({
@@ -58,7 +49,7 @@ describe('resolveBracketSlot', () => {
     const predictionSource = source();
     predictionSource.matches[2] = {
       ...predictionSource.matches[2]!,
-      homeSource: matchOutcome('m1', 'loser'),
+      homeSource: bracketSlot.matchOutcome('m1', 'loser'),
     };
     const bracket = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 
@@ -71,14 +62,7 @@ describe('resolveBracketSlot', () => {
     predictionSource.matches[0] = {
       ...predictionSource.matches[0]!,
       away: null,
-      awaySource: {
-        kind: 'bye',
-        role: null,
-        matchId: null,
-        standingId: null,
-        rank: null,
-        label: 'Bye',
-      },
+      awaySource: bracketSlot.bye('Bye'),
     };
     const bracket = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 
@@ -90,7 +74,7 @@ describe('resolveBracketSlot', () => {
     predictionSource.matches[0] = {
       ...predictionSource.matches[0]!,
       home: null,
-      homeSource: matchOutcome('m3', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m3', 'winner'),
     };
     const bracket = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 
@@ -125,8 +109,8 @@ const rematchChain = (length: number): BracketDataSource<null, null> => ({
     roundId: `r${index}`,
     home: index === 0 ? 'a' : null,
     away: index === 0 ? 'b' : null,
-    homeSource: index === 0 ? undefined : matchOutcome(`m${index - 1}`, 'winner'),
-    awaySource: index === 0 ? undefined : matchOutcome(`m${index - 1}`, 'loser'),
+    homeSource: index === 0 ? undefined : bracketSlot.matchOutcome(`m${index - 1}`, 'winner'),
+    awaySource: index === 0 ? undefined : bracketSlot.matchOutcome(`m${index - 1}`, 'loser'),
     winner: null,
     status: 'pending' as const,
     data: null,
@@ -155,7 +139,11 @@ describe('resolveBracketSlot, shared feeders', () => {
   it('still walks once per slot when a cycle closes below the shared feeders', () => {
     const length = 20;
     const cyclicSource = rematchChain(length);
-    cyclicSource.matches[0] = { ...cyclicSource.matches[0]!, home: null, homeSource: matchOutcome('m0', 'winner') };
+    cyclicSource.matches[0] = {
+      ...cyclicSource.matches[0]!,
+      home: null,
+      homeSource: bracketSlot.matchOutcome('m0', 'winner'),
+    };
     const bracket = createBracket(cyclicSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 
     let matchWinnerCalls = 0;
@@ -207,8 +195,8 @@ const semisWithRealPairings = (): BracketDataSource<null, null> => ({
       roundId: 'r2',
       home: 'c',
       away: 'd',
-      homeSource: matchOutcome('m1', 'winner'),
-      awaySource: matchOutcome('m2', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -218,8 +206,8 @@ const semisWithRealPairings = (): BracketDataSource<null, null> => ({
       roundId: 'r2',
       home: 'g',
       away: 'h',
-      homeSource: matchOutcome('m3', 'winner'),
-      awaySource: matchOutcome('m4', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m3', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m4', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -229,8 +217,8 @@ const semisWithRealPairings = (): BracketDataSource<null, null> => ({
       roundId: 'r3',
       home: null,
       away: null,
-      homeSource: matchOutcome('m5', 'winner'),
-      awaySource: matchOutcome('m6', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m5', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m6', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -269,7 +257,7 @@ describe('resolveBracketSlot, realParticipantOutranksPick', () => {
     const predictionSource = source();
     predictionSource.matches[2] = {
       ...predictionSource.matches[2]!,
-      homeSource: { kind: 'standing-rank', role: null, matchId: null, standingId: 'g1', rank: 2, label: null },
+      homeSource: bracketSlot.standingRank('g1', 2),
     };
     const standingPicks: BracketPickSet = {
       matchWinner: () => null,
@@ -315,8 +303,8 @@ const threeRoundsDeep = (): BracketDataSource<null, null> => ({
       roundId: 'r2',
       home: null,
       away: null,
-      homeSource: matchOutcome('m1', 'winner'),
-      awaySource: matchOutcome('m2', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m1', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m2', 'winner'),
       winner: null,
       status: 'pending',
       data: null,
@@ -326,8 +314,8 @@ const threeRoundsDeep = (): BracketDataSource<null, null> => ({
       roundId: 'r3',
       home: null,
       away: null,
-      homeSource: matchOutcome('m3', 'winner'),
-      awaySource: matchOutcome('m3', 'loser'),
+      homeSource: bracketSlot.matchOutcome('m3', 'winner'),
+      awaySource: bracketSlot.matchOutcome('m3', 'loser'),
       winner: null,
       status: 'pending',
       data: null,
@@ -398,7 +386,7 @@ describe('resolveBracketSlot, keepPickWhileFeederSideIsOpen', () => {
     predictionSource.matches[0] = {
       ...predictionSource.matches[0]!,
       home: null,
-      homeSource: matchOutcome('m3', 'winner'),
+      homeSource: bracketSlot.matchOutcome('m3', 'winner'),
     };
     const cyclic = createBracket(predictionSource, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
 

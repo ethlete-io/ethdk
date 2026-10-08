@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { BracketSlotSource, BracketMatch } from '@ethlete/bracket';
+import { BracketSlotSource, BracketMatch, bracketSlot } from '@ethlete/bracket';
 import '../../test-helpers';
 import { NormalizedMatch } from '../match';
 import { mountControl } from '../testing/control-driver';
@@ -20,15 +20,6 @@ const normalized = (overrides: Partial<NormalizedMatch> = {}): NormalizedMatch =
   resultKind: 'score',
   gameScores: null,
   winnerSide: null,
-  label: null,
-  ...overrides,
-});
-
-const slotSource = (overrides: Partial<BracketSlotSource> & Pick<BracketSlotSource, 'kind'>): BracketSlotSource => ({
-  role: null,
-  matchId: null,
-  standingId: null,
-  rank: null,
   label: null,
   ...overrides,
 });
@@ -178,7 +169,7 @@ describe('BracketPickCardComponent', () => {
 
     driver.host.bracketMatch = {
       ...bracketMatch,
-      awaySource: slotSource({ kind: 'seed', seed: 7 }),
+      awaySource: bracketSlot.seed(7),
     };
     driver.host.match.set(normalized({ away: null, awayState: 'unavailable' }));
     driver.fixture.detectChanges();
@@ -191,7 +182,7 @@ describe('BracketPickCardComponent', () => {
 
     driver.host.bracketMatch = {
       ...bracketMatch,
-      awaySource: slotSource({ kind: 'bye', label: 'Bye' }),
+      awaySource: bracketSlot.bye('Bye'),
     };
     driver.host.match.set(normalized({ away: null, awayState: 'unavailable' }));
     driver.fixture.detectChanges();
@@ -336,32 +327,28 @@ describe('describeBracketSlot', () => {
     describeBracketSlot(source, DEFAULT_BRACKET_LABELS);
 
   it('repeats the competition’s own wording whenever it has some', () => {
-    expect(describe_(slotSource({ kind: 'seed', seed: 3, label: 'Host nation' }))).toBe('Host nation');
+    expect(describe_(bracketSlot.seed(3, 'Host nation'))).toBe('Host nation');
   });
 
   it('tells a winner slot from a loser slot', () => {
-    expect(describe_(slotSource({ kind: 'match-outcome', role: 'winner' }))).toBe('Winner of an earlier match');
-    expect(describe_(slotSource({ kind: 'match-outcome', role: 'loser' }))).toBe('Loser of an earlier match');
+    expect(describe_(bracketSlot.matchOutcome('m1', 'winner'))).toBe('Winner of an earlier match');
+    expect(describe_(bracketSlot.matchOutcome('m1', 'loser'))).toBe('Loser of an earlier match');
   });
 
   it('names the standing and the position in it', () => {
-    expect(describe_(slotSource({ kind: 'standing-rank', standingName: 'Group A', rank: 2 }))).toBe(
-      'Group A position 2',
-    );
+    expect(describe_(bracketSlot.standingRank('a', 2, 'Group A'))).toBe('Group A position 2');
   });
 
-  it('words a standing slot that is missing one of its two halves', () => {
-    expect(describe_(slotSource({ kind: 'standing-rank', rank: 2 }))).toBe('Standing position 2');
-    expect(describe_(slotSource({ kind: 'standing-rank', standingName: 'Group A' }))).toBe('Group A');
-    expect(describe_(slotSource({ kind: 'standing-rank' }))).toBe('A standing position');
+  it('words a standing slot without a standing name', () => {
+    expect(describe_(bracketSlot.standingRank('a', 2))).toBe('Standing position 2');
   });
 
   it('words the remaining kinds', () => {
-    expect(describe_(slotSource({ kind: 'seed', seed: 3 }))).toBe('Seed 3');
-    expect(describe_(slotSource({ kind: 'seed' }))).toBe('A seeded slot');
-    expect(describe_(slotSource({ kind: 'swiss-bucket' }))).toBe('Drawn once the round is scheduled');
-    expect(describe_(slotSource({ kind: 'bye' }))).toBe('Bye');
-    expect(describe_(slotSource({ kind: 'external' }))).toBe('Arrives from another competition');
+    expect(describe_(bracketSlot.seed(3))).toBe('Seed 3');
+    expect(describe_({ kind: 'seed' })).toBe('A seeded slot');
+    expect(describe_(bracketSlot.swissBucket())).toBe('Drawn once the round is scheduled');
+    expect(describe_(bracketSlot.bye())).toBe('Bye');
+    expect(describe_({ kind: 'external' })).toBe('Arrives from another competition');
   });
 
   it('says a slot with no provenance is unknown, rather than guessing at one', () => {
