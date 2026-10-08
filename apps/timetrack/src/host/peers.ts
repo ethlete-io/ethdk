@@ -1,4 +1,6 @@
-import { Observable } from 'rxjs';
+import { ReceivedEvent } from '@ethlete/timetrack';
+import { Observable, map } from 'rxjs';
+import { StoredEvent, reviveEvent } from './event-store';
 import { invokeHost$ } from './invoke';
 
 export type PairedMachine = {
@@ -35,6 +37,8 @@ export type PeerHello = {
   roundTripMs: number;
 };
 
+type StoredReceivedEvent = StoredEvent & { machineId: string; label: string };
+
 export type TauriPeers = {
   list$(): Observable<PairedMachine[]>;
   discovered$(): Observable<DiscoveredMachine[]>;
@@ -42,6 +46,8 @@ export type TauriPeers = {
   accept$(target: PairTarget, code: string): Observable<PairedMachine>;
   hello$(machineId: string): Observable<PeerHello>;
   forget$(machineId: string): Observable<boolean>;
+  /** The events the paired machines collected in `[from, to)`. A forgotten machine's are left out. */
+  receivedBetween$(from: Date, to: Date): Observable<ReceivedEvent[]>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -51,4 +57,10 @@ export const createTauriPeers = (): TauriPeers => ({
   accept$: (target, code) => invokeHost$<PairedMachine>('pair_accept', { target, code }),
   hello$: (machineId) => invokeHost$<PeerHello>('peers_hello', { machineId }),
   forget$: (machineId) => invokeHost$<boolean>('peers_forget', { machineId }),
+  receivedBetween$: (from, to) =>
+    invokeHost$<StoredReceivedEvent[]>('received_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
+      map((stored) =>
+        stored.map((row) => ({ machineId: row.machineId, machineName: row.label, event: reviveEvent(row) })),
+      ),
+    ),
 });

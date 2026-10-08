@@ -610,6 +610,16 @@ export const createFakePorts = (): HostPorts => {
 
         return ok(index >= 0);
       },
+      receivedBetween$: (from, to) =>
+        ok(
+          world.peers.received.flatMap(({ machineId, event }) => {
+            const machine = paired.find((held) => held.machineId === machineId);
+
+            return machine && event.at >= from && event.at < to
+              ? [{ machineId, machineName: machine.label, event }]
+              : [];
+          }),
+        ),
     },
 
     transcription: {

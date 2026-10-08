@@ -52,6 +52,7 @@
     "allow-peers-list",
     "allow-peers-pull",
     "allow-read-spec",
+    "allow-received-between",
     "allow-reporter-vsix-path",
     "allow-run-process",
     "allow-secret-delete",

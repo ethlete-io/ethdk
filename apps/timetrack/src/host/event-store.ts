@@ -13,7 +13,7 @@ import {
 import { Observable, map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
-type StoredEvent = {
+export type StoredEvent = {
   atMs: number;
   source: string;
   kind: string;
@@ -82,7 +82,7 @@ const toStored = (event: CollectedEvent): StoredEvent => ({
   dedupeKey: dedupeKeyOf(event),
 });
 
-const reviveEvent = (stored: StoredEvent): CollectedEvent => {
+export const reviveEvent = (stored: StoredEvent): CollectedEvent => {
   const { at, until, authoredAt, ...rest } = stored.payload;
 
   return {

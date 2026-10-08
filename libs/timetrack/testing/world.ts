@@ -133,15 +133,20 @@ export type FakeDiscoveredMachine = {
   lastSeenMs: number;
 };
 
+/** An event a paired machine collected, as this machine holds it after a pull. */
+export type FakeReceivedEvent = { machineId: string; event: CollectedEvent };
+
 /**
  * The machines around this one. `code` is the one the other machine shows, so pairing with any
- * other code fails; `offerExpired` makes every code fail as an expired offer.
+ * other code fails; `offerExpired` makes every code fail as an expired offer. `received` is read under
+ * the name of the paired machine it names, and a machine not paired reads nothing.
  */
 export type FakePeers = {
   paired: FakePairedMachine[];
   discovered: FakeDiscoveredMachine[];
   code: string;
   offerExpired: boolean;
+  received: FakeReceivedEvent[];
 };
 
 /**
@@ -488,7 +493,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   },
   windowLock: seed.windowLock ?? 'unlocked',
   collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
-  peers: { paired: [], discovered: [], code: '246810', offerExpired: false, ...seed.peers },
+  peers: { paired: [], discovered: [], code: '246810', offerExpired: false, received: [], ...seed.peers },
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},
@@ -518,6 +523,14 @@ export const parseWorldSeed = (raw: string | null | undefined): TimetrackWorldSe
   return {
     ...seed,
     ...(seed.events ? { events: seed.events.map(reviveEvent) } : {}),
+    ...(seed.peers?.received
+      ? {
+          peers: {
+            ...seed.peers,
+            received: seed.peers.received.map((held) => ({ ...held, event: reviveEvent(held.event as SeededEvent) })),
+          },
+        }
+      : {}),
     ...(seed.ledger ? { ledger: seed.ledger.map((entry) => ({ ...entry, syncedAt: new Date(entry.syncedAt) })) } : {}),
   };
 };

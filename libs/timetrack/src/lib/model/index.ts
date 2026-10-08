@@ -12,6 +12,7 @@ export * from './naming-age';
 export * from './price';
 export * from './project-link';
 export * from './proposal';
+export * from './received-event';
 export * from './recurrence';
 export * from './stand-in';
 export * from './statement';

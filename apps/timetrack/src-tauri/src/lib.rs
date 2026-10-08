@@ -191,6 +191,7 @@ pub fn run() {
             peer::peers_hello,
             peer::peers_list,
             peer::peers_pull,
+            peer::received_between,
             process::run_process,
             reporter::reporter_vsix_path,
             secrets::secret_delete,

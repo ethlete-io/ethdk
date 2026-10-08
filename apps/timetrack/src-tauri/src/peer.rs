@@ -552,6 +552,40 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
     })
 }
 
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ReceivedEvent {
+    pub machine_id: String,
+    pub label: String,
+    pub at_ms: i64,
+    pub source: String,
+    pub kind: String,
+    pub payload: serde_json::Value,
+}
+
+/// The copies of a forgotten machine stay in the store until retention takes them, and are left out.
+fn received_in(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedEvent>> {
+    let mut statement = connection.prepare(
+        "SELECT received.machine_id, paired.label, received.at_ms, received.source, received.kind, received.payload
+           FROM received_event received
+           JOIN paired_machine paired ON paired.machine_id = received.machine_id
+          WHERE received.at_ms >= ?1 AND received.at_ms < ?2
+          ORDER BY received.at_ms, received.machine_id, received.peer_row_id",
+    )?;
+    let rows = statement.query_map(params![from_ms, to_ms], |row| {
+        Ok(ReceivedEvent {
+            machine_id: row.get(0)?,
+            label: row.get(1)?,
+            at_ms: row.get(2)?,
+            source: row.get(3)?,
+            kind: row.get(4)?,
+            payload: serde_json::from_str(&row.get::<_, String>(5)?).unwrap_or(serde_json::Value::Null),
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
 fn cursor_of(connection: &Connection, machine_id: &str) -> TimetrackResult<i64> {
     Ok(connection
         .query_row(
@@ -1391,6 +1425,13 @@ impl Peers {
         Ok((upserted, removed, cursor, more))
     }
 
+    pub async fn received_between(&self, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedEvent>> {
+        self.0
+            .db
+            .run(move |connection| received_in(connection, from_ms, to_ms))
+            .await
+    }
+
     pub async fn forget(&self, machine_id: &str) -> TimetrackResult<bool> {
         let machine_id = machine_id.to_string();
 
@@ -1450,6 +1491,18 @@ impl Peers {
                 .pull(&text("machineId")?)
                 .await
                 .map(|pulled| serde_json::json!(pulled)),
+            "peers.received" => {
+                let ms = |field: &str| {
+                    request
+                        .get(field)
+                        .and_then(serde_json::Value::as_i64)
+                        .ok_or_else(|| format!("{field} is missing"))
+                };
+
+                self.received_between(ms("fromMs")?, ms("toMs")?)
+                    .await
+                    .map(|events| serde_json::json!(events))
+            }
             "peers.forget" => self
                 .forget(&text("machineId")?)
                 .await
@@ -1567,6 +1620,15 @@ pub async fn peers_hello(peers: tauri::State<'_, Peers>, machine_id: String) -> 
 #[tauri::command]
 pub async fn peers_pull(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<PullResult> {
     peers.pull(&machine_id).await
+}
+
+#[tauri::command]
+pub async fn received_between(
+    peers: tauri::State<'_, Peers>,
+    from_ms: i64,
+    to_ms: i64,
+) -> TimetrackResult<Vec<ReceivedEvent>> {
+    peers.received_between(from_ms, to_ms).await
 }
 
 #[tauri::command]
@@ -2071,6 +2133,41 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn reads_the_received_events_of_a_range_under_the_name_their_machine_was_paired_by() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        for at_ms in [1_000, 2_000, 3_000] {
+            collect(&a, at_ms, None).await;
+        }
+
+        b.pull(&a_id).await.unwrap();
+
+        let read = b.received_between(1_500, 3_000).await.unwrap();
+
+        assert_eq!(
+            read.iter()
+                .map(|event| (
+                    event.machine_id.as_str(),
+                    event.label.as_str(),
+                    event.at_ms,
+                    event.kind.as_str()
+                ))
+                .collect::<Vec<_>>(),
+            vec![(a_id.as_str(), "pc", 2_000, "git-commit")]
+        );
+        assert_eq!(read[0].payload, serde_json::json!({}));
+        assert!(a.received_between(0, 10_000).await.unwrap().is_empty());
+
+        b.forget(&a_id).await.unwrap();
+
+        assert!(b.received_between(0, 10_000).await.unwrap().is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn answers_the_agent_ops_by_name() {
         let (a, b) = (instance("pc"), instance("laptop"));
         let offer = a.answer(&serde_json::json!({ "op": "pair.offer" })).await.unwrap();
@@ -2099,6 +2196,12 @@ mod tests {
                 .await
                 .unwrap()["upserted"],
             0
+        );
+        assert_eq!(
+            b.answer(&serde_json::json!({ "op": "peers.received", "fromMs": 0, "toMs": 1 }))
+                .await
+                .unwrap(),
+            serde_json::json!([])
         );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.forget", "machineId": id }))
