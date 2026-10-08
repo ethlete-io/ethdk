@@ -278,7 +278,18 @@ enum Frame {
         deleted: Vec<i64>,
         cursor: i64,
         more: bool,
+        /// Absent from a peer that predates the map, which then keeps the map stored for it.
+        #[serde(default)]
+        repo_keys: Option<Vec<RepoKey>>,
     },
+}
+
+/// A checkout path and its `repoKeyOf` key.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoKey {
+    pub path: String,
+    pub key: String,
 }
 
 /// One of the serving machine's own `collected_event` rows, as it stands at `changed_seq`.
@@ -551,7 +562,53 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
         deleted,
         cursor,
         more,
+        repo_keys: Some(own_repo_keys(connection)?),
     })
+}
+
+fn own_repo_keys(connection: &Connection) -> TimetrackResult<Vec<RepoKey>> {
+    let mut statement = connection.prepare("SELECT path, key FROM repo_key ORDER BY path")?;
+    let rows = statement.query_map([], |row| {
+        Ok(RepoKey {
+            path: row.get(0)?,
+            key: row.get(1)?,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+fn store_repo_keys(connection: &mut Connection, keys: &[RepoKey]) -> TimetrackResult<()> {
+    let transaction = connection.transaction()?;
+
+    transaction.execute("DELETE FROM repo_key", [])?;
+
+    for entry in keys {
+        transaction.execute(
+            "INSERT OR REPLACE INTO repo_key (path, key) VALUES (?1, ?2)",
+            params![entry.path, entry.key],
+        )?;
+    }
+
+    transaction.commit()?;
+
+    Ok(())
+}
+
+/// A paired machine's checkout path and its key, as that machine last sent them.
+#[derive(Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct PeerRepoKey {
+    pub machine_id: String,
+    pub path: String,
+    pub key: String,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ReceivedRange {
+    pub events: Vec<ReceivedEvent>,
+    pub repo_keys: Vec<PeerRepoKey>,
 }
 
 #[derive(Serialize, Debug)]
@@ -588,6 +645,24 @@ fn received_in(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackRe
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+fn peer_repo_keys(connection: &Connection) -> TimetrackResult<Vec<PeerRepoKey>> {
+    let mut statement = connection.prepare(
+        "SELECT keys.machine_id, keys.path, keys.key
+           FROM peer_repo_key keys
+           JOIN paired_machine paired ON paired.machine_id = keys.machine_id
+          ORDER BY keys.machine_id, keys.path",
+    )?;
+    let rows = statement.query_map([], |row| {
+        Ok(PeerRepoKey {
+            machine_id: row.get(0)?,
+            path: row.get(1)?,
+            key: row.get(2)?,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
 fn cursor_of(connection: &Connection, machine_id: &str) -> TimetrackResult<i64> {
     Ok(connection
         .query_row(
@@ -610,9 +685,21 @@ fn apply_changes(
     events: &[PeerEvent],
     deleted: &[i64],
     cursor: i64,
+    repo_keys: Option<&[RepoKey]>,
 ) -> TimetrackResult<(usize, usize)> {
     let transaction = connection.transaction()?;
     let mut removed = 0;
+
+    if let Some(keys) = repo_keys {
+        transaction.execute("DELETE FROM peer_repo_key WHERE machine_id = ?1", params![machine_id])?;
+
+        for entry in keys {
+            transaction.execute(
+                "INSERT OR REPLACE INTO peer_repo_key (machine_id, path, key) VALUES (?1, ?2, ?3)",
+                params![machine_id, entry.path, entry.key],
+            )?;
+        }
+    }
 
     for event in events {
         if let Some(key) = &event.dedupe_key {
@@ -1403,13 +1490,14 @@ impl Peers {
         )
         .await?;
 
-        let (events, deleted, cursor, more) = match read_frame_up_to(&mut tls, MAX_PAGE_FRAME_BYTES).await? {
+        let (events, deleted, cursor, more, repo_keys) = match read_frame_up_to(&mut tls, MAX_PAGE_FRAME_BYTES).await? {
             Frame::Changes {
                 events,
                 deleted,
                 cursor,
                 more,
-            } => (events, deleted, cursor, more),
+                repo_keys,
+            } => (events, deleted, cursor, more, repo_keys),
             Frame::Refused { message } => return Err(rejected(message)),
             _ => return Err(rejected("the other machine answered out of turn")),
         };
@@ -1425,16 +1513,38 @@ impl Peers {
         let (upserted, removed) = self
             .0
             .db
-            .run(move |connection| apply_changes(connection, &peer.machine_id, &events, &deleted, cursor))
+            .run(move |connection| {
+                apply_changes(
+                    connection,
+                    &peer.machine_id,
+                    &events,
+                    &deleted,
+                    cursor,
+                    repo_keys.as_deref(),
+                )
+            })
             .await?;
 
         Ok((upserted, removed, cursor, more))
     }
 
-    pub async fn received_between(&self, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedEvent>> {
+    pub async fn received_between(&self, from_ms: i64, to_ms: i64) -> TimetrackResult<ReceivedRange> {
         self.0
             .db
-            .run(move |connection| received_in(connection, from_ms, to_ms))
+            .run(move |connection| {
+                Ok(ReceivedRange {
+                    events: received_in(connection, from_ms, to_ms)?,
+                    repo_keys: peer_repo_keys(connection)?,
+                })
+            })
+            .await
+    }
+
+    /// Replaces this machine's map from checkout path to repository key, which every pull sends along.
+    pub async fn set_repo_keys(&self, keys: Vec<RepoKey>) -> TimetrackResult<()> {
+        self.0
+            .db
+            .run(move |connection| store_repo_keys(connection, &keys))
             .await
     }
 
@@ -1653,8 +1763,13 @@ pub async fn received_between(
     peers: tauri::State<'_, Peers>,
     from_ms: i64,
     to_ms: i64,
-) -> TimetrackResult<Vec<ReceivedEvent>> {
+) -> TimetrackResult<ReceivedRange> {
     peers.received_between(from_ms, to_ms).await
+}
+
+#[tauri::command]
+pub async fn set_repo_keys(peers: tauri::State<'_, Peers>, keys: Vec<RepoKey>) -> TimetrackResult<()> {
+    peers.set_repo_keys(keys).await
 }
 
 #[tauri::command]
@@ -2177,7 +2292,7 @@ mod tests {
 
         b.pull(&a_id).await.unwrap();
 
-        let read = b.received_between(1_500, 3_000).await.unwrap();
+        let read = b.received_between(1_500, 3_000).await.unwrap().events;
 
         assert_eq!(
             read.iter()
@@ -2191,11 +2306,86 @@ mod tests {
             vec![(a_id.as_str(), "pc", 2_000, "git-commit")]
         );
         assert_eq!(read[0].payload, serde_json::json!({}));
-        assert!(a.received_between(0, 10_000).await.unwrap().is_empty());
+        assert!(a.received_between(0, 10_000).await.unwrap().events.is_empty());
 
         b.forget(&a_id).await.unwrap();
 
-        assert!(b.received_between(0, 10_000).await.unwrap().is_empty());
+        assert!(b.received_between(0, 10_000).await.unwrap().events.is_empty());
+    }
+
+    fn repo_key(path: &str, key: &str) -> RepoKey {
+        RepoKey {
+            path: path.to_string(),
+            key: key.to_string(),
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_pull_brings_the_peers_repo_keys_and_a_later_pull_replaces_them() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let peer_key = |path: &str, key: &str| PeerRepoKey {
+            machine_id: a_id.clone(),
+            path: path.to_string(),
+            key: key.to_string(),
+        };
+
+        a.set_repo_keys(vec![
+            repo_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk"),
+            repo_key("/home/tom/dev/notes", "notes"),
+        ])
+        .await
+        .unwrap();
+        b.pull(&a_id).await.unwrap();
+
+        assert_eq!(
+            b.received_between(0, 1).await.unwrap().repo_keys,
+            vec![
+                peer_key("/home/tom/dev/notes", "notes"),
+                peer_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk")
+            ]
+        );
+        assert!(a.received_between(0, 1).await.unwrap().repo_keys.is_empty());
+
+        a.set_repo_keys(vec![repo_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk")])
+            .await
+            .unwrap();
+        b.pull(&a_id).await.unwrap();
+
+        assert_eq!(
+            b.received_between(0, 1).await.unwrap().repo_keys,
+            vec![peer_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk")]
+        );
+
+        b.forget(&a_id).await.unwrap();
+
+        assert!(b.received_between(0, 1).await.unwrap().repo_keys.is_empty());
+    }
+
+    #[test]
+    fn a_changes_frame_from_a_peer_without_the_map_keeps_the_stored_one() {
+        let frame: Frame =
+            serde_json::from_str(r#"{"type":"changes","events":[],"deleted":[],"cursor":0,"more":false}"#).unwrap();
+
+        assert!(matches!(frame, Frame::Changes { repo_keys: None, .. }));
+
+        let mut connection = Connection::open_in_memory().unwrap();
+
+        crate::db::migrate(&connection).unwrap();
+        apply_changes(&mut connection, "a", &[], &[], 0, Some(&[repo_key("/x", "k")])).unwrap();
+        apply_changes(&mut connection, "a", &[], &[], 0, None).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM peer_repo_key WHERE machine_id = 'a'", [], |row| {
+                    row.get::<_, i64>(0)
+                })
+                .unwrap(),
+            1
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -2211,7 +2401,7 @@ mod tests {
 
         assert!(b.rename(&a_id, "  Desk  ").await.unwrap());
         assert_eq!(b.list().await.unwrap()[0].label, "Desk");
-        assert_eq!(b.received_between(0, 10_000).await.unwrap()[0].label, "Desk");
+        assert_eq!(b.received_between(0, 10_000).await.unwrap().events[0].label, "Desk");
 
         b.hello(&a_id).await.unwrap();
 
@@ -2219,7 +2409,7 @@ mod tests {
 
         assert!(b.rename(&a_id, "   ").await.unwrap());
         assert_eq!(b.list().await.unwrap()[0].label, "pc");
-        assert_eq!(b.received_between(0, 10_000).await.unwrap()[0].label, "pc");
+        assert_eq!(b.received_between(0, 10_000).await.unwrap().events[0].label, "pc");
         assert!(!b.rename("nobody", "x").await.unwrap());
     }
 
@@ -2276,7 +2466,7 @@ mod tests {
             b.answer(&serde_json::json!({ "op": "peers.received", "fromMs": 0, "toMs": 1 }))
                 .await
                 .unwrap(),
-            serde_json::json!([])
+            serde_json::json!({ "events": [], "repoKeys": [] })
         );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.rename", "machineId": id, "name": "Desk" }))

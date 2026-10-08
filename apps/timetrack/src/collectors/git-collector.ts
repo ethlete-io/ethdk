@@ -8,8 +8,24 @@ import {
   gitWorktreeArgs,
   linkedWorktreesOf,
   parseGitWorktrees,
+  readRepoKey$,
 } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, from, map, of, tap, timer, toArray } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  concatMap,
+  defer,
+  endWith,
+  exhaustMap,
+  from,
+  ignoreElements,
+  map,
+  of,
+  tap,
+  timer,
+  toArray,
+} from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { GitRepoDiscovery, injectHostPorts } from '../host';
@@ -92,6 +108,16 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       catchError(() => of({})),
     );
 
+  const writeRepoKeys$ = (found: Repo[]): Observable<unknown> =>
+    from(found).pipe(
+      concatMap((repo) =>
+        readRepoKey$({ processes: ports.processes, repoPath: repo.path }).pipe(map((key) => [repo.path, key])),
+      ),
+      toArray(),
+      concatMap((entries) => ports.peers.setRepoKeys$(Object.fromEntries(entries))),
+      catchError(() => of(null)),
+    );
+
   const discover$ = (): Observable<Repo[]> =>
     ports.git.repos$(settings.settings().gitScanRoots).pipe(
       concatMap((found) =>
@@ -108,6 +134,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         ),
       ),
       tap((found) => (repos = found)),
+      concatMap((found) => writeRepoKeys$(found).pipe(ignoreElements(), endWith(found))),
     );
 
   const scan$ = (paths: string[]): Observable<unknown> => {

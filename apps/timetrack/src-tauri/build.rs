@@ -61,6 +61,7 @@ const COMMANDS: &[&str] = &[
     "set_compacted_through",
     "set_day_nudge_record",
     "set_day_review_edits",
+    "set_repo_keys",
     "set_tempo_coverage",
     "set_tempo_sync_run",
     "tempo_coverage_for_day",

@@ -85,7 +85,10 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
       edits: ports.review.editsFor$(key),
       runs: ports.timers.runsBetween$(from, to),
       coverage: ports.coverage.forDay$(key),
-      received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of([]))),
+      received: ports.peers.receivedBetween$(from, to).pipe(
+        map((range) => range.events),
+        catchError(() => of([])),
+      ),
     }).pipe(
       concatMap(({ events, edits, runs, coverage, received }) => {
         const read = () => {

@@ -193,6 +193,7 @@ pub fn run() {
             peer::peers_pull,
             peer::peers_rename,
             peer::received_between,
+            peer::set_repo_keys,
             process::run_process,
             reporter::reporter_vsix_path,
             reporter::save_report_file,

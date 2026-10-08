@@ -1,4 +1,4 @@
-import { ReceivedEvent } from '@ethlete/timetrack';
+import { CheckoutKeys, ReceivedRange } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { StoredEvent, reviveEvent } from './event-store';
 import { invokeHost$ } from './invoke';
@@ -41,6 +41,11 @@ export type PeerHello = {
 
 type StoredReceivedEvent = StoredEvent & { machineId: string; label: string };
 
+type StoredReceivedRange = {
+  events: StoredReceivedEvent[];
+  repoKeys: { machineId: string; path: string; key: string }[];
+};
+
 export type TauriPeers = {
   list$(): Observable<PairedMachine[]>;
   discovered$(): Observable<DiscoveredMachine[]>;
@@ -51,7 +56,9 @@ export type TauriPeers = {
   /** An empty name clears it, so the machine reads under its host name again. */
   rename$(machineId: string, name: string): Observable<boolean>;
   /** The events the paired machines collected in `[from, to)`. A forgotten machine's are left out. */
-  receivedBetween$(from: Date, to: Date): Observable<ReceivedEvent[]>;
+  receivedBetween$(from: Date, to: Date): Observable<ReceivedRange>;
+  /** Replaces this machine's checkout keys, which every pull from here carries to the paired machine. */
+  setRepoKeys$(keys: CheckoutKeys): Observable<void>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -63,9 +70,20 @@ export const createTauriPeers = (): TauriPeers => ({
   forget$: (machineId) => invokeHost$<boolean>('peers_forget', { machineId }),
   rename$: (machineId, name) => invokeHost$<boolean>('peers_rename', { machineId, name }),
   receivedBetween$: (from, to) =>
-    invokeHost$<StoredReceivedEvent[]>('received_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
-      map((stored) =>
-        stored.map((row) => ({ machineId: row.machineId, machineName: row.label, event: reviveEvent(row) })),
-      ),
+    invokeHost$<StoredReceivedRange>('received_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
+      map((stored) => ({
+        events: stored.events.map((row) => ({
+          machineId: row.machineId,
+          machineName: row.label,
+          event: reviveEvent(row),
+        })),
+        repoKeys: stored.repoKeys.reduce<Record<string, Record<string, string>>>((byMachine, row) => {
+          (byMachine[row.machineId] ??= {})[row.path] = row.key;
+
+          return byMachine;
+        }, {}),
+      })),
     ),
+  setRepoKeys$: (keys) =>
+    invokeHost$<void>('set_repo_keys', { keys: Object.entries(keys).map(([path, key]) => ({ path, key })) }),
 });

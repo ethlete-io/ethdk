@@ -1,5 +1,7 @@
+import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import { repoKeyOf } from './repo-key';
+import { ProcessResult, TimetrackProcessRunner } from '../transport/ports';
+import { readRepoKey$, repoKeyOf } from './repo-key';
 
 describe('repoKeyOf', () => {
   it.each([
@@ -32,5 +34,35 @@ describe('repoKeyOf', () => {
 
   it('takes the last segment of a Windows checkout path', () => {
     expect(repoKeyOf(null, 'C:\\dev\\x')).toBe('x');
+  });
+});
+
+const runnerOf = (byArgs: Record<string, string>): TimetrackProcessRunner => ({
+  run$: (spec) => {
+    const stdout = byArgs[spec.args.join(' ')];
+
+    return of<ProcessResult>(
+      stdout === undefined ? { code: 2, stdout: '', stderr: 'no' } : { code: 0, stdout, stderr: '' },
+    );
+  },
+});
+
+describe('readRepoKey$', () => {
+  it('keys a checkout by its origin before any other remote', async () => {
+    const processes = runnerOf({
+      remote: 'fork\norigin\n',
+      'remote get-url origin': 'git@gitlab.com:Ethlete/sdk.git\n',
+      'remote get-url fork': 'git@github.com:someone/sdk.git\n',
+    });
+
+    await expect(firstValueFrom(readRepoKey$({ processes, repoPath: '/home/tom/dev/x' }))).resolves.toBe(
+      'gitlab.com/ethlete/sdk',
+    );
+  });
+
+  it('keys a checkout without a remote by its directory name', async () => {
+    await expect(
+      firstValueFrom(readRepoKey$({ processes: runnerOf({ remote: '' }), repoPath: '/home/tom/dev/Notes' })),
+    ).resolves.toBe('notes');
   });
 });

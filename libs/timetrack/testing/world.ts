@@ -1,4 +1,5 @@
 import {
+  CheckoutKeys,
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
   EditorCli,
@@ -140,7 +141,8 @@ export type FakeReceivedEvent = { machineId: string; event: CollectedEvent };
 /**
  * The machines around this one. `code` is the one the other machine shows, so pairing with any
  * other code fails; `offerExpired` makes every code fail as an expired offer. `received` is read under
- * the name of the paired machine it names, and a machine not paired reads nothing.
+ * the name of the paired machine it names, and a machine not paired reads nothing. `repoKeys` holds
+ * each paired machine's checkout keys by machine id; `ownRepoKeys` is what this machine last wrote.
  */
 export type FakePeers = {
   paired: FakePairedMachine[];
@@ -148,6 +150,8 @@ export type FakePeers = {
   code: string;
   offerExpired: boolean;
   received: FakeReceivedEvent[];
+  repoKeys: Record<string, CheckoutKeys>;
+  ownRepoKeys: CheckoutKeys;
 };
 
 /**
@@ -497,7 +501,16 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   },
   windowLock: seed.windowLock ?? 'unlocked',
   collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
-  peers: { paired: [], discovered: [], code: '246810', offerExpired: false, received: [], ...seed.peers },
+  peers: {
+    paired: [],
+    discovered: [],
+    code: '246810',
+    offerExpired: false,
+    received: [],
+    repoKeys: {},
+    ownRepoKeys: {},
+    ...seed.peers,
+  },
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},

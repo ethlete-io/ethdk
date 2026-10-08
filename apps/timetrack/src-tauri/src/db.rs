@@ -315,6 +315,22 @@ CREATE TABLE IF NOT EXISTS paired_machine (
 );
 ";
 
+/// `repo_key` maps each checkout on this machine to `repoKeyOf` of its origin; `peer_repo_key` holds
+/// the same map as each paired machine last sent it.
+const SCHEMA_V23: &str = "
+CREATE TABLE IF NOT EXISTS repo_key (
+  path TEXT PRIMARY KEY,
+  key TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS peer_repo_key (
+  machine_id TEXT NOT NULL,
+  path TEXT NOT NULL,
+  key TEXT NOT NULL,
+  PRIMARY KEY (machine_id, path)
+);
+";
+
 /// `name` is the label the user gave the machine; it wins over `label`, the host name the peer reports.
 /// `last_pull_ms` is when a pull from the machine last succeeded.
 fn add_paired_machine_name_and_pull(connection: &Connection) -> TimetrackResult<()> {
@@ -641,6 +657,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 22, add_paired_machine_name_and_pull)?;
     }
 
+    if version < 23 {
+        step(connection, 23, |connection| Ok(connection.execute_batch(SCHEMA_V23)?))?;
+    }
+
     Ok(())
 }
 
@@ -715,7 +735,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            22
+            23
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -839,7 +859,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            22
+            23
         );
     }
 
@@ -1368,7 +1388,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            22
+            23
         );
         assert_eq!(
             connection
@@ -1382,5 +1402,33 @@ mod tests {
 
         connection.execute(insert, params!["a"]).unwrap();
         assert!(connection.execute(insert, params!["b"]).is_err());
+    }
+
+    #[test]
+    fn gives_a_v22_store_empty_repo_key_maps() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        migrate(&connection).unwrap();
+        connection
+            .execute_batch("DROP TABLE repo_key; DROP TABLE peer_repo_key;")
+            .unwrap();
+        connection.pragma_update(None, "user_version", 22).unwrap();
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row(
+                    "SELECT (SELECT count(*) FROM repo_key) + (SELECT count(*) FROM peer_repo_key)",
+                    [],
+                    |row| row.get::<_, i64>(0)
+                )
+                .unwrap(),
+            0
+        );
+
+        let insert = "INSERT INTO peer_repo_key (machine_id, path, key) VALUES ('a', '/x', ?1)";
+
+        connection.execute(insert, params!["k"]).unwrap();
+        assert!(connection.execute(insert, params!["other"]).is_err());
     }
 }

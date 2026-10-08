@@ -22,7 +22,7 @@ const lines = (output: string) =>
     .filter(Boolean);
 
 /** `origin` when it exists, so a repository with several remotes is not read through a fork. */
-const preferredRemote = (names: string[]) => (names.includes('origin') ? 'origin' : names[0]);
+export const preferredRemote = (names: string[]) => (names.includes('origin') ? 'origin' : names[0]);
 
 /**
  * Reads the branch names, the remote and whether the working tree is clean.

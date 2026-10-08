@@ -630,15 +630,25 @@ export const createFakePorts = (): HostPorts => {
         return ok(true);
       },
       receivedBetween$: (from, to) =>
-        ok(
-          world.peers.received.flatMap(({ machineId, event }) => {
+        ok({
+          events: world.peers.received.flatMap(({ machineId, event }) => {
             const machine = paired.find((held) => held.machineId === machineId);
 
             return machine && event.at >= from && event.at < to
               ? [{ machineId, machineName: machine.label, event }]
               : [];
           }),
-        ),
+          repoKeys: Object.fromEntries(
+            Object.entries(world.peers.repoKeys).filter(([machineId]) =>
+              paired.some((held) => held.machineId === machineId),
+            ),
+          ),
+        }),
+      setRepoKeys$: (keys) => {
+        world.peers.ownRepoKeys = { ...keys };
+
+        return ok(undefined);
+      },
     },
 
     transcription: {

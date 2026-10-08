@@ -231,7 +231,10 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           load$: combineLatest({
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
-            received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of<ReceivedEvent[]>([]))),
+            received: ports.peers.receivedBetween$(from, to).pipe(
+              map((range) => range.events),
+              catchError(() => of<ReceivedEvent[]>([])),
+            ),
           }).pipe(
             map((loaded) => ({
               ...loaded,

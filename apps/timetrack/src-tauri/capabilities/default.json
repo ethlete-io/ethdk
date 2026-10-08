@@ -66,6 +66,7 @@
     "allow-set-compacted-through",
     "allow-set-day-nudge-record",
     "allow-set-day-review-edits",
+    "allow-set-repo-keys",
     "allow-set-tempo-coverage",
     "allow-set-tempo-sync-run",
     "allow-tempo-coverage-for-day",

@@ -1,3 +1,7 @@
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { TimetrackProcessRunner } from '../transport/ports';
+import { preferredRemote } from './state';
+
 const SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
 const USER_INFO = /^[^@/]*@/;
 const PORT_BEFORE_PATH = /^([^/]+?)(?::\d+)?(\/.*)$/;
@@ -43,3 +47,29 @@ const directoryName = (checkoutPath: string) => {
  */
 export const repoKeyOf = (remoteUrl: string | null, checkoutPath: string): string =>
   remoteUrl?.trim() ? normalizeRemote(remoteUrl) : directoryName(checkoutPath);
+
+/** The key of the checkout at `repoPath`, read through its preferred remote. A failed read keys it by its directory name. */
+export const readRepoKey$ = (options: { processes: TimetrackProcessRunner; repoPath: string }): Observable<string> => {
+  const { processes, repoPath } = options;
+  const run$ = (args: string[]) => processes.run$({ command: 'git', args, cwd: repoPath });
+
+  return run$(['remote']).pipe(
+    switchMap((remotes) => {
+      const name =
+        remotes.code === 0
+          ? preferredRemote(
+              remotes.stdout
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean),
+            )
+          : undefined;
+
+      return name
+        ? run$(['remote', 'get-url', name]).pipe(map((url) => (url.code === 0 ? url.stdout : null)))
+        : of(null);
+    }),
+    catchError(() => of(null)),
+    map((url) => repoKeyOf(url, repoPath)),
+  );
+};
