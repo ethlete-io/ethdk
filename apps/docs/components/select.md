@@ -81,12 +81,12 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 
 On `et-select-option`:
 
-| Input               | Type      | Default | Description                                                                                                                                                                                         |
-| ------------------- | --------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `value`             | `unknown` | -       | Required. The value this option commits.                                                                                                                                                            |
-| `label`             | `string`  | `''`    | Display label for the trigger and typeahead; falls back to the rendered text.                                                                                                                       |
-| `disabled`          | `boolean` | `false` | Skipped by keyboard navigation, not committable.                                                                                                                                                    |
-| `customValueOption` | `boolean` | `false` | Marks the row as the "Create …" option for the current custom-value candidate, so the candidate doesn't hide itself as a duplicate label. Headless compositions only - `et-select` renders its own. |
+| Input               | Type      | Default | Description                                                                                                                                                                                                |
+| ------------------- | --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `value`             | `unknown` | -       | Required. The value this option commits.                                                                                                                                                                   |
+| `label`             | `string`  | `''`    | Display label for the trigger and typeahead; falls back to the rendered text. An option with no projected content renders it as its row text, so `<et-select-option [value]="1" label="One" />` is enough. |
+| `disabled`          | `boolean` | `false` | Skipped by keyboard navigation, not committable.                                                                                                                                                           |
+| `customValueOption` | `boolean` | `false` | Marks the row as the "Create …" option for the current custom-value candidate, so the candidate doesn't hide itself as a duplicate label. Headless compositions only - `et-select` renders its own.        |
 
 The trigger resolves the selected value's label from the options - including a preselected value that was set programmatically before the panel ever opened. Values are compared with reference equality unless you set [`compareWith`](#object-values).
 

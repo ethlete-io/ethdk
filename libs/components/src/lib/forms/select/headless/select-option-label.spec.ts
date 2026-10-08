@@ -39,3 +39,35 @@ describe('SelectOptionDirective text label', () => {
     expect(driver.select.displayValue()).toBe('Ada Lovelace');
   });
 });
+
+@Component({
+  template: `
+    <et-select [value]="value()">
+      <et-select-option [value]="50" label="50 children" />
+      <et-select-option [value]="100" label="100 children" />
+      <et-select-option [value]="200" label="200 children">Two hundred</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class LabelInputTestHost {
+  value = signal<number | null>(100);
+}
+
+describe('SelectOptionComponent label input', () => {
+  let driver: SelectDriver<LabelInputTestHost>;
+
+  beforeEach(() => {
+    driver = mountSelect(LabelInputTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('renders the label in the panel when no content is projected', async () => {
+    await driver.open();
+
+    expect(driver.optionLabels()).toEqual(['50 children', '100 children', 'Two hundred']);
+  });
+});
