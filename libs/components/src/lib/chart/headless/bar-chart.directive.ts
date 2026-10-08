@@ -8,6 +8,7 @@ import {
   ChartTick,
   ChartTooltipPlacement,
 } from '../chart.types';
+import { injectChartLabels } from './chart-labels';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { assertChartPlot } from './internals/chart-plot-check';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
@@ -139,6 +140,7 @@ const finiteOrNull = (value: number | null | undefined) =>
 export class BarChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
+  private labels = injectChartLabels();
 
   /**
    * The categories, in order. `{ label, value }` per bar for one series; with `series`,
@@ -179,10 +181,10 @@ export class BarChartDirective implements ChartPlotHost {
   public valueFormatter = input<BarChartValueFormatter | null>(null);
 
   /** The table view's category column header. @default 'Category' */
-  public categoryHeader = input('Category');
+  public categoryHeader = input<string>();
 
   /** The table view's value column header in a single-series chart. @default 'Value' */
-  public valueHeader = input('Value');
+  public valueHeader = input<string>();
 
   public formatValue = computed(() => resolveChartValueFormatter(this.valueFormatter(), this.locale.currentLocale()));
 
@@ -425,9 +427,13 @@ export class BarChartDirective implements ChartPlotHost {
   public table = computed<ChartTableModel>(() => {
     const series = this.series();
     const format = this.formatValue();
+    const labels = this.labels();
 
     return {
-      columns: [this.categoryHeader(), ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader()])],
+      columns: [
+        this.categoryHeader() ?? labels.barCategoryHeader,
+        ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader() ?? labels.barValueHeader]),
+      ],
       rows: this.categories().map((category) => ({
         header: category.label,
         cells: category.values.map((value) => (value === null ? '' : format(value))),

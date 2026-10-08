@@ -1,6 +1,7 @@
 import {
   booleanAttribute,
   Component,
+  computed,
   inject,
   input,
   TemplateRef,
@@ -10,6 +11,7 @@ import {
 import { ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { ChartDataTableComponent } from './chart-data-table.component';
 import { ChartTooltipComponent } from './chart-tooltip.component';
+import { injectChartLabels } from './headless/chart-labels';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import { ChartMarkDirective } from './headless/internals/chart-mark.directive';
 import { PieChartDirective } from './headless/pie-chart.directive';
@@ -55,6 +57,7 @@ import { PieChartDirective } from './headless/pie-chart.directive';
 })
 export class PieChartComponent {
   protected chart = inject(PieChartDirective);
+  private labels = injectChartLabels();
 
   /** The accent the slices without a color of their own are drawn in steps of. @default the surrounding color scope's accent */
   public colorToken = input<RegisteredColorThemeName | null>(null);
@@ -62,8 +65,10 @@ export class PieChartComponent {
   /** Shows the formatted total in the donut hole, above `totalLabel`. Has no effect on a pie. @default false */
   public showTotal = input(false, { transform: booleanAttribute });
 
-  /** The caption under the total in the donut hole. @default 'Total' */
-  public totalLabel = input('Total');
+  /** The caption under the total in the donut hole. @default the pie total of {@link ChartLabels} */
+  public totalLabel = input<string>();
+
+  protected resolvedTotalLabel = computed(() => this.totalLabel() ?? this.labels().pieTotal);
 
   protected sliceTooltips = viewChildren('sliceTooltip', { read: TemplateRef });
 }

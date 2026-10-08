@@ -99,12 +99,12 @@
       <strong class="et-sankey-chart-tooltip-name">{{ node.name }}</strong>
       @if (node.incomingText) {
         <span class="et-sankey-chart-tooltip-total"
-          >{{ chart.incomingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.incomingText }}</span></span
+          >{{ chart.resolvedIncomingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.incomingText }}</span></span
         >
       }
       @if (node.outgoingText) {
         <span class="et-sankey-chart-tooltip-total"
-          >{{ chart.outgoingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.outgoingText }}</span></span
+          >{{ chart.resolvedOutgoingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.outgoingText }}</span></span
         >
       }
     </span>

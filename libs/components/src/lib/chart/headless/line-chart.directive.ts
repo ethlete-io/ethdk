@@ -21,6 +21,7 @@ import { filter, fromEvent, merge, tap } from 'rxjs';
 import { ChartAxisLabel, ChartLegendItem, ChartRect, ChartTableModel, ChartTick } from '../chart.types';
 import { injectReportError } from '../../internals/report-error';
 import { LINE_CHART_ERROR_CODES } from '../line-chart-errors';
+import { injectChartLabels } from './chart-labels';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import {
@@ -174,6 +175,7 @@ const finiteOrNull = (value: number | null | undefined) =>
 export class LineChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
+  private labels = injectChartLabels();
   private hostElement = injectHostElement();
   private destroyRef = inject(DestroyRef);
   private reportError = injectReportError();
@@ -227,13 +229,13 @@ export class LineChartDirective implements ChartPlotHost {
   public xHeader = input<string | null>(null);
 
   /** The table view's x column header on a category axis, while `xHeader` is `null`. @default 'Category' */
-  public categoryHeader = input('Category');
+  public categoryHeader = input<string>();
 
   /** The table view's x column header on a time axis, while `xHeader` is `null`. @default 'Date' */
-  public dateHeader = input('Date');
+  public dateHeader = input<string>();
 
   /** The table view's value column header in a single-series chart. @default 'Value' */
-  public valueHeader = input('Value');
+  public valueHeader = input<string>();
 
   public formatValue = computed(() => resolveChartValueFormatter(this.valueFormatter(), this.locale.currentLocale()));
 
@@ -535,10 +537,18 @@ export class LineChartDirective implements ChartPlotHost {
     const series = this.series();
     const format = this.formatValue();
     const formatX = this.formatX();
-    const xHeader = this.xHeader() ?? (this.isTime() ? this.dateHeader() : this.categoryHeader());
+    const labels = this.labels();
+    const xHeader =
+      this.xHeader() ??
+      (this.isTime()
+        ? (this.dateHeader() ?? labels.lineDateHeader)
+        : (this.categoryHeader() ?? labels.lineCategoryHeader));
 
     return {
-      columns: [xHeader, ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader()])],
+      columns: [
+        xHeader,
+        ...(series.length ? series.map((entry) => entry.label) : [this.valueHeader() ?? labels.lineValueHeader]),
+      ],
       rows: this.rows().map((row) => ({
         header: formatX(row),
         cells: row.values.map((value) => (value === null ? '' : format(value))),

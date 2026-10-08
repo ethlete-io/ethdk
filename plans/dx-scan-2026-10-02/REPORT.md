@@ -26,7 +26,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TG-01   | `tableRowsFromQuery` owns its state. Accept external writable signals (`sort`, `filters`, `page`, `quickFilter`) and add `pageSize`? How does it interact with `isResetBy`?                    |
 | TG-03   | Server sort/filter state is untyped. Options: (a) generic column key, (b) `sortKey`/`filterKey` on `TableColumn`, (c) a `filterValues<V>()` helper.                                            |
-| TG-04   | Add `CHART_LABELS` / `provideChartLabels` for the 15 English chart defaults? Which keys, and which key-hint signature?                                                                         |
 | TG-07   | Add a `(markActivate)` output to the four charts? Which payload shape?                                                                                                                         |
 | SS-02   | How does `<et-scheduler>` take custom edit-surface fields: a `directives` option on `provideSchedulerEditSurface()`, or an `editSurfaceDirectives` input?                                      |
 | SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                     |

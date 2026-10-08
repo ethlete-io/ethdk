@@ -2,6 +2,7 @@ import { computed, Directive, effect, input, numberAttribute, signal } from '@an
 import { injectSurfaceColorPalette, injectLocale, RegisteredColorThemeName, RuntimeError } from '@ethlete/core';
 import { ChartTableModel, ChartTooltipPlacement } from '../chart.types';
 import { PIE_CHART_ERROR_CODES } from '../pie-chart-errors';
+import { injectChartLabels } from './chart-labels';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import {
   ChartPoint,
@@ -80,6 +81,7 @@ const drawnValue = (value: number) => (Number.isFinite(value) && value > 0 ? val
 export class PieChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
+  private labels = injectChartLabels();
 
   /** The slices, in drawing order. A value of 0 draws no slice; a negative value counts as 0. */
   public data = input.required<readonly PieChartDatum[]>();
@@ -97,13 +99,13 @@ export class PieChartDirective implements ChartPlotHost {
   public valueFormatter = input<PieChartValueFormatter | null>(null);
 
   /** The table view's category column header. @default 'Category' */
-  public categoryHeader = input('Category');
+  public categoryHeader = input<string>();
 
   /** The table view's value column header. @default 'Value' */
-  public valueHeader = input('Value');
+  public valueHeader = input<string>();
 
   /** The table view's share column header. @default 'Share' */
-  public shareHeader = input('Share');
+  public shareHeader = input<string>();
 
   public formatValue = computed(() => resolveChartValueFormatter(this.valueFormatter(), this.locale.currentLocale()));
 
@@ -211,10 +213,18 @@ export class PieChartDirective implements ChartPlotHost {
   });
 
   /** The data as a table: a row per datum with its value and share. */
-  public table = computed<ChartTableModel>(() => ({
-    columns: [this.categoryHeader(), this.valueHeader(), this.shareHeader()],
-    rows: this.entries().map((entry) => ({ header: entry.datum.label, cells: [entry.valueText, entry.percentText] })),
-  }));
+  public table = computed<ChartTableModel>(() => {
+    const labels = this.labels();
+
+    return {
+      columns: [
+        this.categoryHeader() ?? labels.pieCategoryHeader,
+        this.valueHeader() ?? labels.pieValueHeader,
+        this.shareHeader() ?? labels.pieShareHeader,
+      ],
+      rows: this.entries().map((entry) => ({ header: entry.datum.label, cells: [entry.valueText, entry.percentText] })),
+    };
+  });
 
   constructor() {
     assertChartPlot(this, 'PieChartDirective');

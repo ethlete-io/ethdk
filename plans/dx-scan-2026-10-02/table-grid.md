@@ -97,6 +97,7 @@ server-side path: the query adapters and the sort/filter state they hand to `arg
 
 ## TG-04 Charts have no injectable label set; 15 English defaults must be overridden per instance
 
+- Status: fixed (2026-10-08, `CHART_LABELS` / `provideChartLabels` / `injectChartLabels` with 16 keys incl. the key-hint formatter; chart inputs stay as overrides)
 - Where: `libs/components/src/lib/chart/headless/bar-chart.directive.ts:177,180`,
   `line-chart.directive.ts:225,228,231`, `pie-chart.directive.ts:100,103,106`,
   `pie-chart.component.ts:66`, `sankey-chart.directive.ts:188,191,194,197,200,203`, and

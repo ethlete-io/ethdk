@@ -46,7 +46,7 @@
         <div [style.--_et-pie-chart-hole-size.px]="chart.holeRadius() * 2" class="et-pie-chart-center">
           @if (showTotal()) {
             <strong class="et-pie-chart-total">{{ chart.totalText() }}</strong>
-            <span class="et-pie-chart-total-label">{{ totalLabel() }}</span>
+            <span class="et-pie-chart-total-label">{{ resolvedTotalLabel() }}</span>
           }
           <ng-content select="[etPieChartCenter]" />
         </div>

@@ -196,6 +196,14 @@ The title and note are plain projected elements; `label` still names the chart f
 </div>
 ```
 
+## Localization
+
+The table headers, the pie total and the Sankey in/out/separator words and key hint are English by default. Provide them once with `provideChartLabels` (token `CHART_LABELS`); an input such as `categoryHeader`, `totalLabel` or `linkKeyHint` still overrides the provided value on one chart. See [Localization](./localization.md).
+
+```ts
+provideChartLabels({ pieTotal: 'Gesamt', sankeyLinkSeparator: 'nach', barCategoryHeader: 'Kategorie' });
+```
+
 ## Accessibility
 
 - The plot is an SVG with `role="group"`, named by `label`.

@@ -5,12 +5,19 @@ import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import { PieChartDatum, PieChartDirective } from './headless/pie-chart.directive';
+import { provideChartLabels } from './headless/chart-labels';
 import { PieChartComponent } from './pie-chart.component';
 
 @Component({
   selector: 'et-test-pie-chart-host',
   template: `
-    <et-pie-chart [data]="data()" [innerRadius]="innerRadius()" [showTotal]="showTotal()" label="Visits">
+    <et-pie-chart
+      [data]="data()"
+      [innerRadius]="innerRadius()"
+      [showTotal]="showTotal()"
+      [categoryHeader]="categoryHeader()"
+      label="Visits"
+    >
       @if (center()) {
         <span class="custom-center" etPieChartCenter>Last 30 days</span>
       }
@@ -26,6 +33,7 @@ class PieChartHostComponent {
   ]);
   innerRadius = signal(0);
   showTotal = signal(false);
+  categoryHeader = signal<string | undefined>(undefined);
   center = signal(false);
 }
 
@@ -293,5 +301,34 @@ describe('PieChartComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.et-pie-chart-slice')).toBeNull();
+  });
+  describe('labels', () => {
+    const headerOf = (element: HTMLElement) =>
+      Array.from(element.querySelectorAll('.et-chart-table thead th')).map((cell) => cell.textContent?.trim());
+
+    it('takes the headers and the total from provideChartLabels', () => {
+      const { fixture, host, element } = setup({
+        providers: [
+          provideChartLabels({ pieCategoryHeader: 'Kategorie', pieShareHeader: 'Anteil', pieTotal: 'Gesamt' }),
+        ],
+      });
+      host.innerRadius.set(60);
+      host.showTotal.set(true);
+      fixture.detectChanges();
+
+      expect(headerOf(element)).toEqual(['Kategorie', 'Value', 'Anteil']);
+      expect(element.querySelector('.et-pie-chart-total-label')?.textContent).toBe('Gesamt');
+    });
+
+    it('lets an input win over the provided labels', () => {
+      const { fixture, chart, host, element } = setup({
+        providers: [provideChartLabels({ pieCategoryHeader: 'Kategorie' })],
+      });
+      host.categoryHeader.set('Quelle');
+      fixture.detectChanges();
+
+      expect(chart.table().columns[0]).toBe('Quelle');
+      expect(headerOf(element)[0]).toBe('Quelle');
+    });
   });
 });

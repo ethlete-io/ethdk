@@ -8,6 +8,7 @@ import {
 } from '@ethlete/core';
 import { injectReportError } from '../../internals/report-error';
 import { ChartRect, ChartTableModel, ChartTooltipPlacement } from '../chart.types';
+import { injectChartLabels, SankeyChartLinkKeyHint } from './chart-labels';
 import { CHART_PLOT_HOST, ChartPlotDirective, ChartPlotHost } from './chart-plot.directive';
 import { ChartValueFormatter, resolveChartValueFormatter } from './internals/chart-format';
 import { assertChartPlot } from './internals/chart-plot-check';
@@ -36,27 +37,6 @@ export type SankeyChartValueFormatter = ChartValueFormatter;
 
 /** Which way the flow runs: left to right in columns, or top to bottom in rows. */
 export type SankeyChartDirection = 'horizontal' | 'vertical';
-
-/** Where a keyboard-focused link sits among its source's outgoing links. `position` counts from 1. */
-export type SankeyChartLinkKeyHintContext = {
-  position: number;
-  count: number;
-  sourceLabel: string;
-  direction: SankeyChartDirection;
-};
-
-/** Writes the key hint a keyboard-focused link's tooltip shows. */
-export type SankeyChartLinkKeyHint = (context: SankeyChartLinkKeyHintContext) => string;
-
-/** The English key hint, e.g. `"1 of 2 · ↑↓ next link · Esc back to Reserve"`. */
-export const defaultSankeyChartLinkKeyHint: SankeyChartLinkKeyHint = ({ position, count, sourceLabel, direction }) =>
-  [
-    `${position} of ${count}`,
-    count > 1 ? `${direction === 'vertical' ? '←→' : '↑↓'} next link` : null,
-    `Esc back to ${sourceLabel}`,
-  ]
-    .filter((part) => part !== null)
-    .join(' · ');
 
 /** Where a node's label sits along the flow: before the node (first column), after it, or on a chip centred on it (large middle-column nodes). */
 export type SankeyChartLabelSide = 'start' | 'end' | 'center';
@@ -152,6 +132,7 @@ type LabelPlacement = Pick<SankeyChartNode, 'labelSide' | 'labelX' | 'labelY' | 
 export class SankeyChartDirective implements ChartPlotHost {
   private palette = injectSurfaceColorPalette();
   private locale = injectLocale();
+  private labels = injectChartLabels();
   private reportError = injectReportError();
   private focusVisibleTracker = injectFocusVisibleTracker();
   /** The stages of the flow. Their order sets their palette colour and the first ordering guess. */
@@ -185,25 +166,29 @@ export class SankeyChartDirective implements ChartPlotHost {
   public valueFormatter = input<SankeyChartValueFormatter | null>(null);
 
   /** Names what flows into a node, in its tooltip and description. @default 'In' */
-  public incomingLabel = input('In');
+  public incomingLabel = input<string>();
 
   /** Names what flows out of a node, in its tooltip and description. @default 'Out' */
-  public outgoingLabel = input('Out');
+  public outgoingLabel = input<string>();
 
   /** The word between source and target in a link's name. @default 'to' */
-  public linkSeparator = input('to');
+  public linkSeparator = input<string>();
 
   /** The table view's source column header. @default 'Source' */
-  public sourceHeader = input('Source');
+  public sourceHeader = input<string>();
 
   /** The table view's target column header. @default 'Target' */
-  public targetHeader = input('Target');
+  public targetHeader = input<string>();
 
   /** The table view's value column header. @default 'Value' */
-  public valueHeader = input('Value');
+  public valueHeader = input<string>();
 
-  /** Writes the key hint under a keyboard-focused link's tooltip; `null` shows none. Visual only, assistive tech does not read it. @default {@link defaultSankeyChartLinkKeyHint} */
-  public linkKeyHint = input<SankeyChartLinkKeyHint | null>(defaultSankeyChartLinkKeyHint);
+  /** Writes the key hint under a keyboard-focused link's tooltip; `null` shows none. Visual only, assistive tech does not read it. @default the key hint of {@link ChartLabels} */
+  public linkKeyHint = input<SankeyChartLinkKeyHint | null>(undefined);
+
+  public resolvedIncomingLabel = computed(() => this.incomingLabel() ?? this.labels().sankeyIncoming);
+
+  public resolvedOutgoingLabel = computed(() => this.outgoingLabel() ?? this.labels().sankeyOutgoing);
 
   public formatValue = computed(() => resolveChartValueFormatter(this.valueFormatter(), this.locale.currentLocale()));
 
@@ -263,8 +248,8 @@ export class SankeyChartDirective implements ChartPlotHost {
     const colors = this.nodeColors();
     const mixes = this.nodeAccentMixes();
     const format = this.formatValue();
-    const incomingLabel = this.incomingLabel();
-    const outgoingLabel = this.outgoingLabel();
+    const incomingLabel = this.resolvedIncomingLabel();
+    const outgoingLabel = this.resolvedOutgoingLabel();
     const labelWidth = this.labelWidth();
     const plotWidth = this.plotWidth();
     const vertical = layout.direction === 'vertical';
@@ -387,7 +372,7 @@ export class SankeyChartDirective implements ChartPlotHost {
     const inputs = this.links();
     const format = this.formatValue();
     const nodes = this.renderedNodes();
-    const separator = this.linkSeparator();
+    const separator = this.linkSeparator() ?? this.labels().sankeyLinkSeparator;
     const byId = new Map(nodes.map((node) => [node.key, node]));
     const nodeAt = (index: number) => byId.get(layout.nodes[index]?.id ?? '');
     const vertical = layout.direction === 'vertical';
@@ -447,7 +432,8 @@ export class SankeyChartDirective implements ChartPlotHost {
 
   /** The key hint of the link that has keyboard focus; `null` while no link has it or {@link linkKeyHint} is `null`. */
   public linkKeyHintText = computed<{ key: string; text: string } | null>(() => {
-    const write = this.linkKeyHint();
+    const hint = this.linkKeyHint();
+    const write = hint === undefined ? this.labels().sankeyLinkKeyHint : hint;
     const focused = this.focused();
 
     if (!write || focused?.kind !== 'link' || !this.focusVisibleTracker.isFocusVisible()) return null;
@@ -500,10 +486,15 @@ export class SankeyChartDirective implements ChartPlotHost {
   /** The flows as a table: a row per link, zero-value links included. */
   public table = computed<ChartTableModel>(() => {
     const format = this.formatValue();
+    const chartLabels = this.labels();
     const labels = new Map(this.nodes().map((node) => [node.id, node.label]));
 
     return {
-      columns: [this.sourceHeader(), this.targetHeader(), this.valueHeader()],
+      columns: [
+        this.sourceHeader() ?? chartLabels.sankeySourceHeader,
+        this.targetHeader() ?? chartLabels.sankeyTargetHeader,
+        this.valueHeader() ?? chartLabels.sankeyValueHeader,
+      ],
       rows: this.links().map((link) => ({
         header: labels.get(link.source) ?? link.source,
         cells: [labels.get(link.target) ?? link.target, format(link.value)],
