@@ -38,7 +38,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                    |
 | OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                          |
 | EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                       |
-| FG-05   | Reactive forms to signal forms: the report section and the guide are proposed. Is the reactive/signal forms interop of Angular a supported bridge?                                             |
 | FG-13   | Add `standingRankSides()` / `swapStandingRank()` to `@ethlete/bracket`? Does the swap UI belong in components?                                                                                 |
 
 ## 3. Calls the coordinator made

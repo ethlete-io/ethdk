@@ -830,11 +830,45 @@ What moves:
 - The value lives in your model signal; read it with `signupForm.email().value()` instead
   of `email.value`.
 
-A form can be migrated one screen at a time - a reactive-forms screen keeps the cdk
-controls until it moves. The [`migrate-from-cdk`](/cdk/migration#run-the-codemod) codemod
-rewrites the imports it can and lists every form control whose contract changed in
-`migrate-from-cdk-tasks.md`; the [CDK forms guide](/cdk/forms) maps each cdk control to its
-successor.
+### Mapping the pieces
+
+| Reactive forms                                                       | Signal forms with `@ethlete/components`                                                                |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `new FormGroup({ … })` / `FormBuilder`                               | a model `signal({ … })` plus `form(model, schema)`; each leaf is `myForm.<name>`                       |
+| `[formGroup]` / `formControlName`                                    | `[formField]="myForm.<name>"` on each control                                                          |
+| `Validators.required`, `Validators.email`, `Validators.minLength(n)` | schema rules: `required`, `email`, `minLength` from `@angular/forms/signals`, each with its `message`  |
+| a custom `ValidatorFn`                                               | a `validate(path, fn)` rule in the schema                                                              |
+| `provideValidatorErrorsService()` message map                        | the `message` on the rule, or the [error resolver](#custom-error-messages)                             |
+| `control.value`, `valueChanges`, `controlValueSignal(control)`       | `myForm.<name>().value()` or the model signal itself - already a signal, no bridge needed              |
+| `control.setValue()` / `patchValue()`                                | `model.set()` / `model.update()`                                                                       |
+| `control.disable()`                                                  | the `disabled` schema rule                                                                             |
+| `form.valid` / `form.invalid` / `markAllAsTouched()`                 | `myForm().valid()` / `invalid()`, and `submit()` touches every field                                   |
+| `QueryForm` with `[formControl]`                                     | [`defineQueryForm`](/query/query-forms#legacy-queryform) - `qf.fields.<name>` binds with `[formField]` |
+| server validation errors written with `control.setErrors()`          | [`mapViolationsToFormErrors`](#server-side-violations) returned from `submit()`                        |
+
+Names of the schema rules are Angular's; check them against the signal forms version you have installed.
+
+### Not a bridge: reactive forms into `et-*` controls
+
+Angular's reactive-forms and signal-forms interop is **not a supported way to bind a `FormControl` to an
+`et-*` control**. The controls have no `ControlValueAccessor`, and this library does not wrap, adapt or
+test any interop layer around them. A screen is either reactive forms with the cdk controls, or signal forms
+with the components controls - never a `FormControl` on an `et-*` control.
+
+### Migrating screen by screen
+
+A form can be migrated one screen at a time; the cdk and the components controls live side by side in one app.
+
+1. Run the [`migrate-from-cdk`](/cdk/migration#run-the-codemod) codemod. It rewrites the imports it can and
+   lists every cdk control still bound with `formControl`, `formControlName` or `[formGroup]` in the section
+   "Form controls that need signal forms first" of `migrate-from-cdk-tasks.md`, grouped by component. Those
+   screens stay on `@ethlete/cdk` for now.
+2. Pick one screen, leaf-most first. Move its whole form together: the model and schema, every control's
+   binding, the error messages, any `controlValueSignal` call sites, and the submit handler.
+3. A filter bar on `QueryForm` moves with its screen to `defineQueryForm`; the query args read `qf.value()`.
+4. Move the server-error handling to `mapViolationsToFormErrors`.
+5. Repeat. Remove `ReactiveFormsModule` and `provideValidatorErrorsService()` from an app once its last
+   reactive screen is gone. The [CDK forms guide](/cdk/forms) maps each cdk control to its successor.
 
 ## Theming
 

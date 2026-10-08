@@ -125,6 +125,7 @@ the parts no codemod reports, and the forms/styling rewrite.
   (c) Decide whether Angular's reactive/signal forms interop (if it fits the Angular 22 API) is a documented,
   supported bridge for a `FormControl` bound into an `et-*` control.
 - Breaking: no. Decision: yes (c - whether an interop bridge is supported).
+- Status: fixed (2026-10-08, (a) report section shipped earlier in c11e5824e; (b) mapping table, no-interop statement and screen-by-screen strategy in `forms.md#coming-from-reactive-forms`; (c) decided: no supported bridge)
 
 ## FG-06 `migrate-from-cdk` ignores app stylesheets that restyle cdk classes
 
