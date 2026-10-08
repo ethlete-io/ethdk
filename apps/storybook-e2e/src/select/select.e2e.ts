@@ -64,6 +64,8 @@ const dropPreflightHiddenRule = (page: Page) =>
     for (const sheet of Array.from(document.styleSheets)) prune(sheet);
   });
 
+const heightOf = (locator: Locator) => locator.evaluate((element) => element.getBoundingClientRect().height);
+
 const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 
 const backgroundOf = (locator: Locator) => locator.evaluate((element) => getComputedStyle(element).backgroundColor);
@@ -278,6 +280,18 @@ test.describe('select / layout', () => {
 
     expect(samples.length).toBeGreaterThan(0);
     expect(Math.max(...samples.map(({ panel, pane }) => panel - pane))).toBeLessThanOrEqual(1);
+  });
+
+  test('an empty select without a placeholder keeps the height of one that shows its placeholder', async ({ page }) => {
+    const args = { appearance: 'underline', size: 'sm' };
+    const withPlaceholder = await openStory(page, DEFAULT_STORY_ID, { args });
+    const placeholderHeight = await heightOf(withPlaceholder.locator('et-select'));
+
+    const empty = await openStory(page, DEFAULT_STORY_ID, { args: { ...args, placeholder: '' } });
+
+    await expect(empty.locator('.et-select-value')).toHaveText('');
+    expect(placeholderHeight).toBeGreaterThan(0);
+    expect(await heightOf(empty.locator('et-select'))).toBe(placeholderHeight);
   });
 });
 

@@ -27,7 +27,7 @@
     }
 
     @if (!select.mixed() && showValueLabel()) {
-      <span [attr.data-placeholder]="!select.hasValue() || null" class="et-select-value">
+      <span [attr.data-placeholder]="select.displayValue() === null || null" class="et-select-value">
         {{ select.displayValue() ?? select.placeholder() }}
       </span>
     }

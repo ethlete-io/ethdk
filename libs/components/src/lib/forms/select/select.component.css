@@ -90,6 +90,7 @@
 
     .et-select-value {
       flex: 1;
+      min-block-size: 1lh;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;

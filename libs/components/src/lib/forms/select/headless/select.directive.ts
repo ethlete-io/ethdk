@@ -616,7 +616,7 @@ export class SelectDirective<TValue = unknown>
       const label =
         item?.label() ||
         this.findCachedLabel(cache, entryValue) ||
-        (typeof entryValue === 'string' ? entryValue : null);
+        (typeof entryValue === 'string' && entryValue !== '' ? entryValue : null);
 
       return { value: entryValue, label, item };
     });

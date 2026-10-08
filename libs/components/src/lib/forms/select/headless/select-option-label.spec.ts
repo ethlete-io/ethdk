@@ -71,3 +71,32 @@ describe('SelectOptionComponent label input', () => {
     expect(driver.optionLabels()).toEqual(['50 children', '100 children', 'Two hundred']);
   });
 });
+
+@Component({
+  template: `
+    <et-select [value]="value()" placeholder="Pick a preset">
+      <et-select-option value="a" label="A" />
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class UnmatchedEmptyValueTestHost {
+  value = signal('');
+}
+
+describe('SelectDirective with an empty string value no option matches', () => {
+  let driver: SelectDriver<UnmatchedEmptyValueTestHost>;
+
+  beforeEach(() => {
+    driver = mountSelect(UnmatchedEmptyValueTestHost);
+  });
+
+  afterEach(async () => {
+    await driver.close();
+  });
+
+  it('shows the placeholder as a placeholder', () => {
+    expect(driver.valueText()).toBe('Pick a preset');
+    expect(driver.valueEl()?.hasAttribute('data-placeholder')).toBe(true);
+  });
+});
