@@ -32,5 +32,6 @@ fi
 git rm -rq --ignore-unmatch -- "$folder"
 rm -rf -- "$folder"
 git checkout "$commit" -- "$folder"
+node tools/api-models/quirks.mjs "$folder"
 node tools/api-models/normalize.mjs "$folder"
 git add -- "$folder"
