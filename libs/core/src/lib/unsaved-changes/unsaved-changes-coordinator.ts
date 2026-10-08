@@ -11,8 +11,9 @@ export type UnsavedChangesAbandonReason = 'logout' | (string & {});
 export type UnsavedChangesConfirmContext = {
   /**
    * Aborts when the session this confirm belongs to ends underneath it - a logout, or an explicit
-   * `abandonAll()`. **Close your confirm dialog when it fires**, otherwise it is left on screen over
-   * a page the user has already been redirected away from. The guard itself stops waiting either way.
+   * `abandonAll()`. An `Observable` confirm is unsubscribed when it fires; a confirm that returns a
+   * `Promise` must **close its dialog itself**, otherwise it is left on screen over a page the user has
+   * already been redirected away from. The guard itself stops waiting either way.
    *
    * ```ts
    * confirm: (value, { signal }) => {

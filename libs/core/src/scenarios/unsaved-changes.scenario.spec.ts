@@ -8,6 +8,10 @@ import {
   createUnsavedChangesGuard,
   createUnsavedChangesTracker,
   injectUnsavedChangesCoordinator,
+  provideUnsavedChangesConfirm,
+  RuntimeError,
+  UNSAVED_CHANGES_CONFIRM,
+  UNSAVED_CHANGES_ERROR_CODES,
   UnsavedChangesConfirmContext,
 } from '../index';
 import { Scenario, useScenario } from './harness';
@@ -272,6 +276,60 @@ describe('unsaved-changes scenarios', () => {
     s.run(() => injectUnsavedChangesCoordinator()).abandonAll('logout');
 
     await expect(check).resolves.toBe(true);
+
+    c.destroy();
+  });
+
+  it('falls back to the confirm provided by provideUnsavedChangesConfirm', async () => {
+    const s = scenario();
+    const model = signal<Model>({ name: 'Ada' });
+    const asked: unknown[] = [];
+    const c = s.consumer([
+      provideUnsavedChangesConfirm(() => (value) => {
+        asked.push(value);
+
+        return false;
+      }),
+    ]);
+    const tracker = c.run(() => createUnsavedChangesTracker({ source: model, tab: false }));
+
+    model.set({ name: 'Grace' });
+    s.tick();
+
+    await expect(tracker.runCheck()).resolves.toBe(false);
+    expect(asked).toEqual([{ name: 'Grace' }]);
+
+    c.destroy();
+  });
+
+  it('prefers a call site confirm over the provided one', async () => {
+    const s = scenario();
+    const model = signal<Model>({ name: 'Ada' });
+    const c = s.consumer([{ provide: UNSAVED_CHANGES_CONFIRM, useValue: () => false }]);
+    const tracker = c.run(() => createUnsavedChangesTracker({ source: model, tab: false, confirm: () => true }));
+
+    model.set({ name: 'Grace' });
+    s.tick();
+
+    await expect(tracker.runCheck()).resolves.toBe(true);
+
+    c.destroy();
+  });
+
+  it('throws ET9100 for a tracker without a confirm and no provider', () => {
+    const s = scenario();
+    const c = s.consumer();
+
+    let error: unknown = null;
+
+    try {
+      c.run(() => createUnsavedChangesTracker({ source: signal<Model>({ name: 'Ada' }), tab: false }));
+    } catch (e) {
+      error = e;
+    }
+
+    expect(error).toBeInstanceOf(RuntimeError);
+    expect((error as RuntimeError<number>).code).toBe(UNSAVED_CHANGES_ERROR_CODES.MISSING_CONFIRM);
 
     c.destroy();
   });

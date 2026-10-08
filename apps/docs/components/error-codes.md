@@ -25,52 +25,53 @@ A configuration error that is found while the app renders - an unknown icon name
 
 Each domain owns a 100-code block. The codes are exported per domain (e.g. `MENU_ERROR_CODES`, `OVERLAY_ERROR_CODES`) if you need to match on them programmatically.
 
-| Range     | Domain                            | Guide                                              |
-| --------- | --------------------------------- | -------------------------------------------------- |
-| 1000–1099 | Select                            | [Select](/components/select)                       |
-| 1100–1199 | Chip                              | [Chip](/components/chip)                           |
-| 1200–1299 | Overlay                           | [Overlays](/components/overlays)                   |
-| 1300–1399 | Menu                              | [Menu](/components/menu)                           |
-| 1400–1499 | Tooltip                           | [Tooltip](/components/tooltip)                     |
-| 1500–1599 | Toggletip                         | [Toggletip](/components/toggletip)                 |
-| 1600–1699 | Stream                            | [Stream](/components/stream)                       |
-| 1700–1799 | Notification                      | [Notification](/components/notification)           |
-| 1800–1899 | Icon                              | [Icon](/components/icon)                           |
-| 1900–1999 | Grid                              | [Grid](/components/grid)                           |
-| 2000–2099 | Tabs                              | [Tabs](/components/tabs)                           |
-| 2100–2199 | Scrollable                        | [Scrollable](/components/scrollable)               |
-| 2200–2299 | Form field                        | [Forms](/components/forms)                         |
-| 2300–2399 | Split button                      | [Button](/components/button)                       |
-| 2400–2499 | Dropzone                          | [Dropzone](/components/dropzone)                   |
-| 2500–2599 | Rich text editor                  | [Rich text editor](/components/rich-text-editor)   |
-| 2600–2699 | Multi-language RTE                | [Rich text editor](/components/rich-text-editor)   |
-| 2700–2799 | Tag input                         | [Text inputs](/components/text-inputs)             |
-| 2800–2899 | Phone input                       | [Text inputs](/components/text-inputs)             |
-| 2900–2999 | Calendar                          | [Calendar](/components/calendar)                   |
-| 3000–3099 | Date & time inputs                | [Date & time inputs](/components/date-time-inputs) |
-| 3100–3199 | Slider                            | [Slider](/components/slider)                       |
-| 3200–3299 | Masked input                      | [Text inputs](/components/text-inputs)             |
-| 3300–3399 | Cascader                          | [Cascader](/components/cascader)                   |
-| 3400–3499 | Bracket                           | [Bracket](/components/bracket)                     |
-| 3500–3599 | Table                             | [Table](/components/table)                         |
-| 3600–3699 | Accordion                         | [Accordion](/components/accordion)                 |
-| 3700–3799 | Breadcrumb                        | [Breadcrumb](/components/breadcrumb)               |
-| 3800–3899 | Carousel                          | [Carousel](/components/carousel)                   |
-| 3900–3999 | Masonry                           | [Masonry](/components/masonry)                     |
-| 4000–4099 | Query error                       | [Query error](/components/query-error)             |
-| 4100–4199 | Floating action                   | [Floating action](/components/floating-action)     |
-| 4200–4299 | Filter overlay                    | [Filter overlay](/components/filter-overlay)       |
-| 4300–4399 | Match                             | [Match](/components/match)                         |
-| 4400–4499 | Standings                         | [Standings](/components/standings)                 |
-| 4500–4599 | Scheduler                         | [Scheduler](/components/scheduler)                 |
-| 4600–4699 | Tree                              | [Tree](/components/tree)                           |
-| 4700–4799 | Color input                       | [Color input](/components/text-inputs#color-input) |
-| 4800–4899 | Command palette                   | [Command palette](/components/command-palette)     |
-| 4900–4999 | Scrollbar                         | [Scrollbar](/components/scrollbar)                 |
-| 5000–5099 | Rating                            | [Choice & rating](/components/choice-inputs)       |
-| 5100–5199 | Chart                             | [Chart](/components/chart)                         |
-| 5200–5299 | Selection lists                   | [Choice & rating](/components/choice-inputs)       |
-| 9000–9099 | Core animations (`@ethlete/core`) | [Animations](/core/animations)                     |
+| Range     | Domain                                 | Guide                                              |
+| --------- | -------------------------------------- | -------------------------------------------------- |
+| 1000–1099 | Select                                 | [Select](/components/select)                       |
+| 1100–1199 | Chip                                   | [Chip](/components/chip)                           |
+| 1200–1299 | Overlay                                | [Overlays](/components/overlays)                   |
+| 1300–1399 | Menu                                   | [Menu](/components/menu)                           |
+| 1400–1499 | Tooltip                                | [Tooltip](/components/tooltip)                     |
+| 1500–1599 | Toggletip                              | [Toggletip](/components/toggletip)                 |
+| 1600–1699 | Stream                                 | [Stream](/components/stream)                       |
+| 1700–1799 | Notification                           | [Notification](/components/notification)           |
+| 1800–1899 | Icon                                   | [Icon](/components/icon)                           |
+| 1900–1999 | Grid                                   | [Grid](/components/grid)                           |
+| 2000–2099 | Tabs                                   | [Tabs](/components/tabs)                           |
+| 2100–2199 | Scrollable                             | [Scrollable](/components/scrollable)               |
+| 2200–2299 | Form field                             | [Forms](/components/forms)                         |
+| 2300–2399 | Split button                           | [Button](/components/button)                       |
+| 2400–2499 | Dropzone                               | [Dropzone](/components/dropzone)                   |
+| 2500–2599 | Rich text editor                       | [Rich text editor](/components/rich-text-editor)   |
+| 2600–2699 | Multi-language RTE                     | [Rich text editor](/components/rich-text-editor)   |
+| 2700–2799 | Tag input                              | [Text inputs](/components/text-inputs)             |
+| 2800–2899 | Phone input                            | [Text inputs](/components/text-inputs)             |
+| 2900–2999 | Calendar                               | [Calendar](/components/calendar)                   |
+| 3000–3099 | Date & time inputs                     | [Date & time inputs](/components/date-time-inputs) |
+| 3100–3199 | Slider                                 | [Slider](/components/slider)                       |
+| 3200–3299 | Masked input                           | [Text inputs](/components/text-inputs)             |
+| 3300–3399 | Cascader                               | [Cascader](/components/cascader)                   |
+| 3400–3499 | Bracket                                | [Bracket](/components/bracket)                     |
+| 3500–3599 | Table                                  | [Table](/components/table)                         |
+| 3600–3699 | Accordion                              | [Accordion](/components/accordion)                 |
+| 3700–3799 | Breadcrumb                             | [Breadcrumb](/components/breadcrumb)               |
+| 3800–3899 | Carousel                               | [Carousel](/components/carousel)                   |
+| 3900–3999 | Masonry                                | [Masonry](/components/masonry)                     |
+| 4000–4099 | Query error                            | [Query error](/components/query-error)             |
+| 4100–4199 | Floating action                        | [Floating action](/components/floating-action)     |
+| 4200–4299 | Filter overlay                         | [Filter overlay](/components/filter-overlay)       |
+| 4300–4399 | Match                                  | [Match](/components/match)                         |
+| 4400–4499 | Standings                              | [Standings](/components/standings)                 |
+| 4500–4599 | Scheduler                              | [Scheduler](/components/scheduler)                 |
+| 4600–4699 | Tree                                   | [Tree](/components/tree)                           |
+| 4700–4799 | Color input                            | [Color input](/components/text-inputs#color-input) |
+| 4800–4899 | Command palette                        | [Command palette](/components/command-palette)     |
+| 4900–4999 | Scrollbar                              | [Scrollbar](/components/scrollbar)                 |
+| 5000–5099 | Rating                                 | [Choice & rating](/components/choice-inputs)       |
+| 5100–5199 | Chart                                  | [Chart](/components/chart)                         |
+| 5200–5299 | Selection lists                        | [Choice & rating](/components/choice-inputs)       |
+| 9000–9099 | Core animations (`@ethlete/core`)      | [Animations](/core/animations)                     |
+| 9100–9199 | Core unsaved changes (`@ethlete/core`) | [Utilities](/core/utilities#unsaved-changes)       |
 
 ::: info Codes below 1000
 Codes below 1000 come from other packages: `@ethlete/query` (see [Query errors](/query/errors#error-codes)) and `@ethlete/contentful` (see [Contentful](/contentful/)). The query web-socket codes `ET1000`/`ET1001` collide with the select codes - the bracketed source in the select messages (`[SelectDirective]`) tells them apart.
@@ -571,3 +572,11 @@ Thrown by `@ethlete/core`, in every build.
 | Code     | Cause                                                                                | Fix                                                                                    |
 | -------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | `ET9000` | `*etAnimatedIf` has no `[etAnimatedLifecycle]` element around it to animate against. | Wrap it in an element with `etAnimatedLifecycle` - see [Animations](/core/animations). |
+
+## Core unsaved changes (ET91xx)
+
+Thrown by `@ethlete/core`, in dev mode only.
+
+| Code     | Cause                                                                                                                                                   | Fix                                                                                                                                                                                      |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ET9100` | An unsaved-changes tracker or guard has no `confirm`, and no `provideUnsavedChangesConfirm()` is in scope. A production build lets the discard through. | Pass `confirm`, or provide one app-wide - `provideUnsavedChangesAlertDialog()` from `@ethlete/components`, see [One confirm for the whole app](/core/utilities#unsaved-changes-confirm). |

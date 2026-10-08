@@ -4,6 +4,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  isDevMode,
   signal,
   Signal,
   untracked,
@@ -21,7 +22,10 @@ import {
   takeUntil,
 } from 'rxjs';
 import { equal } from '../utils';
+import { RuntimeError } from '../utils/runtime-error';
+import { UNSAVED_CHANGES_CONFIRM } from './unsaved-changes-confirm';
 import { injectUnsavedChangesCoordinator, UnsavedChangesConfirmContext } from './unsaved-changes-coordinator';
+import { UNSAVED_CHANGES_ERROR_CODES } from './unsaved-changes-errors';
 import { normalizeUnsavedChangesSource, UnsavedChangesSource } from './unsaved-changes-source';
 import { createUnsavedChangesTabLock, UnsavedChangesTabConfig, UnsavedChangesTabLockRef } from './unsaved-changes-tab';
 
@@ -50,10 +54,11 @@ export type CreateUnsavedChangesTrackerConfig<T> = {
   defaultValue?: T | (() => T);
 
   /**
-   * Required, per call site. Runs only when there are changes to discard.
+   * Runs only when there are changes to discard. Defaults to the confirm set with
+   * `provideUnsavedChangesConfirm()`; without either, dev mode throws `ET9100`.
    * @see UnsavedChangesConfirmFn
    */
-  confirm: UnsavedChangesConfirmFn<T>;
+  confirm?: UnsavedChangesConfirmFn<T>;
 
   /**
    * Custom equality between the current value and the default. Deep-equal by default.
@@ -156,7 +161,16 @@ export const createUnsavedChangesTracker = <T>(
 ): UnsavedChangesTrackerRef<T> => {
   assertInInjectionContext(createUnsavedChangesTracker);
 
-  const { compareFn, confirm } = config;
+  const { compareFn } = config;
+  const confirm = config.confirm ?? inject(UNSAVED_CHANGES_CONFIRM, { optional: true });
+
+  if (!confirm && isDevMode()) {
+    throw new RuntimeError(
+      UNSAVED_CHANGES_ERROR_CODES.MISSING_CONFIRM,
+      '[createUnsavedChangesTracker] No confirm: pass `confirm` or call `provideUnsavedChangesConfirm()` in a parent injector.',
+    );
+  }
+
   const normalized = normalizeUnsavedChangesSource(config.source);
 
   const hasExplicitDefault = config.defaultValue !== undefined;
@@ -216,6 +230,10 @@ export const createUnsavedChangesTracker = <T>(
 
   const runCheck = (): Promise<boolean> => {
     if (untracked(_isAbandoned) || !untracked(hasChanges)) {
+      return Promise.resolve(true);
+    }
+
+    if (!confirm) {
       return Promise.resolve(true);
     }
 

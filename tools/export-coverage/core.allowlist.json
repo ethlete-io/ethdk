@@ -38,7 +38,6 @@
   "NormalizeMatchTypePipe": "internal: pipe wrapper around an exported transform; no app or lib imports it",
   "RUNTIME_ERROR_NO_DATA": "constant: value",
   "RestoreScrollDirective": "spec: libs/core/src/lib/directives/restore-scroll.directive.spec.ts",
-  "RuntimeError": "internal: building block of @ethlete/cdk, @ethlete/components, @ethlete/contentful, @ethlete/query, no app imports it",
   "SURFACE_COLOR": "constant: value",
   "SURFACE_PROVIDER": "constant: injection token",
   "SURFACE_TYPE": "constant: value",

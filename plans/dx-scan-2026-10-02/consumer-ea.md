@@ -51,6 +51,7 @@ disables). The friction sits in hand-written wrappers and CSS overrides.
   default that uses `createAlertDialogOpener().confirm` with labels from an `UNSAVED_CHANGES_LABELS`
   token (title, message, "Discard", "Keep editing", `destructive: true`). `confirm` then becomes optional.
 - Breaking: no (optional field). Decision: yes (new provider + default dialog copy).
+- Status: fixed (2026-10-08, abort unsubscribes an Observable confirm; `provideUnsavedChangesConfirm()` in core, `provideUnsavedChangesAlertDialog()` + `UNSAVED_CHANGES_LABELS` in components, `confirm` optional, dev-mode `ET9100` without one; 5 ea-frontend partner sidebar sites migrated)
 
 ## EA-02 No busy state on an overlay
 

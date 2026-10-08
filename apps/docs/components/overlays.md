@@ -99,23 +99,17 @@ The manager also exposes an `openOverlays` computed with every currently open re
 An overlay that hosts a form should not silently throw away unsaved edits when the user clicks the backdrop, hits <kbd>Escape</kbd>, drags the sheet away, or a programmatic `close()` runs. `createOverlayUnsavedChangesGuard` (the overlay flavor of the [`unsavedChanges` family](/core/utilities#unsaved-changes)) handles exactly this: called from the overlay content component's injection context, it injects the current `OVERLAY_REF`, and while the watched form differs from its baseline it **vetoes** the close, runs your async `confirm`, and only re-issues the close if the user agrees. In a [routed overlay](#routing-inside-overlays) it guards route changes away from the page the same way, so a form on a route needs no separate navigation guard.
 
 ```ts
-import { createAlertDialogOpener, createOverlayUnsavedChangesGuard, OVERLAY_REF } from '@ethlete/components';
+import { createOverlayUnsavedChangesGuard, OVERLAY_REF } from '@ethlete/components';
 import { form } from '@angular/forms/signals';
-import { fromEvent, takeUntil } from 'rxjs';
 
 @Component({/* … */})
 export class EditItemOverlayComponent {
-  private dialogs = createAlertDialogOpener();
   private overlayRef = inject(OVERLAY_REF);
 
   protected form = form(signal({ title: '', notes: '' }));
 
   private guard = createOverlayUnsavedChangesGuard({
     source: this.form, // a signal-forms FieldTree (also: Signal<FieldTree | null>, AbstractControl, WritableSignal)
-    confirm: (value, { signal }) =>
-      this.dialogs
-        .confirm({ title: 'Discard changes?', confirmLabel: 'Discard', cancelLabel: 'Keep editing', destructive: true })
-        .pipe(takeUntil(fromEvent(signal, 'abort'))), // the session ended - unsubscribing closes the dialog
   });
 
   protected save() {
@@ -126,13 +120,43 @@ export class EditItemOverlayComponent {
 }
 ```
 
+The guard above has no `confirm`, so it asks through the app-wide one. `provideUnsavedChangesAlertDialog()` makes that a destructive [confirm dialog](#confirm-and-alert-dialogs) worded by `UNSAVED_CHANGES_LABELS` - provide it once, next to `provideOverlay()`:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideOverlay(),
+    provideUnsavedChangesAlertDialog(),
+    provideUnsavedChangesLabels({ title: 'Änderungen verwerfen?', discard: 'Verwerfen' }), // optional
+  ],
+});
+```
+
+| `UNSAVED_CHANGES_LABELS` key | Default                                                       |
+| ---------------------------- | ------------------------------------------------------------- |
+| `title`                      | `'Discard unsaved changes?'`                                  |
+| `message`                    | `'Your changes have not been saved. Leave and discard them?'` |
+| `discard`                    | `'Discard'`                                                   |
+| `keepEditing`                | `'Keep editing'`                                              |
+
+The labels resolve in the injector that holds `provideUnsavedChangesAlertDialog()`. The dialog closes by itself when the session ends while it is open (a logout). A guard with special wording passes its own `confirm`:
+
+```ts
+private dialogs = createAlertDialogOpener();
+
+private guard = createOverlayUnsavedChangesGuard({
+  source: this.form,
+  confirm: () => this.dialogs.confirm({ title: 'Discard your message?', confirmLabel: 'Discard', destructive: true }),
+});
+```
+
 - **`source`** is a signal-forms `FieldTree` (first-class), a `Signal<FieldTree | null>` for late/async forms, an `AbstractControl`, or a plain `WritableSignal`. Changes are detected by a deep-equal snapshot against a baseline - editing a field and reverting it is clean again (unlike signal-forms' `dirty()`).
-- **`confirm`** is required per call site and runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` - a truthy result allows the discard.
+- **`confirm`** runs **only** when there are actual changes. Return a boolean, `Promise`, or `Observable` - a truthy result allows the discard. Leave it out to use the app-wide confirm (above); with neither, dev mode throws [`ET9100`](/components/error-codes#core-unsaved-changes-et91xx).
 - **`refreshDefaultValue()`** re-baselines to the current value; call it after a save that keeps the overlay open. **`restoreDefaultValue()`** reverts the form to the baseline.
 - **`dismissSources`** opts individual sources out (`{ outsidePointer, escape, closeCall, drag, replace }`, all `true` by default). `replace` is a [`single` opener](/components/overlay-openers#single) opening another overlay in this one's place. With `disableClose`, only a programmatic `close()` can reach the guard.
 - **`guardRouteChanges`** (default `true`) additionally vetoes [overlay router](#guarding-navigation) navigations away from the page holding the guard, so in a routed overlay one call covers both ways the edits can be lost - moving to another route and dismissing the overlay - and both go through the same `confirm`. Set it to `false` for a page whose edits survive a route change. It does nothing when the overlay has no router.
 - **`tab`** - while the form is dirty the guard also locks the **browser tab** (`beforeunload`), since closing or reloading the tab bypasses the overlay runtime entirely. Opt into a tab title marker, a blinking marker, a favicon dot or an app badge, or disable it with `tab: false` - see [Guarding the browser tab](/core/utilities#unsaved-changes-tab).
-- **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - wire `confirm`'s `signal` to close your dialog (with a [confirm dialog](#confirm-and-alert-dialogs), unsubscribing is enough), see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
+- **Only one confirm shows at a time**, app-wide, and a logout releases the guard instead of stranding the dialog over the login page - an `Observable` confirm is unsubscribed then, which closes a [confirm dialog](#confirm-and-alert-dialogs); a `Promise` confirm closes its dialog on `confirm`'s `signal`, see [Sessions ending underneath a guard](/core/utilities#unsaved-changes-coordinator).
 - The guard auto-cleans up on injector destroy; call `guard.destroy()` to stop guarding earlier.
 
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.

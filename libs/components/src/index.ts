@@ -48,4 +48,5 @@ export * from './lib/toggletip';
 export * from './lib/toolbar';
 export * from './lib/tooltip';
 export * from './lib/tree';
+export * from './lib/unsaved-changes';
 export * from './lib/version';

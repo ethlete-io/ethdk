@@ -65,14 +65,34 @@ Subscribe to host-element events from an injection context, cleaned up on destro
 
 Guard a form against accidentally discarding edits. Call these from an injection context.
 
-- **`createUnsavedChangesTracker({ source, confirm, defaultValue?, compareFn?, tab? })`** - the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
+- **`createUnsavedChangesTracker({ source, confirm?, defaultValue?, compareFn?, tab? })`** - the framework-agnostic core. It snapshots a baseline and exposes `hasChanges` (a `Signal<boolean>`), `runCheck()` (resolves `true` when clean or the user confirmed the discard), plus `refreshDefaultValue()` / `restoreDefaultValue()` and the `defaultValue` signal.
   - `source` accepts a signal-forms **`FieldTree`** (first-class), a **`Signal<FieldTree | null>`** for late/async forms (the first non-null value auto-baselines), an **`AbstractControl`** (migration path, bridged via `controlValueSignal`), or a plain **`WritableSignal`**. A `WritableSignal<T | null>` that starts `null` and is filled later works too: the first non-null value becomes the baseline.
   - Changes are a **deep-equal snapshot** against the baseline - editing then reverting a field is clean again, deliberately unlike signal-forms' `dirty()` ("was edited").
-  - `confirm` is **required per call site** and runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog. Its second argument carries an `AbortSignal` - see [Sessions ending underneath a guard](#unsaved-changes-coordinator).
+  - `confirm` runs only when there are changes; return a boolean, `Promise`, or `Observable` (normalized to `Promise<boolean>`). It typically opens a confirm dialog. Its second argument carries an `AbortSignal` - see [Sessions ending underneath a guard](#unsaved-changes-coordinator). Leave it out to use the app-wide confirm - see [One confirm for the whole app](#unsaved-changes-confirm).
   - `refreshDefaultValue()` re-baselines to the current value - call it after a save that keeps the view open.
   - `isAbandoned` reads `true` once the guard was switched off because the session ended (see below).
 - **`createUnsavedChangesGuard(config)`** - the router / manual flavor: the tracker above plus a **`canDeactivate()`** method (`CanDeactivateFn`-compatible) for Angular route guards.
 - For overlays, use **`createOverlayUnsavedChangesGuard`** from `@ethlete/components`, which wires the tracker to the overlay's close events automatically - see [Overlays › Guarding against accidental dismissal](/components/overlays#guarding-against-accidental-dismissal).
+
+### One confirm for the whole app {#unsaved-changes-confirm}
+
+Most apps ask the same question everywhere, so the dialog belongs in one place. `provideUnsavedChangesConfirm(factory)` sets the confirm every tracker and guard below that injector runs when its config has no `confirm`. `factory` runs once, in an injection context, and returns the confirm:
+
+```ts
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideUnsavedChangesConfirm(() => {
+      const dialogs = inject(MyDialogs);
+
+      return () => dialogs.confirmDiscard();
+    }),
+  ],
+});
+```
+
+A `confirm` passed at the call site still wins, so a form with special wording keeps its own. With `@ethlete/components`, [`provideUnsavedChangesAlertDialog()`](/components/overlays#guarding-against-accidental-dismissal) is a ready-made provider.
+
+A tracker with neither throws [`ET9100`](/components/error-codes#core-unsaved-changes-et91xx) in dev mode. A production build lets the discard through.
 
 ### Guarding the browser tab {#unsaved-changes-tab}
 
@@ -129,7 +149,7 @@ Every tracker registers with a root-provided coordinator, `injectUnsavedChangesC
 - **One confirm at a time.** A page form, an overlay form and a route guard can all want a decision in the same tick. A check that starts while another confirm is on screen **adopts that decision** instead of stacking a second "discard your changes?" dialog. `isCheckPending` reads whether one is up.
 - **The session ending mid-confirm.** `abandonAll(reason?)` resolves the pending check as "discard allowed", aborts its `AbortSignal`, and switches every live guard off: further `runCheck()`s pass and the tab locks release. `@ethlete/query`'s auth provider calls it on `logout()`, which fixes the classic mess - pressing logout with a dirty form used to leave a dead confirm dialog floating over the login page, plus a tab that still refused to close. Trackers created afterwards (post re-login) guard normally again.
 
-Because the confirm dialog belongs to your app, closing it is your call - wire the abort signal:
+A confirm that returns a `Promise` has to close its dialog itself - wire the abort signal:
 
 ```ts
 confirm: (value, { signal }) => {
