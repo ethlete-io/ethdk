@@ -1316,7 +1316,7 @@ describe('ContentfulRichTextRendererComponent', () => {
           provideContentfulConfig({
             ...CONTENTFUL_DEFAULT_COMPONENTS,
             components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: StubImageComponent as any },
-            customComponents: { productTeaser: StubTeaserComponent },
+            customComponents: { productTeaser: StubTeaserComponent as any },
           }),
         ],
       });

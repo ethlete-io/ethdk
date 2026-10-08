@@ -763,6 +763,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-scheduler-appointment-title',
   'et-scheduler-body',
   'et-scheduler-edit-color-swatch',
+  'et-scheduler-edit-surface-action',
   'et-scheduler-edit-surface-actions',
   'et-scheduler-edit-surface-breadcrumb',
   'et-scheduler-edit-surface-breadcrumb-current',
