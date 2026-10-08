@@ -10,6 +10,7 @@ export type WindowCapabilities = {
   minimize: boolean;
   maximize: boolean;
   fullscreen: boolean;
+  nativeControls: boolean;
 };
 
 export type TauriWindowControls = {

@@ -519,7 +519,7 @@ export const createFakePorts = (): HostPorts => {
     },
 
     windowControls: {
-      capabilities$: () => ok({ minimize: false, maximize: false, fullscreen: false }),
+      capabilities$: () => ok({ minimize: false, maximize: false, fullscreen: false, nativeControls: false }),
       isMaximized$: () => ok(false),
       minimize$: () => done(),
       toggleMaximize$: () => done(),

@@ -9,6 +9,7 @@ pub struct WindowCapabilities {
     pub minimize: bool,
     pub maximize: bool,
     pub fullscreen: bool,
+    pub native_controls: bool,
 }
 
 impl WindowCapabilities {
@@ -18,6 +19,7 @@ impl WindowCapabilities {
         minimize: true,
         maximize: true,
         fullscreen: true,
+        native_controls: false,
     };
 }
 
@@ -27,7 +29,15 @@ pub fn detect() -> WindowCapabilities {
         crate::decorations_wayland::probe().unwrap_or(WindowCapabilities::ALL)
     }
 
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(target_os = "macos")]
+    {
+        WindowCapabilities {
+            native_controls: true,
+            ..WindowCapabilities::ALL
+        }
+    }
+
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
     {
         WindowCapabilities::ALL
     }

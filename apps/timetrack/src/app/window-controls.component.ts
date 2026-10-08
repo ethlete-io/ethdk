@@ -16,28 +16,30 @@ import { MAXIMIZE_ICON, RESTORE_ICON } from './window-control-icons';
   selector: 'ethlete-window-controls',
   template: `
     @if (capabilities(); as capabilities) {
-      <div class="flex items-center gap-1">
-        @if (capabilities.minimize) {
-          <button (click)="minimize()" et-window-control-button size="sm" aria-label="Minimise">
-            <i etIcon="et-minus"></i>
-          </button>
-        }
+      @if (!capabilities.nativeControls) {
+        <div class="flex items-center gap-1">
+          @if (capabilities.minimize) {
+            <button (click)="minimize()" et-window-control-button size="sm" aria-label="Minimise">
+              <i etIcon="et-minus"></i>
+            </button>
+          }
 
-        @if (capabilities.maximize) {
-          <button
-            [attr.aria-label]="isMaximized() ? 'Restore' : 'Maximise'"
-            (click)="toggleMaximize()"
-            et-window-control-button
-            size="sm"
-          >
-            <i [etIcon]="isMaximized() ? 'timetrack-restore' : 'timetrack-maximize'"></i>
-          </button>
-        }
+          @if (capabilities.maximize) {
+            <button
+              [attr.aria-label]="isMaximized() ? 'Restore' : 'Maximise'"
+              (click)="toggleMaximize()"
+              et-window-control-button
+              size="sm"
+            >
+              <i [etIcon]="isMaximized() ? 'timetrack-restore' : 'timetrack-maximize'"></i>
+            </button>
+          }
 
-        <button [kind]="CLOSE_KIND" (click)="close()" et-window-control-button size="sm" aria-label="Close">
-          <i etIcon="et-times"></i>
-        </button>
-      </div>
+          <button [kind]="CLOSE_KIND" (click)="close()" et-window-control-button size="sm" aria-label="Close">
+            <i etIcon="et-times"></i>
+          </button>
+        </div>
+      }
     }
   `,
   encapsulation: ViewEncapsulation.None,

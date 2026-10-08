@@ -19,6 +19,7 @@ fn read_capabilities(raw: &[u8]) -> WindowCapabilities {
         minimize: has(xdg_toplevel::WmCapabilities::Minimize),
         maximize: has(xdg_toplevel::WmCapabilities::Maximize),
         fullscreen: has(xdg_toplevel::WmCapabilities::Fullscreen),
+        native_controls: false,
     }
 }
 

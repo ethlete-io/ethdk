@@ -51,7 +51,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
       -->
         <div
           [class]="pause.isPaused() ? 'bg-et-warning/10' : ''"
-          class="flex shrink-0 items-center justify-end gap-3 border-b border-et-surface-border px-3 py-2"
+          class="flex min-h-[4.5rem] shrink-0 items-center justify-end gap-3 border-b border-et-surface-border px-3 py-2"
           data-tauri-drag-region="deep"
         >
           <ethlete-update-button />

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Timetrack",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 720,
+        "minHeight": 520,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 16, "y": 22 },
+        "visible": false
+      }
+    ]
+  }
+}
