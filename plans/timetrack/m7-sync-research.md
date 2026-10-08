@@ -20,13 +20,14 @@ Tom decided all six on 2026-10-08, each as recommended in the table below, plus 
 
 ## Bugs that need no sync (slice 0)
 
-- a. A commit that arrives by pull or fast-forward (reflog) is neither presence nor a band. Use the
-  time this machine first saw it.
-- b. A block never takes a session that started after the block.
-- c. The 15-minute rounding at the start of a break drops attended minutes and leaves an empty
-  unattended band.
-- d. The day does not say "this machine was off until 19:26" (M5).
-- e. Freeze only a day this app booked, or wait for paired machines before the freeze.
+- a. Done (08b03c0fd, 4b2267f6e). A commit no reflog entry here wrote is dated by the reflog entry
+  that brought it in, `authoredAt` keeps the author time, and its subject describes no row (ADR 0018).
+- b. Done (5697e49bc). A block that ends before its session started carries no session.
+- c. Done (f2c1e74ca, 44dce2135). A session silent until the prompt that ended a break draws no band
+  inside it, a band in a break ends where its work did, and a single increment before a break no
+  longer folds across it.
+- d. Open. The day does not say "this machine was off until 19:26" (M5).
+- e. Done (77ad9adb2). Only a day this app booked is frozen (ADR 0038).
 
 ## Decisions, one recommendation each
 
