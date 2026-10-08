@@ -74,6 +74,34 @@ export type FakeCallSourceStatus = {
   watchingSinceMs: number;
 };
 
+/** What the host reports the call transcription is doing, in its wire shape. Unavailable by default. */
+export type FakeTranscriptionStatus = {
+  available: boolean;
+  enabled: boolean;
+  listening: boolean;
+  transcribing: boolean;
+  model: string | null;
+  detail: string | null;
+  error: string | null;
+  lastTranscribedAtMs: number | null;
+  lastDurationMs: number | null;
+  chunksStored: number;
+};
+
+export type FakeTranscriptChunk = {
+  atMs: number;
+  callStartedAtMs: number;
+  appId: string;
+  model: string;
+  language: string | null;
+  text: string;
+};
+
+export type FakeTranscription = {
+  status: FakeTranscriptionStatus;
+  chunks: FakeTranscriptChunk[];
+};
+
 /**
  * What reading the window lock does in the seeded world.
  *
@@ -115,6 +143,7 @@ export type TimetrackWorldSeed = {
   spec?: SpecFiles | null;
   windowSource?: Partial<FakeWindowSourceStatus>;
   callSource?: Partial<FakeCallSourceStatus>;
+  transcription?: { status?: Partial<FakeTranscriptionStatus>; chunks?: FakeTranscriptChunk[] };
   /**
    * What reading the window lock does. `'unreachable'` is a host that is there and did not answer,
    * which a window must not read as an unlocked one.
@@ -147,6 +176,7 @@ export type FakeWorld = {
   codexLogs: FakeAgentLog[];
   windowSource: FakeWindowSourceStatus;
   callSource: FakeCallSourceStatus;
+  transcription: FakeTranscription;
   windowLock: FakeWindowLock;
   collectionPausedAt: Date | null;
   backend: FakeBackend;
@@ -400,6 +430,22 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   codexLogs: seed.codexLogs ?? [],
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
+  transcription: {
+    status: {
+      available: false,
+      enabled: false,
+      listening: false,
+      transcribing: false,
+      model: null,
+      detail: null,
+      error: null,
+      lastTranscribedAtMs: null,
+      lastDurationMs: null,
+      chunksStored: 0,
+      ...seed.transcription?.status,
+    },
+    chunks: seed.transcription?.chunks ?? [],
+  },
   windowLock: seed.windowLock ?? 'unlocked',
   collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
   secrets: seed.secrets ?? {},

@@ -109,7 +109,7 @@ describe('parseTimetrackSettings', () => {
 
   it('transcribes in German unless the document names another known language', () => {
     expect(parseTimetrackSettings({}).transcribeLanguage).toBe('de');
-    expect(parseTimetrackSettings({ transcribeLanguage: 'sv' }).transcribeLanguage).toBe('de');
+    expect(parseTimetrackSettings({ transcribeLanguage: 'Deutsch' }).transcribeLanguage).toBe('de');
     expect(parseTimetrackSettings({ transcribeLanguage: 'en' }).transcribeLanguage).toBe('en');
     expect(parseTimetrackSettings({ transcribeLanguage: 'auto' }).transcribeLanguage).toBe('auto');
   });

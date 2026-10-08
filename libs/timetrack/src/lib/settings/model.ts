@@ -1,3 +1,4 @@
+import { TranscribeLanguage } from './transcription';
 import { ActionClasses } from '../agent-api/action-classes';
 import { DEFAULT_EPIC_CHILD_LIMIT, MIN_EPIC_CHILD_LIMIT } from '../jira/children';
 import { PriceTable } from '../model/price';
@@ -264,9 +265,6 @@ export const clampLockAfterIdleMs = (value: number) => Math.min(MAX_LOCK_AFTER_I
  * about it costs the user something. Everything derived — a repository's author, the Jira account id —
  * is read from the source that owns it instead.
  */
-export const TRANSCRIBE_LANGUAGES = ['de', 'en', 'auto'] as const;
-
-export type TranscribeLanguage = (typeof TRANSCRIBE_LANGUAGES)[number];
 
 export type TimetrackSettings = {
   dayTargetMs: number;

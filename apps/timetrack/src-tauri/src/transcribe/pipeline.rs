@@ -107,6 +107,11 @@ pub fn transcribe_chunk(
     }))
 }
 
+pub enum Progress {
+    Started,
+    Finished { took_ms: i64, stored: bool },
+}
+
 /// Transcribes each chunk as it arrives and stores its text before taking the next, until the sender
 /// hangs up. A chunk that fails is dropped with its audio; the error names no transcript text.
 pub fn run(
@@ -115,11 +120,22 @@ pub fn run(
     transcriber: &mut dyn Transcribe,
     mut store: impl FnMut(&TranscriptChunk) -> TimetrackResult<()>,
     mut failed: impl FnMut(String),
+    mut progress: impl FnMut(Progress),
 ) {
     for spoken in chunks {
-        match transcribe_chunk(transcriber, call, spoken).and_then(|chunk| chunk.as_ref().map(&mut store).transpose()) {
-            Ok(_) => {}
-            Err(error) => failed(error.to_string()),
+        progress(Progress::Started);
+
+        let started = std::time::Instant::now();
+        let outcome =
+            transcribe_chunk(transcriber, call, spoken).and_then(|chunk| chunk.as_ref().map(&mut store).transpose());
+
+        progress(Progress::Finished {
+            took_ms: started.elapsed().as_millis() as i64,
+            stored: matches!(outcome, Ok(Some(_))),
+        });
+
+        if let Err(error) = outcome {
+            failed(error.to_string());
         }
     }
 }
@@ -220,6 +236,7 @@ mod tests {
         });
         let mut echo = Echo { heard: Vec::new() };
         let mut failures = Vec::new();
+        let mut events = Vec::new();
 
         run(
             receiver,
@@ -227,10 +244,13 @@ mod tests {
             &mut echo,
             |chunk| crate::transcript::append(&connection, chunk),
             |error| failures.push(error),
+            |progress| events.push(progress),
         );
         producer.join().unwrap();
 
         assert!(failures.is_empty());
+        assert_eq!(events.len(), 4);
+        assert!(matches!(events[1], Progress::Finished { stored: true, .. }));
         assert_eq!(echo.heard, vec![CHUNK_SAMPLES, CHUNK_SAMPLES]);
 
         let stored: Vec<(String, String)> = connection
@@ -306,6 +326,7 @@ mod tests {
                 Ok(())
             },
             |error| failures.push(error),
+            |_| {},
         );
 
         assert_eq!(stored, vec!["zweiter"]);

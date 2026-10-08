@@ -1,5 +1,5 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
@@ -14,8 +14,6 @@ import {
   TAB_IMPORTS,
 } from '@ethlete/components';
 import {
-  TRANSCRIBE_LANGUAGES,
-  TranscribeLanguage,
   callNamingKey,
   carriesCredentialsSafely,
   findStandIn,
@@ -32,8 +30,6 @@ import {
   injectGitCollector,
   injectGitLabCollector,
 } from '../../collectors';
-import { injectHostPorts } from '../../host';
-import { catchError, of, switchMap, timer } from 'rxjs';
 import { injectDayNudge } from '../day-nudge';
 import { injectWindowLock } from '../window-lock';
 import { ActionClassesComponent } from './action-classes.component';
@@ -49,6 +45,7 @@ import { ProjectPathsComponent } from './project-paths.component';
 import { ScanRootsComponent } from './scan-roots.component';
 import { injectTimetrackSettings } from './settings';
 import { TicketSettingsComponent } from './ticket-settings.component';
+import { TranscriptionPanelComponent } from './transcription-panel.component';
 import { TokenFieldComponent } from './token-field.component';
 import { YourProjectsComponent } from './your-projects.component';
 import { injectProjectLinks } from '../project-links';
@@ -151,10 +148,6 @@ keystroke.
 
 Zero locks as soon as you are called idle. Locking the screen locks the window straight away whatever this
 says, because walking off is not something to wait out.`;
-
-const TRANSCRIBE_WHY = `During a call, your own microphone is transcribed on this machine, 30 seconds at a
-time. The audio stays in memory and is dropped once its text is written to the encrypted database; the other
-participants are never recorded. Nothing is sent anywhere, and transcripts older than seven days are deleted.`;
 
 const SUGGESTIONS_WHY = `For work no branch name, rule or merge request could name an issue for, the review
 can ask the agent CLI you already have signed in.
@@ -644,41 +637,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                 }
               </div>
 
-              @if (transcription()?.available) {
-                <div class="flex flex-col gap-3">
-                  <div class="flex items-center gap-2">
-                    <h3 class="text-h4">Transcribe my microphone on calls</h3>
-                    <et-switch
-                      [checked]="store.settings().transcribeCalls"
-                      (checkedChange)="store.setTranscribeCalls($event)"
-                      aria-label="Transcribe my own microphone during calls"
-                    />
-                    <ethlete-explain [text]="TRANSCRIBE_WHY" label="call transcription" />
-                  </div>
-
-                  @if (store.settings().transcribeCalls) {
-                    <et-form-field class="w-48" appearance="underline" size="sm">
-                      <et-label>Language</et-label>
-                      <et-select
-                        [value]="store.settings().transcribeLanguage"
-                        (valueChange)="setTranscribeLanguage($event)"
-                      >
-                        @for (option of TRANSCRIBE_LANGUAGE_OPTIONS; track option.value) {
-                          <et-select-option [value]="option.value" [label]="option.label">
-                            {{ option.label }}
-                          </et-select-option>
-                        }
-                      </et-select>
-                    </et-form-field>
-                  }
-
-                  @if (transcription()?.listening) {
-                    <p class="text-small" data-transcription-listening>Listening to your microphone</p>
-                  } @else if (transcription()?.detail; as detail) {
-                    <p class="text-small text-et-surface-subtle">{{ detail }}</p>
-                  }
-                </div>
-              }
+              <ethlete-transcription-panel />
 
               <ethlete-exclusion-rules
                 [rules]="store.settings().exclusionRules"
@@ -792,6 +751,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
     SpinnerComponent,
     TAB_IMPORTS,
     TicketSettingsComponent,
+    TranscriptionPanelComponent,
     TokenFieldComponent,
     YourProjectsComponent,
   ],
@@ -808,14 +768,8 @@ export class SettingsViewComponent {
   private codex = injectCodexSessionCollector();
   private codexSpend = injectCodexSpendBackfill();
   protected lock = injectWindowLock();
-  private ports = injectHostPorts();
   private dayNudge = injectDayNudge();
   private destroyRef = inject(DestroyRef);
-
-  protected transcription = toSignal(
-    timer(0, 5_000).pipe(switchMap(() => this.ports.transcription.status$().pipe(catchError(() => of(null))))),
-    { initialValue: null },
-  );
 
   protected readonly DAY_START_WHY = DAY_START_WHY;
   protected readonly FILL_WHY = FILL_WHY;
@@ -851,13 +805,6 @@ export class SettingsViewComponent {
   protected readonly ACTION_CLASSES_WHY = ACTION_CLASSES_WHY;
   protected readonly LOCK_WHY = LOCK_WHY;
   protected readonly LOCK_WAIT_WHY = LOCK_WAIT_WHY;
-  protected readonly TRANSCRIBE_WHY = TRANSCRIBE_WHY;
-  protected readonly TRANSCRIBE_LANGUAGE_OPTIONS: { value: TranscribeLanguage; label: string }[] = [
-    { value: 'de', label: 'German' },
-    { value: 'en', label: 'English' },
-    { value: 'auto', label: 'Detect per chunk' },
-  ];
-
   protected repoPaths = computed(() => this.git.discovery()?.repos ?? []);
 
   /**
@@ -926,12 +873,6 @@ export class SettingsViewComponent {
         label: workdays === 0 ? 'Never by age' : `${workdays} workday${workdays === 1 ? '' : 's'}`,
       })),
   );
-
-  protected setTranscribeLanguage(value: unknown) {
-    const language = TRANSCRIBE_LANGUAGES.find((known) => known === value);
-
-    if (language) this.store.setTranscribeLanguage(language);
-  }
 
   /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {

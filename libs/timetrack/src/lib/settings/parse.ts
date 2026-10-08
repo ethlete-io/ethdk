@@ -18,8 +18,6 @@ import {
   TimetrackReasoningSettings,
   TimetrackSettings,
   TimetrackTicketSettings,
-  TRANSCRIBE_LANGUAGES,
-  TranscribeLanguage,
   clampDayTargetMs,
   clampDayStartHour,
   clampEpicChildLimit,
@@ -30,6 +28,7 @@ import {
   clampStandInOverdueWorkdays,
 } from './model';
 import { withoutOrphanedStandIns } from './stand-in';
+import { migrateTranscribeLanguage } from './transcription';
 
 const asRecord = (value: unknown) =>
   typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -460,8 +459,6 @@ const asPriceTable = (value: unknown): PriceTable => {
  * The sweep is here rather than at a call site because a dead placeholder is a property of the
  * document, and every screen that reads the document would otherwise have to know about it.
  */
-const asTranscribeLanguage = (value: unknown): TranscribeLanguage =>
-  TRANSCRIBE_LANGUAGES.find((language) => language === value) ?? DEFAULT_TIMETRACK_SETTINGS.transcribeLanguage;
 
 export const parseTimetrackSettings = (raw: unknown): TimetrackSettings =>
   withoutOrphanedStandIns(readTimetrackSettings(raw));
@@ -509,7 +506,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     lockWindow: document['lockWindow'] !== false,
     lockAfterIdleMs: asLockAfterIdle(document['lockAfterIdleMs']),
     transcribeCalls: document['transcribeCalls'] === true,
-    transcribeLanguage: asTranscribeLanguage(document['transcribeLanguage']),
+    transcribeLanguage: migrateTranscribeLanguage(document['transcribeLanguage']),
     priceTable: asPriceTable(document['priceTable']),
   };
 };

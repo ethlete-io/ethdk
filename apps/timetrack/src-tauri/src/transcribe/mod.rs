@@ -50,7 +50,12 @@ pub fn start(listener: Listener) {
 
         listener.state.update(|status| {
             status.listening = false;
-            status.detail = detail;
+            status.transcribing = false;
+            status.detail = None;
+
+            if detail.is_some() {
+                status.error = detail;
+            }
         });
 
         // A call that cannot be listened to is not retried every second for as long as it runs.
@@ -117,6 +122,7 @@ fn listen(listener: &Listener, app_id: String) -> TimetrackResult<()> {
     listener.state.update(|status| {
         status.listening = true;
         status.detail = None;
+        status.error = None;
     });
 
     let db = listener.db.clone();
@@ -140,7 +146,21 @@ fn listen(listener: &Listener, app_id: String) -> TimetrackResult<()> {
                 let chunk = chunk.clone();
                 tauri::async_runtime::block_on(db.run(move |connection| crate::transcript::append(connection, &chunk)))
             },
-            |error| state.update(|status| status.detail = Some(error)),
+            |error| state.update(|status| status.error = Some(error)),
+            |progress| {
+                state.update(|status| match progress {
+                    pipeline::Progress::Started => status.transcribing = true,
+                    pipeline::Progress::Finished { took_ms, stored } => {
+                        status.transcribing = false;
+
+                        if stored {
+                            status.last_transcribed_at_ms = Some(chrono::Utc::now().timestamp_millis());
+                            status.last_duration_ms = Some(took_ms);
+                            status.chunks_stored += 1;
+                        }
+                    }
+                })
+            },
         );
     });
 

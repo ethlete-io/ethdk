@@ -6,8 +6,13 @@ export type TranscriptionStatus = {
   available: boolean;
   enabled: boolean;
   listening: boolean;
+  transcribing: boolean;
   model: string | null;
   detail: string | null;
+  error: string | null;
+  lastTranscribedAtMs: number | null;
+  lastDurationMs: number | null;
+  chunksStored: number;
 };
 
 /** One transcribed stretch of the user's own microphone, as the host stored it. */

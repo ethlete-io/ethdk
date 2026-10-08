@@ -100,7 +100,14 @@ pub struct TranscriptionState {
     status: Arc<Mutex<TranscriptionStatus>>,
 }
 
-const LANGUAGES: [&str; 3] = ["de", "en", "auto"];
+const LANGUAGES: [&str; 101] = [
+    "auto", "de", "en", "fr", "es", "it", "nl", "pl", "pt", "tr", "uk", "ru", "ja", "zh", "af", "am", "ar", "as", "az",
+    "ba", "be", "bg", "bn", "bo", "br", "bs", "ca", "cs", "cy", "da", "el", "et", "eu", "fa", "fi", "fo", "gl", "gu",
+    "ha", "haw", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln",
+    "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nn", "no", "oc", "pa", "ps", "ro",
+    "sa", "sd", "si", "sk", "sl", "sn", "so", "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tt",
+    "ur", "uz", "vi", "yi", "yo", "yue",
+];
 const DEFAULT_LANGUAGE: &str = "de";
 
 /// What the settings document says about transcription, read the way the webview's parser reads it.
@@ -133,8 +140,17 @@ pub struct TranscriptionStatus {
     pub available: bool,
     pub enabled: bool,
     pub listening: bool,
+    pub transcribing: bool,
     pub model: Option<String>,
+    /// What the listener is doing before it hears anything, such as loading the model.
     pub detail: Option<String>,
+    /// The last failure, kept until the next call is listened to.
+    pub error: Option<String>,
+    pub last_transcribed_at_ms: Option<i64>,
+    /// How long the engine took for the last chunk it turned into text.
+    pub last_duration_ms: Option<i64>,
+    /// Chunks stored since the app started.
+    pub chunks_stored: u32,
 }
 
 impl TranscriptionState {
@@ -356,8 +372,17 @@ mod tests {
         let language = |document| TranscriptionSettings::read(&document).language;
 
         assert_eq!(language(serde_json::json!({})), "de");
-        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "sv" })), "de");
+        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "Deutsch" })), "de");
+        assert_eq!(language(serde_json::json!({ "transcribeLanguage": "sv" })), "sv");
         assert_eq!(language(serde_json::json!({ "transcribeLanguage": "en" })), "en");
         assert_eq!(language(serde_json::json!({ "transcribeLanguage": "auto" })), "auto");
+    }
+
+    #[test]
+    fn knows_the_languages_the_settings_select_offers() {
+        let model = include_str!("../../../../libs/timetrack/src/lib/settings/transcription.ts");
+        assert!(LANGUAGES
+            .iter()
+            .all(|code| model.contains(&format!("'{code}'")) || *code == "auto"));
     }
 }

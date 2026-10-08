@@ -539,8 +539,8 @@ export const createFakePorts = (): HostPorts => {
     },
 
     transcription: {
-      status$: () => ok({ available: false, enabled: false, listening: false, model: null, detail: null }),
-      day$: () => ok([]),
+      status$: () => ok(world.transcription.status),
+      day$: () => ok(world.transcription.chunks),
     },
   };
 };
