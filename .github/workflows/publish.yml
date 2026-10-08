@@ -104,7 +104,7 @@ jobs:
       fail-fast: false
       matrix:
         app: ${{ fromJSON(needs.apps-plan.outputs.apps) }}
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
     name: Bundle ${{ matrix.app.project }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     permissions:
@@ -191,8 +191,15 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           bundle=${{ matrix.app.dir }}/src-tauri/target/release/bundle
+          case "$RUNNER_ARCH" in
+            X64) arch=x86_64 ;;
+            ARM64) arch=aarch64 ;;
+            *) echo "Unknown runner architecture $RUNNER_ARCH" >&2; exit 1 ;;
+          esac
+          # Both macOS runners name the updater tarball `<product>.app.tar.gz`; without the arch the
+          # second upload would overwrite the first.
           for file in "$bundle"/*/*; do
-            renamed="$(dirname "$file")/$(basename "$file" | tr ' ' '.')"
+            renamed="$(dirname "$file")/$(basename "$file" | tr ' ' '.' | sed "s/\.app\.tar\.gz/_$arch.app.tar.gz/")"
             [ "$file" = "$renamed" ] || mv "$file" "$renamed"
           done
           files=("$bundle"/deb/*.deb "$bundle"/rpm/*.rpm "$bundle"/appimage/*.AppImage "$bundle"/dmg/*.dmg "$bundle"/macos/*.app.tar.gz "$bundle"/nsis/*.exe)
@@ -202,11 +209,6 @@ jobs:
           fi
           gh release upload "${{ matrix.app.tag }}" "${files[@]}" --clobber
 
-          case "$RUNNER_ARCH" in
-            X64) arch=x86_64 ;;
-            ARM64) arch=aarch64 ;;
-            *) echo "Unknown runner architecture $RUNNER_ARCH" >&2; exit 1 ;;
-          esac
           base="https://github.com/$GITHUB_REPOSITORY/releases/download/$(jq -rn --arg tag "${{ matrix.app.tag }}" '$tag | @uri')"
           platforms='{}'
           for sig in "$bundle"/*/*.sig; do
