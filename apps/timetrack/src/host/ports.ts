@@ -13,6 +13,7 @@ import { TauriIngestSource, createTauriIngestSource } from './ingest-source';
 import { createTauriLedgerStore } from './ledger-store';
 import { TauriNudge, createTauriNudge } from './nudge';
 import { TauriOAuth, createTauriOAuth } from './oauth';
+import { TauriPeers, createTauriPeers } from './peers';
 import { createTauriProcessRunner } from './process-runner';
 import { createTauriReporterBundle } from './reporter-bundle';
 import { createTauriSpecSource } from './spec-source';
@@ -42,6 +43,7 @@ export type HostPorts = TimetrackPorts & {
   ingest: TauriIngestSource;
   nudge: TauriNudge;
   oauth: TauriOAuth;
+  peers: TauriPeers;
   syncRuns: TauriSyncRunStore;
   transcription: TauriTranscription;
   tray: TauriTray;
@@ -81,6 +83,7 @@ export const createHostPorts = (): HostPorts => {
     ingest: createTauriIngestSource(),
     nudge: createTauriNudge(),
     oauth: createTauriOAuth(),
+    peers: createTauriPeers(),
     transcription: createTauriTranscription(),
     tray: createTauriTray(),
     widget: createTauriWidget(),

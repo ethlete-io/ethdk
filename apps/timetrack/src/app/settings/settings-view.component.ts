@@ -39,6 +39,7 @@ import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
 import { GoogleConnectionComponent } from './google-connection.component';
+import { PairedMachinesComponent } from './paired-machines.component';
 import { MaskedNamesComponent } from './masked-names.component';
 import { PriceTableComponent } from './price-table.component';
 import { ProjectPathsComponent } from './project-paths.component';
@@ -597,6 +598,8 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                 (forgetClientSecret)="store.forgetGoogleClientSecret()"
               />
 
+              <ethlete-paired-machines />
+
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-2">
                   <h3 class="text-h4">Lock the window</h3>
@@ -743,6 +746,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
     GoogleConnectionComponent,
     INPUT_IMPORTS,
     MaskedNamesComponent,
+    PairedMachinesComponent,
     PriceTableComponent,
     ProjectPathsComponent,
     SELECT_IMPORTS,

@@ -14,6 +14,7 @@ export * from './invoke';
 export * from './ledger-store';
 export * from './nudge';
 export * from './oauth';
+export * from './peers';
 export * from './ports';
 export * from './process-runner';
 export * from './reporter-bundle';

@@ -1,9 +1,10 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { createOverlayOpener } from '@ethlete/components';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
 import { injectAutoMode } from '../day-review/auto-mode';
+import { injectPeers } from '../peers';
 import { SHELL_VIEWS } from './views';
 
 @Component({
@@ -53,6 +54,23 @@ import { SHELL_VIEWS } from './views';
         </span>
       </button>
     }
+
+    @if (peers.paired().length) {
+      <div
+        [class.mt-4]="!autoMode.enabled()"
+        [title]="peersTitle()"
+        class="flex items-center gap-2 px-3 py-2 text-small"
+        data-peers-status
+      >
+        <span
+          [class.bg-et-brand]="peers.connected().length"
+          [class.bg-et-surface-border]="!peers.connected().length"
+          class="size-2 shrink-0 rounded-full"
+          aria-hidden="true"
+        ></span>
+        <span>Timetrack · {{ peers.connected().length }} connected</span>
+      </div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [RouterLink, RouterLinkActive],
@@ -60,6 +78,13 @@ import { SHELL_VIEWS } from './views';
 export class SidebarComponent {
   protected autoMode = injectAutoMode();
   protected queue = injectApprovalQueue();
+  protected peers = injectPeers();
   protected readonly VIEWS = SHELL_VIEWS;
   protected approvals = createOverlayOpener(APPROVAL_QUEUE_OVERLAY);
+
+  protected peersTitle = computed(() => {
+    const connected = this.peers.connected().map((machine) => machine.label);
+
+    return connected.length ? `Connected: ${connected.join(', ')}` : 'No paired machine answered in the last 3 minutes';
+  });
 }

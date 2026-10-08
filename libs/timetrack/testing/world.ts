@@ -111,6 +111,39 @@ export type FakeTranscription = {
  */
 export type FakeWindowLock = 'unlocked' | 'locked' | 'unreachable';
 
+/** A paired machine, in the host's wire shape. */
+export type FakePairedMachine = {
+  machineId: string;
+  label: string;
+  certFingerprint: string;
+  lastAddr: string | null;
+  lastSeenMs: number | null;
+  clockOffsetMs: number | null;
+  pairedAtMs: number;
+};
+
+/** A machine advertising itself on the LAN, in the host's wire shape. */
+export type FakeDiscoveredMachine = {
+  machineId: string;
+  label: string;
+  addresses: string[];
+  port: number;
+  fingerprint: string;
+  paired: boolean;
+  lastSeenMs: number;
+};
+
+/**
+ * The machines around this one. `code` is the one the other machine shows, so pairing with any
+ * other code fails; `offerExpired` makes every code fail as an expired offer.
+ */
+export type FakePeers = {
+  paired: FakePairedMachine[];
+  discovered: FakeDiscoveredMachine[];
+  code: string;
+  offerExpired: boolean;
+};
+
 /**
  * The world an e2e spec declares. Every key it leaves out falls back to the default fixture, so a
  * spec that does not care about Tempo states nothing about Tempo.
@@ -152,6 +185,8 @@ export type TimetrackWorldSeed = {
   windowLock?: FakeWindowLock;
   /** When collection was paused. Absent: the app starts collecting. */
   collectionPausedAt?: Date | string;
+  /** No machine paired or discovered by default. */
+  peers?: Partial<FakePeers>;
   faults?: FakeFault[];
   /** Secrets the keychain already holds, over the three tokens every seed starts with. */
   secrets?: Record<string, string>;
@@ -182,6 +217,7 @@ export type FakeWorld = {
   transcription: FakeTranscription;
   windowLock: FakeWindowLock;
   collectionPausedAt: Date | null;
+  peers: FakePeers;
   backend: FakeBackend;
   secrets: Record<string, string>;
   spec: SpecFiles | null;
@@ -452,6 +488,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   },
   windowLock: seed.windowLock ?? 'unlocked',
   collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
+  peers: { paired: [], discovered: [], code: '246810', offerExpired: false, ...seed.peers },
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},

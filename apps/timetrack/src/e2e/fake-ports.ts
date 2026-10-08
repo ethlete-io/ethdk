@@ -113,6 +113,8 @@ export const createFakePorts = (): HostPorts => {
   // `Date` on it arrives as a string, and only the parse turns them back.
   let settings: TimetrackSettings = parseTimetrackSettings(world.settings);
   let pausedAt: Date | null = world.collectionPausedAt;
+  const paired = [...world.peers.paired];
+  const discovered = world.peers.discovered.map((machine) => ({ ...machine }));
   let reasoningRuns = 0;
   let agentRuns = 0;
 
@@ -539,6 +541,75 @@ export const createFakePorts = (): HostPorts => {
           : ok({ locked: world.windowLock === 'locked', promptsItself: false, available: true }),
       lock$: () => done(),
       unlock$: () => ok(true),
+    },
+
+    // Answers with the host's own refusals, word for word, so a spec reads what the user would.
+    peers: {
+      list$: () => ok(paired.map((machine) => ({ ...machine }))),
+      discovered$: () => ok(discovered.map((machine) => ({ ...machine }))),
+      offer$: () => ok({ code: world.peers.code, port: 52741, expiresAtMs: Date.now() + 5 * 60_000 }),
+      accept$: (target, code) => {
+        const found =
+          target.kind === 'discovered'
+            ? discovered.find((machine) => machine.machineId === target.machineId)
+            : discovered.find((machine) => machine.addresses.includes(target.host));
+
+        if (!found) {
+          return throwError(() =>
+            target.kind === 'discovered'
+              ? 'that machine is no longer seen on the network: pick it again, or enter its address'
+              : `nothing answered at ${target.host}:${target.port ?? 52741} (Connection refused (os error 111))`,
+          );
+        }
+
+        if (world.peers.offerExpired) {
+          return throwError(() => 'the code on the other machine has expired: show a new one');
+        }
+
+        if (code !== world.peers.code) {
+          return throwError(() => 'the code does not match the one the other machine shows');
+        }
+
+        const machine = {
+          machineId: found.machineId,
+          label: found.label,
+          certFingerprint: found.fingerprint,
+          lastAddr: `${found.addresses[0]}:${found.port}`,
+          lastSeenMs: null,
+          clockOffsetMs: null,
+          pairedAtMs: Date.now(),
+        };
+
+        paired.push(machine);
+        found.paired = true;
+
+        return ok({ ...machine });
+      },
+      hello$: (machineId) => {
+        const machine = paired.find((held) => held.machineId === machineId);
+
+        if (!machine) return throwError(() => `no paired machine has the id ${machineId}`);
+
+        machine.lastSeenMs = Date.now();
+        machine.clockOffsetMs ??= 0;
+
+        return ok({
+          machineId,
+          label: machine.label,
+          appVersion: 'e2e',
+          clockOffsetMs: machine.clockOffsetMs,
+          roundTripMs: 1,
+        });
+      },
+      forget$: (machineId) => {
+        const index = paired.findIndex((held) => held.machineId === machineId);
+
+        if (index >= 0) paired.splice(index, 1);
+
+        for (const machine of discovered) if (machine.machineId === machineId) machine.paired = false;
+
+        return ok(index >= 0);
+      },
     },
 
     transcription: {
