@@ -74,7 +74,7 @@ test.describe('a band two answers disagree about', () => {
     await page.goto('/day');
     await band(page).click();
 
-    const surface = page.locator('et-scheduler-edit-surface');
+    const surface = page.locator('ethlete-row-edit-surface');
 
     await expect(surface).toBeVisible();
     await expect(dispute(page)).toContainText(E2E_PARENT_KEY);

@@ -1,18 +1,8 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, input, signal } from '@angular/core';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { EvidenceKind, formatTokenCount, totalTokens } from '@ethlete/timetrack';
 import { formatClockTime } from '../format';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
   'attribution-rule',
@@ -68,7 +58,7 @@ const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
   imports: [BUTTON_IMPORTS],
 })
 export class EditEvidenceComponent {
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected evidence = computed(
     () =>
@@ -99,13 +89,4 @@ export class EditEvidenceComponent {
   });
 
   protected hiddenCount = computed(() => this.evidence().length - this.shown().length);
-}
-
-@Directive({ selector: '[ethleteEditEvidence]' })
-export class EditEvidenceDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditEvidence');
-
-  constructor() {
-    this.host.registerEditField({ component: EditEvidenceComponent, injector: inject(Injector), order: 50 });
-  }
 }

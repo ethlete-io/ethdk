@@ -1,19 +1,8 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  effect,
-  inject,
-  input,
-  untracked,
-} from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, effect, input, untracked } from '@angular/core';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { injectJiraCatalog } from '../../jira';
 import { injectDayReview } from '../day-review';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 /**
  * The other work a rung named for this band, one press that keeps the booked answer and one that takes
@@ -49,7 +38,7 @@ export class EditDisputedComponent {
   private store = injectDayReview();
   private catalog = injectJiraCatalog();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected booked = computed(() => rowEntryOf(this.draft()())?.row.issueKey ?? null);
 
@@ -94,14 +83,5 @@ export class EditDisputedComponent {
     if (!row) return;
     if (rival.kind === 'issue') this.store.setIssue(row, rival.id);
     else this.store.setStandIn(row, rival.id);
-  }
-}
-
-@Directive({ selector: '[ethleteEditDisputed]' })
-export class EditDisputedDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditDisputed');
-
-  constructor() {
-    this.host.registerEditField({ component: EditDisputedComponent, injector: inject(Injector), order: 0 });
   }
 }

@@ -1,17 +1,9 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { UnobservedOccurrence } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
 import { formatClockTime } from '../format';
+import { TimelineEntry } from './row-appointment';
 
 /** One of the day's meetings, as the field offers it. */
 type MeetingOffer = {
@@ -52,7 +44,7 @@ type MeetingOffer = {
 export class EditMeetingComponent {
   private store = injectDayReview();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected offers = computed(() => this.store.meetings().map(offerOf));
 
@@ -64,21 +56,6 @@ export class EditMeetingComponent {
       start: offer.from,
       end: offer.to,
     }));
-  }
-}
-
-@Directive({ selector: '[ethleteEditMeeting]' })
-export class EditMeetingDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditMeeting');
-  private store = injectDayReview();
-
-  constructor() {
-    this.host.registerEditField({
-      component: EditMeetingComponent,
-      injector: inject(Injector),
-      order: -10,
-      enabled: computed(() => this.store.meetings().length > 0),
-    });
   }
 }
 

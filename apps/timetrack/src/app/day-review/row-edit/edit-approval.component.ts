@@ -1,22 +1,11 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  effect,
-  inject,
-  input,
-  untracked,
-} from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, effect, input, untracked } from '@angular/core';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { AgentApproval, describeApproval } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../../agent/approval-queue';
 import { injectJiraCatalog } from '../../jira';
 import { approvalDescriptionOf, approvalIssueKeysOf, approvalLinesOf, injectBandApprovals } from '../band-approvals';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 /** What a waiting approval would change on this row, with the presses that decide it. */
 @Component({
@@ -60,7 +49,7 @@ export class EditApprovalComponent {
   private placed = injectBandApprovals();
 
   private catalog = injectJiraCatalog();
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
   protected readonly DESCRIPTION_OF = approvalDescriptionOf;
 
   protected items = computed(() => {
@@ -83,14 +72,5 @@ export class EditApprovalComponent {
 
   protected describe(item: AgentApproval) {
     return describeApproval(item.request);
-  }
-}
-
-@Directive({ selector: '[ethleteEditApproval]' })
-export class EditApprovalDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditApproval');
-
-  constructor() {
-    this.host.registerEditField({ component: EditApprovalComponent, injector: inject(Injector), order: 0 });
   }
 }

@@ -1,23 +1,7 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
-import {
-  Appointment,
-  FORM_FIELD_IMPORTS,
-  SELECT_IMPORTS,
-  SchedulerEditSurfaceDirective,
-  injectSchedulerEditSurfaceHost,
-} from '@ethlete/components';
-import { isStandInRow } from '@ethlete/timetrack';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
+import { Appointment, FORM_FIELD_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import { injectDayReview } from '../day-review';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 /**
  * The name the user gave this band's work, while Jira holds no issue for it.
@@ -49,7 +33,7 @@ import { rowEntryOf } from './row-appointment';
 export class EditStandInComponent {
   private store = injectDayReview();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   public row = computed(() => rowEntryOf(this.draft()())?.row);
 
@@ -78,31 +62,5 @@ export class EditStandInComponent {
 
     this.store.setStandIn(row, standInId);
     this.draft().update((appointment) => ({ ...appointment, title: '' }));
-  }
-}
-
-@Directive({ selector: '[ethleteEditStandIn]' })
-export class EditStandInDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditStandIn');
-  private surface = inject(SchedulerEditSurfaceDirective);
-  private store = injectDayReview();
-
-  private enabled = computed(() => {
-    const draft = this.surface.draft();
-    const row = rowEntryOf(draft)?.row;
-    const standInRow = !!row && isStandInRow(row);
-
-    if (!standInRow && !this.store.openStandIns().length) return false;
-
-    return standInRow || !draft.title.trim();
-  });
-
-  constructor() {
-    this.host.registerEditField({
-      component: EditStandInComponent,
-      injector: inject(Injector),
-      order: 1,
-      enabled: this.enabled,
-    });
   }
 }

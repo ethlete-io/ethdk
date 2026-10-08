@@ -1,8 +1,6 @@
 import {
   Component,
-  Directive,
   EnvironmentInjector,
-  Injector,
   ViewEncapsulation,
   WritableSignal,
   computed,
@@ -10,19 +8,12 @@ import {
   input,
   runInInjectionContext,
 } from '@angular/core';
-import {
-  Appointment,
-  BUTTON_IMPORTS,
-  OVERLAY_REF,
-  OverlayRef,
-  createOverlayOpener,
-  injectSchedulerEditSurfaceHost,
-} from '@ethlete/components';
+import { Appointment, BUTTON_IMPORTS, OVERLAY_REF, OverlayRef, createOverlayOpener } from '@ethlete/components';
 import { StandIn } from '@ethlete/timetrack';
 import { STAND_INS_OVERLAY } from '../../stand-ins';
 import { injectStandIns } from '../../stand-ins/stand-ins';
 import { injectTicketDraft } from '../ticket-draft';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 /**
  * What a band waiting on a ticket is waiting for, and the one press that ends the wait.
@@ -52,7 +43,7 @@ export class EditStandInWaitingComponent {
   private tickets = injectTicketDraft();
   private surfaceRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
   /** Made on the app's injector: the press closes this surface, and the dialog outlives it. */
   private panel = runInInjectionContext(inject(EnvironmentInjector), () => createOverlayOpener(STAND_INS_OVERLAY));
 
@@ -73,18 +64,5 @@ export class EditStandInWaitingComponent {
     this.tickets.openForStandIn(waiting);
     this.surfaceRef?.close();
     this.panel.open();
-  }
-}
-
-@Directive({ selector: '[ethleteEditStandInWaiting]' })
-export class EditStandInWaitingDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditStandInWaiting');
-
-  constructor() {
-    this.host.registerEditField({
-      component: EditStandInWaitingComponent,
-      injector: inject(Injector),
-      order: 0,
-    });
   }
 }

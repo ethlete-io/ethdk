@@ -1,42 +1,13 @@
-import { Injector, inject, inputBinding } from '@angular/core';
-import {
-  Appointment,
-  SCHEDULER_ADD_SURFACE_OVERLAY,
-  SCHEDULER_EDIT_SURFACE_OVERLAY,
-  createOverlayOpener,
-  createOverlaySingleSlot,
-  SCHEDULER_LABELS,
-} from '@ethlete/components';
+import { Appointment, injectSchedulerEditSurfaceOpener } from '@ethlete/components';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
-import { ReviewedRow, callExclusionReasonOf, syncsInState } from '@ethlete/timetrack';
+import { ReviewedRow, syncsInState } from '@ethlete/timetrack';
 import { injectDayReview } from '../day-review';
-import { EditApprovalDirective } from './edit-approval.component';
-import { EditEvidenceDirective } from './edit-evidence.component';
-import { EditIssueStatusDirective } from './edit-issue-status.component';
-import { EditIssueDirective } from './edit-issue.component';
-import { EditMeetingDirective } from './edit-meeting.component';
-import { EditStandInWaitingDirective } from './edit-stand-in-waiting.component';
-import { EditStandInDirective } from './edit-stand-in.component';
-import { EditDisputedDirective } from './edit-disputed.component';
-import { EditUnattendedDirective } from './edit-unattended.component';
-import { EditWhenDirective } from './edit-when.component';
-import { EditStateDirective } from './edit-state.component';
-import { RowActionsDirective } from './row-actions.directive';
-import { appointmentOf, rowEntryOf, unnamedLabelOf } from './row-appointment';
-
-const DISABLED = { enabled: false } as const;
+import { TimelineEntry, appointmentOf, rowEntryOf } from './row-appointment';
 
 /**
- * The day's rows are edited on the scheduler's own edit surface, not in a list beside it.
- *
- * The surface brings the anchored dialog, the story breadcrumb, the action menu and save/cancel; what
- * this adds is the four things a worklog has and an appointment does not — the issue, the rounded
- * duration, whether a sync writes the row, and the evidence behind it. Each is a field the surface
- * stamps, reached through the open call's `directives` because the surface has no template of ours.
- *
- * The built-in title, time range, location and colour fields are switched off: the issue field writes
- * the title, the when field the span on the row's own day, and neither a place nor a colour is
- * something a worklog carries.
+ * The day's rows are edited on the scheduler's edit surface, not in a list beside it: an anchored
+ * dialog over the band, with `RowEditSurfaceComponent` as its content. Register it with
+ * `provideSchedulerEditSurface({ component: RowEditSurfaceComponent })`.
  */
 const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const store = injectDayReview();
@@ -70,62 +41,22 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     });
   };
 
-  const headerOf = (row: ReviewedRow) => {
-    const standInName = row.standInId
-      ? store.allStandIns().find((standIn) => standIn.id === row.standInId)?.name
-      : undefined;
-
-    const call = store.excludedCallOf(row);
-
-    return unnamedLabelOf({ row, standInName, excludedReason: call && callExclusionReasonOf(call) });
-  };
-
-  const injector = inject(Injector);
-  const labelled = (untitledAppointment: string) =>
-    Injector.create({
-      parent: injector,
-      providers: [{ provide: SCHEDULER_LABELS, useValue: { untitledAppointment } }],
-    });
-
-  const surfaceSlot = createOverlaySingleSlot();
-  const rowOpener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, { single: surfaceSlot });
-  const draftOpener = createOverlayOpener(SCHEDULER_ADD_SURFACE_OVERLAY, { single: surfaceSlot });
-
-  /** The appointment under edit, and every built-in the surface bundles that a worklog cannot use. */
-  const surfaceBindings = (appointment: Appointment, appointments: readonly Appointment[]) => [
-    inputBinding('appointment', () => appointment),
-    inputBinding('appointments', () => appointments),
-    inputBinding('etSchedulerEditTitle', () => DISABLED),
-    inputBinding('etSchedulerEditTimeRange', () => DISABLED),
-    inputBinding('etSchedulerEditLocation', () => DISABLED),
-    inputBinding('etSchedulerEditColor', () => DISABLED),
-    inputBinding('etSchedulerActionAddSubAppointment', () => DISABLED),
-    inputBinding('etSchedulerActionDelete', () => DISABLED),
-  ];
+  const editSurface = injectSchedulerEditSurfaceOpener<TimelineEntry>();
 
   return {
     /** Opens the surface over the band that was pressed. */
-    openRow: (options: { row: ReviewedRow; origin: HTMLElement; appointments: readonly Appointment[] }) => {
-      rowOpener.open({
+    openRow: (options: {
+      row: ReviewedRow;
+      origin: HTMLElement;
+      appointments: readonly Appointment<TimelineEntry>[];
+    }) => {
+      editSurface.openEdit({
         afterClosed: (result) => {
           if (result?.kind === 'save') editRow(options.row, result.appointment);
         },
         origin: options.origin,
-        injector: labelled(headerOf(options.row)),
-        bindings: surfaceBindings(appointmentOf({ row: options.row }), options.appointments),
-        directives: [
-          EditApprovalDirective,
-          EditStandInWaitingDirective,
-          EditUnattendedDirective,
-          EditDisputedDirective,
-          EditIssueDirective,
-          EditIssueStatusDirective,
-          EditStandInDirective,
-          EditStateDirective,
-          EditWhenDirective,
-          EditEvidenceDirective,
-          RowActionsDirective,
-        ],
+        appointment: appointmentOf({ row: options.row }),
+        appointments: options.appointments,
       });
     },
 
@@ -137,13 +68,11 @@ const ROW_EDIT_SURFACE_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * the reviewer had no column in front of them, so the row lands beside the work nothing placed.
      */
     openDraft: (range: { from: Date; to: Date; laneKey?: string }) => {
-      draftOpener.open({
+      editSurface.openAdd({
         afterClosed: (result) => {
           if (result?.kind === 'save') addRow(result.appointment, range.laneKey);
         },
-        injector: labelled('New entry'),
-        bindings: surfaceBindings({ id: 'draft', parentId: null, title: '', start: range.from, end: range.to }, []),
-        directives: [EditIssueDirective, EditMeetingDirective, EditWhenDirective],
+        appointment: { id: 'draft', parentId: null, title: '', start: range.from, end: range.to },
       });
     },
   };

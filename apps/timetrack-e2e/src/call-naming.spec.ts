@@ -36,7 +36,7 @@ test.describe('naming a call the calendar never held', () => {
 
     await row.click();
 
-    const surface = page.locator('et-scheduler-edit-surface');
+    const surface = page.locator('ethlete-row-edit-surface');
 
     await expect(surface).toBeVisible();
     await surface.locator('ethlete-issue-select et-select').click();

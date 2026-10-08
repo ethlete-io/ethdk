@@ -36,7 +36,7 @@ test.describe('marking a band', () => {
   test('a modifier-click does not open the edit surface', async ({ page }) => {
     await mark(band(page, 0));
 
-    await expect(page.locator('et-scheduler-edit-surface')).toBeHidden();
+    await expect(page.locator('ethlete-row-edit-surface')).toBeHidden();
   });
 
   test('a shift-click marks the whole run through to the band it landed on', async ({ page }) => {

@@ -1,16 +1,7 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { injectDayReview } from '../day-review';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 /**
  * Why a band nobody watched books nothing, and the one press that decides it was the user's after all.
@@ -39,7 +30,7 @@ import { rowEntryOf } from './row-appointment';
 export class EditUnattendedComponent {
   private store = injectDayReview();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected withheld = computed(() => {
     const row = rowEntryOf(this.draft()())?.row;
@@ -51,14 +42,5 @@ export class EditUnattendedComponent {
     const row = rowEntryOf(this.draft()())?.row;
 
     if (row) this.store.setIssue(row, issueKey);
-  }
-}
-
-@Directive({ selector: '[ethleteEditUnattended]' })
-export class EditUnattendedDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditUnattended');
-
-  constructor() {
-    this.host.registerEditField({ component: EditUnattendedComponent, injector: inject(Injector), order: 0 });
   }
 }

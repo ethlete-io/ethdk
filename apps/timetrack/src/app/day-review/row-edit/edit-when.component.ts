@@ -1,23 +1,13 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
 import {
   Appointment,
   DURATION_INPUT_IMPORTS,
   FORM_FIELD_IMPORTS,
   TIME_RANGE_INPUT_IMPORTS,
   TimeRangeValue,
-  injectSchedulerEditSurfaceHost,
 } from '@ethlete/components';
 import { formatDurationMs, roundDurationUp } from '@ethlete/timetrack';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 const clockOf = (date: Date) =>
   [date.getHours(), date.getMinutes()].map((part) => String(part).padStart(2, '0')).join(':');
@@ -67,7 +57,7 @@ const atClock = (day: Date, clock: string) => {
   imports: [DURATION_INPUT_IMPORTS, FORM_FIELD_IMPORTS, TIME_RANGE_INPUT_IMPORTS],
 })
 export class EditWhenComponent {
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected entry = computed(() => rowEntryOf(this.draft()()));
 
@@ -124,14 +114,5 @@ export class EditWhenComponent {
         extra: { ...entry, durationMs: booked },
       };
     });
-  }
-}
-
-@Directive({ selector: '[ethleteEditWhen]' })
-export class EditWhenDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditWhen');
-
-  constructor() {
-    this.host.registerEditField({ component: EditWhenComponent, injector: inject(Injector), order: 10 });
   }
 }

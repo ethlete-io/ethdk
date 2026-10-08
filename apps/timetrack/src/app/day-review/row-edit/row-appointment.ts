@@ -107,13 +107,7 @@ export type StoryEntry = { kind: 'story'; issueKey: string };
 
 export type TimelineEntry = RowEntry | StoryEntry;
 
-/**
- * The row an appointment holds, or nothing when it holds a story instead.
- *
- * The edit surface types its draft as `Appointment<unknown>`, because every field on it shares one
- * draft and the surface cannot know what another field put there. This is the one place that reads
- * the type back out.
- */
+/** The row an appointment holds, or nothing when it holds a story instead. */
 export const rowEntryOf = (appointment: Appointment): RowEntry | null => {
   const entry = appointment.extra as TimelineEntry | undefined;
 

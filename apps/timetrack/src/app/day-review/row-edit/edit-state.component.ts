@@ -1,22 +1,7 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
-import {
-  Appointment,
-  BADGE_IMPORTS,
-  CHECKBOX_IMPORTS,
-  CHOICE_FIELD_IMPORTS,
-  injectSchedulerEditSurfaceHost,
-} from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
+import { Appointment, BADGE_IMPORTS, CHECKBOX_IMPORTS, CHOICE_FIELD_IMPORTS } from '@ethlete/components';
 import { Confidence } from '@ethlete/timetrack';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 const CONFIDENCE_TONE: Record<Confidence, string> = {
   certain: 'text-et-success-ink',
@@ -52,7 +37,7 @@ const CONFIDENCE_TONE: Record<Confidence, string> = {
   imports: [BADGE_IMPORTS, CHECKBOX_IMPORTS, CHOICE_FIELD_IMPORTS],
 })
 export class EditStateComponent {
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   private entry = computed(() => rowEntryOf(this.draft()()));
 
@@ -72,14 +57,5 @@ export class EditStateComponent {
 
       return entry ? { ...appointment, extra: { ...entry, willSync } } : appointment;
     });
-  }
-}
-
-@Directive({ selector: '[ethleteEditState]' })
-export class EditStateDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditState');
-
-  constructor() {
-    this.host.registerEditField({ component: EditStateComponent, injector: inject(Injector), order: 5 });
   }
 }

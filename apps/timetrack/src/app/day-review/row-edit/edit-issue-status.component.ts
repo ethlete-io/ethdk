@@ -1,15 +1,6 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Appointment, BUTTON_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Appointment, BUTTON_IMPORTS } from '@ethlete/components';
 import { JiraStatusMove, JiraTransition } from '@ethlete/timetrack';
 import {
   Observable,
@@ -26,6 +17,7 @@ import {
   switchMap,
 } from 'rxjs';
 import { injectJiraCatalog } from '../../jira';
+import { TimelineEntry } from './row-appointment';
 
 type Read<T> =
   { kind: 'idle' } | { kind: 'loading' } | { kind: 'ready'; value: T } | { kind: 'failed'; message: string };
@@ -112,7 +104,7 @@ const read$ = <T>(source$: Observable<T>): Observable<Read<T>> =>
 export class EditIssueStatusComponent {
   private catalog = injectJiraCatalog();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected issueKey = computed(() => this.draft()().title.trim().toUpperCase());
 
@@ -195,15 +187,6 @@ export class EditIssueStatusComponent {
 
   protected moveTo(issueKey: string, move: JiraTransition) {
     this.moves$.next({ issueKey, statusName: move.toStatusName });
-  }
-}
-
-@Directive({ selector: '[ethleteEditIssueStatus]' })
-export class EditIssueStatusDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditIssueStatus');
-
-  constructor() {
-    this.host.registerEditField({ component: EditIssueStatusComponent, injector: inject(Injector), order: 0 });
   }
 }
 

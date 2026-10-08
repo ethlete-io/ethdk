@@ -1,7 +1,7 @@
 import { Locator, Page, expect } from '@playwright/test';
 
 /** The scheduler's edit surface, which is where every band is named, timed and answered. */
-export const editSurface = (page: Page) => page.locator('et-scheduler-edit-surface');
+export const editSurface = (page: Page) => page.locator('ethlete-row-edit-surface');
 
 /**
  * Opens the edit surface for a band. `title` is the band's own label — the issue it is logged

@@ -1,20 +1,11 @@
-import {
-  Component,
-  Directive,
-  Injector,
-  ViewEncapsulation,
-  WritableSignal,
-  computed,
-  inject,
-  input,
-} from '@angular/core';
-import { Appointment, FORM_FIELD_IMPORTS, injectSchedulerEditSurfaceHost } from '@ethlete/components';
+import { Component, ViewEncapsulation, WritableSignal, computed, input } from '@angular/core';
+import { Appointment, FORM_FIELD_IMPORTS } from '@ethlete/components';
 import { projectKeyFor, streamKeyRepoPath } from '@ethlete/timetrack';
 import { IssueSelectComponent } from '../../jira';
-import { rowEntryOf } from './row-appointment';
+import { rowEntryOf, TimelineEntry } from './row-appointment';
 import { injectProjectLinks } from '../../project-links';
 
-/** The issue the row is logged against. Replaces the surface's own title field, which writes the same key. */
+/** The issue the row is logged against, kept in the appointment's title. */
 @Component({
   selector: 'ethlete-edit-issue',
   template: `
@@ -41,7 +32,7 @@ import { injectProjectLinks } from '../../project-links';
 export class EditIssueComponent {
   private projectLinks = injectProjectLinks();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
 
   protected issueKey = computed(() => this.draft()().title);
 
@@ -65,14 +56,5 @@ export class EditIssueComponent {
 
   protected pick(issueKey: string) {
     this.draft().update((appointment) => ({ ...appointment, title: issueKey }));
-  }
-}
-
-@Directive({ selector: '[ethleteEditIssue]' })
-export class EditIssueDirective {
-  private host = injectSchedulerEditSurfaceHost('ethleteEditIssue');
-
-  constructor() {
-    this.host.registerEditField({ component: EditIssueComponent, injector: inject(Injector), order: 0 });
   }
 }
