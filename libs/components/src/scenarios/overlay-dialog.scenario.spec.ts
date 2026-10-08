@@ -1,4 +1,4 @@
-import { Component, inject, input, inputBinding, signal, viewChild, viewChildren } from '@angular/core';
+import { Component, effect, inject, input, inputBinding, signal, viewChild, viewChildren } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subscription } from 'rxjs';
 import {
@@ -422,6 +422,39 @@ describe('overlay dialog scenarios', () => {
     s.flush();
 
     expect(page.results()).toEqual(['saved']);
+    expect(overlayRoots()).toBe(0);
+  });
+
+  it('opens from inside an effect and still tracks busy on the pane', () => {
+    const s = scenario();
+    const refs: OverlayRef[] = [];
+
+    s.run(() => {
+      const manager = injectOverlayManager();
+      const pending = signal(true);
+
+      effect(() => {
+        if (!pending()) return;
+
+        refs.push(manager.open(BusyClosersOverlayComponent, { strategies: dialogOverlayStrategy() }));
+        pending.set(false);
+      });
+    });
+    s.flush();
+
+    expect(refs).toHaveLength(1);
+    expect(overlayRoots()).toBe(1);
+
+    const ref = refs[0] as OverlayRef;
+
+    ref.busy.set(true);
+    s.flush();
+
+    expect(elementsOf(ref).paneElement.getAttribute('aria-busy')).toBe('true');
+
+    ref.close();
+    s.flush();
+
     expect(overlayRoots()).toBe(0);
   });
 

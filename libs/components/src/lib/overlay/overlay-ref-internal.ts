@@ -1,4 +1,4 @@
-import { Injector, TemplateRef, computed, effect, runInInjectionContext, signal } from '@angular/core';
+import { Injector, TemplateRef, computed, effect, runInInjectionContext, signal, untracked } from '@angular/core';
 import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef, injectRenderer } from '@ethlete/core';
 import { Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
@@ -46,10 +46,13 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
     const paneElement = runtimeRef.elements.paneElement;
     const renderer = runInInjectionContext(injector, () => injectRenderer());
-    const busyAttributeEffect = effect(() => renderer.setAttribute(paneElement, 'aria-busy', busy() ? 'true' : null), {
-      injector,
-      manualCleanup: true,
-    });
+    // An overlay may open from an effect or computed, where effect() throws NG0602.
+    const busyAttributeEffect = untracked(() =>
+      effect(() => renderer.setAttribute(paneElement, 'aria-busy', busy() ? 'true' : null), {
+        injector,
+        manualCleanup: true,
+      }),
+    );
 
     runtimeRef.registerCloseGuard((event) => {
       if (busy() && event.source !== 'api') {
