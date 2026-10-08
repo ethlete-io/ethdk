@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.0-next.15
+
+### Major Changes
+
+- `@ethlete/query-devtools` exports only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS` and `QUERY_DEVTOOLS_VERSION`, no longer peer-depends on `@ethlete/types`, and warns once in dev mode when `provideQueryDevtools()` is missing.
+
+### Patch Changes
+
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions.
+- The panel reads the query system through `@ethlete/query/devtools-contract`.
+- Holding `Ctrl/Cmd + Alt + Q` now toggles the devtools once instead of flickering the panel open and closed on every key repeat.
+- The override menus' error text takes its color from the surface of the menu panel.
+- The published typings no longer contain `@internal` members; the toggle entry point's view-state helpers are exported with a `ɵ` prefix.
+- Add `invalidates` to mutation creators and `tags` to read creators, plus `invalidateQueries({ tag })`, so a mutation declares what it makes stale.
+- Breaking: `ResizeMoveEvent` `dx`/`dy` are now `totalDx`/`totalDy`, and `resizeEnded` emits the final `ResizeMoveEvent` instead of `void`.
+
 ## 1.0.0-next.14
 
 ### Patch Changes

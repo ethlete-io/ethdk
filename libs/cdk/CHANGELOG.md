@@ -1,5 +1,33 @@
 # @ethlete/cdk
 
+## 5.0.0-next.38
+
+### Minor Changes
+
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. The test-only `vite` and `@analogjs/vite-plugin-angular` peers are gone. `migrate-from-cdk` lists app stylesheet `.et-*` selectors that no `@ethlete/components` class matches.
+
+### Patch Changes
+
+- `et-accordion` no longer closes an accordion opened through `[isOpen]` when `isOpenByDefault` is false.
+- Fix `et-breadcrumb` collapsing endlessly with few items, masonry `0` keys and narrow layouts, `et-picture` srcset base URLs, and tooltips staying open when `etTooltip` turns null.
+- `createFormChangesTracker` and `createNavigationDismissChecker` report a form cleared to `null` as a change.
+- `createFormChangesTracker().hasChanges` no longer reports the inverse, and both it and `createNavigationDismissChecker` now see a change to `''`, `0` or `false`.
+- The `migrate-from-cdk` task file lists cdk form controls still bound through `formControl`, `formControlName` or `[formGroup]`, grouped by control, as needing signal forms first.
+- Correct the migration map rows for `DATE_TIME_INPUT_FORMAT_TOKEN`, `provideDateTimeFormat`, the `DEFAULT_DATE_*` formats and `QueryButtonDirective`, and the documented defaults of `delayFocusTrap` and the toggletip `offset`.
+- `paginate` handles a `NaN` or fractional `currentPage` and disables "previous" on a non-1 `firstPage`, and `TableDataSource` no longer sets the paginator to page `-1` when a filter matches nothing.
+- `et-picture` keeps a srcset URL that contains a comma (such as a Cloudinary transform) intact when it applies the base URL or picks the fallback image.
+- Name the hostDirective wrapper case and the injection context of `queryButtonSourceFromV2Query` in the `QueryButton*` migration notes.
+- `et-query-error` shows the default message instead of throwing when an error response carries an empty violation or message list.
+- The `et-query-error` retry button no longer submits a surrounding form.
+- Page Up and Page Down in a cdk select or combobox move to the nearest enabled option when the first or last option is disabled.
+- Keep a falsy option such as `0` or `''` selectable in the combobox, and stop `SelectionModel.getOptionByOffset` from overflowing the stack when it loops, gets no options, or meets only disabled options.
+- A sort header without its own `disableClear` now falls back to `etSortDisableClear` and the `SORT_DEFAULT_OPTIONS` token instead of always allowing the cleared state.
+- A destroyed sort header removes its screen-reader sort description from the document.
+- Add `etQueryButton`, which shows a query's loading state and progress on any button, and `queryButtonSourceFromV2Query` for legacy queries; the cdk migration map now points the cdk query button at it.
+- `AnimatedLifecycleDirective` gains a read-only `state` signal, and `state$` is now a read-only observable; read `state()` instead of `state$.value`.
+- Breaking: spinner and progress bar are determinate while `value` is bound, replacing `determinate` and `indeterminate` (`et update` migrates templates); the progress bar takes `color`, and `LOADER_IMPORTS` is exported.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+
 ## 5.0.0-next.37
 
 ### Patch Changes

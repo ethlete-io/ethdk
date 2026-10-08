@@ -1,5 +1,24 @@
 # @ethlete/cli
 
+## 3.0.0-next.16
+
+### Major Changes
+
+- Breaking: `release()` takes `{ args, root?, invocation? }` and resolves to an exit code instead of exiting. `et release` tags after the release commit and takes `--message` and `--help`; `et update` names the `.npmrc` whose token was refused.
+
+### Minor Changes
+
+- New `et migrations` lists the recommended and optional migrations an app has not run, and `et migrations run <package>:<name>` runs one and records it in `.ethlete/migrations.json`.
+- `et update` runs only `required` migrations and points at the recommended and optional ones it left.
+- `et migrations` shows the number of affected files next to each migration whose manifest entry names a `scan` generator.
+- Peer dependencies are ranges (`^22.1.0` for Angular, `^7.8.0` for RxJS, ...) instead of the workspace's exact versions. `et update` says when another dist tag holds a newer major, also when the repo is up to date.
+
+### Patch Changes
+
+- `et release` and `et update` now reject values on boolean flags and empty `--tag=`/`--to=`, and version comparison ignores build metadata.
+- `et update --from` rejects a version that is not one, such as `core@v5.0.0`, instead of running every migration of the package.
+- The call title bar no longer covers the top of a drawing: the drawing starts below it, and it fades out while the drawing scrolls down and back in on scroll up.
+
 ## 2.1.0-next.15
 
 ### Minor Changes

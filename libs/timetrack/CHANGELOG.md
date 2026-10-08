@@ -1,5 +1,57 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.13
+
+### Minor Changes
+
+- `timetrack approvals` lists the writes that wait for approval, and `timetrack approval <id> --reject` rejects one the way the Reject button does; approving stays the user's click in the app.
+- `timetrack ask` asks auto mode again about a stand-in or an unnamed band of any day, as the app's "Ask auto mode again" does.
+- `timetrack standins --resolve <id> --issue <KEY>` resolves a stand-in to a Jira issue, or moves a resolved one to another, once the user approves it in the app.
+- When auto mode matches a stand-in to a done issue, it queues the match for your approval, marked done, instead of leaving it with no action. Approving resolves the stand-in to that issue; rejecting writes nothing.
+- A finished day Tempo holds keeps the rows it was booked with, so a model change re-cuts only the days Tempo does not hold yet.
+- "Show on the day" in Waiting requests now switches to the request's day, and an auto mode ticket draft shows its stand-in or band.
+- A waiting stand-in resolve now shows on the stand-in's bands, and each Waiting requests item offers "Show on the day" or "Show in stand-ins".
+- Ticket matching also offers the issues you logged time on in Tempo, done ones included, so auto mode finds a done ticket you still book on instead of drafting a new one.
+- Ticket matching also offers the issues you named your own Timetrack rows with, so auto mode finds a done ticket even when Tempo holds no worklog on it.
+- When auto mode matches a stand-in or band to an issue that is a parent of other issues, it queues the match for your approval, marked parent, instead of writing it at once.
+- Transcribe calls in German by default, with a Settings select for German, English or a guess per chunk.
+- Read a day's call transcript through the read-only `transcript.day` agent op and `ethlete-agents timetrack transcript [day]`.
+
+### Patch Changes
+
+- The `rxjs` peer is the range `^7.8.0` instead of an exact version.
+- The agent endpoint refuses a day key that names no calendar day, such as `2026-02-30` or `2026-13-01`, for every day operation instead of reading, editing or syncing the day it rolls over into.
+- A band's context menu offers "Ask auto mode again", which asks the model about that band once more, even with auto mode off.
+- Auto mode asks a band or stand-in again when new evidence changes what its answer was built from, while the answer is still its own, and expires the create the old answer left waiting.
+- Auto mode asks about an unnamed band only once its work has been quiet for 30 minutes, and asks again once it settles when it answered while the band still ran.
+- Auto mode waits until a stand-in's work has been quiet for 30 minutes before it asks about it, and asks again once it settles when it answered while the work still ran.
+- When auto mode asks again and a draft replaces an earlier match, the rows that match named lose its issue at once instead of keeping it until the create is approved. Rows the user named are untouched.
+- `listGoogleCalendarEvents$` now drops an all-day entry whose date does not exist, such as `2026-02-30`, instead of rolling it over into the next month.
+- Every Jira create, including the epic or parent create and the agent's `jira.create`, now skips an issue the project already holds and shares a create still in flight, so a retry files no duplicate.
+- Cut a break nobody prompted in out of the rows an agent ran through, so the day and the Tempo sync book the parts before and after it and nothing inside it.
+- Cut the rows at the edges the Break lane draws, so no booked row reaches into a drawn break and its "Nobody was here" row fills the whole break.
+- Stop Timetrack freezing on a band auto mode named with the issue its dispute offered: such a band is no longer disputed, and applying a dispute answer the band already holds changes nothing
+- A Jira or GitLab host typed with a capitalised scheme, such as `HTTPS://acme.atlassian.net`, is kept as it is instead of getting a second `https://` in front of it.
+- Keep the agent work inside a break as a "Nobody was here" row instead of dropping it, so the day shows it and the user can still book it.
+- An agent session in a worktree that lives inside another checkout's directory keeps the branch it reports, rather than taking the branch the enclosing checkout last switched to, so its time no longer goes to that branch's issue.
+- A commit records the worktree it was made in, so a commit from a worktree inside another checkout keeps its own branch and no longer moves that checkout's branch.
+- Phone time now books in full while the remote prompts are at most a quarter hour apart; a longer gap ends the stretch and stays a break. The one-hour daily cap and the `maxRemoteAttentionMs` option are gone.
+- Edit model prices under Settings, and show what a day's agent turns cost once a price exists.
+- Add a dated price table that turns agent spend into a cost, with no cost for a day that used an unpriced model.
+- A band the reviewer chose not to log no longer counts as unattributed time or raises the "Some work is not named yet" warning.
+- An agent session that loses minutes to another session of its checkout on another issue now reports them as a behind stretch.
+- One agent session that works in two repositories now books each minute once, to the repository its tool calls touched.
+- Keep a session's piece per checkout, and test a session's overlap against the real intervals of a handoff-joined piece, so sequential sessions no longer merge into one long band.
+- A session that moves between two repositories named to the same ticket no longer pulls the other repository's minutes into one band.
+- A call is no longer named after a window its app left long before the microphone opened, and a `call-start` can carry the title the host read.
+- A stand-in no longer counts a day Tempo already holds. Its day count, age, waiting line and ticket request cover only the days Tempo does not hold yet, and a resolve leaves the rows of the booked days alone.
+- A ticket drafted for a stand-in now names the work all of its bands on the day did, not the first commit that opened it.
+- A lane no longer draws a "in the background" strip under one of its own rows that books the same minutes.
+- The day banner counts only the time a synced row grew by as not in Tempo yet, and names a synced row that changed without growing as a row changed since the sync.
+- Follow a Tempo next page on the account's regional API host (`api.eu.tempo.io`), so reads longer than one page no longer fail.
+- State what the turns no checkout carries cost, apart from the day's total.
+- Read no break inside a stretch the focused window held, so a commit in it no longer cuts the row in two.
+
 ## 0.1.0-next.12
 
 ### Patch Changes

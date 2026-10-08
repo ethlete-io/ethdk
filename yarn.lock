@@ -4463,7 +4463,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@ethlete/bracket@npm:^1.0.0-next.2, @ethlete/bracket@workspace:libs/bracket":
+"@ethlete/bracket@npm:^1.0.0-next.3, @ethlete/bracket@workspace:libs/bracket":
   version: 0.0.0-use.local
   resolution: "@ethlete/bracket@workspace:libs/bracket"
   languageName: unknown
@@ -4517,7 +4517,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@ethlete/components@workspace:libs/components"
   dependencies:
-    "@ethlete/bracket": "npm:^1.0.0-next.2"
+    "@ethlete/bracket": "npm:^1.0.0-next.3"
   peerDependencies:
     "@angular/common": ^22.1.0
     "@angular/compiler": ^22.1.0

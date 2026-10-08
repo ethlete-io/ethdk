@@ -1,5 +1,28 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.20
+
+### Minor Changes
+
+- `ethlete-agents` rejects unknown flags, derives the lint and Storybook commands from `package.json`, names a config file that does not parse, and warns about unknown config keys.
+- `timetrack approvals` lists the writes that wait for approval, and `timetrack approval <id> --reject` rejects one the way the Reject button does; approving stays the user's click in the app.
+- `timetrack ask` asks auto mode again about a stand-in or an unnamed band of any day, as the app's "Ask auto mode again" does.
+- `timetrack standins --resolve <id> --issue <KEY>` resolves a stand-in to a Jira issue, or moves a resolved one to another, once the user approves it in the app.
+- Read a day's call transcript through the read-only `transcript.day` agent op and `ethlete-agents timetrack transcript [day]`.
+
+### Patch Changes
+
+- `ethlete-agents sync`, `check` and `migrate` now reject a value on a flag that takes none (`--dry-run=false`) and ignore empty `--targets` entries.
+- The `context-warning` hook no longer asks to finish or hand off while a handoff is being saved.
+- The theming skill and styling rules recommend `injectSemanticColorTheme(type)` over the deprecated `injectErrorTheme()` and its siblings.
+- The `sdk-docs` skill lists the `testing` component docs page.
+- The theming skill covers `injectSemanticColorTheme()` and `SurfaceTheme.semanticColorThemes`.
+- The `app-styling` rule now also fits apps on Tailwind 3 and apps that define their own colour palette.
+- The `tslib` peer is the range `^2.3.0` instead of an exact version.
+- Mark every migration with a `level`, so `et update` runs only the required ones.
+- The query skill names `createQueryGroup` and `withOptimisticUpdate` and links the query groups page; the sdk-docs skill lists the `paged-query-trigger` domain.
+- List the stat tile in the component domains of the `sdk-docs` skill.
+
 ## 0.1.0-next.19
 
 ### Minor Changes

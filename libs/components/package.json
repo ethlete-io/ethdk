@@ -1,10 +1,10 @@
 {
   "name": "@ethlete/components",
-  "version": "1.0.0-next.66",
+  "version": "1.0.0-next.67",
   "license": "MIT",
   "sideEffects": false,
   "dependencies": {
-    "@ethlete/bracket": "^1.0.0-next.2"
+    "@ethlete/bracket": "^1.0.0-next.3"
   },
   "peerDependencies": {
     "@angular/common": "^22.1.0",

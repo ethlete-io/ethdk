@@ -1,5 +1,26 @@
 # @ethlete/bracket
 
+## 1.0.0-next.3
+
+### Major Changes
+
+- Breaking: `BracketSlotSource` is now a union discriminated by `kind` that carries only the fields of its kind; build slots with the new `bracketSlot.*` constructors.
+
+### Minor Changes
+
+- Export `BracketRuntimeError` with a numeric `code`, add an `onWarning` option to `createBracket` for unlinked matches and unknown feeder ids, and name the match and round ids in relation errors.
+- Add `createPlaceholderBracketSource(shape)`, an empty single or double elimination source for drawing a loading state.
+- Add `standingRankSides()` and `swapStandingRank()` for changing who fills a knockout side fed by a table position.
+- Add `validateBracketSource()`, which returns the `BracketRuntimeError` a source would throw, or `null`.
+
+### Patch Changes
+
+- A double elimination grand final with no reverse final now marks both finalists as in an elimination match, and its loser as eliminated.
+- The lower-bracket finalist of a double elimination with a reverse final is recognised whatever order the source lists its rounds in.
+- A merge connector bends towards its card when the source names the lower feeder first, instead of overshooting and doubling back.
+- The published typings no longer contain `@internal` members; `createStackedDoubleEliminationGrid` is exported as `ɵcreateStackedDoubleEliminationGrid`.
+- A third place round no longer counts as the round after the final (or reverse final) in a source without slot provenance, so the final stays the last match and the continue column is drawn.
+
 ## 1.0.0-next.2
 
 ### Minor Changes

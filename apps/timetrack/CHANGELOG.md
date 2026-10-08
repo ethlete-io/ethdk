@@ -1,5 +1,61 @@
 # timetrack-app
 
+## 0.2.0-next.9
+
+### Minor Changes
+
+- A band's context menu offers "Ask auto mode again", which asks the model about that band once more, even with auto mode off.
+- `timetrack approvals` lists the writes that wait for approval, and `timetrack approval <id> --reject` rejects one the way the Reject button does; approving stays the user's click in the app.
+- `timetrack ask` asks auto mode again about a stand-in or an unnamed band of any day, as the app's "Ask auto mode again" does.
+- `timetrack standins --resolve <id> --issue <KEY>` resolves a stand-in to a Jira issue, or moves a resolved one to another, once the user approves it in the app.
+- "Show on the day" in Waiting requests now switches to the request's day, and an auto mode ticket draft shows its stand-in or band.
+- A waiting stand-in resolve now shows on the stand-in's bands, and each Waiting requests item offers "Show on the day" or "Show in stand-ins".
+- On macOS, the window now uses the native traffic-light buttons at the top left, rounded corners and shadow instead of the drawn minimise, maximise and close buttons. Windows and Linux keep the drawn buttons.
+- The Sync view now remembers each day's last write to Tempo across reloads and restarts.
+- Transcribe calls in German by default, with a Settings select for German, English or a guess per chunk.
+- Read a day's call transcript through the read-only `transcript.day` agent op and `ethlete-agents timetrack transcript [day]`.
+
+### Patch Changes
+
+- The day screen names a Tempo history read that failed, instead of matching tickets without it in silence.
+- The agent log reader no longer fails on a dangling symlink or a line that is not valid UTF-8. It skips the broken link and reads the bad line with replacement characters, so the other logs still arrive.
+- The release now ships a macOS bundle for Intel Macs next to the Apple Silicon one.
+- The approval card now names a new issue's parent, and the ticket of a worklog or naming offer, with its summary after the key.
+- Auto mode asks a band or stand-in again when new evidence changes what its answer was built from, while the answer is still its own, and expires the create the old answer left waiting.
+- Auto mode asks about an unnamed band only once its work has been quiet for 30 minutes, and asks again once it settles when it answered while the band still ran.
+- Auto mode waits until a stand-in's work has been quiet for 30 minutes before it asks about it, and asks again once it settles when it answered while the work still ran.
+- A band drawn over a stretch a parallel session lost now reads that stretch as its own line under the description, or drops it when the band is too short, instead of overlapping it.
+- On Linux a `call-start` carries the title of the call app's window, even when that window never had the focus.
+- Every Jira create, including the epic or parent create and the agent's `jira.create`, now skips an issue the project already holds and shares a create still in flight, so a retry files no duplicate.
+- Stop Timetrack freezing on a band auto mode named with the issue its dispute offered: such a band is no longer disputed, and applying a dispute answer the band already holds changes nothing
+- On macOS, a click on the dock icon now shows the hidden window again.
+- When auto mode matches a stand-in to a done issue, it queues the match for your approval, marked done, instead of leaving it with no action. Approving resolves the stand-in to that issue; rejecting writes nothing.
+- A finished day Tempo holds keeps the rows it was booked with, so a model change re-cuts only the days Tempo does not hold yet.
+- In light mode, overlays such as the row edit surface and select dropdowns render light, disabled buttons use light disabled colors, and a long row title truncates in the edit surface's header instead of widening it.
+- Ticket matching also offers the issues you logged time on in Tempo, done ones included, so auto mode finds a done ticket you still book on instead of drafting a new one.
+- Ticket matching also offers the issues you named your own Timetrack rows with, so auto mode finds a done ticket even when Tempo holds no worklog on it.
+- An agent session in a worktree that lives inside another checkout's directory keeps the branch it reports, rather than taking the branch the enclosing checkout last switched to, so its time no longer goes to that branch's issue.
+- A commit records the worktree it was made in, so a commit from a worktree inside another checkout keeps its own branch and no longer moves that checkout's branch.
+- The reminder banner opens the reminded day. A day that is not logged yet offers "Sync the day" and opens the sync view, and any other gap offers "Review the day" and opens the day view.
+- The end-of-day reminder re-reads the day as soon as a Tempo sync lands or an edit on the day screen is saved, instead of up to a minute later.
+- When auto mode matches a stand-in or band to an issue that is a parent of other issues, it queues the match for your approval, marked parent, instead of writing it at once.
+- Phone time now books in full while the remote prompts are at most a quarter hour apart; a longer gap ends the stretch and stays a break. The one-hour daily cap and the `maxRemoteAttentionMs` option are gone.
+- A band that draws phone time past the hour the day books now reads "15m phone time not counted" instead of "15m not booked", so it no longer reads as if the rest were already in Tempo.
+- Edit model prices under Settings, and show what a day's agent turns cost once a price exists.
+- A band the reviewer chose not to log no longer counts as unattributed time or raises the "Some work is not named yet" warning.
+- The row edit surface is an app component built from the scheduler's edit surface blocks, replacing the field and action registrations.
+- Day: the band menu offers "Don't log this time" and "Log this time". A band not logged paints muted, and reads "Not logged" where it had no name, or adds "· not logged" after its issue.
+- Remember a timeline scroll under the day it was made on, with the offset it had then, when the day changes before the scroll settles.
+- Bind the renamed `loadError` input on the Jira and settings selects.
+- A call is no longer named after a window its app left long before the microphone opened, and a `call-start` can carry the title the host read.
+- A stand-in no longer counts a day Tempo already holds. Its day count, age, waiting line and ticket request cover only the days Tempo does not hold yet, and a resolve leaves the rows of the booked days alone.
+- A ticket drafted for a stand-in now names the work all of its bands on the day did, not the first commit that opened it.
+- The day banner counts only the time a synced row grew by as not in Tempo yet, and names a synced row that changed without growing as a row changed since the sync.
+- Fix a keyboard activation on the day timeline being ignored after a pointer drag.
+- State what the turns no checkout carries cost, apart from the day's total.
+- Line an underline field's label up with its value again.
+- The lock screen can be unlocked again after an unlock attempt fails instead of staying on "Checking…", and a remembered day that is not a real calendar day (such as `2026-02-30`) is dropped instead of opened.
+
 ## 0.2.0-next.8
 
 ### Minor Changes
