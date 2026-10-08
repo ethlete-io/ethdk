@@ -406,10 +406,11 @@ pub struct PairedMachine {
     pub last_seen_ms: Option<i64>,
     pub clock_offset_ms: Option<i64>,
     pub paired_at_ms: i64,
+    pub last_pull_ms: Option<i64>,
 }
 
 const PAIRED_COLUMNS: &str =
-    "machine_id, label, cert_fingerprint, last_addr, last_seen_ms, clock_offset_ms, paired_at_ms";
+    "machine_id, COALESCE(name, label), cert_fingerprint, last_addr, last_seen_ms, clock_offset_ms, paired_at_ms, last_pull_ms";
 
 fn paired_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PairedMachine> {
     Ok(PairedMachine {
@@ -420,6 +421,7 @@ fn paired_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<PairedMachine> {
         last_seen_ms: row.get(4)?,
         clock_offset_ms: row.get(5)?,
         paired_at_ms: row.get(6)?,
+        last_pull_ms: row.get(7)?,
     })
 }
 
@@ -566,7 +568,7 @@ pub struct ReceivedEvent {
 /// The copies of a forgotten machine stay in the store until retention takes them, and are left out.
 fn received_in(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedEvent>> {
     let mut statement = connection.prepare(
-        "SELECT received.machine_id, paired.label, received.at_ms, received.source, received.kind, received.payload
+        "SELECT received.machine_id, COALESCE(paired.name, paired.label), received.at_ms, received.source, received.kind, received.payload
            FROM received_event received
            JOIN paired_machine paired ON paired.machine_id = received.machine_id
           WHERE received.at_ms >= ?1 AND received.at_ms < ?2
@@ -648,6 +650,10 @@ fn apply_changes(
         "INSERT INTO peer_cursor (machine_id, changed_seq) VALUES (?1, ?2)
          ON CONFLICT (machine_id) DO UPDATE SET changed_seq = MAX(changed_seq, ?2)",
         params![machine_id, cursor],
+    )?;
+    transaction.execute(
+        "UPDATE paired_machine SET last_pull_ms = ?2 WHERE machine_id = ?1",
+        params![machine_id, now_ms()],
     )?;
     transaction.commit()?;
 
@@ -1444,6 +1450,22 @@ impl Peers {
     }
 
     /// Withdraws this machine's mDNS advertisement and stops browsing.
+    /// An empty name clears the user's name, so the machine reads under its host name again.
+    pub async fn rename(&self, machine_id: &str, name: &str) -> TimetrackResult<bool> {
+        let machine_id = machine_id.to_string();
+        let name = Some(name.trim().to_string()).filter(|name| !name.is_empty());
+
+        self.0
+            .db
+            .run(move |connection| {
+                Ok(connection.execute(
+                    "UPDATE paired_machine SET name = ?2 WHERE machine_id = ?1",
+                    params![machine_id, name],
+                )? > 0)
+            })
+            .await
+    }
+
     pub fn shutdown(&self) {
         let running = self.0.discovery.lock().ok().and_then(|mut discovery| discovery.take());
 
@@ -1507,6 +1529,10 @@ impl Peers {
                 .forget(&text("machineId")?)
                 .await
                 .map(|forgotten| serde_json::json!({ "forgotten": forgotten })),
+            "peers.rename" => self
+                .rename(&text("machineId")?, &text("name")?)
+                .await
+                .map(|renamed| serde_json::json!({ "renamed": renamed })),
             _ => return Err(format!("{op} is not an operation")),
         };
 
@@ -1634,6 +1660,11 @@ pub async fn received_between(
 #[tauri::command]
 pub async fn peers_forget(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<bool> {
     peers.forget(&machine_id).await
+}
+
+#[tauri::command]
+pub async fn peers_rename(peers: tauri::State<'_, Peers>, machine_id: String, name: String) -> TimetrackResult<bool> {
+    peers.rename(&machine_id, &name).await
 }
 
 #[cfg(test)]
@@ -2168,6 +2199,50 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn a_renamed_machine_reads_under_the_name_given_and_under_its_host_name_once_cleared() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        collect(&a, 2_000, None).await;
+        b.pull(&a_id).await.unwrap();
+
+        assert!(b.rename(&a_id, "  Desk  ").await.unwrap());
+        assert_eq!(b.list().await.unwrap()[0].label, "Desk");
+        assert_eq!(b.received_between(0, 10_000).await.unwrap()[0].label, "Desk");
+
+        b.hello(&a_id).await.unwrap();
+
+        assert_eq!(b.list().await.unwrap()[0].label, "Desk");
+
+        assert!(b.rename(&a_id, "   ").await.unwrap());
+        assert_eq!(b.list().await.unwrap()[0].label, "pc");
+        assert_eq!(b.received_between(0, 10_000).await.unwrap()[0].label, "pc");
+        assert!(!b.rename("nobody", "x").await.unwrap());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn records_when_the_last_pull_succeeded() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        assert_eq!(b.list().await.unwrap()[0].last_pull_ms, None);
+
+        let before = now_ms();
+
+        b.pull(&a_id).await.unwrap();
+
+        let pulled = b.list().await.unwrap()[0].last_pull_ms.unwrap();
+
+        assert!(pulled >= before && pulled <= now_ms());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn answers_the_agent_ops_by_name() {
         let (a, b) = (instance("pc"), instance("laptop"));
         let offer = a.answer(&serde_json::json!({ "op": "pair.offer" })).await.unwrap();
@@ -2202,6 +2277,12 @@ mod tests {
                 .await
                 .unwrap(),
             serde_json::json!([])
+        );
+        assert_eq!(
+            b.answer(&serde_json::json!({ "op": "peers.rename", "machineId": id, "name": "Desk" }))
+                .await
+                .unwrap()["renamed"],
+            true
         );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.forget", "machineId": id }))

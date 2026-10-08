@@ -46,6 +46,7 @@ const COMMANDS: &[&str] = &[
     "peers_hello",
     "peers_list",
     "peers_pull",
+    "peers_rename",
     "read_spec",
     "received_between",
     "reporter_vsix_path",

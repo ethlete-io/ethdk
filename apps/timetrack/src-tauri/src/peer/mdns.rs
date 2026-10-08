@@ -386,6 +386,7 @@ mod tests {
             last_seen_ms: None,
             clock_offset_ms: None,
             paired_at_ms: 0,
+            last_pull_ms: None,
         };
 
         assert!(found.describe(&[paired("m1", "f1")]).paired);

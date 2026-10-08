@@ -51,6 +51,7 @@
     "allow-peers-hello",
     "allow-peers-list",
     "allow-peers-pull",
+    "allow-peers-rename",
     "allow-read-spec",
     "allow-received-between",
     "allow-reporter-vsix-path",

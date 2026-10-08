@@ -315,6 +315,22 @@ CREATE TABLE IF NOT EXISTS paired_machine (
 );
 ";
 
+/// `name` is the label the user gave the machine; it wins over `label`, the host name the peer reports.
+/// `last_pull_ms` is when a pull from the machine last succeeded.
+fn add_paired_machine_name_and_pull(connection: &Connection) -> TimetrackResult<()> {
+    for (column, definition) in [("name", "TEXT"), ("last_pull_ms", "INTEGER")] {
+        let present = connection
+            .prepare("SELECT 1 FROM pragma_table_info('paired_machine') WHERE name = ?1")?
+            .exists([column])?;
+
+        if !present {
+            connection.execute_batch(&format!("ALTER TABLE paired_machine ADD COLUMN {column} {definition}"))?;
+        }
+    }
+
+    Ok(())
+}
+
 /// Checked first because a store re-run from an older version already has the column.
 fn add_change_tracking(connection: &Connection) -> TimetrackResult<()> {
     let present = connection
@@ -621,6 +637,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 21, |connection| Ok(connection.execute_batch(SCHEMA_V21)?))?;
     }
 
+    if version < 22 {
+        step(connection, 22, add_paired_machine_name_and_pull)?;
+    }
+
     Ok(())
 }
 
@@ -695,7 +715,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            21
+            22
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -819,7 +839,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            21
+            22
         );
     }
 
@@ -1348,7 +1368,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            21
+            22
         );
         assert_eq!(
             connection
