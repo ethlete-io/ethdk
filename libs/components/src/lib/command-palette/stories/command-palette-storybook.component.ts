@@ -5,7 +5,7 @@ import { KBD_IMPORTS } from '../../kbd';
 import { COMMAND_PALETTE_IMPORTS } from '../command-palette.imports';
 import { registerCommands } from '../command-palette-registry';
 import { CommandPaletteCommand } from '../command-palette.types';
-import { injectCommandPalette } from '../command-palette.overlay';
+import { createCommandPaletteOpener } from '../command-palette.overlay';
 
 @Component({
   selector: 'et-sb-command-palette',
@@ -32,7 +32,7 @@ import { injectCommandPalette } from '../command-palette.overlay';
   providers: [provideIcons(PLUS_ICON, TABLE_ICON, TRASH_ICON)],
 })
 export class CommandPaletteStorybookComponent {
-  protected palette = injectCommandPalette();
+  protected palette = createCommandPaletteOpener();
 
   protected lastRun = signal<string | null>(null);
   protected selectedRow = signal<string | null>(null);

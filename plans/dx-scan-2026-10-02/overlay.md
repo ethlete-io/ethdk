@@ -231,3 +231,4 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
 - Fix: pick `undefined` for both result paths; rename to `createCommandPaletteOpener` (keep an alias for one
   release); add the transforms.
 - Breaking: yes (result nullability, rename). Decision: yes (which names win).
+- Status: fixed (2026-10-08, `undefined` on both result paths, `createCommandPaletteOpener` with deprecated `injectCommandPalette` alias; the `showDelay`/`closeOnActivate` transforms already existed; `etMenu` vs `etOverlay` `autoFocus` left alone - different shapes, no trivial transform fix)

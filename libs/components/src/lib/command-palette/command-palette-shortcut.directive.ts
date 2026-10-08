@@ -6,7 +6,7 @@ import { KBD_PLATFORM, matchesKbdChord, parseKbdKeys } from '../kbd';
 import { injectOverlayManager } from '../overlay';
 import { CommandPaletteComponent } from './command-palette.component';
 import { COMMAND_PALETTE_ERROR_CODES } from './command-palette-errors';
-import { injectCommandPalette } from './command-palette.overlay';
+import { createCommandPaletteOpener } from './command-palette.overlay';
 
 const MODIFIERS = /* @__PURE__ */ new Set([
   'mod',
@@ -43,9 +43,7 @@ const DEFAULT_SHORTCUT = 'mod+k';
 export class CommandPaletteShortcutDirective {
   private document = inject(DOCUMENT);
   private platform = inject(KBD_PLATFORM);
-  private palette = injectCommandPalette();
   private overlayManager = injectOverlayManager();
-
   /** The chord, in `et-kbd` syntax. */
   public shortcut = input(DEFAULT_SHORTCUT, {
     alias: 'etCommandPaletteShortcut',
@@ -53,6 +51,8 @@ export class CommandPaletteShortcutDirective {
     // this the documented no-value form would listen for a chord that can never fire.
     transform: (value: string) => value?.trim() || DEFAULT_SHORTCUT,
   });
+
+  private palette = createCommandPaletteOpener();
 
   constructor() {
     if (ngDevMode) {

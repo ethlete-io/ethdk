@@ -90,7 +90,7 @@ const renameOverlay = defineOverlay<RenameOverlayComponent, string>({
   template: `<button (click)="open()" class="open" type="button">Rename</button>`,
 })
 class RenamePageComponent {
-  results = signal<(string | null)[]>([]);
+  results = signal<(string | undefined)[]>([]);
   ref: OverlayRef<RenameOverlayComponent, string> | null = null;
   opener = createOverlayOpener(renameOverlay, {
     panelClass: 'opener-pane',
@@ -328,7 +328,7 @@ describe('overlay dialog scenarios', () => {
     expect(escape.defaultPrevented).toBe(true);
     s.flush();
     expect(sources).toEqual(['escape']);
-    expect(page.results()).toEqual([null]);
+    expect(page.results()).toEqual([undefined]);
 
     page.open();
     s.flush();
@@ -341,7 +341,7 @@ describe('overlay dialog scenarios', () => {
     s.flush();
 
     expect(sources).toEqual(['escape', 'before:outside-pointer']);
-    expect(page.results()).toEqual([null, null]);
+    expect(page.results()).toEqual([undefined, undefined]);
     expect(overlayRoots()).toBe(0);
   });
 
@@ -523,7 +523,7 @@ describe('overlay dialog scenarios', () => {
     s.keydown('Escape', document.body);
     s.flush();
     expect(manager.openOverlays()).toEqual([]);
-    expect(page.results()).toEqual([null]);
+    expect(page.results()).toEqual([undefined]);
     expect(overlayRoots()).toBe(0);
   });
 

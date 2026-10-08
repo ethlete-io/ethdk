@@ -448,7 +448,7 @@ const plainOverlay = defineOverlay<PlainOverlayComponent, string>({
 
 @Component({ template: '' })
 class PlainOpenerHostComponent {
-  public openerClosed: (string | null)[] = [];
+  public openerClosed: (string | undefined)[] = [];
   public plain = createOverlayOpener(plainOverlay, {
     ariaLabel: 'opener',
     hostClass: 'from-opener',
@@ -475,7 +475,7 @@ describe('overlay opener', () => {
   });
 
   it('runs both the opener and the per-open afterClosed with the result', async () => {
-    const openClosed: (string | null)[] = [];
+    const openClosed: (string | undefined)[] = [];
     const ref = host.plain.open({ afterClosed: (result) => openClosed.push(result) });
     await flushFrames();
 
@@ -486,14 +486,14 @@ describe('overlay opener', () => {
     expect(openClosed).toEqual(['saved']);
   });
 
-  it('reports a close without a result as null', async () => {
+  it('reports a close without a result as undefined', async () => {
     const ref = host.plain.open();
     await flushFrames();
 
     ref.close();
     await flushFrames();
 
-    expect(host.openerClosed).toEqual([null]);
+    expect(host.openerClosed).toEqual([undefined]);
   });
 
   it('merges definition, opener and per-open config in that order', () => {

@@ -112,7 +112,7 @@ The opener config takes three callbacks alongside the overlay config overrides. 
 ```ts
 private product = createOverlayOpener(productOverlay, {
   afterOpened: () => {},
-  beforeClosed: (result) => {}, // result: ProductResult | null
+  beforeClosed: (result) => {}, // result: ProductResult | undefined
   afterClosed: (result) => {},
 });
 ```

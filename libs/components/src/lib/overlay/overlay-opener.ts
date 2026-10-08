@@ -33,10 +33,10 @@ export type OverlayOpenConfig = Omit<OverlayConfig, 'strategies'>;
 
 export type OverlayLifecycleConfig<TResult = unknown> = {
   /** A callback function to be executed once the overlay has been closed */
-  afterClosed?: (result: TResult | null) => void;
+  afterClosed?: (result: TResult | undefined) => void;
 
   /** A callback function to be executed before the overlay is closed */
-  beforeClosed?: (result: TResult | null) => void;
+  beforeClosed?: (result: TResult | undefined) => void;
 
   /** A callback function to be executed once the overlay has been opened */
   afterOpened?: () => void;
@@ -194,7 +194,7 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
     let closeStarted = false;
     const subscription = overlayRef
       .afterClosed()
-      .pipe(tap((result) => afterClosed(result ?? null)))
+      .pipe(tap((result) => afterClosed(result)))
       .subscribe();
     const unregister = destroyRef.onDestroy(() => {
       if (!closeStarted) subscription.unsubscribe();
@@ -214,7 +214,7 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
     overlayRef
       .beforeClosed()
       .pipe(
-        tap((result) => beforeClosed(result ?? null)),
+        tap((result) => beforeClosed(result)),
         takeUntilDestroyed(destroyRef),
       )
       .subscribe();

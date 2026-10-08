@@ -5,7 +5,7 @@ import { OverlayRef } from '../overlay';
 import { CommandPaletteComponent } from './command-palette.component';
 import { COMMAND_PALETTE_IMPORTS } from './command-palette.imports';
 import { provideCommandPaletteRegistry, registerCommands } from './command-palette-registry';
-import { injectCommandPalette } from './command-palette.overlay';
+import { createCommandPaletteOpener } from './command-palette.overlay';
 import { CommandPaletteCommand } from './command-palette.types';
 
 @Component({
@@ -285,7 +285,7 @@ describe('CommandPaletteComponent opened as an overlay', () => {
       ]),
     );
 
-    const overlayRef = TestBed.runInInjectionContext(() => injectCommandPalette().open());
+    const overlayRef = TestBed.runInInjectionContext(() => createCommandPaletteOpener().open());
     let closedVia: string | null = null;
 
     overlayRef.afterClosedEvent().subscribe((event) => (closedVia = event.source ?? 'unknown'));

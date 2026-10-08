@@ -18,7 +18,7 @@ import {
   createOverlayOpener,
   DEFAULT_COMMAND_PALETTE_LABELS,
   GERMAN_COMMAND_PALETTE_LABELS,
-  injectCommandPalette,
+  createCommandPaletteOpener,
   injectCommandPaletteLabels,
   injectCommandPaletteRegistry,
   injectOverlayManager,
@@ -106,7 +106,7 @@ class RowsFeatureComponent {
   `,
 })
 class ShellComponent {
-  palette = injectCommandPalette();
+  palette = createCommandPaletteOpener();
   rows = signal(false);
   hasSelection = signal(false);
   ran: string[] = [];
@@ -501,7 +501,7 @@ describe('command palette scenarios with app labels', () => {
     expect(text(probe.nativeElement)).toBe('Rechercher une commande…');
     expect(probe.componentInstance.source).toEqual({ placeholder: 'Rechercher une commande…' });
 
-    s.run(() => injectCommandPalette()).open();
+    s.run(() => createCommandPaletteOpener()).open();
     settle(s);
 
     expect(search().placeholder).toBe('Rechercher une commande…');

@@ -5,7 +5,7 @@ import { KBD_PLATFORM } from '../kbd';
 import { pressKey } from '../testing/driver-core';
 import { createOverlayDriver } from '../testing/overlay-driver';
 import { CommandPaletteShortcutDirective } from './command-palette-shortcut.directive';
-import { injectCommandPalette } from './command-palette.overlay';
+import { createCommandPaletteOpener } from './command-palette.overlay';
 
 @Component({
   template: `<div etCommandPaletteShortcut></div>`,
@@ -67,7 +67,7 @@ describe('CommandPaletteShortcutDirective', () => {
   });
 
   it('closes a palette that was opened programmatically', async () => {
-    await driver.openVia(() => TestBed.runInInjectionContext(() => injectCommandPalette().open()));
+    await driver.openVia(() => TestBed.runInInjectionContext(() => createCommandPaletteOpener().open()));
 
     expect(openPalettes()).toBe(1);
 

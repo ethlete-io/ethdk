@@ -19,10 +19,13 @@ export const COMMAND_PALETTE_OVERLAY = /* @__PURE__ */ defineOverlay<CommandPale
  * `[etCommandPaletteShortcut]` to an element and let a key chord open it.
  *
  * @example
- * private palette = injectCommandPalette();
+ * private palette = createCommandPaletteOpener();
  *
  * protected openPalette() {
  *   this.palette.open();
  * }
  */
-export const injectCommandPalette = () => createOverlayOpener(COMMAND_PALETTE_OVERLAY);
+export const createCommandPaletteOpener = () => createOverlayOpener(COMMAND_PALETTE_OVERLAY);
+
+/** @deprecated Use `createCommandPaletteOpener`. Removed in the next major. */
+export const injectCommandPalette = createCommandPaletteOpener;

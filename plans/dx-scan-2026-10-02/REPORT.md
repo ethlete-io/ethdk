@@ -22,23 +22,18 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
 
 The domain file of each ID has the full problem and the proposed fix.
 
-| ID      | Question                                                                                                                                                                                       |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TG-01   | `tableRowsFromQuery` owns its state. Accept external writable signals (`sort`, `filters`, `page`, `quickFilter`) and add `pageSize`? How does it interact with `isResetBy`?                    |
-| TG-03   | Server sort/filter state is untyped. Options: (a) generic column key, (b) `sortKey`/`filterKey` on `TableColumn`, (c) a `filterValues<V>()` helper.                                            |
-| SS-02   | How does `<et-scheduler>` take custom edit-surface fields: a `directives` option on `provideSchedulerEditSurface()`, or an `editSurfaceDirectives` input?                                      |
-| SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                     |
-| SS-04   | `TExtra` is lost at `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it?                       |
-| BR-06   | `BracketRuntimeError` is now exported with a `code`. Is a soft-fail mode on `<et-bracket>` or a `validateBracketSource()` API wanted?                                                          |
-| BR-08   | Add `bracketSlot.*` constructors for `BracketSlotSource`? Make it a discriminated union per `kind` (breaking)?                                                                                 |
-| RTE-05  | Give the multi-language editor a `triggers` input and expose the inner editor (`insertToken`, palette)?                                                                                        |
-| RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                        |
-| MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable. |
-| CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                    |
-| CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                    |
-| OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                          |
-| EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                       |
-| FG-13   | Add `standingRankSides()` / `swapStandingRank()` to `@ethlete/bracket`? Does the swap UI belong in components?                                                                                 |
+| ID      | Question                                                                                                                                                                                                                                                    |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TG-01   | `tableRowsFromQuery` owns its state. Accept external writable signals (`sort`, `filters`, `page`, `quickFilter`) and add `pageSize`? How does it interact with `isResetBy`?                                                                                 |
+| TG-03   | Server sort/filter state is untyped. Options: (a) generic column key, (b) `sortKey`/`filterKey` on `TableColumn`, (c) a `filterValues<V>()` helper.                                                                                                         |
+| SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                                                                                  |
+| SS-04   | `TExtra` is lost at `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it? (The edit-field half is decided in `plans/scheduler-edit-surface-composition.md`.) |
+| RTE-05  | Give the multi-language editor a `triggers` input and expose the inner editor (`insertToken`, palette)?                                                                                                                                                     |
+| RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                                                                                     |
+| MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable.                                                              |
+| CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                                                                                 |
+| CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                                                                                 |
+| EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                                                                                    |
 
 ## 3. Calls the coordinator made
 
@@ -52,7 +47,7 @@ A human can reverse each of these.
 
 ## 4. Known gaps
 
-- The scheduler stories Headless, CustomBadgeAdornment and CustomEditField wait on SS-02 and SS-03.
+- The scheduler stories Headless, CustomBadgeAdornment and CustomEditField wait on SS-03 and `plans/scheduler-edit-surface-composition.md`.
 - Overlay router (`syncUrl: true`): after overlay B closes, the stale param of overlay A can come back from the old history entry of A. The browser cannot remove that entry.
 - Commit `b53c99304` has the subject `test(components)` but also holds the SEL-02 source fix.
 

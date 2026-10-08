@@ -9,7 +9,7 @@ Commands come from a **registry**, not from a template. That is the whole point:
 feature area registers its own commands, and they appear in the same palette.
 
 ```ts
-import { COMMAND_PALETTE_IMPORTS, injectCommandPalette, registerCommands } from '@ethlete/components';
+import { COMMAND_PALETTE_IMPORTS, createCommandPaletteOpener, registerCommands } from '@ethlete/components';
 ```
 
 ## Setup
@@ -17,7 +17,7 @@ import { COMMAND_PALETTE_IMPORTS, injectCommandPalette, registerCommands } from 
 Two parts, in any order:
 
 1. Register commands wherever they belong, with `registerCommands`.
-2. Open the palette - either with `injectCommandPalette().open()`, or by adding
+2. Open the palette - either with `createCommandPaletteOpener().open()`, or by adding
    `etCommandPaletteShortcut` to an element so a key chord opens it.
 
 You never place `<et-command-palette>` in a page yourself. It is opened as a dialog.
@@ -118,7 +118,7 @@ otherwise in the order it was registered.
 ## The keyboard shortcut
 
 `etCommandPaletteShortcut` opens the palette on a key chord, and closes it again on the same chord -
-including a palette that `injectCommandPalette().open()` opened. It listens on the document, so put it
+including a palette that `createCommandPaletteOpener().open()` opened. It listens on the document, so put it
 on the application's root component - not on the element a reader must focus first. A held chord
 toggles once, and a focused widget that handles the same chord and calls `preventDefault()` keeps it.
 
@@ -147,7 +147,7 @@ matchesKbdChord(event, { keys: 'mod+k', platform: inject(KBD_PLATFORM) });
 ## Opening it yourself
 
 ```ts
-private palette = injectCommandPalette();
+private palette = createCommandPaletteOpener();
 
 protected openPalette() {
   this.palette.open();
