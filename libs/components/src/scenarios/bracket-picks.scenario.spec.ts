@@ -7,6 +7,7 @@ import {
   BracketDataSource,
   BracketMatch,
   BracketMatchSource,
+  BracketRuntimeError,
   BRACKET_PICK_CARD_IMPORTS,
   BracketPickCardComponent,
   BracketPickSet,
@@ -24,8 +25,10 @@ import {
   NormalizedMatchSideState,
   provideBracketLabels,
   resolveBracketSlot,
+  standingRankSides,
   SINGLE_ELIMINATION_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
+  validateBracketSource,
 } from '../index';
 import '../test-helpers';
 import { useScenario } from './harness';
@@ -356,6 +359,28 @@ describe('bracket prediction scenarios', () => {
       resolveBracketSlot({ bracket, picks, matchId: 'final', side: 'away', keepPickWhileFeederSideIsOpen: true }),
     ).toBeNull();
     expect(resolveBracketSlot({ bracket, picks, matchId: 'missing', side: 'home' })).toBeNull();
+  });
+
+  it('lists the standing-rank sides of a match and reports an unusable source instead of throwing', () => {
+    const source = sourceOf([
+      seeded('semi-1', null, 'team-b', { home: bracketSlot.standingRank('group-a', 1) }),
+      seeded('semi-2', 'team-c', 'team-d'),
+    ]);
+    const bracket = createBracket(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT });
+
+    expect(standingRankSides({ bracket, matchId: 'semi-1' })).toEqual([
+      { side: 'home', standingId: 'group-a', rank: 1, standingName: null, participantId: null },
+    ]);
+    expect(standingRankSides({ bracket, matchId: 'semi-2' })).toEqual([]);
+    expect(standingRankSides({ bracket, matchId: 'missing' })).toEqual([]);
+
+    expect(validateBracketSource(source, { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT })).toBeNull();
+    expect(
+      validateBracketSource(
+        { ...source, matches: [...source.matches, ...source.matches] },
+        { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT },
+      ),
+    ).toBeInstanceOf(BracketRuntimeError);
   });
 
   it('migrates saved picks after a re-draw: kept, moved with their participant, or stranded', () => {

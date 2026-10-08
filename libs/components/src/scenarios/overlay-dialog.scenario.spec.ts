@@ -9,6 +9,7 @@ import {
   createOverlayUnsavedChangesGuard,
   DEFAULT_ALERT_DIALOG_LABELS,
   defineOverlay,
+  overlayResult,
   dialogOverlayStrategy,
   getClosestOverlay,
   injectAlertDialogLabels,
@@ -78,8 +79,9 @@ class RenameOverlayComponent {
 })
 class BusyClosersOverlayComponent {}
 
-const renameOverlay = defineOverlay<RenameOverlayComponent, string>({
+const renameOverlay = defineOverlay({
   component: RenameOverlayComponent,
+  result: overlayResult<string>(),
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
   autoFocus: '.name',
   panelClass: 'rename-pane',

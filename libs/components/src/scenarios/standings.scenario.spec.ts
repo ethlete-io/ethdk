@@ -13,6 +13,7 @@ import {
   STANDINGS_IMPORTS,
   STANDINGS_LABELS,
   STANDINGS_PICK_IMPORTS,
+  swapStandingRank,
   StandingPick,
   StandingsComponent,
   StandingsDirective,
@@ -448,5 +449,17 @@ describe('standings scenarios', () => {
       s.tick();
     }).toThrow(`ET${STANDINGS_ERROR_CODES.DUPLICATE_MARK_TEMPLATE}`);
     dropErrorContext(s);
+  });
+});
+
+describe('standing rank swaps', () => {
+  it('puts a participant on a rank by swapping it with whoever stood there', () => {
+    const order = ['a', 'b', 'c'];
+
+    expect(swapStandingRank({ order, rank: 1, participantId: 'c' })).toEqual(['c', 'b', 'a']);
+    expect(order).toEqual(['a', 'b', 'c']);
+    expect(swapStandingRank({ order, rank: 2, participantId: 'x' })).toEqual(order);
+    expect(swapStandingRank({ order, rank: 4, participantId: 'a' })).toEqual(order);
+    expect(swapStandingRank({ order, rank: 0, participantId: 'a' })).toEqual(order);
   });
 });

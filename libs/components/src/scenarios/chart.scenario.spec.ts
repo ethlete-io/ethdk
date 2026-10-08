@@ -9,10 +9,13 @@ import {
   BarChartSeriesDatum,
   CHART_ERROR_CODES,
   CHART_IMPORTS,
+  CHART_LABELS,
   CHART_PLOT_HOST,
   ChartPlotDirective,
   ChartPlotHost,
+  DEFAULT_CHART_LABELS,
   defaultSankeyChartLinkKeyHint,
+  injectChartLabels,
   LINE_CHART_ERROR_CODES,
   LineChartComponent,
   LineChartDatum,
@@ -22,6 +25,7 @@ import {
   PieChartComponent,
   PieChartDatum,
   PieChartDirective,
+  provideChartLabels,
   provideOverlay,
   SANKEY_CHART_ERROR_CODES,
   SankeyChartComponent,
@@ -109,6 +113,18 @@ class ResultsPieComponent {
     { label: 'Draws', value: 2, colorToken: 'default' },
     { label: 'Losses', value: 2, colorToken: 'red' },
   ]);
+}
+
+@Component({
+  selector: 'et-scenario-unlabelled-pie',
+  imports: [PieChartComponent],
+  template: `<et-pie-chart [data]="results" [innerRadius]="40" label="Results" showTotal />`,
+})
+class UnlabelledPieComponent {
+  results: PieChartDatum[] = [
+    { label: 'Wins', value: 6, colorToken: 'sunshine' },
+    { label: 'Losses', value: 2, colorToken: 'red' },
+  ];
 }
 
 @Component({
@@ -589,5 +605,46 @@ describe('chart scenarios', () => {
     s.flush();
 
     s.expectError(`ET${CHART_ERROR_CODES.MISSING_PLOT}`);
+  });
+});
+
+describe('chart scenarios with labels', () => {
+  const scenario = useScenario({ providers: [provideOverlay(), provideColorThemes(TEST_COLOR_THEMES)] });
+
+  it('writes the built-in English strings and reads them through injectChartLabels', () => {
+    const s = scenario();
+    const { host } = render(s, UnlabelledPieComponent);
+
+    expect(text(query('.et-pie-chart-total-label', host))).toBe(DEFAULT_CHART_LABELS.pieTotal);
+    expect(tableColumns(host)).toEqual([
+      DEFAULT_CHART_LABELS.pieCategoryHeader,
+      DEFAULT_CHART_LABELS.pieValueHeader,
+      DEFAULT_CHART_LABELS.pieShareHeader,
+    ]);
+    expect(s.run(() => injectChartLabels())()).toEqual(DEFAULT_CHART_LABELS);
+  });
+});
+
+describe('chart scenarios with app labels', () => {
+  const scenario = useScenario({
+    providers: [
+      provideOverlay(),
+      provideColorThemes(TEST_COLOR_THEMES),
+      provideChartLabels({ pieTotal: 'Gesamt', pieShareHeader: 'Anteil' }),
+    ],
+  });
+
+  it('overrides the strings it is given and keeps the others', () => {
+    const s = scenario();
+    const { host } = render(s, UnlabelledPieComponent);
+
+    expect(text(query('.et-pie-chart-total-label', host))).toBe('Gesamt');
+    expect(tableColumns(host)).toEqual([
+      DEFAULT_CHART_LABELS.pieCategoryHeader,
+      DEFAULT_CHART_LABELS.pieValueHeader,
+      'Anteil',
+    ]);
+    expect(s.run(() => injectChartLabels())().pieTotal).toBe('Gesamt');
+    expect(TestBed.inject(CHART_LABELS)).toEqual({ pieTotal: 'Gesamt', pieShareHeader: 'Anteil' });
   });
 });

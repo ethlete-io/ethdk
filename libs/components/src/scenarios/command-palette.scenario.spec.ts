@@ -19,6 +19,7 @@ import {
   DEFAULT_COMMAND_PALETTE_LABELS,
   GERMAN_COMMAND_PALETTE_LABELS,
   createCommandPaletteOpener,
+  injectCommandPalette,
   injectCommandPaletteLabels,
   injectCommandPaletteRegistry,
   injectOverlayManager,
@@ -407,6 +408,25 @@ describe('command palette scenarios', () => {
 
     registry.clear();
     expect(registry.commands()).toEqual([]);
+  });
+
+  it('opens the palette through the deprecated injectCommandPalette alias', () => {
+    const s = scenario();
+    const registry = s.run(() => injectCommandPaletteRegistry());
+
+    registry.register([{ id: 'reload', label: 'Reload standings', run: () => undefined }]);
+
+    const opener = s.run(() => injectCommandPalette());
+
+    opener.open();
+    settle(s);
+    expect(paletteOpen()).toBe(true);
+
+    s.keydown('Escape', search());
+    settle(s);
+    expect(paletteOpen()).toBe(false);
+
+    registry.clear();
   });
 
   it('drives a headless palette of its own markup with a two-way query and without closing on run', () => {

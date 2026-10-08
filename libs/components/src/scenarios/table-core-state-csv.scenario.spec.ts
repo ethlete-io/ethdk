@@ -2,8 +2,10 @@ import { Component, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import {
+  createTableRowsState,
   createTableStateStorage,
   deserializeTableState,
+  filterValues,
   injectTableCsvExport,
   isRestorableTableState,
   mergeTableCsvExportOptions,
@@ -236,6 +238,28 @@ describe('table state persistence scenarios', () => {
     disabled.componentInstance.config.set({ key: 'orders', enabled: false });
     s.flush();
     expect(disabled.componentInstance.table().sort()).toEqual([]);
+  });
+
+  it('resolves the rows state from its defaults or from signals of the app and reads one filter’s values', () => {
+    const defaults = createTableRowsState({});
+
+    expect([defaults.sort(), defaults.filters(), defaults.page(), defaults.pageSize(), defaults.quickFilter()]).toEqual(
+      [[], [], 1, 25, ''],
+    );
+
+    const page = signal(4);
+    const custom = createTableRowsState<'status'>({
+      initialPage: 2,
+      initialPageSize: 10,
+      initialFilters: [{ key: 'status', values: ['open', 'late'] }],
+      page,
+    });
+
+    expect(custom.initialPage).toBe(2);
+    expect(custom.page).toBe(page);
+    expect(custom.pageSize()).toBe(10);
+    expect(filterValues<string>(custom.filters(), 'status')).toEqual(['open', 'late']);
+    expect(filterValues(custom.filters(), 'missing' as 'status')).toEqual([]);
   });
 
   it('round-trips a state through storage and reconciles it against changed columns', () => {
