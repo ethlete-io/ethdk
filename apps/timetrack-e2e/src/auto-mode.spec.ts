@@ -165,6 +165,16 @@ test.describe('auto mode on a stand-in of today', () => {
       activity.locator('[data-auto-activity][data-state="done"]').filter({ hasText: 'Asks about' }),
     ).toHaveCount(1);
   });
+
+  test('shows what the ask sent to the model and what came back', async ({ page }) => {
+    const readout = await openAutoModeReadout(page);
+    const call = readout.locator('[data-model-call]').filter({ hasText: 'a ticket' }).first();
+
+    await call.locator('summary').click();
+
+    await expect(call.locator('[data-model-call-sent]')).not.toBeEmpty();
+    await expect(call.locator('[data-model-call-reply]')).not.toBeEmpty();
+  });
 });
 
 test.describe('auto mode on a stand-in whose issue is done but still logged on', () => {

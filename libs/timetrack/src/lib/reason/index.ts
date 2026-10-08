@@ -7,3 +7,4 @@ export * from './pseudonym';
 export * from './provider';
 export * from './spec';
 export * from './spend';
+export * from './recording';

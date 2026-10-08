@@ -13,6 +13,7 @@ import {
 import { formatDurationMs } from '@ethlete/timetrack';
 import { injectAutoMode } from './auto-mode';
 import { AutoModeActivityComponent } from './auto-mode-activity.component';
+import { AutoModeCallsComponent } from './auto-mode-calls.component';
 import { AutoModeReadoutComponent } from './auto-mode-readout.component';
 import { BranchRepairComponent } from './branch-repair.component';
 import { injectBranchRepair } from './branch-repair';
@@ -201,6 +202,11 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
             <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Jobs since the app started</h4>
             <ethlete-auto-mode-activity [entries]="autoMode.activity()" />
           }
+
+          @if (autoMode.modelCalls().length) {
+            <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Model calls since the app started</h4>
+            <ethlete-auto-mode-calls [calls]="autoMode.modelCalls()" />
+          }
         </et-accordion>
 
         <et-accordion label="Day notes">
@@ -225,6 +231,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
   imports: [
     ACCORDION_IMPORTS,
     AutoModeActivityComponent,
+    AutoModeCallsComponent,
     AutoModeReadoutComponent,
     BANNER_IMPORTS,
     BUTTON_IMPORTS,

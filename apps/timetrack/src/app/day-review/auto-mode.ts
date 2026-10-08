@@ -57,8 +57,10 @@ import {
   isAgentApiRequest,
   inferTicketProjectKey,
   localDayKey,
+  ModelCall,
   matchAttributionRule,
   reasoningOptionsOf,
+  recordingRunner,
   readJiraCredentials$,
   withAutoModeAnswer,
   withAutoModeSubjectItemsExpired,
@@ -136,6 +138,8 @@ export type AutoModeActivity = {
 
 const ACTIVITY_LIMIT = 50;
 
+const MODEL_CALL_LIMIT = 30;
+
 /** What one ask sends: the payload, and the project a new ticket would be filed in. */
 type Prepared = { request: TicketWritingRequest; projectKey?: string; parentKeys: ReadonlySet<string> };
 
@@ -204,6 +208,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const git = injectGitCollector();
   const epics = injectEpicSiblings();
   const reportCopy = signal<{ ok: boolean; atMs: number } | null>(null);
+  const modelCalls = signal<readonly ModelCall[]>([]);
+  const runner = recordingRunner({
+    runner: ports.processes,
+    record: (call) =>
+      modelCalls.update((calls) =>
+        calls.some((entry) => entry.id === call.id)
+          ? calls.map((entry) => (entry.id === call.id ? call : entry))
+          : [call, ...calls].slice(0, MODEL_CALL_LIMIT),
+      ),
+  });
   const jobs$ = new Subject<Job>();
   const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
@@ -548,7 +562,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const current = settings.settings();
 
         return writeTicketWithAgent$({
-          runner: ports.processes,
+          runner,
           request: prepared.request,
           options: reasoningOptionsOf(current),
           maskedNames: current.reasoning.maskedNames,
@@ -663,7 +677,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const request = autoDisputeRequest({ row, other, summaries, standIns: current.standIns, maskedNames });
 
         return resolveDisputeWithAgent$({
-          runner: ports.processes,
+          runner,
           request,
           options: reasoningOptionsOf(current),
           maskedNames,
@@ -705,7 +719,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const request = autoDescriptionRequest({ row, issueSummary, maskedNames });
 
         return writeWorklogWithAgent$({
-          runner: ports.processes,
+          runner,
           request,
           options: reasoningOptionsOf(current),
           maskedNames,
@@ -1150,6 +1164,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     copyAnonymousReport,
     /** How the last copy went, for the button that pressed it to say so. */
     reportCopy: reportCopy.asReadonly(),
+    /** The model calls auto mode made in this app session, newest first: what was sent and what came back. */
+    modelCalls: modelCalls.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */
     readout: computed(() => {
       const edits = dayReview.storedEdits();
