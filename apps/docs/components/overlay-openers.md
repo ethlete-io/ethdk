@@ -79,13 +79,13 @@ this.product.open({
 
 ### Extending an overlay you did not define {#extending-an-overlay}
 
-`directives` applies directives to the overlay component itself, the way `bindings` applies inputs to it. It matters for an overlay the SDK defines and opens for you - the [scheduler's edit surface](/components/scheduler#extending-the-edit-surface) is the case it exists for. That component has no template of yours to place a directive in, so a self-registering feature reaches it here:
+`directives` applies directives to the overlay component itself, the way `bindings` applies inputs to it. It matters for an overlay the SDK defines and opens for you: that component has no template of yours to place a directive in, so a directive reaches it here:
 
 ```ts
-this.editSurface.open({
+this.opener.open({
   origin: bandElement,
-  bindings: [inputBinding('appointment', () => appointment)],
-  directives: [MyEditIssueDirective, MyEditDurationDirective],
+  bindings: [inputBinding('item', () => item)],
+  directives: [MyTrackingDirective],
 });
 ```
 

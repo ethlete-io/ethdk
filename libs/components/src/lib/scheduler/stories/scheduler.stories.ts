@@ -1,5 +1,6 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { SchedulerCustomEditFieldStorybookComponent } from './scheduler-custom-edit-surface-storybook.component';
 import { SchedulerInfiniteAgendaStorybookComponent } from './scheduler-infinite-agenda-storybook.component';
 import { SchedulerReadOnlyStorybookComponent } from './scheduler-read-only-storybook.component';
 import { SchedulerStorybookComponent } from './scheduler-storybook.component';
@@ -70,4 +71,9 @@ export const WithColorPalette: Story = {
       ],
     }),
   ],
+};
+
+export const CustomEditField: StoryObj<SchedulerCustomEditFieldStorybookComponent> = {
+  render: () => ({ template: '<et-sb-scheduler-custom-edit-field />' }),
+  decorators: [moduleMetadata({ imports: [SchedulerCustomEditFieldStorybookComponent] })],
 };

@@ -65,8 +65,8 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   Alternatively add an `editSurfaceDirectives` input on `<et-scheduler>`. Update the guide's "Extending the edit
   surface" section, and add a story with a custom field.
 - Breaking: no. Decision: yes (shape of the new API: provider option vs input).
-- Status: open: user decision.
-- Review: open (user decision).
+- Status: fixed (7ff23cc87, cf60c5882): `provideSchedulerEditSurface({ component })` registers an app-owned surface built from `SCHEDULER_EDIT_SURFACE_IMPORTS`; the registry is gone. Story `CustomEditField`. Decided by `plans/scheduler-edit-surface-composition.md`.
+- Review: replaced.
 
 ## SS-03 The default views inside a bare `[etScheduler]` render empty badges
 
@@ -103,7 +103,7 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   `appointmentSave` / `appointmentsDelete` / `SchedulerEditSurfaceResult<TExtra>` with it. Make `SchedulerEditField`,
   `SchedulerFeatureHost` and `SchedulerEditSurfaceHost` generic over `TExtra` with an `unknown` default.
 - Breaking: no (defaults keep today's types). Decision: no.
-- Status: open: not fixed. Making `SchedulerComponent<TExtra>` generic gives nothing in templates, because Angular infers a component generic only from the component's own inputs, and `appointments` is a host-directive input. The component would have to own `appointments`, which collides with `SchedulerFeatureHost.appointments()` (the visible ones). Needs a rename such as `visibleAppointments()` (breaking), so it is a design call.
+- Status: open: not fixed. Making `SchedulerComponent<TExtra>` generic gives nothing in templates, because Angular infers a component generic only from the component's own inputs, and `appointments` is a host-directive input. The component would have to own `appointments`, which collides with `SchedulerFeatureHost.appointments()` (the visible ones). Needs a rename such as `visibleAppointments()` (breaking), so it is a design call. The edit-field half is fixed (cf60c5882): fields take a typed `draft`, `injectSchedulerEditSurface<TExtra>()` and the opener are generic, and `SchedulerEditSurfaceResult<TExtra>`. The `<et-scheduler>` outputs half stays open.
 - Review: ok (left open, design call).
 
 ## SS-05 The PiP slot placeholder is off by default, and the guide never mentions it
@@ -220,4 +220,4 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   `<StoryEmbed>` where the page cap allows, otherwise name them in text.
 - Breaking: no. Decision: no.
 - Status: fixed (partly): `ReadOnly` scheduler story and YouTube `SlotControls` stream story. Not added: headless, custom adornment and custom edit field (blocked by SS-02/SS-03), consent provider, custom PiP chrome.
-- Review: fixed (partly): added the YouTube `ConsentProvider` story (a fake CMP through `createUserConsentProvider`), and embedded `SlotControls` and `ConsentProvider` in the stream guide; the scheduler guide names the `ReadOnly` story (page already has 6 embeds). Left: `Headless`, `CustomBadgeAdornment`, `CustomEditField` scheduler stories (wait for SS-02/SS-03). Also added the `CustomPipChrome` stream story (the app-built `PipChromeRef` chrome from `stream-pip.scenario.spec.ts`), embedded in the stream guide.
+- Review: fixed (partly): added the YouTube `ConsentProvider` story (a fake CMP through `createUserConsentProvider`), and embedded `SlotControls` and `ConsentProvider` in the stream guide; the scheduler guide names the `ReadOnly` story (page already has 6 embeds). Left: `Headless`, `CustomBadgeAdornment` scheduler stories (wait for SS-03); `CustomEditField` added with the SS-02 fix. Also added the `CustomPipChrome` stream story (the app-built `PipChromeRef` chrome from `stream-pip.scenario.spec.ts`), embedded in the stream guide.

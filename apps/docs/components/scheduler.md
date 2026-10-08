@@ -45,7 +45,7 @@ type Appointment<TExtra = unknown> = {
 - `parentId` links an appointment under another, to any depth - a dangling reference (the parent was filtered out) falls back to top-level rather than being dropped.
 - `colorToken` resolves through the [color theming](/core/theming) system - it's read as `[etProvideColor]` on the appointment's badge, so pass whatever theme name your app registered (`'brand'`, `'danger'`, …), never a literal color.
 - `location` shows in the badge via the built-in `etSchedulerBadgeLocation` adornment when set - see [badge composability](#badge-composability).
-- `description` is edited by the built-in `etSchedulerEditDescription` field - see [edit surface](#edit-surface).
+- `description` is edited by the built-in `<et-scheduler-edit-description>` field - see [fields](#fields).
 - `extra` is the open extension point for a custom edit field to read and write, so adding one never widens `Appointment` itself.
 - An appointment renders on **every day it spans**, not just the day it starts - a 3-day `allDay` appointment shows a badge on all three month-view day cells, and one bar spanning all three columns in the time grid's all-day strip.
 - `end` is exclusive: an appointment that ends at 00:00 does not reach into the next day. A zero-length appointment shows on the day it starts.
@@ -94,7 +94,7 @@ Toolbar actions are the same self-registering-feature mechanism as everything el
 <et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" [appointments]="appointments" />
 ```
 
-Like the edit surface's own "Add sub-appointment"/"Delete" actions, this depends on the default edit surface (it's what the dialog it opens is): without `provideSchedulerEditSurface()` the action hides itself. A bare `[etScheduler]` composition needs its own "new appointment" affordance, the same caveat [clicking a badge](#month-view) already has.
+It opens the registered [edit surface](#edit-surface), so without `provideSchedulerEditSurface()` the action hides itself. A bare `[etScheduler]` composition opens the surface with [`openAdd`](#edit-surface-opener) from an affordance of its own.
 
 ### At narrow widths {#toolbar-narrow}
 
@@ -295,11 +295,11 @@ The state behind it lives on the headless directive, so a custom view can drive 
 
 ## Edit surface {#edit-surface}
 
-Clicking any appointment badge or block opens `<et-scheduler-edit-surface>`, built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler is read-only: a click on a badge only selects it (bind `(selectedAppointmentIdChange)` to drive a detail panel of your own), the toolbar has no "Add appointment" button, and clicking, dragging or pressing Enter on an empty slot drafts nothing. The headless `createEnabled` signal on `[etScheduler]` is what turns drag-to-create off; set it yourself in a headless composition. Calling `addAppointment()` without the surface reports `ET4505` to the `ErrorHandler` in development (and does nothing). The Scheduler `ReadOnly` story in Storybook shows this setup.
+Clicking any appointment badge or block opens the edit surface - `<et-scheduler-edit-surface>`, or a component of [your own](#own-edit-surface) - built on the [overlay](/components/overlays) system, which `<et-scheduler>` opens automatically whenever `selectedAppointmentId` becomes non-`null` and closes back to `null` when it does. Register `provideSchedulerEditSurface()` in a parent injector to enable that behavior. Without it, the scheduler is read-only: a click on a badge only selects it (bind `(selectedAppointmentIdChange)` to drive a detail panel of your own), the toolbar has no "Add appointment" button, and clicking, dragging or pressing Enter on an empty slot drafts nothing. The headless `createEnabled` signal on `[etScheduler]` is what turns drag-to-create off; set it yourself in a headless composition. Calling `addAppointment()` without the surface reports `ET4505` to the `ErrorHandler` in development (and does nothing). The Scheduler `ReadOnly` story in Storybook shows this setup.
 
-`SCHEDULER_IMPORTS` no longer includes the editor. Add `SCHEDULER_EDIT_IMPORTS` when rendering `<et-scheduler-edit-surface>` directly in a custom composition.
+`SCHEDULER_IMPORTS` does not include the edit surface. Import `SCHEDULER_EDIT_SURFACE_IMPORTS` in a surface of [your own](#own-edit-surface).
 
-The auto-open is keyed on the **selected id**, not on the selected `Appointment` object, so replacing `appointments` with a fresh array while the surface is open - a poll, a websocket push, or merging an `appointmentSave` back in - never stacks a second surface on top of the first.
+The auto-open is keyed on the **selected id**, not on the selected `Appointment` object, so replacing `appointments` with a fresh array while the surface is open - a poll, a websocket push, or merging an `appointmentSave` back in - never stacks a second surface on top of the first. Only one surface is ever open: selecting another appointment while one is open replaces it.
 
 Three methods on `<et-scheduler>` drive the same surface directly (`<et-scheduler #s>` then `s.openEditSurface(id)`):
 
@@ -331,23 +331,117 @@ Anchored, it opens **beside** what it belongs to - to the right of it, aligned t
 
 The scheduler never mutates `appointments` itself - `appointmentSave` emits the edited (or newly-added) `Appointment` for you to merge back into your own array, and `appointmentsDelete` emits every id to remove (the appointment plus, for "Delete (with descendants)", its whole sub-appointment chain) for you to filter out. See the [live demo](#live-demo)'s story source for the merge/filter logic.
 
-Like the badge, the surface is built from self-registering feature directives bundled onto `<et-scheduler-edit-surface>` by default - not a set of boolean inputs. When you host the surface in a template of your own, disable one by binding its own config input (`<et-scheduler>` opens a fixed surface and takes no field configuration - see [extending](#extending-the-edit-surface)):
+### Your own edit surface {#own-edit-surface}
 
-```html
-<et-scheduler-edit-surface [etSchedulerEditDescription]="{ enabled: false }" />
+The surface is a component, and the app can write its own. `provideSchedulerEditSurface()` registers the default `<et-scheduler-edit-surface>`; pass `component` to register yours instead, and `<et-scheduler>` opens it everywhere it would open the default:
+
+```ts
+providers: [provideSchedulerEditSurface({ component: TicketSurfaceComponent })];
 ```
+
+| Option      | Type           | Default                         | Description                                                                                                          |
+| ----------- | -------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `component` | `Type<object>` | `SchedulerEditSurfaceComponent` | The surface to open. It must apply `SchedulerEditSurfaceDirective` with the `appointment` and `appointments` inputs. |
+
+A surface component applies two host directives - `OverlayMainDirective`, which lays the header, body and footer out in the overlay, and the headless `SchedulerEditSurfaceDirective` - and reads the headless state with `injectSchedulerEditSurface<TExtra>()`. `TExtra` types `extra` on the draft, so a custom field reads and writes it without a cast. Its template is built from the blocks in `SCHEDULER_EDIT_SURFACE_IMPORTS`. The default surface's own template is the start for a copy:
+
+```ts
+import { Component } from '@angular/core';
+import {
+  injectSchedulerEditSurface,
+  OverlayMainDirective,
+  SCHEDULER_EDIT_SURFACE_IMPORTS,
+  SchedulerEditSurfaceDirective,
+} from '@ethlete/components';
+
+@Component({
+  selector: 'app-ticket-surface',
+  imports: [SCHEDULER_EDIT_SURFACE_IMPORTS, EstimateFieldComponent],
+  hostDirectives: [
+    OverlayMainDirective,
+    { directive: SchedulerEditSurfaceDirective, inputs: ['appointment', 'appointments'] },
+  ],
+  template: `
+    <et-scheduler-edit-surface-header>
+      <et-scheduler-edit-surface-actions>
+        <et-scheduler-edit-add-sub-appointment-item />
+        <et-scheduler-edit-delete-item />
+      </et-scheduler-edit-surface-actions>
+    </et-scheduler-edit-surface-header>
+
+    <et-overlay-body>
+      <et-scheduler-edit-surface-breadcrumb />
+
+      <et-scheduler-edit-surface-fields>
+        <et-scheduler-edit-title #title [draft]="surface.draft" />
+        <et-scheduler-edit-time-range #timeRange [draft]="surface.draft" />
+        <et-scheduler-edit-location [draft]="surface.draft" />
+        <et-scheduler-edit-description [draft]="surface.draft" />
+        <et-scheduler-edit-color [draft]="surface.draft" />
+        <app-estimate-field [draft]="surface.draft" />
+      </et-scheduler-edit-surface-fields>
+
+      <et-scheduler-edit-surface-children />
+    </et-overlay-body>
+
+    <et-scheduler-edit-surface-footer [canSave]="title.valid() && timeRange.valid()" />
+  `,
+})
+export class TicketSurfaceComponent {
+  protected surface = injectSchedulerEditSurface<Ticket>();
+}
+```
+
+Drop a line to drop a field or a block, and put `@if` around one that only some appointments get - `surface.isSaved()` tells a fresh "add" apart from a saved appointment. Storybook's **Scheduler → Custom Edit Field** story is this setup with an estimate field and an action of its own. (It is not embedded here: this page already carries as many live stories as one page can host.)
+
+| Block                                          | Renders                                                                                                                                                                |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<et-scheduler-edit-surface-header>`           | The title and a projected `<et-scheduler-edit-surface-actions>`. Projected text replaces the title, which defaults to the appointment's own or "Untitled appointment". |
+| `<et-scheduler-edit-surface-actions>`          | The "⋮" action menu - see [actions](#actions).                                                                                                                         |
+| `<et-scheduler-edit-surface-breadcrumb>`       | The ancestor breadcrumb; hidden for a top-level appointment.                                                                                                           |
+| `<et-scheduler-edit-surface-fields>`           | Stacks its content with the default surface's spacing.                                                                                                                 |
+| `<et-scheduler-edit-surface-children>`         | The children list; hidden without children.                                                                                                                            |
+| `<et-scheduler-edit-surface-footer [canSave]>` | Cancel and Save. Save commits the draft and is disabled while `canSave` is `false` (default `true`).                                                                   |
+
+`SCHEDULER_EDIT_SURFACE_IMPORTS` also carries `et-overlay-body`, `et-menu-item` and the headless directive itself.
 
 ### Fields
 
-| Directive                    | Edits         | Control                                                                              | Default order |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------ | ------------- |
-| `etSchedulerEditTitle`       | `title`       | [`et-input`](/components/text-inputs#text-field)                                     | `0`           |
-| `etSchedulerEditTimeRange`   | `start`/`end` | One [`et-date-time-range-input`](/components/date-time-inputs#date-time-range-input) | `10`          |
-| `etSchedulerEditLocation`    | `location`    | `et-input`                                                                           | `20`          |
-| `etSchedulerEditDescription` | `description` | [`et-textarea`](/components/text-inputs#textarea)                                    | `30`          |
-| `etSchedulerEditColor`       | `colorToken`  | Swatch picker, or `et-input` - see below                                             | `40`          |
+Each built-in field is a component with a `draft` input - pass the surface's `draft`, the writable signal every field reads and writes:
 
-The title field is required - the Save button disables while it's blank. The time-range field is invalid while `end` is before `start`. Both gate the surface's save button; a custom field can do the same by including a `valid: Signal<boolean>` in its registration.
+| Component                         | Edits         | Control                                                                              |
+| --------------------------------- | ------------- | ------------------------------------------------------------------------------------ |
+| `<et-scheduler-edit-title>`       | `title`       | [`et-input`](/components/text-inputs#text-field)                                     |
+| `<et-scheduler-edit-time-range>`  | `start`/`end` | One [`et-date-time-range-input`](/components/date-time-inputs#date-time-range-input) |
+| `<et-scheduler-edit-location>`    | `location`    | `et-input`                                                                           |
+| `<et-scheduler-edit-description>` | `description` | [`et-textarea`](/components/text-inputs#textarea)                                    |
+| `<et-scheduler-edit-color>`       | `colorToken`  | Swatch picker, or `et-input` - see below                                             |
+
+The title field's `valid()` is `false` while the title is blank, and the time-range field's while `end` is before `start`. The surface does not read them: bind them to the footer's `canSave` through a template reference, as the default template does. A field of your own gates Save the same way - or compute its validity from `surface.draft()` in the surface, which also works for a field inside an `@if`.
+
+A custom field is any component with a `draft` input:
+
+```ts
+@Component({
+  selector: 'app-estimate-field',
+  imports: [FORM_FIELD_IMPORTS, INPUT_IMPORTS],
+  template: `
+    <et-form-field>
+      <et-label>Estimate (hours)</et-label>
+      <et-input [value]="value()" (valueChange)="update($event)" />
+    </et-form-field>
+  `,
+})
+export class EstimateFieldComponent {
+  draft = input.required<WritableSignal<Appointment<Ticket>>>();
+
+  protected value = computed(() => String(this.draft()().extra?.estimateHours ?? ''));
+
+  protected update(value: string) {
+    this.draft().update((appointment) => ({ ...appointment, extra: { estimateHours: Number(value) } }));
+  }
+}
+```
 
 The color field follows whatever the app told the SDK about its own colors. Register a palette with [`provideColorPalette`](/core/theming#offering-colors-to-a-user) and the field is a swatch picker over it - a radio row of labelled swatches, each rendering its own theme, preceded by a "No color" choice that clears `colorToken`:
 
@@ -362,61 +456,65 @@ providers: [
 ];
 ```
 
-Storybook's **Scheduler → With Color Palette** story runs the scheduler with that palette - select an appointment to see the picker. (It is not embedded here: this page already carries as many live stories as one page can host.)
+Storybook's **Scheduler → With Color Palette** story runs the scheduler with that palette - select an appointment to see the picker.
 
 Without a palette in scope the field stays a plain text box, because theme names are [app-registered](/core/theming) and the SDK has no set of its own to offer as choices. Both shapes write the same thing - a theme name into `colorToken` - so an app can add the palette later without touching its appointment data. Word the "No color" choice with `provideSchedulerLabels({ colorFieldNone: '…' })`.
 
-Add your own field the same way: a directive that injects `SCHEDULER_EDIT_SURFACE_HOST` (via `injectSchedulerEditSurfaceHost()`) and calls `registerEditField({ component, order, enabled, valid })` from its constructor. `component` must declare a `draft: InputSignal<WritableSignal<Appointment>>` input - call `draft()` for the shared writable signal, then read (`draft()()`) or write (`draft().update(a => ({ ...a, ... }))`) the appointment being edited. Custom fields typically write into `extra`.
+The fields need no surface at all: put `etSchedulerEditSurface` on an element of your own (`#surface="etSchedulerEditSurface"`, with `[appointment]`) and bind `surface.draft` into them to edit an appointment inline. `surface.commit()` then only emits `(save)`.
 
-#### Extending the edit surface {#extending-the-edit-surface}
+### Actions
 
-`provideSchedulerEditSurface()` takes no options and `<et-scheduler>` opens the default surface with its built-in fields and actions only, so it cannot hide a field or add a custom one. Extend the surface from a scheduler composition of your own instead.
+`<et-scheduler-edit-surface-actions>` is the header's "⋮" menu, and its content is the menu: `et-menu-item` buttons, in template order. Two are ready-made:
 
-A headless scheduler opens the surface through the overlay definition, so there is no template of yours to place the directive in. Pass it as the open call's [`directives`](/components/overlay-openers#extending-an-overlay):
+| Component                                      | Does                                                                                                                |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `<et-scheduler-edit-add-sub-appointment-item>` | Navigates the surface (in place, no new dialog) to a blank child of the current appointment, `parentId` pre-filled. |
+| `<et-scheduler-edit-delete-item>`              | Closes the surface with every id to delete - the current appointment and every descendant. Destructive variant.     |
+
+Both render nothing while the current appointment is not in `appointments` yet - a fresh "add" nobody saved has nothing to delete or nest under - and the menu trigger hides while the menu has no item.
+
+An action of your own is a plain menu item. `variant="destructive"` renders it with the [error theme](/core/theming); an action that replaces the appointment closes the surface itself through `OVERLAY_REF`:
+
+```html
+<et-scheduler-edit-surface-actions>
+  <button (click)="archive()" et-menu-item type="button">Archive</button>
+  <et-scheduler-edit-delete-item />
+</et-scheduler-edit-surface-actions>
+```
+
+### Opening a surface yourself {#edit-surface-opener}
+
+`injectSchedulerEditSurfaceOpener<TExtra>()` opens the registered surface - what `<et-scheduler>` itself uses - from a bare `[etScheduler]` composition or from UI outside any scheduler:
 
 ```ts
-private editSurface = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-  afterClosed: (result) => this.applyEdit(result),
-});
+private editSurface = injectSchedulerEditSurfaceOpener<Ticket>();
 
-protected openFor(appointment: Appointment, band: HTMLElement) {
-  this.editSurface.open({
+protected openFor(appointment: Appointment<Ticket>, band: HTMLElement) {
+  this.editSurface.openEdit({
+    appointment,
+    appointments: this.appointments,
     origin: band,
-    bindings: [
-      inputBinding('appointment', () => appointment),
-      inputBinding('appointments', () => this.appointments()),
-    ],
-    directives: [MyEditIssueDirective, MyEditDurationDirective],
+    afterClosed: (result) => this.apply(result),
   });
 }
 ```
 
-Disable a built-in field you are replacing by binding its own config through the same list: `{ type: SchedulerEditTitleDirective, bindings: [inputBinding('etSchedulerEditTitle', () => ({ enabled: false }))] }`.
+| Member             | Does                                                                                                                             |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `openEdit(config)` | Opens the surface anchored to `origin` above `md`, full screen below it. Returns the `OverlayRef`, or `null` - see below.        |
+| `openAdd(config)`  | The same as a centered dialog above `md` - for an appointment with nothing on the calendar to anchor to.                         |
+| `close()`          | Closes the open surface without a result.                                                                                        |
+| `available`        | Whether `provideSchedulerEditSurface()` is in scope. Without it the open calls report `ET4505` in development and return `null`. |
 
-When you host `<et-scheduler-edit-surface>` in a template of your own, put the directive on the element as an attribute and skip all of this.
+`config` is the open config of any [overlay opener](/components/overlay-openers) plus `appointment` and `appointments` - a list, or a function the surface reads reactively while it is open. The surface closes with a `SchedulerEditSurfaceResult<TExtra>`: `{ kind: 'save', appointment }` or `{ kind: 'delete', ids }`, and `undefined` when it is dismissed.
 
-### Actions
-
-The header's "⋮" menu lists registered appointment actions - also self-registering directives, bundled by default:
-
-| Directive                            | Does                                                                                                                | Default order |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `etSchedulerActionAddSubAppointment` | Navigates the surface (in place, no new dialog) to a blank child of the current appointment, `parentId` pre-filled. | `0`           |
-| `etSchedulerActionDelete`            | Emits `appointmentsDelete` for the current appointment and every descendant, then closes.                           | `100`         |
-
-Both stay out of the menu while the current appointment is not in `appointments` yet - a fresh "add" nobody saved has nothing to delete or nest under.
-
-Add your own with `registerAppointmentAction({ label, icon?, run, order, enabled, destructive? })` - `destructive: true` renders it with the [error theme](/core/theming) (`et-menu-item`'s destructive variant).
+**One surface at a time.** An opener keeps one surface open: opening another closes the open one first, with the close source `'replace'`, so an unsaved-changes guard on it still gets its say. While such a guard decides, the open call returns `null` and opens once the old surface has closed.
 
 ### Navigation: breadcrumb and children
 
 The surface shows an ancestor breadcrumb (when the current appointment has a parent) and a children list (when it has any) - clicking either **navigates the same dialog instance** to that appointment rather than opening a new one. Navigating discards any unsaved edits to the appointment navigated away from, the same "edit a copy" tradeoff the [filter overlay](/components/filter-overlay) makes: the draft resets from the newly-shown appointment's real data every time.
 
 Navigating is the **only** thing that resets the draft. Replacing `appointments` underneath an open surface leaves whatever the user has typed alone, so a background refresh cannot discard a half-finished edit - the breadcrumb, the children list and the descendant-aware delete do pick up the new data.
-
-### Edit-surface feature host
-
-`SCHEDULER_EDIT_SURFACE_HOST` (injected via `injectSchedulerEditSurfaceHost()`) is the surface-scoped counterpart to the scheduler's own feature host: `appointment()` (the pre-edit snapshot of whichever appointment is currently shown), `appointmentTree()` (every appointment, for breadcrumb/children/descendant lookups), the surface's own `element`, and `registerEditField()` / `editFields()` plus `registerAppointmentAction()` / `appointmentActions()`. It's separate from `SCHEDULER_FEATURE_HOST` because the two hosts expose genuinely different data - one appointment being edited versus every visible one.
 
 ## Sub-appointment chains
 
@@ -464,11 +562,11 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ### Feature host
 
-`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the default edit surface for a brand-new appointment - the same "only meaningful with that default surface" caveat as `etSchedulerActionAddAppointment`, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The optional `canAddAppointment()` hides that action when it returns `false`; `<et-scheduler>` returns `false` without `provideSchedulerEditSurface()`. The [edit surface](#edit-surface) has its own, separately-scoped host - see [edit-surface feature host](#edit-surface-feature-host).
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the registered [edit surface](#edit-surface) for a brand-new appointment, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The optional `canAddAppointment()` hides that action when it returns `false`; `<et-scheduler>` returns `false` without `provideSchedulerEditSurface()`.
 
 ### Hosting features on your own component {#own-feature-host}
 
-A shell of your own that provides `SCHEDULER_FEATURE_HOST` (or `SCHEDULER_EDIT_SURFACE_HOST`) so the built-in feature directives can register on it does not need to rewrite the registration lists. `createSchedulerRegistry<T>()` is the one `<et-scheduler>` and `<et-scheduler-edit-surface>` use: `register` appends an entry, `entries()` returns the enabled ones sorted by `order`. Use one per `register…`/list pair:
+A shell of your own that provides `SCHEDULER_FEATURE_HOST` so the built-in feature directives can register on it does not need to rewrite the registration lists. `createSchedulerRegistry<T>()` is the one `<et-scheduler>` uses: `register` appends an entry, `entries()` returns the enabled ones sorted by `order`. Use one per `register…`/list pair:
 
 ```ts
 @Component({
@@ -486,8 +584,6 @@ export class MyShellComponent implements SchedulerFeatureHost {
   // appointments(), appointmentTree(), selectedAppointment(), element, addAppointment()
 }
 ```
-
-The same works for `editFields` / `registerEditField` and `appointmentActions` / `registerAppointmentAction` on an edit-surface host.
 
 ## Keyboard {#keyboard}
 
@@ -533,4 +629,4 @@ Badge and selection colors come from the nearest [color theme](/core/theming) vi
 
 ## Error codes
 
-The scheduler domain owns the `ET4500`–`ET4599` range - see [error codes](/components/error-codes#scheduler-et45xx). `ET4500` and `ET4502`–`ET4504` (a feature directive outside its host) throw on creation in every build; `ET4501`, `ET4505` and `ET4506` are reported in development only.
+The scheduler domain owns the `ET4500`–`ET4599` range - see [error codes](/components/error-codes#scheduler-et45xx). `ET4500`, `ET4503` and `ET4504` (a feature directive outside its host) throw on creation in every build; `ET4501`, `ET4505` and `ET4506` are reported in development only.

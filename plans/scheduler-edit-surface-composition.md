@@ -83,6 +83,8 @@ provideSchedulerEditSurface({ component: RowEditSurfaceComponent });
   SS-04 stays partly open for `<et-scheduler>` itself (see its status note): a component generic needs the
   `appointments` rename.
 
+Status: done (7ff23cc87)
+
 ### 2. SDK: building blocks and built-in fields
 
 - Split `scheduler-edit-surface.component.html` into exported blocks: header (title plus action menu), breadcrumb,
@@ -95,6 +97,8 @@ provideSchedulerEditSurface({ component: RowEditSurfaceComponent });
   behavior must not change: check it in Storybook against the stories before the change.
 - Delete the registry and the feature directives listed above. Delete the error code of
   `injectSchedulerEditSurfaceHost` or mark it as unused, as the scheduler error codes do for removed codes.
+
+Status: done (cf60c5882). The deletions of the old directive files landed in cfc506ce6 by accident (shared index).
 
 ### 3. Timetrack
 

@@ -41,7 +41,7 @@ A human can reverse each of these.
 
 ## 4. Known gaps
 
-- The scheduler stories Headless, CustomBadgeAdornment and CustomEditField wait on SS-03 and `plans/scheduler-edit-surface-composition.md`.
+- The scheduler stories Headless and CustomBadgeAdornment wait on SS-03. CustomEditField shipped with `plans/scheduler-edit-surface-composition.md`.
 - Overlay router (`syncUrl: true`): after overlay B closes, the stale param of overlay A can come back from the old history entry of A. The browser cannot remove that entry.
 - Commit `b53c99304` has the subject `test(components)` but also holds the SEL-02 source fix.
 
