@@ -1,4 +1,4 @@
-import { Directive, computed, input, model, output, signal } from '@angular/core';
+import { Directive, booleanAttribute, computed, input, model, output, signal } from '@angular/core';
 import { injectHostElement } from '@ethlete/core';
 import { Locale, isSameDay, setMilliseconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
@@ -51,6 +51,9 @@ export class TimePickerDirective {
   private defaultLocale = injectDateLocale();
 
   private hostElement = injectHostElement();
+
+  /** Blocks every change: a press, a drag and the keys leave the time alone. */
+  public disabled = input(false, { transform: booleanAttribute });
 
   /** Whether the ring holds one time (`value`) or a range (`rangeValue`). */
   public mode = input<TimePickerMode>('single');
@@ -184,7 +187,7 @@ export class TimePickerDirective {
    * range hands the active side on to the end. Returns whether it handed on.
    */
   public commitRingMinute(side: TimeRangeSide, minute: number) {
-    if (!isStopOpen(this.ringStops()[side], minute)) {
+    if (this.disabled() || !isStopOpen(this.ringStops()[side], minute)) {
       return false;
     }
 

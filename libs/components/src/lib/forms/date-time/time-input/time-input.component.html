@@ -33,6 +33,7 @@
   <et-date-picker-panel [dialogLabel]="resolvedDialogLabel()">
     <et-time-picker
       [value]="timeInput.time()"
+      [disabled]="timeInput.disabled()"
       [format]="timeInput.effectiveDisplayFormat()"
       [locale]="timeInput.effectiveLocale()"
       [minuteStep]="minuteStep()"

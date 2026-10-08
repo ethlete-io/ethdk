@@ -69,6 +69,7 @@
         <div class="et-date-time-input-panel-time-pane">
           <et-time-picker
             [value]="dateTimeInput.pickerTime()"
+            [disabled]="dateTimeInput.disabled()"
             [day]="dateTimeInput.pickerDate()"
             [format]="dateTimeInput.effectiveDisplayFormat()"
             [locale]="dateTimeInput.effectiveLocale()"

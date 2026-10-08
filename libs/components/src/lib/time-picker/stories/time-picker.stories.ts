@@ -21,6 +21,7 @@ export default {
     startDay: { control: 'text' },
     endDay: { control: 'text' },
     color: { control: 'select', options: ['brand', 'danger', 'success', 'warning', 'neutral'] },
+    disabled: { control: 'boolean' },
   },
   args: {
     mode: 'single',
@@ -38,6 +39,7 @@ export default {
     startDay: null,
     endDay: null,
     color: 'brand',
+    disabled: false,
   },
 } as Meta<TimePickerStorybookComponent>;
 
@@ -119,4 +121,12 @@ export const RangeWithDaysOvernight: Story = {
 
 export const RangeHandOff: Story = {
   args: { mode: 'range' },
+};
+
+export const Disabled: Story = {
+  args: { start: '14:30', disabled: true },
+};
+
+export const RangeDisabled: Story = {
+  args: { mode: 'range', start: '09:00', end: '17:30', disabled: true },
 };

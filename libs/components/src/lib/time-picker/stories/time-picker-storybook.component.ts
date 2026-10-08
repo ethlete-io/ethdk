@@ -32,6 +32,7 @@ const parseDay = (value: string | null) => {
         [endLabel]="endLabel()"
         [day]="dayDate()"
         [rangeDays]="rangeDaysValue()"
+        [disabled]="disabled()"
         (rangeHandOff)="handOff.set($event)"
       />
 
@@ -65,6 +66,7 @@ export class TimePickerStorybookComponent {
   public endDay = input<string | null>(null);
   public day = input<string | null>(null);
   public color = input('brand');
+  public disabled = input(false);
 
   protected handOff = signal<TimeRangeSide | null>(null);
 

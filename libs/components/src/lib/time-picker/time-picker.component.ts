@@ -88,6 +88,7 @@ const sunRays = (sun: { x: number; y: number }) =>
         'activeSide',
         'day',
         'rangeDays',
+        'disabled',
       ],
       outputs: ['valueChange', 'rangeValueChange', 'activeSideChange', 'timeSelect', 'rangeHandOff'],
     },
@@ -95,6 +96,7 @@ const sunRays = (sun: { x: number; y: number }) =>
   host: {
     class: 'et-time-picker',
     '[attr.data-mode]': 'timePicker.mode()',
+    '[attr.data-disabled]': 'timePicker.disabled() || null',
   },
 })
 export class TimePickerComponent {

@@ -93,6 +93,7 @@
           <et-time-picker
             [(activeSide)]="rangeInput.pickerActiveSide"
             [rangeValue]="rangeInput.pickerTimeRange()"
+            [disabled]="rangeInput.disabled()"
             [rangeDays]="rangeInput.pickerDateRange()"
             [format]="rangeInput.effectiveDisplayFormat()"
             [locale]="rangeInput.effectiveLocale()"

@@ -19,6 +19,7 @@
     justify-content: center;
     -webkit-user-select: none;
     user-select: none;
+    transition: opacity 120ms ease;
 
     .et-time-picker-ring {
       position: relative;
@@ -51,6 +52,11 @@
       stroke: var(--et-theme-color-primary-solid, currentColor);
       stroke-linecap: round;
       opacity: 0.45;
+    }
+
+    .et-time-picker-track,
+    .et-time-picker-arc {
+      cursor: pointer;
     }
 
     .et-time-picker-blocked {
@@ -126,6 +132,17 @@
       transform: rotate(var(--_et-time-picker-handle-angle, 0deg))
         translateY(calc(var(--et-time-picker-ring-size) * -0.4))
         rotate(calc(var(--_et-time-picker-handle-angle, 0deg) * -1));
+      --_et-time-picker-halo-shadow: 0 0 0 calc(var(--et-time-picker-handle-size) * var(--_et-time-picker-halo))
+        color-mix(
+          in srgb,
+          var(--et-theme-color-primary-solid, currentColor) var(--_et-time-picker-halo-opacity, 16%),
+          transparent
+        );
+      box-shadow: var(--_et-time-picker-halo-shadow, none);
+      transition:
+        background-color 120ms ease,
+        border-color 120ms ease,
+        box-shadow 120ms ease;
       cursor: grab;
       outline: none;
       touch-action: none;
@@ -137,6 +154,15 @@
 
       &:where([data-dragging]) {
         cursor: grabbing;
+      }
+
+      &:hover:not([data-disabled], [data-dragging]) {
+        --_et-time-picker-halo: 0.3;
+      }
+
+      &[data-dragging]:not([data-disabled]) {
+        --_et-time-picker-halo: 0.5;
+        --_et-time-picker-halo-opacity: 28%;
       }
 
       &:focus-visible:not([data-pointer-focused]) {
@@ -153,7 +179,42 @@
   }
 
   .et-time-picker:where([data-mode='single']) .et-time-picker-handle {
-    box-shadow: 0 0 0 calc(var(--et-time-picker-handle-size) * 0.35)
-      color-mix(in srgb, var(--et-theme-color-primary-solid, currentColor) 22%, transparent);
+    --_et-time-picker-halo: 0.35;
+    --_et-time-picker-halo-opacity: 22%;
+  }
+
+  .et-time-picker[data-mode='range'] .et-time-picker-handle:hover:not([data-disabled], [data-dragging], [data-active]) {
+    background: color-mix(
+      in srgb,
+      var(--et-theme-color-primary-solid, currentColor) 16%,
+      var(--et-surface-background-solid, Canvas)
+    );
+  }
+
+  .et-time-picker[data-mode='single'] .et-time-picker-handle:hover:not([data-disabled], [data-dragging]) {
+    --_et-time-picker-halo: 0.5;
+    --_et-time-picker-halo-opacity: 28%;
+  }
+
+  .et-time-picker[data-mode='single'] .et-time-picker-handle[data-dragging]:not([data-disabled]) {
+    --_et-time-picker-halo: 0.65;
+    --_et-time-picker-halo-opacity: 32%;
+  }
+
+  .et-time-picker:where([data-disabled]) {
+    opacity: 0.4;
+
+    .et-time-picker-track,
+    .et-time-picker-arc,
+    .et-time-picker-handle {
+      cursor: not-allowed;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .et-time-picker,
+    .et-time-picker .et-time-picker-handle {
+      transition: none;
+    }
   }
 }

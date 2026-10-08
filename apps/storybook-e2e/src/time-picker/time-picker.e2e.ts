@@ -1,4 +1,4 @@
-import { Locator, expect, test } from '@playwright/test';
+import { Locator, Page, expect, test } from '@playwright/test';
 import {
   TouchPoint,
   boxOf,
@@ -18,6 +18,8 @@ const DEFAULT_STORY_ID = 'components-date-time-time-picker--default';
 const WITH_VALUE_STORY_ID = 'components-date-time-time-picker--with-value';
 const OPENING_HOURS_STORY_ID = 'components-date-time-time-picker--opening-hours';
 const RANGE_STORY_ID = 'components-date-time-time-picker--range';
+const DISABLED_STORY_ID = 'components-date-time-time-picker--disabled';
+const RANGE_DISABLED_STORY_ID = 'components-date-time-time-picker--range-disabled';
 const RANGE_HAND_OFF_STORY_ID = 'components-date-time-time-picker--range-hand-off';
 
 const RING = '.et-time-picker-ring';
@@ -321,4 +323,178 @@ test.describe('time-picker / touch', () => {
     await expect(end).toHaveAttribute('aria-valuenow', '1020');
     await expect(start).toHaveAttribute('aria-valuenow', '540');
   });
+});
+
+async function cursorAt(page: Page, point: TouchPoint): Promise<string> {
+  return page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+
+    return element ? getComputedStyle(element).cursor : 'none';
+  }, point);
+}
+
+async function handlePoint(handle: Locator): Promise<TouchPoint> {
+  const box = await boxOf(handle);
+
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+test.describe('time-picker / interaction states', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hover and drag');
+
+  test('hovering a handle of a range lifts a halo and tints it, and the active handle keeps its fill', async ({
+    page,
+  }) => {
+    const root = await openStory(page, RANGE_STORY_ID);
+    const start = root.getByRole('slider', { name: 'Start time' });
+    const end = root.getByRole('slider', { name: 'End time' });
+
+    await page.mouse.move(0, 0);
+    const restBackground = await end.evaluate((el) => getComputedStyle(el).backgroundColor);
+    await expect(end).toHaveCSS('box-shadow', 'none');
+
+    const endPoint = await handlePoint(end);
+    await page.mouse.move(endPoint.x, endPoint.y);
+
+    await expect(end).not.toHaveCSS('box-shadow', 'none');
+    await expect(end).not.toHaveCSS('background-color', restBackground);
+
+    await expect(start).toHaveAttribute('data-active', 'true');
+    const activeFill = await start.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const startPoint = await handlePoint(start);
+    await page.mouse.move(startPoint.x, startPoint.y);
+
+    await expect(start).not.toHaveCSS('box-shadow', 'none');
+    await expect(start).toHaveCSS('background-color', activeFill);
+  });
+
+  test('hovering the single handle widens its halo', async ({ page }) => {
+    const root = await openStory(page, WITH_VALUE_STORY_ID);
+    const handle = root.getByRole('slider', { name: 'Time' });
+
+    await page.mouse.move(0, 0);
+    const rest = await handle.evaluate((el) => getComputedStyle(el).boxShadow);
+    const point = await handlePoint(handle);
+    await page.mouse.move(point.x, point.y);
+
+    await expect.poll(() => handle.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe(rest);
+  });
+
+  test('dragging shows the grabbing cursor and a stronger halo than hovering', async ({ page }) => {
+    const root = await openStory(page, WITH_VALUE_STORY_ID);
+    const ring = root.locator(RING);
+    const handle = root.getByRole('slider', { name: 'Time' });
+
+    const point = await handlePoint(handle);
+    await page.mouse.move(point.x, point.y);
+    const hovered = await handle.evaluate((el) => getComputedStyle(el).boxShadow);
+
+    await mouseDownAlongRing(page, ring, 870, [900, 930]);
+
+    await expect(handle).toHaveAttribute('data-dragging', 'true');
+    await expect(handle).toHaveCSS('cursor', 'grabbing');
+    await expect.poll(() => handle.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe(hovered);
+
+    await page.mouse.up();
+  });
+
+  test('the track and the arc show a pointer cursor but no hover style', async ({ page }) => {
+    const root = await openStory(page, RANGE_STORY_ID);
+    const ring = root.locator(RING);
+    const arcPoint = await ringPoint(ring, 13 * 60);
+    const trackPoint = await ringPoint(ring, 3 * 60);
+    const paint = (point: TouchPoint) =>
+      page.evaluate(({ x, y }) => {
+        const element = document.elementFromPoint(x, y);
+        const style = element ? getComputedStyle(element) : null;
+
+        return `${element?.getAttribute('class')} ${style?.stroke} ${style?.opacity}`;
+      }, point);
+
+    await page.mouse.move(0, 0);
+    const restArc = await paint(arcPoint);
+    const restTrack = await paint(trackPoint);
+
+    await page.mouse.move(arcPoint.x, arcPoint.y);
+    expect(await cursorAt(page, arcPoint)).toBe('pointer');
+    expect(await paint(arcPoint)).toBe(restArc);
+
+    await page.mouse.move(trackPoint.x, trackPoint.y);
+    expect(await cursorAt(page, trackPoint)).toBe('pointer');
+    expect(await paint(trackPoint)).toBe(restTrack);
+  });
+
+  test('a handle transitions its state changes, and not under reduced motion', async ({ page }) => {
+    const root = await openStory(page, WITH_VALUE_STORY_ID);
+    const handle = root.getByRole('slider', { name: 'Time' });
+    const transition = () => handle.evaluate((el) => getComputedStyle(el).transitionDuration);
+
+    expect(await transition()).toContain('0.12s');
+    await expect(handle).toHaveCSS('transition-property', /box-shadow/);
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    await expect.poll(transition).toBe('0s');
+  });
+
+  test('a focused handle draws a solid two pixel outline', async ({ page }) => {
+    const root = await openStory(page, WITH_VALUE_STORY_ID);
+    const handle = root.getByRole('slider', { name: 'Time' });
+
+    await pressKey(page, 'Tab');
+
+    await expectFocusVisible(handle);
+    await expect(handle).toHaveCSS('outline-style', 'solid');
+    await expect(handle).toHaveCSS('outline-width', '2px');
+  });
+
+  for (const [name, storyId, handleNames] of [
+    ['single', DISABLED_STORY_ID, ['Time']],
+    ['range', RANGE_DISABLED_STORY_ID, ['Start time', 'End time']],
+  ] as const) {
+    test(`a disabled ${name} picker mutes the dial, blocks every gesture and takes its handles out of the tab order`, async ({
+      page,
+    }) => {
+      const root = await openStory(page, storyId);
+      const ring = root.locator(RING);
+      const dial = root.locator('et-time-picker');
+      const handles = handleNames.map((handleName) => root.getByRole('slider', { name: handleName }));
+      const before = await Promise.all(handles.map((handle) => handle.getAttribute('aria-valuenow')));
+
+      await expect(dial).toHaveCSS('opacity', '0.4');
+
+      await page.mouse.move(0, 0);
+      const restShadows = await Promise.all(
+        handles.map((handle) => handle.evaluate((el) => getComputedStyle(el).boxShadow)),
+      );
+
+      for (const [index, handle] of handles.entries()) {
+        await expect(handle).toHaveAttribute('aria-disabled', 'true');
+        await expect(handle).toHaveAttribute('tabindex', '-1');
+        await expect(handle).toHaveCSS('cursor', 'not-allowed');
+
+        const point = await handlePoint(handle);
+        await page.mouse.move(point.x, point.y);
+        await expect(handle).toHaveCSS('box-shadow', restShadows[index] ?? '');
+      }
+
+      const trackPoint = await ringPoint(ring, 6 * 60);
+      await page.mouse.move(trackPoint.x, trackPoint.y);
+      expect(await cursorAt(page, trackPoint)).toBe('not-allowed');
+
+      await pressKey(page, 'Tab');
+      for (const handle of handles) {
+        await expect(handle).not.toBeFocused();
+      }
+
+      await clickRing(page, ring, 20 * 60);
+      await mouseDownAlongRing(page, ring, 9 * 60, [10 * 60, 11 * 60]);
+      await page.mouse.up();
+
+      for (const [index, handle] of handles.entries()) {
+        await expect(handle).not.toHaveAttribute('data-dragging');
+        await expect(handle).toHaveAttribute('aria-valuenow', before[index] ?? '');
+      }
+    });
+  }
 });

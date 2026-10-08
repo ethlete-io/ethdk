@@ -24,7 +24,9 @@ const outsideRing = (element: Element): never => {
   exportAs: 'etTimePickerRingHandle',
   host: {
     role: 'slider',
-    tabindex: '0',
+    '[attr.tabindex]': 'picker.disabled() ? -1 : 0',
+    '[attr.aria-disabled]': 'picker.disabled() || null',
+    '[attr.data-disabled]': 'picker.disabled() || null',
     'aria-valuemin': '0',
     'aria-valuemax': '1439',
     '[attr.aria-valuenow]': 'minute()',
@@ -42,7 +44,7 @@ const outsideRing = (element: Element): never => {
 })
 export class TimePickerRingHandleDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private picker = inject(TimePickerDirective);
+  protected picker = inject(TimePickerDirective);
   private labels = injectTimePickerLabels();
 
   /** The end of a range this handle sets. A single time uses `start`. */

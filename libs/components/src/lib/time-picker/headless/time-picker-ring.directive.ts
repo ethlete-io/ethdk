@@ -103,7 +103,7 @@ export class TimePickerRingDirective {
   protected handlePointerDown(event: PointerEvent) {
     const picker = this.picker;
 
-    if (event.button !== 0 || this.draggingSide() !== null) {
+    if (picker.disabled() || event.button !== 0 || this.draggingSide() !== null) {
       return;
     }
 

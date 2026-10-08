@@ -27,6 +27,7 @@ On `et-time-picker` (forwarded from the headless `[etTimePicker]` directive):
 | `max`        | `Date \| null`                      | `null`              | Latest selectable time, same reading.                                                                        |
 | `timeFilter` | `((date: Date) => boolean) \| null` | `null`              | Return `false` to make a time unselectable. Receives the full candidate timestamp.                           |
 | `day`        | `Date \| null`                      | `null`              | The day the time falls on, from a calendar next to the picker. Set, the ring centre shows it under the time. |
+| `disabled`   | `boolean`                           | `false`             | Blocks every press, drag and key, mutes the dial and takes the handles out of the tab order.                 |
 
 | Model   | Type           | Default | Description                                                                |
 | ------- | -------------- | ------- | -------------------------------------------------------------------------- |
@@ -164,7 +165,8 @@ With no `rangeDays`, the centre shows the **duration** of the range (`8 h 30 min
 - Each handle is a `role="slider"` with `aria-valuemin="0"`, `aria-valuemax="1439"` (minutes of the day), `aria-valuenow` and an `aria-valuetext` holding the formatted time. An empty end has no `aria-valuenow` and announces `emptyHint` as its `aria-valuetext`.
 - The handle's name is the `time` label; in range mode it is the start or end label, so which end is being edited is announced rather than only drawn.
 - The ring graphic is `aria-hidden`; everything it shows is on the handles.
-- Disabled/readonly states belong to the hosting control (e.g. the time input) - the inline picker itself is always interactive.
+- `disabled` sets `aria-disabled` and `tabindex="-1"` on the handles. The time and date-time inputs pass their own disabled state on; readonly is not forwarded.
+- Handle states: hovering lifts a soft halo (a range handle that is not the active one also tints), dragging strengthens the halo and shows the grabbing cursor, and keyboard focus draws a two pixel outline. Each change fades over 120ms, and not at all under `prefers-reduced-motion: reduce`. The track and the arc have no hover style.
 
 ## Theming
 
