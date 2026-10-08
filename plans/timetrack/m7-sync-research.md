@@ -64,7 +64,17 @@ copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repo
 0. Bugs a-e (S-M, 2-3 d).
 1. Done. ADR 0039 + migration 20 (machine id, change counter, tombstones, `received_event`,
    `peer_cursor`) + `repoKeyOf`. The read fold and the stream key change wait for slice 4.
-2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d).
+2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d). In progress, Tom said go on 2026-10-08.
+   - 2a. Host: machine key and self-signed certificate (key in the keychain), SPAKE2 pairing on the
+     6-digit code that binds both certificate fingerprints, `paired_machine` table (migration 21),
+     mutual-TLS LAN listener with pinned certificates and a configurable port, a `hello` exchange that
+     measures clock offset and updates last-seen. Agent ops `peers.list`, `pair.offer`, `pair.accept`,
+     `peers.forget`, so pairing is verifiable without a click.
+   - 2b. Discovery: mDNS `_timetrack._tcp` advertise and browse (`mdns-sd`), manual host:port.
+   - 2c. UI: "Paired machines" in Settings (pair, forget, last-seen, clock offset) and the sidebar
+     status item next to Auto mode. Fake ports for the e2e suite.
+   - 2d. macOS: `NSLocalNetworkUsageDescription`, `NSBonjourServices`; `cargo test` on ethlete-mac;
+     pair this PC with the MacBook through the agent ops and see each other's hello.
 3. Read-only overlay, the first user value: the peer sends presence and attendance intervals, booked
    rows and stream labels. "Nobody was here" becomes "Worked on MacBook". No row changes (S-M, 2-3 d).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
