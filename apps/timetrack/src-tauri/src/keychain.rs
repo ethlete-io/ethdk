@@ -5,6 +5,7 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 const SERVICE: &str = "io.ethlete.timetrack";
 const DATABASE_KEY_ACCOUNT: &str = "database-key";
+const MACHINE_KEY_ACCOUNT: &str = "machine-key";
 
 fn entry(account: &str) -> TimetrackResult<Entry> {
     Ok(Entry::new(SERVICE, account)?)
@@ -108,6 +109,22 @@ pub fn database_key() -> TimetrackResult<String> {
     write_secret(DATABASE_KEY_ACCOUNT, &key)?;
 
     Ok(key)
+}
+
+/// This machine's private key and certificate for the peer listener, as `generate` serializes them,
+/// generated on first use.
+///
+/// Losing it unpairs this machine from every peer: each one pinned the certificate it held.
+pub fn machine_key(generate: impl FnOnce() -> TimetrackResult<String>) -> TimetrackResult<String> {
+    if let Some(existing) = read_secret(MACHINE_KEY_ACCOUNT)? {
+        return Ok(existing);
+    }
+
+    let generated = generate()?;
+
+    write_secret(MACHINE_KEY_ACCOUNT, &generated)?;
+
+    Ok(generated)
 }
 
 #[cfg(target_os = "macos")]

@@ -25,6 +25,7 @@ mod logs;
 mod nudge;
 mod oauth;
 mod pause;
+mod peer;
 mod placement;
 mod process;
 mod recovery;
@@ -97,6 +98,14 @@ pub fn run() {
             transcript::prune(&connection, chrono::Utc::now().timestamp_millis())?;
 
             app.manage(state::Db::new(connection));
+
+            let peers = peer::Peers::new(
+                app.state::<state::Db>().inner().clone(),
+                peer::PeerConfig::for_app(app.package_info().version.to_string()),
+            );
+
+            peer::resume(peers.clone());
+            app.manage(peers);
             app.manage(http::Http(http::client()?));
 
             let window_lock = lock::WindowLock::new();

@@ -301,6 +301,20 @@ CREATE TABLE peer_cursor (
 );
 ";
 
+/// The machines this one has paired with. `cert_fingerprint` is the SHA-256 of the certificate the
+/// peer presented while pairing, and a connection that presents any other certificate is not this peer.
+const SCHEMA_V21: &str = "
+CREATE TABLE IF NOT EXISTS paired_machine (
+  machine_id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  cert_fingerprint TEXT NOT NULL UNIQUE,
+  last_addr TEXT,
+  last_seen_ms INTEGER,
+  clock_offset_ms INTEGER,
+  paired_at_ms INTEGER NOT NULL
+);
+";
+
 /// Checked first because a store re-run from an older version already has the column.
 fn add_change_tracking(connection: &Connection) -> TimetrackResult<()> {
     let present = connection
@@ -603,6 +617,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 20, add_change_tracking)?;
     }
 
+    if version < 21 {
+        step(connection, 21, |connection| Ok(connection.execute_batch(SCHEMA_V21)?))?;
+    }
+
     Ok(())
 }
 
@@ -677,7 +695,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            20
+            21
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -801,7 +819,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            20
+            21
         );
     }
 
@@ -1211,7 +1229,7 @@ mod tests {
                  DROP INDEX collected_event_changed_seq;
                  ALTER TABLE collected_event DROP COLUMN changed_seq;
                  DROP TABLE machine; DROP TABLE change_clock; DROP TABLE deleted_event;
-                 DROP TABLE received_event; DROP TABLE peer_cursor;",
+                 DROP TABLE received_event; DROP TABLE peer_cursor; DROP TABLE paired_machine;",
             )
             .unwrap();
         connection.pragma_update(None, "user_version", 19).unwrap();
@@ -1315,5 +1333,34 @@ mod tests {
                 .unwrap(),
             (1, 1, 3)
         );
+    }
+
+    #[test]
+    fn gives_a_v20_store_an_empty_paired_machine_table_that_pins_one_peer_per_certificate() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        migrate(&connection).unwrap();
+        connection.execute_batch("DROP TABLE paired_machine").unwrap();
+        connection.pragma_update(None, "user_version", 20).unwrap();
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            21
+        );
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*) FROM paired_machine", [], |row| row.get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+
+        let insert = "INSERT INTO paired_machine (machine_id, label, cert_fingerprint, paired_at_ms)
+             VALUES (?1, 'laptop', 'ab', 1)";
+
+        connection.execute(insert, params!["a"]).unwrap();
+        assert!(connection.execute(insert, params!["b"]).is_err());
     }
 }

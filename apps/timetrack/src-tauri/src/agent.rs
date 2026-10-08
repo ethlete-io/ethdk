@@ -483,15 +483,27 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
         return respond(stream, "400 Bad Request").await;
     };
 
-    // The one thing this host reads out of the body. What an operation means belongs to the window,
-    // which is also what keeps a caller from reaching Jira through a shape invented here.
+    // What an operation means belongs to the window, which is also what keeps a caller from reaching
+    // Jira through a shape invented here. Pairing is the exception: the keys and the LAN listener live
+    // in this host, and the window never sees them.
     let op = request.get("op").and_then(serde_json::Value::as_str);
 
     if !op.is_some_and(|op| !op.trim().is_empty()) {
         return respond(stream, "400 Bad Request").await;
     }
 
-    let answer = endpoint.ask(app, request).await;
+    let answer = match op {
+        Some(op) if op.starts_with("peers.") || op.starts_with("pair.") => {
+            match app.try_state::<crate::peer::Peers>() {
+                Some(peers) => match peers.answer(&request).await {
+                    Ok(value) => AgentAnswer::value(value),
+                    Err(message) => AgentAnswer::failed(message),
+                },
+                None => AgentAnswer::failed("pairing is not available: the store did not open".to_string()),
+            }
+        }
+        _ => endpoint.ask(app, request).await,
+    };
 
     endpoint.answered();
 

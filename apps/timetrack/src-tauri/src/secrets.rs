@@ -7,7 +7,9 @@ use crate::keychain;
 /// The app's own service holds more than those: `database-key` is the SQLCipher key, and every event
 /// ever collected is behind it. Reading it from a window would hand the whole store to anything that
 /// reaches this command, and writing or deleting it would leave the database unreadable at the next
-/// start. Matching `TIMETRACK_SECRET_KEYS` in the core.
+/// start. `machine-key` is the private key a paired machine knows this one by; reading it would let
+/// anything that reaches this command pose as this machine to every peer. Matching
+/// `TIMETRACK_SECRET_KEYS` in the core.
 const ACCOUNTS: [&str; 5] = [
     "jira-token",
     "tempo-token",
@@ -76,6 +78,7 @@ mod tests {
     #[test]
     fn never_reaches_the_database_key() {
         assert!(check("database-key").is_err());
+        assert!(check("machine-key").is_err());
         assert!(check("").is_err());
         assert!(check("jira-token ").is_err());
     }

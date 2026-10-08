@@ -15,23 +15,28 @@ tauri-build = { version = "2.6.3", features = ["codegen"] }
 [dependencies]
 base64 = "0.22.1"
 chrono = "0.4.45"
+gethostname = "1.1.0"
 hmac = "0.12.1"
 # Not on crates.io - the Tauri team publishes it as a git repo, with no version tags to pin.
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", rev = "c4c45d503ea115a839aae718d02f79e7c7f0f673" }
 keyring = { version = "4.1.6", default-features = false, features = ["v1"] }
 notify = "8.2.0"
 rand = "0.10.2"
+rcgen = { version = "0.14.10", default-features = false, features = ["aws_lc_rs"] }
 reqwest = { version = "0.13.4", features = ["json", "form", "gzip"] }
 rusqlite = { version = "0.40.2", features = ["bundled-sqlcipher-vendored-openssl", "chrono"] }
+rustls = { version = "0.23.45", default-features = false, features = ["aws-lc-rs", "std"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.10.9"
+spake2 = "0.4.0"
 tauri = { version = "2.11.5", features = ["tray-icon"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.1"
 thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "sync", "time", "net", "rt-multi-thread", "macros"] }
+tokio-rustls = { version = "0.26.4", default-features = false }
 whisper-rs = { version = "0.16.0", optional = true }
 tauri-plugin-updater = "2.12.0"
 
