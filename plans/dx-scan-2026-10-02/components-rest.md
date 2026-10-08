@@ -170,7 +170,7 @@ domain in scope has a suite in `apps/storybook-e2e`.
 
 ## CR-09 537 `@internal` members ship as normal public API (no `stripInternal`)
 
-- Status: fixed (2026-10-08, stripInternal on; scheduler re-audit pending)
+- Status: fixed (2026-10-08, stripInternal on; scheduler re-audited, all 6 tags are true internals)
 
 - Where: `libs/components/tsconfig.lib.prod.json` (no `stripInternal`); for example
   `carousel/carousel.component.ts:103`, `tabs/tabs/headless/tab-group.directive.ts` (`panels`,
