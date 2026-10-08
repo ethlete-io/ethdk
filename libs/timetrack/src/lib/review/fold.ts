@@ -43,7 +43,8 @@ const overlaps = (a: TimeWindow, b: TimeWindow) =>
  * A row longer than one increment is preferred as the neighbour. A short row with no such neighbour
  * folds into another short row of its name. An `unattended` short row folds only into a row it
  * touches, an attended one never into an `unattended` row, and the grown row keeps the neighbour's
- * mark. A row `afterBreak` marks also folds only into a row it touches. A short row with no neighbour at all, or whose neighbour would grow over another row of the
+ * mark. A row `afterBreak` marks also folds only into a row it touches, and a row before it folds into it only
+ * when the two touch. A short row with no neighbour at all, or whose neighbour would grow over another row of the
  * lane or one it `collides` with on both sides, stays as it is. In the calls lane a short row folds
  * only into a row of its name that touches it.
  * `fixed` rows neither fold nor absorb, and neither do the rows of parallel sessions on one ticket
@@ -68,8 +69,10 @@ export const foldShortRows = <T extends FoldRow>(options: {
   const shared = sharingTicket(rows);
   const takesPart = (row: T) => !options.fixed(row) && !row.excluded && !!nameOf(row) && !shared.has(row);
   const isShort = (row: T) => spanOf(row) === options.incrementMs;
+  const crossesBreak = (row: T, short: T) =>
+    gapMs(row, short) > 0 && (!!short.afterBreak || (!!row.afterBreak && row.from > short.from));
   const canTakeIn = (row: T, short: T) =>
-    short.unattended ? gapMs(row, short) === 0 : !row.unattended && (!short.afterBreak || gapMs(row, short) === 0);
+    short.unattended ? gapMs(row, short) === 0 : !row.unattended && !crossesBreak(row, short);
 
   for (let index = 0; index < rows.length; index++) {
     const short = rows[index];

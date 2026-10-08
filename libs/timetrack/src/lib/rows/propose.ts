@@ -479,6 +479,8 @@ export const propose = (options: {
     .map((row) => ({ ...row, group: { ...row.group, rowId: unnamedIds.next(idGroupOf(row)) } }));
   const unattributed = unnamed.filter((row) => !row.group.standInId);
   const ids = rowIds(proposalId);
+  const startsAtBreakEnd = (from: Date) =>
+    away.some((window) => window.from < from && floorToGrid(window.to.getTime(), incrementMs) === from.getTime());
 
   return {
     proposals: attributed.map(({ group, from, to, durationMs, stretches, afterBreak, idFrom }) => ({
@@ -488,7 +490,7 @@ export const propose = (options: {
       storyKey: group.storyKey,
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),
       ...(group.disputedStandInId ? { disputedStandInId: group.disputedStandInId } : {}),
-      ...(afterBreak ? { afterBreak } : {}),
+      ...(afterBreak || startsAtBreakEnd(from) ? { afterBreak: true as const } : {}),
       from,
       to,
       durationMs,
@@ -508,7 +510,7 @@ export const propose = (options: {
       ...(group.attended === false ? { unattended: true } : {}),
       ...(group.attended === false && group.issueKey ? { withheldIssueKey: group.issueKey } : {}),
       ...(group.bookable === false ? { excluded: true } : {}),
-      ...(afterBreak ? { afterBreak } : {}),
+      ...(afterBreak || startsAtBreakEnd(from) ? { afterBreak: true as const } : {}),
       ...(group.disputedIssueKey ? { disputedIssueKey: group.disputedIssueKey } : {}),
       ...(group.disputedStandInId ? { disputedStandInId: group.disputedStandInId } : {}),
       from,

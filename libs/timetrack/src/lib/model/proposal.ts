@@ -57,8 +57,8 @@ export type WorklogProposal = {
    */
   withheldIssueKey?: string;
   /**
-   * True on the part of a row nobody attended that lies past the break the row started in, which the
-   * user was back for. Like an unattended row, it folds only into a row it touches.
+   * True on a row that starts where a break ended, the part the user was back for. Like an unattended
+   * row, it folds only into a row it touches, and no row before the break folds into it.
    */
   afterBreak?: boolean;
   /**

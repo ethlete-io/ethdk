@@ -770,4 +770,17 @@ describe('streamDay, on an agent that finished a prompt a few minutes after the 
     expect(minutesOf(proposals.filter((row) => row.from < AT(1060)))).toEqual([[1020, 1050]]);
     expect(minutesOf(unnamed.filter((row) => row.unattended))).toEqual([]);
   });
+
+  it('keeps a single increment the user left in where it was, rather than folding it across the break', () => {
+    const late = LEFT.filter((event) => event.kind !== 'window-focus' || event.at >= AT(1045));
+    const day = streamDay({
+      events: [...late, focus(1046)].sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: { repoRoots: [REPO], windowsSeenThroughMs: AT(1200).getTime(), rows: { config: CONFIG } },
+    });
+
+    expect(minutesOf(reviewDay({ rows: day.rows }).rows.filter((row) => row.from < AT(1070)))).toEqual([
+      [1035, 1050],
+      [1065, 1155],
+    ]);
+  });
 });

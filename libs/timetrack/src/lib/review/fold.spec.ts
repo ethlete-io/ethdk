@@ -33,6 +33,24 @@ describe('foldShortRows', () => {
     expect(grown?.stretches).toEqual([{ from: at('09:00'), to: at('10:00') }]);
   });
 
+  it('keeps a short row before a break where it is, rather than folding it across the break', () => {
+    const rows = foldShortRows({
+      rows: [
+        row({ id: 'before', from: '17:15', to: '17:30' }),
+        { ...row({ id: 'after', from: '17:45', to: '19:30' }), afterBreak: true },
+      ],
+      incrementMs: 15 * MINUTE,
+      fixed: () => false,
+      canFold: () => true,
+      blockers: [],
+    });
+
+    expect(rows.map((entry) => [entry.id, entry.from, entry.to])).toEqual([
+      ['before', at('17:15'), at('17:30')],
+      ['after', at('17:45'), at('19:30')],
+    ]);
+  });
+
   it('folds no short row of a parallel session into the other session of its ticket', () => {
     const rows = foldShortRows({
       rows: [row({ id: 'one', from: '09:00', to: '10:00' }), row({ id: 'two', from: '09:30', to: '09:45' })],
