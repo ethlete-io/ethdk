@@ -105,6 +105,7 @@ pub fn run() {
             );
 
             peer::resume(peers.clone());
+            peer::heartbeat(peers.clone());
             app.manage(peers);
             app.manage(http::Http(http::client()?));
 
@@ -183,6 +184,12 @@ pub fn run() {
             oauth::oauth_authorize,
             pause::collection_set_paused,
             pause::collection_state,
+            peer::pair_accept,
+            peer::pair_offer,
+            peer::peers_discovered,
+            peer::peers_forget,
+            peer::peers_hello,
+            peer::peers_list,
             process::run_process,
             reporter::reporter_vsix_path,
             secrets::secret_delete,
@@ -245,6 +252,12 @@ pub fn run() {
             // since the window was last put away is written.
             if matches!(event, tauri::RunEvent::Exit) {
                 placement::persist(app);
+
+                // `Discovery`'s Drop is what sends the mDNS goodbye, and nothing drops the managed
+                // state before the process exits.
+                if let Some(peers) = app.try_state::<peer::Peers>() {
+                    peers.shutdown();
+                }
 
                 // The token in these files outlives nothing: what binds the freed port next would
                 // otherwise be asked the same questions, with the same bearer token attached.

@@ -37,6 +37,11 @@ const TLS_NAME: &str = "timetrack";
 const SPAKE_IDENTITY: &[u8] = b"timetrack-pair-v1";
 const CLIENT_CONFIRM: &[u8] = b"timetrack-pair-v1 client";
 const SERVER_CONFIRM: &[u8] = b"timetrack-pair-v1 server";
+const HEARTBEAT_EVERY: Duration = Duration::from_secs(60);
+
+pub const NO_OFFER: &str = "no pairing offer is open on the other machine: show a code there first";
+pub const OFFER_EXPIRED: &str = "the code on the other machine has expired: show a new one";
+pub const WRONG_CODE: &str = "the code does not match the one the other machine shows";
 
 type KeySource = Arc<dyn Fn() -> TimetrackResult<String> + Send + Sync>;
 
@@ -635,7 +640,9 @@ impl Peers {
             .map_err(|_| TimetrackError::Poisoned)?
             .get(machine_id)
             .cloned()
-            .ok_or_else(|| rejected(format!("no machine with the id {machine_id} has been discovered")))?;
+            .ok_or_else(|| {
+                rejected("that machine is no longer seen on the network: pick it again, or enter its address")
+            })?;
 
         Ok((found.addresses[0].to_string(), found.port))
     }
@@ -685,16 +692,17 @@ impl Peers {
         }
     }
 
-    /// Takes one attempt at the open offer and returns its code. Every attempt counts, whatever its
-    /// outcome, and the attempt that reaches `MAX_ATTEMPTS` closes the offer.
-    fn take_attempt(&self) -> Option<String> {
-        let mut offer = self.0.offer.lock().ok()?;
-        let open = offer.as_mut()?;
+    /// Takes one attempt at the open offer and returns its code, or why there is none to try. Every
+    /// attempt counts, whatever its outcome, and the attempt that reaches `MAX_ATTEMPTS` closes the
+    /// offer.
+    fn take_attempt(&self) -> Result<String, &'static str> {
+        let mut offer = self.0.offer.lock().map_err(|_| NO_OFFER)?;
+        let open = offer.as_mut().ok_or(NO_OFFER)?;
 
         if open.expires_at <= Instant::now() || open.attempts >= MAX_ATTEMPTS {
             *offer = None;
 
-            return None;
+            return Err(OFFER_EXPIRED);
         }
 
         open.attempts += 1;
@@ -705,7 +713,7 @@ impl Peers {
             *offer = None;
         }
 
-        Some(code)
+        Ok(code)
     }
 
     fn close_offer(&self) {
@@ -729,8 +737,9 @@ impl Peers {
             .await;
         }
 
-        let Some(code) = self.take_attempt() else {
-            return refuse(tls, "no pairing offer is open on this machine").await;
+        let code = match self.take_attempt() {
+            Ok(code) => code,
+            Err(reason) => return refuse(tls, reason).await,
         };
         let (state, outbound) = start_spake(&code);
 
@@ -758,7 +767,7 @@ impl Peers {
             client_label: &client.label,
         };
         let Some(key) = key.filter(|key| transcript.verifies(key, CLIENT_CONFIRM, &mac)) else {
-            return refuse(tls, "the pairing failed: a wrong code, or a machine in between").await;
+            return refuse(tls, WRONG_CODE).await;
         };
         let confirm = transcript.confirm(&key, SERVER_CONFIRM);
 
@@ -855,7 +864,9 @@ impl Peers {
         host: &str,
         port: u16,
     ) -> TimetrackResult<tokio_rustls::client::TlsStream<TcpStream>> {
-        let stream = TcpStream::connect((host, port)).await?;
+        let stream = TcpStream::connect((host, port))
+            .await
+            .map_err(|error| rejected(format!("nothing answered at {host}:{port} ({error})")))?;
         let name = ServerName::try_from(TLS_NAME).map_err(rejected)?;
 
         Ok(TlsConnector::from(identity.client.clone())
@@ -963,7 +974,7 @@ impl Peers {
         match read_frame(&mut tls).await? {
             Frame::Confirm { mac } if transcript.verifies(&key, SERVER_CONFIRM, &mac) => {}
             Frame::Refused { message } => return Err(rejected(message)),
-            _ => return Err(rejected("the pairing failed: a wrong code, or a machine in between")),
+            _ => return Err(rejected(WRONG_CODE)),
         }
 
         let peer = Party {
@@ -985,6 +996,16 @@ impl Peers {
             .await?;
 
         stored.ok_or_else(|| rejected("the pairing was not stored"))
+    }
+
+    /// Pairs with a discovered machine, or with the one at an address the user typed.
+    pub async fn pair_with(&self, target: PairTarget, code: &str) -> TimetrackResult<PairedMachine> {
+        let (host, port) = match target {
+            PairTarget::Discovered { machine_id } => self.locate(&machine_id).await?,
+            PairTarget::Address { host, port } => (host, port.unwrap_or(DEFAULT_PORT)),
+        };
+
+        self.accept(&host, port, code).await
     }
 
     /// Says hello to a paired machine at the address it was last seen on, and records the clock offset
@@ -1093,6 +1114,13 @@ impl Peers {
             .await
     }
 
+    /// Withdraws this machine's mDNS advertisement and stops browsing.
+    pub fn shutdown(&self) {
+        let running = self.0.discovery.lock().ok().and_then(|mut discovery| discovery.take());
+
+        drop(running);
+    }
+
     /// Answers a `peers.*` or `pair.*` agent op. The error is the message the caller is shown.
     pub async fn answer(&self, request: &serde_json::Value) -> Result<serde_json::Value, String> {
         let text = |field: &str| {
@@ -1113,24 +1141,18 @@ impl Peers {
             "peers.discovered" => self.discovered().await.map(|rows| serde_json::json!(rows)),
             "pair.accept" => {
                 let code = text("code")?;
-                let (host, port) = match text("machineId") {
-                    Ok(machine_id) => match self.locate(&machine_id).await {
-                        Ok(located) => located,
-                        Err(error) => return Err(error.to_string()),
-                    },
-                    Err(_) => (
-                        text("host")?,
-                        request
+                let target = match text("machineId") {
+                    Ok(machine_id) => PairTarget::Discovered { machine_id },
+                    Err(_) => PairTarget::Address {
+                        host: text("host")?,
+                        port: request
                             .get("port")
                             .and_then(serde_json::Value::as_u64)
-                            .and_then(|port| u16::try_from(port).ok())
-                            .unwrap_or(DEFAULT_PORT),
-                    ),
+                            .and_then(|port| u16::try_from(port).ok()),
+                    },
                 };
 
-                self.accept(&host, port, &code)
-                    .await
-                    .map(|peer| serde_json::json!(peer))
+                self.pair_with(target, &code).await.map(|peer| serde_json::json!(peer))
             }
             "peers.hello" => self
                 .hello(&text("machineId")?)
@@ -1145,6 +1167,15 @@ impl Peers {
 
         answered.map_err(|error| error.to_string())
     }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum PairTarget {
+    #[serde(rename_all = "camelCase")]
+    Discovered { machine_id: String },
+    #[serde(rename_all = "camelCase")]
+    Address { host: String, port: Option<u16> },
 }
 
 /// One side of a connection as the other side saw it.
@@ -1180,6 +1211,58 @@ pub fn resume(peers: Peers) {
             let _ = peers.ensure_listening().await;
         }
     });
+}
+
+/// Says hello to every paired machine once a `HEARTBEAT_EVERY`, which keeps last-seen and the clock
+/// offset current on both sides. A machine that does not answer is skipped until the next round.
+pub fn heartbeat(peers: Peers) {
+    tauri::async_runtime::spawn(async move {
+        let mut every = tokio::time::interval(HEARTBEAT_EVERY);
+
+        every.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
+        loop {
+            every.tick().await;
+
+            for machine in peers.list().await.unwrap_or_default() {
+                let _ = peers.hello(&machine.machine_id).await;
+            }
+        }
+    });
+}
+
+#[tauri::command]
+pub async fn peers_list(peers: tauri::State<'_, Peers>) -> TimetrackResult<Vec<PairedMachine>> {
+    peers.list().await
+}
+
+#[tauri::command]
+pub async fn peers_discovered(peers: tauri::State<'_, Peers>) -> TimetrackResult<Vec<Discovered>> {
+    peers.discovered().await
+}
+
+#[tauri::command]
+pub async fn pair_offer(peers: tauri::State<'_, Peers>) -> TimetrackResult<OpenOffer> {
+    peers.offer().await
+}
+
+#[tauri::command]
+pub async fn pair_accept(
+    peers: tauri::State<'_, Peers>,
+    target: PairTarget,
+    code: String,
+) -> TimetrackResult<PairedMachine> {
+    peers.pair_with(target, &code).await
+}
+
+#[tauri::command]
+pub async fn peers_hello(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<HelloResult> {
+    peers.hello(&machine_id).await
+}
+
+#[tauri::command]
+pub async fn peers_forget(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<bool> {
+    peers.forget(&machine_id).await
 }
 
 #[cfg(test)]
@@ -1253,7 +1336,12 @@ mod tests {
         let (a, b) = (instance("pc"), instance("laptop"));
         let offer = a.offer().await.unwrap();
 
-        assert!(b.accept("127.0.0.1", offer.port, &wrong(&offer.code)).await.is_err());
+        let error = b
+            .accept("127.0.0.1", offer.port, &wrong(&offer.code))
+            .await
+            .unwrap_err();
+
+        assert_eq!(error.to_string(), WRONG_CODE);
         assert!(a.list().await.unwrap().is_empty());
         assert!(b.list().await.unwrap().is_empty());
         assert_eq!(attempts(&a), Some(1));
@@ -1390,6 +1478,46 @@ mod tests {
         let error = b.hello(&machine_id(&a).await).await.unwrap_err();
 
         assert!(error.to_string().contains("not paired"), "{error}");
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_expired_offer_says_so_rather_than_that_none_is_open() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+        let offer = a.offer().await.unwrap();
+
+        a.0.offer.lock().unwrap().as_mut().unwrap().expires_at = Instant::now() - Duration::from_secs(1);
+
+        let error = b.accept("127.0.0.1", offer.port, &offer.code).await.unwrap_err();
+
+        assert_eq!(error.to_string(), OFFER_EXPIRED);
+        assert!(a.list().await.unwrap().is_empty());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_that_is_not_there_is_named_by_its_address() {
+        let b = instance("laptop");
+        let closed = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+        let port = closed.local_addr().unwrap().port();
+
+        drop(closed);
+
+        let error = b
+            .pair_with(
+                PairTarget::Address {
+                    host: "127.0.0.1".to_string(),
+                    port: Some(port),
+                },
+                "123456",
+            )
+            .await
+            .unwrap_err();
+
+        assert!(
+            error
+                .to_string()
+                .starts_with(&format!("nothing answered at 127.0.0.1:{port}")),
+            "{error}"
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
