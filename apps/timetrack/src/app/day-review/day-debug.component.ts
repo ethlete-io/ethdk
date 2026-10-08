@@ -7,6 +7,7 @@ import {
   OVERLAY_CONTENT_IMPORTS,
   OverlayMainDirective,
   SpinnerComponent,
+  createOverlayOpener,
   defineOverlay,
   dialogOverlayStrategy,
 } from '@ethlete/components';
@@ -24,6 +25,7 @@ import { DayStreamsComponent } from './day-streams.component';
 import { DayTotalsComponent } from './day-totals.component';
 import { HiddenRowsComponent } from './hidden-rows.component';
 import { IssueFilterComponent } from '../jira';
+import { REPORT_OVERLAY } from './report-overlay.component';
 import { StandInsListComponent } from '../stand-ins';
 import { LoggedElsewhereComponent } from './logged-elsewhere.component';
 import { injectTicketDraft } from './ticket-draft';
@@ -224,6 +226,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
       <button (click)="autoMode.copyAnonymousReport()" et-button size="sm" variant="outline">
         Copy as anonymous report
       </button>
+      <button (click)="report.open()" et-button size="sm" variant="outline" data-report-export>Export report</button>
       <button et-button etOverlayClose size="sm" variant="outline">Close</button>
     </div>
   `,
@@ -257,6 +260,7 @@ export class DayDebugComponent {
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
   protected autoMode = injectAutoMode();
+  protected report = createOverlayOpener(REPORT_OVERLAY);
 
   protected waitingLabel = computed(() => {
     const contexts = this.store.unnamed().length;

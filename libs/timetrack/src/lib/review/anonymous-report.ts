@@ -24,6 +24,10 @@ export type AnonymousReportInput = {
   /** The day the review screen shows, which the on-screen passes run for. */
   screenDay: string;
   generatedAt: Date;
+  /** Whether every name is replaced by a placeholder. Defaults to `true`. */
+  anonymize?: boolean;
+  /** The raw day inputs the agent `day.inputs` op returns, carried as written. They hold names, so they belong in a report that is not anonymized. */
+  inputs?: unknown;
   /** The row the report was copied from, when it was copied from one. */
   focusRowId?: string;
   flags: AnonymousReportFlags;
@@ -82,7 +86,8 @@ const countBy = <T>(entries: readonly T[], keyOf: (entry: T) => string) =>
  * email leaves in it. Only numbers, instants, the app's own enum values and placeholders do.
  */
 export const anonymousDayReport = (input: AnonymousReportInput) => {
-  const name = placeholders();
+  const anonymous = input.anonymize !== false;
+  const name = anonymous ? placeholders() : (_kind: string, raw: string | undefined) => raw || undefined;
   const { settings, day } = input;
   const config = gitFlowConfigFor(settings);
   const baseBranches = new Set(
@@ -150,7 +155,8 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
   };
 
   return {
-    format: 'timetrack-anonymous-report/1',
+    format: anonymous ? 'timetrack-anonymous-report/1' : 'timetrack-debug-report/1',
+    anonymous,
     generatedAt: iso(input.generatedAt),
     day,
     isToday: day === input.today,
@@ -306,6 +312,7 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
         ...(entry.endedAtMs ? { tookMs: entry.endedAtMs - entry.startedAtMs } : {}),
         failed: !!entry.error,
       })),
+    ...(input.inputs !== undefined ? { inputs: input.inputs } : {}),
   };
 };
 

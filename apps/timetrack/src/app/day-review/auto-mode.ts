@@ -1084,7 +1084,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  const anonymousReport = (focusRowId?: string) => {
+  const anonymousReport = (focusRowId?: string, options: { anonymize?: boolean; inputs?: unknown } = {}) => {
     const day = dayReview.dayKey();
 
     return anonymousDayReport({
@@ -1092,6 +1092,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       today: today(),
       screenDay: day,
       generatedAt: new Date(),
+      ...options,
       ...(focusRowId ? { focusRowId } : {}),
       flags: {
         windowLocked: windowLock.isLocked(),
@@ -1122,6 +1123,21 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         tap((ok) => reportCopy.set({ ok, atMs: Date.now() })),
       )
       .subscribe();
+  };
+
+  const saveReport$ = (options: { anonymize: boolean; includeInputs: boolean }) => {
+    const day = dayReview.dayKey();
+    const inputs$: Observable<unknown> =
+      options.includeInputs && !options.anonymize ? agentDay.inputs$(day).pipe(take(1)) : of(undefined);
+
+    return inputs$.pipe(
+      switchMap((inputs) =>
+        ports.reportFile.save$({
+          suggestedName: `timetrack-${options.anonymize ? 'anonymous' : 'debug'}-report-${day}.json`,
+          text: JSON.stringify(anonymousReport(undefined, { anonymize: options.anonymize, inputs }), null, 2),
+        }),
+      ),
+    );
   };
 
   return {
@@ -1164,6 +1180,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     copyAnonymousReport,
     /** How the last copy went, for the button that pressed it to say so. */
     reportCopy: reportCopy.asReadonly(),
+    saveReport$,
     /** The model calls auto mode made in this app session, newest first: what was sent and what came back. */
     modelCalls: modelCalls.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */

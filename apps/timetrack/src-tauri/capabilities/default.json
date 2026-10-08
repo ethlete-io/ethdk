@@ -56,6 +56,7 @@
     "allow-received-between",
     "allow-reporter-vsix-path",
     "allow-run-process",
+    "allow-save-report-file",
     "allow-secret-delete",
     "allow-secret-has",
     "allow-secret-read",

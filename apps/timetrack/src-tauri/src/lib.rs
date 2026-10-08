@@ -195,6 +195,7 @@ pub fn run() {
             peer::received_between,
             process::run_process,
             reporter::reporter_vsix_path,
+            reporter::save_report_file,
             secrets::secret_delete,
             secrets::secret_has,
             secrets::secret_read,

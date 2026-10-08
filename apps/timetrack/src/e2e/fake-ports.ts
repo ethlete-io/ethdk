@@ -29,6 +29,7 @@ import {
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_SETTINGS_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
+  TIMETRACK_E2E_REPORT_FILE_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
@@ -382,6 +383,14 @@ export const createFakePorts = (): HostPorts => {
         if (run) Object.assign(run, label);
 
         return done();
+      },
+    },
+
+    reportFile: {
+      save$: (file) => {
+        (globalThis as Record<string, unknown>)[TIMETRACK_E2E_REPORT_FILE_KEY] = file;
+
+        return ok(`/e2e/${file.suggestedName}`);
       },
     },
 

@@ -19,3 +19,31 @@ pub fn reporter_vsix_path(app: tauri::AppHandle) -> TimetrackResult<Option<Strin
 
     Ok(path.exists().then(|| path.to_string_lossy().into_owned()))
 }
+
+/// Asks where to save a debug report and writes it there, answering the chosen path, or `None` when the
+/// user dismissed the dialog.
+#[tauri::command]
+pub async fn save_report_file(
+    app: tauri::AppHandle,
+    suggested_name: String,
+    text: String,
+) -> TimetrackResult<Option<String>> {
+    use tauri_plugin_dialog::DialogExt;
+
+    let Some(chosen) = app
+        .dialog()
+        .file()
+        .set_file_name(suggested_name)
+        .add_filter("JSON", &["json"])
+        .blocking_save_file()
+    else {
+        return Ok(None);
+    };
+    let path = chosen
+        .into_path()
+        .map_err(|error| crate::error::TimetrackError::Rejected(error.to_string()))?;
+
+    std::fs::write(&path, text)?;
+
+    Ok(Some(path.to_string_lossy().into_owned()))
+}

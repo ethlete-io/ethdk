@@ -244,6 +244,9 @@ export const TIMETRACK_E2E_BACKEND_KEY = '__timetrackE2eBackend';
  */
 export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
 
+/** Where the last report written through the save dialog is published, as `{ suggestedName, text }`. */
+export const TIMETRACK_E2E_REPORT_FILE_KEY = '__timetrackE2eReportFile';
+
 /**
  * Where the stored agent-log cursors are published, keyed by pass. A cursor holds a log's last title
  * and checkout, so what it does *not* hold is the only proof that a private link reached it.

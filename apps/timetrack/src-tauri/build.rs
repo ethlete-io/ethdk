@@ -50,6 +50,7 @@ const COMMANDS: &[&str] = &[
     "read_spec",
     "received_between",
     "reporter_vsix_path",
+    "save_report_file",
     "run_process",
     "secret_delete",
     "secret_has",

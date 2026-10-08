@@ -17,6 +17,7 @@ export * from './oauth';
 export * from './peers';
 export * from './ports';
 export * from './process-runner';
+export * from './report-file';
 export * from './reporter-bundle';
 export * from './review-store';
 export * from './secrets';

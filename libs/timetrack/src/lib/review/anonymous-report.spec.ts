@@ -149,7 +149,7 @@ const SETTINGS: TimetrackSettings = {
   standIns: [STAND_IN],
 };
 
-const reportOf = (focusRowId?: string) => {
+const reportOf = (focusRowId?: string, extra: { anonymize?: boolean; inputs?: unknown } = {}) => {
   const stream = streamDay({
     events: EVENTS,
     options: { repoRoots: [CLIENT_REPO, OTHER_REPO], links: LINKS, baseBranches: ['main', 'develop'] },
@@ -167,6 +167,7 @@ const reportOf = (focusRowId?: string) => {
     today: '2026-09-23',
     screenDay: '2026-09-22',
     generatedAt: AT(240),
+    ...extra,
     ...(focusRowId ? { focusRowId } : {}),
     flags: { windowLocked: false, tempoHistory: 'ready', epicsSettled: true, discoveryAnswered: true },
     settings: SETTINGS,
@@ -215,5 +216,28 @@ describe('anonymousDayReport', () => {
     expect(report.flags.autoModeRuns).toBe(true);
     expect(report.screenShowsDay).toBe(false);
     expect(report.settings.reasoning.command).toBe('custom');
+  });
+
+  it('is anonymous by default and says so', () => {
+    const report = reportOf();
+
+    expect(report.anonymous).toBe(true);
+    expect(report.format).toBe('timetrack-anonymous-report/1');
+    expect('inputs' in report).toBe(false);
+  });
+
+  it('keeps the names and changes the format when it is not anonymized', () => {
+    const report = reportOf(undefined, { anonymize: false });
+    const text = JSON.stringify(report);
+
+    expect(report.anonymous).toBe(false);
+    expect(report.format).toBe('timetrack-debug-report/1');
+    expect(text).toContain(CLIENT_REPO);
+  });
+
+  it('carries the raw inputs as written', () => {
+    const report = reportOf(undefined, { anonymize: false, inputs: { day: '2026-09-23', rows: ['x'] } });
+
+    expect(report.inputs).toEqual({ day: '2026-09-23', rows: ['x'] });
   });
 });

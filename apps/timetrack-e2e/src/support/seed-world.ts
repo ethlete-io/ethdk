@@ -6,6 +6,7 @@ import {
   TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_SETTINGS_KEY,
+  TIMETRACK_E2E_REPORT_FILE_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   TimetrackWorldSeed,
 } from '@ethlete/timetrack/testing';
@@ -77,3 +78,9 @@ export type TrayLines = { activity: string; total: string; timer: string; pause:
 /** What the tray menu last said about today. A browser tab has no tray, so the fake port keeps it. */
 export const readTray = (page: Page): Promise<TrayLines | undefined> =>
   page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as TrayLines | undefined, TIMETRACK_E2E_TRAY_KEY);
+
+export const readSavedReport = (page: Page) =>
+  page.evaluate(
+    (key) => (globalThis as Record<string, unknown>)[key] as { suggestedName: string; text: string } | undefined,
+    TIMETRACK_E2E_REPORT_FILE_KEY,
+  );
