@@ -8,6 +8,7 @@ import {
   Type,
   ViewContainerRef,
   ViewEncapsulation,
+  DOCUMENT,
   afterNextRender,
   booleanAttribute,
   computed,
@@ -30,6 +31,7 @@ import {
   SurfaceType,
   createCssSurfaceName,
   injectBoundaryElement,
+  injectDefaultSurfaceTheme,
   injectRenderer,
   injectSurfaceContextTracker,
   injectSurfaceThemes,
@@ -71,6 +73,7 @@ export class OverlayContainerComponent {
   private surfaceThemes = injectSurfaceThemes({ optional: true });
   private surfacePrefix = injectSurfaceThemesPrefix({ optional: true });
   private surfaceContextTracker = injectSurfaceContextTracker();
+  private document = inject(DOCUMENT);
   private renderer = injectRenderer();
 
   public rootBoundary = injectBoundaryElement();
@@ -86,6 +89,8 @@ export class OverlayContainerComponent {
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));
   public contentComponentRef = signal<ComponentRef<object> | null>(null);
 
+  private defaultSurfaceType = injectDefaultSurfaceTheme()?.type ?? null;
+
   constructor() {
     const contextColorProvider = this.parentColorProvider ?? resolveAppRootColorProvider(this.appRef);
 
@@ -95,7 +100,7 @@ export class OverlayContainerComponent {
 
     if (this.surfaceThemes) {
       const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
-      const parentType = parentSurface?.type ?? 'dark';
+      const parentType = parentSurface?.type ?? this.rootSurfaceType();
       const surfaceThemes = this.surfaceThemes;
       const hasBackdrop = computed(
         () => this.mountedHasBackdrop?.() ?? resolveOverlayHasBackdrop(this.overlayRef.config),
@@ -210,7 +215,18 @@ export class OverlayContainerComponent {
 
     if (!provider) return null;
 
-    return { elevation: provider.elevation(), type: provider.surfaceType() ?? 'dark' };
+    return { elevation: provider.elevation(), type: provider.surfaceType() ?? this.rootSurfaceType() };
+  }
+
+  private rootSurfaceType(): SurfaceType {
+    const painted = this.document.defaultView
+      ?.getComputedStyle(this.document.documentElement)
+      .getPropertyValue('--et-surface-type')
+      .trim();
+
+    if (painted === 'light' || painted === 'dark') return painted;
+
+    return this.defaultSurfaceType ?? 'dark';
   }
 
   private resolveOriginSurface(): { elevation: number; type: SurfaceType } | null {

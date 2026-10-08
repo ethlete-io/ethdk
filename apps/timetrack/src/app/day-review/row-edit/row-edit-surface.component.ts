@@ -33,7 +33,7 @@ import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
   selector: 'ethlete-row-edit-surface',
   template: `
     <et-scheduler-edit-surface-header>
-      {{ surface.currentAppointment().title || header() }}
+      <span [title]="title()">{{ title() }}</span>
 
       <et-scheduler-edit-surface-actions>
         @for (action of actions(); track action.label) {
@@ -125,7 +125,7 @@ export class RowEditSurfaceComponent {
     return standInRow || !draft.title.trim();
   });
 
-  protected header = computed(() => {
+  private header = computed(() => {
     const row = this.openedRow();
 
     if (!row) return 'New entry';
@@ -137,6 +137,8 @@ export class RowEditSurfaceComponent {
 
     return unnamedLabelOf({ row, standInName, excludedReason: call && callExclusionReasonOf(call) });
   });
+
+  protected title = computed(() => this.surface.currentAppointment().title || this.header());
 
   /** Each acts on the row as it stands, not on the draft, and replaces it: nothing is left for a save to write. */
   protected actions = computed(() => {

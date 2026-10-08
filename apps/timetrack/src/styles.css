@@ -3,6 +3,20 @@
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
 
+/* The generated brand theme has one set of disabled colours, tuned for the dark surface; the color
+   theme generator cannot emit a set per `prefers-color-scheme`. */
+@layer base {
+  @media (prefers-color-scheme: light) {
+    :root,
+    .et-color--default,
+    .et-color--brand {
+      --et-color-primary-disabled: 196 236 216;
+      --et-color-on-primary-disabled: 96 140 118;
+      --et-color-primary-ink-disabled: 150 200 175;
+    }
+  }
+}
+
 @theme {
   --spacing: 0.4rem;
 

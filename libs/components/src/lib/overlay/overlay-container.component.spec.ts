@@ -269,6 +269,53 @@ describe('OverlayContainerComponent surface elevation', () => {
   });
 });
 
+const lightSurface = (name: string, elevation: number, isDefault?: boolean): SurfaceTheme => ({
+  ...surface(name, elevation, isDefault),
+  type: 'light',
+});
+
+describe('OverlayContainerComponent surface type without a provider', () => {
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  beforeEach(() => {
+    fakeMatchMedia();
+    TestBed.configureTestingModule({
+      providers: [
+        provideSurfaceThemesWithTailwind4([
+          surface('night', 0, true),
+          surface('night-1', 1),
+          lightSurface('day', 0, true),
+          lightSurface('day-1', 1),
+        ]),
+      ],
+    });
+
+    driver = createOverlayDriver();
+  });
+
+  afterEach(() => {
+    driver.closeAll();
+    document.documentElement.style.removeProperty('--et-surface-type');
+  });
+
+  const surfaceName = () =>
+    Array.from(driver.pane()?.classList ?? []).find((cls) => cls.startsWith('et-surface--')) ?? null;
+
+  it('follows the surface type :root paints', async () => {
+    document.documentElement.style.setProperty('--et-surface-type', 'light');
+
+    await driver.open(OverlayContentComponent, { strategies: dialogOverlayStrategy() });
+
+    expect(surfaceName()).toBe('et-surface--day-1');
+  });
+
+  it('falls back to dark when :root paints no surface type', async () => {
+    await driver.open(OverlayContentComponent, { strategies: dialogOverlayStrategy() });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+  });
+});
+
 const CONTENT_SCOPED_TOKEN = new InjectionToken<string>('CONTENT_SCOPED_TOKEN');
 
 @Component({ template: 'scoped content' })
