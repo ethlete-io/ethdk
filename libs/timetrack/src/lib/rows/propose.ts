@@ -215,10 +215,11 @@ const placeInBreaks = (options: {
 
         return neighbour && options.placed.get(neighbour);
       };
-      const from = placedAt(index - 1)?.to.getTime() ?? floorToGrid(piece.group.from.getTime(), incrementMs);
-      const to =
-        placedAt(index + 1)?.from.getTime() ??
-        Math.max(nearestOnGrid(piece.group.to.getTime(), incrementMs), from + incrementMs);
+      const worked = mergeWindows(piece.group.blocks);
+      const first = worked[0]?.from.getTime() ?? piece.group.from.getTime();
+      const last = worked[worked.length - 1]?.to.getTime() ?? piece.group.to.getTime();
+      const from = Math.max(placedAt(index - 1)?.to.getTime() ?? -Infinity, floorToGrid(first, incrementMs));
+      const to = Math.min(placedAt(index + 1)?.from.getTime() ?? Infinity, nearestOnGrid(last, incrementMs));
       const lane = laneOf(piece);
       const free = subtractWindows({
         windows: to > from ? [{ from: new Date(from), to: new Date(to) }] : [],

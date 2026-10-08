@@ -319,6 +319,8 @@ export type StreamDay = {
 type PieceDraft = {
   focus: TimeWindow[];
   agent: TimeWindow[];
+  /** The part of `agent` a session spent waiting for a prompt the user then typed. */
+  waiting: TimeWindow[];
   /** The stretches this piece claimed where nothing observed the day. Clipped to the rebuilt part. */
   rebuilt: TimeWindow[];
 };
@@ -956,7 +958,7 @@ const pieceFor = (draft: StreamDraft, context: ActivityContext) => {
 
   if (found) return found;
 
-  const piece: PieceDraft = { focus: [], agent: [], rebuilt: [] };
+  const piece: PieceDraft = { focus: [], agent: [], waiting: [], rebuilt: [] };
 
   draft.pieces.set(key, piece);
 
@@ -1259,6 +1261,15 @@ export const streamDay = (options: {
   const marks: Mark[] = [];
   const focusSpans: ContextSpan[] = [];
   const agentSpans: ContextSpan[] = [];
+  const waitingSpans = new Set<ContextSpan>();
+  const humanPromptsBy = new Map<string, Date[]>();
+
+  for (const prompt of prompts) {
+    if (prompt.askedBy === 'machine' || originAt(prompt.at) === 'remote') continue;
+
+    humanPromptsBy.set(prompt.sessionId, [...(humanPromptsBy.get(prompt.sessionId) ?? []), prompt.at]);
+  }
+
   const rebuiltSpans: ContextSpan[] = [];
   const observations: ContextObservation[] = [];
   const unnamed: UnnamedDraft[] = [];
@@ -1404,9 +1415,19 @@ export const streamDay = (options: {
         // the checkout at that instant. That is the whole cut: two sessions of one checkout running at
         // once are two pieces here, where reading the checkout's answer collapsed them into one.
         const ranIn = ran;
+        const span = { from: last, to: sample.at, context: ranIn };
+        const piece = pieceFor(draft, ranIn);
 
-        pieceFor(draft, ranIn).agent.push({ from: last, to: sample.at });
-        agentSpans.push({ from: last, to: sample.at, context: ranIn });
+        piece.agent.push({ from: last, to: sample.at });
+        agentSpans.push(span);
+
+        if (
+          sample.at.getTime() - last.getTime() > config.maxAgentGapMs &&
+          humanPromptsBy.get(sample.sessionId)?.some((at) => at > last && at <= sample.at)
+        ) {
+          piece.waiting.push({ from: last, to: sample.at });
+          waitingSpans.add(span);
+        }
       }
 
       lastAgentSample.set(ranBy, sample.at);
@@ -1532,7 +1553,7 @@ export const streamDay = (options: {
       const claimed = clipWindows({ windows: piece.rebuilt, within: rebuilt });
 
       blocks.push(...mergeWindows([...focus, ...claimed, ...clipWindows({ windows: agent, within: presence })]));
-      unattended.push(...subtractWindows({ windows: agent, without: presence }));
+      unattended.push(...subtractWindows({ windows: agent, without: mergeWindows([...presence, ...piece.waiting]) }));
     }
 
     blocks.sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime());
@@ -1638,7 +1659,15 @@ export const streamDay = (options: {
   const blocks = blocksFromSpans({
     spans: [
       ...clipSpans({ spans: focusSpans, within: seen }),
-      ...clipSpans({ spans: agentSpans, within: mergeWindows([...presence, ...gaps]) }),
+      ...clipSpans({
+        spans: agentSpans.filter((span) => !waitingSpans.has(span)),
+        within: mergeWindows([...presence, ...gaps]),
+      }),
+      // A session silent until the prompt that ended a break waited through it rather than worked.
+      ...clipSpans({
+        spans: [...waitingSpans],
+        within: subtractWindows({ windows: mergeWindows([...presence, ...gaps]), without: breaks }),
+      }),
       ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
     ],
     observations,

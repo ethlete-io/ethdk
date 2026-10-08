@@ -735,3 +735,39 @@ describe('streamDay, on an agent that ran through three breaks nobody prompted i
     expect(timed.map((row) => [row.from.getTime() < AT(885).getTime(), row.to])).toEqual([[true, AT(900)]]);
   });
 });
+
+describe('streamDay, on an agent that finished a prompt a few minutes after the user left', () => {
+  /**
+   * 2026-10-08: the last prompt at 17:28, the seat idle from 17:29, the agent's turn done at 17:33,
+   * and the next prompt at 18:02.
+   */
+  const LEFT: CollectedEvent[] = [
+    ...Array.from({ length: 6 }, (_, step) => focus(1020 + step * 5)),
+    prompt(1048, 'human'),
+    session(1048),
+    turn(1049),
+    idle(1049, 'idle-start'),
+    turn(1051),
+    session(1053),
+    prompt(1082, 'human'),
+    ...running(1082, 1150),
+    ...Array.from({ length: 14 }, (_, step) => focus(1082 + step * 5)),
+  ];
+  const leftDay = () =>
+    streamDay({
+      events: LEFT.slice().sort((a, b) => a.at.getTime() - b.at.getTime()),
+      options: { repoRoots: [REPO], windowsSeenThroughMs: AT(1200).getTime(), rows: { config: CONFIG } },
+    });
+  const minutesOf = (rows: readonly { from: Date; to: Date }[]) =>
+    rows.map((row) => [
+      (row.from.getTime() - DAY_START.getTime()) / MINUTE,
+      (row.to.getTime() - DAY_START.getTime()) / MINUTE,
+    ]);
+
+  it('keeps the increment the user left in, and draws no band for the minutes the agent ran on', () => {
+    const { proposals, unnamed } = leftDay().rows;
+
+    expect(minutesOf(proposals.filter((row) => row.from < AT(1060)))).toEqual([[1020, 1050]]);
+    expect(minutesOf(unnamed.filter((row) => row.unattended))).toEqual([]);
+  });
+});
