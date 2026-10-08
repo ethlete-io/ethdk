@@ -1,6 +1,6 @@
 # DX scan 2026-10-02 — final report
 
-The scan plan is `README.md`. Each domain file in this folder holds the findings, with a `Status:` and a `Review:` line per ID. The scan found 216 findings. The fix and review agents closed most of them. All work is committed on `next` (from `bb56ef294`). Nothing is pushed or published.
+The scan plan is `README.md`. Each domain file in this folder holds the findings, with a `Status:` and a `Review:` line per ID. The scan found 216 findings. The fix and review agents closed most of them. All work is committed on `next` (from `bb56ef294`) and pushed. Nothing is published.
 
 ## 1. Human steps
 
@@ -18,15 +18,14 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (21)
+## 2. Open user decisions (2)
 
-The domain file of each ID has the full problem and the proposed fix.
+The domain file of each ID has the full problem and the proposed fix. The user put both aside on 2026-10-08.
 
-| ID      | Question                                                                                                                                                                                                                                                    |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                                                                                  |
-| SS-04   | `TExtra` is lost at `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it? (The edit-field half is decided in `plans/scheduler-edit-surface-composition.md`.) |
-| MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable.                                                              |
+| ID    | Question                                                                                                                                                                                                                                                          |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SS-03 | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                                                                                        |
+| SS-04 | `TExtra` is lost at the outputs of `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it? `plans/scheduler-edit-surface-composition.md` closed the edit-field half. |
 
 ## 3. Calls the coordinator made
 
