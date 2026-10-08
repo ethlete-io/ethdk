@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GIT_FIELD_SEPARATOR } from './format';
@@ -315,15 +315,15 @@ describe('collectGitEvents$', () => {
         stdout:
           spec.args[0] === 'reflog'
             ? reflog
-            : spec.args[0] === 'log'
-              ? log
-              : spec.args[0] === 'rev-list'
-                ? `${tip}\n${pulled}\n`
+            : spec.args.includes('--format=%H')
+              ? `${tip}\n${pulled}\n`
+              : spec.args[0] === 'log'
+                ? log
                 : '',
       }),
     });
 
-    expect(specs.find((spec) => spec.args[0] === 'rev-list')?.args.slice(-2)).toEqual([tip, `^${before}`]);
+    expect(specs.find((spec) => spec.args.includes('--format=%H'))?.args.slice(-2)).toEqual([tip, `^${before}`]);
     expect(
       result?.events.flatMap((event) =>
         event.kind === 'git-commit' ? [[event.sha[0], event.at.toISOString(), event.authoredAt?.toISOString()]] : [],
@@ -333,5 +333,21 @@ describe('collectGitEvents$', () => {
       ['b', new Date('2026-08-11T19:27:28+02:00').toISOString(), new Date('2026-08-11T13:36:06+02:00').toISOString()],
       ['d', new Date('2026-08-11T19:29:44+02:00').toISOString(), undefined],
     ]);
+  });
+
+  it('keeps every commit when the host refuses to list what a pull brought in', () => {
+    const sep = GIT_FIELD_SEPARATOR;
+    const reflog = `next@{2026-08-11T19:27:28+02:00}${sep}pull origin next: Fast-forward${sep}${'c'.repeat(40)}`;
+    const processes: TimetrackProcessRunner = {
+      run$: (spec) =>
+        spec.args.includes('--format=%H')
+          ? throwError(() => new Error('git log is not allowed'))
+          : of({ code: 0, stderr: '', stdout: spec.args[0] === 'reflog' ? reflog : spec.args[0] === 'log' ? LOG : '' }),
+    };
+    let result: GitScanResult | undefined;
+
+    collectGitEvents$({ processes, repos: REPOS }).subscribe((value) => (result = value));
+
+    expect(result?.events.filter((event) => event.kind === 'git-commit')).toHaveLength(1);
   });
 });

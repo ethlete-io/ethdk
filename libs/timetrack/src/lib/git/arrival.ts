@@ -58,16 +58,17 @@ export const gitArrivalsOf = (options: { outputs: readonly string[]; window: Git
 };
 
 export const gitArrivalArgs = (options: { arrival: GitArrival; window: GitScanWindow }) => [
-  'rev-list',
+  'log',
   '--no-merges',
+  '--format=%H',
   `--since=${options.window.from.toISOString()}`,
   options.arrival.to,
   ...(options.arrival.from ? [`^${options.arrival.from}`] : []),
 ];
 
 /**
- * When each commit this machine did not write first arrived here, from the `rev-list` output of every
- * arrival. A commit a reflog says was made here is never in it, whatever later move carried it again.
+ * When each commit this machine did not write first arrived here, from the `gitArrivalArgs` output of
+ * every arrival. A commit a reflog says was made here is never in it, whatever later move carried it again.
  */
 export const gitArrivedAt = (options: {
   arrivals: GitArrivals;

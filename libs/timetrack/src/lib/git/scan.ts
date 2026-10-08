@@ -1,4 +1,4 @@
-import { Observable, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
+import { Observable, catchError, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { GitArrival, gitArrivalArgs, gitArrivalsOf, gitArrivedAt } from './arrival';
@@ -214,7 +214,10 @@ const arrivedOf$ = (options: {
       run$({
         processes,
         spec: gitSpec({ repoPath: repo.path, args: gitArrivalArgs({ arrival, window: repo.window }) }),
-      }).pipe(map((run) => ({ arrival, output: run.result.code === 0 ? run.result.stdout : '' }))),
+      }).pipe(
+        map((run) => ({ arrival, output: run.result.code === 0 ? run.result.stdout : '' })),
+        catchError(() => of({ arrival, output: '' })),
+      ),
     ),
     toArray(),
     map((listed) => gitArrivedAt({ arrivals, listed })),
