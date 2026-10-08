@@ -1,6 +1,6 @@
 import { ElementRef, Injector, OutputEmitterRef, runInInjectionContext, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { DragHandleDirective, ResizeHandlesComponent, ResizeMoveEvent } from '@ethlete/core';
+import { DragHandleDirective, ResizeEdge, ResizeHandlesComponent, ResizeMoveEvent } from '@ethlete/core';
 import '../../../../../test-helpers';
 import { PipWindowParamsDirective } from '../pip-window-params.directive';
 import { createPipWindowPosition } from './pip-window-position';
@@ -34,7 +34,7 @@ const build = ({ left, top }: { left: number; top: number }) => {
     viewportPadding: signal(PAD),
   } as unknown as PipWindowParamsDirective;
 
-  const resizeStarted = new OutputEmitterRef<ResizeMoveEvent>();
+  const resizeStarted = new OutputEmitterRef<ResizeEdge>();
   const resizeMoved = new OutputEmitterRef<ResizeMoveEvent>();
   const resizeEnded = new OutputEmitterRef<ResizeMoveEvent>();
   const resizeCancelled = new OutputEmitterRef<ResizeMoveEvent>();
@@ -87,7 +87,7 @@ const build = ({ left, top }: { left: number; top: number }) => {
   };
 
   const resize = (move: ResizeMoveEvent) => {
-    resizeStarted.emit();
+    resizeStarted.emit('e');
     resizeMoved.emit(move);
   };
 

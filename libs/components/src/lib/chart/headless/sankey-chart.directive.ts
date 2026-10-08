@@ -184,7 +184,7 @@ export class SankeyChartDirective implements ChartPlotHost {
   public valueHeader = input<string>();
 
   /** Writes the key hint under a keyboard-focused link's tooltip; `null` shows none. Visual only, assistive tech does not read it. @default the key hint of {@link ChartLabels} */
-  public linkKeyHint = input<SankeyChartLinkKeyHint | null>(undefined);
+  public linkKeyHint = input<SankeyChartLinkKeyHint | null | undefined>(undefined);
 
   public resolvedIncomingLabel = computed(() => this.incomingLabel() ?? this.labels().sankeyIncoming);
 

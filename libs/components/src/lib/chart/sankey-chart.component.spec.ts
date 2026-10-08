@@ -4,13 +4,12 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorPalette } from '@ethlete/core';
 import '../../test-helpers';
+import { defaultSankeyChartLinkKeyHint, SankeyChartLinkKeyHint } from './headless/chart-labels';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import {
-  defaultSankeyChartLinkKeyHint,
   SankeyChartDirection,
   SankeyChartDirective,
   SankeyChartLinkInput,
-  SankeyChartLinkKeyHint,
   SankeyChartNodeInput,
 } from './headless/sankey-chart.directive';
 import { SankeyChartComponent, SankeyChartMarkActivateEvent } from './sankey-chart.component';
