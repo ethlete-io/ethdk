@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { Component, booleanAttribute, ViewEncapsulation, computed, input, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   BANNER_IMPORTS,
@@ -23,44 +23,46 @@ const DISCOVERY_POLL_MS = 5_000;
   selector: 'ethlete-paired-machines',
   template: `
     <div class="flex flex-col gap-3" data-paired-machines>
-      <div class="flex items-center gap-2">
-        <h3 class="text-h4">Paired machines</h3>
-        <ethlete-explain [text]="WHY" label="paired machines" />
-        @if (peers.busy()) {
-          <et-spinner size="sm" />
-        }
-      </div>
-
-      @for (row of rows(); track row.machineId) {
-        <div class="flex flex-wrap items-center gap-3" data-paired-machine>
-          <span class="text-base">{{ row.label }}</span>
-          <span class="text-small text-et-surface-subtle" data-paired-last-seen>Last seen {{ row.lastSeen }}</span>
-
-          @if (row.offset; as offset) {
-            <span
-              [class.text-et-surface-subtle]="offset.severity === 'ok'"
-              [class.text-et-warning-ink]="offset.severity === 'warning'"
-              [class.text-et-error]="offset.severity === 'error'"
-              [attr.data-clock-offset]="offset.severity"
-              class="text-small"
-            >
-              {{ offset.text }}
-            </span>
+      @if (listed()) {
+        <div class="flex items-center gap-2">
+          <h3 class="text-h4">Paired machines</h3>
+          <ethlete-explain [text]="WHY" label="paired machines" />
+          @if (peers.busy()) {
+            <et-spinner size="sm" />
           }
-
-          <button
-            [attr.aria-label]="'Forget ' + row.label"
-            [disabled]="peers.busy()"
-            (click)="peers.forget(row.machineId)"
-            et-button
-            variant="transparent"
-            size="sm"
-          >
-            Forget
-          </button>
         </div>
-      } @empty {
-        <p class="text-small text-et-surface-subtle">No machine is paired.</p>
+
+        @for (row of rows(); track row.machineId) {
+          <div class="flex flex-wrap items-center gap-3" data-paired-machine>
+            <span class="text-base">{{ row.label }}</span>
+            <span class="text-small text-et-surface-subtle" data-paired-last-seen>Last seen {{ row.lastSeen }}</span>
+
+            @if (row.offset; as offset) {
+              <span
+                [class.text-et-surface-subtle]="offset.severity === 'ok'"
+                [class.text-et-warning-ink]="offset.severity === 'warning'"
+                [class.text-et-error]="offset.severity === 'error'"
+                [attr.data-clock-offset]="offset.severity"
+                class="text-small"
+              >
+                {{ offset.text }}
+              </span>
+            }
+
+            <button
+              [attr.aria-label]="'Forget ' + row.label"
+              [disabled]="peers.busy()"
+              (click)="peers.forget(row.machineId)"
+              et-button
+              variant="transparent"
+              size="sm"
+            >
+              Forget
+            </button>
+          </div>
+        } @empty {
+          <p class="text-small text-et-surface-subtle">No machine is paired.</p>
+        }
       }
 
       <h4 class="text-base">Pair a machine</h4>
@@ -128,6 +130,8 @@ const DISCOVERY_POLL_MS = 5_000;
 export class PairedMachinesComponent {
   protected peers = injectPeers();
   private ports = injectHostPorts();
+
+  public listed = input(true, { transform: booleanAttribute });
 
   protected readonly WHY = WHY;
 

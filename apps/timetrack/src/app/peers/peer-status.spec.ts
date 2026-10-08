@@ -18,6 +18,7 @@ const machine = (label: string, lastSeenMs: number | null): PairedMachine => ({
   lastSeenMs,
   clockOffsetMs: null,
   pairedAtMs: 0,
+  lastPullMs: null,
 });
 
 describe('clockOffsetSeverity', () => {

@@ -12,6 +12,8 @@ export type PairedMachine = {
   /** How far the other machine's clock is ahead of this one's; negative when it is behind. */
   clockOffsetMs: number | null;
   pairedAtMs: number;
+  /** When a pull from this machine last succeeded. */
+  lastPullMs: number | null;
 };
 
 export type DiscoveredMachine = {
@@ -46,6 +48,8 @@ export type TauriPeers = {
   accept$(target: PairTarget, code: string): Observable<PairedMachine>;
   hello$(machineId: string): Observable<PeerHello>;
   forget$(machineId: string): Observable<boolean>;
+  /** An empty name clears it, so the machine reads under its host name again. */
+  rename$(machineId: string, name: string): Observable<boolean>;
   /** The events the paired machines collected in `[from, to)`. A forgotten machine's are left out. */
   receivedBetween$(from: Date, to: Date): Observable<ReceivedEvent[]>;
 };
@@ -57,6 +61,7 @@ export const createTauriPeers = (): TauriPeers => ({
   accept$: (target, code) => invokeHost$<PairedMachine>('pair_accept', { target, code }),
   hello$: (machineId) => invokeHost$<PeerHello>('peers_hello', { machineId }),
   forget$: (machineId) => invokeHost$<boolean>('peers_forget', { machineId }),
+  rename$: (machineId, name) => invokeHost$<boolean>('peers_rename', { machineId, name }),
   receivedBetween$: (from, to) =>
     invokeHost$<StoredReceivedEvent[]>('received_between', { fromMs: from.getTime(), toMs: to.getTime() }).pipe(
       map((stored) =>

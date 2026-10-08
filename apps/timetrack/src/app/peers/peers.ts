@@ -97,6 +97,13 @@ const PEERS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       actions$.next(
         started('The machine could not be forgotten', ports.peers.forget$(machineId).pipe(tap(() => refresh$.next()))),
       ),
+    rename: (machineId: string, name: string) =>
+      actions$.next(
+        started(
+          'The machine could not be renamed',
+          ports.peers.rename$(machineId, name).pipe(tap(() => refresh$.next())),
+        ),
+      ),
     refresh: () => refresh$.next(),
   };
 });

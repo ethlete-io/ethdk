@@ -120,6 +120,7 @@ export type FakePairedMachine = {
   lastSeenMs: number | null;
   clockOffsetMs: number | null;
   pairedAtMs: number;
+  lastPullMs: number | null;
 };
 
 /** A machine advertising itself on the LAN, in the host's wire shape. */

@@ -5,6 +5,7 @@ import { injectApprovalQueue } from '../agent/approval-queue';
 import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
 import { injectAutoMode } from '../day-review/auto-mode';
 import { injectPeers } from '../peers';
+import { PAIRED_MACHINES_OVERLAY } from '../peers/paired-machines-overlay.component';
 import { SHELL_VIEWS } from './views';
 
 @Component({
@@ -56,10 +57,12 @@ import { SHELL_VIEWS } from './views';
     }
 
     @if (peers.paired().length) {
-      <div
+      <button
         [class.mt-4]="!autoMode.enabled()"
         [title]="peersTitle()"
-        class="flex items-center gap-2 px-3 py-2 text-small"
+        (click)="pairedMachines.open()"
+        class="flex w-full cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent px-3 py-2 text-left text-small transition-colors hover:bg-et-surface-border/40"
+        type="button"
         data-peers-status
       >
         <span
@@ -69,7 +72,7 @@ import { SHELL_VIEWS } from './views';
           aria-hidden="true"
         ></span>
         <span>Timetrack · {{ peers.connected().length }} connected</span>
-      </div>
+      </button>
     }
   `,
   encapsulation: ViewEncapsulation.None,
@@ -81,6 +84,7 @@ export class SidebarComponent {
   protected peers = injectPeers();
   protected readonly VIEWS = SHELL_VIEWS;
   protected approvals = createOverlayOpener(APPROVAL_QUEUE_OVERLAY);
+  protected pairedMachines = createOverlayOpener(PAIRED_MACHINES_OVERLAY);
 
   protected peersTitle = computed(() => {
     const connected = this.peers.connected().map((machine) => machine.label);

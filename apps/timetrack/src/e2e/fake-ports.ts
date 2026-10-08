@@ -578,6 +578,7 @@ export const createFakePorts = (): HostPorts => {
           lastSeenMs: null,
           clockOffsetMs: null,
           pairedAtMs: Date.now(),
+          lastPullMs: null,
         };
 
         paired.push(machine);
@@ -609,6 +610,15 @@ export const createFakePorts = (): HostPorts => {
         for (const machine of discovered) if (machine.machineId === machineId) machine.paired = false;
 
         return ok(index >= 0);
+      },
+      rename$: (machineId, name) => {
+        const machine = paired.find((held) => held.machineId === machineId);
+
+        if (!machine) return ok(false);
+
+        machine.label = name.trim() || machine.label;
+
+        return ok(true);
       },
       receivedBetween$: (from, to) =>
         ok(

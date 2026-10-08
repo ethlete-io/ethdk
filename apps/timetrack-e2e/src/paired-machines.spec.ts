@@ -23,6 +23,7 @@ const paired = (overrides: Partial<FakePairedMachine>): FakePairedMachine => ({
   lastSeenMs: AT - 30_000,
   clockOffsetMs: 2_000,
   pairedAtMs: AT - 86_400_000,
+  lastPullMs: null,
   ...overrides,
 });
 

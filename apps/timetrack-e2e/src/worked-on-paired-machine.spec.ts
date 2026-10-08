@@ -21,6 +21,7 @@ const MACBOOK: FakePairedMachine = {
   lastSeenMs: new Date(E2E_NOW).getTime() - 30_000,
   clockOffsetMs: 0,
   pairedAtMs: new Date(E2E_NOW).getTime() - 86_400_000,
+  lastPullMs: null,
 };
 
 const at = (minutes: number) => new Date(new Date(`${E2E_DAY_KEY}T09:00:00.000Z`).getTime() + minutes * 60_000);
