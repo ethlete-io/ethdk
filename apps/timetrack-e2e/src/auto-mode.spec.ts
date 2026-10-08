@@ -9,7 +9,7 @@ import {
   defaultSettings,
   tempoWorklogOn,
 } from '@ethlete/timetrack/testing';
-import { CollectedEvent, TimetrackSettings } from '@ethlete/timetrack';
+import { CollectedEvent, TimetrackSettings, shiftDayKey } from '@ethlete/timetrack';
 import {
   E2E_DAY_KEY,
   E2E_NOW,
@@ -95,6 +95,40 @@ test.describe('auto mode on a band no issue matches', () => {
     await expect(dialog).toBeHidden();
     await band.click();
     await expect(editSurface(page).locator('[data-auto-named]')).toBeVisible();
+  });
+});
+
+const YESTERDAY = shiftDayKey(E2E_DAY_KEY, -1);
+
+const showsYesterday = (page: Page) =>
+  page.addInitScript((day) => localStorage.setItem('ethlete.timetrack.view-state', JSON.stringify({ day })), YESTERDAY);
+
+const savedDay = (page: Page) =>
+  page.evaluate(() => JSON.parse(localStorage.getItem('ethlete.timetrack.view-state') ?? '{}').day as string);
+
+test.describe('auto mode while the screen shows another day', () => {
+  test('asks about a band of today and leaves the screen where it is', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, settings: withAutoMode(defaultSettings()) });
+    await showsYesterday(page);
+    await page.goto('/day');
+
+    const dialog = await openApprovals(page);
+
+    await expect(dialog.locator('[data-approval]')).toContainText('Files a Jira issue in ABC: Drafted');
+    expect(await savedDay(page)).toBe(YESTERDAY);
+  });
+
+  test('opens the stand-in of today and resolves it', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
+    });
+    await showsYesterday(page);
+    await page.goto('/day');
+    await openStandIns(page);
+
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toContainText('by auto mode');
+    expect(await savedDay(page)).toBe(YESTERDAY);
   });
 });
 

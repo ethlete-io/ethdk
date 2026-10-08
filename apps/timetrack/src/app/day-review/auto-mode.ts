@@ -56,6 +56,7 @@ import {
   isAgentApiRequest,
   inferTicketProjectKey,
   localDayKey,
+  matchAttributionRule,
   reasoningOptionsOf,
   readJiraCredentials$,
   withAutoModeAnswer,
@@ -75,6 +76,7 @@ import {
   catchError,
   concatMap,
   defer,
+  exhaustMap,
   finalize,
   forkJoin,
   from,
@@ -85,7 +87,9 @@ import {
   take,
   tap,
   throwError,
+  timer,
 } from 'rxjs';
+import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectAgentDay } from '../agent/agent-day';
 import { injectApprovalQueue } from '../agent/approval-queue';
@@ -93,12 +97,16 @@ import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
+import { runStandInPass } from '../stand-ins/stand-in-pass';
 import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectDayReview } from './day-review';
 import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
 /** How often settle times are checked again: a row or a context settles by the clock, not by a change. */
 const SETTLE_TICK_MS = 60_000;
+
+/** How often today is read while the screen shows another day. Each pass is a whole day read. */
+const OFF_SCREEN_TICK_MS = 5 * 60_000;
 
 type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows; reviewed: readonly ReviewedRow[] } | null;
 
@@ -191,6 +199,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const windowLock = injectWindowLock();
   const recurring = injectRecurringPatterns();
   const standInStore = injectStandIns();
+  const git = injectGitCollector();
   const jobs$ = new Subject<Job>();
   const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
@@ -824,6 +833,82 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }
     });
   });
+
+  const offScreenEvidence$ = (day: string) =>
+    agentDay
+      .askEvidence$(day)
+      .pipe(
+        map((current): AskEvidence => ({ contexts: current.contexts, rows: current.dayRows, reviewed: current.rows })),
+      );
+
+  /**
+   * Today, read without the screen: the stand-in pass and the asks the day screen runs for the day on
+   * screen. Without it a reviewer left on another day stops auto mode and the stand-ins for today.
+   */
+  const offScreenPass$ = (day: string): Observable<unknown> =>
+    forkJoin({ evidence: agentDay.askEvidence$(day).pipe(take(1)), answers: heldAnswers$(day) }).pipe(
+      tap(({ evidence, answers }) => {
+        runStandInPass({
+          settings,
+          day,
+          contexts: evidence.contexts,
+          unattributed: evidence.unattributed,
+          links: projectLinks(),
+          repoRoots: git.discovery()?.repos,
+          offeredCheckouts: evidence.offeredCheckouts,
+          standInIds: evidence.rows.flatMap((row) => (row.standInId ? [row.standInId] : [])),
+          streams: evidence.streams,
+        });
+
+        const current = settings.settings();
+        const subjects = autoModeAsks({
+          enabled: enabled(),
+          day,
+          today: today(),
+          nowMs: Date.now(),
+          contexts: evidence.contexts,
+          ruledContextIds: new Set(
+            evidence.contexts
+              .filter((context) => matchAttributionRule({ context: context.context, rules: current.attributionRules }))
+              .map((context) => context.id),
+          ),
+          standIns: current.standIns,
+          rows: evidence.rows,
+          answers,
+          evidence: {
+            unattributed: evidence.unattributed,
+            config: gitFlowConfigFor(current),
+            maskedNames: current.reasoning.maskedNames,
+          },
+          approvals: approvals.items(),
+        });
+
+        for (const subject of subjects) {
+          queueAsk({
+            day,
+            subject,
+            stillNeeded: () => enabled() && dayReview.dayKey() !== day,
+            evidence$: offScreenEvidence$(day),
+          });
+        }
+      }),
+      catchError(() => EMPTY),
+    );
+
+  const offScreenDay = computed(() => {
+    minuteTick();
+
+    const day = today();
+
+    return enabled() && approvals.isLoaded() && dayReview.dayKey() !== day ? day : null;
+  });
+
+  toObservable(offScreenDay)
+    .pipe(
+      switchMap((day) => (day ? timer(0, OFF_SCREEN_TICK_MS).pipe(exhaustMap(() => offScreenPass$(day))) : EMPTY)),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
 
   effect(() => {
     const day = dayReview.dayKey();

@@ -240,22 +240,18 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const inputs$ = (day: string) =>
     read$(day).pipe(map((read) => ({ day, rows: read.day.rows, edits: editsOf(read), cut: read.cut })));
 
-  const namingDecisions$ = (day: string): Observable<RepoNamingDecisions> =>
-    read$(day).pipe(
-      map((read) =>
-        repoNamingDecisions({
-          checkouts: read.day.streams.flatMap((stream) =>
-            stream.repoPath
-              ? [{ repoPath: stream.repoPath, branches: stream.branches, observedMs: stream.engagedMs }]
-              : [],
-          ),
-          links: projectLinks(),
-          rules: settings.settings().attributionRules,
-          worklogs: recurring.worklogs(),
-          loggedIssues: recurring.loggedIssues(),
-        }),
+  const namingDecisionsOf = (read: DayRead): RepoNamingDecisions =>
+    repoNamingDecisions({
+      checkouts: read.day.streams.flatMap((stream) =>
+        stream.repoPath ? [{ repoPath: stream.repoPath, branches: stream.branches, observedMs: stream.engagedMs }] : [],
       ),
-    );
+      links: projectLinks(),
+      rules: settings.settings().attributionRules,
+      worklogs: recurring.worklogs(),
+      loggedIssues: recurring.loggedIssues(),
+    });
+
+  const namingDecisions$ = (day: string): Observable<RepoNamingDecisions> => read$(day).pipe(map(namingDecisionsOf));
 
   /**
    * Makes the edits a caller stated against a day, and answers how many landed and the day they left.
@@ -302,7 +298,14 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const askEvidence$ = (day: string) =>
-    read$(day).pipe(map((read) => ({ ...askEvidenceOf(read), rows: read.reviewWith(editsOf(read)).rows })));
+    read$(day).pipe(
+      map((read) => ({
+        ...askEvidenceOf(read),
+        rows: read.reviewWith(editsOf(read)).rows,
+        streams: read.day.streams,
+        offeredCheckouts: namingDecisionsOf(read).offers.map((offer) => offer.repoPath),
+      })),
+    );
 
   const applyAutoModeNames$ = (options: {
     day: string;

@@ -22,7 +22,6 @@ import {
   UnnamedContext,
   addManualRow,
   agedNamings,
-  autoStandIns,
   classifyCalls,
   closeTimerRun,
   buildRows,
@@ -31,8 +30,6 @@ import {
   dayBoundaryOf,
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
-  checkoutOf,
-  findStandIn,
   gitFlowConfigFor,
   clearStatements,
   deleteStatement,
@@ -84,7 +81,6 @@ import {
   showRow,
   writeStatement,
   splitRow,
-  standInBranches,
   standInNameFor,
   statedPresence,
   agentTurnsOf,
@@ -132,6 +128,7 @@ import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
 import { injectProjectLinks } from '../project-links';
+import { runStandInPass } from '../stand-ins/stand-in-pass';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
@@ -685,45 +682,17 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (!load || load.failure || !deterministic || recurring.state().state === 'loading') return;
     if (!epics.settledFor(day())) return;
 
-    const current = settings.settings();
-    const key = day();
-
-    for (const opened of autoStandIns({
+    runStandInPass({
+      settings,
+      day: day(),
       contexts: unnamed(),
       unattributed: deterministic.unattributed,
       links: projectLinks(),
-      rules: current.attributionRules,
-      config: gitFlowConfigFor(current),
       repoRoots: git.discovery()?.repos,
       offeredCheckouts: namingOffers().map((offer) => offer.repoPath),
-      standIns: current.standIns,
-      refused: current.noStandInCheckouts,
-      day: key,
-      now: new Date(),
-    })) {
-      settings.nameWithStandIn({ standIn: opened.standIn, rule: opened.rule });
-    }
-
-    const config = gitFlowConfigFor(current);
-    const baseBranches = [config.baseBranches.development, config.baseBranches.production];
-    const streams = streamed()?.streams ?? [];
-
-    for (const id of new Set(rows().flatMap((row) => (row.standInId ? [row.standInId] : [])))) {
-      const standIn = findStandIn({ id, standIns: settings.settings().standIns });
-
-      if (!standIn) continue;
-
-      const checkout = checkoutOf({ settings: current, standIn });
-      /** A placeholder with a branch of its own holds that branch and no other, whatever else ran. */
-      const branches = standIn.openedForBranch
-        ? [standIn.openedForBranch]
-        : streams.filter((stream) => !!checkout && stream.repoPath === checkout).flatMap((stream) => stream.branches);
-      const heldOn = standInBranches({ standIn, branches, baseBranches });
-
-      /** A day already listed is written again once the checkout swapped branch: the grain grew. */
-      if (!standIn.days.includes(key) || heldOn.length !== (standIn.heldOn?.length ?? 0))
-        settings.markStandInDay({ id, day: key, branches, baseBranches });
-    }
+      standInIds: rows().flatMap((row) => (row.standInId ? [row.standInId] : [])),
+      streams: streamed()?.streams ?? [],
+    });
   });
 
   // The whole day's ledger, not the rows': an entry no row claims is a worklog the sync has to delete,
