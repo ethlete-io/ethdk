@@ -3,7 +3,7 @@
 Tom decided all six on 2026-10-08, each as recommended in the table below, plus mDNS discovery with
 6-digit code pairing. ADR 0039 records event identity and the merge. It replaces the "Event
 identity" bullet below: a peer's events go into their own table, every key keeps its spelling, and
-copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repoKeyOf`). Next: slice 2.
+copies of one fact fold when a day is read. Slices 1 and 2 are done. Slice 3 is in progress (steps under slice 3 below).
 
 ## What made 2026-10-08 look wrong on this PC
 
@@ -85,8 +85,24 @@ copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repo
 io.ethlete.timetrack`). Every new signature asks for the keychain password about 10 times, so
      launch a test build on the Mac once and keep it running. The macOS firewall is off on ethlete-mac.
      The installed `/Applications/Timetrack.app` is arm64-only and does not run on this Intel MacBook.
-3. Read-only overlay, the first user value: the peer sends presence and attendance intervals, booked
-   rows and stream labels. "Nobody was here" becomes "Worked on MacBook". No row changes (S-M, 2-3 d).
+3. Read-only overlay, the first user value: "Nobody was here" becomes "Worked on MacBook". No row
+   changes (S-M, 2-3 d). In progress. Tom, 2026-10-08: the peer sends raw events per ADR 0039 (not
+   derived windows), and booked rows are dropped from this slice (Tempo coverage already shows a
+   booking from either machine; peer claims come in slice 5).
+   - 3a. Host pull. New `Frame` variants for "changes after my cursor": the server answers only for a
+     paired fingerprint (same check as `answer_hello`) and sends a page of its own `collected_event`
+     rows by `changed_seq` plus `deleted_event` tombstones. The client upserts into `received_event`,
+     applies tombstones, and advances `peer_cursor` in one transaction. Pull after each heartbeat
+     hello. Op `peers.pull` and a Tauri command. Rust tests over loopback, including paging and a
+     tombstone.
+   - 3b. TS port: `eventsBetween$` gains the received events, each tagged with its machine id and
+     name, and the e2e fake seeds them from `world.peers`.
+   - 3c. Lib: `presenceWindows` per peer from its received events; `markAttendance` takes them as a
+     separate input. A band with no local attendance but peer presence gets the peer's machine name
+     on the group, proposal and `ReviewedRow`; it still books nothing. `unnamedLabelOf` shows
+     "Worked on <machine>". Do not reuse `remoteWork` (it means something else). Unit specs.
+   - 3d. UI + e2e spec for the label; verify between tank and ethlete-mac (one new Mac build, signed
+     with `macos-dev-sign.sh`, about 10 password prompts).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
    machines, spend per origin, sender filter (L, 1-2 wk).
 5. One owner and an incomplete day: claim + Tempo marker, the other machine refuses to book, the
