@@ -1,25 +1,16 @@
 import { NgComponentOutlet } from '@angular/common';
 import { Component, computed, ElementRef, inject, ViewEncapsulation } from '@angular/core';
-import { outputToObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { injectStyleManager } from '@ethlete/core';
 import { format } from 'date-fns';
-import { tap } from 'rxjs';
 import { BUTTON_IMPORTS } from '../button';
 import { ELLIPSIS_VERTICAL_ICON, IconDirective, PLUS_ICON, provideIcons, TRASH_ICON } from '../icon';
 import { MENU_IMPORTS } from '../menu';
 import {
-  buildAnchoredRuntimePositionStrategy,
-  defineOverlay,
-  injectAnchoredDialogStrategy,
-  injectDialogStrategy,
-  injectFullscreenDialogStrategy,
-  OVERLAY_REF,
   OverlayBodyComponent,
   OverlayCloseDirective,
   OverlayFooterDirective,
   OverlayHeaderDirective,
   OverlayMainDirective,
-  OverlayRef,
   OverlayTitleDirective,
 } from '../overlay';
 import { SchedulerActionAddSubAppointmentDirective } from './scheduler-action-add-sub-appointment.directive';
@@ -42,9 +33,7 @@ import { SchedulerEditLocationDirective } from './scheduler-edit-location.direct
 import { SchedulerEditTimeRangeDirective } from './scheduler-edit-time-range.directive';
 import { SchedulerEditTitleDirective } from './scheduler-edit-title.directive';
 import { injectSchedulerLabels } from './scheduler-labels';
-import { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
-
-export type { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
+import { defineSchedulerAddOverlay, defineSchedulerEditOverlay } from './scheduler-edit-surface-overlays';
 
 /**
  * The default edit surface: a dialog for one appointment, its fields, its ancestor breadcrumb and
@@ -92,7 +81,6 @@ export type { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token'
 export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
   private labels = injectSchedulerLabels();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private overlayRef = inject<OverlayRef<object, SchedulerEditSurfaceResult>>(OVERLAY_REF, { optional: true });
   private scheduler = inject(SchedulerDirective, { optional: true });
 
   /** The headless directive behind this surface - field/action registration, draft state and navigation. */
@@ -126,20 +114,6 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
     // the children list borrows the appointment badge's chain-count chip, and a surface can be
     // opened without any scheduler view having mounted that sheet
     injectStyleManager().mount(SchedulerAppointmentStylesComponent);
-
-    outputToObservable(this.surface.save)
-      .pipe(
-        tap((appointment) => this.overlayRef?.close({ kind: 'save', appointment })),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-
-    outputToObservable(this.surface.deleteAppointments)
-      .pipe(
-        tap((ids) => this.overlayRef?.close({ kind: 'delete', ids })),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
   }
 
   public editFields() {
@@ -176,62 +150,14 @@ export class SchedulerEditSurfaceComponent implements SchedulerEditSurfaceHost {
 }
 
 /**
- * Opens `<et-scheduler-edit-surface>` anchored to the appointment it edits - what `<et-scheduler>`
- * uses to auto-open on selection. Below `md` it is a full-screen dialog instead, where the form
- * needs the whole viewport. Pass the appointment's element as the open call's `origin`; without one
- * the anchored strategy falls back to a centered dialog.
+ * Opens `<et-scheduler-edit-surface>` anchored to the appointment it edits. Below `md` it is a
+ * full-screen dialog instead, where the form needs the whole viewport. Pass the appointment's element
+ * as the open call's `origin`; without one the anchored strategy falls back to a centered dialog.
  */
-export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
-  SchedulerEditSurfaceComponent,
-  SchedulerEditSurfaceResult
->({
-  component: SchedulerEditSurfaceComponent,
-  strategies: () => {
-    const fullscreenDialogStrategy = injectFullscreenDialogStrategy();
-    const anchoredDialogStrategy = injectAnchoredDialogStrategy();
-
-    return [
-      { strategy: fullscreenDialogStrategy.build() },
-      {
-        breakpoint: 'md',
-        strategy: anchoredDialogStrategy.build({
-          maxWidth: '520px',
-          // `minWidth` is also what decides the placement below: a side too narrow for it overflows,
-          // so the pane drops under the appointment rather than being squeezed in beside it.
-          minWidth: '440px',
-          positionStrategy: buildAnchoredRuntimePositionStrategy({
-            placement: 'right-start',
-            fallbackPlacements: ['left-start', 'bottom', 'top', 'right', 'left'],
-            offset: 10,
-            arrowPadding: 16,
-            shift: true,
-            autoResize: true,
-          }),
-        }),
-      },
-    ];
-  },
-  panelClass: 'et-scheduler-edit-surface-panel',
-});
+export const SCHEDULER_EDIT_SURFACE_OVERLAY = /* @__PURE__ */ defineSchedulerEditOverlay(SchedulerEditSurfaceComponent);
 
 /**
- * Opens `<et-scheduler-edit-surface>` as a plain centered dialog above `md`, full-screen below it.
- * Used for an appointment added from the toolbar, which has no appointment on the calendar to
- * anchor to. An add that starts on the calendar itself uses {@link SCHEDULER_EDIT_SURFACE_OVERLAY}.
+ * Opens `<et-scheduler-edit-surface>` as a plain centered dialog above `md`, full-screen below it -
+ * for an appointment with nothing on the calendar to anchor to.
  */
-export const SCHEDULER_ADD_SURFACE_OVERLAY = /* @__PURE__ */ defineOverlay<
-  SchedulerEditSurfaceComponent,
-  SchedulerEditSurfaceResult
->({
-  component: SchedulerEditSurfaceComponent,
-  strategies: () => {
-    const fullscreenDialogStrategy = injectFullscreenDialogStrategy();
-    const dialogStrategy = injectDialogStrategy();
-
-    return [
-      { strategy: fullscreenDialogStrategy.build() },
-      { breakpoint: 'md', strategy: dialogStrategy.build({ maxWidth: '520px' }) },
-    ];
-  },
-  panelClass: 'et-scheduler-edit-surface-panel',
-});
+export const SCHEDULER_ADD_SURFACE_OVERLAY = /* @__PURE__ */ defineSchedulerAddOverlay(SchedulerEditSurfaceComponent);

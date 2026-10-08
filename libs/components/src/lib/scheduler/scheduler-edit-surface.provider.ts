@@ -1,12 +1,29 @@
-import { Provider } from '@angular/core';
-import { SCHEDULER_ADD_SURFACE_OVERLAY, SCHEDULER_EDIT_SURFACE_OVERLAY } from './scheduler-edit-surface.component';
+import { Provider, Type } from '@angular/core';
+import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
+import { defineSchedulerAddOverlay, defineSchedulerEditOverlay } from './scheduler-edit-surface-overlays';
 import { SCHEDULER_EDIT_SURFACE } from './scheduler-edit-surface.token';
 
-/** Registers the default Scheduler edit surface for schedulers in this injector's subtree. */
-export const provideSchedulerEditSurface = (): Provider => ({
-  provide: SCHEDULER_EDIT_SURFACE,
-  useValue: {
-    editOverlay: SCHEDULER_EDIT_SURFACE_OVERLAY,
-    addOverlay: SCHEDULER_ADD_SURFACE_OVERLAY,
-  },
-});
+export type SchedulerEditSurfaceOptions = {
+  /**
+   * The edit surface component to open. It applies `SchedulerEditSurfaceDirective` through
+   * `hostDirectives` with the `appointment` and `appointments` inputs.
+   * @default SchedulerEditSurfaceComponent
+   */
+  component?: Type<object>;
+};
+
+/**
+ * Registers the edit surface for schedulers and `injectSchedulerEditSurfaceOpener()` in this
+ * injector's subtree - the default `<et-scheduler-edit-surface>`, or `component`.
+ */
+export const provideSchedulerEditSurface = (options: SchedulerEditSurfaceOptions = {}): Provider => {
+  const component = options.component ?? SchedulerEditSurfaceComponent;
+
+  return {
+    provide: SCHEDULER_EDIT_SURFACE,
+    useValue: {
+      editOverlay: defineSchedulerEditOverlay(component),
+      addOverlay: defineSchedulerAddOverlay(component),
+    },
+  };
+};

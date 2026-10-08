@@ -1,25 +1,10 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  inputBinding,
-  output,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RuntimeError, randomId, signalHostElementDimensions, mountVisuallyHidden } from '@ethlete/core';
-import { tap } from 'rxjs';
+import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, output, untracked } from '@angular/core';
+import { randomId, signalHostElementDimensions, mountVisuallyHidden } from '@ethlete/core';
 import { addHours, format, isSameDay, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
 import { FLOATING_ACTION_IMPORTS } from '../floating-action';
 import { LabelDirective, SEGMENTED_BUTTON_IMPORTS } from '../forms';
 import { CALENDAR_ICON, CHEVRON_ICON, IconDirective, PLUS_ICON, provideIcons } from '../icon';
-import { injectReportError } from '../internals/report-error';
-import { OverlayRef, createOverlayOpener } from '../overlay';
 import {
   createSchedulerRegistry,
   SCHEDULER_FEATURE_HOST,
@@ -36,8 +21,8 @@ import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.dir
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
 import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
 import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
-import { SCHEDULER_EDIT_SURFACE, SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
-import { SCHEDULER_ERROR_CODES } from './scheduler-errors';
+import { injectSchedulerEditSurfaceOpener } from './scheduler-edit-surface-opener';
+import { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
 import { SchedulerSwipeNavigationDirective } from './scheduler-swipe-navigation.directive';
@@ -96,8 +81,7 @@ const NARROW_CONTAINER_WIDTH = 480;
 })
 export class SchedulerComponent implements SchedulerFeatureHost {
   private labels = injectSchedulerLabels();
-  private editSurface = inject(SCHEDULER_EDIT_SURFACE, { optional: true });
-  private reportError = injectReportError();
+  private editSurfaceOpener = injectSchedulerEditSurfaceOpener();
 
   /**
    * The headless directive behind this scheduler - everything `[etScheduler]` exposes, for chrome
@@ -106,7 +90,6 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   public headless = inject(SchedulerDirective);
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
-  private destroyRef = inject(DestroyRef);
 
   /** Emits the edited or newly-added appointment once the default edit surface saves. */
   public appointmentSave = output<Appointment>();
@@ -151,40 +134,19 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   private badgeAdornmentRegistry = createSchedulerRegistry<SchedulerBadgeAdornment>();
   private toolbarActionRegistry = createSchedulerRegistry<SchedulerToolbarAction>();
 
-  private editSurfaceRef: OverlayRef<object, SchedulerEditSurfaceResult> | null = null;
-
-  private editSurfaceOpener = this.editSurface ? createOverlayOpener(this.editSurface.editOverlay) : null;
+  private openEditSurfaceToken: object | null = null;
 
   // Which selection the edit surface has already acted on. Compared by id, not by appointment
   // identity: an immutable `appointments` replacement gives the selected appointment a new object
   // every time, and re-opening on that stacks a second surface over the open one.
   private handledSelectionId: AppointmentId | null = null;
 
-  private addSurfaceOpener = this.editSurface
-    ? createOverlayOpener(this.editSurface.addOverlay, {
-        afterClosed: (result) => this.handleEditSurfaceResult(result),
-      })
-    : null;
-
   private openedDraftRange: SchedulerDraftRange | null = null;
-
-  private draftSurfaceOpener = this.editSurface
-    ? createOverlayOpener(this.editSurface.editOverlay, {
-        afterClosed: (result) => {
-          // the close is animated, so a range drawn while it plays out is already the next surface's
-          if (this.headless.draftRange() === this.openedDraftRange) {
-            this.headless.clearDraftRange();
-          }
-
-          this.handleEditSurfaceResult(result);
-        },
-      })
-    : null;
 
   constructor() {
     mountVisuallyHidden();
 
-    this.headless.createEnabled.set(!!this.editSurface);
+    this.headless.createEnabled.set(this.editSurfaceOpener.available);
 
     effect(() => {
       const appointment = this.headless.selectedAppointment();
@@ -235,7 +197,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   }
 
   public canAddAppointment() {
-    return !!this.editSurface;
+    return this.editSurfaceOpener.available;
   }
 
   public get element(): HTMLElement {
@@ -279,31 +241,26 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.handledSelectionId = id;
     this.headless.selectedAppointmentId.set(id);
 
-    if (!this.editSurfaceOpener) {
+    if (!this.editSurfaceOpener.available) {
       this.headless.surfaceAnchor.set(null);
 
       return;
     }
 
-    const ref = this.editSurfaceOpener.open({
+    const surface = {};
+
+    this.openEditSurfaceToken = surface;
+    this.editSurfaceOpener.openEdit({
+      appointment,
+      appointments: this.headless.appointments,
       origin: this.takeSurfaceAnchor(),
-      bindings: this.editSurfaceBindings(appointment),
+      afterClosed: (result) => this.handleEditSurfaceClosed(surface, result),
     });
-
-    this.editSurfaceRef = ref;
-
-    ref
-      .afterClosed()
-      .pipe(
-        tap((result) => this.handleEditSurfaceClosed(ref, result)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe();
   }
 
   /** Closes the default edit surface without saving, clearing `selectedAppointmentId` back to `null`. */
   public closeEditSurface() {
-    this.editSurfaceRef?.close();
+    this.editSurfaceOpener.close();
   }
 
   /**
@@ -316,53 +273,40 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   }
 
   private openAddSurface(appointment: Appointment) {
-    if (!this.addSurfaceOpener) {
-      if (ngDevMode) {
-        this.reportError(
-          new RuntimeError(
-            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-            '[Scheduler] An appointment was added without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
-          ),
-        );
-      }
-
-      return;
-    }
-
-    this.addSurfaceOpener.open({ bindings: this.editSurfaceBindings(appointment) });
+    this.editSurfaceOpener.openAdd({
+      appointment,
+      appointments: this.headless.appointments,
+      afterClosed: (result) => this.handleEditSurfaceResult(result),
+    });
   }
 
   private openDraftSurface(draft: SchedulerDraftRange) {
-    if (!this.editSurfaceOpener) {
-      if (ngDevMode) {
-        this.reportError(
-          new RuntimeError(
-            SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED,
-            '[Scheduler] A draft range was committed without the default edit surface. Add provideSchedulerEditSurface() to a parent injector.',
-          ),
-        );
-      }
-
+    if (!this.editSurfaceOpener.available) {
+      this.editSurfaceOpener.openEdit({ appointment: this.appointmentFromDraft(draft) });
       this.headless.clearDraftRange();
 
       return;
     }
 
-    const appointment: Appointment = {
-      id: randomId(),
-      parentId: null,
-      title: '',
-      start: draft.start,
-      end: draft.end,
-      allDay: draft.allDay,
-    };
-
     this.openedDraftRange = draft;
 
-    this.draftSurfaceOpener?.open({
+    this.editSurfaceOpener.openEdit({
+      appointment: this.appointmentFromDraft(draft),
+      appointments: this.headless.appointments,
       origin: this.takeSurfaceAnchor(),
-      bindings: this.editSurfaceBindings(appointment),
+      afterClosed: (result) => {
+        // the close is animated, so a range drawn while it plays out is already the next surface's
+        if (this.headless.draftRange() === this.openedDraftRange) {
+          this.headless.clearDraftRange();
+        }
+
+        this.handleEditSurfaceResult(result);
+      },
     });
+  }
+
+  private appointmentFromDraft(draft: SchedulerDraftRange): Appointment {
+    return { id: randomId(), parentId: null, title: '', start: draft.start, end: draft.end, allDay: draft.allDay };
   }
 
   private takeSurfaceAnchor() {
@@ -373,24 +317,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return anchor;
   }
 
-  private editSurfaceBindings(appointment: Appointment) {
-    return [
-      inputBinding('appointment', () => appointment),
-      inputBinding('appointments', () => this.headless.appointments()),
-    ];
-  }
-
-  private handleEditSurfaceClosed(
-    ref: OverlayRef<object, SchedulerEditSurfaceResult>,
-    result: SchedulerEditSurfaceResult | null | undefined,
-  ) {
-    if (ref !== this.editSurfaceRef) {
+  private handleEditSurfaceClosed(surface: object, result: SchedulerEditSurfaceResult | null | undefined) {
+    if (surface !== this.openEditSurfaceToken) {
       this.emitEditSurfaceResult(result);
 
       return;
     }
 
-    this.editSurfaceRef = null;
+    this.openEditSurfaceToken = null;
     this.handleEditSurfaceResult(result);
   }
 

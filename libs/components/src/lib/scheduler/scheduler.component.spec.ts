@@ -172,16 +172,18 @@ describe('SchedulerComponent', () => {
     expect(driver.editSurface()).toHaveLength(1);
   });
 
-  it('keeps the selection and the close handle of a surface that opened while another one closes', () => {
+  it('replaces the open surface with the next selection and keeps its close handle', () => {
     driver.clickAppointment('a');
+
+    const [first] = TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays();
+    const firstClosing = vi.fn();
+
+    first?.beforeClosed().subscribe(firstClosing);
+
     driver.clickAppointment('b');
     driver.detectChanges();
 
-    const [first] = TestBed.runInInjectionContext(() => injectOverlayManager()).openOverlays();
-
-    first?.close();
-    driver.detectChanges();
-
+    expect(firstClosing).toHaveBeenCalledTimes(1);
     expect(driver.host.selectedAppointmentId()).toBe('b');
 
     driver.scheduler().closeEditSurface();

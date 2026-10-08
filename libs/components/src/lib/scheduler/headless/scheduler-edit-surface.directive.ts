@@ -1,20 +1,23 @@
-import { computed, Directive, input, linkedSignal, output, signal, untracked } from '@angular/core';
+import { computed, Directive, inject, input, linkedSignal, output, signal, untracked } from '@angular/core';
 import { randomId } from '@ethlete/core';
+import { OVERLAY_REF, OverlayRef } from '../../overlay';
+import { SchedulerEditSurfaceResult } from '../scheduler-edit-surface.token';
 import { Appointment, AppointmentId } from '../scheduler.types';
 import { buildAppointmentTree, collectDescendantIds, findAppointmentNode } from './internals/scheduler-tree';
 
 /**
  * Headless edit-surface state: which appointment is open, the live draft every field reads and
  * writes, and navigation across the sub-appointment chain (ancestors, children, "add
- * sub-appointment") - all without any template structure. `<et-scheduler-edit-surface>` applies
- * this via `hostDirectives` and renders the registered fields/actions on top (see
- * `SCHEDULER_EDIT_SURFACE_HOST`).
+ * sub-appointment") - all without any template structure. An edit surface component applies it via
+ * `hostDirectives` and reads it with `injectSchedulerEditSurface()`.
  */
 @Directive({
   selector: '[etSchedulerEditSurface]',
   exportAs: 'etSchedulerEditSurface',
 })
 export class SchedulerEditSurfaceDirective<TExtra = unknown> {
+  private overlayRef = inject<OverlayRef<object, SchedulerEditSurfaceResult<TExtra>>>(OVERLAY_REF, { optional: true });
+
   /** The appointment to open the surface for - a freshly-synthesized blank one (with `id` already assigned) for "add". */
   public appointment = input.required<Appointment<TExtra>>();
 
@@ -114,16 +117,31 @@ export class SchedulerEditSurfaceDirective<TExtra = unknown> {
     this.currentAppointmentId.set(blank.id);
   }
 
-  /** Commits the current draft via `save` - the component closes the dialog on this. */
+  /** Emits the current draft via `save`, and closes the overlay the surface is open in with it. */
   public commit() {
-    this.save.emit(this.draft());
+    const appointment = this.draft();
+
+    this.save.emit(appointment);
+    this.overlayRef?.close({ kind: 'save', appointment });
   }
 
-  /** Emits `deleteAppointments` for the current appointment and every descendant - the component closes the dialog on this. */
+  /**
+   * Emits `deleteAppointments` for the current appointment and every descendant, and closes the
+   * overlay the surface is open in with those ids.
+   */
   public requestDelete() {
     const node = this.currentNode();
     const ids = node ? [node.appointment.id, ...collectDescendantIds(node)] : [this.currentAppointment().id];
 
     this.deleteAppointments.emit(ids);
+    this.overlayRef?.close({ kind: 'delete', ids });
   }
 }
+
+/**
+ * The {@link SchedulerEditSurfaceDirective} on the current component's host, typed for the
+ * appointments' `extra`. Call it in an edit surface component that applies the directive through
+ * `hostDirectives`.
+ */
+export const injectSchedulerEditSurface = <TExtra = unknown>() =>
+  inject(SchedulerEditSurfaceDirective) as SchedulerEditSurfaceDirective<TExtra>;

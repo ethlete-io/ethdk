@@ -23,6 +23,7 @@ export * from './scheduler-edit-description.directive';
 export * from './scheduler-edit-location.component';
 export * from './scheduler-edit-location.directive';
 export * from './scheduler-edit-surface.component';
+export * from './scheduler-edit-surface-opener';
 export * from './scheduler-edit-surface.provider';
 export * from './scheduler-edit-surface.token';
 export * from './scheduler-edit-time-range.component';
