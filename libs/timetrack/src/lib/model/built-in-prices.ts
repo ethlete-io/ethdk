@@ -7,16 +7,22 @@ export const BUILT_IN_PRICES_CHECKED = '2026-10-08';
 
 type Rates = Pick<ModelPrice, 'input' | 'output' | 'cacheWrite' | 'cacheRead'>;
 
-const FROM = new Date('2026-10-08T00:00:00Z');
+/** A model's first built-in price also prices the days before it was checked; a later entry starts at its own date. */
+const FIRST = new Date(0);
 
 const anthropic = (model: string, rates: Rates): ModelPrice => ({
   provider: CLAUDE_CODE_PROVIDER,
   model,
-  from: FROM,
+  from: FIRST,
   ...rates,
 });
 
-const openai = (model: string, rates: Rates): ModelPrice => ({ provider: CODEX_PROVIDER, model, from: FROM, ...rates });
+const openai = (model: string, rates: Rates): ModelPrice => ({
+  provider: CODEX_PROVIDER,
+  model,
+  from: FIRST,
+  ...rates,
+});
 
 /**
  * USD per million tokens, standard tier, prompts up to 100K / 272K tokens. A price in the user's own

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ModelPrice, PriceTable, costOfTurns, costOfUsage, priceAt } from './price';
-import { BUILT_IN_PRICES } from './built-in-prices';
+import { BUILT_IN_PRICES, BUILT_IN_PRICES_CHECKED } from './built-in-prices';
 
 const opus = (from: string, input: number): ModelPrice => ({
   provider: 'claude-code',
@@ -105,6 +105,12 @@ describe('built-in prices', () => {
       cost: builtIn.input,
       unpriced: [],
     });
+  });
+
+  it('prices a day before the list was checked', () => {
+    const lastYear = new Date(`${Number(BUILT_IN_PRICES_CHECKED.slice(0, 4)) - 1}-06-01T12:00:00Z`);
+
+    expect(costOfTurns({ table: usd(), turns: [turn(lastYear)] }).cost).toBe(builtIn.input);
   });
 
   it('never applies before its own date', () => {
