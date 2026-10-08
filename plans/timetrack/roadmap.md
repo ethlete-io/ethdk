@@ -78,7 +78,7 @@ Slice 7. Nothing is built: no autostart plugin in `Cargo.toml`, no crash restart
 Exit test: three interruptions on one real day. Reboot, kill the process, and quit for two hours.
 The day screen reconciles all three and names each stretch it did not watch.
 
-To decide first:
+Decided on 2026-10-08, each as recommended in [`m7-sync-research.md`](./m7-sync-research.md):
 
 - Is autostart on by default, or offered on first run?
 - Does the tray say the app is collecting, or only that it runs?
@@ -128,7 +128,7 @@ presence, engaged time, spend and concurrency, and no hour counts twice. One mac
 and the other refuses to book it again. Switch the second off for an hour: both screens say the day
 is incomplete and name the missing machine.
 
-To decide first:
+Decided on 2026-10-08, each as recommended in [`m7-sync-research.md`](./m7-sync-research.md):
 
 1. Which machine owns a day: a fixed one, or the one the user books from.
 2. Clock skew: the tolerance, and what happens past it.

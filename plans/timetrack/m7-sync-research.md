@@ -1,7 +1,7 @@
 # M7 sync: research and recommendations (2026-10-08)
 
-Input for the six open decisions in [`roadmap.md`](./roadmap.md) "M7: One day, every machine". Nothing
-here is decided. Tom decides each point; then record the merge and event identity in an ADR.
+Tom decided all six on 2026-10-08, each as recommended in the table below, plus mDNS discovery with
+6-digit code pairing. Next: record the merge and event identity in an ADR, then slice 1.
 
 ## What made 2026-10-08 look wrong on this PC
 
