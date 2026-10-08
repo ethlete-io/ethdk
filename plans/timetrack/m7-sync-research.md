@@ -113,7 +113,84 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
    - 3d. The label and its e2e spec landed with 3c. Left: verify between tank and ethlete-mac (one new Mac build, signed
      with `macos-dev-sign.sh`, about 10 password prompts).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
-   machines, spend per origin, sender filter (L, 1-2 wk).
+   machines, spend per origin, sender filter (L, 1-2 wk). Steps below; 4d is the first that Tom sees
+   (work done only on the Mac shows as rows on the PC). Retention of `received_event` by event time is
+   already in `store.rs`. A step that changes rows runs `timetrack snapshot` before and `--compare`
+   after, and explains every changed row.
+   - 4a. Sender filter, first: today `changes_after` (`peer.rs`) sends every `collected_event` row
+     as stored, and tank already holds 86,555 unfiltered MacBook events. Exclusion rules run before an
+     event is stored, and transcripts live in `transcript_chunk`, which `changes_after` never reads, so
+     the missing parts are private paths and rules added after collection. New `peer/filter.rs` reads
+     `projectLinks` and `exclusionRules` from `settings_document`. An event whose `repoPath`, `cwd`,
+     `workedIn`, `worktree` or `directory` lies under a private link, or a `window-focus` whose title
+     names a private checkout's directory, goes out as a bare interval: new kind `private-interval`,
+     `at` only. A current app-id rule drops the event; a title-pattern rule (`regex` crate) blanks the
+     title, and a pattern that does not compile blanks every title (fail closed). `Frame::Changes`
+     carries a hash of the filter inputs; a receiver that sees a new hash deletes that machine's
+     received rows and resets its `peer_cursor` to 0, so the next pull is the filtered form.
+     Migration 23 clears `received_event` and `peer_cursor` once. Files: `peer.rs`, `peer/filter.rs`,
+     `db.rs`, `Cargo.toml`. Tests: `cargo test` over loopback (private repo path, agent cwd under a
+     private root, private window title, app-id rule, title rule, bad pattern, a filter change causes
+     a re-pull, no transcript text in any frame). Live: `peers.pull` on tank, then `peers.received`
+     holds no private path.
+   - 4b. Path map. TS writes this machine's map from checkout path to `repoKeyOf(origin, path)`
+     (remote from `git/state.ts`) to the host on each git discovery (new command `set_repo_keys`,
+     table `repo_key`, migration 24). `Frame::Changes` carries the sender's map, the receiver stores
+     it per machine (`peer_repo_key`), and `received_between` / `peers.receivedBetween$` return it
+     with the events. Pure `translatePeerPath({ path, peerKeys, localKeys })` maps a peer path (and a
+     path under a peer checkout) onto this machine's checkout of the same key, and keeps the peer path
+     when no local checkout has that key. Nothing reads it yet. Files: `git/repo-key.ts`, new
+     `libs/timetrack/src/lib/model/peer-path.ts`, `apps/timetrack/src/host/peers.ts`, the git wiring
+     in the app, `peer.rs`, `db.rs`, the e2e fake. Tests: unit spec for the translation (prefix,
+     no local checkout, Windows and `/Users` paths), `cargo test` for the map in a pull, the agent op
+     `peers.received` on tank.
+   - 4c. Read fold, pure: `mergeDayEvents({ local, received, keys })` returns one list, each event
+     tagged with its origin. Peer paths go through 4b. Shared facts count once: calendar occurrence,
+     merge-request event id, prompt id, turn id. Commits fold by sha: the copy with no `authoredAt`
+     (the reflog wrote it) describes the row; a copy with `authoredAt` stays as presence at the pull
+     on its own machine (ADR 0018). Machine-local kinds (window, idle, lock, pause, input, call,
+     heartbeat, `private-interval`) never fold across origins. Files: new
+     `libs/timetrack/src/lib/stream/merge-day-events.ts`, `model/event.ts` (`origin`,
+     `private-interval`), `store/dedupe.ts`. Tests: unit spec per fold rule, including the 10-08
+     shape (61 Mac commits pulled into tank).
+   - 4d. The merge in the day, first visible value. `streamDay` takes the merged list and builds
+     presence, focus and blocks per origin, so a focused window on the Mac never ends a block on the
+     PC; the blocks of all origins go into one `buildRows`. Day presence is the union of the origins;
+     a `private-interval` is private time with no link named. Both day readers (`read-day.ts`,
+     `day-review.ts`) and `agent-day.ts` pass the merged list. A band of this machine that a peer's
+     presence covers but its events do not explain keeps "Worked on <machine>" from 3c. Files:
+     `stream/stream-day.ts`, `stream-day-options.ts`, the two readers. Tests: stream-day unit spec
+     (Mac works while the PC is off, both work at once on two checkouts, one checkout on both), new
+     e2e `merged-peer-day.spec.ts` seeding `world.peers.received`, `worked-on-paired-machine.spec.ts`
+     unchanged, snapshot compare for 10-02..10-08.
+   - 4e. Attendance across machines: a break, an away stretch and an unattended band need every
+     origin away; `promptOriginAt` reads input from all origins, so a prompt typed at the Mac is not
+     phone time on the PC; the `unattended-time` check reads merged attendance. Files:
+     `rows/attended.ts`, `stream/prompt-origin.ts`, the break pass in `stream-day.ts`. Tests: unit
+     specs, e2e `remote-phone-time.spec.ts` and `unattended-band.spec.ts` gain a peer case,
+     snapshot compare.
+   - 4f. Spend per origin: a received turn is priced here and counted once (4c), `StreamSpend`
+     carries a split by machine, and the day streams and Sources views show the share spent on each
+     machine. Compaction reads only `collected_event`, so a received turn is never compacted (ADR
+     0002). Files: `stream/stream-day.ts` (spend), `day-review/day-streams.component.ts`,
+     `sources/inventory.ts`, `store.rs` test. Tests: unit spec, `cargo test` that compaction leaves
+     `received_event` alone, e2e `day-streams.spec.ts` peer case.
+   - 4g. Manual alias: settings field `repoAliases` (checkout path to key) overrides `repoKeyOf` on
+     both sides, set in the project paths view. Coordinate first: another session is editing
+     `settings/model.ts` and `settings/parse.ts`. Files: settings model and parse, project paths
+     view, the 4b map writer. Tests: parse spec, e2e `project-paths.spec.ts` alias case.
+   - 4h. "Changed after booking": a booked (frozen) day whose merged read now differs from
+     `frozenRows` shows the note and is not re-cut (decision 4). Files: `day-review.ts`, the day
+     header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case.
+   - 4i. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
+     work of a day shows as rows on tank, a private checkout arrives as bare intervals only.
+   - Open for Tom. (1) 4b realizes decision 3 by mapping a peer path onto the local checkout of the
+     same origin key, so `streamKey` stays `repo:<local path>` and stored lane keys, edits, pins and
+     path rules keep working. Spelling `streamKey` as `repo:<origin key>` instead would need a
+     migration of all of them. Recommendation: map onto the local path. (2) A title-pattern rule the
+     Rust `regex` crate cannot compile (a JS-only construct): blank every window title sent, or send
+     titles unfiltered by that rule. Recommendation: blank them (fail closed) and show the rule as
+     invalid, as the settings screen already does for a rule that does not compile.
 5. One owner and an incomplete day: claim + Tempo marker, the other machine refuses to book, the
    freeze waits for peers, "MacBook not seen since X" (M, 3-4 d).
 6. Settings and stand-ins replicated (M, optional).
