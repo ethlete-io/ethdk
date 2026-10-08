@@ -83,6 +83,18 @@ describe('streamDay agent sessions', () => {
     expect(blocks[0]?.to.getTime()).toBe(AT(120).getTime());
   });
 
+  it('names no stretch after a session that started only after the stretch ended', () => {
+    const blocks = blocksOf([
+      ...focusRun({ from: 0, to: 30 }),
+      ...sessionRun({ sessionId: 'late', from: 200, to: 230 }),
+    ]);
+
+    expect(blocks.map((block) => [block.from.getTime(), block.context.session, block.context.piece])).toEqual([
+      [AT(0).getTime(), undefined, undefined],
+      [AT(200).getTime(), 'late', 'late'],
+    ]);
+  });
+
   it('cuts a checkout that ran two sessions one after the other into one stretch each', () => {
     const blocks = blocksOf([
       ...focusRun({ from: 0, to: 120 }),

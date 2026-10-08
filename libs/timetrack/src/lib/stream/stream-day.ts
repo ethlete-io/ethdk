@@ -667,6 +667,23 @@ const sessionAt = (options: { runs: readonly SessionRun[] | undefined; at: Date 
 };
 
 /**
+ * `sessionAt` carries a run back over the stretches before it, so a block that ended before its session
+ * started would otherwise name work nobody had begun yet.
+ */
+const withoutLaterSession = (options: {
+  block: ActivityBlock;
+  runs: ReadonlyMap<string, readonly SessionRun[]>;
+}): ActivityBlock => {
+  const { block } = options;
+  const { session, piece: _piece, ...context } = block.context;
+  const run = block.context.repoPath
+    ? options.runs.get(block.context.repoPath)?.find((held) => held.sessionId === session)
+    : undefined;
+
+  return run && run.from > block.to ? { ...block, context } : block;
+};
+
+/**
  * The linked worktrees inside another checkout's directory, which `repoRootOf` files under that checkout.
  *
  * Such a worktree has a HEAD of its own, so a branch the enclosing checkout was seen on says nothing
@@ -1625,7 +1642,7 @@ export const streamDay = (options: {
       ...clipSpans({ spans: rebuiltSpans, within: rebuilt }),
     ],
     observations,
-  });
+  }).map((block) => withoutLaterSession({ block, runs }));
   // The focus ranks two background bands against each other, and decides which of a checkout and its
   // worktrees keeps an instant both held. It is derived here because only this pass holds it, and
   // `buildRows` takes blocks that no longer say which stream they came from.
