@@ -320,12 +320,16 @@ fn set_titles(connection: &mut Connection, rows: &[StoredTitleRow]) -> Timetrack
 
 #[tauri::command]
 pub async fn events_delete_before(db: State<'_, Db>, before_ms: i64) -> TimetrackResult<i64> {
-    db.run(move |connection| {
-        let deleted = connection.execute("DELETE FROM collected_event WHERE at_ms < ?1", params![before_ms])?;
+    db.run(move |connection| delete_events_before(connection, before_ms))
+        .await
+}
 
-        Ok(deleted as i64)
-    })
-    .await
+fn delete_events_before(connection: &Connection, before_ms: i64) -> TimetrackResult<i64> {
+    let deleted = connection.execute("DELETE FROM collected_event WHERE at_ms < ?1", params![before_ms])?;
+    connection.execute("DELETE FROM received_event WHERE at_ms < ?1", params![before_ms])?;
+    connection.execute("DELETE FROM deleted_event WHERE at_ms < ?1", params![before_ms])?;
+
+    Ok(deleted as i64)
 }
 
 /// What each collector has actually put in the store, and when it last managed to.
@@ -1298,5 +1302,103 @@ mod tests {
             .unwrap();
 
         assert_eq!(rows, vec![("agent-session".to_string(), 42), ("spend".to_string(), 7)]);
+    }
+
+    fn calendar(payload: &str) -> StoredEvent {
+        StoredEvent {
+            at_ms: 1_000,
+            source: "calendar".to_string(),
+            kind: "calendar-event".to_string(),
+            payload: serde_json::json!({ "title": payload }),
+            dedupe_key: Some("calendar-event:e1".to_string()),
+        }
+    }
+
+    fn clock(connection: &Connection) -> i64 {
+        connection
+            .query_row("SELECT seq FROM change_clock WHERE id = 1", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn an_upsert_that_changes_a_row_advances_the_clock_and_one_that_does_not_leaves_it() {
+        let mut connection = store();
+
+        append_replacing(&mut connection, &[calendar("a")], &[], None, &[]).unwrap();
+        assert_eq!(clock(&connection), 1);
+
+        append_replacing(&mut connection, &[calendar("a")], &[], None, &[]).unwrap();
+        assert_eq!(clock(&connection), 1);
+
+        append_replacing(&mut connection, &[calendar("b")], &[], None, &[]).unwrap();
+        assert_eq!(clock(&connection), 2);
+        assert_eq!(
+            connection
+                .query_row("SELECT changed_seq FROM collected_event", [], |row| row
+                    .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+    }
+
+    #[test]
+    fn a_calendar_re_read_that_drops_an_event_leaves_a_tombstone() {
+        let mut connection = store();
+
+        append_replacing(&mut connection, &[calendar("a")], &[], None, &[]).unwrap();
+        append_replacing(
+            &mut connection,
+            &[],
+            &[],
+            Some(&CalendarWindow {
+                from_ms: 0,
+                to_ms: 2_000,
+            }),
+            &[],
+        )
+        .unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT row_id, changed_seq FROM deleted_event", [], |row| Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, i64>(1)?
+                )))
+                .unwrap(),
+            (1, 2)
+        );
+    }
+
+    #[test]
+    fn retention_prunes_received_rows_and_tombstones_by_event_time() {
+        let connection = store();
+
+        for at_ms in [100_i64, 900] {
+            connection
+                .execute(
+                    "INSERT INTO received_event (machine_id, peer_row_id, at_ms, source, kind, payload)
+                     VALUES ('peer', ?1, ?1, 'git', 'git-commit', '{}')",
+                    params![at_ms],
+                )
+                .unwrap();
+            connection
+                .execute(
+                    "INSERT INTO collected_event (at_ms, source, kind, payload) VALUES (?1, 'git', 'git-commit', '{}')",
+                    params![at_ms],
+                )
+                .unwrap();
+        }
+
+        delete_events_before(&connection, 500).unwrap();
+
+        let remaining = |table: &str| -> i64 {
+            connection
+                .query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row.get(0))
+                .unwrap()
+        };
+
+        assert_eq!(remaining("received_event"), 1);
+        assert_eq!(remaining("collected_event"), 1);
+        assert_eq!(remaining("deleted_event"), 0);
     }
 }

@@ -237,6 +237,83 @@ CREATE TABLE IF NOT EXISTS tempo_sync_run (
 );
 ";
 
+/// Sync identity and change tracking (ADR 0039). The triggers are the only writers of `changed_seq`
+/// and tombstones, so no write path to `collected_event` can skip them. The update trigger lists the
+/// content columns so its own `changed_seq` write does not fire it again.
+const SCHEMA_V20: &str = "
+CREATE TABLE machine (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  machine_id TEXT NOT NULL
+);
+INSERT INTO machine (id, machine_id) VALUES (1, lower(hex(randomblob(16))));
+
+CREATE TABLE change_clock (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  seq INTEGER NOT NULL
+);
+
+ALTER TABLE collected_event ADD COLUMN changed_seq INTEGER;
+UPDATE collected_event SET changed_seq = id;
+INSERT INTO change_clock (id, seq) VALUES (1, (SELECT COALESCE(MAX(id), 0) FROM collected_event));
+CREATE INDEX collected_event_changed_seq ON collected_event (changed_seq);
+
+CREATE TABLE deleted_event (
+  row_id INTEGER PRIMARY KEY,
+  at_ms INTEGER NOT NULL,
+  changed_seq INTEGER NOT NULL
+);
+
+CREATE TRIGGER collected_event_changed_insert AFTER INSERT ON collected_event
+BEGIN
+  UPDATE change_clock SET seq = seq + 1 WHERE id = 1;
+  UPDATE collected_event SET changed_seq = (SELECT seq FROM change_clock WHERE id = 1) WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER collected_event_changed_update AFTER UPDATE OF at_ms, source, kind, payload, dedupe_key ON collected_event
+BEGIN
+  UPDATE change_clock SET seq = seq + 1 WHERE id = 1;
+  UPDATE collected_event SET changed_seq = (SELECT seq FROM change_clock WHERE id = 1) WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER collected_event_changed_delete AFTER DELETE ON collected_event
+BEGIN
+  UPDATE change_clock SET seq = seq + 1 WHERE id = 1;
+  INSERT OR REPLACE INTO deleted_event (row_id, at_ms, changed_seq)
+    VALUES (OLD.id, OLD.at_ms, (SELECT seq FROM change_clock WHERE id = 1));
+END;
+
+CREATE TABLE received_event (
+  machine_id TEXT NOT NULL,
+  peer_row_id INTEGER NOT NULL,
+  at_ms INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  dedupe_key TEXT,
+  PRIMARY KEY (machine_id, peer_row_id)
+);
+CREATE UNIQUE INDEX received_event_dedupe ON received_event (machine_id, dedupe_key);
+CREATE INDEX received_event_at_ms ON received_event (at_ms);
+
+CREATE TABLE peer_cursor (
+  machine_id TEXT PRIMARY KEY,
+  changed_seq INTEGER NOT NULL
+);
+";
+
+/// Checked first because a store re-run from an older version already has the column.
+fn add_change_tracking(connection: &Connection) -> TimetrackResult<()> {
+    let present = connection
+        .prepare("SELECT 1 FROM pragma_table_info('collected_event') WHERE name = 'changed_seq'")?
+        .exists([])?;
+
+    if !present {
+        connection.execute_batch(SCHEMA_V20)?;
+    }
+
+    Ok(())
+}
+
 /// Repairs a store whose v11 ran before `read_through_ms` was part of it.
 ///
 /// The column was added to `SCHEMA_V11` after that migration had already run on real stores, and a
@@ -522,6 +599,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 19, add_synced_worklog_duration)?;
     }
 
+    if version < 20 {
+        step(connection, 20, add_change_tracking)?;
+    }
+
     Ok(())
 }
 
@@ -596,7 +677,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            19
+            20
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -720,7 +801,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            19
+            20
         );
     }
 
@@ -1116,5 +1197,123 @@ mod tests {
             .unwrap()
             .exists([])
             .unwrap());
+    }
+
+    fn stored_at_v19() -> Connection {
+        let connection = Connection::open_in_memory().unwrap();
+
+        migrate(&connection).unwrap();
+        connection
+            .execute_batch(
+                "DROP TRIGGER collected_event_changed_insert;
+                 DROP TRIGGER collected_event_changed_update;
+                 DROP TRIGGER collected_event_changed_delete;
+                 DROP INDEX collected_event_changed_seq;
+                 ALTER TABLE collected_event DROP COLUMN changed_seq;
+                 DROP TABLE machine; DROP TABLE change_clock; DROP TABLE deleted_event;
+                 DROP TABLE received_event; DROP TABLE peer_cursor;",
+            )
+            .unwrap();
+        connection.pragma_update(None, "user_version", 19).unwrap();
+
+        connection
+    }
+
+    fn seqs(connection: &Connection) -> Vec<(i64, i64)> {
+        let mut statement = connection
+            .prepare("SELECT id, changed_seq FROM collected_event ORDER BY id")
+            .unwrap();
+
+        statement
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap()
+    }
+
+    fn clock(connection: &Connection) -> i64 {
+        connection
+            .query_row("SELECT seq FROM change_clock WHERE id = 1", [], |row| row.get(0))
+            .unwrap()
+    }
+
+    #[test]
+    fn keeps_every_row_of_a_v19_store_and_fills_its_changed_seq() {
+        let connection = stored_at_v19();
+
+        for at_ms in [10_i64, 20, 30] {
+            connection
+                .execute(INSERT, params![at_ms, format!("git-commit:{at_ms}")])
+                .unwrap();
+        }
+        connection
+            .execute("DELETE FROM collected_event WHERE at_ms = 20", [])
+            .unwrap();
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(count(&connection), 2);
+        assert_eq!(seqs(&connection), vec![(1, 1), (3, 3)]);
+        assert_eq!(clock(&connection), 3);
+    }
+
+    #[test]
+    fn gives_the_store_one_machine_id_that_survives_a_re_run() {
+        let connection = stored_at_v19();
+
+        migrate(&connection).unwrap();
+
+        let id: String = connection
+            .query_row("SELECT machine_id FROM machine", [], |row| row.get(0))
+            .unwrap();
+
+        assert_eq!(id.len(), 32);
+        assert!(id.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()));
+
+        migrate(&connection).unwrap();
+
+        assert_eq!(
+            connection
+                .query_row("SELECT count(*), min(machine_id) FROM machine", [], |row| Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, String>(1)?
+                )))
+                .unwrap(),
+            (1, id)
+        );
+    }
+
+    #[test]
+    fn insert_update_and_delete_each_advance_the_clock_and_a_no_op_upsert_does_not() {
+        let connection = stored_at_v19();
+        migrate(&connection).unwrap();
+
+        connection.execute(INSERT, params![1_i64, "git-commit:a"]).unwrap();
+        assert_eq!(clock(&connection), 1);
+        assert_eq!(seqs(&connection), vec![(1, 1)]);
+
+        connection.execute(INSERT, params![1_i64, "git-commit:a"]).unwrap();
+        assert_eq!(clock(&connection), 1);
+
+        connection
+            .execute("UPDATE collected_event SET payload = '{\"a\":1}' WHERE id = 1", [])
+            .unwrap();
+        assert_eq!(clock(&connection), 2);
+        assert_eq!(seqs(&connection), vec![(1, 2)]);
+
+        connection
+            .execute("DELETE FROM collected_event WHERE id = 1", [])
+            .unwrap();
+        assert_eq!(clock(&connection), 3);
+        assert_eq!(
+            connection
+                .query_row("SELECT row_id, at_ms, changed_seq FROM deleted_event", [], |row| Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, i64>(1)?,
+                    row.get::<_, i64>(2)?
+                )))
+                .unwrap(),
+            (1, 1, 3)
+        );
     }
 }

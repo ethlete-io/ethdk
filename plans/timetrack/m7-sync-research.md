@@ -3,7 +3,7 @@
 Tom decided all six on 2026-10-08, each as recommended in the table below, plus mDNS discovery with
 6-digit code pairing. ADR 0039 records event identity and the merge. It replaces the "Event
 identity" bullet below: a peer's events go into their own table, every key keeps its spelling, and
-copies of one fact fold when a day is read. Slice 1 is in progress.
+copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repoKeyOf`). Next: slice 2.
 
 ## What made 2026-10-08 look wrong on this PC
 
@@ -62,7 +62,8 @@ copies of one fact fold when a day is read. Slice 1 is in progress.
 ## Proposed slice order
 
 0. Bugs a-e (S-M, 2-3 d).
-1. ADR + migration 20: event identity, dedupe policy, canonical repo key (S, 1-2 d).
+1. Done. ADR 0039 + migration 20 (machine id, change counter, tombstones, `received_event`,
+   `peer_cursor`) + `repoKeyOf`. The read fold and the stream key change wait for slice 4.
 2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d).
 3. Read-only overlay, the first user value: the peer sends presence and attendance intervals, booked
    rows and stream labels. "Nobody was here" becomes "Worked on MacBook". No row changes (S-M, 2-3 d).
