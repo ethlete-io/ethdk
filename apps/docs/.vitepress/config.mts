@@ -26,6 +26,7 @@ export default defineConfig({
       { text: 'CDK', link: '/cdk/' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Agent Rules', link: '/agent-rules/' },
+      { text: 'Timetrack', link: '/timetrack/' },
     ],
 
     sidebar: {
@@ -65,6 +66,15 @@ export default defineConfig({
             { text: 'Git host tokens', link: '/cli/auth' },
             { text: 'Updating the SDK', link: '/cli/update' },
             { text: 'Local config', link: '/cli/config' },
+          ],
+        },
+      ],
+      '/timetrack/': [
+        {
+          text: 'Timetrack',
+          items: [
+            { text: 'Overview', link: '/timetrack/' },
+            { text: 'Privacy policy', link: '/timetrack/privacy' },
           ],
         },
       ],
