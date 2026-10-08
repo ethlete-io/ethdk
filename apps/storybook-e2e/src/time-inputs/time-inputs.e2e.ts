@@ -1,5 +1,14 @@
 import { Page, expect, test } from '@playwright/test';
-import { clickRing, expectFieldFocusVisible, expectFocusVisible, openStory, pressKey, tap, tapRing } from '../support';
+import {
+  boxOf,
+  clickRing,
+  expectFieldFocusVisible,
+  expectFocusVisible,
+  openStory,
+  pressKey,
+  tap,
+  tapRing,
+} from '../support';
 
 const TIME_INPUT_DEFAULT = 'components-forms-time-input--default';
 const TIME_INPUT_PREFILLED = 'components-forms-time-input--prefilled';
@@ -306,6 +315,49 @@ test.describe('time-inputs / time-range-input keyboard', () => {
 
     await start.pressSequentially('0930');
     await expect(start).toHaveValue('09:30');
+  });
+});
+
+test.describe('time-inputs / time-range-input dial size', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: anchored panel');
+
+  test('the panel and the dial keep one size for every duration and with or without the subline', async ({ page }) => {
+    const root = await openStory(page, TIME_RANGE_DEFAULT);
+    const fields = root.locator('.et-time-range-input-field');
+    const ring = page.locator(RING);
+    const panel = page.locator('.et-date-picker-panel');
+    const body = page.locator('.et-date-picker-panel-body');
+    const readout = page.locator('.et-time-picker-readout');
+    const note = page.locator('.et-time-picker-note');
+
+    await root.locator('.et-input-picker-trigger').click();
+    await expect(ring).toBeVisible();
+    await waitForPickerEntered(page);
+
+    const sizes = new Set<string>();
+
+    for (const [start, end, duration, subline] of [
+      ['9:45 PM', '8:25 AM', '10 h 40 min', 'ends next day'],
+      ['10:00 PM', '4:45 AM', '6 h 45 min', 'ends next day'],
+      ['9:00 AM', '5:30 PM', '8 h 30 min', null],
+      ['12:00 AM', '11:55 PM', '23 h 55 min', null],
+      ['6:00 AM', '6:05 AM', '5 min', null],
+    ]) {
+      for (const [index, value] of [start, end].entries()) {
+        await fields.nth(index).fill('');
+        await fields.nth(index).pressSequentially(value ?? '');
+        await pressKey(page, 'Tab');
+      }
+
+      await expect(readout).toHaveText(duration ?? '');
+      await expect(note).toHaveCount(subline === null ? 0 : 1);
+
+      const [panelBox, ringBox, bodyBox] = await Promise.all([boxOf(panel), boxOf(ring), boxOf(body)]);
+      sizes.add(`${panelBox.width}x${panelBox.height} ${ringBox.width}x${ringBox.height}`);
+      expect(bodyBox.height).toBe(ringBox.height);
+    }
+
+    expect([...sizes]).toHaveLength(1);
   });
 });
 

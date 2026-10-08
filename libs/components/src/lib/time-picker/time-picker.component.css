@@ -13,6 +13,7 @@
 
   .et-time-picker {
     display: inline-flex;
+    vertical-align: top;
     flex-direction: column;
     align-items: center;
     justify-content: center;
