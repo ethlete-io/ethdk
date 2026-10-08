@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, effect, input, output } from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, input, output, signal } from '@angular/core';
 import {
   BADGE_IMPORTS,
   BANNER_IMPORTS,
@@ -10,15 +10,14 @@ import {
   SpinnerComponent,
 } from '@ethlete/components';
 import { TimetrackGoogleSettings } from '@ethlete/timetrack';
-import { injectGoogleAccount } from '../google';
+import { googleConnectionState, injectGoogleAccount } from '../google';
 import { TokenFieldComponent } from './token-field.component';
 
 /**
- * The Google account, from the client the user registered to the calendars they count as work.
+ * The Google account, from the OAuth client to the calendars the user counts as work.
  *
- * Every user brings their own OAuth client, which is why the id and the secret are fields rather than
- * something the app ships: an app-wide client would put every user's calendar behind one quota and one
- * consent screen, and Google's verification asks for a privacy policy this app has no use for.
+ * A build with a shared client needs only Connect. The user's own client is an override behind a
+ * toggle, and wins over the shared one once set.
  */
 @Component({
   selector: 'ethlete-google-connection',
@@ -36,35 +35,64 @@ import { TokenFieldComponent } from './token-field.component';
 
       <p class="text-small text-et-surface-muted">
         A calendar names a meeting and gives its time. It does not decide that one was held — Google writes a Meet link
-        for a call held somewhere else. Register an OAuth client of type <em>Desktop app</em> in your own Google Cloud
-        project, then add yourself as a test user — Google shows an unverified-app warning until you do.
+        for a call held somewhere else.
+        @if (!account.hasBuiltInClient()) {
+          Register an OAuth client of type <em>Desktop app</em> in your own Google Cloud project, then add yourself as a
+          test user — Google shows an unverified-app warning until you do.
+        }
       </p>
+
+      @if (state() === 'reconnect') {
+        <et-banner
+          description="Google no longer accepts the saved access. It was revoked or has expired."
+          heading="Reconnect Google Calendar"
+          type="warning"
+        />
+
+        <div>
+          <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
+            Reconnect Google Calendar
+          </button>
+        </div>
+      }
 
       @if (account.failure(); as failure) {
         <et-banner [description]="failure" [heading]="failureHeading()" type="error" />
       }
 
-      <et-form-field class="min-w-60" appearance="underline" size="sm">
-        <et-label>Client id</et-label>
-        <et-input
-          [value]="settings().clientId"
-          (valueChange)="setClientId($event)"
-          placeholder="000000000000-abc.apps.googleusercontent.com"
-        />
-      </et-form-field>
+      @if (ownClientOffered()) {
+        <div>
+          <button (click)="ownClientOpen.set(!ownClientOpen())" et-button variant="transparent" size="sm">
+            {{ ownClientVisible() ? 'Hide your own OAuth client' : 'Use your own OAuth client' }}
+          </button>
+        </div>
+      }
 
-      <ethlete-token-field
-        [connected]="hasClientSecret()"
-        (save)="saveClientSecret.emit($event)"
-        (forget)="forgetClientSecret.emit()"
-        provider="Google client secret"
-        forgetLabel="Remove"
-      />
+      @if (ownClientVisible()) {
+        <et-form-field class="min-w-60" appearance="underline" size="sm">
+          <et-label>Client id</et-label>
+          <et-input
+            [value]="settings().clientId"
+            (valueChange)="setClientId($event)"
+            placeholder="000000000000-abc.apps.googleusercontent.com"
+          />
+        </et-form-field>
+
+        <ethlete-token-field
+          [connected]="hasClientSecret()"
+          (save)="saveClientSecret.emit($event)"
+          (forget)="forgetClientSecret.emit()"
+          provider="Google client secret"
+          forgetLabel="Remove"
+        />
+      }
 
       <div class="flex flex-wrap items-center gap-3">
-        <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
-          {{ connected() ? 'Connect again' : 'Connect' }}
-        </button>
+        @if (state() !== 'reconnect') {
+          <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
+            {{ connected() ? 'Connect again' : 'Connect' }}
+          </button>
+        }
 
         @if (connected()) {
           <button [disabled]="account.busy()" (click)="account.disconnect()" et-button variant="transparent" size="sm">
@@ -147,6 +175,24 @@ export class GoogleConnectionComponent {
   public settingsChange = output<TimetrackGoogleSettings>();
   public saveClientSecret = output<string>();
   public forgetClientSecret = output<void>();
+
+  protected ownClientOpen = signal(false);
+
+  private hasOwnClient = computed(() => !!this.settings().clientId.trim() || this.hasClientSecret());
+
+  protected ownClientOffered = computed(() => this.account.hasBuiltInClient() && !this.hasOwnClient());
+
+  protected ownClientVisible = computed(
+    () => !this.account.hasBuiltInClient() || this.ownClientOpen() || this.hasOwnClient(),
+  );
+
+  protected state = computed(() =>
+    googleConnectionState({
+      hasClient: this.account.hasBuiltInClient() || (!!this.settings().clientId.trim() && this.hasClientSecret()),
+      connected: this.connected(),
+      needsReconnect: this.account.needsReconnect(),
+    }),
+  );
 
   protected picked = computed(() => new Set(this.settings().calendarIds));
 

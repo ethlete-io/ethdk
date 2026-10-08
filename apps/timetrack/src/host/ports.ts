@@ -8,6 +8,7 @@ import { TauriCollectionPause, createTauriCollectionPause } from './collection-p
 import { createTauriCoverageStore } from './coverage-store';
 import { TauriEventStore, createTauriEventStore } from './event-store';
 import { TauriGitSource, createTauriGitSource } from './git-source';
+import { TauriGoogleClient, createTauriGoogleClient } from './google-client';
 import { TauriIngestSource, createTauriIngestSource } from './ingest-source';
 import { createTauriLedgerStore } from './ledger-store';
 import { TauriNudge, createTauriNudge } from './nudge';
@@ -37,6 +38,7 @@ export type HostPorts = TimetrackPorts & {
   agentLogs: AgentSessionLogReader;
   codexLogs: AgentSessionLogReader;
   git: TauriGitSource;
+  googleClient: TauriGoogleClient;
   ingest: TauriIngestSource;
   nudge: TauriNudge;
   oauth: TauriOAuth;
@@ -75,6 +77,7 @@ export const createHostPorts = (): HostPorts => {
     agentLogs: createTauriAgentSessionLogReader(),
     codexLogs: createTauriAgentSessionLogReader({ provider: 'codex' }),
     git: createTauriGitSource(),
+    googleClient: createTauriGoogleClient(),
     ingest: createTauriIngestSource(),
     nudge: createTauriNudge(),
     oauth: createTauriOAuth(),

@@ -2,6 +2,7 @@ import { Observable, catchError, combineLatest, finalize, map, of, shareReplay, 
 import { GoogleCalendarCredentials, GoogleCalendarRequestError } from '../google-calendar/client';
 import { TIMETRACK_SECRET_KEYS } from '../settings/credentials';
 import { TimetrackSecretStore, TimetrackTransport } from '../transport/ports';
+import { selectGoogleClient } from './client';
 import { GoogleOAuthClient, GoogleTokenGrant, refreshGoogleAccessToken$ } from './tokens';
 
 /**
@@ -32,6 +33,8 @@ export const createGoogleTokenSource = (options: {
   secrets: TimetrackSecretStore;
   /** The client id from the settings document. Read per call, so connecting takes effect at once. */
   clientId: () => string;
+  /** The client the build carries. It is used while the user has not set a complete client of their own. */
+  builtInClient?: () => GoogleOAuthClient | null;
   now: () => number;
 }): GoogleTokenSource => {
   let held: { accessToken: string; expiresAtMs: number } | null = null;
@@ -54,13 +57,15 @@ export const createGoogleTokenSource = (options: {
     const startedAt = generation;
     const shared$: Observable<GoogleCalendarCredentials | null> = stored$().pipe(
       switchMap(({ clientSecret, refreshToken }) => {
-        const client: GoogleOAuthClient = {
-          clientId: options.clientId().trim(),
-          clientSecret: clientSecret?.trim() ?? '',
-        };
+        const choice = selectGoogleClient({
+          own: { clientId: options.clientId(), clientSecret: clientSecret ?? '' },
+          builtIn: options.builtInClient?.() ?? null,
+        });
 
         if (generation !== startedAt) return of(null);
-        if (!client.clientId || !client.clientSecret || !refreshToken?.trim()) return of(null);
+        if (choice.source === 'none' || !refreshToken?.trim()) return of(null);
+
+        const client = choice.client;
 
         return refreshGoogleAccessToken$({
           transport: options.transport,

@@ -33,10 +33,12 @@ export type TimetrackCredentialStatus = {
 export const timetrackCredentialStatus = (options: {
   held: TimetrackCredentialStatus;
   settings: TimetrackSettings;
+  /** Whether the build carries a Google client, which stands in for the client id in the settings. */
+  builtInGoogleClient?: boolean;
 }): TimetrackCredentialStatus => ({
   jira: options.held.jira && !!options.settings.jira.host && !!options.settings.jira.email,
   tempo: options.held.tempo,
-  google: options.held.google && !!options.settings.google.clientId,
+  google: options.held.google && (!!options.settings.google.clientId || !!options.builtInGoogleClient),
   gitlab: options.held.gitlab && !!options.settings.gitlab.host,
 });
 

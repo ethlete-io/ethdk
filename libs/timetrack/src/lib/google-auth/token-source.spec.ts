@@ -54,6 +54,20 @@ describe('createGoogleTokenSource', () => {
     expect(tokenOf(sourceWith({}).credentials$())).toEqual({ accessToken: 'ya29.first' });
   });
 
+  it('renews through the built-in client when the user set no client of their own', () => {
+    const transport = granting('ya29.built-in');
+    const source = createGoogleTokenSource({
+      transport,
+      secrets: secretsHolding({ [TIMETRACK_SECRET_KEYS.googleRefreshToken]: '1//refresh' }),
+      clientId: () => '',
+      builtInClient: () => ({ clientId: 'shared.apps.googleusercontent.com', clientSecret: 'shared' }),
+      now: () => 0,
+    });
+
+    expect(tokenOf(source.credentials$())).toEqual({ accessToken: 'ya29.built-in' });
+    expect(JSON.stringify(vi.mocked(transport.request$).mock.calls[0])).toContain('shared.apps.googleusercontent.com');
+  });
+
   it('answers null when nothing is connected, rather than failing', () => {
     const source = sourceWith({ secrets: secretsHolding({}) });
 

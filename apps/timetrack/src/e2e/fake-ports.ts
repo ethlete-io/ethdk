@@ -469,6 +469,8 @@ export const createFakePorts = (): HostPorts => {
       notify$: () => done(),
     },
 
+    googleClient: { builtIn$: () => ok(null) },
+
     oauth: { authorize$: () => ok({ code: 'e2e', redirectUri: 'http://localhost', codeVerifier: 'e2e' }) },
 
     // The one fake store that outlives a reload, so a spec can see the Sync view read it back.

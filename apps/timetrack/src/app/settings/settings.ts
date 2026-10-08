@@ -81,6 +81,7 @@ import {
   tap,
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
+import { injectBuiltInGoogleClient } from '../google/built-in-client';
 
 /** How long an edit settles before the settings document is written. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -115,6 +116,7 @@ const sameRule = (a: TimetrackExclusionRule, b: TimetrackExclusionRule) =>
  */
 const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const builtInGoogleClient = injectBuiltInGoogleClient();
   const destroyRef = inject(DestroyRef);
 
   const local = signal<TimetrackSettings | null>(null);
@@ -204,7 +206,9 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     settings,
     isLoading,
     failure: failure.asReadonly(),
-    credentials: computed(() => timetrackCredentialStatus({ held: held(), settings: settings() })),
+    credentials: computed(() =>
+      timetrackCredentialStatus({ held: held(), settings: settings(), builtInGoogleClient: !!builtInGoogleClient() }),
+    ),
     hasGoogleClientSecret: computed(() => held().googleClientSecret),
 
     /**

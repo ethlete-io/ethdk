@@ -1,4 +1,4 @@
-import { DestroyRef, inject, signal } from '@angular/core';
+import { DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
@@ -14,6 +14,7 @@ import {
   fetchGoogleCalendarList$,
   googleAuthorizationQuery,
   revokeGoogleToken$,
+  selectGoogleClient,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -29,6 +30,7 @@ import {
   throwError,
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
+import { injectBuiltInGoogleClient } from './built-in-client';
 import { injectTimetrackSettings } from '../settings/settings';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -37,6 +39,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  * The Google account meetings are read from: connecting it, dropping it, and handing out the access
  * token everything else needs.
  *
+ * The OAuth client is the user's own when they set one, and the one the build carries otherwise.
+ *
  * The connect step is the one flow in the app that leaves the window entirely — the host opens a
  * browser and listens on a loopback port, because that is what Google's rules for an installed
  * application allow. `exhaustMap` is what stops a second click opening a second browser.
@@ -44,6 +48,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
+  const builtIn = injectBuiltInGoogleClient();
   const destroyRef = inject(DestroyRef);
 
   const busy = signal(false);
@@ -57,21 +62,23 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     transport: ports.transport,
     secrets: ports.secrets,
     clientId: () => settings.settings().google.clientId,
+    builtInClient: builtIn,
     now: () => Date.now(),
   });
 
   const client$ = (): Observable<GoogleOAuthClient> =>
     ports.secrets.read$(TIMETRACK_SECRET_KEYS.googleClientSecret).pipe(
       switchMap((stored) => {
-        const client = {
-          clientId: settings.settings().google.clientId.trim(),
-          clientSecret: stored?.trim() ?? '',
-        };
+        const choice = selectGoogleClient({
+          own: { clientId: settings.settings().google.clientId, clientSecret: stored ?? '' },
+          builtIn: builtIn(),
+        });
 
-        if (!client.clientId) throw new Error('Name the OAuth client id before connecting the account.');
-        if (!client.clientSecret) throw new Error('Store the OAuth client secret before connecting the account.');
+        if (choice.source === 'none') {
+          throw new Error('Name the OAuth client id and store its secret before connecting the account.');
+        }
 
-        return of(client);
+        return of(choice.client);
       }),
     );
 
@@ -198,6 +205,8 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   return {
     busy: busy.asReadonly(),
+    /** Whether the build carries a shared OAuth client, so the user need not register one. */
+    hasBuiltInClient: computed(() => !!builtIn()),
     failure: failure.asReadonly(),
     /** The account's calendars, or `null` until they have been asked for. */
     calendars: calendars.asReadonly(),

@@ -91,6 +91,15 @@ describe('timetrackCredentialStatus', () => {
     });
   });
 
+  it('counts Google as configured through the built-in client when no client id is set', () => {
+    const held = { jira: false, tempo: false, google: true, gitlab: false };
+
+    expect(
+      timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS, builtInGoogleClient: true }).google,
+    ).toBe(true);
+    expect(timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS }).google).toBe(false);
+  });
+
   it('reports nothing as configured while the keychain holds no token', () => {
     const held = { jira: false, tempo: false, google: false, gitlab: false };
 
