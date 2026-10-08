@@ -44,7 +44,13 @@ type StoredReceivedEvent = StoredEvent & { machineId: string; label: string };
 type StoredReceivedRange = {
   events: StoredReceivedEvent[];
   repoKeys: { machineId: string; path: string; key: string }[];
+  ownRepoKeys: { path: string; key: string }[];
 };
+
+/** A range's received events with each paired machine's checkout keys, and this machine's own. */
+export type HostReceivedRange = ReceivedRange & { ownRepoKeys: CheckoutKeys };
+
+export const NOTHING_RECEIVED: HostReceivedRange = { events: [], repoKeys: {}, ownRepoKeys: {} };
 
 export type TauriPeers = {
   list$(): Observable<PairedMachine[]>;
@@ -56,7 +62,7 @@ export type TauriPeers = {
   /** An empty name clears it, so the machine reads under its host name again. */
   rename$(machineId: string, name: string): Observable<boolean>;
   /** The events the paired machines collected in `[from, to)`. A forgotten machine's are left out. */
-  receivedBetween$(from: Date, to: Date): Observable<ReceivedRange>;
+  receivedBetween$(from: Date, to: Date): Observable<HostReceivedRange>;
   /** Replaces this machine's checkout keys, which every pull from here carries to the paired machine. */
   setRepoKeys$(keys: CheckoutKeys): Observable<void>;
 };
@@ -82,6 +88,7 @@ export const createTauriPeers = (): TauriPeers => ({
 
           return byMachine;
         }, {}),
+        ownRepoKeys: Object.fromEntries(stored.ownRepoKeys.map((row) => [row.path, row.key])),
       })),
     ),
   setRepoKeys$: (keys) =>

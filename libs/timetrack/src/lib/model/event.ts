@@ -333,6 +333,9 @@ export type EventOrigin = 'local' | { machineId: string; machineName: string };
 
 export type OriginEvent = CollectedEvent & { origin: EventOrigin };
 
+/** Whether this machine collected the event: a plain `CollectedEvent`, or an `OriginEvent` of origin `local`. */
+export const isLocalEvent = (event: CollectedEvent | OriginEvent) => !('origin' in event) || event.origin === 'local';
+
 /** Events that describe what the machine was doing, as opposed to what a calendar or an API claims. */
 export type ActivityEvent =
   | WindowFocusEvent

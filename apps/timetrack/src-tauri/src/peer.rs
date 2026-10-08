@@ -609,6 +609,7 @@ pub struct PeerRepoKey {
 pub struct ReceivedRange {
     pub events: Vec<ReceivedEvent>,
     pub repo_keys: Vec<PeerRepoKey>,
+    pub own_repo_keys: Vec<RepoKey>,
 }
 
 #[derive(Serialize, Debug)]
@@ -1535,6 +1536,7 @@ impl Peers {
                 Ok(ReceivedRange {
                     events: received_in(connection, from_ms, to_ms)?,
                     repo_keys: peer_repo_keys(connection)?,
+                    own_repo_keys: own_repo_keys(connection)?,
                 })
             })
             .await
@@ -2349,6 +2351,13 @@ mod tests {
             ]
         );
         assert!(a.received_between(0, 1).await.unwrap().repo_keys.is_empty());
+        assert_eq!(
+            a.received_between(0, 1).await.unwrap().own_repo_keys,
+            vec![
+                repo_key("/home/tom/dev/notes", "notes"),
+                repo_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk")
+            ]
+        );
 
         a.set_repo_keys(vec![repo_key("/home/tom/dev/sdk", "gitlab.com/ethlete/sdk")])
             .await
@@ -2466,7 +2475,7 @@ mod tests {
             b.answer(&serde_json::json!({ "op": "peers.received", "fromMs": 0, "toMs": 1 }))
                 .await
                 .unwrap(),
-            serde_json::json!({ "events": [], "repoKeys": [] })
+            serde_json::json!({ "events": [], "repoKeys": [], "ownRepoKeys": [] })
         );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.rename", "machineId": id, "name": "Desk" }))

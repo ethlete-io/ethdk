@@ -8,6 +8,7 @@ import {
   CollectedEvent,
   CollectedEventSource,
   GitCommitEvent,
+  OriginEvent,
   TIMETRACK_PROVIDER,
   TokenUsage,
   isActivityEvent,
@@ -18,6 +19,7 @@ import { TimetrackProjectLink, matchProjectLink } from '../model/project-link';
 import { TimeWindow, clipWindows, mergeWindows, subtractWindows, windowsMs } from '../model/time-window';
 import { TimetrackProjectRoots, workPathsOf, workPathsSplit } from '../model/work-path';
 import { BuildRowsOptions, DayRows, buildRows } from '../rows/build-rows';
+import { BookedRemoteWindow } from '../rows/remote-booking';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
 import { BreakWindow, bookedRemoteWindows, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
@@ -27,6 +29,7 @@ import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
 import { sessionWork } from './session-work';
 import { fileAgentEventsByWork } from './worked-in';
+import { receivedEventsOf } from './merge-day-events';
 import { namedWorkFileOf, sessionPieces } from '../model/session-piece';
 
 /** The key of the one line every application with no checkout folds into. */
@@ -137,7 +140,7 @@ export type StreamDayOptions = {
    * project links and already classified the day's calls, and a second copy of either would let the
    * streams and the rows disagree about a minute neither is wrong about.
    */
-  rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
+  rows?: Omit<BuildRowsOptions, 'links' | 'calls' | 'peerLanes'>;
 };
 
 export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
@@ -306,6 +309,11 @@ export type StreamDay = {
    * of presence that no checkout booked should read as.
    */
   calls: CallWindow[];
+  /**
+   * Each paired machine's blocks by `streamKey`, keyed by machine id. Empty on a day only this machine
+   * collected.
+   */
+  peerLanes: Readonly<Record<string, Readonly<Record<string, readonly TimeWindow[]>>>>;
 };
 
 /**
@@ -1028,22 +1036,20 @@ const spendOnlyStreams = (options: {
   return [...drafts.values()].map((draft) => draft.stream);
 };
 
-/**
- * What a local day was worked on, for how long, and what the agents spent on it.
- *
- * Pure: it reads no clock and no network, so replaying a stored day gives the same answer it did on the
- * day itself. It attributes nothing to an issue, rounds nothing and merges nothing — one line is one
- * context, so where a line is wrong, exactly one thing can be wrong with it.
- *
- * The focused window is exclusive: its time goes to the checkout its title names, else to the one
- * checkout an event named inside `repoStickinessMs`, else to the folded line. An agent session is not,
- * so a checkout an agent ran in books its time whether or not a window ever showed it.
- */
-export const streamDay = (options: {
+/** One machine's day before its rows are built, with what the rows are built from. */
+type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes'> & {
   events: readonly CollectedEvent[];
-  options?: Partial<StreamDayOptions>;
-}): StreamDay => {
-  const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
+  seen: TimeWindow[];
+  rebuiltWindows: TimeWindow[];
+  gaps: TimeWindow[];
+  remoteWork: TimeWindow[];
+  bookedRemote: BookedRemoteWindow[];
+  focusMsByStream: Record<string, number>;
+  focusByStream: Record<string, TimeWindow[]>;
+};
+
+const streamOrigin = (options: { events: readonly CollectedEvent[]; config: StreamDayOptions }): OriginDay => {
+  const { config } = options;
   const roots = config.repoRoots ?? [];
   const links = config.links ?? [];
   const events = fileAgentEventsByWork({ events: options.events, roots });
@@ -1687,19 +1693,6 @@ export const streamDay = (options: {
 
   for (const key of Object.keys(focusByStream)) focusByStream[key] = mergeWindows(focusByStream[key] ?? []);
 
-  const rows = buildRows({
-    ...config.rows,
-    blocks,
-    events,
-    links,
-    calls,
-    breaks,
-    gaps,
-    remoteWork: remoteWorkWindows(remoteOptions),
-    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts }),
-    cut: { ...config.rows?.cut, focusMsByStream, focusByStream },
-  });
-
   const presenceMs = windowsMs(presence);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
 
@@ -1712,7 +1705,6 @@ export const streamDay = (options: {
     unnamedFocus,
     namedApps: [...namedApps].sort(),
     blocks,
-    rows,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     breaks,
     breakMs: breakMs(breaks),
@@ -1725,5 +1717,294 @@ export const streamDay = (options: {
     ownSpend,
     ambiguousNames: [...claimedAmbiguously],
     calls,
+    events,
+    seen,
+    rebuiltWindows: rebuilt,
+    gaps,
+    remoteWork: remoteWorkWindows(remoteOptions),
+    bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts }),
+    focusMsByStream,
+    focusByStream,
+  };
+};
+
+const originIdOf = (event: CollectedEvent | OriginEvent) =>
+  'origin' in event && event.origin !== 'local' ? event.origin.machineId : 'local';
+
+const addSpendOf = (into: StreamSpend, from: StreamSpend) => {
+  into.usage.input += from.usage.input;
+  into.usage.output += from.usage.output;
+  into.usage.cacheWrite += from.usage.cacheWrite;
+  into.usage.cacheRead += from.usage.cacheRead;
+  into.usage.thinking += from.usage.thinking;
+  into.turns += from.turns;
+
+  for (const model of from.models) if (!into.models.includes(model)) into.models.push(model);
+};
+
+const totalSpend = (spends: readonly StreamSpend[]) => {
+  const total = emptySpend();
+
+  for (const spend of spends) addSpendOf(total, spend);
+
+  return total;
+};
+
+const union = <T>(lists: readonly (readonly T[])[]) => [...new Set(lists.flat())];
+
+const mergeStreams = (streams: readonly Stream[]): Stream[] => {
+  const byKey = new Map<string, Stream[]>();
+
+  for (const stream of streams) byKey.set(stream.key, [...(byKey.get(stream.key) ?? []), stream]);
+
+  return [...byKey.values()]
+    .map((held): Stream => {
+      const [first, ...rest] = held as [Stream, ...Stream[]];
+
+      if (!rest.length) return first;
+
+      const evidence = held.flatMap((stream) => stream.evidence).sort((a, b) => a.at.getTime() - b.at.getTime());
+
+      return {
+        key: first.key,
+        repoPath: first.repoPath,
+        apps: union(held.map((stream) => stream.apps)),
+        branches: union(held.map((stream) => stream.branches)),
+        agentSessions: held.reduce((sum, stream) => sum + stream.agentSessions, 0),
+        blocks: held
+          .flatMap((stream) => stream.blocks)
+          .sort((a, b) => a.from.getTime() - b.from.getTime() || a.to.getTime() - b.to.getTime()),
+        from: new Date(Math.min(...held.map((stream) => stream.from.getTime()))),
+        to: new Date(Math.max(...held.map((stream) => stream.to.getTime()))),
+        engagedMs: held.reduce((sum, stream) => sum + stream.engagedMs, 0),
+        unattendedMs: held.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+        neverFocused: held.every((stream) => stream.neverFocused),
+        rebuiltMs: held.reduce((sum, stream) => sum + stream.rebuiltMs, 0),
+        spend: totalSpend(held.map((stream) => stream.spend)),
+        evidence: evidence.slice(0, MAX_EVIDENCE_PER_STREAM),
+        evidenceOmitted:
+          held.reduce((sum, stream) => sum + stream.evidenceOmitted, 0) +
+          Math.max(0, evidence.length - MAX_EVIDENCE_PER_STREAM),
+      };
+    })
+    .sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
+};
+
+const mergeUnnamedFocus = (rows: readonly UnnamedFocus[]): UnnamedFocus[] => {
+  const byApp = new Map<string, UnnamedFocus[]>();
+
+  for (const row of rows) {
+    const key = `${row.appId ?? ''}\u0000${row.reason}`;
+
+    byApp.set(key, [...(byApp.get(key) ?? []), row]);
+  }
+
+  return [...byApp.values()]
+    .map(([first, ...rest]) =>
+      rest.length && first
+        ? {
+            ...first,
+            ms: [first, ...rest].reduce((sum, row) => sum + row.ms, 0),
+            titles: mergeUnnamedTitles([first, ...rest].map((row) => row.titles)),
+          }
+        : (first as UnnamedFocus),
+    )
+    .sort((a, b) => b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? ''));
+};
+
+/** The part of each machine's windows no other machine's presence covers, so every machine was away. */
+const awayEverywhere = <T extends TimeWindow>(options: {
+  days: readonly OriginDay[];
+  windowsOf: (day: OriginDay) => readonly T[];
+}) =>
+  options.days.flatMap((day) => {
+    const elsewhere = mergeWindows(options.days.filter((other) => other !== day).flatMap((other) => other.presence));
+
+    return options
+      .windowsOf(day)
+      .flatMap((window) =>
+        subtractWindows({ windows: [window], without: elsewhere }).map((part) => ({ ...window, ...part })),
+      );
+  });
+
+const mergeBreaks = (breaks: readonly BreakWindow[]): BreakWindow[] =>
+  breaks
+    .slice()
+    .sort((a, b) => a.from.getTime() - b.from.getTime())
+    .reduce<BreakWindow[]>((merged, window) => {
+      const last = merged[merged.length - 1];
+
+      if (last && window.from.getTime() <= last.to.getTime()) {
+        merged[merged.length - 1] = {
+          from: last.from,
+          to: new Date(Math.max(last.to.getTime(), window.to.getTime())),
+          locked: last.locked || window.locked,
+        };
+      } else merged.push(window);
+
+      return merged;
+    }, []);
+
+const lanesOf = (blocks: readonly ActivityBlock[]) => {
+  const lanes: Record<string, TimeWindow[]> = {};
+
+  for (const block of blocks) (lanes[streamKey(block.context)] ??= []).push({ from: block.from, to: block.to });
+  for (const key of Object.keys(lanes)) lanes[key] = mergeWindows(lanes[key] ?? []);
+
+  return lanes;
+};
+
+const rowsOf = (options: {
+  day: OriginDay;
+  config: StreamDayOptions;
+  events: readonly CollectedEvent[];
+  peerLanes?: StreamDay['peerLanes'];
+}) => {
+  const { day, config } = options;
+
+  return buildRows({
+    ...config.rows,
+    blocks: day.blocks,
+    events: options.events,
+    links: config.links ?? [],
+    calls: day.calls,
+    breaks: day.breaks,
+    gaps: day.gaps,
+    remoteWork: day.remoteWork,
+    bookedRemote: day.bookedRemote,
+    cut: { ...config.rows?.cut, focusMsByStream: day.focusMsByStream, focusByStream: day.focusByStream },
+    ...(options.peerLanes ? { peerLanes: options.peerLanes } : {}),
+  });
+};
+
+const publicDayOf = (day: OriginDay): Omit<StreamDay, 'rows' | 'peerLanes'> => {
+  const {
+    events: _events,
+    seen: _seen,
+    rebuiltWindows: _rebuilt,
+    gaps: _gaps,
+    remoteWork: _remoteWork,
+    bookedRemote: _bookedRemote,
+    focusMsByStream: _focusMs,
+    focusByStream: _focus,
+    ...shown
+  } = day;
+
+  return shown;
+};
+
+const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => {
+  const presence = mergeWindows(days.flatMap((day) => day.presence));
+  const presenceMs = windowsMs(presence);
+  const seen = mergeWindows(days.flatMap((day) => day.seen));
+  const rebuilt = subtractWindows({ windows: mergeWindows(days.flatMap((day) => day.rebuiltWindows)), without: seen });
+  const streams = mergeStreams(days.flatMap((day) => day.streams));
+  const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
+  const breaks = mergeBreaks(awayEverywhere({ days, windowsOf: (day) => day.breaks }));
+  const blocks = blocksFromSpans({
+    spans: days.flatMap((day) => day.blocks),
+    observations: days.flatMap((day) =>
+      day.blocks.flatMap((block) =>
+        block.evidence.map((evidence) => ({ at: evidence.at, context: block.context, evidence })),
+      ),
+    ),
+  });
+  const focusMsByStream: Record<string, number> = {};
+  const focusByStream: Record<string, TimeWindow[]> = {};
+
+  for (const day of days) {
+    for (const [key, ms] of Object.entries(day.focusMsByStream))
+      focusMsByStream[key] = (focusMsByStream[key] ?? 0) + ms;
+    for (const [key, windows] of Object.entries(day.focusByStream)) (focusByStream[key] ??= []).push(...windows);
+  }
+
+  for (const key of Object.keys(focusByStream)) focusByStream[key] = mergeWindows(focusByStream[key] ?? []);
+
+  return {
+    presenceMs,
+    presence,
+    engagedMs,
+    concurrency: presenceMs ? engagedMs / presenceMs : 0,
+    focusMs: days.reduce((sum, day) => sum + day.focusMs, 0),
+    unnamedFocus: mergeUnnamedFocus(days.flatMap((day) => day.unnamedFocus)),
+    namedApps: union(days.map((day) => day.namedApps)).sort(),
+    blocks,
+    unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
+    breaks,
+    breakMs: breakMs(breaks),
+    rebuiltMs: windowsMs(rebuilt),
+    streams,
+    spend: totalSpend(days.map((day) => day.spend)),
+    spendTurns: days.flatMap((day) => day.spendTurns),
+    unattributedSpend: totalSpend(days.map((day) => day.unattributedSpend)),
+    unattributedTurns: days.flatMap((day) => day.unattributedTurns),
+    ownSpend: totalSpend(days.map((day) => day.ownSpend)),
+    ambiguousNames: union(days.map((day) => day.ambiguousNames)),
+    calls: days.flatMap((day) => day.calls).sort((a, b) => a.from.getTime() - b.from.getTime()),
+    events: days.flatMap((day) => day.events).sort((a, b) => a.at.getTime() - b.at.getTime()),
+    seen,
+    rebuiltWindows: rebuilt,
+    gaps: mergeWindows(awayEverywhere({ days, windowsOf: (day) => day.gaps })),
+    remoteWork: mergeWindows(days.flatMap((day) => day.remoteWork)),
+    bookedRemote: days.flatMap((day) => day.bookedRemote),
+    focusMsByStream,
+    focusByStream,
+  };
+};
+
+/**
+ * What a local day was worked on, for how long, and what the agents spent on it.
+ *
+ * Pure: it reads no clock and no network, so replaying a stored day gives the same answer it did on the
+ * day itself. It attributes nothing to an issue, rounds nothing and merges nothing — one line is one
+ * context, so where a line is wrong, exactly one thing can be wrong with it.
+ *
+ * A paired machine's events (an `OriginEvent` with a peer `origin`, from `mergeDayEvents`) are read as
+ * that machine's own day: its focus never ends a block here. The blocks of every machine go into one
+ * set of rows, presence is their union, and a break needs every machine away.
+ *
+ * The focused window is exclusive: its time goes to the checkout its title names, else to the one
+ * checkout an event named inside `repoStickinessMs`, else to the folded line. An agent session is not,
+ * so a checkout an agent ran in books its time whether or not a window ever showed it.
+ */
+export const streamDay = (options: {
+  events: readonly (CollectedEvent | OriginEvent)[];
+  options?: Partial<StreamDayOptions>;
+}): StreamDay => {
+  const config = { ...DEFAULT_STREAM_DAY_OPTIONS, ...options.options };
+  const byOrigin = new Map<string, CollectedEvent[]>([['local', []]]);
+
+  for (const event of options.events) {
+    const origin = originIdOf(event);
+
+    byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), event]);
+  }
+
+  const local = streamOrigin({ events: byOrigin.get('local') ?? [], config });
+  const peerConfig: StreamDayOptions = {
+    ...config,
+    windowsSeenThroughMs: undefined,
+    rows: { ...config.rows, pauses: undefined },
+  };
+  const peers = [...byOrigin]
+    .filter(([origin]) => origin !== 'local')
+    .map(([origin, events]) => ({ origin, day: streamOrigin({ events, config: peerConfig }) }));
+
+  if (!peers.length)
+    return { ...publicDayOf(local), rows: rowsOf({ day: local, config, events: local.events }), peerLanes: {} };
+
+  const merged = mergeOrigins([local, ...peers.map((peer) => peer.day)]);
+  const peerLanes = Object.fromEntries(peers.map((peer) => [peer.origin, lanesOf(peer.day.blocks)]));
+  const received = config.rows?.received ?? receivedEventsOf(options.events);
+
+  return {
+    ...publicDayOf(merged),
+    rows: rowsOf({
+      day: merged,
+      config: { ...config, rows: { ...config.rows, received } },
+      events: merged.events,
+      peerLanes,
+    }),
+    peerLanes,
   };
 };

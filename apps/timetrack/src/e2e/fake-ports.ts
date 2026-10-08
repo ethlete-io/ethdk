@@ -643,6 +643,7 @@ export const createFakePorts = (): HostPorts => {
               paired.some((held) => held.machineId === machineId),
             ),
           ),
+          ownRepoKeys: { ...world.peers.ownRepoKeys },
         }),
       setRepoKeys$: (keys) => {
         world.peers.ownRepoKeys = { ...keys };

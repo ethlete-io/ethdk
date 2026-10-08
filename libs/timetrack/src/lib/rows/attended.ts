@@ -1,6 +1,7 @@
 import { CollectedEvent } from '../model/event';
 import { ReceivedEvent } from '../model/received-event';
-import { TimeWindow, mergeWindows } from '../model/time-window';
+import { streamKey } from '../model/block';
+import { TimeWindow, clipWindows, mergeWindows } from '../model/time-window';
 import { WorkGroup } from './merge';
 
 const LEAVING: ReadonlySet<string> = new Set(['idle-start', 'lock']);
@@ -126,6 +127,22 @@ export const peerAttendance = (options: { received: readonly ReceivedEvent[]; gr
     .filter((peer) => peer.at.length);
 };
 
+/** Per `streamKey`, the stretches a person was at a paired machine while that machine worked in the lane. */
+export const attendedLanes = (options: {
+  peers: readonly PeerAttendance[];
+  peerLanes: Readonly<Record<string, Readonly<Record<string, readonly TimeWindow[]>>>>;
+}): Record<string, TimeWindow[]> => {
+  const lanes: Record<string, TimeWindow[]> = {};
+
+  for (const peer of options.peers) {
+    for (const [lane, windows] of Object.entries(options.peerLanes[peer.machineId] ?? {})) {
+      (lanes[lane] ??= []).push(...clipWindows({ windows, within: peer.at }));
+    }
+  }
+
+  return Object.fromEntries(Object.entries(lanes).map(([lane, windows]) => [lane, mergeWindows(windows)]));
+};
+
 /**
  * Marks each group with whether anybody was there for it.
  *
@@ -141,8 +158,9 @@ export const peerAttendance = (options: { received: readonly ReceivedEvent[]; gr
  * A band the user claimed themselves is attended whatever the events say. A timer they started and a
  * call they held are both acts of a person, and neither leaves a window event behind.
  *
- * A band nobody attended here that a person was at a paired machine for stays unattended, and carries
- * that machine's name as `workedOn`.
+ * A band holding a paired machine's own block, while a person was at that machine, is attended. A band
+ * nobody attended here that a person was at a paired machine for, but whose work that machine did not
+ * do, stays unattended and carries that machine's name as `workedOn`.
  */
 export const markAttendance = (options: {
   groups: readonly WorkGroup[];
@@ -150,6 +168,8 @@ export const markAttendance = (options: {
   /** The stretches the user claimed by hand: the runs they timed and the calls a rule counted as work. */
   claimed?: readonly TimeWindow[];
   peers?: readonly PeerAttendance[];
+  /** From `attendedLanes`: a block of a lane in one of these stretches makes its band attended. */
+  lanes?: Readonly<Record<string, readonly TimeWindow[]>>;
 }): WorkGroup[] => {
   const spans = [...options.at, ...(options.claimed ?? [])].map((window) => ({
     from: window.from.getTime(),
@@ -163,6 +183,12 @@ export const markAttendance = (options: {
     const touches = (window: TimeWindow) => window.from.getTime() < to && window.to.getTime() > from;
 
     if (spans.some((span) => span.from < to && span.to > from)) return { ...group, attended: true };
+
+    const elsewhere = group.blocks.some((block) =>
+      options.lanes?.[streamKey(block.context)]?.some((window) => window.from < block.to && window.to > block.from),
+    );
+
+    if (elsewhere) return { ...group, attended: true };
 
     const peer = options.peers?.find((candidate) => candidate.at.some(touches));
 

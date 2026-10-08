@@ -1,7 +1,8 @@
 import { CollectedEvent, EventOrigin, OriginEvent } from '../model/event';
 import { CheckoutKeys, translatePeerPath } from '../model/peer-path';
-import { ReceivedRange } from '../model/received-event';
+import { ReceivedEvent, ReceivedRange } from '../model/received-event';
 import { dedupeKeyOf } from '../store/dedupe';
+import { TimetrackExclusionRule, exclusionFilter } from '../store/exclusion';
 
 const translateEvent = (event: CollectedEvent, translate: (path: string) => string): CollectedEvent => {
   switch (event.kind) {
@@ -53,16 +54,26 @@ const originIdOf = (origin: EventOrigin) => (origin === 'local' ? 'local' : `pee
  * machine that collected it. A peer's paths are mapped onto the local checkout of the same
  * repository. A fact several machines hold counts once, this machine's copy first; a commit a
  * machine pulled rather than wrote stays on that machine as presence at the pull.
+ *
+ * `rules` are this machine's exclusion rules, from `effectiveExclusionRules`. They apply to the
+ * received events whatever the sending machine's rules were.
  */
 export const mergeDayEvents = (options: {
   local: readonly CollectedEvent[];
   received: ReceivedRange;
   keys: CheckoutKeys;
+  rules: readonly TimetrackExclusionRule[];
 }): OriginEvent[] => {
   const { local, received, keys } = options;
+  const allowedBy = exclusionFilter(options.rules);
+  const allowed = received.events.flatMap((entry) => {
+    const event = allowedBy(entry.event);
+
+    return event ? [{ ...entry, event }] : [];
+  });
   const tagged: OriginEvent[] = [
     ...local.map((event) => ({ ...event, origin: 'local' as const })),
-    ...received.events.map(({ machineId, machineName, event }) => {
+    ...allowed.map(({ machineId, machineName, event }) => {
       const peerKeys = received.repoKeys[machineId] ?? {};
       const translated = translateEvent(event, (path) => translatePeerPath({ path, peerKeys, localKeys: keys }));
 
@@ -85,3 +96,13 @@ export const mergeDayEvents = (options: {
 
   return merged.sort((left, right) => left.at.getTime() - right.at.getTime());
 };
+
+/** The events of a merged day that a paired machine collected, as it sent them. */
+export const receivedEventsOf = (events: readonly (CollectedEvent | OriginEvent)[]): ReceivedEvent[] =>
+  events.flatMap((event) => {
+    if (!('origin' in event) || event.origin === 'local') return [];
+
+    const { origin, ...collected } = event;
+
+    return [{ machineId: origin.machineId, machineName: origin.machineName, event: collected as CollectedEvent }];
+  });

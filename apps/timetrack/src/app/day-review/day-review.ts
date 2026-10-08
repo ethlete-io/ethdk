@@ -10,7 +10,6 @@ import {
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
-  ReceivedEvent,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   InferredAttribution,
@@ -29,6 +28,9 @@ import {
   breaksBetweenRows,
   coveredMsOf,
   dayBoundaryOf,
+  effectiveExclusionRules,
+  mergeDayEvents,
+  receivedEventsOf,
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
   gitFlowConfigFor,
@@ -121,7 +123,7 @@ import {
   injectWindowCollector,
 } from '../../collectors';
 import { injectLaneIssueHistory } from '../jira';
-import { injectHostPorts } from '../../host';
+import { HostReceivedRange, NOTHING_RECEIVED, injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
@@ -142,7 +144,7 @@ type Loaded<T> = { key: string; value: T | null; failure: string | null };
 /** One day's raw inputs, loaded together so a half-loaded day is never correlated. */
 type DayEvidence = {
   events: CollectedEvent[];
-  received: ReceivedEvent[];
+  received: HostReceivedRange;
   runs: ClosedTimerRun[];
   pauses: TimeWindow[];
   /** The instant the day is read through, for anything that has to cut off a stretch still open. */
@@ -231,10 +233,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           load$: combineLatest({
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
-            received: ports.peers.receivedBetween$(from, to).pipe(
-              map((range) => range.events),
-              catchError(() => of<ReceivedEvent[]>([])),
-            ),
+            received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
           }).pipe(
             map((loaded) => ({
               ...loaded,
@@ -410,8 +409,20 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],
-    received: evidence()?.received ?? [],
   }));
+
+  const merged = computed(() => {
+    const collected = evidence();
+
+    return collected
+      ? mergeDayEvents({
+          local: collected.events,
+          received: collected.received,
+          keys: collected.received.ownRepoKeys,
+          rules: effectiveExclusionRules(settings.settings()),
+        })
+      : null;
+  });
 
   /**
    * The day as its streams, with no model answer in it: presence, concurrency, spend, the blocks the
@@ -425,9 +436,11 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const collected = evidence();
     const discovery = git.discovery();
 
-    return collected && discovery && !settings.isLoading() && editsReady()
+    const events = merged();
+
+    return collected && events && discovery && !settings.isLoading() && editsReady()
       ? streamDay({
-          events: collected.events,
+          events,
           options: streamDayOptionsOf({
             repoRoots: discovery.repos,
             settings: daySettings(),
@@ -538,14 +551,18 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     if (frozen) return frozen;
     if (!proposed.length) return current.rows;
 
+    const events = merged() ?? collected.events;
+
     return buildRows({
       blocks: current.blocks,
-      events: collected.events,
+      events,
       links: projectLinks(),
       calls: calls(),
       breaks: current.breaks,
       inferred: proposed,
       ...rowOptions(),
+      received: receivedEventsOf(events),
+      peerLanes: current.peerLanes,
     });
   });
 

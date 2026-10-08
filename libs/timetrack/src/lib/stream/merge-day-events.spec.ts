@@ -35,7 +35,7 @@ describe('mergeDayEvents', () => {
   it('tags this machine’s events as local and leaves them as they are', () => {
     const window: CollectedEvent = { at: at(9), source: 'window', kind: 'window-focus', appId: 'code', title: 'x' };
 
-    expect(mergeDayEvents({ local: [window], received: { events: [], repoKeys: {} }, keys })).toEqual([
+    expect(mergeDayEvents({ local: [window], received: { events: [], repoKeys: {} }, keys, rules: [] })).toEqual([
       { ...window, origin: 'local' },
     ]);
   });
@@ -64,6 +64,7 @@ describe('mergeDayEvents', () => {
         },
       ]),
       keys,
+      rules: [],
     });
 
     expect(mergedCommit).toMatchObject({ repoPath: LOCAL_SDK, worktree: `${LOCAL_SDK}/wt`, origin: MAC });
@@ -85,6 +86,7 @@ describe('mergeDayEvents', () => {
         },
       ]),
       keys,
+      rules: [],
     });
 
     expect(heartbeat).toMatchObject({ directory: `${LOCAL_SDK}/docs` });
@@ -95,6 +97,7 @@ describe('mergeDayEvents', () => {
       local: [],
       received: receivedFrom(MAC, [commit({ repoPath: '/Users/tom/code/other' })]),
       keys,
+      rules: [],
     });
 
     expect(merged).toMatchObject({ repoPath: '/Users/tom/code/other' });
@@ -111,7 +114,7 @@ describe('mergeDayEvents', () => {
       accepted: true,
     };
 
-    const merged = mergeDayEvents({ local: [meeting], received: receivedFrom(MAC, [meeting]), keys });
+    const merged = mergeDayEvents({ local: [meeting], received: receivedFrom(MAC, [meeting]), keys, rules: [] });
 
     expect(originsOf(merged)).toEqual(['local']);
   });
@@ -133,6 +136,7 @@ describe('mergeDayEvents', () => {
       local: [],
       received: { events: [...mac.events, ...laptop.events], repoKeys: { ...mac.repoKeys, ...laptop.repoKeys } },
       keys,
+      rules: [],
     });
 
     expect(originsOf(merged)).toEqual(['MacBook']);
@@ -169,7 +173,7 @@ describe('mergeDayEvents', () => {
       },
     ];
 
-    const merged = mergeDayEvents({ local: shared, received: receivedFrom(MAC, shared), keys });
+    const merged = mergeDayEvents({ local: shared, received: receivedFrom(MAC, shared), keys, rules: [] });
 
     expect(merged.map(({ kind }) => kind)).toEqual(['merge-request-activity', 'agent-prompt', 'agent-usage']);
     expect(originsOf(merged)).toEqual(['local', 'local', 'local']);
@@ -187,7 +191,7 @@ describe('mergeDayEvents', () => {
       { at: at(9), source: 'private', kind: 'private-interval' },
     ];
 
-    const merged = mergeDayEvents({ local, received: receivedFrom(MAC, local), keys });
+    const merged = mergeDayEvents({ local, received: receivedFrom(MAC, local), keys, rules: [] });
 
     expect(merged).toHaveLength(local.length * 2);
   });
@@ -197,7 +201,7 @@ describe('mergeDayEvents', () => {
     const written = shas.map((sha, index) => commit({ sha, repoPath: MAC_SDK, at: at(13, 36 + index) }));
     const pulled = shas.map((sha, index) => commit({ sha, at: at(19, 27), authoredAt: at(13, 36 + index) }));
 
-    const merged = mergeDayEvents({ local: pulled, received: receivedFrom(MAC, written), keys });
+    const merged = mergeDayEvents({ local: pulled, received: receivedFrom(MAC, written), keys, rules: [] });
 
     const onMac = merged.filter(({ origin }) => origin !== 'local');
     const onPc = merged.filter(({ origin }) => origin === 'local');
@@ -217,6 +221,7 @@ describe('mergeDayEvents', () => {
       local: [commit()],
       received: receivedFrom(MAC, [commit({ repoPath: MAC_SDK })]),
       keys,
+      rules: [],
     });
 
     expect(originsOf(merged)).toEqual(['local']);
@@ -227,6 +232,7 @@ describe('mergeDayEvents', () => {
       local: [commit(), commit({ repoPath: '/home/tom/dev/ethlete-sdk-2' })],
       received: { events: [], repoKeys: {} },
       keys,
+      rules: [],
     });
 
     expect(merged).toHaveLength(2);
@@ -237,6 +243,7 @@ describe('mergeDayEvents', () => {
       local: [commit({ sha: 'b', at: at(15) })],
       received: receivedFrom(MAC, [commit({ sha: 'a', at: at(14) })]),
       keys,
+      rules: [],
     });
 
     expect(merged.map((event) => event.at.getHours())).toEqual([14, 15]);

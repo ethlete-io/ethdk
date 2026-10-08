@@ -13,8 +13,10 @@ import {
   closeTimerRun,
   coveredMsOf,
   dayBoundaryOf,
+  effectiveExclusionRules,
   localDayKey,
   localDayRange,
+  mergeDayEvents,
   pinnedOntoDay,
   pauseWindows,
   pausedMs,
@@ -25,7 +27,7 @@ import {
   unbranchedCheckouts,
 } from '@ethlete/timetrack';
 import { Observable, catchError, combineLatest, concatMap, defer, map, of } from 'rxjs';
-import { HostPorts } from '../host';
+import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
 
 export type DayRead = {
@@ -85,12 +87,15 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
       edits: ports.review.editsFor$(key),
       runs: ports.timers.runsBetween$(from, to),
       coverage: ports.coverage.forDay$(key),
-      received: ports.peers.receivedBetween$(from, to).pipe(
-        map((range) => range.events),
-        catchError(() => of([])),
-      ),
+      received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
     }).pipe(
       concatMap(({ events, edits, runs, coverage, received }) => {
+        const merged = mergeDayEvents({
+          local: events,
+          received,
+          keys: received.ownRepoKeys,
+          rules: effectiveExclusionRules(settings),
+        });
         const read = () => {
           const at = new Date(Math.min(Date.now(), to.getTime()));
           const pauses = pauseWindows({ events, window: { from, to }, through: at });
@@ -105,9 +110,9 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             headBranches: { ...heads },
             through: at,
             now: at < to ? at : undefined,
-            rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses, received },
+            rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
           });
-          const day = streamDay({ events, options: dayOptions });
+          const day = streamDay({ events: merged, options: dayOptions });
           const reviewWith = (current: DayReviewEdits) =>
             reviewDay({
               rows: day.rows,

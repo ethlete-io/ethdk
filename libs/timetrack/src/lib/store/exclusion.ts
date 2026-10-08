@@ -179,3 +179,22 @@ export const applyExclusionRules = (options: {
 
   return result;
 };
+
+/**
+ * `applyExclusionRules` for one event at a time, compiled once: the event as it may be kept, or
+ * `null` when a rule denies it.
+ */
+export const exclusionFilter = (rules: readonly TimetrackExclusionRule[]) => {
+  const { compiled } = compile([...rules]);
+
+  return <T extends CollectedEvent>(event: T): T | null => {
+    const rule = matching(compiled, event);
+
+    if (!rule) return event;
+    if (event.source !== 'call') return null;
+
+    const { title: _title, ...untitled } = event as T & { title?: string };
+
+    return untitled as T;
+  };
+};
