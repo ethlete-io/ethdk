@@ -120,6 +120,12 @@ export type StreamDayOptions = {
    */
   baseBranches?: readonly string[];
   /**
+   * The branch each checkout was on, read from its reflog, for a checkout the day holds no git event,
+   * editor heartbeat or agent session for. Without it such a checkout's minutes sit on no branch, and
+   * no rule can name them and no placeholder can open for them.
+   */
+  headBranches?: Readonly<Record<string, string>>;
+  /**
    * The projects each checkout declares, which is the grain a work path is cut to. Without them a
    * checkout's own commits decide the grain between them - see `workPathsOf`.
    */
@@ -147,6 +153,10 @@ export type StreamSpend = {
   /** The models the turns ran on, first seen first. */
   models: string[];
 };
+
+/** The checkouts a day's streams name no branch for, which the reflog is asked about. */
+export const unbranchedCheckouts = (streams: readonly Pick<Stream, 'repoPath' | 'branches'>[]) =>
+  streams.flatMap((stream) => (stream.repoPath && !stream.branches.length ? [stream.repoPath] : []));
 
 /** One context's work across one local day. Several streams run at once, and each books its full time. */
 export type Stream = {
@@ -1136,6 +1146,10 @@ export const streamDay = (options: {
    */
   const nested = nestedWorktreesOf({ worktrees: config.rows?.worktrees, roots });
   const branches = firstBranches({ samples, roots, nested });
+
+  for (const [repoPath, branch] of Object.entries(config.headBranches ?? {})) {
+    if (!branches.has(repoPath)) branches.set(repoPath, branchOf(branch));
+  }
   /**
    * The checkouts a directory says the piece of work for, and the branches that cannot say it
    * themselves. A feature branch is one piece of work already, so its directories never split it.

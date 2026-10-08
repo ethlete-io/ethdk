@@ -59,6 +59,7 @@ import {
   pausedMs,
   projectKeyFor,
   readHeadBranches$,
+  unbranchedCheckouts,
   readJiraCredentials$,
   readTempoCredentials$,
   reasoningCandidates,
@@ -134,6 +135,8 @@ import { injectProjectLinks } from '../project-links';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
+
+const NO_HEAD_BRANCHES: Readonly<Record<string, string>> = {};
 
 /** A load tagged with the day it was asked for, so a stale answer is recognised rather than shown. */
 type Loaded<T> = { key: string; value: T | null; failure: string | null };
@@ -423,6 +426,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
+            headBranches: headBranches(),
             now: collected.now,
             rows: rowOptions(),
           }),
@@ -541,28 +545,59 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     if (!current) return null;
 
-    return {
-      at: localDayRange(day(), boundary()).to,
-      repoPaths: current.streams
-        .filter((stream) => !!stream.repoPath && !stream.branches.length)
-        .map((stream) => stream.repoPath as string),
-    };
+    return { day: day(), at: localDayRange(day(), boundary()).to, repoPaths: unbranchedCheckouts(current.streams) };
   });
+
+  const heldHeads = signal<{ day: string; branches: Readonly<Record<string, string>>; asked: ReadonlySet<string> }>({
+    day: '',
+    branches: {},
+    asked: new Set(),
+  });
+
+  /**
+   * Each checkout is asked once per day and the answer is kept: the day is streamed again with it, which
+   * takes the checkout off the unbranched list, and dropping the answer then would stream it branchless
+   * again.
+   */
+  toObservable(unbranched)
+    .pipe(
+      concatMap((ask) =>
+        defer(() => {
+          const held = heldHeads();
+          const asked = held.day === ask?.day ? held.asked : new Set<string>();
+          const missing = ask?.repoPaths.filter((repoPath) => !asked.has(repoPath)) ?? [];
+
+          if (!ask || !missing.length) return EMPTY;
+
+          return readHeadBranches$({ processes: ports.processes, repoPaths: missing, at: ask.at }).pipe(
+            catchError(() => of<Record<string, string>>({})),
+            tap((found) =>
+              heldHeads.update((current) => {
+                const base = current.day === ask.day ? current : { branches: {}, asked: new Set<string>() };
+
+                return {
+                  day: ask.day,
+                  branches: { ...base.branches, ...found },
+                  asked: new Set([...base.asked, ...missing]),
+                };
+              }),
+            ),
+          );
+        }),
+      ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
 
   /**
    * The branch each of those checkouts was on that day, from its reflog. It resolves after the day
    * does, so a slow repository delays the branch on one line and never the day's numbers.
    */
-  const headBranches = toSignal(
-    toObservable(unbranched).pipe(
-      switchMap((ask) =>
-        ask?.repoPaths.length
-          ? readHeadBranches$({ processes: ports.processes, ...ask }).pipe(catchError(() => of({})))
-          : of<Record<string, string>>({}),
-      ),
-    ),
-    { initialValue: {} as Record<string, string> },
-  );
+  const headBranches = computed(() => {
+    const held = heldHeads();
+
+    return held.day === day() ? held.branches : NO_HEAD_BRANCHES;
+  });
 
   const isToday = computed(() => day() === localDayKey(new Date(), boundary()));
 

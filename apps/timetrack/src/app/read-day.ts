@@ -17,11 +17,13 @@ import {
   localDayRange,
   pauseWindows,
   pausedMs,
+  readHeadBranches$,
   reviewDay,
   settingsOnDay,
   streamDay,
+  unbranchedCheckouts,
 } from '@ethlete/timetrack';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable, catchError, combineLatest, concatMap, defer, map, of } from 'rxjs';
 import { HostPorts } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
 
@@ -73,56 +75,79 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
   const boundary = dayBoundaryOf(settings);
   const { from, to } = localDayRange(key, boundary);
 
-  return combineLatest({
-    events: ports.events.eventsBetween$(from, to),
-    edits: ports.review.editsFor$(key),
-    runs: ports.timers.runsBetween$(from, to),
-    coverage: ports.coverage.forDay$(key),
-  }).pipe(
-    map(({ events, edits, runs, coverage }) => {
-      const at = new Date(Math.min(Date.now(), to.getTime()));
-      const pauses = pauseWindows({ events, window: { from, to }, through: at });
-      const dayOptions = streamDayOptionsOf({
-        repoRoots: options.repoRoots,
-        settings,
-        links: options.links,
-        worktrees: options.worktrees,
-        patterns: options.patterns,
-        epics: options.epics,
-        windowsSeenThroughMs: options.windowsSeenThroughMs,
-        through: at,
-        now: at < to ? at : undefined,
-        rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
-      });
-      const day = streamDay({ events, options: dayOptions });
-      const reviewWith = (current: DayReviewEdits) =>
-        reviewDay({
-          rows: day.rows,
-          edits: current,
-          cut: dayOptions.rows?.cut,
-          standIns: settings.standIns,
-          rules: settings.attributionRules,
-          check: {
-            targetMs: settings.dayTargetMs,
-            coveredMs: coveredMsOf(coverage),
-            pausedMs: pausedMs(pauses),
-            ...options.check,
-          },
-        });
-      const stored = edits ?? EMPTY_DAY_REVIEW_EDITS;
+  return defer(() => {
+    const heads: Record<string, string> = {};
+    const asked = new Set<string>();
 
-      return {
-        key,
-        at,
-        events,
-        day,
-        edits: stored,
-        cut: dayOptions.rows?.cut,
-        review: reviewWith(stored),
-        reviewWith,
-      };
-    }),
-  );
+    return combineLatest({
+      events: ports.events.eventsBetween$(from, to),
+      edits: ports.review.editsFor$(key),
+      runs: ports.timers.runsBetween$(from, to),
+      coverage: ports.coverage.forDay$(key),
+    }).pipe(
+      concatMap(({ events, edits, runs, coverage }) => {
+        const read = () => {
+          const at = new Date(Math.min(Date.now(), to.getTime()));
+          const pauses = pauseWindows({ events, window: { from, to }, through: at });
+          const dayOptions = streamDayOptionsOf({
+            repoRoots: options.repoRoots,
+            settings,
+            links: options.links,
+            worktrees: options.worktrees,
+            patterns: options.patterns,
+            epics: options.epics,
+            windowsSeenThroughMs: options.windowsSeenThroughMs,
+            headBranches: { ...heads },
+            through: at,
+            now: at < to ? at : undefined,
+            rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
+          });
+          const day = streamDay({ events, options: dayOptions });
+          const reviewWith = (current: DayReviewEdits) =>
+            reviewDay({
+              rows: day.rows,
+              edits: current,
+              cut: dayOptions.rows?.cut,
+              standIns: settings.standIns,
+              rules: settings.attributionRules,
+              check: {
+                targetMs: settings.dayTargetMs,
+                coveredMs: coveredMsOf(coverage),
+                pausedMs: pausedMs(pauses),
+                ...options.check,
+              },
+            });
+          const stored = edits ?? EMPTY_DAY_REVIEW_EDITS;
+
+          return {
+            key,
+            at,
+            events,
+            day,
+            edits: stored,
+            cut: dayOptions.rows?.cut,
+            review: reviewWith(stored),
+            reviewWith,
+          };
+        };
+        const first = read();
+        const missing = unbranchedCheckouts(first.day.streams).filter((repoPath) => !asked.has(repoPath));
+
+        if (!missing.length) return of(first);
+
+        missing.forEach((repoPath) => asked.add(repoPath));
+
+        return readHeadBranches$({ processes: ports.processes, repoPaths: missing, at: to }).pipe(
+          catchError(() => of<Record<string, string>>({})),
+          map((found) => {
+            Object.assign(heads, found);
+
+            return Object.keys(found).length ? read() : first;
+          }),
+        );
+      }),
+    );
+  });
 };
 
 /**
