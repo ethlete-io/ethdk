@@ -21,6 +21,12 @@ describe('translatePeerPath', () => {
     ).toBe('/home/tom/dev/ethlete-sdk/libs/timetrack/src');
   });
 
+  it('keeps the trailing separator of a directory path', () => {
+    expect(
+      translatePeerPath({ path: '/Users/tom/code/sdk/libs/', peerKeys: { '/Users/tom/code/sdk': SDK }, localKeys }),
+    ).toBe('/home/tom/dev/ethlete-sdk/libs/');
+  });
+
   it('does not take a sibling that only shares a name prefix as under the checkout', () => {
     expect(
       translatePeerPath({ path: '/Users/tom/code/sdk-old/src', peerKeys: { '/Users/tom/code/sdk': SDK }, localKeys }),

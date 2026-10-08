@@ -17,9 +17,9 @@ const separatorOf = (root: string) => (root.includes('\\') && !root.includes('/'
 
 /**
  * Maps a path a paired machine reported onto this machine's checkout with the same repository key,
- * keeping whatever lies below the peer's checkout. A path under no peer checkout, or under one whose
- * key no local checkout has, comes back unchanged. With several local checkouts of one key the
- * shortest path wins.
+ * keeping whatever lies below the peer's checkout, a trailing separator included. A path under no
+ * peer checkout, or under one whose key no local checkout has, comes back unchanged. With several
+ * local checkouts of one key the shortest path wins.
  */
 export const translatePeerPath = (options: { path: string; peerKeys: CheckoutKeys; localKeys: CheckoutKeys }) => {
   const { path, peerKeys, localKeys } = options;
@@ -39,6 +39,7 @@ export const translatePeerPath = (options: { path: string; peerKeys: CheckoutKey
   const root = trimRoot(local);
   const separator = separatorOf(root);
   const rest = peer.rest.split(SEPARATORS).filter(Boolean).join(separator);
+  const trailing = rest && /[\\/]$/.test(peer.rest) ? separator : '';
 
-  return rest ? `${root}${separator}${rest}` : root;
+  return rest ? `${root}${separator}${rest}${trailing}` : root;
 };

@@ -11,7 +11,8 @@ export type CollectedEventSource =
   | 'github'
   | 'editor'
   | 'call'
-  | 'input';
+  | 'input'
+  | 'private';
 
 type CollectedEventBase<TSource extends CollectedEventSource, TKind extends string> = {
   at: Date;
@@ -308,6 +309,9 @@ export type MergeRequestActivityEvent = CollectedEventBase<'gitlab' | 'github', 
   url?: string;
 };
 
+/** An instant a paired machine spent in a private checkout or window, sent with nothing that names it. */
+export type PrivateIntervalEvent = CollectedEventBase<'private', 'private-interval'>;
+
 export type CollectedEvent =
   | WindowFocusEvent
   | PresenceEvent
@@ -321,7 +325,13 @@ export type CollectedEvent =
   | EditorHeartbeatEvent
   | CallEvent
   | CalendarOccurrenceEvent
-  | MergeRequestActivityEvent;
+  | MergeRequestActivityEvent
+  | PrivateIntervalEvent;
+
+/** The machine that collected an event: this one, or a paired machine by its id and paired name. */
+export type EventOrigin = 'local' | { machineId: string; machineName: string };
+
+export type OriginEvent = CollectedEvent & { origin: EventOrigin };
 
 /** Events that describe what the machine was doing, as opposed to what a calendar or an API claims. */
 export type ActivityEvent =
