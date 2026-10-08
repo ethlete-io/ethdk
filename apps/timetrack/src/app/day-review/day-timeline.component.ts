@@ -1063,7 +1063,7 @@ export class DayTimelineComponent {
         return;
       }
 
-      const rowId = reveal ? this.bandApprovals.firstRowOf(reveal.itemId) : null;
+      const rowId = this.bandApprovals.revealRowId();
       const row = rowId ? this.rows().find((entry) => entry.id === rowId) : undefined;
       const band = this.bands()
         .map((entry) => entry.nativeElement)

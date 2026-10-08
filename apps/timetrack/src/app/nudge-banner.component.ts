@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { BUTTON_IMPORTS } from '@ethlete/components';
+import { injectBandApprovals } from './day-review/band-approvals';
 import { injectDayReview } from './day-review/day-review';
 import { injectDayNudge } from './day-nudge';
 
@@ -30,7 +31,7 @@ import { injectDayNudge } from './day-nudge';
               Sync the day
             </a>
           } @else {
-            <a (click)="dayReview.goToDay(pending.day)" routerLink="/day" et-button variant="filled" size="sm">
+            <a (click)="reviewDay(pending.day)" routerLink="/day" et-button variant="filled" size="sm">
               Review the day
             </a>
           }
@@ -46,4 +47,10 @@ import { injectDayNudge } from './day-nudge';
 export class NudgeBannerComponent {
   protected nudge = injectDayNudge();
   protected dayReview = injectDayReview();
+  private bandApprovals = injectBandApprovals();
+
+  protected reviewDay(day: string) {
+    this.dayReview.goToDay(day);
+    this.bandApprovals.revealUndecided();
+  }
 }

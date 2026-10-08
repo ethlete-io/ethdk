@@ -6,8 +6,11 @@ import {
   approvalRowIdsOf,
   autoModeTargetOf,
   disputedTargetLabel,
+  ReviewedRow,
   formatDurationMs,
+  isStandInRow,
   localDayKey,
+  syncsInState,
 } from '@ethlete/timetrack';
 import { injectApprovalQueue } from '../agent/approval-queue';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -39,6 +42,12 @@ export const approvalChipOf = (item: AgentApproval) => {
       return `${who} · ${request.op}`;
   }
 };
+
+/** Whether a row still waits for a yes or a no, as the day reminder counts it. */
+const isUndecidedRow = (row: ReviewedRow) =>
+  row.state !== 'rejected' &&
+  !isStandInRow(row) &&
+  (row.state === 'suggested' || (syncsInState(row.state) && row.durationMs > 0 && !row.issueKey));
 
 /** A `worklog.add` no row of the day holds yet, drawn where the row it adds would land. */
 export type ApprovalPreview = { item: AgentApproval; from: Date; to: Date };
@@ -88,7 +97,21 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return { byRow, previews, unplaced, first };
   });
 
-  const revealing = signal<{ itemId: string; day: string } | null>(null);
+  const revealing = signal<{ itemId: string; day: string } | { undecided: true; day: string } | null>(null);
+
+  const revealRowId = computed(() => {
+    const reveal = revealing();
+
+    if (!reveal) return null;
+    if ('itemId' in reveal) return placed().first.get(reveal.itemId) ?? null;
+
+    const [first] = store
+      .rows()
+      .filter(isUndecidedRow)
+      .sort((a, b) => a.from.getTime() - b.from.getTime());
+
+    return first?.id ?? null;
+  });
 
   const dayOf = (item: AgentApproval) => {
     const { request } = item;
@@ -120,8 +143,12 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return day && day !== store.dayKey() ? day : null;
     },
     revealing: revealing.asReadonly(),
+    /** The band the pending reveal opens, once the day in view draws it. */
+    revealRowId,
     /** Opens the item's band once the day in view draws it. Call it after the day is set. */
     reveal: (itemId: string) => revealing.set({ itemId, day: store.dayKey() }),
+    /** Opens the earliest band still waiting for a yes or a no. Call it after the day is set. */
+    revealUndecided: () => revealing.set({ undecided: true, day: store.dayKey() }),
     revealed: () => revealing.set(null),
     forRow: (rowId: string) => placed().byRow.get(rowId) ?? [],
     previews: computed(() => placed().previews),
