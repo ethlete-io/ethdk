@@ -189,9 +189,13 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      view, the 4b map writer. Tests: parse spec, e2e `project-paths.spec.ts` alias case.
    - 4h. "Changed after booking": a booked (frozen) day whose merged read now differs from
      `frozenRows` shows the note and is not re-cut (decision 4). Files: `day-review.ts`, the day
-     header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case.
+     header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. Tom, 2026-10-09: the
+     frozen day also draws a peer's work as read-only bands labeled "Booked on <machine>", so 10-08
+     shows the MacBook's 13:15-18:00 and not an empty gap.
    - 4i. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
-     work of a day shows as rows on tank, a private checkout arrives as bare intervals only.
+     work of a day shows as rows on tank, Mac lanes map onto the local checkout (the Mac build in use
+     on 2026-10-09 predates 4b, so its rows sit in `repo:/Users/tom/...` lanes), a private checkout
+     shows as a bare interval. Also check that the rebuild asks for no keychain password.
    - Open for Tom. (1) 4b realizes decision 3 by mapping a peer path onto the local checkout of the
      same origin key, so `streamKey` stays `repo:<local path>` and stored lane keys, edits, pins and
      path rules keep working. Spelling `streamKey` as `repo:<origin key>` instead would need a
