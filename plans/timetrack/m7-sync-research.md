@@ -97,13 +97,20 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      tombstone.
      Learned: a missed tombstone (retention) can leave a copy holding a key the peer has moved to a new
      row, so an incoming row evicts any received row of that machine with its `dedupe_key`.
-   - 3b. TS port: `eventsBetween$` gains the received events, each tagged with its machine id and
-     name, and the e2e fake seeds them from `world.peers`.
-   - 3c. Lib: `presenceWindows` per peer from its received events; `markAttendance` takes them as a
-     separate input. A band with no local attendance but peer presence gets the peer's machine name
-     on the group, proposal and `ReviewedRow`; it still books nothing. `unnamedLabelOf` shows
-     "Worked on <machine>". Do not reuse `remoteWork` (it means something else). Unit specs.
-   - 3d. UI + e2e spec for the label; verify between tank and ethlete-mac (one new Mac build, signed
+   - 3b. Done (62554638a). Tauri command `received_between` and agent op `peers.received` read
+     `received_event` for a range, joined to `paired_machine` for the name (a forgotten machine's
+     copies are left out). TS port `peers.receivedBetween$` returns `ReceivedEvent` (machine id, name,
+     event), kept apart from `eventsBetween$` per ADR 0039; the e2e fake seeds `world.peers.received`.
+   - 3c. Done (3507c6d85). `peerAttendance` reads each machine's received events by the same test as
+     `attendedAt` (not `presenceWindows`: attendance is what `markAttendance` compares), and
+     `buildRows({ received })` hands them to `markAttendance` as `peers`. An unattended band a peer
+     covers carries `workedOn` on the group, proposal, `ReviewedRow` and pinned row, still books
+     nothing, and raises no `unattended-time` check. `unnamedLabelOf` shows "Worked on <machine>".
+     Both day readers pass the received events. Unit specs and the e2e spec
+     `worked-on-paired-machine.spec.ts`. Live: tank holds 86,555 events from the MacBook, and no
+     unattended band of 10-02..10-08 lies within the 15 min grace of the Mac's presence, so the
+     snapshot shows no row change.
+   - 3d. The label and its e2e spec landed with 3c. Left: verify between tank and ethlete-mac (one new Mac build, signed
      with `macos-dev-sign.sh`, about 10 password prompts).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
    machines, spend per origin, sender filter (L, 1-2 wk).
