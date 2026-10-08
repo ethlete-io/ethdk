@@ -71,6 +71,12 @@ describe('subagent-model-policy', () => {
     expect(decisionOf({ toolInput: { subagent_type: 'reviewer' }, agentDefinition })).toBeNull();
   });
 
+  it('finds a definition whose file name is capitalized, as a built-in override like Explore.md is', () => {
+    const agentDefinition = { name: 'Explore', contents: '---\nname: Explore\nmodel: haiku\n---\n' };
+
+    expect(decisionOf({ toolInput: { subagent_type: 'Explore' }, agentDefinition })).toBeNull();
+  });
+
   it('still denies an agent definition that declares no model', () => {
     const agentDefinition = { name: 'reviewer', contents: '---\nname: reviewer\n---\n' };
 
