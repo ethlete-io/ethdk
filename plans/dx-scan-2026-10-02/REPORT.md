@@ -5,7 +5,7 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
 ## 1. Human steps
 
 - **FG-02:** retag `@ethlete/components` `latest` on npm. An agent cannot do this.
-- **ea-frontend has uncommitted edits from the agents.** Review them in `~/dev/ea-frontend`, then commit or discard them. `git -C ~/dev/ea-frontend status --short` shows:
+- **ea-frontend has uncommitted edits from the agents.** Review them in `~/dev/fut-frontend`, then commit or discard them. `git -C ~/dev/fut-frontend status --short` shows:
   - `apps/hub/eslint.config.mjs`
   - `libs/domain/hub/eslint.config.mjs`
   - `libs/domain/hub/src/lib/list-view/hub-list-view-saved-views-menu.component.html`
