@@ -33,6 +33,7 @@
     "allow-events-titles-after",
     "allow-git-changes",
     "allow-git-repos",
+    "allow-google-builtin-client",
     "allow-http-request",
     "allow-ingest-events",
     "allow-ingest-status",

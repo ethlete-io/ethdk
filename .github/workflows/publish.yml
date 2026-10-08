@@ -133,6 +133,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ -z "${TIMETRACK_GOOGLE_CLIENT_ID:-}" ] || [ -z "${TIMETRACK_GOOGLE_CLIENT_SECRET:-}" ]; then
+            echo "::warning::TIMETRACK_GOOGLE_CLIENT_ID or TIMETRACK_GOOGLE_CLIENT_SECRET is not set. The build ships no Google client, so every user has to register their own."
+          fi
           if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
             echo "::error::TAURI_SIGNING_PRIVATE_KEY is not set. Run tools/scripts/tauri-updater-key.sh once."
             exit 1
@@ -179,6 +182,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           MACOS_SIGNING_CERTIFICATE: ${{ secrets.MACOS_SIGNING_CERTIFICATE }}
           MACOS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_SIGNING_CERTIFICATE_PASSWORD }}
+          TIMETRACK_GOOGLE_CLIENT_ID: ${{ secrets.TIMETRACK_GOOGLE_CLIENT_ID }}
+          TIMETRACK_GOOGLE_CLIENT_SECRET: ${{ secrets.TIMETRACK_GOOGLE_CLIENT_SECRET }}
 
       # GitHub turns a space in an asset name into a dot, and the manifest must name the asset as
       # GitHub stores it. The updater looks up `<os>-<arch>-<installer>` first, so each bundle type

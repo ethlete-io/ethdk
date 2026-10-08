@@ -12,6 +12,7 @@ mod decorations_wayland;
 mod discovery;
 mod error;
 mod git;
+mod google_client;
 mod http;
 mod ingest;
 mod keychain;
@@ -158,6 +159,7 @@ pub fn run() {
             decorations::window_capabilities,
             git::git_changes,
             git::git_repos,
+            google_client::google_builtin_client,
             http::http_request,
             ingest::ingest_events,
             ingest::ingest_status,

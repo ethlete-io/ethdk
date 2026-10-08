@@ -28,6 +28,7 @@ const COMMANDS: &[&str] = &[
     "events_titles_after",
     "git_changes",
     "git_repos",
+    "google_builtin_client",
     "http_request",
     "ingest_events",
     "ingest_status",
@@ -77,6 +78,9 @@ const COMMANDS: &[&str] = &[
 ];
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=TIMETRACK_GOOGLE_CLIENT_ID");
+    println!("cargo:rerun-if-env-changed=TIMETRACK_GOOGLE_CLIENT_SECRET");
+
     tauri_build::try_build(
         tauri_build::Attributes::new().app_manifest(tauri_build::AppManifest::new().commands(COMMANDS)),
     )

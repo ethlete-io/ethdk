@@ -163,22 +163,46 @@ Four consequences worth knowing before changing it:
 
 ## Connecting Google Calendar
 
-Each user registers their own OAuth client, so there is a one-time setup in the Google Cloud console.
-The consent screen now lives under **Google Auth Platform**, in the **Overview**, **Branding**,
-**Audience**, **Clients** and **Data access** tabs:
+A release build carries one shared Google OAuth client, so a user registers nothing.
 
-1. Create a project, then enable the **Google Calendar API** in it.
-2. Open **APIs & Services → OAuth consent screen**, which redirects to the Google Auth Platform. Run
-   **Get started** and set the audience to **External**.
-3. On the **Audience** tab, leave the publishing status at **Testing** and add your own address under
-   **Test users**. Google shows an unverified-app warning until you do.
-4. On the **Data access** tab, add the two scopes from `GOOGLE_CALENDAR_SCOPES`
+1. Open **Settings** and press **Connect**. The browser opens Google's consent page.
+2. Until the app is verified, Google shows an **unverified app** screen. Click **Advanced**, then
+   **Go to Timetrack (unsafe)**, and continue.
+3. Press **Allow**, then pick the calendars that count as work. Nothing is read until a calendar is
+   picked.
+
+When Google later rejects the stored access (revoked, or expired), Settings shows **Reconnect Google
+Calendar**. Press it and allow again.
+
+### Maintainers: the shared client
+
+Done once, by the team:
+
+1. Create one Google Cloud project and enable the **Google Calendar API** in it.
+2. Under **Google Auth Platform**, run **Get started** and set the audience to **External**. On the
+   **Audience** tab, publish the app to **Production**.
+3. On the **Data access** tab, add the two scopes from `GOOGLE_CALENDAR_SCOPES`
    (`libs/timetrack/src/lib/google-auth/oauth.ts`): `calendar.events.readonly` and
-   `calendar.readonly`. Both are sensitive, but a project in **Testing** needs no verification.
-5. On the **Clients** tab, create a client of type **Desktop app**. No redirect URI has to be
-   registered — Google allows any `127.0.0.1` port for an installed application.
-6. Paste the client id and the client secret into Settings, press **Connect**, then pick the
-   calendars that count as work. Nothing is read until a calendar is picked.
+   `calendar.readonly`. Both are sensitive, so Google shows the unverified-app screen until the app
+   passes verification.
+4. On the **Clients** tab, create a client of type **Desktop app**. No redirect URI has to be
+   registered; Google allows any `127.0.0.1` port for an installed application.
+5. Store the client id and secret as the GitHub secrets `TIMETRACK_GOOGLE_CLIENT_ID` and
+   `TIMETRACK_GOOGLE_CLIENT_SECRET`. `publish.yml` passes them to the bundle build, and
+   `src-tauri/src/google_client.rs` bakes them in with `option_env!`. A build without them logs a
+   warning and ships no client. A Desktop client's secret is not confidential, but it stays out of
+   the repository.
+
+A local build without these variables has no shared client, so Settings shows the client fields. To
+try one locally, export both variables before `yarn timetrack`.
+
+### Your own client (advanced)
+
+A client of your own wins over the shared one. In Settings press **Use your own OAuth client**, or
+use it for a build without a shared client. Setup is the maintainer steps above in your own project,
+with two differences: leave the publishing status at **Testing** and add your address under **Test
+users** (a project in Testing needs no verification), then paste the client id and secret into
+Settings and press **Connect**.
 
 ## Still to build
 
