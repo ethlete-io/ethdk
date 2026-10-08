@@ -93,8 +93,8 @@ describe('GridResizeDirective', () => {
     getResizeDirective().beginResize();
     getResizeDirective().updateResize({
       edge: 'e',
-      dx: geometry.strideX * 0.7,
-      dy: 0,
+      totalDx: geometry.strideX * 0.7,
+      totalDy: 0,
       clientX: 0,
       clientY: 0,
     });
@@ -116,8 +116,8 @@ describe('GridResizeDirective', () => {
     getResizeDirective().beginResize();
     getResizeDirective().updateResize({
       edge: 'e',
-      dx: geometry.strideX * 1.7,
-      dy: 0,
+      totalDx: geometry.strideX * 1.7,
+      totalDy: 0,
       clientX: 0,
       clientY: 0,
     });

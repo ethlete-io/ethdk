@@ -25,8 +25,8 @@ export type ResizeEdge = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 export type ResizeMoveEvent = {
   edge: ResizeEdge;
   /** Cumulative delta from the pointerdown position. */
-  dx: number;
-  dy: number;
+  totalDx: number;
+  totalDy: number;
   clientX: number;
   clientY: number;
 };
@@ -45,7 +45,7 @@ const EDGE_CURSORS: Record<ResizeEdge, string> = {
 type GestureEvent =
   | { readonly type: 'start'; readonly edge: ResizeEdge }
   | { readonly type: 'move'; readonly data: ResizeMoveEvent }
-  | { readonly type: 'end' }
+  | { readonly type: 'end'; readonly data: ResizeMoveEvent }
   | { readonly type: 'cancelled' };
 
 // jsdom and other non-browser DOMs ship no pointer capture; the document listeners track the
@@ -69,6 +69,7 @@ const setupResizeObservable = (
   const startY = startEvent.clientY;
 
   let cancelled = false;
+  let last: ResizeMoveEvent = { edge, totalDx: 0, totalDy: 0, clientX: startX, clientY: startY };
 
   const end$ = merge(fromEvent<PointerEvent>(doc, 'pointerup'), fromEvent<PointerEvent>(doc, 'pointercancel')).pipe(
     filter((e) => e.pointerId === pointerId),
@@ -85,13 +86,19 @@ const setupResizeObservable = (
       of<GestureEvent>({ type: 'start', edge }),
       fromEvent<PointerEvent>(doc, 'pointermove').pipe(
         filter((e) => e.pointerId === pointerId),
-        map((e): GestureEvent => ({
-          type: 'move',
-          data: { edge, dx: e.clientX - startX, dy: e.clientY - startY, clientX: e.clientX, clientY: e.clientY },
-        })),
+        map((e): GestureEvent => {
+          last = {
+            edge,
+            totalDx: e.clientX - startX,
+            totalDy: e.clientY - startY,
+            clientX: e.clientX,
+            clientY: e.clientY,
+          };
+          return { type: 'move', data: last };
+        }),
         takeUntil(end$),
       ),
-      defer((): Observable<GestureEvent> => of({ type: cancelled ? 'cancelled' : 'end' })),
+      defer((): Observable<GestureEvent> => of(cancelled ? { type: 'cancelled' } : { type: 'end', data: last })),
     ).pipe(finalize(releaseSelection));
   });
 };
@@ -149,10 +156,10 @@ export class ResizeHandlesComponent {
     ),
   );
 
-  resizeEnded = outputFromObservable<void>(
+  resizeEnded = outputFromObservable<ResizeMoveEvent>(
     this.gesture$.pipe(
-      filter((e) => e.type === 'end'),
-      map(() => undefined),
+      filter((e): e is Extract<GestureEvent, { type: 'end' }> => e.type === 'end'),
+      map((e) => e.data),
     ),
   );
 

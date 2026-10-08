@@ -33,7 +33,7 @@ class GestureTileComponent {
       #handles
       [edges]="edges"
       (resizeStarted)="log.push('start:' + $event)"
-      (resizeMoved)="log.push('move:' + $event.dx)"
+      (resizeMoved)="log.push('move:' + $event.totalDx)"
       (resizeEnded)="log.push('end')"
       (resizeCancelled)="log.push('cancelled')"
     />

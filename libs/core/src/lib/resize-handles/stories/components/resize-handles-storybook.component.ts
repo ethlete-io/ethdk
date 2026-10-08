@@ -60,8 +60,8 @@ export class ResizeHandlesStorybookComponent {
 
   protected move(event: ResizeMoveEvent) {
     this.size.set({
-      width: event.edge === 's' ? this.startSize.width : Math.max(80, this.startSize.width + event.dx),
-      height: event.edge === 'e' ? this.startSize.height : Math.max(60, this.startSize.height + event.dy),
+      width: event.edge === 's' ? this.startSize.width : Math.max(80, this.startSize.width + event.totalDx),
+      height: event.edge === 'e' ? this.startSize.height : Math.max(60, this.startSize.height + event.totalDy),
     });
   }
 

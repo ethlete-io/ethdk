@@ -418,7 +418,7 @@ export const resizedFloatRect = (
   base: FloatRect,
   { move, viewport }: { move: ResizeMoveEvent; viewport: ViewportSize },
 ): FloatRect => {
-  const { edge, dx, dy } = move;
+  const { edge, totalDx: dx, totalDy: dy } = move;
 
   const maxWidth = edge.includes('w') ? base.x + base.width : viewport.width - base.x;
   const maxHeight = edge.includes('n') ? base.y + base.height : viewport.height - base.y;

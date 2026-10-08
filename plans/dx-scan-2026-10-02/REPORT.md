@@ -38,7 +38,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | MISC-08 | The rich-text renderer cannot render a GraphQL rich-text field. Input shape: a `[gqlRichText]` input with `{ json, links }`, or a `createContentfulIncludeMapFromGqlLinks()` helper?           |
 | CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                    |
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                    |
-| CORE-16 | Pointer capture is fixed. Rename `ResizeMoveEvent` fields to `totalDx`/`totalDy` and make `resizeEnded` emit the final event (breaking)?                                                       |
 | OV-06   | Typed overlay data: (a) a result marker `overlayResult<T>()`, (b) a typed `inputs` option on `open()`?                                                                                         |
 | OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                          |
 | EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                       |

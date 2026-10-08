@@ -301,7 +301,7 @@ describe('grid headless scenarios', () => {
     expect(cell(host, 'a').classList.contains('et-grid-resize--active')).toBe(true);
     expect(cell(host, 'a').classList.contains('et-grid-item--direct')).toBe(true);
 
-    grip.resize.updateResize({ edge: 'e', dx: 200, dy: 0, clientX: 400, clientY: 40 });
+    grip.resize.updateResize({ edge: 'e', totalDx: 200, totalDy: 0, clientX: 400, clientY: 40 });
     s.tick();
     expect(cell(host, 'a').style.width).toBe('410px');
 
@@ -315,7 +315,7 @@ describe('grid headless scenarios', () => {
     const changes = board.changes.length;
 
     grip.resize.beginResize();
-    grip.resize.updateResize({ edge: 's', dx: 0, dy: 180, clientX: 40, clientY: 260 });
+    grip.resize.updateResize({ edge: 's', totalDx: 0, totalDy: 180, clientX: 40, clientY: 260 });
     s.tick();
     s.keydown('Escape', document);
     s.tick(400);

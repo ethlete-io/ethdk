@@ -290,7 +290,7 @@ c.push('is-active', active);` and then change `sig` to another element. The new 
 - Fix: add pointer capture to the resize gesture (same try/catch helper). Rename `ResizeMoveEvent`
   to `totalDx`/`totalDy` and have `resizeEnded` emit the final `ResizeMoveEvent`.
 - Breaking: yes (renames). Decision: yes (renames); the pointer capture can go in without one.
-- Status: fixed (pointer capture only); renames open - need a decision
+- Status: fixed (pointer capture; 2026-10-08 renames to totalDx/totalDy, resizeEnded emits the final event)
 - Review: ok (pointer capture); renames left for the user decision
 
 ## CORE-17 `injectIsDocumentVisible` undocumented; two viewport-size signals with no guidance between them

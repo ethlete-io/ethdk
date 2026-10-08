@@ -34,10 +34,10 @@ const build = ({ left, top }: { left: number; top: number }) => {
     viewportPadding: signal(PAD),
   } as unknown as PipWindowParamsDirective;
 
-  const resizeStarted = new OutputEmitterRef<void>();
+  const resizeStarted = new OutputEmitterRef<ResizeMoveEvent>();
   const resizeMoved = new OutputEmitterRef<ResizeMoveEvent>();
-  const resizeEnded = new OutputEmitterRef<void>();
-  const resizeCancelled = new OutputEmitterRef<void>();
+  const resizeEnded = new OutputEmitterRef<ResizeMoveEvent>();
+  const resizeCancelled = new OutputEmitterRef<ResizeMoveEvent>();
   const resizeHandles = signal({
     isResizing: signal(false),
     resizeStarted,
@@ -47,11 +47,11 @@ const build = ({ left, top }: { left: number; top: number }) => {
   } as unknown as ResizeHandlesComponent);
   const dragHandle = signal({
     isDragging: signal(false),
-    dragStarted: new OutputEmitterRef<void>(),
+    dragStarted: new OutputEmitterRef<ResizeMoveEvent>(),
     dragMoved: new OutputEmitterRef<never>(),
-    dragEnded: new OutputEmitterRef<void>(),
-    dragCancelled: new OutputEmitterRef<void>(),
-    dragTapped: new OutputEmitterRef<void>(),
+    dragEnded: new OutputEmitterRef<ResizeMoveEvent>(),
+    dragCancelled: new OutputEmitterRef<ResizeMoveEvent>(),
+    dragTapped: new OutputEmitterRef<ResizeMoveEvent>(),
   } as unknown as DragHandleDirective);
 
   const injector = Injector.create({
@@ -91,7 +91,7 @@ const build = ({ left, top }: { left: number; top: number }) => {
     resizeMoved.emit(move);
   };
 
-  const endResize = () => resizeEnded.emit();
+  const endResize = () => resizeEnded.emit({ edge: 'e', totalDx: 0, totalDy: 0, clientX: 0, clientY: 0 });
 
   const setViewport = (width: number, height: number) => {
     window.innerWidth = width;
@@ -164,7 +164,7 @@ describe('pip window position', () => {
     const { place, resize, size } = setup({ left: 100, top: 100 });
 
     place();
-    resize({ edge: 'e', dx: 80, dy: 0 } as ResizeMoveEvent);
+    resize({ edge: 'e', totalDx: 80, totalDy: 0 } as ResizeMoveEvent);
 
     expect(size.get().w).toBe(400);
     expect(size.get().h).toBeCloseTo(TITLE_BAR_H + 400 / (16 / 9));
@@ -174,7 +174,7 @@ describe('pip window position', () => {
     const { place, resize, position } = setup({ left: 300, top: 100 });
 
     place();
-    resize({ edge: 'w', dx: -80, dy: 0 } as ResizeMoveEvent);
+    resize({ edge: 'w', totalDx: -80, totalDy: 0 } as ResizeMoveEvent);
 
     expect(position.position()).toBe('220px 100px');
   });
@@ -183,7 +183,7 @@ describe('pip window position', () => {
     const { place, resize, position, size } = setup({ left: 300, top: 300 });
 
     place();
-    resize({ edge: 'nw', dx: -80, dy: -45 } as ResizeMoveEvent);
+    resize({ edge: 'nw', totalDx: -80, totalDy: -45 } as ResizeMoveEvent);
 
     const { h } = size.get();
 
@@ -195,7 +195,7 @@ describe('pip window position', () => {
     const { place, resize, position } = setup({ left: 300, top: 100 });
 
     place();
-    resize({ edge: 's', dx: 0, dy: 90 } as ResizeMoveEvent);
+    resize({ edge: 's', totalDx: 0, totalDy: 90 } as ResizeMoveEvent);
 
     expect(position.position()).toBe(`${300 + (320 - 480) / 2}px 100px`);
   });
@@ -204,7 +204,7 @@ describe('pip window position', () => {
     const { place, resize, endResize, size } = setup({ left: 100, top: 100 });
 
     place();
-    resize({ edge: 'e', dx: 80, dy: 0 } as ResizeMoveEvent);
+    resize({ edge: 'e', totalDx: 80, totalDy: 0 } as ResizeMoveEvent);
     endResize();
 
     expect(size.get().w).toBe(320);
@@ -214,7 +214,7 @@ describe('pip window position', () => {
     const { place, resize, size } = setup({ left: 300, top: 100 });
 
     place();
-    resize({ edge: 'n', dx: -50, dy: -50 } as ResizeMoveEvent);
+    resize({ edge: 'n', totalDx: -50, totalDy: -50 } as ResizeMoveEvent);
 
     expect(size.get().w).toBe(320);
   });
@@ -223,7 +223,7 @@ describe('pip window position', () => {
     const { place, resize, size } = setup({ left: 300, top: 100 });
 
     place();
-    resize({ edge: 'e', dx: -500, dy: 0 } as ResizeMoveEvent);
+    resize({ edge: 'e', totalDx: -500, totalDy: 0 } as ResizeMoveEvent);
 
     expect(size.get().w).toBe(200);
   });

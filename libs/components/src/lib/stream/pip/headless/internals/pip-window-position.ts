@@ -427,7 +427,7 @@ export const createPipWindowPosition = (options: PipWindowPositionOptions): PipW
     deriveStickyEdges();
   };
 
-  const applyResizeDelta = ({ edge, dx, dy }: ResizeMoveEvent) => {
+  const applyResizeDelta = ({ edge, totalDx: dx, totalDy: dy }: ResizeMoveEvent) => {
     const movesE = edge.includes('e');
     const movesW = edge.includes('w');
     const movesN = edge.includes('n');

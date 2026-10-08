@@ -5,7 +5,7 @@ const VIEWPORT = { width: 1400, height: 900 };
 const BASE = { x: 200, y: 100, width: 600, height: 400 };
 
 const MV = (edge: ResizeMoveEvent['edge'], dx: number, dy: number) => ({
-  move: { edge, dx, dy, clientX: 0, clientY: 0 },
+  move: { edge, totalDx: dx, totalDy: dy, clientX: 0, clientY: 0 },
   viewport: VIEWPORT,
 });
 

@@ -64,12 +64,12 @@ import { ResizeHandlesComponent } from '@ethlete/core';
 | `edges`    | all 8 (`n s e w ne nw se sw`) | Which handles to render.                      |
 | `disabled` | `false`                       | Hides the handles from interaction (`inert`). |
 
-| Output            | Payload                                                                        |
-| ----------------- | ------------------------------------------------------------------------------ |
-| `resizeStarted`   | The `ResizeEdge` being dragged.                                                |
-| `resizeMoved`     | `{ edge, dx, dy, clientX, clientY }` - `dx`/`dy` cumulative since pointerdown. |
-| `resizeEnded`     | `void`                                                                         |
-| `resizeCancelled` | `void` - the browser took the gesture away; revert to the size it started at.  |
+| Output            | Payload                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| `resizeStarted`   | The `ResizeEdge` being dragged.                                                                    |
+| `resizeMoved`     | `{ edge, totalDx, totalDy, clientX, clientY }` - `totalDx`/`totalDy` cumulative since pointerdown. |
+| `resizeEnded`     | The final `ResizeMoveEvent` (zero deltas if the pointer never moved).                              |
+| `resizeCancelled` | `void` - the browser took the gesture away; revert to the size it started at.                      |
 
 A handle captures the pointer when the gesture starts, so the gesture keeps its moves while the pointer crosses an iframe. `isResizing` and `activeEdge` are signals; the active edge is also reflected as `data-active-edge` on the host. Handles set the matching resize cursor per edge. Sizing is themable via CSS custom properties (`--et-resize-handles-edge-size`, `--et-resize-handles-corner-size`, `--et-resize-handles-z-index`, …) - see `resize-handles.component.ts` for the full list and defaults.
 

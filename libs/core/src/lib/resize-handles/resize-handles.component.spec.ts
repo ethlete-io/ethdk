@@ -11,7 +11,7 @@ import { ResizeEdge, ResizeHandlesComponent, ResizeMoveEvent } from './resize-ha
       [disabled]="disabled()"
       (resizeStarted)="log.push('start:' + $event)"
       (resizeMoved)="moves.push($event)"
-      (resizeEnded)="log.push('end')"
+      (resizeEnded)="ends.push($event); log.push('end')"
       (resizeCancelled)="log.push('cancel')"
     />
   `,
@@ -22,6 +22,7 @@ class HostComponent {
   disabled = signal(false);
   log: string[] = [];
   moves: ResizeMoveEvent[] = [];
+  ends: ResizeMoveEvent[] = [];
 }
 
 const pointer = (type: string, target: EventTarget, x = 0, y = 0, init: PointerEventInit = {}) =>
@@ -70,9 +71,19 @@ describe('ResizeHandlesComponent', () => {
 
     expect(host.log).toEqual(['start:se', 'end']);
     expect(host.moves).toEqual([
-      { edge: 'se', dx: 10, dy: -5, clientX: 110, clientY: 95 },
-      { edge: 'se', dx: 30, dy: 20, clientX: 130, clientY: 120 },
+      { edge: 'se', totalDx: 10, totalDy: -5, clientX: 110, clientY: 95 },
+      { edge: 'se', totalDx: 30, totalDy: 20, clientX: 130, clientY: 120 },
     ]);
+    expect(host.ends).toEqual([{ edge: 'se', totalDx: 30, totalDy: 20, clientX: 130, clientY: 120 }]);
+  });
+
+  it('emits a zero-delta final event when released without moving', () => {
+    const { host, handle } = setup();
+
+    pointer('pointerdown', handle('se'), 100, 100);
+    pointer('pointerup', document, 100, 100);
+
+    expect(host.ends).toEqual([{ edge: 'se', totalDx: 0, totalDy: 0, clientX: 100, clientY: 100 }]);
   });
 
   it('exposes the active edge and resizing state while the gesture runs', () => {

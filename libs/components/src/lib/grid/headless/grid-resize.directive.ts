@@ -180,10 +180,10 @@ export class GridResizeDirective {
       columns: geometry.columns,
     });
 
-    // dx/dy are client-space; shift them into container space so scrolling
+    // totalDx/totalDy are client-space; shift them into container space so scrolling
     // mid-gesture (including auto-scroll) keeps the box under the pointer.
-    const dx = event.dx + (startOrigin.left - currentOrigin.left);
-    const dy = event.dy + (startOrigin.top - currentOrigin.top);
+    const dx = event.totalDx + (startOrigin.left - currentOrigin.left);
+    const dy = event.totalDy + (startOrigin.top - currentOrigin.top);
 
     const live = clampResizeRect({ edge: event.edge, dx, dy, startRect, bounds, geometry });
     gridItem.updateDirectRect(live);
