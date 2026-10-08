@@ -6,7 +6,7 @@ import {
   NUMBER_INPUT_IMPORTS,
   SELECT_IMPORTS,
 } from '@ethlete/components';
-import { CLAUDE_CODE_PROVIDER, CODEX_PROVIDER, ModelPrice, PriceTable } from '@ethlete/timetrack';
+import { BUILT_IN_PRICES, CLAUDE_CODE_PROVIDER, CODEX_PROVIDER, ModelPrice, PriceTable } from '@ethlete/timetrack';
 import { ExplainComponent } from './explain.component';
 import {
   MODEL_PRICE_PRESETS,
@@ -17,11 +17,13 @@ import {
 } from './model-price-presets';
 import { CURRENCIES, withStoredOption } from './select-options';
 
-const WHY = `A day's spend becomes a cost through these prices. Each turn is priced at the price of its
-model dated last on or before the turn, so a new price never reprices the days before its date.
+const WHY = `A day's spend becomes a cost through these prices. Each turn is priced at the latest price
+for its model dated on or before the turn: yours first, then the built-in list. A new price never
+reprices the days before its date.
 
-The model is the name the agent wrote into its log, such as claude-opus-4-1. A day that used a model
-with no price here shows its spend and no cost, and names the model.
+The built-in list is USD and ships with each release, so a known model needs no setup. Your table holds
+overrides and models the list does not know. In another currency only your own prices apply, with no
+conversion. A model with no price shows its spend and no cost, and is named.
 
 Rates are per million tokens. Thinking is priced as output.`;
 
@@ -53,6 +55,32 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
         <h3 class="text-h4">What a model costs</h3>
         <ethlete-explain [text]="WHY" label="model prices" />
       </div>
+
+      <details class="flex flex-col gap-2" data-built-in-prices>
+        <summary class="cursor-pointer text-small text-et-surface-muted">
+          Built-in prices, USD per million tokens, checked {{ PRESETS_CHECKED }}
+        </summary>
+        @for (group of BUILT_IN_GROUPS; track group.provider) {
+          <div class="mt-2 flex flex-col gap-1">
+            <span class="text-small">{{ group.provider }}</span>
+            @for (price of group.prices; track price.model) {
+              <div
+                [attr.data-built-in-price]="price.model"
+                class="flex flex-wrap gap-x-3 text-small text-et-surface-muted"
+              >
+                <span class="text-mono min-w-44">{{ price.model }}</span>
+                <span>
+                  in {{ price.input }} · out {{ price.output }} · cache write {{ price.cacheWrite }} · cache read
+                  {{ price.cacheRead }}
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </details>
+
+      <h4 class="text-base">Your prices</h4>
+      <p class="text-small text-et-surface-subtle">Overrides of the list above, and models it does not know.</p>
 
       <et-form-field class="w-56" appearance="underline" size="sm">
         <et-label>Currency</et-label>
@@ -86,7 +114,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
           </button>
         </div>
       } @empty {
-        <p class="text-small text-et-surface-subtle">No price yet, so no day shows a cost.</p>
+        <p class="text-small text-et-surface-subtle">You have none, so the built-in prices apply.</p>
       }
 
       <div class="flex flex-wrap items-end gap-3">
@@ -95,7 +123,7 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
           <et-select
             [(value)]="presetKey"
             (valueChange)="applyPreset($event)"
-            placeholder="Fill from a known model"
+            placeholder="Start an override from a known model"
             data-price-preset
           >
             @for (group of PRESET_GROUPS; track group.provider) {
@@ -107,9 +135,6 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
             }
           </et-select>
         </et-form-field>
-        <span class="pb-1 text-small text-et-surface-subtle">
-          USD per million tokens, checked {{ PRESETS_CHECKED }}
-        </span>
       </div>
 
       <div class="flex flex-wrap items-end gap-3">
@@ -173,6 +198,10 @@ export class PriceTableComponent {
   protected readonly WHY = WHY;
   protected readonly PROVIDERS = PROVIDERS;
   protected readonly PRESETS_CHECKED = MODEL_PRICE_PRESETS_CHECKED;
+  protected readonly BUILT_IN_GROUPS = [...new Set(BUILT_IN_PRICES.map((price) => price.provider))].map((provider) => ({
+    provider,
+    prices: BUILT_IN_PRICES.filter((price) => price.provider === provider),
+  }));
   protected readonly PRESET_GROUPS = [...new Set(MODEL_PRICE_PRESETS.map((preset) => preset.provider))].map(
     (provider) => ({
       provider,

@@ -275,7 +275,7 @@ export class DayNotesComponent {
     const turns = this.day()?.spendTurns ?? [];
     const table = this.settings.settings().priceTable;
 
-    if (!turns.length || !table.prices.length) return null;
+    if (!turns.length) return null;
 
     const unattributed = this.day()?.unattributedTurns ?? [];
 

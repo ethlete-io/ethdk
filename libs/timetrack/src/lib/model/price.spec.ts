@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ModelPrice, PriceTable, costOfTurns, costOfUsage, priceAt } from './price';
+import { BUILT_IN_PRICES } from './built-in-prices';
 
 const opus = (from: string, input: number): ModelPrice => ({
   provider: 'claude-code',
@@ -88,5 +89,56 @@ describe('costOfTurns', () => {
         turns: [{ at: new Date('2026-09-15T00:00:00Z'), provider: 'claude-code', model: 'opus', usage: usage(1) }],
       }).cost,
     ).toBeUndefined();
+  });
+});
+
+describe('built-in prices', () => {
+  const builtIn = BUILT_IN_PRICES[0] as ModelPrice;
+  const usd = (...prices: ModelPrice[]): PriceTable => ({ currency: 'USD', prices });
+  const turn = (at: Date) => ({ at, provider: builtIn.provider, model: builtIn.model, usage: usage(1_000_000) });
+  const lookup = (options: { table: PriceTable; at: Date }) =>
+    priceAt({ ...options, provider: builtIn.provider, model: builtIn.model });
+
+  it('prices a known model from an empty USD table', () => {
+    expect(costOfTurns({ table: usd(), turns: [turn(builtIn.from)] })).toEqual({
+      currency: 'USD',
+      cost: builtIn.input,
+      unpriced: [],
+    });
+  });
+
+  it('never applies before its own date', () => {
+    const before = new Date(builtIn.from.getTime() - 1);
+
+    expect(lookup({ table: usd(), at: before })).toBeUndefined();
+    expect(costOfTurns({ table: usd(), turns: [turn(before)] }).cost).toBeUndefined();
+  });
+
+  it('lets a user price for the same model win from its date, and no earlier', () => {
+    const override = { ...builtIn, from: new Date(builtIn.from.getTime() + 86_400_000), input: 99 };
+    const prices = usd(override);
+
+    expect(lookup({ table: prices, at: override.from })?.input).toBe(99);
+    expect(lookup({ table: prices, at: new Date(override.from.getTime() - 1) })?.input).toBe(builtIn.input);
+  });
+
+  it('prefers any user price dated on or before the turn, even one older than the built-in date', () => {
+    const early = { ...builtIn, from: new Date(builtIn.from.getTime() - 86_400_000), input: 77 };
+
+    expect(lookup({ table: usd(early), at: builtIn.from })?.input).toBe(77);
+    expect(lookup({ table: usd(early), at: new Date(early.from.getTime() - 1) })).toBeUndefined();
+  });
+
+  it('stays unpriced in another currency, and names the model', () => {
+    expect(costOfTurns({ table: table(), turns: [turn(builtIn.from)] })).toEqual({
+      currency: 'EUR',
+      unpriced: [{ provider: builtIn.provider, model: builtIn.model }],
+    });
+  });
+
+  it('still uses the user price in another currency', () => {
+    const own = { ...builtIn, input: 3 };
+
+    expect(costOfTurns({ table: table(own), turns: [turn(builtIn.from)] }).cost).toBe(3);
   });
 });

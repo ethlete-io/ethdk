@@ -1,4 +1,9 @@
+import { BUILT_IN_PRICES } from './built-in-prices';
 import { AgentUsageEvent, TokenUsage } from './event';
+
+export { BUILT_IN_PRICES, BUILT_IN_PRICES_CHECKED } from './built-in-prices';
+
+const BUILT_IN_CURRENCY = 'USD';
 
 const PER_MILLION = 1_000_000;
 
@@ -17,7 +22,7 @@ export type ModelPrice = {
   cacheRead: number;
 };
 
-/** The user's prices, all in one currency. The app ships none. */
+/** The user's own prices, all in one currency: overrides of the built-in list and models it does not know. */
 export type PriceTable = {
   currency: string;
   prices: readonly ModelPrice[];
@@ -33,17 +38,8 @@ export type SpendCost = {
   unpriced: UnpricedModel[];
 };
 
-/**
- * The price that held for a model at an instant: the latest one dated at or before it. A price added
- * later with a later date never reprices a turn before that date.
- */
-export const priceAt = (options: {
-  table: PriceTable;
-  provider: string;
-  model: string;
-  at: Date;
-}): ModelPrice | undefined =>
-  options.table.prices
+const latestAt = (options: { prices: readonly ModelPrice[]; provider: string; model: string; at: Date }) =>
+  options.prices
     .filter(
       (price) =>
         price.provider === options.provider &&
@@ -54,6 +50,20 @@ export const priceAt = (options: {
       (latest, price) => (!latest || price.from > latest.from ? price : latest),
       undefined,
     );
+
+/**
+ * The price that held for a model at an instant. The user's latest price dated at or before it wins;
+ * otherwise the built-in one, which is in USD and so applies only to a USD table. A price added later
+ * with a later date never reprices a turn before that date.
+ */
+export const priceAt = (options: {
+  table: PriceTable;
+  provider: string;
+  model: string;
+  at: Date;
+}): ModelPrice | undefined =>
+  latestAt({ ...options, prices: options.table.prices }) ??
+  (options.table.currency === BUILT_IN_CURRENCY ? latestAt({ ...options, prices: BUILT_IN_PRICES }) : undefined);
 
 /** What a spend costs at one price. */
 export const costOfUsage = (usage: TokenUsage, price: ModelPrice) =>
