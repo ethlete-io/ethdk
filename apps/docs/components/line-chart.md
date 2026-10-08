@@ -104,6 +104,16 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 <StoryEmbed id="components-data-display-line-chart--stacked-area" height="420px" />
 
+## Drill-down
+
+`(markActivate)` emits when an x is clicked, or when Enter or Space is pressed on the focused x. The payload is a `LineChartMarkActivateEvent`: `datum` is the entry from `data` at that x (the same object you passed in, also on a time axis given out of order) and `series` lists the `LineChartSeries` with a value there, in series order - empty in a single-series chart. A click still opens the tooltip.
+
+```html
+<et-line-chart [data]="visitors" (markActivate)="openDay($event.datum.x)" label="Visitors per day" />
+```
+
+The story `Components/Data display/Line chart/Mark activate` shows it.
+
 ## Custom template
 
 `LineChartDirective` (`[etLineChart]`) holds the geometry without markup: `lines()` (per series its `linePath`, `areaPath`, `points`, `colorToken` and `accentMix`), `slices()` (per x its `position`, `label`, `entries`, hit `target`, tooltip `anchor` and `description`), `ticks()`, `baseline()`, `valueLabels()`, `xLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the chart is laid out in - without one the directive throws `ET5100` in dev mode. Import `LineChartDirective`, `LineChartSliceDirective` and `ChartPlotDirective`.

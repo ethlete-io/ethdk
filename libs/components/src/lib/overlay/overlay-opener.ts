@@ -23,6 +23,7 @@ import {
   QueryParamOverlayDefinition,
   QueryParamOverlayValue,
 } from './overlay-definition';
+import { OverlayInputs, OverlayInputsConfig } from './overlay-inputs';
 import { injectOverlayManager } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
 import { getOverlayRefInternals } from './overlay-ref-internal';
@@ -50,17 +51,22 @@ export type OverlayLifecycleConfig<TResult = unknown> = {
  * deep links where the originating element may not exist - omitting it is usually right (the
  * overlay then falls back to the currently focused element).
  */
-export type OverlayOpenerConfig<TResult = unknown> = OverlayLifecycleConfig<TResult> & OverlayOpenConfig;
+export type OverlayOpenerConfig<
+  TResult = unknown,
+  TComponent extends object = object,
+> = OverlayLifecycleConfig<TResult> & OverlayOpenConfig & OverlayInputsConfig<TComponent>;
 
 /**
  * Per-open config for a standard opener: config overrides plus lifecycle callbacks that apply to
  * this open only, in addition to the opener's own callbacks.
  */
-export type OverlayOpenerOpenConfig<TResult = unknown> = OverlayOpenConfig & OverlayLifecycleConfig<TResult>;
+export type OverlayOpenerOpenConfig<TResult = unknown, TComponent extends object = object> = OverlayOpenConfig &
+  OverlayLifecycleConfig<TResult> &
+  OverlayInputsConfig<TComponent>;
 
 export type OverlayOpener<TComponent extends object = object, TResult = unknown> = {
   /** Open the overlay. Per-open config is merged additively on top of the definition and opener configs. */
-  open: (config?: OverlayOpenerOpenConfig<TResult>) => OverlayRef<TComponent, TResult>;
+  open: (config?: OverlayOpenerOpenConfig<TResult, TComponent>) => OverlayRef<TComponent, TResult>;
 };
 
 export type SingleOverlayOpener<TComponent extends object = object, TResult = unknown> = {
@@ -69,7 +75,7 @@ export type SingleOverlayOpener<TComponent extends object = object, TResult = un
    * is still deciding whether to close (e.g. a pending unsaved-changes confirm) - the open then runs
    * once it closes with source `'replace'`, and is dropped if it closes any other way.
    */
-  open: (config?: OverlayOpenerOpenConfig<TResult>) => OverlayRef<TComponent, TResult> | null;
+  open: (config?: OverlayOpenerOpenConfig<TResult, TComponent>) => OverlayRef<TComponent, TResult> | null;
 };
 
 /**
@@ -126,7 +132,10 @@ export const createOverlaySingleSlot = (): OverlaySingleSlot => {
   return { open };
 };
 
-export type OverlaySingleOpenerConfig<TResult = unknown> = OverlayOpenerConfig<TResult> & {
+export type OverlaySingleOpenerConfig<TResult = unknown, TComponent extends object = object> = OverlayOpenerConfig<
+  TResult,
+  TComponent
+> & {
   /**
    * Keep at most one overlay of this opener open: `open()` closes the open one with source
    * `'replace'` (guardable, e.g. by `createOverlayUnsavedChangesGuard`) and opens the new one once it
@@ -146,27 +155,29 @@ export type QueryParamOverlayOpener<TQueryParam extends string = string> = {
 type CreateOverlayOpenerFn = {
   <TComponent extends object, TResult>(
     definition: QueryParamOverlayDefinition<TComponent, TResult>,
-    config?: OverlayOpenerConfig<TResult>,
+    config?: OverlayOpenerConfig<TResult, TComponent>,
   ): QueryParamOverlayOpener<QueryParamOverlayValue<TComponent>>;
   <TComponent extends object, TResult>(
     definition: OverlayDefinition<TComponent, TResult>,
-    config: OverlaySingleOpenerConfig<TResult>,
+    config: OverlaySingleOpenerConfig<TResult, TComponent>,
   ): SingleOverlayOpener<TComponent, TResult>;
   <TComponent extends object, TResult>(
     definition: OverlayDefinition<TComponent, TResult>,
-    config?: OverlayOpenerConfig<TResult>,
+    config?: OverlayOpenerConfig<TResult, TComponent>,
   ): OverlayOpener<TComponent, TResult>;
 };
 
 const isWritableSignal = <T>(value: unknown): value is WritableSignal<T> =>
   isSignal(value) && typeof (value as { set?: unknown }).set === 'function';
 
-const splitOpenerConfig = <TResult>(config: OverlayOpenerConfig<TResult> | undefined) => {
-  const { afterClosed, beforeClosed, afterOpened, ...overlayConfig } = config ?? {};
+const splitOpenerConfig = <TResult, TComponent extends object>(
+  config: OverlayOpenerConfig<TResult, TComponent> | undefined,
+) => {
+  const { afterClosed, beforeClosed, afterOpened, inputs, ...overlayConfig } = config ?? {};
 
   const lifecycle: OverlayLifecycleConfig<TResult> = { afterClosed, beforeClosed, afterOpened };
 
-  return { lifecycle, overlayConfig };
+  return { lifecycle, overlayConfig, inputs: inputs as OverlayInputs<TComponent> | undefined };
 };
 
 type AttachLifecycleOptions<TComponent extends object, TResult> = {
@@ -222,25 +233,30 @@ const attachLifecycle = <TComponent extends object, TResult>(options: AttachLife
 
 const createStandardOverlayOpener = <TComponent extends object, TResult>(
   definition: OverlayDefinition<TComponent, TResult>,
-  openerConfig?: OverlayOpenerConfig<TResult> | OverlaySingleOpenerConfig<TResult>,
+  openerConfig?: OverlayOpenerConfig<TResult, TComponent> | OverlaySingleOpenerConfig<TResult, TComponent>,
 ): OverlayOpener<TComponent, TResult> | SingleOverlayOpener<TComponent, TResult> => {
   const overlayManager = injectOverlayManager();
   const destroyRef = inject(DestroyRef);
   const fallbackViewContainerRef = inject(ViewContainerRef, { optional: true }) ?? undefined;
-  const { single, ...sharedConfig } = (openerConfig ?? {}) as Partial<OverlaySingleOpenerConfig<TResult>>;
-  const { lifecycle, overlayConfig } = splitOpenerConfig(sharedConfig);
+  const { single, ...sharedConfig } = (openerConfig ?? {}) as Partial<OverlaySingleOpenerConfig<TResult, TComponent>>;
+  const { lifecycle, overlayConfig, inputs } = splitOpenerConfig(sharedConfig);
   const slot = single === 'replace' ? createOverlaySingleSlot() : (single ?? null);
 
   let destroyed = false;
   destroyRef.onDestroy(() => (destroyed = true));
 
-  const openNow = (config?: OverlayOpenerOpenConfig<TResult>) => {
-    const { lifecycle: openLifecycle, overlayConfig: openConfig } = splitOpenerConfig(config);
+  const openNow = (config?: OverlayOpenerOpenConfig<TResult, TComponent>) => {
+    const { lifecycle: openLifecycle, overlayConfig: openConfig, inputs: openInputs } = splitOpenerConfig(config);
 
-    const overlayRef = overlayManager.open<TComponent, TResult>(
-      definition.component,
-      mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, openConfig),
-    );
+    const overlayRef = overlayManager.open<TComponent, TResult>(definition.component, {
+      ...mergeOverlayConfigs(
+        { viewContainerRef: fallbackViewContainerRef },
+        definition.config,
+        overlayConfig,
+        openConfig,
+      ),
+      inputs: { ...inputs, ...openInputs },
+    });
 
     attachLifecycle({ overlayRef, lifecycle, destroyRef });
     attachLifecycle({ overlayRef, lifecycle: openLifecycle, destroyRef });
@@ -261,7 +277,7 @@ const createStandardOverlayOpener = <TComponent extends object, TResult>(
 
 const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   definition: QueryParamOverlayDefinition<TComponent, TResult>,
-  openerConfig?: OverlayOpenerConfig<TResult>,
+  openerConfig?: OverlayOpenerConfig<TResult, TComponent>,
 ): QueryParamOverlayOpener => {
   const overlayManager = injectOverlayManager();
   const router = inject(Router);
@@ -271,7 +287,7 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   const fallbackViewContainerRef = inject(ViewContainerRef, { optional: true }) ?? undefined;
   const queryParamValue = injectQueryParam(definition.queryParamKey);
   const url = injectUrl();
-  const { lifecycle, overlayConfig } = splitOpenerConfig(openerConfig);
+  const { lifecycle, overlayConfig, inputs } = splitOpenerConfig(openerConfig);
 
   let overlayRef: OverlayRef<TComponent, TResult> | null = null;
   let modelSyncEffect: EffectRef | null = null;
@@ -354,13 +370,13 @@ const createQueryParamOverlayOpener = <TComponent extends object, TResult>(
   };
 
   const openOverlay = (value: string) => {
-    const ref = overlayManager.open<TComponent, TResult>(
-      definition.component,
-      mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, {
+    const ref = overlayManager.open<TComponent, TResult>(definition.component, {
+      ...mergeOverlayConfigs({ viewContainerRef: fallbackViewContainerRef }, definition.config, overlayConfig, {
         bindings: [inputBinding(OVERLAY_QUERY_PARAM_INPUT_NAME, () => value)],
         closeOnNavigation: false,
       }),
-    );
+      inputs,
+    });
 
     attachLifecycle({ overlayRef: ref, lifecycle: composedLifecycle, destroyRef });
 

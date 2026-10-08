@@ -1,10 +1,11 @@
-import { Component, ViewEncapsulation, input, inputBinding, model, signal } from '@angular/core';
+import { Component, ViewEncapsulation, input, model, signal } from '@angular/core';
 import { injectQueryParam } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
 import { OverlayBodyComponent } from '../../overlay-body.component';
 import { OverlayCloseDirective } from '../../overlay-close.directive';
 import { defineOverlay, defineQueryParamOverlay } from '../../overlay-definition';
 import { OverlayFooterDirective } from '../../overlay-footer.directive';
+import { overlayResult } from '../../overlay-inputs';
 import { OverlayHeaderDirective } from '../../overlay-header.directive';
 import { OverlayMainDirective } from '../../overlay-main.directive';
 import { createOverlayOpener } from '../../overlay-opener';
@@ -110,8 +111,9 @@ export class MergeDemoOverlayComponent {
   protected overlayRef = mergeDemoOverlay.injectRef();
 }
 
-const mergeDemoOverlay = defineOverlay<MergeDemoOverlayComponent, string>({
+const mergeDemoOverlay = defineOverlay({
   component: MergeDemoOverlayComponent,
+  result: overlayResult<string>(),
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
   panelClass: 'et-sb-merge-panel-base',
 });
@@ -195,7 +197,7 @@ export class OverlayOpenerStorybookComponent {
   protected openMergeDemo(event: Event) {
     this.mergeDemo.open({
       origin: event,
-      bindings: [inputBinding('message', () => 'Set via a per-open input binding')],
+      inputs: { message: () => 'Set via typed per-open inputs' },
     });
   }
 }

@@ -27,6 +27,9 @@
             [attr.aria-label]="slice.name"
             [style.--_et-pie-chart-accent-mix.%]="slice.accentMix"
             [style.--_et-pie-chart-slice-order]="$index"
+            (click)="activate($event, slice)"
+            (keydown.enter)="activate($event, slice)"
+            (keydown.space)="activate($event, slice)"
             class="et-pie-chart-slice"
           >
             <svg:path [attr.d]="slice.path" class="et-pie-chart-slice-mark" />

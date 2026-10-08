@@ -10,10 +10,11 @@ Opening an overlay (dialog, sheet, …) imperatively involves three pieces with 
 
 ```ts
 // product-overlay.ts - module scope, no injection context needed
-import { defineOverlay, dialogOverlayStrategy } from '@ethlete/components';
+import { defineOverlay, dialogOverlayStrategy, overlayResult } from '@ethlete/components';
 
-export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResult>({
+export const productOverlay = defineOverlay({
   component: ProductOverlayComponent,
+  result: overlayResult<ProductResult>(),
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
 });
 ```
@@ -27,8 +28,8 @@ export class ProductListComponent {
     afterClosed: (result) => console.log('closed with', result),
   });
 
-  protected showProduct() {
-    this.product.open();
+  protected showProduct(id: number) {
+    this.product.open({ inputs: { productId: () => id } });
   }
 }
 ```
@@ -44,7 +45,7 @@ export class ProductOverlayComponent {
 }
 ```
 
-The two generics on `defineOverlay<TComponent, TResult>` are the overlay component and the close-result type. `TResult` flows into `afterClosed` / `beforeClosed` callbacks and into `injectRef().close(...)`.
+`result: overlayResult<ProductResult>()` types the close result without naming the component a second time; it does nothing at runtime. The result type flows into `afterClosed` / `beforeClosed` callbacks and into `injectRef().close(...)`. Without it the result is `unknown`. Writing both generics, `defineOverlay<ProductOverlayComponent, ProductResult>({ … })`, still works and means the same.
 
 ## Live demo
 
@@ -52,14 +53,26 @@ The two generics on `defineOverlay<TComponent, TResult>` are the overlay compone
 
 ## Passing data into the overlay
 
-Inputs and outputs use Angular's native binding API (`inputBinding`, `outputBinding`, `twoWayBinding`); services use `providers`. Both are regular `OverlayConfig` options, so they can be set at **any** layer - on the definition, on the opener, or per `open()` call:
+Set the component's signal inputs with `inputs`, one getter per input, keyed by the property name:
 
 ```ts
 this.product.open({
-  bindings: [
-    inputBinding('productId', () => this.selectedId()),
-    outputBinding('reserved', (amount: number) => this.updateStock(amount)),
-  ],
+  inputs: { productId: () => this.selectedId() },
+});
+```
+
+The keys and value types come from the component's `input()`, `input.required()` and `model()` members, so a misspelled input or a value of the wrong type fails to compile. An input with a `transform` takes the transform's input type. Each getter is re-read like an `inputBinding`, so a signal read inside it keeps the input up to date. An aliased input is still keyed by its property name.
+
+Every key is optional, including a `input.required()` one: Angular types a required input the same as an optional one, so leaving one out compiles and fails at runtime (`NG0950`).
+
+`inputs` is accepted on the opener config and on each `open()` call; per-open values win for the same key. The overlay manager's `open()` takes it too.
+
+For everything else use `bindings` and `providers`, Angular's native binding API (`inputBinding`, `outputBinding`, `twoWayBinding`) and DI. Both are regular `OverlayConfig` options, so they can be set at **any** layer - on the definition, on the opener, or per `open()` call. They combine with `inputs`, and a binding for the same input wins:
+
+```ts
+this.product.open({
+  inputs: { productId: () => this.selectedId() },
+  bindings: [outputBinding('reserved', (amount: number) => this.updateStock(amount))],
   providers: [{ provide: PRODUCT_CONTEXT, useValue: this.context }],
 });
 ```
@@ -85,6 +98,7 @@ Configs merge **additively** from least to most specific: definition → opener 
 | Config keys                                | Merge behavior                                                                                           |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `bindings`, `directives`, `providers`      | Concatenated in layer order - a later binding/provider for the same input/token wins (Angular semantics) |
+| `inputs` (opener and per-open)             | Merged by key, per-open wins; applied before every layer's `bindings`                                    |
 | `hostClass`, `backdropClass`, `panelClass` | Normalized to arrays, concatenated, deduped                                                              |
 | Everything else (`origin`, `role`, …)      | Most specific layer wins; `undefined` never overrides, an explicit `null` (aria fields) does             |
 | `strategies`, `component`                  | Fixed by the definition - not overridable                                                                |
@@ -107,7 +121,7 @@ A standard opener's `open()` takes the same three callbacks for that one open, o
 
 ```ts
 this.product.open({
-  bindings: [inputBinding('productId', () => id)],
+  inputs: { productId: () => id },
   afterClosed: (result) => this.save(id, result),
 });
 ```

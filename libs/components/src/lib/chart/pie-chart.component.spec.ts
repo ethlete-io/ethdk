@@ -302,6 +302,7 @@ describe('PieChartComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.et-pie-chart-slice')).toBeNull();
   });
+
   describe('labels', () => {
     const headerOf = (element: HTMLElement) =>
       Array.from(element.querySelectorAll('.et-chart-table thead th')).map((cell) => cell.textContent?.trim());
@@ -330,5 +331,35 @@ describe('PieChartComponent', () => {
       expect(chart.table().columns[0]).toBe('Quelle');
       expect(headerOf(element)[0]).toBe('Quelle');
     });
+  });
+});
+
+describe('PieChartComponent markActivate', () => {
+  const listen = (result: ReturnType<typeof setup>) => {
+    const emitted: PieChartDatum[] = [];
+
+    result.fixture.debugElement
+      .query(By.directive(PieChartComponent))
+      .injector.get(PieChartComponent)
+      .markActivate.subscribe((datum) => emitted.push(datum));
+
+    return emitted;
+  };
+
+  it('emits the slice’s datum on click, Enter and Space', () => {
+    const result = setup();
+    const emitted = listen(result);
+    const direct = result.element.querySelectorAll<SVGElement>('.et-pie-chart-slice')[1] as SVGElement;
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    direct.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    direct.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    direct.dispatchEvent(space);
+
+    const datum = result.host.data()[1];
+
+    expect(emitted).toEqual([datum, datum, datum]);
+    expect(emitted[0]).toBe(datum);
+    expect(space.defaultPrevented).toBe(true);
   });
 });

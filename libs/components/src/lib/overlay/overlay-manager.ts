@@ -2,10 +2,12 @@ import {
   DOCUMENT,
   DestroyRef,
   EnvironmentInjector,
+  Binding,
   Type,
   computed,
   inject,
   inputBinding,
+  reflectComponentType,
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -27,16 +29,20 @@ import { OVERLAY_ERROR_CODES } from './overlay-errors';
 import { warnIfOverlayScrollBlockerMissing } from './overlay-scroll-blocker-registry';
 import { OverlayConfig } from './overlay-config';
 import { OverlayContainerComponent } from './overlay-container.component';
+import { OverlayInputs, OverlayTypedConfig } from './overlay-inputs';
 import { OVERLAY_HAS_BACKDROP, resolveOverlayHasBackdrop } from './overlay-has-backdrop';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
 import { createOverlayRef, getOverlayRefInternals } from './overlay-ref-internal';
 import { createOverlayStrategyController } from './strategies/overlay-strategy-controller';
 import { resolveOriginElement } from './strategies/resolve-origin-element';
 
+export type OverlayManagerOpenConfig<TComponent extends object = object, TResult = unknown> = OverlayConfig &
+  OverlayTypedConfig<TComponent, TResult>;
+
 export type OverlayManager = {
   open: <TComponent extends object, TResult = unknown>(
     component: Type<TComponent>,
-    config?: OverlayConfig,
+    config?: OverlayManagerOpenConfig<TComponent, TResult>,
   ) => OverlayRef<TComponent, TResult>;
   openOverlays: ReturnType<typeof computed<OverlayRef<object, unknown>[]>>;
 };
@@ -74,6 +80,34 @@ const resolveZIndex = (origin: Element | Event | null | undefined, document: Doc
   return resolveOverlayLayer(resolved?.target instanceof Element ? resolved.target : null);
 };
 
+const overlayInputBindings = <TComponent>(
+  component: Type<TComponent>,
+  inputs: OverlayInputs<TComponent> | undefined,
+): Binding[] => {
+  if (!inputs) return [];
+
+  const declaredInputs = reflectComponentType(component)?.inputs ?? [];
+
+  return Object.entries(inputs).flatMap(([propName, getter]) => {
+    if (!getter) return [];
+
+    const templateName = declaredInputs.find((declared) => declared.propName === propName)?.templateName ?? propName;
+
+    return [inputBinding(templateName, getter as () => unknown)];
+  });
+};
+
+const resolveTypedConfig = <TComponent extends object, TResult>(
+  component: Type<TComponent>,
+  typedConfig: OverlayManagerOpenConfig<TComponent, TResult>,
+): OverlayConfig => {
+  const { inputs, result, ...config } = typedConfig;
+
+  if (!inputs) return config;
+
+  return { ...config, bindings: [...overlayInputBindings(component, inputs), ...(config.bindings ?? [])] };
+};
+
 const stripQueryAndFragment = (url: string) => url.split(/[?#]/, 1)[0];
 
 const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
@@ -109,8 +143,10 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const open = <TComponent extends object, TResult = unknown>(
       component: Type<TComponent>,
-      config: OverlayConfig = {},
+      typedConfig: OverlayManagerOpenConfig<TComponent, TResult> = {},
     ) => {
+      const config = resolveTypedConfig(component, typedConfig);
+
       if (ngDevMode && config.mode !== 'non-modal' && !config.passive) {
         warnIfOverlayScrollBlockerMissing(document);
       }

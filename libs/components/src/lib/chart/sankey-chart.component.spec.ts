@@ -13,7 +13,7 @@ import {
   SankeyChartLinkKeyHint,
   SankeyChartNodeInput,
 } from './headless/sankey-chart.directive';
-import { SankeyChartComponent } from './sankey-chart.component';
+import { SankeyChartComponent, SankeyChartMarkActivateEvent } from './sankey-chart.component';
 
 @Component({
   selector: 'et-test-sankey-chart-host',
@@ -227,14 +227,13 @@ describe('SankeyChartComponent', () => {
     });
   });
 
-  it('leaves Enter alone on a node without outgoing links', () => {
+  it('keeps the focus on a node without outgoing links on Enter', () => {
     const { fixture, element } = setup();
     const salaries = mark(element, 'Salaries');
 
     salaries.focus();
-    const event = press(fixture, salaries, 'Enter');
+    press(fixture, salaries, 'Enter');
 
-    expect(event.defaultPrevented).toBe(false);
     expect(document.activeElement).toBe(salaries);
   });
 
@@ -506,5 +505,51 @@ describe('SankeyChartComponent', () => {
     expect(() => fixture.detectChanges()).not.toThrow();
     expect(String(handleError.mock.calls[0]?.[0])).toMatch(/ET5160/);
     expect(element.querySelector('.et-sankey-chart-node, .et-sankey-chart-link')).toBeNull();
+  });
+});
+
+describe('SankeyChartComponent markActivate', () => {
+  const listen = (result: ReturnType<typeof setup>) => {
+    const emitted: SankeyChartMarkActivateEvent[] = [];
+
+    result.fixture.debugElement
+      .query(By.directive(SankeyChartComponent))
+      .injector.get(SankeyChartComponent)
+      .markActivate.subscribe((event) => emitted.push(event));
+
+    return emitted;
+  };
+
+  it('emits the node or link input on click', () => {
+    const result = setup();
+    const emitted = listen(result);
+    const host = result.fixture.componentInstance;
+
+    mark(result.element, 'Tickets').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    result.element.querySelector('.et-sankey-chart-link')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted[0]).toEqual({ kind: 'node', node: host.nodes()[0] });
+    expect(emitted[1]?.kind).toBe('link');
+    expect(host.links()).toContain(emitted[1]?.kind === 'link' ? emitted[1].link : null);
+  });
+
+  it('emits on Space, and on Enter only where Enter does not step into a node’s links', () => {
+    const result = setup();
+    const emitted = listen(result);
+    const host = result.fixture.componentInstance;
+
+    expect(press(result.fixture, mark(result.element, 'Salaries'), 'Enter').defaultPrevented).toBe(true);
+    expect(press(result.fixture, mark(result.element, 'Tickets'), ' ').defaultPrevented).toBe(true);
+    press(result.fixture, mark(result.element, 'Tickets'), 'Enter');
+
+    expect(emitted).toEqual([
+      { kind: 'node', node: host.nodes()[3] },
+      { kind: 'node', node: host.nodes()[0] },
+    ]);
+
+    const link = result.element.querySelector('.et-sankey-chart-link') as SVGElement;
+    press(result.fixture, link, 'Enter');
+
+    expect(emitted[2]?.kind).toBe('link');
   });
 });

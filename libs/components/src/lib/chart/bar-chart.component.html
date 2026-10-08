@@ -40,6 +40,9 @@
               [style.--_et-chart-accent-mix.%]="bar.accentMix"
               [attr.aria-label]="bar.name"
               [attr.data-negative]="bar.isNegative ? '' : null"
+              (click)="activate($event, bar)"
+              (keydown.enter)="activate($event, bar)"
+              (keydown.space)="activate($event, bar)"
               class="et-bar-chart-bar"
             >
               <svg:rect

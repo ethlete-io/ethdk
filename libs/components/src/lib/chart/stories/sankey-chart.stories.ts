@@ -1,6 +1,7 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { SankeyChartStorybookComponent } from './sankey-chart-storybook.component';
+import { SankeyChartMarkActivateStorybookComponent } from './chart-mark-activate-storybook.component';
 
 const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
@@ -71,6 +72,21 @@ export const NarrowScreen: Story = {
         story:
           'Below 480px of width the `auto` direction turns the flow top to bottom: columns become rows, the ' +
           'first row is labelled above, the last below, and large middle nodes carry a chip.',
+      },
+    },
+  },
+};
+
+export const MarkActivate: Story = {
+  render: () => ({ template: '<et-sb-sankey-chart-mark-activate />' }),
+  decorators: [moduleMetadata({ imports: [SankeyChartMarkActivateStorybookComponent] })],
+  parameters: {
+    controls: { disable: true },
+    docs: {
+      description: {
+        story:
+          '`(markActivate)` emits the node or link input, tagged with `kind`, when a node or link is clicked, or on ' +
+          'Space on the focused mark, or Enter where it does not step into a node’s links. Use it to drill down.',
       },
     },
   },

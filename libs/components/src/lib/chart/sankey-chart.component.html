@@ -23,6 +23,9 @@
               [etSankeyChartMarkKey]="node.key"
               (pointerenter)="hoverNode($event, node.key)"
               (pointerleave)="chart.unhoverMark(node.key)"
+              (click)="activateNode($event, node)"
+              (keydown.enter)="activateNode($event, node)"
+              (keydown.space)="activateNode($event, node)"
               class="et-sankey-chart-node"
               etSankeyChartMark="node"
             >
@@ -59,6 +62,9 @@
               [etSankeyChartMarkKey]="link.key"
               (pointerenter)="hoverLink($event, link.key)"
               (pointerleave)="chart.unhoverMark(link.key)"
+              (click)="activateLink($event, link)"
+              (keydown.enter)="activateLink($event, link)"
+              (keydown.space)="activateLink($event, link)"
               class="et-sankey-chart-link"
               etChartMarkPlacement="top"
               etSankeyChartMark="link"
@@ -99,12 +105,14 @@
       <strong class="et-sankey-chart-tooltip-name">{{ node.name }}</strong>
       @if (node.incomingText) {
         <span class="et-sankey-chart-tooltip-total"
-          >{{ chart.resolvedIncomingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.incomingText }}</span></span
+          >{{ chart.resolvedIncomingLabel() }}
+          <span class="et-sankey-chart-tooltip-value">{{ node.incomingText }}</span></span
         >
       }
       @if (node.outgoingText) {
         <span class="et-sankey-chart-tooltip-total"
-          >{{ chart.resolvedOutgoingLabel() }} <span class="et-sankey-chart-tooltip-value">{{ node.outgoingText }}</span></span
+          >{{ chart.resolvedOutgoingLabel() }}
+          <span class="et-sankey-chart-tooltip-value">{{ node.outgoingText }}</span></span
         >
       }
     </span>

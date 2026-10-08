@@ -64,6 +64,9 @@
               [etLineChartSliceDescription]="slice.description"
               [etLineChartSliceAnchor]="anchor"
               [attr.aria-label]="slice.label"
+              (click)="activate($event, slice)"
+              (keydown.enter)="activate($event, slice)"
+              (keydown.space)="activate($event, slice)"
               class="et-line-chart-slice"
             >
               <svg:rect

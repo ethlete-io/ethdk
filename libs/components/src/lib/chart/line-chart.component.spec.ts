@@ -11,7 +11,7 @@ import {
   LineChartSeries,
   LineChartSeriesDatum,
 } from './headless/line-chart.directive';
-import { LineChartComponent } from './line-chart.component';
+import { LineChartComponent, LineChartMarkActivateEvent } from './line-chart.component';
 
 @Component({
   selector: 'et-test-line-chart-host',
@@ -628,5 +628,65 @@ describe('LineChartComponent series colors', () => {
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('share the colorToken "lava"'));
     warn.mockRestore();
+  });
+});
+
+describe('LineChartComponent markActivate', () => {
+  const listen = (result: ReturnType<typeof setup>) => {
+    const emitted: LineChartMarkActivateEvent[] = [];
+
+    result.fixture.debugElement
+      .query(By.directive(LineChartComponent))
+      .injector.get(LineChartComponent)
+      .markActivate.subscribe((event) => emitted.push(event));
+
+    return emitted;
+  };
+
+  const slices = (element: HTMLElement) => [...element.querySelectorAll<SVGElement>('.et-line-chart-slice')];
+
+  it('emits the datum from `data` when an x is clicked', () => {
+    const result = setup();
+    const emitted = listen(result);
+
+    slices(result.element)[1]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0]?.datum).toBe(result.host.data()[1]);
+    expect(emitted[0]?.series).toEqual([]);
+  });
+
+  it('emits on Enter and Space with the series that have a value at the x', () => {
+    const result = setup();
+    result.host.data.set(SERIES_DATA);
+    result.host.series.set(SERIES);
+    result.fixture.detectChanges();
+    const emitted = listen(result);
+    const slice = slices(result.element)[1] as SVGElement;
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    slice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    slice.dispatchEvent(space);
+
+    expect(space.defaultPrevented).toBe(true);
+    expect(emitted).toEqual([
+      { datum: SERIES_DATA[1], series: [SERIES[0]] },
+      { datum: SERIES_DATA[1], series: [SERIES[0]] },
+    ]);
+  });
+
+  it('finds the datum of a time axis given out of order', () => {
+    const result = setup();
+    const data: LineChartDatum[] = [
+      { x: new Date('2025-03-03T12:00:00Z'), value: 3 },
+      { x: new Date('2025-03-01T12:00:00Z'), value: 1 },
+    ];
+    result.host.data.set(data);
+    result.fixture.detectChanges();
+    const emitted = listen(result);
+
+    slices(result.element)[0]?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted[0]?.datum).toBe(data[1]);
   });
 });

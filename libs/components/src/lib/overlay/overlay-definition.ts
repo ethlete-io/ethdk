@@ -2,6 +2,7 @@ import { ModelSignal, Type, inject } from '@angular/core';
 import { RuntimeError } from '@ethlete/core';
 import { OverlayConfig } from './overlay-config';
 import { OVERLAY_ERROR_CODES } from './overlay-errors';
+import { OverlayResultMarker } from './overlay-inputs';
 import { OVERLAY_REF, OverlayRef } from './overlay-ref';
 
 /** The name of the model the overlay component must expose to participate in query-param sync. */
@@ -18,12 +19,18 @@ export type QueryParamOverlayValue<TComponent> = TComponent extends { overlayQue
   ? Extract<TValue, string>
   : string;
 
-export type OverlayDefinitionConfig<TComponent extends object> = OverlayConfig & {
+export type OverlayDefinitionConfig<TComponent extends object, TResult = unknown> = OverlayConfig & {
   /** The overlay component. */
   component: Type<TComponent>;
+
+  /** Types the overlay's result, see {@link overlayResult}. Has no effect at runtime. */
+  result?: OverlayResultMarker<TResult>;
 };
 
-export type QueryParamOverlayDefinitionConfig<TComponent extends object> = OverlayDefinitionConfig<TComponent> & {
+export type QueryParamOverlayDefinitionConfig<TComponent extends object, TResult = unknown> = OverlayDefinitionConfig<
+  TComponent,
+  TResult
+> & {
   /** The query param key that drives the overlay's open/close lifecycle. */
   queryParamKey: string;
 };
@@ -75,15 +82,16 @@ const injectOverlayRefOrThrow = <TComponent extends object, TResult>() => {
  * itself accesses its typed ref via `definition.injectRef()`.
  *
  * @example
- * export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResult>({
+ * export const productOverlay = defineOverlay({
  *   component: ProductOverlayComponent,
+ *   result: overlayResult<ProductResult>(),
  *   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
  * });
  */
 export const defineOverlay = <TComponent extends object, TResult = unknown>(
-  config: OverlayDefinitionConfig<TComponent>,
+  config: OverlayDefinitionConfig<TComponent, TResult>,
 ): OverlayDefinition<TComponent, TResult> => {
-  const { component, ...overlayConfig } = config;
+  const { component, result, ...overlayConfig } = config;
 
   return {
     kind: 'overlay',
@@ -110,9 +118,9 @@ export const defineOverlay = <TComponent extends object, TResult = unknown>(
  * });
  */
 export const defineQueryParamOverlay = <TComponent extends QueryParamOverlayHost, TResult = unknown>(
-  config: QueryParamOverlayDefinitionConfig<TComponent>,
+  config: QueryParamOverlayDefinitionConfig<TComponent, TResult>,
 ): QueryParamOverlayDefinition<TComponent, TResult> => {
-  const { component, queryParamKey, ...overlayConfig } = config;
+  const { component, queryParamKey, result, ...overlayConfig } = config;
 
   return {
     kind: 'queryParamOverlay',

@@ -9,7 +9,7 @@ import {
   SurfaceTheme,
 } from '@ethlete/core';
 import '../../test-helpers';
-import { BarChartComponent } from './bar-chart.component';
+import { BarChartComponent, BarChartMarkActivateEvent } from './bar-chart.component';
 import {
   BarChartDatum,
   BarChartDirective,
@@ -659,5 +659,59 @@ describe('BarChartComponent series colors', () => {
 
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('BarChartComponent markActivate', () => {
+  const listen = (result: ReturnType<typeof measure>) => {
+    const emitted: BarChartMarkActivateEvent[] = [];
+
+    result.fixture.debugElement
+      .query(By.directive(BarChartComponent))
+      .injector.get(BarChartComponent)
+      .markActivate.subscribe((event) => emitted.push(event));
+
+    return emitted;
+  };
+
+  const barNamed = (element: HTMLElement, name: string) =>
+    element.querySelector(`.et-bar-chart-bar[aria-label="${name}"]`) as SVGElement;
+
+  it('emits the datum from `data` and `null` as series when a bar is clicked', () => {
+    const result = setup();
+    const emitted = listen(result);
+
+    barNamed(result.element, 'Feb').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(emitted).toEqual([{ datum: result.fixture.componentInstance.data()[1], series: null }]);
+    expect(emitted[0]?.datum).toBe(result.fixture.componentInstance.data()[1]);
+  });
+
+  it('emits the series datum and the bar’s series on Enter and Space, cancelling the key', () => {
+    const result = setupSeries();
+    const emitted = listen(result);
+    const host = result.fixture.componentInstance;
+    const index = result.chart.bars().findIndex((entry) => entry.datum.label === 'Feb' && entry.series?.key === 'home');
+    const bar = result.element.querySelectorAll('.et-bar-chart-bar')[index] as SVGElement;
+    const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+    const space = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+
+    bar.dispatchEvent(enter);
+    bar.dispatchEvent(space);
+
+    expect(enter.defaultPrevented).toBe(true);
+    expect(space.defaultPrevented).toBe(true);
+    expect(emitted).toHaveLength(2);
+    expect(emitted[0]?.datum).toBe(host.data()[1]);
+    expect(emitted[0]?.series).toBe(host.series()[0]);
+  });
+
+  it('ignores other keys', () => {
+    const result = setup();
+    const emitted = listen(result);
+
+    barNamed(result.element, 'Jan').dispatchEvent(new KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+
+    expect(emitted).toEqual([]);
   });
 });

@@ -95,6 +95,19 @@ Hovering or focusing a node highlights its links and dims all others; hovering o
 
 When the chart first renders, the nodes and labels fade in, then the ribbons. Under `prefers-reduced-motion: reduce` everything appears at once.
 
+## Drill-down
+
+`(markActivate)` emits when a node or link is clicked, or when Space is pressed on the focused mark. Enter emits on a link and on a node without outgoing links; on a node with outgoing links it keeps stepping into them (see [Keyboard](#keyboard)). The payload is a `SankeyChartMarkActivateEvent`, `{ kind: 'node', node }` or `{ kind: 'link', link }`, holding the `SankeyChartNodeInput` or `SankeyChartLinkInput` you passed in.
+
+```ts
+protected openFlow(event: SankeyChartMarkActivateEvent) {
+  if (event.kind === 'node') this.openAccount(event.node.id);
+  else this.openTransfers(event.link.source, event.link.target);
+}
+```
+
+The story `Components/Data display/Sankey chart/Mark activate` shows it.
+
 ## Custom template
 
 `SankeyChartDirective` (`[etSankeyChart]`) holds the geometry without markup: `renderedNodes()` (per node its rect, hit `target`, `colorToken`, `accentMix`, in/out totals and texts, `description` and label position), `renderedLinks()` (per link its ribbon `path`, `width`, midpoint `anchor`, `source`, `target`, `colorToken`, `accentMix`, `valueText` and `name`), `highlightedLinks()`, `activeNodeKey()`, `hasHighlight()`, `table()`, `plotWidth()`, `flowDirection()` (the direction with `auto` resolved against the width of the element around `etChartPlot`) and `formatValue()`. Report hover with `hoverMark()`/`unhoverMark()`. Put `etSankeyChartMark="node"` or `etSankeyChartMark="link"` with `[etSankeyChartMarkKey]` (the node's `key` or the link's `key`) on each focusable mark: it reports focus, holds the chart's one tab stop (`tabStopMark()`) and handles the keys below. `focusMarkElement()` moves focus to a mark from code. Put `etChartPlot` on the element the flow is laid out in - its width is what the columns divide. Without one the directive throws `ET5100` in dev mode. Import `SankeyChartDirective`, `SankeyChartMarkDirective` and `ChartPlotDirective`.
@@ -144,7 +157,8 @@ The chart is one tab stop. Tab enters on the first node - or on the mark that wa
 | `↓` / `↑`    | The next / previous node in the column; stops at the ends                   | The next / previous outgoing link; wraps |
 | `→` / `←`    | The node in the next / previous column nearest in height; stops at the edge | -                                        |
 | `Home`/`End` | The first / last node of the chart                                          | The first / last outgoing link           |
-| `Enter`      | The node's first outgoing link, top to bottom; nothing on a sink            | -                                        |
+| `Enter`      | The node's first outgoing link, top to bottom; on a sink, `(markActivate)`  | `(markActivate)`                         |
+| `Space`      | `(markActivate)`                                                            | `(markActivate)`                         |
 | `Escape`     | Closes the tooltip                                                          | Back to the link's source node           |
 
 Nodes go column by column, top to bottom; a node's outgoing links top to bottom at the node. In a vertical flow the keys turn with it: `↓` / `↑` move to the nearest node of the next / previous row, `→` / `←` move within a row and cycle a node's outgoing links, left to right. An incoming link is reached from its source node.

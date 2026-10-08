@@ -82,6 +82,16 @@ A palette is one set of colors; for a dark surface, provide a second palette wit
 
 The legend sits beside the circle and wraps below it when the container is too narrow for both, as on a phone. Each legend row shows the swatch, the label, the formatted value and the share.
 
+## Drill-down
+
+`(markActivate)` emits the slice's `PieChartDatum` - the same object you passed in `data` - when a slice is clicked, or when Enter or Space is pressed on the focused slice. A click still opens the slice's tooltip. The legend rows do not emit.
+
+```html
+<et-pie-chart [data]="channels" (markActivate)="filterByChannel($event.label)" label="Traffic by channel" />
+```
+
+The story `Components/Data display/Pie chart/Mark activate` shows it.
+
 ## Custom template
 
 `PieChartDirective` (`[etPieChart]`) holds the geometry without markup: `slices()` (per slice its `path`, `startAngle`, `endAngle`, tooltip `anchor` and `placement`, `colorToken`, `accentMix`, `valueText`, `percentText` and `description`), `entries()` (every datum, including the ones that draw no slice), `diameter()`, `radius()`, `holeRadius()`, `total()`, `totalText()`, `table()` and `formatValue()`. Put `etChartPlot` on the element the circle is fitted in - its width caps the diameter. Without one the directive throws `ET5100` in dev mode. Import `PieChartDirective` and `ChartPlotDirective`.

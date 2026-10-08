@@ -1,6 +1,7 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { LineChartStorybookComponent } from './line-chart-storybook.component';
+import { LineChartMarkActivateStorybookComponent } from './chart-mark-activate-storybook.component';
 
 const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
@@ -111,4 +112,19 @@ export const Area: Story = {
 export const StackedArea: Story = {
   args: { dataset: 'channels', area: true, stacked: true },
   decorators: [withPalette(PALETTE)],
+};
+
+export const MarkActivate: Story = {
+  render: () => ({ template: '<et-sb-line-chart-mark-activate />' }),
+  decorators: [moduleMetadata({ imports: [LineChartMarkActivateStorybookComponent] })],
+  parameters: {
+    controls: { disable: true },
+    docs: {
+      description: {
+        story:
+          '`(markActivate)` emits its datum from `data` and the series with a value there when an x is clicked, or on ' +
+          'Enter or Space on the focused mark. Use it to drill down.',
+      },
+    },
+  },
 };

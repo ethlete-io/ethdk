@@ -26,7 +26,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TG-01   | `tableRowsFromQuery` owns its state. Accept external writable signals (`sort`, `filters`, `page`, `quickFilter`) and add `pageSize`? How does it interact with `isResetBy`?                    |
 | TG-03   | Server sort/filter state is untyped. Options: (a) generic column key, (b) `sortKey`/`filterKey` on `TableColumn`, (c) a `filterValues<V>()` helper.                                            |
-| TG-07   | Add a `(markActivate)` output to the four charts? Which payload shape?                                                                                                                         |
 | SS-02   | How does `<et-scheduler>` take custom edit-surface fields: a `directives` option on `provideSchedulerEditSurface()`, or an `editSurfaceDirectives` input?                                      |
 | SS-03   | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                     |
 | SS-04   | `TExtra` is lost at `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it?                       |
@@ -37,7 +36,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable. |
 | CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                    |
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                    |
-| OV-06   | Typed overlay data: (a) a result marker `overlayResult<T>()`, (b) a typed `inputs` option on `open()`?                                                                                         |
 | OV-14   | Overlay family names: `undefined` for both result paths, rename to `createCommandPaletteOpener`, add the transforms. Which names win?                                                          |
 | EA-01   | Unsaved-changes `confirm`: add `provideUnsavedChangesConfirm()` and a default alert dialog with `UNSAVED_CHANGES_LABELS`, so `confirm` becomes optional?                                       |
 | FG-05   | Reactive forms to signal forms: the report section and the guide are proposed. Is the reactive/signal forms interop of Angular a supported bridge?                                             |

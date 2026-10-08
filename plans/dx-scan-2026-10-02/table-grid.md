@@ -151,6 +151,7 @@ server-side path: the query adapters and the sort/filter state they hand to `arg
 
 ## TG-07 Charts emit nothing: no click/activate output for a bar, slice, point or Sankey link
 
+- Status: fixed (2026-10-08, `(markActivate)` on bar, line, pie and Sankey; payload types `BarChartMarkActivateEvent`, `LineChartMarkActivateEvent` (`series` is the list with a value at the x), `PieChartDatum`, `SankeyChartMarkActivateEvent`; Sankey Enter still steps into a node's links)
 - Where: `libs/components/src/lib/chart/*.component.ts` and `headless/*.directive.ts`: no `output()`
   anywhere in the chart folder.
 - Problem: drill-down ("click a month to open its orders", "click a slice to filter the table") is the

@@ -12,8 +12,9 @@ Imperative overlays are split into three pieces:
 
 ```ts
 // module scope
-export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResult>({
+export const productOverlay = defineOverlay({
   component: ProductOverlayComponent,
+  result: overlayResult<ProductResult>(),
   strategies: dialogOverlayStrategy({ maxWidth: '480px' }),
 });
 
@@ -21,7 +22,7 @@ export const productOverlay = defineOverlay<ProductOverlayComponent, ProductResu
 private product = createOverlayOpener(productOverlay, {
   afterClosed: (result) => console.log(result),
 });
-this.product.open({ origin: event, bindings: [inputBinding('productId', () => '42')] });
+this.product.open({ origin: event, inputs: { productId: () => '42' } });
 
 // inside ProductOverlayComponent
 protected overlayRef = productOverlay.injectRef();

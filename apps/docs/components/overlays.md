@@ -63,7 +63,7 @@ Defaults worth knowing:
 | `customAnimated`                         | `false` - set `true` to disable the built-in animations and drive your own via the [animation lifecycle](/core/animations)          |
 | `zIndex`                                 | The level declared by the nearest `data-et-overlay-layer` ancestor of `origin`, else `2147483003`                                   |
 
-Data goes in via `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers` - see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
+Data goes in via `inputs` (typed against the component's signal inputs: `{ productId: () => id }`), `bindings` (Angular's `inputBinding` / `outputBinding` / `twoWayBinding`) and `providers`. `result: overlayResult<ProductResult>()` types the ref's close result - see [passing data](/components/overlay-openers#passing-data-into-the-overlay).
 
 Popovers stack safely: a pane opened from **inside** another overlay (a select body, menu or tooltip within a dialog or anchored panel) renders as a sibling in the overlay root, but the parent still treats a pointer interaction with it as "inside". Clicking a nested popover never dismisses the overlay that opened it - dismissal is resolved against the whole nested tree, anchored by each pane's `origin`.
 

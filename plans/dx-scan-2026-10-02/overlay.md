@@ -123,6 +123,7 @@ notification, floating-action; guides `apps/docs/components/{overlays,overlay-op
   (b) a typed `inputs` option on `open()` derived from the component's `InputSignal` members
   (`{ productId: () => id }` mapped to `inputBinding`), keeping `bindings` as the escape hatch.
 - Breaking: no (additive). Decision: yes.
+- Status: fixed (2026-10-08, `overlayResult<T>()` marker on `defineOverlay`/`defineQueryParamOverlay`/`overlayManager.open`; typed `inputs` on `open()` and opener configs, all keys optional since required inputs are indistinguishable at the type level)
 
 ## OV-07 Filter overlay: dismiss yields `undefined`, not `{ didUpdate: false }`; guide uses the raw manager
 

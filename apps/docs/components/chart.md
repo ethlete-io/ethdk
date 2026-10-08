@@ -180,6 +180,21 @@ The title and note are plain projected elements; `label` still names the chart f
 
 <StoryEmbed id="components-data-display-bar-chart--empty" height="440px" />
 
+## Drill-down
+
+`(markActivate)` emits when a bar is clicked, or when Enter or Space is pressed on the focused bar. The payload is a `BarChartMarkActivateEvent`: `datum` is the entry from `data` (a `BarChartDatum` or `BarChartSeriesDatum`, the same object you passed in) and `series` is the bar's `BarChartSeries`, `null` in a single-series chart. A click still opens the bar's tooltip.
+
+```html
+<et-bar-chart
+  [data]="tickets"
+  [series]="channels"
+  (markActivate)="openOrders($event.datum.label, $event.series?.key)"
+  label="Tickets sold"
+/>
+```
+
+The story `Components/Data display/Bar chart/Mark activate` shows it.
+
 ## Custom template
 
 `BarChartDirective` (`[etBarChart]`) holds the geometry without markup: `bars()` (per bar its rect, `path`, hit `target`, tooltip `anchor` and `placement`, `series`, `colorToken`, `accentMix`, `valueText` and a `name` such as `Mar, Online`), `ticks()`, `baseline()`, `categoryLabels()` (already thinned), `categoryLabelStride()`, `isEmpty()`, `valueLabels()`, `legendItems()`, `table()`, `plotWidth()` and `formatValue()`. Put `etChartPlot` on the element the bars are laid out in - its width is what the bands divide. Without one the directive throws `ET5100` in dev mode. `etBarChartPlot` still works as another name for it. Import `BarChartDirective` and `ChartPlotDirective`.

@@ -1,6 +1,7 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { PieChartStorybookComponent } from './pie-chart-storybook.component';
+import { PieChartMarkActivateStorybookComponent } from './chart-mark-activate-storybook.component';
 
 const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
@@ -108,6 +109,21 @@ export const NoPalette: Story = {
     docs: {
       description: {
         story: 'Without a palette, every slice is drawn in its own step of the accent, from full strength to 40%.',
+      },
+    },
+  },
+};
+
+export const MarkActivate: Story = {
+  render: () => ({ template: '<et-sb-pie-chart-mark-activate />' }),
+  decorators: [moduleMetadata({ imports: [PieChartMarkActivateStorybookComponent] })],
+  parameters: {
+    controls: { disable: true },
+    docs: {
+      description: {
+        story:
+          '`(markActivate)` emits its datum when a slice is clicked, or on ' +
+          'Enter or Space on the focused mark. Use it to drill down.',
       },
     },
   },

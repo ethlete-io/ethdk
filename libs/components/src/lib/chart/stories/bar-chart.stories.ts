@@ -1,6 +1,7 @@
 import { provideColorPalette } from '@ethlete/core';
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { BarChartStorybookComponent } from './bar-chart-storybook.component';
+import { BarChartMarkActivateStorybookComponent } from './chart-mark-activate-storybook.component';
 
 const PALETTE = provideColorPalette([
   { token: 'chart-blue', label: 'Blue' },
@@ -144,6 +145,21 @@ export const Empty: Story = {
     docs: {
       description: {
         story: 'While `data` is empty, projected `etBarChartEmpty` content is shown over the plot.',
+      },
+    },
+  },
+};
+
+export const MarkActivate: Story = {
+  render: () => ({ template: '<et-sb-bar-chart-mark-activate />' }),
+  decorators: [moduleMetadata({ imports: [BarChartMarkActivateStorybookComponent] })],
+  parameters: {
+    controls: { disable: true },
+    docs: {
+      description: {
+        story:
+          '`(markActivate)` emits its datum from `data` and its series when a bar is clicked, or on ' +
+          'Enter or Space on the focused mark. Use it to drill down.',
       },
     },
   },

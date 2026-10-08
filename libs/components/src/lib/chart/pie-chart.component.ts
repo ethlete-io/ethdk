@@ -4,6 +4,7 @@ import {
   computed,
   inject,
   input,
+  output,
   TemplateRef,
   viewChildren,
   ViewEncapsulation,
@@ -14,12 +15,12 @@ import { ChartTooltipComponent } from './chart-tooltip.component';
 import { injectChartLabels } from './headless/chart-labels';
 import { ChartPlotDirective } from './headless/chart-plot.directive';
 import { ChartMarkDirective } from './headless/internals/chart-mark.directive';
-import { PieChartDirective } from './headless/pie-chart.directive';
+import { PieChartDatum, PieChartDirective, PieChartSlice } from './headless/pie-chart.directive';
 
 /**
  * A pie chart, or a donut with `innerRadius`, with a legend listing every value and share and a
  * visually hidden table view. Driven by the headless {@link PieChartDirective}. Content marked
- * `etPieChartCenter` is shown in the donut hole.
+ * `etPieChartCenter` is shown in the donut hole. Bind `(markActivate)` to drill down from a slice.
  *
  * @example
  * <et-pie-chart [data]="channels" [innerRadius]="0.6" showTotal label="Traffic by channel" />
@@ -68,7 +69,15 @@ export class PieChartComponent {
   /** The caption under the total in the donut hole. @default the pie total of {@link ChartLabels} */
   public totalLabel = input<string>();
 
-  protected resolvedTotalLabel = computed(() => this.totalLabel() ?? this.labels().pieTotal);
+  /** Emits the slice's datum when a slice is clicked, or when Enter or Space is pressed on the focused slice. */
+  public markActivate = output<PieChartDatum>();
 
   protected sliceTooltips = viewChildren('sliceTooltip', { read: TemplateRef });
+
+  protected resolvedTotalLabel = computed(() => this.totalLabel() ?? this.labels().pieTotal);
+
+  protected activate(event: Event, slice: PieChartSlice) {
+    event.preventDefault();
+    this.markActivate.emit(slice.datum);
+  }
 }
