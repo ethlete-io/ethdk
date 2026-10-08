@@ -1,10 +1,18 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { FormFieldMultiLanguageRichTextEditorStorybookComponent } from './multi-language-rich-text-editor-storybook.component';
+import { MultiLanguageRichTextEditorTriggersStorybookComponent } from './multi-language-rich-text-editor-triggers-storybook.component';
 
 export default {
   title: 'Components/Forms/Rich Text Editor/Multi Language',
   component: FormFieldMultiLanguageRichTextEditorStorybookComponent,
-  decorators: [moduleMetadata({ imports: [FormFieldMultiLanguageRichTextEditorStorybookComponent] })],
+  decorators: [
+    moduleMetadata({
+      imports: [
+        FormFieldMultiLanguageRichTextEditorStorybookComponent,
+        MultiLanguageRichTextEditorTriggersStorybookComponent,
+      ],
+    }),
+  ],
   argTypes: {
     appearance: { control: 'select', options: ['box', 'underline'] },
     fill: { control: 'select', options: ['transparent', 'filled'] },
@@ -52,4 +60,10 @@ export const RequiredLanguages: Story = {
       en: '# Welcome\n\nAlready written.',
     },
   },
+};
+
+/** `[triggers]` gives every language `#` merge fields; the palette inserts into the active language
+ *  through the component's `editor()`. */
+export const WithTriggers: StoryObj<MultiLanguageRichTextEditorTriggersStorybookComponent> = {
+  render: () => ({ template: '<et-sb-multi-language-rich-text-editor-triggers />' }),
 };

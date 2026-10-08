@@ -688,6 +688,24 @@ The multi-language editor takes the single editor's `labels`, `hidden`, `warning
 
 <StoryEmbed id="components-forms-rich-text-editor-multi-language--with-existing-translations" height="420px" />
 
+**Tokens in every language.** `etRichTextEditorTriggers` cannot sit on the multi-language editor,
+since the editor it needs is inside the template. Pass `triggers` (and optionally
+`parsePastedTokens`) to the multi-language editor instead; it applies them to the editor it embeds.
+The embedded `RichTextEditorDirective` is on the `editor()` signal - one instance edits every
+language, so `insertToken()` and the token palette always write into the active language:
+
+```html
+<et-multi-language-rich-text-editor #body [formField]="form.body" [languages]="languages" [triggers]="triggers" />
+
+@if (body.editor(); as editor) {
+<et-rich-text-editor-token-palette [editor]="editor" [triggers]="triggers" />
+}
+```
+
+`editor()` is `undefined` until the embedded editor renders, and while `languages` is invalid.
+
+<StoryEmbed id="components-forms-rich-text-editor-multi-language--with-triggers" height="420px" />
+
 **Requiring translations.** To make specific languages mandatory, add the exported `requiredLanguages`
 validator to your `form()` schema - a missing translation then surfaces as a normal form-field error,
 the same channel every other control uses:

@@ -105,6 +105,7 @@ Scope: `libs/components/src/lib/forms/rich-text-editor`, `libs/components/src/li
   carrying `etRichTextEditorTriggers`), and expose the inner `RichTextEditorDirective` (`editor` signal, or
   `insertToken`/`insertTokenItem` delegates) so the palette and app buttons work. Document both.
 - Breaking: no. Decision: yes (new API).
+- Status: fixed (2026-10-08, `triggers` + `parsePastedTokens` inputs apply `etRichTextEditorTriggers` to the embedded editor; `editor()` exposes its directive for `insertToken` and the palette; spec, `WithTriggers` story, docs)
 
 ## RTE-06 Headless `[etRichTextEditor]` gets no paste/drop/undo/autoformat/tool-hook handling
 

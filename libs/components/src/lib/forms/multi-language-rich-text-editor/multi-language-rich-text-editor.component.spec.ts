@@ -10,6 +10,8 @@ import { provideRichTextEditorDefaultTools, provideRichTextEditorTools } from '.
 import { RichTextEditorDirective } from '../rich-text-editor/headless/rich-text-editor.directive';
 import { RichTextEditorLabels } from '../rich-text-editor/rich-text-editor-labels';
 import { RichTextEditorComponent } from '../rich-text-editor/rich-text-editor.component';
+import { RichTextEditorTokenPaletteComponent } from '../rich-text-editor/rich-text-editor-token-palette.component';
+import { RichTextEditorTrigger } from '../rich-text-editor/rich-text-editor-trigger';
 import { MultiLanguageRichTextEditorDirective } from './headless/multi-language-rich-text-editor.directive';
 import {
   MultiLanguageRichTextEditorLanguage,
@@ -63,6 +65,34 @@ class MultiLanguageEditorFormHost {
   public languages: readonly MultiLanguageRichTextEditorLanguage[] = [
     { code: 'en', label: 'English' },
     { code: 'de', label: 'German' },
+  ];
+}
+
+const FIELDS = [{ id: 'first-name', label: 'First name' }];
+
+@Component({
+  template: `
+    <et-multi-language-rich-text-editor
+      #ml
+      [(value)]="value"
+      [languages]="languages"
+      [triggers]="triggers"
+      aria-label="Body"
+    />
+    @if (ml.editor(); as editor) {
+      <et-rich-text-editor-token-palette [editor]="editor" [triggers]="triggers" />
+    }
+  `,
+  imports: [MULTI_LANGUAGE_RICH_TEXT_EDITOR_IMPORTS, RichTextEditorTokenPaletteComponent],
+})
+class MultiLanguageEditorWithTriggersHost {
+  public value = signal<MultiLanguageRichTextEditorValue>({});
+  public languages: readonly MultiLanguageRichTextEditorLanguage[] = [
+    { code: 'en', label: 'English' },
+    { code: 'de', label: 'German' },
+  ];
+  public triggers: RichTextEditorTrigger[] = [
+    { char: '#', type: 'field', items: FIELDS, resolveItem: (id) => FIELDS.find((item) => item.id === id) ?? null },
   ];
 }
 
@@ -380,6 +410,47 @@ describe('MultiLanguageRichTextEditorComponent', () => {
   providers: [provideRichTextEditorDefaultTools(), provideRichTextEditorLanguageTool()],
 })
 class BareEditorWithLanguageToolHost {}
+
+describe('MultiLanguageRichTextEditorComponent with triggers', () => {
+  let driver: RichTextEditorDriver<MultiLanguageEditorWithTriggersHost>;
+
+  beforeEach(() => {
+    driver = mountRichTextEditor(MultiLanguageEditorWithTriggersHost, { directiveSelector: 'et-rich-text-editor' });
+  });
+
+  it('exposes the embedded editor', () => {
+    expect(driver.query('et-multi-language-rich-text-editor')).not.toBeNull();
+    expect(driver.editor).toBeInstanceOf(RichTextEditorDirective);
+    expect(driver.editable().getAttribute('aria-haspopup')).toBe('listbox');
+  });
+
+  it('inserts a token from the palette into the active language', async () => {
+    await switchLanguage(driver, 'German');
+
+    driver.query<HTMLButtonElement>('et-rich-text-editor-token-palette button')!.click();
+    tick();
+
+    expect(driver.host.value()).toEqual({ de: '{{field:first-name}}' });
+    expect(driver.editable().querySelectorAll('[data-et-token]').length).toBe(1);
+  });
+
+  it('inserts a token through the exposed editor', () => {
+    const ml = driver.fixture.debugElement.query((el) => el.name === 'et-multi-language-rich-text-editor');
+
+    ml.componentInstance.editor().insertToken('field', 'first-name');
+    tick();
+
+    expect(driver.host.value()).toEqual({ en: '{{field:first-name}}' });
+    expect(textOf(driver.editable().querySelector('[data-et-token]'))).toContain('First name');
+  });
+
+  it('turns a pasted token spelled out as text back into a chip', () => {
+    driver.caretAtStart();
+    driver.paste({ text: '#First name' });
+
+    expect(driver.host.value()).toEqual({ en: '{{field:first-name}}' });
+  });
+});
 
 describe('the language tool outside the multi-language editor', () => {
   it('reports ET2602', () => {
