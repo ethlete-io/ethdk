@@ -305,6 +305,31 @@ describe('streamDay', () => {
     expect(streamOf(day, OTHER_APPLICATIONS_KEY)?.engagedMs).toBe(30 * MINUTE);
   });
 
+  it('describes a row by the commits written here, never by the ones a pull brought in', () => {
+    const pulled: CollectedEvent = {
+      at: AT(2),
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: SDK,
+      branch: 'next',
+      sha: 'pulled1234',
+      subject: 'feat(components): Written on the laptop',
+      authoredAt: AT(-300),
+    };
+    const day = streamDay({
+      events: [
+        ...focusRun({ from: 0, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        pulled,
+        commit(8, 'fix(repo): Written here'),
+      ],
+      options: { repoRoots: [SDK] },
+    });
+
+    expect([...day.rows.proposals, ...day.rows.unnamed].map((row) => row.description)).toEqual([
+      'fix(repo): Written here',
+    ]);
+  });
+
   it('never passes the sticky to another application, so a browser page stays off the checkout', () => {
     const day = streamDay({
       events: [

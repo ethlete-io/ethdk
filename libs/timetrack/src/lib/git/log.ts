@@ -31,6 +31,10 @@ const branchOf = (ref: string) => {
  * `worktrees` names the checkout that holds a branch none of `owners` holds, which the commit carries
  * as its `worktree`.
  *
+ * `arrived` names the commits this machine received rather than wrote, with when each arrived (see
+ * `gitArrivedAt`). Such a commit is dated by its arrival, which is the only moment this machine took
+ * part in it, and keeps its author date as `authoredAt`.
+ *
  * The paths `--name-only` prints follow their own commit's header, so a commit this drops has to stay
  * the current one until the next header arrives. Otherwise its files join the commit before it.
  */
@@ -40,6 +44,7 @@ export const parseGitLog = (options: {
   window?: GitScanWindow;
   owners?: ReadonlyMap<string, string>;
   worktrees?: ReadonlyMap<string, string>;
+  arrived?: ReadonlyMap<string, Date>;
 }): GitCommitEvent[] => {
   const events: GitCommitEvent[] = [];
   const seen = new Set<string>();
@@ -62,9 +67,13 @@ export const parseGitLog = (options: {
 
     if (!sha || !authored || !branch || !subject || seen.has(sha)) continue;
 
-    const at = new Date(authored);
+    const authoredAt = new Date(authored);
 
-    if (Number.isNaN(at.getTime())) continue;
+    if (Number.isNaN(authoredAt.getTime())) continue;
+
+    const arrivedAt = options.arrived?.get(sha);
+    const at = arrivedAt ?? authoredAt;
+
     if (options.window && (at < options.window.from || at > options.window.to)) continue;
 
     seen.add(sha);
@@ -81,6 +90,7 @@ export const parseGitLog = (options: {
       sha,
       subject,
       ...(worktree ? { worktree } : {}),
+      ...(arrivedAt ? { authoredAt } : {}),
     };
     events.push(current);
   }

@@ -5,7 +5,7 @@ export const GIT_FIELD_SEPARATOR = '\u001f';
  * `%gd` renders the reflog's own timestamp under `--date=iso-strict`, which is the instant the branch
  * was actually switched. A commit or author date would be a different moment entirely.
  */
-export const GIT_REFLOG_FORMAT = `%gd${GIT_FIELD_SEPARATOR}%gs`;
+export const GIT_REFLOG_FORMAT = `%gd${GIT_FIELD_SEPARATOR}%gs${GIT_FIELD_SEPARATOR}%H`;
 
 /**
  * `%S` names the ref the commit was reached from, which is the only way a plain `git log` says which

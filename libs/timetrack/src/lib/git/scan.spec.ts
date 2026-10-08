@@ -290,4 +290,48 @@ describe('collectGitEvents$', () => {
     expect(result?.events.map((event) => event.kind)).toEqual(['git-checkout', 'git-commit']);
     expect(result?.failures.map((failure) => failure.args[0])).toEqual(['worktree']);
   });
+
+  it('dates a commit a pull brought in by when it arrived, and a commit written here by its author date', () => {
+    const before = 'a'.repeat(40);
+    const pulled = 'b'.repeat(40);
+    const tip = 'c'.repeat(40);
+    const local = 'd'.repeat(40);
+    const sep = GIT_FIELD_SEPARATOR;
+    const reflog = [
+      `next@{2026-08-11T19:29:44+02:00}${sep}commit: test(cli): Written here${sep}${local}`,
+      `next@{2026-08-11T19:27:28+02:00}${sep}pull --tags origin next: Fast-forward${sep}${tip}`,
+      `next@{2026-08-10T01:01:13+02:00}${sep}commit: fix(repo): Written yesterday${sep}${before}`,
+    ].join('\n');
+    const log = [
+      [local, '2026-08-11T19:29:44+02:00', 'next', 'test(cli): Written here'],
+      [tip, '2026-08-11T18:06:00+02:00', 'next', 'feat(repo): Written on the laptop'],
+      [pulled, '2026-08-11T13:36:06+02:00', 'next', 'ci(repo): Written on the laptop too'],
+    ]
+      .map((fields) => fields.join(sep))
+      .join('\n');
+    const { result, specs } = scan({
+      repos: REPOS,
+      outputs: (spec) => ({
+        stdout:
+          spec.args[0] === 'reflog'
+            ? reflog
+            : spec.args[0] === 'log'
+              ? log
+              : spec.args[0] === 'rev-list'
+                ? `${tip}\n${pulled}\n`
+                : '',
+      }),
+    });
+
+    expect(specs.find((spec) => spec.args[0] === 'rev-list')?.args.slice(-2)).toEqual([tip, `^${before}`]);
+    expect(
+      result?.events.flatMap((event) =>
+        event.kind === 'git-commit' ? [[event.sha[0], event.at.toISOString(), event.authoredAt?.toISOString()]] : [],
+      ),
+    ).toEqual([
+      ['c', new Date('2026-08-11T19:27:28+02:00').toISOString(), new Date('2026-08-11T18:06:00+02:00').toISOString()],
+      ['b', new Date('2026-08-11T19:27:28+02:00').toISOString(), new Date('2026-08-11T13:36:06+02:00').toISOString()],
+      ['d', new Date('2026-08-11T19:29:44+02:00').toISOString(), undefined],
+    ]);
+  });
 });

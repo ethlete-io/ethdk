@@ -399,8 +399,8 @@ const evidenceFor = (sample: ActivityEvent): Evidence | null => {
       return {
         kind: 'commit',
         at: sample.at,
-        detail: `${sample.sha.slice(0, 7)} ${sample.subject}`,
-        summary: sample.subject,
+        detail: `${sample.sha.slice(0, 7)} ${sample.subject}${sample.authoredAt ? ' (pulled)' : ''}`,
+        ...(sample.authoredAt ? {} : { summary: sample.subject }),
       };
     case 'agent-session':
       return {

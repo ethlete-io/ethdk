@@ -153,6 +153,13 @@ fn append(
     append_replacing(connection, events, cursors, calendar_window, &[])
 }
 
+const WORKTREE_NAMED: &str = "(json_extract(collected_event.payload, '$.worktree') IS NULL
+    AND json_extract(excluded.payload, '$.worktree') IS NOT NULL
+    AND json_extract(collected_event.payload, '$.branch') IS json_extract(excluded.payload, '$.branch'))";
+
+const ARRIVAL_FOUND: &str = "(json_extract(collected_event.payload, '$.authoredAt') IS NULL
+    AND json_extract(excluded.payload, '$.authoredAt') IS NOT NULL)";
+
 fn append_replacing(
     connection: &mut Connection,
     events: &[StoredEvent],
@@ -191,20 +198,28 @@ fn append_replacing(
     }
 
     {
-        let mut insert = transaction.prepare(
+        let mut insert = transaction.prepare(&format!(
             "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key) VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT (dedupe_key) DO UPDATE SET payload = CASE collected_event.kind
-               WHEN 'git-commit'
-                 THEN json_set(collected_event.payload, '$.worktree', json_extract(excluded.payload, '$.worktree'))
-               ELSE excluded.payload
-             END
+             ON CONFLICT (dedupe_key) DO UPDATE SET
+               payload = CASE
+                 WHEN collected_event.kind = 'git-commit' THEN CASE WHEN {arrived}
+                   THEN json_set({commit}, '$.at', json_extract(excluded.payload, '$.at'),
+                     '$.authoredAt', json_extract(excluded.payload, '$.authoredAt'))
+                   ELSE {commit} END
+                 ELSE excluded.payload
+               END,
+               at_ms = CASE WHEN collected_event.kind = 'git-commit' AND {arrived}
+                 THEN excluded.at_ms ELSE collected_event.at_ms END
              WHERE (collected_event.kind IN ('calendar-event', 'agent-session', 'agent-usage', 'agent-prompt')
                  AND collected_event.payload IS NOT excluded.payload)
-               OR (collected_event.kind = 'git-commit'
-                 AND json_extract(collected_event.payload, '$.worktree') IS NULL
-                 AND json_extract(excluded.payload, '$.worktree') IS NOT NULL
-                 AND json_extract(collected_event.payload, '$.branch') IS json_extract(excluded.payload, '$.branch'))",
-        )?;
+               OR (collected_event.kind = 'git-commit' AND ({worktree} OR {arrived}))",
+            commit = format!(
+                "CASE WHEN {WORKTREE_NAMED} THEN json_set(collected_event.payload, '$.worktree', \
+                 json_extract(excluded.payload, '$.worktree')) ELSE collected_event.payload END"
+            ),
+            worktree = WORKTREE_NAMED,
+            arrived = ARRIVAL_FOUND,
+        ))?;
         for event in events {
             if crate::pause::is_paused_at(&paused, event.at_ms) {
                 continue;
@@ -1117,6 +1132,31 @@ mod tests {
                 "branch": "wt/gallery",
                 "subject": "first",
                 "worktree": "/repo/.claude/worktrees/gallery"
+            })
+        );
+    }
+
+    #[test]
+    fn moves_a_stored_commit_to_when_a_later_scan_found_it_arrived() {
+        let mut connection = store();
+        let mut arrived = commit_on("next", None);
+
+        arrived.at_ms = 9_000;
+        arrived.payload["at"] = serde_json::json!("1970-01-01T00:00:09.000Z");
+        arrived.payload["authoredAt"] = serde_json::json!("1970-01-01T00:00:01.000Z");
+        append(&mut connection, &[commit_on("next", None)], &[], None).unwrap();
+        append(&mut connection, &[arrived], &[], None).unwrap();
+        append(&mut connection, &[commit_on("next", None)], &[], None).unwrap();
+
+        assert_eq!(stored_at(&connection), vec![9_000]);
+        assert_eq!(
+            commit_payload(&connection),
+            serde_json::json!({
+                "sha": "sha-1000",
+                "branch": "next",
+                "subject": "first",
+                "at": "1970-01-01T00:00:09.000Z",
+                "authoredAt": "1970-01-01T00:00:01.000Z"
             })
         );
     }

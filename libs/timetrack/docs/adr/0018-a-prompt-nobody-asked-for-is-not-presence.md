@@ -54,11 +54,15 @@ all, because this machine held no agent events to read — the second is what re
 - **The user can still name it by hand**, and that names it. The barrier is against a day proposing
   such an hour, not against a person deciding they were in fact there. A refusal nothing could
   override would be a refusal that gets worked around.
-- **A commit is still a presence source, and is still wrong on a pulled commit.** `git` stays in
+- **A commit is still a presence source, dated by when this machine took part in it.** `git` stays in
   `PRESENCE_SOURCES`: on a normal day a commit is real presence, and taking it out would lose a
-  terminal-only afternoon. What the second rule does is stop a pulled commit from _booking_ anything.
-  Recording when this machine first saw a commit, beside when it was authored, is the fix for the
-  bands themselves, and it is not built yet.
+  terminal-only afternoon. A commit no reflog entry here wrote, which a pull, merge or reset brought
+  in, is dated by that reflog entry, and `authoredAt` keeps when it was written elsewhere. It is
+  presence at the pull and nowhere else, and its subject describes no row: the work it names was done
+  on another machine. Dropping it instead would lose the one fact this machine holds, and a
+  cross-machine merge needs it to tell the machine that wrote a commit from the ones that received it.
+  Found on 2026-10-08: 40 commits written on a laptop from 13:36 to 18:06 and pulled at 19:27 drew a
+  14:45-17:30 band nobody sat at.
 - **Donation is not covered yet, and it is a hole.** `donateBlocks` runs in `buildRows` _before_
   `markAttendance`, so a band nobody was at can still give its hours to the attended band beside it —
   past the barrier this ADR builds. A donate rule on a long-lived branch is the shape that hits it:

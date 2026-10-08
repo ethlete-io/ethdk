@@ -83,10 +83,14 @@ const toStored = (event: CollectedEvent): StoredEvent => ({
 });
 
 const reviveEvent = (stored: StoredEvent): CollectedEvent => {
-  const { at, until, ...rest } = stored.payload;
-  const revived = { ...rest, at: new Date(at as string) };
+  const { at, until, authoredAt, ...rest } = stored.payload;
 
-  return (typeof until === 'string' ? { ...revived, until: new Date(until) } : revived) as CollectedEvent;
+  return {
+    ...rest,
+    at: new Date(at as string),
+    ...(typeof until === 'string' ? { until: new Date(until) } : {}),
+    ...(typeof authoredAt === 'string' ? { authoredAt: new Date(authoredAt) } : {}),
+  } as CollectedEvent;
 };
 
 const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredCursor => ({

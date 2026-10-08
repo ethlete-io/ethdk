@@ -1,6 +1,7 @@
 import { Observable, concatMap, forkJoin, from, map, of, toArray } from 'rxjs';
 import { CollectedEvent } from '../model/event';
 import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
+import { GitArrival, gitArrivalArgs, gitArrivalsOf, gitArrivedAt } from './arrival';
 import { GIT_LOG_FORMAT, GIT_REFLOG_FORMAT, GitScanWindow } from './format';
 import { parseGitLog } from './log';
 import { parseGitBranchReflog, parseGitReflog } from './reflog';
@@ -164,8 +165,8 @@ const probeScanOf = (probe: RepoProbe): GitScanResult => ({
   ].filter((failure): failure is GitScanFailure => !!failure),
 });
 
-const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult => {
-  const { group, log } = options;
+const logScanOf = (options: { group: RepoGroup; log: GitRun; arrived: ReadonlyMap<string, Date> }): GitScanResult => {
+  const { group, log, arrived } = options;
   const repo = group.scanner.repo;
   const failure = failureOf({ repoPath: repo.path, run: log });
   const { owners, worktrees } = holdersOf(group);
@@ -174,7 +175,14 @@ const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult =>
   return {
     events: [
       ...(log.result.code === 0
-        ? parseGitLog({ repoPath: repo.path, output: log.result.stdout, window: repo.window, owners, worktrees })
+        ? parseGitLog({
+            repoPath: repo.path,
+            output: log.result.stdout,
+            window: repo.window,
+            owners,
+            worktrees,
+            arrived,
+          })
         : []),
       ...(reflog.code === 0
         ? parseGitBranchReflog({ repoPath: repo.path, output: reflog.stdout, window: repo.window, owners })
@@ -182,6 +190,35 @@ const logScanOf = (options: { group: RepoGroup; log: GitRun }): GitScanResult =>
     ],
     failures: failure ? [failure] : [],
   };
+};
+
+/**
+ * When each commit of the group that this machine received rather than wrote first arrived. Read from
+ * every checkout's reflog, since a commit written in a worktree is recorded in that worktree's own.
+ */
+const arrivedOf$ = (options: {
+  processes: TimetrackProcessRunner;
+  group: RepoGroup;
+}): Observable<Map<string, Date>> => {
+  const { processes, group } = options;
+  const repo = group.scanner.repo;
+  const arrivals = gitArrivalsOf({
+    outputs: group.members.flatMap((member) => (member.reflog.result.code === 0 ? [member.reflog.result.stdout] : [])),
+    window: repo.window,
+  });
+
+  if (!arrivals.arrivals.length) return of(new Map<string, Date>());
+
+  return from(arrivals.arrivals).pipe(
+    concatMap((arrival: GitArrival) =>
+      run$({
+        processes,
+        spec: gitSpec({ repoPath: repo.path, args: gitArrivalArgs({ arrival, window: repo.window }) }),
+      }).pipe(map((run) => ({ arrival, output: run.result.code === 0 ? run.result.stdout : '' }))),
+    ),
+    toArray(),
+    map((listed) => gitArrivedAt({ arrivals, listed })),
+  );
 };
 
 const merged = (scans: GitScanResult[]): GitScanResult => ({
@@ -209,10 +246,13 @@ export const collectGitEvents$ = (options: {
     concatMap((probes) =>
       from(groupsOf(probes)).pipe(
         concatMap((group) =>
-          run$({
-            processes: options.processes,
-            spec: gitSpec({ repoPath: group.scanner.repo.path, args: gitLogArgs(group.scanner.repo) }),
-          }).pipe(map((log) => logScanOf({ group, log }))),
+          forkJoin({
+            log: run$({
+              processes: options.processes,
+              spec: gitSpec({ repoPath: group.scanner.repo.path, args: gitLogArgs(group.scanner.repo) }),
+            }),
+            arrived: arrivedOf$({ processes: options.processes, group }),
+          }).pipe(map(({ log, arrived }) => logScanOf({ group, log, arrived }))),
         ),
         toArray(),
         map((logs) => merged([...probes.map(probeScanOf), ...logs])),

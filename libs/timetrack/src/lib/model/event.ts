@@ -69,6 +69,11 @@ export type GitCommitEvent = CollectedEventBase<'git', 'git-commit'> & {
    * no configured checkout stands for. `repoPath` is then only the checkout the log was read from.
    */
   worktree?: string;
+  /**
+   * Set on a commit this machine received by a pull, merge or reset rather than wrote. `at` is then
+   * when it arrived here, and this is when it was written elsewhere.
+   */
+  authoredAt?: Date;
 };
 
 /**
