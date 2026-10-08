@@ -55,16 +55,15 @@ copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repo
   sha, prompt and turn ids, MR, calendar) do not, so two copies count once; the machine whose reflog
   says `commit` owns the commit.
 - **macOS:** idle polled from `idle_ms`; lock from `com.apple.screenIsLocked`; no Accessibility grant,
-  so app-only evidence; paths start `/Users/tom`; macOS 15 needs `NSLocalNetworkUsageDescription` and
-  `NSBonjourServices` (no `Info.plist` yet); expect a firewall prompt; asleep, away and off look the
-  same.
+  so app-only evidence; paths start `/Users/tom`; `NSLocalNetworkUsageDescription` and
+  `NSBonjourServices` live in `src-tauri/Info.plist`; asleep, away and off look the same.
 
 ## Proposed slice order
 
 0. Bugs a-e (S-M, 2-3 d).
 1. Done. ADR 0039 + migration 20 (machine id, change counter, tombstones, `received_event`,
    `peer_cursor`) + `repoKeyOf`. The read fold and the stream key change wait for slice 4.
-2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d). In progress, Tom said go on 2026-10-08.
+2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d). Done 2026-10-08.
    - 2a. Done (639dca492). Port 52741, override `TIMETRACK_PEER_PORT`; the ops are answered in the
      host, so the `ethlete-agents timetrack` CLI does not know them yet. Host: machine key and self-signed certificate (key in the keychain), SPAKE2 pairing on the
      6-digit code that binds both certificate fingerprints, `paired_machine` table (migration 21),
@@ -74,8 +73,18 @@ copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repo
    - 2b. Done (365e2354b), op `peers.discovered`. Discovery: mDNS `_timetrack._tcp` advertise and browse (`mdns-sd`), manual host:port.
    - 2c. Done (1e1ec1c2f, 8230aab7b), host heartbeat every 60 s. UI: "Paired machines" in Settings (pair, forget, last-seen, clock offset) and the sidebar
      status item next to Auto mode. Fake ports for the e2e suite.
-   - 2d. macOS: `NSLocalNetworkUsageDescription`, `NSBonjourServices`; `cargo test` on ethlete-mac;
-     pair this PC with the MacBook through the agent ops and see each other's hello.
+   - 2d. Done (3aad3faab). `Info.plist` next to `tauri.conf.json` carries `NSLocalNetworkUsageDescription`
+     and `NSBonjourServices`; it lands in the bundle's `Contents/Info.plist`. `cargo test` on
+     ethlete-mac: 232 passed. Paired tank (PC) and the MacBook through the agent ops: `pair.offer` on
+     the PC, the PC found by `peers.discovered` on the Mac over mDNS, `pair.accept {machineId, code}`,
+     `peers.hello` both ways. Both lists hold last-seen, address and a clock offset of 35 ms (Mac
+     behind; `sntp` on the Mac agrees: 34 ms behind time.apple.com, the PC within 1 ms). A wrong
+     code is refused over the LAN. Learned: macOS cannot read the signing identifier of an unsigned app,
+     so it shows no local-network prompt and denies every LAN connect with "No route to host". An
+     Intel debug build is unsigned, so ad-hoc sign it first (`codesign --force --deep -s - --identifier
+io.ethlete.timetrack`). Every new signature asks for the keychain password about 10 times, so
+     launch a test build on the Mac once and keep it running. The macOS firewall is off on ethlete-mac.
+     The installed `/Applications/Timetrack.app` is arm64-only and does not run on this Intel MacBook.
 3. Read-only overlay, the first user value: the peer sends presence and attendance intervals, booked
    rows and stream labels. "Nobody was here" becomes "Worked on MacBook". No row changes (S-M, 2-3 d).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
