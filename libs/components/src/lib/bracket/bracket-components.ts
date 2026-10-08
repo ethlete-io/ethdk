@@ -14,8 +14,6 @@ import { BRACKET_ERROR_CODES } from './bracket-errors';
 
 /**
  * The cards a host component was told to draw with, each `undefined` where its input was left unset.
- *
- * @internal
  */
 export type BracketComponentOverrides<TRoundData, TMatchData> = {
   roundHeader?: BracketRoundHeaderComponent<TRoundData, TMatchData>;

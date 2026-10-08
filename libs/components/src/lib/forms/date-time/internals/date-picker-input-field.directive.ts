@@ -107,12 +107,12 @@ export abstract class DatePickerInputFieldDirective implements InputMaskHost {
     this.elementRef.nativeElement.value = '';
   }
 
-  /** @internal `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */
+  /** `InputMaskHost` - an attached mask owns value-sync; our input/mirror handling stands down. */
   public suppressNativeSync() {
     this.maskAttached.set(true);
   }
 
-  /** @internal `InputMaskHost` - the mask was set to `null`; native handling resumes. */
+  /** `InputMaskHost` - the mask was set to `null`; native handling resumes. */
   public resumeNativeSync() {
     this.maskAttached.set(false);
   }

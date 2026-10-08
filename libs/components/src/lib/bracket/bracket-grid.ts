@@ -5,8 +5,6 @@ import { BRACKET_DATA_LAYOUT, BracketDataLayout, CreateBracketGridConfig } from 
 /**
  * Every layout setting, resolved to a concrete value - no `undefined`, no "fall back to the config".
  * Produced by {@link resolveBracketLayoutSettings}.
- *
- * @internal
  */
 export type BracketLayoutSettings = Required<BracketLayoutConfig>;
 

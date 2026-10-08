@@ -53,7 +53,6 @@ export class TabBarDirective {
    * anywhere but the end would otherwise desync every `$index`-keyed consumer from the rendered bar.
    */
   public triggers = computed(() => sortByDomOrder(this.registeredTriggers(), (trigger) => trigger.getElement()));
-  /** @internal */
   public focusedIndex = signal(-1);
   public selectedIndex = signal(0);
 

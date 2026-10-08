@@ -29,6 +29,7 @@ export type SelectionListDirectiveBase<TValue = unknown> = {
   items: Signal<SelectionListItem<TValue>[]>;
   focusItem(item: SelectionListItem<TValue>, options?: FocusOptions): void;
   /** Buffers a typed character and returns the enabled item its prefix names next after `from`. */
+  /** @internal */
   findTypeaheadMatch(character: string, from: SelectionListItem<TValue>): SelectionListItem<TValue> | null;
   markTouched(): void;
 };

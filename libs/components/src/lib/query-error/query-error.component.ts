@@ -40,7 +40,7 @@ import { QUERY_ERROR_TOKEN, QueryErrorDirective } from './headless';
   },
 })
 export class QueryErrorComponent {
-  /** @internal Read from the template; also the handle for a consumer reaching in with `viewChild`. */
+  /** Read from the template; also the handle for a consumer reaching in with `viewChild`. */
   public queryError = inject(QUERY_ERROR_TOKEN);
 
   /**

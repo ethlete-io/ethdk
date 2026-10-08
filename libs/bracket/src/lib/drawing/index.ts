@@ -3,7 +3,7 @@ export * from './draw-man';
 export * from './draw-man-swiss';
 export * from './grid/core';
 export * from './grid/double-elimination';
-export * from './grid/double-elimination-stacked';
+export { createStackedDoubleEliminationGrid as ɵcreateStackedDoubleEliminationGrid } from './grid/double-elimination-stacked';
 export * from './grid/double-elimination-utils';
 export * from './grid/prebuild';
 export * from './grid/row-span';

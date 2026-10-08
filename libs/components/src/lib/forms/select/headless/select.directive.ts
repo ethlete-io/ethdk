@@ -1003,7 +1003,7 @@ export class SelectDirective<TValue = unknown>
     this.mixed.set(false);
   }
 
-  /** @internal Emits `loadMore` - wired to the panel's load-more control. */
+  /** Emits `loadMore` - wired to the panel's load-more control. */
   public requestLoadMore() {
     if (this.loading()) {
       return;

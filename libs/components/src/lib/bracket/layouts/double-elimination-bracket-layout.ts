@@ -6,7 +6,7 @@ import {
   DOUBLE_ELIMINATION_BRACKET_ROUND_TYPE,
   TOURNAMENT_MODE,
   createDoubleEliminationGrid,
-  createStackedDoubleEliminationGrid,
+  ɵcreateStackedDoubleEliminationGrid,
   BracketRound,
 } from '@ethlete/bracket';
 import { drawEliminationEdges } from './draw-elimination-edges';
@@ -72,7 +72,7 @@ export const mirroredDoubleEliminationBracketLayout = <TRoundData = any, TMatchD
   name: 'double-elimination-mirrored',
   mode: TOURNAMENT_MODE.DOUBLE_ELIMINATION,
   dataLayout: BRACKET_DATA_LAYOUT.MIRRORED,
-  createGrid: createStackedDoubleEliminationGrid,
+  createGrid: ɵcreateStackedDoubleEliminationGrid,
   drawEdges: drawEliminationEdges,
   // eslint-disable-next-line max-params -- the contract's (round, bracket, labels) shape
   listSection: (round, _bracket, labels) => doubleEliminationListSection(round, labels),

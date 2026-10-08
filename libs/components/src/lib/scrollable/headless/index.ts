@@ -2,7 +2,7 @@ export { ScrollableActiveChildDirective } from './scrollable-active-child.direct
 export { ScrollableButtonsComponent } from './scrollable-buttons.component';
 export type { ScrollableButtonsConfig } from './scrollable-buttons.directive';
 export { ScrollableButtonsDirective } from './scrollable-buttons.directive';
-export type { ResolvedScrollableChrome, ScrollableChrome, ScrollableChromeSlot } from './scrollable-chrome';
+export type { ScrollableChrome, ScrollableChromeSlot } from './scrollable-chrome';
 export { ScrollableDarkenDirective } from './scrollable-darken.directive';
 export { ScrollableDragDirective } from './scrollable-drag.directive';
 export { SCROLLABLE_ERROR_CODES } from './scrollable-errors';

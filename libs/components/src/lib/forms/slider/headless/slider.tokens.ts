@@ -88,7 +88,9 @@ export type SliderHostBase = {
   /** Clamps + snaps `value` and commits it to the thumb at `index`. */
   commitThumbValue(index: number, value: number): void;
   markTouched(): void;
+  /** @internal */
   registerThumb(thumb: SliderThumbBase): void;
+  /** @internal */
   unregisterThumb(thumb: SliderThumbBase): void;
 };
 

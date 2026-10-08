@@ -22,8 +22,11 @@ export type MenuSelectionGroupDirectiveBase<TValue = unknown> = {
   multiple: Signal<boolean>;
   disabled: Signal<boolean>;
   items: Signal<MenuSelectionGroupItem<TValue>[]>;
+  /** @internal */
   labelId: WritableSignal<string | null>;
+  /** @internal */
   registerItem(item: MenuSelectionGroupItem<TValue>): void;
+  /** @internal */
   unregisterItem(item: MenuSelectionGroupItem<TValue>): void;
   select(item: MenuSelectionGroupItem<TValue>): void;
   markTouched(): void;

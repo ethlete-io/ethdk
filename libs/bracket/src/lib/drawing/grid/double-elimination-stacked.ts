@@ -139,8 +139,6 @@ const createStackedBlock = <TRoundData, TMatchData>(
  * Draws a double elimination as two mirrored blocks, one above the other: the winners bracket folded
  * around its own centre, the losers bracket folded around its own, and nothing but a gap between them.
  * Each block's deciding rounds hang vertically below the round its two halves converge on.
- *
- * @internal
  */
 export const createStackedDoubleEliminationGrid = <TRoundData, TMatchData>(
   bracketData: Bracket<TRoundData, TMatchData>,

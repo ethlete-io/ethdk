@@ -28,7 +28,7 @@ export class CalendarHeaderDirective {
   /** @internal */
   public templateRef = inject<TemplateRef<CalendarHeaderContext>>(TemplateRef);
 
-  /** @internal Lets the template's `let-` bindings be typed without the consumer declaring the shape. */
+  /** Lets the template's `let-` bindings be typed without the consumer declaring the shape. */
   public static ngTemplateContextGuard(
     _directive: CalendarHeaderDirective,
     _context: unknown,

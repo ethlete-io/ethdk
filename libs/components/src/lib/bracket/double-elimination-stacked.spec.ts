@@ -1,4 +1,8 @@
-import { BRACKET_DATA_LAYOUT, createStackedDoubleEliminationGrid, createBracket } from '@ethlete/bracket';
+import {
+  BRACKET_DATA_LAYOUT,
+  ɵcreateStackedDoubleEliminationGrid as createStackedDoubleEliminationGrid,
+  createBracket,
+} from '@ethlete/bracket';
 import { resolveBracketComponents } from './bracket-components';
 import { BRACKET_DEFAULT_CARDS } from './bracket-default-cards';
 import { createBracketGridConfig, resolveBracketLayoutSettings } from './bracket-grid';

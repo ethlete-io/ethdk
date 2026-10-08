@@ -87,12 +87,12 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
     }
   }
 
-  /** @internal Suppresses the built-in native `(input)` sync - see `nativeSyncSuppressed`. */
+  /** Suppresses the built-in native `(input)` sync - see `nativeSyncSuppressed`. */
   public suppressNativeSync() {
     this.nativeSyncSuppressed = true;
   }
 
-  /** @internal Restores the built-in native `(input)` sync - the mask calls this when set to `null`. */
+  /** Restores the built-in native `(input)` sync - the mask calls this when set to `null`. */
   public resumeNativeSync() {
     this.nativeSyncSuppressed = false;
   }

@@ -205,7 +205,7 @@ import {
   TabBadge,
 } from './query-devtools-types';
 import {
-  QUERY_DEVTOOLS_VIEW_STATE_KEY,
+  ɵQUERY_DEVTOOLS_VIEW_STATE_KEY,
   QueryDevtoolsToggleComponent,
   isQueryDevtoolsShortcut,
   queryDevtoolsShortcutLabel,
@@ -333,7 +333,7 @@ const describeEntryId = (id: string) => {
   return `${method} ${route}${client ? ` · ${client}` : ''}${seq && seq !== '0' ? ` #${seq}` : ''}`;
 };
 
-const STORAGE_KEY = QUERY_DEVTOOLS_VIEW_STATE_KEY;
+const STORAGE_KEY = ɵQUERY_DEVTOOLS_VIEW_STATE_KEY;
 
 /**
  * Pinned queries, held apart from {@link STORAGE_KEY} and defaulting to `localStorage`: everything under

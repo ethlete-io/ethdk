@@ -14,7 +14,7 @@ import { QueryDevtoolsComponent } from '@ethlete/query-devtools';
 import {
   isQueryDevtoolsShortcut,
   QueryDevtoolsToggleComponent,
-  wasQueryDevtoolsOpen,
+  ɵwasQueryDevtoolsOpen,
 } from '@ethlete/query-devtools/toggle';
 
 let warnedMissingProvider = false;
@@ -65,7 +65,7 @@ export class QueryDevtoolsLazyComponent {
    * Whether the panel is wanted. Whether it was already open has to be answered before the panel exists,
    * which is why the stored view state is read here rather than asked of the panel.
    */
-  protected load = signal(this.enabled && wasQueryDevtoolsOpen());
+  protected load = signal(this.enabled && ɵwasQueryDevtoolsOpen());
 
   /** A restored panel opens because it was open; one that was clicked open has to be told to. */
   protected openOnLoad = signal(false);

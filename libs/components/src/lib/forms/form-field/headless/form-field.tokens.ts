@@ -110,17 +110,29 @@ export type ControlSuffixBase = {
 export const FORM_FIELD_TOKEN = new InjectionToken<FormFieldDirectiveBase>('FORM_FIELD_TOKEN');
 
 export type FormFieldDirectiveBase = {
+  /** @internal */
   registerControl(control: FormFieldControl): void;
+  /** @internal */
   unregisterControl(control: FormFieldControl): void;
+  /** @internal */
   registerHint(hint: HintComponentBase): void;
+  /** @internal */
   unregisterHint(hint: HintComponentBase): void;
+  /** @internal */
   registerCounter(counter: CounterComponentBase): void;
+  /** @internal */
   unregisterCounter(counter: CounterComponentBase): void;
+  /** @internal */
   unregisterLabel(label: LabelDirectiveBase): void;
+  /** @internal */
   registeredControl: WritableSignal<FormFieldControl | null>;
+  /** @internal */
   registeredHint: WritableSignal<HintComponentBase | null>;
+  /** @internal */
   registeredCounter: WritableSignal<CounterComponentBase | null>;
+  /** @internal */
   registeredLabel: WritableSignal<LabelDirectiveBase | null>;
+  /** @internal */
   registeredControlSuffix: WritableSignal<ControlSuffixBase | null>;
   /** The registered control's value, for the counter to measure. */
   controlValue: Signal<unknown>;

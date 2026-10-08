@@ -171,6 +171,8 @@ signal - how you get from `state$` to a signal is your app's choice, not this ad
 `<et-query-error>` adds one input of its own: **`color`** (`RegisteredColorThemeName | ColorTheme | null`),
 defaulting to the app's `type: 'error'` theme.
 
+A consumer reaching in with `viewChild(QueryErrorComponent)` finds the bound error handle on `queryError`.
+
 ## Accessibility
 
 The host is `role="alert"`, so an error that appears is announced - assertive rather than polite on purpose: the
