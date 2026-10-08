@@ -1,5 +1,37 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.14
+
+### Minor Changes
+
+- Copy a day or a band as an anonymous report of the stand-in and auto mode decisions, from the Debug dialog or the band menu.
+- Price agent spend from a built-in USD list, so a known model shows a cost with no setup; your own table now holds overrides and unknown models.
+- Timetrack shows dates as day-month, month-day or ISO and clock times as 24-hour or 12-hour, set in Settings. The default is day-month and 24-hour.
+- "Add an entry" drafts on the day on screen, and a hand-written row stored under a day it does not lie in is drawn on that day at the same clock time.
+- The debug report can be saved as a JSON file from the day debug panel, anonymous by default or with names and the raw day inputs.
+- A finished day freezes its rows only once this app booked it; a day only another machine booked keeps being re-cut. `withFrozenRows` takes the day's `ledger` instead of `held`.
+- A checkout the day saw only through its window, with no commit, branch switch, editor heartbeat or agent session, now takes the branch its reflog names. Its work gets an automatic stand-in instead of staying `Not yet named`.
+- The Debug dialog lists the model calls auto mode made since the app started, with what each sent and what came back.
+- `repoKeyOf` turns a checkout's git remote URL into the repository key every machine shares, or its directory name when there is no remote.
+- Timetrack release builds carry a shared Google OAuth client, so connecting Calendar needs only Connect. Your own client stays available as an override, and a revoked token shows "Reconnect Google Calendar".
+- Settings now shows what call transcription is doing, its last error and latest text, and the language select offers every language whisper knows.
+
+### Patch Changes
+
+- The git scan lists what a pull brought in with `git log`, which the desktop host allows, and keeps every commit when that read fails.
+- A break no longer shows a Nobody was here band for an agent that only waited for the prompt that ended it, and a band inside a break ends where its work did.
+- Price the days before the built-in price list was checked with each model's first built-in price.
+- A single increment worked just before a break stays where it was instead of folding across the break into the row after it.
+- A block that ended before an agent session started no longer names that session.
+- Timetrack can fold a paired machine's events into the local day, counting a fact both machines hold once.
+- Timetrack shows the work done on a paired machine as rows of the day, read through this machine's private project links and exclusion rules.
+- Clicking "N connected" in the sidebar opens the paired machines, each renamable, with its last seen, clock offset and last sync.
+- Timetrack sends each checkout's repository key with a pull, and `translatePeerPath` maps a paired machine's path onto the local checkout of the same repository.
+- A commit this machine only received by a pull, merge or reset is dated by when it arrived, so another machine's work no longer draws a band here.
+- Timetrack reads the events a paired machine collected for a time range, under the name that machine was paired by. The agent op `peers.received` returns them.
+- Settings pick the suggestion language and currency from lists, and fill a model's prices from known Claude and Codex presets. The "does not read" pill is now filled like "reads".
+- A band nobody was at here reads "Worked on <machine>" when a person was at a paired machine meanwhile, and raises no unattended check. It still books nothing.
+
 ## 0.1.0-next.13
 
 ### Minor Changes

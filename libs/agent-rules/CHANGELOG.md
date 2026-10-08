@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.21
+
+### Patch Changes
+
+- The subagent model rule now gives haiku small, fully specified jobs as well as lookups. The model hook also finds an agent definition whose file name is capitalized, for example an `Explore.md` that overrides the built-in agent.
+
 ## 0.1.0-next.20
 
 ### Minor Changes
