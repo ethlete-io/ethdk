@@ -88,6 +88,10 @@ const buildScenario = (config: ScenarioConfig): Scenario => {
 
   const originalConsoleError = console.error;
   console.error = (...args: unknown[]) => {
+    // jsdom drops the component stylesheets (`@layer`, nesting), so a host that is `display: grid`
+    // in a browser stays `inline` here and trips signalElementDimensions' dev-mode check.
+    if (String(args[0]).includes('Inline elements cannot be observed for dimensions')) return;
+
     errors.push({ source: 'console.error', error: args[0] });
   };
 

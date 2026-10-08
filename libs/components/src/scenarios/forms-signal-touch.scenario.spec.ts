@@ -43,7 +43,6 @@ type TouchCase = {
   template: string;
   leaveFrom: string;
   openFrom?: string;
-  expectedError?: string;
 };
 
 const inMenu = (items: string) =>
@@ -153,7 +152,6 @@ const CASES: TouchCase[] = [
     initial: {},
     template: inField('<et-multi-language-rich-text-editor [formField]="f" [languages]="languages" />'),
     leaveFrom: '.et-rte-content',
-    expectedError: 'Element <et-scrollbar> is an Angular component and has a display of',
   },
   {
     control: 'et-checkbox',
@@ -311,7 +309,5 @@ describe('signal-form touch', () => {
       s.keydown('Escape', target);
       s.flush();
     }
-
-    if (touchCase.expectedError) s.expectError(touchCase.expectedError);
   });
 });
