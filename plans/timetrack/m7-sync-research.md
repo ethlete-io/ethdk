@@ -133,7 +133,14 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      private root, private window title, app-id rule, title rule, bad pattern, a filter change causes
      a re-pull, no transcript text in any frame). Live: `peers.pull` on tank, then `peers.received`
      holds no private path.
-   - 4b. Path map. TS writes this machine's map from checkout path to `repoKeyOf(origin, path)`
+   - 4b. Done (571b3c3d7). Tom, 2026-10-08: `streamKey` stays `repo:<local path>`; a peer path maps
+     onto the local checkout with the same origin key (open question 1). Landed as migration 23, since
+     4a is on hold; 4a takes the next free number. `readRepoKey$` reads the key; the git collector
+     writes the map after each discovery; `receivedBetween$` returns `{ events, repoKeys }` (by machine
+     id, a forgotten machine's left out), and both day readers take `events` only. A frame without
+     the map (an older peer) keeps the stored one. Several local checkouts of one key: the shortest
+     path wins. Left: the agent op `peers.received` on tank, after the next app restart.
+     Path map. TS writes this machine's map from checkout path to `repoKeyOf(origin, path)`
      (remote from `git/state.ts`) to the host on each git discovery (new command `set_repo_keys`,
      table `repo_key`, migration 24). `Frame::Changes` carries the sender's map, the receiver stores
      it per machine (`peer_repo_key`), and `received_between` / `peers.receivedBetween$` return it
