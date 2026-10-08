@@ -15,6 +15,7 @@ import {
   dayBoundaryOf,
   localDayKey,
   localDayRange,
+  pinnedOntoDay,
   pauseWindows,
   pausedMs,
   readHeadBranches$,
@@ -117,7 +118,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
                 ...options.check,
               },
             });
-          const stored = edits ?? EMPTY_DAY_REVIEW_EDITS;
+          const stored = pinnedOntoDay({ edits: edits ?? EMPTY_DAY_REVIEW_EDITS, day: key, boundary });
 
           return {
             key,

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { DayBoundary, MIDNIGHT, byLocalDay, dayKeysThrough, localDayKey, localDayRange, shiftDayKey } from './day';
+import {
+  DayBoundary,
+  MIDNIGHT,
+  byLocalDay,
+  dayKeysThrough,
+  localDayKey,
+  localDayRange,
+  ontoDay,
+  shiftDayKey,
+} from './day';
+import { pinnedOntoDay } from './edits';
+import { DayReviewEdits, PinnedRow } from './model';
 
 describe('localDayKey', () => {
   it('names the day the instant falls in locally, not in UTC', () => {
@@ -118,5 +129,56 @@ describe('a day that starts at a configured hour', () => {
     });
 
     expect(grouped).toEqual([[at(9, 22), at(10, 1)], [at(10, 9)]]);
+  });
+});
+
+describe('ontoDay', () => {
+  it('moves a window from another day onto the day at the same clock time', () => {
+    const moved = ontoDay(
+      { from: new Date(2026, 9, 8, 9), to: new Date(2026, 9, 8, 18) },
+      { day: '2026-10-07', boundary: MIDNIGHT },
+    );
+
+    expect(moved).toEqual({ from: new Date(2026, 9, 7, 9), to: new Date(2026, 9, 7, 18) });
+  });
+
+  it('leaves a window that overlaps the day where it is', () => {
+    const window = { from: new Date(2026, 9, 7, 23), to: new Date(2026, 9, 8, 1) };
+
+    expect(ontoDay(window, { day: '2026-10-07', boundary: MIDNIGHT })).toBe(window);
+  });
+});
+
+describe('pinnedOntoDay', () => {
+  const pin = (from: Date, to: Date): PinnedRow => ({
+    id: `manual:BD-1@${from.toISOString()}`,
+    replaces: [],
+    issueKey: 'BD-1',
+    from,
+    to,
+    durationMs: to.getTime() - from.getTime(),
+    observedMs: 0,
+    description: '',
+    confidence: 'certain',
+    evidence: [{ kind: 'manual', at: from, detail: 'you added this row by hand' }],
+  });
+
+  it('draws a row written by hand on the next day on the day it is stored under', () => {
+    const stored = pin(new Date(2026, 9, 8, 9), new Date(2026, 9, 8, 18));
+    const edits: DayReviewEdits = { overrides: {}, pinned: [stored], statements: [] };
+
+    const [row] = pinnedOntoDay({ edits, day: '2026-10-07', boundary: MIDNIGHT }).pinned;
+
+    expect(row).toMatchObject({ id: stored.id, from: new Date(2026, 9, 7, 9), to: new Date(2026, 9, 7, 18) });
+  });
+
+  it('returns the edits it was given when every row lies on the day', () => {
+    const edits: DayReviewEdits = {
+      overrides: {},
+      pinned: [pin(new Date(2026, 9, 7, 9), new Date(2026, 9, 7, 10))],
+      statements: [],
+    };
+
+    expect(pinnedOntoDay({ edits, day: '2026-10-07', boundary: MIDNIGHT })).toBe(edits);
   });
 });

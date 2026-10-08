@@ -36,6 +36,7 @@ import {
   hideRow,
   localDayKey,
   localDayRange,
+  pinnedOntoDay,
   matchAttributionRule,
   callBehindRow,
   callLabel,
@@ -384,7 +385,13 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
         })
       : [];
   });
-  const edits = computed(() => local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS);
+  const edits = computed(() =>
+    pinnedOntoDay({
+      edits: local()[day()] ?? editsLoad()?.value ?? EMPTY_DAY_REVIEW_EDITS,
+      day: day(),
+      boundary: boundary(),
+    }),
+  );
 
   const daySettings = computed(() => settingsOnDay({ settings: settings.settings(), day: day() }));
 

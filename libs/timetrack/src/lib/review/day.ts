@@ -49,6 +49,24 @@ export const localDayRange = (day: string, boundary: DayBoundary) => {
 };
 
 /**
+ * Moves a window that lies wholly outside a day onto it by whole days, keeping its clock time and its
+ * length. A window that overlaps the day comes back as it is.
+ */
+export const ontoDay = <T extends { from: Date; to: Date }>(
+  window: T,
+  options: { day: string; boundary: DayBoundary },
+): T => {
+  const day = localDayRange(options.day, options.boundary);
+
+  if (window.from < day.to && window.to > day.from) return window;
+
+  const home = localDayRange(localDayKey(window.from, options.boundary), options.boundary).from;
+  const from = new Date(day.from.getTime() + window.from.getTime() - home.getTime());
+
+  return { ...window, from, to: new Date(from.getTime() + window.to.getTime() - window.from.getTime()) };
+};
+
+/**
  * Moves a day key by whole days, over month and year ends and across a daylight-saving change.
  *
  * It needs no boundary: a key is already a day, and stepping from one to the next never asks which

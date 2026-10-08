@@ -3,6 +3,7 @@ import { DEFAULT_ROUND_OPTIONS, RoundOptions, roundDurationUp } from '../rows/ro
 import { storedLaneKey } from '../rows/lane';
 import { Evidence } from '../model/evidence';
 import { RowField, RowFieldSources, WriteSource, mayWrite, rowFieldSourceOf } from '../model/field-source';
+import { DayBoundary, ontoDay } from './day';
 import { DayReviewEdits, PinnedRow, ProposalOverride, ReviewedRow } from './model';
 
 const pinnedById = (edits: DayReviewEdits, id: string) => edits.pinned.find((row) => row.id === id);
@@ -401,6 +402,20 @@ export const isManualRow = (row: Pick<ReviewedRow, 'evidence'>) =>
 const manualEvidence = (row: ManualRow): Evidence[] => [
   { kind: 'manual', at: row.from, detail: 'you added this row by hand' },
 ];
+
+/**
+ * The edits stored under a day with every pinned row that lies wholly outside it moved onto it at the
+ * same clock time, so the day can draw what it counts. Returns the edits it was given when none moved.
+ */
+export const pinnedOntoDay = (options: {
+  edits: DayReviewEdits;
+  day: string;
+  boundary: DayBoundary;
+}): DayReviewEdits => {
+  const pinned = options.edits.pinned.map((row) => ontoDay(row, options));
+
+  return pinned.every((row, at) => row === options.edits.pinned[at]) ? options.edits : { ...options.edits, pinned };
+};
 
 /**
  * Adds a row for work nothing observed.

@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent, createOverlayOpener } from '@ethlete/components';
-import { DEFAULT_ROUND_OPTIONS, describeApproval, formatDurationMs, localDayRange } from '@ethlete/timetrack';
+import { DEFAULT_ROUND_OPTIONS, describeApproval, formatDurationMs, localDayRange, ontoDay } from '@ethlete/timetrack';
 import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectBandApprovals } from './band-approvals';
@@ -174,10 +174,18 @@ export class DayReviewViewComponent {
   protected delta = computed(() => formatSignedDurationMs(this.store.review()?.check.deltaMs ?? 0));
   protected unattributed = computed(() => formatDurationMs(this.store.review()?.check.unattributedMs ?? 0));
 
-  /** Drafts a row over the hour the reviewer is most likely to mean: the one that just finished. */
+  /**
+   * Drafts a row over the hour the reviewer is most likely to mean: the one that just finished, at the
+   * same clock time on the day on screen when that is another day.
+   */
   protected addEntry() {
     const from = new Date(Math.floor(Date.now() / ENTRY_STEP_MS) * ENTRY_STEP_MS - DEFAULT_ENTRY_MS);
 
-    this.surface.openDraft({ from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) });
+    this.surface.openDraft(
+      ontoDay(
+        { from, to: new Date(from.getTime() + DEFAULT_ENTRY_MS) },
+        { day: this.store.dayKey(), boundary: this.store.boundary() },
+      ),
+    );
   }
 }
