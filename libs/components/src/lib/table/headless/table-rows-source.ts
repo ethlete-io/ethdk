@@ -6,15 +6,59 @@ import { TableFilter, TableSort } from '../table.types';
 // query into three signals; the pagination/sort state and row/total bookkeeping live here once.
 
 /** The reactive server-side state the query args are built from. */
-export type TableRowsQueryState = {
+export type TableRowsQueryState<TKey extends string = string> = {
   /** The active sort (bind the table's `sort` output through `setSort`). */
-  sort: Signal<TableSort[]>;
+  sort: Signal<TableSort<TKey>[]>;
   /** The active filters (bind the table's `filters` output through `setFilters`). */
-  filters: Signal<TableFilter[]>;
+  filters: Signal<TableFilter<TKey>[]>;
   /** The current page (1-based by default). */
   page: Signal<number>;
+  /** The rows per page (feed it through `setPageSize`). */
+  pageSize: Signal<number>;
   /** The free-text search (feed it through `setQuickFilter`), for the backend to match rows against. */
   quickFilter: Signal<string>;
+};
+
+/**
+ * The state options both query adapters share. Each piece of state is either created internally from
+ * its `initial*` value or, when an existing writable signal is passed (a query form field's `value`,
+ * say), read and written through that signal instead.
+ */
+export type TableRowsStateConfig<TKey extends string = string> = {
+  /** Initial sort. @default [] */
+  initialSort?: TableSort<TKey>[];
+  /** Initial filters. @default [] */
+  initialFilters?: TableFilter<TKey>[];
+  /** Initial free-text search. @default '' */
+  initialQuickFilter?: string;
+  /** The page `args` receives on first load; `setSort`/`setFilters`/`setQuickFilter`/`setPageSize` reset to it. @default 1 */
+  initialPage?: number;
+  /** Initial rows per page. @default 25 */
+  initialPageSize?: number;
+  /** An existing sort signal to use instead of an internal one. `initialSort` is ignored. */
+  sort?: WritableSignal<TableSort<TKey>[]>;
+  /** An existing filters signal to use instead of an internal one. `initialFilters` is ignored. */
+  filters?: WritableSignal<TableFilter<TKey>[]>;
+  /** An existing page signal to use instead of an internal one. The setters still reset it to `initialPage`. */
+  page?: WritableSignal<number>;
+  /** An existing page-size signal to use instead of an internal one. `initialPageSize` is ignored. */
+  pageSize?: WritableSignal<number>;
+  /** An existing free-text search signal to use instead of an internal one. `initialQuickFilter` is ignored. */
+  quickFilter?: WritableSignal<string>;
+};
+
+/** Resolves {@link TableRowsStateConfig} into the writable signals the core works on. */
+export const createTableRowsState = <TKey extends string>(config: TableRowsStateConfig<TKey>) => {
+  const initialPage = config.initialPage ?? 1;
+
+  return {
+    initialPage,
+    sort: config.sort ?? signal<TableSort<TKey>[]>(config.initialSort ?? []),
+    filters: config.filters ?? signal<TableFilter<TKey>[]>(config.initialFilters ?? []),
+    page: config.page ?? signal(initialPage),
+    pageSize: config.pageSize ?? signal(config.initialPageSize ?? 25),
+    quickFilter: config.quickFilter ?? signal(config.initialQuickFilter ?? ''),
+  };
 };
 
 /**
@@ -27,7 +71,7 @@ export type TableRowsQueryState = {
  * through `setSort`/`setFilters` so the server does the work. That also flips `sortMode`/`filterMode`
  * to `'server'` unless you set them yourself: rows that came back sorted must not be re-sorted here.
  */
-export type TableRowsSource<TRow> = {
+export type TableRowsSource<TRow, TKey extends string = string> = {
   /** The rows to render. */
   rows: Signal<readonly TRow[]>;
   /** True while a request is in flight - feeds the table's `loading`. */
@@ -42,16 +86,16 @@ export type TableRowsSource<TRow> = {
    */
   total?: Signal<number | null>;
   /** The server-side sort, if the source owns it. */
-  sort?: Signal<TableSort[]>;
+  sort?: Signal<TableSort<TKey>[]>;
   /** The server-side filters, if the source owns them. */
-  filters?: Signal<TableFilter[]>;
-  /** Called instead of updating the table's own `sort` when the user sorts. */
-  setSort?: (sort: TableSort[]) => void;
-  /** Called instead of updating the table's own `filters` when the user filters. */
-  setFilters?: (filters: TableFilter[]) => void;
+  filters?: Signal<TableFilter<TKey>[]>;
+  /** Called instead of updating the table's own `sort` when the user sorts. Keys are each column's `sortKey`, else its key. */
+  setSort?: (sort: TableSort<TKey>[]) => void;
+  /** Called instead of updating the table's own `filters` when the user filters. Keys are each column's `filterKey`, else its key. */
+  setFilters?: (filters: TableFilter<TKey>[]) => void;
 };
 
-export type TableRowsFromQuery<TRow> = {
+export type TableRowsFromQuery<TRow, TKey extends string = string> = {
   /** The current page's rows. Keeps the previous page visible while the next one loads. */
   rows: Signal<TRow[]>;
   /** True while a request is in flight. */
@@ -63,19 +107,23 @@ export type TableRowsFromQuery<TRow> = {
   /** Whether more pages exist (via `toHasMore`). */
   hasMore: Signal<boolean>;
   /** The current sort. */
-  sort: Signal<TableSort[]>;
+  sort: Signal<TableSort<TKey>[]>;
   /** The current filters. */
-  filters: Signal<TableFilter[]>;
+  filters: Signal<TableFilter<TKey>[]>;
   /** The current page. */
   page: Signal<number>;
+  /** The current rows per page. */
+  pageSize: Signal<number>;
   /** The current free-text search. */
   quickFilter: Signal<string>;
   /** Set the sort; resets the page to `initialPage`. A table bound through `[rowsSource]` calls it. */
-  setSort: (sort: TableSort[]) => void;
+  setSort: (sort: TableSort<TKey>[]) => void;
   /** Set the filters; resets the page to `initialPage`. A table bound through `[rowsSource]` calls it. */
-  setFilters: (filters: TableFilter[]) => void;
+  setFilters: (filters: TableFilter<TKey>[]) => void;
   /** Set the page (wire a paginator). */
   setPage: (page: number) => void;
+  /** Set the rows per page (wire a page-size select); resets the page to `initialPage`. */
+  setPageSize: (pageSize: number) => void;
   /** Set the free-text search (wire a search field); resets the page to `initialPage`. */
   setQuickFilter: (quickFilter: string) => void;
 };
@@ -90,11 +138,12 @@ export type TableRowsDriver<TResponse> = {
   errorText: Signal<string | null>;
 };
 
-export type CreateTableRowsSourceOptions<TResponse, TRow> = {
+export type CreateTableRowsSourceOptions<TResponse, TRow, TKey extends string = string> = {
   driver: TableRowsDriver<TResponse>;
-  sort: WritableSignal<TableSort[]>;
-  filters: WritableSignal<TableFilter[]>;
+  sort: WritableSignal<TableSort<TKey>[]>;
+  filters: WritableSignal<TableFilter<TKey>[]>;
   page: WritableSignal<number>;
+  pageSize?: WritableSignal<number>;
   quickFilter?: WritableSignal<string>;
   initialPage: number;
   toRows: (response: TResponse) => TRow[];
@@ -103,11 +152,12 @@ export type CreateTableRowsSourceOptions<TResponse, TRow> = {
 };
 
 /** Builds the shared adapter surface from a client driver + the reactive sort/page state. */
-export const createTableRowsSource = <TResponse, TRow>(
-  options: CreateTableRowsSourceOptions<TResponse, TRow>,
-): TableRowsFromQuery<TRow> => {
+export const createTableRowsSource = <TResponse, TRow, TKey extends string = string>(
+  options: CreateTableRowsSourceOptions<TResponse, TRow, TKey>,
+): TableRowsFromQuery<TRow, TKey> => {
   const { driver, sort, filters, page, initialPage, toRows, toTotal, toHasMore } = options;
   const quickFilter = options.quickFilter ?? signal('');
+  const pageSize = options.pageSize ?? signal(25);
 
   // Keep the previous page's rows while the next request is in flight (driver.response is null
   // between executions) so the table doesn't flash empty. linkedSignal folds synchronously on read.
@@ -150,6 +200,7 @@ export const createTableRowsSource = <TResponse, TRow>(
     sort: sort.asReadonly(),
     filters: filters.asReadonly(),
     page: page.asReadonly(),
+    pageSize: pageSize.asReadonly(),
     quickFilter: quickFilter.asReadonly(),
     setSort: (next) => {
       sort.set(next);
@@ -160,6 +211,10 @@ export const createTableRowsSource = <TResponse, TRow>(
       page.set(initialPage);
     },
     setPage: (next) => page.set(next),
+    setPageSize: (next) => {
+      pageSize.set(next);
+      page.set(initialPage);
+    },
     setQuickFilter: (next) => {
       quickFilter.set(next);
       page.set(initialPage);

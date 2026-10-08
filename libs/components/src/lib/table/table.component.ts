@@ -215,6 +215,16 @@ const isFlexibleTrack = (track: string) => /\bauto\b|[\d.]fr\b/.test(track);
  */
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
+const renameKeys = <TEntry extends { key: string }>(
+  entries: readonly TEntry[],
+  keys: ReadonlyMap<string, string>,
+): TEntry[] =>
+  entries.map((entry) => {
+    const key = keys.get(entry.key);
+
+    return key === undefined ? entry : { ...entry, key };
+  });
+
 const isError = (value: unknown) => value !== null && value !== undefined && value !== false;
 
 /** Sub-pixel slack (px) before a scroll offset counts as "there is content over there". */
@@ -317,7 +327,8 @@ export class TableComponent<T> implements TableFeatureHost {
    * Because such a source has already sorted and filtered on the server, `sortMode` and `filterMode`
    * default to `'server'` while one is bound - set them explicitly to override.
    */
-  public rowsSource = input<TableRowsSource<T>>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public rowsSource = input<TableRowsSource<T, any>>();
 
   /** The column definitions, keyed by column key (see {@link TableColumns}). */
   public columns = input<TableColumns<T>>({});
@@ -686,6 +697,27 @@ export class TableComponent<T> implements TableFeatureHost {
   private columnDefs = computed<TableColumnDef<T>[]>(() =>
     Object.entries(this.columns()).map(([key, column]) => ({ ...column, key })),
   );
+
+  private sourceKeys = computed(() => {
+    const sortTo = new Map<string, string>();
+    const sortFrom = new Map<string, string>();
+    const filterTo = new Map<string, string>();
+    const filterFrom = new Map<string, string>();
+
+    for (const column of this.columnDefs()) {
+      if (column.sortKey !== undefined) {
+        sortTo.set(column.key, column.sortKey);
+        sortFrom.set(column.sortKey, column.key);
+      }
+
+      if (column.filterKey !== undefined) {
+        filterTo.set(column.key, column.filterKey);
+        filterFrom.set(column.filterKey, column.key);
+      }
+    }
+
+    return { sortTo, sortFrom, filterTo, filterFrom };
+  });
 
   // Column order, visibility and user-resized widths (px). All three are reconciled rather than
   // reset when the `columns` input changes identity, so a reorder / resize / hidden column (or a
@@ -1322,8 +1354,11 @@ export class TableComponent<T> implements TableFeatureHost {
 
       if (!source) return;
 
-      const sort = source.sort?.();
-      const filters = source.filters?.();
+      const keys = this.sourceKeys();
+      const sourceSort = source.sort?.();
+      const sourceFilters = source.filters?.();
+      const sort = sourceSort && renameKeys(sourceSort, keys.sortFrom);
+      const filters = sourceFilters && renameKeys(sourceFilters, keys.filterFrom);
 
       untracked(() => {
         if (sort && !sameJson(sort, this.sort())) this.sort.set([...sort]);
@@ -1812,7 +1847,7 @@ export class TableComponent<T> implements TableFeatureHost {
     const next = values.length ? [...others, { key, values }] : others;
     const source = this.rowsSource();
 
-    source?.setFilters?.(next);
+    source?.setFilters?.(renameKeys(next, this.sourceKeys().filterTo));
 
     // See `applySort`: without a `filters` signal on the source nothing writes the value back.
     if (!source?.filters) this.filters.set(next);
@@ -2213,7 +2248,7 @@ export class TableComponent<T> implements TableFeatureHost {
 
     const source = this.rowsSource();
 
-    source?.setSort?.(sort);
+    source?.setSort?.(renameKeys(sort, this.sourceKeys().sortTo));
 
     // Only a source that publishes `sort` mirrors the new value back; skipping the local write for one
     // that does not would leave the header on the direction it already had, forever.

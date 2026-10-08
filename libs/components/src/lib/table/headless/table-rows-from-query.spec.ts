@@ -1,16 +1,19 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { createGetQuery, createQueryClient } from '@ethlete/query';
 import '../../../test-helpers';
 import { silenceExpectedConsole } from '../../testing/expected-console';
 import { tableRowsFromQuery } from './table-rows-from-query';
-import { TableRowsFromQuery } from './table-rows-source';
+import { filterValues } from './table-filter';
+import { TableRowsFromQuery, TableRowsStateConfig } from './table-rows-source';
+import { TableColumns, TableSort } from '../table.types';
 
 type User = { id: string; name: string };
 type UsersResponse = { items: User[]; totalHits: number; hasMore: boolean };
 type UsersArgs = {
-  queryParams: { sortBy?: string; sortOrder?: string; search?: string; page: number };
+  queryParams: { sortBy?: string; sortOrder?: string; search?: string; page: number; limit?: number };
   response: UsersResponse;
 };
 
@@ -27,7 +30,7 @@ describe('tableRowsFromQuery', () => {
 
   afterEach(() => httpMock.verify());
 
-  const createSource = (queryConfig: { keepPreviousResponse?: boolean } = {}) => {
+  const createSource = (queryConfig: { keepPreviousResponse?: boolean } = {}, state: TableRowsStateConfig = {}) => {
     const client = createQueryClient({ baseUrl: 'https://api.example.com', name: `table-${Math.random()}` });
     const getUsers = createGetQuery(client)<UsersArgs>('/users');
     const queryCreator = ((...features: Parameters<typeof getUsers>) =>
@@ -36,12 +39,14 @@ describe('tableRowsFromQuery', () => {
     return TestBed.runInInjectionContext(() =>
       tableRowsFromQuery({
         queryCreator,
-        args: ({ sort, page, quickFilter }) => ({
+        ...state,
+        args: ({ sort, page, pageSize, quickFilter }) => ({
           queryParams: {
             sortBy: sort()[0]?.key,
             sortOrder: sort()[0]?.direction,
             search: quickFilter() || undefined,
             page: page(),
+            limit: pageSize(),
           },
         }),
         toRows: (response) => response.items,
@@ -61,6 +66,7 @@ describe('tableRowsFromQuery', () => {
       sortOrder: params.get('sortOrder'),
       search: params.get('search'),
       page: params.get('page'),
+      limit: params.get('limit'),
     };
 
     if ('error' in body) {
@@ -197,5 +203,83 @@ describe('tableRowsFromQuery', () => {
     expect(source.total()).toBeNull();
     expect(source.hasMore()).toBe(false);
     expect(source.loading()).toBe(false);
+  });
+
+  it('re-executes with the new page size and resets the page when setPageSize is called', () => {
+    const source = createSource({}, { initialPageSize: 10 });
+    expect(respond({ items: page1, totalHits: 420, hasMore: true }).limit).toBe('10');
+
+    source.setPage(9);
+    respond({ items: page2, totalHits: 420, hasMore: true });
+
+    source.setPageSize(100);
+    const captured = respond({ items: page1, totalHits: 420, hasMore: true });
+
+    expect(captured.limit).toBe('100');
+    expect(captured.page).toBe('1');
+    expect(source.pageSize()).toBe(100);
+    expect(source.page()).toBe(1);
+  });
+
+  it('reads and writes external state signals driven from outside', () => {
+    const sort = signal<TableSort[]>([{ key: 'name', direction: 'asc' }]);
+    const page = signal(4);
+    const pageSize = signal(50);
+    const quickFilter = signal('ada');
+    const source = createSource({}, { sort, page, pageSize, quickFilter, initialSort: [] });
+
+    expect(respond({ items: page1, totalHits: 420, hasMore: true })).toEqual({
+      sortBy: 'name',
+      sortOrder: 'asc',
+      search: 'ada',
+      page: '4',
+      limit: '50',
+    });
+
+    sort.set([{ key: 'name', direction: 'desc' }]);
+    page.set(7);
+    const captured = respond({ items: page2, totalHits: 420, hasMore: true });
+
+    expect(captured.sortOrder).toBe('desc');
+    expect(captured.page).toBe('7');
+    expect(source.sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+
+    source.setQuickFilter('alan');
+    respond({ items: page2, totalHits: 1, hasMore: false });
+
+    expect(quickFilter()).toBe('alan');
+    expect(page()).toBe(1);
+  });
+
+  it('types the state keys from the columns, sortKey and filterKey included', () => {
+    const columns = {
+      name: { value: (user: User) => user.name, sortable: true },
+      joined: { value: (user: User) => user.id, sortable: true, sortKey: 'joined_at' as const },
+    } satisfies TableColumns<User>;
+
+    const source = TestBed.runInInjectionContext(() =>
+      tableRowsFromQuery({
+        queryCreator: createGetQuery(
+          createQueryClient({ baseUrl: 'https://api.example.com', name: 'typed' }),
+        )<UsersArgs>('/users'),
+        columns,
+        args: ({ sort, filters }) => {
+          const key: 'name' | 'joined' | 'joined_at' | undefined = sort()[0]?.key;
+          const statuses: ('active' | 'banned')[] = filterValues<'active' | 'banned'>(filters(), 'name');
+
+          // @ts-expect-error - not a column or source key
+          filterValues(filters(), 'email');
+
+          return { queryParams: { sortBy: key, search: statuses.join(','), page: 1 } };
+        },
+        toRows: (response) => response.items,
+      }),
+    );
+
+    // @ts-expect-error - not a column or source key
+    source.setSort([{ key: 'email', direction: 'asc' }]);
+    source.setSort([{ key: 'joined_at', direction: 'asc' }]);
+
+    expect(respond({ items: page1, totalHits: 1, hasMore: false }).sortBy).toBe('joined_at');
   });
 });

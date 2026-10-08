@@ -45,6 +45,7 @@ server-side path: the query adapters and the sort/filter state they hand to `arg
   `createTableRowsSource` already takes `WritableSignal`s, so the core needs no change. Then document a
   "URL-backed table" recipe that binds `qf.fields.sort().value` and friends straight into the adapter.
 - Breaking: no (additive). Decision: yes (new API shape, and how it interacts with `isResetBy`).
+- Status: fixed (2026-10-08, external `sort`/`filters`/`page`/`pageSize`/`quickFilter` signals via `TableRowsStateConfig`; `pageSize`/`setPageSize` with a page reset; URL-backed recipe in the guide)
 
 ## TG-02 Column flags fail silently when their feature directive is missing
 
@@ -94,6 +95,7 @@ server-side path: the query adapters and the sort/filter state they hand to `arg
   `TableColumn`, which a source receives in place of the column key. (c) Add a helper such as
   `filterValues<V>(filters, key)` so the cast disappears.
 - Breaking: possibly (generic defaults keep it source-compatible). Decision: yes.
+- Status: fixed (2026-10-08, generic key inferred from an optional type-only `columns` config via `TableSourceKeyOf`, explicit type args need all three; `sortKey`/`filterKey` mapped by the table; `filterValues`)
 
 ## TG-04 Charts have no injectable label set; 15 English defaults must be overridden per instance
 

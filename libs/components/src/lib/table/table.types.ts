@@ -22,8 +22,8 @@ export type TableSortValue = string | number | Date | boolean | null | undefined
 export type TableSortDirection = 'asc' | 'desc';
 
 /** One column's sort, by column `key`. Sort state is an ordered list of these. */
-export type TableSort = {
-  key: string;
+export type TableSort<TKey extends string = string> = {
+  key: TKey;
   direction: TableSortDirection;
 };
 
@@ -60,8 +60,8 @@ export type TableFilterOptionsProvider = {
 };
 
 /** One column's active filter - the selected values, by column `key`. */
-export type TableFilter = {
-  key: string;
+export type TableFilter<TKey extends string = string> = {
+  key: TKey;
   values: unknown[];
 };
 
@@ -205,6 +205,13 @@ export type TableColumn<T, TValue = unknown> = {
   sortValue?: (row: T) => TableSortValue;
 
   /**
+   * The key a bound `rowsSource` receives for this column's sort, in place of the column key - for a
+   * backend whose sort field is named differently (`joined` sorts by `joined_at`). Client sorting and
+   * the table's own `sort` state keep the column key.
+   */
+  sortKey?: string;
+
+  /**
    * The value a CSV export writes for this column. Defaults to `value`. Required for a column whose
    * cell is an `etTableCell` template - a template renders DOM, which has no text form to export -
    * and for one whose `value` isn't a primitive. Once declared it is the only source the export
@@ -237,6 +244,12 @@ export type TableColumn<T, TValue = unknown> = {
 
   /** The value matched against the selected filter values. Defaults to `value`. */
   filterValue?: (row: T) => unknown;
+
+  /**
+   * The key a bound `rowsSource` receives for this column's filter, in place of the column key.
+   * Client filtering and the table's own `filters` state keep the column key.
+   */
+  filterKey?: string;
 
   /**
    * Include this column in the table's `quickFilter` search. A column whose `value` is neither a
@@ -307,6 +320,17 @@ export type AnyTableColumn<T> = TableColumn<T, any>;
  * } satisfies TableColumns<User>;
  */
 export type TableColumns<T> = Record<string, AnyTableColumn<T>>;
+
+/**
+ * The keys a rows source sees for a columns record: each column's `sortKey` / `filterKey` where it
+ * declares one, else the column key. A `sortKey` written without `as const` widens to `string`, and
+ * so does the whole union.
+ */
+export type TableSourceKeyOf<TColumns> = {
+  [P in keyof TColumns & string]:
+    | (TColumns[P] extends { sortKey: infer S extends string } ? S : P)
+    | (TColumns[P] extends { filterKey: infer F extends string } ? F : P);
+}[keyof TColumns & string];
 
 /**
  * A column definition paired with the key it was declared under. This is what the table renders

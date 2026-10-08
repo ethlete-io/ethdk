@@ -1267,6 +1267,34 @@ describe('TableComponent', () => {
       expect(table.rows()).toEqual(PEOPLE);
     });
 
+    it('hands the source each column sortKey and filterKey, and maps its state back to column keys', () => {
+      const source = createSource();
+      const fixture = create({
+        name: { header: 'Name', value: (person: Person) => person.name, sortable: true, sortKey: 'last_name' },
+        role: { header: 'Role', value: (person: Person) => person.role, filterKey: 'role_id' },
+      } satisfies TableColumns<Person>);
+      const table = fixture.componentInstance;
+
+      fixture.componentRef.setInput('rowsSource', source);
+      source.rows.set(PEOPLE);
+      fixture.detectChanges();
+
+      table.toggleSort('name');
+      fixture.detectChanges();
+      expect(source.setSort).toHaveBeenCalledWith([{ key: 'last_name', direction: 'asc' }]);
+      expect(table.sort()).toEqual([{ key: 'name', direction: 'asc' }]);
+      expect(table.sortDirection('name')).toBe('asc');
+
+      table.setFilterValues('role', ['Admin']);
+      fixture.detectChanges();
+      expect(source.setFilters).toHaveBeenCalledWith([{ key: 'role_id', values: ['Admin'] }]);
+      expect(table.filterValuesFor('role')).toEqual(['Admin']);
+
+      source.sort.set([{ key: 'last_name', direction: 'desc' }]);
+      fixture.detectChanges();
+      expect(table.sortDirection('name')).toBe('desc');
+    });
+
     it('keeps the source sort and filters when a layout-only state is restored', () => {
       const source = createSource();
       const fixture = create({

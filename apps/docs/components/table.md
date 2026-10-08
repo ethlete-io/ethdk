@@ -763,25 +763,104 @@ past the end when the end can only be inferred. Prefer an exact derivation anywa
 (`res.nextPage !== null`, `res.currentPage < res.totalPageCount`).
 
 It returns `rows`, `loading`, `error`, `total`, `hasMore`, `sort`, `filters`,
-`quickFilter` and `page` signals plus `setSort`/`setFilters`/`setQuickFilter`/`setPage` - the
-`args` builder reads `sort`/`filters`/`quickFilter`/`page` to build the request. `rows` keeps
+`quickFilter`, `page` and `pageSize` signals plus `setSort`/`setFilters`/`setQuickFilter`/`setPage`/`setPageSize` - the
+`args` builder reads `sort`/`filters`/`quickFilter`/`page`/`pageSize` to build the request. `rows` keeps
 the previous page visible while the next one loads (no empty flash); `setSort`/`setFilters`/
-`setQuickFilter` reset to `initialPage`, and `hasMore` likewise keeps its last answer while a page loads.
+`setQuickFilter`/`setPageSize` reset to `initialPage`, and `hasMore` likewise keeps its last answer while a page loads.
 Call it from a field initializer / constructor, like a query or query stack.
 
-| Config                                                  | Default             | Description                                                                                                |
-| ------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `queryCreator`                                          | - (required)        | The query creator. The query is created once and re-executes as `args` changes.                            |
-| `args`                                                  | - (required)        | `(state) => args \| null` - build the request from `sort`/`filters`/`quickFilter`/`page`; `null` skips it. |
-| `toRows`                                                | - (required)        | Maps a response to the page's rows.                                                                        |
-| `toTotal` / `toHasMore`                                 | -                   | Map a response to the total row count / whether more pages exist.                                          |
-| `toErrorMessage`                                        | first error message | Turns a query failure into the `error` text.                                                               |
-| `initialSort` / `initialFilters` / `initialQuickFilter` | `[]` / `[]` / `''`  | The state `args` sees on first load.                                                                       |
-| `initialPage`                                           | `1`                 | The first page, and the one `setSort`/`setFilters`/`setQuickFilter` reset to.                              |
+| Config                                                   | Default             | Description                                                                                                                           |
+| -------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `queryCreator`                                           | - (required)        | The query creator. The query is created once and re-executes as `args` changes.                                                       |
+| `args`                                                   | - (required)        | `(state) => args \| null` - build the request from `sort`/`filters`/`quickFilter`/`page`/`pageSize`; `null` skips it.                 |
+| `toRows`                                                 | - (required)        | Maps a response to the page's rows.                                                                                                   |
+| `toTotal` / `toHasMore`                                  | -                   | Map a response to the total row count / whether more pages exist.                                                                     |
+| `toErrorMessage`                                         | first error message | Turns a query failure into the `error` text.                                                                                          |
+| `initialSort` / `initialFilters` / `initialQuickFilter`  | `[]` / `[]` / `''`  | The state `args` sees on first load.                                                                                                  |
+| `initialPage`                                            | `1`                 | The first page, and the one `setSort`/`setFilters`/`setQuickFilter`/`setPageSize` reset to.                                           |
+| `initialPageSize`                                        | `25`                | The first page size.                                                                                                                  |
+| `sort` / `filters` / `page` / `pageSize` / `quickFilter` | internal signals    | Existing `WritableSignal`s to read and write instead - see [URL-backed table](#url-backed-table). The matching `initial*` is ignored. |
+| `columns`                                                | -                   | The table's columns, to type the state's keys - see [Typed keys](#typed-keys). Not read at runtime.                                   |
 
 For the legacy `V2QueryClient`, use **`tableRowsFromV2Query`** - the same config
 and return shape, backed by the legacy `queryComputed` container. Both adapters
 share one client-agnostic core (`createTableRowsSource`), so they stay in lockstep.
+
+### URL-backed table
+
+To keep the sort, page, page size and search in the URL, hand the fields of a
+[`defineQueryForm`](/query/query-forms) to the adapter. It then reads and writes those signals instead
+of its own, so a reload or a shared link restores the table, and a header click or a page-size change
+lands in the URL:
+
+```ts
+export class UsersComponent {
+  qf = defineQueryForm({
+    fields: {
+      sort: tableSortQueryField(),
+      search: searchQueryField(),
+      limit: queryField<number>({ defaultValue: 25 }),
+      page: queryField<number>({ defaultValue: 1, isResetBy: ['sort', 'search', 'limit'] }),
+    },
+  }).observe();
+
+  users = tableRowsFromQuery({
+    queryCreator: getUsers,
+    sort: this.qf.fields.sort().value,
+    quickFilter: this.qf.fields.search().value,
+    pageSize: this.qf.fields.limit().value,
+    page: this.qf.fields.page().value,
+    args: ({ sort, quickFilter, page, pageSize }) => ({
+      queryParams: {
+        sortBy: sort()[0]?.key,
+        sortOrder: sort()[0]?.direction,
+        q: quickFilter(),
+        page: page(),
+        limit: pageSize(),
+      },
+    }),
+    toRows: (res) => res.items,
+    toTotal: (res) => res.totalHits,
+  });
+}
+```
+
+```html
+<et-table [rowsSource]="users" [columns]="COLUMNS" />
+<et-page-size-select [pageSize]="users.pageSize()" (pageSizeChange)="users.setPageSize($event)" />
+```
+
+The setters still reset the page signal to `initialPage`, and the form's `isResetBy` resets it as well when
+a field changes from anywhere else - a URL edit, a form control bound with `[formField]` - so the two never
+disagree. Keep `initialPage` equal to the page field's default.
+
+### Typed keys
+
+`sort`, `filters` and the setters carry `string` keys by default. Pass the table's `columns` and they
+carry the column keys instead, so a renamed column fails to compile instead of sending a stale key:
+
+```ts
+users = tableRowsFromQuery({
+  queryCreator: getUsers,
+  columns: this.COLUMNS,
+  args: ({ sort, filters }) => ({
+    queryParams: {
+      sortBy: sort()[0]?.key, // 'name' | 'joined_at' | 'status'
+      status: filterValues<Status>(filters(), 'status'), // Status[], no cast
+    },
+  }),
+  toRows: (res) => res.items,
+});
+```
+
+When the backend names a field differently from the column, set `sortKey` (or `filterKey`) on the
+column. A bound `rowsSource` receives that key in `setSort` / `setFilters`, and the table maps the
+source's `sort` / `filters` back to column keys; client sorting and the table's own `sort()` keep the
+column key. Write it `sortKey: 'joined_at' as const` for the typed keys to include it - a plain string
+widens every key to `string`. The adapter can only infer the keys from `columns`: TypeScript has no
+partial type arguments, so an explicit `tableRowsFromQuery<typeof getUsers, User, typeof COLUMNS>(…)`
+must name all three. A query form's `tableSortQueryField()` holds `string` keys, so leave `columns` out
+when binding one.
 
 ### One binding instead of six
 
@@ -1178,54 +1257,50 @@ For controls that span the whole table - a paginator, a page-size picker - proje
 them into the **`[etTableFooter]` slot**. It renders a full-width bar below the grid,
 pinned to the bottom of the table's scroll viewport (and only appears when you
 actually project something). The table bakes in **no** pager; you drop in
-[`<et-pagination>`](/components/pagination) and a page-size
-[`<et-select>`](/components/select) and wire them to your data source.
+[`<et-pagination>`](/components/pagination) and an
+[`<et-page-size-select>`](/components/pagination#page-size) and wire them to your data source.
 
 With the `tableRowsFromQuery` adapter, bind the paginator's `page` / `(pageChange)`
-to the adapter's `page` / `setPage`, and let the page-size select drive the query's
-`limit`:
+to the adapter's `page` / `setPage`, and the page-size select to its `pageSize` / `setPageSize`. The
+`args` builder reads `pageSize()` for the query's `limit`, and a new page size resets the page, so a
+reader on page 9 who switches to 100 rows does not ask for a page past the end:
 
 ```ts
 @Component({
+  imports: [TABLE_IMPORTS, PAGINATION_IMPORTS, PAGE_SIZE_SELECT_IMPORTS],
   template: `
     <et-table [rowsSource]="rows" [columns]="COLUMNS" [style.block-size.rem]="32">
-      <!-- Material-style controls row: label + page-size select + range + prev/next, right-aligned. -->
       <div class="flex flex-wrap items-center justify-end gap-3" etTableFooter>
-        <span class="et-table-footer-label">Items per page:</span>
-        <!-- `sm` keeps the field compact; pull its 12px control text back to the 14px of the label and
-             readout either side of it, so the row reads as one size -->
-        <et-form-field appearance="underline" size="sm" [style.--et-form-field-control-font-size.px]="14">
-          <!-- a page-size trigger is narrower than its option rows, so let the panel size itself -->
-          <et-select [formField]="pageSizeForm.pageSize" [clearable]="false" [mirrorPanelWidth]="false" />
-        </et-form-field>
+        <et-page-size-select [pageSize]="rows.pageSize()" (pageSizeChange)="rows.setPageSize($event)" size="sm" />
         <et-pagination
           [page]="rows.page()"
           [totalPages]="totalPages()"
           [totalItems]="rows.total()"
-          [pageSize]="pageSizeForm.pageSize().value()"
-          compact
+          [pageSize]="rows.pageSize()"
           (pageChange)="rows.setPage($event)"
+          compact
         />
       </div>
     </et-table>
   `,
 })
 export class UsersComponent {
-  rows = tableRowsFromQuery({ queryCreator, args, toRows, toTotal });
-  pageSizeForm = form(signal({ pageSize: 20 }));
-  totalPages = computed(() => Math.ceil((this.rows.total() ?? 0) / this.pageSizeForm.pageSize().value()));
+  rows = tableRowsFromQuery({
+    queryCreator: getUsers,
+    args: ({ page, pageSize }) => ({ queryParams: { page: page(), limit: pageSize() } }),
+    toRows: (res) => res.items,
+    toTotal: (res) => res.totalHits,
+  });
+  totalPages = computed(() => Math.ceil((this.rows.total() ?? 0) / this.rows.pageSize()));
 }
 ```
 
 The slot is layout-only, so its arrangement is yours: the example above is a
-right-aligned Material-style row with an external, translatable "Items per page:"
-label - given `.et-table-footer-label` so it matches the paginator's own readout
-instead of being a near-miss - and an `underline` select (`[mirrorPanelWidth]="false"` keeps its option rows
-readable - a page-size trigger is narrower than "20 ✓"). In a table with a bounded
+right-aligned Material-style row with the "Items per page" select beside the paginator. In a table with a bounded
 `block-size`, the bar sits at the bottom of the box even when the rows don't fill it. With `compact` the paginator renders as a
 range readout plus previous/next chevrons that sit inline and hold their position
 across page changes. For its other options (links mode, paged SEO, jump-to-page,
-the width-driven auto-collapse), see the [pagination guide](/components/pagination).
+the width-driven auto-collapse) and the page-size select, see the [pagination guide](/components/pagination).
 
 ## Empty state
 

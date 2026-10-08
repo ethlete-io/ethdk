@@ -1,4 +1,4 @@
-import { computed, signal } from '@angular/core';
+import { computed } from '@angular/core';
 import {
   AnyLegacyQuery,
   AnyLegacyQueryCreator,
@@ -13,17 +13,27 @@ import {
   queryStateSignal,
 } from '@ethlete/query';
 import { injectTableLabels } from './table-labels';
-import { createTableRowsSource, TableRowsFromQuery, TableRowsQueryState } from './table-rows-source';
-import { TableFilter, TableSort } from '../table.types';
+import {
+  createTableRowsSource,
+  createTableRowsState,
+  TableRowsFromQuery,
+  TableRowsQueryState,
+  TableRowsStateConfig,
+} from './table-rows-source';
+import { TableSourceKeyOf } from '../table.types';
 
 // The legacy twin of `table-rows-from-query.ts` for apps still on the class-based `V2QueryClient`.
 // Same module rules: standalone function in its own file so unused integrations tree-shake away.
 
-export type TableRowsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TRow> = {
+export type TableRowsFromV2QueryConfig<
+  TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
+  TRow,
+  TColumns extends object = Record<string, unknown>,
+> = TableRowsStateConfig<TableSourceKeyOf<TColumns>> & {
   /** The legacy query creator to run. A fresh query is prepared/executed as sort/page change; the previous is released. */
   queryCreator: TCreator;
   /** Builds the `prepare()` args from the reactive server state. Return `null` to skip (rows keep their previous value). */
-  args: (state: TableRowsQueryState) => Parameters<TCreator['prepare']>[0] | null;
+  args: (state: TableRowsQueryState<TableSourceKeyOf<TColumns>>) => Parameters<TCreator['prepare']>[0] | null;
   /** Maps a successful response to the current page's rows. */
   toRows: (response: QueryDataOf<TCreator>) => TRow[];
   /** Total row count across all pages, for a paginator. */
@@ -32,14 +42,11 @@ export type TableRowsFromV2QueryConfig<TCreator extends AnyV2QueryCreator | AnyL
   toHasMore?: (response: QueryDataOf<TCreator>) => boolean;
   /** Turns a query failure into the table's error text. Defaults to the first error message. */
   toErrorMessage?: (error: RequestError) => string;
-  /** Initial sort. @default [] */
-  initialSort?: TableSort[];
-  /** Initial filters. @default [] */
-  initialFilters?: TableFilter[];
-  /** Initial free-text search. @default '' */
-  initialQuickFilter?: string;
-  /** The page `args` receives on first load; `setSort`/`setFilters`/`setQuickFilter` reset to it. @default 1 */
-  initialPage?: number;
+  /**
+   * The table's columns. Types the keys `sort`, `filters` and the setters carry - each column's
+   * `sortKey` / `filterKey`, else its key (see `TableSourceKeyOf`). Nothing reads it at runtime.
+   */
+  columns?: TColumns;
 };
 
 const firstErrorMessage = (error: RequestError, fallback: string) => {
@@ -62,19 +69,20 @@ const firstErrorMessage = (error: RequestError, fallback: string) => {
  *
  * Call it from a field initializer / constructor (injection context).
  */
-export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator, TRow>(
-  config: TableRowsFromV2QueryConfig<TCreator, TRow>,
-): TableRowsFromQuery<TRow> => {
+export const tableRowsFromV2Query = <
+  TCreator extends AnyV2QueryCreator | AnyLegacyQueryCreator,
+  TRow,
+  TColumns extends object = Record<string, unknown>,
+>(
+  config: TableRowsFromV2QueryConfig<TCreator, TRow, TColumns>,
+): TableRowsFromQuery<TRow, TableSourceKeyOf<TColumns>> => {
   type TResponse = QueryDataOf<TCreator>;
+  type TKey = TableSourceKeyOf<TColumns>;
 
-  const initialPage = config.initialPage ?? 1;
-  const sort = signal<TableSort[]>(config.initialSort ?? []);
-  const filters = signal<TableFilter[]>(config.initialFilters ?? []);
-  const page = signal(initialPage);
-  const quickFilter = signal(config.initialQuickFilter ?? '');
+  const { initialPage, sort, filters, page, pageSize, quickFilter } = createTableRowsState<TKey>(config);
 
   const query = queryComputed<AnyV2Query | AnyLegacyQuery | null>(() => {
-    const args = config.args({ sort, filters, page, quickFilter });
+    const args = config.args({ sort, filters, page, pageSize, quickFilter });
 
     if (args === null) return null;
 
@@ -87,7 +95,7 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
   const labels = injectTableLabels();
   const toErrorMessage = config.toErrorMessage ?? ((error) => firstErrorMessage(error, labels().error));
 
-  return createTableRowsSource<TResponse, TRow>({
+  return createTableRowsSource<TResponse, TRow, TKey>({
     driver: {
       response: computed(() => {
         const current = settled();
@@ -104,6 +112,7 @@ export const tableRowsFromV2Query = <TCreator extends AnyV2QueryCreator | AnyLeg
     sort,
     filters,
     page,
+    pageSize,
     quickFilter,
     initialPage,
     toRows: config.toRows,
