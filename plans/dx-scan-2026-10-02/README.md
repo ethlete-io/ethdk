@@ -177,11 +177,14 @@ A review agent gets one finished fix slice (a domain file and its list of change
   `b855e81b3`, EA-01 `331ac4fd6`, TG-01/TG-03 `c9c3833e7`, RTE-06 `7ecb531c1`, RTE-05 `d0b746ebc`.
 - ea-frontend has uncommitted EA-01 edits (app.config.ts, unsaved-changes-confirm.provider.ts, shared/index.ts, five
   partner overlays); they typecheck only after the next SDK release.
-- Running at checkpoint: CR-06 (one `value` model whose type is inferred from the binding; user rejected a
-  `value`/`values` split), the RTE test-driver `attachEditable()` fix, and the scheduler plan phases 1, 2, 4
-  (`plans/scheduler-edit-surface-composition.md`).
-- Next: scheduler phase 3 (timetrack; run the timetrack snapshot before/after and the e2e suite on a quiet tree), then
-  CR-09 (`stripInternal` + per-member audit, checked against the ea-frontend build).
+- Later the same day: CR-06 `8537e50d3`, RTE driver `89e61875a`, scheduler plan phases 1/2/4 `7ff23cc87`,
+  `cf60c5882`, `4bf442c3c` (commits between `cfc506ce6` and `cf60c5882` do not compile: shared index).
+- CR-09: audit in `cr09-internal-audit.md`; an edit agent turns on `stripInternal` (scheduler excluded, re-audit its
+  six tags after phase 3). `tools/release-smoke/config.json` points at `../fut-frontend` (absent here): ask the user.
+- Running: scheduler phase 3 (timetrack, snapshot before/after, e2e last) and the CR-09 edit phase.
+- Do not push `next` before phase 3 lands (timetrack app does not compile until then), and only with the user's
+  approval. Session `ethlete-sdk-da` has local commits `cfc506ce6`, `95b8a0174` on top and waits for the push hash.
+- CI gap: `nx run timetrack:typecheck` checks `libs/timetrack`, not `apps/timetrack`.
 - Skipped by the user for now: SS-03. SS-02 and the edit-field half of SS-04 are replaced by the scheduler plan.
 - Final sweep after all agents: `nx lint components` (CR-06 added `V` type-parameter names that fail lint),
   `docs:error-codes:check` (ET1015, ET3309, ET4602 were undocumented mid-run), full `nx test components` once.
