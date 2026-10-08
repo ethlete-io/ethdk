@@ -124,6 +124,122 @@ const alreadyWaiting = (options: {
       (!standIn.openedForWorkPath || standIn.openedForWorkPath === options.workPath),
   );
 
+type AutoStandInOptions = {
+  contexts: readonly UnnamedContext[];
+  unattributed: readonly WorkGroup[];
+  links: readonly TimetrackProjectLink[];
+  rules: readonly AttributionRule[];
+  config: GitFlowConfig;
+  /**
+   * The checkouts the host discovered, or nothing while the discovery has not answered yet. Nothing
+   * opens until it has.
+   */
+  repoRoots: readonly string[] | null | undefined;
+  /**
+   * The checkouts the app can still offer a real issue for. A placeholder is the answer for work no
+   * issue covers, so one that does is not work for a placeholder.
+   */
+  offeredCheckouts: readonly string[];
+  /** Every placeholder the settings hold, so work already waiting on one gets no second. */
+  standIns: readonly StandIn[];
+  /** The work the user refused a placeholder for. It stays unnamed until they name it. */
+  refused: readonly StandInRefusal[];
+  /** The local day key the placeholders open on. */
+  day: string;
+  now: Date;
+  minObservedMs?: number;
+};
+
+/** Why the stand-in pass opened a placeholder for a piece of work, or why it left the work unnamed. */
+export type AutoStandInVerdict =
+  | 'opens'
+  | 'no-repo-roots'
+  | 'no-checkout'
+  | 'no-branch'
+  | 'below-floor'
+  | 'base-branch'
+  | 'not-a-checkout'
+  | 'offered'
+  | 'refused'
+  | 'waiting'
+  | 'answered'
+  | 'no-project-link';
+
+/** One piece of work the stand-in pass looked at, and what it decided. */
+export type AutoStandInDecision = {
+  repoPath?: string;
+  branch?: string;
+  workPath?: string;
+  appId?: string;
+  observedMs: number;
+  verdict: AutoStandInVerdict;
+};
+
+const verdictOf = (
+  options: Omit<AutoStandInOptions, 'day' | 'now' | 'unattributed'> & { group: BranchGroup; roots: readonly string[] },
+) => {
+  const { group, roots } = options;
+  const { repoPath, branch, workPath } = group;
+  const base = new Set(
+    [options.config.baseBranches.development, options.config.baseBranches.production].map(stripRefPrefix),
+  );
+
+  if (group.observedMs < (options.minObservedMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS))
+    return { verdict: 'below-floor' as const };
+  if (base.has(branch) && !workPath) return { verdict: 'base-branch' as const };
+  if (!isCheckout({ repoPath, roots })) return { verdict: 'not-a-checkout' as const };
+  if (options.offeredCheckouts.includes(repoPath)) return { verdict: 'offered' as const };
+  if (isStandInRefused({ repoPath, branch, workPath, refused: options.refused }))
+    return { verdict: 'refused' as const };
+  if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns }))
+    return { verdict: 'waiting' as const };
+  if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules })) return { verdict: 'answered' as const };
+
+  const first = group.contexts[0];
+  const link = first && matchProjectLink({ context: first.context, links: options.links });
+
+  return link?.target.kind === 'project'
+    ? { verdict: 'opens' as const, projectKey: link.target.projectKey }
+    : { verdict: 'no-project-link' as const };
+};
+
+/**
+ * What the stand-in pass decides for each piece of work a day left unnamed, including the work it never
+ * groups: a context on no checkout and a checkout on no branch.
+ */
+export const autoStandInDecisions = (
+  options: Omit<AutoStandInOptions, 'day' | 'now' | 'unattributed'>,
+): AutoStandInDecision[] => {
+  const ungrouped = new Map<string, AutoStandInDecision>();
+
+  for (const unnamed of options.contexts) {
+    const { repoPath, branch, appId } = unnamed.context;
+
+    if (repoPath && stripRefPrefix(branch ?? '')) continue;
+
+    const key = repoPath ? `repo:${repoPath}` : `app:${appId ?? ''}`;
+    const held = ungrouped.get(key) ?? {
+      ...(repoPath ? { repoPath } : { appId }),
+      observedMs: 0,
+      verdict: repoPath ? ('no-branch' as const) : ('no-checkout' as const),
+    };
+
+    held.observedMs += unnamed.observedMs;
+    ungrouped.set(key, held);
+  }
+
+  const roots = options.repoRoots;
+  const grouped = groupByWork(options.contexts).map((group): AutoStandInDecision => ({
+    repoPath: group.repoPath,
+    branch: group.branch,
+    ...(group.workPath ? { workPath: group.workPath } : {}),
+    observedMs: group.observedMs,
+    verdict: roots ? verdictOf({ ...options, group, roots }).verdict : 'no-repo-roots',
+  }));
+
+  return [...grouped, ...ungrouped.values()];
+};
+
 /**
  * Opens a placeholder for every branch of a linked checkout whose work no rule could name.
  *
@@ -154,56 +270,18 @@ const alreadyWaiting = (options: {
  * user's own Tempo history, it arrives later than the day does, and a placeholder written first both
  * replaces the rule it would have become and stops the offer ever being made again.
  */
-export const autoStandIns = (options: {
-  contexts: readonly UnnamedContext[];
-  unattributed: readonly WorkGroup[];
-  links: readonly TimetrackProjectLink[];
-  rules: readonly AttributionRule[];
-  config: GitFlowConfig;
-  /**
-   * The checkouts the host discovered, or nothing while the discovery has not answered yet. Nothing
-   * opens until it has.
-   */
-  repoRoots: readonly string[] | null | undefined;
-  /**
-   * The checkouts the app can still offer a real issue for. A placeholder is the answer for work no
-   * issue covers, so one that does is not work for a placeholder.
-   */
-  offeredCheckouts: readonly string[];
-  /** Every placeholder the settings hold, so work already waiting on one gets no second. */
-  standIns: readonly StandIn[];
-  /** The work the user refused a placeholder for. It stays unnamed until they name it. */
-  refused: readonly StandInRefusal[];
-  /** The local day key the placeholders open on. */
-  day: string;
-  now: Date;
-  minObservedMs?: number;
-}): AutoStandIn[] => {
+export const autoStandIns = (options: AutoStandInOptions): AutoStandIn[] => {
   const roots = options.repoRoots;
 
   if (!roots) return [];
 
-  const minObservedMs = options.minObservedMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS;
-  const base = new Set(
-    [options.config.baseBranches.development, options.config.baseBranches.production].map(stripRefPrefix),
-  );
   const opened: AutoStandIn[] = [];
 
   for (const group of groupByWork(options.contexts)) {
     const { repoPath, branch, workPath } = group;
+    const decided = verdictOf({ ...options, group, roots });
 
-    if (group.observedMs < minObservedMs) continue;
-    if (base.has(branch) && !workPath) continue;
-    if (!isCheckout({ repoPath, roots })) continue;
-    if (options.offeredCheckouts.includes(repoPath)) continue;
-    if (isStandInRefused({ repoPath, branch, workPath, refused: options.refused })) continue;
-    if (alreadyWaiting({ repoPath, branch, workPath, standIns: options.standIns })) continue;
-    if (alreadyAnswered({ repoPath, branch, workPath, rules: options.rules })) continue;
-
-    const first = group.contexts[0];
-    const link = first && matchProjectLink({ context: first.context, links: options.links });
-
-    if (link?.target.kind !== 'project') continue;
+    if (decided.verdict !== 'opens') continue;
 
     const draft = draftRepoTicket({
       repoPath: group.repoPath,
@@ -216,7 +294,7 @@ export const autoStandIns = (options: {
       description: draft.description,
       day: options.day,
       now: options.now,
-      projectKey: link.target.projectKey,
+      projectKey: decided.projectKey,
       author: 'app',
       openedFor: group.repoPath,
       openedForBranch: group.branch,

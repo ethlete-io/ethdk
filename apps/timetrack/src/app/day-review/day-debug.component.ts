@@ -209,7 +209,15 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
       </et-accordion-group>
     </et-overlay-body>
 
-    <div class="flex justify-end" etOverlayFooter>
+    <div class="flex items-center justify-end gap-3" etOverlayFooter>
+      @if (autoMode.reportCopy(); as copy) {
+        <span class="text-small text-et-surface-muted" data-report-copy>
+          {{ copy.ok ? 'Copied the anonymous report' : 'The clipboard refused the report' }}
+        </span>
+      }
+      <button (click)="autoMode.copyAnonymousReport()" et-button size="sm" variant="outline">
+        Copy as anonymous report
+      </button>
       <button et-button etOverlayClose size="sm" variant="outline">Close</button>
     </div>
   `,

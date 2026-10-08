@@ -16,6 +16,7 @@ import {
   ReviewedRow,
   TicketWritingRequest,
   actionClassOf,
+  anonymousDayReport,
   autoModeActs,
   autoModeApplies,
   autoModeApplyRequest,
@@ -93,6 +94,7 @@ import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectAgentDay } from '../agent/agent-day';
 import { injectApprovalQueue } from '../agent/approval-queue';
+import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -200,6 +202,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const recurring = injectRecurringPatterns();
   const standInStore = injectStandIns();
   const git = injectGitCollector();
+  const epics = injectEpicSiblings();
+  const reportCopy = signal<{ ok: boolean; atMs: number } | null>(null);
   const jobs$ = new Subject<Job>();
   const pending = signal<ReadonlySet<string>>(new Set());
   const activity = signal<readonly AutoModeActivity[]>([]);
@@ -1066,6 +1070,46 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  const anonymousReport = (focusRowId?: string) => {
+    const day = dayReview.dayKey();
+
+    return anonymousDayReport({
+      day,
+      today: today(),
+      screenDay: day,
+      generatedAt: new Date(),
+      ...(focusRowId ? { focusRowId } : {}),
+      flags: {
+        windowLocked: windowLock.isLocked(),
+        tempoHistory: recurring.state().state,
+        epicsSettled: epics.settledFor(day),
+        discoveryAnswered: !!git.discovery(),
+      },
+      settings: settings.settings(),
+      links: projectLinks(),
+      repoRoots: git.discovery()?.repos,
+      stream: dayReview.day(),
+      contexts: dayReview.unnamed(),
+      rows: dayReview.rows(),
+      offeredCheckouts: dayReview.namingOffers().map((offer) => offer.repoPath),
+      answers: dayReview.autoAnswers() ?? [],
+      approvals: approvals.items(),
+      activity: activity(),
+    });
+  };
+
+  const copyAnonymousReport = (focusRowId?: string) => {
+    const text = JSON.stringify(anonymousReport(focusRowId), null, 2);
+
+    defer(() => from(navigator.clipboard.writeText(text)))
+      .pipe(
+        map(() => true),
+        catchError(() => of(false)),
+        tap((ok) => reportCopy.set({ ok, atMs: Date.now() })),
+      )
+      .subscribe();
+  };
+
   return {
     /** Whether auto mode runs: it needs the suggestions switch as well as its own. */
     enabled,
@@ -1099,6 +1143,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     askFor$,
     /** The jobs auto mode ran in this app session, newest first. */
     activity: activity.asReadonly(),
+    /**
+     * Copies what the stand-in pass and auto mode decided on the day on screen, with every name replaced
+     * by a placeholder, to the clipboard. `focusRowId` marks the row it was copied from.
+     */
+    copyAnonymousReport,
+    /** How the last copy went, for the button that pressed it to say so. */
+    reportCopy: reportCopy.asReadonly(),
     /** What auto mode did on the day on screen, read from the stored answers, rows, stand-ins and queue. */
     readout: computed(() => {
       const edits = dayReview.storedEdits();

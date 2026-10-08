@@ -100,6 +100,12 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     run: ({ store, row }) => store.hide(row),
   },
   {
+    label: 'Copy as anonymous report',
+    order: 38,
+    enabled: () => true,
+    run: ({ autoMode, row }) => autoMode.copyAnonymousReport(row.id),
+  },
+  {
     label: 'Remove this row',
     order: 40,
     destructive: true,

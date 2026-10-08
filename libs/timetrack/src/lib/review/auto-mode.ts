@@ -303,7 +303,8 @@ const handNamedContextIds = (options: { rows: readonly AskRow[]; unattributed: r
   );
 };
 
-const subjectSettledAt = (options: {
+/** When each subject of a day settles, so auto mode may ask about it. A stand-in with no row has settled. */
+export const autoModeSettledAt = (options: {
   contexts: readonly UnnamedContext[];
   rows: readonly AskRow[];
   unattributed: readonly WorkGroup[];
@@ -470,7 +471,7 @@ export const autoModeAsks = (options: {
       .filter((row) => row.standInId && row.issueKey && rowFieldSourceOf(row, 'issue') === 'human')
       .map((row) => row.standInId),
   );
-  const settledAt = subjectSettledAt({
+  const settledAt = autoModeSettledAt({
     contexts: options.contexts,
     rows: options.rows,
     unattributed: evidence?.unattributed ?? [],
