@@ -163,3 +163,39 @@ export const RICH_TEXT_TABLES = collection(
     paragraph(text('Cells hold full rich text, so each one is a paragraph node.')),
   ),
 );
+
+/** The same embeds as `RICH_TEXT_EMBEDS`, shaped like a Contentful GraphQL rich-text field. */
+/* eslint-disable @typescript-eslint/naming-convention */
+export const RICH_TEXT_GQL = {
+  json: document(
+    heading(1, 'A GraphQL rich-text field'),
+    paragraph(text('Passed to the renderer as-is through '), text('gqlRichText', ['code']), text('.')),
+    embeddedAsset('asset-1'),
+    embeddedEntry(CALLOUT_ENTRY_ID),
+  ),
+  links: {
+    assets: {
+      block: [
+        {
+          sys: { id: 'asset-1' },
+          title: 'Placeholder',
+          description: null,
+          fileName: 'placeholder.svg',
+          contentType: 'image/svg+xml',
+          url: PLACEHOLDER_IMAGE,
+          width: 640,
+          height: 360,
+          size: 1024,
+        },
+      ],
+      hyperlink: [],
+    },
+    entries: {
+      block: [
+        { __typename: 'Callout', sys: { id: CALLOUT_ENTRY_ID }, title: 'From GraphQL', body: 'Matched by __typename.' },
+      ],
+      inline: [],
+      hyperlink: [],
+    },
+  },
+};

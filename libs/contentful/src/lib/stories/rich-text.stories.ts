@@ -6,7 +6,7 @@ export default {
   component: RichTextStorybookComponent,
   decorators: [moduleMetadata({ imports: [RichTextStorybookComponent] })],
   args: { fixture: 'embeds' },
-  argTypes: { fixture: { control: 'inline-radio', options: ['embeds', 'lists', 'tables'] } },
+  argTypes: { fixture: { control: 'inline-radio', options: ['embeds', 'lists', 'tables', 'gql'] } },
 } as Meta<RichTextStorybookComponent>;
 
 type Story = StoryObj<RichTextStorybookComponent>;
@@ -39,6 +39,18 @@ export const Tables: Story = {
     docs: {
       description: {
         story: 'A table with a header row. Every cell holds full rich text, so its content is a paragraph node.',
+      },
+    },
+  },
+};
+
+export const GraphQlField: Story = {
+  args: { fixture: 'gql' },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A rich-text field from the GraphQL API (`{ json, links }`) passed to `[gqlRichText]` as-is. Embedded entries are matched to `customComponents` by their `__typename`, first letter lower-cased.',
       },
     },
   },

@@ -31,6 +31,7 @@ import { injectContentfulConfig } from '../../utils/contentful-config';
 import { isExternalWebHref, isRouteRelativeHref, resolveHrefAgainstRoute } from '../link/contentful-link.util';
 import { CF_BLOCKS, CF_INLINES } from './rich-text-node-types';
 import { richTextRendererError } from './rich-text-renderer.errors';
+import { ContentfulGqlRichText, mapContentfulGqlLinks } from './rich-text-renderer.gql';
 import { isRichTextRootNode, translateContentfulNodeTypeToHtmlTag } from './rich-text-renderer.util';
 
 type HtmlOpenRenderCommand = {
@@ -336,33 +337,67 @@ export class ContentfulRichTextRendererComponent {
    * The contentful response gotten via their REST api.
    * @see https://www.contentful.com/developers/docs/references/content-delivery-api/#/reference/entries/entries-collection
    */
-  content = input.required<ContentfulCollection | null | undefined>();
+  content = input<ContentfulCollection | null | undefined>();
 
   /**
    * The path to where the rich text field is inside the contentful response. Dot and array notation is allowed.
    * @example "items[0].fields.html"
    */
-  richTextPath = input.required<string>();
+  richTextPath = input<string>();
+
+  /**
+   * A rich-text field from the Contentful GraphQL API, passed as-is. An alternative to `content` and
+   * `richTextPath`; setting both is an error in dev mode.
+   * @example { json, links: { assets: { block, hyperlink }, entries: { block, inline, hyperlink } } }
+   */
+  gqlRichText = input<ContentfulGqlRichText | null | undefined>();
 
   private readonly executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
 
-  private contentIncludesMap = computed<ContentfulIncludeMap>(() => {
-    const content = this.content();
-    const assets = content?.includes?.Asset;
-    const entries = content?.includes?.Entry;
+  private includes = computed(() => {
+    const gqlRichText = this.gqlRichText();
 
-    return createContentfulIncludeMap({ assets: assets ?? [], entries: entries ?? [] });
+    if (gqlRichText) {
+      return mapContentfulGqlLinks(gqlRichText.links);
+    }
+
+    const includes = this.content()?.includes;
+
+    return { assets: includes?.Asset ?? [], entries: includes?.Entry ?? [] };
   });
 
-  private includedEntries = computed(
-    () => new Map((this.content()?.includes?.Entry ?? []).map((entry) => [entry.sys.id, entry])),
-  );
+  private contentIncludesMap = computed<ContentfulIncludeMap>(() => createContentfulIncludeMap(this.includes()));
+
+  private includedEntries = computed(() => new Map(this.includes().entries.map((entry) => [entry.sys.id, entry])));
 
   private richTextData = computed(() => {
+    const gqlRichText = this.gqlRichText();
     const content = this.content();
     const richTextPath = this.richTextPath();
 
+    if (ngDevMode && gqlRichText && (content || richTextPath)) {
+      throw richTextRendererError('rich_text_conflicting_inputs', { gqlRichText, content, richTextPath });
+    }
+
+    if (gqlRichText) {
+      if (!isRichTextRootNode(gqlRichText.json)) {
+        throw richTextRendererError('rich_text_wrong_type', { gqlRichText });
+      }
+
+      return gqlRichText.json;
+    }
+
     if (!content) {
+      return null;
+    }
+
+    if (!richTextPath) {
+      if (ngDevMode) {
+        console.warn(
+          '<et-contentful-rich-text-renderer>: content is set without richTextPath, so nothing is rendered. Set richTextPath, or pass a GraphQL field through gqlRichText.',
+        );
+      }
+
       return null;
     }
 

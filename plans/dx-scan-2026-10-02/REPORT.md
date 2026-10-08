@@ -35,7 +35,6 @@ The domain file of each ID has the full problem and the proposed fix.
 | RTE-05  | Give the multi-language editor a `triggers` input and expose the inner editor (`insertToken`, palette)?                                                                                        |
 | RTE-06  | Move paste/drop/undo/autoformat/tool-hook handling from the component into the headless `[etRichTextEditor]`, or only correct the docs?                                                        |
 | MISC-07 | The fix agent kept only `QueryDevtoolsComponent`, `QUERY_DEVTOOLS_IMPORTS`, `QUERY_DEVTOOLS_VERSION` in the panel entry. Confirm, and say if the about/settings components must be embeddable. |
-| MISC-08 | The rich-text renderer cannot render a GraphQL rich-text field. Input shape: a `[gqlRichText]` input with `{ json, links }`, or a `createContentfulIncludeMapFromGqlLinks()` helper?           |
 | CR-06   | Tree `value` is `T \| T[] \| null`. Split into `value` / `values`, or a generic mode parameter? Apply the same rule to select and cascader.                                                    |
 | CR-09   | 537 `@internal` members ship as public API. Turn on `stripInternal`, or make members `protected`, after a check per member?                                                                    |
 | OV-06   | Typed overlay data: (a) a result marker `overlayResult<T>()`, (b) a typed `inputs` option on `open()`?                                                                                         |

@@ -77,10 +77,13 @@ Everything else falls back to the defaults above without the provider. The stand
 
 `<et-contentful-rich-text-renderer>` takes the **raw Contentful REST response** and a path to the rich-text field inside it:
 
-| Input          | Type                                                   | Purpose                                                                                    |
-| -------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| `content`      | `ContentfulCollection \| null \| undefined` (required) | The full collection response. `includes` may be omitted when there are no linked entities. |
-| `richTextPath` | `string` (required)                                    | Dot/array path to the rich-text `document` field, e.g. `items[0].fields.html`.             |
+| Input          | Type                                         | Purpose                                                                                                     |
+| -------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `content`      | `ContentfulCollection \| null \| undefined`  | The full collection response. `includes` may be omitted when there are no linked entities.                  |
+| `richTextPath` | `string`                                     | Dot/array path to the rich-text `document` field, e.g. `items[0].fields.html`.                              |
+| `gqlRichText`  | `ContentfulGqlRichText \| null \| undefined` | A GraphQL rich-text field, see [Rendering a GraphQL rich-text field](#rendering-a-graphql-rich-text-field). |
+
+Use `content` with `richTextPath`, or `gqlRichText` - not both. In dev mode, setting `gqlRichText` together with either REST input throws ET011.
 
 An absent rich-text field renders nothing. In dev mode, a path whose parent does not resolve either (`item[0].fields.html`, or an `items[1]` the response does not have) also logs a warning naming the deepest part that resolved, since that is almost always a typo.
 
@@ -195,6 +198,37 @@ For Contentful's GraphQL API the package exports:
 
 REST-side types (`ContentfulCollection`, `ContentfulEntry<T>`, `ContentfulRestAsset`, `ContentfulEntrySys`, `ContentfulMetadata`, `RichTextResponse`, link types, …) are exported for annotating query responses.
 
+### Rendering a GraphQL rich-text field
+
+A rich-text field from the GraphQL API has the shape `{ json, links }`. Pass it to `gqlRichText` as-is; no REST-shaped collection has to be built by hand:
+
+```ts
+@Component({
+  template: `<et-contentful-rich-text-renderer [gqlRichText]="page().body" />`,
+  imports: [ContentfulRichTextRendererComponent],
+})
+export class PageComponent {
+  page = input.required<{ body: ContentfulGqlRichText }>();
+}
+```
+
+```graphql
+body {
+  json
+  links {
+    assets {
+      block { sys { id } title url contentType width height size }
+    }
+    entries {
+      block { __typename sys { id } }
+      inline { __typename sys { id } }
+    }
+  }
+}
+```
+
+`links.assets.block`, `links.assets.hyperlink`, `links.entries.block`, `links.entries.inline` and `links.entries.hyperlink` are all read. Embedded entries are matched to `customComponents` by the `__typename` with its first letter lower-cased (`ProductTeaser` becomes `productTeaser`), which is how Contentful derives the type name from a content type id. Select `__typename` on every linked entry; one without it is skipped. The custom component receives the entry's selected fields (everything except `__typename` and `sys`) as `fields`.
+
 ## Error codes
 
 The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 3 digits - a separate namespace from the [`@ethlete/components` ranges](/components/error-codes)), all prefixed `<et-contentful-rich-text-renderer>:`.
@@ -208,3 +242,4 @@ The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 
 | ET007 | A text node's parent node was not found.                                             |
 | ET009 | An internal render update found no rendered node for its command.                    |
 | ET010 | An internal render update expected a component but found a plain node.               |
+| ET011 | `gqlRichText` is set together with `content` or `richTextPath` (dev mode only).      |

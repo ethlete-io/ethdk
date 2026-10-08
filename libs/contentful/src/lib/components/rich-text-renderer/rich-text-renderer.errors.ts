@@ -6,6 +6,9 @@ export const RICH_TEXT_RENDERER_ERRORS = {
   rich_text_wrong_type:
     'The rich text object does not satisfy the RichTextResponse interface. It should contain a property named "nodeType" with the value "document".',
 
+  rich_text_conflicting_inputs:
+    'gqlRichText cannot be combined with content or richTextPath. Pass either a GraphQL rich-text field through gqlRichText, or a REST response through content and richTextPath.',
+
   asset_id_not_found: 'The asset ID was not found. This node is not supported.',
   entry_id_not_found: 'The entry ID was not found. This node is not supported.',
 
@@ -19,6 +22,7 @@ export const RICH_TEXT_RENDERER_ERRORS = {
 const RICH_TEXT_RENDERER_ERROR_CODES: Record<keyof typeof RICH_TEXT_RENDERER_ERRORS, number> = {
   rich_text_not_object: 0,
   rich_text_wrong_type: 1,
+  rich_text_conflicting_inputs: 11,
   asset_id_not_found: 2,
   entry_id_not_found: 3,
   text_parent_not_found: 7,

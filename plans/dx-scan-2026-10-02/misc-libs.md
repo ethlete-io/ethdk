@@ -140,7 +140,7 @@ Scope: `libs/contentful`, `libs/types`, `libs/query-devtools` (`.`, `/lazy`, `/t
 
 ## MISC-08 Rich-text renderer cannot render a GraphQL rich-text field
 
-- Status: open: needs the input-shape decision
+- Status: fixed (2026-10-08, [gqlRichText] input maps GraphQL links to the include map by lower-cased __typename; ET011 in dev mode when combined with REST inputs)
 
 - Where: `libs/contentful/src/lib/components/rich-text-renderer/rich-text-renderer.component.ts:306,316-322`;
   `libs/contentful/src/lib/gql/asset.fragments.ts` (GQL helpers exist).

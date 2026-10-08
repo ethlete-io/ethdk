@@ -4,14 +4,21 @@ import { ContentfulIncludeMap, ContentfulRichTextRendererComponent } from '../co
 import { ContentfulCollection, ContentfulEntry, ContentfulEntrySys } from '../types';
 import { CONTENTFUL_DEFAULT_COMPONENTS } from '../utils/contentful-default-components';
 import { provideContentfulConfig } from '../utils/contentful.util';
-import { CALLOUT_ENTRY_ID, RICH_TEXT_EMBEDS, RICH_TEXT_LISTS, RICH_TEXT_TABLES } from './rich-text-fixtures';
+import {
+  CALLOUT_ENTRY_ID,
+  RICH_TEXT_EMBEDS,
+  RICH_TEXT_GQL,
+  RICH_TEXT_LISTS,
+  RICH_TEXT_TABLES,
+} from './rich-text-fixtures';
 
-export type RichTextFixture = 'embeds' | 'lists' | 'tables';
+export type RichTextFixture = 'embeds' | 'lists' | 'tables' | 'gql';
 
 const FIXTURES: Record<RichTextFixture, ContentfulCollection> = {
   embeds: RICH_TEXT_EMBEDS,
   lists: RICH_TEXT_LISTS,
   tables: RICH_TEXT_TABLES,
+  gql: RICH_TEXT_EMBEDS,
 };
 
 @Component({
@@ -73,7 +80,11 @@ export class RichTextProductTeaserComponent {
       </div>
     }
 
-    <et-contentful-rich-text-renderer [content]="content()" richTextPath="items[0].fields.html" />
+    @if (fixture() === 'gql') {
+      <et-contentful-rich-text-renderer [gqlRichText]="GQL_RICH_TEXT" />
+    } @else {
+      <et-contentful-rich-text-renderer [content]="content()" richTextPath="items[0].fields.html" />
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [ContentfulRichTextRendererComponent],
@@ -91,6 +102,8 @@ export class RichTextProductTeaserComponent {
 })
 export class RichTextStorybookComponent {
   fixture = input<RichTextFixture>('embeds');
+
+  readonly GQL_RICH_TEXT = RICH_TEXT_GQL;
 
   content = linkedSignal(() => clone(FIXTURES[this.fixture()]));
 

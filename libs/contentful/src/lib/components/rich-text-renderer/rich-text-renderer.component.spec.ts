@@ -1280,4 +1280,96 @@ describe('ContentfulRichTextRendererComponent', () => {
       expect(renderRoot(fixture).innerHTML).toBe('');
     });
   });
+
+  describe('gqlRichText', () => {
+    const gqlField = {
+      json: doc(paragraph('Intro'), embeddedEntry('e1'), embeddedAsset('a1')),
+      links: {
+        assets: {
+          block: [
+            {
+              sys: { id: 'a1' },
+              title: 'Logo',
+              description: null,
+              fileName: 'logo.png',
+              contentType: 'image/png',
+              url: '//cdn/logo.png',
+              width: 10,
+              height: 20,
+              size: 5,
+            },
+          ],
+          hyperlink: [],
+        },
+        entries: {
+          block: [{ __typename: 'ProductTeaser', sys: { id: 'e1' }, title: 'Gql teaser' }],
+          inline: [],
+          hyperlink: [],
+        },
+      },
+    };
+
+    const setupGql = (gqlRichText: unknown, extraInputs: Record<string, unknown> = {}) => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          provideContentfulConfig({
+            ...CONTENTFUL_DEFAULT_COMPONENTS,
+            components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: StubImageComponent as any },
+            customComponents: { productTeaser: StubTeaserComponent },
+          }),
+        ],
+      });
+
+      const fixture = TestBed.createComponent(ContentfulRichTextRendererComponent);
+
+      fixture.componentRef.setInput('gqlRichText', gqlRichText);
+
+      for (const [name, value] of Object.entries(extraInputs)) {
+        fixture.componentRef.setInput(name, value);
+      }
+
+      fixture.detectChanges();
+
+      return fixture;
+    };
+
+    it('renders an embedded entry and an embedded asset from the GraphQL links', () => {
+      const fixture = setupGql(gqlField);
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(root.querySelector('p')?.textContent).toBe('Intro');
+      expect(root.querySelector('.teaser')?.textContent).toBe('Gql teaser');
+      expect(StubTeaserComponent.instances.at(-1)?.sys()?.contentType.sys.id).toBe('productTeaser');
+      expect(StubTeaserComponent.instances.at(-1)?.fields()).toEqual({ title: 'Gql teaser' });
+
+      const asset = StubImageComponent.instances.at(-1)?.asset();
+
+      expect(asset?.sys.id).toBe('a1');
+      expect(asset?.fields.file).toEqual({
+        url: '//cdn/logo.png',
+        details: { size: 5, image: { width: 10, height: 20 } },
+        fileName: 'logo.png',
+        contentType: 'image/png',
+      });
+    });
+
+    it('skips an embedded entry that has no __typename', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const fixture = setupGql({
+        ...gqlField,
+        links: { entries: { block: [{ sys: { id: 'e1' }, title: 'No type' }] } },
+      });
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('.teaser')).toBeNull();
+
+      warn.mockRestore();
+    });
+
+    it('throws ET011 in dev mode when combined with content', () => {
+      expect(() =>
+        setupGql(gqlField, { content: createCollection(doc()), richTextPath: 'items[0].fields.html' }),
+      ).toThrow(/gqlRichText cannot be combined with content or richTextPath/);
+    });
+  });
 });
