@@ -2,6 +2,7 @@ export * from './format';
 export * from './head';
 export * from './log';
 export * from './reflog';
+export * from './repo-key';
 export * from './scan';
 export * from './state';
 export * from './worktree';
