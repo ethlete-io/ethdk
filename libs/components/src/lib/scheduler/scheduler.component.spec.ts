@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { de } from 'date-fns/locale';
 import { provideDateLocale } from '../forms/date-time/date-time-formats';
+import { MenuDirective } from '../menu';
 import { injectOverlayManager } from '../overlay';
 import { expectAriaGrid, expectUniformCellsPerRow } from '../testing/aria-structure';
 import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
@@ -67,10 +68,13 @@ describe('SchedulerComponent', () => {
 
   describe('edit surface actions', () => {
     const surface = () => getDebugNode(driver.editSurface()[0])?.componentInstance as SchedulerEditSurfaceComponent;
+    const actions = () => driver.editSurface()[0]!.querySelector<HTMLElement>('et-scheduler-edit-surface-actions')!;
     const actionIcons = () =>
-      surface()
-        .appointmentActions()
-        .map((action) => action.icon);
+      getDebugNode(actions())!
+        .injector.get(MenuDirective)
+        .sortedItems()
+        .map((item) => item.elementRef.nativeElement.querySelector('i')?.getAttribute('etIcon'))
+        .sort();
 
     it('offers adding a sub-appointment and deleting for a saved appointment', () => {
       driver.openEditSurface('a');
@@ -83,6 +87,7 @@ describe('SchedulerComponent', () => {
       driver.detectChanges();
 
       expect(actionIcons()).toEqual([]);
+      expect(actions().hidden).toBe(true);
     });
 
     it('offers neither for a sub-appointment nobody saved', () => {

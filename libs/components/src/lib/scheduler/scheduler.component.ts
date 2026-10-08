@@ -91,10 +91,10 @@ export class SchedulerComponent implements SchedulerFeatureHost {
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
-  /** Emits the edited or newly-added appointment once the default edit surface saves. */
+  /** Emits the edited or newly-added appointment once the edit surface saves. */
   public appointmentSave = output<Appointment>();
 
-  /** Emits every id to remove once the default edit surface deletes a chain. */
+  /** Emits every id to remove once the edit surface deletes a chain. */
   public appointmentsDelete = output<readonly AppointmentId[]>();
 
   private dimensions = signalHostElementDimensions();
@@ -225,7 +225,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
   }
 
   /**
-   * Selects an appointment and opens the default edit surface for it, anchored to whatever the
+   * Selects an appointment and opens the registered edit surface for it, anchored to whatever the
    * view registered for the interaction. Runs for you whenever `selectedAppointmentId` changes to
    * an appointment the surface is not already open for; call it to re-open the surface for the
    * appointment that is already selected, or to open one from your own UI. Without
@@ -258,7 +258,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
-  /** Closes the default edit surface without saving, clearing `selectedAppointmentId` back to `null`. */
+  /** Closes the open edit surface without saving, clearing `selectedAppointmentId` back to `null`. */
   public closeEditSurface() {
     this.editSurfaceOpener.close();
   }

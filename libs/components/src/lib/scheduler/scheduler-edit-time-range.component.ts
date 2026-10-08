@@ -8,9 +8,8 @@ import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
 /**
- * The start/end piece of the edit surface, stamped by `etSchedulerEditTimeRange`.
- *
- * @internal
+ * The start/end field, one date-time range input. `valid()` is `false` while `end` is before
+ * `start` - bind it to the footer's `canSave`.
  */
 @Component({
   selector: 'et-scheduler-edit-time-range',
@@ -25,21 +24,25 @@ import { Appointment } from './scheduler.types';
       />
     </et-form-field>
   `,
+  styleUrl: './scheduler-edit-time-range.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...DATE_TIME_RANGE_INPUT_IMPORTS],
   host: {
     class: 'et-scheduler-edit-time-range',
   },
 })
-export class SchedulerEditTimeRangeComponent {
+export class SchedulerEditTimeRangeComponent<TExtra = unknown> {
   private labels = injectSchedulerLabels();
   private dateTimeFormat = injectDateTimeFormat();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  /** The draft to edit - pass the surface's `draft`. */
+  public draft = input.required<WritableSignal<Appointment<TExtra>>>();
 
   public label = computed(() => this.labels().timeRangeField);
   public startLabel = computed(() => this.labels().startField);
   public endLabel = computed(() => this.labels().endField);
+
+  public valid = computed(() => this.draft()().end >= this.draft()().start);
 
   protected rangeValue = computed<DateTimeRangeValue>(() => ({
     start: format(this.draft()().start, this.dateTimeFormat),

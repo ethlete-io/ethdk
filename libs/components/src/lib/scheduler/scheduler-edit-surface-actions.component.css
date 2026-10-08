@@ -1,0 +1,14 @@
+@layer components {
+  .et-scheduler-edit-surface-actions {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .et-scheduler-edit-surface-action {
+    display: contents;
+  }
+}

@@ -7,12 +7,8 @@ import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
 /**
- * The color piece of the edit surface, stamped by `etSchedulerEditColor`. A swatch picker over the
- * app's `provideColorPalette` palette, or - with no palette in scope - a plain text field for
- * `colorToken`, since theme names are app-registered (see `theming`) and the SDK has no set of its
- * own to offer as choices.
- *
- * @internal
+ * The color field: a swatch picker over the app's `provideColorPalette` palette, or - with no
+ * palette in scope - a plain text field for `colorToken`, since theme names are app-registered.
  */
 @Component({
   selector: 'et-scheduler-edit-color',
@@ -44,12 +40,13 @@ import { Appointment } from './scheduler.types';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...INPUT_IMPORTS, ...RADIO_GROUP_IMPORTS, ProvideColorDirective],
 })
-export class SchedulerEditColorComponent {
+export class SchedulerEditColorComponent<TExtra = unknown> {
   private labels = injectSchedulerLabels();
 
   protected palette = injectColorPalette({ optional: true });
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  /** The draft to edit - pass the surface's `draft`. */
+  public draft = input.required<WritableSignal<Appointment<TExtra>>>();
 
   public label = computed(() => this.labels().colorField);
 

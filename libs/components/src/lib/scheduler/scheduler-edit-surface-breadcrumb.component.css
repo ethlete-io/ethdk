@@ -1,0 +1,26 @@
+@layer components {
+  .et-scheduler-edit-surface-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-block-end: 16px;
+    font-size: 13px;
+    color: var(--et-surface-color-muted-solid);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  .et-scheduler-edit-surface-breadcrumb-item {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .et-scheduler-edit-surface-breadcrumb-current {
+    color: var(--et-surface-color-solid);
+    font-weight: 600;
+  }
+}

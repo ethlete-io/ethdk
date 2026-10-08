@@ -1,7 +1,10 @@
 import { Provider, Type } from '@angular/core';
 import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
-import { defineSchedulerAddOverlay, defineSchedulerEditOverlay } from './scheduler-edit-surface-overlays';
-import { SCHEDULER_EDIT_SURFACE } from './scheduler-edit-surface.token';
+import {
+  defineSchedulerAddOverlay,
+  defineSchedulerEditOverlay,
+  SCHEDULER_EDIT_SURFACE,
+} from './scheduler-edit-surface-overlays';
 
 export type SchedulerEditSurfaceOptions = {
   /**

@@ -14,7 +14,6 @@ import {
   SCHEDULER_LABELS,
   SchedulerAppointmentDragDirective,
   SchedulerBadgeTitleDirective,
-  SchedulerEditTitleDirective,
   SchedulerMonthViewComponent,
   SchedulerSwipeNavigationDirective,
   SchedulerAppointmentReschedule,
@@ -108,13 +107,6 @@ class PlannerComponent {
   template: `<div etSchedulerBadgeTitle></div>`,
 })
 class StrayBadgeComponent {}
-
-@Component({
-  selector: 'et-scenario-stray-field',
-  imports: [SchedulerEditTitleDirective],
-  template: `<div etSchedulerEditTitle></div>`,
-})
-class StrayFieldComponent {}
 
 @Component({
   selector: 'et-scenario-stray-swipe',
@@ -715,7 +707,6 @@ describe('scheduler misuse scenarios', () => {
 
     for (const [stray, expected] of [
       [StrayBadgeComponent, SCHEDULER_ERROR_CODES.FEATURE_OUTSIDE_SCHEDULER],
-      [StrayFieldComponent, SCHEDULER_ERROR_CODES.EDIT_SURFACE_FEATURE_OUTSIDE_SURFACE],
       [StraySwipeComponent, SCHEDULER_ERROR_CODES.SWIPE_NAVIGATION_OUTSIDE_SCHEDULER],
       [StrayDragComponent, SCHEDULER_ERROR_CODES.APPOINTMENT_DRAG_OUTSIDE_SCHEDULER],
     ] as const) {

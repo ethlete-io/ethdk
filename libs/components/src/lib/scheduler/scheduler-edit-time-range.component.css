@@ -1,0 +1,11 @@
+@layer components {
+  .et-scheduler-edit-time-range {
+    display: flex;
+    gap: 12px;
+  }
+
+  .et-scheduler-edit-time-range-field {
+    flex: 1;
+    min-inline-size: 0;
+  }
+}

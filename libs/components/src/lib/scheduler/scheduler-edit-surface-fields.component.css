@@ -1,0 +1,11 @@
+@layer components {
+  .et-scheduler-edit-surface-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .et-scheduler-edit-surface-fields > :empty {
+    display: none;
+  }
+}

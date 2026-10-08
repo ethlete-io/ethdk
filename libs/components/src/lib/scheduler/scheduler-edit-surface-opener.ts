@@ -9,7 +9,8 @@ import {
   OverlayRef,
   OverlaySingleSlot,
 } from '../overlay';
-import { SCHEDULER_EDIT_SURFACE, SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
+import { SCHEDULER_EDIT_SURFACE } from './scheduler-edit-surface-overlays';
+import { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
 import { SCHEDULER_ERROR_CODES } from './scheduler-errors';
 import { Appointment } from './scheduler.types';
 

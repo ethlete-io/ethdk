@@ -1,12 +1,20 @@
-import { Type } from '@angular/core';
+import { InjectionToken, Type } from '@angular/core';
 import {
   buildAnchoredRuntimePositionStrategy,
   defineOverlay,
   injectAnchoredDialogStrategy,
   injectDialogStrategy,
   injectFullscreenDialogStrategy,
+  OverlayDefinition,
 } from '../overlay';
 import { SchedulerEditSurfaceResult } from './scheduler-edit-surface.token';
+
+export type SchedulerEditSurfaceRegistration = {
+  editOverlay: OverlayDefinition<object, SchedulerEditSurfaceResult>;
+  addOverlay: OverlayDefinition<object, SchedulerEditSurfaceResult>;
+};
+
+export const SCHEDULER_EDIT_SURFACE = new InjectionToken<SchedulerEditSurfaceRegistration>('SchedulerEditSurface');
 
 export const defineSchedulerEditOverlay = <TComponent extends object>(component: Type<TComponent>) =>
   defineOverlay<TComponent, SchedulerEditSurfaceResult>({

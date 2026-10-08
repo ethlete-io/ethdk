@@ -1,0 +1,15 @@
+@layer components {
+  .et-scheduler-edit-surface-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .et-scheduler-edit-surface-title {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

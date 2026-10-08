@@ -18,7 +18,7 @@ export type Appointment<TExtra = unknown> = {
   colorToken?: string;
   /** Shown by the built-in location badge adornment (`etSchedulerBadgeLocation`) when set. */
   location?: string;
-  /** Edited by the built-in `etSchedulerEditDescription` edit-surface field. */
+  /** Edited by the built-in `<et-scheduler-edit-description>` edit-surface field. */
   description?: string;
   extra?: TExtra;
 };

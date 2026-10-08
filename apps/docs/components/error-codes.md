@@ -483,17 +483,19 @@ Checked in dev mode only.
 
 ## Scheduler (ET45xx)
 
-ET4500 and ET4502-ET4504 throw on creation in all builds. ET4501, ET4505 and ET4506 are reported in dev mode only.
+ET4500, ET4503 and ET4504 throw on creation in all builds. ET4501, ET4505 and ET4506 are reported in dev mode only.
 
-| Code     | Cause                                                                                                           | Fix                                                        |
-| -------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                                                | Move the feature inside the scheduler root.                |
-| `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                       | Move it inside the scheduler root.                         |
-| `ET4502` | An edit-surface feature (an edit field or appointment action) is used outside an `<et-scheduler-edit-surface>`. | Move it inside the edit surface root.                      |
-| `ET4503` | `[etSchedulerSwipeNavigation]` is placed on an element that is not an `[etScheduler]`.                          | Move it onto the scheduler root.                           |
-| `ET4504` | `[etSchedulerAppointmentDrag]` is placed on an element that is not an `[etScheduler]`.                          | Move it onto the scheduler root.                           |
-| `ET4505` | `addAppointment()` was called, or a draft range was committed, without a registered default edit surface.       | Add `provideSchedulerEditSurface()` to a parent injector.  |
-| `ET4506` | A `businessHours` entry has a time that is not `HH:mm`, or ends before it starts.                               | Fix the entry; `24:00` is the only valid end past `23:59`. |
+| Code     | Cause                                                                                                          | Fix                                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `ET4500` | An opt-in scheduler feature is used outside an `<et-scheduler>`.                                               | Move the feature inside the scheduler root.                |
+| `ET4501` | A view layout directive (e.g. `[etSchedulerMonth]`) is placed outside an `[etScheduler]`.                      | Move it inside the scheduler root.                         |
+| `ET4503` | `[etSchedulerSwipeNavigation]` is placed on an element that is not an `[etScheduler]`.                         | Move it onto the scheduler root.                           |
+| `ET4504` | `[etSchedulerAppointmentDrag]` is placed on an element that is not an `[etScheduler]`.                         | Move it onto the scheduler root.                           |
+| `ET4505` | An edit surface was opened, an appointment added or a draft range committed without a registered edit surface. | Add `provideSchedulerEditSurface()` to a parent injector.  |
+| `ET4506` | A `businessHours` entry has a time that is not `HH:mm`, or ends before it starts.                              | Fix the entry; `24:00` is the only valid end past `23:59`. |
+
+`ET4502` is retired: it flagged an edit-surface feature directive outside its surface, and the
+surface no longer takes feature directives.
 
 ## Tree (ET46xx)
 

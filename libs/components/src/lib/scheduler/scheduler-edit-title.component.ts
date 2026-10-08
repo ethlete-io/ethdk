@@ -5,9 +5,8 @@ import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
 /**
- * The title piece of the edit surface, stamped by `etSchedulerEditTitle`.
- *
- * @internal
+ * The title field. Required: `valid()` is `false` while the draft's title is blank - bind it to the
+ * footer's `canSave`.
  */
 @Component({
   selector: 'et-scheduler-edit-title',
@@ -20,12 +19,15 @@ import { Appointment } from './scheduler.types';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...INPUT_IMPORTS],
 })
-export class SchedulerEditTitleComponent {
+export class SchedulerEditTitleComponent<TExtra = unknown> {
   private labels = injectSchedulerLabels();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  /** The draft to edit - pass the surface's `draft`. */
+  public draft = input.required<WritableSignal<Appointment<TExtra>>>();
 
   public label = computed(() => this.labels().titleField);
+
+  public valid = computed(() => this.draft()().title.trim().length > 0);
 
   protected value = computed(() => this.draft()().title);
 

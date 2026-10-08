@@ -6,12 +6,11 @@ import { injectSchedulerLabels } from './scheduler-labels';
 export type SchedulerActionAddAppointmentConfig = SchedulerFeatureConfig;
 
 /**
- * Built-in toolbar action: opens the default edit surface for a brand-new, blank top-level
+ * Built-in toolbar action: opens the registered edit surface for a brand-new, blank top-level
  * appointment - see `SchedulerFeatureHost.addAppointment`. One of the default pieces
- * `<et-scheduler>` bundles - see `registerToolbarAction`. Depends on the default edit surface
- * (it's what the dialog it opens is), so unlike `etSchedulerActionAddSubAppointment` it has no
- * bare-`[etScheduler]` equivalent - a headless-only composition needs its own "new appointment"
- * affordance. Left out of the toolbar when no `provideSchedulerEditSurface()` is in scope.
+ * `<et-scheduler>` bundles - see `registerToolbarAction`. Left out of the toolbar when no
+ * `provideSchedulerEditSurface()` is in scope; a bare `[etScheduler]` opens one itself with
+ * `injectSchedulerEditSurfaceOpener().openAdd(...)`.
  *
  * @example
  * <et-scheduler [etSchedulerActionAddAppointment]="{ enabled: false }" … />

@@ -1,13 +1,11 @@
-import { NgComponentOutlet } from '@angular/common';
 import {
   Component,
   computed,
   Directive,
   ElementRef,
+  getDebugNode,
   inject,
-  Injector,
   input,
-  inputBinding,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -20,28 +18,37 @@ import {
   AppointmentId,
   AppointmentTreeNode,
   countDescendants,
-  createOverlayOpener,
   createSchedulerRegistry,
-  defineOverlay,
-  injectDialogStrategy,
-  injectSchedulerEditSurfaceHost,
+  injectSchedulerEditSurface,
+  injectSchedulerEditSurfaceOpener,
   injectSchedulerFeatureHost,
+  MenuDirective,
+  MenuItemComponent,
+  OverlayBodyComponent,
+  SchedulerEditAddSubAppointmentItemComponent,
+  SchedulerEditColorComponent,
+  SchedulerEditDeleteItemComponent,
+  SchedulerEditDescriptionComponent,
+  SchedulerEditLocationComponent,
+  SchedulerEditSurfaceActionsComponent,
+  SchedulerEditSurfaceBreadcrumbComponent,
+  SchedulerEditSurfaceChildrenComponent,
+  SchedulerEditSurfaceFieldsComponent,
+  SchedulerEditSurfaceFooterComponent,
+  SchedulerEditSurfaceHeaderComponent,
+  SchedulerEditTimeRangeComponent,
+  SchedulerEditTitleComponent,
   OVERLAY_REF,
-  OverlayRef,
+  OverlayMainDirective,
   provideOverlay,
-  SCHEDULER_ADD_SURFACE_OVERLAY,
-  SCHEDULER_EDIT_IMPORTS,
-  SCHEDULER_EDIT_SURFACE,
-  SCHEDULER_EDIT_SURFACE_HOST,
-  SCHEDULER_EDIT_SURFACE_OVERLAY,
+  provideSchedulerEditSurface,
+  SCHEDULER_EDIT_SURFACE_IMPORTS,
+  SCHEDULER_ERROR_CODES,
   SCHEDULER_FEATURE_HOST,
   SCHEDULER_IMPORTS,
   SchedulerActionAddAppointmentDirective,
-  SchedulerActionAddSubAppointmentDirective,
-  SchedulerActionDeleteDirective,
   SchedulerAgendaDirective,
   SchedulerAgendaViewComponent,
-  SchedulerAppointmentAction,
   SchedulerAppointmentDragDirective,
   SchedulerBadgeAdornment,
   SchedulerBadgeChainCountComponent,
@@ -55,21 +62,9 @@ import {
   SchedulerBadgeTitleComponent,
   SchedulerBadgeTitleDirective,
   SchedulerDirective,
-  SchedulerEditColorComponent,
-  SchedulerEditColorDirective,
-  SchedulerEditDescriptionDirective,
-  SchedulerEditLocationDirective,
-  SchedulerEditTimeRangeDirective,
-  SchedulerEditTitleDirective,
-  SchedulerEditDescriptionComponent,
-  SchedulerEditField,
-  SchedulerEditLocationComponent,
   SchedulerEditSurfaceComponent,
   SchedulerEditSurfaceDirective,
-  SchedulerEditSurfaceHost,
   SchedulerEditSurfaceResult,
-  SchedulerEditTimeRangeComponent,
-  SchedulerEditTitleComponent,
   SchedulerFeatureConfig,
   schedulerFeatureConfig,
   SchedulerFeatureHost,
@@ -308,8 +303,8 @@ class LayoutsComponent {
   template: `<label>Estimate <input [value]="value()" (input)="update($event)" class="estimate" /></label>`,
 })
 class EstimateFieldComponent {
-  draft = input.required<WritableSignal<Appointment>>();
-  value = computed(() => (this.draft()().extra as Ticket | undefined)?.estimate ?? 0);
+  draft = input.required<WritableSignal<Appointment<Ticket>>>();
+  value = computed(() => this.draft()().extra?.estimate ?? 0);
 
   update(event: Event) {
     const estimate = Number((event.target as HTMLInputElement).value);
@@ -318,106 +313,69 @@ class EstimateFieldComponent {
   }
 }
 
-@Directive({ selector: '[appEstimateField]' })
-class EstimateFieldDirective {
-  private host = injectSchedulerEditSurfaceHost('appEstimateField');
-
-  constructor() {
-    this.host.registerEditField({
-      component: EstimateFieldComponent,
-      injector: inject(Injector),
-      order: 50,
-      valid: computed(() => ((this.host.appointment().extra as Ticket | undefined)?.estimate ?? 0) >= 0),
-    });
-  }
-}
+const archived = signal<AppointmentId | null>(null);
 
 @Component({
-  selector: 'et-scenario-edit-sheet',
+  selector: 'et-scenario-ticket-surface',
   imports: [
-    NgComponentOutlet,
-    SchedulerEditSurfaceDirective,
-    SchedulerEditTitleDirective,
-    SchedulerEditTimeRangeDirective,
-    SchedulerEditLocationDirective,
-    SchedulerEditDescriptionDirective,
-    SchedulerEditColorDirective,
-    SchedulerActionAddSubAppointmentDirective,
-    SchedulerActionDeleteDirective,
-    EstimateFieldDirective,
+    MenuItemComponent,
+    OverlayBodyComponent,
+    SchedulerEditSurfaceHeaderComponent,
+    SchedulerEditSurfaceActionsComponent,
+    SchedulerEditAddSubAppointmentItemComponent,
+    SchedulerEditDeleteItemComponent,
+    SchedulerEditSurfaceBreadcrumbComponent,
+    SchedulerEditSurfaceFieldsComponent,
+    SchedulerEditTitleComponent,
+    SchedulerEditColorComponent,
+    SchedulerEditSurfaceChildrenComponent,
+    SchedulerEditSurfaceFooterComponent,
+    EstimateFieldComponent,
   ],
-  providers: [{ provide: SCHEDULER_EDIT_SURFACE_HOST, useExisting: EditSheetComponent }],
+  hostDirectives: [
+    OverlayMainDirective,
+    { directive: SchedulerEditSurfaceDirective, inputs: ['appointment', 'appointments'] },
+  ],
   template: `
-    <div
-      #surface="etSchedulerEditSurface"
-      [appointment]="appointment()"
-      [appointments]="appointments()"
-      [etSchedulerEditLocation]="{ enabled: false }"
-      (save)="close({ kind: 'save', appointment: $event })"
-      (deleteAppointments)="close({ kind: 'delete', ids: $event })"
-      etSchedulerEditSurface
-      etSchedulerEditTitle
-      etSchedulerEditTimeRange
-      etSchedulerEditDescription
-      etSchedulerEditColor
-      etSchedulerActionAddSubAppointment
-      etSchedulerActionDelete
-      appEstimateField
-    >
-      <h2 class="sheet-title">{{ surface.currentAppointment().title }}</h2>
-      @for (field of editFields(); track $index) {
-        <ng-container
-          *ngComponentOutlet="field.component; inputs: { draft: surface.draft }; injector: field.injector"
-        />
-      }
-      @for (action of appointmentActions(); track $index) {
-        <button (click)="action.run()" class="sheet-action" type="button">{{ action.label() }}</button>
-      }
-      <button [disabled]="!canSave()" (click)="surface.commit()" class="sheet-save" type="button">Save</button>
-    </div>
+    <et-scheduler-edit-surface-header>
+      Ticket {{ surface.currentAppointment().title }}
+      <et-scheduler-edit-surface-actions>
+        <et-scheduler-edit-add-sub-appointment-item />
+        <button (click)="archive()" class="archive" et-menu-item type="button">Archive</button>
+        <et-scheduler-edit-delete-item />
+      </et-scheduler-edit-surface-actions>
+    </et-scheduler-edit-surface-header>
+
+    <et-overlay-body>
+      <et-scheduler-edit-surface-breadcrumb />
+      <et-scheduler-edit-surface-fields>
+        <et-scheduler-edit-title #title [draft]="surface.draft" />
+        <et-scheduler-edit-color [draft]="surface.draft" />
+        @if (surface.isSaved()) {
+          <et-scenario-estimate-field [draft]="surface.draft" />
+        }
+      </et-scheduler-edit-surface-fields>
+      <et-scheduler-edit-surface-children />
+    </et-overlay-body>
+
+    <et-scheduler-edit-surface-footer [canSave]="title.valid() && estimateValid()" />
   `,
 })
-class EditSheetComponent implements SchedulerEditSurfaceHost {
-  private overlayRef = inject<OverlayRef<object, SchedulerEditSurfaceResult>>(OVERLAY_REF);
-  private surface = viewChild.required(SchedulerEditSurfaceDirective);
-  appointment = input.required<Appointment>();
-  appointments = input<readonly Appointment[]>([]);
-  element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private fields = createSchedulerRegistry<SchedulerEditField>();
-  private actions = createSchedulerRegistry<SchedulerAppointmentAction>();
+class TicketSurfaceComponent {
+  private overlayRef = inject(OVERLAY_REF);
+  surface = injectSchedulerEditSurface<Ticket>();
+  estimateValid = computed(() => (this.surface.draft().extra?.estimate ?? 0) >= 0);
 
-  editFields = this.fields.entries;
-  registerEditField = this.fields.register;
-  appointmentActions = this.actions.entries;
-  registerAppointmentAction = this.actions.register;
-
-  canSave = computed(() => this.editFields().every((field) => field.valid?.() ?? true));
-
-  appointmentTree = () => this.surface().appointmentTree();
-
-  close(result: SchedulerEditSurfaceResult) {
-    this.overlayRef.close(result);
+  archive() {
+    archived.set(this.surface.currentAppointment().id);
+    this.overlayRef.close();
   }
 }
 
-const EDIT_SHEET_OVERLAY = defineOverlay<EditSheetComponent, SchedulerEditSurfaceResult>({
-  component: EditSheetComponent,
-  strategies: () => {
-    const dialogStrategy = injectDialogStrategy();
-
-    return [{ strategy: dialogStrategy.build() }];
-  },
-});
-
 @Component({
-  selector: 'et-scenario-sheet-planner',
+  selector: 'et-scenario-ticket-planner',
   imports: [SCHEDULER_IMPORTS],
-  providers: [
-    {
-      provide: SCHEDULER_EDIT_SURFACE,
-      useValue: { editOverlay: EDIT_SHEET_OVERLAY, addOverlay: SCHEDULER_ADD_SURFACE_OVERLAY },
-    },
-  ],
+  providers: [provideSchedulerEditSurface({ component: TicketSurfaceComponent })],
   styles: [UNSTYLED_BLOCKS],
   encapsulation: ViewEncapsulation.None,
   template: `
@@ -429,7 +387,7 @@ const EDIT_SHEET_OVERLAY = defineOverlay<EditSheetComponent, SchedulerEditSurfac
     />
   `,
 })
-class SheetPlannerComponent {
+class TicketPlannerComponent {
   appointments = APPOINTMENTS;
   focusedDate = at(15, 0);
   saved = signal<Appointment | null>(null);
@@ -439,12 +397,10 @@ class SheetPlannerComponent {
 @Component({
   selector: 'et-scenario-quick-edit',
   imports: [
-    SCHEDULER_EDIT_IMPORTS,
-    SchedulerEditTitleComponent,
+    SCHEDULER_EDIT_SURFACE_IMPORTS,
     SchedulerEditTimeRangeComponent,
     SchedulerEditLocationComponent,
     SchedulerEditDescriptionComponent,
-    SchedulerEditColorComponent,
   ],
   template: `
     <form
@@ -470,22 +426,47 @@ class QuickEditComponent {
 
 @Component({
   selector: 'et-scenario-sidebar',
+  providers: [provideSchedulerEditSurface()],
   styles: [UNSTYLED_BLOCKS],
   encapsulation: ViewEncapsulation.None,
   template: ``,
 })
 class SidebarComponent {
-  result = signal<SchedulerEditSurfaceResult | null>(null);
-  private opener = createOverlayOpener(SCHEDULER_EDIT_SURFACE_OVERLAY, {
-    afterClosed: (result) => this.result.set(result ?? null),
-  });
+  results: (SchedulerEditSurfaceResult<Ticket> | undefined)[] = [];
+  opener = injectSchedulerEditSurfaceOpener<Ticket>();
 
-  edit(target: Appointment) {
-    return this.opener.open({
-      bindings: [inputBinding('appointment', () => target), inputBinding('appointments', () => APPOINTMENTS)],
+  edit(target: Appointment<Ticket>) {
+    return this.opener.openEdit({
+      appointment: target,
+      appointments: APPOINTMENTS,
+      afterClosed: (result) => this.results.push(result),
+    });
+  }
+
+  add() {
+    return this.opener.openAdd({
+      appointment: appointment('fresh', { title: '' }),
+      afterClosed: (result) => this.results.push(result),
     });
   }
 }
+
+@Component({ selector: 'et-scenario-unregistered', template: `` })
+class UnregisteredComponent {
+  opener = injectSchedulerEditSurfaceOpener();
+}
+
+const openMenu = (s: Scenario, surface: HTMLElement) => {
+  query('.et-scheduler-edit-surface-actions button', surface).click();
+  s.tick();
+  s.frame(3);
+  s.tick(400);
+};
+
+const menuButton = (label: string) =>
+  [...document.querySelectorAll<HTMLButtonElement>('.et-menu button')].find(
+    (candidate) => candidate.textContent?.trim() === label,
+  )!;
 
 describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
   const scenario = useScenario({ providers: [provideOverlay(), provideColorThemesWithTailwind4(COLOR_THEMES)] });
@@ -620,46 +601,50 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     s.tick();
   });
 
-  it('opens an own edit surface registered through SCHEDULER_EDIT_SURFACE, with custom fields and actions', () => {
+  it('opens an app-owned edit surface component built from the blocks, with a typed field and own actions', () => {
     const s = scenario();
-    const fixture = TestBed.createComponent(SheetPlannerComponent);
+    const fixture = TestBed.createComponent(TicketPlannerComponent);
     const host = fixture.nativeElement as HTMLElement;
     const planner = fixture.componentInstance;
-    const sheet = () => document.querySelector<HTMLElement>('et-scenario-edit-sheet');
+    const sheet = () => document.querySelector<HTMLElement>('et-scenario-ticket-surface');
 
+    archived.set(null);
     s.tick();
 
-    query('.et-scheduler-appointment[title="Review"]', host).click();
+    query('.et-scheduler-appointment[title="Draft"]', host).click();
     s.tick(1000);
 
-    expect(query('.sheet-title', sheet()!).textContent).toBe('Review');
+    expect(query('.et-scheduler-edit-surface-title', sheet()!).textContent?.trim()).toBe('Ticket Draft');
+    expect(texts('.et-scheduler-edit-surface-breadcrumb-item', sheet()!)).toEqual(['Review']);
+    expect(texts('.et-scheduler-edit-surface-children-item-title', sheet()!)).toEqual(['Notes']);
     expect(
-      [...query('[etschedulereditsurface]', sheet()!).children]
-        .map((child) => child.tagName.toLowerCase())
-        .filter((tag) => tag.includes('-')),
-    ).toEqual([
-      'et-scheduler-edit-title',
-      'et-scheduler-edit-time-range',
-      'et-scheduler-edit-description',
-      'et-scheduler-edit-color',
-      'et-scenario-estimate-field',
-    ]);
-    expect(texts('.sheet-action', sheet()!)).toEqual(['Add sub-appointment', 'Delete (with descendants)']);
+      [...query('et-scheduler-edit-surface-fields', sheet()!).children].map((child) => child.tagName.toLowerCase()),
+    ).toEqual(['et-scheduler-edit-title', 'et-scheduler-edit-color', 'et-scenario-estimate-field']);
+    expect(
+      getDebugNode(query('et-scheduler-edit-surface-actions', sheet()!))!
+        .injector.get(MenuDirective)
+        .sortedItems()
+        .map((item) => item.elementRef.nativeElement.textContent?.trim())
+        .sort(),
+    ).toEqual(['Add sub-appointment', 'Archive', 'Delete (with descendants)']);
 
     const title = query<HTMLInputElement>('et-scheduler-edit-title input', sheet()!);
+    const save = () => [...sheet()!.querySelectorAll<HTMLButtonElement>('et-scheduler-edit-surface-footer button')][1]!;
 
     type(s, title, '  ');
-    expect(query<HTMLButtonElement>('.sheet-save', sheet()!).disabled).toBe(true);
-    type(s, title, 'Review round');
-    type(s, query<HTMLInputElement>('et-scheduler-edit-color input', sheet()!), 'alert');
+    expect(save().disabled).toBe(true);
+    type(s, title, 'Draft two');
+    type(s, query<HTMLInputElement>('.estimate', sheet()!), '-1');
+    expect(save().disabled).toBe(true);
     type(s, query<HTMLInputElement>('.estimate', sheet()!), '5');
+    type(s, query<HTMLInputElement>('et-scheduler-edit-color input', sheet()!), 'alert');
 
-    query('.sheet-save', sheet()!).click();
+    save().click();
     s.tick(1000);
 
     expect(planner.saved()).toMatchObject({
-      id: 'review',
-      title: 'Review round',
+      id: 'draft',
+      title: 'Draft two',
       colorToken: 'alert',
       extra: { estimate: 5 },
     });
@@ -667,18 +652,31 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
 
     query('.et-scheduler-appointment[title="Draft"]', host).click();
     s.tick(1000);
-    [...sheet()!.querySelectorAll<HTMLButtonElement>('.sheet-action')][1]!.click();
+    openMenu(s, sheet()!);
+    menuButton('Delete (with descendants)').click();
     s.tick(1000);
 
     expect(planner.deleted()).toEqual(['draft', 'notes']);
+    expect(sheet()).toBeNull();
+
+    query('.et-scheduler-appointment[title="Retreat"]', host).click();
+    s.tick(1000);
+    openMenu(s, sheet()!);
+    menuButton('Archive').click();
+    s.tick(1000);
+
+    expect(archived()).toBe('retreat');
+    expect(sheet()).toBeNull();
 
     query('.et-scheduler-toolbar-action', host).click();
     s.tick(1000);
 
-    const added = document.querySelector<HTMLElement>('et-scheduler-edit-surface');
-
-    expect(added).not.toBeNull();
-    query<HTMLButtonElement>('[etoverlayclose]', added!).click();
+    expect(query('.et-scheduler-edit-surface-title', sheet()!).textContent?.trim()).toBe('Ticket');
+    expect(sheet()!.querySelector('.estimate')).toBeNull();
+    expect(
+      getDebugNode(query('et-scheduler-edit-surface-actions', sheet()!))!.injector.get(MenuDirective).sortedItems(),
+    ).toHaveLength(1);
+    query<HTMLButtonElement>('[etoverlayclose]', sheet()!).click();
     s.tick(1000);
     s.flush();
   });
@@ -712,19 +710,37 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     s.flush();
   });
 
-  it('opens the stock edit surface from own UI outside any scheduler', () => {
+  it('opens the default edit surface one at a time from own UI outside any scheduler', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(SidebarComponent);
+    const sidebar = fixture.componentInstance;
 
     s.flush();
 
-    const ref = fixture.componentInstance.edit(APPOINTMENTS[1]!);
+    expect(sidebar.opener.available).toBe(true);
+
+    const ref = sidebar.edit(APPOINTMENTS[1]!);
 
     s.tick(1000);
 
-    expect(ref.componentInstance()).toBeInstanceOf(SchedulerEditSurfaceComponent);
+    expect(ref?.componentInstance()).toBeInstanceOf(SchedulerEditSurfaceComponent);
     expect(texts('.et-scheduler-edit-surface-breadcrumb-item')).toEqual(['Review']);
     expect(texts('.et-scheduler-edit-surface-children-item-title')).toEqual(['Notes']);
+
+    sidebar.add();
+    s.tick(1000);
+
+    expect(sidebar.results).toEqual([undefined]);
+    expect(texts('.et-scheduler-edit-surface-title')).toEqual(['Untitled appointment']);
+
+    sidebar.opener.close();
+    s.tick(1000);
+
+    expect(sidebar.results).toEqual([undefined, undefined]);
+    expect(document.querySelector('et-scheduler-edit-surface')).toBeNull();
+
+    sidebar.edit(APPOINTMENTS[1]!);
+    s.tick(1000);
 
     const save = [...document.querySelectorAll<HTMLButtonElement>('et-scheduler-edit-surface button')].find(
       (candidate) => candidate.textContent?.trim() === 'Save',
@@ -733,7 +749,17 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     save.click();
     s.tick(1000);
 
-    expect(fixture.componentInstance.result()).toEqual({ kind: 'save', appointment: APPOINTMENTS[1] });
+    expect(sidebar.results.at(-1)).toEqual({ kind: 'save', appointment: APPOINTMENTS[1] });
+    s.flush();
+  });
+
+  it('reports an open request without a registered edit surface', () => {
+    const s = scenario();
+    const opener = TestBed.createComponent(UnregisteredComponent).componentInstance.opener;
+
+    expect(opener.available).toBe(false);
+    expect(opener.openAdd({ appointment: APPOINTMENTS[0]! })).toBeNull();
+    s.expectError(`ET${SCHEDULER_ERROR_CODES.EDIT_SURFACE_NOT_REGISTERED}`);
     s.flush();
   });
 });

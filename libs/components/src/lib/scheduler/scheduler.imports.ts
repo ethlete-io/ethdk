@@ -6,8 +6,6 @@ import {
   SchedulerTimeGridDirective,
 } from './headless';
 import { SchedulerActionAddAppointmentDirective } from './scheduler-action-add-appointment.directive';
-import { SchedulerActionAddSubAppointmentDirective } from './scheduler-action-add-sub-appointment.directive';
-import { SchedulerActionDeleteDirective } from './scheduler-action-delete.directive';
 import { SchedulerAgendaViewComponent } from './scheduler-agenda-view.component';
 import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerBadgeChainCountDirective } from './scheduler-badge-chain-count.directive';
@@ -15,12 +13,22 @@ import { SchedulerBadgeColorDotDirective } from './scheduler-badge-color-dot.dir
 import { SchedulerBadgeLocationDirective } from './scheduler-badge-location.directive';
 import { SchedulerBadgeTimeRangeDirective } from './scheduler-badge-time-range.directive';
 import { SchedulerBadgeTitleDirective } from './scheduler-badge-title.directive';
-import { SchedulerEditColorDirective } from './scheduler-edit-color.directive';
-import { SchedulerEditDescriptionDirective } from './scheduler-edit-description.directive';
-import { SchedulerEditLocationDirective } from './scheduler-edit-location.directive';
+import { MenuItemComponent } from '../menu';
+import { OverlayBodyComponent } from '../overlay';
+import { SchedulerEditAddSubAppointmentItemComponent } from './scheduler-edit-add-sub-appointment-item.component';
+import { SchedulerEditColorComponent } from './scheduler-edit-color.component';
+import { SchedulerEditDeleteItemComponent } from './scheduler-edit-delete-item.component';
+import { SchedulerEditDescriptionComponent } from './scheduler-edit-description.component';
+import { SchedulerEditLocationComponent } from './scheduler-edit-location.component';
+import { SchedulerEditSurfaceActionsComponent } from './scheduler-edit-surface-actions.component';
+import { SchedulerEditSurfaceBreadcrumbComponent } from './scheduler-edit-surface-breadcrumb.component';
+import { SchedulerEditSurfaceChildrenComponent } from './scheduler-edit-surface-children.component';
+import { SchedulerEditSurfaceFieldsComponent } from './scheduler-edit-surface-fields.component';
+import { SchedulerEditSurfaceFooterComponent } from './scheduler-edit-surface-footer.component';
+import { SchedulerEditSurfaceHeaderComponent } from './scheduler-edit-surface-header.component';
 import { SchedulerEditSurfaceComponent } from './scheduler-edit-surface.component';
-import { SchedulerEditTimeRangeDirective } from './scheduler-edit-time-range.directive';
-import { SchedulerEditTitleDirective } from './scheduler-edit-title.directive';
+import { SchedulerEditTimeRangeComponent } from './scheduler-edit-time-range.component';
+import { SchedulerEditTitleComponent } from './scheduler-edit-title.component';
 import { SchedulerSwipeNavigationDirective } from './scheduler-swipe-navigation.directive';
 import { SchedulerComponent } from './scheduler.component';
 import { SchedulerMonthViewComponent } from './scheduler-month-view.component';
@@ -45,14 +53,26 @@ export const SCHEDULER_IMPORTS = [
   SchedulerAppointmentDragDirective,
 ] as const;
 
-export const SCHEDULER_EDIT_IMPORTS = [
+/**
+ * Everything an edit surface template uses: the default surface, its blocks, the built-in fields,
+ * the ready-made menu items, `et-menu-item` for actions of your own and `et-overlay-body`.
+ */
+export const SCHEDULER_EDIT_SURFACE_IMPORTS = [
   SchedulerEditSurfaceDirective,
   SchedulerEditSurfaceComponent,
-  SchedulerEditTitleDirective,
-  SchedulerEditTimeRangeDirective,
-  SchedulerEditLocationDirective,
-  SchedulerEditDescriptionDirective,
-  SchedulerEditColorDirective,
-  SchedulerActionAddSubAppointmentDirective,
-  SchedulerActionDeleteDirective,
+  SchedulerEditSurfaceHeaderComponent,
+  SchedulerEditSurfaceActionsComponent,
+  SchedulerEditAddSubAppointmentItemComponent,
+  SchedulerEditDeleteItemComponent,
+  SchedulerEditSurfaceBreadcrumbComponent,
+  SchedulerEditSurfaceFieldsComponent,
+  SchedulerEditSurfaceChildrenComponent,
+  SchedulerEditSurfaceFooterComponent,
+  SchedulerEditTitleComponent,
+  SchedulerEditTimeRangeComponent,
+  SchedulerEditLocationComponent,
+  SchedulerEditDescriptionComponent,
+  SchedulerEditColorComponent,
+  MenuItemComponent,
+  OverlayBodyComponent,
 ] as const;

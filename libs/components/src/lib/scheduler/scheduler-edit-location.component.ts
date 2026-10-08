@@ -4,11 +4,7 @@ import { INPUT_IMPORTS } from '../forms/input';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
-/**
- * The location piece of the edit surface, stamped by `etSchedulerEditLocation`.
- *
- * @internal
- */
+/** The location field. */
 @Component({
   selector: 'et-scheduler-edit-location',
   template: `
@@ -20,10 +16,11 @@ import { Appointment } from './scheduler.types';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...INPUT_IMPORTS],
 })
-export class SchedulerEditLocationComponent {
+export class SchedulerEditLocationComponent<TExtra = unknown> {
   private labels = injectSchedulerLabels();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  /** The draft to edit - pass the surface's `draft`. */
+  public draft = input.required<WritableSignal<Appointment<TExtra>>>();
 
   public label = computed(() => this.labels().locationField);
 

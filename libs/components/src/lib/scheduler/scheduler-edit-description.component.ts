@@ -4,11 +4,7 @@ import { TEXTAREA_IMPORTS } from '../forms/textarea';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment } from './scheduler.types';
 
-/**
- * The description piece of the edit surface, stamped by `etSchedulerEditDescription`.
- *
- * @internal
- */
+/** The description field. */
 @Component({
   selector: 'et-scheduler-edit-description',
   template: `
@@ -20,10 +16,11 @@ import { Appointment } from './scheduler.types';
   encapsulation: ViewEncapsulation.None,
   imports: [...FORM_FIELD_IMPORTS, ...TEXTAREA_IMPORTS],
 })
-export class SchedulerEditDescriptionComponent {
+export class SchedulerEditDescriptionComponent<TExtra = unknown> {
   private labels = injectSchedulerLabels();
 
-  public draft = input.required<WritableSignal<Appointment>>();
+  /** The draft to edit - pass the surface's `draft`. */
+  public draft = input.required<WritableSignal<Appointment<TExtra>>>();
 
   public label = computed(() => this.labels().descriptionField);
 
