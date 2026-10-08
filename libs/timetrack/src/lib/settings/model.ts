@@ -122,9 +122,8 @@ export type TimetrackReasoningSettings = {
   /** A model alias such as `sonnet`. Empty uses the CLI's own default, which is the usual answer. */
   model: string;
   /**
-   * The language every answer is written in, as the user names it — `Deutsch`, `English`. It is free
-   * text rather than a list: the model reads a language name, and the app has no business deciding
-   * which languages a user may file a ticket in.
+   * The language every answer is written in, as the user names it — `Deutsch`, `English`. The model reads a
+   * language name, so any stored name is kept, listed or not.
    *
    * Empty leaves each call following the evidence it was given, so a repository whose commits are
    * German already gets a German ticket. Naming one here is for a user whose evidence is mixed.

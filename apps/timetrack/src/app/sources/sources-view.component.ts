@@ -222,11 +222,7 @@ type SourceRow = {
                   @for (capability of row.capabilities; track capability.reads) {
                     <li [attr.data-capability]="capability.reads" class="flex flex-col gap-0.5">
                       <div class="flex flex-wrap items-center gap-2">
-                        <et-badge
-                          [color]="capability.available ? 'success' : 'neutral'"
-                          [variant]="capability.available ? 'tonal' : 'outline'"
-                          size="sm"
-                        >
+                        <et-badge [color]="capability.available ? 'success' : 'neutral'" size="sm">
                           {{ capability.available ? 'reads' : 'does not read' }}
                         </et-badge>
                         <span class="text-small">{{ capability.label }}</span>

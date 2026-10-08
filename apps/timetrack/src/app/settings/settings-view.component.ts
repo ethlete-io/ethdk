@@ -39,6 +39,7 @@ import { CallRulesComponent } from './call-rules.component';
 import { ExclusionRulesComponent } from './exclusion-rules.component';
 import { ExplainComponent } from './explain.component';
 import { GoogleConnectionComponent } from './google-connection.component';
+import { REASONING_LANGUAGES, withStoredOption } from './select-options';
 import { PairedMachinesComponent } from './paired-machines.component';
 import { MaskedNamesComponent } from './masked-names.component';
 import { PriceTableComponent } from './price-table.component';
@@ -704,11 +705,16 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
 
                 <et-form-field class="w-40" appearance="underline" size="sm">
                   <et-label>Language</et-label>
-                  <et-input
+                  <et-select
                     [value]="store.settings().reasoning.language"
                     (valueChange)="setReasoningLanguage($event)"
                     placeholder="the evidence decides"
-                  />
+                    data-reasoning-language
+                  >
+                    @for (option of reasoningLanguages(); track option.value) {
+                      <et-select-option [value]="option.value" [label]="option.label" />
+                    }
+                  </et-select>
                 </et-form-field>
               </div>
 
@@ -878,6 +884,10 @@ export class SettingsViewComponent {
       })),
   );
 
+  protected reasoningLanguages = computed(() =>
+    withStoredOption(REASONING_LANGUAGES, this.store.settings().reasoning.language),
+  );
+
   /** Every pass over the logs reads the checkout again: one per agent for its sessions, one for their spend. */
   protected resync(paths: readonly string[]) {
     this.agent.resync(paths);
@@ -914,7 +924,9 @@ export class SettingsViewComponent {
     this.store.setReasoning({ ...this.store.settings().reasoning, model: model.trim() });
   }
 
-  protected setReasoningLanguage(language: string) {
-    this.store.setReasoning({ ...this.store.settings().reasoning, language: language.trim() });
+  protected setReasoningLanguage(language: unknown) {
+    if (typeof language !== 'string') return;
+
+    this.store.setReasoning({ ...this.store.settings().reasoning, language });
   }
 }

@@ -8,6 +8,14 @@ import {
 } from '@ethlete/components';
 import { CLAUDE_CODE_PROVIDER, CODEX_PROVIDER, ModelPrice, PriceTable } from '@ethlete/timetrack';
 import { ExplainComponent } from './explain.component';
+import {
+  MODEL_PRICE_PRESETS,
+  MODEL_PRICE_PRESETS_CHECKED,
+  ModelPricePreset,
+  presetByKey,
+  presetKey,
+} from './model-price-presets';
+import { CURRENCIES, withStoredOption } from './select-options';
 
 const WHY = `A day's spend becomes a cost through these prices. Each turn is priced at the price of its
 model dated last on or before the turn, so a new price never reprices the days before its date.
@@ -20,8 +28,6 @@ Rates are per million tokens. Thinking is priced as output.`;
 const PROVIDERS = [CLAUDE_CODE_PROVIDER, CODEX_PROVIDER];
 
 const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
-
-const CURRENCY_PATTERN = /^[A-Za-z]{3}$/;
 
 const dayStartOf = (typed: string) => {
   const match = DAY_PATTERN.exec(typed.trim());
@@ -48,9 +54,13 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
         <ethlete-explain [text]="WHY" label="model prices" />
       </div>
 
-      <et-form-field class="w-30" appearance="underline" size="sm">
+      <et-form-field class="w-56" appearance="underline" size="sm">
         <et-label>Currency</et-label>
-        <et-input [value]="table().currency" (valueChange)="setCurrency($event)" data-price-currency />
+        <et-select [value]="table().currency" (valueChange)="setCurrency($event)" data-price-currency>
+          @for (option of currencies(); track option.value) {
+            <et-select-option [value]="option.value" [label]="option.label" />
+          }
+        </et-select>
       </et-form-field>
 
       @for (price of sorted(); track price.provider + price.model + price.from.getTime()) {
@@ -78,6 +88,21 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
       } @empty {
         <p class="text-small text-et-surface-subtle">No price yet, so no day shows a cost.</p>
       }
+
+      <div class="flex flex-wrap items-end gap-3">
+        <et-form-field class="min-w-50 max-w-96 grow" appearance="underline" size="sm">
+          <et-label>Preset</et-label>
+          <et-select [(value)]="presetKey" (valueChange)="applyPreset($event)" data-price-preset>
+            <et-select-option value="" label="Fill from a known model" />
+            @for (preset of PRESETS; track preset.key) {
+              <et-select-option [value]="preset.key" [label]="preset.label" />
+            }
+          </et-select>
+        </et-form-field>
+        <span class="pb-1 text-small text-et-surface-subtle">
+          USD per million tokens, checked {{ PRESETS_CHECKED }}
+        </span>
+      </div>
 
       <div class="flex flex-wrap items-end gap-3">
         <et-form-field class="w-36" appearance="underline" size="sm">
@@ -139,14 +164,22 @@ export class PriceTableComponent {
 
   protected readonly WHY = WHY;
   protected readonly PROVIDERS = PROVIDERS;
+  protected readonly PRESETS_CHECKED = MODEL_PRICE_PRESETS_CHECKED;
+  protected readonly PRESETS = MODEL_PRICE_PRESETS.map((preset) => ({
+    key: presetKey(preset),
+    label: `${preset.provider} · ${preset.model}`,
+  }));
 
   protected provider = signal<string>(CLAUDE_CODE_PROVIDER);
+  protected presetKey = signal('');
   protected model = signal('');
   protected from = signal(calendarDayOf(new Date()));
   protected inputRate = signal<number | null>(null);
   protected outputRate = signal<number | null>(null);
   protected cacheWriteRate = signal<number | null>(null);
   protected cacheReadRate = signal<number | null>(null);
+
+  protected currencies = computed(() => withStoredOption(CURRENCIES, this.table().currency));
 
   protected sorted = computed(() =>
     [...this.table().prices].sort(
@@ -173,8 +206,14 @@ export class PriceTableComponent {
     return calendarDayOf(price.from);
   }
 
-  protected setCurrency(typed: string) {
-    if (CURRENCY_PATTERN.test(typed.trim())) this.currencyChange.emit(typed);
+  protected setCurrency(value: unknown) {
+    if (typeof value === 'string' && value) this.currencyChange.emit(value);
+  }
+
+  protected applyPreset(key: unknown) {
+    const preset = typeof key === 'string' ? presetByKey(key) : null;
+
+    if (preset) this.fill(preset);
   }
 
   protected addTyped() {
@@ -183,10 +222,20 @@ export class PriceTableComponent {
     if (!price) return;
 
     this.add.emit(price);
+    this.presetKey.set('');
     this.model.set('');
     this.inputRate.set(null);
     this.outputRate.set(null);
     this.cacheWriteRate.set(null);
     this.cacheReadRate.set(null);
+  }
+
+  private fill(preset: ModelPricePreset) {
+    this.provider.set(preset.provider);
+    this.model.set(preset.model);
+    this.inputRate.set(preset.input);
+    this.outputRate.set(preset.output);
+    this.cacheWriteRate.set(preset.cacheWrite);
+    this.cacheReadRate.set(preset.cacheRead);
   }
 }
