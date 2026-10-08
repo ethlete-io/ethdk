@@ -62,7 +62,7 @@ distinct from **disabled**, which stays dimmed.
 `et-number-input` is the numeric sibling of `et-input`: same shell, same look,
 but its form value is a **`number | null`** instead of a string - an empty or
 unparseable input reads as `null`, never `NaN` or `''`. It accepts `min`, `max`,
-`step`, `placeholder`, `autocomplete`, `textAlign`, and the shared control state.
+`step`, [`decimals`](#decimals-and-typed-text), `placeholder`, `autocomplete`, `textAlign`, and the shared control state.
 `min`, `max` and `step` also take static attributes (`min="0" step="0.5"`).
 The native spin buttons are hidden.
 
@@ -118,6 +118,37 @@ somewhere valid never flashes a validation error under the pointer.
 For a headless stepper of your own, `NumberInputDirective.stepBy(direction, { multiplier })`
 is the single entry point all of the above uses, and `numberInputStepMultiplierFrom(event)`
 reads the modifier vocabulary off any event carrying `shiftKey` / `altKey`.
+
+### Decimals and typed text
+
+The input never takes exponent notation: `e`, `E` and `+` are rejected as they are
+typed, and a paste or drop holding one is rejected whole. A leading `-` stays
+allowed - bound negatives with `min`.
+
+Set `decimals` to cap the fraction digits a user can type:
+
+| `decimals`       | Typing                                                          | `inputmode` |
+| ---------------- | --------------------------------------------------------------- | ----------- |
+| `null` (default) | unrestricted                                                    | none        |
+| `0`              | whole numbers only - `.` and `,` are rejected                   | `numeric`   |
+| `n > 0`          | an edit that would give more than `n` fraction digits is undone | `decimal`   |
+
+Stepping (keys, stepper buttons, scrub) rounds its result to `decimals` places too.
+A value written by code - the model, an API response - is shown as it is and never
+rounded; validate it in the field schema if it has to fit.
+
+Text the browser cannot read as a number (a lone `-` or `-.`) sets the
+form value to `null` and raises `parseError`. The form field shows it once the
+control is touched, with the message from `parseErrorMessage` (unset →
+[`INPUT_LABELS.invalidNumber`](/components/localization), `'Please enter a valid number'`).
+Like the date and time inputs' parse error, it lives on the control and the form
+field - it does not enter the signal-forms field's `errors()`.
+
+```html
+<et-number-input [formField]="demoForm.amount" [decimals]="2" parseErrorMessage="Enter an amount" />
+```
+
+<StoryEmbed id="components-forms-number-input--decimals" height="260px" />
 
 ## Password input - `et-password-input` {#password-input}
 

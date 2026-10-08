@@ -20,6 +20,8 @@ export default {
     min: { control: 'number' },
     max: { control: 'number' },
     step: { control: 'number' },
+    decimals: { control: 'number' },
+    showModelValue: { control: false, table: { disable: true } },
     stepper: { control: 'boolean' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -42,6 +44,8 @@ export default {
     min: null,
     max: null,
     step: null,
+    decimals: null,
+    showModelValue: false,
     stepper: false,
     disabled: false,
     required: false,
@@ -74,5 +78,15 @@ export const Mixed: Story = {
     mixedLabel: 'Mixed amounts',
     showMixedState: true,
     hint: 'The raw value stays hidden and intact until typing commits a replacement; the mixed label shows as the placeholder.',
+  },
+};
+
+export const Decimals: Story = {
+  args: {
+    decimals: 2,
+    step: 0.25,
+    stepper: true,
+    showModelValue: true,
+    hint: 'At most two fraction digits. e, E and + are never accepted; text that is not a number is a parse error.',
   },
 };

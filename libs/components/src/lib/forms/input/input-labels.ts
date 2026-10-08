@@ -1,8 +1,8 @@
 import { defineLabels, toInjectFn, toProvideFn, toToken } from '@ethlete/core';
 
 /**
- * The strings the text-field family's own controls render - the number input's steppers and the password
- * input's reveal toggle. The field's label, hint and errors are yours; these are the parts the control
+ * The strings the text-field family's own controls render - the number input's steppers and parse error,
+ * and the password input's reveal toggle. The field's label, hint and errors are yours; these are the parts the control
  * adds by itself.
  */
 export type InputLabels = {
@@ -10,6 +10,8 @@ export type InputLabels = {
   increment: string;
   /** Accessible label for the number input's step-down control. */
   decrement: string;
+  /** The number input's error message while its text is not a number. */
+  invalidNumber: string;
   /** Accessible label for the password input's control while the value is masked. */
   showPassword: string;
   /** Accessible label for the password input's control while the value is visible. */
@@ -22,6 +24,7 @@ export type InputLabels = {
 export const DEFAULT_INPUT_LABELS: InputLabels = {
   increment: 'Increment',
   decrement: 'Decrement',
+  invalidNumber: 'Please enter a valid number',
   showPassword: 'Show password',
   hidePassword: 'Hide password',
   capsLockOn: 'Caps Lock might be on',

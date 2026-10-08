@@ -1,6 +1,7 @@
-import { computed, Directive, ElementRef, inject, input, model, signal } from '@angular/core';
+import { computed, Directive, ElementRef, inject, input, linkedSignal, model, signal } from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
+import { injectInputLabels } from '../input-labels';
 import { INPUT_TEXT_ALIGNMENTS, InputTextAlignment } from '../input.types';
 import { nullableNumberAttribute, optionalNumberAttribute } from '../../../internals/number-attributes';
 
@@ -34,12 +35,15 @@ const PAGE_STEP_MULTIPLIER = 100;
   selector: '[etNumberInput]',
   host: {
     '(keydown)': 'handleStepKeydown($event)',
+    '(beforeinput)': 'handleBeforeInput($event)',
     '(input)': 'handleNativeInput($event)',
     '(focus)': 'handleNativeFocus($event)',
     '(blur)': 'handleNativeBlur($event)',
   },
 })
 export class NumberInputDirective extends TextFieldControlDirective implements FormValueControl<number | null> {
+  private inputLabels = injectInputLabels();
+
   public value = model<number | null>(null);
 
   // `min`/`max` satisfy the signal-forms `FormValueControl` contract, which types them as
@@ -47,12 +51,35 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   public min = input(undefined, { transform: optionalNumberAttribute });
   public max = input(undefined, { transform: optionalNumberAttribute });
   public step = input(null, { transform: nullableNumberAttribute });
+  /**
+   * The most fraction digits the user can type - `0` takes whole numbers only. Stepping rounds to it
+   * too. `null` leaves typing unrestricted. A value written by code is never rounded.
+   */
+  public decimals = input(null, { transform: nullableNumberAttribute });
+  /** Message the form field shows when the typed text is not a number. */
+  public parseErrorMessage = input<string | null>(null);
   public placeholder = input('');
   public autocomplete = input('');
   public textAlign = input<InputTextAlignment>(INPUT_TEXT_ALIGNMENTS.START);
 
   public hasValue = computed(() => this.mixed() || this.value() !== null);
   public controlType = signal(FORM_FIELD_CONTROL_TYPES.NUMBER_INPUT);
+
+  /** `true` while the native input holds text the browser cannot read as a number (`-`, `-.`). */
+  public parseError = linkedSignal({ source: this.value, computation: () => false });
+
+  public resolvedParseErrorMessage = computed(() => this.parseErrorMessage() ?? this.inputLabels().invalidNumber);
+
+  public override shouldDisplayError = computed(() => this.touched() && (this.invalid() || this.parseError()));
+
+  /** The virtual keyboard the native input asks for - digits only while `decimals` is `0`. */
+  public inputMode = computed(() => {
+    const decimals = this.decimals();
+
+    if (decimals === null) return null;
+
+    return decimals > 0 ? 'decimal' : 'numeric';
+  });
 
   /** What the native input renders - empty while mixed so the raw value never reaches the DOM. */
   public displayValue = computed(() => (this.mixed() ? '' : (this.value() ?? '')));
@@ -66,6 +93,8 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
    * registers it.
    */
   public nativeControl = signal<HTMLInputElement | null>(null);
+
+  private textBeforeEdit: string | null = null;
 
   /** The value stepping starts from - `0` while mixed (deriving from the hidden raw value would leak it). */
   private steppingBase = computed(() => (this.mixed() ? 0 : (this.value() ?? 0)));
@@ -104,6 +133,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
           min: this.min()?.toString() ?? null,
           max: this.max()?.toString() ?? null,
           step: this.step()?.toString() ?? null,
+          inputmode: this.inputMode(),
         }),
       });
     }
@@ -126,6 +156,9 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     // precision off the multiplied step would read float noise (0.1 * 0.1) as 18 decimals
     const precision = Math.max(decimalPrecisionOf(step) + decimalPrecisionOf(multiplier), decimalPrecisionOf(current));
     let next = Number((current + step * multiplier * direction).toFixed(precision));
+    const decimals = this.decimals();
+
+    if (decimals !== null) next = Number(next.toFixed(decimals));
 
     const min = this.min();
     const max = this.max();
@@ -169,11 +202,46 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     this.stepBy(direction, { multiplier });
   }
 
+  /**
+   * Rejects an edit that inserts a character the control never takes: exponent notation always,
+   * and the decimal separators while `decimals` is `0`. A paste or drop holding one is rejected whole.
+   */
+  protected handleBeforeInput(event: InputEvent) {
+    const inputElement = this.nativeControl();
+
+    if (event.target !== inputElement) return;
+
+    const inserted = event.data ?? event.dataTransfer?.getData('text/plain') ?? '';
+    const forbidden = this.decimals() === 0 ? WHOLE_NUMBER_FORBIDDEN_CHARACTERS : FORBIDDEN_CHARACTERS;
+
+    if (forbidden.test(inserted)) {
+      event.preventDefault();
+
+      return;
+    }
+
+    this.textBeforeEdit = inputElement.value;
+  }
+
   /** @internal Keeps the model in sync while typing into a standalone native host. */
   protected handleNativeInput(event: Event) {
-    if (event.target !== this.nativeControl()) return;
+    const inputElement = this.nativeControl();
 
-    this.syncFromNativeInput(event.target as HTMLInputElement);
+    if (event.target !== inputElement) return;
+
+    const textBeforeEdit = this.textBeforeEdit ?? `${this.displayValue()}`;
+
+    this.textBeforeEdit = null;
+
+    // `selectionStart` is null on `type="number"`, so `beforeinput` cannot tell where the text
+    // lands - the excess is only visible here, after the browser applied it
+    if (this.exceedsDecimals(inputElement.value)) {
+      inputElement.value = textBeforeEdit;
+
+      return;
+    }
+
+    this.syncFromNativeInput(inputElement);
   }
 
   /**
@@ -193,8 +261,23 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
     const parsed = inputElement.valueAsNumber;
 
     this.value.set(Number.isNaN(parsed) ? null : parsed);
+    this.parseError.set(inputElement.validity.badInput);
+  }
+
+  private exceedsDecimals(text: string) {
+    const decimals = this.decimals();
+
+    if (decimals === null) return false;
+
+    const fraction = text.split(DECIMAL_SEPARATOR)[1] ?? '';
+
+    return fraction.length > decimals;
   }
 }
+
+const FORBIDDEN_CHARACTERS = /[eE+]/;
+const WHOLE_NUMBER_FORBIDDEN_CHARACTERS = /[eE+.,]/;
+const DECIMAL_SEPARATOR = /[.,]/;
 
 const STEP_KEY_DIRECTIONS: Record<string, 1 | -1 | undefined> = {
   ArrowUp: 1,

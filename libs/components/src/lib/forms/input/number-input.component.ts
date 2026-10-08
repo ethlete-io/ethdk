@@ -41,7 +41,18 @@ const SCRUB_ACTIVE_CLASS = 'et-number-input-scrubbing';
   hostDirectives: [
     {
       directive: NumberInputDirective,
-      inputs: ['min', 'max', 'step', 'placeholder', 'autocomplete', 'textAlign', 'value', ...TEXT_FIELD_CONTROL_INPUTS],
+      inputs: [
+        'min',
+        'max',
+        'step',
+        'decimals',
+        'parseErrorMessage',
+        'placeholder',
+        'autocomplete',
+        'textAlign',
+        'value',
+        ...TEXT_FIELD_CONTROL_INPUTS,
+      ],
       outputs: ['valueChange', 'mixedChange', 'touchedChange', 'touch'],
     },
     ColorInteractiveDirective,

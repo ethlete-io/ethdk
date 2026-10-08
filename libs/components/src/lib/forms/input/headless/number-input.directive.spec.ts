@@ -1,9 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, Type } from '@angular/core';
 import '../../../../test-helpers';
 import { mountNumberInput, NumberInputDriver } from '../../testing/number-input-driver';
 import { FormFieldDirective, LabelDirective } from '../../form-field/headless';
 import { describeMixedStateContract } from '../../testing/mixed-state-contract';
 import { NUMBER_INPUT_IMPORTS } from '../input.imports';
+import { DEFAULT_INPUT_LABELS } from '../input-labels';
 import { NumberInputDirective } from './number-input.directive';
 
 @Component({
@@ -69,6 +70,79 @@ class MixedNumberInputTestHost {
   imports: [NUMBER_INPUT_IMPORTS],
 })
 class StaticBoundsTestHost {}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Amount</et-label>
+      <input
+        [decimals]="decimals()"
+        [step]="step()"
+        [value]="value()"
+        (valueChange)="value.set($event)"
+        etNumberInput
+        type="number"
+      />
+    </div>
+  `,
+  imports: [NumberInputDirective, FormFieldDirective, LabelDirective],
+})
+class NativeDecimalsTestHost {
+  value = signal<number | null>(null);
+  decimals = signal<number | null>(null);
+  step = signal<number | null>(null);
+}
+
+@Component({
+  template: `
+    <div etFormField>
+      <et-label>Amount</et-label>
+      <et-number-input
+        [decimals]="decimals()"
+        [step]="step()"
+        [value]="value()"
+        (valueChange)="value.set($event)"
+        stepper
+      />
+    </div>
+  `,
+  imports: [NUMBER_INPUT_IMPORTS, FormFieldDirective, LabelDirective],
+})
+class ComponentDecimalsTestHost {
+  value = signal<number | null>(null);
+  decimals = signal<number | null>(null);
+  step = signal<number | null>(null);
+}
+
+@Component({
+  template: `<et-number-input parseErrorMessage="Digits only" aria-label="Amount" />`,
+  imports: [NUMBER_INPUT_IMPORTS],
+})
+class ParseErrorMessageTestHost {}
+
+type DecimalsTestHost = NativeDecimalsTestHost | ComponentDecimalsTestHost;
+
+const beforeInput = (field: HTMLInputElement, init: { inputType: string; data?: string | null; pasted?: string }) => {
+  const event = new InputEvent('beforeinput', {
+    inputType: init.inputType,
+    data: init.data ?? null,
+    bubbles: true,
+    cancelable: true,
+  });
+
+  if (init.pasted !== undefined) {
+    const pasted = init.pasted;
+
+    Object.defineProperty(event, 'dataTransfer', { value: { getData: () => pasted } });
+  }
+
+  field.dispatchEvent(event);
+
+  return event.defaultPrevented;
+};
+
+const setBadInput = (field: HTMLInputElement, badInput: boolean) =>
+  Object.defineProperty(field, 'validity', { value: { badInput }, configurable: true });
 
 describe('NumberInputDirective', () => {
   describe('inside form field', () => {
@@ -479,5 +553,144 @@ describe('NumberInputDirective', () => {
     expect(driver.control.min()).toBe(0);
     expect(driver.control.max()).toBe(10);
     expect(driver.control.step()).toBe(0.5);
+  });
+
+  describe.each<[string, Type<DecimalsTestHost>]>([
+    ['on a native input', NativeDecimalsTestHost],
+    ['inside et-number-input', ComponentDecimalsTestHost],
+  ])('typing rules %s', (_, hostType) => {
+    let driver: NumberInputDriver<DecimalsTestHost>;
+
+    const setDecimals = (decimals: number | null) => {
+      driver.host.decimals.set(decimals);
+      driver.tick();
+    };
+
+    beforeEach(() => {
+      driver = mountNumberInput(hostType, { directiveSelector: '[etNumberInput], et-number-input' });
+    });
+
+    it('blocks exponent notation and a plus sign, but not a minus', () => {
+      for (const data of ['e', 'E', '+']) {
+        expect(beforeInput(driver.field(), { inputType: 'insertText', data })).toBe(true);
+      }
+
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: '-' })).toBe(false);
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: '5' })).toBe(false);
+    });
+
+    it('rejects a whole paste or drop that holds a forbidden character, read from dataTransfer', () => {
+      expect(beforeInput(driver.field(), { inputType: 'insertFromPaste', pasted: '1e5' })).toBe(true);
+      expect(beforeInput(driver.field(), { inputType: 'insertFromDrop', pasted: '+3' })).toBe(true);
+      expect(beforeInput(driver.field(), { inputType: 'insertFromPaste', pasted: '-15' })).toBe(false);
+    });
+
+    it('blocks the decimal separators only while decimals is 0', () => {
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: '.' })).toBe(false);
+
+      setDecimals(0);
+
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: '.' })).toBe(true);
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: ',' })).toBe(true);
+      expect(beforeInput(driver.field(), { inputType: 'insertFromPaste', pasted: '1.5' })).toBe(true);
+
+      setDecimals(2);
+
+      expect(beforeInput(driver.field(), { inputType: 'insertText', data: '.' })).toBe(false);
+    });
+
+    it('asks for a numeric keyboard at 0 decimals and a decimal one above', () => {
+      expect(driver.field().hasAttribute('inputmode')).toBe(false);
+
+      setDecimals(0);
+      expect(driver.field().getAttribute('inputmode')).toBe('numeric');
+
+      setDecimals(2);
+      expect(driver.field().getAttribute('inputmode')).toBe('decimal');
+    });
+
+    it('restores the text before an edit that adds a fraction digit too many', () => {
+      setDecimals(2);
+      driver.type('1.55');
+      expect(driver.host.value()).toBe(1.55);
+
+      beforeInput(driver.field(), { inputType: 'insertText', data: '5' });
+      driver.type('1.555');
+
+      expect(driver.fieldValue()).toBe('1.55');
+      expect(driver.host.value()).toBe(1.55);
+    });
+
+    it('accepts a trailing zero within the limit', () => {
+      setDecimals(2);
+      driver.type('1.5');
+      driver.type('1.50');
+
+      expect(driver.fieldValue()).toBe('1.50');
+      expect(driver.host.value()).toBe(1.5);
+    });
+
+    it('leaves a value written by code alone, however many decimals it has', () => {
+      setDecimals(2);
+      driver.host.value.set(1.2345);
+      driver.tick();
+
+      expect(driver.host.value()).toBe(1.2345);
+      expect(driver.fieldValue()).toBe('1.2345');
+    });
+
+    it('rounds a step to decimals', () => {
+      setDecimals(1);
+      driver.host.step.set(0.25);
+      driver.tick();
+
+      driver.press('ArrowUp');
+
+      expect(driver.host.value()).toBe(0.3);
+    });
+
+    it('reports unparsable text as a parse error with a null model value', () => {
+      driver.type('5');
+      expect(driver.numberInput.parseError()).toBe(false);
+
+      setBadInput(driver.field(), true);
+      driver.type('');
+
+      expect(driver.host.value()).toBeNull();
+      expect(driver.numberInput.parseError()).toBe(true);
+
+      const formField = driver.directive(FormFieldDirective);
+
+      expect(formField.parseError()).toBe(true);
+      expect(formField.parseErrorMessage()).toBe(DEFAULT_INPUT_LABELS.invalidNumber);
+      expect(driver.numberInput.shouldDisplayError()).toBe(false);
+
+      driver.blur();
+      expect(driver.numberInput.shouldDisplayError()).toBe(true);
+      expect(driver.field().getAttribute('aria-invalid')).toBe('true');
+
+      setBadInput(driver.field(), false);
+      driver.type('7');
+
+      expect(driver.numberInput.parseError()).toBe(false);
+      expect(driver.host.value()).toBe(7);
+    });
+
+    it('clears the parse error when code writes a value', () => {
+      setBadInput(driver.field(), true);
+      driver.type('');
+      expect(driver.numberInput.parseError()).toBe(true);
+
+      driver.host.value.set(3);
+      driver.tick();
+
+      expect(driver.numberInput.parseError()).toBe(false);
+    });
+  });
+
+  it('takes the parse error message from its own input over the labels', () => {
+    const driver = mountNumberInput(ParseErrorMessageTestHost);
+
+    expect(driver.numberInput.resolvedParseErrorMessage()).toBe('Digits only');
   });
 });

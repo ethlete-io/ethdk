@@ -29,6 +29,7 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           [formField]="demoForm.value"
           [mixedLabel]="mixedLabel()"
           [step]="step()"
+          [decimals]="decimals()"
           [stepper]="stepper()"
           [placeholder]="placeholder()"
         />
@@ -39,6 +40,10 @@ import { NUMBER_INPUT_IMPORTS } from '../input.imports';
           <et-hint>{{ hint() }}</et-hint>
         }
       </et-form-field>
+
+      @if (showModelValue()) {
+        <p class="opacity-60">Model value: {{ demoForm.value().value() ?? 'null' }}</p>
+      }
 
       @if (showMixedState()) {
         <div class="text-sm opacity-60">
@@ -73,6 +78,8 @@ export class FormFieldNumberInputStorybookComponent {
   public min = input<number | null>(null);
   public max = input<number | null>(null);
   public step = input<number | null>(null);
+  public decimals = input<number | null>(null);
+  public showModelValue = input(false);
   public stepper = input(false);
   public disabled = input(false);
   public readonly = input(false);
