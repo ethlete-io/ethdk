@@ -165,7 +165,7 @@ export const createRichTextEditorDriver = <T>(
 ) => {
   const base = createControlDriver(fixture, RichTextEditorDirective, controlOptions);
 
-  if (attach) base.control.editorDom.root.set(attachEditable());
+  if (attach) base.control.attachEditable(attachEditable());
 
   tick();
 

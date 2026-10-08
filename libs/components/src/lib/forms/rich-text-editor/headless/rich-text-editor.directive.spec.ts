@@ -165,6 +165,23 @@ describe('RichTextEditorDirective', () => {
     });
   });
 
+  describe('a driver-attached headless editor', () => {
+    it('handles paste and undo through the handlers attachEditable binds', () => {
+      const driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+
+      driver.caretAtStart();
+
+      const event = driver.paste({ html: '<p><b>bold</b></p>' });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(driver.value()).toBe('**bold**');
+
+      driver.press('z', { ctrlKey: true });
+
+      expect(driver.value()).toBe('');
+    });
+  });
+
   describe('tool lifecycle', () => {
     it('tells each registered tool when the editor is destroyed', () => {
       editorDestroyed.mockClear();

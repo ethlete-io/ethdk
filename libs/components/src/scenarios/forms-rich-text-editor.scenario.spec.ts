@@ -168,7 +168,7 @@ class BareEditorComponent {}
   template: `
     <div #notesEditor="etRichTextEditor" [(value)]="notes" etRichTextEditor aria-label="Notes">
       <button (click)="notesEditor.toggleBold()" type="button">Bold</button>
-      <div #editable (input)="notesEditor.syncFromDom()" class="notes-editable" contenteditable="true"></div>
+      <div #editable class="notes-editable" contenteditable="true"></div>
     </div>
   `,
 })
