@@ -12,6 +12,7 @@ import {
 import { catchError, combineLatest, concatMap, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { injectAgentSessionCollector, injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
+import { formatDateTime } from '../display';
 import { injectTimetrackSettings } from '../settings/settings';
 import { BuildStampComponent } from '../build-stamp.component';
 import { injectProjectLinks } from '../project-links';
@@ -173,13 +174,13 @@ export class HostStatusViewComponent {
   protected oldestEventAt = computed(() => {
     const status = this.status();
 
-    return status.state === 'ready' ? (status.oldestEventAt?.toLocaleString() ?? null) : null;
+    return status.state === 'ready' ? (status.oldestEventAt ? formatDateTime(status.oldestEventAt) : null) : null;
   });
 
   protected compactedThrough = computed(() => {
     const status = this.status();
 
-    return status.state === 'ready' ? (status.compactedThrough?.toLocaleString() ?? null) : null;
+    return status.state === 'ready' ? (status.compactedThrough ? formatDateTime(status.compactedThrough) : null) : null;
   });
 
   protected cursors = computed(() => {

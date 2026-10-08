@@ -44,6 +44,7 @@ describe('parseTimetrackSettings', () => {
       holdsWorkApps: ['discord'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
+      display: { dateStyle: 'iso', clock: '12h' },
     });
 
     expect(settings).toEqual({
@@ -93,6 +94,7 @@ describe('parseTimetrackSettings', () => {
       transcribeCalls: false,
       transcribeLanguage: 'de',
       priceTable: { currency: 'USD', prices: [] },
+      display: { dateStyle: 'iso', clock: '12h' },
     });
   });
 
@@ -179,6 +181,7 @@ describe('parseTimetrackSettings', () => {
       transcribeCalls: false,
       transcribeLanguage: 'de',
       priceTable: { currency: 'USD', prices: [] },
+      display: { dateStyle: 'day-month', clock: '24h' },
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
   });
@@ -582,5 +585,25 @@ describe('parseTimetrackSettings', () => {
   it('keeps the shipped rules unless the document says otherwise', () => {
     expect(parseTimetrackSettings({}).keepDefaultExclusionRules).toBe(true);
     expect(parseTimetrackSettings({ keepDefaultExclusionRules: false }).keepDefaultExclusionRules).toBe(false);
+  });
+
+  it('defaults the display settings for a document that predates them', () => {
+    expect(parseTimetrackSettings({}).display).toEqual({ dateStyle: 'day-month', clock: '24h' });
+  });
+
+  it('reads a stored display style', () => {
+    expect(parseTimetrackSettings({ display: { dateStyle: 'iso', clock: '12h' } }).display).toEqual({
+      dateStyle: 'iso',
+      clock: '12h',
+    });
+  });
+
+  it('falls back to the default for an unknown or mistyped display value, one field at a time', () => {
+    expect(parseTimetrackSettings({ display: { dateStyle: 'us', clock: '12h' } }).display).toEqual({
+      dateStyle: 'day-month',
+      clock: '12h',
+    });
+    expect(parseTimetrackSettings({ display: 'iso' }).display).toEqual({ dateStyle: 'day-month', clock: '24h' });
+    expect(parseTimetrackSettings({ display: { clock: 12 } }).display.clock).toBe('24h');
   });
 });

@@ -11,6 +11,7 @@ import {
 } from '@ethlete/timetrack';
 import { catchError, of, switchMap, timer } from 'rxjs';
 import { injectHostPorts } from '../../host';
+import { formatClockTime } from '../display';
 import { ExplainComponent } from './explain.component';
 import { injectTimetrackSettings } from './settings';
 
@@ -56,8 +57,7 @@ const OPTIONS = (() => {
   ];
 })();
 
-const clock = (atMs: number) =>
-  new Date(atMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const clock = (atMs: number) => formatClockTime(new Date(atMs), { seconds: true });
 
 @Component({
   selector: 'ethlete-transcription-panel',

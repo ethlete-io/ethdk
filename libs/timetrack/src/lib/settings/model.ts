@@ -10,6 +10,7 @@ import { MeetingNaming } from '../model/meeting-naming';
 import { JiraParenting } from '../jira/hierarchy';
 import { DEFAULT_REASONING_OPTIONS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
+import { DEFAULT_DISPLAY_SETTINGS, TimetrackDisplaySettings } from './display';
 
 /** How much time a day is expected to account for when nothing else is configured. */
 export const DEFAULT_DAY_TARGET_MS = 8 * 60 * 60_000;
@@ -403,6 +404,8 @@ export type TimetrackSettings = {
   transcribeLanguage: TranscribeLanguage;
   /** What each agent model costs, which turns a day's spend into a cost. Empty until the user writes a price. */
   priceTable: PriceTable;
+  /** How the app prints a date and a clock time. Display only: stored keys and the agent API stay ISO and 24h. */
+  display: TimetrackDisplaySettings;
 };
 
 export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
@@ -455,4 +458,5 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   transcribeCalls: false,
   transcribeLanguage: 'de',
   priceTable: { currency: DEFAULT_PRICE_CURRENCY, prices: [] },
+  display: DEFAULT_DISPLAY_SETTINGS,
 };

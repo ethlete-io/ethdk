@@ -37,7 +37,7 @@ test.describe('a meeting nothing heard', () => {
 
     await openDayNotes(page);
 
-    await expect(offerFor(page, 'ABC-2000 Refinement')).toContainText(/02:00\sPM\s+\u2013\s+03:00\sPM/);
+    await expect(offerFor(page, 'ABC-2000 Refinement')).toContainText(/14:00\s+\u2013\s+15:00/);
   });
 
   test('puts the meeting on the day when one press adopts it', async ({ page }) => {

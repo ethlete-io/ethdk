@@ -21,6 +21,8 @@ import {
   isForgeHostname,
   normalizeGitLabHost,
   normalizeJiraHost,
+  ClockStyle,
+  DateStyle,
 } from '@ethlete/timetrack';
 import {
   injectAgentSessionCollector,
@@ -232,6 +234,38 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                   </et-form-field>
 
                   <ethlete-explain [text]="DAY_START_WHY" label="when a day starts" />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-3">
+                <h3 class="text-h4">How dates and times read</h3>
+
+                <div class="flex flex-wrap items-end gap-3">
+                  <et-form-field class="w-48" appearance="underline" size="sm">
+                    <et-label>Date</et-label>
+                    <et-select
+                      [value]="store.settings().display.dateStyle"
+                      (valueChange)="store.setDateStyle($event ?? 'day-month')"
+                      data-date-style
+                    >
+                      @for (option of DATE_STYLE_OPTIONS; track option.value) {
+                        <et-select-option [value]="option.value" [label]="option.label" />
+                      }
+                    </et-select>
+                  </et-form-field>
+
+                  <et-form-field class="w-48" appearance="underline" size="sm">
+                    <et-label>Clock</et-label>
+                    <et-select
+                      [value]="store.settings().display.clock"
+                      (valueChange)="store.setClock($event ?? '24h')"
+                      data-clock-style
+                    >
+                      @for (option of CLOCK_STYLE_OPTIONS; track option.value) {
+                        <et-select-option [value]="option.value" [label]="option.label" />
+                      }
+                    </et-select>
+                  </et-form-field>
                 </div>
               </div>
 
@@ -859,6 +893,17 @@ export class SettingsViewComponent {
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */
   protected nudgeAtMs = computed(() => this.store.settings().nudge.atMinute * 60_000);
+
+  protected readonly DATE_STYLE_OPTIONS: { value: DateStyle; label: string }[] = [
+    { value: 'day-month', label: '7 Oct' },
+    { value: 'month-day', label: 'Oct 7' },
+    { value: 'iso', label: '2026-10-07' },
+  ];
+
+  protected readonly CLOCK_STYLE_OPTIONS: { value: ClockStyle; label: string }[] = [
+    { value: '24h', label: '24-hour (21:45)' },
+    { value: '12h', label: '12-hour (9:45 PM)' },
+  ];
 
   protected dayStartMs = computed(() => this.store.settings().dayStartHour * 3_600_000);
 

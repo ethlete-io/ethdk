@@ -60,7 +60,7 @@ test.describe('the handle between two rows', () => {
     await expect(rows(page)).toHaveCount(3);
 
     await expect(handles(page)).toHaveCount(1);
-    await expect(handles(page)).toHaveAttribute('aria-valuetext', '04:30 PM');
+    await expect(handles(page)).toHaveAttribute('aria-valuetext', '16:30');
   });
 });
 

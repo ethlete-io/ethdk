@@ -1,4 +1,4 @@
-import { DestroyRef, computed, inject, signal } from '@angular/core';
+import { DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
@@ -8,6 +8,8 @@ import {
   rememberCallNaming,
   rememberMeetingNaming,
   AttributionRule,
+  ClockStyle,
+  DateStyle,
   DEFAULT_TIMETRACK_SETTINGS,
   NamedTarget,
   ProjectLinkTarget,
@@ -82,6 +84,7 @@ import {
 } from 'rxjs';
 import { injectHostPorts } from '../../host';
 import { injectBuiltInGoogleClient } from '../google/built-in-client';
+import { setDisplaySettings } from '../display';
 
 /** How long an edit settles before the settings document is written. */
 const SAVE_DEBOUNCE_MS = 400;
@@ -138,6 +141,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const settings = computed(() => local() ?? loaded() ?? DEFAULT_TIMETRACK_SETTINGS);
   const isLoading = computed(() => !loaded());
+
+  effect(() => setDisplaySettings(settings().display));
 
   const held = toSignal(
     toObservable(secretRevision).pipe(
@@ -223,6 +228,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** Asks the keychain again, for a caller that stored or removed a secret through another route. */
     recheckCredentials: () => secretRevision.update((count) => count + 1),
 
+    setDateStyle: (dateStyle: DateStyle) => patch({ display: { ...settings().display, dateStyle } }),
+    setClock: (clock: ClockStyle) => patch({ display: { ...settings().display, clock } }),
     setDayTargetMs: (dayTargetMs: number) => patch({ dayTargetMs: clampDayTargetMs(dayTargetMs) }),
     setGapFillMs: (gapFillMs: number) => patch({ gapFillMs: clampGapFillMs(gapFillMs) }),
     setDayStartHour: (dayStartHour: number) => patch({ dayStartHour: clampDayStartHour(dayStartHour) }),

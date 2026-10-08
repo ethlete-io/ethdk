@@ -80,7 +80,7 @@ test.describe('a break the user says was time at the machine', () => {
     await page.locator('[data-statement-undo]').first().click();
 
     await expect(statements(page)).toHaveCount(0);
-    await expect(breaks(page).first()).toHaveAttribute('title', '10:15 AM - 11:30 AM');
+    await expect(breaks(page).first()).toHaveAttribute('title', '10:15 - 11:30');
   });
 });
 
@@ -96,13 +96,13 @@ test.describe('a stretch the user says they were away for', () => {
     await drawBreak({ page, from: 14, to: 15 });
 
     await expect(breaks(page)).toHaveCount(2);
-    await expect(breaks(page).nth(1)).toHaveAttribute('title', '02:00 PM - 03:00 PM');
+    await expect(breaks(page).nth(1)).toHaveAttribute('title', '14:00 - 15:00');
   });
 
   test('holds even where the day already reads the stretch as work', async ({ page }) => {
     await drawBreak({ page, from: 9, to: 10 });
 
-    await expect(breaks(page).first()).toHaveAttribute('title', '09:00 AM - 10:00 AM');
+    await expect(breaks(page).first()).toHaveAttribute('title', '09:00 - 10:00');
   });
 });
 

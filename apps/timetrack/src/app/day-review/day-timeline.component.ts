@@ -1297,7 +1297,7 @@ export class DayTimelineComponent {
    * day that starts at 04:00 the first row of the axis is 04:00, not midnight. See ADR 0015.
    */
   protected labelFor(hour: number) {
-    return `${String(new Date(this.focusedDate().getTime() + hour * HOUR_MS).getHours()).padStart(2, '0')}:00`;
+    return formatClockTime(new Date(this.focusedDate().getTime() + hour * HOUR_MS));
   }
 
   protected kindOf(appointment: Appointment<TimelineEntry>) {

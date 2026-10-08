@@ -1,6 +1,7 @@
 export * from './attribution';
 export * from './credentials';
 export * from './day';
+export * from './display';
 export * from './favorites';
 export * from './masked-name';
 export * from './model';

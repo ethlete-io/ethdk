@@ -101,7 +101,7 @@ test.describe('a break an agent ran through', () => {
   });
 
   test('is as long as the notifier measured, because the rows leave it no gap', async ({ page }) => {
-    await expect(page.locator('[data-break]').first()).toHaveAttribute('title', '10:15 AM - 11:00 AM');
+    await expect(page.locator('[data-break]').first()).toHaveAttribute('title', '10:15 - 11:00');
   });
 });
 
@@ -115,6 +115,6 @@ test.describe('the break between two rows', () => {
     const band = page.locator('[data-break]').first();
 
     await expect(band).toBeVisible();
-    await expect(band).toHaveAttribute('title', '10:15 AM - 11:30 AM');
+    await expect(band).toHaveAttribute('title', '10:15 - 11:30');
   });
 });

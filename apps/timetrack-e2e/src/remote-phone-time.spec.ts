@@ -72,6 +72,6 @@ test.describe('phone prompts with a pause of more than a quarter hour between th
   });
 
   test('draw the pause as a break', async ({ page }) => {
-    await expect.poll(() => titles(page, '[data-break]')).toContain('11:30 AM - 12:15 PM');
+    await expect.poll(() => titles(page, '[data-break]')).toContain('11:30 - 12:15');
   });
 });

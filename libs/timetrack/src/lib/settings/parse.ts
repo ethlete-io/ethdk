@@ -8,6 +8,7 @@ import { CallNaming } from '../model/call-naming';
 import { MeetingNaming } from '../model/meeting-naming';
 import { REASONING_COMMANDS } from '../reason/model';
 import { TimetrackExclusionRule } from '../store/exclusion';
+import { CLOCK_STYLES, DATE_STYLES, DEFAULT_DISPLAY_SETTINGS, TimetrackDisplaySettings } from './display';
 import {
   DEFAULT_PRICE_CURRENCY,
   DEFAULT_TIMETRACK_SETTINGS,
@@ -69,6 +70,17 @@ const asDayStartHour = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
     ? clampDayStartHour(value)
     : DEFAULT_TIMETRACK_SETTINGS.dayStartHour;
+
+const asDisplay = (value: unknown): TimetrackDisplaySettings => {
+  const raw = asRecord(value);
+  const dateStyle = DATE_STYLES.find((style) => style === raw['dateStyle']);
+  const clock = CLOCK_STYLES.find((style) => style === raw['clock']);
+
+  return {
+    dateStyle: dateStyle ?? DEFAULT_DISPLAY_SETTINGS.dateStyle,
+    clock: clock ?? DEFAULT_DISPLAY_SETTINGS.clock,
+  };
+};
 
 const asLockAfterIdle = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value)
@@ -508,5 +520,6 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     transcribeCalls: document['transcribeCalls'] === true,
     transcribeLanguage: migrateTranscribeLanguage(document['transcribeLanguage']),
     priceTable: asPriceTable(document['priceTable']),
+    display: asDisplay(document['display']),
   };
 };

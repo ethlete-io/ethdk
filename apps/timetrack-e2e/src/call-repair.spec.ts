@@ -30,7 +30,7 @@ test.describe('a call the store holds no end for', () => {
     await page.goto('/day');
     await openDayNotes(page);
 
-    await expect(callSpan(page)).toContainText('02:01 PM – 06:00 PM');
+    await expect(callSpan(page)).toContainText('14:01 – 18:00');
   });
 
   test('is cut where the watching stopped when the host that opened it is gone', async ({ page }) => {
@@ -43,6 +43,6 @@ test.describe('a call the store holds no end for', () => {
     await page.goto('/day');
     await openDayNotes(page);
 
-    await expect(callSpan(page)).toContainText('02:01 PM – 02:20 PM');
+    await expect(callSpan(page)).toContainText('14:01 – 14:20');
   });
 });

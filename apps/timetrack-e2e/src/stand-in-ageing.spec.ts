@@ -71,7 +71,7 @@ test.describe('a stand-in that has waited', () => {
       overdueAfterMs: 0,
     });
 
-    await expect(card).toContainText('on Wed, Aug 12');
+    await expect(card).toContainText('on Wed, 12 Aug');
     await expect(card.locator('[data-overdue]')).toHaveCount(0);
   });
 
@@ -82,7 +82,7 @@ test.describe('a stand-in that has waited', () => {
       overdueAfterMs: 0,
     });
 
-    await expect(card).toContainText('on Wed, Aug 12');
+    await expect(card).toContainText('on Wed, 12 Aug');
     await expect(card.locator('[data-overdue]')).toBeVisible();
   });
 

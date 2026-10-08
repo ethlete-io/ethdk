@@ -241,7 +241,7 @@ test.describe('a worklog add on a row of the day', () => {
 
     const section = editSurface(page).locator('[data-row-approval]');
 
-    await expect(section).toContainText(/Span\s*\d\d:\d\d [AP]M – \d\d:\d\d [AP]M/);
+    await expect(section).toContainText(/Span\s*\d\d:\d\d – \d\d:\d\d/);
     await expect(section).toContainText('Review follow-ups');
   });
 });

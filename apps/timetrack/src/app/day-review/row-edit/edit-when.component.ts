@@ -6,7 +6,8 @@ import {
   TIME_RANGE_INPUT_IMPORTS,
   TimeRangeValue,
 } from '@ethlete/components';
-import { formatDurationMs, roundDurationUp } from '@ethlete/timetrack';
+import { clockDisplayFormat, formatDurationMs, roundDurationUp } from '@ethlete/timetrack';
+import { injectTimetrackSettings } from '../../settings/settings';
 import { rowEntryOf, TimelineEntry } from './row-appointment';
 
 const clockOf = (date: Date) =>
@@ -29,6 +30,7 @@ const atClock = (day: Date, clock: string) => {
         <et-label>When</et-label>
         <et-time-range-input
           [value]="range()"
+          [displayFormat]="displayFormat()"
           (valueChange)="setRange($event)"
           clearable="false"
           startAriaLabel="Start"
@@ -57,7 +59,11 @@ const atClock = (day: Date, clock: string) => {
   imports: [DURATION_INPUT_IMPORTS, FORM_FIELD_IMPORTS, TIME_RANGE_INPUT_IMPORTS],
 })
 export class EditWhenComponent {
+  private settings = injectTimetrackSettings();
+
   public draft = input.required<WritableSignal<Appointment<TimelineEntry>>>();
+
+  protected displayFormat = computed(() => clockDisplayFormat(this.settings.settings().display.clock));
 
   protected entry = computed(() => rowEntryOf(this.draft()()));
 

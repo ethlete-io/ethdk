@@ -1,4 +1,5 @@
 import { ForgeCli, GitScanFailure, isForgeHostname } from '@ethlete/timetrack';
+import { formatClockTime, formatShortDate } from '../display';
 import {
   AgentSessionCollectorTotals,
   AgentLogBackfillRun,
@@ -8,9 +9,9 @@ import {
 } from '../../collectors';
 import { CallSourceStatus, GitRepoDiscovery, IngestStatus, SourceTally, WindowSourceStatus } from '../../host';
 
-const clock = (at: Date) => at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const clock = (at: Date) => formatClockTime(at);
 
-const day = (at: Date) => at.toLocaleDateString([], { day: 'numeric', month: 'short' });
+const day = (at: Date) => formatShortDate(at);
 
 const repos = (count: number) => `${count} ${count === 1 ? 'repository' : 'repositories'}`;
 
