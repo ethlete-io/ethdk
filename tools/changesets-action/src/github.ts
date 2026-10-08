@@ -237,6 +237,8 @@ export class GitHub {
   }
 
   async prepareBranch(branch: string) {
+    // The publish step runs first in the same checkout, and its script may rewrite tracked files.
+    await reset(context.sha, { cwd: this.cwd });
     await switchToMaybeExistingBranch(branch, { cwd: this.cwd });
     await reset(context.sha, { cwd: this.cwd });
   }

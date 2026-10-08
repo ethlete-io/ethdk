@@ -1,7 +1,7 @@
 # Changesets GitHub Action
 
 > [!NOTE]
-> Vendored from [`changesets/action`](https://github.com/changesets/action) at `0138f456ec3d73906fcd11169ce59502d8d241c1` (v2.1.2), plus the Slack release notification (`src/slack*.ts`, the `slack-title`, `slack-channel` and `slack-token` inputs, the `slack-payload` output; see [Slack release notification](#slack-release-notification)), first added in the former `TomTomB/changesets-action` fork. `.github/workflows/publish.yml` builds it with `nx build changesets-action` and runs it from `dist/`. Keep upstream's formatting (the folder is Prettier-ignored) so upstream commits still apply.
+> Vendored from [`changesets/action`](https://github.com/changesets/action) at `0138f456ec3d73906fcd11169ce59502d8d241c1` (v2.1.2), plus the Slack release notification (`src/slack*.ts`, the `slack-title`, `slack-channel` and `slack-token` inputs, the `slack-payload` output; see [Slack release notification](#slack-release-notification)), first added in the former `TomTomB/changesets-action` fork. A second change: the action publishes on every run, and opens or updates the version PR only when a changeset bumps a package (`src/plan.ts`). Upstream does one or the other, so a changeset pushed after a version PR merge held that release back, and a `none`-only changeset opened an empty PR. `.github/workflows/publish.yml` builds it with `nx build changesets-action` and runs it from `dist/`. Keep upstream's formatting (the folder is Prettier-ignored) so upstream commits still apply.
 
 ## Slack release notification
 
