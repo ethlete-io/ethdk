@@ -1,18 +1,41 @@
 #!/usr/bin/env bash
-# Creates the self-signed code-signing identity that `sign-and-run.sh` signs dev builds with, and
-# imports it into the login keychain. Run it once per machine.
-#
-# Without a signing identity the dev binary is unsigned, and a keychain item's ACL cannot name it in a
-# way that survives a rebuild - so macOS asks for the login password again after every `cargo` build,
-# even after "Always Allow". A certificate gives the binary a designated requirement that names the
-# certificate rather than the file's hash, which is what makes the grant stick.
+# Creates the self-signed code-signing identity `macos-dev-sign.sh` signs dev builds with, in a keychain
+# of its own whose password lives in a file. Run it once per machine; it needs no login password and
+# works over SSH. Running it again keeps the identity: a new one makes every keychain item and privacy
+# permission ask once more.
 set -euo pipefail
+. "$(dirname "$0")/macos-dev-signing.env.sh"
 
-NAME="Timetrack Dev Signing"
-IDENTIFIER="io.ethlete.timetrack"
+if [ -f "$KEYCHAIN" ]; then
+  if [ ! -f "$PASSWORD_FILE" ]; then
+    echo "$KEYCHAIN exists but $PASSWORD_FILE does not. Delete the keychain and run this again." >&2
+    exit 1
+  fi
+  security unlock-keychain -p "$(cat "$PASSWORD_FILE")" "$KEYCHAIN"
+  if security find-identity -p codesigning "$KEYCHAIN" | grep -qF "\"$NAME\""; then
+    HAS_IDENTITY=1
+  fi
+else
+  mkdir -p "$(dirname "$PASSWORD_FILE")"
+  (umask 077 && openssl rand -hex 24 > "$PASSWORD_FILE")
+  security create-keychain -p "$(cat "$PASSWORD_FILE")" "$KEYCHAIN"
+  security set-keychain-settings "$KEYCHAIN"
+  security unlock-keychain -p "$(cat "$PASSWORD_FILE")" "$KEYCHAIN"
+fi
 
-if security find-identity -p codesigning | grep -qF "$NAME"; then
-  echo "The identity \"$NAME\" is already in the login keychain."
+# codesign builds the certificate chain from the search list, so the keychain has to be on it.
+keychains=()
+while IFS= read -r line; do
+  line="${line#"${line%%[![:space:]]*}"}"
+  line="${line#\"}"
+  keychains+=("${line%\"}")
+done < <(security list-keychains -d user)
+if [[ " ${keychains[*]} " != *" $KEYCHAIN "* ]]; then
+  security list-keychains -d user -s "${keychains[@]}" "$KEYCHAIN"
+fi
+
+if [ -n "${HAS_IDENTITY:-}" ]; then
+  echo "The identity \"$NAME\" is already in $KEYCHAIN."
   exit 0
 fi
 
@@ -35,18 +58,14 @@ CNF
 openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
   -keyout "$WORK/key.pem" -out "$WORK/cert.pem" -config "$WORK/openssl.cnf" 2>/dev/null
 
-# macOS `security` cannot read OpenSSL 3's default PKCS#12 algorithms, so the bundle is written with
-# the older ones it does read.
+# macOS `security` cannot read OpenSSL 3's default PKCS#12 algorithms.
 openssl pkcs12 -export -inkey "$WORK/key.pem" -in "$WORK/cert.pem" -name "$NAME" \
   -out "$WORK/identity.p12" -passout pass:timetrack \
   -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 2>/dev/null
 
-# `-T /usr/bin/codesign -A` puts codesign in the private key's ACL, so signing a build never asks for
-# the login password either.
-security import "$WORK/identity.p12" -k "$HOME/Library/Keychains/login.keychain-db" \
-  -P timetrack -T /usr/bin/codesign -A
+security import "$WORK/identity.p12" -k "$KEYCHAIN" -P timetrack -T /usr/bin/codesign
+# Without the partition list codesign asks for the keychain password in a dialog, and fails over SSH.
+security set-key-partition-list -S apple-tool:,apple: -s -k "$(cat "$PASSWORD_FILE")" "$KEYCHAIN" >/dev/null
 
-echo
-echo "Imported \"$NAME\"."
-echo "The next \`cargo\` build signs the binary with it as \"$IDENTIFIER\"."
-echo "Answer \"Always Allow\" once per keychain item after that, and it holds."
+echo "Created \"$NAME\" in $KEYCHAIN."
+echo "Every dev build is now signed with it. Answer \"Always Allow\" once per keychain item on the next start."

@@ -44,34 +44,49 @@ identity below is what stops that.
 
 ### The signing identity, on macOS
 
-Run this once per machine:
+Run this once per machine. It needs no login password and works over SSH:
 
 ```bash
 apps/timetrack/src-tauri/tools/macos-dev-identity.sh
 ```
 
-It creates a self-signed code-signing certificate in the login keychain, and the cargo runner in
-`src-tauri/.cargo/config.toml` signs every dev build with it.
+It creates a self-signed code-signing certificate in a keychain of its own
+(`~/Library/Keychains/timetrack-dev-signing.keychain-db`, password in
+`~/.config/timetrack/dev-signing-keychain-password`) and puts that keychain on the search list.
+`tools/macos-dev-sign.sh` signs a build with it:
 
-Without it the dev binary is unsigned, and macOS has nothing stable to identify the app by. Two
-grants then break at each rebuild:
+- `yarn timetrack` (`tauri dev`) - the cargo runner in `src-tauri/.cargo/config.toml` signs the
+  binary before each start.
+- A debug `.app` - `npx nx run timetrack-app:tauri:dev-app` bundles and signs it. Without node,
+  run `tools/macos-dev-sign.sh target/debug/bundle/macos/Timetrack.app` in `src-tauri` after
+  `tauri build --debug --bundles app`.
+
+An unsigned or ad-hoc build is identified by its file hash, which every build changes. Two grants
+then break at each rebuild:
 
 - **Every keychain item** asks for the login password again. "Always Allow" writes the binary's
-  identity into the item's ACL, and an unsigned binary's identity is its file hash, which the next
-  `cargo` build changes. The app reads four items on boot, so this is four prompts each start.
-- **The Accessibility permission** has to be granted again, for the same reason.
+  identity into the item's ACL, and the app reads several items on boot.
+- **The Accessibility and local network permissions** have to be granted again.
 
-A certificate gives the binary a designated requirement that names the certificate rather than the
-file, so both grants hold. Answer "Always Allow" once per keychain item after the first signed
-build.
+A certificate gives every build the designated requirement
+`identifier "io.ethlete.timetrack" and certificate leaf = H"…"`, so both grants hold. The first
+signed start asks once per item; answer "Always Allow". A release build has its own certificate, so
+dev and release each hold their own grant on the same items.
 
-To undo it, delete the identity from Keychain Access, or:
+Dev and release builds share the keychain service and the data directory, both keyed by
+`io.ethlete.timetrack`.
+
+To undo it:
 
 ```bash
-security delete-identity -c "Timetrack Dev Signing"
+security delete-keychain ~/Library/Keychains/timetrack-dev-signing.keychain-db
+rm ~/.config/timetrack/dev-signing-keychain-password
 ```
 
-`tauri build` signs nothing by itself. Set `APPLE_SIGNING_IDENTITY` to sign a bundle.
+An identity named "Timetrack Dev Signing" in the login keychain is from an earlier version of the
+script and unused: `security delete-identity -c "Timetrack Dev Signing" ~/Library/Keychains/login.keychain-db`.
+
+A plain `tauri build` signs ad-hoc at most. Set `APPLE_SIGNING_IDENTITY` to sign a bundle.
 
 ## Running it
 

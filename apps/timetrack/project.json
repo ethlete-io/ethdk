@@ -134,6 +134,17 @@
         "command": "tauri build --features transcribe",
         "cwd": "apps/timetrack"
       }
+    },
+    "tauri:dev-app": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "tauri build --debug --bundles app --features transcribe",
+          "src-tauri/tools/macos-dev-sign.sh src-tauri/target/debug/bundle/macos/Timetrack.app"
+        ],
+        "parallel": false,
+        "cwd": "apps/timetrack"
+      }
     }
   }
 }
