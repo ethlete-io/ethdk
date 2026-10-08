@@ -109,6 +109,8 @@ Status: done (cf60c5882). The deletions of the old directive files landed in cfc
 - Replace the opener setup, the `DISABLED` bindings and the labels injector in `row-edit-surface.ts`.
 - Run the timetrack snapshot before and after (see AGENTS.md). Run the timetrack e2e suite.
 
+Status: done (d82d772df). The timetrack snapshot could not run: it reads rows from the running app, and neither the installed app nor a dev build was up.
+
 ### 4. Docs, stories, tests
 
 - Rewrite "Edit surface", "Fields", "Extending the edit surface", "Actions" and "Edit-surface feature host" in
