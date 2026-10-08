@@ -118,6 +118,8 @@ Status: done (cf60c5882). The deletions of the old directive files landed in cfc
 - Rewrite `libs/components/src/scenarios/scheduler-composition.scenario.spec.ts` for the new shape.
 - Changesets for `@ethlete/components` (breaking) and `timetrack-app`. Use the `changeset` skill for the levels.
 
+Status: done (4bf442c3c). The `timetrack-app` changeset belongs to phase 3.
+
 ## Decided questions (2026-10-08)
 
 - `<et-scheduler>` uses the new opener from phase 1. There is one code path for a registered surface.
