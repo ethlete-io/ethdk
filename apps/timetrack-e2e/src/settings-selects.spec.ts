@@ -36,7 +36,7 @@ test.describe('the settings selects', () => {
     await page.goto('/#/settings');
 
     await page.locator('[data-price-preset] [role=combobox]').click();
-    await page.getByRole('option', { name: 'claude-code · claude-opus-5-5' }).click();
+    await page.getByRole('option', { name: 'claude-opus-5-5' }).click();
     await page.locator('[data-price-add]').click();
 
     await expect(page.locator('[data-model-price="claude-opus-5-5"]')).toContainText(

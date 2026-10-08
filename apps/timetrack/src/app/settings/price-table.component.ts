@@ -98,8 +98,12 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
             placeholder="Fill from a known model"
             data-price-preset
           >
-            @for (preset of PRESETS; track preset.key) {
-              <et-select-option [value]="preset.key" [label]="preset.label" />
+            @for (group of PRESET_GROUPS; track group.provider) {
+              <et-select-option-group [label]="group.provider">
+                @for (preset of group.presets; track preset.key) {
+                  <et-select-option [value]="preset.key" [label]="preset.model" />
+                }
+              </et-select-option-group>
             }
           </et-select>
         </et-form-field>
@@ -169,10 +173,15 @@ export class PriceTableComponent {
   protected readonly WHY = WHY;
   protected readonly PROVIDERS = PROVIDERS;
   protected readonly PRESETS_CHECKED = MODEL_PRICE_PRESETS_CHECKED;
-  protected readonly PRESETS = MODEL_PRICE_PRESETS.map((preset) => ({
-    key: presetKey(preset),
-    label: `${preset.provider} · ${preset.model}`,
-  }));
+  protected readonly PRESET_GROUPS = [...new Set(MODEL_PRICE_PRESETS.map((preset) => preset.provider))].map(
+    (provider) => ({
+      provider,
+      presets: MODEL_PRICE_PRESETS.filter((preset) => preset.provider === provider).map((preset) => ({
+        key: presetKey(preset),
+        model: preset.model,
+      })),
+    }),
+  );
 
   protected provider = signal<string>(CLAUDE_CODE_PROVIDER);
   protected presetKey = signal('');
