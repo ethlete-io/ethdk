@@ -40,6 +40,10 @@ describe('createV2DropzoneUpload', () => {
     URL.revokeObjectURL = vi.fn();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('handle (genuine V2QueryClient creator)', () => {
     let injector: Injector;
 
@@ -144,14 +148,19 @@ describe('createV2DropzoneUpload', () => {
     });
 
     it('stops tracking the query after dispose', async () => {
+      vi.useFakeTimers();
+
       const handle = createHandle({ mock: { delay: 20, response: { uuid: 'uuid-late' } } });
 
       handle.execute();
-      await flush();
+      TestBed.tick();
+      await vi.advanceTimersByTimeAsync(0);
+      TestBed.tick();
+      await vi.advanceTimersByTimeAsync(0);
       expect(handle.state()).toBe('uploading');
 
       handle.dispose();
-      await settle(30);
+      await vi.advanceTimersByTimeAsync(30);
       TestBed.tick();
 
       expect(handle.value()).toBeNull();

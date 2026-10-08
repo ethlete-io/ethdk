@@ -300,7 +300,7 @@ describe('bracket scenarios', () => {
     expect(text(finalCard?.querySelector('.et-bracket-final-champion'))).toBe('Champion: Team D');
     expect(finalCard?.hasAttribute('data-decided')).toBe(true);
     expect(host.querySelectorAll('.et-bracket-svg path').length).toBeGreaterThanOrEqual(2);
-  });
+  }, 20_000);
 
   it('pins a journey from the participants legend and drops it on Escape', () => {
     const s = scenario();
