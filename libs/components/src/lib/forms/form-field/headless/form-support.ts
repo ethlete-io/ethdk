@@ -37,6 +37,8 @@ const formSupportFactory = () => {
   const warningDimensions = signalElementDimensions(warningContent);
   const hintDimensions = signalElementDimensions(hintContent);
   const counterDimensions = signalElementDimensions(counterContent);
+  const hostDimensions = signalElementDimensions(inject<ElementRef<HTMLElement>>(ElementRef));
+  const hostShown = computed(() => (hostDimensions().offset?.width ?? 0) > 0);
 
   const effectiveErrors = computed<readonly ValidationError.WithOptionalFieldTree[]>(() => {
     const parseMessage = formFieldDir.parseError() ? formFieldDir.parseErrorMessage() : null;
@@ -163,11 +165,18 @@ const formSupportFactory = () => {
     }
   });
 
-  // support content that is already there when the control first lays out (also one mounted
-  // hidden and revealed later) must not animate in, so this waits a frame past its first layout
+  // support content that is already there when the control lays out - first, or again after a
+  // hidden ancestor (an inactive tab panel) shows it - must not animate in, so this waits a frame
+  // past that layout and re-arms whenever the host is hidden
   const supportCanAnimate = signal(false);
 
   effect((onCleanup) => {
+    if (!hostShown()) {
+      supportCanAnimate.set(false);
+
+      return;
+    }
+
     if (supportCanAnimate() || activeContentWidth() === 0) return;
 
     onCleanup(nextFrame(() => supportCanAnimate.set(true)));

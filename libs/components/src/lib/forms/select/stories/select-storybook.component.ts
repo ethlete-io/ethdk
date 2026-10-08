@@ -15,6 +15,7 @@ import {
   FormFieldLabelMode,
   FormFieldSize,
 } from '../../form-field';
+import { TAB_IMPORTS } from '../../../tabs/tabs.imports';
 import { SELECT_IMPORTS } from '../select.imports';
 
 const FRUIT_OPTIONS = [
@@ -114,6 +115,57 @@ export class FormFieldSelectStorybookComponent {
     readonly(s.value, () => this.readonly());
     required(s.value, { when: () => this.required(), message: 'This field is required' });
   });
+}
+
+const ISSUE_TYPES = ['Story', 'Epic', 'Task', 'Bug'] as const;
+
+@Component({
+  selector: 'et-sb-form-field-select-in-tabs',
+  template: `
+    <div [etProvideColor]="color()" class="flex max-w-xl flex-col p-8 font-sans">
+      <et-tab-group>
+        <et-tab label="Tickets">
+          <div class="flex flex-col py-6">
+            <et-form-field appearance="underline" size="sm">
+              <et-label>A parent may be</et-label>
+              <et-select [(value)]="parentTypes" placeholder="Any open issue in the project" multiple>
+                <input etSelectSearch placeholder="Search types" />
+                @for (type of ISSUE_TYPES; track type) {
+                  <et-select-option [value]="type">{{ type }}</et-select-option>
+                }
+              </et-select>
+              <et-hint>Empty offers every open issue in the project.</et-hint>
+            </et-form-field>
+          </div>
+        </et-tab>
+        <et-tab label="Projects">
+          <div class="flex flex-col py-6">
+            <et-form-field appearance="underline" size="sm">
+              <et-label>Projects</et-label>
+              <et-select [(value)]="projects" placeholder="Pick the projects you work in" multiple>
+                <input etSelectSearch placeholder="Search projects" />
+                @for (type of PROJECTS; track type) {
+                  <et-select-option [value]="type">{{ type }}</et-select-option>
+                }
+              </et-select>
+              <et-hint>Without one of these, a branch name has to carry the whole issue key to be read.</et-hint>
+            </et-form-field>
+          </div>
+        </et-tab>
+      </et-tab-group>
+    </div>
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [...FORM_FIELD_IMPORTS, ...SELECT_IMPORTS, ...TAB_IMPORTS, ProvideColorDirective],
+})
+export class FormFieldSelectInTabsStorybookComponent {
+  public color = input('brand');
+
+  protected readonly ISSUE_TYPES = ISSUE_TYPES;
+  protected readonly PROJECTS = ['ABC', 'XYZ'] as const;
+
+  protected parentTypes = signal<string[]>(['Story', 'Epic']);
+  protected projects = signal<string[]>(['ABC']);
 }
 
 @Component({

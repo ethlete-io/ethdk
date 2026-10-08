@@ -5,6 +5,7 @@ const INPUT_STORY_ID = 'components-forms-input--default';
 const DESCRIPTION_STORY_ID = 'components-forms-input--description';
 const WARNING_STORY_ID = 'components-forms-warning--default';
 const COUNTER_STORY_ID = 'components-forms-counter--default';
+const SELECT_IN_TABS_STORY_ID = 'components-forms-select--in-tabs';
 
 interface FieldParts {
   field: Locator;
@@ -274,6 +275,28 @@ test.describe('form-field / support region', () => {
 
     expect(await supportTransitions(field)).toEqual([]);
     await expectSupportFitsActiveMessage(field);
+  });
+
+  test('a hint in a hidden tab panel does not animate in when its tab is first shown', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const projects = root.locator('et-form-field').filter({ hasText: 'Projects' });
+
+    await root.getByRole('tab', { name: 'Projects' }).click();
+
+    expect(await supportTransitions(projects)).toEqual([]);
+    await expectSupportFitsActiveMessage(projects);
+  });
+
+  test('a hint does not animate in again when its tab is shown again', async ({ page }) => {
+    const root = await openStory(page, SELECT_IN_TABS_STORY_ID);
+    const parentTypes = root.locator('et-form-field').filter({ hasText: 'A parent may be' });
+
+    await root.getByRole('tab', { name: 'Projects' }).click();
+    await expect(parentTypes).toBeHidden();
+    await root.getByRole('tab', { name: 'Tickets' }).click();
+
+    expect(await supportTransitions(parentTypes)).toEqual([]);
+    await expectSupportFitsActiveMessage(parentTypes);
   });
 
   test('a message that replaces another later animates in', async ({ page }) => {

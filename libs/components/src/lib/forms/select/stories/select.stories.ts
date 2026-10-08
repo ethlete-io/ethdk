@@ -5,6 +5,7 @@ import {
   FormFieldSelectAddNewStorybookComponent,
   FormFieldSelectAsyncStorybookComponent,
   FormFieldSelectCountryStorybookComponent,
+  FormFieldSelectInTabsStorybookComponent,
   FormFieldSelectManyOptionsStorybookComponent,
   FormFieldSelectObjectValuesStorybookComponent,
   FormFieldSelectOptionTemplateStorybookComponent,
@@ -200,4 +201,13 @@ export const NestedElevation: StoryObj<SelectNestedElevationStorybookComponent> 
     applicationConfig({ providers: [provideOverlay()] }),
   ],
   render: () => ({ template: `<et-sb-select-nested-elevation />` }),
+};
+
+/**
+ * Multi-selects with hints in a tab group, which keeps every panel mounted and hides the inactive
+ * ones. Switching tabs shows each hint in place; it only animates when the message itself changes.
+ */
+export const InTabs: StoryObj<FormFieldSelectInTabsStorybookComponent> = {
+  decorators: [moduleMetadata({ imports: [FormFieldSelectInTabsStorybookComponent] })],
+  render: () => ({ template: `<et-sb-form-field-select-in-tabs />` }),
 };
