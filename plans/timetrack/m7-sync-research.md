@@ -151,7 +151,12 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      in the app, `peer.rs`, `db.rs`, the e2e fake. Tests: unit spec for the translation (prefix,
      no local checkout, Windows and `/Users` paths), `cargo test` for the map in a pull, the agent op
      `peers.received` on tank.
-   - 4c. Read fold, pure: `mergeDayEvents({ local, received, keys })` returns one list, each event
+   - 4c. Done (7289dae85). `mergeDayEvents({ local, received, keys })` (`stream/merge-day-events.ts`)
+     takes `ReceivedRange` and this machine's `CheckoutKeys`, returns `OriginEvent[]` (`origin: 'local'`
+     or the peer's id and name) sorted by `at`. Agent sessions fold by their key too. Commits fold only
+     across origins, so two local checkouts of one sha stay as today. `translatePeerPath` now keeps a
+     trailing separator (`workedIn`). `private-interval` has source `private`. Nothing reads it yet.
+     Read fold, pure: `mergeDayEvents({ local, received, keys })` returns one list, each event
      tagged with its origin. Peer paths go through 4b. Shared facts count once: calendar occurrence,
      merge-request event id, prompt id, turn id. Commits fold by sha: the copy with no `authoredAt`
      (the reflog wrote it) describes the row; a copy with `authoredAt` stays as presence at the pull
