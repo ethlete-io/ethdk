@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.0-next.68
+
+### Patch Changes
+
+- A form field's hint, warning or error shown from the start no longer appears a frame late and shifts the layout below it.
+- A hint, warning or error shown from a form field's first render no longer animates in, also when the field mounts hidden and is revealed later.
+- A form field's hint, warning or error no longer animates in again each time a hidden ancestor, such as an inactive tab panel, shows the field.
+- A select whose value is an empty string no option matches shows its placeholder, and an empty select keeps its line height instead of collapsing to zero.
+- An `et-select-option` without projected content renders its `label` as the row text instead of an empty row.
+- The time picker's panel no longer reserves a baseline gap under the dial, so its size no longer depends on the surrounding font or on the readout it shows.
+- The time picker dial handles now have hover, dragging and disabled states that fade in. The picker has a new `disabled` input, which the time and date-time inputs forward.
+
 ## 1.0.0-next.67
 
 ### Major Changes

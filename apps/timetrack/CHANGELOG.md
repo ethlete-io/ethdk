@@ -1,5 +1,46 @@
 # timetrack-app
 
+## 0.2.0-next.10
+
+### Minor Changes
+
+- Copy a day or a band as an anonymous report of the stand-in and auto mode decisions, from the Debug dialog or the band menu.
+- Price agent spend from a built-in USD list, so a known model shows a cost with no setup; your own table now holds overrides and unknown models.
+- Timetrack shows dates as day-month, month-day or ISO and clock times as 24-hour or 12-hour, set in Settings. The default is day-month and 24-hour.
+- The debug report can be saved as a JSON file from the day debug panel, anonymous by default or with names and the raw day inputs.
+- The Debug dialog lists the model calls auto mode made since the app started, with what each sent and what came back.
+- Timetrack release builds carry a shared Google OAuth client, so connecting Calendar needs only Connect. Your own client stays available as an override, and a revoked token shows "Reconnect Google Calendar".
+- Settings now shows what call transcription is doing, its last error and latest text, and the language select offers every language whisper knows.
+- A band that reads Not yet named now offers Create a ticket in its menu, and the filed key names the band.
+
+### Patch Changes
+
+- Auto mode and the automatic stand-ins now act on today while the day screen shows another day. Before, a reviewer left on a past day, which the app restores at start, stopped both for today.
+- Price the days before the built-in price list was checked with each model's first built-in price.
+- "Add an entry" drafts on the day on screen, and a hand-written row stored under a day it does not lie in is drawn on that day at the same clock time.
+- A finished day freezes its rows only once this app booked it; a day only another machine booked keeps being re-cut. `withFrozenRows` takes the day's `ledger` instead of `held`.
+- A checkout the day saw only through its window, with no commit, branch switch, editor heartbeat or agent session, now takes the branch its reflog names. Its work gets an automatic stand-in instead of staying `Not yet named`.
+- The store gets a machine id and records every change to a collected event, so a paired machine can later pull only what it has not seen.
+- macOS now collects desk input from the seconds since the last keyboard or pointer event, without any extra permission.
+- On macOS, Timetrack now explains why it asks for local network access, and declares the `_timetrack._tcp` Bonjour service it uses to find your paired machines.
+- On macOS the git repository search no longer walks Desktop, Documents, Downloads, Library, Movies, Music or Pictures in the home directory, so the app stops asking for access to them; a root configured inside one is still searched.
+- Timetrack shows the work done on a paired machine as rows of the day, read through this machine's private project links and exclusion rules.
+- Clicking "N connected" in the sidebar opens the paired machines, each renamable, with its last seen, clock offset and last sync.
+- Settings has a "Paired machines" section to pair, forget and check other machines, and the sidebar shows how many are connected.
+- The window can pair and forget machines, the host greets paired machines every minute, and a failed pairing says why.
+- Timetrack advertises itself on the LAN over mDNS, lists the machines it finds with `peers.discovered`, lets `pair.accept` take a discovered `machineId`, and keeps a paired machine's address current.
+- Pair two machines on the LAN with a 6-digit code over mutual TLS, and measure each paired machine's clock offset with a hello.
+- Timetrack sends each checkout's repository key with a pull, and `translatePeerPath` maps a paired machine's path onto the local checkout of the same repository.
+- A paired machine now pulls the other machine's own events after each heartbeat and keeps them apart from its own, and deletions on the other machine reach the copy. The agent op `peers.pull` runs one pull on demand.
+- Group the model price presets by agent and show only the model name in each option.
+- Show the model price preset prompt as the select's placeholder instead of an empty first option.
+- A commit this machine only received by a pull, merge or reset is dated by when it arrived, so another machine's work no longer draws a band here.
+- Timetrack reads the events a paired machine collected for a time range, under the name that machine was paired by. The agent op `peers.received` returns them.
+- "Review the day" on the reminder banner opens the earliest band still waiting for a yes or a no. With the day already on screen, the button did nothing before.
+- Settings pick the suggestion language and currency from lists, and fill a model's prices from known Claude and Codex presets. The "does not read" pill is now filled like "reads".
+- The time picker in a row's edit surface steps in 15-minute increments instead of 5.
+- A band nobody was at here reads "Worked on <machine>" when a person was at a paired machine meanwhile, and raises no unattended check. It still books nothing.
+
 ## 0.2.0-next.9
 
 ### Minor Changes
