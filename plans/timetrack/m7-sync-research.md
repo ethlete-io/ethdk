@@ -60,7 +60,7 @@ Tom decided all six on 2026-10-08, each as recommended in the table below, plus 
 
 0. Bugs a-e (S-M, 2-3 d).
 1. ADR + migration 20: event identity, dedupe policy, canonical repo key (S, 1-2 d).
-2. Pairing and transport, a "Paired machines" view with last-seen; verify on ethlete-mac (M, 3-5 d).
+2. Pairing and transport, a "Paired machines" view with last-seen, and a status item in the sidebar next to Auto mode that shows the connected Timetrack instances (Tom, 2026-10-08); verify on ethlete-mac (M, 3-5 d).
 3. Read-only overlay, the first user value: the peer sends presence and attendance intervals, booked
    rows and stream labels. "Nobody was here" becomes "Worked on MacBook". No row changes (S-M, 2-3 d).
 4. Full merge: replication per origin into `readDay$`, path aliases, commit dedupe, attendance across
