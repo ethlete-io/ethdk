@@ -71,8 +71,8 @@ copies of one fact fold when a day is read. Slice 1 is done (migration 20, `repo
      mutual-TLS LAN listener with pinned certificates and a configurable port, a `hello` exchange that
      measures clock offset and updates last-seen. Agent ops `peers.list`, `pair.offer`, `pair.accept`,
      `peers.forget`, so pairing is verifiable without a click.
-   - 2b. Discovery: mDNS `_timetrack._tcp` advertise and browse (`mdns-sd`), manual host:port.
-   - 2c. UI: "Paired machines" in Settings (pair, forget, last-seen, clock offset) and the sidebar
+   - 2b. Done (365e2354b), op `peers.discovered`. Discovery: mDNS `_timetrack._tcp` advertise and browse (`mdns-sd`), manual host:port.
+   - 2c. In progress. UI: "Paired machines" in Settings (pair, forget, last-seen, clock offset) and the sidebar
      status item next to Auto mode. Fake ports for the e2e suite.
    - 2d. macOS: `NSLocalNetworkUsageDescription`, `NSBonjourServices`; `cargo test` on ethlete-mac;
      pair this PC with the MacBook through the agent ops and see each other's hello.
