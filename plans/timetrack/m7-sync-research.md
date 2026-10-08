@@ -33,14 +33,14 @@ copies of one fact fold when a day is read. Slices 1 and 2 are done. Slice 3 is 
 
 ## Decisions, one recommendation each
 
-| Decision     | Recommendation                                                                                                                                                                                                | Code facts                                                                                                                                            |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1 Day owner  | The machine you book from owns the day. The claim travels to the peers; the Tempo marker (description suffix + machine id, open M6 decision) is the lock while a peer is offline.                             | Ledger is local (`db.rs:16`); marker hard-coded `none` (`sync.ts:177`); `subtractForeignTime` matches per issue, not per interval (`subtract.ts:32`). |
-| 2 Clock skew | Measure the offset at each handshake. Under 2 min: merge. 2-10 min: correct and warn. Over 10 min: refuse and name the machine.                                                                               | Rows are 15-minute steps (ADR 0017).                                                                                                                  |
-| 3 Stream key | One stream per checkout, keyed by the normalized `origin` URL, with a path alias per machine (dir name, manual alias as fallback). Rules match through the alias.                                             | `streamKey` is `repo:<abs path>` (`block.ts:91`); rules keyed by path (`settings/parse.ts:112`); commit dedupe key holds the path (`dedupe.ts`).      |
-| 4 Merge mode | Continuous pull with a cursor per origin. No freeze while a peer is behind for that day. A booked day that changes shows "changed after booking" and is not re-cut.                                           | The day is re-cut every tick; the ADR 0038 freeze drops late arrivals.                                                                                |
-| 5 Peer needs | The same full app on every machine, credentials set up per machine; secrets never travel. The merge works with no Jira, Tempo or Google. Settings and stand-ins stay on the booking machine until slice 6.    | Secrets allowlist `secrets.rs:9`.                                                                                                                     |
-| 6 Retention  | Raw events, filtered at the sender: exclusions applied, private-path time as a bare interval, transcripts never sent. Received events follow the 30-day retention by event time; spend stays with its origin. | Private link per path (`build-rows.ts:55`); ADR 0002 keeps spend.                                                                                     |
+| Decision     | Recommendation                                                                                                                                                                                                 | Code facts                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Day owner  | The machine you book from owns the day. The claim travels to the peers; the Tempo marker (description suffix + machine id, open M6 decision) is the lock while a peer is offline.                              | Ledger is local (`db.rs:16`); marker hard-coded `none` (`sync.ts:177`); `subtractForeignTime` matches per issue, not per interval (`subtract.ts:32`). |
+| 2 Clock skew | Measure the offset at each handshake. Under 2 min: merge. 2-10 min: correct and warn. Over 10 min: refuse and name the machine.                                                                                | Rows are 15-minute steps (ADR 0017).                                                                                                                  |
+| 3 Stream key | One stream per checkout, keyed by the normalized `origin` URL, with a path alias per machine (dir name, manual alias as fallback). Rules match through the alias.                                              | `streamKey` is `repo:<abs path>` (`block.ts:91`); rules keyed by path (`settings/parse.ts:112`); commit dedupe key holds the path (`dedupe.ts`).      |
+| 4 Merge mode | Continuous pull with a cursor per origin. No freeze while a peer is behind for that day. A booked day that changes shows "changed after booking" and is not re-cut.                                            | The day is re-cut every tick; the ADR 0038 freeze drops late arrivals.                                                                                |
+| 5 Peer needs | The same full app on every machine, credentials set up per machine; secrets never travel. The merge works with no Jira, Tempo or Google. Settings and stand-ins stay on the booking machine until slice 6.     | Secrets allowlist `secrets.rs:9`.                                                                                                                     |
+| 6 Retention  | Raw events, filtered at the receiver at read time (its own exclusion rules and private links); transcripts never sent. Received events follow the 30-day retention by event time; spend stays with its origin. | Private link per path (`build-rows.ts:55`); ADR 0002 keeps spend.                                                                                     |
 
 - **Discovery and pairing:** mDNS `_timetrack._tcp` (`mdns-sd` crate), manual host:port as fallback.
   A 6-digit code shown on one machine and typed on the other authenticates a key exchange (PAKE or a
@@ -117,22 +117,9 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
    (work done only on the Mac shows as rows on the PC). Retention of `received_event` by event time is
    already in `store.rs`. A step that changes rows runs `timetrack snapshot` before and `--compare`
    after, and explains every changed row.
-   - 4a. Sender filter, first: today `changes_after` (`peer.rs`) sends every `collected_event` row
-     as stored, and tank already holds 86,555 unfiltered MacBook events. Exclusion rules run before an
-     event is stored, and transcripts live in `transcript_chunk`, which `changes_after` never reads, so
-     the missing parts are private paths and rules added after collection. New `peer/filter.rs` reads
-     `projectLinks` and `exclusionRules` from `settings_document`. An event whose `repoPath`, `cwd`,
-     `workedIn`, `worktree` or `directory` lies under a private link, or a `window-focus` whose title
-     names a private checkout's directory, goes out as a bare interval: new kind `private-interval`,
-     `at` only. A current app-id rule drops the event; a title-pattern rule (`regex` crate) blanks the
-     title, and a pattern that does not compile blanks every title (fail closed). `Frame::Changes`
-     carries a hash of the filter inputs; a receiver that sees a new hash deletes that machine's
-     received rows and resets its `peer_cursor` to 0, so the next pull is the filtered form.
-     Migration 23 clears `received_event` and `peer_cursor` once. Files: `peer.rs`, `peer/filter.rs`,
-     `db.rs`, `Cargo.toml`. Tests: `cargo test` over loopback (private repo path, agent cwd under a
-     private root, private window title, app-id rule, title rule, bad pattern, a filter change causes
-     a re-pull, no transcript text in any frame). Live: `peers.pull` on tank, then `peers.received`
-     holds no private path.
+   - 4a. Dropped (Tom, 2026-10-09). Both machines are his own and received events sit in the same
+     encrypted store, so the receiver applies its own private links and exclusion rules at read time
+     (4d) instead of the sender filtering. Transcripts are never sent.
    - 4b. Done (571b3c3d7). Tom, 2026-10-08: `streamKey` stays `repo:<local path>`; a peer path maps
      onto the local checkout with the same origin key (open question 1). Landed as migration 23, since
      4a is on hold; 4a takes the next free number. `readRepoKey$` reads the key; the git collector
@@ -165,7 +152,16 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      `libs/timetrack/src/lib/stream/merge-day-events.ts`, `model/event.ts` (`origin`,
      `private-interval`), `store/dedupe.ts`. Tests: unit spec per fold rule, including the 10-08
      shape (61 Mac commits pulled into tank).
-   - 4d. The merge in the day, first visible value. `streamDay` takes the merged list and builds
+   - 4d. Done (4fc778680). `streamDay` reads each origin of an `OriginEvent` list as its own day
+     (`streamOrigin`), joins the blocks with `blocksFromSpans`, unions presence, and keeps a break or
+     gap only where every other origin was away. `StreamDay.peerLanes` hands each peer's blocks by lane
+     to `buildRows`, so a band is attended where its own machine saw a person; attendance from local
+     events stays local, so 3c's "Worked on" holds. Both readers merge with `mergeDayEvents`, which now
+     takes this machine's exclusion rules (`exclusionFilter`); private links apply as for local events.
+     `received_between` returns `ownRepoKeys`. Snapshot 10-02..10-08: 12 new unnamed rows on 10-03/04
+     in `repo:/Users/tom/dev/ethlete-sdk` (the Mac sends no keys yet, so its paths stay its own until
+     the 4i build); 10-08 is frozen and unchanged (4h). `private-interval` is unused since 4a is dropped.
+     Plan as written: The merge in the day, first visible value. `streamDay` takes the merged list and builds
      presence, focus and blocks per origin, so a focused window on the Mac never ends a block on the
      PC; the blocks of all origins go into one `buildRows`. Day presence is the union of the origins;
      a `private-interval` is private time with no link named. Both day readers (`read-day.ts`,
