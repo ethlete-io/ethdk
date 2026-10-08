@@ -92,8 +92,12 @@ const rateOf = (value: number | null) => (value !== null && Number.isFinite(valu
       <div class="flex flex-wrap items-end gap-3">
         <et-form-field class="min-w-50 max-w-96 grow" appearance="underline" size="sm">
           <et-label>Preset</et-label>
-          <et-select [(value)]="presetKey" (valueChange)="applyPreset($event)" data-price-preset>
-            <et-select-option value="" label="Fill from a known model" />
+          <et-select
+            [(value)]="presetKey"
+            (valueChange)="applyPreset($event)"
+            placeholder="Fill from a known model"
+            data-price-preset
+          >
             @for (preset of PRESETS; track preset.key) {
               <et-select-option [value]="preset.key" [label]="preset.label" />
             }
