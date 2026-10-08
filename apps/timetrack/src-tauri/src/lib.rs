@@ -225,6 +225,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("timetrack failed to start")
         .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if matches!(event, tauri::RunEvent::Reopen { .. }) {
+                tray::reveal(app);
+            }
+
             // A quit from the tray passes through no close, so this is the only place a resize made
             // since the window was last put away is written.
             if matches!(event, tauri::RunEvent::Exit) {
