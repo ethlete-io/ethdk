@@ -10,6 +10,9 @@ use std::time::Duration;
 /// splits the block. The Wayland source registers the same threshold with the compositor.
 const IDLE_THRESHOLD_MS: i64 = 5 * 60_000;
 
+/// The Wayland source registers the same threshold for desk input.
+const INPUT_IDLE_THRESHOLD_MS: i64 = 60_000;
+
 /// macOS pushes application activations but never title changes, and a browser tab switch is a context
 /// switch, so the window is read on an interval instead.
 const POLL: Duration = Duration::from_secs(1);
@@ -77,11 +80,37 @@ fn frontmost() -> Option<Sample> {
     })
 }
 
-fn idle_ms() -> i64 {
-    let seconds =
-        CGEventSource::seconds_since_last_event_type(CGEventSourceStateID::CombinedSessionState, ANY_INPUT_EVENT);
+fn ms_since_last_input(state: CGEventSourceStateID) -> i64 {
+    let seconds = CGEventSource::seconds_since_last_event_type(state, ANY_INPUT_EVENT);
 
     (seconds * 1000.0) as i64
+}
+
+struct Readings {
+    idle_ms: i64,
+    input_idle_ms: i64,
+}
+
+/// Reads no event, so it needs neither the Accessibility nor the Input Monitoring permission.
+///
+/// Desk input reads the HID state, which counts only hardware: an event another process posts would
+/// read as somebody at the desk, which is the one thing desk input exists to rule out.
+fn read_idle() -> Readings {
+    Readings {
+        idle_ms: ms_since_last_input(CGEventSourceStateID::CombinedSessionState),
+        input_idle_ms: ms_since_last_input(CGEventSourceStateID::HIDSystemState),
+    }
+}
+
+/// Flips `idle` when `idle_ms` crosses `threshold`, and answers whether it did.
+fn crossed(idle: &mut bool, idle_ms: i64, threshold: i64) -> bool {
+    if *idle == (idle_ms >= threshold) {
+        return false;
+    }
+
+    *idle = !*idle;
+
+    true
 }
 
 fn trusted() -> bool {
@@ -103,6 +132,7 @@ struct Sampler {
     sink: WindowSource,
     emitted: Option<Sample>,
     idle: bool,
+    input_idle: bool,
     trusted: bool,
 }
 
@@ -119,6 +149,7 @@ impl Sampler {
             sink,
             emitted: None,
             idle: false,
+            input_idle: false,
             trusted,
         }
     }
@@ -137,21 +168,33 @@ impl Sampler {
             return;
         }
 
-        self.apply(now_ms(), idle_ms(), trusted(), frontmost);
+        self.apply(now_ms(), read_idle(), trusted(), frontmost);
     }
 
     /// The rules, over one set of readings. `frontmost` is only called when somebody is at the machine.
-    fn apply(&mut self, now: i64, idle_ms: i64, trusted: bool, frontmost: impl FnOnce() -> Option<Sample>) {
+    fn apply(&mut self, now: i64, readings: Readings, trusted: bool, frontmost: impl FnOnce() -> Option<Sample>) {
+        let Readings { idle_ms, input_idle_ms } = readings;
+
         // Input stopped `idle_ms` ago and the block ended with it — dating either transition now would
         // bill every break its first five minutes, and bill the machine for the poll it took to notice.
-        if self.idle != (idle_ms >= IDLE_THRESHOLD_MS) {
-            self.idle = !self.idle;
+        if crossed(&mut self.idle, idle_ms, IDLE_THRESHOLD_MS) {
             self.sink.push(
                 now - idle_ms,
                 if self.idle {
                     WindowEventPayload::IdleStart
                 } else {
                     WindowEventPayload::IdleEnd
+                },
+            );
+        }
+
+        if crossed(&mut self.input_idle, input_idle_ms, INPUT_IDLE_THRESHOLD_MS) {
+            self.sink.push(
+                now - input_idle_ms,
+                if self.input_idle {
+                    WindowEventPayload::InputIdle
+                } else {
+                    WindowEventPayload::InputActive
                 },
             );
         }
@@ -231,7 +274,22 @@ mod tests {
             sink: WindowSource::new(crate::lock::WindowLock::new()),
             emitted: None,
             idle: false,
+            input_idle: false,
             trusted: true,
+        }
+    }
+
+    fn presence(idle_ms: i64) -> Readings {
+        Readings {
+            idle_ms,
+            input_idle_ms: 0,
+        }
+    }
+
+    fn input(input_idle_ms: i64) -> Readings {
+        Readings {
+            idle_ms: input_idle_ms,
+            input_idle_ms,
         }
     }
 
@@ -243,7 +301,7 @@ mod tests {
     fn dates_the_idle_start_when_input_stopped() {
         let mut sampler = sampler();
 
-        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || None);
+        sampler.apply(60 * MINUTE, presence(7 * MINUTE), true, || None);
 
         let events = pushed(&sampler);
 
@@ -256,8 +314,10 @@ mod tests {
     fn dates_the_idle_end_when_input_returned() {
         let mut sampler = sampler();
 
-        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || None);
-        sampler.apply(70 * MINUTE, MINUTE / 2, true, || sample("com.apple.Safari", "Jira"));
+        sampler.apply(60 * MINUTE, presence(7 * MINUTE), true, || None);
+        sampler.apply(70 * MINUTE, presence(MINUTE / 2), true, || {
+            sample("com.apple.Safari", "Jira")
+        });
 
         let events = pushed(&sampler);
 
@@ -267,11 +327,71 @@ mod tests {
     }
 
     #[test]
+    fn dates_an_input_idle_when_input_stopped_a_minute_ago() {
+        let mut sampler = sampler();
+
+        sampler.apply(60 * MINUTE, input(MINUTE + 1000), true, || None);
+
+        let events = pushed(&sampler);
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].at_ms, 59 * MINUTE - 1000);
+        assert!(matches!(events[0].payload, WindowEventPayload::InputIdle));
+    }
+
+    #[test]
+    fn dates_an_input_active_when_input_returned() {
+        let mut sampler = sampler();
+
+        sampler.apply(60 * MINUTE, input(2 * MINUTE), true, || None);
+        sampler.apply(61 * MINUTE, input(400), true, || None);
+
+        let events = pushed(&sampler);
+
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[1].at_ms, 61 * MINUTE - 400);
+        assert!(matches!(events[1].payload, WindowEventPayload::InputActive));
+    }
+
+    #[test]
+    fn reports_input_once_per_transition() {
+        let mut sampler = sampler();
+
+        sampler.apply(0, input(10_000), true, || None);
+        sampler.apply(MINUTE, input(MINUTE + 10_000), true, || None);
+        sampler.apply(2 * MINUTE, input(2 * MINUTE + 10_000), true, || None);
+        sampler.apply(3 * MINUTE, input(0), true, || None);
+        sampler.apply(4 * MINUTE, input(0), true, || None);
+
+        let kinds: Vec<_> = pushed(&sampler)
+            .into_iter()
+            .map(|event| serde_json::to_value(&event).unwrap()["kind"].clone())
+            .collect();
+
+        assert_eq!(kinds, ["input-idle", "input-active"]);
+    }
+
+    #[test]
+    fn reports_input_idle_before_the_five_minute_presence_idle() {
+        let mut sampler = sampler();
+
+        sampler.apply(2 * MINUTE, input(2 * MINUTE), true, || None);
+        sampler.apply(6 * MINUTE, input(6 * MINUTE), true, || None);
+
+        let kinds: Vec<_> = pushed(&sampler)
+            .into_iter()
+            .map(|event| serde_json::to_value(&event).unwrap()["kind"].clone())
+            .collect();
+
+        assert_eq!(kinds, ["input-idle", "idle-start"]);
+    }
+
+    #[test]
     fn does_not_look_at_the_window_while_idle() {
         let mut sampler = sampler();
         let mut looked = false;
 
-        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || {
+        sampler.apply(60 * MINUTE, presence(7 * MINUTE), true, || {
             looked = true;
             None
         });
@@ -283,9 +403,13 @@ mod tests {
     fn emits_a_focus_sample_only_when_it_changes() {
         let mut sampler = sampler();
 
-        sampler.apply(0, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
-        sampler.apply(1000, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
-        sampler.apply(2000, 0, true, || {
+        sampler.apply(0, presence(0), true, || {
+            sample("com.microsoft.VSCode", "lib.rs - timetrack")
+        });
+        sampler.apply(1000, presence(0), true, || {
+            sample("com.microsoft.VSCode", "lib.rs - timetrack")
+        });
+        sampler.apply(2000, presence(0), true, || {
             sample("com.microsoft.VSCode", "window.rs - timetrack")
         });
 
@@ -300,7 +424,7 @@ mod tests {
         let mut sampler = sampler();
 
         sampler.sink.set_paused(true);
-        sampler.apply(60 * MINUTE, 7 * MINUTE, true, || {
+        sampler.apply(60 * MINUTE, presence(7 * MINUTE), true, || {
             sample("com.microsoft.VSCode", "lib.rs")
         });
 
@@ -311,11 +435,15 @@ mod tests {
     fn re_establishes_the_window_after_a_resume() {
         let mut sampler = sampler();
 
-        sampler.apply(0, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
+        sampler.apply(0, presence(0), true, || {
+            sample("com.microsoft.VSCode", "lib.rs - timetrack")
+        });
         sampler.sink.set_paused(true);
         sampler.tick();
         sampler.sink.set_paused(false);
-        sampler.apply(60_000, 0, true, || sample("com.microsoft.VSCode", "lib.rs - timetrack"));
+        sampler.apply(60_000, presence(0), true, || {
+            sample("com.microsoft.VSCode", "lib.rs - timetrack")
+        });
 
         let events = pushed(&sampler);
 
@@ -330,7 +458,7 @@ mod tests {
             ..sampler()
         };
 
-        sampler.apply(0, 0, true, || None);
+        sampler.apply(0, presence(0), true, || None);
 
         assert_eq!(sampler.sink.status().unwrap().kind, "macos-ax");
         assert_eq!(sampler.sink.status().unwrap().detail, None);

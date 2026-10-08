@@ -88,13 +88,13 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
     id: 'input',
     name: 'Desk input',
     reads:
-      'The Wayland idle notifier, at a one-minute threshold, to tell a prompt typed here from one sent from a phone.',
+      'The Wayland idle notifier, or on macOS the seconds since the last keyboard or pointer event, at a one-minute threshold, to tell a prompt typed here from one sent from a phone.',
     stores: 'Only that input stopped or returned, with the instant it happened. No keys and no content.',
     state: 'collecting',
-    detail: 'Only a Wayland compositor reports it. macOS does not collect it yet.',
+    detail: 'Only a Wayland compositor or macOS reports it.',
     collector: 'window',
     eventSource: 'input',
-    collectsOn: ['wayland-wlr'],
+    collectsOn: ['wayland-wlr', 'macos-ax', 'macos-app-only'],
   },
   {
     id: 'git',

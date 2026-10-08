@@ -106,7 +106,7 @@ test.describe('what the focused-window source reads on this machine', () => {
   });
 });
 
-/** Only the Wayland idle notifier reports desk input, so the row must not claim it anywhere else. */
+/** Only the Wayland idle notifier and macOS report desk input, so the row must not claim it anywhere else. */
 test.describe('the desk input row', () => {
   test('collects on a Wayland compositor', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, windowSource: WAYLAND_WLR });
@@ -115,7 +115,7 @@ test.describe('the desk input row', () => {
     await expect(row(page, 'input')).toContainText('collecting');
   });
 
-  test('is not running on macOS, and says why', async ({ page }) => {
+  test('collects on macOS, with or without the Accessibility permission', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
       windowSource: {
@@ -130,9 +130,19 @@ test.describe('the desk input row', () => {
     });
     await page.goto('/#/sources');
 
-    await expect(row(page, 'input')).toContainText('not running');
-    await expect(row(page, 'input')).toContainText('macOS does not collect it yet');
+    await expect(row(page, 'input')).toContainText('collecting');
     await expect(row(page, 'window')).toContainText('collecting');
+  });
+
+  test('is not running where no source reports it, and says why', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      windowSource: { kind: 'none', detail: 'no window source is implemented for this platform yet', capabilities: [] },
+    });
+    await page.goto('/#/sources');
+
+    await expect(row(page, 'input')).toContainText('not running');
+    await expect(row(page, 'input')).toContainText('Only a Wayland compositor or macOS reports it.');
   });
 });
 
