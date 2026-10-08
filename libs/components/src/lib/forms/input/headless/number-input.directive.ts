@@ -209,7 +209,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   protected handleBeforeInput(event: InputEvent) {
     const inputElement = this.nativeControl();
 
-    if (event.target !== inputElement) return;
+    if (!inputElement || event.target !== inputElement) return;
 
     const inserted = event.data ?? event.dataTransfer?.getData('text/plain') ?? '';
     const forbidden = this.decimals() === 0 ? WHOLE_NUMBER_FORBIDDEN_CHARACTERS : FORBIDDEN_CHARACTERS;
@@ -227,7 +227,7 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
   protected handleNativeInput(event: Event) {
     const inputElement = this.nativeControl();
 
-    if (event.target !== inputElement) return;
+    if (!inputElement || event.target !== inputElement) return;
 
     const textBeforeEdit = this.textBeforeEdit ?? `${this.displayValue()}`;
 
