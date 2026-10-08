@@ -89,12 +89,14 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
    changes (S-M, 2-3 d). In progress. Tom, 2026-10-08: the peer sends raw events per ADR 0039 (not
    derived windows), and booked rows are dropped from this slice (Tempo coverage already shows a
    booking from either machine; peer claims come in slice 5).
-   - 3a. Host pull. New `Frame` variants for "changes after my cursor": the server answers only for a
+   - 3a. Done (77f6f8fc8). Host pull. New `Frame` variants for "changes after my cursor": the server answers only for a
      paired fingerprint (same check as `answer_hello`) and sends a page of its own `collected_event`
      rows by `changed_seq` plus `deleted_event` tombstones. The client upserts into `received_event`,
      applies tombstones, and advances `peer_cursor` in one transaction. Pull after each heartbeat
      hello. Op `peers.pull` and a Tauri command. Rust tests over loopback, including paging and a
      tombstone.
+     Learned: a missed tombstone (retention) can leave a copy holding a key the peer has moved to a new
+     row, so an incoming row evicts any received row of that machine with its `dedupe_key`.
    - 3b. TS port: `eventsBetween$` gains the received events, each tagged with its machine id and
      name, and the e2e fake seeds them from `world.peers`.
    - 3c. Lib: `presenceWindows` per peer from its received events; `markAttendance` takes them as a
