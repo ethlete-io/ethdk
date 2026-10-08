@@ -89,6 +89,9 @@ export const createFakePorts = (): HostPorts => {
   const dedupeKeys = new Set(events.map(dedupeKeyOf));
   const cursorsByPass = new Map<AgentLogPass, Map<string, AgentSessionCursor>>();
   const ledger = new Map<string, SyncedWorklog[]>();
+
+  for (const entry of world.ledger) ledger.set(entry.day, [...(ledger.get(entry.day) ?? []), entry]);
+
   const edits = new Map<string, DayReviewEdits>(
     Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
   );

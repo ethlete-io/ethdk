@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { WorklogProposal } from '../model/proposal';
+import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { DayRows } from '../rows/build-rows';
 import { setRowDescription } from './edits';
 import { isDayHeldByTempo, withFrozenRows } from './frozen-rows';
@@ -39,6 +39,16 @@ const dayRows = (proposals: WorklogProposal[]): DayRows => ({
   privateMs: 0,
 });
 
+const LEDGER: SyncedWorklog[] = [
+  {
+    proposalId: 'ABC-1@2026-10-01T18:15:00.000Z',
+    day: '2026-10-01',
+    tempoWorklogId: 'w-1',
+    contentHash: 'h',
+    syncedAt: at('20:00'),
+  },
+];
+
 const booked = dayRows([proposal({ issueKey: 'ABC-1', from: '18:15', to: '19:45' })]);
 const recut = dayRows([
   proposal({ issueKey: 'ABC-2', from: '18:15', to: '19:15' }),
@@ -63,7 +73,7 @@ const spans = (rows: DayRows, edits = EMPTY_DAY_REVIEW_EDITS) =>
 
 describe('a day Tempo holds', () => {
   it('keeps the rows and the edit it was booked with when the model re-cuts the day', () => {
-    const frozen = withFrozenRows({ edits: describedOn(booked), rows: booked, held: true, finished: true });
+    const frozen = withFrozenRows({ edits: describedOn(booked), rows: booked, ledger: LEDGER, finished: true });
 
     expect(frozen).not.toBeNull();
     expect(spans(recut, frozen ?? undefined)).toEqual([
@@ -74,10 +84,10 @@ describe('a day Tempo holds', () => {
   it('freezes nothing on a day Tempo does not hold, one still running, or one already frozen', () => {
     const edits = describedOn(booked);
 
-    expect(withFrozenRows({ edits, rows: booked, held: false, finished: true })).toBeNull();
-    expect(withFrozenRows({ edits, rows: booked, held: true, finished: false })).toBeNull();
+    expect(withFrozenRows({ edits, rows: booked, ledger: [], finished: true })).toBeNull();
+    expect(withFrozenRows({ edits, rows: booked, ledger: LEDGER, finished: false })).toBeNull();
     expect(
-      withFrozenRows({ edits: { ...edits, frozenRows: booked }, rows: recut, held: true, finished: true }),
+      withFrozenRows({ edits: { ...edits, frozenRows: booked }, rows: recut, ledger: LEDGER, finished: true }),
     ).toBeNull();
   });
 

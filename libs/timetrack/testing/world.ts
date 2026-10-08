@@ -4,6 +4,7 @@ import {
   EditorCli,
   ProposalOverride,
   SpecFiles,
+  SyncedWorklog,
   TimetrackSettings,
 } from '@ethlete/timetrack';
 import { FAKE_REPORTER_VSIX, FakeEditorState, FakeEditors } from './backend/editor-cli';
@@ -162,6 +163,8 @@ export type TimetrackWorldSeed = {
   reviewOverrides?: Record<string, Record<string, ProposalOverride>>;
   /** The Tempo coverage already stored, by local calendar day. */
   tempoCoverage?: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
+  /** The worklogs this app already wrote to Tempo. */
+  ledger?: SyncedWorklog[];
 };
 
 export type FakeWorld = {
@@ -184,6 +187,7 @@ export type FakeWorld = {
   spec: SpecFiles | null;
   reviewOverrides: Record<string, Record<string, ProposalOverride>>;
   tempoCoverage: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
+  ledger: SyncedWorklog[];
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -452,6 +456,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},
   tempoCoverage: seed.tempoCoverage ?? {},
+  ledger: seed.ledger ?? [],
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),
@@ -476,6 +481,7 @@ export const parseWorldSeed = (raw: string | null | undefined): TimetrackWorldSe
   return {
     ...seed,
     ...(seed.events ? { events: seed.events.map(reviveEvent) } : {}),
+    ...(seed.ledger ? { ledger: seed.ledger.map((entry) => ({ ...entry, syncedAt: new Date(entry.syncedAt) })) } : {}),
   };
 };
 

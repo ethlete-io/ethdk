@@ -3,7 +3,7 @@ import { E2E_ISSUE_BRANCH, E2E_REPO, tempoWorklogOn } from '@ethlete/timetrack/t
 import { E2E_DAY_KEY, E2E_NOW, askAgent, expect, seedWorld, test } from './support';
 
 const BOOKED_DAY = '2026-08-11';
-const OPEN_DAY = '2026-08-10';
+const ELSEWHERE_DAY = '2026-08-10';
 
 const hourOn = (day: string): CollectedEvent[] => [
   {
@@ -38,16 +38,23 @@ const inputsOf = async (page: Parameters<typeof askAgent>[0], day: string) => {
   return answer.ok ? answer.value.edits : null;
 };
 
-test.describe('a finished day Tempo holds', () => {
+test.describe('a finished day this app booked', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
-      events: [OPEN_DAY, BOOKED_DAY, E2E_DAY_KEY].flatMap(hourOn),
+      events: [ELSEWHERE_DAY, BOOKED_DAY, E2E_DAY_KEY].flatMap(hourOn),
       tempo: {
-        worklogs: [BOOKED_DAY, E2E_DAY_KEY].map((day, at) =>
-          tempoWorklogOn({ day, minutes: 30, startTime: '15:00:00', id: `w-foreign-${at}` }),
+        worklogs: [ELSEWHERE_DAY, BOOKED_DAY, E2E_DAY_KEY].map((day, at) =>
+          tempoWorklogOn({ day, minutes: 30, startTime: '15:00:00', id: `w-${at}` }),
         ),
       },
+      ledger: [BOOKED_DAY, E2E_DAY_KEY].map((day) => ({
+        proposalId: `booked@${day}`,
+        day,
+        tempoWorklogId: `w-${day === BOOKED_DAY ? 1 : 2}`,
+        contentHash: 'booked',
+        syncedAt: new Date(`${day}T16:00:00.000Z`),
+      })),
     });
     await page.goto('/day');
   });
@@ -59,7 +66,7 @@ test.describe('a finished day Tempo holds', () => {
     const frozen = await inputsOf(page, BOOKED_DAY);
 
     expect(rows.ok && rows.value.rows.map((row) => row.id)).toEqual(frozen?.frozenRows?.proposals.map((row) => row.id));
-    expect((await inputsOf(page, OPEN_DAY))?.frozenRows).toBeUndefined();
+    expect((await inputsOf(page, ELSEWHERE_DAY))?.frozenRows).toBeUndefined();
     expect((await inputsOf(page, E2E_DAY_KEY))?.frozenRows).toBeUndefined();
   });
 });

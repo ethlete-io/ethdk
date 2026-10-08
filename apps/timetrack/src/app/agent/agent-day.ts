@@ -17,7 +17,6 @@ import {
   fetchJiraIssueTouchedAt$,
   fetchTempoDayCoverage$,
   hideRow,
-  isDayHeldByTempo,
   ledgerEntriesForRange$,
   localDayKey,
   matchAttributionRule,
@@ -168,25 +167,19 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const editsOf = (read: DayRead) => review.heldEditsOf(read.key) ?? read.edits;
 
-  const heldByTempo$ = (day: string) =>
-    forkJoin({
-      ledger: ledgerEntriesForRange$({ ledger: ports.ledger, day, boundary: dayBoundaryOf(settings.settings()) }).pipe(
-        take(1),
-        catchError(() => of([])),
-      ),
-      coverage: ports.coverage.forDay$(day).pipe(
-        take(1),
-        catchError(() => of(null)),
-      ),
-    }).pipe(map(isDayHeldByTempo));
+  const ledgerOf$ = (day: string) =>
+    ledgerEntriesForRange$({ ledger: ports.ledger, day, boundary: dayBoundaryOf(settings.settings()) }).pipe(
+      take(1),
+      catchError(() => of([])),
+    );
 
   const read$ = (day: string): Observable<DayRead> =>
     liveRead$(day).pipe(
       switchMap((read) =>
-        heldByTempo$(day).pipe(
-          switchMap((held) => {
+        ledgerOf$(day).pipe(
+          switchMap((ledger) => {
             const finished = day !== localDayKey(new Date(), dayBoundaryOf(settings.settings()));
-            const freeze = (edits: DayReviewEdits) => withFrozenRows({ edits, rows: read.day.rows, held, finished });
+            const freeze = (edits: DayReviewEdits) => withFrozenRows({ edits, rows: read.day.rows, ledger, finished });
 
             if (!freeze(editsOf(read))) return of(read);
 

@@ -68,7 +68,6 @@ import {
   resetRow,
   reviewDay,
   settingsOnDay,
-  isDayHeldByTempo,
   withFrozenRows,
   runReasoning$,
   setRowDescription,
@@ -761,7 +760,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     const next = withFrozenRows({
       edits: edits(),
       rows,
-      held: isDayHeldByTempo({ ledger: loaded.entries, coverage: coverage() }),
+      ledger: loaded.entries,
       finished: !isToday(),
     });
 

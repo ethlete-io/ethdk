@@ -14,9 +14,15 @@ he made it on. Tom: freeze booked days.
 engine's rows into the day's edits as `frozenRows`, and `reviewDay` reviews the day over those rather
 than over a fresh cut. A model change re-cuts only the days Tempo does not hold.
 
-A day is held when the ledger has a worklog this app wrote on it, or the stored coverage read a
-foreign one: the same test the stand-ins use (`isDayHeldByTempo`). A day is finished once it is not
+A day is held when the ledger has a worklog this app wrote on it. A day is finished once it is not
 today.
+
+Until 2026-10-08 a foreign worklog in the stored coverage held a day too, the test the stand-ins
+still use (`isDayHeldByTempo`). That froze a day another machine of the same user booked: the PC was
+off until 19:26 while the MacBook booked the day, and the PC's first read the next morning would have
+frozen its own half-collected cut. A later cross-machine merge (M7) could then never reach those
+rows. So only a day this app booked itself is frozen; a day only another machine booked keeps being
+re-cut.
 
 ## Consequences
 
