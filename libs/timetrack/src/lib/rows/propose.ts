@@ -508,6 +508,7 @@ export const propose = (options: {
       id: unnamedRowId(group),
       ...(group.standInId ? { standInId: group.standInId } : {}),
       ...(group.attended === false ? { unattended: true } : {}),
+      ...(group.attended === false && group.workedOn ? { workedOn: group.workedOn } : {}),
       ...(group.attended === false && group.issueKey ? { withheldIssueKey: group.issueKey } : {}),
       ...(group.bookable === false ? { excluded: true } : {}),
       ...(afterBreak || startsAtBreakEnd(from) ? { afterBreak: true as const } : {}),

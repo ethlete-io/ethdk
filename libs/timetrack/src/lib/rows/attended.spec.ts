@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityBlock } from '../model/block';
 import { CollectedEvent } from '../model/event';
+import { ReceivedEvent } from '../model/received-event';
 import { WorkGroup } from './merge';
-import { attendedAt, markAttendance } from './attended';
+import { attendedAt, markAttendance, peerAttendance } from './attended';
 
 const AT = (minute: number) => new Date(2026, 8, 12, 0, minute, 0);
 const GRACE = 15 * 60_000;
@@ -174,5 +175,42 @@ describe('markAttendance', () => {
     const marked = markAttendance({ groups: [group(300, 540)], at: present([focus(30)]) });
 
     expect(marked[0]?.attended).toBe(false);
+  });
+});
+
+const received = (machineName: string, events: readonly CollectedEvent[]): ReceivedEvent[] =>
+  events.map((event) => ({ machineId: `id-${machineName}`, machineName, event }));
+
+describe('peerAttendance', () => {
+  it('reads each paired machine by the same test as this one, under its own name', () => {
+    const peers = peerAttendance({
+      received: [...received('MacBook', [focus(30), commit(200)]), ...received('Tablet', [turn(100)])],
+      graceMs: GRACE,
+    });
+
+    expect(peers).toEqual([{ machineId: 'id-MacBook', machineName: 'MacBook', at: present([focus(30)]) }]);
+  });
+});
+
+describe('markAttendance with paired machines', () => {
+  const macbook = peerAttendance({ received: received('MacBook', [focus(30)]), graceMs: GRACE });
+
+  it('names the machine a person was at for a band nobody attended here, and leaves it unattended', () => {
+    const marked = markAttendance({ groups: [group(0, 60)], at: present([commit(30)]), peers: macbook });
+
+    expect(marked[0]).toMatchObject({ attended: false, workedOn: 'MacBook' });
+  });
+
+  it('names no machine on a band attended here, nor on one no machine saw a person for', () => {
+    const marked = markAttendance({
+      groups: [group(0, 60), group(200, 260)],
+      at: present([focus(20)]),
+      peers: macbook,
+    });
+
+    expect(marked.map((entry) => [entry.attended, entry.workedOn])).toEqual([
+      [true, undefined],
+      [false, undefined],
+    ]);
   });
 });

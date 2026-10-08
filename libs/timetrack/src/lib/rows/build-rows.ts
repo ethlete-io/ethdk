@@ -2,10 +2,11 @@ import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CollectedEvent } from '../model/event';
+import { ReceivedEvent } from '../model/received-event';
 import { WorklogProposal } from '../model/proposal';
 import { ClosedTimerRun, timerRunDurationMs } from '../model/timer';
 import { TimeWindow } from '../model/time-window';
-import { attendedAt, markAttendance } from './attended';
+import { attendedAt, markAttendance, peerAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
 import {
@@ -108,6 +109,11 @@ export type BuildRowsOptions = {
   remoteWork?: readonly TimeWindow[];
   /** `remoteWork` split by the lane of the prompt that bought each part, from `bookedRemoteWindows`. */
   bookedRemote?: readonly BookedRemoteWindow[];
+  /**
+   * The events paired machines collected, for the `workedOn` name of a band nobody attended here. They
+   * make no band and book nothing.
+   */
+  received?: readonly ReceivedEvent[];
 };
 
 export type DayRows = {
@@ -278,6 +284,7 @@ export const buildRows = (
   // Attendance is marked after the merge and before the proposal: a band is the unit the user books,
   // so it is the unit the question "was anybody here" has to be answered for. A call and a timed run
   // are the user's own acts, so they answer it themselves.
+  const graceMs = options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs;
   const groups = joinUnattended({
     groups: markAttendance({
       groups: [
@@ -290,14 +297,9 @@ export const buildRows = (
         ...calls.map((call) => call.group),
         ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
       ],
-      at: [
-        ...attendedAt({
-          events: options.events,
-          graceMs: options.fill?.maxFillGapMs ?? DEFAULT_FILL_OPTIONS.maxFillGapMs,
-        }),
-        ...(options.remoteWork ?? []),
-      ],
+      at: [...attendedAt({ events: options.events, graceMs }), ...(options.remoteWork ?? [])],
       claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
+      peers: peerAttendance({ received: options.received ?? [], graceMs }),
     }),
     gaps: options.gaps ?? [],
     maxGapMs: options.merge?.maxMergeGapMs ?? DEFAULT_MERGE_OPTIONS.maxMergeGapMs,

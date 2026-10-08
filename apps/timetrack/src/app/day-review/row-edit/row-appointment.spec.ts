@@ -79,3 +79,23 @@ describe('a row the reviewer said not to log', () => {
     expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m · not logged');
   });
 });
+
+describe('a band nobody was at here that a paired machine saw a person for', () => {
+  it('reads as worked on that machine', () => {
+    const row = rowOf({ unattended: true, workedOn: 'MacBook' });
+
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('Worked on MacBook · 1h 0m');
+  });
+
+  it('keeps the key the day withheld', () => {
+    const row = rowOf({ unattended: true, workedOn: 'MacBook', withheldIssueKey: 'ABC-1' });
+
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('Worked on MacBook · ABC-1 · 1h 0m');
+  });
+
+  it('names the machine on a row the user named', () => {
+    const row = rowOf({ unattended: true, workedOn: 'MacBook', issueKey: 'ABC-1' });
+
+    expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m · worked on MacBook');
+  });
+});

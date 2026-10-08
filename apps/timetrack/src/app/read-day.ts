@@ -85,8 +85,9 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
       edits: ports.review.editsFor$(key),
       runs: ports.timers.runsBetween$(from, to),
       coverage: ports.coverage.forDay$(key),
+      received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of([]))),
     }).pipe(
-      concatMap(({ events, edits, runs, coverage }) => {
+      concatMap(({ events, edits, runs, coverage, received }) => {
         const read = () => {
           const at = new Date(Math.min(Date.now(), to.getTime()));
           const pauses = pauseWindows({ events, window: { from, to }, through: at });
@@ -101,7 +102,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             headBranches: { ...heads },
             through: at,
             now: at < to ? at : undefined,
-            rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
+            rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses, received },
           });
           const day = streamDay({ events, options: dayOptions });
           const reviewWith = (current: DayReviewEdits) =>

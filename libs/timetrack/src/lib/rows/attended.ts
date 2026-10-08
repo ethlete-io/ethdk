@@ -1,4 +1,5 @@
 import { CollectedEvent } from '../model/event';
+import { ReceivedEvent } from '../model/received-event';
 import { TimeWindow, mergeWindows } from '../model/time-window';
 import { WorkGroup } from './merge';
 
@@ -100,6 +101,31 @@ export const attendedAt = (options: { events: readonly CollectedEvent[]; graceMs
   );
 };
 
+export type PeerAttendance = { machineId: string; machineName: string; at: TimeWindow[] };
+
+/**
+ * The stretches a person was at each paired machine, read from the events it collected by the same
+ * test as {@link attendedAt}. A machine no person was seen at is left out.
+ */
+export const peerAttendance = (options: { received: readonly ReceivedEvent[]; graceMs: number }): PeerAttendance[] => {
+  const byMachine = new Map<string, { machineName: string; events: CollectedEvent[] }>();
+
+  for (const { machineId, machineName, event } of options.received) {
+    const held = byMachine.get(machineId) ?? { machineName, events: [] };
+
+    held.events.push(event);
+    byMachine.set(machineId, held);
+  }
+
+  return [...byMachine]
+    .map(([machineId, held]) => ({
+      machineId,
+      machineName: held.machineName,
+      at: attendedAt({ events: held.events, graceMs: options.graceMs }),
+    }))
+    .filter((peer) => peer.at.length);
+};
+
 /**
  * Marks each group with whether anybody was there for it.
  *
@@ -114,12 +140,16 @@ export const attendedAt = (options: { events: readonly CollectedEvent[]; graceMs
  *
  * A band the user claimed themselves is attended whatever the events say. A timer they started and a
  * call they held are both acts of a person, and neither leaves a window event behind.
+ *
+ * A band nobody attended here that a person was at a paired machine for stays unattended, and carries
+ * that machine's name as `workedOn`.
  */
 export const markAttendance = (options: {
   groups: readonly WorkGroup[];
   at: readonly TimeWindow[];
   /** The stretches the user claimed by hand: the runs they timed and the calls a rule counted as work. */
   claimed?: readonly TimeWindow[];
+  peers?: readonly PeerAttendance[];
 }): WorkGroup[] => {
   const spans = [...options.at, ...(options.claimed ?? [])].map((window) => ({
     from: window.from.getTime(),
@@ -130,6 +160,12 @@ export const markAttendance = (options: {
     const from = group.from.getTime();
     const to = group.to.getTime();
 
-    return { ...group, attended: spans.some((span) => span.from < to && span.to > from) };
+    const touches = (window: TimeWindow) => window.from.getTime() < to && window.to.getTime() > from;
+
+    if (spans.some((span) => span.from < to && span.to > from)) return { ...group, attended: true };
+
+    const peer = options.peers?.find((candidate) => candidate.at.some(touches));
+
+    return { ...group, attended: false, ...(peer ? { workedOn: peer.machineName } : {}) };
   });
 };

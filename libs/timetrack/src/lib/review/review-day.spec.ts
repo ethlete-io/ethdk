@@ -233,6 +233,31 @@ describe('reviewDay', () => {
     expect(review.check.warnings.map((warning) => warning.kind)).toContain('stale-edit');
   });
 
+  it('keeps the machine a person was at on a band nobody was at here, and on each piece of a split', () => {
+    const band: UnnamedProposal = {
+      id: `unnamed@${at('08:00').toISOString()}`,
+      from: at('08:00'),
+      to: at('10:00'),
+      durationMs: 120 * MINUTE,
+      observedMs: 120 * MINUTE,
+      laneKey: 'repo:/home/tom/dev/example',
+      description: 'unattributed activity',
+      confidence: 'weak',
+      evidence: [],
+      state: 'suggested',
+      unattended: true,
+      workedOn: 'MacBook',
+    };
+    const rows = dayRows({ proposals: [], unnamed: [band] });
+    const edits = splitRow({ edits: EMPTY_DAY_REVIEW_EDITS, row: reviewDay({ rows }).rows[0]!, at: at('09:00') });
+
+    expect(reviewDay({ rows }).rows.map((row) => row.workedOn)).toEqual(['MacBook']);
+    expect(reviewDay({ rows, edits }).rows.map((row) => [row.unattended, row.workedOn])).toEqual([
+      [true, 'MacBook'],
+      [true, 'MacBook'],
+    ]);
+  });
+
   it('draws one band where an edited row lost every source to a change of the id scheme', () => {
     const laneKey = 'repo:/home/tom/dev/example';
     const band = (id: string): UnnamedProposal => ({

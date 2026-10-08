@@ -49,6 +49,11 @@ export type WorkGroup = {
    */
   attended?: boolean;
   /**
+   * The paired machine a person was at for a band nobody attended here, from `markAttendance`. The band
+   * still books nothing on this machine.
+   */
+  workedOn?: string;
+  /**
    * Whether a worklog could hold this band. `false` is a band the day draws and never asks about — a
    * call a rule excluded from work. Absent leaves the answer to the lane, in `isBookable`.
    */
@@ -184,6 +189,7 @@ export const joinGroups = (into: WorkGroup, next: WorkGroup): WorkGroup => {
     storyKey: into.storyKey ?? next.storyKey,
     taskKey: into.taskKey ?? next.taskKey,
     ruleScope: into.ruleScope ?? next.ruleScope,
+    ...(into.workedOn || next.workedOn ? { workedOn: into.workedOn ?? next.workedOn } : {}),
     from: into.from <= next.from ? into.from : next.from,
     to: into.to >= next.to ? into.to : next.to,
     observedMs: into.observedMs + next.observedMs,

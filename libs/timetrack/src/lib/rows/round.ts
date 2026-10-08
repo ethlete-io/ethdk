@@ -358,10 +358,13 @@ export const checkDay = (options: {
     });
   }
 
-  if (unattendedMs > 0) {
+  const alone = unattended.filter((group) => !group.workedOn);
+  const aloneMs = alone.reduce((sum, group) => sum + group.observedMs, 0);
+
+  if (aloneMs > 0) {
     warnings.push({
       kind: 'unattended-time',
-      detail: `${formatDurationMs(unattendedMs)} across ${unattended.length} block(s) ran with nobody at the machine`,
+      detail: `${formatDurationMs(aloneMs)} across ${alone.length} block(s) ran with nobody at the machine`,
     });
   }
 

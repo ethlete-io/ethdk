@@ -49,6 +49,8 @@ export type WorklogProposal = {
    * band — it is drawn, its tokens are counted, and naming it stays a deliberate act of the user's.
    */
   unattended?: boolean;
+  /** On an `unattended` row, the paired machine a person was at meanwhile. The row still books nothing. */
+  workedOn?: string;
   /**
    * The issue the ladder named this band, on a band that is drawn unnamed because nobody was at the
    * machine for it. The row still books nothing and still never syncs — `isNamedRow` reads `issueKey`

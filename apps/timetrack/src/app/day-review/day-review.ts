@@ -10,6 +10,7 @@ import {
   AttributionTarget,
   ClosedTimerRun,
   CollectedEvent,
+  ReceivedEvent,
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   InferredAttribution,
@@ -141,6 +142,7 @@ type Loaded<T> = { key: string; value: T | null; failure: string | null };
 /** One day's raw inputs, loaded together so a half-loaded day is never correlated. */
 type DayEvidence = {
   events: CollectedEvent[];
+  received: ReceivedEvent[];
   runs: ClosedTimerRun[];
   pauses: TimeWindow[];
   /** The instant the day is read through, for anything that has to cut off a stretch still open. */
@@ -229,6 +231,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
           load$: combineLatest({
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
+            received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of<ReceivedEvent[]>([]))),
           }).pipe(
             map((loaded) => ({
               ...loaded,
@@ -404,6 +407,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
     timerRuns: evidence()?.runs ?? [],
     pauses: evidence()?.pauses ?? [],
+    received: evidence()?.received ?? [],
   }));
 
   /**

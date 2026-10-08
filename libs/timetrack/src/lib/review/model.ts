@@ -86,6 +86,7 @@ export type PinnedRow = {
    */
   excluded?: boolean;
   unattended?: boolean;
+  workedOn?: string;
   withheldIssueKey?: string;
   /** Who set each field. A field holding a value without one is the user's. */
   sources?: RowFieldSources;

@@ -432,6 +432,51 @@ describe('buildRows with a rule naming an issue for work nobody watched', () => 
   });
 });
 
+describe('buildRows with a paired machine a person was at', () => {
+  const WORK = [block({ from: at(9), to: at(10), context: { repoPath: '/dev/a', branch: 'main' } })];
+  const focus: CollectedEvent = {
+    at: at(9, 30),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'code',
+    title: 'main.ts - a - Code',
+  };
+
+  it('names the machine on a band nobody was at here, and still books nothing', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [],
+      received: [{ machineId: 'mac-1', machineName: 'MacBook', event: focus }],
+    });
+
+    expect(rows.proposals).toEqual([]);
+    expect(rows.unnamed).toHaveLength(1);
+    expect(rows.unnamed[0]).toMatchObject({ unattended: true, workedOn: 'MacBook' });
+  });
+
+  it('does not warn that an agent worked alone for that band', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [],
+      received: [{ machineId: 'mac-1', machineName: 'MacBook', event: focus }],
+    });
+    const check = checkDay({ proposals: rows.proposals, unattributed: rows.unattributed });
+
+    expect(check.warnings.map((warning) => warning.kind)).not.toContain('unattended-time');
+  });
+
+  it('names no machine on a band attended here', () => {
+    const rows = buildRows({
+      blocks: WORK,
+      events: [focus],
+      received: [{ machineId: 'mac-1', machineName: 'MacBook', event: focus }],
+    });
+
+    expect(rows.unnamed[0]?.unattended).toBeUndefined();
+    expect(rows.unnamed[0]?.workedOn).toBeUndefined();
+  });
+});
+
 describe('buildRows with a break as long as the fillable gap', () => {
   const WORK = [
     block({ from: at(9), to: at(9, 30), context: { repoPath: '/dev/a', branch: 'main' } }),

@@ -24,6 +24,8 @@ export const UNNAMED_LABEL = 'Not yet named';
  */
 export const UNATTENDED_LABEL = 'Nobody was here';
 
+export const workedOnLabel = (name: string) => `Worked on ${name}`;
+
 /**
  * What a band for a call the day does not count is called. The reason follows it where the call behind
  * the band is still known — see `callExclusionReasonOf`.
@@ -48,7 +50,9 @@ export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string
   if (row.standInId && options.standInName) return options.standInName;
   if (!row.unattended) return UNNAMED_LABEL;
 
-  return row.withheldIssueKey ? `${UNATTENDED_LABEL} · ${row.withheldIssueKey}` : UNATTENDED_LABEL;
+  const state = row.workedOn ? workedOnLabel(row.workedOn) : UNATTENDED_LABEL;
+
+  return row.withheldIssueKey ? `${state} · ${row.withheldIssueKey}` : state;
 };
 
 /**
@@ -197,7 +201,10 @@ export const appointmentLabel = (appointment: Appointment) => {
       standInName: entry.standInName,
       excludedReason: entry.excludedReason,
     });
-  const alone = entry.row.issueKey && entry.row.unattended ? ' · nobody was here' : '';
+  const alone =
+    entry.row.issueKey && entry.row.unattended
+      ? ` · ${entry.row.workedOn ? `worked on ${entry.row.workedOn}` : 'nobody was here'}`
+      : '';
   const disputed = disputedLabelOf(entry.row);
   const shared = entry.sharedMs ? ` of ${formatDurationMs(entry.sharedMs)}` : '';
   const skipped = entry.row.issueKey && entry.row.state === 'rejected' && !entry.row.excluded ? ' · not logged' : '';

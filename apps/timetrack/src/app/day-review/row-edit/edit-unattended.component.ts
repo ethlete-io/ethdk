@@ -15,7 +15,11 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
   template: `
     @if (withheld(); as issueKey) {
       <div class="flex flex-col gap-2 rounded-md border border-et-surface-border p-3" data-unattended-waiting>
-        <span class="text-small">Nobody was here for this band, so it books nothing.</span>
+        @if (workedOn(); as machine) {
+          <span class="text-small">You were on {{ machine }} for this band, so it books nothing here.</span>
+        } @else {
+          <span class="text-small">Nobody was here for this band, so it books nothing.</span>
+        }
         <span class="text-small text-et-surface-muted">The day would have called it {{ issueKey }}.</span>
 
         <div>
@@ -37,6 +41,8 @@ export class EditUnattendedComponent {
 
     return row && !row.issueKey ? (row.withheldIssueKey ?? null) : null;
   });
+
+  protected workedOn = computed(() => rowEntryOf(this.draft()())?.row.workedOn ?? null);
 
   protected book(issueKey: string) {
     const row = rowEntryOf(this.draft()())?.row;

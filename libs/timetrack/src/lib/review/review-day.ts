@@ -107,6 +107,7 @@ const fromPinned = (row: PinnedRow): ReviewedRow => ({
   evidence: row.evidence,
   excluded: row.excluded,
   unattended: row.unattended,
+  workedOn: row.workedOn,
   withheldIssueKey: row.withheldIssueKey,
   state: row.state ?? 'edited',
   edited: true,
@@ -333,6 +334,7 @@ const trackPinnedRows = (options: {
       // is not left reading as work nobody named.
       excluded: source.excluded,
       unattended: source.unattended,
+      workedOn: source.workedOn,
       withheldIssueKey: source.withheldIssueKey,
     };
   });

@@ -346,6 +346,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     disputedIssueKey: row.disputedIssueKey,
     disputedStandInId: row.disputedStandInId,
     unattended: row.unattended,
+    workedOn: row.workedOn,
     edited: row.edited,
     sources: { issue: rowFieldSourceOf(row, 'issue'), description: rowFieldSourceOf(row, 'description') },
     hidden: row.hidden,

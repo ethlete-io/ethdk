@@ -72,6 +72,7 @@ const asPinned = (row: ReviewedRow, replaces: readonly string[]): PinnedRow => (
   evidence: row.evidence,
   excluded: row.excluded,
   unattended: row.unattended,
+  workedOn: row.workedOn,
   withheldIssueKey: row.withheldIssueKey,
   sources: sourcesOf(row),
   state: row.state === 'rejected' ? 'rejected' : undefined,

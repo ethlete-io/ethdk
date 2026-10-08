@@ -352,6 +352,8 @@ export type AgentApiReviewedRow = {
   disputedStandInId?: string;
   /** Whether nobody was at the machine for the band the row was built from. */
   unattended?: boolean;
+  /** On an `unattended` row, the paired machine a person was at meanwhile. */
+  workedOn?: string;
   /** Whether a reviewer's own edit produced this row. */
   edited: boolean;
   /** Who set the row's issue (or stand-in) and its description: the user, auto mode, or nobody. */
