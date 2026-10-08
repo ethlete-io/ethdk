@@ -1,6 +1,7 @@
 import { ReviewedRow, appDisplayNameOf, isManualRow } from '@ethlete/timetrack';
 import { injectAutoMode } from '../auto-mode';
 import { injectDayReview } from '../day-review';
+import { RowTicketFiling } from './row-ticket-filing';
 
 type DayReviewStore = NonNullable<ReturnType<typeof injectDayReview>>;
 
@@ -9,6 +10,7 @@ export type RowActionContext = {
   autoMode: NonNullable<ReturnType<typeof injectAutoMode>>;
   row: ReviewedRow;
   rows: readonly ReviewedRow[];
+  ticket: RowTicketFiling;
 };
 
 type RowActionDefinition = {
@@ -76,6 +78,12 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
 
       if (subject) autoMode.askAgain(subject);
     },
+  },
+  {
+    label: 'Create a ticket',
+    order: 12,
+    enabled: ({ ticket, row }) => !!ticket.contextOf(row),
+    run: ({ ticket, row }) => ticket.file(row),
   },
   {
     label: 'Merge with the next band',

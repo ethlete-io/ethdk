@@ -65,6 +65,7 @@ import {
   sharedMsByRow,
 } from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
+import { injectRowTicket } from './row-edit/row-ticket';
 import { injectRowEditSurface } from './row-edit/row-edit-surface';
 import { injectDayReview } from './day-review';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -791,6 +792,7 @@ export class DayTimelineComponent {
   private surface = injectRowEditSurface();
   protected store = injectDayReview();
   private autoMode = injectAutoMode();
+  private ticket = injectRowTicket();
   private settings = injectTimetrackSettings();
   private git = injectGitCollector();
   protected approvals = injectApprovalQueue();
@@ -1358,7 +1360,7 @@ export class DayTimelineComponent {
 
   /** What a band's own context menu offers, which is the list the edit surface offers as well. */
   protected actionsFor(row: ReviewedRow) {
-    return rowActionsFor({ store: this.store, autoMode: this.autoMode, row, rows: this.rows() });
+    return rowActionsFor({ store: this.store, autoMode: this.autoMode, ticket: this.ticket, row, rows: this.rows() });
   }
 
   protected dragging(appointment: Appointment<TimelineEntry>) {

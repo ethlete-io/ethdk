@@ -46,7 +46,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
 
     <et-overlay-body>
       <et-accordion-group>
-        <et-accordion [label]="waitingLabel()">
+        <et-accordion [isOpenByDefault]="!!tickets.context()" [label]="waitingLabel()">
           <div class="flex flex-col gap-3">
             <ethlete-issue-filter />
 

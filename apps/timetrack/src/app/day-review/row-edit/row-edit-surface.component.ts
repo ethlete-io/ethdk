@@ -22,6 +22,7 @@ import { EditStateComponent } from './edit-state.component';
 import { EditUnattendedComponent } from './edit-unattended.component';
 import { EditWhenComponent } from './edit-when.component';
 import { RowAction, rowActionsFor } from './row-actions';
+import { injectRowTicket } from './row-ticket';
 import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
 
 /**
@@ -105,6 +106,7 @@ import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
 export class RowEditSurfaceComponent {
   private store = injectDayReview();
   private autoMode = injectAutoMode();
+  private ticket = injectRowTicket();
   private overlayRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
   protected surface = injectSchedulerEditSurface<TimelineEntry>();
@@ -146,9 +148,13 @@ export class RowEditSurfaceComponent {
 
     if (!row) return [];
 
-    return rowActionsFor({ store: this.store, autoMode: this.autoMode, row, rows: this.store.rows() }).filter(
-      (action) => !action.disabled,
-    );
+    return rowActionsFor({
+      store: this.store,
+      autoMode: this.autoMode,
+      ticket: this.ticket,
+      row,
+      rows: this.store.rows(),
+    }).filter((action) => !action.disabled);
   });
 
   protected run(action: RowAction) {
