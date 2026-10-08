@@ -28,6 +28,9 @@ pub const PORT_ENV: &str = "TIMETRACK_PEER_PORT";
 const OFFER_LIFETIME: Duration = Duration::from_secs(5 * 60);
 const MAX_ATTEMPTS: u32 = 5;
 const MAX_FRAME_BYTES: usize = 64 * 1024;
+const MAX_PAGE_FRAME_BYTES: usize = 4 * 1024 * 1024;
+const PAGE_BYTES: usize = 1024 * 1024;
+const MAX_PAGE_ROWS: u32 = 500;
 const EXCHANGE_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_CONNECTIONS: usize = 8;
 
@@ -42,6 +45,7 @@ const HEARTBEAT_EVERY: Duration = Duration::from_secs(60);
 pub const NO_OFFER: &str = "no pairing offer is open on the other machine: show a code there first";
 pub const OFFER_EXPIRED: &str = "the code on the other machine has expired: show a new one";
 pub const WRONG_CODE: &str = "the code does not match the one the other machine shows";
+const NOT_PAIRED: &str = "this machine is not paired with the caller";
 
 type KeySource = Arc<dyn Fn() -> TimetrackResult<String> + Send + Sync>;
 
@@ -262,6 +266,31 @@ enum Frame {
     Offset { offset_ms: i64 },
     #[serde(rename_all = "camelCase")]
     Refused { message: String },
+    #[serde(rename_all = "camelCase")]
+    Pull {
+        machine_id: String,
+        after_seq: i64,
+        limit: u32,
+    },
+    #[serde(rename_all = "camelCase")]
+    Changes {
+        events: Vec<PeerEvent>,
+        deleted: Vec<i64>,
+        cursor: i64,
+        more: bool,
+    },
+}
+
+/// One of the serving machine's own `collected_event` rows, as it stands at `changed_seq`.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+struct PeerEvent {
+    row_id: i64,
+    at_ms: i64,
+    source: String,
+    kind: String,
+    payload: String,
+    dedupe_key: Option<String>,
 }
 
 async fn write_frame<S: AsyncWrite + Unpin>(stream: &mut S, frame: &Frame) -> TimetrackResult<()> {
@@ -276,13 +305,17 @@ async fn write_frame<S: AsyncWrite + Unpin>(stream: &mut S, frame: &Frame) -> Ti
 }
 
 async fn read_frame<S: AsyncRead + Unpin>(stream: &mut S) -> TimetrackResult<Frame> {
+    read_frame_up_to(stream, MAX_FRAME_BYTES).await
+}
+
+async fn read_frame_up_to<S: AsyncRead + Unpin>(stream: &mut S, max_bytes: usize) -> TimetrackResult<Frame> {
     let mut length = [0u8; 4];
 
     stream.read_exact(&mut length).await?;
 
     let length = u32::from_be_bytes(length) as usize;
 
-    if length > MAX_FRAME_BYTES {
+    if length > max_bytes {
         return Err(rejected("the other machine sent a frame that is too large"));
     }
 
@@ -462,6 +495,129 @@ fn split_address(address: &str) -> TimetrackResult<(String, u16)> {
     let port = port.parse().map_err(|_| rejected(format!("{address} names no port")))?;
 
     Ok((host.trim_start_matches('[').trim_end_matches(']').to_string(), port))
+}
+
+/// The changes after `after_seq` among this machine's own events, oldest first, as one frame that
+/// stays within `PAGE_BYTES` unless its first row alone is larger. `received_event` is never read:
+/// a machine serves only what it collected (ADR 0039).
+fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> TimetrackResult<Frame> {
+    let limit = limit.clamp(1, MAX_PAGE_ROWS);
+    let mut statement = connection.prepare(
+        "SELECT changed_seq, id, at_ms, source, kind, payload, dedupe_key, 0 FROM collected_event
+           WHERE changed_seq > ?1
+         UNION ALL
+         SELECT changed_seq, row_id, at_ms, '', '', '', NULL, 1 FROM deleted_event WHERE changed_seq > ?1
+         ORDER BY 1
+         LIMIT ?2",
+    )?;
+    let mut rows = statement.query(params![after_seq, i64::from(limit) + 1])?;
+    let (mut events, mut deleted) = (Vec::new(), Vec::new());
+    let (mut cursor, mut bytes, mut taken, mut more) = (after_seq, 0usize, 0u32, false);
+
+    while let Some(row) = rows.next()? {
+        if taken == limit || (taken > 0 && bytes >= PAGE_BYTES) {
+            more = true;
+
+            break;
+        }
+
+        let seq: i64 = row.get(0)?;
+
+        if row.get::<_, i64>(7)? == 1 {
+            deleted.push(row.get(1)?);
+            bytes += 24;
+        } else {
+            let event = PeerEvent {
+                row_id: row.get(1)?,
+                at_ms: row.get(2)?,
+                source: row.get(3)?,
+                kind: row.get(4)?,
+                payload: row.get(5)?,
+                dedupe_key: row.get(6)?,
+            };
+
+            bytes += serde_json::to_vec(&event)?.len() + 1;
+            events.push(event);
+        }
+
+        cursor = seq;
+        taken += 1;
+    }
+
+    Ok(Frame::Changes {
+        events,
+        deleted,
+        cursor,
+        more,
+    })
+}
+
+fn cursor_of(connection: &Connection, machine_id: &str) -> TimetrackResult<i64> {
+    Ok(connection
+        .query_row(
+            "SELECT changed_seq FROM peer_cursor WHERE machine_id = ?1",
+            params![machine_id],
+            |row| row.get(0),
+        )
+        .optional()?
+        .unwrap_or(0))
+}
+
+/// Applies one page of a peer's changes and moves its cursor, all or nothing.
+///
+/// A peer's `dedupe_key` is unique among its own rows, so a received row of the same machine that
+/// still holds an incoming row's key is a copy the peer has since deleted or re-keyed and whose
+/// tombstone this machine never saw (retention dropped it). The incoming row replaces it.
+fn apply_changes(
+    connection: &mut Connection,
+    machine_id: &str,
+    events: &[PeerEvent],
+    deleted: &[i64],
+    cursor: i64,
+) -> TimetrackResult<(usize, usize)> {
+    let transaction = connection.transaction()?;
+    let mut removed = 0;
+
+    for event in events {
+        if let Some(key) = &event.dedupe_key {
+            removed += transaction.execute(
+                "DELETE FROM received_event WHERE machine_id = ?1 AND dedupe_key = ?2 AND peer_row_id <> ?3",
+                params![machine_id, key, event.row_id],
+            )?;
+        }
+
+        transaction.execute(
+            "INSERT INTO received_event (machine_id, peer_row_id, at_ms, source, kind, payload, dedupe_key)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+             ON CONFLICT (machine_id, peer_row_id) DO UPDATE SET
+               at_ms = ?3, source = ?4, kind = ?5, payload = ?6, dedupe_key = ?7",
+            params![
+                machine_id,
+                event.row_id,
+                event.at_ms,
+                event.source,
+                event.kind,
+                event.payload,
+                event.dedupe_key
+            ],
+        )?;
+    }
+
+    for row_id in deleted {
+        removed += transaction.execute(
+            "DELETE FROM received_event WHERE machine_id = ?1 AND peer_row_id = ?2",
+            params![machine_id, row_id],
+        )?;
+    }
+
+    transaction.execute(
+        "INSERT INTO peer_cursor (machine_id, changed_seq) VALUES (?1, ?2)
+         ON CONFLICT (machine_id) DO UPDATE SET changed_seq = MAX(changed_seq, ?2)",
+        params![machine_id, cursor],
+    )?;
+    transaction.commit()?;
+
+    Ok((events.len(), removed))
 }
 
 struct Offer {
@@ -688,7 +844,21 @@ impl Peers {
 
                 self.answer_hello(&mut tls, &identity, client, client_now_ms).await
             }
-            _ => refuse(&mut tls, "expected a pairing or a hello").await,
+            Frame::Pull {
+                machine_id,
+                after_seq,
+                limit,
+            } => {
+                let client = Party {
+                    fingerprint: client_fingerprint,
+                    machine_id,
+                    label: String::new(),
+                    addr: None,
+                };
+
+                self.answer_pull(&mut tls, &client, after_seq, limit).await
+            }
+            _ => refuse(&mut tls, "expected a pairing, a hello or a pull").await,
         }
     }
 
@@ -787,15 +957,8 @@ impl Peers {
         client: Party,
         client_now_ms: i64,
     ) -> TimetrackResult<()> {
-        let fingerprint = client.fingerprint.clone();
-        let known = self
-            .0
-            .db
-            .run(move |connection| paired_where(connection, "cert_fingerprint", &fingerprint))
-            .await?;
-
-        if !known.is_some_and(|known| known.machine_id == client.machine_id) {
-            return refuse(tls, "this machine is not paired with the caller").await;
+        if !self.is_paired(&client).await? {
+            return refuse(tls, NOT_PAIRED).await;
         }
 
         let received_ms = now_ms();
@@ -822,6 +985,44 @@ impl Peers {
         }
 
         self.store_seen(&client, received_ms, offset_ms).await
+    }
+
+    async fn is_paired(&self, client: &Party) -> TimetrackResult<bool> {
+        let fingerprint = client.fingerprint.clone();
+        let known = self
+            .0
+            .db
+            .run(move |connection| paired_where(connection, "cert_fingerprint", &fingerprint))
+            .await?;
+
+        Ok(known.is_some_and(|known| known.machine_id == client.machine_id))
+    }
+
+    async fn answer_pull<S: AsyncRead + AsyncWrite + Unpin>(
+        &self,
+        tls: &mut S,
+        client: &Party,
+        after_seq: i64,
+        limit: u32,
+    ) -> TimetrackResult<()> {
+        if !self.is_paired(client).await? {
+            return refuse(tls, NOT_PAIRED).await;
+        }
+
+        let page = self
+            .0
+            .db
+            .run(move |connection| changes_after(connection, after_seq, limit))
+            .await?;
+
+        if serde_json::to_vec(&page)?.len() > MAX_PAGE_FRAME_BYTES {
+            return refuse(tls, "an event is too large to send").await;
+        }
+
+        write_frame(tls, &page).await?;
+        tls.shutdown().await?;
+
+        Ok(())
     }
 
     async fn store_pairing(&self, peer: &Party) -> TimetrackResult<()> {
@@ -1016,7 +1217,15 @@ impl Peers {
             .map_err(|_| rejected("the other machine did not answer the hello in time"))?
     }
 
-    async fn run_hello(&self, machine_id: &str) -> TimetrackResult<HelloResult> {
+    async fn connect_paired(
+        &self,
+        machine_id: &str,
+    ) -> TimetrackResult<(
+        Arc<Identity>,
+        PairedMachine,
+        String,
+        tokio_rustls::client::TlsStream<TcpStream>,
+    )> {
         let identity = self.identity().await?;
         let wanted = machine_id.to_string();
         let peer = self
@@ -1030,8 +1239,8 @@ impl Peers {
             .clone()
             .ok_or_else(|| rejected(format!("{} has no known address", peer.label)))?;
         let (host, port) = split_address(&addr)?;
-        let own_port = self.ensure_listening().await.ok();
-        let mut tls = self.dial(&identity, &host, port).await?;
+        let _ = self.ensure_listening().await;
+        let tls = self.dial(&identity, &host, port).await?;
 
         if peer_fingerprint(tls.get_ref().1.peer_certificates())? != peer.cert_fingerprint {
             return Err(rejected(format!(
@@ -1040,6 +1249,12 @@ impl Peers {
             )));
         }
 
+        Ok((identity, peer, addr, tls))
+    }
+
+    async fn run_hello(&self, machine_id: &str) -> TimetrackResult<HelloResult> {
+        let (identity, peer, addr, mut tls) = self.connect_paired(machine_id).await?;
+        let own_port = self.listening_port().await;
         let sent_ms = now_ms();
 
         write_frame(
@@ -1103,6 +1318,79 @@ impl Peers {
         })
     }
 
+    /// Copies the events a paired machine collected since the last pull into `received_event`, page by
+    /// page, and applies the deletions it reports.
+    pub async fn pull(&self, machine_id: &str) -> TimetrackResult<PullResult> {
+        self.pull_in_pages(machine_id, MAX_PAGE_ROWS).await
+    }
+
+    async fn pull_in_pages(&self, machine_id: &str, limit: u32) -> TimetrackResult<PullResult> {
+        let mut result = PullResult {
+            machine_id: machine_id.to_string(),
+            upserted: 0,
+            deleted: 0,
+            cursor: 0,
+        };
+
+        loop {
+            let (upserted, deleted, cursor, more) =
+                tokio::time::timeout(EXCHANGE_TIMEOUT, self.pull_page(machine_id, limit))
+                    .await
+                    .map_err(|_| rejected("the other machine did not answer the pull in time"))??;
+
+            result.upserted += upserted;
+            result.deleted += deleted;
+            result.cursor = cursor;
+
+            if !more {
+                return Ok(result);
+            }
+        }
+    }
+
+    async fn pull_page(&self, machine_id: &str, limit: u32) -> TimetrackResult<(usize, usize, i64, bool)> {
+        let wanted = machine_id.to_string();
+        let after_seq = self.0.db.run(move |connection| cursor_of(connection, &wanted)).await?;
+        let (identity, peer, _, mut tls) = self.connect_paired(machine_id).await?;
+
+        write_frame(
+            &mut tls,
+            &Frame::Pull {
+                machine_id: identity.machine_id.clone(),
+                after_seq,
+                limit,
+            },
+        )
+        .await?;
+
+        let (events, deleted, cursor, more) = match read_frame_up_to(&mut tls, MAX_PAGE_FRAME_BYTES).await? {
+            Frame::Changes {
+                events,
+                deleted,
+                cursor,
+                more,
+            } => (events, deleted, cursor, more),
+            Frame::Refused { message } => return Err(rejected(message)),
+            _ => return Err(rejected("the other machine answered out of turn")),
+        };
+        let _ = tls.shutdown().await;
+
+        if cursor < after_seq {
+            return Err(rejected(format!(
+                "{} answered with a change cursor before this machine's",
+                peer.label
+            )));
+        }
+
+        let (upserted, removed) = self
+            .0
+            .db
+            .run(move |connection| apply_changes(connection, &peer.machine_id, &events, &deleted, cursor))
+            .await?;
+
+        Ok((upserted, removed, cursor, more))
+    }
+
     pub async fn forget(&self, machine_id: &str) -> TimetrackResult<bool> {
         let machine_id = machine_id.to_string();
 
@@ -1158,6 +1446,10 @@ impl Peers {
                 .hello(&text("machineId")?)
                 .await
                 .map(|hello| serde_json::json!(hello)),
+            "peers.pull" => self
+                .pull(&text("machineId")?)
+                .await
+                .map(|pulled| serde_json::json!(pulled)),
             "peers.forget" => self
                 .forget(&text("machineId")?)
                 .await
@@ -1204,6 +1496,15 @@ pub struct HelloResult {
     pub round_trip_ms: i64,
 }
 
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PullResult {
+    pub machine_id: String,
+    pub upserted: usize,
+    pub deleted: usize,
+    pub cursor: i64,
+}
+
 /// Opens the listener at start when this machine already has a peer to be reached by.
 pub fn resume(peers: Peers) {
     tauri::async_runtime::spawn(async move {
@@ -1214,7 +1515,8 @@ pub fn resume(peers: Peers) {
 }
 
 /// Says hello to every paired machine once a `HEARTBEAT_EVERY`, which keeps last-seen and the clock
-/// offset current on both sides. A machine that does not answer is skipped until the next round.
+/// offset current on both sides, and pulls the events of each one that answered. A machine that does
+/// not answer is skipped until the next round.
 pub fn heartbeat(peers: Peers) {
     tauri::async_runtime::spawn(async move {
         let mut every = tokio::time::interval(HEARTBEAT_EVERY);
@@ -1225,7 +1527,9 @@ pub fn heartbeat(peers: Peers) {
             every.tick().await;
 
             for machine in peers.list().await.unwrap_or_default() {
-                let _ = peers.hello(&machine.machine_id).await;
+                if peers.hello(&machine.machine_id).await.is_ok() {
+                    let _ = peers.pull(&machine.machine_id).await;
+                }
             }
         }
     });
@@ -1258,6 +1562,11 @@ pub async fn pair_accept(
 #[tauri::command]
 pub async fn peers_hello(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<HelloResult> {
     peers.hello(&machine_id).await
+}
+
+#[tauri::command]
+pub async fn peers_pull(peers: tauri::State<'_, Peers>, machine_id: String) -> TimetrackResult<PullResult> {
+    peers.pull(&machine_id).await
 }
 
 #[tauri::command]
@@ -1530,6 +1839,237 @@ mod tests {
         assert!(error.to_string().contains("no pairing offer"), "{error}");
     }
 
+    async fn collect(peers: &Peers, at_ms: i64, dedupe_key: Option<&str>) -> i64 {
+        let dedupe_key = dedupe_key.map(str::to_string);
+
+        peers
+            .0
+            .db
+            .run(move |connection| {
+                connection.execute(
+                    "INSERT INTO collected_event (at_ms, source, kind, payload, dedupe_key)
+                     VALUES (?1, 'git', 'git-commit', '{}', ?2)",
+                    params![at_ms, dedupe_key],
+                )?;
+
+                Ok(connection.last_insert_rowid())
+            })
+            .await
+            .unwrap()
+    }
+
+    async fn execute(peers: &Peers, sql: &'static str) {
+        peers
+            .0
+            .db
+            .run(move |connection| {
+                connection.execute_batch(sql)?;
+                Ok(())
+            })
+            .await
+            .unwrap();
+    }
+
+    async fn received(peers: &Peers) -> Vec<(String, i64, i64, Option<String>)> {
+        peers
+            .0
+            .db
+            .run(|connection| {
+                let mut statement = connection.prepare(
+                    "SELECT machine_id, peer_row_id, at_ms, dedupe_key FROM received_event
+                     ORDER BY machine_id, peer_row_id",
+                )?;
+                let rows = statement
+                    .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)))?
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                Ok(rows)
+            })
+            .await
+            .unwrap()
+    }
+
+    async fn cursor(peers: &Peers, machine_id: String) -> i64 {
+        peers
+            .0
+            .db
+            .run(move |connection| cursor_of(connection, &machine_id))
+            .await
+            .unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_pull_copies_every_event_then_only_the_new_ones() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let first = collect(&a, 1_000, Some("one")).await;
+        let second = collect(&a, 2_000, None).await;
+
+        let pulled = b.pull(&a_id).await.unwrap();
+
+        assert_eq!((pulled.upserted, pulled.deleted), (2, 0));
+        assert_eq!(
+            received(&b).await,
+            vec![
+                (a_id.clone(), first, 1_000, Some("one".to_string())),
+                (a_id.clone(), second, 2_000, None)
+            ]
+        );
+        assert_eq!(cursor(&b, a_id.clone()).await, pulled.cursor);
+
+        let third = collect(&a, 3_000, Some("three")).await;
+        let again = b.pull(&a_id).await.unwrap();
+
+        assert_eq!((again.upserted, again.deleted), (1, 0));
+        assert!(again.cursor > pulled.cursor);
+        assert_eq!(received(&b).await.len(), 3);
+        assert_eq!(
+            received(&b).await[2],
+            (a_id.clone(), third, 3_000, Some("three".to_string()))
+        );
+        assert_eq!(b.pull(&a_id).await.unwrap().upserted, 0);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_updated_event_replaces_its_copy() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let row = collect(&a, 1_000, Some("commit")).await;
+
+        b.pull(&a_id).await.unwrap();
+        execute(&a, "UPDATE collected_event SET at_ms = 1500").await;
+
+        assert_eq!(b.pull(&a_id).await.unwrap().upserted, 1);
+        assert_eq!(received(&b).await, vec![(a_id, row, 1_500, Some("commit".to_string()))]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_deleted_event_arrives_as_a_tombstone_and_removes_the_copy() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        collect(&a, 1_000, Some("gone")).await;
+        let kept = collect(&a, 2_000, Some("kept")).await;
+
+        b.pull(&a_id).await.unwrap();
+        execute(&a, "DELETE FROM collected_event WHERE dedupe_key = 'gone'").await;
+
+        let pulled = b.pull(&a_id).await.unwrap();
+
+        assert_eq!((pulled.upserted, pulled.deleted), (0, 1));
+        assert_eq!(received(&b).await, vec![(a_id, kept, 2_000, Some("kept".to_string()))]);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_key_held_by_a_copy_whose_tombstone_was_missed_moves_to_the_new_row() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        collect(&a, 1_000, Some("calendar")).await;
+        b.pull(&a_id).await.unwrap();
+        execute(
+            &a,
+            "DELETE FROM collected_event WHERE dedupe_key = 'calendar'; DELETE FROM deleted_event;",
+        )
+        .await;
+
+        let replacement = collect(&a, 1_000, Some("calendar")).await;
+        let pulled = b.pull(&a_id).await.unwrap();
+
+        assert_eq!((pulled.upserted, pulled.deleted), (1, 1));
+        assert_eq!(
+            received(&b).await,
+            vec![(a_id, replacement, 1_000, Some("calendar".to_string()))]
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_pull_pages_through_more_changes_than_one_page_holds() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+
+        for at_ms in 0..7 {
+            collect(&a, at_ms, None).await;
+        }
+
+        execute(&a, "DELETE FROM collected_event WHERE at_ms = 3").await;
+
+        let pulled = b.pull_in_pages(&a_id, 3).await.unwrap();
+
+        assert_eq!(pulled.upserted, 6);
+        assert_eq!(received(&b).await.len(), 6);
+        assert!(received(&b).await.iter().all(|(_, _, at_ms, _)| *at_ms != 3));
+
+        let page = a.0.db.run(|connection| changes_after(connection, 0, 3)).await.unwrap();
+
+        assert!(matches!(page, Frame::Changes { ref events, more: true, .. } if events.len() == 3));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn an_unpaired_certificate_cannot_pull() {
+        let (a, b) = (instance("pc"), instance("stranger"));
+        let port = a.ensure_listening().await.unwrap();
+        let a_id = machine_id(&a).await;
+        let a_fingerprint = a.identity().await.unwrap().fingerprint.clone();
+        let stored_id = a_id.clone();
+
+        collect(&a, 1_000, None).await;
+        b.0.db
+            .run(move |connection| {
+                store_pairing(
+                    connection,
+                    &stored_id,
+                    "pc",
+                    &a_fingerprint,
+                    Some(&format!("127.0.0.1:{port}")),
+                )
+            })
+            .await
+            .unwrap();
+
+        let error = b.pull(&a_id).await.unwrap_err();
+
+        assert!(error.to_string().contains("not paired"), "{error}");
+        assert!(received(&b).await.is_empty());
+        assert_eq!(cursor(&b, a_id).await, 0);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_never_serves_the_events_it_received_from_a_third() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let own = collect(&a, 1_000, None).await;
+
+        execute(
+            &a,
+            "INSERT INTO received_event (machine_id, peer_row_id, at_ms, source, kind, payload, dedupe_key)
+             VALUES ('third', 1, 1000, 'git', 'git-commit', '{}', 'theirs')",
+        )
+        .await;
+
+        b.pull(&a_id).await.unwrap();
+
+        assert_eq!(received(&b).await, vec![(a_id, own, 1_000, None)]);
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn answers_the_agent_ops_by_name() {
         let (a, b) = (instance("pc"), instance("laptop"));
@@ -1554,6 +2094,12 @@ mod tests {
             .answer(&serde_json::json!({ "op": "peers.hello", "machineId": id }))
             .await
             .is_ok());
+        assert_eq!(
+            b.answer(&serde_json::json!({ "op": "peers.pull", "machineId": id }))
+                .await
+                .unwrap()["upserted"],
+            0
+        );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.forget", "machineId": id }))
                 .await

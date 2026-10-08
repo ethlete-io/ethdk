@@ -45,6 +45,7 @@ const COMMANDS: &[&str] = &[
     "peers_forget",
     "peers_hello",
     "peers_list",
+    "peers_pull",
     "read_spec",
     "reporter_vsix_path",
     "run_process",
