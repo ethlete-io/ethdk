@@ -169,3 +169,20 @@ A review agent gets one finished fix slice (a domain file and its list of change
 - Open user decisions: every line still marked `Decision: yes` and without a status, plus SEL-04/06,
   QA-03/06/13, TG-01/03/04/07, SS-02/03/05, BR-08, RTE-05/06/07, MISC-07/13, CR-05/06/09, QB-02/12,
   DT-05/06, the EA/FG decision lines.
+
+## Coordinator checkpoint (2026-10-08)
+
+- Decided and committed today: TG-04 `c26a2a59e`, CORE-16 `60d15e33d`, MISC-08 `f480e7aec`, TG-07 + OV-06 `647d11994`
+  (one commit, shared index), FG-05 `5fcb4d275`, OV-14 `092d7a434`, typecheck fix `f063728b0`, BR-08/BR-06/FG-13
+  `b855e81b3`, EA-01 `331ac4fd6`, TG-01/TG-03 `c9c3833e7`, RTE-06 `7ecb531c1`, RTE-05 `d0b746ebc`.
+- ea-frontend has uncommitted EA-01 edits (app.config.ts, unsaved-changes-confirm.provider.ts, shared/index.ts, five
+  partner overlays); they typecheck only after the next SDK release.
+- Running at checkpoint: CR-06 (one `value` model whose type is inferred from the binding; user rejected a
+  `value`/`values` split), the RTE test-driver `attachEditable()` fix, and the scheduler plan phases 1, 2, 4
+  (`plans/scheduler-edit-surface-composition.md`).
+- Next: scheduler phase 3 (timetrack; run the timetrack snapshot before/after and the e2e suite on a quiet tree), then
+  CR-09 (`stripInternal` + per-member audit, checked against the ea-frontend build).
+- Skipped by the user for now: SS-03. SS-02 and the edit-field half of SS-04 are replaced by the scheduler plan.
+- Final sweep after all agents: `nx lint components` (CR-06 added `V` type-parameter names that fail lint),
+  `docs:error-codes:check` (ET1015, ET3309, ET4602 were undocumented mid-run), full `nx test components` once.
+- Agents share one git index: brief them to commit with `git commit --only <files>`.
