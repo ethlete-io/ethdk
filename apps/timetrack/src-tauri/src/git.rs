@@ -18,6 +18,19 @@ const SKIPPED_DIRS: [&str; 5] = ["node_modules", "target", "dist", "vendor", "Li
 /// still scanned — they just wait for the next reconcile instead of reporting a switch at once.
 const MAX_WATCHED_REPOS: usize = 128;
 
+/// macOS TCC guards these home folders with a consent prompt that a mere listing triggers, so a walk
+/// that enters one asks for the music library, the Photos library and the user's files at once.
+/// A root configured inside one is still walked: the walk starts below the folder and never meets it.
+const TCC_PROTECTED_HOME_DIRS: [&str; 7] = [
+    "Desktop",
+    "Documents",
+    "Downloads",
+    "Library",
+    "Movies",
+    "Music",
+    "Pictures",
+];
+
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitRepos {
@@ -163,7 +176,7 @@ fn is_skipped(entry: &Path) -> bool {
 ///
 /// A repository inside a repository is a submodule or a vendored copy: its commits already belong to
 /// the parent's history, so walking in would report the same work twice.
-fn discover(root: &Path, depth: usize, found: &mut Vec<PathBuf>) {
+fn discover(root: &Path, depth: usize, fenced: &[PathBuf], found: &mut Vec<PathBuf>) {
     if depth > MAX_DEPTH {
         return;
     }
@@ -175,14 +188,14 @@ fn discover(root: &Path, depth: usize, found: &mut Vec<PathBuf>) {
     for entry in entries.filter_map(Result::ok) {
         let path = entry.path();
 
-        if !entry.file_type().is_ok_and(|kind| kind.is_dir()) || is_skipped(&path) {
+        if !entry.file_type().is_ok_and(|kind| kind.is_dir()) || is_skipped(&path) || fenced.contains(&path) {
             continue;
         }
 
         if git_dir(&path).is_some() {
             found.push(path);
         } else {
-            discover(&path, depth + 1, found);
+            discover(&path, depth + 1, fenced, found);
         }
     }
 }
@@ -301,17 +314,27 @@ impl Default for GitWatcher {
 
 /// Walks every root, reporting each repository once however many roots reach it. `MAX_DEPTH` counts
 /// from each root, so naming `~/dev` finds work the home directory alone is too shallow to reach.
-fn discover_all(roots: &[PathBuf]) -> Vec<PathBuf> {
+///
+/// A path in `fenced` is never entered.
+fn discover_all(roots: &[PathBuf], fenced: &[PathBuf]) -> Vec<PathBuf> {
     let mut found = Vec::new();
 
     for root in roots {
-        discover(root, 0, &mut found);
+        discover(root, 0, fenced, &mut found);
     }
 
     found.sort();
     found.dedup();
 
     found
+}
+
+fn protected_dirs(home: &Path) -> Vec<PathBuf> {
+    if !cfg!(target_os = "macos") {
+        return Vec::new();
+    }
+
+    TCC_PROTECTED_HOME_DIRS.iter().map(|name| home.join(name)).collect()
 }
 
 /// Finds the repositories to scan and arms the watch over them.
@@ -333,7 +356,8 @@ pub async fn git_repos(
         .map(|root| root.to_string_lossy().into_owned())
         .collect::<Vec<_>>()
         .join(", ");
-    let found = tauri::async_runtime::spawn_blocking(move || discover_all(&roots))
+    let fenced = protected_dirs(&app.path().home_dir()?);
+    let found = tauri::async_runtime::spawn_blocking(move || discover_all(&roots, &fenced))
         .await
         .map_err(|error| TimetrackError::Rejected(error.to_string()))?;
 
@@ -394,7 +418,7 @@ mod tests {
     }
 
     fn found_in(root: &Path) -> Vec<String> {
-        discover_all(&[root.to_path_buf()])
+        discover_all(&[root.to_path_buf()], &[])
             .iter()
             .map(|path| path.strip_prefix(root).unwrap().to_string_lossy().into_owned())
             .collect()
@@ -441,9 +465,42 @@ mod tests {
         repo(&root, "dev/frontend");
         repo(&root, "work/api");
 
-        let found = discover_all(&[root.join("dev"), root.join("work"), root.clone()]);
+        let found = discover_all(&[root.join("dev"), root.join("work"), root.clone()], &[]);
 
         assert_eq!(found, [root.join("dev/frontend"), root.join("work/api")]);
+    }
+
+    fn fenced_home(root: &Path) -> Vec<PathBuf> {
+        TCC_PROTECTED_HOME_DIRS.iter().map(|name| root.join(name)).collect()
+    }
+
+    #[test]
+    fn never_enters_a_protected_home_folder_from_the_home_directory() {
+        let root = temp_root("protected");
+
+        repo(&root, "dev/sdk");
+        repo(&root, "Music/band");
+        repo(&root, "Pictures/Photos Library.photoslibrary/inner");
+        repo(&root, "Documents/client/api");
+        repo(&root, "Desktop/scratch");
+        repo(&root, "Downloads/clone");
+
+        assert_eq!(
+            discover_all(std::slice::from_ref(&root), &fenced_home(&root)),
+            [root.join("dev/sdk")]
+        );
+    }
+
+    #[test]
+    fn walks_a_root_configured_inside_a_protected_folder() {
+        let root = temp_root("protected-configured");
+
+        repo(&root, "Documents/client/api");
+
+        assert_eq!(
+            discover_all(&[root.join("Documents")], &fenced_home(&root)),
+            [root.join("Documents/client/api")]
+        );
     }
 
     #[test]
