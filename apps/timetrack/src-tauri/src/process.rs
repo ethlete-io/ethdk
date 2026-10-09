@@ -147,6 +147,44 @@ fn rejected_argument(argument: &str) -> bool {
         || names_a_transport(argument)
 }
 
+fn reads_a_file(field: &str) -> bool {
+    field.starts_with('@') || field.split_once('=').is_some_and(|(_, value)| value.starts_with('@'))
+}
+
+/// The `api` flag that makes a forge CLI read a local file, if the arguments use one: `--input`
+/// takes a file unless it is `-` (stdin), and a `-F`/`--field` value starting with `@` is read from a file.
+fn forge_file_read(args: &[String]) -> Option<&str> {
+    let mut iter = args.iter().map(String::as_str);
+
+    while let Some(argument) = iter.next() {
+        let (flag, inline) = match argument.split_once('=') {
+            Some((flag, value)) if flag.starts_with("--") => (flag, Some(value)),
+            _ => match argument.strip_prefix("-F").filter(|rest| !rest.is_empty()) {
+                Some(rest) if !argument.starts_with("--") => ("-F", Some(rest)),
+                _ => (argument, None),
+            },
+        };
+
+        if flag != "--input" && flag != "-F" && flag != "--field" {
+            continue;
+        }
+
+        let value = inline.or_else(|| iter.next()).unwrap_or_default();
+
+        let reads = if flag == "--input" {
+            value != "-"
+        } else {
+            reads_a_file(value)
+        };
+
+        if reads {
+            return Some(argument);
+        }
+    }
+
+    None
+}
+
 /// The operation the arguments ask for, checked against what this binary may be asked to do.
 fn check(command: &str, args: &[String]) -> TimetrackResult<()> {
     let Some(allowed) = ALLOWED.iter().find(|allowed| allowed.command == command) else {
@@ -172,6 +210,14 @@ fn check(command: &str, args: &[String]) -> TimetrackResult<()> {
         return Err(TimetrackError::Rejected(format!(
             "{argument} would let {command} run something else"
         )));
+    }
+
+    if matches!(command, "glab" | "gh") {
+        if let Some(argument) = forge_file_read(args) {
+            return Err(TimetrackError::Rejected(format!(
+                "{argument} would let {command} read a local file"
+            )));
+        }
     }
 
     Ok(())
@@ -283,5 +329,19 @@ mod tests {
         assert!(check("claude", &args(&["--dangerously-skip-permissions"])).is_err());
         assert!(check("codex", &args(&["--dangerously-bypass-approvals-and-sandbox"])).is_err());
         assert!(check("sh", &args(&["-c", "id"])).is_err());
+    }
+
+    #[test]
+    fn refuses_a_forge_call_that_reads_a_local_file() {
+        assert!(check("glab", &args(&["api", "--input", "/etc/passwd", "projects"])).is_err());
+        assert!(check("glab", &args(&["api", "--input=/etc/passwd", "projects"])).is_err());
+        assert!(check("gh", &args(&["api", "--input", "body.json", "repos"])).is_err());
+        assert!(check("glab", &args(&["api", "--input", "-", "projects"])).is_ok());
+        assert!(check("glab", &args(&["api", "--input=-", "projects"])).is_ok());
+        assert!(check("glab", &args(&["api", "-F", "body=@/etc/passwd", "projects"])).is_err());
+        assert!(check("glab", &args(&["api", "--field", "@/etc/passwd", "projects"])).is_err());
+        assert!(check("glab", &args(&["api", "--field=body=@/etc/passwd", "projects"])).is_err());
+        assert!(check("glab", &args(&["api", "-Fbody=@/etc/passwd", "projects"])).is_err());
+        assert!(check("glab", &args(&["api", "-F", "title=hello", "-f", "a=@b", "projects"])).is_ok());
     }
 }
