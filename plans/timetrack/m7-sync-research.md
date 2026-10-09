@@ -210,7 +210,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      both sides, set in the project paths view. Coordinate first: another session is editing
      `settings/model.ts` and `settings/parse.ts`. Files: settings model and parse, project paths
      view, the 4b map writer. Tests: parse spec, e2e `project-paths.spec.ts` alias case.
-   - 4h. "Changed after booking": a booked (frozen) day whose merged read now differs from
+   - 4h. In progress (2026-10-09). "Changed after booking": a booked (frozen) day whose merged read now differs from
      `frozenRows` shows the note and is not re-cut (decision 4). Files: `day-review.ts`, the day
      header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. Tom, 2026-10-09: the
      frozen day also draws a peer's work as read-only bands labeled "Booked on <machine>", so 10-08
