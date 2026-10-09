@@ -98,7 +98,7 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
   {
     label: 'Reset to the proposal',
     order: 30,
-    enabled: ({ row }) => row.edited && !isManualRow(row),
+    enabled: ({ row }) => (row.edited || row.sources?.description === 'auto') && !isManualRow(row),
     run: ({ store, row }) => store.reset(row),
   },
   {

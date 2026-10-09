@@ -221,6 +221,34 @@ describe('reviewDay folding single-increment rows', () => {
     expect(spans(review(unfolded, edited))).toEqual(['12:15-13:45 90m', '14:45-15:00 15m']);
   });
 
+  it('still folds a short row whose only change is a description auto mode wrote', () => {
+    const unfolded = dayRows({ unnamed: [band({ from: '12:15', to: '13:45' }), band({ from: '14:45', to: '15:00' })] });
+    const described = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { ...unfolded.unnamed[1]!, edited: false, hidden: false },
+      description: 'auto line',
+      source: 'auto',
+    });
+
+    expect(spans(review(unfolded, described))).toEqual(['12:15-14:00 105m']);
+  });
+
+  it('reads a row whose only change is an auto description as not edited', () => {
+    const [grown] = review(day).rows;
+    const edits = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: grown!,
+      description: 'auto line',
+      source: 'auto',
+    });
+    const [row] = review(day, edits).rows;
+
+    expect(row?.description).toBe('auto line');
+    expect(row?.edited).toBe(false);
+    expect(row?.state).toBe('suggested');
+    expect(row?.sources?.description).toBe('auto');
+  });
+
   it('keeps folding into a neighbour the reviewer edited in place', () => {
     const [grown] = review(day).rows;
     const edits = setRowDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row: grown!, description: 'mine' });

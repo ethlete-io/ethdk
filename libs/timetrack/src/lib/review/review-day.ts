@@ -55,13 +55,24 @@ const MOST_PARALLEL_SIBLINGS = 3;
 const defaultState = (row: RowSource): WorklogProposalState =>
   row.issueKey && syncsWithoutReview(row.confidence) ? 'accepted' : 'suggested';
 
+const describedByHand = (override: ProposalOverride) =>
+  override.description !== undefined && override.sources?.description !== 'auto';
+
+/** Whether a row may fold: nothing overrides it, or only a description auto mode wrote. */
+const foldableOverride = (override: ProposalOverride | undefined) =>
+  !override ||
+  (!describedByHand(override) &&
+    override.issueKey === undefined &&
+    override.standInId === undefined &&
+    override.state === undefined &&
+    override.hidden !== true);
+
 const withOverride = (row: RowSource, override: ProposalOverride | undefined): ReviewedRow => {
   const proposed = row.issueKey ? { ...row, issueKey: row.issueKey } : undefined;
 
   if (!override) return { ...row, state: defaultState(row), edited: false, hidden: false };
 
-  const changed =
-    override.issueKey !== undefined || override.standInId !== undefined || override.description !== undefined;
+  const changed = override.issueKey !== undefined || override.standInId !== undefined || describedByHand(override);
 
   // An override that names a placeholder names no issue. The form blanks its issue field to say so,
   // and an empty key is not `undefined`, so without this it wins the `??` below and the row reads
@@ -529,11 +540,11 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
       most: MOST_PARALLEL_SIBLINGS,
       incrementMs,
       fixed: (row) => pinnedIds.has(row.id),
-      canFold: (row) => !edits.overrides[row.id],
+      canFold: (row) => foldableOverride(edits.overrides[row.id]),
     }),
     incrementMs,
     fixed: (row) => pinnedIds.has(row.id),
-    canFold: (row) => !edits.overrides[row.id],
+    canFold: (row) => foldableOverride(edits.overrides[row.id]),
     blockers: edits.pinned.filter((row) => !row.hidden),
     // The re-cut below hands a background row's minutes to any foreground row over them, so a growth
     // across that divide would take minutes a background row books, or be cut away again.
