@@ -198,7 +198,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      0002). Files: `stream/stream-day.ts` (spend), `day-review/day-streams.component.ts`,
      `sources/inventory.ts`, `store.rs` test. Tests: unit spec, `cargo test` that compaction leaves
      `received_event` alone, e2e `day-streams.spec.ts` peer case.
-   - 4g. Manual alias: settings field `repoAliases` (checkout path to key) overrides `repoKeyOf` on
+   - 4g. In progress (2026-10-09). Manual alias: settings field `repoAliases` (checkout path to key) overrides `repoKeyOf` on
      both sides, set in the project paths view. Coordinate first: another session is editing
      `settings/model.ts` and `settings/parse.ts`. Files: settings model and parse, project paths
      view, the 4b map writer. Tests: parse spec, e2e `project-paths.spec.ts` alias case.
