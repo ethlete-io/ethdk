@@ -2,7 +2,13 @@ import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
-import { fetchJiraIssueStatus$, fetchJiraStatuses$, fetchJiraTransitions$, moveJiraIssueTo$ } from './status';
+import {
+  fetchJiraIssueState$,
+  fetchJiraIssueStatus$,
+  fetchJiraStatuses$,
+  fetchJiraTransitions$,
+  moveJiraIssueTo$,
+} from './status';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
 
@@ -75,6 +81,44 @@ describe('fetchJiraIssueStatus$', () => {
     fetchJiraIssueStatus$({ transport, credentials: CREDENTIALS, issueKey: 'FIP-9' }).subscribe(seen);
 
     expect(seen).toHaveBeenCalledWith('');
+  });
+});
+
+describe('fetchJiraIssueState$', () => {
+  const stateOf = (answer: { status: number; body: unknown }) => {
+    const transport: TimetrackTransport = { request$: vi.fn(() => of({ headers: {}, ...answer })) as never };
+    const seen = vi.fn();
+    const failed = vi.fn();
+
+    fetchJiraIssueState$({ transport, credentials: CREDENTIALS, issueKey: 'fip-9' }).subscribe({
+      next: seen,
+      error: failed,
+    });
+
+    return { seen, failed };
+  };
+
+  it('reads an issue in the done category as done, and any other as open', () => {
+    expect(
+      stateOf({ status: 200, body: { key: 'FIP-9', fields: { status: { statusCategory: { key: 'done' } } } } }).seen,
+    ).toHaveBeenCalledWith('done');
+    expect(
+      stateOf({ status: 200, body: { key: 'FIP-9', fields: { status: { statusCategory: { key: 'new' } } } } }).seen,
+    ).toHaveBeenCalledWith('open');
+  });
+
+  it('reads a deleted issue and one Jira answers under another key as gone', () => {
+    expect(stateOf({ status: 404, body: { errorMessages: ['Issue does not exist.'] } }).seen).toHaveBeenCalledWith(
+      'gone',
+    );
+    expect(stateOf({ status: 200, body: { key: 'OTHER-4', fields: {} } }).seen).toHaveBeenCalledWith('gone');
+  });
+
+  it('fails on any other refusal rather than guessing', () => {
+    const { seen, failed } = stateOf({ status: 429, body: {} });
+
+    expect(seen).not.toHaveBeenCalled();
+    expect(failed).toHaveBeenCalled();
   });
 });
 

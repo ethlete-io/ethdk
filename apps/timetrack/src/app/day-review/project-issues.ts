@@ -4,6 +4,7 @@ import {
   JiraCredentials,
   JiraIssue,
   JiraIssueType,
+  TicketCandidate,
   TimetrackPorts,
   TimetrackSettings,
   childTypeNameFor,
@@ -27,8 +28,7 @@ export const NO_JIRA = 'Jira needs a host, an account email and a token in Setti
 export type ProjectIssues = {
   projectKey: string;
   parents: JiraIssue[];
-  epic: JiraIssue[];
-  open: JiraIssue[];
+  open: TicketCandidate[];
   /** The issues the user logged or named rows with that `open` lacks, done ones included. */
   logged: JiraIssue[];
   /** What this account may create here. Empty until the read lands, which offers no type at all. */
@@ -77,7 +77,7 @@ export const readProjectIssues$ = (options: {
   projectKey: string;
   /** The keys the user logged on or named rows with, most relevant first. Any project's. */
   loggedKeys?: readonly string[];
-  epic$?: (credentials: JiraCredentials) => Observable<JiraIssue[]>;
+  open$?: (credentials: JiraCredentials) => Observable<TicketCandidate[]>;
 }): Observable<ProjectIssues> => {
   const { ports, settings, projectKey } = options;
   const subjectField = settings.ticket.subjectField || undefined;
@@ -103,7 +103,9 @@ export const readProjectIssues$ = (options: {
                           subjectField,
                         })
                       : of<JiraIssue[]>([]),
-                    open: fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
+                    open:
+                      options.open$?.(credentials) ??
+                      fetchJiraOpenIssues$({ transport: ports.transport, credentials, projectKey, subjectField }),
                     logged: fetchJiraLoggedIssues$({
                       transport: ports.transport,
                       credentials,
@@ -111,14 +113,10 @@ export const readProjectIssues$ = (options: {
                       loggedKeys: options.loggedKeys ?? [],
                       subjectField,
                     }).pipe(catchError(() => of<JiraIssue[]>([]))),
-                    epic: (options.epic$?.(credentials) ?? of<JiraIssue[]>([])).pipe(
-                      catchError(() => of<JiraIssue[]>([])),
-                    ),
                   }).pipe(
-                    map(({ parents, open, logged, epic }) => ({
+                    map(({ parents, open, logged }) => ({
                       projectKey,
                       parents,
-                      epic,
                       open,
                       logged: logged.filter((issue) => !open.some((held) => held.key === issue.key)),
                       creatable,
@@ -135,9 +133,8 @@ export const readProjectIssues$ = (options: {
   );
 };
 
-/** Every issue the work could already be: the epics' open children, the project's open ones, then the logged ones. */
-export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'projectKey' | 'epic' | 'open' | 'logged'>) =>
-  ticketMatchCandidates(issues);
+/** Every issue the work could already be: the project's open ones, then the logged ones. */
+export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'open' | 'logged'>) => ticketMatchCandidates(issues);
 
 /**
  * The keys the work could already be, from the user's own record: the keys the user named rows of

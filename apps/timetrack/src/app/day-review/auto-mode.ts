@@ -13,6 +13,8 @@ import {
   DayRows,
   JiraCredentials,
   JiraIssue,
+  JiraIssueState,
+  JiraMirror,
   TicketCandidate,
   TicketWording,
   UnnamedContext,
@@ -62,7 +64,8 @@ import {
   epicKeysOfIssues,
   favoriteProjectKeys,
   fetchJiraDoneIssueKeys$,
-  fetchJiraEpicChildren$,
+  fetchJiraIssueState$,
+  fetchJiraOpenIssues$,
   fetchJiraIssues$,
   gitFlowConfigFor,
   isAgentApiRequest,
@@ -72,8 +75,10 @@ import {
   matchAttributionRule,
   reasoningOptionsOf,
   recordingRunner,
+  rankMirrorCandidates,
   readJiraCredentials$,
   shiftDayKey,
+  ticketRequestText,
   userNamedIssueKeysIn,
   withAutoModeAnswer,
   withAutoModeSubjectItemsExpired,
@@ -110,6 +115,7 @@ import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectAgentDay } from '../agent/agent-day';
 import { injectApprovalQueue } from '../agent/approval-queue';
+import { injectJiraMirror } from '../jira/jira-mirror';
 import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
@@ -238,6 +244,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const standInStore = injectStandIns();
   const git = injectGitCollector();
   const epics = injectEpicSiblings();
+  const jiraMirror = injectJiraMirror();
   const reportCopy = signal<{ ok: boolean; atMs: number } | null>(null);
   const modelCalls = signal<readonly ModelCall[]>([]);
   const runner = recordingRunner({
@@ -414,7 +421,6 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }),
       );
 
-  const epicReads = createDayReadCache<JiraIssue[]>();
   const checkoutEpicReads = createDayReadCache<string[]>();
 
   const readMoment = () => ({
@@ -423,48 +429,71 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     standInIds: settings.settings().standIns.map((entry) => entry.id),
   });
 
-  const checkoutEpicKeys$ = (credentials: JiraCredentials, repoPath: string): Observable<string[]> =>
+  const checkoutEpicKeys$ = (options: {
+    credentials: JiraCredentials;
+    repoPath: string;
+    mirror: JiraMirror;
+  }): Observable<string[]> =>
     checkoutEpicReads({
-      key: repoPath,
+      key: options.repoPath,
       now: readMoment(),
       read$: () => {
         const day = today();
+        const held = new Map(options.mirror.issues.map((issue) => [issue.key.toUpperCase(), issue]));
 
         return ports.review.editsBetween$(shiftDayKey(day, -CHECKOUT_EPIC_WEEKS * 7), day).pipe(
           take(1),
-          map((days) => userNamedIssueKeysIn(days, `repo:${repoPath}`).slice(0, CHECKOUT_EPIC_ISSUE_LIMIT)),
-          switchMap((keys) => fetchJiraIssues$({ transport: ports.transport, credentials, keys })),
+          map((days) => userNamedIssueKeysIn(days, `repo:${options.repoPath}`).slice(0, CHECKOUT_EPIC_ISSUE_LIMIT)),
+          switchMap((keys) => {
+            const known = keys.flatMap((key) => held.get(key.toUpperCase()) ?? []);
+            const missing = keys.filter((key) => !held.has(key.toUpperCase()));
+
+            return (
+              missing.length
+                ? fetchJiraIssues$({ transport: ports.transport, credentials: options.credentials, keys: missing })
+                : of<JiraIssue[]>([])
+            ).pipe(map((read) => [...known, ...read]));
+          }),
           map(epicKeysOfIssues),
         );
       },
     });
 
-  const epicChildren$ = (options: {
+  const epicKeys$ = (options: {
     credentials: JiraCredentials;
-    projectKey: string;
     repoPath: string | undefined;
-  }): Observable<JiraIssue[]> => {
-    const { credentials, projectKey, repoPath } = options;
+    mirror: JiraMirror;
+  }): Observable<string[]> => {
+    const { repoPath } = options;
 
     if (!repoPath) return of([]);
 
     const linked = epicKeysFor({ context: { repoPath }, links: projectLinks() });
 
-    return (linked.length ? of(linked) : checkoutEpicKeys$(credentials, repoPath)).pipe(
-      switchMap((epicKeys) =>
-        epicKeys.length
-          ? epicReads({
-              key: `${projectKey}|${[...epicKeys].sort().join(',')}`,
-              now: readMoment(),
-              read$: () =>
-                fetchJiraEpicChildren$({
-                  transport: ports.transport,
-                  credentials,
-                  epicKeys,
-                  subjectField: settings.settings().ticket.subjectField || undefined,
-                }),
-            })
-          : of<JiraIssue[]>([]),
+    return linked.length ? of(linked) : checkoutEpicKeys$({ ...options, repoPath });
+  };
+
+  const rankedOpen$ = (options: {
+    credentials: JiraCredentials;
+    projectKey: string;
+    repoPath: string | undefined;
+    text: string;
+  }): Observable<TicketCandidate[]> => {
+    const { credentials, projectKey, repoPath, text } = options;
+
+    return jiraMirror.mirror$(projectKey).pipe(
+      switchMap((mirror) =>
+        mirror
+          ? epicKeys$({ credentials, repoPath, mirror }).pipe(
+              catchError(() => of<string[]>([])),
+              map((epicKeys) => rankMirrorCandidates({ issues: mirror.issues, projectKey, text, epicKeys })),
+            )
+          : fetchJiraOpenIssues$({
+              transport: ports.transport,
+              credentials,
+              projectKey,
+              subjectField: settings.settings().ticket.subjectField || undefined,
+            }),
       ),
     );
   };
@@ -478,8 +507,9 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     subject: AutoModeSubject;
     projectKey: string | undefined;
     repoPath: string | undefined;
+    text: string;
   }): Observable<ProjectIssues | null> => {
-    const { subject, projectKey, repoPath } = options;
+    const { subject, projectKey, repoPath, text } = options;
 
     if (!projectKey) return of(null);
 
@@ -503,7 +533,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           settings: settings.settings(),
           projectKey,
           loggedKeys,
-          epic$: (credentials) => epicChildren$({ credentials, projectKey, repoPath }),
+          open$: (credentials) => rankedOpen$({ credentials, projectKey, repoPath, text }),
         }),
       ),
       catchError(() => of(null)),
@@ -558,11 +588,18 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   };
 
   const prepare$ = (subject: AutoModeSubject, evidence: AskEvidence): Observable<Prepared | null> => {
-    if (!requestOf({ subject, evidence, issues: null, candidates: [] })) return of(null);
+    const bare = requestOf({ subject, evidence, issues: null, candidates: [] });
+
+    if (!bare) return of(null);
 
     const projectKey = projectKeyOf(subject, evidence);
 
-    return issues$({ subject, projectKey, repoPath: repoPathOf(subject, evidence) }).pipe(
+    return issues$({
+      subject,
+      projectKey,
+      repoPath: repoPathOf(subject, evidence),
+      text: ticketRequestText(bare),
+    }).pipe(
       map((issues) => {
         const candidates = issues ? matchCandidatesOf(issues) : [];
         const request = requestOf({ subject, evidence, issues, candidates });
@@ -639,13 +676,26 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return of(undefined);
   };
 
-  const withDone$ = (answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
+  const issueState$ = (issueKey: string): Observable<JiraIssueState | null> =>
+    readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
+      switchMap((credentials) =>
+        credentials ? fetchJiraIssueState$({ transport: ports.transport, credentials, issueKey }) : of(null),
+      ),
+      catchError(() => of(null)),
+    );
+
+  const withIssueState$ = (answer: AutoModeAnswer): Observable<AutoModeAnswer> => {
     const { outcome } = answer;
 
     if (outcome.kind !== 'match') return of(answer);
 
-    return doneKeys$([outcome.issueKey]).pipe(
-      map((done) => (done.has(outcome.issueKey) ? { ...answer, outcome: { ...outcome, done: true } } : answer)),
+    return issueState$(outcome.issueKey).pipe(
+      map((state) => {
+        if (state === 'done') return { ...answer, outcome: { ...outcome, done: true } };
+        if (state === 'gone') return { ...answer, outcome: { ...outcome, gone: true } };
+
+        return answer;
+      }),
     );
   };
 
@@ -690,7 +740,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           })),
         );
       }),
-      switchMap((answer) => withDone$(answer)),
+      switchMap((answer) => withIssueState$(answer)),
       switchMap((answer) =>
         heldAnswers$(ask.day).pipe(
           tap((held) => {
@@ -714,6 +764,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               const { outcome } = answer;
 
               if (outcome.kind !== 'match') return undefined;
+              if (outcome.gone) return `Jira no longer holds ${outcome.issueKey}, nothing applied`;
               if (outcome.done)
                 return `${outcome.issueKey} is done, ${queued ? 'waits for your approval' : 'left to you'}`;
               if (outcome.listOnly && queued)
@@ -1248,13 +1299,28 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           return EMPTY;
         }
 
-        approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
+        return issueState$(request.issueKey).pipe(
+          map((state) => {
+            const refusal =
+              state === 'gone'
+                ? `Jira no longer holds ${request.issueKey}: it was deleted or moved to another project.`
+                : state === 'done' && !request.done
+                  ? `${request.issueKey} is done in Jira now. Ask auto mode again.`
+                  : undefined;
 
-        if (request.subject.kind === 'stand-in') {
-          standInStore.resolve({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
-        }
+            if (refusal) {
+              approvals.finish(id, { ok: false, message: refusal });
 
-        return EMPTY;
+              return;
+            }
+
+            approvals.finish(id, { ok: true, value: { issueKey: request.issueKey } });
+
+            if (request.subject.kind === 'stand-in') {
+              standInStore.resolve({ id: request.subject.standInId, issueKey: request.issueKey, source: 'auto' });
+            }
+          }),
+        );
       }),
       takeUntilDestroyed(),
     )

@@ -30,11 +30,30 @@ const issueResource = (issue: FakeJiraIssue, fields: string[], issues: readonly 
   };
 };
 
+const statusResource = (name: string) => ({
+  name,
+  statusCategory: { key: name === 'Done' ? 'done' : 'indeterminate' },
+});
+
+const withStatus = (
+  backend: FakeBackend,
+  issue: FakeJiraIssue,
+  resource: ReturnType<typeof issueResource>,
+  fields: string[],
+) =>
+  fields.includes('status')
+    ? { ...resource, fields: { ...resource.fields, status: statusResource(statusOf(backend, issue)) } }
+    : resource;
+
 const search = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswer => {
   const fields = (request.query.get('fields') ?? '').split(',').filter(Boolean);
   const matched = filterByJql(backend.jira.issues, request.query.get('jql') ?? '');
 
-  return ok({ issues: matched.map((issue) => issueResource(issue, fields, backend.jira.issues)) });
+  return ok({
+    issues: matched.map((issue) =>
+      withStatus(backend, issue, issueResource(issue, fields, backend.jira.issues), fields),
+    ),
+  });
 };
 
 const projectSearch = (backend: FakeBackend): FakeAnswer =>
@@ -83,13 +102,8 @@ const readIssue = (backend: FakeBackend, read: { issueKey: string; request: Fake
   if (!issue) return { status: 404, body: { errorMessages: ['Issue does not exist.'] } };
 
   const fields = (request.query.get('fields') ?? '').split(',').filter(Boolean);
-  const resource = issueResource(issue, fields, backend.jira.issues);
 
-  return ok(
-    fields.includes('status')
-      ? { ...resource, fields: { ...resource.fields, status: { name: statusOf(backend, issue) } } }
-      : resource,
-  );
+  return ok(withStatus(backend, issue, issueResource(issue, fields, backend.jira.issues), fields));
 };
 
 const readTransitions = (backend: FakeBackend, issueKey: string): FakeAnswer => {

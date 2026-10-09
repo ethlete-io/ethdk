@@ -119,6 +119,23 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    stays out of `autoModeEvidenceOf`. A match whose key no evidence names (`autoModeKeyInEvidence`)
    is stored `listOnly` and waits as an `autoMode.apply` with its summary and reason at `local` and
    `external`, like a parent match; nothing at `human-only`. e2e: `epic-candidates.spec.ts`.
+   Jira mirror (approved and built 2026-10-09): candidates come from a local mirror, not a per-ask
+   read of the 100 newest. `jira/mirror.ts`: each linked project is read whole (open issues and the
+   ones updated in the last 30 days, paged, with status category, type, parent and its summary,
+   `updated`) once a day, and for `updated >= -Nm` since the last read every 20 minutes while auto
+   mode is on (`app/jira/jira-mirror.ts`, skipped within 10 minutes of the last read, so a reload
+   costs nothing); a project an ask needs and no mirror holds is read on demand. A failed read keeps
+   the mirror held. Stored per project in the encrypted store (`jira_mirror`, schema v24). Per ask
+   `rankMirrorCandidates` (`ticket/mirror-rank.ts`) runs BM25 over summary, parent summary and
+   subject against the branch, notes, stand-in and spec words (6-letter stems), boosts and marks
+   the children of the checkout's epics `inEpic`, puts a key the words name first, and sends the
+   best 25 (ties by recency). The epic keys come from the link or from the mirror's parents of the
+   issues the checkout was named with; only keys the mirror lacks are read from Jira. Without a
+   mirror the ask falls back to the 100 newest. `fetchJiraEpicChildren$` is gone. Before a match
+   applies, `fetchJiraIssueState$` reads that one issue: done marks it `done` as before; deleted, or
+   answered under another key (moved), marks it `gone`, which never applies or queues and reads out
+   as failed. An approved `autoMode.apply` is read again too and refused when gone, or done where the
+   card did not say done. The issue picker still searches Jira. e2e: `jira-mirror.spec.ts`.
    Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
    minutes before now) that names an issue gets its description written as `auto`, once per row:
    `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription` in

@@ -10,6 +10,7 @@ import { TauriEventStore, createTauriEventStore } from './event-store';
 import { TauriGitSource, createTauriGitSource } from './git-source';
 import { TauriGoogleClient, createTauriGoogleClient } from './google-client';
 import { TauriIngestSource, createTauriIngestSource } from './ingest-source';
+import { TauriJiraMirrorStore, createTauriJiraMirrorStore } from './jira-mirror-store';
 import { createTauriLedgerStore } from './ledger-store';
 import { TauriNudge, createTauriNudge } from './nudge';
 import { TauriOAuth, createTauriOAuth } from './oauth';
@@ -42,6 +43,7 @@ export type HostPorts = TimetrackPorts & {
   git: TauriGitSource;
   googleClient: TauriGoogleClient;
   ingest: TauriIngestSource;
+  jiraMirrors: TauriJiraMirrorStore;
   nudge: TauriNudge;
   oauth: TauriOAuth;
   peers: TauriPeers;
@@ -83,6 +85,7 @@ export const createHostPorts = (): HostPorts => {
     git: createTauriGitSource(),
     googleClient: createTauriGoogleClient(),
     ingest: createTauriIngestSource(),
+    jiraMirrors: createTauriJiraMirrorStore(),
     nudge: createTauriNudge(),
     oauth: createTauriOAuth(),
     peers: createTauriPeers(),

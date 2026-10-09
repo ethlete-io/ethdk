@@ -1,4 +1,4 @@
-import { Observable, map, of } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
 import { JiraCredentials } from './client';
 import { projectKeyOf } from '../ticket/project';
@@ -45,31 +45,6 @@ export const fetchJiraOpenIssues$ = (options: {
     fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
     describe: `open issues in ${options.projectKey}`,
     limit: options.limit ?? DEFAULT_OPEN_ISSUE_LIMIT,
-  }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
-};
-
-/** How many open children of the checkout's epics the duplicate check reads before the project-wide list. */
-export const DEFAULT_EPIC_CHILD_CANDIDATE_LIMIT = 50;
-
-/** The open children of `epicKeys`, most recently active first, in one read. */
-export const fetchJiraEpicChildren$ = (options: {
-  transport: TimetrackTransport;
-  credentials: JiraCredentials;
-  epicKeys: readonly string[];
-  subjectField?: string;
-  limit?: number;
-}): Observable<JiraIssue[]> => {
-  const keys = [...new Set(options.epicKeys.map((key) => key.trim().toUpperCase()))].filter((key) => projectKeyOf(key));
-
-  if (!keys.length) return of([]);
-
-  return searchJiraTopIssues$({
-    transport: options.transport,
-    credentials: options.credentials,
-    jql: `parent in (${keys.map(quoted).join(', ')}) AND statusCategory != Done ORDER BY updated DESC`,
-    fields: ['summary', 'issuetype', 'parent', ...(options.subjectField ? [options.subjectField] : [])],
-    describe: `open children of ${keys.join(', ')}`,
-    limit: options.limit ?? DEFAULT_EPIC_CHILD_CANDIDATE_LIMIT,
   }).pipe(map((resources) => resources.flatMap((resource) => toJiraIssue(resource, options.subjectField) ?? [])));
 };
 

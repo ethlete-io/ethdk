@@ -7,6 +7,7 @@ export * from './createmeta';
 export * from './fields';
 export * from './hierarchy';
 export * from './issue';
+export * from './mirror';
 export * from './myself';
 export * from './picker';
 export * from './projects';

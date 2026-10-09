@@ -151,11 +151,21 @@ describe('respondJira', () => {
     const statusOf = () =>
       (get(backend, `/issue/${E2E_ISSUE_KEY}`, { fields: 'status' }).body as IssueResource).fields['status'];
 
-    expect(statusOf()).toEqual({ name: 'Backlog' });
+    expect(statusOf()).toEqual({ name: 'Backlog', statusCategory: { key: 'indeterminate' } });
 
     post(backend, `/issue/${E2E_ISSUE_KEY}/transitions`, { transition: { id: 't3' } });
 
-    expect(statusOf()).toEqual({ name: 'In Progress' });
+    expect(statusOf()).toEqual({ name: 'In Progress', statusCategory: { key: 'indeterminate' } });
+  });
+
+  it('sends a searched issue’s status and its category when the search names the field', () => {
+    const backend = backendOf();
+
+    post(backend, `/issue/${E2E_ISSUE_KEY}/transitions`, { transition: { id: 't10001' } });
+
+    const found = get(backend, '/search/jql', { jql: `key in ("${E2E_ISSUE_KEY}")`, fields: 'summary,status' });
+
+    expect(issuesOf(found.body)[0]?.fields['status']).toEqual({ name: 'Done', statusCategory: { key: 'done' } });
   });
 
   it('answers 404 for an issue it does not hold', () => {

@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { TimetrackRequest, TimetrackTransport } from '../transport/ports';
-import { fetchJiraEpicChildren$, fetchJiraLoggedIssues$, fetchJiraParentCandidates$ } from './candidates';
+import { fetchJiraLoggedIssues$, fetchJiraParentCandidates$ } from './candidates';
 import { JiraCredentials } from './client';
 
 const CREDENTIALS: JiraCredentials = { host: 'https://team.atlassian.net', email: 'you@x.com', token: 't' };
@@ -154,57 +154,5 @@ describe('fetchJiraLoggedIssues$', () => {
     }).subscribe();
 
     expect(requests).toEqual([]);
-  });
-});
-
-describe('fetchJiraEpicChildren$', () => {
-  it('reads the open children of every epic in one read, most recently active first', () => {
-    const { transport, requests } = fakeTransport([]);
-
-    fetchJiraEpicChildren$({
-      transport,
-      credentials: CREDENTIALS,
-      epicKeys: ['fifagg-12601', 'FIFAGG-12601', 'FIP-3'],
-    }).subscribe();
-
-    expect(requests).toHaveLength(1);
-    expect(jqlOf(requests[0])).toBe(
-      'parent in ("FIFAGG-12601", "FIP-3") AND statusCategory != Done ORDER BY updated DESC',
-    );
-  });
-
-  it('reads nothing without an epic', () => {
-    const { transport, requests } = fakeTransport([]);
-    const seen: unknown[] = [];
-
-    fetchJiraEpicChildren$({ transport, credentials: CREDENTIALS, epicKeys: [' ', 'nokey'] }).subscribe((issues) =>
-      seen.push(issues),
-    );
-
-    expect(requests).toEqual([]);
-    expect(seen).toEqual([[]]);
-  });
-
-  it('keeps the summary of the parent Jira sends with each child', () => {
-    const { transport } = fakeTransport([
-      {
-        id: '1',
-        key: 'FIFAGG-12704',
-        fields: {
-          summary: 'Reward pass claim flow',
-          issuetype: { name: 'Story' },
-          parent: { key: 'FIFAGG-12601', fields: { summary: 'Rewards' } },
-        },
-      },
-    ]);
-    const seen: unknown[] = [];
-
-    fetchJiraEpicChildren$({ transport, credentials: CREDENTIALS, epicKeys: ['FIFAGG-12601'] }).subscribe((issues) =>
-      seen.push(issues),
-    );
-
-    expect(seen).toEqual([
-      [expect.objectContaining({ key: 'FIFAGG-12704', parentKey: 'FIFAGG-12601', parentSummary: 'Rewards' })],
-    ]);
   });
 });

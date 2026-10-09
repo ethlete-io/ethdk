@@ -1,6 +1,7 @@
 import {
   AgentApiAnswer,
   AgentApproval,
+  JiraMirror,
   AgentLogPass,
   AgentSessionCursor,
   AgentSessionLogReader,
@@ -19,6 +20,7 @@ import {
   TimetrackResponse,
   TimetrackSettings,
   parseApprovalQueue,
+  parseJiraMirror,
   parseTimetrackSettings,
   dedupeKeyOf,
   localDayKey,
@@ -126,6 +128,7 @@ export const createFakePorts = (): HostPorts => {
   const agentRequests$ = new Subject<AgentRequestEvent>();
   const agentReplies = new Map<number, (answer: AgentApiAnswer) => void>();
   let approvalQueue: string | null = null;
+  const jiraMirrors = new Map<string, string>();
   let agentRequestCount = 0;
 
   (globalThis as Record<string, unknown>)[TIMETRACK_E2E_AGENT_KEY] = (body: unknown) =>
@@ -192,6 +195,15 @@ export const createFakePorts = (): HostPorts => {
       read$: () => ok(parseApprovalQueue(approvalQueue === null ? null : JSON.parse(approvalQueue))),
       save$: (queue: readonly AgentApproval[]) => {
         approvalQueue = JSON.stringify(queue);
+
+        return done();
+      },
+    },
+
+    jiraMirrors: {
+      read$: () => ok([...jiraMirrors.values()].flatMap((stored) => parseJiraMirror(JSON.parse(stored)) ?? [])),
+      save$: (mirror: JiraMirror) => {
+        jiraMirrors.set(mirror.projectKey, JSON.stringify(mirror));
 
         return done();
       },

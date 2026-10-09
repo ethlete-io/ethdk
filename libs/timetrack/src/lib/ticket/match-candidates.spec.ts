@@ -13,40 +13,26 @@ const issue = (key: string, extra: Partial<JiraIssue> = {}): JiraIssue => ({
 const keysOf = (issues: readonly JiraIssue[]) => issues.map((entry) => entry.key);
 
 describe('ticketMatchCandidates', () => {
-  it('puts the epic children first and marks them, ahead of a project list they fell out of', () => {
-    const open = Array.from({ length: 100 }, (_, index) => issue(`FIFAGG-${20000 + index}`));
+  it('keeps the order it was given, marks included, and caps the list before the logged issues', () => {
+    const open = Array.from({ length: 30 }, (_, index) => issue(`FIFAGG-${1000 + index}`));
     const candidates = ticketMatchCandidates({
-      projectKey: 'FIFAGG',
-      epic: [issue('FIFAGG-12704', { parentKey: 'FIFAGG-12601', parentSummary: 'Rewards' })],
-      open,
-      logged: [],
+      open: [{ ...issue('FIFAGG-12704'), inEpic: true }, ...open],
+      logged: [issue('FIFAGG-5000')],
+      limit: 25,
     });
 
     expect(candidates[0]).toEqual(expect.objectContaining({ key: 'FIFAGG-12704', inEpic: true }));
-    expect(candidates).toHaveLength(100);
-    expect(candidates.filter((entry) => entry.inEpic)).toHaveLength(1);
-  });
-
-  it('caps the epic children at 50 and the two lists at 100 together', () => {
-    const epic = Array.from({ length: 70 }, (_, index) => issue(`FIFAGG-${index + 1}`));
-    const open = Array.from({ length: 100 }, (_, index) => issue(`FIFAGG-${1000 + index}`));
-    const candidates = ticketMatchCandidates({ projectKey: 'FIFAGG', epic, open, logged: [issue('FIFAGG-5000')] });
-
-    expect(candidates.filter((entry) => entry.inEpic)).toHaveLength(50);
-    expect(candidates).toHaveLength(101);
+    expect(candidates).toHaveLength(26);
     expect(candidates.at(-1)?.key).toBe('FIFAGG-5000');
   });
 
-  it('lists each key once, and drops sub-tasks and epic children of another project', () => {
+  it('lists each key once, and drops sub-tasks', () => {
     const candidates = ticketMatchCandidates({
-      projectKey: 'FIFAGG',
-      epic: [issue('FIFAGG-1'), issue('OTHER-2'), issue('FIFAGG-3', { isSubtask: true })],
-      open: [issue('FIFAGG-1'), issue('FIFAGG-4'), issue('FIFAGG-5', { isSubtask: true })],
+      open: [issue('FIFAGG-1'), issue('FIFAGG-4'), issue('FIFAGG-1'), issue('FIFAGG-5', { isSubtask: true })],
       logged: [issue('FIFAGG-4'), issue('FIFAGG-6')],
     });
 
     expect(keysOf(candidates)).toEqual(['FIFAGG-1', 'FIFAGG-4', 'FIFAGG-6']);
-    expect(candidates[1]?.inEpic).toBeUndefined();
   });
 });
 

@@ -1,6 +1,6 @@
-import { Observable, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
 import { TimetrackTransport } from '../transport/ports';
-import { JiraCredentials, jiraRequest$ } from './client';
+import { JiraCredentials, JiraRequestError, jiraRequest$ } from './client';
 
 /** A status an issue can stand in, by the name Jira shows. */
 export type JiraStatus = {
@@ -80,6 +80,35 @@ export const fetchJiraIssueStatus$ = (options: {
     query: { fields: 'status' },
     describe: `the status of ${options.issueKey}`,
   }).pipe(map((body) => body.fields?.status?.name ?? ''));
+
+/**
+ * Where one issue stands in Jira right now: `gone` when Jira has no issue under the key any more, or
+ * answers with another key because the issue moved to another project.
+ */
+export type JiraIssueState = 'open' | 'done' | 'gone';
+
+/** Reads {@link JiraIssueState} for one key. Any failure but a 404 errors. */
+export const fetchJiraIssueState$ = (options: {
+  transport: TimetrackTransport;
+  credentials: JiraCredentials;
+  issueKey: string;
+}): Observable<JiraIssueState> =>
+  jiraRequest$<{ key?: string; fields?: { status?: { statusCategory?: { key?: string } } } }>({
+    transport: options.transport,
+    credentials: options.credentials,
+    path: `/rest/api/3/issue/${encodeURIComponent(options.issueKey)}`,
+    query: { fields: 'status' },
+    describe: `the state of ${options.issueKey}`,
+  }).pipe(
+    map((body): JiraIssueState => {
+      if (body.key?.toUpperCase() !== options.issueKey.trim().toUpperCase()) return 'gone';
+
+      return body.fields?.status?.statusCategory?.key === 'done' ? 'done' : 'open';
+    }),
+    catchError((error: unknown) =>
+      error instanceof JiraRequestError && error.status === 404 ? of<JiraIssueState>('gone') : throwError(() => error),
+    ),
+  );
 
 /** The moves this issue offers this account right now. An issue at the end of its workflow offers none. */
 export const fetchJiraTransitions$ = (options: {
