@@ -37,11 +37,13 @@ import {
   autoModeHideTarget,
   autoModeKeyInEvidence,
   autoModeQueuedAnswer,
+  autoModeSentTranscript,
   autoModeReadout,
   autoModeReaskSubjectOf,
   autoModeSubjectKey,
   autoModeSubjectRequest,
   autoDescriptionAsks,
+  isAutoModeCallRow,
   autoDisputeApplies,
   autoDisputeAsks,
   autoDisputeDoneChoice,
@@ -343,6 +345,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         config: gitFlowConfigFor(current),
         maskedNames: current.reasoning.maskedNames,
       },
+      transcribedCalls: transcribedCalls(),
       ...(approvals.isLoaded() ? { approvals: approvals.items() } : {}),
     });
   };
@@ -615,6 +618,59 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     return callTranscriptOf$({ ports, row, calls: evidence?.rows.calls ?? [] }).pipe(catchError(() => of(undefined)));
   };
+
+  const askedCallRowIds = (answers: readonly AutoModeAnswer[], rows: readonly ReviewedRow[]) => {
+    const held = new Set(
+      answers.flatMap((answer) =>
+        answer.subject.kind === 'call' && !autoModeSentTranscript(answer) ? [answer.subject.rowId] : [],
+      ),
+    );
+
+    return rows
+      .filter((row) => isAutoModeCallRow(row) && held.has(autoDescriptionRowId(row)))
+      .map((row) => autoDescriptionRowId(row));
+  };
+
+  const transcribedCallsOf$ = (options: { rowIds: readonly string[]; evidence: AskEvidence }) => {
+    const { evidence } = options;
+
+    if (!evidence || !options.rowIds.length) return of(new Set<string>());
+
+    return forkJoin(
+      options.rowIds.map((rowId) => {
+        const row = callRowOf(rowId, evidence.reviewed);
+
+        return row ? callTranscript$(row, evidence).pipe(map((transcript) => (transcript ? rowId : null))) : of(null);
+      }),
+    ).pipe(map((ids) => new Set(ids.flatMap((id) => (id ? [id] : [])))));
+  };
+
+  const callsToTranscribe = computed(
+    () => {
+      const answers = dayReview.autoAnswers();
+      const current = settings.settings();
+
+      if (!enabled() || !answers || !current.transcribeCalls || !current.reasoning.autoModeTranscripts) return [];
+      if (dayReview.dayKey() !== today()) return [];
+
+      return askedCallRowIds(answers, dayReview.rows());
+    },
+    { equal: (left, right) => left.join() === right.join() },
+  );
+
+  const transcribedCalls = toSignal(
+    toObservable(callsToTranscribe).pipe(
+      switchMap((rowIds) =>
+        rowIds.length
+          ? timer(0, SETTLE_TICK_MS).pipe(
+              switchMap(() => screenEvidence$),
+              switchMap((evidence) => transcribedCallsOf$({ rowIds, evidence })),
+            )
+          : of(new Set<string>()),
+      ),
+    ),
+    { initialValue: new Set<string>() },
+  );
 
   const prepareCall$ = (rowId: string, evidence: AskEvidence): Observable<Prepared | null> => {
     const row = evidence && callRowOf(rowId, evidence.reviewed);
@@ -1115,7 +1171,19 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
    */
   const offScreenPass$ = (day: string): Observable<unknown> =>
     forkJoin({ evidence: agentDay.askEvidence$(day).pipe(take(1)), answers: heldAnswers$(day) }).pipe(
-      tap(({ evidence, answers }) => {
+      switchMap(({ evidence, answers }) => {
+        const current = settings.settings();
+        const askedWithout =
+          current.transcribeCalls && current.reasoning.autoModeTranscripts
+            ? askedCallRowIds(answers, evidence.rows)
+            : [];
+
+        return transcribedCallsOf$({
+          rowIds: askedWithout,
+          evidence: { contexts: evidence.contexts, rows: evidence.dayRows, reviewed: evidence.rows },
+        }).pipe(map((transcribed) => ({ evidence, answers, transcribed })));
+      }),
+      tap(({ evidence, answers, transcribed }) => {
         runStandInPass({
           settings,
           day,
@@ -1150,6 +1218,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             maskedNames: current.reasoning.maskedNames,
           },
           approvals: approvals.items(),
+          transcribedCalls: transcribed,
         });
 
         for (const subject of subjects) {

@@ -49,7 +49,13 @@ const DAY: DayRows = {
 const rowsOf = (edits: DayReviewEdits = EMPTY_DAY_REVIEW_EDITS) => reviewDay({ rows: DAY, edits }).rows;
 const SETTLED_MS = at('10:45').getTime() + AUTO_MODE_SETTLE_MS;
 
-const asks = (options: { edits?: DayReviewEdits; nowMs?: number; day?: string; answers?: AutoModeAnswer[] }) =>
+const asks = (options: {
+  edits?: DayReviewEdits;
+  nowMs?: number;
+  day?: string;
+  answers?: AutoModeAnswer[];
+  transcribedCalls?: ReadonlySet<string>;
+}) =>
   autoModeAsks({
     enabled: true,
     day: options.day ?? TODAY,
@@ -59,6 +65,7 @@ const asks = (options: { edits?: DayReviewEdits; nowMs?: number; day?: string; a
     standIns: [],
     rows: rowsOf(options.edits),
     answers: options.answers ?? [],
+    ...(options.transcribedCalls ? { transcribedCalls: options.transcribedCalls } : {}),
   }).map(autoModeSubjectKey);
 
 const answer = (outcome: AutoModeAnswer['outcome']): AutoModeAnswer => ({
@@ -77,6 +84,32 @@ describe('auto mode on an unnamed call', () => {
   it('asks nothing on another day, and nothing twice', () => {
     expect(asks({ day: '2026-08-10' })).toEqual([]);
     expect(asks({ answers: [answer({ kind: 'failed' })] })).toEqual([]);
+  });
+
+  it('asks again once an excerpt exists for a call asked without one, and then never again', () => {
+    const transcribedCalls = new Set([CALL_ID]);
+    const without = answer({ kind: 'failed' });
+    const sent = {
+      ...without,
+      request: callWritingRequest({ label: 'Weekly sync', observedMs: 45 * 60_000, transcript: 'the invite flow' }),
+    };
+
+    expect(asks({ answers: [without] })).toEqual([]);
+    expect(asks({ answers: [without], transcribedCalls })).toEqual([`call:${CALL_ID}`]);
+    expect(asks({ answers: [sent], transcribedCalls })).toEqual([]);
+  });
+
+  it('asks again only a call still unnamed and not named by the user', () => {
+    const [row] = rowsOf();
+
+    if (!row) throw new Error('no row');
+
+    const transcribedCalls = new Set([CALL_ID]);
+    const answers = [answer({ kind: 'match', issueKey: 'ABC-7' })];
+    const mine = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row, issueKey: 'ABC-1' });
+
+    expect(asks({ edits: mine, answers, transcribedCalls })).toEqual([]);
+    expect(asks({ day: '2026-08-10', answers, transcribedCalls })).toEqual([]);
   });
 
   it('leaves a call the user named by hand, and one a rule excluded', () => {

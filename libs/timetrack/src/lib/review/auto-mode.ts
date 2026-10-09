@@ -584,6 +584,8 @@ export const autoModeAsks = (options: {
   evidence?: { unattributed: readonly WorkGroup[]; config: GitFlowConfig; maskedNames: readonly string[] };
   /** The approval queue. Absent, an answered subject is never asked again. */
   approvals?: readonly ApprovalView[];
+  /** The call rows an excerpt of transcript exists for now, where auto mode may send it. */
+  transcribedCalls?: ReadonlySet<string>;
 }): AutoModeSubject[] => {
   if (!options.enabled || options.day !== options.today) return [];
 
@@ -649,9 +651,14 @@ export const autoModeAsks = (options: {
 
     const answer = answers.get(autoModeSubjectKey(subject));
 
-    return !answer || outdated(subject, answer);
+    if (!answer || outdated(subject, answer)) return true;
+
+    return subject.kind === 'call' && !!options.transcribedCalls?.has(subject.rowId) && !autoModeSentTranscript(answer);
   });
 };
+
+/** Whether the ask an answer holds sent an excerpt of the call's transcript. */
+export const autoModeSentTranscript = (answer: AutoModeAnswer) => !!answer.request.call?.transcript;
 
 /** The issue an answer names: the one the match found, or the one its approved create filed. */
 export const autoModeIssueKeyOf = (answer: AutoModeAnswer) => {

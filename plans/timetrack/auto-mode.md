@@ -203,6 +203,12 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
   characters), masked. A match names the row as an `auto` field (`withAutoModeRowNames`), never a
   `nameCall`; a draft is stored, never filed. The transcript switch sits in the transcription panel.
   The row editor of a call band shows the same excerpt under its evidence (`edit-call-transcript`).
+  - Re-ask (2026-10-09): a call asked while the switch was off was never asked again, so turning it
+    on did nothing for that call. Now a call of today whose stored request carries no `call.transcript`
+    (`autoModeSentTranscript`, the record of what was sent) is asked once more when the switch is on
+    and an excerpt exists for it (`transcribedCalls` in `autoModeAsks`, read each minute on screen and
+    per off-screen pass). It must still be an unnamed call row, so a name by hand or a rule ends it.
+    The new answer carries the excerpt, so the rule is false afterwards and never loops.
   - Decided (2026-10-06): a second Settings switch, "Let auto mode read call transcripts", off by
     default and shown only while transcription is on. Only the transcript of the call auto mode
     asks about goes into the prompt, never other calls. `TRANSCRIBE_WHY` must then stop saying

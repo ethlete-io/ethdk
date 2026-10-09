@@ -48,7 +48,10 @@ const callWorld = (options: { transcripts: boolean }) => {
       { at: at('14:30'), source: 'call', kind: 'call-end', appId: `${DISCORD}.helper.Renderer` },
     ] satisfies CollectedEvent[],
     settings,
-    transcription: { chunks: [chunk('14:00', OPENING_NOISE), chunk('14:05', HEARD)] },
+    transcription: {
+      status: { available: true, enabled: true, listening: true },
+      chunks: [chunk('14:00', OPENING_NOISE), chunk('14:05', HEARD)],
+    },
     tempo: { worklogs: [tempoWorklogOn({ day: '2026-08-05', minutes: 60, issueId: E2E_ISSUE_ID })] },
   };
 };
@@ -116,5 +119,29 @@ test.describe('auto mode on an unnamed call, with transcripts kept back', () => 
 
     expect(sent).toContain('Open Room #1');
     expect(sent).not.toContain(HEARD);
+  });
+});
+
+test.describe('auto mode on an unnamed call, with transcripts let in afterwards', () => {
+  test('asks about the call again with its transcript, by itself', async ({ page }) => {
+    await seedWorld(page, callWorld({ transcripts: false }));
+    await page.goto('/day');
+
+    expect(await sentCallPayload(page)).not.toContain(HEARD);
+    await page.keyboard.press('Escape');
+
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('tab', { name: 'Sources' }).click();
+    await page.locator('[data-auto-mode-transcripts]').click();
+    await page.evaluate(() => {
+      window.location.hash = '#/day';
+    });
+
+    const readout = await openAutoModeReadout(page);
+    const sent = readout.locator('[data-model-call-sent]').filter({ hasText: '"call"' });
+
+    await expect(sent.filter({ hasText: HEARD })).toHaveCount(1, { timeout: 20_000 });
+    await expect(sent.filter({ hasText: OPENING_NOISE })).toHaveCount(0);
+    await expect(sent).toHaveCount(2);
   });
 });
