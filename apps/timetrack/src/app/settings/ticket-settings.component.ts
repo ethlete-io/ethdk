@@ -62,26 +62,27 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
           </et-select>
         </et-form-field>
 
-        <et-form-field class="w-45" appearance="underline" size="sm">
-          <et-label>Then move it to</et-label>
-          <et-select
-            [value]="settings().initialStatus || null"
-            [loading]="catalog.isLoadingStatuses()"
-            [loadError]="catalog.statusFailure()"
-            (valueChange)="setInitialStatus($event)"
-            (openChange)="openedStatuses($event)"
-            placeholder="Leave it where Jira files it"
-            allowCustomValues
-          >
-            <input etSelectSearch placeholder="Search statuses" />
+        <div class="flex items-end">
+          <et-form-field class="w-45" appearance="underline" size="sm">
+            <et-label>Then move it to</et-label>
+            <et-select
+              [value]="settings().initialStatus || null"
+              [loading]="catalog.isLoadingStatuses()"
+              [loadError]="catalog.statusFailure()"
+              (valueChange)="setInitialStatus($event)"
+              (openChange)="openedStatuses($event)"
+              placeholder="Leave it where Jira files it"
+              allowCustomValues
+            >
+              <input etSelectSearch placeholder="Search statuses" />
 
-            @for (status of statuses(); track status.id) {
-              <et-select-option [value]="status.name">{{ status.name }}</et-select-option>
-            }
-          </et-select>
-        </et-form-field>
-
-        <ethlete-explain [text]="STATUS_WHY" label="the status a ticket starts in" />
+              @for (status of statuses(); track status.id) {
+                <et-select-option [value]="status.name">{{ status.name }}</et-select-option>
+              }
+            </et-select>
+          </et-form-field>
+          <ethlete-explain [text]="STATUS_WHY" label="the status a ticket starts in" />
+        </div>
 
         <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
           <et-label>A parent may be</et-label>
@@ -129,30 +130,31 @@ fields rather than a box to type an id into. Leave it unset to write no subject.
           </et-form-field>
         }
 
-        <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
-          <et-label>Branch-subject field</et-label>
-          <et-select
-            [value]="settings().subjectField || null"
-            [loading]="catalog.isLoadingFields()"
-            [loadError]="catalog.fieldFailure()"
-            (valueChange)="setSubjectField($event)"
-            (openChange)="openedFields($event)"
-            placeholder="Write no subject"
-          >
-            <input etSelectSearch placeholder="Search your fields" />
+        <div class="flex grow items-end">
+          <et-form-field class="min-w-60 grow" appearance="underline" size="sm">
+            <et-label>Branch-subject field</et-label>
+            <et-select
+              [value]="settings().subjectField || null"
+              [loading]="catalog.isLoadingFields()"
+              [loadError]="catalog.fieldFailure()"
+              (valueChange)="setSubjectField($event)"
+              (openChange)="openedFields($event)"
+              placeholder="Write no subject"
+            >
+              <input etSelectSearch placeholder="Search your fields" />
 
-            @for (field of subjectFields(); track field.id) {
-              <et-select-option [value]="field.id" [label]="field.name + ' ' + field.id">
-                <span class="flex min-w-0 items-baseline gap-2">
-                  <span class="min-w-0 grow truncate text-small">{{ field.name }}</span>
-                  <span class="shrink-0 text-mono text-small text-et-surface-subtle">{{ field.id }}</span>
-                </span>
-              </et-select-option>
-            }
-          </et-select>
-        </et-form-field>
-
-        <ethlete-explain [text]="SUBJECT_WHY" label="the branch-subject field" />
+              @for (field of subjectFields(); track field.id) {
+                <et-select-option [value]="field.id" [label]="field.name + ' ' + field.id">
+                  <span class="flex min-w-0 items-baseline gap-2">
+                    <span class="min-w-0 grow truncate text-small">{{ field.name }}</span>
+                    <span class="shrink-0 text-mono text-small text-et-surface-subtle">{{ field.id }}</span>
+                  </span>
+                </et-select-option>
+              }
+            </et-select>
+          </et-form-field>
+          <ethlete-explain [text]="SUBJECT_WHY" label="the branch-subject field" />
+        </div>
       </div>
     </div>
   `,

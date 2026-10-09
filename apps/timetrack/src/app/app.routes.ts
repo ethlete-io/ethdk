@@ -38,6 +38,36 @@ export const APP_ROUTES: Routes = [
     path: 'settings',
     title: 'Settings',
     loadComponent: () => import('./settings/settings-view.component').then((entry) => entry.SettingsViewComponent),
+    children: [
+      { path: '', pathMatch: 'full', redirectTo: 'day' },
+      {
+        path: 'day',
+        loadComponent: () =>
+          import('./settings/settings-day-view.component').then((entry) => entry.SettingsDayViewComponent),
+      },
+      {
+        path: 'jira',
+        loadComponent: () =>
+          import('./settings/settings-jira-view.component').then((entry) => entry.SettingsJiraViewComponent),
+      },
+      {
+        path: 'projects',
+        loadComponent: () =>
+          import('./settings/settings-projects-view.component').then((entry) => entry.SettingsProjectsViewComponent),
+      },
+      {
+        path: 'sources',
+        loadComponent: () =>
+          import('./settings/settings-sources-view.component').then((entry) => entry.SettingsSourcesViewComponent),
+      },
+      {
+        path: 'suggestions',
+        loadComponent: () =>
+          import('./settings/settings-suggestions-view.component').then(
+            (entry) => entry.SettingsSuggestionsViewComponent,
+          ),
+      },
+    ],
   },
   {
     path: 'host',
