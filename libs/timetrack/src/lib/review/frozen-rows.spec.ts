@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { SyncedWorklog, WorklogProposal } from '../model/proposal';
 import { DayRows } from '../rows/build-rows';
 import { setRowDescription } from './edits';
-import { isDayHeldByTempo, withFrozenRows } from './frozen-rows';
+import { changedAfterBooking, frozenDayPeerBands, isDayHeldByTempo, withFrozenRows } from './frozen-rows';
 import { EMPTY_DAY_REVIEW_EDITS } from './model';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
 const at = (time: string) => new Date(`2026-10-01T${time}:00Z`);
 
-const proposal = (options: { issueKey: string; from: string; to: string }): WorklogProposal => {
+const proposal = (options: { issueKey: string; from: string; to: string; laneKey?: string }): WorklogProposal => {
   const observedMs = at(options.to).getTime() - at(options.from).getTime();
 
   return {
@@ -23,6 +23,7 @@ const proposal = (options: { issueKey: string; from: string; to: string }): Work
     confidence: 'certain',
     evidence: [],
     state: 'suggested',
+    ...(options.laneKey ? { laneKey: options.laneKey } : {}),
   };
 };
 
@@ -107,5 +108,51 @@ describe('a day Tempo holds', () => {
         coverage: null,
       }),
     ).toBe(true);
+  });
+});
+
+describe('a frozen day a paired machine worked on', () => {
+  const SDK = 'repo:/home/tom/dev/ethlete-sdk';
+  const FUT = 'repo:/home/tom/dev/fut-frontend';
+  const window = (from: string, to: string) => ({ from: at(from), to: at(to) });
+  const frozen = dayRows([proposal({ issueKey: 'ET-1', from: '18:15', to: '19:45', laneKey: SDK })]);
+  const current = dayRows([
+    proposal({ issueKey: 'FUT-1', from: '13:15', to: '15:00', laneKey: FUT }),
+    proposal({ issueKey: 'FUT-2', from: '15:00', to: '18:00', laneKey: FUT }),
+    proposal({ issueKey: 'ET-1', from: '18:15', to: '19:45', laneKey: SDK }),
+  ]);
+  const peerLanes = {
+    'mac-id': {
+      [FUT]: [window('13:15', '15:00'), window('15:00', '18:00')],
+      [SDK]: [window('18:30', '19:00'), window('19:45', '19:48')],
+    },
+  };
+  const bandsOf = (foreignIssues: string[]) =>
+    frozenDayPeerBands({
+      frozen,
+      current: { rows: current, peerLanes },
+      machineNames: { 'mac-id': 'MacBook' },
+      foreignIssues,
+    });
+
+  it('draws the paired machine’s work the frozen rows do not hold, as booked where Tempo holds its issue', () => {
+    expect(bandsOf(['FUT-2'])).toEqual([
+      { ...window('13:15', '18:00'), machineId: 'mac-id', machineName: 'MacBook', laneKey: FUT, booked: true },
+    ]);
+  });
+
+  it('draws it as worked on where Tempo holds none of its issues', () => {
+    expect(bandsOf(['ET-1']).map((band) => band.booked)).toEqual([false]);
+  });
+
+  it('reads a day whose read gained a lane as changed, and a renamed band or a sliver as not', () => {
+    expect(changedAfterBooking({ frozen, current })).toBe(true);
+    expect(
+      changedAfterBooking({
+        frozen,
+        current: dayRows([proposal({ issueKey: 'ET-2', from: '18:15', to: '19:55', laneKey: SDK })]),
+      }),
+    ).toBe(false);
+    expect(changedAfterBooking({ frozen, current: frozen })).toBe(false);
   });
 });

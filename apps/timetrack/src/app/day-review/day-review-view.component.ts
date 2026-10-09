@@ -1,8 +1,17 @@
 import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { BANNER_IMPORTS, BUTTON_IMPORTS, SpinnerComponent, createOverlayOpener } from '@ethlete/components';
-import { DEFAULT_ROUND_OPTIONS, describeApproval, formatDurationMs, localDayRange, ontoDay } from '@ethlete/timetrack';
+import {
+  DEFAULT_ROUND_OPTIONS,
+  changedAfterBooking,
+  describeApproval,
+  formatDurationMs,
+  frozenDayPeerBands,
+  localDayRange,
+  ontoDay,
+} from '@ethlete/timetrack';
 import { APPROVAL_QUEUE_OVERLAY } from '../agent/approval-queue.component';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
+import { injectPeers } from '../peers';
 import { injectBandApprovals } from './band-approvals';
 import { injectDayReview } from './day-review';
 import { DayConcurrencyComponent } from './day-concurrency.component';
@@ -38,6 +47,15 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           <button (click)="store.shiftDay(1)" et-button variant="outline" size="sm" aria-label="Next day">→</button>
           @if (!store.isToday()) {
             <button (click)="store.goToToday()" et-button variant="transparent" size="sm">Today</button>
+          }
+          @if (changed()) {
+            <span
+              class="text-small text-et-warning-ink"
+              data-changed-after-booking
+              title="Events arrived after this day was booked. The booked rows stay as they are."
+            >
+              Changed after booking
+            </span>
           }
         </div>
 
@@ -98,6 +116,7 @@ const DEFAULT_ENTRY_MS = 60 * 60_000;
           [behind]="day.behind"
           [breaks]="store.breaks()"
           [focusedDate]="focusedDate()"
+          [peers]="peerBands()"
           [rows]="store.rows()"
           (boundaryMove)="store.moveBoundary($event)"
           (breakClear)="store.clearBreak($event)"
@@ -141,6 +160,7 @@ export class DayReviewViewComponent {
   protected store = injectDayReview();
   private surface = injectRowEditSurface();
   private recurring = injectRecurringPatterns();
+  private peers = injectPeers();
 
   protected placed = injectBandApprovals();
   protected historyFailure = computed(() => {
@@ -159,6 +179,31 @@ export class DayReviewViewComponent {
   );
 
   protected dayLabel = computed(() => formatDayLabel(this.store.dayKey()));
+
+  private frozen = computed(() => {
+    const frozen = this.store.storedEdits()?.frozenRows;
+    const current = this.store.day();
+
+    return frozen && current ? { frozen, current } : null;
+  });
+
+  protected peerBands = computed(() => {
+    const day = this.frozen();
+
+    if (!day) return [];
+
+    return frozenDayPeerBands({
+      ...day,
+      machineNames: Object.fromEntries(this.peers.paired().map((machine) => [machine.machineId, machine.label])),
+      foreignIssues: (this.store.coverage()?.issues ?? []).map((issue) => issue.issueKey),
+    });
+  });
+
+  protected changed = computed(() => {
+    const day = this.frozen();
+
+    return !!day && changedAfterBooking({ frozen: day.frozen, current: day.current.rows });
+  });
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
 
   protected proposed = computed(() => formatDurationMs(this.store.review()?.check.proposedMs ?? 0));

@@ -3,6 +3,7 @@ import {
   BehindStretch,
   BreakWindow,
   CALL_LANE_KEY,
+  PeerBand,
   ReviewedRow,
   TIMER_LANE_KEY,
   TimeWindow,
@@ -11,7 +12,7 @@ import {
   streamKeyLabel,
   streamKeyRepoPath,
 } from '@ethlete/timetrack';
-import { TimelineEntry, rowEntryOf } from './row-edit/row-appointment';
+import { TimelineEntry, rowEntryOf, workedOnLabel } from './row-edit/row-appointment';
 
 /** The lane a row with no checkout and no application behind it falls into. */
 export const NO_LANE_KEY = 'lane:none';
@@ -72,6 +73,16 @@ export type BehindBand = {
   carrier: string | null;
 };
 
+/** A paired machine's work on a frozen day, placed on the day axis the same way a break is. */
+export type PeerLaneBand = {
+  band: PeerBand;
+  offset: number;
+  span: number;
+};
+
+export const peerBandLabel = (band: PeerBand) =>
+  band.booked ? `Booked on ${band.machineName}` : workedOnLabel(band.machineName);
+
 /** How far a row may overrun a stretch and not carry its label: a snapped row overruns by the odd minute. */
 const CARRY_SLACK = ((5 * 60_000) / DAY_MS) * 100;
 
@@ -121,6 +132,8 @@ export type DayLane = {
   breaks: BreakBand[];
   /** The stretches this checkout lost to another, drawn under its rows to explain the hole they left. */
   behind: BehindBand[];
+  /** A paired machine's work in this checkout that a frozen day's rows do not hold. */
+  peers: PeerLaneBand[];
 };
 
 export const laneKeyOfRow = (row: ReviewedRow) => row.laneKey ?? NO_LANE_KEY;
@@ -336,6 +349,7 @@ export const lanesOf = (options: {
   blocks: readonly SchedulerTimeGridBlock<TimelineEntry>[];
   breaks: readonly BreakWindow[];
   behind?: readonly BehindStretch[];
+  peers?: readonly PeerBand[];
   /** Midnight of the day on screen, which the break and behind geometry is measured from. */
   dayStart: Date;
   columnOf?: (laneKey: string) => string;
@@ -369,10 +383,24 @@ export const lanesOf = (options: {
     if (!byLane.has(key)) byLane.set(key, []);
   }
 
+  const peersByLane = new Map<string, PeerLaneBand[]>();
+
+  for (const band of options.peers ?? []) {
+    const key = columnOf(band.laneKey);
+    const placed = { band, offset: offsetOf({ at: band.from, dayStart: options.dayStart }), span: spanOf(band) };
+
+    peersByLane.set(key, [...(peersByLane.get(key) ?? []), placed]);
+    if (!byLane.has(key)) byLane.set(key, []);
+  }
+
   for (const key of options.openLanes ?? []) if (!byLane.has(key)) byLane.set(key, []);
 
   const startOf = (key: string, lane: SchedulerTimeGridBlock<TimelineEntry>[]) =>
-    Math.min(...lane.map((block) => block.offset), ...(behindByLane.get(key) ?? []).map((band) => band.offset));
+    Math.min(
+      ...lane.map((block) => block.offset),
+      ...(behindByLane.get(key) ?? []).map((band) => band.offset),
+      ...(peersByLane.get(key) ?? []).map((band) => band.offset),
+    );
 
   const work = [...byLane]
     .sort(
@@ -388,13 +416,14 @@ export const lanesOf = (options: {
         blocks,
         breaks: [],
         behind: (behindByLane.get(key) ?? []).map((band) => ({ ...band, carrier: carrierOf(band, blocks) })),
+        peers: peersByLane.get(key) ?? [],
       };
     });
 
   if (!work.length) return work;
 
   return [
-    { key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options), behind: [] },
+    { key: BREAK_LANE_KEY, label: BREAK_LANE_LABEL, blocks: [], breaks: breakBandsOf(options), behind: [], peers: [] },
     ...work,
   ];
 };

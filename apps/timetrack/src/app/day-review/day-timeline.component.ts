@@ -29,6 +29,7 @@ import {
 import { DragGestureEvent, ProvideColorDirective, dragGestureFrom } from '@ethlete/core';
 import {
   BehindStretch,
+  PeerBand,
   BreakWindow,
   DEFAULT_ROUND_OPTIONS,
   ReviewedRow,
@@ -51,6 +52,7 @@ import {
   NO_LANE_KEY,
   lanesOf,
   laneKeyOfRow,
+  peerBandLabel,
   worktreeColumnOf,
 } from './lanes';
 import {
@@ -317,6 +319,22 @@ type RowDrag = {
                     >
                       @if (labelled(band.span) && !band.carrier) {
                         <span class="block truncate">{{ BEHIND_LABEL_OF(band.stretch) }}</span>
+                      }
+                    </div>
+                  }
+
+                  @for (placed of lane.peers; track placed.band.machineId + placed.offset) {
+                    <div
+                      [style.top.%]="placed.offset"
+                      [style.height.%]="placed.span"
+                      [title]="PEER_LABEL_OF(placed.band)"
+                      [attr.data-compact]="compact(placed.span) || null"
+                      [attr.data-booked]="placed.band.booked || null"
+                      class="absolute inset-x-0 flex flex-col overflow-hidden rounded-sm border border-dashed border-et-surface-border bg-et-surface-subtle/12 px-2 py-1 text-small text-et-surface-muted data-[compact]:py-0 data-[compact]:leading-none"
+                      data-peer-band
+                    >
+                      @if (labelled(placed.span)) {
+                        <span class="block truncate">{{ PEER_LABEL_OF(placed.band) }}</span>
                       }
                     </div>
                   }
@@ -807,6 +825,8 @@ export class DayTimelineComponent {
    * lane's hole says which band holds its minutes instead of saying nothing.
    */
   public behind = input<readonly BehindStretch[]>([]);
+  /** A paired machine's work on a frozen day, drawn in its lane and read-only. */
+  public peers = input<readonly PeerBand[]>([]);
 
   /** Where two adjacent rows should meet instead. */
   public boundaryMove = output<BoundaryMove>();
@@ -856,6 +876,7 @@ export class DayTimelineComponent {
   protected readonly COUNT_DESCENDANTS = countDescendants;
   protected readonly LABEL_OF = appointmentLabel;
   protected readonly BEHIND_LABEL_OF = behindLabel;
+  protected readonly PEER_LABEL_OF = peerBandLabel;
   protected readonly UNBOOKED_OF = unbookedLabel;
   protected readonly STANDS_IN = isStandInAppointment;
   protected readonly CLOCK_OF = formatClockTime;
@@ -881,6 +902,7 @@ export class DayTimelineComponent {
       blocks: this.grid()?.days()[0]?.blocks ?? [],
       breaks: this.breaks(),
       behind: this.behind(),
+      peers: this.peers(),
       dayStart: this.focusedDate(),
       columnOf: this.columnOf(),
       openLanes: this.bandApprovals.previews().length ? [NO_LANE_KEY] : [],
