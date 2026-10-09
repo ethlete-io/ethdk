@@ -538,26 +538,45 @@ const firstBranches = (options: {
   return found;
 };
 
-/** One commit's answer to which directory the checkout was working in, at the instant it was made. */
+/** One commit's or edit's answer to which directory the checkout was working in, at that instant. */
 type WorkPathMark = { at: Date; workPath: string };
+
+type PathsAt = { at: Date; paths: readonly string[] };
+
+const heldBy = (into: Map<string, PathsAt[]>, entry: PathsAt & { repoPath: string }) => {
+  const held = into.get(entry.repoPath) ?? [];
+
+  held.push({ at: entry.at, paths: entry.paths });
+  into.set(entry.repoPath, held);
+};
+
+/** The last mark of each run in one directory, which `workPathAt` reads exactly as it reads the whole run. */
+const lastOfEachRun = (marks: readonly WorkPathMark[]) =>
+  marks.filter((mark, index) => marks[index + 1]?.workPath !== mark.workPath);
 
 /**
  * When each checkout's commits said which directory was worked in, oldest first.
  *
- * Only a commit answers this. A window focus says which checkout is in front of you and an editor
- * heartbeat says which file, but neither says which piece of work a stretch belongs to, and the files
- * a commit carries do.
+ * A commit is the better answer: a window focus says which checkout is in front of you, but the files
+ * a commit carries say which piece of work a stretch belongs to. A checkout with no commit that day
+ * falls back to the directories its editor heartbeats were in, which is all that says it there.
  */
 const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
-  const commits = new Map<string, { at: Date; paths: readonly string[] }[]>();
+  const commits = new Map<string, PathsAt[]>();
+  const edits = new Map<string, PathsAt[]>();
 
   for (const sample of samples) {
-    if (sample.kind !== 'git-commit') continue;
+    if (sample.kind === 'git-commit') {
+      heldBy(commits, { repoPath: sample.repoPath, at: sample.at, paths: sample.paths ?? [] });
+    }
 
-    const held = commits.get(sample.repoPath) ?? [];
+    if (sample.kind === 'editor-heartbeat' && sample.repoPath && sample.directory) {
+      heldBy(edits, { repoPath: sample.repoPath, at: sample.at, paths: [`${sample.directory}/`] });
+    }
+  }
 
-    held.push({ at: sample.at, paths: sample.paths ?? [] });
-    commits.set(sample.repoPath, held);
+  for (const [repoPath, held] of edits) {
+    if (!commits.has(repoPath)) commits.set(repoPath, held);
   }
 
   const found = new Map<string, WorkPathMark[]>();
@@ -568,7 +587,7 @@ const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: Timetrac
       .map((commit, index) => ({ at: commit.at, workPath: paths[index] }))
       .filter((mark): mark is WorkPathMark => !!mark.workPath);
 
-    if (marks.length) found.set(repoPath, marks);
+    if (marks.length) found.set(repoPath, lastOfEachRun(marks));
   }
 
   return found;

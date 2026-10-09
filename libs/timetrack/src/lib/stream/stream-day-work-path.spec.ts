@@ -101,6 +101,43 @@ describe('streamDay work paths', () => {
   });
 });
 
+const heartbeat = (options: { minutes: number; branch: string; directory: string }): CollectedEvent => ({
+  at: AT(options.minutes),
+  source: 'editor',
+  kind: 'editor-heartbeat',
+  reporter: 'vscode',
+  repoPath: SPECS,
+  branch: options.branch,
+  directory: options.directory,
+  editing: true,
+});
+
+describe('streamDay work paths from the editor', () => {
+  const edits = (branch: string) => [
+    heartbeat({ minutes: 10, branch, directory: `${JOURNEY}/notes` }),
+    heartbeat({ minutes: 40, branch, directory: JOURNEY }),
+    heartbeat({ minutes: 80, branch, directory: REWORK }),
+    heartbeat({ minutes: 110, branch, directory: REWORK }),
+  ];
+
+  it('splits a base branch by the directories edited on a day with no commit', () => {
+    const blocks = blocksOf([...focusRun({ from: 0, to: 120 }), ...edits('main')]);
+
+    expect(new Set(blocks.map((block) => block.context.workPath))).toEqual(new Set([JOURNEY, REWORK]));
+    expect(blocks.at(-1)?.context.workPath).toBe(REWORK);
+  });
+
+  it('reads the commits rather than the edits when the checkout committed', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      ...edits('main'),
+      commit({ minutes: 30, branch: 'main', paths: [`${REWORK}/spec.md`] }),
+    ];
+
+    expect(blocksOf(events).map((block) => block.context.workPath)).toEqual([undefined]);
+  });
+});
+
 const checkout = (options: { minutes: number; branch: string }): CollectedEvent => ({
   at: AT(options.minutes),
   source: 'git',
