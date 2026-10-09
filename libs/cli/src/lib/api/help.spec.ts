@@ -14,7 +14,7 @@ describe('apiHelp', () => {
   it('lists the built-in commands', () => {
     const help = apiHelp({ hub: definition() }, 'et api');
 
-    expect(help).toContain('Usage: et api <command> <api>[,<api>] [--host]');
+    expect(help).toContain('Usage: et api <command> <api>[,<api>] [<service> | <seed>[,<seed>]] [--host]');
     expect(help).toContain('up        Start the containers of the API');
     expect(help).toContain('shell     Open a shell in the API container');
   });
@@ -22,13 +22,20 @@ describe('apiHelp', () => {
   it('lists each API with the commands it accepts', () => {
     const help = apiHelp({ hub: definition({ install: ['composer', 'install'] }) }, 'et api');
 
-    expect(help).toContain('hub       up, down, logs, shell, clone, clear, checkout, pull, install');
+    expect(help).toContain('hub       up, down, logs, shell, clone, clear, checkout, pull, seed, fixtures, install');
   });
 
   it('lists an exec entry once even when several APIs declare it', () => {
     const help = apiHelp({ hub: definition({ install: ['a'] }), shop: definition({ install: ['b'] }) }, 'et api');
 
     expect(help.match(/^ {2}install/gm)).toHaveLength(1);
+  });
+
+  it('lists an exec entry that replaces a seed command once', () => {
+    const help = apiHelp({ hub: definition({ fixtures: ['make', 'fixtures'] }) }, 'et api');
+
+    expect(help.match(/^ {2}fixtures/gm)).toHaveLength(1);
+    expect(help).toContain('An exec entry named seed or fixtures in ethlete.apis.js runs instead');
   });
 
   it('says where to declare an API when none exist', () => {
@@ -74,6 +81,13 @@ describe('singleApiHelp', () => {
 
   it('leaves out setup for an API that declares no setupCommand', () => {
     expect(singleApiHelp({ name: 'hub', api: definition(), invocation: 'yarn api' })).not.toContain('setup');
+  });
+
+  it('says what an exec entry that replaces fixtures runs', () => {
+    const help = singleApiHelp({ name: 'hub', api: definition({ fixtures: ['make', 'fixtures'] }), invocation: 'et' });
+
+    expect(help).toContain('fixtures  make fixtures');
+    expect(help.match(/^ {2}fixtures/gm)).toHaveLength(1);
   });
 
   it('shows the state of the checkout when it is given one', () => {

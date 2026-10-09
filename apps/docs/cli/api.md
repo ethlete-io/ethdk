@@ -20,6 +20,9 @@ yarn et api clone hub           # clone the API into .ethlete/hub
 yarn et api clear hub           # remove that clone again
 yarn et api clear --all         # remove every managed clone
 yarn et api setup hub           # run the API's own setupCommand, which writes its .env
+yarn et api seed hub            # list the seeds in .ethlete/seeds/hub/seeds.json
+yarn et api seed hub demo,shop  # run two of them, in that order
+yarn et api fixtures hub demo   # load the fixtures, then run the demo seed
 ```
 
 `ethlete.apis.js` describes each API and is committed. Where the checkout lives on this machine is optional: set [`apiRepoPaths`](/cli/config) to point at a checkout you already have, or let `et` clone the API's `repoUrl` into a gitignored `.ethlete/<name>`.
@@ -121,7 +124,7 @@ Adding an API is an entry in this map. Nothing else changes.
 | `env`          | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
 | `exec`         | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
 
-Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`) or `help`; the file then fails to load with an error that names the entry.
+Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
 
 ## Where the checkout comes from
 
@@ -143,7 +146,7 @@ into /repo/.ethlete/hub? [Y/n]
 
 Press enter and the original command continues once the clone finishes. `yarn et api clone hub` does the clone on its own, and `--clone` on any command skips the question - use it in scripts and anywhere without a terminal, where the prompt cannot be answered and the command exits instead.
 
-The clone checks out the branch [`apiRepoBranches`](/cli/config) names, when there is one. `et` warns if `.ethlete/` is not gitignored - add it to your `.gitignore`.
+The clone checks out the branch [`apiRepoBranches`](/cli/config) names, when there is one. Before it clones, `et` adds `/.ethlete/<name>/` to `.gitignore` unless git ignores that directory already. Ignore each managed checkout this way rather than `.ethlete/` as a whole: [`.ethlete/seeds/`](#seeds) is meant to be committed.
 
 ::: tip A checkout you work in beats a managed one
 If you commit to the backend, point `apiRepoPaths` at your own checkout. The managed clone is for people who only need the API to run.
@@ -184,6 +187,58 @@ writes a token that passes those checks.
 
 Any other failed `exec` entry says nothing about tokens. It suggests running the install entry first,
 because a container whose dependencies were never installed fails every other command in it.
+
+## Seeds
+
+Seeds load extra local data into a running API, from scripts committed to your repo rather than to the API. Each API has a folder of its own, `.ethlete/seeds/<name>/`, with a `seeds.json` beside the scripts it runs:
+
+```json
+{
+  "fixtures": ["php -d memory_limit=1G bin/console doctrine:fixtures:load --no-interaction --group dev"],
+  "seeds": {
+    "rewards": {
+      "description": "Reward pass art and tile states",
+      "run": ["bin/console app:reward:demo:seed", "php $SEED_DIR/reward-seed.php"]
+    },
+    "wc26": {
+      "description": "WC26 finals and broadcast layouts",
+      "run": ["php $SEED_DIR/wc26-broadcast-seed.php"],
+      "env": { "WC26_TITLE": "rocket-league" }
+    }
+  }
+}
+```
+
+| Field                      | Required | Meaning                                                                      |
+| -------------------------- | -------- | ---------------------------------------------------------------------------- |
+| `fixtures`                 | no       | Shell lines `fixtures` runs before any seed. Without it, `fixtures` refuses. |
+| `seeds.<name>`             | no       | One seed. A name holds letters, digits, `-` and `_`.                         |
+| `seeds.<name>.run`         | yes      | Shell lines, run in order. The first line that fails stops the seed.         |
+| `seeds.<name>.description` | no       | Shown by `yarn et api seed <name>`. The `run` lines are shown without it.    |
+| `seeds.<name>.env`         | no       | Variables exported before the `run` lines, as strings.                       |
+
+```
+$ yarn et api seed hub
+
+Seeds of the hub API
+
+  rewards  Reward pass art and tile states
+  wc26     WC26 finals and broadcast layouts
+
+Run them with "yarn et api seed hub rewards,wc26".
+```
+
+`yarn et api seed hub rewards,wc26` runs the named seeds in the order you name them. `yarn et api fixtures hub rewards` runs the `fixtures` lines first, and with no seed named, only those. An unknown seed name, an unknown key or a wrong type in `seeds.json` stops the call before anything runs, and a typo names the closest seed.
+
+Before the first line runs, the whole folder is copied into `execService` at `/tmp/ethlete-seeds/<name>`, as a tar on the stdin of `compose exec -T`, so it works with every [container engine](#container-engines) and has no size limit. `SEED_DIR` points at that copy. Each seed then runs as one `sh -c` with `set -e`, in the container's working directory, which is the API's project root for the usual compose file. The seed's files never touch the API checkout.
+
+`.ethlete/seeds/` is committed, so `.ethlete/` must not be gitignored as a whole. `et` warns when the manifest is ignored, and names the line to use instead:
+
+```gitignore
+/.ethlete/hub/
+```
+
+An `exec` entry named `seed` or `fixtures` in `ethlete.apis.js` runs instead of these commands, so an API that already declares one keeps it. Delete the entry to switch to the manifest.
 
 ## Container commands
 

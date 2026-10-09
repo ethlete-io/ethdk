@@ -1,4 +1,5 @@
 import { ApiDefinition, ApiDefinitions, BUILT_IN_API_COMMANDS, apiCommandNames } from './definition';
+import { SEED_API_COMMANDS } from './seeds';
 
 const BUILT_IN_DESCRIPTIONS: Record<(typeof BUILT_IN_API_COMMANDS)[number], string> = {
   up: 'Start the containers of the API',
@@ -11,6 +12,14 @@ const BUILT_IN_DESCRIPTIONS: Record<(typeof BUILT_IN_API_COMMANDS)[number], stri
   pull: 'Fetch and fast-forward the checked-out branch',
   setup: "Run the API's own setupCommand in its compose directory",
 };
+
+const SEED_DESCRIPTIONS: Record<(typeof SEED_API_COMMANDS)[number], string> = {
+  seed: 'List the seeds in .ethlete/seeds/<name>/seeds.json, or run the ones you name',
+  fixtures: 'Run the fixtures of that manifest, then the seeds you name',
+};
+
+const isSeedCommand = (command: string): command is (typeof SEED_API_COMMANDS)[number] =>
+  SEED_API_COMMANDS.some((candidate) => candidate === command);
 
 const pad = (text: string, width: number) => text.padEnd(width);
 
@@ -26,15 +35,20 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
 
   const apiLines = entries.map(([name, api]) => `  ${pad(name, width)}  ${apiCommandNames(api).join(', ')}`);
 
-  const execNames = [...new Set(entries.flatMap(([, api]) => Object.keys(api.exec ?? {})))];
+  const execNames = [
+    ...new Set(entries.flatMap(([, api]) => Object.keys(api.exec ?? {}).filter((command) => !isSeedCommand(command)))),
+  ];
 
   return [
-    `Usage: ${invocation} <command> <api>[,<api>] [--host]`,
+    `Usage: ${invocation} <command> <api>[,<api>] [<service> | <seed>[,<seed>]] [--host]`,
     '',
     'Commands',
     ...BUILT_IN_API_COMMANDS.map((command) => `  ${pad(command, commandWidth)}  ${BUILT_IN_DESCRIPTIONS[command]}`),
+    ...SEED_API_COMMANDS.map((command) => `  ${pad(command, commandWidth)}  ${SEED_DESCRIPTIONS[command]}`),
     ...execNames.map((command) => `  ${pad(command, commandWidth)}  Declared by the API itself`),
     `  ${pad('help', commandWidth)}  What one API accepts, and where its checkout is`,
+    '',
+    `An exec entry named seed or fixtures in ethlete.apis.js runs instead of the built-in command.`,
     '',
     'APIs',
     ...(apiLines.length > 0 ? apiLines : ['  none — declare them in ethlete.apis.js']),
@@ -52,9 +66,13 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
 const commandDescription = (api: ApiDefinition, command: string) => {
   if (command === 'setup' && api.setupCommand) return `Run "${api.setupCommand}" in ${api.composeDir}`;
 
+  const execCommand = api.exec?.[command];
+
+  if (isSeedCommand(command)) return execCommand ? execCommand.join(' ') : SEED_DESCRIPTIONS[command];
+
   const builtIn = BUILT_IN_API_COMMANDS.find((candidate) => candidate === command);
 
-  return builtIn ? BUILT_IN_DESCRIPTIONS[builtIn] : (api.exec?.[command] ?? []).join(' ');
+  return builtIn ? BUILT_IN_DESCRIPTIONS[builtIn] : (execCommand ?? []).join(' ');
 };
 
 /** The help text for one API: every command it accepts, what each one runs, and where its files are. */

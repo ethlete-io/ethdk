@@ -10,6 +10,7 @@ export * from './load-definitions';
 export * from './ports';
 export * from './resolve-checkout';
 export * from './run';
+export * from './seeds';
 export * from './setup';
 export * from './state';
 export * from './suggest';

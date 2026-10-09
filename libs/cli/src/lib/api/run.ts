@@ -22,7 +22,23 @@ import { apiHelp, singleApiHelp } from './help';
 import { checkoutProblem, resolveApiCheckout } from './resolve-checkout';
 import { runApiSetup } from './setup';
 import { didYouMean } from './suggest';
-import { cloneApiRepo, isGitIgnored, DEFAULT_CHECKOUT_DIR } from './clone';
+import { cloneApiRepo, DEFAULT_CHECKOUT_DIR } from './clone';
+import { ignoredByGit } from './git';
+import { ignoreEntry } from '../update/gitignore';
+import {
+  SEED_API_COMMANDS,
+  SeedStep,
+  containerSeedDirectory,
+  parseSeedList,
+  readSeedManifest,
+  seedCopyArgs,
+  seedDirectory,
+  seedListText,
+  seedManifestPath,
+  seedRunArgs,
+  seedSteps,
+  tarDirectory,
+} from './seeds';
 import { gitUrlHost, printPrivateDependencyHint } from './auth-hint';
 import { confirm } from '../utils';
 import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config';
@@ -80,10 +96,11 @@ type SingleApiOptions = {
   name: string;
   api: ApiDefinition;
   service: string | undefined;
+  seedSteps?: SeedStep[];
 };
 
 const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
-  const { argv, root, invocation, command, name, api, service } = options;
+  const { argv, root, invocation, command, name, api, service, seedSteps: steps } = options;
   const exposeOnLan = argv.includes('--host');
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
@@ -112,8 +129,10 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
 
       if (!accepted) return 1;
 
-      if (!isGitIgnored(root, into)) {
-        console.warn(`\n${DEFAULT_CHECKOUT_DIR}/ is not gitignored. Add it before you commit anything.\n`);
+      const ignoreLine = `/${DEFAULT_CHECKOUT_DIR}/${name}/`;
+
+      if (ignoreEntry({ root, entry: ignoreLine, probe: `${DEFAULT_CHECKOUT_DIR}/${name}/` })) {
+        console.log(`\nAdded ${ignoreLine} to .gitignore.`);
       }
 
       const cloned = cloneApiRepo({ repoUrl, into, branch });
@@ -354,6 +373,33 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
 
     if (command === 'logs') runCompose('logs', '-f', target);
     else runCompose('exec', target, 'bash');
+  } else if (steps !== undefined) {
+    const directory = containerSeedDirectory(name);
+    const copied = spawnSync(binary, [...composePrefix, ...seedCopyArgs(api.execService, directory)], {
+      cwd,
+      env,
+      input: tarDirectory(seedDirectory(root, name)),
+      stdio: ['pipe', 'inherit', 'inherit'],
+    });
+
+    if (copied.error || copied.status !== 0) {
+      if (copied.error) console.error(copied.error.message);
+
+      console.error(`Could not copy ${seedDirectory(root, name)} into the ${api.execService} container.`);
+
+      return copied.status || 1;
+    }
+
+    for (const step of steps) {
+      console.log(`\nRunning ${step.label} in ${api.execService}.`);
+      runCompose(...seedRunArgs({ service: api.execService, directory, step, tty: process.stdin.isTTY === true }));
+
+      if (exitCode !== 0) {
+        console.error(`\n${step.label} failed with exit code ${exitCode}.`);
+
+        return exitCode;
+      }
+    }
   } else {
     const execCommand = api.exec?.[command] ?? [];
 
@@ -465,10 +511,65 @@ export const runApiCommand = async ({
 
   if (command === 'clear') return clear(names);
 
+  const stepsByApi = new Map<string, SeedStep[]>();
+  const isSeedCommand = SEED_API_COMMANDS.some((candidate) => candidate === command);
+
+  for (const { name } of isSeedCommand ? targets.filter(({ api }) => !api.exec?.[command]) : []) {
+    const manifest = readSeedManifest(root, name);
+
+    if (!manifest.ok) {
+      console.error(manifest.problem);
+
+      return 1;
+    }
+
+    if (ignoredByGit(root, seedManifestPath(name)) === true) {
+      console.warn(
+        `${seedManifestPath(name)} is gitignored, so nobody else gets these seeds. Ignore only the managed ` +
+          `checkout: replace the ${DEFAULT_CHECKOUT_DIR} line in .gitignore with "/${DEFAULT_CHECKOUT_DIR}/${name}/".\n`,
+      );
+    }
+
+    const seedNames = parseSeedList(service);
+
+    if (command === 'seed' && seedNames.length === 0) {
+      console.log(seedListText({ api: name, manifest: manifest.value, invocation }));
+      continue;
+    }
+
+    const steps = seedSteps({
+      manifest: manifest.value,
+      names: seedNames,
+      withFixtures: command === 'fixtures',
+      api: name,
+    });
+
+    if (!steps.ok) {
+      console.error(steps.problem);
+
+      return 1;
+    }
+
+    stepsByApi.set(name, steps.value);
+  }
+
   let exitCode = 0;
 
   for (const { name, api } of targets) {
-    const code = await runOneApiCommand({ argv, root, invocation, command, name, api, service });
+    const seedStepsOfApi = stepsByApi.get(name);
+
+    if (isSeedCommand && !api.exec?.[command] && seedStepsOfApi === undefined) continue;
+
+    const code = await runOneApiCommand({
+      argv,
+      root,
+      invocation,
+      command,
+      name,
+      api,
+      service,
+      seedSteps: seedStepsOfApi,
+    });
 
     if (code !== 0) exitCode = code;
   }

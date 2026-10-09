@@ -43,7 +43,7 @@ Changesets runs through the package manager the repo uses (`yarn changeset`, `pn
 
 ## Other commands
 
-- [`et api`](/cli/api) - start, stop and inspect the containers of a local backend, and move its checkout to the right branch.
+- [`et api`](/cli/api) - start, stop and inspect the containers of a local backend, move its checkout to the right branch, and load seed data into it.
 - [`et auth`](/cli/auth) - write a GitLab token into composer's `auth.json`, after checking that it can fetch code.
 - [`et update`](/cli/update) - move the `@ethlete/*` packages to a newer version, run the codemods those versions ship, and report what needs a decision.
 - [`et migrations`](/cli/update#migration-levels) - list the recommended and optional migrations the app has not run, and run one of them.

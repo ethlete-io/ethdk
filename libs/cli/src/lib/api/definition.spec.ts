@@ -20,6 +20,8 @@ describe('apiCommandNames', () => {
       'clear',
       'checkout',
       'pull',
+      'seed',
+      'fixtures',
     ]);
   });
 
@@ -34,6 +36,8 @@ describe('apiCommandNames', () => {
       'checkout',
       'pull',
       'setup',
+      'seed',
+      'fixtures',
     ]);
   });
 
@@ -47,8 +51,16 @@ describe('apiCommandNames', () => {
       'clear',
       'checkout',
       'pull',
+      'seed',
+      'fixtures',
       'install',
     ]);
+  });
+
+  it('lists an exec entry that replaces a seed command once', () => {
+    const names = apiCommandNames(definition({ fixtures: ['make', 'fixtures'] }));
+
+    expect(names.filter((name) => name === 'fixtures')).toEqual(['fixtures']);
   });
 });
 

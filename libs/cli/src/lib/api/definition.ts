@@ -1,3 +1,5 @@
+import { SEED_API_COMMANDS } from './seeds';
+
 /** One API this repo can run locally. Everything here describes the API's own compose setup. */
 export type ApiDefinition = {
   /** Directory inside the API checkout that holds the compose file, for example `development`. */
@@ -55,6 +57,9 @@ export const dependencyInstallCommandName = (api: ApiDefinition) =>
 
 /** `setup` is dropped for an API that declares no `setupCommand`, so nothing lists a command it cannot run. */
 export const apiCommandNames = (api: ApiDefinition) => [
-  ...BUILT_IN_API_COMMANDS.filter((command) => command !== 'setup' || api.setupCommand),
-  ...Object.keys(api.exec ?? {}),
+  ...new Set([
+    ...BUILT_IN_API_COMMANDS.filter((command) => command !== 'setup' || api.setupCommand),
+    ...SEED_API_COMMANDS,
+    ...Object.keys(api.exec ?? {}),
+  ]),
 ];

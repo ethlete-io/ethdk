@@ -104,9 +104,17 @@ yarn et api clone hub           # clone the API into .ethlete/hub
 yarn et api clear hub           # remove that clone again
 yarn et api clear --all         # remove every managed clone
 yarn et api setup hub           # run the API's own setupCommand, which writes its .env
+yarn et api seed hub            # list the seeds in .ethlete/seeds/hub/seeds.json
+yarn et api seed hub demo,shop  # run two of them, in that order
+yarn et api fixtures hub demo   # load the fixtures, then run the demo seed
 ```
 
 Every command takes a comma-separated list of names, and acts on each API in turn.
+
+`seed` and `fixtures` read `.ethlete/seeds/<name>/seeds.json`, copy that folder into the API
+container at `$SEED_DIR`, and run the shell lines of each seed you name there. The folder is
+committed, so gitignore each managed checkout as `/.ethlete/<name>/`, never `.ethlete/` as a whole.
+An `exec` entry named `seed` or `fixtures` runs instead.
 
 `clone`, `checkout`, `pull`, `setup` and `clear` act on the checkout itself, so they work before the
 API has an `.env` and need no container engine. `pull` refuses to run on a checkout with uncommitted
