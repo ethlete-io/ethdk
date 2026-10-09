@@ -32,6 +32,9 @@ re-cut.
   writes a day. A day synced while it was still today is frozen on its first read once it is over.
 - Evidence that arrives after the freeze, and a setting changed after it (a rule, a project link), no
   longer reach the day's rows. That is the point: Tempo already holds the day.
-- A day that was re-cut before this landed is frozen as it now reads. 2026-09-30 and 2026-10-01 need
-  their rows fixed by hand once.
+- A day that was re-cut before this landed is frozen as it now reads. A worklog this app wrote that no
+  row of the day carries any more is drawn as a read-only row of its own, from the worklog as Tempo
+  holds it: its issue, start, length and description. Nothing is fixed by hand and nothing is synced
+  again; a booked day already stored draws the row on its next read (`withUncarriedWorklogs`). The row
+  keeps the ledger's id, so a sync no longer plans to delete the worklog.
 - Nothing unfreezes a day. A day whose worklogs were all deleted from Tempo keeps its frozen rows.

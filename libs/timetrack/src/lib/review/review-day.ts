@@ -38,7 +38,7 @@ import {
 import { isManualRow } from './edits';
 import { autoDisputeSettles } from './auto-dispute';
 import { pieceSourceId, separateOverlappingProposals } from '../tempo/separate';
-import { openEditsOf, patchBookedReview, sameStored } from './frozen-rows';
+import { openEditsOf, patchBookedReview, sameStored, withUncarriedWorklogs } from './frozen-rows';
 import { foldEndedRests } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
@@ -607,18 +607,27 @@ export const reviewDay = (options: ReviewDayOptions): DayReview => {
 
   if (!edits || !booked) return reviewRows({ ...options, rows });
 
-  const reviewWith = (current: DayReviewEdits, agree: boolean) =>
-    reviewRows({
-      ...options,
-      rows,
-      edits: { ...current, ...(edits.frozenRows ? { frozenRows: edits.frozenRows } : {}) },
+  const withUncarried = (review: DayReview) =>
+    withUncarriedWorklogs({
+      review,
       written: booked.written,
-      agree,
+      backgroundProjects: options.cut?.backgroundProjects,
+      incrementMs: { ...DEFAULT_ROUND_OPTIONS, ...options.round }.incrementMs,
     });
+  const reviewWith = (current: DayReviewEdits, agree: boolean) =>
+    withUncarried(
+      reviewRows({
+        ...options,
+        rows,
+        edits: { ...current, ...(edits.frozenRows ? { frozenRows: edits.frozenRows } : {}) },
+        written: booked.written,
+        agree,
+      }),
+    );
   const open = openEditsOf(edits);
 
   if (!booked.review) return reviewWith(open, true);
-  if (sameStored(open, booked.edits)) return booked.review;
+  if (sameStored(open, booked.edits)) return withUncarried(booked.review);
 
   return patchBookedReview({
     stored: booked.review,

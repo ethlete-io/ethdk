@@ -33,7 +33,9 @@ const hourOn = (day: string): CollectedEvent[] => [
   { at: new Date(`${day}T12:00:00.000Z`), source: 'idle', kind: 'idle-start' },
 ];
 
-const seedBookedDay = (page: Page, storedReviews?: Record<string, unknown>) =>
+const RECUT_ROW_ID = `${E2E_ISSUE_KEY}@${BOOKED_DAY}T14:00:00.000Z`;
+
+const seedBookedDay = (page: Page, storedReviews?: Record<string, unknown>, options?: { recut?: boolean }) =>
   seedWorld(page, {
     now: E2E_NOW,
     events: hourOn(BOOKED_DAY),
@@ -46,6 +48,17 @@ const seedBookedDay = (page: Page, storedReviews?: Record<string, unknown>) =>
           id: 'w-1',
           description: 'Invited a member',
         }),
+        ...(options?.recut
+          ? [
+              tempoWorklogOn({
+                day: BOOKED_DAY,
+                minutes: 30,
+                startTime: '14:00:00',
+                id: 'w-2',
+                description: 'Reviewed the invite flow',
+              }),
+            ]
+          : []),
       ],
     },
     ledger: [
@@ -56,6 +69,17 @@ const seedBookedDay = (page: Page, storedReviews?: Record<string, unknown>) =>
         contentHash: 'booked',
         syncedAt: new Date(`${BOOKED_DAY}T16:00:00.000Z`),
       },
+      ...(options?.recut
+        ? [
+            {
+              proposalId: RECUT_ROW_ID,
+              day: BOOKED_DAY,
+              tempoWorklogId: 'w-2',
+              contentHash: 'booked',
+              syncedAt: new Date(`${BOOKED_DAY}T16:00:00.000Z`),
+            },
+          ]
+        : []),
     ],
     ...(storedReviews ? { storedReviews } : {}),
   });
@@ -131,5 +155,35 @@ test.describe('a booked day', () => {
       .poll(async () => (await rowsOf(page))?.map((row) => [row.id, row.description, row.durationMs]))
       .toEqual([[ROW_ID, 'As it was booked', 45 * 60_000]]);
     expect(inStoredForm((await inputsOf(page))?.booked)).toEqual(inStoredForm(asBooked.booked));
+  });
+
+  test('draws a worklog this app wrote that no stored row carries, without a resync', async ({ page }) => {
+    await seedBookedDay(page);
+    await page.goto('/day');
+    await expect.poll(async () => !!(await inputsOf(page))?.booked?.review).toBe(true);
+
+    const stored = await inputsOf(page);
+    const recut = {
+      proposalId: RECUT_ROW_ID,
+      worklogId: 'w-2',
+      issueKey: E2E_ISSUE_KEY,
+      from: new Date(`${BOOKED_DAY}T14:00:00.000Z`),
+      durationMs: 30 * 60_000,
+      description: 'Reviewed the invite flow',
+    };
+    const storedBefore = {
+      ...stored,
+      booked: { ...stored?.booked, written: [...(stored?.booked?.written ?? []), recut] },
+    };
+
+    await seedBookedDay(page, { [BOOKED_DAY]: inStoredForm(storedBefore) }, { recut: true });
+    await page.goto('/day');
+
+    await expect
+      .poll(async () => (await rowsOf(page))?.map((row) => [row.id, row.description, row.durationMs]))
+      .toEqual([
+        [ROW_ID, 'Invited a member', 30 * 60_000],
+        [RECUT_ROW_ID, 'Reviewed the invite flow', 30 * 60_000],
+      ]);
   });
 });

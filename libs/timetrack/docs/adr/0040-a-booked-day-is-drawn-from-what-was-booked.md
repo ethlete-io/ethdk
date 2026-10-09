@@ -42,6 +42,7 @@ draw's until the day is booked again.
 
 - A rule change never reaches a booked day again, and a change to the frozen-day rule reaches only a day
   not yet stored.
-- A worklog the ledger holds under an id no row has any more (a re-cut before ADR 0038) is not drawn.
-  2026-09-28, 09-29 and 10-01 each hold one.
+- A worklog the ledger holds under an id no row has any more (a re-cut before ADR 0038) is drawn as a
+  row of its own, added over the stored review on every draw, so a review stored without it heals on
+  its own (ADR 0038). 2026-09-28, 09-29 and 10-01 each hold one.
 - A setting changed after the booking - a stand-in resolved, a rule - no longer renames a booked row.

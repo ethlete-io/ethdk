@@ -146,6 +146,58 @@ describe('a booked day', () => {
     });
     expect(again.booked?.edits).toEqual(EMPTY_DAY_REVIEW_EDITS);
   });
+
+  describe('with a worklog no row carries', () => {
+    const RECUT = 'ET-772@2026-10-06T21:15:00.000Z';
+    const uncarried = written({ proposalId: RECUT, worklogId: 'w-9', from: '21:15', minutes: 30 });
+    const drawnRow = {
+      id: RECUT,
+      span: '21:15-21:45',
+      minutes: 30,
+      description: 'work on ET-772',
+      worklogIds: ['w-9'],
+    };
+
+    it('draws the worklog as a row of its own and counts it', () => {
+      const review = reviewDay({ rows: frozen, edits: book({ worklogs: [...worklogs, uncarried] }) });
+
+      expect(shape(review).at(-1)).toEqual(drawnRow);
+      expect(review.rows.at(-1)?.state).toBe('synced');
+      expect(review.check.loggedMs).toBe(120 * MINUTE);
+    });
+
+    it('draws it into a review stored before such a row was drawn', () => {
+      const edits = book({ worklogs });
+      const stored = { ...edits, booked: edits.booked && { ...edits.booked, written: [...worklogs, uncarried] } };
+      const review = reviewDay({ rows: frozen, edits: stored });
+
+      expect(shape(review).at(-1)).toEqual(drawnRow);
+      expect(review.check.loggedMs).toBe(120 * MINUTE);
+      expect(
+        shape(reviewDay({ rows: frozen, edits: { ...stored, overrides: { [LATE]: { description: 'x' } } } })).at(-1),
+      ).toEqual(drawnRow);
+    });
+
+    it('counts the minutes it shares with another row once', () => {
+      const overlapping = written({ proposalId: RECUT, worklogId: 'w-9', from: '09:30', minutes: 30 });
+      const review = reviewDay({ rows: frozen, edits: book({ worklogs: [...worklogs, overlapping] }) });
+
+      expect(review.rows.filter((row) => row.id === RECUT)).toHaveLength(1);
+      expect(review.check.loggedMs).toBe(90 * MINUTE);
+    });
+
+    it('draws it once when the day is booked again', () => {
+      const again = withBookedReview({
+        edits: book({ worklogs: [...worklogs, uncarried] }),
+        written: [...worklogs, uncarried],
+        review: (edits) => reviewDay({ rows: frozen, edits }),
+      });
+      const review = reviewDay({ rows: frozen, edits: again });
+
+      expect(review.rows.filter((row) => row.id === RECUT)).toHaveLength(1);
+      expect(review.check.loggedMs).toBe(120 * MINUTE);
+    });
+  });
 });
 
 describe('writtenAfterSync', () => {

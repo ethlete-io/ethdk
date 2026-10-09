@@ -13,8 +13,9 @@ import { StreamDay } from '../stream/stream-day';
 import { TempoDayCoverage } from '../tempo/coverage';
 import { TempoSyncPlan } from '../tempo/diff';
 import { TempoSyncOutcome } from '../tempo/execute';
+import { separateOverlappingProposals } from '../tempo/separate';
 import { TempoWorklog } from '../tempo/worklogs';
-import { DayReview, DayReviewEdits, ReviewedRow, WrittenWorklog } from './model';
+import { DayReview, DayReviewEdits, ReviewedRow, WrittenWorklog, isNamedRow } from './model';
 import { PeerDayRows } from './peer-rows';
 
 /** Whether Tempo holds work on a day: a worklog this app wrote, or one the stored coverage read. */
@@ -356,6 +357,60 @@ export const patchBookedReview = (options: { stored: DayReview; before: DayRevie
     rows: rows.filter((row) => !row.hidden).sort(byStart),
     hidden: rows.filter((row) => row.hidden),
     behind: options.stored.behind,
+  };
+};
+
+/**
+ * A booked day's review with a read-only row for each worklog this app wrote that no row carries, drawn
+ * from the worklog as Tempo holds it and counted in the day's totals. The row keeps the ledger's id, so
+ * a sync reads the worklog as its own rather than as one to delete. See ADR 0038.
+ */
+export const withUncarriedWorklogs = (options: {
+  review: DayReview;
+  written: readonly WrittenWorklog[];
+  backgroundProjects?: readonly string[];
+  incrementMs?: number;
+}): DayReview => {
+  const { review, written } = options;
+  const carried = new Set(allRowsOf(review).flatMap((row) => row.worklogIds ?? []));
+  const rows = written
+    .filter((worklog) => !carried.has(worklog.worklogId))
+    .map((worklog): ReviewedRow => ({
+      id: worklog.proposalId,
+      issueKey: worklog.issueKey,
+      from: worklog.from,
+      to: new Date(worklog.from.getTime() + worklog.durationMs),
+      durationMs: worklog.durationMs,
+      observedMs: 0,
+      description: worklog.description,
+      confidence: 'certain',
+      evidence: [],
+      state: 'synced',
+      edited: false,
+      hidden: false,
+      worklogIds: [worklog.worklogId],
+    }));
+
+  if (!rows.length) return review;
+
+  const writtenMs = (drawn: ReviewedRow[]) =>
+    separateOverlappingProposals({
+      proposals: drawn.filter(isNamedRow),
+      backgroundProjects: options.backgroundProjects,
+      incrementMs: options.incrementMs,
+    }).reduce((sum, write) => sum + write.durationMs, 0);
+  const addedMs = writtenMs([...review.rows, ...rows]) - writtenMs(review.rows);
+  const { check } = review;
+
+  return {
+    ...review,
+    rows: [...review.rows, ...rows].sort(byStart),
+    check: {
+      ...check,
+      proposedMs: check.proposedMs + addedMs,
+      loggedMs: check.loggedMs + addedMs,
+      ...(check.deltaMs === undefined ? {} : { deltaMs: check.deltaMs + addedMs }),
+    },
   };
 };
 

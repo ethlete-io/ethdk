@@ -47,6 +47,11 @@ const inputsOf = async (page: Parameters<typeof askAgent>[0], day: string) => {
   return answer.ok ? answer.value.edits : null;
 };
 
+const UNCARRIED_ID = `booked@${BOOKED_DAY}`;
+
+const drawnIds = (rows: { ok: true; value: AgentApiDayRows } | { ok: false }) =>
+  rows.ok ? rows.value.rows.map((row) => row.id) : [];
+
 test.describe('a finished day this app booked', () => {
   test.beforeEach(async ({ page }) => {
     await seedWorld(page, {
@@ -74,7 +79,10 @@ test.describe('a finished day this app booked', () => {
     const rows = await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY });
     const frozen = await inputsOf(page, BOOKED_DAY);
 
-    expect(rows.ok && rows.value.rows.map((row) => row.id)).toEqual(frozen?.frozenRows?.proposals.map((row) => row.id));
+    expect(drawnIds(rows).filter((id) => id !== UNCARRIED_ID)).toEqual(
+      frozen?.frozenRows?.proposals.map((row) => row.id),
+    );
+    expect(drawnIds(rows)).toContain(UNCARRIED_ID);
     expect((await inputsOf(page, ELSEWHERE_DAY))?.frozenRows).toBeUndefined();
     expect((await inputsOf(page, E2E_DAY_KEY))?.frozenRows).toBeUndefined();
   });
@@ -236,7 +244,10 @@ test.describe('a booked day a paired machine’s events reach afterwards', () =>
     const rows = await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY });
     const frozen = await inputsOf(page, BOOKED_DAY);
 
-    expect(rows.ok && rows.value.rows.map((row) => row.id)).toEqual(frozen?.frozenRows?.proposals.map((row) => row.id));
+    expect(drawnIds(rows).filter((id) => id !== UNCARRIED_ID)).toEqual(
+      frozen?.frozenRows?.proposals.map((row) => row.id),
+    );
+    expect(drawnIds(rows)).toContain(UNCARRIED_ID);
   });
 });
 
