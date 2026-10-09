@@ -792,7 +792,8 @@ pub async fn jira_mirrors(db: State<'_, Db>) -> TimetrackResult<Vec<serde_json::
 
 #[tauri::command]
 pub async fn set_jira_mirror(db: State<'_, Db>, project_key: String, mirror: serde_json::Value) -> TimetrackResult<()> {
-    db.run(move |connection| save_jira_mirror(connection, &project_key, &mirror)).await
+    db.run(move |connection| save_jira_mirror(connection, &project_key, &mirror))
+        .await
 }
 
 #[cfg(test)]
@@ -804,9 +805,19 @@ mod tests {
     fn keeps_one_jira_mirror_per_project() {
         let connection = store();
 
-        save_jira_mirror(&connection, "ABC", &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 1 })).unwrap();
+        save_jira_mirror(
+            &connection,
+            "ABC",
+            &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 1 }),
+        )
+        .unwrap();
         save_jira_mirror(&connection, "XYZ", &serde_json::json!({ "projectKey": "XYZ" })).unwrap();
-        save_jira_mirror(&connection, "ABC", &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 2 })).unwrap();
+        save_jira_mirror(
+            &connection,
+            "ABC",
+            &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 2 }),
+        )
+        .unwrap();
 
         assert_eq!(
             jira_mirror_documents(&connection).unwrap(),
