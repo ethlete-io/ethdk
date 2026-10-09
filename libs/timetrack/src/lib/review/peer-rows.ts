@@ -68,7 +68,7 @@ export const peerDayRowsOf = (options: {
  * The version of the rows this app builds. Raise it when {@link peerDayRowsOf} or the rows it reads change
  * what a booked day sends: each machine then builds and sends its stored days again.
  */
-export const PEER_DAY_ROWS_VERSION = 1;
+export const PEER_DAY_ROWS_VERSION = 2;
 
 /** The wire form of {@link PeerDayRows}, stamped with {@link PEER_DAY_ROWS_VERSION}. */
 export const encodePeerDayRows = (rows: PeerDayRows) =>

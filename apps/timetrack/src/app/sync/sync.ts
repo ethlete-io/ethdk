@@ -53,7 +53,7 @@ type SyncPreviewStatus =
 type SyncRunStatus =
   | typeof IDLE
   | { kind: 'writing'; day: string }
-  | { kind: 'written'; day: string; outcome: TempoSyncOutcome; unrecorded: string | null }
+  | { kind: 'written'; day: string; plan: TempoSyncPlan; outcome: TempoSyncOutcome; unrecorded: string | null }
   | { kind: 'failed'; day: string; message: string };
 
 export type SyncRequest = { day: string; plan: TempoSyncPlan; authorAccountId: string };
@@ -196,7 +196,13 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
       }),
       switchMap((outcome) =>
         record$(outcome).pipe(
-          map((unrecorded): FinishedRun => ({ kind: 'written', day: request.day, outcome, unrecorded })),
+          map((unrecorded): FinishedRun => ({
+            kind: 'written',
+            day: request.day,
+            plan: request.plan,
+            outcome,
+            unrecorded,
+          })),
         ),
       ),
       catchError((error: unknown) => of<FinishedRun>({ kind: 'failed', day: request.day, message: messageOf(error) })),
@@ -218,8 +224,10 @@ const SYNC_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   runStates$
     .pipe(
-      filter((state) => state.kind === 'written'),
-      concatMap((state) => agentDay.freeze$(state.day).pipe(catchError(() => EMPTY))),
+      filter((state): state is Extract<SyncRunStatus, { kind: 'written' }> => state.kind === 'written'),
+      concatMap((state) =>
+        agentDay.book$(state.day, { plan: state.plan, outcome: state.outcome }).pipe(catchError(() => EMPTY)),
+      ),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();

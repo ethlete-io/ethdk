@@ -56,6 +56,7 @@ import {
 import { EMPTY, Observable, Subject, delay, of, throwError } from 'rxjs';
 import { AgentRequestEvent } from '../host/agent-channel';
 import { HostPorts } from '../host/ports';
+import { parseStoredEdits } from '../host/review-store';
 import { parseSyncRun, toStoredSyncRun } from '../host/sync-run-store';
 
 const ok = <T>(value: T): Observable<T> => of(value);
@@ -113,9 +114,16 @@ export const createFakePorts = (): HostPorts => {
     );
   }
 
-  const edits = new Map<string, DayReviewEdits>(
-    Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
-  );
+  const edits = new Map<string, DayReviewEdits>([
+    ...Object.entries(world.reviewOverrides).map(([day, overrides]): [string, DayReviewEdits] => [
+      day,
+      { ...EMPTY_DAY_REVIEW_EDITS, overrides },
+    ]),
+    ...Object.entries(world.storedReviews).map(([day, stored]): [string, DayReviewEdits] => [
+      day,
+      parseStoredEdits(stored as Parameters<typeof parseStoredEdits>[0]),
+    ]),
+  ]);
   const coverage = new Map<string, TempoDayCoverage>(
     Object.entries(world.tempoCoverage).map(([day, held]) => [
       day,

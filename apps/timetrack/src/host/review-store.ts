@@ -1,4 +1,11 @@
-import { DayReviewEdits, DayRows, PinnedRow, PresenceStatement, TimetrackReviewStore } from '@ethlete/timetrack';
+import {
+  BookedDay,
+  DayReviewEdits,
+  DayRows,
+  PinnedRow,
+  PresenceStatement,
+  TimetrackReviewStore,
+} from '@ethlete/timetrack';
 import { map } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -10,10 +17,11 @@ type StoredPinnedRow = Omit<PinnedRow, 'from' | 'to' | 'evidence'> & {
 
 type StoredStatement = Omit<PresenceStatement, 'from' | 'to'> & { fromMs: number; toMs: number };
 
-type StoredEdits = Omit<DayReviewEdits, 'pinned' | 'statements' | 'frozenRows'> & {
+type StoredEdits = Omit<DayReviewEdits, 'pinned' | 'statements' | 'frozenRows' | 'booked'> & {
   pinned: StoredPinnedRow[];
   statements: StoredStatement[];
   frozenRows?: unknown;
+  booked?: unknown;
 };
 
 const STORED_DATE_KEY = '$dateMs';
@@ -47,6 +55,7 @@ export const toStoredEdits = (edits: DayReviewEdits): StoredEdits => ({
   ...(edits.autoDescriptions ? { autoDescriptions: edits.autoDescriptions } : {}),
   ...(edits.autoDisputes ? { autoDisputes: edits.autoDisputes } : {}),
   ...(edits.frozenRows ? { frozenRows: withStoredDates(edits.frozenRows) } : {}),
+  ...(edits.booked ? { booked: withStoredDates(edits.booked) } : {}),
   pinned: edits.pinned.map(({ from, to, evidence, ...rest }) => ({
     ...rest,
     fromMs: from.getTime(),
@@ -67,6 +76,9 @@ export const parseStoredEdits = (stored: StoredEdits): DayReviewEdits => ({
   ...(Array.isArray(stored.autoDisputes) ? { autoDisputes: stored.autoDisputes } : {}),
   ...(stored.frozenRows && typeof stored.frozenRows === 'object'
     ? { frozenRows: withRevivedDates(stored.frozenRows) as DayRows }
+    : {}),
+  ...(stored.booked && typeof stored.booked === 'object'
+    ? { booked: withRevivedDates(stored.booked) as BookedDay }
     : {}),
   pinned: (stored.pinned ?? []).map(({ fromMs, toMs, evidence, ...rest }) => ({
     ...rest,

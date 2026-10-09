@@ -223,6 +223,8 @@ export type TimetrackWorldSeed = {
    * page as JSON.
    */
   reviewOverrides?: Record<string, Record<string, ProposalOverride>>;
+  /** Whole review edits by local calendar day, in the form the store holds them: a `Date` as `{ $dateMs }`. */
+  storedReviews?: Record<string, unknown>;
   /** The Tempo coverage already stored, by local calendar day. */
   tempoCoverage?: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
   /** The worklogs this app already wrote to Tempo. */
@@ -253,6 +255,7 @@ export type FakeWorld = {
   secrets: Record<string, string>;
   spec: SpecFiles | null;
   reviewOverrides: Record<string, Record<string, ProposalOverride>>;
+  storedReviews: Record<string, unknown>;
   tempoCoverage: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
   ledger: SyncedWorklog[];
   approvals: AgentApproval[];
@@ -546,6 +549,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   secrets: seed.secrets ?? {},
   spec: seed.spec ?? null,
   reviewOverrides: seed.reviewOverrides ?? {},
+  storedReviews: seed.storedReviews ?? {},
   tempoCoverage: seed.tempoCoverage ?? {},
   ledger: seed.ledger ?? [],
   approvals: seed.approvals ?? [],

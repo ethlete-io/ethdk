@@ -9,13 +9,20 @@ import {
   ManualRow,
   RepoNamingDecisions,
   ReviewedRow,
+  SyncedWorklog,
   TempoDayCoverage,
+  TempoSyncOutcome,
+  TempoSyncPlan,
+  WrittenWorklog,
   addManualRow,
   autoModeReaskSubjectOf,
   agedNamings,
   dayBoundaryOf,
+  fetchJiraIssueKeysByIds$,
   fetchJiraIssueTouchedAt$,
+  fetchJiraMyself$,
   fetchTempoDayCoverage$,
+  fetchTempoDayWorklogs$,
   hideRow,
   ledgerEntriesForRange$,
   localDayKey,
@@ -33,9 +40,12 @@ import {
   showRow,
   unnamedContexts,
   withAutoModeRowNames,
+  withBookedReview,
   withFrozenRows,
+  writtenAfterSync,
+  writtenWorklogsOf,
 } from '@ethlete/timetrack';
-import { Observable, catchError, concatMap, filter, forkJoin, map, of, switchMap, take, tap } from 'rxjs';
+import { Observable, catchError, concatMap, filter, forkJoin, map, of, switchMap, take, tap, throwError } from 'rxjs';
 import { injectGitCollector, injectWindowCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { injectDayReview } from '../day-review/day-review';
@@ -178,47 +188,119 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
       catchError(() => of([])),
     );
 
-  const read$ = (day: string): Observable<DayRead> =>
+  const finishedDay = (day: string) => day !== localDayKey(new Date(), dayBoundaryOf(settings.settings()));
+
+  const sendRows$ = (read: DayRead, ledger: readonly SyncedWorklog[]): Observable<void> => {
+    const edits = editsOf(read);
+
+    return ports.peers.setDayRows$(
+      ownDayRowsOf({
+        day: read.key,
+        frozen: !!edits.frozenRows,
+        rows: read.reviewWith(edits).rows,
+        ledger,
+        standIns: settings.settings().standIns,
+      }),
+      localDayRange(read.key, dayBoundaryOf(settings.settings())).from,
+    );
+  };
+
+  const frozenRead$ = (day: string): Observable<{ read: DayRead; ledger: SyncedWorklog[]; froze: boolean }> =>
     liveRead$(day).pipe(
       switchMap((read) =>
         ledgerOf$(day).pipe(
           switchMap((ledger) => {
-            const finished = day !== localDayKey(new Date(), dayBoundaryOf(settings.settings()));
-            const freeze = (edits: DayReviewEdits) => withFrozenRows({ edits, rows: read.day.rows, ledger, finished });
+            const freeze = (edits: DayReviewEdits) =>
+              withFrozenRows({ edits, rows: read.day.rows, ledger, finished: finishedDay(day) });
 
-            if (!freeze(editsOf(read))) return of(read);
+            if (!freeze(editsOf(read))) return of({ read, ledger, froze: false });
 
             return review
               .changeDay$(day, (edits) => freeze(edits) ?? edits)
               .pipe(
                 take(1),
-                map(() => {
-                  const edits = editsOf(read);
-
-                  return { ...read, edits, review: read.reviewWith(edits) };
-                }),
-                concatMap((frozen) =>
-                  ports.peers
-                    .setDayRows$(
-                      ownDayRowsOf({
-                        day,
-                        frozen: true,
-                        rows: frozen.review.rows,
-                        ledger,
-                        standIns: settings.settings().standIns,
-                      }),
-                      localDayRange(day, dayBoundaryOf(settings.settings())).from,
-                    )
-                    .pipe(
-                      catchError(() => of(undefined)),
-                      map(() => frozen),
-                    ),
-                ),
+                map(() => ({ read, ledger, froze: true })),
               );
           }),
         ),
       ),
     );
+
+  const writtenOf$ = (day: string, ledger: readonly SyncedWorklog[]): Observable<WrittenWorklog[]> =>
+    forkJoin({
+      jira: readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }),
+      tempo: readTempoCredentials$({ secrets: ports.secrets }),
+    }).pipe(
+      switchMap(({ jira, tempo }) => {
+        if (!jira || !tempo) return throwError(() => new Error('Jira and Tempo need credentials in Settings.'));
+
+        return fetchJiraMyself$({ transport: ports.transport, credentials: jira }).pipe(
+          switchMap((account) =>
+            fetchTempoDayWorklogs$({
+              transport: ports.transport,
+              credentials: tempo,
+              accountId: account.accountId,
+              day,
+              boundary: dayBoundaryOf(settings.settings()),
+            }),
+          ),
+          switchMap((remote) => {
+            const owned = new Set(ledger.map((entry) => entry.tempoWorklogId));
+
+            return fetchJiraIssueKeysByIds$({
+              transport: ports.transport,
+              credentials: jira,
+              ids: remote.filter((worklog) => owned.has(worklog.id)).map((worklog) => worklog.issueId),
+            }).pipe(map((keysByIssueId) => writtenWorklogsOf({ ledger, remote, keysByIssueId })));
+          }),
+        );
+      }),
+      take(1),
+    );
+
+  /**
+   * Stores the review a frozen finished day is drawn from (ADR 0040). Without `sync` only a day with no
+   * stored review is booked; with it the day is booked again with the sync's writes laid over Tempo's.
+   */
+  const bookedRead$ = (day: string, sync?: { plan: TempoSyncPlan; outcome: TempoSyncOutcome }): Observable<DayRead> =>
+    frozenRead$(day).pipe(
+      switchMap(({ read, ledger, froze }) => {
+        const stored = editsOf(read).booked;
+        const bookable = !!editsOf(read).frozenRows && ledger.length > 0 && finishedDay(day) && (!!sync || !stored);
+        const booked$: Observable<boolean> = bookable
+          ? writtenOf$(day, ledger).pipe(
+              catchError((error: unknown) => (sync && stored ? of(stored.written) : throwError(() => error))),
+              map((written) => (sync ? writtenAfterSync({ written, ...sync }) : written)),
+              switchMap((written) =>
+                review.changeDay$(day, (edits) =>
+                  edits.booked && !sync ? edits : withBookedReview({ edits, written, review: read.reviewWith }),
+                ),
+              ),
+              take(1),
+              map(() => true),
+              catchError(() => of(false)),
+            )
+          : of(false);
+
+        return booked$.pipe(
+          concatMap((booked) =>
+            booked || froze
+              ? sendRows$(read, ledger).pipe(
+                  catchError(() => of(undefined)),
+                  map(() => read),
+                )
+              : of(read),
+          ),
+          map((current) => {
+            const edits = editsOf(current);
+
+            return { ...current, edits, review: current.reviewWith(edits) };
+          }),
+        );
+      }),
+    );
+
+  const read$ = (day: string): Observable<DayRead> => bookedRead$(day);
 
   const askEvidenceOf = (read: DayRead) => {
     const { unattributed } = read.day.rows;
@@ -344,29 +426,12 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const addRow$ = (options: { day: string; row: ManualRow }): Observable<void> =>
     review.changeDay$(options.day, (edits) => addManualRow({ edits, row: options.row })).pipe(take(1));
 
-  const freeze$ = (day: string): Observable<void> => read$(day).pipe(map(() => undefined));
+  /** Books a frozen finished day, or, given the sync that wrote it, books it again. See ADR 0040. */
+  const book$ = (day: string, sync?: { plan: TempoSyncPlan; outcome: TempoSyncOutcome }): Observable<void> =>
+    bookedRead$(day, sync).pipe(map(() => undefined));
 
   const sendDayRows$ = (day: string): Observable<void> =>
-    read$(day).pipe(
-      concatMap((read) =>
-        ledgerOf$(day).pipe(
-          concatMap((ledger) => {
-            const edits = editsOf(read);
-
-            return ports.peers.setDayRows$(
-              ownDayRowsOf({
-                day,
-                frozen: !!edits.frozenRows,
-                rows: read.reviewWith(edits).rows,
-                ledger,
-                standIns: settings.settings().standIns,
-              }),
-              localDayRange(day, dayBoundaryOf(settings.settings())).from,
-            );
-          }),
-        ),
-      ),
-    );
+    read$(day).pipe(concatMap((read) => ledgerOf$(day).pipe(concatMap((ledger) => sendRows$(read, ledger)))));
 
   return {
     review$,
@@ -376,7 +441,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
     addRow$,
     askEvidence$,
     applyAutoModeNames$,
-    freeze$,
+    book$,
     sendDayRows$,
   };
 });
