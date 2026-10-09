@@ -541,6 +541,17 @@ test.describe('auto mode on a settled code row with a ticket', () => {
     await expect(entry).toHaveAttribute('data-status', 'written');
     await expect(entry).toContainText(`Worklog: ${FAKE_WORKLOG}`);
   });
+
+  test('opens the row it described from the readout, marked as written by auto mode', async ({ page }) => {
+    await expect.poll(() => describedRow(page)).toEqual({ description: FAKE_WORKLOG, source: 'auto' });
+
+    const readout = await openAutoModeReadout(page);
+
+    await readout.locator('[data-auto-entry^="description:"] [data-show-row]').click();
+
+    await expect(readout).toBeHidden();
+    await expect(editSurface(page).locator('[data-auto-described]')).toBeVisible();
+  });
 });
 
 test.describe('auto mode on a code row that has not settled yet', () => {

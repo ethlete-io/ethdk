@@ -11,6 +11,7 @@ import { callExclusionReasonOf, isStandInRow } from '@ethlete/timetrack';
 import { injectAutoMode } from '../auto-mode';
 import { injectDayReview } from '../day-review';
 import { EditApprovalComponent } from './edit-approval.component';
+import { EditDescriptionSourceComponent } from './edit-description-source.component';
 import { EditDisputedComponent } from './edit-disputed.component';
 import { EditEvidenceComponent } from './edit-evidence.component';
 import { EditIssueStatusComponent } from './edit-issue-status.component';
@@ -74,6 +75,7 @@ import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
           <ethlete-edit-state [draft]="surface.draft" />
           <ethlete-edit-when [draft]="surface.draft" />
           <et-scheduler-edit-description [draft]="surface.draft" />
+          <ethlete-edit-description-source [draft]="surface.draft" />
           <ethlete-edit-evidence [draft]="surface.draft" />
         }
       </et-scheduler-edit-surface-fields>
@@ -87,6 +89,7 @@ import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
   imports: [
     SCHEDULER_EDIT_SURFACE_IMPORTS,
     EditApprovalComponent,
+    EditDescriptionSourceComponent,
     EditDisputedComponent,
     EditEvidenceComponent,
     EditIssueComponent,

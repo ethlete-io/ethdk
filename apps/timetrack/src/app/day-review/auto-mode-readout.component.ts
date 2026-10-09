@@ -1,4 +1,5 @@
-import { Component, ViewEncapsulation, input } from '@angular/core';
+import { Component, ViewEncapsulation, input, output } from '@angular/core';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { AutoModeReadoutEntry, AutoModeReadoutStatus } from '@ethlete/timetrack';
 import { formatClockTime } from './format';
 
@@ -49,6 +50,19 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
               <span class="text-et-surface-muted">Worklog: {{ entry.description }}</span>
             }
 
+            @if (entry.rowId; as rowId) {
+              <button
+                (click)="showRow.emit(rowId)"
+                class="self-start"
+                et-button
+                size="sm"
+                variant="transparent"
+                data-show-row
+              >
+                Show the row
+              </button>
+            }
+
             @if (entry.error) {
               <span class="text-et-error">{{ entry.error }}</span>
             }
@@ -60,9 +74,12 @@ const STATUS_TEXT: Record<AutoModeReadoutStatus, string> = {
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS],
 })
 export class AutoModeReadoutComponent {
   public entries = input.required<readonly AutoModeReadoutEntry[]>();
+
+  public showRow = output<string>();
 
   protected askedAt(entry: AutoModeReadoutEntry) {
     return formatClockTime(new Date(entry.askedAtMs));

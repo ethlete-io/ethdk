@@ -1,11 +1,13 @@
-import { Component, ViewEncapsulation, computed } from '@angular/core';
+import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import {
   ACCORDION_IMPORTS,
   BANNER_IMPORTS,
   BUTTON_IMPORTS,
   EMPTY_STATE_IMPORTS,
   OVERLAY_CONTENT_IMPORTS,
+  OVERLAY_REF,
   OverlayMainDirective,
+  OverlayRef,
   SpinnerComponent,
   createOverlayOpener,
   defineOverlay,
@@ -13,6 +15,7 @@ import {
 } from '@ethlete/components';
 import { formatDurationMs } from '@ethlete/timetrack';
 import { injectAutoMode } from './auto-mode';
+import { injectBandApprovals } from './band-approvals';
 import { AutoModeActivityComponent } from './auto-mode-activity.component';
 import { AutoModeCallsComponent } from './auto-mode-calls.component';
 import { AutoModeReadoutComponent } from './auto-mode-readout.component';
@@ -198,7 +201,7 @@ import { ContextNaming, UnnamedWorkComponent } from './unnamed-work.component';
         </et-accordion>
 
         <et-accordion [label]="autoModeLabel()">
-          <ethlete-auto-mode-readout [entries]="autoMode.readout()" />
+          <ethlete-auto-mode-readout [entries]="autoMode.readout()" (showRow)="showRow($event)" />
 
           @if (autoMode.activity().length) {
             <h4 class="mb-2 mt-4 text-small text-et-surface-muted">Jobs since the app started</h4>
@@ -260,6 +263,8 @@ export class DayDebugComponent {
   protected tickets = injectTicketDraft();
   protected repair = injectBranchRepair();
   protected autoMode = injectAutoMode();
+  private bandApprovals = injectBandApprovals();
+  private overlayRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
   protected report = createOverlayOpener(REPORT_OVERLAY);
 
   protected waitingLabel = computed(() => {
@@ -312,6 +317,11 @@ export class DayDebugComponent {
 
     return { repoPath: context.repoPath, branch: context.branch ?? '', issueKey };
   });
+
+  protected showRow(rowId: string) {
+    this.overlayRef?.close();
+    this.bandApprovals.revealRow(rowId);
+  }
 
   protected labelRun(label: TimerRunLabel) {
     this.store.labelRun(label.id, { issueKey: label.issueKey, note: label.note });

@@ -97,13 +97,16 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     return { byRow, previews, unplaced, first };
   });
 
-  const revealing = signal<{ itemId: string; day: string } | { undecided: true; day: string } | null>(null);
+  const revealing = signal<
+    { itemId: string; day: string } | { rowId: string; day: string } | { undecided: true; day: string } | null
+  >(null);
 
   const revealRowId = computed(() => {
     const reveal = revealing();
 
     if (!reveal) return null;
     if ('itemId' in reveal) return placed().first.get(reveal.itemId) ?? null;
+    if ('rowId' in reveal) return reveal.rowId;
 
     const [first] = store
       .rows()
@@ -147,6 +150,8 @@ const BAND_APPROVALS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     revealRowId,
     /** Opens the item's band once the day in view draws it. Call it after the day is set. */
     reveal: (itemId: string) => revealing.set({ itemId, day: store.dayKey() }),
+    /** Opens a band of the day in view. */
+    revealRow: (rowId: string) => revealing.set({ rowId, day: store.dayKey() }),
     /** Opens the earliest band still waiting for a yes or a no. Call it after the day is set. */
     revealUndecided: () => revealing.set({ undecided: true, day: store.dayKey() }),
     revealed: () => revealing.set(null),

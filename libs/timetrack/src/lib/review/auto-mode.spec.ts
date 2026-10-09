@@ -1239,6 +1239,10 @@ describe('autoModeReadout', () => {
       ]);
     });
 
+    it('links the entry to the row it wrote to', () => {
+      expect(readRows(described('Built the export'))[0]?.rowId).toBe(row.id);
+    });
+
     it('reads a line the user wrote over as overruled', () => {
       const edits = described('Built the export');
       const [current] = rowsOf(edits);

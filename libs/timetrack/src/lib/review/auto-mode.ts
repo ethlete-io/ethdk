@@ -847,6 +847,8 @@ export type AutoModeReadoutEntry = {
   error?: string;
   /** The masked payload that left the machine. */
   request: TicketWritingRequest | WorklogWritingRequest | DisputeResolvingRequest;
+  /** The row of the day the entry wrote to, where the day still draws one. */
+  rowId?: string;
 };
 
 const autoNamedRows = (edits: DayReviewEdits, issueKey: string | undefined) => {
@@ -885,6 +887,7 @@ const descriptionReadout = (options: {
       namedRows: 0,
       request: answer.request,
       ...(row?.issueKey ? { issueKey: row.issueKey } : {}),
+      ...(row ? { rowId: row.id } : {}),
     };
 
     if (!answer.description) return { ...base, status: 'failed' };
