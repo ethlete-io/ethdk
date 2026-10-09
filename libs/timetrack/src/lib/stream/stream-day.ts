@@ -575,11 +575,16 @@ const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: Timetrac
     }
   }
 
+  const edited = new Set<string>();
+
   for (const [repoPath, held] of edits) {
-    if (!commits.has(repoPath)) commits.set(repoPath, held);
+    if (commits.has(repoPath)) continue;
+
+    commits.set(repoPath, held);
+    edited.add(repoPath);
   }
 
-  const found = new Map<string, WorkPathMark[]>();
+  const found = new Map<string, { marks: WorkPathMark[]; edited: boolean }>();
 
   for (const [repoPath, held] of commits) {
     const paths = workPathsOf({ commits: held, projectRoots: projectRoots[repoPath] });
@@ -587,7 +592,7 @@ const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: Timetrac
       .map((commit, index) => ({ at: commit.at, workPath: paths[index] }))
       .filter((mark): mark is WorkPathMark => !!mark.workPath);
 
-    if (marks.length) found.set(repoPath, lastOfEachRun(marks));
+    if (marks.length) found.set(repoPath, { marks: lastOfEachRun(marks), edited: edited.has(repoPath) });
   }
 
   return found;
@@ -603,8 +608,10 @@ const workPathMarks = (samples: readonly ActivityEvent[], projectRoots: Timetrac
 const workPathGrains = (samples: readonly ActivityEvent[], projectRoots: TimetrackProjectRoots) => {
   const grains = new Map<string, WorkPathMark[]>();
 
-  for (const [repoPath, marks] of workPathMarks(samples, projectRoots)) {
-    if (workPathsSplit({ paths: marks.map((mark) => mark.workPath) })) grains.set(repoPath, marks);
+  for (const [repoPath, { marks, edited }] of workPathMarks(samples, projectRoots)) {
+    const paths = marks.map((mark) => mark.workPath);
+
+    if (workPathsSplit({ paths }) || (edited && new Set(paths).size === 1)) grains.set(repoPath, marks);
   }
 
   return grains;

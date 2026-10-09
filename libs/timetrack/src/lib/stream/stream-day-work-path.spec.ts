@@ -127,6 +127,16 @@ describe('streamDay work paths from the editor', () => {
     expect(blocks.at(-1)?.context.workPath).toBe(REWORK);
   });
 
+  it('gives a base branch the one directory edited all day on a day with no commit', () => {
+    const events = [
+      ...focusRun({ from: 0, to: 120 }),
+      heartbeat({ minutes: 10, branch: 'main', directory: REWORK }),
+      heartbeat({ minutes: 100, branch: 'main', directory: REWORK }),
+    ];
+
+    expect(new Set(blocksOf(events).map((block) => block.context.workPath))).toEqual(new Set([REWORK]));
+  });
+
   it('reads the commits rather than the edits when the checkout committed', () => {
     const events = [
       ...focusRun({ from: 0, to: 120 }),
