@@ -371,7 +371,7 @@ export const describeApproval = (request: AgentApprovalRequest) => {
       const issue = request.summary ? `${request.issueKey} ${request.summary}` : request.issueKey;
       const why = request.reason ? ` — ${request.reason}` : '';
 
-      if (request.subject.kind === 'call') return `Names today's ${request.label} call with ${issue}${why}`;
+      if (request.subject.kind === 'call') return `${request.label} → ${request.issueKey}`;
 
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${issue}${why}`

@@ -30,14 +30,19 @@ const chunk = (atClock: string, text: string) => ({
   text,
 });
 
-const callWorld = (options: { transcripts: boolean }) => {
+const callWorld = (options: { transcripts: boolean; language?: string }) => {
   const base = defaultSettings();
   const settings: TimetrackSettings = {
     ...base,
     nudge: { ...base.nudge, enabled: false },
     callRules: { countsAsWork: ['Discord'], neverCountsAsWork: [] },
     transcribeCalls: true,
-    reasoning: { ...base.reasoning, autoMode: true, autoModeTranscripts: options.transcripts },
+    reasoning: {
+      ...base.reasoning,
+      autoMode: true,
+      autoModeTranscripts: options.transcripts,
+      ...(options.language ? { language: options.language } : {}),
+    },
   };
 
   return {
@@ -75,7 +80,7 @@ const sentCallPayload = async (page: Page) => {
 
 test.describe('auto mode on an unnamed call, with transcripts let in', () => {
   test.beforeEach(async ({ page }) => {
-    await seedWorld(page, callWorld({ transcripts: true }));
+    await seedWorld(page, callWorld({ transcripts: true, language: 'Deutsch' }));
     await page.goto('/day');
   });
 
@@ -84,7 +89,8 @@ test.describe('auto mode on an unnamed call, with transcripts let in', () => {
     const item = dialog.locator('[data-approval]');
 
     await expect(item).toHaveCount(1);
-    await expect(item).toContainText(`Names today's Open Room #1 call with ${E2E_ISSUE_KEY}`);
+    await expect(item).toContainText(`Open Room #1 → ${E2E_ISSUE_KEY}`);
+    await expect(item).not.toContainText('Names today');
 
     await item.getByRole('button', { name: 'Approve' }).click();
     await expect(item).toBeHidden();
@@ -98,6 +104,18 @@ test.describe('auto mode on an unnamed call, with transcripts let in', () => {
 
     expect(sent).toContain(HEARD);
     expect(sent).not.toContain(OPENING_NOISE);
+  });
+
+  test('suggests the call on its row with a short headline and the why in the suggestion language', async ({
+    page,
+  }) => {
+    await page.locator('[data-kind="row"]').first().click();
+
+    const card = editSurface(page).locator('[data-row-approval]');
+
+    await expect(card.locator('span.text-small').nth(1)).toHaveText(`Open Room #1 → ${E2E_ISSUE_KEY}`);
+    await expect(card).toContainText('Why');
+    await expect(card).toContainText('Das benennt dieselbe Arbeit.');
   });
 
   test('lists the transcript with the evidence of the call band', async ({ page }) => {

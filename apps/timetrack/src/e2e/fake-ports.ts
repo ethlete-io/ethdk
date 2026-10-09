@@ -101,6 +101,18 @@ export const createFakePorts = (): HostPorts => {
 
   for (const entry of world.ledger) ledger.set(entry.day, [...(ledger.get(entry.day) ?? []), entry]);
 
+  for (const [pass, cursors] of Object.entries(world.agentLogCursors)) {
+    cursorsByPass.set(
+      pass as AgentLogPass,
+      new Map(
+        (cursors ?? []).map(({ after, ...cursor }) => [
+          cursor.id,
+          { ...cursor, ...(after ? { after: new Date(after) } : {}) },
+        ]),
+      ),
+    );
+  }
+
   const edits = new Map<string, DayReviewEdits>(
     Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
   );
@@ -755,6 +767,9 @@ const FAKE_WORKLOG_ANSWER = `{"structured_output":${JSON.stringify({ description
 
 const FAKE_DISPUTE_ANSWER = `{"structured_output":${JSON.stringify({ choice: 'use', reason: 'The fake agent reads the other answer.' })}}`;
 
+const asksInGerman = (spec: ProcessSpec) =>
+  spec.args.some((arg) => arg.includes('Write every word you answer in Deutsch,'));
+
 const fakeTicketAnswer = (spec: ProcessSpec) => {
   const request = JSON.parse(spec.stdin ?? '{}') as {
     branch?: string;
@@ -769,7 +784,7 @@ const fakeTicketAnswer = (spec: ProcessSpec) => {
     description: 'Drafted by the fake agent.',
     parentKey: request.parents?.[0]?.key ?? null,
     existingKey,
-    existingReason: existingKey ? 'it names the same work' : '',
+    existingReason: existingKey ? (asksInGerman(spec) ? 'Das benennt dieselbe Arbeit.' : 'it names the same work') : '',
   };
 
   return `{"structured_output":${JSON.stringify(wording)}}`;
