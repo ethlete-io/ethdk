@@ -295,6 +295,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
       map((read) => ({
         ...askEvidenceOf(read),
         rows: read.reviewWith(editsOf(read)).rows,
+        events: read.events,
         streams: read.day.streams,
         offeredCheckouts: namingDecisionsOf(read).offers.map((offer) => offer.repoPath),
       })),

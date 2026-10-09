@@ -38,10 +38,21 @@ const unnamed = (context: ActivityContext): UnnamedContext => ({
   suggestion: { repoPath: context.repoPath, branch: context.branch },
 });
 
+const WORK = unnamed({ repoPath: WORKTREE, branch: 'feat/login-altcha' });
+
 const open = (links: readonly TimetrackProjectLink[]) =>
   autoStandIns({
-    contexts: [unnamed({ repoPath: WORKTREE, branch: 'feat/login-altcha' })],
-    unattributed: [],
+    contexts: [WORK],
+    unattributed: [
+      {
+        from: WORK.from,
+        to: WORK.to,
+        observedMs: WORK.observedMs,
+        confidence: 'weak',
+        evidence: [],
+        blocks: [{ from: WORK.from, to: WORK.to, context: WORK.context, evidence: [] }],
+      },
+    ],
     links,
     rules: [],
     config: resolveGitFlowConfig({ keyPrefixes: ['FUT'] }),

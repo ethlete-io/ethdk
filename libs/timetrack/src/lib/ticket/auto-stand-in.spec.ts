@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { WorkGroup } from '../rows/merge';
 import { AttributionRule, UnnamedContext } from '../model/attribution';
 import { ActivityBlock, ActivityContext, contextKey } from '../model/block';
+import { CollectedEvent } from '../model/event';
 import { Evidence } from '../model/evidence';
 import { TimetrackProjectLink } from '../model/project-link';
 import { StandIn, StandInRefusal } from '../model/stand-in';
@@ -40,6 +41,25 @@ const group = (context: ActivityContext, entries: Evidence[]): WorkGroup => {
   return { from: block.from, to: block.to, observedMs: 0, confidence: 'weak', evidence: [], blocks: [block] };
 };
 
+const drawn = (unnamedContext: UnnamedContext, from: Date, to: Date): WorkGroup => ({
+  from,
+  to,
+  observedMs: unnamedContext.observedMs,
+  confidence: 'weak',
+  evidence: [],
+  blocks: [
+    {
+      from: unnamedContext.from,
+      to: new Date(unnamedContext.from.getTime() + unnamedContext.observedMs),
+      context: unnamedContext.context,
+      evidence: [],
+    },
+  ],
+});
+
+const drawnAsObserved = (unnamedContext: UnnamedContext) =>
+  drawn(unnamedContext, unnamedContext.from, new Date(unnamedContext.from.getTime() + unnamedContext.observedMs));
+
 const commit = (summary: string): Evidence => ({
   kind: 'commit',
   at: new Date('2026-09-15T09:30:00Z'),
@@ -56,10 +76,12 @@ const open = (options: {
   offeredCheckouts?: readonly string[];
   standIns?: readonly StandIn[];
   refused?: readonly StandInRefusal[];
+  events?: readonly CollectedEvent[];
 }) =>
   autoStandIns({
     contexts: options.contexts,
-    unattributed: options.unattributed ?? [],
+    unattributed: options.unattributed ?? options.contexts.map(drawnAsObserved),
+    events: options.events,
     links: options.links ?? [link(FIFAGG, { kind: 'project', projectKey: 'FIF' })],
     rules: options.rules ?? [],
     config: CONFIG,
@@ -220,6 +242,72 @@ describe('autoStandIns', () => {
 
     expect(open({ contexts: [short, other] })).toEqual([]);
     expect(open({ contexts: [short, more] })).toHaveLength(1);
+  });
+
+  it('weighs the drawn row rather than the observed minutes behind it', () => {
+    const context = unnamed({ repoPath: FIFAGG, branch: 'feature/reward-frontend' }, 12.6 * 60_000);
+    const row = drawn(context, new Date('2026-09-15T10:15:00Z'), new Date('2026-09-15T10:30:00Z'));
+
+    expect(open({ contexts: [context], unattributed: [row] }).map((entry) => entry.rule.branch)).toEqual([
+      'feature/reward-frontend',
+    ]);
+  });
+
+  describe('a branch below the floor with strong evidence on the day', () => {
+    const branch = 'feature/reward-frontend';
+    const short = unnamed({ repoPath: FIFAGG, branch }, 5 * 60_000);
+    const at = new Date('2026-09-15T09:03:00Z');
+    const opensWith = (events: CollectedEvent[]) => open({ contexts: [short], events }).length;
+
+    it('opens for an own commit on the branch, and not for one a pull brought in', () => {
+      const own: CollectedEvent = {
+        at,
+        source: 'git',
+        kind: 'git-commit',
+        repoPath: FIFAGG,
+        branch,
+        sha: 'abcdef1234',
+        subject: 'feat: Reward list',
+      };
+
+      expect(opensWith([own])).toBe(1);
+      expect(opensWith([{ ...own, authoredAt: new Date('2026-09-14T09:00:00Z') }])).toBe(0);
+      expect(opensWith([{ ...own, branch: 'feature/other' }])).toBe(0);
+    });
+
+    it('opens for merge request activity on the branch, a push included', () => {
+      const push: CollectedEvent = {
+        at,
+        source: 'gitlab',
+        kind: 'merge-request-activity',
+        eventId: '1',
+        action: 'pushed to',
+        branch,
+      };
+
+      expect(opensWith([push])).toBe(1);
+      expect(opensWith([{ ...push, branch: 'feature/other' }])).toBe(0);
+    });
+
+    it('opens for an agent session that wrote in the checkout, and not for one that only read there', () => {
+      const wrote: CollectedEvent = {
+        at,
+        source: 'agent-usage',
+        kind: 'agent-usage',
+        provider: 'claude-code',
+        sessionId: 's1',
+        turnId: 't1',
+        cwd: FIFAGG,
+        gitBranch: branch,
+        workedIn: `${FIFAGG}/src/reward.ts`,
+        model: 'm',
+        usage: { input: 1, output: 1, cacheWrite: 0, cacheRead: 0, thinking: 0 },
+      };
+
+      expect(opensWith([wrote])).toBe(1);
+      expect(opensWith([{ ...wrote, workedIn: FIFAGG }])).toBe(0);
+      expect(opensWith([{ ...wrote, cwd: OTHER, workedIn: `${OTHER}/src/x.ts` }])).toBe(0);
+    });
   });
 
   it('gives two checkouts opened in the same millisecond two ids', () => {

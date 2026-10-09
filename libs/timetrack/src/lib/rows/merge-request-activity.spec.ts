@@ -37,6 +37,27 @@ describe('mergeRequestActivity', () => {
     expect(mergeRequestActivity({ events: [activity({ branch: 'refactor/hub-query-v3' })], config })).toEqual([]);
   });
 
+  it('reads the issue out of the title or the description when the branch names none', () => {
+    const keyless = { branch: 'feature/reward-frontend' };
+
+    expect(
+      mergeRequestActivity({ events: [activity({ ...keyless, title: 'FIP-12704: Reward frontend' })], config })[0]
+        ?.issueKey,
+    ).toBe('FIP-12704');
+    expect(
+      mergeRequestActivity({
+        events: [activity({ ...keyless, title: 'Reward frontend', description: 'Closes FIP-12705' })],
+        config,
+      })[0]?.issueKey,
+    ).toBe('FIP-12705');
+  });
+
+  it('keeps the issue the branch names over one the title quotes', () => {
+    expect(mergeRequestActivity({ events: [activity({ title: 'FIP-1: Other' })], config })[0]?.issueKey).toBe(
+      'FIP-2178',
+    );
+  });
+
   it('says nothing while the branch is still unknown', () => {
     expect(mergeRequestActivity({ events: [activity({ branch: undefined })], config })).toEqual([]);
   });

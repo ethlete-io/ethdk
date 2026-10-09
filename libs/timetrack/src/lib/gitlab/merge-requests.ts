@@ -8,6 +8,7 @@ export type GitLabMergeRequest = {
   projectId: string;
   iid: string;
   title: string;
+  description?: string;
   /**
    * The branch the work is on. Under the branch grammar this carries the Story and the Task, which is
    * what lets time spent in somebody else's merge request land on the issue being reviewed.
@@ -24,6 +25,7 @@ type GitLabMergeRequestResource = {
   iid?: number | string;
   project_id?: number | string;
   title?: string;
+  description?: string | null;
   source_branch?: string;
   target_branch?: string;
   web_url?: string;
@@ -63,6 +65,7 @@ export const fetchGitLabMergeRequest$ = (options: {
         projectId: String(body.project_id ?? options.projectId),
         iid: String(body.iid ?? options.iid),
         title: body.title ?? '',
+        ...(body.description ? { description: body.description } : {}),
         sourceBranch: body.source_branch,
         targetBranch: body.target_branch ?? '',
         webUrl: body.web_url,

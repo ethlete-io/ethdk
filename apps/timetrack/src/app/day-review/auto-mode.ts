@@ -871,6 +871,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           day,
           contexts: evidence.contexts,
           unattributed: evidence.unattributed,
+          events: evidence.events,
           links: projectLinks(),
           repoRoots: git.discovery()?.repos,
           offeredCheckouts: evidence.offeredCheckouts,

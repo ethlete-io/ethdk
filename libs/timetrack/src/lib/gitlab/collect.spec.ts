@@ -84,6 +84,16 @@ describe('collectGitLabEvents$', () => {
     });
   });
 
+  it('carries the description of a merge request it read', () => {
+    const { runner } = stubRunner({
+      events: [NOTE],
+      mergeRequest: { ...MERGE_REQUEST, description: 'Closes FIP-2178' },
+    });
+    const [event] = collect(runner).events as MergeRequestActivityEvent[];
+
+    expect(event?.description).toBe('Closes FIP-2178');
+  });
+
   it('reads one merge request however many events were left on it', () => {
     const { runner, specs } = stubRunner({ events: [NOTE, { ...NOTE, id: 9003 }] });
     const collection = collect(runner);

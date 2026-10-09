@@ -1,4 +1,5 @@
 import {
+  CollectedEvent,
   Stream,
   TimetrackProjectLink,
   UnnamedContext,
@@ -21,6 +22,7 @@ export const runStandInPass = (options: {
   day: string;
   contexts: readonly UnnamedContext[];
   unattributed: readonly WorkGroup[];
+  events: readonly CollectedEvent[];
   links: readonly TimetrackProjectLink[];
   repoRoots: readonly string[] | null | undefined;
   offeredCheckouts: readonly string[];
@@ -33,6 +35,7 @@ export const runStandInPass = (options: {
   const opened = autoStandIns({
     contexts: options.contexts,
     unattributed: options.unattributed,
+    events: options.events,
     links: options.links,
     rules: current.attributionRules,
     config,

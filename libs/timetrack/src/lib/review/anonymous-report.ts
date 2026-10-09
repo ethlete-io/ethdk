@@ -255,6 +255,7 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
     })),
     standInPass: autoStandInDecisions({
       contexts: input.contexts,
+      unattributed,
       links: input.links,
       rules: settings.attributionRules,
       config,
@@ -268,6 +269,7 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
       ...(decision.workPath ? { workPath: name('path', decision.workPath) } : {}),
       ...(decision.appId ? { app: app(decision.appId) } : {}),
       observedMs: decision.observedMs,
+      ...(decision.drawnMs === undefined ? {} : { drawnMs: Math.round(decision.drawnMs) }),
       verdict: decision.verdict,
     })),
     autoMode: subjects.map((subject) => {

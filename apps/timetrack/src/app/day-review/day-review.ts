@@ -717,6 +717,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
       day: day(),
       contexts: unnamed(),
       unattributed: deterministic.unattributed,
+      events: load.value?.events ?? [],
       links: projectLinks(),
       repoRoots: git.discovery()?.repos,
       offeredCheckouts: namingOffers().map((offer) => offer.repoPath),

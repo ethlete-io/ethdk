@@ -1,6 +1,6 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
 import { CollectedEvent, MergeRequestActivityEvent } from '../model/event';
-import { IssueActivity } from './attribute';
+import { IssueActivity, issueKeyInText } from './attribute';
 
 const isMergeRequestActivity = (event: CollectedEvent): event is MergeRequestActivityEvent =>
   event.kind === 'merge-request-activity';
@@ -19,8 +19,9 @@ const detailOf = (event: MergeRequestActivityEvent) => {
  * read with, so reviewing `sub/feat/FIP-2177-…/FIP-2178-…` lands on the Task being reviewed. That is
  * the whole point of the collector: review time has no ticket of its own and no local trace either.
  *
- * A merge request whose branch names no issue produces nothing. Guessing from a project or a title is
- * what the reasoning provider is for.
+ * A branch that names no issue falls back to the first issue key the merge request's title or
+ * description quotes, which is the user's own wording too. A merge request that names one nowhere
+ * produces nothing: guessing from a project or a summary is what the reasoning provider is for.
  */
 export const mergeRequestActivity = (options: {
   events: readonly CollectedEvent[];
@@ -31,13 +32,15 @@ export const mergeRequestActivity = (options: {
   return options.events.filter(isMergeRequestActivity).flatMap((event): IssueActivity | [] => {
     if (!event.branch) return [];
 
-    const parsed = parseBranch({ branch: event.branch, config });
+    const issueKey =
+      parseBranch({ branch: event.branch, config }).issueKey ??
+      issueKeyInText({ text: [event.title, event.description].filter(Boolean).join('\n'), config });
 
-    if (!parsed.issueKey) return [];
+    if (!issueKey) return [];
 
     return {
       kind: 'merge-request',
-      issueKey: parsed.issueKey,
+      issueKey,
       at: event.at,
       branch: event.branch,
       detail: detailOf(event),

@@ -1,13 +1,16 @@
 import { GitFlowConfig, stripRefPrefix } from '@ethlete/agent-rules/git-flow';
 import { WorkGroup } from '../rows/merge';
 import { AttributionRule, UnnamedContext } from '../model/attribution';
+import { ActivityBlock, blockDurationMs, contextKey } from '../model/block';
 import { repoRootOf } from '../model/context';
+import { CollectedEvent } from '../model/event';
 import { TimetrackProjectLink, describeProjectLink, matchProjectLink } from '../model/project-link';
 import { StandIn, StandInRefusal, isStandInRefused, openStandIn } from '../model/stand-in';
 import { TicketDraft, draftRepoTicket } from './draft';
 
 /**
- * How much unnamed time on one branch is worth a placeholder.
+ * How much drawn unnamed time on one branch is worth a placeholder, unless the day holds strong evidence
+ * of the branch: an own commit, merge request activity, or an agent session that wrote in the checkout.
  *
  * A stray five minutes on a branch is noise, and a placeholder for it is a row the user has to
  * answer later for nothing. Fifteen minutes is the smallest stretch this app books at all.
@@ -29,6 +32,54 @@ type BranchGroup = {
   workPath?: string;
   contexts: UnnamedContext[];
   observedMs: number;
+};
+
+const sumMs = (blocks: readonly ActivityBlock[]) => blocks.reduce((total, block) => total + blockDurationMs(block), 0);
+
+const drawnMsOf = (options: { group: BranchGroup; unattributed: readonly WorkGroup[] }) => {
+  const ids = new Set(options.group.contexts.map((unnamed) => unnamed.id));
+
+  return options.unattributed.reduce((total, row) => {
+    const allMs = sumMs(row.blocks);
+    const ownMs = sumMs(row.blocks.filter((block) => ids.has(contextKey(block.context))));
+
+    return allMs > 0 ? total + ((row.to.getTime() - row.from.getTime()) * ownMs) / allMs : total;
+  }, 0);
+};
+
+const isUnder = (path: string, root: string) => path.startsWith(`${root}/`);
+
+const hasStrongEvidence = (options: { group: BranchGroup; events: readonly CollectedEvent[] }) => {
+  const { repoPath, branch, workPath } = options.group;
+  const within = workPath ? `${repoPath}/${workPath}` : repoPath;
+  const from = Math.min(...options.group.contexts.map((unnamed) => unnamed.from.getTime()));
+  const to = Math.max(...options.group.contexts.map((unnamed) => unnamed.to.getTime()));
+
+  return options.events.some((event) => {
+    switch (event.kind) {
+      case 'git-commit':
+        return (
+          !event.authoredAt &&
+          (event.repoPath === repoPath || event.worktree === repoPath) &&
+          stripRefPrefix(event.branch) === branch &&
+          (!workPath || (event.paths ?? []).some((path) => isUnder(`${repoPath}/${path}`, within)))
+        );
+      case 'merge-request-activity':
+        return !workPath && !!event.branch && stripRefPrefix(event.branch) === branch;
+      case 'agent-session':
+      case 'agent-usage':
+        return (
+          !!event.workedIn &&
+          event.workedIn !== event.cwd &&
+          isUnder(event.workedIn, within) &&
+          (event.gitBranch
+            ? stripRefPrefix(event.gitBranch) === branch
+            : event.at.getTime() >= from && event.at.getTime() <= to)
+        );
+      default:
+        return false;
+    }
+  });
 };
 
 /**
@@ -147,7 +198,9 @@ type AutoStandInOptions = {
   /** The local day key the placeholders open on. */
   day: string;
   now: Date;
-  minObservedMs?: number;
+  /** The day's collected events, which the strong evidence that lifts the floor is read from. */
+  events?: readonly CollectedEvent[];
+  minDrawnMs?: number;
 };
 
 /** Why the stand-in pass opened a placeholder for a piece of work, or why it left the work unnamed. */
@@ -172,11 +225,12 @@ export type AutoStandInDecision = {
   workPath?: string;
   appId?: string;
   observedMs: number;
+  drawnMs?: number;
   verdict: AutoStandInVerdict;
 };
 
 const verdictOf = (
-  options: Omit<AutoStandInOptions, 'day' | 'now' | 'unattributed'> & { group: BranchGroup; roots: readonly string[] },
+  options: Omit<AutoStandInOptions, 'day' | 'now'> & { group: BranchGroup; roots: readonly string[] },
 ) => {
   const { group, roots } = options;
   const { repoPath, branch, workPath } = group;
@@ -184,7 +238,10 @@ const verdictOf = (
     [options.config.baseBranches.development, options.config.baseBranches.production].map(stripRefPrefix),
   );
 
-  if (group.observedMs < (options.minObservedMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS))
+  if (
+    drawnMsOf({ group, unattributed: options.unattributed }) < (options.minDrawnMs ?? DEFAULT_MIN_AUTO_STAND_IN_MS) &&
+    !hasStrongEvidence({ group, events: options.events ?? [] })
+  )
     return { verdict: 'below-floor' as const };
   if (base.has(branch) && !workPath) return { verdict: 'base-branch' as const };
   if (!isCheckout({ repoPath, roots })) return { verdict: 'not-a-checkout' as const };
@@ -207,9 +264,7 @@ const verdictOf = (
  * What the stand-in pass decides for each piece of work a day left unnamed, including the work it never
  * groups: a context on no checkout and a checkout on no branch.
  */
-export const autoStandInDecisions = (
-  options: Omit<AutoStandInOptions, 'day' | 'now' | 'unattributed'>,
-): AutoStandInDecision[] => {
+export const autoStandInDecisions = (options: Omit<AutoStandInOptions, 'day' | 'now'>): AutoStandInDecision[] => {
   const ungrouped = new Map<string, AutoStandInDecision>();
 
   for (const unnamed of options.contexts) {
@@ -234,6 +289,7 @@ export const autoStandInDecisions = (
     branch: group.branch,
     ...(group.workPath ? { workPath: group.workPath } : {}),
     observedMs: group.observedMs,
+    drawnMs: drawnMsOf({ group, unattributed: options.unattributed }),
     verdict: roots ? verdictOf({ ...options, group, roots }).verdict : 'no-repo-roots',
   }));
 

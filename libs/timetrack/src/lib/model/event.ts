@@ -306,6 +306,8 @@ export type MergeRequestActivityEvent = CollectedEventBase<'gitlab' | 'github', 
   mergeRequestIid?: string;
   branch?: string;
   title?: string;
+  /** Present only where the collector read the merge request itself rather than the event alone. */
+  description?: string;
   url?: string;
 };
 

@@ -110,6 +110,7 @@ const toCollectedEvent = (options: {
     mergeRequestIid: event.mergeRequestIid,
     branch: event.branch ?? mergeRequest?.sourceBranch,
     title: event.title || mergeRequest?.title,
+    ...(mergeRequest?.description ? { description: mergeRequest.description } : {}),
     url: mergeRequest?.webUrl,
   };
 };
