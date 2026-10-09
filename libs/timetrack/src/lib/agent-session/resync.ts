@@ -1,6 +1,6 @@
 import { TimetrackProjectLink, pathIsUnder, projectKeyFor } from '../model/project-link';
 import { AgentSessionEvent } from '../model/event';
-import { AgentSessionCursor } from './collect';
+import { AgentSessionCollection, AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
 
 /**
@@ -102,3 +102,82 @@ export const agentSessionResyncOffers = (options: {
 
     return projectKey ? [{ ...entry, projectKey }] : [];
   });
+
+const parserVersionOf = (cursor: AgentSessionCursor) => cursor.parserVersion ?? 1;
+
+/**
+ * The next logs to read again from the top because older parse rules read them, rewound: the logs of
+ * the `limit` log groups whose stale cursor sampled most recently, among the logs the host still lists.
+ *
+ * A group is read whole, stale or not. A subagent's log shares its parent's session id, so a replacing
+ * write built from the parent alone would delete the subagent's samples and write none back.
+ */
+export const agentSessionReparseBatch = (options: {
+  cursors: readonly AgentSessionCursor[];
+  listed: readonly string[];
+  version: number;
+  limit: number;
+  /** The log group of a log id. Every log is its own group by default. */
+  groupOf?: (logId: string) => string;
+}): AgentSessionCursor[] => {
+  const groupOf = options.groupOf ?? ((logId: string) => logId);
+  const listed = new Set(options.listed);
+  const cursors = new Map(options.cursors.map((cursor) => [cursor.id, cursor]));
+  const latestStale = new Map<string, number>();
+
+  for (const cursor of options.cursors) {
+    if (!listed.has(cursor.id) || !cursor.nextLine || parserVersionOf(cursor) >= options.version) continue;
+
+    const group = groupOf(cursor.id);
+    const at = cursor.after?.getTime() ?? 0;
+
+    latestStale.set(group, Math.max(latestStale.get(group) ?? 0, at));
+  }
+
+  const groups = new Set(
+    [...latestStale]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .slice(0, options.limit)
+      .map(([group]) => group),
+  );
+
+  return options.listed
+    .filter((logId) => groups.has(groupOf(logId)))
+    .map((logId) => {
+      const cwd = cursors.get(logId)?.cwd;
+
+      return { id: logId, nextLine: 0, ...(cwd ? { cwd } : {}) };
+    });
+};
+
+/**
+ * What a re-read under newer parse rules writes: its events less every one dated on a frozen day, and
+ * the span per session and day the store replaces with them. A finished day this app booked keeps the
+ * rows it was booked with (ADR 0038), so the store keeps that day's samples as they are.
+ */
+export const reparsedAgentSessionWrite = (options: {
+  collection: Pick<AgentSessionCollection, 'events' | 'usage' | 'prompts'>;
+  dayOf: (at: Date) => string;
+  frozenDays: ReadonlySet<string>;
+}): Pick<AgentSessionCollection, 'events' | 'usage' | 'prompts'> & { replacing: AgentSessionSpan[] } => {
+  const open = <T extends { at: Date }>(events: readonly T[]) =>
+    events.filter((event) => !options.frozenDays.has(options.dayOf(event.at)));
+  const events = open(options.collection.events);
+  const spans = new Map<string, AgentSessionSpan>();
+
+  for (const event of events) {
+    const key = `${event.sessionId}\u0000${options.dayOf(event.at)}`;
+    const span = spans.get(key);
+
+    if (!span) spans.set(key, { sessionId: event.sessionId, from: event.at, to: event.at });
+    else if (event.at < span.from) span.from = event.at;
+    else if (event.at > span.to) span.to = event.at;
+  }
+
+  return {
+    events,
+    usage: open(options.collection.usage),
+    prompts: open(options.collection.prompts),
+    replacing: [...spans.values()],
+  };
+};

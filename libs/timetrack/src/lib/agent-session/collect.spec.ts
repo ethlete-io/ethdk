@@ -52,7 +52,12 @@ const readerFor = (logs: Log[]) => {
   return { reader, reads };
 };
 
-const collect = (options: { logs: Log[]; cursors?: AgentSessionCursor[]; modifiedAfter?: Date }) => {
+const collect = (options: {
+  logs: Log[];
+  cursors?: AgentSessionCursor[];
+  modifiedAfter?: Date;
+  parserVersion?: number;
+}) => {
   const { reader, reads } = readerFor(options.logs);
   const seen = vi.fn();
 
@@ -62,6 +67,7 @@ const collect = (options: { logs: Log[]; cursors?: AgentSessionCursor[]; modifie
     cursors: options.cursors ?? [],
     modifiedAfter: options.modifiedAfter,
     parsing: { sampleIntervalMs: 0 },
+    parserVersion: options.parserVersion,
   }).subscribe(seen);
 
   return { result: seen.mock.calls[0]?.[0] as AgentSessionCollection, reads, reader };
@@ -300,5 +306,35 @@ describe('collectAgentSessions$', () => {
     });
 
     expect(result.unreadLogs).toEqual([]);
+  });
+
+  it('stamps the parse rules on a log it read from the top', () => {
+    const { result } = collect({
+      logs: [{ ref: ref('s1'), lines: [record({ timestamp: '2026-08-11T09:00:00.000Z' })] }],
+      cursors: [{ id: 's1', nextLine: 0 }],
+      parserVersion: 3,
+    });
+
+    expect(result.cursors[0]?.parserVersion).toBe(3);
+  });
+
+  it('keeps the parse rules a resumed log was first read under', () => {
+    const lines = [
+      record({ timestamp: '2026-08-11T09:00:00.000Z' }),
+      record({ timestamp: '2026-08-11T09:05:00.000Z' }),
+    ];
+    const { result } = collect({
+      logs: [
+        { ref: ref('s1'), lines },
+        { ref: ref('s2'), lines },
+      ],
+      cursors: [
+        { id: 's1', nextLine: 1, after: new Date('2026-08-11T09:00:00.000Z') },
+        { id: 's2', nextLine: 1, after: new Date('2026-08-11T09:00:00.000Z'), parserVersion: 2 },
+      ],
+      parserVersion: 3,
+    });
+
+    expect(result.cursors.map((cursor) => cursor.parserVersion)).toEqual([undefined, 2]);
   });
 });

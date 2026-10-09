@@ -5,6 +5,12 @@
 > `replace` goes further for samples: it deletes what the store holds for each re-read session inside
 > the span the re-read covers, because thinning after a parser fix emits at other instants and a wrong
 > sample the upsert never meets would stay. The backfill still never moves the collector's cursor.
+>
+> **Amended 2026-10-09.** Such a replacing re-read now also runs by itself. Each session cursor records
+> the parse rules that read its log from the top (`parserVersion`, absent is 1). When a parser's version
+> is raised, the collector reads the stale logs again from the top, ten sessions per poll, most recent
+> first, a subagent's logs with their parent's, and replaces the samples per session and day. A day
+> this app booked keeps its samples (ADR 0038). Nobody has to run `agentSessions.resync`.
 
 Spend collection started after months of agent logs had already been read, so the stored days hold
 no spend. To fill them, a backfill pass reads every agent log from the first line and appends only

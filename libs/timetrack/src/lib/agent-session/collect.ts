@@ -30,6 +30,11 @@ export type AgentSessionCursor = {
    * empty log on every run.
    */
   readThrough?: Date;
+  /**
+   * The parse rules that read this log from its top. A cursor read under older rules is read again
+   * from the top once, so what the newer rules say reaches the stored samples. Absent is version 1.
+   */
+  parserVersion?: number;
 };
 
 export type AgentSessionCollection = {
@@ -67,8 +72,10 @@ const readLog$ = (options: {
   reader: AgentSessionLogReader;
   ref: AgentSessionLogRef;
   cursor?: AgentSessionCursor;
+  parserVersion?: number;
 }): Observable<LogRead> => {
   const { cursor, ref } = options;
+  const parserVersion = cursor?.nextLine ? cursor.parserVersion : options.parserVersion;
 
   return options.reader.readLines$({ ref, fromLine: cursor?.nextLine ?? 0 }).pipe(
     map((chunk) => {
@@ -94,6 +101,7 @@ const readLog$ = (options: {
           title: parsed.title,
           cwd: last?.cwd ?? cursor?.cwd,
           session: parsed.session,
+          ...(parserVersion ? { parserVersion } : {}),
         },
       };
     }),
@@ -114,6 +122,8 @@ export const collectAgentSessions$ = (options: {
   /** Skips logs the agent has not touched since. Cursors of the skipped logs are kept as they were. */
   modifiedAfter?: Date;
   parsing?: Omit<AgentSessionLogParseOptions, 'lines' | 'resume'>;
+  /** Stamped on each cursor this run reads from the top. See {@link AgentSessionCursor.parserVersion}. */
+  parserVersion?: number;
 }): Observable<AgentSessionCollection> => {
   const cursors = new Map(options.cursors.map((cursor) => [cursor.id, cursor]));
 
@@ -127,6 +137,7 @@ export const collectAgentSessions$ = (options: {
             reader: options.reader,
             ref,
             cursor: cursors.get(ref.id),
+            parserVersion: options.parserVersion,
           }).pipe(
             catchError(() =>
               of<LogRead>({

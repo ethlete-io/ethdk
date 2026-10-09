@@ -1,5 +1,7 @@
 import {
   AgentApproval,
+  AgentLogPass,
+  AgentSessionCursor,
   CheckoutKeys,
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
@@ -52,6 +54,9 @@ export type FakeAgentLog = {
   modifiedAt: string;
   lines: string[];
 };
+
+/** A cursor an earlier run stored, as a seed carries it: `after` in ISO 8601. */
+export type FakeAgentLogCursor = Omit<AgentSessionCursor, 'after'> & { after?: string };
 
 /**
  * What the host says the focused-window source is doing, in the shape the host wire reports it.
@@ -179,6 +184,8 @@ export type TimetrackWorldSeed = {
   /** Claude Code's session logs. Empty by default, so no spec collects an agent it says nothing about. */
   agentLogs?: FakeAgentLog[];
   codexLogs?: FakeAgentLog[];
+  /** The cursors an earlier run left, by pass. None by default, so every log is read from its top. */
+  agentLogCursors?: Partial<Record<AgentLogPass, FakeAgentLogCursor[]>>;
   jira?: Partial<FakeJiraState>;
   tempo?: Partial<FakeTempoState>;
   gitlab?: Partial<FakeGitLabState>;
@@ -234,6 +241,7 @@ export type FakeWorld = {
   settingsReadDelayMs: number;
   agentLogs: FakeAgentLog[];
   codexLogs: FakeAgentLog[];
+  agentLogCursors: Partial<Record<AgentLogPass, FakeAgentLogCursor[]>>;
   windowSource: FakeWindowSourceStatus;
   callSource: FakeCallSourceStatus;
   transcription: FakeTranscription;
@@ -501,6 +509,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   settingsReadDelayMs: seed.settingsReadDelayMs ?? 0,
   agentLogs: seed.agentLogs ?? [],
   codexLogs: seed.codexLogs ?? [],
+  agentLogCursors: seed.agentLogCursors ?? {},
   windowSource: { kind: 'none', detail: null, capabilities: [], ...seed.windowSource },
   callSource: { kind: 'none', detail: null, watchingSinceMs: Date.now(), ...seed.callSource },
   transcription: {

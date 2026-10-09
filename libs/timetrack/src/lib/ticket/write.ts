@@ -10,6 +10,7 @@ import { TicketCandidate } from './match-candidates';
 import { SpecHeader } from './spec';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH, StandInBand, standInNotes, standInObservedMs } from './draft';
+import { WorkFacts } from './work-facts';
 
 /** An issue the agent may choose from, offered so it picks rather than invents a key. */
 export type TicketWritingIssue = {
@@ -47,6 +48,12 @@ export type TicketWritingCall = {
   transcript?: string;
 };
 
+/** One agent session behind the work. No prompt and no file it read, only whether it wrote one. */
+export type TicketWritingSession = { title?: string; wroteFiles: boolean };
+
+/** The merge request a stretch that changed nothing belongs to. See `ContextWorkFacts`. */
+export type TicketWritingMergeRequest = { reference: string; title?: string; issueKey?: string; action: string };
+
 /**
  * Exactly what leaves the machine to have a ticket written. The same redaction the day's reasoning
  * call uses: a repository's name rather than its path, a branch name, an application id, and wording
@@ -69,6 +76,10 @@ export type TicketWritingRequest = {
   parents: TicketWritingIssue[];
   /** The project's open issues and the ones the user logged on, so tracked work is not filed twice. */
   issues: TicketWritingIssue[];
+  /** The agent sessions behind the work. */
+  sessions?: TicketWritingSession[];
+  /** Never sent: auto mode names a stretch that carries it without asking the model. */
+  mergeRequest?: TicketWritingMergeRequest;
 };
 
 /**
@@ -95,6 +106,10 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   'opens with. It is the closest thing to a brief that exists, so it outranks the notes on what the',
   'work is for. The notes still say what was touched. Only the opening section is sent, never the',
   'body of the specification, so take it as the frame and never assume a requirement it omits.',
+  '',
+  "`sessions` is the coding agent sessions behind the work: each one's title where it reads as words,",
+  'and `wroteFiles`, whether the session changed a file. A session that wrote none only read and',
+  'answered, such as a search for the cause of a bug. Never describe a change such a session made.',
   '',
   '`standIn` is present when the user already named this work themselves, before Jira held a ticket:',
   'their own name for it, their own draft description, and how many days it has run across. Take it as',
@@ -269,6 +284,32 @@ const maskedSpec = (options: { spec: SpecHeader | undefined; map: PseudonymMap }
   };
 };
 
+const factsPayload = (options: {
+  facts: WorkFacts | undefined;
+  map: PseudonymMap;
+}): Pick<TicketWritingRequest, 'sessions' | 'mergeRequest'> => {
+  const { facts, map } = options;
+  const sessions = (facts?.sessions ?? []).map((session): TicketWritingSession => ({
+    ...(session.title ? { title: maskNames({ text: session.title, map }) } : {}),
+    wroteFiles: session.wroteFiles,
+  }));
+  const related = facts?.mergeRequest;
+
+  return {
+    ...(sessions.length ? { sessions } : {}),
+    ...(related
+      ? {
+          mergeRequest: {
+            reference: related.reference,
+            ...(related.title ? { title: maskNames({ text: related.title, map }) } : {}),
+            ...(related.issueKey ? { issueKey: maskIssueKey({ issueKey: related.issueKey, map }) } : {}),
+            action: related.action,
+          },
+        }
+      : {}),
+  };
+};
+
 /**
  * Builds the redacted payload the review shows before anything is sent.
  *
@@ -285,6 +326,8 @@ export const ticketWritingRequest = (options: {
   spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
   maskedNames?: readonly string[];
+  /** What the day's events say about the context beyond its notes, from `contextWorkFacts`. */
+  facts?: WorkFacts;
 }): TicketWritingRequest => {
   const { repoPath, branch, appId } = options.context.context;
   const map = pseudonymMap(options.maskedNames ?? []);
@@ -299,6 +342,7 @@ export const ticketWritingRequest = (options: {
     ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
+    ...factsPayload({ facts: options.facts, map }),
   };
 };
 
@@ -324,6 +368,8 @@ export const standInWritingRequest = (options: {
   maskedNames?: readonly string[];
   /** The days Tempo already holds. Only the days it does not hold are counted as waiting. */
   bookedDays?: ReadonlySet<string>;
+  /** What the day's events say about the stand-in's bands beyond their notes, from `standInWorkFacts`. */
+  facts?: WorkFacts;
 }): TicketWritingRequest => {
   const { standIn } = options;
   const map = pseudonymMap(options.maskedNames ?? []);
@@ -350,6 +396,7 @@ export const standInWritingRequest = (options: {
     ...(spec ? { spec } : {}),
     parents: asIssues({ issues: options.parents ?? [], map }),
     issues: asIssues({ issues: options.issues ?? [], map }),
+    ...factsPayload({ facts: options.facts, map }),
   };
 };
 
@@ -378,6 +425,14 @@ export const callWritingRequest = (options: {
   };
 };
 
+const sentRequestOf = (request: TicketWritingRequest): Omit<TicketWritingRequest, 'mergeRequest'> => {
+  const sent = { ...request };
+
+  delete sent.mergeRequest;
+
+  return sent;
+};
+
 export const ticketWritingSpec = (options: {
   request: TicketWritingRequest;
   options?: Partial<ReasoningOptions>;
@@ -385,7 +440,7 @@ export const ticketWritingSpec = (options: {
   agentProcessSpec({
     systemPrompt: TICKET_WRITING_SYSTEM_PROMPT,
     schema: TICKET_WRITING_JSON_SCHEMA,
-    stdin: JSON.stringify(options.request),
+    stdin: JSON.stringify(sentRequestOf(options.request)),
     ask: 'a ticket',
     options: options.options,
   });

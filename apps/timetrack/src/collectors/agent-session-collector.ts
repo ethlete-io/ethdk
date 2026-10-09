@@ -4,17 +4,24 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AgentSessionCollection,
   AgentSessionSpan,
+  CLAUDE_CODE_PARSER_VERSION,
+  CODEX_PARSER_VERSION,
   UnlinkedAgentSessions,
+  agentSessionReparseBatch,
   agentSessionSpansUnder,
   applyExclusionRules,
+  claudeCodeLogGroupOf,
   collectAgentSessions$,
+  dayBoundaryOf,
   effectiveExclusionRules,
   keepLinkedAgentSessions,
   keepPublicAgentRecords,
   parseClaudeCodeSessionLog,
   parseCodexSessionLog,
+  localDayKey,
   pathIsUnder,
   redactEventTitles,
+  reparsedAgentSessionWrite,
   resyncAgentSessionCursors,
   sanitizeAgentSessionCursors,
 } from '@ethlete/timetrack';
@@ -25,9 +32,13 @@ import {
   catchError,
   concatMap,
   defer,
+  endWith,
   exhaustMap,
   finalize,
+  forkJoin,
+  ignoreElements,
   map,
+  of,
   merge,
   switchMap,
   tap,
@@ -40,6 +51,9 @@ import { injectHostPorts } from '../host';
 import { AgentLogSource } from './agent-log-source';
 
 export const AGENT_SESSION_POLL_INTERVAL_MS = 60_000;
+
+/** How many sessions one poll reads again for newer parse rules, so a long history is worked off in the background. */
+const REPARSE_SESSIONS_PER_RUN = 10;
 
 export type AgentSessionCollectorRun = {
   at: Date;
@@ -133,6 +147,8 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
     collection: AgentSessionCollection;
     startedAt: Date;
     replacing: readonly AgentSessionSpan[];
+    /** A re-read for newer parse rules, which reports no run and moves no `modifiedAfter`. */
+    rereading?: boolean;
   }): Observable<AgentSessionCollection> => {
     const { collection, startedAt, replacing } = options;
     const links = projectLinks();
@@ -156,6 +172,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
       .pipe(
         map(() => collection),
         tap(() => {
+          if (options.rereading) return;
           if (!collection.unreadLogs.length) modifiedAfter = startedAt;
           failure.set(null);
           lastRun.set({
@@ -170,6 +187,90 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
           }));
         }),
       );
+  };
+
+  /** Set once no listed log is left that older parse rules read, so the rest of the session skips the listing. */
+  let reparsed = false;
+
+  /** The finished days this app booked, whose rows are frozen (ADR 0038). Today is re-cut until it is over. */
+  const frozenDaysOf$ = (options: { days: readonly string[]; today: string }): Observable<Set<string>> => {
+    const finished = options.days.filter((day) => day < options.today);
+
+    return finished.length
+      ? forkJoin(
+          finished.map((day) =>
+            ports.ledger.entriesForDay$(day).pipe(map((entries) => [day, entries.length] as const)),
+          ),
+        ).pipe(map((held) => new Set(held.filter(([, count]) => count > 0).map(([day]) => day))))
+      : of(new Set<string>());
+  };
+
+  /**
+   * Reads the next few logs again from the top whose cursor older parse rules wrote, and replaces what
+   * the store holds of them, so a change to the rules reaches the logs already read without a resync.
+   * A finished day this app booked keeps its samples: see `reparsedAgentSessionWrite`.
+   */
+  const reparse$ = (): Observable<unknown> => {
+    const version = source.parserVersion;
+
+    if (reparsed || !version) return EMPTY;
+
+    const reader = source.readerOf(ports);
+
+    return forkJoin([ports.events.cursors$(source.pass), reader.logs$({})]).pipe(
+      concatMap(([cursors, refs]) => {
+        const batch = agentSessionReparseBatch({
+          cursors,
+          listed: refs.map((ref) => ref.id),
+          version,
+          limit: REPARSE_SESSIONS_PER_RUN,
+          groupOf: source.logGroupOf,
+        });
+
+        if (!batch.length) {
+          reparsed = true;
+
+          return EMPTY;
+        }
+
+        const wanted = new Set(batch.map((cursor) => cursor.id));
+
+        return collectAgentSessions$({
+          parser: source.parser,
+          reader: { ...reader, logs$: () => of(refs.filter((ref) => wanted.has(ref.id))) },
+          cursors: batch,
+          parserVersion: version,
+        });
+      }),
+      concatMap((collection) => {
+        const dayOf = (at: Date) => localDayKey(at, dayBoundaryOf(settings.settings()));
+        const today = dayOf(new Date());
+        const days = [
+          ...new Set(
+            [...collection.events, ...collection.usage, ...collection.prompts].map((event) => dayOf(event.at)),
+          ),
+        ];
+
+        return frozenDaysOf$({ days, today }).pipe(
+          concatMap((frozenDays) => {
+            const linked = keepLinkedAgentSessions({ events: collection.events, links: projectLinks() }).kept;
+            const { replacing, ...kept } = reparsedAgentSessionWrite({
+              collection: { ...collection, events: linked },
+              dayOf,
+              frozenDays,
+            });
+
+            return persist$({
+              collection: { ...collection, ...kept },
+              startedAt: new Date(),
+              replacing,
+              rereading: true,
+            });
+          }),
+        );
+      }),
+      catchError(() => EMPTY),
+    );
   };
 
   /**
@@ -195,6 +296,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
             reader: source.readerOf(ports),
             cursors,
             modifiedAfter: resyncPaths.length ? undefined : modifiedAfter,
+            parserVersion: source.parserVersion,
           }),
         ),
         switchMap((collection) =>
@@ -206,6 +308,7 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
               : [],
           }),
         ),
+        concatMap((collection) => reparse$().pipe(ignoreElements(), endWith(collection))),
         catchError((error: unknown) => {
           pendingResync = [...new Set([...resyncPaths, ...pendingResync])];
           pendingReplace = [...new Set([...replacePaths, ...pendingReplace])];
@@ -252,6 +355,8 @@ const createAgentSessionCollector = (source: AgentLogSource) => {
 const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() =>
   createAgentSessionCollector({
     parser: parseClaudeCodeSessionLog,
+    parserVersion: CLAUDE_CODE_PARSER_VERSION,
+    logGroupOf: claudeCodeLogGroupOf,
     readerOf: (ports) => ports.agentLogs,
     pass: 'agent-session',
   }),
@@ -260,6 +365,7 @@ const AGENT_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() =>
 const CODEX_SESSION_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() =>
   createAgentSessionCollector({
     parser: parseCodexSessionLog,
+    parserVersion: CODEX_PARSER_VERSION,
     readerOf: (ports) => ports.codexLogs,
     pass: 'codex-session',
   }),

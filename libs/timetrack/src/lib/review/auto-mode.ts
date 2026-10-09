@@ -5,6 +5,7 @@ import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
 import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
 import { StandInBand, contextHasTicketText, draftTicket, standInHasTicketText } from '../ticket/draft';
+import { WorkFacts } from '../ticket/work-facts';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
@@ -275,11 +276,14 @@ export const autoModeSubjectRequest = (options: {
   issues?: readonly JiraIssue[];
   /** The days Tempo already holds, which a stand-in's request does not count. */
   bookedDays?: ReadonlySet<string>;
+  /** What the day's events say about each subject beyond its notes, by `autoModeSubjectKey`. */
+  workFacts?: ReadonlyMap<string, WorkFacts>;
   /** The call a `call` subject asks about, with the excerpt of its transcript where one may be sent. */
   call?: { label: string; observedMs: number; transcript?: string };
 }): TicketWritingRequest | null => {
   const { subject, maskedNames } = options;
   const jira = { parents: options.parents ?? [], issues: options.issues ?? [] };
+  const facts = options.workFacts?.get(autoModeSubjectKey(subject));
 
   if (subject.kind === 'call') {
     return options.call ? callWritingRequest({ ...options.call, issues: jira.issues, maskedNames }) : null;
@@ -289,7 +293,14 @@ export const autoModeSubjectRequest = (options: {
     const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
 
     return standIn
-      ? standInWritingRequest({ standIn, bands: options.bands, maskedNames, bookedDays: options.bookedDays, ...jira })
+      ? standInWritingRequest({
+          standIn,
+          bands: options.bands,
+          maskedNames,
+          bookedDays: options.bookedDays,
+          facts,
+          ...jira,
+        })
       : null;
   }
 
@@ -299,7 +310,7 @@ export const autoModeSubjectRequest = (options: {
 
   const { notes } = draftTicket({ context, unattributed: options.unattributed, config: options.config });
 
-  return ticketWritingRequest({ context, notes, maskedNames, ...jira });
+  return ticketWritingRequest({ context, notes, maskedNames, facts, ...jira });
 };
 
 /**
@@ -316,6 +327,7 @@ export const autoModeEvidenceOf = (request: TicketWritingRequest) =>
     request.standIn ? [request.standIn.name, request.standIn.description ?? null] : null,
     request.spec ?? null,
     request.call ?? null,
+    ...(request.mergeRequest ? [request.mergeRequest] : []),
   ]);
 
 const escapedForRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -343,6 +355,7 @@ export const autoModeKeyInEvidence = (options: {
     request.spec?.intent,
     request.call?.label,
     request.call?.transcript,
+    request.mergeRequest?.issueKey,
   ];
 
   return texts.some((text) => !!text && key.test(text));
@@ -561,6 +574,12 @@ export const autoModeAskRefusal = (options: {
 };
 
 /**
+ * Whether a stretch that changed nothing sits beside a merge request that names no issue. Auto mode
+ * then names it nothing, and files nothing for it either.
+ */
+export const leavesUnnamed = (facts: WorkFacts | undefined) => !!facts?.mergeRequest && !facts.mergeRequest.issueKey;
+
+/**
  * What auto mode still has to ask about on a day: each unnamed context and each open stand-in the day
  * holds that holds no answer yet, or whose answer is still auto mode's and was built from evidence the
  * day no longer holds. A context or stand-in is asked only once its work settled, {@link AUTO_MODE_SETTLE_MS}
@@ -581,7 +600,13 @@ export const autoModeAsks = (options: {
   rows: readonly AskRow[];
   answers: readonly AutoModeAnswer[];
   /** What the day's evidence is built from now. Absent, an answered subject is never asked again. */
-  evidence?: { unattributed: readonly WorkGroup[]; config: GitFlowConfig; maskedNames: readonly string[] };
+  evidence?: {
+    unattributed: readonly WorkGroup[];
+    config: GitFlowConfig;
+    maskedNames: readonly string[];
+    /** What the day's events say about each subject beyond its notes, by `autoModeSubjectKey`. */
+    workFacts?: ReadonlyMap<string, WorkFacts>;
+  };
   /** The approval queue. Absent, an answered subject is never asked again. */
   approvals?: readonly ApprovalView[];
   /** The call rows an excerpt of transcript exists for now, where auto mode may send it. */
@@ -637,6 +662,7 @@ export const autoModeAsks = (options: {
       bands: options.rows,
       config: evidence.config,
       maskedNames: evidence.maskedNames,
+      workFacts: evidence.workFacts,
     });
 
     return (
@@ -648,6 +674,7 @@ export const autoModeAsks = (options: {
 
   return [...contexts, ...standIns, ...calls].filter((subject) => {
     if (settledAt(subject) > options.nowMs) return false;
+    if (leavesUnnamed(evidence?.workFacts?.get(autoModeSubjectKey(subject)))) return false;
 
     const answer = answers.get(autoModeSubjectKey(subject));
 

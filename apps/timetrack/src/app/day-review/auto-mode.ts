@@ -8,6 +8,7 @@ import {
   AutoModeDispute,
   AutoModeHideRequest,
   AutoModeOutcome,
+  CollectedEvent,
   AutoModeSubject,
   AgentApiAutoModeAsk,
   DayRows,
@@ -86,6 +87,10 @@ import {
   withAutoModeSubjectItemsExpired,
   withNamedContextItemsExpired,
   withTextlessSubjectItemsExpired,
+  withUnnamedSubjectItemsExpired,
+  autoModeMergeRequestOutcome,
+  autoModeWorkFacts,
+  WorkFacts,
   withAutoModeCreated,
   withAutoModeDescription,
   writeTicketWithAgent$,
@@ -137,7 +142,12 @@ const SETTLE_TICK_MS = 60_000;
 /** How often today is read while the screen shows another day. Each pass is a whole day read. */
 const OFF_SCREEN_TICK_MS = 5 * 60_000;
 
-type AskEvidence = { contexts: readonly UnnamedContext[]; rows: DayRows; reviewed: readonly ReviewedRow[] } | null;
+type AskEvidence = {
+  contexts: readonly UnnamedContext[];
+  rows: DayRows;
+  reviewed: readonly ReviewedRow[];
+  workFacts?: ReadonlyMap<string, WorkFacts>;
+} | null;
 
 type Ask = { day: string; subject: AutoModeSubject; evidence$: Observable<AskEvidence> };
 
@@ -172,6 +182,7 @@ const CHECKOUT_EPIC_ISSUE_LIMIT = 50;
 /** What one ask sends: the payload, the issues it offered, and the project a new ticket would be filed in. */
 type Prepared = {
   request: TicketWritingRequest;
+  facts?: WorkFacts;
   candidates: readonly TicketCandidate[];
   projectKey?: string;
   parentKeys: ReadonlySet<string>;
@@ -320,6 +331,32 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
+  const workFactsOf = (options: {
+    day: string;
+    contexts: readonly UnnamedContext[];
+    reviewed: readonly ReviewedRow[];
+    events: readonly CollectedEvent[];
+  }) => {
+    const current = settings.settings();
+
+    return autoModeWorkFacts({
+      contexts: options.contexts,
+      standIns: current.standIns.filter((standIn) => standIn.days.includes(options.day)),
+      bands: options.reviewed,
+      events: options.events,
+      config: gitFlowConfigFor(current),
+      repoKeys: git.remoteKeys(),
+    });
+  };
+
+  const screenWorkFacts = computed(() => {
+    const events = dayReview.events();
+
+    return events
+      ? workFactsOf({ day: dayReview.dayKey(), contexts: dayReview.unnamed(), reviewed: dayReview.rows(), events })
+      : undefined;
+  });
+
   const askedNow = (day: string) => {
     const answers = dayReview.autoAnswers();
 
@@ -344,6 +381,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         unattributed: dayReview.deterministic()?.unattributed ?? [],
         config: gitFlowConfigFor(current),
         maskedNames: current.reasoning.maskedNames,
+        workFacts: screenWorkFacts(),
       },
       transcribedCalls: transcribedCalls(),
       ...(approvals.isLoaded() ? { approvals: approvals.items() } : {}),
@@ -607,6 +645,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       parents: issues?.parents ?? [],
       issues: candidates,
       bookedDays: standInStore.bookedDays(),
+      workFacts: evidence?.workFacts,
       ...(options.call ? { call: options.call } : {}),
     });
   };
@@ -710,8 +749,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         const candidates = issues ? matchCandidatesOf(issues) : [];
         const request = requestOf({ subject, evidence, issues, candidates });
 
+        const facts = evidence?.workFacts?.get(autoModeSubjectKey(subject));
+
         return request
-          ? { request, candidates, parentKeys: parentKeysOf(issues), ...(projectKey ? { projectKey } : {}) }
+          ? {
+              request,
+              candidates,
+              parentKeys: parentKeysOf(issues),
+              ...(projectKey ? { projectKey } : {}),
+              ...(facts ? { facts } : {}),
+            }
           : null;
       }),
     );
@@ -808,7 +855,9 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const screenEvidence$ = defer(() => {
     const rows = dayReview.deterministic();
 
-    return of<AskEvidence>(rows ? { contexts: dayReview.unnamed(), rows, reviewed: dayReview.rows() } : null);
+    return of<AskEvidence>(
+      rows ? { contexts: dayReview.unnamed(), rows, reviewed: dayReview.rows(), workFacts: screenWorkFacts() } : null,
+    );
   });
 
   const heldAnswers$ = (day: string): Observable<readonly AutoModeAnswer[]> =>
@@ -831,6 +880,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         if (!prepared) return EMPTY;
 
         const current = settings.settings();
+        const own = autoModeMergeRequestOutcome(prepared.facts);
+
+        if (own?.kind === 'match') {
+          return of<AutoModeAnswer>({
+            subject: ask.subject,
+            askedAtMs: Date.now(),
+            request: prepared.request,
+            outcome: prepared.parentKeys.has(own.issueKey) ? { ...own, parent: true } : own,
+          });
+        }
 
         return writeTicketWithAgent$({
           runner,
@@ -1102,6 +1161,12 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               contexts: current.contexts,
               rows: current.dayRows,
               reviewed: current.rows,
+              workFacts: workFactsOf({
+                day,
+                contexts: current.contexts,
+                reviewed: current.rows,
+                events: current.events,
+              }),
             })),
           ),
         });
@@ -1159,11 +1224,14 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   });
 
   const offScreenEvidence$ = (day: string) =>
-    agentDay
-      .askEvidence$(day)
-      .pipe(
-        map((current): AskEvidence => ({ contexts: current.contexts, rows: current.dayRows, reviewed: current.rows })),
-      );
+    agentDay.askEvidence$(day).pipe(
+      map((current): AskEvidence => ({
+        contexts: current.contexts,
+        rows: current.dayRows,
+        reviewed: current.rows,
+        workFacts: workFactsOf({ day, contexts: current.contexts, reviewed: current.rows, events: current.events }),
+      })),
+    );
 
   /**
    * Today, read without the screen: the stand-in pass and the asks the day screen runs for the day on
@@ -1216,6 +1284,12 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             unattributed: evidence.unattributed,
             config: gitFlowConfigFor(current),
             maskedNames: current.reasoning.maskedNames,
+            workFacts: workFactsOf({
+              day,
+              contexts: evidence.contexts,
+              reviewed: evidence.rows,
+              events: evidence.events,
+            }),
           },
           approvals: approvals.items(),
           transcribedCalls: transcribed,
@@ -1263,6 +1337,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
     const current = settings.settings();
+    const workFacts = screenWorkFacts() ?? new Map<string, WorkFacts>();
     const textless = {
       day,
       contexts: dayReview.unnamed(),
@@ -1274,7 +1349,10 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     untracked(() =>
       approvals.revise((queue) =>
-        withTextlessSubjectItemsExpired(withNamedContextItemsExpired(queue, { day, openContextIds }), textless),
+        withUnnamedSubjectItemsExpired(
+          withTextlessSubjectItemsExpired(withNamedContextItemsExpired(queue, { day, openContextIds }), textless),
+          { day, workFacts },
+        ),
       ),
     );
   });

@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
+  CheckoutKeys,
   GitRepoScan,
   GitScanFailure,
   collectGitEvents$,
@@ -85,6 +86,8 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const failure = signal<string | null>(null);
   const discovery = signal<GitRepoDiscovery | null>(null);
   const worktrees = signal<Readonly<Record<string, string>>>({});
+  /** Each checkout's key read from its remote, before an alias the user set replaces it. */
+  const remoteKeys = signal<CheckoutKeys>({});
 
   let repos: Repo[] = [];
   let afterSeq = 0;
@@ -120,6 +123,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       toArray(),
       concatMap((entries) => {
         keyedAliases = aliasesNow();
+        remoteKeys.set(Object.fromEntries(entries));
 
         return ports.peers.setRepoKeys$(
           withRepoAliases({ keys: Object.fromEntries(entries), aliases: settings.settings().repoAliases }),
@@ -245,7 +249,7 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
-  return { lastRun, failure, discovery, worktrees };
+  return { lastRun, failure, discovery, worktrees, remoteKeys: remoteKeys.asReadonly() };
 });
 
 export const injectGitCollector = /* @__PURE__ */ toInjectFn(GIT_COLLECTOR_DEF);

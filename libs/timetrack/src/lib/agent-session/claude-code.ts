@@ -602,6 +602,15 @@ const leftCwdFor = (record: WorkedRecord) => {
   return to.slice(0, shared + 1).join('/');
 };
 
+/**
+ * The version of the parse rules below. Raise it with every change that alters what a log already read
+ * would store: the collector then reads each stored log again from its top, without anyone asking.
+ */
+export const CLAUDE_CODE_PARSER_VERSION = 3;
+
+/** The log group of a Claude Code log id: a subagent's log sits under its parent session's id. */
+export const claudeCodeLogGroupOf = (logId: string) => logId.split('/')[0] ?? logId;
+
 const contextOf = (record: WorkedRecord) => `${record.cwd}\u0000${record.gitBranch ?? ''}\u0000${leftCwdFor(record)}`;
 
 /**

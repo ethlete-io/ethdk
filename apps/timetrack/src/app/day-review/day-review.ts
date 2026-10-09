@@ -932,6 +932,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     autoAnswers: computed(() => (editsReady() ? (edits().auto ?? []) : null)),
     /** The stored edits of the day on screen, or `null` until they are read. */
     storedEdits: computed(() => (editsReady() ? edits() : null)),
+    /** The events this machine collected on the day on screen, or `null` until they are read. */
+    events: computed(() => evidence()?.events ?? null),
     heldEditsOf,
     changeDay$,
     /** Whether the reads the stand-in pass waits for all answered, so it has had its turn. */

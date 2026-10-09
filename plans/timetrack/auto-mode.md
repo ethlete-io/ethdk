@@ -221,6 +221,39 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
   - Known noise: whisper invents text on near-silence at a call's start ("Hallå … Upp dum dum").
     Cap the excerpt length and say in the prompt that the text is a raw machine transcript.
 
+- Bug hunts take the related merge request's issue. Done (2026-10-09). Real case: a fut-frontend
+  session on `main` (10:43-10:48) read code and wrote nothing, auto mode drafted a ticket from its
+  unreadable title `(click)=`, and the user commented on !1095 at 11:21.
+  - Every context and stand-in ask carries `sessions`: per agent session its readable title and
+    `wroteFiles` (a sample or turn whose `workedIn` differs from `cwd`). No prompt text, no read file
+    names (ADR 0002). `contextWorkFacts` / `standInWorkFacts` in `ticket/work-facts.ts`.
+  - Decided: a stretch "changed nothing" when sessions ran in it, none wrote, and no own commit, no
+    commit/rebase/merge reflog move (a pull does not count) and no `pushed to` merge request activity
+    of the checkout fell inside it. Editor `editing` heartbeats do not count: the real case had two.
+  - Decided: a merge request is "of the checkout" when the checkout's remote key ends in its project
+    path (`git.remoteKeys()`, read before aliases), else when the last path segments match. The
+    nearest activity wins, ties by words shared with the session titles, then by iid.
+  - Decided: such a stretch with a keyed merge request is answered without the model
+    (`autoModeMergeRequestOutcome`): a `match` whose key the request's `mergeRequest` names, so it
+    counts as evidence (`autoModeKeyInEvidence`) and applies at `local`, queues at `external`. The
+    `mergeRequest` field is stored with the answer and never sent (`ticketWritingSpec` drops it).
+  - Decided: a keyless merge request leaves the stretch unnamed: `autoModeAsks` skips it
+    (`leavesUnnamed`) and `withUnnamedSubjectItemsExpired` expires what auto mode queued for it.
+  - The merge request joins the evidence string only where present, so answers stored before this
+    are not re-asked; a stretch whose merge request turns up after a draft is re-asked while the draft
+    is still auto mode's, which expires the queued create.
+  - Open: a stretch with no merge request yet still goes to the model and may draft; the later
+    activity then replaces the draft. `sessions` is not part of the evidence string, so a session
+    that writes later does not re-ask by itself.
+
+- Stored agent sessions are re-parsed by themselves. Done (2026-10-09). 83bef4128 dropped unreadable
+  titles on a new parse only; stored samples kept `(click)=` until a manual `agentSessions.resync`.
+  Now each cursor carries `parserVersion` (stored inside `session_json`, no store migration), the
+  parsers export `CLAUDE_CODE_PARSER_VERSION` (3) and `CODEX_PARSER_VERSION` (1), and the collector
+  re-reads stale logs after each poll: `agentSessionReparseBatch` (10 sessions per poll, most recent
+  first, a session's subagent logs with it), `reparsedAgentSessionWrite` (nothing on a day the ledger
+  holds, replace spans per session and day). Raise the version with every parse-rule change.
+
 ## Open questions
 
 - Settled in slice 2: a CLI write returns `queued` at once and never blocks; a queued item expires

@@ -9,6 +9,10 @@ import { HostPorts } from '../host';
  */
 export type AgentLogSource = {
   parser: AgentSessionLogParser;
+  /** The version of `parser`'s rules, where a log an older version read is to be read again. */
+  parserVersion?: number;
+  /** Which logs are read again together. See `agentSessionReparseBatch`. */
+  logGroupOf?: (logId: string) => string;
   readerOf: (ports: HostPorts) => AgentSessionLogReader;
   pass: AgentLogPass;
 };

@@ -70,6 +70,10 @@ describe('sanitizeAgentSessionCursors', () => {
     expect(sanitized({ cwd: '/home/tom/dev/side', readThrough }).readThrough).toEqual(readThrough);
   });
 
+  it('keeps the parse rules of a private checkout, so its log is not read again for newer ones', () => {
+    expect(sanitized({ cwd: '/home/tom/dev/side', parserVersion: 2 }).parserVersion).toBe(2);
+  });
+
   it('drops the title a rule denies and keeps the checkout', () => {
     const result = sanitized({ title: 'Onlinebanking — transfers' });
 

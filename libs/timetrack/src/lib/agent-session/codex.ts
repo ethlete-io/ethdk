@@ -188,6 +188,9 @@ const promptOf = (record: CodexRecord, state: CodexSessionState): AgentPromptEve
   };
 };
 
+/** The version of the parse rules below, raised the way `CLAUDE_CODE_PARSER_VERSION` is. */
+export const CODEX_PARSER_VERSION = 1;
+
 /**
  * Reads a Codex CLI rollout log — the JSONL file under `~/.codex/sessions/<yyyy>/<mm>/<dd>/` — into
  * activity samples and one event per turn's token spend.

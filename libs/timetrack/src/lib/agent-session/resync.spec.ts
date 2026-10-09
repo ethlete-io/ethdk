@@ -4,8 +4,10 @@ import { AgentSessionCursor } from './collect';
 import { UnlinkedAgentSessions } from './linked';
 import { AgentSessionEvent } from '../model/event';
 import {
+  agentSessionReparseBatch,
   agentSessionResyncOffers,
   agentSessionSpansUnder,
+  reparsedAgentSessionWrite,
   resyncAgentSessionCursors,
   rewindAgentBackfillCursors,
 } from './resync';
@@ -226,5 +228,84 @@ describe('agentSessionSpansUnder', () => {
     });
 
     expect(span?.to).toEqual(new Date('2026-09-24T12:00:00Z'));
+  });
+});
+
+describe('agentSessionReparseBatch', () => {
+  const stale = (id: string, after: string, parserVersion?: number): AgentSessionCursor => ({
+    id,
+    nextLine: 40,
+    after: new Date(after),
+    cwd: '/home/tom/dev/fut-frontend',
+    ...(parserVersion ? { parserVersion } : {}),
+  });
+  const groupOf = (logId: string) => logId.split('/')[0] ?? logId;
+
+  it('rewinds the logs older parse rules read, the most recently sampled first', () => {
+    const batch = agentSessionReparseBatch({
+      cursors: [stale('a', '2026-10-01T09:00:00Z'), stale('b', '2026-10-08T09:00:00Z')],
+      listed: ['a', 'b'],
+      version: 2,
+      limit: 1,
+    });
+
+    expect(batch).toEqual([{ id: 'b', nextLine: 0, cwd: '/home/tom/dev/fut-frontend' }]);
+  });
+
+  it('leaves a log the current parse rules read, and one the host no longer lists', () => {
+    const batch = agentSessionReparseBatch({
+      cursors: [stale('a', '2026-10-01T09:00:00Z', 2), stale('gone', '2026-10-08T09:00:00Z')],
+      listed: ['a'],
+      version: 2,
+      limit: 5,
+    });
+
+    expect(batch).toEqual([]);
+  });
+
+  it('rewinds every log of a stale session, its subagents included', () => {
+    const batch = agentSessionReparseBatch({
+      cursors: [stale('s1', '2026-10-08T09:00:00Z'), stale('s1/agent-a1', '2026-10-08T09:00:00Z', 2)],
+      listed: ['s1', 's1/agent-a1', 's2'],
+      version: 2,
+      limit: 5,
+      groupOf,
+    });
+
+    expect(batch.map((cursor) => cursor.id)).toEqual(['s1', 's1/agent-a1']);
+  });
+});
+
+describe('reparsedAgentSessionWrite', () => {
+  const sample = (at: string, sessionId = 's1'): AgentSessionEvent => ({
+    at: new Date(at),
+    source: 'agent-session',
+    kind: 'agent-session',
+    sessionId,
+    cwd: '/home/tom/dev/fut-frontend',
+  });
+  const dayOf = (at: Date) => at.toISOString().slice(0, 10);
+
+  it('writes nothing dated on a frozen day and replaces each open day of a session apart', () => {
+    const write = reparsedAgentSessionWrite({
+      collection: {
+        events: [
+          sample('2026-10-06T09:00:00Z'),
+          sample('2026-10-07T09:00:00Z'),
+          sample('2026-10-08T09:00:00Z'),
+          sample('2026-10-08T11:00:00Z'),
+        ],
+        usage: [],
+        prompts: [],
+      },
+      dayOf,
+      frozenDays: new Set(['2026-10-07']),
+    });
+
+    expect(write.events.map((event) => dayOf(event.at))).toEqual(['2026-10-06', '2026-10-08', '2026-10-08']);
+    expect(write.replacing).toEqual([
+      { sessionId: 's1', from: new Date('2026-10-06T09:00:00Z'), to: new Date('2026-10-06T09:00:00Z') },
+      { sessionId: 's1', from: new Date('2026-10-08T09:00:00Z'), to: new Date('2026-10-08T11:00:00Z') },
+    ]);
   });
 });

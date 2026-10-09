@@ -19,6 +19,13 @@ that answer is still auto mode's: no create of it approved, no apply of it appro
 no row of the band named by hand. The new answer expires what the old one left waiting, and so does a
 rule or a match that names the band. With auto mode off, ADR 0013 holds unchanged.
 
+**A stretch that changed nothing drafts no ticket once a merge request explains it** (2026-10-09). Where
+the agent sessions of a band or stand-in wrote no file and nothing committed or pushed in its checkout
+while it ran, and the user was active that day on a merge request of the same checkout, auto mode
+answers by itself with the issue that merge request names (the nearest in time, ties by shared words
+with the session titles), applied or queued as a match is. Where that merge request names no issue,
+auto mode leaves the band unnamed and withdraws what it queued for it. No model is asked either way.
+
 **"Ask auto mode again" is a press.** A band's context menu offers it on an unnamed row, a row auto
 mode named, and an open stand-in, but never on a row whose issue the user set by hand: they reset it
 first. The press is the consent for that one subject, so it works with auto mode off and on the day on

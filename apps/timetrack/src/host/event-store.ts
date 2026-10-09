@@ -56,22 +56,38 @@ const stringField = (record: Record<string, unknown>, key: string) => {
  * Read field by field rather than cast: the row was written by an older version of this app, so a
  * field it never wrote is missing and a field this one dropped is still there.
  */
-const reviveSessionState = (json: string): AgentLogSessionState | undefined => {
+const sessionRecordOf = (json: string): Record<string, unknown> | undefined => {
   try {
     const parsed: unknown = JSON.parse(json);
 
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return undefined;
-
-    const record = parsed as Record<string, unknown>;
-
-    return {
-      sessionId: stringField(record, 'sessionId'),
-      model: stringField(record, 'model'),
-      ...(record['titleIsCustom'] === true ? { titleIsCustom: true } : {}),
-    };
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : undefined;
   } catch {
     return undefined;
   }
+};
+
+const reviveSessionState = (record: Record<string, unknown> | undefined): AgentLogSessionState | undefined =>
+  record && {
+    sessionId: stringField(record, 'sessionId'),
+    model: stringField(record, 'model'),
+    ...(record['titleIsCustom'] === true ? { titleIsCustom: true } : {}),
+  };
+
+/**
+ * The parse rules a cursor was read under travel in `session_json` beside the parser's state, so the
+ * store needs no column for them. A row written before them has none, which reads as version 1.
+ */
+const PARSER_VERSION_FIELD = 'parserVersion';
+
+const sessionJsonOf = (cursor: AgentSessionCursor) => {
+  if (!cursor.session && !cursor.parserVersion) return null;
+
+  return JSON.stringify({
+    ...cursor.session,
+    ...(cursor.parserVersion ? { [PARSER_VERSION_FIELD]: cursor.parserVersion } : {}),
+  });
 };
 
 const toStored = (event: CollectedEvent): StoredEvent => ({
@@ -93,7 +109,7 @@ export const reviveEvent = (stored: StoredEvent): CollectedEvent => {
   } as CollectedEvent;
 };
 
-const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredCursor => ({
+export const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredCursor => ({
   id: cursor.id,
   kind,
   nextLine: cursor.nextLine,
@@ -101,18 +117,25 @@ const toStoredCursor = (cursor: AgentSessionCursor, kind: AgentLogPass): StoredC
   title: cursor.title ?? null,
   cwd: cursor.cwd ?? null,
   readThroughMs: cursor.readThrough ? cursor.readThrough.getTime() : null,
-  sessionJson: cursor.session ? JSON.stringify(cursor.session) : null,
+  sessionJson: sessionJsonOf(cursor),
 });
 
-const reviveCursor = (stored: StoredCursor): AgentSessionCursor => ({
-  id: stored.id,
-  nextLine: stored.nextLine,
-  ...(stored.afterMs === null ? {} : { after: new Date(stored.afterMs) }),
-  ...(stored.title === null ? {} : { title: stored.title }),
-  ...(stored.cwd === null ? {} : { cwd: stored.cwd }),
-  ...(stored.readThroughMs === null ? {} : { readThrough: new Date(stored.readThroughMs) }),
-  ...(stored.sessionJson === null ? {} : { session: reviveSessionState(stored.sessionJson) }),
-});
+export const reviveCursor = (stored: StoredCursor): AgentSessionCursor => {
+  const record = stored.sessionJson === null ? undefined : sessionRecordOf(stored.sessionJson);
+  const parserVersion = record?.[PARSER_VERSION_FIELD];
+  const sessionKeys = Object.keys(record ?? {}).filter((key) => key !== PARSER_VERSION_FIELD);
+
+  return {
+    id: stored.id,
+    nextLine: stored.nextLine,
+    ...(stored.afterMs === null ? {} : { after: new Date(stored.afterMs) }),
+    ...(stored.title === null ? {} : { title: stored.title }),
+    ...(stored.cwd === null ? {} : { cwd: stored.cwd }),
+    ...(stored.readThroughMs === null ? {} : { readThrough: new Date(stored.readThroughMs) }),
+    ...(stored.sessionJson === null || (record && !sessionKeys.length) ? {} : { session: reviveSessionState(record) }),
+    ...(typeof parserVersion === 'number' ? { parserVersion } : {}),
+  };
+};
 
 /**
  * The encrypted store, plus the one thing the port cannot express: appending a collector's events

@@ -101,6 +101,18 @@ export const createFakePorts = (): HostPorts => {
 
   for (const entry of world.ledger) ledger.set(entry.day, [...(ledger.get(entry.day) ?? []), entry]);
 
+  for (const [pass, cursors] of Object.entries(world.agentLogCursors)) {
+    cursorsByPass.set(
+      pass as AgentLogPass,
+      new Map(
+        (cursors ?? []).map(({ after, ...cursor }) => [
+          cursor.id,
+          { ...cursor, ...(after ? { after: new Date(after) } : {}) },
+        ]),
+      ),
+    );
+  }
+
   const edits = new Map<string, DayReviewEdits>(
     Object.entries(world.reviewOverrides).map(([day, overrides]) => [day, { ...EMPTY_DAY_REVIEW_EDITS, overrides }]),
   );

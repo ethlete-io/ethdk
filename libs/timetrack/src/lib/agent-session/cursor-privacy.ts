@@ -11,6 +11,7 @@ const progressOnly = (cursor: AgentSessionCursor): AgentSessionCursor => ({
   nextLine: cursor.nextLine,
   ...(cursor.after ? { after: cursor.after } : {}),
   ...(cursor.readThrough ? { readThrough: cursor.readThrough } : {}),
+  ...(cursor.parserVersion ? { parserVersion: cursor.parserVersion } : {}),
 });
 
 const withoutTitle = (cursor: AgentSessionCursor): AgentSessionCursor => {
