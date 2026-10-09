@@ -89,7 +89,7 @@ test.describe('the focus that named no checkout', () => {
     });
     await page.reload();
 
-    await expect(row(page, 'code')).toContainText('names one elsewhere');
+    await expect(row(page, 'code')).toContainText('names one at other times');
     await expect(gap(page)).toContainText('15m of it is a window a checkout should have taken');
   });
 

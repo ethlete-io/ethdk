@@ -38,7 +38,7 @@ const REASON_LABEL: Record<UnnamedFocusReason, string> = {
 
 const VERDICT_LABEL: Record<UnnamedFocusVerdict, string> = {
   'on-purpose': 'on purpose',
-  gap: 'names one elsewhere',
+  gap: 'names one at other times',
   unknown: 'never names one',
 };
 
