@@ -225,16 +225,38 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. Tom, 2026-10-09: the
      frozen day also draws a peer's work as read-only bands labeled "Booked on <machine>", so 10-08
      shows the MacBook's 13:15-18:00 and not an empty gap.
-   - 4i. In progress (Tom approved, 2026-10-09). A booked day draws a paired machine's own rows. On
-     10-08 tank showed no "Booked on" band (it names no issue for the Mac's work: the Mac named its
-     rows with its own rules, auto answers and pins), the bands were raw-block fragments, Mac app ids
-     became lanes, and "Changed after booking" fired for the peer time the bands already showed.
-     Each machine sends its rows of a day (lane key, window, issue or stand-in name, description,
-     state, Tempo worklog id when booked; last version per day wins) on a change (debounced) and on
-     the freeze. Tank draws them as received, read-only, in the lane mapped through 4b/4g: "Booked on
-     <machine> · ISSUE" or "Worked on <machine> · ISSUE/name". Repo lanes only. Raw-block bands stay
-     as the fallback for a day no rows arrived for (an older peer), still without app-only lanes.
-     `changedAfterBooking` leaves out peer-origin time.
+   - 4i. Done (9ea342ab9, 82959b851, 8c210453e; Tom approved the design 2026-10-09). A booked day draws a
+     paired machine's own rows. On 10-08 tank showed no "Booked on" band (it names no issue for the
+     Mac's work: the Mac named its rows with its own rules, auto answers and pins), the bands were
+     raw-block fragments, Mac app ids became lanes, and "Changed after booking" fired for the peer time
+     the bands already showed. Decisions:
+     - Wire: migration 25 adds `day_rows` (this machine's rows per day, on the ADR 0039 change clock by
+       trigger) and `received_day_rows` (the last version per machine and day). `Frame::Changes`
+       carries `dayRows` in the same pages as events; `received_between` (and the `peers.received` op)
+       returns the rows of the days that start in the range. Not a collected event: an event is an
+       observation (ADR 0039), and an older peer would read an unknown kind as one. An older receiver
+       ignores the field; an older sender sends none, and tank then draws the 4h raw bands.
+     - Payload (`PeerDayRows`, `review/peer-rows.ts`): the day, `frozen`, and per attended repo-lane row
+       the lane key, window, issue key or stand-in name, description, state (`booked` when the ledger
+       holds it, with its Tempo worklog id; `accepted` for accepted, edited or synced; else `suggested`).
+       No evidence; hidden, unattended and app-lane rows are never sent.
+     - Sent by the day screen when its rows change (2 s debounce, the host keeps the change number when
+       the rows are equal) and by an agent read that freezes a day. A day nothing reads sends nothing.
+     - Drawn as sent, read-only, in the lane `mapPeerDayRows` moves onto the local checkout (4b map,
+       4g aliases): "Booked on <machine> · ISSUE" or "Worked on <machine> · ISSUE/name". Not cut by the
+       frozen rows; a frozen row draws over a band. Repo lanes only, also for the raw fallback. The
+       machine name is the paired label (a rename wins), as in 4h.
+     - `changedAfterBooking` leaves out each lane's peer time: raw peer blocks and sent rows widened to
+       whole 15 min increments, plus each current row they cover at least half of (the cut filled the
+       gaps between fragments). The 4h e2e case that expected the note for the Mac's work now expects
+       none, as approved.
+     - Retention deletes both tables by day start, with the events.
+       Tests: `peer-rows.spec.ts`, `frozen-rows.spec.ts`, `cargo test` (pull carries the last rows per
+       day, equal rows keep the change number, forgotten machine left out, retention), e2e
+       `booked-day-frozen.spec.ts` (rows handed on freeze and on screen, sent rows drawn booked and named
+       in the mapped lane, raw fallback without app lane, no "Changed after booking" from peer time).
+       Snapshot 10-03..10-09: no row changed by this step (10-09 live: one fifagg-frontend row grew one
+       increment with new work). Full Timetrack e2e: 493 passed, 1 flaky (`masked-names`, unrelated).
    - 4j. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
      work of a day shows as rows on tank, Mac lanes map onto the local checkout (the Mac build in use
      on 2026-10-09 predates 4b, so its rows sit in `repo:/Users/tom/...` lanes), a private checkout
