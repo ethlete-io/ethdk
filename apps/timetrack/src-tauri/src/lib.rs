@@ -22,6 +22,7 @@ mod lock_linux;
 #[cfg(target_os = "macos")]
 mod lock_macos;
 mod logs;
+mod manifests;
 mod nudge;
 mod oauth;
 mod pause;
@@ -179,6 +180,7 @@ pub fn run() {
             lock::unlock_window,
             logs::agent_log_lines,
             logs::agent_logs,
+            manifests::repo_manifests,
             nudge::day_nudge_record,
             nudge::notify,
             nudge::set_day_nudge_record,

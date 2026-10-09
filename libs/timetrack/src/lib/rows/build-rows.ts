@@ -1,4 +1,5 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { CheckoutDependencies } from '../git/dependencies';
 import { ActivityBlock } from '../model/block';
 import { CallWindow, callLabel } from '../model/call';
 import { CollectedEvent, isLocalEvent } from '../model/event';
@@ -9,6 +10,7 @@ import { TimeWindow } from '../model/time-window';
 import { attendedAt, attendedLanes, markAttendance, peerAttendance } from './attended';
 import { AttributeOptions, attribute } from './attribute';
 import { CallMatch, dropCallWindows, matchCalls } from './calls';
+import { consumerTickets } from './consumer-ticket';
 import {
   BehindStretch,
   CutOptions,
@@ -62,6 +64,11 @@ export type BuildRowsOptions = {
   inferred?: AttributeOptions['inferred'];
   /** What the checkouts sharing a branch slug already book, from a first read of this same day. */
   epics?: AttributeOptions['epics'];
+  /**
+   * Which checkouts each checkout uses as a package, from `checkoutDependenciesOf`. Unnamed work in a
+   * library is proposed under the ticket of the next work in a checkout that uses it.
+   */
+  dependencies?: CheckoutDependencies;
   /** How far a donating repository's time looks for the work it was done for. */
   donate?: Partial<DonateOptions>;
   /** Which projects run behind the day, and the focus that ranks two of them — see `cutBackground`. */
@@ -205,7 +212,7 @@ export const buildRows = (
     ...mergeRequestActivity({ events: options.events, config: options.config }),
   ];
   const nameable = dropNoWorkContext({ blocks: reconstructed, ...options.noWorkContext });
-  const attributed = nameable.map((block) =>
+  const laddered = nameable.map((block) =>
     attribute({
       block,
       config: options.config,
@@ -219,6 +226,9 @@ export const buildRows = (
       epics: options.epics,
     }),
   );
+  const attributed = options.dependencies
+    ? consumerTickets({ blocks: laddered, dependencies: options.dependencies, rules: options.rules })
+    : laddered;
   // Private blocks leave before donation rather than after proposal: a repository the user took out
   // of their working day must not lend its time to the work beside it either.
   const secluded = attributed.flatMap((entry) =>

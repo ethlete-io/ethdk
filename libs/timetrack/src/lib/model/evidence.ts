@@ -14,6 +14,8 @@ export type EvidenceKind =
   | 'attribution-rule'
   /** Another checkout on the same branch slug names this block's work: through an issue's parent, or an open stand-in. */
   | 'sibling-checkout'
+  /** A checkout that uses this block's checkout as a package worked on an issue next. */
+  | 'consumer-checkout'
   | 'project-link'
   | 'model'
   | 'gap-fill'

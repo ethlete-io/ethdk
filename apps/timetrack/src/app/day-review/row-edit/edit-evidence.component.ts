@@ -7,6 +7,7 @@ import { rowEntryOf, TimelineEntry } from './row-appointment';
 const NAMING_KINDS: ReadonlySet<EvidenceKind> = new Set([
   'attribution-rule',
   'sibling-checkout',
+  'consumer-checkout',
   'project-link',
   'model',
   'tempo-history',

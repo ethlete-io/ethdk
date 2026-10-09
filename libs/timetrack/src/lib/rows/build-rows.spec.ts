@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { resolveGitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { AttributionRule } from '../model/attribution';
 import { ActivityBlock, ActivityContext } from '../model/block';
 import { CallWindow } from '../model/call';
@@ -704,5 +705,38 @@ describe('buildRows with activity on another branch inside a rule-named band', (
     expect(rows.proposals[0]?.issueKey).toBe('FIP-3006');
     expect(rows.proposals[0]?.disputedIssueKey).toBeUndefined();
     expect(rows.proposals[0]?.disputedStandInId).toBeUndefined();
+  });
+});
+
+describe('buildRows with a library a later checkout uses', () => {
+  const LIBRARY = '/dev/shared-sdk';
+  const APP = '/dev/app-a';
+  const WORK = [
+    block({ from: at(10), to: at(11), context: { repoPath: LIBRARY, branch: 'next' } }),
+    block({ from: at(11, 30), to: at(13), context: { repoPath: APP, branch: 'feat/ABC-7-club-pack' } }),
+  ];
+  const rowsOf = (dependencies?: Record<string, string[]>) =>
+    buildRows({
+      blocks: WORK,
+      events: [],
+      config: resolveGitFlowConfig({ keyPrefixes: ['ABC'] }),
+      remoteWork: [{ from: at(9), to: at(14) }],
+      dependencies,
+    });
+
+  it('proposes the library row under the app ticket as a weak match', () => {
+    const library = rowsOf({ [APP]: [LIBRARY] }).proposals.find((row) => row.laneKey === `repo:${LIBRARY}`);
+
+    expect(library).toMatchObject({ issueKey: 'ABC-7', confidence: 'weak', state: 'suggested' });
+    expect(library?.evidence.map((entry) => entry.detail)).toContain(
+      'used by `app-a`, worked on `feat/ABC-7-club-pack` at 11:30',
+    );
+  });
+
+  it('leaves the library row unnamed without the dependency', () => {
+    const rows = rowsOf();
+
+    expect(rows.proposals.map((row) => row.laneKey)).toEqual([`repo:${APP}`]);
+    expect(rows.unnamed.map((row) => row.laneKey)).toEqual([`repo:${LIBRARY}`]);
   });
 });

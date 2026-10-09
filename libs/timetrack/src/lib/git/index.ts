@@ -1,3 +1,4 @@
+export * from './dependencies';
 export * from './format';
 export * from './head';
 export * from './log';

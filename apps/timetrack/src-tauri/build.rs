@@ -51,6 +51,7 @@ const COMMANDS: &[&str] = &[
     "peers_rename",
     "read_spec",
     "received_between",
+    "repo_manifests",
     "reporter_vsix_path",
     "save_report_file",
     "run_process",
