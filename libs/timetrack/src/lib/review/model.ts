@@ -128,6 +128,8 @@ export type AutoModeOutcome =
       reason?: string;
       /** Jira had the issue in its done category when the answer came, so auto mode never applies it. */
       done?: boolean;
+      /** Jira had no issue under the key when the answer came, deleted or moved, so nothing applies or queues it. */
+      gone?: boolean;
       /** The issue is a parent in the project's issues, so auto mode never applies it without an approval. */
       parent?: boolean;
       summary?: string;

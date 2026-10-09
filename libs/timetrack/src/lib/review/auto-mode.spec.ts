@@ -986,6 +986,42 @@ describe('a match Jira had done', () => {
   });
 });
 
+describe('a match Jira no longer holds', () => {
+  const gone = (subject?: AutoModeAnswer['subject']): AutoModeAnswer => {
+    const answer = matched('FOO-1');
+
+    return answer.outcome.kind === 'match'
+      ? { ...answer, ...(subject ? { subject } : {}), outcome: { ...answer.outcome, gone: true } }
+      : answer;
+  };
+
+  it('is never written, queued or named onto a band, and reads out as failed', () => {
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, gone());
+
+    expect(autoModeApplies({ day: TODAY, answer: gone(), classes: {}, approvals: [] })).toBe(false);
+    expect(
+      autoModeApplyRequest({ day: TODAY, answer: gone(), label: 'shop', classes: { 'autoMode.apply': 'external' } }),
+    ).toBeNull();
+    expect(withAutoModeRowNames({ edits, rows: rowsOf(edits), unattributed: DAY.unattributed })).toBe(edits);
+    expect(autoModeReadout({ day: TODAY, edits, approvals: [], classes: {}, standIns: [] })).toEqual([
+      expect.objectContaining({ status: 'failed', issueKey: 'FOO-1', error: 'Jira no longer holds FOO-1.' }),
+    ]);
+  });
+
+  it('queues no apply for a stand-in either, where an open match would wait for approval', () => {
+    const standIn = openStandIn({ name: 'Journey', day: TODAY, now: at('07:00') });
+
+    expect(
+      autoModeApplyRequest({
+        day: TODAY,
+        answer: gone({ kind: 'stand-in', standInId: standIn.id }),
+        label: 'Journey',
+        classes: { 'autoMode.apply': 'external' },
+      }),
+    ).toBeNull();
+  });
+});
+
 describe('a match on a parent issue', () => {
   const parentMatch = (subject: AutoModeAnswer['subject']): AutoModeAnswer => ({
     ...matched('FOO-1'),
