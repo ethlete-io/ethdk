@@ -184,7 +184,9 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      `rows/attended.ts`, `stream/prompt-origin.ts`, the break pass in `stream-day.ts`. Tests: unit
      specs, e2e `remote-phone-time.spec.ts` and `unattended-band.spec.ts` gain a peer case,
      snapshot compare.
-   - 4f. Spend per origin: a received turn is priced here and counted once (4c), `StreamSpend`
+   - 4f. In progress (2026-10-09). Also takes the per-machine unattended total (Tom accepted the 4e
+     point): a stream's agent-alone time leaves out what any paired machine's presence covers.
+     Spend per origin: a received turn is priced here and counted once (4c), `StreamSpend`
      carries a split by machine, and the day streams and Sources views show the share spent on each
      machine. Compaction reads only `collected_event`, so a received turn is never compacted (ADR
      0002). Files: `stream/stream-day.ts` (spend), `day-review/day-streams.component.ts`,
