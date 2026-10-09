@@ -245,7 +245,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                     <et-label>Date</et-label>
                     <et-select
                       [value]="store.settings().display.dateStyle"
-                      (valueChange)="store.setDateStyle($event ?? 'day-month')"
+                      (valueChange)="store.setDateStyle($event)"
                       data-date-style
                     >
                       @for (option of DATE_STYLE_OPTIONS; track option.value) {
@@ -258,7 +258,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                     <et-label>Clock</et-label>
                     <et-select
                       [value]="store.settings().display.clock"
-                      (valueChange)="store.setClock($event ?? '24h')"
+                      (valueChange)="store.setClock($event)"
                       data-clock-style
                     >
                       @for (option of CLOCK_STYLE_OPTIONS; track option.value) {
@@ -306,10 +306,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                 <div class="flex flex-wrap items-end gap-3">
                   <et-form-field class="w-48" appearance="underline" size="sm">
                     <et-label>Older than</et-label>
-                    <et-select
-                      [value]="overdueWorkdays()"
-                      (valueChange)="store.setStandInOverdueWorkdays(+($event ?? 0))"
-                    >
+                    <et-select [value]="overdueWorkdays()" (valueChange)="store.setStandInOverdueWorkdays(+$event)">
                       @for (option of workdayOptions(); track option.value) {
                         <et-select-option [value]="option.value" [label]="option.label">
                           {{ option.label }}
@@ -442,7 +439,7 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
 
                 <et-form-field class="w-48" appearance="underline" size="sm">
                   <et-label>Children read</et-label>
-                  <et-select [value]="epicChildLimit()" (valueChange)="store.setEpicChildLimit(+($event ?? 0))">
+                  <et-select [value]="epicChildLimit()" (valueChange)="store.setEpicChildLimit(+$event)">
                     @for (option of epicChildOptions(); track option.value) {
                       <et-select-option [value]="option.value" [label]="option.label" />
                     }
