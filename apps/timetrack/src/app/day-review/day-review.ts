@@ -123,11 +123,12 @@ import {
   injectWindowCollector,
 } from '../../collectors';
 import { injectLaneIssueHistory } from '../jira';
-import { HostReceivedRange, NOTHING_RECEIVED, injectHostPorts } from '../../host';
+import { HostReceivedRange, NOTHING_RECEIVED, TranscriptChunk, injectHostPorts } from '../../host';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectEpicSiblings } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
+import { heardChunksOf, transcriptBetween$ } from '../transcript-chunks';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
 import { injectProjectLinks } from '../project-links';
@@ -145,6 +146,7 @@ type Loaded<T> = { key: string; value: T | null; failure: string | null };
 type DayEvidence = {
   events: CollectedEvent[];
   received: HostReceivedRange;
+  transcript: TranscriptChunk[];
   runs: ClosedTimerRun[];
   pauses: TimeWindow[];
   /** The instant the day is read through, for anything that has to cut off a stretch still open. */
@@ -234,6 +236,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             events: ports.events.eventsBetween$(from, to),
             runs: ports.timers.runsBetween$(from, to).pipe(map((runs) => closedThrough(runs, to))),
             received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
+            transcript: transcriptBetween$({ ports, from, to }),
           }).pipe(
             map((loaded) => ({
               ...loaded,
@@ -452,6 +455,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             headBranches: headBranches(),
             now: collected.now,
             rows: rowOptions(),
+            heard: heardChunksOf(collected.transcript),
           }),
         })
       : null;

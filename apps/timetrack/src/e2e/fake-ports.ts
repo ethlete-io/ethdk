@@ -9,6 +9,7 @@ import {
   DayReviewEdits,
   EMPTY_DAY_REVIEW_EDITS,
   EditorCli,
+  MIDNIGHT,
   ProcessSpec,
   SyncedWorklog,
   TIMETRACK_SECRET_KEYS,
@@ -20,6 +21,7 @@ import {
   parseApprovalQueue,
   parseTimetrackSettings,
   dedupeKeyOf,
+  localDayKey,
   meteredRunner,
 } from '@ethlete/timetrack';
 import {
@@ -657,7 +659,8 @@ export const createFakePorts = (): HostPorts => {
 
     transcription: {
       status$: () => ok(world.transcription.status),
-      day$: () => ok(world.transcription.chunks),
+      day$: (day) =>
+        ok(world.transcription.chunks.filter((chunk) => localDayKey(new Date(chunk.atMs), MIDNIGHT) === day)),
     },
   };
 };

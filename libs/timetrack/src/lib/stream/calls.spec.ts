@@ -1,6 +1,6 @@
 import { CalendarOccurrenceEvent, CallEvent, CollectedEvent, WindowFocusEvent } from '../model/event';
 import { TimetrackCallRules } from '../settings/model';
-import { DEFAULT_MIN_ATTENDED_MS, classifyCalls, closeAbandonedCalls } from './calls';
+import { DEFAULT_MIN_ATTENDED_MS, HeardChunk, classifyCalls, closeAbandonedCalls } from './calls';
 
 const at = (minute: number, second = 0) => new Date(Date.UTC(2026, 8, 9, 9, minute, second));
 
@@ -884,6 +884,49 @@ describe('classifyCalls, why a call is not counted', () => {
 
     expect(window!.countsAsWork).toBe(true);
     expect(window!.excludedBy).toBeUndefined();
+  });
+});
+
+describe('classifyCalls, a call heard but never in front', () => {
+  const discord = 'com.hnc.Discord';
+  const room = [
+    focus(0, 'code', 'calls.ts'),
+    focus(1, discord, 'Meeting #3 | Braune Digital - Discord', 0),
+    focus(1, 'code', 'calls.ts', 2),
+    call(1, 'call-start', discord),
+    call(15, 'call-end', discord),
+  ];
+  const heard = (...minutes: number[]): HeardChunk[] =>
+    minutes.map((minute) => ({ atMs: +at(minute), appId: discord }));
+  const classifyHeard = (chunks: HeardChunk[]) =>
+    classifyCalls({ events: room, rules: rules({ countsAsWork: ['Discord'] }), until: at(120), heard: chunks });
+
+  it('counts the call as attended when the transcriber heard it twice', () => {
+    const [window] = classifyHeard(heard(3, 9));
+
+    expect(window!.countsAsWork).toBe(true);
+    expect(window!.isPresence).toBe(true);
+    expect(window!.excludedBy).toBeUndefined();
+  });
+
+  it('keeps a single chunk unattended, since whisper invents one on silence', () => {
+    expect(classifyHeard(heard(3))[0]!.excludedBy).toBe('unattended');
+  });
+
+  it('reads no chunk heard outside the call or in another application', () => {
+    const [window] = classifyHeard([
+      ...heard(30, 40),
+      { atMs: +at(5), appId: 'com.slack.Slack' },
+      { atMs: +at(6), appId: 'com.slack.Slack' },
+    ]);
+
+    expect(window!.excludedBy).toBe('unattended');
+  });
+
+  it('matches a chunk from a helper of the call application, in any case', () => {
+    const [window] = classifyHeard(heard(3, 9).map((chunk) => ({ ...chunk, appId: 'COM.HNC.DISCORD.helper' })));
+
+    expect(window!.countsAsWork).toBe(true);
   });
 });
 

@@ -23,7 +23,7 @@ import { BookedRemoteWindow } from '../rows/remote-booking';
 import { TimetrackCallRules } from '../settings/model';
 import { ContextObservation, ContextSpan, blocksFromSpans, clipSpans } from './blocks';
 import { BreakWindow, bookedRemoteWindows, breakGaps, breakMs, breakWindows, remoteWorkWindows } from './breaks';
-import { classifyCalls, lastHostSampleAt } from './calls';
+import { HeardChunk, classifyCalls, lastHostSampleAt } from './calls';
 import { promptOriginReader } from './prompt-origin';
 import { PresenceSample, presenceWindows } from './presence';
 import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-focus';
@@ -101,6 +101,8 @@ export type StreamDayOptions = {
   now?: Date;
   /** Which calls counted as work. Nothing configured leaves every call unclassified — see `classifyCalls`. */
   callRules?: TimetrackCallRules;
+  /** When the call transcriber heard something, which attends a call — see `classifyCalls`. */
+  heard?: readonly HeardChunk[];
   /**
    * The applications the user has said hold no work context. Their unnamed time is reported with its
    * own cause, and nothing else about the day changes: a title of theirs that names a checkout still
@@ -1150,6 +1152,7 @@ const streamOrigin = (options: {
   const calls = classifyCalls({
     events,
     rules: config.callRules ?? { countsAsWork: [], neverCountsAsWork: [] },
+    heard: config.heard,
     // Where a call nothing has ended yet is cut: the later of what the sources have reported through
     // and the last sample a source took. A call with neither has no known duration and reads as none.
     // Only a sample the host took, never a calendar occurrence: an invitation is read from an API
@@ -2099,6 +2102,7 @@ export const streamDay = (options: {
   const peerConfig: StreamDayOptions = {
     ...config,
     windowsSeenThroughMs: undefined,
+    heard: undefined,
     rows: { ...config.rows, pauses: undefined },
   };
   const peers = [...byOrigin]

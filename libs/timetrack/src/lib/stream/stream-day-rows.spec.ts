@@ -8,6 +8,8 @@ import { pauseWindows } from './pauses';
 import { streamDay } from './stream-day';
 import { reviewDay } from '../review/review-day';
 import { CALL_LANE_KEY } from '../rows/lane';
+import { callFeaturesOf } from '../model/call-naming';
+import { HeardChunk } from './calls';
 
 const MINUTE = 60_000;
 const DAY_START = new Date(2026, 7, 11, 8, 0, 0);
@@ -378,5 +380,41 @@ describe('the rows a switch from one call to the next produces', () => {
       [AT(60), AT(90), 'FIP-3000'],
       [AT(90), AT(120), undefined],
     ]);
+  });
+});
+
+describe('a call the user talked in while another window held the focus', () => {
+  const DISCORD = 'com.hnc.Discord';
+  const events: CollectedEvent[] = [
+    ...focusRun({ from: 0, to: 30, appId: 'code', title: 'calls.ts - ethlete-sdk - Code' }),
+    { ...focus(10, DISCORD, 'Meeting #3 | Braune Digital - Discord'), at: new Date(AT(10).getTime() + 500) },
+    call(10, 'call-start', DISCORD),
+    call(25, 'call-end', DISCORD),
+  ];
+  const naming = {
+    ...callFeaturesOf({ appId: DISCORD, from: AT(10), to: AT(25) }),
+    target: { kind: 'issue' as const, issueKey: 'FIP-4000' },
+    label: 'Meeting #3 | Braune Digital - Discord',
+    createdAt: AT(-7 * 24 * 60),
+  };
+  const callRowsOf = (heard: HeardChunk[]) =>
+    streamDay({
+      events,
+      options: {
+        windowsSeenThroughMs: AT(30).getTime(),
+        callRules: { countsAsWork: ['Discord'], neverCountsAsWork: [] },
+        heard,
+        rows: { meetings: { callNamings: [naming] } },
+      },
+    }).rows.proposals.filter((proposal) => proposal.laneKey === CALL_LANE_KEY);
+
+  it('names the call from the remembered answer once the transcriber heard it', () => {
+    const heard = [12, 18].map((minute) => ({ atMs: AT(minute).getTime(), appId: DISCORD }));
+
+    expect(callRowsOf(heard).map((proposal) => proposal.issueKey)).toEqual(['FIP-4000']);
+  });
+
+  it('proposes nothing for it when nothing was heard', () => {
+    expect(callRowsOf([])).toEqual([]);
   });
 });

@@ -1,6 +1,7 @@
 import {
   BuildRowsOptions,
   EpicOptions,
+  HeardChunk,
   RecurringPattern,
   StreamDayOptions,
   TimetrackProjectLink,
@@ -88,6 +89,7 @@ export const streamDayOptionsOf = (options: {
   now?: Date;
   /** What this reader adds to the shared row options: the day's timer runs, pauses and edits. */
   rows?: Omit<BuildRowsOptions, 'links' | 'calls'>;
+  heard?: readonly HeardChunk[];
 }): Partial<StreamDayOptions> => ({
   repoRoots: [...options.repoRoots],
   links: options.links,
@@ -96,6 +98,7 @@ export const streamDayOptionsOf = (options: {
   headBranches: options.headBranches,
   now: options.now,
   callRules: options.settings.callRules,
+  heard: options.heard,
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
   multiPurposeApps: effectiveMultiPurposeApps(options.settings),

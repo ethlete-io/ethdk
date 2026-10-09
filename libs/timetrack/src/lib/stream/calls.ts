@@ -37,7 +37,23 @@ export type ClassifyCallsOptions = {
    * {@link DEFAULT_CALL_TITLE_SETTLE_MS}.
    */
   titleSettleMs?: number;
+  /**
+   * When the call transcriber heard something in each call. A call with {@link MIN_HEARD_CHUNKS} of
+   * them inside it was attended, whatever held the focus.
+   */
+  heard?: readonly HeardChunk[];
 };
+
+/** One transcript chunk, reduced to when it was heard and which call it belongs to. Never its text. */
+export type HeardChunk = { atMs: number; appId: string };
+
+/**
+ * How many transcript chunks inside a call show that someone sat at the machine during it.
+ *
+ * The microphone also picks up the speakers, so a chunk shows somebody was at the machine, not that the
+ * user spoke. One is not enough: whisper invents text on near-silence when a call opens.
+ */
+export const MIN_HEARD_CHUNKS = 2;
 
 /**
  * The break in the microphone that still reads as one call.
@@ -327,6 +343,13 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
   );
 
   const titleSettleMs = options.titleSettleMs ?? DEFAULT_CALL_TITLE_SETTLE_MS;
+  const heardIn = (session: PairedCall) =>
+    (options.heard ?? []).filter(
+      (chunk) =>
+        chunk.atMs >= session.from.getTime() &&
+        chunk.atMs <= session.to.getTime() &&
+        (callHolderBelongsTo(chunk.appId, session.appId) || callHolderBelongsTo(session.appId, chunk.appId)),
+    ).length;
   const rules: CompiledCallRules = {
     countsAsWork: compiled(options.rules.countsAsWork),
     neverCountsAsWork: compiled(options.rules.neverCountsAsWork),
@@ -359,7 +382,8 @@ export const classifyCalls = (options: ClassifyCallsOptions): CallWindow[] => {
     const named = { appId: call.appId, title: windowTitle };
     // Attendance, not the work rules: a room nobody sat in is the one call that says nothing about
     // where the user was, and a rule denying the work still leaves them in the meeting. See ADR 0024.
-    const attendedCall = !readable || expected || attendedMs(held, session) >= minAttendedMs;
+    const attendedCall =
+      !readable || expected || attendedMs(held, session) >= minAttendedMs || heardIn(session) >= MIN_HEARD_CHUNKS;
     const denied = matches(rules.neverCountsAsWork, named);
     const counts = attendedCall && countsAsWork({ rules, named, expected });
 

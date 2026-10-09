@@ -29,6 +29,7 @@ import {
 import { Observable, catchError, combineLatest, concatMap, defer, map, of } from 'rxjs';
 import { HostPorts, NOTHING_RECEIVED } from '../host';
 import { streamDayOptionsOf } from './stream-day-options';
+import { heardChunksOf, transcriptBetween$ } from './transcript-chunks';
 
 export type DayRead = {
   key: string;
@@ -88,8 +89,9 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
       runs: ports.timers.runsBetween$(from, to),
       coverage: ports.coverage.forDay$(key),
       received: ports.peers.receivedBetween$(from, to).pipe(catchError(() => of(NOTHING_RECEIVED))),
+      transcript: transcriptBetween$({ ports, from, to }),
     }).pipe(
-      concatMap(({ events, edits, runs, coverage, received }) => {
+      concatMap(({ events, edits, runs, coverage, received, transcript }) => {
         const merged = mergeDayEvents({
           local: events,
           received,
@@ -111,6 +113,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             through: at,
             now: at < to ? at : undefined,
             rows: { timerRuns: runs.map((run) => closeTimerRun(run, at)), pauses },
+            heard: heardChunksOf(transcript),
           });
           const day = streamDay({ events: merged, options: dayOptions });
           const reviewWith = (current: DayReviewEdits) =>
