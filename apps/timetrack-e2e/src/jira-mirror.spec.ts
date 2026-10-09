@@ -79,6 +79,7 @@ const refusalOf = async (page: Page) =>
 
 const standInState = async (page: Page) => {
   await page.keyboard.press('Escape');
+  await expect(page.locator('ethlete-day-debug')).toBeHidden();
   await openStandIns(page);
 
   return page.locator('ethlete-stand-ins-list [data-stand-in]').first();
