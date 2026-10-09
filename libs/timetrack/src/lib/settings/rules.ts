@@ -60,6 +60,30 @@ export const DEFAULT_TRANSIENT_APPS = [
 ];
 
 /**
+ * Applications shipped as multi-purpose: a browser or a file manager, whose windows hold a checkout at
+ * one time and the news at another. `app_id` as each platform reports it, Linux first and macOS after.
+ *
+ * Their unnamed time is judged per window title rather than per application, so one title that once
+ * named a checkout does not make every other page a gap. `holdsWorkApps` takes an entry off this list,
+ * and the application is then judged as a whole again.
+ */
+export const DEFAULT_MULTI_PURPOSE_APPS = [
+  'google-chrome',
+  'chromium',
+  'chromium-browser',
+  'org.chromium.Chromium',
+  'firefox',
+  'org.mozilla.firefox',
+  'brave-browser',
+  'com.brave.Browser',
+  'org.gnome.Nautilus',
+  'org.kde.dolphin',
+  'com.google.Chrome',
+  'com.apple.Safari',
+  'com.apple.finder',
+];
+
+/**
  * The applications read as no work context: the shipped list plus the user's own, less the ones the
  * user took back. Taking one back beats both lists, so the panel's control always has an effect.
  */
@@ -85,6 +109,13 @@ export const effectiveTransientApps = (settings: TimetrackSettings) => {
   const held = new Set(settings.holdsWorkApps.map((id) => id.toLowerCase()));
 
   return DEFAULT_TRANSIENT_APPS.filter((id) => !held.has(id.toLowerCase()));
+};
+
+/** The applications judged per window title: the shipped list, less the ones the user took back. */
+export const effectiveMultiPurposeApps = (settings: TimetrackSettings) => {
+  const held = new Set(settings.holdsWorkApps.map((id) => id.toLowerCase()));
+
+  return DEFAULT_MULTI_PURPOSE_APPS.filter((id) => !held.has(id.toLowerCase()));
 };
 
 const keyOf = (rule: TimetrackExclusionRule) =>

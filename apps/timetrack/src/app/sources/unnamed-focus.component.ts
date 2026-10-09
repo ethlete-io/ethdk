@@ -58,6 +58,8 @@ type FocusRow = {
   key: string;
   /** The application, or a stretch before the day's first focus sample, which no window is known for. */
   app: string;
+  /** The one title a browser or a file manager row stands for. */
+  title?: string;
   duration: string;
   why: string;
   standing: string;
@@ -94,7 +96,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         Every minute here is on the Today screen already, folded into the Other applications line. An application that
         names a checkout at another time lost this stretch. One that never names a checkout either holds no work context
         at all, or holds one this app cannot read yet. Say that one does hold work and it takes a lane of its own on the
-        day screen; every other application stays folded into the line.
+        day screen; every other application stays folded into the line. A browser or a file manager is read per title:
+        only a title that named a checkout at another time counts as lost.
       </p>
 
       @if (failure()) {
@@ -127,9 +130,14 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
         <ul class="flex flex-col gap-1">
           @for (row of rows(); track row.key) {
-            <li [attr.data-app]="row.app" class="flex flex-col gap-1 text-small">
+            <li [attr.data-app]="row.app" [attr.data-row-title]="row.title" class="flex flex-col gap-1 text-small">
               <div class="grid grid-cols-[minmax(0,16rem)_5rem_minmax(0,1fr)_8rem_15rem] items-baseline gap-x-3">
-                <span [title]="row.app" class="truncate font-medium">{{ row.app }}</span>
+                <span class="flex min-w-0 flex-col">
+                  <span [title]="row.app" class="truncate font-medium">{{ row.app }}</span>
+                  @if (row.title) {
+                    <span [title]="row.title" class="truncate text-et-surface-muted">{{ row.title }}</span>
+                  }
+                </span>
                 <span class="text-right tabular-nums">{{ row.duration }}</span>
 
                 <span class="flex min-w-0 flex-wrap items-baseline gap-2">
@@ -302,18 +310,19 @@ export class UnnamedFocusComponent {
     (this.current()?.rows ?? [])
       .filter((row) => row.ms >= READABLE_MS)
       .map((row) => {
-        const titles = row.titles.filter((held) => held.ms >= READABLE_MS);
+        const titles = row.title === undefined ? row.titles.filter((held) => held.ms >= READABLE_MS) : [];
         const remainderMs = row.ms - titles.reduce((sum, held) => sum + held.ms, 0);
         // A row the day kept no title for at all is a private checkout, or a stretch before the day's
         // first focus sample. Neither has anything to open, and neither is a remainder either.
         const remainder =
-          row.titles.length && remainderMs >= READABLE_MS
+          row.title === undefined && row.titles.length && remainderMs >= READABLE_MS
             ? `${formatDurationMs(remainderMs)} across shorter titles`
             : '';
 
         return {
-          key: `${row.appId ?? ''} ${row.reason}`,
+          key: `${row.appId ?? ''} ${row.reason} ${row.title ?? ''}`,
           app: row.appId ?? 'no application reported',
+          title: row.title,
           duration: formatDurationMs(row.ms),
           why: REASON_LABEL[row.reason],
           standing: VERDICT_LABEL[row.verdict],

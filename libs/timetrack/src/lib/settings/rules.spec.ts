@@ -5,6 +5,7 @@ import {
   DEFAULT_NO_WORK_CONTEXT_APPS,
   DEFAULT_TRANSIENT_APPS,
   effectiveExclusionRules,
+  effectiveMultiPurposeApps,
   effectiveNoWorkContextApps,
   effectiveTransientApps,
 } from './rules';
@@ -100,5 +101,20 @@ describe('effectiveTransientApps', () => {
 
     expect(apps).not.toContain('xdg-desktop-portal-gnome');
     expect(apps).toContain('xdg-desktop-portal-kde');
+  });
+});
+
+describe('effectiveMultiPurposeApps', () => {
+  it('ships the browsers and file managers of both platforms', () => {
+    expect(effectiveMultiPurposeApps(settingsWith({}))).toEqual(
+      expect.arrayContaining(['google-chrome', 'com.google.Chrome', 'org.gnome.Nautilus', 'com.apple.finder']),
+    );
+  });
+
+  it('lets one be taken back off the list, and leaves the rest of it', () => {
+    const apps = effectiveMultiPurposeApps(settingsWith({ holdsWorkApps: ['Google-Chrome'] }));
+
+    expect(apps).not.toContain('google-chrome');
+    expect(apps).toContain('firefox');
   });
 });

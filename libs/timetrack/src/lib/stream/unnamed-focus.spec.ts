@@ -194,4 +194,67 @@ describe('unnamedFocusOver', () => {
 
     expect(span.rows[0]?.verdict).toBe('unknown');
   });
+
+  it('splits a multi-purpose application per title: only a title that named a checkout is a gap', () => {
+    const span = unnamedFocusOver([
+      {
+        focusMs: 60 * MINUTE,
+        unnamedFocus: [],
+        namedApps: ['google-chrome'],
+        namedTitles: { 'google-chrome': ['localhost:4200 - Google Chrome'] },
+      },
+      {
+        focusMs: 60 * MINUTE,
+        unnamedFocus: [
+          row('google-chrome', 'no-name', 30, [
+            title('News - Google Chrome', 20),
+            title('localhost:4200 - Google Chrome', 10),
+          ]),
+        ],
+        namedApps: [],
+      },
+    ]);
+
+    expect(span.rows.map(({ title: held, ms, verdict }) => ({ title: held, ms, verdict }))).toEqual([
+      { title: 'News - Google Chrome', ms: 20 * MINUTE, verdict: 'unknown' },
+      { title: 'localhost:4200 - Google Chrome', ms: 10 * MINUTE, verdict: 'gap' },
+    ]);
+    expect(span.gapMs).toBe(10 * MINUTE);
+    expect(span.unknownMs).toBe(20 * MINUTE);
+  });
+
+  it('keys a split title after its query string is dropped, so each site is its own row', () => {
+    const span = unnamedFocusOver([
+      {
+        focusMs: 60 * MINUTE,
+        unnamedFocus: [
+          row('firefox', 'no-name', 15, [
+            title('https://gitlab.example.com/mr?tab=a', 5),
+            title('https://gitlab.example.com/mr?tab=b', 5),
+            title('https://news.example.com/today', 5),
+          ]),
+        ],
+        namedApps: ['firefox'],
+        namedTitles: { firefox: ['https://gitlab.example.com/mr'] },
+      },
+    ]);
+
+    expect(span.rows.map(({ title: held, ms, verdict }) => ({ title: held, ms, verdict }))).toEqual([
+      { title: 'https://gitlab.example.com/mr', ms: 10 * MINUTE, verdict: 'gap' },
+      { title: 'https://news.example.com/today', ms: 5 * MINUTE, verdict: 'unknown' },
+    ]);
+  });
+
+  it('judges a day read without titles whole, as before', () => {
+    const span = unnamedFocusOver([
+      {
+        focusMs: 60 * MINUTE,
+        unnamedFocus: [row('firefox', 'no-name', 15, [title('News', 15)])],
+        namedApps: ['firefox'],
+      },
+    ]);
+
+    expect(span.rows).toHaveLength(1);
+    expect(span.rows[0]?.verdict).toBe('gap');
+  });
 });

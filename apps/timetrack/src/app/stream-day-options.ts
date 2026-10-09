@@ -6,6 +6,7 @@ import {
   TimetrackProjectLink,
   TimetrackSettings,
   effectiveNoWorkContextApps,
+  effectiveMultiPurposeApps,
   effectiveTransientApps,
   gitFlowConfigFor,
 } from '@ethlete/timetrack';
@@ -97,6 +98,7 @@ export const streamDayOptionsOf = (options: {
   callRules: options.settings.callRules,
   noWorkContextApps: effectiveNoWorkContextApps(options.settings),
   transientApps: effectiveTransientApps(options.settings),
+  multiPurposeApps: effectiveMultiPurposeApps(options.settings),
   minBreakMs: options.settings.gapFillMs,
   baseBranches: Object.values(gitFlowConfigFor(options.settings).baseBranches),
   rows: {

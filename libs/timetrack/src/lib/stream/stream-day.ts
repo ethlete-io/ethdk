@@ -30,6 +30,7 @@ import { UnnamedFocus, UnnamedFocusReason, mergeUnnamedTitles } from './unnamed-
 import { sessionWork } from './session-work';
 import { fileAgentEventsByWork } from './worked-in';
 import { receivedEventsOf } from './merge-day-events';
+import { redactTitleUrls } from '../store/title';
 import { namedWorkFileOf, sessionPieces } from '../model/session-piece';
 
 /** The key of the one line every application with no checkout folds into. */
@@ -111,6 +112,11 @@ export type StreamDayOptions = {
    * Reported with their own cause, for the same reason and to the same effect.
    */
   transientApps?: readonly string[];
+  /**
+   * The applications whose windows hold unrelated things, a browser or a file manager. The titles of
+   * theirs that held a checkout are kept in `namedTitles`, and nothing else about the day changes.
+   */
+  multiPurposeApps?: readonly string[];
   /**
    * The shortest gap in presence that is a break. Kept at `maxFillGapMs`, so a gap `fillGaps` gives to
    * the work around it is not also drawn as time away from it.
@@ -243,6 +249,11 @@ export type StreamDay = {
    * Nothing here is a verdict on its own — `unnamedFocusOver` is where the two meet.
    */
   namedApps: string[];
+  /**
+   * The titles of a `multiPurposeApps` window that held a checkout at some point in the day, per
+   * application and after `redactTitleUrls`. Only multi-purpose applications are recorded.
+   */
+  namedTitles: Record<string, string[]>;
   /** Ordered by when each stream started. */
   streams: Stream[];
   /**
@@ -1060,6 +1071,7 @@ const streamOrigin = (options: {
   const ownAppIds = new Set((config.ownAppIds ?? []).map((id) => id.toLowerCase()));
   const noWorkContextApps = new Set((config.noWorkContextApps ?? []).map((id) => id.toLowerCase()));
   const transientApps = new Set((config.transientApps ?? []).map((id) => id.toLowerCase()));
+  const multiPurposeApps = new Set((config.multiPurposeApps ?? []).map((id) => id.toLowerCase()));
   const observed = events
     .filter(isActivityEvent)
     .filter((sample) => READ_SOURCES.includes(sample.source))
@@ -1297,6 +1309,7 @@ const streamOrigin = (options: {
   let windowTitle: string | undefined;
   let unnamedReason: UnnamedFocusReason = 'no-name';
   const namedApps = new Set<string>();
+  const namedTitles = new Map<string, Set<string>>();
 
   const unnamedDraftFor = (reason: UnnamedFocusReason) => {
     const found = unnamed.find((draft) => draft.appId === windowAppId && draft.reason === reason);
@@ -1398,6 +1411,18 @@ const streamOrigin = (options: {
       }
     }
     if (holder && windowAppId && sample.kind === 'window-focus') namedApps.add(windowAppId);
+    if (
+      holder &&
+      windowAppId &&
+      windowTitle !== undefined &&
+      sample.kind === 'window-focus' &&
+      multiPurposeApps.has(windowAppId.toLowerCase())
+    ) {
+      const titles = namedTitles.get(windowAppId) ?? new Set<string>();
+
+      titles.add(redactTitleUrls(windowTitle));
+      namedTitles.set(windowAppId, titles);
+    }
 
     if (sample.kind === 'agent-session') {
       const cwd = repoRootOf({ path: sample.cwd, roots });
@@ -1708,6 +1733,7 @@ const streamOrigin = (options: {
     focusMs,
     unnamedFocus,
     namedApps: [...namedApps].sort(),
+    namedTitles: Object.fromEntries([...namedTitles].map(([app, titles]) => [app, [...titles].sort()])),
     blocks,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     breaks,
@@ -1792,6 +1818,16 @@ const mergeStreams = (streams: readonly Stream[]): Stream[] => {
       };
     })
     .sort((a, b) => a.from.getTime() - b.from.getTime() || a.key.localeCompare(b.key));
+};
+
+const mergeNamedTitles = (days: readonly Readonly<Record<string, readonly string[]>>[]) => {
+  const byApp: Record<string, string[]> = {};
+
+  for (const day of days) {
+    for (const [app, titles] of Object.entries(day)) byApp[app] = union([byApp[app] ?? [], titles]).sort();
+  }
+
+  return byApp;
 };
 
 const mergeUnnamedFocus = (rows: readonly UnnamedFocus[]): UnnamedFocus[] => {
@@ -1932,6 +1968,7 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
     focusMs: days.reduce((sum, day) => sum + day.focusMs, 0),
     unnamedFocus: mergeUnnamedFocus(days.flatMap((day) => day.unnamedFocus)),
     namedApps: union(days.map((day) => day.namedApps)).sort(),
+    namedTitles: mergeNamedTitles(days.map((day) => day.namedTitles)),
     blocks,
     unattendedMs: streams.reduce((sum, stream) => sum + stream.unattendedMs, 0),
     breaks,

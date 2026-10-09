@@ -1,3 +1,5 @@
+import { redactTitleUrls } from '../store/title';
+
 /**
  * Why a stretch of focused-window time took no checkout.
  *
@@ -37,6 +39,8 @@ export type UnnamedFocusDay = {
   focusMs: number;
   unnamedFocus: readonly UnnamedFocus[];
   namedApps: readonly string[];
+  /** Absent on a day read before titles were recorded, which then splits no row. */
+  namedTitles?: Readonly<Record<string, readonly string[]>>;
 };
 
 /**
@@ -49,7 +53,11 @@ export type UnnamedFocusDay = {
 export type UnnamedFocusVerdict = 'on-purpose' | 'gap' | 'unknown';
 
 /** A row of a span: what a day reported, and what the whole span makes of it. */
-export type UnnamedFocusRow = UnnamedFocus & { verdict: UnnamedFocusVerdict };
+export type UnnamedFocusRow = UnnamedFocus & {
+  verdict: UnnamedFocusVerdict;
+  /** The one title, after `redactTitleUrls`, a row of a multi-purpose application was split into. */
+  title?: string;
+};
 
 /** The focus of a span, and the part of it no checkout took, split by what can be said about it. */
 export type UnnamedFocusSpan = {
@@ -78,6 +86,42 @@ export const verdictFor = (options: { row: UnnamedFocus; namedApps: ReadonlySet<
   if (row.reason === 'ambiguous-name') return 'gap';
 
   return row.appId && namedApps.has(row.appId) ? 'gap' : 'unknown';
+};
+
+/**
+ * A row with its verdict, split per title when it comes from a multi-purpose application that named a
+ * checkout: a title that held one on some day is a gap, and every other title is unknown, so one page
+ * that named a checkout does not make all of a browser's time a gap.
+ */
+export const judgeUnnamedFocus = (options: {
+  row: UnnamedFocus;
+  namedApps: ReadonlySet<string>;
+  namedTitles: ReadonlyMap<string, ReadonlySet<string>>;
+}): UnnamedFocusRow[] => {
+  const { row } = options;
+  const verdict = verdictFor(options);
+  const named = row.appId ? options.namedTitles.get(row.appId) : undefined;
+
+  if (verdict !== 'gap' || row.reason !== 'no-name' || !named) return [{ ...row, verdict }];
+
+  const byTitle = new Map<string, UnnamedFocusTitle[]>();
+
+  for (const held of row.titles) {
+    const title = redactTitleUrls(held.title);
+
+    byTitle.set(title, [...(byTitle.get(title) ?? []), held]);
+  }
+
+  const split = [...byTitle].map(([title, titles]): UnnamedFocusRow => ({
+    ...row,
+    title,
+    ms: titles.reduce((sum, held) => sum + held.ms, 0),
+    titles: mergeUnnamedTitles([titles]),
+    verdict: named.has(title) ? 'gap' : 'unknown',
+  }));
+  const restMs = row.ms - unnamedFocusMs(split);
+
+  return restMs > 0 ? [...split, { ...row, ms: restMs, titles: [], verdict: 'unknown' }] : split;
 };
 
 /** The titles of several rows summed per title, longest first. */
@@ -132,10 +176,20 @@ export const mergeUnnamedFocus = (days: readonly (readonly UnnamedFocus[])[]): U
  */
 export const unnamedFocusOver = (days: readonly UnnamedFocusDay[]): UnnamedFocusSpan => {
   const namedApps = new Set(days.flatMap((day) => [...day.namedApps]));
-  const rows = mergeUnnamedFocus(days.map((day) => day.unnamedFocus)).map((row) => ({
-    ...row,
-    verdict: verdictFor({ row, namedApps }),
-  }));
+  const namedTitles = new Map<string, Set<string>>();
+
+  for (const day of days) {
+    for (const [app, titles] of Object.entries(day.namedTitles ?? {})) {
+      namedTitles.set(app, new Set([...(namedTitles.get(app) ?? []), ...titles]));
+    }
+  }
+
+  const rows = mergeUnnamedFocus(days.map((day) => day.unnamedFocus))
+    .flatMap((row) => judgeUnnamedFocus({ row, namedApps, namedTitles }))
+    .sort(
+      (a, b) =>
+        b.ms - a.ms || (a.appId ?? '').localeCompare(b.appId ?? '') || (a.title ?? '').localeCompare(b.title ?? ''),
+    );
   const msOf = (verdict: UnnamedFocusVerdict) => unnamedFocusMs(rows.filter((row) => row.verdict === verdict));
 
   return {

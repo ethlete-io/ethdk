@@ -246,6 +246,30 @@ test.describe('the focus that named no checkout', () => {
     await expect(page.getByText('umbau-elrond')).toHaveCount(0);
   });
 
+  test('reads a browser per title, so only the page that named a checkout is a gap', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: [
+        ...day(),
+        focus(105, 'google-chrome', 'fut-frontend - GitLab - Google Chrome'),
+        focus(110, 'google-chrome', 'localhost:4200 - Google Chrome'),
+        focus(115, 'code', 'invite.ts - fut-frontend - Visual Studio Code'),
+        focus(120, 'google-chrome', 'localhost:4200 - Google Chrome'),
+        focus(130, 'google-chrome', 'News - Google Chrome'),
+        focus(150, 'foot', 'tom@e2e: ~'),
+      ],
+    });
+    await page.reload();
+
+    const chrome = (title: string) => page.locator(`[data-app="google-chrome"][data-row-title="${title}"]`);
+
+    await expect(chrome('localhost:4200 - Google Chrome')).toContainText('10m');
+    await expect(chrome('localhost:4200 - Google Chrome')).toContainText('names one at other times');
+    await expect(chrome('News - Google Chrome')).toContainText('20m');
+    await expect(chrome('News - Google Chrome')).toContainText('never names one');
+    await expect(gap(page)).toContainText('10m of it is a window a checkout should have taken');
+  });
+
   test('says no window held the focus, rather than showing an empty list', async ({ page }) => {
     await seedWorld(page, { now: E2E_NOW, events: [] });
     await page.reload();

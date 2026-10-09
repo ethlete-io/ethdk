@@ -616,6 +616,7 @@ describe('streamDay', () => {
       focusMs: 0,
       unnamedFocus: [],
       namedApps: [],
+      namedTitles: {},
       concurrency: 0,
       unattendedMs: 0,
       breaks: [],
@@ -1452,6 +1453,29 @@ describe('streamDay, the focus that named no checkout', () => {
 
     expect(day.namedApps).toEqual(['code']);
     expect(day.unnamedFocus).toEqual([]);
+  });
+
+  it('keeps the titles of a multi-purpose application that held a checkout, query strings dropped', () => {
+    const day = streamDay({
+      events: [
+        commit(0, 'feat(bracket): Add the resolver'),
+        ...focusRun({ from: 0, to: 5, appId: 'google-chrome', title: 'ethlete-sdk - GitLab - Google Chrome' }),
+        ...focusRun({ from: 5, to: 10, appId: 'code', title: 'block.ts - ethlete-sdk - Code' }),
+        ...focusRun({ from: 10, to: 15, appId: 'google-chrome', title: 'News - Google Chrome' }),
+        ...focusRun({
+          from: 15,
+          to: 20,
+          appId: 'firefox',
+          title: 'ethlete-sdk - https://gitlab.example.com/mr?tab=a - Mozilla Firefox',
+        }),
+      ],
+      options: { repoRoots: [SDK], multiPurposeApps: ['Google-Chrome', 'firefox'] },
+    });
+
+    expect(day.namedTitles).toEqual({
+      firefox: ['ethlete-sdk - https://gitlab.example.com/mr - Mozilla Firefox'],
+      'google-chrome': ['ethlete-sdk - GitLab - Google Chrome'],
+    });
   });
 
   it('names no application on a day no window held a checkout', () => {
