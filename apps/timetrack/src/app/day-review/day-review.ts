@@ -5,6 +5,7 @@ import {
   AutoModeAnswer,
   AutoModeDispute,
   isDayHeldByTempo,
+  isNotInTempo,
   AttributionRule,
   withAutoModeRowNames,
   withAutoModeDisputeResolutions,
@@ -1069,6 +1070,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     }),
     /** How many of the day's rows Tempo holds. An entry no row claims is not one — the sync deletes it. */
     syncedRowCount: computed(() => rows().filter((row) => syncedIds().has(row.id)).length),
+    /** Whether a row of a booked day is one a sync writes that Tempo holds none of. */
+    notInTempo: (row: ReviewedRow) => !!edits().booked && isNotInTempo(row),
     goToDay,
     boundary,
     goToToday: () => goToDay(localDayKey(new Date(), boundary())),

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DayRows } from '../rows/build-rows';
 import { WorklogProposal } from '../model/proposal';
 import { TempoSyncPlan } from '../tempo/diff';
-import { withBookedReview, writtenAfterSync } from './frozen-rows';
+import { isNotInTempo, withBookedReview, writtenAfterSync } from './frozen-rows';
 import { DayReview, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, WrittenWorklog } from './model';
 import { reviewDay } from './review-day';
 
@@ -145,6 +145,20 @@ describe('a booked day', () => {
       worklogIds: ['w-2'],
     });
     expect(again.booked?.edits).toEqual(EMPTY_DAY_REVIEW_EDITS);
+  });
+
+  it('marks an accepted row Tempo holds none of as not in Tempo, and still counts it', () => {
+    const accepted = { [MORNING]: { state: 'accepted' as const }, [LATE]: { state: 'accepted' as const } };
+    const review = reviewDay({
+      rows: frozen,
+      edits: book({ edits: { ...EMPTY_DAY_REVIEW_EDITS, overrides: accepted }, worklogs: worklogs.slice(0, 1) }),
+    });
+
+    expect(review.rows.map((row) => [row.id, isNotInTempo(row)])).toEqual([
+      [MORNING, false],
+      [LATE, true],
+    ]);
+    expect(review.check.loggedMs).toBe(105 * MINUTE);
   });
 
   describe('with a worklog no row carries', () => {

@@ -363,7 +363,11 @@ type RowDrag = {
                       [style.clipPath]="laid.clipPath"
                       [style.paddingInlineStart]="insetOf(laid).start"
                       [style.paddingInlineEnd]="insetOf(laid).end"
-                      [title]="LABEL_OF(laid.block.node.appointment) + UNBOOKED_OF(laid.block.node.appointment)"
+                      [title]="
+                        LABEL_OF(laid.block.node.appointment) +
+                        UNBOOKED_OF(laid.block.node.appointment) +
+                        (notInTempo(laid.block.node.appointment) ? NOT_IN_TEMPO : '')
+                      "
                       (pointerdown)="
                         startDrag({
                           event: $event,
@@ -460,6 +464,9 @@ type RowDrag = {
                           {{ LABEL_OF(laid.block.node.appointment) }}
                           @if (UNBOOKED_OF(laid.block.node.appointment); as unbooked) {
                             <span class="text-et-surface-muted" data-unbooked>{{ unbooked }}</span>
+                          }
+                          @if (notInTempo(laid.block.node.appointment)) {
+                            <span class="text-et-theme-ink" data-not-in-tempo>{{ NOT_IN_TEMPO }}</span>
                           }
                           @if (
                             !detailed(laid.block.span) && descriptionOf(laid.block.node.appointment);
@@ -879,6 +886,7 @@ export class DayTimelineComponent {
   protected readonly BEHIND_LABEL_OF = behindLabel;
   protected readonly PEER_LABEL_OF = peerBandLabel;
   protected readonly UNBOOKED_OF = unbookedLabel;
+  protected readonly NOT_IN_TEMPO = ' · not in Tempo';
   protected readonly STANDS_IN = isStandInAppointment;
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly CHIP_OF = approvalChipOf;
@@ -1375,6 +1383,12 @@ export class DayTimelineComponent {
     const row = this.rowOf(appointment);
 
     return !!row && this.isMarked(row);
+  }
+
+  protected notInTempo(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+
+    return !!row && this.store.notInTempo(row);
   }
 
   /** Whether a rule excluded this band, which is what makes the press on it draw rather than drag. */

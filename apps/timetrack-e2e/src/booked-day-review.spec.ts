@@ -186,4 +186,36 @@ test.describe('a booked day', () => {
         [RECUT_ROW_ID, 'Reviewed the invite flow', 30 * 60_000],
       ]);
   });
+
+  test('marks an accepted row Tempo holds none of as not in Tempo', async ({ page }) => {
+    await seedBookedDay(page);
+    await page.goto('/day');
+    await expect.poll(async () => !!(await inputsOf(page))?.booked?.review).toBe(true);
+
+    const stored = await inputsOf(page);
+    const review = stored?.booked?.review;
+    const [booked] = review?.rows ?? [];
+    const unwritten = {
+      ...booked,
+      id: RECUT_ROW_ID,
+      from: new Date(`${BOOKED_DAY}T14:00:00.000Z`),
+      to: new Date(`${BOOKED_DAY}T14:30:00.000Z`),
+      description: 'Reviewed the invite flow',
+      state: 'accepted',
+      worklogIds: undefined,
+    };
+
+    await seedBookedDay(page, {
+      [BOOKED_DAY]: inStoredForm({
+        ...stored,
+        booked: { ...stored?.booked, review: { ...review, rows: [...(review?.rows ?? []), unwritten] } },
+      }),
+    });
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+
+    await expect(page.locator(`[data-row-id="${RECUT_ROW_ID}"] [data-not-in-tempo]`)).toHaveText('· not in Tempo');
+    await expect(page.locator(`[data-row-id="${ROW_ID}"]`)).toBeVisible();
+    await expect(page.locator(`[data-row-id="${ROW_ID}"] [data-not-in-tempo]`)).toHaveCount(0);
+  });
 });

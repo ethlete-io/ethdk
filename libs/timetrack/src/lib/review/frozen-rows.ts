@@ -1,5 +1,5 @@
 import { streamKeyRepoPath } from '../model/block';
-import { SyncedWorklog } from '../model/proposal';
+import { SyncedWorklog, syncsInState } from '../model/proposal';
 import {
   TimeWindow,
   clipWindows,
@@ -413,6 +413,20 @@ export const withUncarriedWorklogs = (options: {
     },
   };
 };
+
+/** Whether a booked day's row is a worklog no row carries, drawn by {@link withUncarriedWorklogs}. It takes no edit. */
+export const isUncarriedWorklogRow = (row: Pick<ReviewedRow, 'state'>) => row.state === 'synced';
+
+/**
+ * Whether a booked day's row is one a sync writes that Tempo holds none of. It still counts in the
+ * day's totals, and a sync may still write it.
+ */
+export const isNotInTempo = (row: ReviewedRow) =>
+  isNamedRow(row) &&
+  syncsInState(row.state) &&
+  !isUncarriedWorklogRow(row) &&
+  row.durationMs > 0 &&
+  !row.worklogIds?.length;
 
 /**
  * The edits with the day drawn into them as it is booked: `written` is what Tempo holds of this app's
