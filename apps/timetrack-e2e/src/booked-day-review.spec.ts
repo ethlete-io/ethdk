@@ -1,7 +1,7 @@
 import { AgentApiDayRows, CollectedEvent, DayReviewEdits } from '@ethlete/timetrack';
 import { E2E_ISSUE_BRANCH, E2E_ISSUE_KEY, E2E_REPO, tempoWorklogOn } from '@ethlete/timetrack/testing';
 import { Page } from '@playwright/test';
-import { E2E_NOW, askAgent, expect, seedWorld, test } from './support';
+import { E2E_NOW, askAgent, editSurface, expect, seedWorld, test } from './support';
 
 const BOOKED_DAY = '2026-08-11';
 const ROW_ID = `${E2E_ISSUE_KEY}@${BOOKED_DAY}T11:00:00.000Z`;
@@ -217,5 +217,59 @@ test.describe('a booked day', () => {
     await expect(page.locator(`[data-row-id="${RECUT_ROW_ID}"] [data-not-in-tempo]`)).toHaveText('· not in Tempo');
     await expect(page.locator(`[data-row-id="${ROW_ID}"]`)).toBeVisible();
     await expect(page.locator(`[data-row-id="${ROW_ID}"] [data-not-in-tempo]`)).toHaveCount(0);
+  });
+
+  test('takes no edit on a worklog no stored row carries', async ({ page }) => {
+    await seedBookedDay(page);
+    await page.goto('/day');
+    await expect.poll(async () => !!(await inputsOf(page))?.booked?.review).toBe(true);
+
+    const stored = await inputsOf(page);
+    const recut = {
+      proposalId: RECUT_ROW_ID,
+      worklogId: 'w-2',
+      issueKey: E2E_ISSUE_KEY,
+      from: new Date(`${BOOKED_DAY}T14:00:00.000Z`),
+      durationMs: 30 * 60_000,
+      description: 'Reviewed the invite flow',
+    };
+
+    await seedBookedDay(
+      page,
+      {
+        [BOOKED_DAY]: inStoredForm({
+          ...stored,
+          booked: { ...stored?.booked, written: [...(stored?.booked?.written ?? []), recut] },
+        }),
+      },
+      { recut: true },
+    );
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+
+    const band = page.locator(`[data-row-id="${RECUT_ROW_ID}"]`);
+    const drawn = [RECUT_ROW_ID, recut.from.getTime(), 30 * 60_000];
+    const recutRow = async () =>
+      (await rowsOf(page))?.filter((row) => row.id === RECUT_ROW_ID).map((row) => [row.id, row.fromMs, row.durationMs]);
+
+    await expect(band).toBeVisible();
+    await expect(band.locator('.cursor-ns-resize')).toHaveCount(0);
+
+    await band.click();
+    await expect.poll(recutRow).toEqual([drawn]);
+    await expect(editSurface(page)).toHaveCount(0);
+
+    const box = (await band.boundingBox()) ?? { x: 0, y: 0, width: 0, height: 0 };
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 120, { steps: 10 });
+    await expect(page.locator('[data-dragging]')).toHaveCount(0);
+    await page.mouse.up();
+    await expect.poll(recutRow).toEqual([drawn]);
+
+    await band.click({ button: 'right' });
+    await expect(page.getByRole('menuitem', { name: 'Copy as anonymous report' })).toBeVisible();
+    await expect(page.getByRole('menuitem')).toHaveCount(1);
   });
 });

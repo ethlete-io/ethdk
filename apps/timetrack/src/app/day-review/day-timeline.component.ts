@@ -37,6 +37,7 @@ import {
   callExclusionReasonOf,
   describeApproval,
   formatDurationMs,
+  isUncarriedWorklogRow,
 } from '@ethlete/timetrack';
 import { debounceTime, filter, fromEvent, map, merge, tap } from 'rxjs';
 import { injectAutoMode } from './auto-mode';
@@ -348,6 +349,7 @@ type RowDrag = {
                       [attr.data-compact]="compact(laid.block.span) || null"
                       [attr.data-dragging]="dragging(laid.block.node.appointment) || null"
                       [attr.data-excluded]="excluded(laid.block.node.appointment) || null"
+                      [attr.data-read-only]="readOnly(laid.block.node.appointment) || null"
                       [attr.data-marked]="marks(laid.block.node.appointment) || null"
                       [attr.data-stand-in]="STANDS_IN(laid.block.node.appointment) || null"
                       [attr.data-pending]="pendingOn(laid.block.node.appointment) || null"
@@ -380,7 +382,7 @@ type RowDrag = {
                       (click)="select(laid.block.node.appointment, $event)"
                       (keydown.enter)="select(laid.block.node.appointment, $event)"
                       (keydown.space)="$event.preventDefault(); select(laid.block.node.appointment, $event)"
-                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
+                      class="absolute flex cursor-grab touch-none flex-col overflow-hidden rounded-sm border-l-2 [--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] hover:[--tt-card-bg:color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] border-l-et-theme bg-et-theme/15 px-2 py-1 text-left text-small outline-none hover:bg-et-theme/30 data-[cascade]:bg-[color-mix(in_oklab,var(--color-et-theme)_15%,var(--color-et-surface-bg))] data-[cascade]:shadow-[0_0_0_1px_var(--color-et-surface-bg)] data-[cascade]:hover:bg-[color-mix(in_oklab,var(--color-et-theme)_30%,var(--color-et-surface-bg))] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-et-theme-ink data-[compact]:py-0 data-[compact]:leading-none data-[dragging]:opacity-70 data-[excluded]:cursor-cell data-[read-only]:cursor-default data-[marked]:ring-2 data-[marked]:ring-et-theme-ink data-[marked]:ring-inset data-[stand-in]:border-dashed"
                       etMenu
                       etMenuContextTrigger
                       role="button"
@@ -417,8 +419,10 @@ type RowDrag = {
 
                       <!-- These carry the resize cursor over the zone modeAt reads as an end, and nothing
                       else: the press is handled on the band, so they must let it through. A band a rule
-                      excluded resizes nowhere, so it shows neither. -->
-                      @if (!excluded(laid.block.node.appointment) && !laid.piece) {
+                      excluded resizes nowhere, and neither does a read-only band, so they show neither. -->
+                      @if (
+                        !excluded(laid.block.node.appointment) && !readOnly(laid.block.node.appointment) && !laid.piece
+                      ) {
                         <span
                           [style.height.%]="EDGE_PERCENT"
                           [style.maxHeight.px]="MAX_EDGE_PX"
@@ -941,6 +945,7 @@ export class DayTimelineComponent {
         const after = ordered[index + 1];
 
         if (!after || before.to.getTime() !== after.from.getTime()) return [];
+        if (isUncarriedWorklogRow(before) || isUncarriedWorklogRow(after)) return [];
         if (after.to.getTime() - before.from.getTime() < 3 * SNAP_MS) return [];
 
         return [{ id: `${before.id}|${after.id}`, before, after }];
@@ -1391,6 +1396,12 @@ export class DayTimelineComponent {
     return !!row && this.store.notInTempo(row);
   }
 
+  protected readOnly(appointment: Appointment<TimelineEntry>) {
+    const row = this.rowOf(appointment);
+
+    return !!row && isUncarriedWorklogRow(row);
+  }
+
   /** Whether a rule excluded this band, which is what makes the press on it draw rather than drag. */
   protected excluded(appointment: Appointment<TimelineEntry>) {
     return !!this.rowOf(appointment)?.excluded;
@@ -1417,7 +1428,7 @@ export class DayTimelineComponent {
     const entry = appointment.extra;
     const origin = event.currentTarget as HTMLElement;
 
-    if (entry?.kind === 'row') {
+    if (entry?.kind === 'row' && !isUncarriedWorklogRow(entry.row)) {
       const intent = markIntentOf(event);
 
       if (intent === 'toggle') return this.toggleMark(entry.row);
@@ -1470,7 +1481,7 @@ export class DayTimelineComponent {
     this.hasDragged = false;
     this.cutDragRowId = null;
 
-    if (entry?.kind !== 'row' || event.button !== 0) return;
+    if (entry?.kind !== 'row' || event.button !== 0 || isUncarriedWorklogRow(entry.row)) return;
     if (entry.row.excluded) return this.startDraw({ event, column, lane });
 
     this.trackRowDrag({
@@ -1692,7 +1703,7 @@ export class DayTimelineComponent {
   private extendMark(row: ReviewedRow) {
     const { ids, anchor } = this.marking();
     const lane = this.rows()
-      .filter((other) => laneKeyOfRow(other) === laneKeyOfRow(row))
+      .filter((other) => laneKeyOfRow(other) === laneKeyOfRow(row) && !isUncarriedWorklogRow(other))
       .sort((a, b) => a.from.getTime() - b.from.getTime());
     const from = lane.findIndex((other) => other.id === anchor);
     const to = lane.findIndex((other) => other.id === row.id);
@@ -1705,6 +1716,8 @@ export class DayTimelineComponent {
   }
 
   private openFor(row: ReviewedRow, origin: HTMLElement) {
+    if (isUncarriedWorklogRow(row)) return;
+
     this.surface.openRow({ row, origin, appointments: this.appointments() });
   }
 

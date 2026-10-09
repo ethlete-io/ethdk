@@ -1,4 +1,4 @@
-import { ReviewedRow, appDisplayNameOf, isManualRow } from '@ethlete/timetrack';
+import { ReviewedRow, appDisplayNameOf, isManualRow, isUncarriedWorklogRow } from '@ethlete/timetrack';
 import { injectAutoMode } from '../auto-mode';
 import { injectDayReview } from '../day-review';
 import { RowTicketFiling } from './row-ticket-filing';
@@ -21,6 +21,8 @@ type RowActionDefinition = {
   /** Shown but not pressable, where the context menu can say so. The edit surface leaves it out. */
   disabled?: (context: RowActionContext) => boolean;
   run: (context: RowActionContext) => void;
+  /** Leaves the row as it is, so a row that takes no edit still offers it. */
+  readsOnly?: true;
 };
 
 /** The band that starts where this one ends. Only such a pair can merge without inventing time. */
@@ -112,6 +114,7 @@ export const ROW_ACTIONS: readonly RowActionDefinition[] = [
     order: 38,
     enabled: () => true,
     run: ({ autoMode, row }) => autoMode.copyAnonymousReport(row.id),
+    readsOnly: true,
   },
   {
     label: 'Remove this row',
@@ -135,7 +138,8 @@ export const rowActionLabelOf = (action: RowActionDefinition, context: RowAction
 
 /** The actions a row can take right now, in render order, each bound to that row. */
 export const rowActionsFor = (context: RowActionContext): RowAction[] =>
-  ROW_ACTIONS.filter((action) => action.enabled(context))
+  ROW_ACTIONS.filter((action) => action.readsOnly || !isUncarriedWorklogRow(context.row))
+    .filter((action) => action.enabled(context))
     .sort((a, b) => a.order - b.order)
     .map((action) => ({
       label: rowActionLabelOf(action, context),

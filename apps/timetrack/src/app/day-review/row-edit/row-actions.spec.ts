@@ -1,5 +1,5 @@
 import { ReviewedRow } from '@ethlete/timetrack';
-import { ROW_ACTIONS, RowActionContext } from './row-actions';
+import { ROW_ACTIONS, RowActionContext, rowActionsFor } from './row-actions';
 
 const rowOf = (overrides: Partial<ReviewedRow>) =>
   ({
@@ -27,5 +27,15 @@ describe('Reset to the proposal', () => {
 
   it('is not offered on a row nothing changed', () => {
     expect(resetOffered(rowOf({}))).toBe(false);
+  });
+});
+
+describe('a worklog no booked row carries', () => {
+  it('offers nothing that changes the row', () => {
+    const row = rowOf({ issueKey: 'ET-772', state: 'synced', worklogIds: ['w-9'] });
+
+    expect(rowActionsFor({ row, rows: [row] } as unknown as RowActionContext).map((action) => action.label)).toEqual([
+      'Copy as anonymous report',
+    ]);
   });
 });
