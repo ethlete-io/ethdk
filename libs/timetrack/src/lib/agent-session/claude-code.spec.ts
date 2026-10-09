@@ -260,6 +260,22 @@ describe('parseClaudeCodeSessionLog', () => {
       expect(result.title).toBe(`${'a'.repeat(10)}…`);
     });
 
+    it('skips a generated title that does not read as words', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt('add the collector'), aiTitle('(click)=')], {
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('add the collector');
+    });
+
+    it('reads the first prompt past a blank one', () => {
+      const result = parse([record({ minute: 0 }), lastPrompt(' \n '), lastPrompt('add the collector')], {
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.title).toBe('add the collector');
+    });
+
     it('prefers a generated title over the prompt fallback', () => {
       const result = parse([record({ minute: 0 }), lastPrompt('add the collector'), aiTitle('Agent collector')], {
         promptFallback: { maxLength: 60 },

@@ -1,3 +1,4 @@
+import { isReadableSummary } from '../model/acknowledgement';
 import { AgentPromptEvent, AgentSessionEvent, AgentUsageEvent, PromptAskedBy, TokenUsage } from '../model/event';
 import { pathIsUnder } from '../model/project-link';
 import { asJsonObject, countAt, objectAt, stringAt } from './record';
@@ -561,14 +562,16 @@ const readTitle = (record: Record<string, unknown>, into: TitleCandidates) => {
   }
 
   if (type === 'ai-title') {
-    into.generated = stringAt(record, 'aiTitle') ?? into.generated;
+    const generated = stringAt(record, 'aiTitle');
+
+    if (generated !== undefined && isReadableSummary(generated)) into.generated = generated;
 
     return;
   }
 
   // A fresh `last-prompt` record is appended for every prompt, so the first one in file order is the
   // prompt that opened the session. The last one describes only what the session ended on.
-  if (type === 'last-prompt' && into.firstPrompt === undefined) {
+  if (type === 'last-prompt' && !into.firstPrompt?.trim()) {
     into.firstPrompt = stringAt(record, 'lastPrompt');
   }
 };

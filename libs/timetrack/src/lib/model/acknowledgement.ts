@@ -13,3 +13,19 @@ export const isAcknowledgement = (note: string) => {
 
   return !plain || ACKNOWLEDGEMENT.test(plain) || NEXT_STEP_QUESTION.test(plain);
 };
+
+const MIN_WORDS = 2;
+const WORD = /\p{L}{2,}/gu;
+const LETTER = /\p{L}/gu;
+
+/** Whether a summary reads as words: at least two words of two letters, and letters for half of what is not space. */
+export const isReadableSummary = (summary: string) => {
+  const visible = summary.replace(/\s+/g, '');
+
+  if (!visible) return false;
+
+  const words = summary.match(WORD)?.length ?? 0;
+  const letters = visible.match(LETTER)?.length ?? 0;
+
+  return words >= MIN_WORDS && letters * 2 >= visible.length;
+};

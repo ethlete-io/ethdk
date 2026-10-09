@@ -1,5 +1,5 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
-import { isAcknowledgement } from '../model/acknowledgement';
+import { isAcknowledgement, isReadableSummary } from '../model/acknowledgement';
 import { EvidenceKind } from '../model/evidence';
 import { WorkGroup } from './merge';
 
@@ -25,6 +25,11 @@ const SUMMARY_PRIORITY: EvidenceKind[] = [
   'call',
 ];
 
+const MEETING_KINDS: EvidenceKind[] = ['calendar', 'call'];
+
+const quotable = (summary: string, kind: EvidenceKind) =>
+  !isAcknowledgement(summary) && (MEETING_KINDS.includes(kind) || isReadableSummary(summary));
+
 const truncate = (text: string, maxLength: number) =>
   text.length <= maxLength ? text : `${text.slice(0, maxLength - 1).trimEnd()}…`;
 
@@ -34,7 +39,7 @@ const summariesOf = (group: WorkGroup, kind: EvidenceKind) => {
   for (const entry of group.evidence) {
     const summary = entry.kind === kind ? entry.summary?.trim() : undefined;
 
-    if (summary && !isAcknowledgement(summary) && !found.includes(summary)) found.push(summary);
+    if (summary && quotable(summary, kind) && !found.includes(summary)) found.push(summary);
   }
 
   return found;

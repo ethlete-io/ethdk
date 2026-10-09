@@ -56,17 +56,17 @@ describe('describeWork', () => {
     const text = describeWork({
       group: group({
         evidence: [
-          commit('one', 'a111111'),
-          commit('two', 'b222222'),
-          commit('three', 'c333333'),
-          commit('four', 'd444444'),
-          commit('five', 'e555555'),
+          commit('step one', 'a111111'),
+          commit('step two', 'b222222'),
+          commit('step three', 'c333333'),
+          commit('step four', 'd444444'),
+          commit('step five', 'e555555'),
         ],
       }),
       config: FIP,
     });
 
-    expect(text).toBe('one; two; three (+2 more)');
+    expect(text).toBe('step one; step two; step three (+2 more)');
   });
 
   it('does not repeat an identical subject committed twice', () => {
@@ -126,6 +126,28 @@ describe('describeWork', () => {
     expect(text).toBe('user management');
   });
 
+  it('quotes no summary that does not read as words, and falls back past it', () => {
+    const titled = (summary: string): Evidence => ({ kind: 'agent-session', at: AT, detail: summary, summary });
+    const text = describeWork({
+      group: group({
+        branch: 'feat/FIP-2177-user-management',
+        evidence: [titled('(click)='), titled('Refactor'), titled('fix: {}[]() => x;')],
+      }),
+      config: FIP,
+    });
+
+    expect(text).toBe('user management');
+  });
+
+  it('quotes a one-word meeting name', () => {
+    const text = describeWork({
+      group: group({ evidence: [{ kind: 'calendar', at: AT, detail: 'Daily', summary: 'Daily' }] }),
+      config: FIP,
+    });
+
+    expect(text).toBe('Daily');
+  });
+
   it('ignores an agent session that never had a title', () => {
     const text = describeWork({
       group: group({
@@ -150,7 +172,7 @@ describe('describeWork', () => {
 
   it('truncates a description that would not fit a worklog', () => {
     const text = describeWork({
-      group: group({ evidence: [commit('a'.repeat(300))] }),
+      group: group({ evidence: [commit('word '.repeat(60))] }),
       config: FIP,
       options: { maxLength: 40 },
     });
