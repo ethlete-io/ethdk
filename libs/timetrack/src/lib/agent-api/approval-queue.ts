@@ -368,14 +368,9 @@ export const disputedTargetLabel = (target: DisputedTarget) =>
 export const describeApproval = (request: AgentApprovalRequest) => {
   switch (request.op) {
     case 'autoMode.apply': {
-      const issue = request.summary ? `${request.issueKey} ${request.summary}` : request.issueKey;
-      const why = request.reason ? ` — ${request.reason}` : '';
+      const flags = `${request.done ? ', which Jira has done' : ''}${request.parent ? ', a parent issue' : ''}`;
 
-      if (request.subject.kind === 'call') return `${request.label} → ${request.issueKey}`;
-
-      return request.subject.kind === 'context'
-        ? `Names today's ${request.label} band with ${issue}${why}`
-        : `Resolves stand-in ${request.label} with ${issue}${request.done ? ', which Jira has done' : ''}${request.parent ? ', a parent issue' : ''}${why}`;
+      return `${request.label} → ${request.issueKey}${request.subject.kind === 'call' ? '' : flags}`;
     }
     case 'autoMode.resolve':
       return `${request.choice === 'keep' ? `Keeps ${request.booked}` : `Takes ${disputedTargetLabel(request.other)} instead of ${request.booked}`} on today's ${request.label} band: ${request.reason}`;

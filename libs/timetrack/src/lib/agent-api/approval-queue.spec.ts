@@ -247,7 +247,7 @@ describe('an auto mode apply in the queue', () => {
     expect(item?.opClass).toBe('external');
     expect(item && approvalClassOf(item, { 'autoMode.apply': 'human-only' })).toBe('human-only');
     expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
-    expect(describeApproval(APPLY)).toBe('Resolves stand-in Pdf export with ABC-7');
+    expect(describeApproval(APPLY)).toBe('Pdf export → ABC-7');
   });
 
   it('keeps the done mark of a done issue it stored, and says the issue is done', () => {
@@ -255,10 +255,10 @@ describe('an auto mode apply in the queue', () => {
     const queue = enqueueApproval([], { id: 'a0', request: done, client: 'auto mode', at: AT, day: '2026-09-28' });
 
     expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
-    expect(describeApproval(done)).toBe('Resolves stand-in Pdf export with ABC-7, which Jira has done');
+    expect(describeApproval(done)).toBe('Pdf export → ABC-7, which Jira has done');
   });
 
-  it('keeps the list-only mark, the summary and the reason it stored, and says them', () => {
+  it('keeps the list-only mark, the summary and the reason it stored, and says only the key', () => {
     const listed: AutoModeApplyRequest = {
       ...APPLY,
       listOnly: true,
@@ -268,9 +268,7 @@ describe('an auto mode apply in the queue', () => {
     const queue = enqueueApproval([], { id: 'a0', request: listed, client: 'auto mode', at: AT, day: '2026-09-28' });
 
     expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
-    expect(describeApproval(listed)).toBe(
-      "Resolves stand-in Pdf export with ABC-7 Reward pass claim flow — Commits mention 'reward pass'.",
-    );
+    expect(describeApproval(listed)).toBe('Pdf export → ABC-7');
   });
 
   it('reads back an apply for a call as the call and its key, with no issue summary or reason', () => {
