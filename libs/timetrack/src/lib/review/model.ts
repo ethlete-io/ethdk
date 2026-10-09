@@ -174,9 +174,15 @@ export type AutoModeDispute = {
   doneKeys?: string[];
 };
 
-/** What auto mode asked for one settled row. A run that failed holds no `description`, and is not asked again. */
+/**
+ * What auto mode asked for one settled row, or for every row of one ticket on a day that is over. A
+ * run that failed holds no `description`, and is not asked again.
+ */
 export type AutoModeDescription = {
+  /** The row's edit id, or `ticket:<key>` for an answer that described every row of one ticket. */
   rowId: string;
+  /** The edit ids of the rows a ticket's answer was written to. Absent on a single row's answer. */
+  rowIds?: string[];
   askedAtMs: number;
   /** The masked payload that left the machine. */
   request: WorklogWritingRequest;

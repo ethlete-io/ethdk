@@ -53,6 +53,10 @@ import {
   withAutoModeDispute,
   autoDescriptionRequest,
   autoDescriptionRowId,
+  autoDescriptionTicketId,
+  AutoDescriptionAsk,
+  isDayHeldByTempo,
+  ledgerEntriesForRange$,
   dayBoundaryOf,
   epicKeysFor,
   epicKeysOfIssues,
@@ -97,6 +101,7 @@ import {
   of,
   switchMap,
   take,
+  takeWhile,
   tap,
   throwError,
   timer,
@@ -337,6 +342,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       rows: dayReview.rows(),
       answers: edits.autoDescriptions ?? [],
       maskedNames: settings.settings().reasoning.maskedNames,
+      backgroundProjects: settings.settings().backgroundProjects,
+      heldByTempo: dayReview.heldByTempo(),
     });
   };
 
@@ -825,12 +832,14 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  const describe$ = (day: string, row: ReviewedRow): Observable<void> =>
-    (row.issueKey ? issueSummary$(row.issueKey) : of(undefined)).pipe(
+  const describe$ = (day: string, ask: AutoDescriptionAsk): Observable<void> => {
+    const issueKey = ask.rows[0]?.issueKey;
+
+    return (issueKey ? issueSummary$(issueKey) : of(undefined)).pipe(
       switchMap((issueSummary) => {
         const current = settings.settings();
         const maskedNames = current.reasoning.maskedNames;
-        const request = autoDescriptionRequest({ row, issueSummary, maskedNames });
+        const request = autoDescriptionRequest({ rows: ask.rows, issueSummary, maskedNames });
 
         return writeWorklogWithAgent$({
           runner,
@@ -842,9 +851,9 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             dayReview.changeDay$(day, (edits) =>
               withAutoModeDescription({
                 edits,
-                row,
+                rows: ask.rows,
                 answer: {
-                  rowId: autoDescriptionRowId(row),
+                  rowId: ask.id,
                   askedAtMs: Date.now(),
                   request,
                   ...(description ? { description } : {}),
@@ -855,6 +864,32 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         );
       }),
     );
+  };
+
+  const describeLabelOf = (ask: AutoDescriptionAsk) => {
+    const issueKey = ask.rows[0]?.issueKey ?? 'a row';
+
+    return ask.id === autoDescriptionTicketId(issueKey)
+      ? `Describes the day's worklogs of ${issueKey}`
+      : `Describes the worklog of ${issueKey}`;
+  };
+
+  const queueDescribe = (options: {
+    day: string;
+    ask: AutoDescriptionAsk;
+    still: () => AutoDescriptionAsk | undefined;
+  }) =>
+    queue({
+      key: `${options.day}|description:${options.ask.id}`,
+      day: options.day,
+      label: describeLabelOf(options.ask),
+      stillNeeded: () => !!options.still(),
+      work: () => {
+        const held = options.still();
+
+        return held ? describe$(options.day, held) : EMPTY;
+      },
+    });
 
   const queue = (job: Job) => {
     if (pending().has(job.key)) return false;
@@ -1062,28 +1097,89 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   effect(() => {
     const day = dayReview.dayKey();
-    const rows = describedNow(day);
+    const asks = describedNow(day);
 
     untracked(() => {
-      for (const row of rows) {
-        const rowId = autoDescriptionRowId(row);
-
-        const still = () => describedNow(day).find((held) => autoDescriptionRowId(held) === rowId);
-
-        queue({
-          key: `${day}|description:${rowId}`,
-          day,
-          label: `Describes the worklog of ${row.issueKey ?? 'a row'}`,
-          stillNeeded: () => !!still(),
-          work: () => {
-            const held = still();
-
-            return held ? describe$(day, held) : EMPTY;
-          },
-        });
+      for (const ask of asks) {
+        queueDescribe({ day, ask, still: () => describedNow(day).find((held) => held.id === ask.id) });
       }
     });
   });
+
+  const pastDayHeld$ = (day: string): Observable<boolean> =>
+    forkJoin({
+      ledger: ledgerEntriesForRange$({ ledger: ports.ledger, day, boundary: dayBoundaryOf(settings.settings()) }),
+      coverage: ports.coverage.forDay$(day),
+    }).pipe(
+      map(({ ledger, coverage }) => isDayHeldByTempo({ ledger, coverage })),
+      catchError(() => of(true)),
+    );
+
+  const describedPastDays = new Set<string>();
+
+  const offScreenDescribeAsks$ = (day: string): Observable<AutoDescriptionAsk[]> =>
+    forkJoin({
+      evidence: agentDay.askEvidence$(day).pipe(take(1)),
+      edits: ports.review.editsFor$(day).pipe(take(1)),
+      heldByTempo: pastDayHeld$(day),
+    }).pipe(
+      map(({ evidence, edits, heldByTempo }) =>
+        autoDescriptionAsks({
+          enabled: enabled(),
+          day,
+          today: today(),
+          nowMs: Date.now(),
+          classes: settings.settings().actionClasses,
+          rows: evidence.rows,
+          answers: edits?.autoDescriptions ?? [],
+          maskedNames: settings.settings().reasoning.maskedNames,
+          backgroundProjects: settings.settings().backgroundProjects,
+          heldByTempo,
+        }),
+      ),
+    );
+
+  /**
+   * The day that just ended, read without the screen once its tickets wait for their description.
+   * A pass that finds nothing left to ask ends the reads of that day for this app session.
+   */
+  const offScreenPastPass$ = (day: string): Observable<unknown> =>
+    offScreenDescribeAsks$(day).pipe(
+      tap((asks) => {
+        if (!asks.length) describedPastDays.add(day);
+
+        for (const ask of asks) {
+          queueDescribe({
+            day,
+            ask,
+            still: () => (enabled() && dayReview.dayKey() !== day ? ask : undefined),
+          });
+        }
+      }),
+      catchError(() => EMPTY),
+    );
+
+  const offScreenPastDay = computed(() => {
+    minuteTick();
+
+    const day = shiftDayKey(today(), -1);
+
+    return enabled() && dayReview.dayKey() !== day && !describedPastDays.has(day) ? day : null;
+  });
+
+  toObservable(offScreenPastDay)
+    .pipe(
+      switchMap((day) =>
+        day
+          ? timer(0, OFF_SCREEN_TICK_MS).pipe(
+              takeWhile(() => !describedPastDays.has(day)),
+              exhaustMap(() => offScreenPastPass$(day)),
+            )
+          : EMPTY,
+      ),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
 
   effect(() => {
     const day = dayReview.dayKey();

@@ -7,9 +7,10 @@ import {
   AUTO_MODE_SETTLE_MS,
   autoDescriptionAsks,
   autoDescriptionRequest,
+  autoDescriptionTicketId,
   withAutoModeDescription,
 } from './auto-description';
-import { setRowDescription } from './edits';
+import { setRowDescription, setRowIssue } from './edits';
 import { AutoModeDescription, DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 import { reviewDay } from './review-day';
 
@@ -55,21 +56,26 @@ const asks = (options: {
   day?: string;
   nowMs?: number;
   classes?: ActionClasses;
+  today?: string;
+  backgroundProjects?: string[];
+  heldByTempo?: boolean | null;
 }) =>
   autoDescriptionAsks({
     enabled: true,
     day: options.day ?? TODAY,
-    today: TODAY,
+    today: options.today ?? TODAY,
     nowMs: options.nowMs ?? NOW_MS,
     classes: options.classes ?? {},
     rows: options.rows,
     answers: options.answers ?? [],
-  }).map((row) => row.id);
+    backgroundProjects: options.backgroundProjects,
+    heldByTempo: options.heldByTempo,
+  }).map((ask) => ask.id);
 
 const answerFor = (row: ReviewedRow, description?: string): AutoModeDescription => ({
   rowId: row.id,
   askedAtMs: NOW_MS,
-  request: autoDescriptionRequest({ row }),
+  request: autoDescriptionRequest({ rows: [row] }),
   ...(description === undefined ? {} : { description }),
 });
 
@@ -119,7 +125,7 @@ describe('autoDescriptionAsks', () => {
 
     const edits = withAutoModeDescription({
       edits: EMPTY_DAY_REVIEW_EDITS,
-      row,
+      rows: [row],
       answer: answerFor(row, 'Exports the month as a CSV file.'),
     });
     const [written] = rowsOf(edits);
@@ -131,7 +137,11 @@ describe('autoDescriptionAsks', () => {
 
   it('asks again once the notes of a row it described changed, and rewrites its description', () => {
     const row = codeRow();
-    const edits = withAutoModeDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row, answer: answerFor(row, 'First') });
+    const edits = withAutoModeDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      rows: [row],
+      answer: answerFor(row, 'First'),
+    });
     const grown = proposal({
       id: CODE.id,
       evidence: [
@@ -145,7 +155,7 @@ describe('autoDescriptionAsks', () => {
 
     if (!again) throw new Error('no row');
 
-    const rewritten = withAutoModeDescription({ edits, row: again, answer: answerFor(again, 'Second') });
+    const rewritten = withAutoModeDescription({ edits, rows: [again], answer: answerFor(again, 'Second') });
 
     expect(rowsOf(rewritten, [grown])[0]?.description).toBe('Second');
   });
@@ -162,7 +172,7 @@ describe('autoDescriptionAsks', () => {
   it('asks a failed row no second time', () => {
     const row = codeRow();
 
-    const edits = withAutoModeDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row, answer: answerFor(row) });
+    const edits = withAutoModeDescription({ edits: EMPTY_DAY_REVIEW_EDITS, rows: [row], answer: answerFor(row) });
 
     expect(rowsOf(edits)[0]?.description).toBe(CODE.description);
     expect(asks({ rows: rowsOf(edits), answers: edits.autoDescriptions })).toEqual([]);
@@ -180,7 +190,7 @@ describe('autoDescriptionAsks', () => {
     const row = codeRow();
 
     const edited = setRowDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row, description: 'Mine' });
-    const edits = withAutoModeDescription({ edits: edited, row, answer: answerFor(row, 'From the model') });
+    const edits = withAutoModeDescription({ edits: edited, rows: [row], answer: answerFor(row, 'From the model') });
 
     expect(rowsOf(edits)[0]?.description).toBe('Mine');
     expect(rowsOf(edits)[0]?.sources?.description).toBe('human');
@@ -220,11 +230,116 @@ describe('autoDescriptionAsks', () => {
   });
 });
 
+describe('autoDescriptionAsks, a ticket the whole day books on', () => {
+  const TOMORROW = '2026-08-12';
+  const LATER_MS = new Date(`${TOMORROW}T08:00:00Z`).getTime();
+  const ruled = (options: { id: string; from: string; to: string; note: string }) =>
+    proposal({
+      id: options.id,
+      issueKey: 'ET-772',
+      from: at(options.from),
+      to: at(options.to),
+      durationMs: 3_600_000,
+      observedMs: 3_600_000,
+      evidence: [
+        { kind: 'commit', at: at(options.from), detail: 'a commit', summary: options.note },
+        { kind: 'attribution-rule', at: at(options.from), detail: 'you assigned the checkout to ET-772' },
+      ],
+    });
+  const RULED = [
+    ruled({ id: 'ET-772@08:00', from: '08:00', to: '09:00', note: 'Fold short rows' }),
+    ruled({ id: 'ET-772@10:00', from: '10:00', to: '11:00', note: 'Mark auto descriptions' }),
+  ];
+  const ruledRows = (edits: DayReviewEdits = EMPTY_DAY_REVIEW_EDITS) => rowsOf(edits, RULED);
+  const over = (options: { rows: ReviewedRow[]; answers?: AutoModeDescription[]; heldByTempo?: boolean | null }) =>
+    asks({ today: TOMORROW, nowMs: LATER_MS, heldByTempo: false, ...options });
+
+  it('waits while the day runs', () => {
+    expect(asks({ rows: ruledRows(), heldByTempo: false })).toEqual([]);
+  });
+
+  it('asks once per ticket once the day is over, with the notes of all its rows', () => {
+    const found = autoDescriptionAsks({
+      enabled: true,
+      day: TODAY,
+      today: TOMORROW,
+      nowMs: LATER_MS,
+      classes: {},
+      rows: ruledRows(),
+      answers: [],
+      heldByTempo: false,
+    });
+
+    expect(found.map((ask) => [ask.id, ask.rows.map((row) => row.id)])).toEqual([
+      [autoDescriptionTicketId('ET-772'), ['ET-772@08:00', 'ET-772@10:00']],
+    ]);
+    expect(autoDescriptionRequest({ rows: found[0]?.rows ?? [] })).toEqual({
+      repo: expect.any(String),
+      minutes: 120,
+      issue: { key: 'ET-772' },
+      notes: ['Fold short rows', 'Mark auto descriptions'],
+    });
+  });
+
+  it('treats a ticket of a background project the same, with no rule behind it', () => {
+    const background = RULED.map((row) => ({
+      ...row,
+      evidence: row.evidence.filter((entry) => entry.kind !== 'attribution-rule'),
+    }));
+    const rows = rowsOf(EMPTY_DAY_REVIEW_EDITS, background);
+
+    expect(asks({ rows, backgroundProjects: ['et'] })).toEqual([]);
+    expect(asks({ rows, today: TOMORROW, nowMs: LATER_MS, heldByTempo: false, backgroundProjects: ['et'] })).toEqual([
+      autoDescriptionTicketId('ET-772'),
+    ]);
+  });
+
+  it('asks nothing while Tempo may hold the day, nor a week and more back', () => {
+    expect(over({ rows: ruledRows(), heldByTempo: null })).toEqual([]);
+    expect(over({ rows: ruledRows(), heldByTempo: true })).toEqual([]);
+    expect(asks({ rows: ruledRows(), today: '2026-08-19', nowMs: LATER_MS, heldByTempo: false })).toEqual([]);
+  });
+
+  it('writes the answer to every row of the ticket, and asks no second time', () => {
+    const rows = ruledRows();
+    const edits = withAutoModeDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      rows,
+      answer: {
+        rowId: autoDescriptionTicketId('ET-772'),
+        askedAtMs: LATER_MS,
+        request: autoDescriptionRequest({ rows }),
+        description: 'Short rows fold, auto descriptions are marked',
+      },
+    });
+    const written = ruledRows(edits);
+
+    expect(written.map((row) => [row.description, row.sources?.description, row.edited])).toEqual([
+      ['Short rows fold, auto descriptions are marked', 'auto', false],
+      ['Short rows fold, auto descriptions are marked', 'auto', false],
+    ]);
+    expect(edits.autoDescriptions?.[0]?.rowIds).toEqual(['ET-772@08:00', 'ET-772@10:00']);
+    expect(over({ rows: written, answers: edits.autoDescriptions })).toEqual([]);
+  });
+
+  it('describes a row the user named over the rule on its own, today', () => {
+    const [first] = ruledRows();
+
+    if (!first) throw new Error('no row');
+
+    const named = setRowIssue({ edits: EMPTY_DAY_REVIEW_EDITS, row: first, issueKey: 'ET-772' });
+
+    expect(asks({ rows: ruledRows(named) })).toEqual(['ET-772@08:00']);
+  });
+});
+
 describe('autoDescriptionRequest', () => {
   it('sends the checkout name, the length, the ticket and the quotable wording, masked', () => {
     const row = codeRow();
 
-    expect(autoDescriptionRequest({ row, issueSummary: 'Shop month export', maskedNames: ['shop', 'ABC'] })).toEqual({
+    expect(
+      autoDescriptionRequest({ rows: [row], issueSummary: 'Shop month export', maskedNames: ['shop', 'ABC'] }),
+    ).toEqual({
       repo: expect.not.stringContaining('shop'),
       minutes: 60,
       issue: { key: expect.stringMatching(/^(?!ABC-)[A-Z]+-1$/), summary: expect.not.stringContaining('Shop') },
@@ -238,7 +353,7 @@ describe('autoDescriptionRequest', () => {
       evidence: [{ kind: 'agent-session' as const, at: at('08:30'), detail: 'agent session 5f0c2a9e in /work/shop' }],
     };
 
-    expect(autoDescriptionRequest({ row }).notes).toEqual([]);
+    expect(autoDescriptionRequest({ rows: [row] }).notes).toEqual([]);
   });
 
   it('drops prompts that only agree or ask what comes next, and keeps the work', () => {
@@ -264,13 +379,13 @@ describe('autoDescriptionRequest', () => {
       ],
     };
 
-    expect(autoDescriptionRequest({ row }).notes).toEqual([
+    expect(autoDescriptionRequest({ rows: [row] }).notes).toEqual([
       'changeset scan mediums',
       'docs(core): Close the scan findings',
     ]);
   });
 
   it('sends the key alone where the ticket summary is not known', () => {
-    expect(autoDescriptionRequest({ row: codeRow() }).issue).toEqual({ key: 'ABC-1' });
+    expect(autoDescriptionRequest({ rows: [codeRow()] }).issue).toEqual({ key: 'ABC-1' });
   });
 });

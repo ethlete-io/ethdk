@@ -132,6 +132,10 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    description is never touched, also one the user typed while the call ran. Calls, rows without a
    ticket, hidden, rejected, unattended and excluded rows are skipped. The check runs when the day's
    rows change, not on a timer, and the readout does not list descriptions yet.
+   Per ticket (2026-10-09): a row whose ticket a standing rule or a background project names waits
+   until its day is over; then one call per ticket and day sends the notes of all its rows and writes
+   the answer to each (`autoDescriptionTicketId`, `rowIds` on the stored answer), at most 7 days back
+   and only while Tempo holds nothing of the day. The day that just ended is read off screen once.
    Open follow-ups:
    - It runs only while today is the day on screen: the review computes nothing for another day.
    - The spec header (`specForCommits$`) is not in the auto payload, and an auto-named row carries

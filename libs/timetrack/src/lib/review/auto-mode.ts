@@ -870,11 +870,17 @@ const descriptionReadout = (options: {
   rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
 }): AutoModeReadoutEntry[] =>
   (options.edits.autoDescriptions ?? []).map((answer): AutoModeReadoutEntry => {
-    const row = options.rows.find((entry) => autoDescriptionRowId(entry) === answer.rowId);
+    const rowIds = answer.rowIds ?? [answer.rowId];
+    const row = options.rows.find((entry) => rowIds.includes(autoDescriptionRowId(entry)));
+    const perTicket = !!answer.rowIds;
     const base = {
       key: `description:${answer.rowId}`,
       kind: 'description' as const,
-      label: row?.laneKey ? streamKeyLabel(row.laneKey) : (answer.request.repo ?? 'a code row'),
+      label: perTicket
+        ? `${rowIds.length} row(s) of the day`
+        : row?.laneKey
+          ? streamKeyLabel(row.laneKey)
+          : (answer.request.repo ?? 'a code row'),
       askedAtMs: answer.askedAtMs,
       namedRows: 0,
       request: answer.request,
@@ -883,9 +889,9 @@ const descriptionReadout = (options: {
 
     if (!answer.description) return { ...base, status: 'failed' };
 
-    const status = storedDescriptionSource(options.edits, answer.rowId) === 'human' ? 'overruled' : 'written';
+    const overruled = rowIds.every((id) => storedDescriptionSource(options.edits, id) === 'human');
 
-    return { ...base, status, description: answer.description };
+    return { ...base, status: overruled ? 'overruled' : 'written', description: answer.description };
   });
 
 const disputeReadout = (options: {

@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AutoModeAnswer,
   AutoModeDispute,
+  isDayHeldByTempo,
   AttributionRule,
   withAutoModeRowNames,
   withAutoModeDisputeResolutions,
@@ -1006,6 +1007,15 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     coverage,
     /** Rows this app has already written to Tempo, by proposal id. */
     syncedIds,
+    /** Whether Tempo holds work on the day, `null` until both the ledger and the coverage were read. */
+    heldByTempo: computed(() => {
+      const ledgerRead = loadedLedger();
+      const coverageRead = loadedCoverage();
+
+      if (ledgerRead?.key !== day() || coverageRead?.key !== day()) return null;
+
+      return isDayHeldByTempo({ ledger: ledgerRead.entries, coverage: coverageRead.value });
+    }),
     /** How many of the day's rows Tempo holds. An entry no row claims is not one — the sync deletes it. */
     syncedRowCount: computed(() => rows().filter((row) => syncedIds().has(row.id)).length),
     goToDay,

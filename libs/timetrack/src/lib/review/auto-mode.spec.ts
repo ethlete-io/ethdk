@@ -1216,7 +1216,7 @@ describe('autoModeReadout', () => {
     const described = (description?: string) =>
       withAutoModeDescription({
         edits: EMPTY_DAY_REVIEW_EDITS,
-        row,
+        rows: [row],
         answer: {
           rowId: autoDescriptionRowId(row),
           askedAtMs: at('10:00').getTime(),

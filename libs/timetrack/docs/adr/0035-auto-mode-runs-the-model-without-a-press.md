@@ -36,7 +36,9 @@ What stays:
 - **The naming store is a human click.** Auto mode never writes a remembered meeting or call name
   (`nameMeeting`, `nameCall`), so a model answer still never becomes a rule by itself.
 - **Only the current day.** Auto mode acts on today. A past day changes only on a press, because a
-  past day may already be in Tempo and the user reviewed it as it stands.
+  past day may already be in Tempo and the user reviewed it as it stands. One exception: the worklog
+  description of a ticket a standing rule or a background project names waits until its day is over,
+  and is then written once per ticket, only while Tempo holds nothing of that day.
 
 The roadmap sentence "the agent endpoint lists stand-ins and writes none" was stale before this: the
 endpoint has `jira.create`, `worklog.add`, `standIn.remove`, `standIn.rename`, `standIn.split` and
