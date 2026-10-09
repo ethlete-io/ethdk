@@ -24,8 +24,11 @@ import {
   defer,
   exhaustMap,
   finalize,
+  from,
+  map,
   of,
   switchMap,
+  takeUntil,
   tap,
   throwError,
 } from 'rxjs';
@@ -43,7 +46,9 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  *
  * The connect step is the one flow in the app that leaves the window entirely — the host opens a
  * browser and listens on a loopback port, because that is what Google's rules for an installed
- * application allow. `exhaustMap` is what stops a second click opening a second browser.
+ * application allow. `exhaustMap` is what stops a second click opening a second browser, so a
+ * browser the user closed would hold every other action until the host times out — `cancel` is the
+ * way out of that.
  */
 const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -57,6 +62,10 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const needsReconnect = signal(false);
   const loadFailed = signal(false);
   const revokeFailed = signal(false);
+  const waitingForBrowser = signal(false);
+  const linkCopied = signal<boolean | null>(null);
+  const cancels$ = new Subject<void>();
+  const copies$ = new Subject<void>();
 
   const tokens = createGoogleTokenSource({
     transport: ports.transport,
@@ -124,22 +133,27 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     started(
       client$().pipe(
         switchMap((client) =>
-          ports.oauth
-            .authorize$({
+          defer(() => {
+            waitingForBrowser.set(true);
+            linkCopied.set(null);
+
+            return ports.oauth.authorize$({
               authorizationEndpoint: GOOGLE_AUTHORIZATION_ENDPOINT,
               query: googleAuthorizationQuery({ clientId: client.clientId }),
-            })
-            .pipe(
-              switchMap((outcome) =>
-                exchangeGoogleAuthCode$({
-                  transport: ports.transport,
-                  client,
-                  code: outcome.code,
-                  codeVerifier: outcome.codeVerifier,
-                  redirectUri: outcome.redirectUri,
-                }),
-              ),
+            });
+          }).pipe(
+            takeUntil(cancels$),
+            finalize(() => waitingForBrowser.set(false)),
+            switchMap((outcome) =>
+              exchangeGoogleAuthCode$({
+                transport: ports.transport,
+                client,
+                code: outcome.code,
+                codeVerifier: outcome.codeVerifier,
+                redirectUri: outcome.redirectUri,
+              }),
             ),
+          ),
         ),
         switchMap((grant) => {
           // Without one there is nothing to renew with, and the connection would stop working within
@@ -203,6 +217,31 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     )
     .subscribe();
 
+  cancels$
+    .pipe(
+      switchMap(() => ports.oauth.cancel$().pipe(catchError(() => EMPTY))),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  copies$
+    .pipe(
+      exhaustMap(() =>
+        ports.oauth.pendingUrl$().pipe(
+          switchMap((url) => {
+            if (!url) throw new Error('No sign-in is waiting.');
+
+            return from(navigator.clipboard.writeText(url));
+          }),
+          map(() => true),
+          catchError(() => of(false)),
+        ),
+      ),
+      tap((copied) => linkCopied.set(copied)),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
   return {
     busy: busy.asReadonly(),
     /** Whether the build carries a shared OAuth client, so the user need not register one. */
@@ -222,6 +261,10 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
      * until the user either disconnects again or removes the token with `forgetLocally`.
      */
     revokeFailed: revokeFailed.asReadonly(),
+    /** Whether a browser was sent to Google and the app waits for it to come back. */
+    waitingForBrowser: waitingForBrowser.asReadonly(),
+    /** Whether the last `copyLink` reached the clipboard, or `null` before one in this sign-in. */
+    linkCopied: linkCopied.asReadonly(),
 
     /**
      * Runs `work` with an access token that is valid now, or `null` while no account is connected, and
@@ -231,6 +274,10 @@ const GOOGLE_ACCOUNT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       withGoogleCredentials$(tokens, work),
 
     connect: () => actions$.next(connect$()),
+    /** Stops waiting for the browser, for when it was closed or was the wrong one. */
+    cancel: () => cancels$.next(),
+    /** Copies the sign-in URL, so it can be opened in a browser other than the default. */
+    copyLink: () => copies$.next(),
     disconnect: () => actions$.next(disconnect$()),
     /** Deletes the stored token without asking Google, for when a revocation cannot get through. */
     forgetLocally: () => actions$.next(started(forget$())),

@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { EnvironmentInjector, Injector, createEnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TIMETRACK_SECRET_KEYS } from '@ethlete/timetrack';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { HOST_PORTS, HostPorts } from '../../host';
 import { injectGoogleAccount } from './google-account';
 
@@ -24,8 +24,17 @@ vi.mock('../settings/settings', () => ({
 const setup = (options: { tokenStatus: number; tokenBody: unknown }) => {
   const held: Record<string, string> = { [TIMETRACK_SECRET_KEYS.googleRefreshToken]: '1//refresh' };
   const bodies: string[] = [];
+  const cancels: number[] = [];
   const ports = {
     secrets: { read$: (key: string) => of(held[key] ?? null) },
+    oauth: {
+      authorize$: () => NEVER,
+      cancel$: () => {
+        cancels.push(Date.now());
+
+        return of(undefined);
+      },
+    },
     transport: {
       request$: (request: { body?: unknown }) => {
         bodies.push(JSON.stringify(request));
@@ -39,7 +48,7 @@ const setup = (options: { tokenStatus: number; tokenBody: unknown }) => {
     Injector.NULL as EnvironmentInjector,
   );
 
-  return { account: runInInjectionContext(injector, () => injectGoogleAccount()), bodies };
+  return { account: runInInjectionContext(injector, () => injectGoogleAccount()), bodies, cancels };
 };
 
 describe('injectGoogleAccount', () => {
@@ -72,5 +81,21 @@ describe('injectGoogleAccount', () => {
 
     expect(account.hasBuiltInClient()).toBe(true);
     expect(bodies[0]).toContain('shared.apps.googleusercontent.com');
+  });
+
+  it('frees the card when the user cancels a sign-in whose browser never comes back', () => {
+    const { account, cancels } = setup({ tokenStatus: 200, tokenBody: {} });
+
+    account.connect();
+
+    expect(account.busy()).toBe(true);
+    expect(account.waitingForBrowser()).toBe(true);
+
+    account.cancel();
+
+    expect(account.busy()).toBe(false);
+    expect(account.waitingForBrowser()).toBe(false);
+    expect(account.failure()).toBeNull();
+    expect(cancels).toHaveLength(1);
   });
 });

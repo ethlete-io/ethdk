@@ -87,6 +87,23 @@ import { TokenFieldComponent } from './token-field.component';
         />
       }
 
+      @if (account.waitingForBrowser()) {
+        <div class="flex flex-col items-start gap-2" data-google-waiting>
+          <p class="text-small text-et-surface-muted">
+            Finish the sign-in in the browser that opened. If it opened the wrong browser, copy the link and paste it
+            into the right one. If you closed it, cancel and connect again.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <button (click)="account.copyLink()" et-button variant="outline" size="sm">
+              {{ copyLabel() }}
+            </button>
+
+            <button (click)="account.cancel()" et-button variant="transparent" size="sm">Cancel</button>
+          </div>
+        </div>
+      }
+
       <div class="flex flex-wrap items-center gap-3">
         @if (state() !== 'reconnect') {
           <button [disabled]="account.busy()" (click)="account.connect()" et-button variant="filled" size="sm">
@@ -207,6 +224,14 @@ export class GoogleConnectionComponent {
     if (this.account.needsReconnect()) return { color: 'danger', label: 'reconnect needed' };
 
     return this.connected() ? { color: 'success', label: 'connected' } : { color: 'warning', label: 'not connected' };
+  });
+
+  protected copyLabel = computed(() => {
+    const copied = this.account.linkCopied();
+
+    if (copied === null) return 'Copy link';
+
+    return copied ? 'Link copied' : 'Copy failed · retry';
   });
 
   protected calendarsNote = computed(() => {

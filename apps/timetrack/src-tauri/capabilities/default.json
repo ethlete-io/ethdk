@@ -44,6 +44,8 @@
     "allow-lock-window",
     "allow-notify",
     "allow-oauth-authorize",
+    "allow-oauth-cancel",
+    "allow-oauth-pending-url",
     "allow-pair-accept",
     "allow-pair-offer",
     "allow-peers-discovered",

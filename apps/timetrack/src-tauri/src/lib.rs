@@ -69,6 +69,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(update::PendingUpdate::default())
+        .manage(oauth::PendingAuthorization::default())
         .setup(|app| {
             // Before the database: the window is declared invisible so its stored size and position
             // can be applied before it is drawn, and a keychain that asks for a password must not be
@@ -182,6 +183,8 @@ pub fn run() {
             nudge::notify,
             nudge::set_day_nudge_record,
             oauth::oauth_authorize,
+            oauth::oauth_cancel,
+            oauth::oauth_pending_url,
             pause::collection_set_paused,
             pause::collection_state,
             peer::pair_accept,

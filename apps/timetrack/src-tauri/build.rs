@@ -39,6 +39,8 @@ const COMMANDS: &[&str] = &[
     "lock_window",
     "notify",
     "oauth_authorize",
+    "oauth_cancel",
+    "oauth_pending_url",
     "pair_accept",
     "pair_offer",
     "peers_discovered",

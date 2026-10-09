@@ -19,12 +19,18 @@ export type AuthorizeOutcome = {
  * The browser half of an OAuth 2.0 authorization code flow.
  *
  * The host owns it because the webview can neither open a browser nor listen on a port, and both are
- * what an installed application's redirect is made of. The window never sees the authorization URL.
+ * what an installed application's redirect is made of.
  */
 export type TauriOAuth = {
   authorize$(request: AuthorizeRequest): Observable<AuthorizeOutcome>;
+  /** Stops the authorization `authorize$` is waiting on and frees its port. `authorize$` then fails. */
+  cancel$(): Observable<void>;
+  /** The URL the browser was sent to, or `null` while no authorization is waiting. */
+  pendingUrl$(): Observable<string | null>;
 };
 
 export const createTauriOAuth = (): TauriOAuth => ({
   authorize$: (request) => invokeHost$<AuthorizeOutcome>('oauth_authorize', { request }),
+  cancel$: () => invokeHost$<void>('oauth_cancel'),
+  pendingUrl$: () => invokeHost$<string | null>('oauth_pending_url'),
 });

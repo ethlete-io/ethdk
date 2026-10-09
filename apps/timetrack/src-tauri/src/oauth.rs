@@ -3,8 +3,9 @@ use base64::Engine;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use tauri::State;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -31,6 +32,25 @@ pub struct AuthorizeRequest {
     /// Everything the provider needs that does not depend on the loopback port or the verifier.
     pub query: HashMap<String, String>,
     pub timeout_secs: Option<u64>,
+}
+
+struct Pending {
+    url: String,
+    cancel: tokio::sync::oneshot::Sender<()>,
+}
+
+/// The authorization the browser is out on, so the window can cancel it or hand its URL to another browser.
+#[derive(Default)]
+pub struct PendingAuthorization(Mutex<Option<Pending>>);
+
+impl PendingAuthorization {
+    fn settle(&self, url: &str) {
+        if let Ok(mut held) = self.0.lock() {
+            if held.as_ref().is_some_and(|pending| pending.url == url) {
+                *held = None;
+            }
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -241,7 +261,10 @@ fn open_browser(url: &str) -> TimetrackResult<()> {
 /// The listener is on 127.0.0.1 with a port the OS picks, which is what Google's own rules for an
 /// installed application allow without the port being registered anywhere.
 #[tauri::command]
-pub async fn oauth_authorize(request: AuthorizeRequest) -> TimetrackResult<AuthorizeOutcome> {
+pub async fn oauth_authorize(
+    request: AuthorizeRequest,
+    pending: State<'_, PendingAuthorization>,
+) -> TimetrackResult<AuthorizeOutcome> {
     let listener = Arc::new(TcpListener::bind("127.0.0.1:0").await?);
     let redirect_uri = format!("http://127.0.0.1:{}", listener.local_addr()?.port());
     let code_verifier = random_hex();
@@ -265,21 +288,58 @@ pub async fn oauth_authorize(request: AuthorizeRequest) -> TimetrackResult<Autho
 
     open_browser(&url)?;
 
+    let (cancel, cancelled) = tokio::sync::oneshot::channel();
+    let previous = pending
+        .0
+        .lock()
+        .map_err(|_| TimetrackError::Poisoned)?
+        .replace(Pending {
+            url: url.clone(),
+            cancel,
+        });
+    if let Some(previous) = previous {
+        let _ = previous.cancel.send(());
+    }
+
     let timeout = Duration::from_secs(request.timeout_secs.unwrap_or(DEFAULT_TIMEOUT_SECS));
-    let code = match tokio::time::timeout(timeout, wait_for_code(listener.clone(), state.clone())).await {
-        Ok(code) => code?,
-        Err(_) => {
-            return Err(TimetrackError::Rejected(
+    let waited = tokio::select! {
+        waited = tokio::time::timeout(timeout, wait_for_code(listener.clone(), state.clone())) => match waited {
+            Ok(code) => code,
+            Err(_) => Err(TimetrackError::Rejected(
                 "the browser did not come back with an authorization".into(),
-            ))
-        }
+            )),
+        },
+        _ = cancelled => Err(TimetrackError::Rejected("the authorization was cancelled".into())),
     };
+    pending.settle(&url);
+    let code = waited?;
 
     Ok(AuthorizeOutcome {
         code,
         redirect_uri,
         code_verifier,
     })
+}
+
+/// Stops the authorization the browser is out on, if there is one, and frees its loopback port.
+#[tauri::command]
+pub fn oauth_cancel(pending: State<'_, PendingAuthorization>) -> TimetrackResult<()> {
+    if let Some(held) = pending.0.lock().map_err(|_| TimetrackError::Poisoned)?.take() {
+        let _ = held.cancel.send(());
+    }
+
+    Ok(())
+}
+
+/// The URL of the authorization the browser is out on, for opening it in a browser other than the default.
+#[tauri::command]
+pub fn oauth_pending_url(pending: State<'_, PendingAuthorization>) -> TimetrackResult<Option<String>> {
+    Ok(pending
+        .0
+        .lock()
+        .map_err(|_| TimetrackError::Poisoned)?
+        .as_ref()
+        .map(|held| held.url.clone()))
 }
 
 #[cfg(test)]
