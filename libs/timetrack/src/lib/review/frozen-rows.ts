@@ -11,7 +11,10 @@ import {
 import { DayRows } from '../rows/build-rows';
 import { StreamDay } from '../stream/stream-day';
 import { TempoDayCoverage } from '../tempo/coverage';
-import { DayReviewEdits } from './model';
+import { TempoSyncPlan } from '../tempo/diff';
+import { TempoSyncOutcome } from '../tempo/execute';
+import { TempoWorklog } from '../tempo/worklogs';
+import { DayReview, DayReviewEdits, ReviewedRow, WrittenWorklog } from './model';
 import { PeerDayRows } from './peer-rows';
 
 /** Whether Tempo holds work on a day: a worklog this app wrote, or one the stored coverage read. */
@@ -217,4 +220,162 @@ export const changedAfterBooking = (options: {
   }
 
   return differentMs >= ROW_INCREMENT_MS;
+};
+
+/** The edits a reviewer and auto mode made, without the rows and the review a booking stored. */
+export const openEditsOf = (edits: DayReviewEdits): DayReviewEdits => {
+  const { frozenRows: _frozenRows, booked: _booked, ...open } = edits;
+
+  return open;
+};
+
+const sortedKeys = (_key: string, value: unknown) =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)))
+    : value;
+
+/** Two values as one JSON text, keys in order, so a value read back from the store compares equal. */
+export const sameStored = (left: unknown, right: unknown) =>
+  JSON.stringify(left, sortedKeys) === JSON.stringify(right, sortedKeys);
+
+/** The worklogs Tempo holds that the ledger says this app wrote, with the issue key each is on. */
+export const writtenWorklogsOf = (options: {
+  ledger: readonly SyncedWorklog[];
+  remote: readonly TempoWorklog[];
+  keysByIssueId: ReadonlyMap<string, string>;
+}): WrittenWorklog[] => {
+  const remoteById = new Map(options.remote.map((worklog) => [worklog.id, worklog]));
+
+  return options.ledger.flatMap((entry) => {
+    const worklog = remoteById.get(entry.tempoWorklogId);
+    const issueKey = worklog ? options.keysByIssueId.get(worklog.issueId) : undefined;
+
+    if (!worklog || !issueKey) return [];
+
+    return [
+      {
+        proposalId: entry.proposalId,
+        worklogId: worklog.id,
+        issueKey,
+        from: worklog.from,
+        durationMs: worklog.durationMs,
+        description: worklog.description,
+      },
+    ];
+  });
+};
+
+/**
+ * `written` with a sync's own writes laid over it. Tempo is eventually consistent, so a read straight
+ * after the writes can miss what they just created or changed.
+ */
+export const writtenAfterSync = (options: {
+  written: readonly WrittenWorklog[];
+  plan: TempoSyncPlan;
+  outcome: TempoSyncOutcome;
+}): WrittenWorklog[] => {
+  const landed = new Map(
+    options.outcome.rows
+      .filter((row) => row.status === 'written' && row.tempoWorklogId)
+      .map((row) => [`${row.kind}:${row.proposalId}`, row.tempoWorklogId ?? '']),
+  );
+  const deleted = new Set(
+    options.plan.deletes.flatMap((write) => (landed.has(`delete:${write.proposalId}`) ? [write.tempoWorklogId] : [])),
+  );
+  const writes = [
+    ...options.plan.creates.map((write) => ({ kind: 'create', write })),
+    ...options.plan.updates.map((write) => ({ kind: 'update', write })),
+  ].flatMap(({ kind, write }): WrittenWorklog[] => {
+    const worklogId = landed.get(`${kind}:${write.proposal.id}`);
+
+    if (!worklogId) return [];
+
+    return [
+      {
+        proposalId: write.proposal.id,
+        worklogId,
+        issueKey: write.proposal.issueKey,
+        from: write.proposal.from,
+        durationMs: write.proposal.durationMs,
+        description: write.proposal.description,
+      },
+    ];
+  });
+  const rewritten = new Set(writes.map((written) => written.worklogId));
+
+  return [
+    ...options.written.filter((written) => !deleted.has(written.worklogId) && !rewritten.has(written.worklogId)),
+    ...writes,
+  ];
+};
+
+const allRowsOf = (review: DayReview) => [...review.rows, ...review.hidden];
+
+const byStart = (a: ReviewedRow, b: ReviewedRow) =>
+  a.from.getTime() - b.from.getTime() || (a.issueKey ?? '').localeCompare(b.issueKey ?? '');
+
+const editedFieldsOver = (options: { stored: ReviewedRow; before: ReviewedRow; after: ReviewedRow }) => {
+  const row: Record<string, unknown> = { ...options.stored };
+  const before: Record<string, unknown> = options.before;
+  const after: Record<string, unknown> = options.after;
+
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    if (sameStored(before[key], after[key])) continue;
+    if (after[key] === undefined) delete row[key];
+    else row[key] = after[key];
+  }
+
+  return row as ReviewedRow;
+};
+
+/**
+ * A booked day's stored review with an edit made since laid over it. `before` and `after` are the day
+ * drawn by today's rules with the edits the review was stored with and with the current ones: a row
+ * keeps its stored form but for the fields they draw differently, so only what the edit changed is drawn
+ * by today's rules. A row whose worklogs changed is drawn as `after` draws it.
+ * The totals and warnings are `after`'s.
+ */
+export const patchBookedReview = (options: { stored: DayReview; before: DayReview; after: DayReview }): DayReview => {
+  const stored = new Map(allRowsOf(options.stored).map((row) => [row.id, row]));
+  const before = new Map(allRowsOf(options.before).map((row) => [row.id, row]));
+  const after = new Map(allRowsOf(options.after).map((row) => [row.id, row]));
+  const ids = [...new Set([...stored.keys(), ...after.keys()])];
+  const rows = ids.flatMap((id): ReviewedRow[] => {
+    const now = after.get(id);
+    const then = before.get(id);
+    const was = stored.get(id);
+
+    if (!now) return was && !then ? [was] : [];
+    if (!was || !then || !sameStored(was.worklogIds, now.worklogIds)) return [now];
+
+    return [editedFieldsOver({ stored: was, before: then, after: now })];
+  });
+
+  return {
+    ...options.after,
+    rows: rows.filter((row) => !row.hidden).sort(byStart),
+    hidden: rows.filter((row) => row.hidden),
+    behind: options.stored.behind,
+  };
+};
+
+/**
+ * The edits with the day drawn into them as it is booked: `written` is what Tempo holds of this app's
+ * writes. `review` draws a day's edits, as `reviewDay` does. A day booked again keeps every row the
+ * edits since and the new writes leave alone. See ADR 0040.
+ */
+export const withBookedReview = (options: {
+  edits: DayReviewEdits;
+  written: WrittenWorklog[];
+  review: (edits: DayReviewEdits) => DayReview;
+}): DayReviewEdits => {
+  const { frozenRows, booked } = options.edits;
+  const open = openEditsOf(options.edits);
+  const drawn = (edits: DayReviewEdits) =>
+    options.review({ ...edits, ...(frozenRows ? { frozenRows } : {}), booked: { written: options.written, edits } });
+  const review = booked?.review
+    ? patchBookedReview({ stored: booked.review, before: drawn(booked.edits), after: drawn(open) })
+    : drawn(open);
+
+  return { ...open, ...(frozenRows ? { frozenRows } : {}), booked: { written: options.written, edits: open, review } };
 };

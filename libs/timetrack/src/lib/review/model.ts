@@ -112,6 +112,28 @@ export type DayReviewEdits = {
    * `reviewDay` reads these instead of the rows it is handed, so a model change never re-cuts a booked day.
    */
   frozenRows?: DayRows;
+  /** The day as it was drawn when it was booked, from `withBookedReview`. `reviewDay` draws a booked day from it. */
+  booked?: BookedDay;
+};
+
+/** A worklog this app wrote for a row of a booked day, as Tempo held it when the day was booked. */
+export type WrittenWorklog = {
+  /** The piece the sync wrote: a row's id, or a row's id with a `~n` piece suffix. */
+  proposalId: string;
+  worklogId: string;
+  issueKey: string;
+  from: Date;
+  durationMs: number;
+  description: string;
+};
+
+/** A booked day's review as it was drawn when it was booked, and what Tempo held of it then. See ADR 0040. */
+export type BookedDay = {
+  written: WrittenWorklog[];
+  /** The edits `review` was drawn with, without `frozenRows` and `booked`. */
+  edits: DayReviewEdits;
+  /** Absent only while `withBookedReview` draws it. */
+  review?: DayReview;
 };
 
 /**
@@ -224,6 +246,8 @@ export type ReviewedRow = Omit<WorklogProposal, 'issueKey'> & {
   unbookedMs?: number;
   /** Who set each field. A field absent here holds what the engine observed. See `rowFieldSourceOf`. */
   sources?: RowFieldSources;
+  /** The Tempo worklogs this app wrote for the row, on a booked day. */
+  worklogIds?: string[];
 };
 
 /** A row that names an issue. It is the only kind a sync writes, and the only kind Tempo can take. */

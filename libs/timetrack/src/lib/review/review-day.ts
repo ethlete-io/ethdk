@@ -32,11 +32,13 @@ import {
   ProposalOverride,
   NamedRow,
   ReviewedRow,
+  WrittenWorklog,
   isNamedRow,
 } from './model';
 import { isManualRow } from './edits';
 import { autoDisputeSettles } from './auto-dispute';
-import { separateOverlappingProposals } from '../tempo/separate';
+import { pieceSourceId, separateOverlappingProposals } from '../tempo/separate';
+import { openEditsOf, patchBookedReview, sameStored } from './frozen-rows';
 import { foldEndedRests } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
@@ -510,6 +512,83 @@ type ReviewDayOptions = {
   rules?: readonly AttributionRule[];
 };
 
+type ReviewRowsOptions = ReviewDayOptions & {
+  written?: readonly WrittenWorklog[];
+  /** Whether a row this app wrote takes what Tempo holds of it, as it does when the day is booked. */
+  agree?: boolean;
+};
+
+const groupedBy = <T>(items: readonly T[], keyOf: (item: T) => string) => {
+  const groups = new Map<string, T[]>();
+
+  for (const item of items) groups.set(keyOf(item), [...(groups.get(keyOf(item)) ?? []), item]);
+
+  return groups;
+};
+
+/**
+ * Each row this app wrote takes what Tempo holds of it, where the pieces a sync would write for it now
+ * differ from the worklogs it was written as: its issue, its start, its length and, for one worklog, its
+ * description. A row the pieces agree with keeps its own span. Either way it carries its worklog ids.
+ */
+const agreeWithTempo = (options: {
+  rows: ReviewedRow[];
+  written: readonly WrittenWorklog[];
+  backgroundProjects?: readonly string[];
+  incrementMs: number;
+  agree: boolean;
+}): ReviewedRow[] => {
+  if (!options.written.length) return options.rows;
+
+  const writing = options.rows.filter(isNamedRow).filter((row) => syncsInState(row.state));
+  const pieces = groupedBy(
+    separateOverlappingProposals({
+      proposals: writing,
+      backgroundProjects: options.backgroundProjects,
+      incrementMs: options.incrementMs,
+    }),
+    (piece) => pieceSourceId(piece.id),
+  );
+  const written = groupedBy(options.written, (worklog) => pieceSourceId(worklog.proposalId));
+
+  return options.rows.map((row) => {
+    const own = [...(written.get(row.id) ?? [])].sort((a, b) => a.from.getTime() - b.from.getTime());
+    const [first] = own;
+
+    if (!first) return row;
+
+    const worklogIds = own.map((worklog) => worklog.worklogId);
+    const computed = pieces.get(row.id) ?? [];
+    const agrees =
+      !writing.includes(row as NamedRow) ||
+      (computed.length === own.length &&
+        own.every((worklog) =>
+          computed.some(
+            (piece) =>
+              piece.id === worklog.proposalId &&
+              piece.issueKey === worklog.issueKey &&
+              piece.from.getTime() === worklog.from.getTime() &&
+              piece.durationMs === worklog.durationMs &&
+              piece.description === worklog.description,
+          ),
+        ));
+
+    if (agrees || !options.agree) return { ...row, worklogIds };
+
+    const { unbookedMs: _unbookedMs, ...rest } = row;
+
+    return {
+      ...rest,
+      issueKey: first.issueKey,
+      from: first.from,
+      to: new Date(Math.max(...own.map((worklog) => worklog.from.getTime() + worklog.durationMs))),
+      durationMs: own.reduce((sum, worklog) => sum + worklog.durationMs, 0),
+      ...(own.length === 1 ? { description: first.description } : {}),
+      worklogIds,
+    };
+  });
+};
+
 /**
  * Applies a day's local edits to a freshly correlated day and reports what a sync would write.
  *
@@ -521,10 +600,34 @@ type ReviewDayOptions = {
  *
  * Edits that hold `frozenRows` are reviewed over those rather than over `rows`.
  */
-export const reviewDay = (options: ReviewDayOptions): DayReview =>
-  reviewRows({ ...options, rows: options.edits?.frozenRows ?? options.rows });
+export const reviewDay = (options: ReviewDayOptions): DayReview => {
+  const { edits } = options;
+  const rows = edits?.frozenRows ?? options.rows;
+  const booked = edits?.booked;
 
-const reviewRows = (options: ReviewDayOptions): DayReview => {
+  if (!edits || !booked) return reviewRows({ ...options, rows });
+
+  const reviewWith = (current: DayReviewEdits, agree: boolean) =>
+    reviewRows({
+      ...options,
+      rows,
+      edits: { ...current, ...(edits.frozenRows ? { frozenRows: edits.frozenRows } : {}) },
+      written: booked.written,
+      agree,
+    });
+  const open = openEditsOf(edits);
+
+  if (!booked.review) return reviewWith(open, true);
+  if (sameStored(open, booked.edits)) return booked.review;
+
+  return patchBookedReview({
+    stored: booked.review,
+    before: reviewWith(booked.edits, false),
+    after: reviewWith(open, false),
+  });
+};
+
+const reviewRows = (options: ReviewRowsOptions): DayReview => {
   const { edits, ended } = foldEndedRests(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
   const frozen = !!edits.frozenRows;
   const standIns = options.standIns ?? [];
@@ -605,7 +708,13 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
     stated: new Set(edits.pinned.filter((row) => !row.replaces.length).map((row) => row.id)),
     round: options.round,
   });
-  const rows = bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round });
+  const rows = agreeWithTempo({
+    rows: bookTheSpan({ rows: recut.rows, remote: options.rows.remote, round: options.round }),
+    written: options.written ?? [],
+    agree: !!options.agree,
+    backgroundProjects: options.cut?.backgroundProjects,
+    incrementMs,
+  });
 
   const replacedMs = proposals
     .filter((proposal) => answered.has(proposal.id))
