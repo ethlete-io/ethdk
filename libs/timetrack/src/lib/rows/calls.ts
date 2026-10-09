@@ -1,6 +1,6 @@
 import { formatTimeOfDay } from '../model/duration';
 import { ActivityBlock } from '../model/block';
-import { CallWindow, callLabel } from '../model/call';
+import { CallWindow, callExclusionReasonOf, callLabel } from '../model/call';
 import { CallFeatures, DEFAULT_CALL_AFTER_GAP_MS, callFeaturesOf, matchCallNaming } from '../model/call-naming';
 import { NamedTarget } from '../model/attribution';
 import { CalendarOccurrenceEvent, isSharedOccurrence } from '../model/event';
@@ -119,7 +119,9 @@ const callEvidence = (options: { call: CallWindow; window: TimeWindow }): Eviden
   kind: 'call',
   at: options.window.from,
   detail: `call in _${callLabel(options.call)}_ ${formatTimeOfDay(options.window.from)}-${formatTimeOfDay(options.window.to)}, ${
-    options.call.countsAsWork ? 'which a rule counts as work' : 'which no rule counts as work'
+    options.call.countsAsWork
+      ? 'which a rule counts as work'
+      : `not counted: ${callExclusionReasonOf({ appId: options.call.appId, excludedBy: options.call.excludedBy ?? 'no-rule' })}`
   }`,
   summary: callLabel(options.call),
 });

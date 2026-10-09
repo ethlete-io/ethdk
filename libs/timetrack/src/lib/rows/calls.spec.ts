@@ -86,7 +86,21 @@ describe('matchCalls', () => {
     expect(found?.group.bookable).toBe(false);
     expect(found?.group.observedMs).toBe(60 * 60_000);
     expect(found?.group.evidence[0]?.detail).toBe(
-      'call in _#standup | Braune Digital_ 10:00-11:00, which no rule counts as work',
+      'call in _#standup | Braune Digital_ 10:00-11:00, not counted: Discord, no rule counts it as work',
+    );
+  });
+
+  it.each([
+    ['unattended', 'Discord, never in front'],
+    ['deny-rule', 'Discord, a rule excludes it'],
+    ['no-rule', 'Discord, no rule counts it as work'],
+  ] as const)('says in the evidence why a call is not counted when it was %s', (excludedBy, reason) => {
+    const [found] = match({
+      calls: [call({ countsAsWork: false, excludedBy, isPresence: excludedBy !== 'unattended' })],
+    });
+
+    expect(found?.group.evidence[0]?.detail).toBe(
+      `call in _#standup | Braune Digital_ 10:00-11:00, not counted: ${reason}`,
     );
   });
 
