@@ -109,6 +109,37 @@ describe('consumerTickets', () => {
     expect(named.slice(0, 3)).toEqual([keyed, waiting, ruled]);
   });
 
+  it('proposes the consumer ticket over a rule covering the whole checkout, keeping the rule as the dispute', () => {
+    const ruled: AttributedBlock = {
+      ...entry({ repoPath: LIB_B, from: '10:00', to: '11:00' }),
+      issueKey: 'LIB-772',
+      ruleScope: 'repo',
+      confidence: 'likely',
+    };
+    const named = consumerTickets({
+      blocks: [ruled, entry({ repoPath: APP_A, from: '11:00', to: '12:00', issueKey: 'ABC-7' })],
+      dependencies: DEPENDENCIES,
+    });
+
+    expect(named[0]).toMatchObject({ issueKey: 'ABC-7', disputedIssueKey: 'LIB-772', confidence: 'weak' });
+    expect(named[0]?.ruleScope).toBeUndefined();
+  });
+
+  it('keeps a branch rule over the consumer ticket', () => {
+    const ruled: AttributedBlock = {
+      ...entry({ repoPath: LIB_B, from: '10:00', to: '11:00' }),
+      issueKey: 'LIB-9',
+      ruleScope: 'branch',
+      confidence: 'likely',
+    };
+    const named = consumerTickets({
+      blocks: [ruled, entry({ repoPath: APP_A, from: '11:00', to: '12:00', issueKey: 'ABC-7' })],
+      dependencies: DEPENDENCIES,
+    });
+
+    expect(named[0]).toEqual(ruled);
+  });
+
   it('files work in a subdirectory of a checkout under that checkout', () => {
     const named = consumerTickets({
       blocks: [

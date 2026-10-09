@@ -715,14 +715,28 @@ describe('buildRows with a library a later checkout uses', () => {
     block({ from: at(10), to: at(11), context: { repoPath: LIBRARY, branch: 'next' } }),
     block({ from: at(11, 30), to: at(13), context: { repoPath: APP, branch: 'feat/ABC-7-club-pack' } }),
   ];
-  const rowsOf = (dependencies?: Record<string, string[]>) =>
+  const rowsOf = (dependencies?: Record<string, string[]>, rules?: AttributionRule[]) =>
     buildRows({
       blocks: WORK,
       events: [],
       config: resolveGitFlowConfig({ keyPrefixes: ['ABC'] }),
       remoteWork: [{ from: at(9), to: at(14) }],
       dependencies,
+      rules,
     });
+
+  it('offers the rule covering the whole library back as the dispute of the app ticket', () => {
+    const wide: AttributionRule = {
+      id: 'rule-wide',
+      repoPath: LIBRARY,
+      target: { kind: 'issue', issueKey: 'ABC-772' },
+      author: 'user',
+      createdAt: at(8),
+    };
+    const library = rowsOf({ [APP]: [LIBRARY] }, [wide]).proposals.find((row) => row.laneKey === `repo:${LIBRARY}`);
+
+    expect(library).toMatchObject({ issueKey: 'ABC-7', disputedIssueKey: 'ABC-772', confidence: 'weak' });
+  });
 
   it('proposes the library row under the app ticket as a weak match', () => {
     const library = rowsOf({ [APP]: [LIBRARY] }).proposals.find((row) => row.laneKey === `repo:${LIBRARY}`);

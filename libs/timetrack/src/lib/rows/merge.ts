@@ -156,6 +156,7 @@ const groupFrom = (attributed: AttributedBlock): WorkGroup => ({
   observedMs: blockDurationMs(attributed.block),
   confidence: attributed.confidence,
   ruleScope: attributed.ruleScope,
+  ...(attributed.disputedIssueKey ? { disputedIssueKey: attributed.disputedIssueKey } : {}),
   evidence: [...attributed.evidence],
   blocks: [attributed.block],
 });
@@ -189,6 +190,9 @@ export const joinGroups = (into: WorkGroup, next: WorkGroup): WorkGroup => {
     storyKey: into.storyKey ?? next.storyKey,
     taskKey: into.taskKey ?? next.taskKey,
     ruleScope: into.ruleScope ?? next.ruleScope,
+    ...(!into.disputedIssueKey && !into.disputedStandInId && next.disputedIssueKey
+      ? { disputedIssueKey: next.disputedIssueKey }
+      : {}),
     ...(into.workedOn || next.workedOn ? { workedOn: into.workedOn ?? next.workedOn } : {}),
     from: into.from <= next.from ? into.from : next.from,
     to: into.to >= next.to ? into.to : next.to,

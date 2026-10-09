@@ -40,6 +40,8 @@ export type AttributedBlock = {
    * a reader that knows which branches a row holds can tell the rule never saw them.
    */
   ruleScope?: AttributionScope;
+  /** The issue a later rung took the block from, which the row offers back in one press. */
+  disputedIssueKey?: string;
   /** The block's own evidence plus whatever attribution added, in the order it was found. */
   evidence: Evidence[];
   /**
