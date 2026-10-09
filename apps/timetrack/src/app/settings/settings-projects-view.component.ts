@@ -32,6 +32,7 @@ import { injectTimetrackSettings } from './settings';
         [projects]="store.settings().favoriteProjects"
         (addLink)="store.addProjectLink($event)"
         (remove)="store.removeProjectLink($event)"
+        (epicsChange)="store.setProjectLinkEpics($event)"
       />
 
       <ethlete-repo-aliases

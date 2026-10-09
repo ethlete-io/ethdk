@@ -59,3 +59,34 @@ describe('approvalLinesOf stand-in resolve', () => {
     expect(ticketOf(item)).toBe('Pdf export: ABC-7');
   });
 });
+
+describe('an auto mode match only the issue list named', () => {
+  const applyOf = (request: Record<string, unknown>) =>
+    ({
+      id: 'a2',
+      client: 'auto mode',
+      askedAtMs: Date.UTC(2026, 0, 5, 9),
+      state: 'waiting',
+      request: {
+        op: 'autoMode.apply',
+        day: '2026-01-05',
+        subject: { kind: 'stand-in', standInId: 's1' },
+        label: 'Reward',
+        issueKey: 'FIFAGG-12704',
+        ...request,
+      },
+    }) as unknown as AgentApproval;
+
+  it('shows the issue summary it found and why', () => {
+    const lines = approvalLinesOf(
+      applyOf({ listOnly: true, summary: 'Reward pass claim flow', reason: "Commits mention 'reward pass'." }),
+    );
+
+    expect(lines.find((line) => line.label === 'Ticket')?.value).toBe('Reward → FIFAGG-12704 Reward pass claim flow');
+    expect(lines.find((line) => line.label === 'Why')?.value).toBe("Commits mention 'reward pass'.");
+  });
+
+  it('shows no reason line where auto mode gave none', () => {
+    expect(approvalLinesOf(applyOf({})).map((line) => line.label)).toEqual(['Ticket', 'Asked by']);
+  });
+});

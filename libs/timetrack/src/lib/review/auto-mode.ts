@@ -3,6 +3,7 @@ import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../ag
 import { AgentApiRequest } from '../agent-api/model';
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
+import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
 import { StandInBand, draftTicket } from '../ticket/draft';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
@@ -253,6 +254,34 @@ export const autoModeEvidenceOf = (request: TicketWritingRequest) =>
     request.standIn ? [request.standIn.name, request.standIn.description ?? null] : null,
     request.spec ?? null,
   ]);
+
+const escapedForRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether the evidence an ask sent names `issueKey` itself: its branch, its notes, the stand-in's own
+ * words or its spec. Pass the name list the request was masked with.
+ */
+export const autoModeKeyInEvidence = (options: {
+  request: TicketWritingRequest;
+  issueKey: string;
+  maskedNames?: readonly string[];
+}) => {
+  const { request } = options;
+  const masked = maskIssueKey({ issueKey: options.issueKey, map: pseudonymMap(options.maskedNames ?? []) });
+  const key = new RegExp(`(?<![\\p{L}\\p{N}])${escapedForRegExp(masked)}(?!\\p{N})`, 'iu');
+  const texts = [
+    request.repo,
+    request.branch,
+    ...request.notes,
+    request.standIn?.name,
+    request.standIn?.description,
+    request.spec?.epicKey,
+    request.spec?.title,
+    request.spec?.intent,
+  ];
+
+  return texts.some((text) => !!text && key.test(text));
+};
 
 const stillAutos = (state: AgentApproval['state'] | undefined) => !state || state === 'queued' || state === 'expired';
 
@@ -707,7 +736,7 @@ const createdIssueKeyOf = (result: unknown) => {
  * The apply a match queues where the user made `autoMode.apply` stricter than `local`, and `null`
  * for any other answer or class. A stand-in's match on a done issue queues at `local` too, marked
  * `done`, since only an approval writes it; a band's stays the user's. A match on a parent issue queues
- * at `local` too, marked `parent`.
+ * at `local` too, marked `parent`, and so does one only the offered list named, marked `listOnly`.
  */
 export const autoModeApplyRequest = (options: {
   day: string;
@@ -725,14 +754,19 @@ export const autoModeApplyRequest = (options: {
   const marks = {
     ...(outcome.done ? { done: true as const } : {}),
     ...(outcome.parent ? { parent: true as const } : {}),
+    ...(outcome.listOnly ? { listOnly: true as const } : {}),
+  };
+  const words = {
+    ...(outcome.summary ? { summary: outcome.summary } : {}),
+    ...(outcome.reason ? { reason: outcome.reason } : {}),
   };
 
   if (outcome.done && subject.kind !== 'stand-in') return null;
-  if (outcome.done || outcome.parent) {
-    return opClass === 'human-only' ? null : { ...request, issueKey: outcome.issueKey, ...marks };
+  if (outcome.done || outcome.parent || outcome.listOnly) {
+    return opClass === 'human-only' ? null : { ...request, issueKey: outcome.issueKey, ...marks, ...words };
   }
 
-  return opClass === 'external' ? { ...request, issueKey: outcome.issueKey } : null;
+  return opClass === 'external' ? { ...request, issueKey: outcome.issueKey, ...words } : null;
 };
 
 /**
@@ -758,7 +792,7 @@ export const autoModeApplies = (options: {
 
   const opClass = actionClassOf('autoMode.apply', options.classes);
 
-  if (opClass === 'local' && !outcome.parent) return true;
+  if (opClass === 'local' && !outcome.parent && !outcome.listOnly) return true;
   if (opClass === 'human-only') return false;
 
   return approval?.state === 'approved' && approval.error === undefined;

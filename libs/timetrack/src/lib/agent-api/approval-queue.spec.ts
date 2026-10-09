@@ -258,6 +258,21 @@ describe('an auto mode apply in the queue', () => {
     expect(describeApproval(done)).toBe('Resolves stand-in Pdf export with ABC-7, which Jira has done');
   });
 
+  it('keeps the list-only mark, the summary and the reason it stored, and says them', () => {
+    const listed: AutoModeApplyRequest = {
+      ...APPLY,
+      listOnly: true,
+      summary: 'Reward pass claim flow',
+      reason: "Commits mention 'reward pass'.",
+    };
+    const queue = enqueueApproval([], { id: 'a0', request: listed, client: 'auto mode', at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+    expect(describeApproval(listed)).toBe(
+      "Resolves stand-in Pdf export with ABC-7 Reward pass claim flow — Commits mention 'reward pass'.",
+    );
+  });
+
   it('drops a stored apply that names no subject', () => {
     const [stored] = enqueueApproval([], { id: 'a0', request: APPLY, at: AT, day: '2026-09-28' });
 

@@ -1,6 +1,6 @@
 import { parseActionClasses } from '../agent-api/action-classes';
 import { ModelPrice, PriceTable } from '../model/price';
-import { ProjectLinkTarget, TimetrackProjectLink } from '../model/project-link';
+import { ProjectLinkTarget, TimetrackProjectLink, issueKeysInText } from '../model/project-link';
 import { AttributionRule, AttributionTarget, NamedTarget, NamingAuthor } from '../model/attribution';
 import { FieldSource } from '../model/field-source';
 import { StandIn, StandInRefusal } from '../model/stand-in';
@@ -242,8 +242,13 @@ const asProjectLinkTarget = (value: unknown): ProjectLinkTarget | null => {
   if (raw['kind'] === 'private') return { kind: 'private' };
 
   const projectKey = asText(raw['projectKey']).toUpperCase();
+  const epicKeys = Array.isArray(raw['epicKeys'])
+    ? issueKeysInText(raw['epicKeys'].filter((key) => typeof key === 'string').join(' '))
+    : [];
 
-  return projectKey ? { kind: 'project', projectKey } : null;
+  if (!projectKey) return null;
+
+  return epicKeys.length ? { kind: 'project', projectKey, epicKeys } : { kind: 'project', projectKey };
 };
 
 /**

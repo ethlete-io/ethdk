@@ -105,6 +105,20 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
    minutes; an app-drafted description is dropped once the bands give notes, and the prompt asks for
    the main outcome, never a minor step. Before, it sent only the name and the description frozen from
    the first 16 minutes, so a day of bracket work drafted a ticket about a `.gitignore` commit.
+   Epic candidates (approved and built 2026-10-09): the match list was the project's 100 newest open
+   issues, so an issue under the checkout's epic could fall out of it (fifagg-frontend
+   `feature/reward-frontend`, FIFAGG-12704 under FIFAGG-12601). A project link now names `epicKeys`
+   (Settings → Projects, "Epics" on the path's own row); without them the epics are the parents of
+   the issues the user named this checkout's rows with over the last 4 weeks. `fetchJiraEpicChildren$`
+   reads their open children, cached per project and epic for the day and read again after an hour
+   or once a stand-in opens (`day-review/day-read-cache.ts`). `ticketMatchCandidates`
+   (`ticket/match-candidates.ts`): epic children first (at most 50, marked `inEpic`, only the linked
+   project's), then the project's open issues, 100 together, then the logged ones; each key once, no
+   sub-task. Every offered issue carries its parent's summary as `parent`, masked. The prompts say to
+   prefer `inEpic` and to quote the matching words in `existingReason`, or answer a draft. The list
+   stays out of `autoModeEvidenceOf`. A match whose key no evidence names (`autoModeKeyInEvidence`)
+   is stored `listOnly` and waits as an `autoMode.apply` with its summary and reason at `local` and
+   `external`, like a parent match; nothing at `human-only`. e2e: `epic-candidates.spec.ts`.
    Row descriptions: done (2026-09-28). A settled code row of today (a `repo:` lane, ended 30
    minutes before now) that names an issue gets its description written as `auto`, once per row:
    `autoDescriptionAsks`, `autoDescriptionRequest` and `withAutoModeDescription` in

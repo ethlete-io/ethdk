@@ -5,6 +5,7 @@ import {
   ProjectPathRow,
   TimetrackFavoriteProject,
   TimetrackProjectLink,
+  issueKeysInText,
   projectPathRows,
 } from '@ethlete/timetrack';
 import { ProjectSelectComponent } from '../jira';
@@ -17,9 +18,15 @@ the same editor and the same window titles otherwise say nothing about which is 
 A directory covers everything under it, and a path named on its own beats the directory it sits in. That is
 how one folder can be private while two checkouts inside it stay work.
 
+A linked path can name the epics its work belongs to. Auto mode then offers their open issues first when
+it looks for the ticket a stretch of work already has. Without them it reads the parents of the issues you
+named this checkout's rows with over the last four weeks.
+
 Marking a path private is the only statement in the app that takes time out of a day. The suggestion reads
 the directory's own name against your projects, and it is a suggestion and never a decision: nothing is
 written until you press it.`;
+
+const epicKeysOf = (link: TimetrackProjectLink) => (link.target.kind === 'project' ? (link.target.epicKeys ?? []) : []);
 
 export type PathLink = { path: string; target: ProjectLinkTarget };
 
@@ -44,7 +51,7 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
         @for (row of rows(); track row.path) {
           <li
             [attr.data-path]="row.path"
-            class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
+            class="group grid grid-cols-[5rem_minmax(0,1fr)_7rem_13rem_11rem_20rem] items-center gap-x-3 rounded-md px-2 text-small hover:bg-et-surface-interaction"
           >
             <span class="text-et-surface-subtle">{{ row.kind }}</span>
 
@@ -64,6 +71,24 @@ export type PathLink = { path: string; target: ProjectLinkTarget };
               class="w-full"
               compact
             />
+
+            @if (epicLinkOf(row); as epicLink) {
+              <et-form-field
+                (focusout)="saveEpics(epicLink)"
+                (keydown.enter)="saveEpics(epicLink)"
+                appearance="underline"
+                size="sm"
+              >
+                <et-input
+                  [value]="epicTextOf(epicLink)"
+                  (valueChange)="typedEpics.set({ id: epicLink.id, text: $event })"
+                  aria-label="Epics the path works in"
+                  placeholder="Epics"
+                />
+              </et-form-field>
+            } @else {
+              <span></span>
+            }
 
             <span class="flex gap-1">
               @if (row.suggestion; as suggestion) {
@@ -147,10 +172,12 @@ export class ProjectPathsComponent {
 
   public addLink = output<PathLink>();
   public remove = output<string>();
+  public epicsChange = output<{ id: string; epicKeys: string[] }>();
 
   protected readonly WHY = WHY;
 
   protected path = signal('');
+  protected typedEpics = signal<{ id: string; text: string } | null>(null);
   protected projectKey = signal('');
 
   protected rows = computed(() =>
@@ -158,6 +185,26 @@ export class ProjectPathsComponent {
   );
 
   protected canAdd = computed(() => !!this.path().trim() && !!this.projectKey().trim());
+
+  protected epicLinkOf(row: ProjectPathRow) {
+    return row.link && !row.inherited && row.link.target.kind === 'project' ? row.link : undefined;
+  }
+
+  protected epicTextOf(link: TimetrackProjectLink) {
+    return epicKeysOf(link).join(', ');
+  }
+
+  protected saveEpics(link: TimetrackProjectLink) {
+    const typed = this.typedEpics();
+
+    if (typed?.id !== link.id) return;
+
+    this.typedEpics.set(null);
+
+    const epicKeys = issueKeysInText(typed.text);
+
+    if (epicKeys.join(',') !== epicKeysOf(link).join(',')) this.epicsChange.emit({ id: link.id, epicKeys });
+  }
 
   /** Only a stated directory can be forgotten whole. A repository row loses its answer, not its row. */
   protected forgettable(row: ProjectPathRow) {

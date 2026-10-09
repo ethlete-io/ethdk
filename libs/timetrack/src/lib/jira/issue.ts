@@ -14,6 +14,8 @@ export type JiraIssue = {
   isSubtask?: boolean;
   /** The parent issue, when the instance reports one — a Task under its Story. */
   parentKey?: string;
+  /** The parent's summary, which Jira sends with the parent itself. */
+  parentSummary?: string;
   /** The configured subject field's value, when the instance has one and this issue sets it. */
   subject?: string;
 };
@@ -53,6 +55,7 @@ export const toJiraIssue = (resource: JiraIssueResource, subjectField?: string):
         issueType: resource.fields?.issuetype?.name ?? '',
         isSubtask: resource.fields?.issuetype?.subtask ?? false,
         parentKey: resource.fields?.parent?.key,
+        ...(resource.fields?.parent?.fields?.summary ? { parentSummary: resource.fields.parent.fields.summary } : {}),
         subject: readSubjectField(resource.fields ?? {}, subjectField),
       }
     : undefined;

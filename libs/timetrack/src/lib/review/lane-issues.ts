@@ -104,3 +104,18 @@ export const userNamedIssueKeys = (days: readonly StoredDayEdits[]): string[] =>
 
   return [...new Set(keys)];
 };
+
+/** The issue keys the user named rows of one lane with over `days`, newest day first, each key once. */
+export const userNamedIssueKeysIn = (days: readonly StoredDayEdits[], laneKey: string): string[] =>
+  userNamedIssueKeys(
+    days.map(({ day, edits }) => ({
+      day,
+      edits: {
+        ...edits,
+        overrides: Object.fromEntries(
+          Object.entries(edits.overrides ?? {}).filter(([, entry]) => storedLaneKey(entry.laneKey) === laneKey),
+        ),
+        pinned: (edits.pinned ?? []).filter((entry) => storedLaneKey(entry.laneKey) === laneKey),
+      },
+    })),
+  );

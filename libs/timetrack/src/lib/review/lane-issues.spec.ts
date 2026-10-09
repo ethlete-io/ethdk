@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CALL_LANE_KEY } from '../rows/lane';
 import { hideRow, setRowIssue, setRowState } from './edits';
-import { laneIssueUses, laneIssueUsesFor, userNamedIssueKeys } from './lane-issues';
+import { laneIssueUses, laneIssueUsesFor, userNamedIssueKeys, userNamedIssueKeysIn } from './lane-issues';
 import { DayReviewEdits, EMPTY_DAY_REVIEW_EDITS, ReviewedRow } from './model';
 
 const row = (options: { id: string; laneKey?: string }): ReviewedRow => ({
@@ -158,5 +158,15 @@ describe('userNamedIssueKeys', () => {
     const hidden = hideRow({ edits: named({ id: 'b', issueKey: 'ABC-2' }), row: row({ id: 'b' }) });
 
     expect(userNamedIssueKeys([day('2026-09-01', rejected), day('2026-09-02', hidden)])).toEqual([]);
+  });
+});
+
+describe('userNamedIssueKeysIn', () => {
+  it('reads only the keys the user named rows of one checkout with', () => {
+    const one = named({ id: 'unnamed:@a', laneKey: 'repo:/dev/reward', issueKey: 'FIFAGG-1' });
+    const other = named({ id: 'unnamed:@b', laneKey: 'repo:/dev/other', issueKey: 'FIFAGG-2' });
+    const both = { ...one, overrides: { ...one.overrides, ...other.overrides } };
+
+    expect(userNamedIssueKeysIn([day('2026-09-01', both)], 'repo:/dev/reward')).toEqual(['FIFAGG-1']);
   });
 });

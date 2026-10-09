@@ -114,6 +114,22 @@ describe('respondJira', () => {
     });
   });
 
+  it('sends the parent summary with the parent where the fake holds the parent', () => {
+    const backend = backendOf({
+      jira: {
+        issues: [
+          { id: '1', key: 'ABC-1', summary: 'Child', issueType: 'Task', parentKey: 'ABC-2' },
+          { id: '2', key: 'ABC-2', summary: 'Rewards', issueType: 'Epic' },
+        ],
+      },
+    });
+    const found = get(backend, '/search/jql', { jql: 'parent in ("ABC-2")', fields: 'summary,parent' });
+
+    expect(issuesOf(found.body)).toEqual([
+      { id: '1', key: 'ABC-1', fields: { summary: 'Child', parent: { key: 'ABC-2', fields: { summary: 'Rewards' } } } },
+    ]);
+  });
+
   it('names the parent of a subtask only when the issue has one', () => {
     const backend = backendOf({
       jira: { issues: [{ id: '1', key: 'ABC-1', summary: 'Child', issueType: 'Task', parentKey: E2E_PARENT_KEY }] },

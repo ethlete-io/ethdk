@@ -14,6 +14,7 @@ import {
   E2E_DAY_KEY,
   E2E_NOW,
   askAgent,
+  closeStandIns,
   editSurface,
   expect,
   openApprovals,
@@ -118,16 +119,21 @@ test.describe('auto mode while the screen shows another day', () => {
     expect(await savedDay(page)).toBe(YESTERDAY);
   });
 
-  test('opens the stand-in of today and resolves it', async ({ page }) => {
+  test('opens the stand-in of today and queues the match no evidence names', async ({ page }) => {
     await seedWorld(page, {
       now: E2E_NOW,
       settings: withAutoMode({ ...defaultSettings(), projectLinks: [LINKS_THE_CHECKOUT] }),
     });
     await showsYesterday(page);
     await page.goto('/day');
+
+    await expect
+      .poll(() => askAgent(page, { op: 'approvals.list' }))
+      .toEqual({ ok: true, value: [expect.objectContaining({ op: 'autoMode.apply', client: 'auto mode' })] });
+
     await openStandIns(page);
 
-    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toContainText('by auto mode');
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
     expect(await savedDay(page)).toBe(YESTERDAY);
   });
 });
@@ -141,15 +147,35 @@ test.describe('auto mode on a stand-in of today', () => {
     await page.goto('/day');
   });
 
-  test('resolves it with the issue the match found and files nothing', async ({ page }) => {
+  const approveTheMatch = async (page: Page) => {
+    await expect(page.locator('[data-band-approval][data-op="autoMode.apply"]')).toContainText(
+      `Auto · Name ${E2E_ISSUE_KEY}`,
+    );
+    await page.locator('[data-kind="row"][data-stand-in][data-pending]').click();
+
+    const section = editSurface(page).locator('[data-row-approval]');
+
+    await expect(section).toContainText(`${E2E_ISSUE_KEY} User management`);
+    await expect(section).toContainText('it names the same work');
+    await section.getByRole('button', { name: 'Approve' }).click();
+    await expect(section).toBeHidden();
+  };
+
+  test('queues the match no evidence names, resolves it once approved, and files nothing', async ({ page }) => {
+    await openStandIns(page);
+    await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toHaveAttribute('data-state', 'open');
+    await closeStandIns(page);
+
+    await approveTheMatch(page);
     await openStandIns(page);
 
     await expect(page.locator('ethlete-stand-ins-list [data-stand-in]').first()).toContainText('by auto mode');
-    await expect(page.getByRole('button', { name: 'Review requests' })).toBeHidden();
     expect((await readBackend(page)).jira.created).toEqual([]);
   });
 
   test('reads out the stand-in it resolved', async ({ page }) => {
+    await approveTheMatch(page);
+
     const readout = await openAutoModeReadout(page);
 
     const applied = readout.locator('[data-auto-entry][data-status="applied"]');

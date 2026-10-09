@@ -7,7 +7,13 @@ const JIRA_PREFIX = '/rest/api/3';
 /** The key the first filed issue gets. Specs name it, so it is a fixture value, not an accident. */
 const FIRST_CREATED_ISSUE_NUMBER = 9999;
 
-const issueResource = (issue: FakeJiraIssue, fields: string[]) => {
+const parentOf = (issue: FakeJiraIssue, issues: readonly FakeJiraIssue[]) => {
+  const summary = issues.find((held) => held.key === issue.parentKey)?.summary;
+
+  return { key: issue.parentKey, ...(summary ? { fields: { summary } } : {}) };
+};
+
+const issueResource = (issue: FakeJiraIssue, fields: string[], issues: readonly FakeJiraIssue[] = []) => {
   const wanted = new Set(fields.length ? fields : ['summary', 'issuetype', 'parent', 'updated']);
   const custom = Object.entries(issue.custom ?? {}).filter(([id]) => wanted.has(id));
 
@@ -17,7 +23,7 @@ const issueResource = (issue: FakeJiraIssue, fields: string[]) => {
     fields: {
       ...(wanted.has('summary') ? { summary: issue.summary } : {}),
       ...(wanted.has('issuetype') ? { issuetype: { name: issue.issueType } } : {}),
-      ...(wanted.has('parent') && issue.parentKey ? { parent: { key: issue.parentKey } } : {}),
+      ...(wanted.has('parent') && issue.parentKey ? { parent: parentOf(issue, issues) } : {}),
       ...(wanted.has('updated') && issue.updated ? { updated: issue.updated } : {}),
       ...Object.fromEntries(custom),
     },
@@ -28,7 +34,7 @@ const search = (backend: FakeBackend, request: FakeRoutedRequest): FakeAnswer =>
   const fields = (request.query.get('fields') ?? '').split(',').filter(Boolean);
   const matched = filterByJql(backend.jira.issues, request.query.get('jql') ?? '');
 
-  return ok({ issues: matched.map((issue) => issueResource(issue, fields)) });
+  return ok({ issues: matched.map((issue) => issueResource(issue, fields, backend.jira.issues)) });
 };
 
 const projectSearch = (backend: FakeBackend): FakeAnswer =>
@@ -77,7 +83,7 @@ const readIssue = (backend: FakeBackend, read: { issueKey: string; request: Fake
   if (!issue) return { status: 404, body: { errorMessages: ['Issue does not exist.'] } };
 
   const fields = (request.query.get('fields') ?? '').split(',').filter(Boolean);
-  const resource = issueResource(issue, fields);
+  const resource = issueResource(issue, fields, backend.jira.issues);
 
   return ok(
     fields.includes('status')

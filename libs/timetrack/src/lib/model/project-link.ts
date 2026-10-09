@@ -8,7 +8,14 @@ import { normalizeLinkPath } from './link-path';
  * title, and none of it billable. It is not an attribution outcome but the absence of one — private
  * time proposes nothing and is owed to nobody.
  */
-export type ProjectLinkTarget = { kind: 'project'; projectKey: string } | { kind: 'private' };
+export type ProjectLinkTarget =
+  | {
+      kind: 'project';
+      projectKey: string;
+      /** The epics the work under the path belongs to. Their open children are offered first as the work. */
+      epicKeys?: string[];
+    }
+  | { kind: 'private' };
 
 /**
  * A standing statement about a path — one repository, or a directory root covering everything beneath
@@ -98,6 +105,23 @@ export const projectKeyFor = (options: { context: ActivityContext; links: readon
 
   return target?.kind === 'project' ? target.projectKey : undefined;
 };
+
+/** The epics the link covering a context names, or none. */
+export const epicKeysFor = (options: { context: ActivityContext; links: readonly TimetrackProjectLink[] }) => {
+  const target = matchProjectLink(options)?.target;
+
+  return target?.kind === 'project' ? (target.epicKeys ?? []) : [];
+};
+
+/** The issue keys typed into a list, upper-cased, each once. Anything that is not a key is dropped. */
+export const issueKeysInText = (text: string) => [
+  ...new Set(
+    text
+      .split(/[\s,;]+/)
+      .map((word) => word.trim().toUpperCase())
+      .filter((word) => /^[A-Z][A-Z0-9_]*-\d+$/.test(word)),
+  ),
+];
 
 /** Reads as something the user can recognise in a list or an evidence chain: `side-project`. */
 export const describeProjectLink = (link: Pick<TimetrackProjectLink, 'path'>) =>

@@ -19,6 +19,11 @@ export type AutoModeApplyRequest = {
   done?: true;
   /** The issue is a parent of other issues: auto mode never writes the match without this approval. */
   parent?: true;
+  /** Only the offered issue list named it, never the evidence: auto mode never writes the match without this approval. */
+  listOnly?: true;
+  summary?: string;
+  /** Auto mode's one sentence for why the issue is the work. */
+  reason?: string;
 };
 
 /**
@@ -243,6 +248,9 @@ const parseAutoModeApply = (value: unknown): AutoModeApplyRequest | undefined =>
     issueKey,
     ...(raw['done'] === true ? { done: true as const } : {}),
     ...(raw['parent'] === true ? { parent: true as const } : {}),
+    ...(raw['listOnly'] === true ? { listOnly: true as const } : {}),
+    ...(textOf(raw['summary']) ? { summary: textOf(raw['summary']) } : {}),
+    ...(textOf(raw['reason']) ? { reason: textOf(raw['reason']) } : {}),
   };
 };
 
@@ -357,10 +365,14 @@ export const disputedTargetLabel = (target: DisputedTarget) =>
 /** One line saying what an approved request writes, for the queue panel. */
 export const describeApproval = (request: AgentApprovalRequest) => {
   switch (request.op) {
-    case 'autoMode.apply':
+    case 'autoMode.apply': {
+      const issue = request.summary ? `${request.issueKey} ${request.summary}` : request.issueKey;
+      const why = request.reason ? ` — ${request.reason}` : '';
+
       return request.subject.kind === 'context'
-        ? `Names today's ${request.label} band with ${request.issueKey}`
-        : `Resolves stand-in ${request.label} with ${request.issueKey}${request.done ? ', which Jira has done' : ''}${request.parent ? ', a parent issue' : ''}`;
+        ? `Names today's ${request.label} band with ${issue}${why}`
+        : `Resolves stand-in ${request.label} with ${issue}${request.done ? ', which Jira has done' : ''}${request.parent ? ', a parent issue' : ''}${why}`;
+    }
     case 'autoMode.resolve':
       return `${request.choice === 'keep' ? `Keeps ${request.booked}` : `Takes ${disputedTargetLabel(request.other)} instead of ${request.booked}`} on today's ${request.label} band: ${request.reason}`;
     case 'autoMode.hide':

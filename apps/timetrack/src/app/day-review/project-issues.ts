@@ -1,6 +1,7 @@
 import {
   DEFAULT_PATTERN_WEEKS,
   JiraCreatableType,
+  JiraCredentials,
   JiraIssue,
   JiraIssueType,
   TimetrackPorts,
@@ -15,6 +16,7 @@ import {
   localDayKey,
   readJiraCredentials$,
   shiftDayKey,
+  ticketMatchCandidates,
   userNamedIssueKeys,
 } from '@ethlete/timetrack';
 import { Observable, catchError, forkJoin, map, of, switchMap, throwError } from 'rxjs';
@@ -23,7 +25,9 @@ export const NO_JIRA = 'Jira needs a host, an account email and a token in Setti
 
 /** The project's issues: the open ones a ticket may roll up to, and every one it could already be. */
 export type ProjectIssues = {
+  projectKey: string;
   parents: JiraIssue[];
+  epic: JiraIssue[];
   open: JiraIssue[];
   /** The issues the user logged or named rows with that `open` lacks, done ones included. */
   logged: JiraIssue[];
@@ -73,6 +77,7 @@ export const readProjectIssues$ = (options: {
   projectKey: string;
   /** The keys the user logged on or named rows with, most relevant first. Any project's. */
   loggedKeys?: readonly string[];
+  epic$?: (credentials: JiraCredentials) => Observable<JiraIssue[]>;
 }): Observable<ProjectIssues> => {
   const { ports, settings, projectKey } = options;
   const subjectField = settings.ticket.subjectField || undefined;
@@ -106,9 +111,14 @@ export const readProjectIssues$ = (options: {
                       loggedKeys: options.loggedKeys ?? [],
                       subjectField,
                     }).pipe(catchError(() => of<JiraIssue[]>([]))),
+                    epic: (options.epic$?.(credentials) ?? of<JiraIssue[]>([])).pipe(
+                      catchError(() => of<JiraIssue[]>([])),
+                    ),
                   }).pipe(
-                    map(({ parents, open, logged }) => ({
+                    map(({ parents, open, logged, epic }) => ({
+                      projectKey,
                       parents,
+                      epic,
                       open,
                       logged: logged.filter((issue) => !open.some((held) => held.key === issue.key)),
                       creatable,
@@ -125,8 +135,9 @@ export const readProjectIssues$ = (options: {
   );
 };
 
-/** Every issue the work could already be: the open ones, then the ones the user logged on. */
-export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'open' | 'logged'>) => [...issues.open, ...issues.logged];
+/** Every issue the work could already be: the epics' open children, the project's open ones, then the logged ones. */
+export const matchCandidatesOf = (issues: Pick<ProjectIssues, 'projectKey' | 'epic' | 'open' | 'logged'>) =>
+  ticketMatchCandidates(issues);
 
 /**
  * The keys the work could already be, from the user's own record: the keys the user named rows of

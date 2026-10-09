@@ -6,6 +6,7 @@ import { agentProcessSpec } from '../reason/spec';
 import { UnnamedContext } from '../model/attribution';
 import { StandIn, standInWaitingDays } from '../model/stand-in';
 import { JiraIssue } from '../jira/issue';
+import { TicketCandidate } from './match-candidates';
 import { SpecHeader } from './spec';
 import { ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { MAX_TICKET_SUMMARY_LENGTH, StandInBand, standInNotes, standInObservedMs } from './draft';
@@ -14,6 +15,10 @@ import { MAX_TICKET_SUMMARY_LENGTH, StandInBand, standInNotes, standInObservedMs
 export type TicketWritingIssue = {
   key: string;
   summary: string;
+  /** The parent's summary, and nothing else of it. */
+  parent?: string;
+  /** An open issue under an epic the checkout works in. */
+  inEpic?: true;
 };
 
 /** What the agent answers. Every field lands in the form, and every field stays the user's. */
@@ -72,8 +77,9 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   'The user message is JSON with the repository, the branch, the application, how many minutes the',
   'work lasted, and notes taken from commit subjects, merge request titles and agent session titles.',
   'The notes are ordered by how much of the work carried them, the most first.',
-  '`parents` is the issues a new ticket could roll up to. `issues` is every open issue in the project,',
-  'then the issues the user recently logged time on, done ones included.',
+  '`parents` is the issues a new ticket could roll up to. `issues` is the open issues under the epics',
+  'this checkout works in, marked `inEpic`, then the other open issues in the project, then the issues',
+  "the user recently logged time on, done ones included. `parent` is the summary of an issue's parent.",
   '`minutes` is absent when nothing measured how long the work took.',
   '',
   '`spec` is present when the work sits in a repository that holds a written specification: its',
@@ -117,8 +123,11 @@ export const TICKET_WRITING_SYSTEM_PROMPT = [
   '- `existingKey` is an issue from `issues` that already tracks this very work, or null. Answer it',
   '  only when the same work is meant, not when the subject is merely related — a second ticket is',
   '  a nuisance, and time logged on the wrong existing issue is worse. Choose only from `issues`. A',
-  '  done issue the user logs time on is still a valid `existingKey`.',
-  '- `existingReason` is one sentence naming the wording that decided `existingKey`. Empty otherwise.',
+  '  done issue the user logs time on is still a valid `existingKey`. Prefer an `inEpic` issue: those',
+  '  are the open issues under the epics this checkout works in.',
+  '- `existingReason` is one sentence that quotes the words of the branch, a note or the `standIn`',
+  '  name that match the summary of `existingKey`. Empty otherwise. Where no such words exist, answer',
+  '  `existingKey` null: the ticket you write is then the answer.',
   '- Write `summary` and `description` in every answer, including one that names an `existingKey`.',
 ].join('\n');
 
@@ -213,10 +222,12 @@ export const PARENT_WRITING_JSON_SCHEMA = {
 
 const repoNameOf = (path: string) => path.split('/').filter(Boolean).pop() ?? path;
 
-const asIssues = (options: { issues: readonly JiraIssue[]; map: PseudonymMap }): TicketWritingIssue[] =>
+const asIssues = (options: { issues: readonly TicketCandidate[]; map: PseudonymMap }): TicketWritingIssue[] =>
   options.issues.map((issue) => ({
     key: maskIssueKey({ issueKey: issue.key, map: options.map }),
     summary: maskNames({ text: issue.summary, map: options.map }),
+    ...(issue.parentSummary ? { parent: maskNames({ text: issue.parentSummary, map: options.map }) } : {}),
+    ...(issue.inEpic ? { inEpic: true as const } : {}),
   }));
 
 const masked = (options: { text: string | undefined; map: PseudonymMap }) =>
@@ -253,7 +264,7 @@ export const ticketWritingRequest = (options: {
   context: UnnamedContext;
   notes: readonly string[];
   parents?: readonly JiraIssue[];
-  issues?: readonly JiraIssue[];
+  issues?: readonly TicketCandidate[];
   /** The spec the work was written against, from `specForCommits$`. */
   spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */
@@ -290,7 +301,7 @@ export const standInWritingRequest = (options: {
   /** The day's bands. Only the ones the stand-in names are read. */
   bands?: readonly StandInBand[];
   parents?: readonly JiraIssue[];
-  issues?: readonly JiraIssue[];
+  issues?: readonly TicketCandidate[];
   /** The spec the work was written against, from `specForCommits$`. */
   spec?: SpecHeader;
   /** The user's own name list, from `settings.reasoning.maskedNames`. Empty masks nothing. */

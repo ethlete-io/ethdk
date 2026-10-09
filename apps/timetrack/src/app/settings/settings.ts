@@ -41,6 +41,7 @@ import {
   withFavoriteProjects,
   withMaskedName,
   withProjectLink,
+  withProjectLinkEpics,
   withNamedStandIn,
   withStandIn,
   withStandInDay,
@@ -455,6 +456,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     },
 
     removeProjectLink: (id: string) => apply(withoutProjectLink({ settings: settings(), id })),
+    setProjectLinkEpics: (options: { id: string; epicKeys: readonly string[] }) =>
+      apply(withProjectLinkEpics({ settings: settings(), ...options })),
 
     /** An empty key takes the alias off the checkout again. */
     setRepoAlias: (options: { path: string; key: string }) => {

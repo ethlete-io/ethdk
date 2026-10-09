@@ -6,7 +6,7 @@ export type JiraIssueFields = Record<string, unknown> & {
   summary?: string;
   updated?: string;
   issuetype?: { name?: string; subtask?: boolean };
-  parent?: { key?: string };
+  parent?: { key?: string; fields?: { summary?: string } };
 };
 
 export type JiraIssueResource = {

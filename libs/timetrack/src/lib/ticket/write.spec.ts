@@ -83,6 +83,31 @@ describe('ticketWritingRequest', () => {
     expect(request.spec?.epicKey).toMatch(/-12$/);
     expect(ticketWritingRequest({ context: UNNAMED, notes: [] })).not.toHaveProperty('spec');
   });
+
+  it('sends each issue with its parent summary and its epic mark, in pseudonyms', () => {
+    const request = ticketWritingRequest({
+      context: UNNAMED,
+      notes: [],
+      issues: [
+        {
+          key: 'NORDKIOSK-12704',
+          id: '1',
+          summary: 'Nordkiosk reward pass',
+          issueType: 'Story',
+          parentKey: 'NORDKIOSK-12601',
+          parentSummary: 'Nordkiosk rewards',
+          inEpic: true,
+        },
+      ],
+      maskedNames: ['Nordkiosk'],
+    });
+
+    expect(request.issues).toEqual([
+      { key: expect.stringMatching(/-12704$/), summary: expect.any(String), parent: expect.any(String), inEpic: true },
+    ]);
+    expect(JSON.stringify(request.issues).toLowerCase()).not.toContain('nordkiosk');
+    expect(request.issues[0]?.parent).toMatch(/ rewards$/);
+  });
 });
 
 describe('writeTicketWithAgent$', () => {

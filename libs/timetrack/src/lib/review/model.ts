@@ -130,6 +130,9 @@ export type AutoModeOutcome =
       done?: boolean;
       /** The issue is a parent in the project's issues, so auto mode never applies it without an approval. */
       parent?: boolean;
+      summary?: string;
+      /** Only the offered list named the issue, never the evidence, so auto mode never applies it without an approval. */
+      listOnly?: boolean;
     }
   | {
       kind: 'draft';

@@ -52,8 +52,9 @@ export const approvalLinesOf = (
       return [
         {
           label: 'Ticket',
-          value: `${request.label} → ${named(request.issueKey)}${request.done ? ' (done)' : ''}${request.parent ? ' (parent)' : ''}`,
+          value: `${request.label} → ${request.summary ? `${request.issueKey} ${request.summary}` : named(request.issueKey)}${request.done ? ' (done)' : ''}${request.parent ? ' (parent)' : ''}`,
         },
+        ...(request.reason ? [{ label: 'Why', value: request.reason }] : []),
         asked,
       ];
     case 'standIn.resolve':

@@ -11,6 +11,9 @@ import {
   AutoModeSubject,
   AgentApiAutoModeAsk,
   DayRows,
+  JiraCredentials,
+  JiraIssue,
+  TicketCandidate,
   TicketWording,
   UnnamedContext,
   ReviewedRow,
@@ -30,6 +33,7 @@ import {
   autoModeHideAsks,
   autoModeHideRequest,
   autoModeHideTarget,
+  autoModeKeyInEvidence,
   autoModeQueuedAnswer,
   autoModeReadout,
   autoModeReaskSubjectOf,
@@ -50,8 +54,11 @@ import {
   autoDescriptionRequest,
   autoDescriptionRowId,
   dayBoundaryOf,
+  epicKeysFor,
+  epicKeysOfIssues,
   favoriteProjectKeys,
   fetchJiraDoneIssueKeys$,
+  fetchJiraEpicChildren$,
   fetchJiraIssues$,
   gitFlowConfigFor,
   isAgentApiRequest,
@@ -62,6 +69,8 @@ import {
   reasoningOptionsOf,
   recordingRunner,
   readJiraCredentials$,
+  shiftDayKey,
+  userNamedIssueKeysIn,
   withAutoModeAnswer,
   withAutoModeSubjectItemsExpired,
   withNamedContextItemsExpired,
@@ -104,6 +113,7 @@ import { injectWindowLock } from '../window-lock';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
 import { injectStandIns } from '../stand-ins/stand-ins';
 import { injectDayReview } from './day-review';
+import { createDayReadCache } from './day-read-cache';
 import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
 
 /** How often settle times are checked again: a row or a context settles by the clock, not by a change. */
@@ -140,8 +150,17 @@ const ACTIVITY_LIMIT = 50;
 
 const MODEL_CALL_LIMIT = 30;
 
-/** What one ask sends: the payload, and the project a new ticket would be filed in. */
-type Prepared = { request: TicketWritingRequest; projectKey?: string; parentKeys: ReadonlySet<string> };
+const CHECKOUT_EPIC_WEEKS = 4;
+
+const CHECKOUT_EPIC_ISSUE_LIMIT = 50;
+
+/** What one ask sends: the payload, the issues it offered, and the project a new ticket would be filed in. */
+type Prepared = {
+  request: TicketWritingRequest;
+  candidates: readonly TicketCandidate[];
+  projectKey?: string;
+  parentKeys: ReadonlySet<string>;
+};
 
 const parentKeysOf = (issues: ProjectIssues | null): ReadonlySet<string> => {
   if (!issues) return new Set();
@@ -157,18 +176,25 @@ const parentKeysOf = (issues: ProjectIssues | null): ReadonlySet<string> => {
 
 const outcomeOf = (options: {
   wording: TicketWording | null;
-  projectKey?: string;
-  parentKeys: ReadonlySet<string>;
+  prepared: Prepared;
+  maskedNames: readonly string[];
 }): AutoModeOutcome => {
-  const { wording, projectKey, parentKeys } = options;
+  const { wording, prepared } = options;
+  const { projectKey, parentKeys } = prepared;
 
   if (!wording) return { kind: 'failed' };
   if (wording.existingKey) {
+    const issueKey = wording.existingKey;
+    const summary = prepared.candidates.find((issue) => issue.key.toUpperCase() === issueKey.toUpperCase())?.summary;
+    const evidenced = autoModeKeyInEvidence({ request: prepared.request, issueKey, maskedNames: options.maskedNames });
+
     return {
       kind: 'match',
-      issueKey: wording.existingKey,
-      ...(parentKeys.has(wording.existingKey) ? { parent: true } : {}),
+      issueKey,
+      ...(parentKeys.has(issueKey) ? { parent: true } : {}),
       ...(wording.existingReason ? { reason: wording.existingReason } : {}),
+      ...(summary ? { summary } : {}),
+      ...(evidenced ? {} : { listOnly: true }),
     };
   }
 
@@ -381,7 +407,73 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         }),
       );
 
-  const issues$ = (subject: AutoModeSubject, projectKey: string | undefined): Observable<ProjectIssues | null> => {
+  const epicReads = createDayReadCache<JiraIssue[]>();
+  const checkoutEpicReads = createDayReadCache<string[]>();
+
+  const readMoment = () => ({
+    day: today(),
+    nowMs: Date.now(),
+    standInIds: settings.settings().standIns.map((entry) => entry.id),
+  });
+
+  const checkoutEpicKeys$ = (credentials: JiraCredentials, repoPath: string): Observable<string[]> =>
+    checkoutEpicReads({
+      key: repoPath,
+      now: readMoment(),
+      read$: () => {
+        const day = today();
+
+        return ports.review.editsBetween$(shiftDayKey(day, -CHECKOUT_EPIC_WEEKS * 7), day).pipe(
+          take(1),
+          map((days) => userNamedIssueKeysIn(days, `repo:${repoPath}`).slice(0, CHECKOUT_EPIC_ISSUE_LIMIT)),
+          switchMap((keys) => fetchJiraIssues$({ transport: ports.transport, credentials, keys })),
+          map(epicKeysOfIssues),
+        );
+      },
+    });
+
+  const epicChildren$ = (options: {
+    credentials: JiraCredentials;
+    projectKey: string;
+    repoPath: string | undefined;
+  }): Observable<JiraIssue[]> => {
+    const { credentials, projectKey, repoPath } = options;
+
+    if (!repoPath) return of([]);
+
+    const linked = epicKeysFor({ context: { repoPath }, links: projectLinks() });
+
+    return (linked.length ? of(linked) : checkoutEpicKeys$(credentials, repoPath)).pipe(
+      switchMap((epicKeys) =>
+        epicKeys.length
+          ? epicReads({
+              key: `${projectKey}|${[...epicKeys].sort().join(',')}`,
+              now: readMoment(),
+              read$: () =>
+                fetchJiraEpicChildren$({
+                  transport: ports.transport,
+                  credentials,
+                  epicKeys,
+                  subjectField: settings.settings().ticket.subjectField || undefined,
+                }),
+            })
+          : of<JiraIssue[]>([]),
+      ),
+    );
+  };
+
+  const repoPathOf = (subject: AutoModeSubject, evidence: AskEvidence) =>
+    subject.kind === 'stand-in'
+      ? settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.openedFor
+      : evidence?.contexts.find((entry) => entry.id === subject.contextId)?.context.repoPath;
+
+  const issues$ = (options: {
+    subject: AutoModeSubject;
+    projectKey: string | undefined;
+    repoPath: string | undefined;
+  }): Observable<ProjectIssues | null> => {
+    const { subject, projectKey, repoPath } = options;
+
     if (!projectKey) return of(null);
 
     const standInDays =
@@ -398,7 +490,15 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           standInDays,
         }),
       ),
-      switchMap((loggedKeys) => readProjectIssues$({ ports, settings: settings.settings(), projectKey, loggedKeys })),
+      switchMap((loggedKeys) =>
+        readProjectIssues$({
+          ports,
+          settings: settings.settings(),
+          projectKey,
+          loggedKeys,
+          epic$: (credentials) => epicChildren$({ credentials, projectKey, repoPath }),
+        }),
+      ),
       catchError(() => of(null)),
     );
   };
@@ -425,8 +525,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  const requestOf = (options: { subject: AutoModeSubject; evidence: AskEvidence; issues: ProjectIssues | null }) => {
-    const { subject, evidence, issues } = options;
+  const requestOf = (options: {
+    subject: AutoModeSubject;
+    evidence: AskEvidence;
+    issues: ProjectIssues | null;
+    candidates: readonly TicketCandidate[];
+  }) => {
+    const { subject, evidence, issues, candidates } = options;
     const current = settings.settings();
 
     if (subject.kind === 'context' && !evidence) return null;
@@ -440,21 +545,24 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       config: gitFlowConfigFor(current),
       maskedNames: current.reasoning.maskedNames,
       parents: issues?.parents ?? [],
-      issues: issues ? matchCandidatesOf(issues) : [],
+      issues: candidates,
       bookedDays: standInStore.bookedDays(),
     });
   };
 
   const prepare$ = (subject: AutoModeSubject, evidence: AskEvidence): Observable<Prepared | null> => {
-    if (!requestOf({ subject, evidence, issues: null })) return of(null);
+    if (!requestOf({ subject, evidence, issues: null, candidates: [] })) return of(null);
 
     const projectKey = projectKeyOf(subject, evidence);
 
-    return issues$(subject, projectKey).pipe(
+    return issues$({ subject, projectKey, repoPath: repoPathOf(subject, evidence) }).pipe(
       map((issues) => {
-        const request = requestOf({ subject, evidence, issues });
+        const candidates = issues ? matchCandidatesOf(issues) : [];
+        const request = requestOf({ subject, evidence, issues, candidates });
 
-        return request ? { request, parentKeys: parentKeysOf(issues), ...(projectKey ? { projectKey } : {}) } : null;
+        return request
+          ? { request, candidates, parentKeys: parentKeysOf(issues), ...(projectKey ? { projectKey } : {}) }
+          : null;
       }),
     );
   };
@@ -571,7 +679,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
             subject: ask.subject,
             askedAtMs: Date.now(),
             request: prepared.request,
-            outcome: outcomeOf({ wording, projectKey: prepared.projectKey, parentKeys: prepared.parentKeys }),
+            outcome: outcomeOf({ wording, prepared, maskedNames: current.reasoning.maskedNames }),
           })),
         );
       }),
@@ -596,9 +704,15 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           .pipe(
             switchMap(() => applyAnswer$(ask.day, answer)),
             map(() => {
-              if (answer.outcome.kind !== 'match' || !answer.outcome.done) return undefined;
+              const { outcome } = answer;
 
-              return `${answer.outcome.issueKey} is done, ${queued ? 'waits for your approval' : 'left to you'}`;
+              if (outcome.kind !== 'match') return undefined;
+              if (outcome.done)
+                return `${outcome.issueKey} is done, ${queued ? 'waits for your approval' : 'left to you'}`;
+              if (outcome.listOnly && queued)
+                return `${outcome.issueKey} waits for your approval: no evidence names it`;
+
+              return undefined;
             }),
           ),
       ),

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { TimetrackProjectLink, describeProjectLink, matchProjectLink, projectKeyFor } from './project-link';
+import {
+  TimetrackProjectLink,
+  describeProjectLink,
+  epicKeysFor,
+  issueKeysInText,
+  matchProjectLink,
+  projectKeyFor,
+} from './project-link';
 
 const link = (options: Partial<TimetrackProjectLink> & Pick<TimetrackProjectLink, 'path' | 'target'>) => ({
   id: options.path,
@@ -68,5 +75,25 @@ describe('describeProjectLink', () => {
   it('reads as the directory the user recognises', () => {
     expect(describeProjectLink({ path: '/home/tom/dev/ea-frontend' })).toBe('ea-frontend');
     expect(describeProjectLink({ path: '/home/tom/dev/ea-frontend/' })).toBe('ea-frontend');
+  });
+});
+
+describe('epicKeysFor', () => {
+  it('reads the epics of the link that covers the checkout, and none elsewhere', () => {
+    const reward = link({
+      path: '/home/tom/dev/fifagg-frontend',
+      target: { kind: 'project', projectKey: 'FIFAGG', epicKeys: ['FIFAGG-12601'] },
+    });
+    const links = [work, secluded, reward];
+
+    expect(epicKeysFor({ context: { repoPath: '/home/tom/dev/fifagg-frontend' }, links })).toEqual(['FIFAGG-12601']);
+    expect(epicKeysFor({ context: { repoPath: '/home/tom/dev/ea-frontend' }, links })).toEqual([]);
+    expect(epicKeysFor({ context: { repoPath: '/home/tom/dev/private/x' }, links })).toEqual([]);
+  });
+});
+
+describe('issueKeysInText', () => {
+  it('reads the keys of a typed list, upper-cased, each once', () => {
+    expect(issueKeysInText('fifagg-12601, FIFAGG-12601; FIP-3 epic')).toEqual(['FIFAGG-12601', 'FIP-3']);
   });
 });

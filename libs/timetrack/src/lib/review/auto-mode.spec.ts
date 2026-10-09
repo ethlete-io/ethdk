@@ -19,6 +19,7 @@ import {
   autoModeApprovalTarget,
   autoModeAskRefusal,
   autoModeContextLabel,
+  autoModeKeyInEvidence,
   autoModeReadout,
   autoModeAsks,
   autoModeSubjectRequest,
@@ -1006,6 +1007,109 @@ describe('a match on a parent issue', () => {
     const answer = matched('FOO-1');
 
     expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: [] })).toBe(true);
+  });
+});
+
+describe('a match only the offered list named', () => {
+  const standIn = openStandIn({ name: 'Reward', day: TODAY, now: at('07:00') });
+  const answer: AutoModeAnswer = {
+    ...matched('FIFAGG-12704'),
+    subject: { kind: 'stand-in', standInId: standIn.id },
+    outcome: {
+      kind: 'match',
+      issueKey: 'FIFAGG-12704',
+      summary: 'Reward pass claim flow',
+      reason: "Commits mention 'reward pass'.",
+      listOnly: true,
+    },
+  };
+  const request = (classes: ActionClasses) => autoModeApplyRequest({ day: TODAY, answer, label: 'Reward', classes });
+
+  it('waits for approval at local and external with its summary and reason, and never writes before it', () => {
+    expect(request({})).toEqual({
+      op: 'autoMode.apply',
+      day: TODAY,
+      subject: answer.subject,
+      label: 'Reward',
+      issueKey: 'FIFAGG-12704',
+      listOnly: true,
+      summary: 'Reward pass claim flow',
+      reason: "Commits mention 'reward pass'.",
+    });
+    expect(request({ 'autoMode.apply': 'external' })).toEqual(expect.objectContaining({ listOnly: true }));
+    expect(request({ 'autoMode.apply': 'human-only' })).toBeNull();
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: [] })).toBe(false);
+
+    const local = request({});
+
+    if (!local) throw new Error('nothing to queue');
+
+    const queue = enqueueApproval([], {
+      id: 'apply-1',
+      request: local,
+      client: AUTO_MODE_CLIENT,
+      target: autoModeApplyTarget(TODAY, answer.subject),
+      at: at('10:00'),
+      day: TODAY,
+    });
+
+    expect(autoModeApplies({ day: TODAY, answer, classes: {}, approvals: queue })).toBe(false);
+    expect(
+      autoModeApplies({
+        day: TODAY,
+        answer,
+        classes: {},
+        approvals: markApproval(queue, { id: 'apply-1', state: 'approved' }),
+      }),
+    ).toBe(true);
+  });
+
+  it('never names a band before the approval', () => {
+    const band: AutoModeAnswer = { ...answer, subject: matched('FIFAGG-12704').subject };
+    const edits = withAutoModeAnswer(EMPTY_DAY_REVIEW_EDITS, band);
+    const applies = (candidate: AutoModeAnswer) =>
+      autoModeApplies({ day: TODAY, answer: candidate, classes: {}, approvals: [] });
+
+    expect(withAutoModeRowNames({ edits, rows: rowsOf(edits), unattributed: DAY.unattributed, applies })).toBe(edits);
+  });
+});
+
+describe('autoModeKeyInEvidence', () => {
+  const evidence = (request: Partial<TicketWritingRequest>) => ({ ...REQUEST, ...request });
+
+  it('finds the key in the branch, a note or the stand-in name, whatever its case', () => {
+    expect(
+      autoModeKeyInEvidence({ request: evidence({ branch: 'feature/fifagg-12704-reward' }), issueKey: 'FIFAGG-12704' }),
+    ).toBe(true);
+    expect(
+      autoModeKeyInEvidence({ request: evidence({ notes: ['FIFAGG-12704 Claim'] }), issueKey: 'FIFAGG-12704' }),
+    ).toBe(true);
+    expect(
+      autoModeKeyInEvidence({
+        request: evidence({ standIn: { name: 'FIFAGG-12704', days: 1 } }),
+        issueKey: 'FIFAGG-12704',
+      }),
+    ).toBe(true);
+  });
+
+  it('does not take a longer key or the summary words for the key', () => {
+    expect(
+      autoModeKeyInEvidence({
+        request: evidence({ branch: 'feature/reward-frontend', notes: ['FIFAGG-127045 reward pass'] }),
+        issueKey: 'FIFAGG-12704',
+      }),
+    ).toBe(false);
+  });
+
+  it('reads the key in the pseudonyms the request was masked with', () => {
+    const request = standInWritingRequest({
+      standIn: { name: 'Fifagg-12704 rewards', days: [TODAY] },
+      maskedNames: ['Fifagg'],
+    });
+
+    expect(JSON.stringify(request).toLowerCase()).not.toContain('fifagg');
+    expect(autoModeKeyInEvidence({ request, issueKey: 'FIFAGG-12704', maskedNames: ['Fifagg'] })).toBe(true);
+    expect(autoModeKeyInEvidence({ request, issueKey: 'FIFAGG-12705', maskedNames: ['Fifagg'] })).toBe(false);
   });
 });
 

@@ -67,3 +67,24 @@ test.describe('a repository alias', () => {
     await expect.poll(async () => (await readStoredSettings(page))?.repoAliases).toEqual({});
   });
 });
+
+test.describe('the epics of a linked path', () => {
+  test('are named on the path’s own row and stored with its link', async ({ page }) => {
+    const row = page.locator(`ethlete-project-paths li[data-path="${E2E_REPO}"]`);
+    const epics = row.getByRole('textbox', { name: 'Epics the path works in' });
+
+    await epics.fill('abc-9000, ABC-9000 not-a-key');
+    await epics.press('Enter');
+
+    await expect
+      .poll(async () => (await readStoredSettings(page))?.projectLinks[0]?.target)
+      .toEqual({ kind: 'project', projectKey: ABC.key, epicKeys: ['ABC-9000'] });
+
+    await epics.fill('');
+    await page.getByRole('heading', { name: 'Paths' }).click();
+
+    await expect
+      .poll(async () => (await readStoredSettings(page))?.projectLinks[0]?.target)
+      .toEqual({ kind: 'project', projectKey: ABC.key });
+  });
+});
