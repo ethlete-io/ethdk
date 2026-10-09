@@ -1,5 +1,6 @@
 import { Observable, catchError, concatMap, from, map, of, reduce } from 'rxjs';
 import { ForgePagingOptions } from '../forge/cli';
+import { isForgeCovered } from '../forge/window';
 import { CollectedEvent, MergeRequestActivityEvent } from '../model/event';
 import { TimetrackProcessRunner } from '../transport/ports';
 import { GitLabEvent, fetchGitLabEvents$ } from './events';
@@ -25,6 +26,8 @@ export type GitLabCollectOptions = {
    * is what keeps a first run over a wide window from making hundreds of calls.
    */
   maxMergeRequestLookups?: number;
+  /** The newest GitLab event the store already holds. A cap that cuts off only what is older is not reported. */
+  coveredThrough?: Date | null;
   paging?: Partial<ForgePagingOptions>;
 };
 
@@ -38,13 +41,28 @@ const keyOf = (event: GitLabEvent) => `${event.projectId}!${event.mergeRequestIi
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-/** The merge requests the window's events name, each read once. */
+/**
+ * The merge requests the window's events name, each read once. An event that already carries its
+ * branch needs none, and the events the store does not hold yet are read first.
+ */
 const resolveMergeRequests$ = (options: GitLabCollectOptions, events: GitLabEvent[]): Observable<Resolved> => {
-  const wanted = new Map(events.map((event) => [keyOf(event), event]));
+  const wanted = new Map<string, GitLabEvent>();
 
+  for (const event of events) {
+    if (event.branch) continue;
+
+    const held = wanted.get(keyOf(event));
+
+    if (!held || isForgeCovered(held.at, options.coveredThrough)) wanted.set(keyOf(event), event);
+  }
+
+  const ordered = [...wanted.values()].sort(
+    (a, b) =>
+      Number(isForgeCovered(a.at, options.coveredThrough)) - Number(isForgeCovered(b.at, options.coveredThrough)),
+  );
   const limit = options.maxMergeRequestLookups ?? DEFAULT_MAX_MERGE_REQUEST_LOOKUPS;
-  const lookups = [...wanted.values()].slice(0, limit);
-  const dropped = wanted.size - lookups.length;
+  const lookups = ordered.slice(0, limit);
+  const dropped = ordered.slice(limit).filter((event) => !isForgeCovered(event.at, options.coveredThrough)).length;
   const initial: Resolved = {
     merged: new Map(),
     failures:
@@ -116,11 +134,12 @@ export const collectGitLabEvents$ = (options: GitLabCollectOptions): Observable<
   }).pipe(
     concatMap((page) => {
       const events = page.events.filter((event) => !!event.mergeRequestIid);
-      const capped = page.reachedBackTo
-        ? [
-            `GitLab's activity feed was read up to its page cap, so this run reached back only to ${page.reachedBackTo.toISOString()}.`,
-          ]
-        : [];
+      const capped =
+        page.reachedBackTo && !isForgeCovered(page.reachedBackTo, options.coveredThrough)
+          ? [
+              `GitLab's activity feed was read up to its page cap, so this run reached back only to ${page.reachedBackTo.toISOString()}.`,
+            ]
+          : [];
 
       if (events.length === 0) return of<GitLabCollection>({ events: [], failures: capped });
 

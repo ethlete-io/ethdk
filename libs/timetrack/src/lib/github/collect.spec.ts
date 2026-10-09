@@ -53,7 +53,10 @@ const stubRunner = (options: { events: unknown[]; pullRequestRefused?: boolean }
   return { runner, specs };
 };
 
-const collect = (runner: TimetrackProcessRunner, options: { maxPullRequestLookups?: number } = {}) => {
+const collect = (
+  runner: TimetrackProcessRunner,
+  options: { maxPullRequestLookups?: number; maxPages?: number; coveredThrough?: Date } = {},
+) => {
   const seen = vi.fn();
 
   collectGitHubEvents$({
@@ -62,7 +65,8 @@ const collect = (runner: TimetrackProcessRunner, options: { maxPullRequestLookup
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     maxPullRequestLookups: options.maxPullRequestLookups,
-    paging: { pageSize: 1, maxPages: 3 },
+    coveredThrough: options.coveredThrough,
+    paging: { pageSize: 1, maxPages: options.maxPages ?? 3 },
   }).subscribe(seen);
 
   return (seen.mock.calls[0]?.[0] ?? { events: [], failures: [] }) as GitHubCollection;
@@ -123,6 +127,40 @@ describe('collectGitHubEvents$', () => {
 
     expect(collection.events).toHaveLength(2);
     expect(collection.failures[0]).toContain('1 more pull request');
+  });
+
+  it('reports how far back the feed reached when its cap cut off what the store does not hold', () => {
+    const collection = collect(stubRunner({ events: [REVIEW] }).runner, {
+      maxPages: 1,
+      coveredThrough: new Date('2026-08-11T09:00:00.000Z'),
+    });
+
+    expect(collection.failures).toEqual([
+      `GitHub's feed stops at 300 events, so this run reached back only to ${new Date(REVIEW.created_at).toISOString()}.`,
+    ]);
+  });
+
+  it('reports no feed cap when the store already holds what the read did not reach', () => {
+    const collection = collect(stubRunner({ events: [REVIEW] }).runner, {
+      maxPages: 1,
+      coveredThrough: new Date(REVIEW.created_at),
+    });
+
+    expect(collection.failures).toEqual([]);
+  });
+
+  it('reports no lookup cap for the pull requests of events the store already holds', () => {
+    const stored = {
+      ...COMMENT,
+      id: '55005',
+      created_at: '2026-08-11T08:00:00.000Z',
+      payload: { issue: { number: 413, pull_request: {} } },
+    };
+    const { runner, specs } = stubRunner({ events: [COMMENT, stored] });
+    const collection = collect(runner, { maxPullRequestLookups: 1, coveredThrough: new Date(stored.created_at) });
+
+    expect(collection.failures).toEqual([]);
+    expect(lookupsIn(specs).map(endpointOf)).toEqual([expect.stringContaining('/pulls/412')]);
   });
 
   it('keys an event by its source as well as its id, so a GitLab event with the same id is not it', () => {

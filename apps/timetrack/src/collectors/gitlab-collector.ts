@@ -8,9 +8,10 @@ import {
   effectiveExclusionRules,
   forgeHostname,
   forgeLoginFor,
+  forgeReadWindow,
   probeForgeAuth$,
 } from '@ethlete/timetrack';
-import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, of, switchMap, tap, timer } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, map, of, switchMap, tap, timer } from 'rxjs';
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
@@ -20,12 +21,6 @@ import { injectHostPorts } from '../host';
  * at its end — and every read costs the instance a page of events plus a merge request or two.
  */
 export const GITLAB_POLL_INTERVAL_MS = 10 * 60_000;
-
-/** How far a run reaches back. Wide enough that yesterday evening is still in it. */
-export const GITLAB_WINDOW_MS = 26 * 60 * 60_000;
-
-/** What the first run of a session reaches back over, so a week the app was closed still arrives. */
-export const GITLAB_FIRST_WINDOW_MS = 30 * 24 * 60 * 60_000;
 
 export type GitLabCollectorRun = {
   at: Date;
@@ -46,8 +41,8 @@ export type GitLabCollectorRun = {
  * moves the two ways the source can go quiet — the binary leaving the `PATH`, and the login expiring —
  * out of the keychain and into `auth`, which the Sources row reports as two distinct states.
  *
- * Every read overlaps the last one, and `dedupeKeyOf` keys each event by GitLab's own id — which is
- * what lets the first run of a session reach back a month without storing anything twice.
+ * Every read starts a day before the newest GitLab event the store holds, and `dedupeKeyOf` keys each
+ * event by GitLab's own id, so the overlap stores nothing twice.
  */
 const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
@@ -56,18 +51,15 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const lastRun = signal<GitLabCollectorRun | null>(null);
   const failure = signal<string | null>(null);
   const auth = signal<ForgeAuth | null>(null);
-  let read = false;
 
   const read$ = (hostname: string): Observable<unknown> => {
     const at = new Date();
-    const windowMs = read ? GITLAB_WINDOW_MS : GITLAB_FIRST_WINDOW_MS;
 
-    return collectGitLabEvents$({
-      runner: ports.processes,
-      hostname,
-      from: new Date(at.getTime() - windowMs),
-      to: at,
-    }).pipe(
+    return ports.events.bySource$().pipe(
+      map((tallies) =>
+        forgeReadWindow({ at, newestStored: tallies.find((tally) => tally.source === 'gitlab')?.latestAt ?? null }),
+      ),
+      concatMap((span) => collectGitLabEvents$({ runner: ports.processes, hostname, ...span })),
       concatMap((collection) => {
         // A merge request title is named after the work, so a title rule applies to it exactly as it
         // applies to a window title — the same argument as an agent session's own title.
@@ -78,7 +70,6 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         return ports.events.appendCounted$(kept).pipe(
           tap((stored) => {
-            read = true;
             lastRun.set({
               at,
               seen: collection.events.length,

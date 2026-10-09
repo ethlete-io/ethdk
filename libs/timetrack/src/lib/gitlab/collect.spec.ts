@@ -49,7 +49,7 @@ const stubRunner = (options: { events: unknown[]; mergeRequest?: unknown; mergeR
 
 const collect = (
   runner: TimetrackProcessRunner,
-  options: { maxMergeRequestLookups?: number; maxPages?: number } = {},
+  options: { maxMergeRequestLookups?: number; maxPages?: number; coveredThrough?: Date } = {},
 ) => {
   const seen = vi.fn();
 
@@ -59,6 +59,7 @@ const collect = (
     from: new Date(2026, 7, 11, 0, 0),
     to: new Date(2026, 7, 11, 23, 59, 59),
     maxMergeRequestLookups: options.maxMergeRequestLookups,
+    coveredThrough: options.coveredThrough,
     paging: { pageSize: 1, ...(options.maxPages ? { maxPages: options.maxPages } : {}) },
   }).subscribe(seen);
 
@@ -128,6 +129,43 @@ describe('collectGitLabEvents$', () => {
     expect(collection.failures).toContain(
       `GitLab's activity feed was read up to its page cap, so this run reached back only to ${new Date(NOTE.created_at).toISOString()}.`,
     );
+  });
+
+  it('reports no page cap when the store already holds what the read did not reach', () => {
+    const collection = collect(stubRunner({ events: [NOTE] }).runner, {
+      maxPages: 1,
+      coveredThrough: new Date(NOTE.created_at),
+    });
+
+    expect(collection.failures).toEqual([]);
+  });
+
+  it('reports no lookup cap for the merge requests of events the store already holds', () => {
+    const stored = {
+      ...NOTE,
+      id: 9006,
+      created_at: '2026-08-11T08:00:00.000+02:00',
+      note: { noteable_type: 'MergeRequest', noteable_iid: 413 },
+    };
+    const { runner, specs } = stubRunner({ events: [stored, NOTE] });
+    const collection = collect(runner, {
+      maxMergeRequestLookups: 1,
+      maxPages: 3,
+      coveredThrough: new Date(stored.created_at),
+    });
+
+    expect(collection.failures).toEqual([]);
+    expect(lookupsIn(specs).map(endpointOf)).toEqual([expect.stringContaining('/merge_requests/412')]);
+  });
+
+  it('looks nothing up for an event that already carries its branch', () => {
+    const { runner, specs } = stubRunner({
+      events: [{ ...NOTE, push_data: { ref: 'feat/FIP-2178-user-password-reset', ref_type: 'branch' } }],
+    });
+    const [event] = collect(runner).events as MergeRequestActivityEvent[];
+
+    expect(lookupsIn(specs)).toEqual([]);
+    expect(event?.branch).toBe('feat/FIP-2178-user-password-reset');
   });
 
   it('reports no cap when the feed ended before it', () => {

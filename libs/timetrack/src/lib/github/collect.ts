@@ -1,5 +1,6 @@
 import { Observable, catchError, concatMap, from, map, of, reduce } from 'rxjs';
 import { ForgePagingOptions } from '../forge/cli';
+import { isForgeCovered } from '../forge/window';
 import { CollectedEvent, MergeRequestActivityEvent } from '../model/event';
 import { TimetrackProcessRunner } from '../transport/ports';
 import { GitHubEvent, fetchGitHubEvents$ } from './events';
@@ -25,6 +26,8 @@ export type GitHubCollectOptions = {
    * what keeps a first run over a wide window from making hundreds of calls.
    */
   maxPullRequestLookups?: number;
+  /** The newest GitHub event the store already holds. A cap that cuts off only what is older is not reported. */
+  coveredThrough?: Date | null;
   paging?: Partial<ForgePagingOptions>;
 };
 
@@ -43,7 +46,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
  *
  * Neither payload shape carries both halves: a comment gives the title and no head ref, and everything
  * else gives the head ref and no title. So an event is worth a lookup whenever either is missing, and
- * the lookup is per pull request rather than per event.
+ * the lookup is per pull request rather than per event. The events the store does not hold yet are
+ * read first.
  */
 const resolvePullRequests$ = (options: GitHubCollectOptions, events: GitHubEvent[]): Observable<Resolved> => {
   const wanted = new Map<string, GitHubEvent>();
@@ -51,12 +55,18 @@ const resolvePullRequests$ = (options: GitHubCollectOptions, events: GitHubEvent
   for (const event of events) {
     if (event.branch && event.title) continue;
 
-    wanted.set(keyOf(event), event);
+    const held = wanted.get(keyOf(event));
+
+    if (!held || isForgeCovered(held.at, options.coveredThrough)) wanted.set(keyOf(event), event);
   }
 
+  const ordered = [...wanted.values()].sort(
+    (a, b) =>
+      Number(isForgeCovered(a.at, options.coveredThrough)) - Number(isForgeCovered(b.at, options.coveredThrough)),
+  );
   const limit = options.maxPullRequestLookups ?? DEFAULT_MAX_PULL_REQUEST_LOOKUPS;
-  const lookups = [...wanted.values()].slice(0, limit);
-  const dropped = wanted.size - lookups.length;
+  const lookups = ordered.slice(0, limit);
+  const dropped = ordered.slice(limit).filter((event) => !isForgeCovered(event.at, options.coveredThrough)).length;
   const initial: Resolved = {
     read: new Map(),
     failures: dropped > 0 ? [`${dropped} more pull request(s) were not read: the per-run lookup cap was reached.`] : [],
@@ -122,9 +132,10 @@ export const collectGitHubEvents$ = (options: GitHubCollectOptions): Observable<
     paging: options.paging,
   }).pipe(
     concatMap((page) => {
-      const capped = page.reachedBackTo
-        ? [`GitHub's feed stops at 300 events, so this run reached back only to ${page.reachedBackTo.toISOString()}.`]
-        : [];
+      const capped =
+        page.reachedBackTo && !isForgeCovered(page.reachedBackTo, options.coveredThrough)
+          ? [`GitHub's feed stops at 300 events, so this run reached back only to ${page.reachedBackTo.toISOString()}.`]
+          : [];
 
       if (page.events.length === 0) return of<GitHubCollection>({ events: [], failures: capped });
 
