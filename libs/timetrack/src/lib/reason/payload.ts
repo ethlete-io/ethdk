@@ -1,3 +1,4 @@
+import { isQuotableNote } from '../model/acknowledgement';
 import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey } from '../model/block';
@@ -32,7 +33,7 @@ const notesFor = (options: { groups: readonly WorkGroup[]; contextId: string; ma
 
         const quoted = entry.summary;
 
-        if (!quoted) continue;
+        if (!quoted || !isQuotableNote(quoted)) continue;
 
         const note = clippedReasoningText(quoted, MAX_REASONING_NOTE_LENGTH);
 

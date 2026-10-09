@@ -4,7 +4,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
-import { draftParentDescription, draftTicket, humanized, standInNameFor } from './draft';
+import { contextHasTicketText, draftParentDescription, draftTicket, humanized, standInNameFor } from './draft';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -120,7 +120,9 @@ describe('draftTicket', () => {
 
   it('quotes no more notes than it was allowed', () => {
     const context = { repoPath: REPO, branch: 'feat/user-management' };
-    const entries = Array.from({ length: 8 }, (_, index) => evidence('commit', `commit ${index}`, `Subject ${index}`));
+    const entries = Array.from({ length: 8 }, (_, index) =>
+      evidence('commit', `commit ${index}`, `Fix subject ${index}`),
+    );
     const drafted = draftTicket({
       context: unnamed(context),
       unattributed: [group([block(context, entries)])],
@@ -141,6 +143,46 @@ describe('draftTicket', () => {
     });
 
     expect(drafted.notes).toEqual([]);
+  });
+});
+
+describe('contextHasTicketText', () => {
+  const hasText = (options: { context: UnnamedContext['context']; entries?: Evidence[] }) =>
+    contextHasTicketText({
+      context: unnamed(options.context),
+      unattributed: [group([block(options.context, options.entries ?? [])])],
+      config: CONFIG,
+    });
+
+  it('finds nothing to write from where the only note does not read as words', () => {
+    expect(
+      hasText({
+        context: { repoPath: REPO, branch: 'main' },
+        entries: [evidence('agent-session', 'agent session', '(click)=')],
+      }),
+    ).toBe(false);
+  });
+
+  it('writes from a readable note, or from the branch subject alone', () => {
+    expect(
+      hasText({
+        context: { repoPath: REPO, branch: 'main' },
+        entries: [evidence('agent-session', 'agent session', 'Bind the click event in the hub')],
+      }),
+    ).toBe(true);
+    expect(hasText({ context: { repoPath: REPO, branch: 'feat/user-management-screen' } })).toBe(true);
+  });
+});
+
+describe('draftTicket quoting', () => {
+  it('leaves a note that does not read as words out of the description', () => {
+    const drafted = draft({
+      context: { repoPath: REPO, branch: 'main' },
+      entries: [evidence('agent-session', 'agent session', '(click)=')],
+    });
+
+    expect(drafted.notes).toEqual([]);
+    expect(drafted.summary).not.toContain('(click)=');
   });
 });
 

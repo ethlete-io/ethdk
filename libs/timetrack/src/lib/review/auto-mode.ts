@@ -4,7 +4,7 @@ import { AgentApiRequest } from '../agent-api/model';
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
 import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
-import { StandInBand, draftTicket } from '../ticket/draft';
+import { StandInBand, contextHasTicketText, draftTicket } from '../ticket/draft';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
@@ -507,6 +507,10 @@ export const autoModeAsks = (options: {
   });
   const contexts = options.contexts
     .filter((context) => !options.ruledContextIds?.has(context.id))
+    .filter(
+      (context) =>
+        !evidence || contextHasTicketText({ context, unattributed: evidence.unattributed, config: evidence.config }),
+    )
     .map((context): AutoModeSubject => ({ kind: 'context', contextId: context.id }));
   const standIns = options.standIns
     .filter(
@@ -664,7 +668,7 @@ export const withAutoModeRowNames = (options: {
 
   for (const answer of options.edits.auto ?? []) {
     if (options.applies && !options.applies(answer)) continue;
-    if (answer.outcome.kind === 'match' && answer.outcome.done) continue;
+    if (answer.outcome.kind === 'match' && (answer.outcome.done || answer.outcome.gone)) continue;
 
     const issueKey = autoModeIssueKeyOf(answer);
 
@@ -746,7 +750,7 @@ export const autoModeApplyRequest = (options: {
 }): AutoModeApplyRequest | null => {
   const { outcome, subject } = options.answer;
 
-  if (outcome.kind !== 'match') return null;
+  if (outcome.kind !== 'match' || outcome.gone) return null;
 
   const opClass = actionClassOf('autoMode.apply', options.classes);
   const request = { op: 'autoMode.apply' as const, day: options.day, subject, label: options.label };
@@ -784,7 +788,7 @@ export const autoModeApplies = (options: {
   const { outcome, subject } = options.answer;
 
   if (outcome.kind === 'draft') return !!outcome.createdKey;
-  if (outcome.kind !== 'match' || outcome.done) return false;
+  if (outcome.kind !== 'match' || outcome.done || outcome.gone) return false;
 
   const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
 
@@ -1002,6 +1006,7 @@ const ticketReadout = (options: {
       return { ...found, status: 'approved' };
     }
 
+    if (outcome.gone) return { ...found, status: 'failed', error: `Jira no longer holds ${issueKey}.` };
     if (outcome.done) return { ...found, status: 'done' };
 
     if (actionClassOf('autoMode.apply', options.classes) === 'human-only') return { ...found, status: 'held' };

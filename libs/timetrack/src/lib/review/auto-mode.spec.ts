@@ -419,6 +419,31 @@ describe('autoModeAsks after new evidence', () => {
     expect(asksWith({ unattributed: longer, contexts, answer: answerFrom(morning, draftOutcome) })).toEqual([]);
   });
 
+  it('asks nothing about a context whose only text does not read as words', () => {
+    const onMain = { repoPath: '/work/shop', branch: 'main' };
+    const context: UnnamedContext = { ...CONTEXT, id: contextKey(onMain), context: onMain, suggestion: onMain };
+    const ask = (notes: string[]) =>
+      autoModeAsks({
+        enabled: true,
+        day: TODAY,
+        today: TODAY,
+        nowMs: NOW,
+        contexts: [context],
+        standIns: [],
+        rows: [],
+        answers: [],
+        evidence: {
+          unattributed: [{ ...GROUP, blocks: [{ ...BLOCK, context: onMain, evidence: notes.map(commit) }] }],
+          config: CONFIG,
+          maskedNames: [],
+        },
+        approvals: [],
+      });
+
+    expect(ask(['(click)='])).toEqual([]);
+    expect(ask(['Bind the click event in the hub'])).toEqual([{ kind: 'context', contextId: context.id }]);
+  });
+
   it('asks nothing again without the evidence or the queue to judge by', () => {
     expect(
       autoModeAsks({

@@ -89,9 +89,18 @@ describe('reasoningPlan', () => {
     expect(JSON.stringify(request)).not.toContain('5f0c2a9e');
   });
 
+  it('quotes no note that does not read as words', () => {
+    const context = { repoPath: REPO, branch: 'main' };
+    const blocks = [block(context, [evidence('agent-session', 'session', '(click)=')])];
+
+    const { request } = reasoningPlan({ contexts: [unnamed(context)], unattributed: [group(blocks)] });
+
+    expect(request.contexts[0]?.notes).toEqual([]);
+  });
+
   it('cuts a long note, so no single title can carry a whole instruction', () => {
     const context = { repoPath: REPO, branch: 'refactor/hub-query-v3' };
-    const blocks = [block(context, [evidence('commit', 'x', 'a'.repeat(1000))])];
+    const blocks = [block(context, [evidence('commit', 'x', 'word '.repeat(250))])];
 
     const { request } = reasoningPlan({ contexts: [unnamed(context)], unattributed: [group(blocks)] });
 

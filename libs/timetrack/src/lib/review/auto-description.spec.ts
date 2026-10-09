@@ -160,6 +160,15 @@ describe('autoDescriptionAsks', () => {
     expect(rowsOf(rewritten, [grown])[0]?.description).toBe('Second');
   });
 
+  it('asks nothing about a row whose only note does not read as words', () => {
+    const unreadable = proposal({
+      id: CODE.id,
+      evidence: [{ kind: 'agent-session', at: at('08:30'), detail: '(click)=', summary: '(click)=' }],
+    });
+
+    expect(asks({ rows: rowsOf(EMPTY_DAY_REVIEW_EDITS, [unreadable]) })).toEqual([]);
+  });
+
   it('asks nothing about a row whose only notes are acknowledgements', () => {
     const acknowledged = proposal({
       id: CODE.id,

@@ -3,6 +3,7 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityContext, contextKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
+import { isQuotableNote } from '../model/acknowledgement';
 import { Evidence, QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 
 /** Jira refuses a longer summary, and a summary that long is a description anyway. */
@@ -60,7 +61,7 @@ const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readon
 
         const note = entry.summary;
 
-        if (!note || seen.has(note)) continue;
+        if (!note || !isQuotableNote(note) || seen.has(note)) continue;
 
         seen.add(note);
         notes.push(note);
@@ -96,7 +97,9 @@ export const standInNotes = (options: { bands: readonly StandInBand[]; standInId
 
     for (const note of new Set(
       (band.evidence ?? [])
-        .filter((entry) => QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) && entry.summary)
+        .filter(
+          (entry) => QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) && !!entry.summary && isQuotableNote(entry.summary),
+        )
         .map((entry) => entry.summary as string),
     )) {
       weight.set(note, (weight.get(note) ?? 0) + (band.observedMs ?? 0));
@@ -132,6 +135,15 @@ const summaryFor = (options: { context: UnnamedContext; notes: string[]; config:
     MAX_TICKET_SUMMARY_LENGTH,
   );
 };
+
+/** Whether a context says anything a ticket could be written from: a branch subject or a quotable note. */
+export const contextHasTicketText = (options: {
+  context: UnnamedContext;
+  unattributed: readonly WorkGroup[];
+  config: GitFlowConfig;
+}) =>
+  !!branchSubjectOf({ branch: options.context.context.branch, config: options.config })?.trim() ||
+  notesForAll({ groups: options.unattributed, contextIds: [options.context.id], max: 1 }).length > 0;
 
 /**
  * The name a stand-in opens with.

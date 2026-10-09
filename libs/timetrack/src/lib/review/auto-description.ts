@@ -1,6 +1,6 @@
 import { ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { streamKeyLabel, streamKeyRepoPath } from '../model/block';
-import { isAcknowledgement } from '../model/acknowledgement';
+import { isQuotableNote } from '../model/acknowledgement';
 import { QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 import { maskIssueKey, maskNames, pseudonymMap } from '../reason/pseudonym';
@@ -23,14 +23,14 @@ export const autoDescriptionRowId = (row: Pick<ReviewedRow, 'id' | 'recutOf'>) =
 
 const isCodeRow = (row: Pick<ReviewedRow, 'laneKey'>) => !!row.laneKey && !!streamKeyRepoPath(row.laneKey);
 
-/** The wording a row's quotable evidence lends a prompt, each note once, acknowledgements left out. */
+/** The wording a row's quotable evidence lends a prompt, each note once, unreadable notes and acknowledgements left out. */
 export const quotableNotesOf = (evidence: ReviewedRow['evidence']) => {
   const notes: string[] = [];
 
   for (const entry of evidence) {
     const note = QUOTABLE_EVIDENCE_KINDS.includes(entry.kind) ? entry.summary?.trim() : undefined;
 
-    if (note && !isAcknowledgement(note) && !notes.includes(note)) notes.push(note);
+    if (note && isQuotableNote(note) && !notes.includes(note)) notes.push(note);
   }
 
   return notes;

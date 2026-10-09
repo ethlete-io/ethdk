@@ -29,3 +29,6 @@ export const isReadableSummary = (summary: string) => {
 
   return words >= MIN_WORDS && letters * 2 >= visible.length;
 };
+
+/** Whether a summary may describe work: it reads as words, and it says more than that the user agreed. */
+export const isQuotableNote = (note: string) => isReadableSummary(note) && !isAcknowledgement(note);
