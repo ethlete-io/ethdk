@@ -64,12 +64,47 @@ export const peerDayRowsOf = (options: {
   };
 };
 
-/** The wire form of {@link PeerDayRows}. */
+/**
+ * The version of the rows this app builds. Raise it when {@link peerDayRowsOf} or the rows it reads change
+ * what a booked day sends: each machine then builds and sends its stored days again.
+ */
+export const PEER_DAY_ROWS_VERSION = 1;
+
+/** The wire form of {@link PeerDayRows}, stamped with {@link PEER_DAY_ROWS_VERSION}. */
 export const encodePeerDayRows = (rows: PeerDayRows) =>
   JSON.stringify({
+    version: PEER_DAY_ROWS_VERSION,
     ...rows,
     rows: rows.rows.map((row) => ({ ...row, from: row.from.getTime(), to: row.to.getTime() })),
   });
+
+/** The version a wire form was built with, 0 for one written before rows carried a version. */
+export const peerDayRowsVersionOf = (json: string) => {
+  try {
+    const parsed: unknown = JSON.parse(json);
+    const version = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>)['version'] : 0;
+
+    return typeof version === 'number' ? version : 0;
+  } catch {
+    return 0;
+  }
+};
+
+/** How many days back a machine builds the rows of its booked days. */
+export const PEER_DAY_ROWS_BACKFILL_DAYS = 30;
+
+/** The booked days whose rows this machine has not stored, or stored with an older version, oldest first. */
+export const peerDayRowsToBackfill = (options: {
+  bookedDays: readonly string[];
+  stored: Readonly<Record<string, string>>;
+}) =>
+  [...new Set(options.bookedDays)]
+    .filter((day) => {
+      const stored = options.stored[day];
+
+      return stored === undefined || peerDayRowsVersionOf(stored) < PEER_DAY_ROWS_VERSION;
+    })
+    .sort();
 
 const STATES: readonly PeerRowState[] = ['booked', 'accepted', 'suggested'];
 

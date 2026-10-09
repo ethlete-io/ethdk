@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ReviewedRow } from './model';
-import { PeerDayRows, encodePeerDayRows, mapPeerDayRows, parsePeerDayRows, peerDayRowsOf } from './peer-rows';
+import {
+  PEER_DAY_ROWS_VERSION,
+  PeerDayRows,
+  encodePeerDayRows,
+  mapPeerDayRows,
+  parsePeerDayRows,
+  peerDayRowsOf,
+  peerDayRowsToBackfill,
+  peerDayRowsVersionOf,
+} from './peer-rows';
 
 const at = (time: string) => new Date(`2026-10-08T${time}:00Z`);
 
@@ -105,5 +114,28 @@ describe('a paired machine’s rows on this machine', () => {
         localKeys: { '/home/tom/dev/specs': 'gitlab.com/fifagg/specs' },
       }).rows.map((mapped) => mapped.laneKey),
     ).toEqual(['repo:/home/tom/dev/specs', 'repo:/Users/tom/dev/elsewhere']);
+  });
+});
+
+describe('the booked days a machine builds its rows for again', () => {
+  const current = encodePeerDayRows({ day: '2026-10-07', frozen: true, rows: [] });
+
+  it('stamps what it sends with the version that built it', () => {
+    expect(peerDayRowsVersionOf(current)).toBe(PEER_DAY_ROWS_VERSION);
+    expect(peerDayRowsVersionOf('{"day":"2026-10-07","frozen":true,"rows":[]}')).toBe(0);
+    expect(peerDayRowsVersionOf('not json')).toBe(0);
+  });
+
+  it('takes each booked day it stored no rows for, or rows an older version built, oldest first', () => {
+    expect(
+      peerDayRowsToBackfill({
+        bookedDays: ['2026-10-08', '2026-10-07', '2026-10-06', '2026-10-05', '2026-10-08'],
+        stored: {
+          '2026-10-07': current,
+          '2026-10-06': '{"day":"2026-10-06","frozen":true,"rows":[]}',
+          '2026-10-04': '{"day":"2026-10-04","frozen":true,"rows":[]}',
+        },
+      }),
+    ).toEqual(['2026-10-05', '2026-10-06', '2026-10-08']);
   });
 });
