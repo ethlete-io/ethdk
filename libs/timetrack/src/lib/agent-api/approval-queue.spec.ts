@@ -355,7 +355,7 @@ describe('waitingApprovalsOf', () => {
         state: 'queued',
         op: 'jira.create',
         askedAtMs: AT.getTime(),
-        summary: 'Files a Jira issue in ABC: Pdf export',
+        summary: 'Pdf export → new issue in ABC',
       },
       {
         approvalId: 'a1',

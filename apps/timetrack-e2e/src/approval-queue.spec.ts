@@ -31,7 +31,7 @@ test.describe('a write an agent asks for', () => {
     const dialog = await openApprovals(page);
     const item = dialog.locator(`[data-approval="${id}"]`);
 
-    await expect(item).toContainText('Files a Jira issue in ABC: Pdf export');
+    await expect(item).toContainText('Pdf export → new issue in ABC');
     await expect(item).toContainText('Claude Code');
     await item.getByRole('button', { name: 'Approve' }).click();
 
@@ -89,7 +89,7 @@ test.describe('a write an agent asks for', () => {
           op: 'jira.create',
           client: 'Claude Code',
           askedAtMs: expect.any(Number),
-          summary: 'Files a Jira issue in ABC: Pdf export',
+          summary: 'Pdf export → new issue in ABC',
         },
       ],
     });

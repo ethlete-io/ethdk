@@ -90,7 +90,7 @@ test.describe('asking auto mode again from the band menu', () => {
     const dialog = await openApprovals(page);
 
     await expect(dialog.locator('[data-approval]')).toHaveCount(1);
-    await expect(dialog.locator('[data-approval]')).toContainText('Files a Jira issue');
+    await expect(dialog.locator('[data-approval]')).toContainText('→ new issue in');
   });
 });
 

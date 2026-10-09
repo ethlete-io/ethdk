@@ -71,7 +71,7 @@ test.describe('auto mode on a band no issue matches', () => {
     const item = dialog.locator('[data-approval]');
 
     await expect(item).toHaveCount(1);
-    await expect(item).toContainText('Files a Jira issue in ABC: Drafted');
+    await expect(item).toContainText('Drafted feat/pdf-export → new issue in ABC');
     await expect(item).toContainText('auto mode');
     expect((await readBackend(page)).jira.created).toEqual([]);
 
@@ -115,7 +115,7 @@ test.describe('auto mode while the screen shows another day', () => {
 
     const dialog = await openApprovals(page);
 
-    await expect(dialog.locator('[data-approval]')).toContainText('Files a Jira issue in ABC: Drafted');
+    await expect(dialog.locator('[data-approval]')).toContainText('Drafted feat/pdf-export → new issue in ABC');
     expect(await savedDay(page)).toBe(YESTERDAY);
   });
 

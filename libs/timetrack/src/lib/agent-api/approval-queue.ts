@@ -377,7 +377,7 @@ export const describeApproval = (request: AgentApprovalRequest) => {
     case 'autoMode.hide':
       return `Hides the rest of the ${request.label || 'call'} call, which went off topic`;
     case 'jira.create':
-      return `Files a Jira issue in ${request.projectKey ?? 'the picked project'}: ${request.summary}`;
+      return `${request.summary} → new issue in ${request.projectKey ?? 'the picked project'}`;
     case 'worklog.add':
       return `Adds a ${minutesOf(request.durationMs)} row for ${request.issueKey} to the day`;
     case 'day.edits':
