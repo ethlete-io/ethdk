@@ -168,4 +168,72 @@ describe('streamDay over a paired machine’s events', () => {
     expect(shown).not.toContain('Acme');
     expect(rowsIn(day, `repo:${SDK}`).length).toBeGreaterThan(0);
   });
+
+  describe('attendance across both machines', () => {
+    const input = (minutes: number, kind: 'input-active' | 'input-idle'): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'input',
+      kind,
+    });
+
+    const idle = (minutes: number, kind: 'idle-start' | 'idle-end'): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'idle',
+      kind,
+    });
+
+    const prompt = (minutes: number): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'agent-prompt',
+      kind: 'agent-prompt',
+      provider: 'claude-code',
+      sessionId: 'remote',
+      promptId: `prompt-${minutes}`,
+      cwd: FUT,
+      askedBy: 'human',
+    });
+
+    it('does not read a prompt typed at the paired machine as phone time here', () => {
+      const day = dayOf({
+        local: [
+          input(0, 'input-active'),
+          ...focusRun({ from: 0, to: 30, appId: 'code', title: 'fut-frontend - Code' }),
+          input(29, 'input-idle'),
+          idle(30, 'idle-start'),
+          ...[45, 60, 75].flatMap((minutes) => [
+            ...sessionRun({ from: minutes, to: minutes, cwd: FUT, sessionId: 'remote' }),
+            prompt(minutes),
+          ]),
+          idle(100, 'idle-end'),
+          input(100, 'input-active'),
+          ...focusRun({ from: 100, to: 130, appId: 'code', title: 'fut-frontend - Code' }),
+        ],
+        mac: [
+          input(0, 'input-idle'),
+          input(30, 'input-active'),
+          ...focusRun({ from: 30, to: 100, appId: 'code', title: 'ethlete-sdk - Code' }),
+        ],
+      });
+      const [atTheMac] = rowsIn(day, `repo:${SDK}`);
+
+      expect(atTheMac?.durationMs).toBe(75 * 60_000);
+    });
+
+    it('lets the grace of this machine reach a band where only this machine was away', () => {
+      const day = dayOf({
+        local: [
+          ...focusRun({ from: 0, to: 10, appId: 'code', title: 'fut-frontend - Code' }),
+          idle(11, 'idle-start'),
+          ...[15, 30, 45, 60, 75].flatMap((minutes) =>
+            sessionRun({ from: minutes, to: minutes, cwd: FUT, sessionId: 'left-running' }),
+          ),
+          idle(90, 'idle-end'),
+          ...focusRun({ from: 90, to: 100, appId: 'code', title: 'fut-frontend - Code' }),
+        ],
+        mac: focusRun({ from: 11, to: 89, appId: 'code', title: 'ethlete-sdk - Code' }),
+      });
+
+      expect(rowsIn(day, `repo:${FUT}`).filter((row) => 'unattended' in row && row.unattended)).toEqual([]);
+    });
+  });
 });

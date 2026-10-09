@@ -1,5 +1,5 @@
 import { CollectedEvent } from '@ethlete/timetrack';
-import { E2E_ISSUE_BRANCH, E2E_ISSUE_KEY, E2E_REPO } from '@ethlete/timetrack/testing';
+import { E2E_ISSUE_BRANCH, E2E_ISSUE_KEY, E2E_REPO, FakePairedMachine } from '@ethlete/timetrack/testing';
 import { Page } from '@playwright/test';
 import { E2E_DAY_KEY, E2E_NOW, expect, seedWorld, test } from './support';
 
@@ -73,5 +73,54 @@ test.describe('phone prompts with a pause of more than a quarter hour between th
 
   test('draw the pause as a break', async ({ page }) => {
     await expect.poll(() => titles(page, '[data-break]')).toContain('11:30 - 12:15');
+  });
+});
+
+const MACBOOK: FakePairedMachine = {
+  machineId: 'mac-1',
+  label: 'MacBook',
+  certFingerprint: 'fp-mac',
+  lastAddr: '192.168.1.20:52741',
+  lastSeenMs: new Date(E2E_NOW).getTime() - 30_000,
+  clockOffsetMs: 0,
+  pairedAtMs: new Date(E2E_NOW).getTime() - 86_400_000,
+  lastPullMs: null,
+};
+
+/** A second checkout, which the MacBook has a clone of. */
+const SDK = '/Users/e2e/dev/ethlete-sdk';
+
+/** The same stretch spent at the MacBook, typing in that checkout. */
+const atTheMac: CollectedEvent[] = [
+  { at: at(0), source: 'input', kind: 'input-idle' },
+  { at: at(90), source: 'input', kind: 'input-active' },
+  ...Array.from({ length: 31 }, (_, step): CollectedEvent => ({
+    at: at(90 + step * 5),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'code',
+    title: 'session.ts - ethlete-sdk - Visual Studio Code',
+  })),
+];
+
+test.describe('prompts typed at the paired MacBook while this machine sat idle', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: { extraRepos: [SDK] },
+      events: aDaySteeredFromThePhone([120, 135, 150, 165, 180, 195, 210]),
+      peers: {
+        paired: [MACBOOK],
+        received: atTheMac.map((event) => ({ machineId: MACBOOK.machineId, event })),
+      },
+    });
+    await page.goto('/day');
+  });
+
+  test('count no phone time against the work done at the MacBook', async ({ page }) => {
+    await expect
+      .poll(() => titles(page, '[data-kind="row"][title^="Not yet named"]'))
+      .toEqual(['Not yet named · 2h 30m']);
+    await expect(page.locator('[data-unbooked]')).toHaveCount(0);
   });
 });

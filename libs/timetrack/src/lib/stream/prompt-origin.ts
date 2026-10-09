@@ -26,15 +26,29 @@ export const promptOriginAt = (options: {
   at: Date;
   windowMs?: number;
   now?: Date;
+  elsewhere?: readonly (readonly CollectedEvent[])[];
 }): PromptOrigin => promptOriginReader(options)(options.at);
 
-/** {@link promptOriginAt} for many prompts over the same events, which it sorts once. */
+/**
+ * {@link promptOriginAt} for many prompts over the same events, which it sorts once.
+ *
+ * `elsewhere` holds the events of each paired machine. A prompt the seat of one of them was touched
+ * for is a desk prompt, so a prompt typed at another machine of the user's is never phone time here.
+ */
 export const promptOriginReader = (options: {
   events: readonly CollectedEvent[];
   windowMs?: number;
   /** The instant a day still being collected is read at. Left out for a day that is over. */
   now?: Date;
+  elsewhere?: readonly (readonly CollectedEvent[])[];
 }) => {
+  const own = seatReader(options);
+  const others = (options.elsewhere ?? []).map((events) => seatReader({ ...options, events }));
+
+  return (at: Date): PromptOrigin => (others.some((other) => other(at) === 'desk') ? 'desk' : own(at));
+};
+
+const seatReader = (options: { events: readonly CollectedEvent[]; windowMs?: number; now?: Date }) => {
   const windowMs = options.windowMs ?? DESK_INPUT_WINDOW_MS;
   const inputs = options.events.filter(isInput).sort((left, right) => left.at.getTime() - right.at.getTime());
 

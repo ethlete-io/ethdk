@@ -1048,7 +1048,11 @@ type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes'> & {
   focusByStream: Record<string, TimeWindow[]>;
 };
 
-const streamOrigin = (options: { events: readonly CollectedEvent[]; config: StreamDayOptions }): OriginDay => {
+const streamOrigin = (options: {
+  events: readonly CollectedEvent[];
+  config: StreamDayOptions;
+  elsewhere?: readonly (readonly CollectedEvent[])[];
+}): OriginDay => {
   const { config } = options;
   const roots = config.repoRoots ?? [];
   const links = config.links ?? [];
@@ -1106,8 +1110,8 @@ const streamOrigin = (options: { events: readonly CollectedEvent[]; config: Stre
   const turns = usage.filter((turn) => turn.provider !== TIMETRACK_PROVIDER);
 
   const inputs = events.filter((event) => event.source === 'input');
-  const originAt = promptOriginReader({ events: inputs, now: config.now });
-  const settledOriginAt = promptOriginReader({ events: inputs });
+  const originAt = promptOriginReader({ events: inputs, now: config.now, elsewhere: options.elsewhere });
+  const settledOriginAt = promptOriginReader({ events: inputs, elsewhere: options.elsewhere });
   // A remote prompt the user has not come back from yet would reopen presence, which the idle-end
   // that later closes the stretch takes back. Left out, the live day reads as the settled one will.
   const awaitingReturn = new Set(
@@ -1961,7 +1965,8 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
  *
  * A paired machine's events (an `OriginEvent` with a peer `origin`, from `mergeDayEvents`) are read as
  * that machine's own day: its focus never ends a block here. The blocks of every machine go into one
- * set of rows, presence is their union, and a break needs every machine away.
+ * set of rows, presence is their union, and a break needs every machine away. A prompt counts as typed at
+ * the desk when the seat of any machine was touched for it.
  *
  * The focused window is exclusive: its time goes to the checkout its title names, else to the one
  * checkout an event named inside `repoStickinessMs`, else to the folded line. An agent session is not,
@@ -1980,7 +1985,12 @@ export const streamDay = (options: {
     byOrigin.set(origin, [...(byOrigin.get(origin) ?? []), event]);
   }
 
-  const local = streamOrigin({ events: byOrigin.get('local') ?? [], config });
+  const inputsOf = new Map(
+    [...byOrigin].map(([origin, events]) => [origin, events.filter((event) => event.source === 'input')]),
+  );
+  const elsewhereOf = (origin: string) =>
+    [...inputsOf].filter(([other]) => other !== origin).map(([, inputs]) => inputs);
+  const local = streamOrigin({ events: byOrigin.get('local') ?? [], config, elsewhere: elsewhereOf('local') });
   const peerConfig: StreamDayOptions = {
     ...config,
     windowsSeenThroughMs: undefined,
@@ -1988,7 +1998,10 @@ export const streamDay = (options: {
   };
   const peers = [...byOrigin]
     .filter(([origin]) => origin !== 'local')
-    .map(([origin, events]) => ({ origin, day: streamOrigin({ events, config: peerConfig }) }));
+    .map(([origin, events]) => ({
+      origin,
+      day: streamOrigin({ events, config: peerConfig, elsewhere: elsewhereOf(origin) }),
+    }));
 
   if (!peers.length)
     return { ...publicDayOf(local), rows: rowsOf({ day: local, config, events: local.events }), peerLanes: {} };

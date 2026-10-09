@@ -1,7 +1,7 @@
 import { CollectedEvent } from '../model/event';
 import { ReceivedEvent } from '../model/received-event';
 import { streamKey } from '../model/block';
-import { TimeWindow, clipWindows, mergeWindows } from '../model/time-window';
+import { TimeWindow, clipWindows, mergeWindows, subtractWindows } from '../model/time-window';
 import { WorkGroup } from './merge';
 
 const LEAVING: ReadonlySet<string> = new Set(['idle-start', 'lock']);
@@ -74,10 +74,21 @@ const awayStretches = (events: readonly CollectedEvent[]): TimeWindow[] => {
  * session idles, three seconds after the transition — and an instant outside one reaches only up to its
  * edge. Without the wall, the first window of the afternoon would answer for the last quarter hour of
  * the lunch break it came back from.
+ *
+ * `elsewhere` is where a person was at another machine of the user's, from {@link peerAttendance}. An
+ * away stretch holds only where every machine was away, so the part of it a person spent at another
+ * machine is no wall.
  */
-export const attendedAt = (options: { events: readonly CollectedEvent[]; graceMs: number }): TimeWindow[] => {
+export const attendedAt = (options: {
+  events: readonly CollectedEvent[];
+  graceMs: number;
+  elsewhere?: readonly TimeWindow[];
+}): TimeWindow[] => {
   const grace = Math.max(0, options.graceMs);
-  const away = awayStretches(options.events).map((stretch) => ({
+  const stretches = awayStretches(options.events);
+  const away = (
+    options.elsewhere?.length ? subtractWindows({ windows: stretches, without: options.elsewhere }) : stretches
+  ).map((stretch) => ({
     from: stretch.from.getTime(),
     to: stretch.to.getTime(),
   }));

@@ -1,5 +1,5 @@
 import { CollectedEvent } from '@ethlete/timetrack';
-import { defaultSettings } from '@ethlete/timetrack/testing';
+import { FakePairedMachine, defaultSettings } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, editSurface, expect, openBand, seedWorld, test } from './support';
 
 /** A checkout an agent worked in alone. Nothing ever brought one of its windows to the front. */
@@ -51,6 +51,56 @@ test.describe('a band an agent worked alone, in a checkout a rule names', () => 
     await editSurface(page).getByRole('button', { name: 'Book it as ABC-4040' }).click();
 
     await expect(band(page, 'ABC-4040')).toHaveCount(1);
+    await expect(band(page, 'Nobody was here')).toHaveCount(0);
+  });
+});
+
+const MACBOOK: FakePairedMachine = {
+  machineId: 'mac-1',
+  label: 'MacBook',
+  certFingerprint: 'fp-mac',
+  lastAddr: '192.168.1.20:52741',
+  lastSeenMs: new Date(E2E_NOW).getTime() - 30_000,
+  clockOffsetMs: 0,
+  pairedAtMs: new Date(E2E_NOW).getTime() - 86_400_000,
+  lastPullMs: null,
+};
+
+const focus = (minutes: number, title: string): CollectedEvent => ({
+  at: at(minutes),
+  source: 'window',
+  kind: 'window-focus',
+  appId: 'code',
+  title,
+});
+
+test.describe('a run left behind here while the user moved to the paired MacBook', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      git: { extraRepos: [SDK] },
+      settings: { ...defaultSettings(), attributionRules: [NAMES_THE_REPO] },
+      events: [
+        ...[0, 5, 10].map((minutes) => focus(minutes, 'session.ts - ethlete-sdk - Visual Studio Code')),
+        { at: at(11), source: 'idle', kind: 'idle-start' },
+        ...[15, 30, 45, 60, 75].map(session),
+        { at: at(90), source: 'idle', kind: 'idle-end' },
+        ...[90, 95, 100].map((minutes) => focus(minutes, 'session.ts - ethlete-sdk - Visual Studio Code')),
+      ],
+      peers: {
+        paired: [MACBOOK],
+        received: Array.from({ length: 16 }, (_, step) => ({
+          machineId: MACBOOK.machineId,
+          event: focus(12 + step * 5, 'notes.md - side-project - Visual Studio Code'),
+        })),
+      },
+    });
+    await page.goto('/day');
+  });
+
+  test('books the run, since the user was away from neither machine', async ({ page }) => {
+    await expect(band(page, 'ABC-4040')).not.toHaveCount(0);
+    await expect(band(page, 'Worked on MacBook')).toHaveCount(0);
     await expect(band(page, 'Nobody was here')).toHaveCount(0);
   });
 });

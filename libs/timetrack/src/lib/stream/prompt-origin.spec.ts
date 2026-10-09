@@ -116,4 +116,26 @@ describe('promptOriginAt', () => {
 
     expect(promptOriginAt({ events, at: at('10:00:00'), windowMs: 10 * 60_000 })).toBe('desk');
   });
+
+  it('reads a prompt typed while the seat of another machine was touched as a desk prompt', () => {
+    const here = [
+      input('input-active', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:30:00Z'),
+      input('input-active', '2026-09-15T11:00:00Z'),
+    ];
+    const mac = [input('input-idle', '2026-09-15T09:00:00Z'), input('input-active', '2026-09-15T09:45:00Z')];
+
+    expect(promptOriginAt({ events: here, at: at('10:00:00'), elsewhere: [mac] })).toBe('desk');
+  });
+
+  it('keeps a prompt remote when no other machine’s seat was touched for it', () => {
+    const here = [
+      input('input-active', '2026-09-15T09:00:00Z'),
+      input('input-idle', '2026-09-15T09:30:00Z'),
+      input('input-active', '2026-09-15T11:00:00Z'),
+    ];
+    const mac = [input('input-active', '2026-09-15T09:00:00Z'), input('input-idle', '2026-09-15T09:40:00Z')];
+
+    expect(promptOriginAt({ events: here, at: at('10:00:00'), elsewhere: [mac, []] })).toBe('remote');
+  });
 });

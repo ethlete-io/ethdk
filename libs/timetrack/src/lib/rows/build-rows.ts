@@ -303,7 +303,14 @@ export const buildRows = (
         ...calls.map((call) => call.group),
         ...timers.filter((timer) => timerProposesRow(timer.run)).map((timer) => timer.group),
       ],
-      at: [...attendedAt({ events: options.events.filter(isLocalEvent), graceMs }), ...(options.remoteWork ?? [])],
+      at: [
+        ...attendedAt({
+          events: options.events.filter(isLocalEvent),
+          graceMs,
+          elsewhere: peers.flatMap((peer) => peer.at),
+        }),
+        ...(options.remoteWork ?? []),
+      ],
       claimed: [...unwatched, ...booked.map((call) => ({ from: call.group.from, to: call.group.to }))],
       peers,
       lanes: attendedLanes({ peers, peerLanes: options.peerLanes ?? {} }),

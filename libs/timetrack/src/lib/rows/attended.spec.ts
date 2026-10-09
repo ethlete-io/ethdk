@@ -119,6 +119,33 @@ describe('attendedAt', () => {
       { from: AT(90), to: AT(106) },
     ]);
   });
+
+  it('lets the grace into a stretch nobody watched here while a person was at another machine', () => {
+    expect(
+      attendedAt({
+        events: [focus(20), idleStart(30), idleEnd(90), focus(91)],
+        graceMs: GRACE,
+        elsewhere: [{ from: AT(25), to: AT(60) }],
+      }),
+    ).toEqual([
+      { from: AT(5), to: AT(45) },
+      { from: AT(90), to: AT(106) },
+    ]);
+  });
+
+  it('reads a prompt given here while a person was at another machine, inside a stretch nobody watched here', () => {
+    expect(
+      attendedAt({
+        events: [idleStart(30), prompt(60, 'human'), idleEnd(120)],
+        graceMs: GRACE,
+        elsewhere: [{ from: AT(40), to: AT(80) }],
+      }),
+    ).toEqual([
+      { from: AT(15), to: AT(30) },
+      { from: AT(45), to: AT(75) },
+      { from: AT(120), to: AT(135) },
+    ]);
+  });
 });
 
 describe('markAttendance', () => {
