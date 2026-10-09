@@ -15,7 +15,7 @@ The app watches your own work on your own machine. Depending on the sources you 
 
 ## Where it is stored
 
-All of this is stored in an encrypted local database (SQLCipher) in the app's data directory on your machine. The database key and the credentials for the services you connect (Jira, Tempo, GitLab, GitHub, Google) are kept in your operating system's keychain.
+All of this is stored in an encrypted local database (SQLCipher) in the app's data directory on your machine. The database key and the credentials for the services you connect (Jira, Tempo, Google) are kept in your operating system's keychain. GitLab and GitHub are reached through the `glab` and `gh` command-line tools, which keep their own login; the app never sees or stores it.
 
 ## Google data
 
@@ -34,7 +34,7 @@ To disconnect Google, use the disconnect action in the app's settings. It asks G
 
 Data leaves your machine only in these cases:
 
-- **Services you connect.** The app talks to your Jira and Tempo, to Google, and to GitLab or GitHub, with your credentials, to read what you ask it to read and to write the worklogs you book.
+- **Services you connect.** The app talks to your Jira and Tempo and to Google with your credentials, and to GitLab or GitHub through `glab` and `gh` under their own login. It reads what you ask it to read, writes the worklogs you book, and opens or changes a merge request when you start or repair a branch.
 - **Your other machines.** If you pair the app on another machine of yours, a day's data is synced between them over the local network, using mutual TLS. Nothing goes through a server of ours.
 - **Model calls you start.** If you press the button to have a ticket or worklog text drafted, the app runs the `claude` or `codex` command-line tool that is already installed and signed in on your machine. You see the full prompt first, and names from your name list are replaced with pseudonyms in it.
 - **Optional transcripts.** The call transcript is off by default. When you turn it on, the app downloads a speech model once and transcribes on your machine.

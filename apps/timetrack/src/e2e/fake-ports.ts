@@ -105,7 +105,6 @@ export const createFakePorts = (): HostPorts => {
   const secrets = new Map<string, string>([
     [TIMETRACK_SECRET_KEYS.jiraToken, 'e2e-jira-token'],
     [TIMETRACK_SECRET_KEYS.tempoToken, 'e2e-tempo-token'],
-    [TIMETRACK_SECRET_KEYS.gitlabToken, 'e2e-gitlab-token'],
     ...Object.entries(world.secrets),
   ]);
   const nudges = new Map<string, DayNudgeRecord>();

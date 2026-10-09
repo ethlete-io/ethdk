@@ -17,9 +17,9 @@ import {
   callNamingKey,
   carriesCredentialsSafely,
   findStandIn,
+  forgeHostname,
   forgeLoginFor,
   isForgeHostname,
-  normalizeGitLabHost,
   normalizeJiraHost,
   ClockStyle,
   DateStyle,
@@ -104,11 +104,11 @@ about, so there is no path back into this window for the value itself.`;
 const TEMPO_WHY = `Worklogs are written here. Tempo issues its own bearer token, separate from Jira's.`;
 
 const GITLAB_WHY = `Your own merge-request activity is read here, which is how reviewing somebody else's
-branch becomes time on the issue being reviewed. Collection needs no token: it runs glab, which holds
-its own login that this app never sees. Run glab auth login --hostname on the instance named above.
+branch becomes time on the issue being reviewed. Everything goes through glab, which holds its own login
+that this app never sees, so there is no token to give here.
 
-The token below is only for writing - repairing a branch and starting one both open merge requests.
-Give it the api scope. Leave it empty if you never use those two.`;
+Writes use glab too: repairing a branch and starting one both open or change merge requests. Run
+glab auth login --hostname <instance> once, and give the token it asks for the api scope.`;
 
 const INSECURE_HOST = `Every call to it carries your token, and a plain http request puts that token and
 everything it answers on the wire for anyone on the network to read. No call is made to this host until
@@ -556,8 +556,8 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
               <div class="flex flex-col gap-3">
                 <div class="flex items-center gap-2">
                   <h3 class="text-h4">GitLab</h3>
-                  <et-badge [color]="store.credentials().gitlab ? 'success' : 'neutral'" size="sm">
-                    {{ store.credentials().gitlab ? 'can write' : 'read only' }}
+                  <et-badge [color]="glabCanWrite() ? 'success' : 'neutral'" size="sm" data-gitlab-status>
+                    {{ glabCanWrite() ? 'can write' : 'no glab login' }}
                   </et-badge>
                   <ethlete-explain [text]="GITLAB_WHY" label="the GitLab connection" />
                 </div>
@@ -579,13 +579,6 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                     heading="This is not an instance"
                     data-gitlab-not-hostname
                   />
-                } @else if (gitlabHostInsecure()) {
-                  <et-banner
-                    [description]="INSECURE_HOST"
-                    type="error"
-                    heading="This instance is not https"
-                    data-gitlab-insecure-host
-                  />
                 }
 
                 @if (glabOffers().length) {
@@ -598,12 +591,11 @@ waits for your approval; set it to one by one and "Approve all" leaves it out.`;
                   </div>
                 }
 
-                <ethlete-token-field
-                  [connected]="store.credentials().gitlab"
-                  (save)="store.saveGitLabToken($event)"
-                  (forget)="store.forgetGitLabToken()"
-                  provider="GitLab"
-                />
+                <p class="text-small text-et-surface-muted">
+                  Reading and writing both use glab. Run
+                  <code>glab auth login --hostname {{ gitlabHostname() || 'git.example.com' }}</code>
+                  once.
+                </p>
               </div>
 
               <div class="flex flex-col gap-3">
@@ -882,10 +874,13 @@ export class SettingsViewComponent {
     return host.length > 0 && !isForgeHostname(host);
   });
 
-  protected gitlabHostInsecure = computed(() => {
+  protected gitlabHostname = computed(() => forgeHostname(this.store.settings().gitlab.host));
+
+  protected glabCanWrite = computed(() => {
+    const auth = this.gitlab.auth();
     const { host } = this.store.settings().gitlab;
 
-    return host.length > 0 && !carriesCredentialsSafely(normalizeGitLabHost(host));
+    return !!host && auth?.state === 'logged-in' && !!forgeLoginFor(auth, host);
   });
 
   /** The reminder is configured as a time of day, and the control it is typed into holds a duration. */

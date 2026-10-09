@@ -1,7 +1,7 @@
 import { DEFAULT_GIT_FLOW_CONFIG } from '@ethlete/agent-rules/git-flow';
 import { Observable, firstValueFrom, of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
-import { ProcessResult, ProcessSpec, TimetrackRequest, TimetrackResponse } from '../transport/ports';
+import { ProcessResult, ProcessSpec } from '../transport/ports';
 import { BranchRepairContext, executeBranchRepair$ } from './repair-execute';
 import { BranchRepairState, planBranchRepair } from './repair';
 
@@ -18,16 +18,34 @@ const stateOf = (overrides: Partial<BranchRepairState> = {}): BranchRepairState 
 const planFor = (state: BranchRepairState) =>
   planBranchRepair({ branch: 'feat/user-management', issueKey: 'FIP-2177', config, state });
 
-type Recorded = { git: string[][]; requests: TimetrackRequest[] };
+type GlabCall = { method: string; endpoint: string; body: unknown };
 
-const contextOf = (options: { failOn?: string; credentials?: boolean } = {}) => {
+type Recorded = { git: string[][]; requests: GlabCall[] };
+
+const glabCallOf = (spec: ProcessSpec): GlabCall => ({
+  method: spec.args[spec.args.indexOf('--method') + 1] ?? 'GET',
+  endpoint: spec.args.at(-1) ?? '',
+  body: spec.stdin === undefined ? undefined : JSON.parse(spec.stdin),
+});
+
+const contextOf = (options: { failOn?: string; gitlab?: boolean } = {}) => {
   const recorded: Recorded = { git: [], requests: [] };
   const context: BranchRepairContext = {
     repoPath: '/repo',
-    projectId: options.credentials === false ? undefined : '77',
-    credentials: options.credentials === false ? null : { host: 'https://gitlab.test', token: 't' },
+    projectId: options.gitlab === false ? undefined : '77',
+    gitlabHostname: options.gitlab === false ? undefined : 'gitlab.test',
     processes: {
       run$: (spec: ProcessSpec): Observable<ProcessResult> => {
+        if (spec.command === 'glab') {
+          recorded.requests.push(glabCallOf(spec));
+
+          return of(
+            options.failOn === 'merge_requests'
+              ? { code: 1, stdout: '{"message":"conflict"}', stderr: 'glab: 409 Conflict (HTTP 409)' }
+              : { code: 0, stdout: '{}', stderr: '' },
+          );
+        }
+
         recorded.git.push(spec.args);
 
         return of(
@@ -35,17 +53,6 @@ const contextOf = (options: { failOn?: string; credentials?: boolean } = {}) => 
             ? { code: 1, stdout: '', stderr: 'remote rejected' }
             : { code: 0, stdout: '', stderr: '' },
         );
-      },
-    },
-    transport: {
-      request$: <T>(request: TimetrackRequest): Observable<TimetrackResponse<T>> => {
-        recorded.requests.push(request);
-
-        return of({
-          status: options.failOn === 'merge_requests' ? 409 : 200,
-          headers: {},
-          body: {} as T,
-        });
       },
     },
   };
@@ -93,7 +100,7 @@ describe('executeBranchRepair$', () => {
     expect(outcome.undo).toEqual(['git branch -m feat/FIP-2177-user-management feat/user-management']);
   });
 
-  it('retargets a merge request through the API, not through git', async () => {
+  it('retargets a merge request through glab, not through git', async () => {
     const { context, recorded } = contextOf();
     const plan = planFor(
       stateOf({
@@ -105,7 +112,7 @@ describe('executeBranchRepair$', () => {
     expect(outcome.failed).toBeUndefined();
     expect(recorded.requests).toHaveLength(1);
     expect(recorded.requests[0]?.method).toBe('PUT');
-    expect(recorded.requests[0]?.url).toContain('/merge_requests/9');
+    expect(recorded.requests[0]?.endpoint).toBe('projects/77/merge_requests/9');
     expect(recorded.requests[0]?.body).toEqual({ target_branch: 'feat/FIP-2177-user-management' });
   });
 
@@ -137,7 +144,7 @@ describe('executeBranchRepair$', () => {
   });
 
   it('fails a merge request step rather than skipping it when GitLab is not configured', async () => {
-    const { context } = contextOf({ credentials: false });
+    const { context } = contextOf({ gitlab: false });
     const plan = planFor(
       stateOf({
         mergeRequests: [
@@ -147,7 +154,20 @@ describe('executeBranchRepair$', () => {
     );
     const outcome = await firstValueFrom(executeBranchRepair$({ plan, context }));
 
-    expect(outcome.failed?.message).toContain('GitLab needs a host and a token');
+    expect(outcome.failed?.message).toContain('GitLab needs an instance');
     expect(outcome.completed).toEqual([]);
+  });
+
+  it('reports what GitLab said when it refuses a merge request change', async () => {
+    const { context } = contextOf({ failOn: 'merge_requests' });
+    const plan = planFor(
+      stateOf({
+        mergeRequests: [{ iid: '9', title: 'Child', sourceBranch: 'sub/x', targetBranch: 'feat/user-management' }],
+      }),
+    );
+    const outcome = await firstValueFrom(executeBranchRepair$({ plan, context }));
+
+    expect(outcome.failed?.message).toContain('409');
+    expect(outcome.failed?.message).toContain('conflict');
   });
 });

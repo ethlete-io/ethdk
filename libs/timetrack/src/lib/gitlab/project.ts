@@ -1,3 +1,5 @@
+import { forgeHostname } from '../forge/cli';
+
 /** A project as a remote URL names it: the instance host and the namespaced path. */
 export type GitLabProjectRef = { host: string; path: string };
 
@@ -22,4 +24,14 @@ export const parseGitLabRemoteUrl = (url: string): GitLabProjectRef | null => {
   if (scheme?.[1] && scheme[2]) return { host: scheme[1], path: scheme[2] };
 
   return null;
+};
+
+/**
+ * Whether a remote's host names the configured instance. Only the hostnames are compared: a remote
+ * reached over ssh carries the ssh port, not the port of the web instance.
+ */
+export const isSameGitLabInstance = (configured: string, remoteHost: string) => {
+  const hostnameOf = (host: string) => forgeHostname(host).replace(/:\d+$/, '').toLowerCase();
+
+  return hostnameOf(configured) === hostnameOf(remoteHost);
 };

@@ -32,18 +32,26 @@ const requestOf = (
   gitlabProject: 'braune-digital/fut-frontend',
 });
 
-type Recorded = { git: string[][]; requests: TimetrackRequest[] };
+type GlabCall = { args: string[]; body: Record<string, unknown> };
+
+type Recorded = { git: string[][]; requests: TimetrackRequest[]; glab: GlabCall[] };
 
 const contextOf = (
   options: { failOn?: string; issueKey?: string; jira?: boolean; gitlab?: boolean; open?: unknown[] } = {},
 ) => {
-  const recorded: Recorded = { git: [], requests: [] };
+  const recorded: Recorded = { git: [], requests: [], glab: [] };
   const context: WorkStartContext = {
     repoPath: '/repo',
     jira: options.jira === false ? null : { host: 'https://jira.test', email: 'a@b.c', token: 't' },
-    gitlab: options.gitlab === false ? null : { host: 'https://gitlab.test', token: 't' },
+    gitlabHostname: options.gitlab === false ? undefined : 'gitlab.test',
     processes: {
       run$: (spec: ProcessSpec): Observable<ProcessResult> => {
+        if (spec.command === 'glab') {
+          recorded.glab.push({ args: spec.args, body: JSON.parse(spec.stdin ?? '{}') as Record<string, unknown> });
+
+          return of({ code: 0, stdout: JSON.stringify({ iid: 12, web_url: 'https://gitlab.test/mr/12' }), stderr: '' });
+        }
+
         recorded.git.push(spec.args);
 
         return of(
@@ -59,9 +67,7 @@ const contextOf = (
 
         const body = request.url.includes('/rest/api/3/search')
           ? { issues: options.open ?? [] }
-          : request.url.includes('/rest/api/3/issue')
-            ? { id: '1', key: options.issueKey ?? 'FIP-2412' }
-            : { iid: 12, web_url: 'https://gitlab.test/mr/12' };
+          : { id: '1', key: options.issueKey ?? 'FIP-2412' };
 
         return of({ status: 200, headers: {}, body: body as T });
       },
@@ -98,14 +104,25 @@ describe('executeWorkStart$', () => {
     );
   });
 
-  it('opens the merge request as a draft, linking the issue', async () => {
+  it('opens the merge request as a draft through glab, linking the issue', async () => {
     const { context, recorded } = contextOf();
     const outcome = await firstValueFrom(executeWorkStart$({ request: requestOf(), context }));
-    const opened = recorded.requests.find(
-      (request) => request.method === 'POST' && request.url.includes('merge_requests'),
-    );
-    const body = opened?.body as Record<string, unknown>;
+    const [opened] = recorded.glab;
+    const body = opened?.body ?? {};
 
+    expect(recorded.glab).toHaveLength(1);
+    expect(opened?.args).toEqual([
+      'api',
+      '--hostname',
+      'gitlab.test',
+      '--method',
+      'POST',
+      '--header',
+      'Content-Type: application/json',
+      '--input',
+      '-',
+      'projects/braune-digital%2Ffut-frontend/merge_requests',
+    ]);
     expect(body['title']).toBe('Draft: FIP-2412 Logout confirmation');
     expect(body['target_branch']).toBe('next');
     expect(body['remove_source_branch']).toBe(true);
@@ -131,7 +148,7 @@ describe('executeWorkStart$', () => {
       'delete FIP-2412 in Jira',
     ]);
     expect(recorded.git.some((args) => args[0] === 'push')).toBe(true);
-    expect(recorded.requests.some((request) => request.url.includes('merge_requests'))).toBe(false);
+    expect(recorded.glab).toEqual([]);
   });
 
   it('keeps the filed issue in the outcome when a later step fails', async () => {
@@ -162,6 +179,15 @@ describe('executeWorkStart$', () => {
     expect(outcome.failed?.message).toContain('uncommitted changes');
     expect(recorded.requests).toEqual([]);
     expect(recorded.git).toEqual([]);
+  });
+
+  it('fails the merge request step while Settings names no GitLab instance', async () => {
+    const { context, recorded } = contextOf({ gitlab: false });
+    const outcome = await firstValueFrom(executeWorkStart$({ request: requestOf(), context }));
+
+    expect(outcome.failed?.step?.action.kind).toBe('open-merge-request');
+    expect(outcome.failed?.message).toContain('GitLab needs an instance');
+    expect(recorded.glab).toEqual([]);
   });
 
   it('files nothing without Jira credentials', async () => {

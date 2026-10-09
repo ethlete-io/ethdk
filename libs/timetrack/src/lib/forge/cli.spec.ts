@@ -107,6 +107,85 @@ describe('forgeApi$', () => {
   });
 });
 
+describe('forgeApi$ writing', () => {
+  const write = (runner: TimetrackProcessRunner) => {
+    const seen = vi.fn();
+    const failed = vi.fn();
+
+    forgeApi$<{ iid: number }>({
+      runner,
+      cli: 'glab',
+      hostname: 'git.example.com',
+      path: '/projects/group%2Frepo/merge_requests',
+      method: 'POST',
+      body: { title: 'Draft: FIP-1 "quoted" $(not run)', remove_source_branch: true },
+      describe: 'a merge request from feat/x into next',
+    }).subscribe({ next: seen, error: failed });
+
+    return { body: seen.mock.calls[0]?.[0] as unknown, error: failed.mock.calls[0]?.[0] as Error | undefined };
+  };
+
+  it('sends the method as a flag and the body as JSON on stdin, with the endpoint still last', () => {
+    const { runner, specs } = runnerOf([ok({ iid: 7 })]);
+
+    expect(write(runner).body).toEqual({ iid: 7 });
+    expect(specs[0]?.args).toEqual([
+      'api',
+      '--hostname',
+      'git.example.com',
+      '--method',
+      'POST',
+      '--header',
+      'Content-Type: application/json',
+      '--input',
+      '-',
+      'projects/group%2Frepo/merge_requests',
+    ]);
+    expect(JSON.parse(specs[0]?.stdin ?? '')).toEqual({
+      title: 'Draft: FIP-1 "quoted" $(not run)',
+      remove_source_branch: true,
+    });
+  });
+
+  it('sends no stdin and no method on a read', () => {
+    const { runner, specs } = runnerOf([ok([])]);
+
+    read(runner);
+
+    expect(specs[0]?.stdin).toBeUndefined();
+    expect(specs[0]?.args).not.toContain('--method');
+  });
+
+  it('names the missing scope when the login may not write', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '{"message":"403 Forbidden"}', stderr: 'glab: 403 (HTTP 403)' }]);
+    const { error } = write(runner);
+
+    expect((error as ForgeRequestError).status).toBe(403);
+    expect(error?.message).toContain('may not write a merge request from feat/x into next');
+    expect(error?.message).toContain('`api` scope');
+  });
+
+  it('says why GitLab refused, out of the body the CLI prints on stdout', () => {
+    const { runner } = runnerOf([
+      {
+        code: 1,
+        stdout: '{"message":["Another open merge request already exists for this source branch: !12"]}',
+        stderr: 'glab: 409 Conflict (HTTP 409)',
+      },
+    ]);
+
+    expect(write(runner).error?.message).toBe(
+      'The forge answered 409 for a merge request from feat/x into next. The forge said: Another open merge request already exists for this source branch: !12',
+    );
+  });
+
+  it('says a 401 on a write is a login problem', () => {
+    const { runner } = runnerOf([{ code: 1, stdout: '', stderr: 'glab: 401 Unauthorized (HTTP 401)' }]);
+
+    expect(write(runner).error?.message).toContain('not logged in, so it could not write');
+  });
+});
+
 describe('forgeApiPaged$', () => {
   const paged = (results: ProcessResult[], maxPages = 20) => {
     const { runner, specs } = runnerOf(results);

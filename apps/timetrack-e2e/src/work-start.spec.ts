@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test';
-import { expect, goToView, test } from './support';
+import { expect, goToView, readBackend, test } from './support';
 
 /**
  * The prospective flow: a ticket, the branch the grammar names for it, and a draft merge request.
@@ -81,5 +81,9 @@ test.describe('starting work', () => {
     await expect(
       page.getByText('https://gitlab.example.com/braune-digital/fut-frontend/-/merge_requests/42'),
     ).toBeVisible();
+
+    const backend = await readBackend(page);
+
+    expect(backend.gitlab.created.map((created) => created.title)).toEqual(['Draft: ABC-9999 Logout confirmation']);
   });
 });

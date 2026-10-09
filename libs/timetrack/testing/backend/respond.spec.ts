@@ -27,8 +27,8 @@ describe('respond', () => {
     expect(call(backendOf(), { url: TEMPO_WORKLOGS }).body).toEqual({ results: [], metadata: {} });
   });
 
-  it('routes a GitLab url into the GitLab state', () => {
-    expect(call(backendOf(), { url: GITLAB_MERGE_REQUESTS }).body).toEqual([]);
+  it('answers 404 for a GitLab REST url, because GitLab is reached only through glab', () => {
+    expect(call(backendOf(), { url: GITLAB_MERGE_REQUESTS }).status).toBe(404);
   });
 
   it('answers every request as JSON', () => {

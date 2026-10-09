@@ -37,12 +37,6 @@ type MergeRequestResource = { iid: string; title: string; target_branch: string;
 const listOf = (body: unknown) => body as MergeRequestResource[];
 
 describe('respondGitLab', () => {
-  it('answers every list with an empty next page header, so paging stops', () => {
-    const answer = call({ backend: backendOf(), method: 'GET', path: `/projects/${PROJECT}/merge_requests` });
-
-    expect(answer.headers).toEqual({ 'x-next-page': '' });
-  });
-
   it('names the project and the iid the way the app reads a reference', () => {
     const backend = backendOf({ gitlab: { mergeRequests: [openMergeRequest()] } });
 

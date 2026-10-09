@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention -- GitLab's REST v4 wire format is snake_case. */
 import { Observable, forkJoin, map } from 'rxjs';
-import { forgeApi$ } from '../forge/cli';
-import { TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
-import { GitLabCredentials, gitlabPaged$, gitlabRequest$ } from './client';
+import { forgeApi$, forgeApiPaged$ } from '../forge/cli';
+import { TimetrackProcessRunner } from '../transport/ports';
 
 /** A merge request, reduced to what attribution and the evidence chain need. */
 export type GitLabMergeRequest = {
@@ -81,16 +80,17 @@ export const fetchGitLabMergeRequest$ = (options: {
  * either-or, so this is two filtered calls rather than a listing of every open merge request.
  */
 export const fetchGitLabMergeRequestsForBranch$ = (options: {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  hostname: string;
   projectId: string;
   branch: string;
 }): Observable<GitLabMergeRequest[]> => {
-  const { transport, credentials, projectId, branch } = options;
+  const { runner, hostname, projectId, branch } = options;
   const page$ = (filter: 'source_branch' | 'target_branch') =>
-    gitlabPaged$<GitLabMergeRequestResource>({
-      transport,
-      credentials,
+    forgeApiPaged$<GitLabMergeRequestResource>({
+      runner,
+      cli: 'glab',
+      hostname,
       path: `/projects/${encodeURIComponent(projectId)}/merge_requests`,
       describe: `open merge requests with ${filter} ${branch}`,
       query: { state: 'opened', [filter]: branch },
@@ -133,17 +133,18 @@ export const fetchGitLabMergeRequestsForBranch$ = (options: {
  * the name reconstructible and a stale branch is a collision the next start has to refuse.
  */
 export const createGitLabMergeRequest$ = (options: {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  hostname: string;
   projectId: string;
   sourceBranch: string;
   targetBranch: string;
   title: string;
   description: string;
 }): Observable<GitLabMergeRequest> =>
-  gitlabRequest$<GitLabMergeRequestResource>({
-    transport: options.transport,
-    credentials: options.credentials,
+  forgeApi$<GitLabMergeRequestResource>({
+    runner: options.runner,
+    cli: 'glab',
+    hostname: options.hostname,
     path: `/projects/${encodeURIComponent(options.projectId)}/merge_requests`,
     describe: `a merge request from ${options.sourceBranch} into ${options.targetBranch}`,
     method: 'POST',
@@ -155,7 +156,7 @@ export const createGitLabMergeRequest$ = (options: {
       remove_source_branch: true,
     },
   }).pipe(
-    map(({ body }) => {
+    map((body) => {
       if (!body?.iid) {
         throw new Error(`GitLab accepted the merge request from ${options.sourceBranch} but returned no iid.`);
       }
@@ -179,16 +180,17 @@ export const createGitLabMergeRequest$ = (options: {
  * retarget can never land without the retitle that was planned beside it.
  */
 export const updateGitLabMergeRequest$ = (options: {
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials;
+  runner: TimetrackProcessRunner;
+  hostname: string;
   projectId: string;
   iid: string;
   title?: string;
   targetBranch?: string;
 }): Observable<void> =>
-  gitlabRequest$<unknown>({
-    transport: options.transport,
-    credentials: options.credentials,
+  forgeApi$<unknown>({
+    runner: options.runner,
+    cli: 'glab',
+    hostname: options.hostname,
     path: `/projects/${encodeURIComponent(options.projectId)}/merge_requests/${encodeURIComponent(options.iid)}`,
     describe: `merge request !${options.iid}`,
     method: 'PUT',

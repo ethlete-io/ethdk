@@ -1,5 +1,4 @@
 import { TimetrackRequest, TimetrackResponse } from '@ethlete/timetrack';
-import { respondGitLab } from './gitlab';
 import { respondGoogle } from './google';
 import { respondJira } from './jira';
 import { FakeAnswer, FakeRoutedRequest, notFound } from './route';
@@ -27,7 +26,6 @@ const answerFor = (backend: FakeBackend, request: TimetrackRequest): FakeAnswer 
   const url = new URL(request.url);
 
   if (url.pathname.startsWith('/rest/api/3')) return respondJira(backend, routed(request, url.pathname));
-  if (url.pathname.includes('/api/v4')) return respondGitLab(backend, routed(request, url.pathname));
   if (url.protocol === 'https:' && TEMPO_API_HOST.test(url.hostname) && url.pathname.startsWith('/4/')) {
     return respondTempo(backend, routed(request, url.pathname.replace(/^\/4/, '')));
   }

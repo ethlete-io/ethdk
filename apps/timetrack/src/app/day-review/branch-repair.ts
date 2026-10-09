@@ -4,17 +4,17 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   BranchRepairOutcome,
   BranchRepairPlan,
-  GitLabCredentials,
   RepairMergeRequest,
   executeBranchRepair$,
   fetchGitLabMergeRequestsForBranch$,
+  forgeHostname,
   gitFlowConfigFor,
   isRepairableBranch,
   isSameGitLabInstance,
   parseGitLabRemoteUrl,
   planBranchRepair,
+  isMissingCliError,
   readGitBranchState$,
-  readGitLabCredentials$,
 } from '@ethlete/timetrack';
 import { Observable, Subject, catchError, exhaustMap, map, of, startWith, switchMap, tap } from 'rxjs';
 import { injectHostPorts } from '../../host';
@@ -55,9 +55,9 @@ const BRANCH_REPAIR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const runs$ = new Subject<void>();
 
   /**
-   * The merge requests of the branch, when the remote is the configured GitLab instance. A remote
-   * this app has no credentials for yields none rather than failing: a repository nobody reviews in
-   * GitLab still has a branch worth renaming.
+   * The merge requests of the branch, when the remote is the configured GitLab instance. Another
+   * remote, or a machine without `glab`, yields none rather than failing: a repository nobody reviews
+   * in GitLab still has a branch worth renaming.
    */
   const mergeRequests$ = (options: {
     remoteUrl: string | undefined;
@@ -70,17 +70,18 @@ const BRANCH_REPAIR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       return of({ mergeRequests: [], project: null });
     }
 
-    return readGitLabCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-      switchMap((credentials: GitLabCredentials | null) =>
-        credentials
-          ? fetchGitLabMergeRequestsForBranch$({
-              transport: ports.transport,
-              credentials,
-              projectId: project.path,
-              branch: options.branch,
-            }).pipe(map((mergeRequests) => ({ mergeRequests, project: project.path })))
-          : of({ mergeRequests: [], project: null }),
-      ),
+    return fetchGitLabMergeRequestsForBranch$({
+      runner: ports.processes,
+      hostname: forgeHostname(configured),
+      projectId: project.path,
+      branch: options.branch,
+    }).pipe(
+      map((mergeRequests) => ({ mergeRequests, project: project.path })),
+      catchError((error: unknown) => {
+        if (isMissingCliError(error)) return of({ mergeRequests: [], project: null });
+
+        throw error;
+      }),
     );
   };
 
@@ -121,19 +122,17 @@ const BRANCH_REPAIR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         if (status.kind !== 'ready' || !opened) return of<RunStatus>(IDLE);
 
-        return readGitLabCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-          switchMap((credentials) =>
-            executeBranchRepair$({
-              plan: status.plan,
-              context: {
-                repoPath: opened.repoPath,
-                processes: ports.processes,
-                transport: ports.transport,
-                credentials,
-                projectId: status.project ?? undefined,
-              },
-            }),
-          ),
+        const gitlabHostname = forgeHostname(settings.settings().gitlab.host);
+
+        return executeBranchRepair$({
+          plan: status.plan,
+          context: {
+            repoPath: opened.repoPath,
+            processes: ports.processes,
+            ...(gitlabHostname ? { gitlabHostname } : {}),
+            ...(status.project ? { projectId: status.project } : {}),
+          },
+        }).pipe(
           map((outcome): RunStatus => ({ kind: 'done', outcome })),
           catchError((error: unknown) =>
             of<RunStatus>({

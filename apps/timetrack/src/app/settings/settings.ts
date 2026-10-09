@@ -34,6 +34,7 @@ import {
   clampStandInOverdueMs,
   clampEpicChildLimit,
   clampStandInOverdueWorkdays,
+  forgetRetiredSecrets$,
   timetrackCredentialStatus,
   withAttributionRule,
   withBackgroundProjects,
@@ -99,7 +100,6 @@ const NOTHING_HELD: HeldSecrets = {
   jira: false,
   tempo: false,
   google: false,
-  gitlab: false,
   googleClientSecret: false,
 };
 
@@ -151,7 +151,6 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
           jira: ports.secrets.has$(TIMETRACK_SECRET_KEYS.jiraToken),
           tempo: ports.secrets.has$(TIMETRACK_SECRET_KEYS.tempoToken),
           google: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleRefreshToken),
-          gitlab: ports.secrets.has$(TIMETRACK_SECRET_KEYS.gitlabToken),
           googleClientSecret: ports.secrets.has$(TIMETRACK_SECRET_KEYS.googleClientSecret),
         }).pipe(
           catchError((error: unknown) => {
@@ -206,6 +205,8 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();
+
+  forgetRetiredSecrets$(ports.secrets).pipe(takeUntilDestroyed(destroyRef)).subscribe();
 
   return {
     settings,
@@ -463,9 +464,6 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     saveGoogleClientSecret: (secret: string) =>
       secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: secret.trim() }),
     forgetGoogleClientSecret: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.googleClientSecret, value: null }),
-    saveGitLabToken: (token: string) =>
-      secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.gitlabToken, value: token.trim() }),
-    forgetGitLabToken: () => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.gitlabToken, value: null }),
   };
 });
 

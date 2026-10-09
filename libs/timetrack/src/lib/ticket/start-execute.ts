@@ -1,6 +1,5 @@
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
-import { GitLabCredentials } from '../gitlab/client';
 import { createGitLabMergeRequest$ } from '../gitlab/merge-requests';
 import { JiraCredentials, normalizeJiraHost } from '../jira/client';
 import { JiraParenting } from '../jira/hierarchy';
@@ -35,7 +34,8 @@ export type WorkStartContext = {
   processes: TimetrackProcessRunner;
   transport: TimetrackTransport;
   jira: JiraCredentials | null;
-  gitlab: GitLabCredentials | null;
+  /** The GitLab instance `glab` opens the merge request on. Absent while Settings names none. */
+  gitlabHostname?: string;
   /** How this Jira instance expresses the relation to a parent issue. */
   parenting?: JiraParenting;
   parentLinkType?: string;
@@ -62,7 +62,7 @@ export type WorkStartOutcome = {
 };
 
 const NO_JIRA = 'Jira needs a host, an account email and a token in Settings before an issue can be filed.';
-const NO_GITLAB = 'GitLab needs a host and a token in Settings before a merge request can be opened.';
+const NO_GITLAB = 'GitLab needs an instance in Settings before a merge request can be opened.';
 
 const issueUrlFor = (options: { credentials: JiraCredentials; issueKey: string }) =>
   `${normalizeJiraHost(options.credentials.host)}/browse/${options.issueKey}`;
@@ -98,11 +98,11 @@ const openMergeRequest$ = (options: {
 }): Observable<string | undefined> => {
   const { action, request, context, issueKey } = options;
 
-  if (!context.gitlab || !request.gitlabProject) return throwError(() => new Error(NO_GITLAB));
+  if (!context.gitlabHostname || !request.gitlabProject) return throwError(() => new Error(NO_GITLAB));
 
   return createGitLabMergeRequest$({
-    transport: context.transport,
-    credentials: context.gitlab,
+    runner: context.processes,
+    hostname: context.gitlabHostname,
     projectId: request.gitlabProject,
     sourceBranch: action.sourceBranch,
     targetBranch: action.targetBranch,

@@ -1,8 +1,9 @@
-import { Observable, of } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { Observable, of, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 import { TimetrackSecretStore } from '../transport/ports';
 import {
   TIMETRACK_SECRET_KEYS,
+  forgetRetiredSecrets$,
   readJiraCredentials$,
   readTempoCredentials$,
   timetrackCredentialStatus,
@@ -74,25 +75,23 @@ describe('readTempoCredentials$', () => {
 });
 
 describe('timetrackCredentialStatus', () => {
-  it('reports Jira, Google and GitLab as configured only once the settings name them too', () => {
-    const held = { jira: true, tempo: true, google: true, gitlab: true };
+  it('reports Jira and Google as configured only once the settings name them too', () => {
+    const held = { jira: true, tempo: true, google: true };
 
     expect(timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS })).toEqual({
       jira: false,
       tempo: true,
       google: false,
-      gitlab: false,
     });
     expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
       jira: true,
       tempo: true,
       google: true,
-      gitlab: true,
     });
   });
 
   it('counts Google as configured through the built-in client when no client id is set', () => {
-    const held = { jira: false, tempo: false, google: true, gitlab: false };
+    const held = { jira: false, tempo: false, google: true };
 
     expect(
       timetrackCredentialStatus({ held, settings: DEFAULT_TIMETRACK_SETTINGS, builtInGoogleClient: true }).google,
@@ -101,13 +100,45 @@ describe('timetrackCredentialStatus', () => {
   });
 
   it('reports nothing as configured while the keychain holds no token', () => {
-    const held = { jira: false, tempo: false, google: false, gitlab: false };
+    const held = { jira: false, tempo: false, google: false };
 
     expect(timetrackCredentialStatus({ held, settings: configured })).toEqual({
       jira: false,
       tempo: false,
       google: false,
-      gitlab: false,
     });
+  });
+});
+
+describe('forgetRetiredSecrets$', () => {
+  it('deletes the GitLab token an earlier version stored, and no current credential', () => {
+    const deleted: string[] = [];
+    const completed = vi.fn();
+
+    forgetRetiredSecrets$({
+      ...secretsHolding({}),
+      delete$: (key) => {
+        deleted.push(key);
+
+        return of(undefined);
+      },
+    }).subscribe({ complete: completed });
+
+    expect(deleted).toEqual(['gitlab-token']);
+    expect(Object.values(TIMETRACK_SECRET_KEYS)).not.toContain('gitlab-token');
+    expect(completed).toHaveBeenCalled();
+  });
+
+  it('completes without an error when the keychain refuses the delete', () => {
+    const failed = vi.fn();
+    const completed = vi.fn();
+
+    forgetRetiredSecrets$({
+      ...secretsHolding({}),
+      delete$: () => throwError(() => new Error('locked')),
+    }).subscribe({ error: failed, complete: completed });
+
+    expect(failed).not.toHaveBeenCalled();
+    expect(completed).toHaveBeenCalled();
   });
 });

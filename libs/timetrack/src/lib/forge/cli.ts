@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention -- Both forges take snake_case query parameters. */
 import { EMPTY, Observable, defer, expand, map, toArray } from 'rxjs';
-import { ProcessResult, TimetrackProcessRunner } from '../transport/ports';
+import { ProcessResult, ProcessSpec, TimetrackProcessRunner } from '../transport/ports';
 import { withQuery } from '../transport/query';
 import { retryWhenRateLimited } from '../transport/rate-limit';
 
@@ -68,26 +68,72 @@ const transportMessageOf = (stderr: string) =>
     .join(' ')
     .replace(/\s+/g, ' ');
 
-const messageFor = (options: { cli: ForgeCli; status: number; describe: string; stderr: string }) => {
-  const { cli, status, describe } = options;
+const reasonOf = (stdout: string): string | undefined => {
+  let body: unknown;
 
-  if (/rate limit/i.test(options.stderr)) return `The forge rate-limited the request for ${describe}.`;
-  if (status === 401) return `\`${cli}\` is not logged in, so it could not read ${describe}.`;
-  if (status === 403) return `The \`${cli}\` login may not read ${describe}.`;
-  if (status === 404) return `There is no ${describe}, or the \`${cli}\` login cannot see it.`;
-  if (status > 0) return `The forge answered ${status} for ${describe}.`;
+  try {
+    body = JSON.parse(stdout);
+  } catch {
+    return undefined;
+  }
 
-  return `\`${cli}\` could not reach the forge for ${describe}: ${transportMessageOf(options.stderr)}`;
+  if (typeof body !== 'object' || body === null) return undefined;
+
+  const { message, error } = body as { message?: unknown; error?: unknown };
+  const reason = message ?? error;
+
+  if (typeof reason === 'string') return reason;
+  if (Array.isArray(reason)) return reason.join('; ');
+  if (typeof reason === 'object' && reason !== null) {
+    return Object.entries(reason)
+      .map(([field, value]) => `${field} ${Array.isArray(value) ? value.join(', ') : String(value)}`)
+      .join('; ');
+  }
+
+  return undefined;
 };
 
-const failureOf = (options: { cli: ForgeCli; describe: string; result: ProcessResult }) => {
+const statusMessageFor = (options: { cli: ForgeCli; status: number; describe: string; writes: boolean }) => {
+  const { cli, status, describe, writes } = options;
+  const verb = writes ? 'write' : 'read';
+
+  if (status === 401) return `\`${cli}\` is not logged in, so it could not ${verb} ${describe}.`;
+  if (status === 403) {
+    return writes
+      ? `The \`${cli}\` login may not write ${describe}. Its token needs the \`api\` scope.`
+      : `The \`${cli}\` login may not read ${describe}.`;
+  }
+  if (status === 404) return `There is no ${describe}, or the \`${cli}\` login cannot see it.`;
+
+  return `The forge answered ${status} for ${describe}.`;
+};
+
+const messageFor = (options: {
+  cli: ForgeCli;
+  status: number;
+  describe: string;
+  writes: boolean;
+  result: ProcessResult;
+}) => {
+  const { cli, status, describe, result } = options;
+
+  if (/rate limit/i.test(result.stderr)) return `The forge rate-limited the request for ${describe}.`;
+  if (status === 0) return `\`${cli}\` could not reach the forge for ${describe}: ${transportMessageOf(result.stderr)}`;
+
+  const reason = reasonOf(result.stdout);
+  const message = statusMessageFor(options);
+
+  return reason ? `${message} The forge said: ${reason}` : message;
+};
+
+const failureOf = (options: { cli: ForgeCli; describe: string; writes: boolean; result: ProcessResult }) => {
   const status = Number(HTTP_STATUS.exec(options.result.stderr)?.[1] ?? 0);
 
   return new ForgeRequestError({
     cli: options.cli,
     status,
     describe: options.describe,
-    message: messageFor({ cli: options.cli, status, describe: options.describe, stderr: options.result.stderr }),
+    message: messageFor({ ...options, status }),
   });
 };
 
@@ -106,16 +152,48 @@ export type ForgeApiCall = {
   describe: string;
 };
 
+export type ForgeWriteMethod = 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+/** A call that changes something, under the same login the reads use. */
+export type ForgeWriteCall = ForgeApiCall & {
+  method: ForgeWriteMethod;
+  /** Sent as the JSON request body, on stdin, so no value of it ever becomes an argument. */
+  body: unknown;
+};
+
+const isWrite = (call: ForgeApiCall | ForgeWriteCall): call is ForgeWriteCall => 'method' in call;
+
+/** The endpoint goes last: the host-side fakes and every reader of a spec take it from there. */
+const forgeSpecOf = (call: ForgeApiCall | ForgeWriteCall): ProcessSpec => {
+  const endpoint = withQuery(call.path, call.query).replace(/^\//, '');
+
+  if (!isWrite(call)) return { command: call.cli, args: ['api', '--hostname', call.hostname, endpoint] };
+
+  return {
+    command: call.cli,
+    args: [
+      'api',
+      '--hostname',
+      call.hostname,
+      '--method',
+      call.method,
+      '--header',
+      'Content-Type: application/json',
+      '--input',
+      '-',
+      endpoint,
+    ],
+    stdin: JSON.stringify(call.body),
+  };
+};
+
 /** Runs one API call through the CLI and parses its body. */
-export const forgeApi$ = <T>(call: ForgeApiCall): Observable<T> =>
-  defer(() =>
-    call.runner.run$({
-      command: call.cli,
-      args: ['api', '--hostname', call.hostname, withQuery(call.path, call.query).replace(/^\//, '')],
-    }),
-  ).pipe(
+export const forgeApi$ = <T>(call: ForgeApiCall | ForgeWriteCall): Observable<T> =>
+  defer(() => call.runner.run$(forgeSpecOf(call))).pipe(
     map((result) => {
-      if (result.code !== 0) throw failureOf({ cli: call.cli, describe: call.describe, result });
+      if (result.code !== 0) {
+        throw failureOf({ cli: call.cli, describe: call.describe, writes: isWrite(call), result });
+      }
 
       try {
         return JSON.parse(result.stdout) as T;

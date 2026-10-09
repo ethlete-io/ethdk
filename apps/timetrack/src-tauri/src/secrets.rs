@@ -10,22 +10,35 @@ use crate::keychain;
 /// start. `machine-key` is the private key a paired machine knows this one by; reading it would let
 /// anything that reaches this command pose as this machine to every peer. Matching
 /// `TIMETRACK_SECRET_KEYS` in the core.
-const ACCOUNTS: [&str; 5] = [
+const ACCOUNTS: [&str; 4] = [
     "jira-token",
     "tempo-token",
     "google-client-secret",
     "google-refresh-token",
-    "gitlab-token",
 ];
+
+/// Accounts an earlier version wrote. A window may delete them, which is how the core clears them on
+/// start, but never read or write them. Matching `RETIRED_TIMETRACK_SECRET_KEYS` in the core.
+const RETIRED: [&str; 1] = ["gitlab-token"];
+
+fn rejected(account: &str) -> TimetrackError {
+    TimetrackError::Rejected(format!("{account} is not a credential a window may reach"))
+}
 
 fn check(account: &str) -> TimetrackResult<()> {
     if ACCOUNTS.contains(&account) {
         return Ok(());
     }
 
-    Err(TimetrackError::Rejected(format!(
-        "{account} is not a credential a window may reach"
-    )))
+    Err(rejected(account))
+}
+
+fn check_delete(account: &str) -> TimetrackResult<()> {
+    if RETIRED.contains(&account) {
+        return Ok(());
+    }
+
+    check(account)
 }
 
 #[tauri::command]
@@ -57,7 +70,7 @@ pub async fn secret_has(account: String) -> TimetrackResult<bool> {
 
 #[tauri::command]
 pub async fn secret_delete(account: String) -> TimetrackResult<()> {
-    check(&account)?;
+    check_delete(&account)?;
 
     tauri::async_runtime::spawn_blocking(move || keychain::delete_secret(&account))
         .await
@@ -81,5 +94,14 @@ mod tests {
         assert!(check("machine-key").is_err());
         assert!(check("").is_err());
         assert!(check("jira-token ").is_err());
+        assert!(check_delete("database-key").is_err());
+        assert!(check_delete("machine-key").is_err());
+    }
+
+    #[test]
+    fn only_deletes_a_retired_account() {
+        assert!(check("gitlab-token").is_err());
+        assert!(check_delete("gitlab-token").is_ok());
+        assert!(check_delete("jira-token").is_ok());
     }
 }

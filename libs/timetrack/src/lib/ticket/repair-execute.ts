@@ -1,7 +1,6 @@
 import { Observable, catchError, map, of, switchMap, throwError } from 'rxjs';
-import { GitLabCredentials } from '../gitlab/client';
 import { updateGitLabMergeRequest$ } from '../gitlab/merge-requests';
-import { TimetrackProcessRunner, TimetrackTransport } from '../transport/ports';
+import { TimetrackProcessRunner } from '../transport/ports';
 import { BranchRepairAction, BranchRepairPlan, BranchRepairStep } from './repair';
 import { git$, messageOf } from './git-step';
 
@@ -20,8 +19,8 @@ export type BranchRepairOutcome = {
 export type BranchRepairContext = {
   repoPath: string;
   processes: TimetrackProcessRunner;
-  transport: TimetrackTransport;
-  credentials: GitLabCredentials | null;
+  /** The GitLab instance `glab` writes to. Absent while Settings names none. */
+  gitlabHostname?: string;
   /** The GitLab project the branch's merge requests live in. Absent when the repo has no project. */
   projectId?: string;
 };
@@ -34,15 +33,13 @@ const mergeRequest$ = (options: {
 }): Observable<void> => {
   const { context, iid, title, targetBranch } = options;
 
-  if (!context.credentials || !context.projectId) {
-    return throwError(
-      () => new Error('GitLab needs a host and a token in Settings before a merge request can change.'),
-    );
+  if (!context.gitlabHostname || !context.projectId) {
+    return throwError(() => new Error('GitLab needs an instance in Settings before a merge request can change.'));
   }
 
   return updateGitLabMergeRequest$({
-    transport: context.transport,
-    credentials: context.credentials,
+    runner: context.processes,
+    hostname: context.gitlabHostname,
     projectId: context.projectId,
     iid,
     title,

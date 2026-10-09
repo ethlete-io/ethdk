@@ -2,13 +2,10 @@
 import { FakeAnswer, FakeRoutedRequest, bodyOf, created, notFound, ok, stringOf } from './route';
 import { FakeBackend, FakeGitLabEvent, FakeGitLabMergeRequest } from './types';
 
-/** Empty, so `gitlabPaged$` stops after the first page instead of asking for the same one forever. */
-const LIST_HEADERS = { 'x-next-page': '' };
-
 /** The iid the first opened merge request gets. Specs name it, so it is a fixture value. */
 const FIRST_CREATED_MERGE_REQUEST_IID = 42;
 
-const list = (items: unknown[]): FakeAnswer => ({ status: 200, body: items, headers: LIST_HEADERS });
+const list = (items: unknown[]): FakeAnswer => ok(items);
 
 const mergeRequestResource = (mergeRequest: FakeGitLabMergeRequest, projectPath: string) => ({
   iid: mergeRequest.iid,

@@ -9,13 +9,13 @@ import {
   WorkStartRequest,
   executeWorkStart$,
   fetchJiraParentCandidates$,
+  forgeHostname,
   gitFlowConfigFor,
   isSameGitLabInstance,
   parseGitLabRemoteUrl,
   planWorkStart,
   projectKeyFor,
   rankParentCandidates,
-  readGitLabCredentials$,
   readGitBranchState$,
   readJiraCredentials$,
 } from '@ethlete/timetrack';
@@ -199,25 +199,23 @@ const WORK_START_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         const ticket = settings.settings().ticket;
 
+        const gitlabHostname = forgeHostname(settings.settings().gitlab.host);
+
         return readJiraCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
           switchMap((jira) =>
-            readGitLabCredentials$({ secrets: ports.secrets, settings: settings.settings() }).pipe(
-              switchMap((gitlab) =>
-                executeWorkStart$({
-                  request: pending,
-                  context: {
-                    repoPath: form().repoPath,
-                    processes: ports.processes,
-                    transport: ports.transport,
-                    jira,
-                    gitlab,
-                    ...(ticket.parenting ? { parenting: ticket.parenting } : {}),
-                    ...(ticket.parentLinkType ? { parentLinkType: ticket.parentLinkType } : {}),
-                    ...(ticket.subjectField ? { subjectField: ticket.subjectField } : {}),
-                  },
-                }),
-              ),
-            ),
+            executeWorkStart$({
+              request: pending,
+              context: {
+                repoPath: form().repoPath,
+                processes: ports.processes,
+                transport: ports.transport,
+                jira,
+                ...(gitlabHostname ? { gitlabHostname } : {}),
+                ...(ticket.parenting ? { parenting: ticket.parenting } : {}),
+                ...(ticket.parentLinkType ? { parentLinkType: ticket.parentLinkType } : {}),
+                ...(ticket.subjectField ? { subjectField: ticket.subjectField } : {}),
+              },
+            }),
           ),
           map((outcome): RunStatus => ({ kind: 'done', outcome })),
           catchError((error: unknown) =>

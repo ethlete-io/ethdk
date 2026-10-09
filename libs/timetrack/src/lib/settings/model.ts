@@ -89,12 +89,9 @@ export type TimetrackGoogleSettings = {
   calendarIds: string[];
 };
 
-/**
- * The GitLab instance review activity is read from. The personal access token is a keychain entry;
- * the host is not one, and the settings screen has to show which instance it will call.
- */
+/** The GitLab instance `glab` reads review activity from and writes merge requests to. */
 export type TimetrackGitLabSettings = {
-  /** The instance, with or without a scheme. `normalizeGitLabHost` is what makes it a base URL. */
+  /** The instance, with or without a scheme. `forgeHostname` is what makes it the host `glab` takes. */
   host: string;
 };
 

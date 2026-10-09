@@ -1,4 +1,5 @@
-import { expect, openWaitingForAName, test } from './support';
+import { E2E_PROJECT_PATH } from '@ethlete/timetrack/testing';
+import { E2E_NOW, expect, openWaitingForAName, readBackend, seedWorld, test } from './support';
 
 /**
  * The repair a filed ticket makes possible. The fixture's second branch names no issue and the
@@ -56,5 +57,38 @@ test.describe('branch repair', () => {
     await page.getByRole('button', { name: 'Run these steps' }).click();
 
     await expect(page.getByText(/feat\/pdf-export is now feat\/ABC-9999-pdf-export/)).toBeVisible();
+  });
+
+  test('retargets a merge request into the branch through glab', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      gitlab: {
+        mergeRequests: [
+          {
+            iid: '7',
+            projectId: E2E_PROJECT_PATH,
+            title: 'PDF footer',
+            sourceBranch: 'sub/pdf-footer',
+            targetBranch: 'feat/pdf-export',
+            state: 'opened',
+            webUrl: `https://gitlab.example.com/${E2E_PROJECT_PATH}/-/merge_requests/7`,
+          },
+        ],
+      },
+    });
+    await page.goto('/day');
+    await fileTheTicket(page);
+    await page.getByRole('button', { name: 'Show me the steps' }).click();
+
+    await expect(
+      page.getByRole('listitem').filter({ hasText: 'Retarget !7 from feat/pdf-export to feat/ABC-9999-pdf-export' }),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Run these steps' }).click();
+    await expect(page.getByText(/feat\/pdf-export is now feat\/ABC-9999-pdf-export/)).toBeVisible();
+
+    const backend = await readBackend(page);
+
+    expect(backend.gitlab.updates).toEqual([{ iid: '7', targetBranch: 'feat/ABC-9999-pdf-export' }]);
   });
 });

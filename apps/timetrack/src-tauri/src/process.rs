@@ -7,8 +7,9 @@ use tokio::io::AsyncWriteExt;
 /// The only binaries the webview may ask the host to spawn, each with the operations it may ask for.
 ///
 /// `git` drives the reconcile pass, the two agent CLIs answer the reasoning prompts, `glab` and `gh`
-/// read the user's own merge request activity under a login this app never sees, and the five editor
-/// clients are asked which extensions they hold.
+/// read the user's own merge request activity under a login this app never sees, `glab` also opens
+/// and changes merge requests under that login, and the five editor clients are asked which extensions
+/// they hold.
 ///
 /// The name of the binary is not enough on its own. Git runs a shell command from an alias its own
 /// arguments define, so an allowlist over names alone leaves any script that reaches this command able

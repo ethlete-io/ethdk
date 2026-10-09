@@ -24,7 +24,6 @@ test.describe('the GitLab instance field', () => {
     await openSources(page);
 
     await expect(page.locator('[data-gitlab-not-hostname]')).toBeVisible();
-    await expect(page.locator('[data-gitlab-insecure-host]')).toHaveCount(0);
 
     await page.locator('[data-glab-offers] button', { hasText: HELD }).click();
 
@@ -52,5 +51,28 @@ test.describe('the GitLab instance field', () => {
     await openSources(page);
 
     await expect(page.locator('[data-glab-offers]')).toHaveCount(0);
+  });
+
+  test('says it can write once glab is logged in to the instance', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), gitlab: { host: HELD } },
+      glab: { installed: true, logins: [{ host: HELD, login: 'bornholdt' }] },
+    });
+    await openSources(page);
+
+    await expect(page.locator('[data-gitlab-status]')).toHaveText('can write');
+    await expect(page.getByText(`glab auth login --hostname ${HELD}`)).toBeVisible();
+  });
+
+  test('says there is no glab login while glab holds none for the instance', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      settings: { ...defaultSettings(), gitlab: { host: HELD } },
+      glab: { installed: true, logins: [] },
+    });
+    await openSources(page);
+
+    await expect(page.locator('[data-gitlab-status]')).toHaveText('no glab login');
   });
 });

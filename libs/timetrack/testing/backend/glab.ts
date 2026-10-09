@@ -1,4 +1,4 @@
-import { ProcessResult, ProcessSpec } from '@ethlete/timetrack';
+import { ProcessResult, ProcessSpec, TimetrackRequestMethod } from '@ethlete/timetrack';
 import { FakeForgeCliState, forgeAuthReport, forgeEndpointOf } from './forge-cli';
 import { respondGitLab } from './gitlab';
 import { FakeRoutedRequest } from './route';
@@ -8,10 +8,23 @@ export type FakeGlabState = FakeForgeCliState;
 
 export const isGlabSpec = (spec: ProcessSpec) => spec.command === 'glab';
 
-const routedFrom = (endpoint: string): FakeRoutedRequest => {
-  const url = new URL(endpoint.replace(/^\/?/, '/'), 'https://gitlab.example.com');
+const methodOf = (spec: ProcessSpec): TimetrackRequestMethod => {
+  const at = spec.args.indexOf('--method');
 
-  return { method: 'GET', path: url.pathname, query: url.searchParams, body: undefined };
+  return at < 0 ? 'GET' : ((spec.args[at + 1] ?? 'GET') as TimetrackRequestMethod);
+};
+
+/** A write sends its JSON body on stdin through `--input -`, exactly as the real call does. */
+const routedFrom = (spec: ProcessSpec): FakeRoutedRequest => {
+  const url = new URL(forgeEndpointOf(spec).replace(/^\/?/, '/'), 'https://gitlab.example.com');
+  const readsStdin = spec.args[spec.args.indexOf('--input') + 1] === '-';
+
+  return {
+    method: methodOf(spec),
+    path: url.pathname,
+    query: url.searchParams,
+    body: readsStdin && spec.stdin ? (JSON.parse(spec.stdin) as unknown) : undefined,
+  };
 };
 
 /**
@@ -39,7 +52,7 @@ export const runFakeGlab = (options: {
 
   if (verb !== 'api') return { code: 1, stdout: '', stderr: `glab: unknown command ${String(verb)}` };
 
-  const answer = respondGitLab(backend, routedFrom(forgeEndpointOf(spec)));
+  const answer = respondGitLab(backend, routedFrom(spec));
   const stdout = JSON.stringify(answer.body ?? {});
 
   return answer.status >= 200 && answer.status < 300

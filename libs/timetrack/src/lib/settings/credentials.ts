@@ -1,5 +1,4 @@
-import { Observable, map } from 'rxjs';
-import { GitLabCredentials } from '../gitlab/client';
+import { EMPTY, Observable, catchError, concatMap, from, ignoreElements, map } from 'rxjs';
 import { JiraCredentials } from '../jira/client';
 import { TempoCredentials } from '../tempo/client';
 import { TimetrackSecretStore } from '../transport/ports';
@@ -12,15 +11,26 @@ export const TIMETRACK_SECRET_KEYS = {
   googleClientSecret: 'google-client-secret',
   /** What survives a restart. The access token is held in memory and never written anywhere. */
   googleRefreshToken: 'google-refresh-token',
-  gitlabToken: 'gitlab-token',
 } as const;
+
+/** Keychain accounts an earlier version wrote and nothing reads any more. Matching `RETIRED` in the host. */
+const RETIRED_TIMETRACK_SECRET_KEYS = ['gitlab-token'] as const;
+
+/**
+ * Deletes every keychain entry an earlier version wrote and this one no longer reads. Run it on start:
+ * a missing entry is not a failure, and one that cannot be deleted is left for the next start.
+ */
+export const forgetRetiredSecrets$ = (secrets: TimetrackSecretStore): Observable<never> =>
+  from(RETIRED_TIMETRACK_SECRET_KEYS).pipe(
+    concatMap((key) => secrets.delete$(key).pipe(catchError(() => EMPTY))),
+    ignoreElements(),
+  );
 
 /** Which providers are ready to be called, answered without a token being read back into the window. */
 export type TimetrackCredentialStatus = {
   jira: boolean;
   tempo: boolean;
   google: boolean;
-  gitlab: boolean;
 };
 
 /**
@@ -28,7 +38,7 @@ export type TimetrackCredentialStatus = {
  * passed in rather than read here so an unrelated settings change does not re-ask the keychain.
  *
  * Jira takes all three of host, email and token, which is why holding its token is not enough. Google
- * takes the client id as well as the refresh token, and GitLab its host, for the same reason.
+ * takes the client id as well as the refresh token, for the same reason.
  */
 export const timetrackCredentialStatus = (options: {
   held: TimetrackCredentialStatus;
@@ -39,7 +49,6 @@ export const timetrackCredentialStatus = (options: {
   jira: options.held.jira && !!options.settings.jira.host && !!options.settings.jira.email,
   tempo: options.held.tempo,
   google: options.held.google && (!!options.settings.google.clientId || !!options.builtInGoogleClient),
-  gitlab: options.held.gitlab && !!options.settings.gitlab.host,
 });
 
 /**
@@ -71,22 +80,5 @@ export const readTempoCredentials$ = (options: {
       const token = stored?.trim() ?? '';
 
       return token ? { token } : null;
-    }),
-  );
-
-/**
- * The GitLab credentials, or `null` while the instance is not configured. The host is a setting and the
- * personal access token is a keychain entry, so both have to be there before a call can be made.
- */
-export const readGitLabCredentials$ = (options: {
-  secrets: TimetrackSecretStore;
-  settings: TimetrackSettings;
-}): Observable<GitLabCredentials | null> =>
-  options.secrets.read$(TIMETRACK_SECRET_KEYS.gitlabToken).pipe(
-    map((stored) => {
-      const token = stored?.trim() ?? '';
-      const { host } = options.settings.gitlab;
-
-      return token && host ? { host, token } : null;
     }),
   );

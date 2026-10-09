@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseGitLabRemoteUrl } from './project';
+import { isSameGitLabInstance, parseGitLabRemoteUrl } from './project';
 
 describe('parseGitLabRemoteUrl', () => {
   it('reads the SSH spelling', () => {
@@ -47,5 +47,13 @@ describe('parseGitLabRemoteUrl', () => {
   it('refuses what is not a remote URL', () => {
     expect(parseGitLabRemoteUrl('')).toBeNull();
     expect(parseGitLabRemoteUrl('/srv/git/repo')).toBeNull();
+  });
+});
+
+describe('isSameGitLabInstance', () => {
+  it('compares hostnames, whatever scheme, port or path either side carries', () => {
+    expect(isSameGitLabInstance('https://git.example.com:8443/', 'git.example.com')).toBe(true);
+    expect(isSameGitLabInstance('http://Git.Example.com', 'git.example.com')).toBe(true);
+    expect(isSameGitLabInstance('git.example.com', 'gitlab.example.com')).toBe(false);
   });
 });
