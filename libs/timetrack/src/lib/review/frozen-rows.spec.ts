@@ -4,6 +4,7 @@ import { DayRows } from '../rows/build-rows';
 import { setRowDescription } from './edits';
 import { changedAfterBooking, frozenDayPeerBands, isDayHeldByTempo, withFrozenRows } from './frozen-rows';
 import { EMPTY_DAY_REVIEW_EDITS } from './model';
+import { PeerDayRows } from './peer-rows';
 import { reviewDay } from './review-day';
 
 const MINUTE = 60_000;
@@ -111,10 +112,11 @@ describe('a day Tempo holds', () => {
   });
 });
 
+const window = (from: string, to: string) => ({ from: at(from), to: at(to) });
+
 describe('a frozen day a paired machine worked on', () => {
   const SDK = 'repo:/home/tom/dev/ethlete-sdk';
   const FUT = 'repo:/home/tom/dev/fut-frontend';
-  const window = (from: string, to: string) => ({ from: at(from), to: at(to) });
   const frozen = dayRows([proposal({ issueKey: 'ET-1', from: '18:15', to: '19:45', laneKey: SDK })]);
   const current = dayRows([
     proposal({ issueKey: 'FUT-1', from: '13:15', to: '15:00', laneKey: FUT }),
@@ -154,5 +156,104 @@ describe('a frozen day a paired machine worked on', () => {
       }),
     ).toBe(false);
     expect(changedAfterBooking({ frozen, current: frozen })).toBe(false);
+  });
+
+  it('reads time a paired machine accounts for as no change, and this machine’s own new time as one', () => {
+    const fragments = {
+      'mac-id': { [FUT]: [window('13:20', '13:50'), window('14:30', '17:55')] },
+    };
+
+    expect(changedAfterBooking({ frozen, current, peerLanes: fragments })).toBe(false);
+    expect(
+      changedAfterBooking({
+        frozen,
+        current: dayRows([
+          ...current.proposals,
+          proposal({ issueKey: 'ET-3', from: '20:00', to: '20:30', laneKey: SDK }),
+        ]),
+        peerLanes: fragments,
+      }),
+    ).toBe(true);
+  });
+
+  it('draws a raw band only in a repository lane', () => {
+    const bands = frozenDayPeerBands({
+      frozen,
+      current: { rows: current, peerLanes: { 'mac-id': { 'app:com.apple.loginwindow': [window('12:00', '13:00')] } } },
+      machineNames: { 'mac-id': 'MacBook' },
+      foreignIssues: [],
+    });
+
+    expect(bands).toEqual([]);
+  });
+});
+
+describe('a frozen day a paired machine sent its rows for', () => {
+  const FUT = 'repo:/home/tom/dev/fut-frontend';
+  const frozen = dayRows([]);
+  const sent: PeerDayRows = {
+    day: '2026-10-01',
+    frozen: true,
+    rows: [
+      {
+        laneKey: FUT,
+        from: at('13:15'),
+        to: at('15:00'),
+        issueKey: 'FUT-1',
+        description: 'a',
+        state: 'booked',
+        worklogId: '7',
+      },
+      {
+        laneKey: FUT,
+        from: at('15:00'),
+        to: at('16:00'),
+        standInName: 'Bracket spike',
+        description: '',
+        state: 'suggested',
+      },
+      { laneKey: 'app:com.google.Chrome', from: at('16:00'), to: at('17:00'), description: '', state: 'suggested' },
+    ],
+  };
+  const fragments = {
+    'mac-id': { [FUT]: [window('13:20', '13:50')], 'app:com.google.Chrome': [window('16:00', '17:00')] },
+  };
+
+  it('draws each row as sent, in its lane, booked or named, and no application lane', () => {
+    expect(
+      frozenDayPeerBands({
+        frozen,
+        current: { rows: frozen, peerLanes: fragments },
+        peerRows: { 'mac-id': sent },
+        machineNames: { 'mac-id': 'MacBook' },
+        foreignIssues: [],
+      }),
+    ).toEqual([
+      {
+        from: at('13:15'),
+        to: at('15:00'),
+        machineId: 'mac-id',
+        machineName: 'MacBook',
+        laneKey: FUT,
+        booked: true,
+        name: 'FUT-1',
+      },
+      {
+        from: at('15:00'),
+        to: at('16:00'),
+        machineId: 'mac-id',
+        machineName: 'MacBook',
+        laneKey: FUT,
+        booked: false,
+        name: 'Bracket spike',
+      },
+    ]);
+  });
+
+  it('reads the time of the rows it sent as no change', () => {
+    const current = dayRows([proposal({ issueKey: 'FUT-1', from: '13:15', to: '16:00', laneKey: FUT })]);
+
+    expect(changedAfterBooking({ frozen, current, peerRows: { 'mac-id': sent } })).toBe(false);
+    expect(changedAfterBooking({ frozen, current })).toBe(true);
   });
 });

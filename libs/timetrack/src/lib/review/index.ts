@@ -11,6 +11,7 @@ export * from './model';
 export * from './now';
 export * from './nudge';
 export * from './off-topic-rest';
+export * from './peer-rows';
 export * from './recut';
 export * from './review-day';
 export * from './statements';
