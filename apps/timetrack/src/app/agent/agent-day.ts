@@ -19,6 +19,7 @@ import {
   hideRow,
   ledgerEntriesForRange$,
   localDayKey,
+  localDayRange,
   matchAttributionRule,
   namedIssueKeys,
   readJiraCredentials$,
@@ -43,6 +44,7 @@ import { readEpicOptions$ } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
+import { ownDayRowsOf } from '../peers/day-rows';
 import { DayRead, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 
@@ -195,6 +197,23 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
                   return { ...read, edits, review: read.reviewWith(edits) };
                 }),
+                concatMap((frozen) =>
+                  ports.peers
+                    .setDayRows$(
+                      ownDayRowsOf({
+                        day,
+                        frozen: true,
+                        rows: frozen.review.rows,
+                        ledger,
+                        standIns: settings.settings().standIns,
+                      }),
+                      localDayRange(day, dayBoundaryOf(settings.settings())).from,
+                    )
+                    .pipe(
+                      catchError(() => of(undefined)),
+                      map(() => frozen),
+                    ),
+                ),
               );
           }),
         ),

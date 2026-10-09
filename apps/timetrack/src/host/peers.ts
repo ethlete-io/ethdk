@@ -1,4 +1,4 @@
-import { CheckoutKeys, ReceivedRange } from '@ethlete/timetrack';
+import { CheckoutKeys, PeerDayRows, ReceivedRange, encodePeerDayRows, parsePeerDayRows } from '@ethlete/timetrack';
 import { Observable, map } from 'rxjs';
 import { StoredEvent, reviveEvent } from './event-store';
 import { invokeHost$ } from './invoke';
@@ -45,12 +45,20 @@ type StoredReceivedRange = {
   events: StoredReceivedEvent[];
   repoKeys: { machineId: string; path: string; key: string }[];
   ownRepoKeys: { path: string; key: string }[];
+  /** Absent from a host that predates day rows. */
+  dayRows?: { machineId: string; day: string; rows: string }[];
 };
 
-/** A range's received events with each paired machine's checkout keys, and this machine's own. */
-export type HostReceivedRange = ReceivedRange & { ownRepoKeys: CheckoutKeys };
+/** The last rows a paired machine sent for a day, as that machine's checkouts name its lanes. */
+export type ReceivedDayRows = { machineId: string; rows: PeerDayRows };
 
-export const NOTHING_RECEIVED: HostReceivedRange = { events: [], repoKeys: {}, ownRepoKeys: {} };
+/**
+ * A range's received events with each paired machine's checkout keys, this machine's own, and the rows
+ * each paired machine last sent for the days that start in the range.
+ */
+export type HostReceivedRange = ReceivedRange & { ownRepoKeys: CheckoutKeys; dayRows: readonly ReceivedDayRows[] };
+
+export const NOTHING_RECEIVED: HostReceivedRange = { events: [], repoKeys: {}, ownRepoKeys: {}, dayRows: [] };
 
 export type TauriPeers = {
   list$(): Observable<PairedMachine[]>;
@@ -65,6 +73,8 @@ export type TauriPeers = {
   receivedBetween$(from: Date, to: Date): Observable<HostReceivedRange>;
   /** Replaces this machine's checkout keys, which every pull from here carries to the paired machine. */
   setRepoKeys$(keys: CheckoutKeys): Observable<void>;
+  /** Replaces this machine's rows of a day starting at `dayStart`, which the next pull from here carries. */
+  setDayRows$(rows: PeerDayRows, dayStart: Date): Observable<void>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -89,8 +99,17 @@ export const createTauriPeers = (): TauriPeers => ({
           return byMachine;
         }, {}),
         ownRepoKeys: Object.fromEntries(stored.ownRepoKeys.map((row) => [row.path, row.key])),
+        dayRows: (stored.dayRows ?? []).flatMap((sent) => {
+          const rows = parsePeerDayRows(sent.rows);
+
+          return rows ? [{ machineId: sent.machineId, rows }] : [];
+        }),
       })),
     ),
   setRepoKeys$: (keys) =>
     invokeHost$<void>('set_repo_keys', { keys: Object.entries(keys).map(([path, key]) => ({ path, key })) }),
+  setDayRows$: (rows, dayStart) =>
+    invokeHost$<void>('set_day_rows', {
+      rows: { day: rows.day, dayStartMs: dayStart.getTime(), rows: encodePeerDayRows(rows) },
+    }),
 });

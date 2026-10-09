@@ -194,6 +194,7 @@ export class DayReviewViewComponent {
 
     return frozenDayPeerBands({
       ...day,
+      peerRows: this.store.peerDayRows(),
       machineNames: Object.fromEntries(this.peers.paired().map((machine) => [machine.machineId, machine.label])),
       foreignIssues: (this.store.coverage()?.issues ?? []).map((issue) => issue.issueKey),
     });
@@ -202,7 +203,15 @@ export class DayReviewViewComponent {
   protected changed = computed(() => {
     const day = this.frozen();
 
-    return !!day && changedAfterBooking({ frozen: day.frozen, current: day.current.rows });
+    return (
+      !!day &&
+      changedAfterBooking({
+        frozen: day.frozen,
+        current: day.current.rows,
+        peerLanes: day.current.peerLanes,
+        peerRows: this.store.peerDayRows(),
+      })
+    );
   });
   protected focusedDate = computed(() => localDayRange(this.store.dayKey(), this.store.boundary()).from);
 

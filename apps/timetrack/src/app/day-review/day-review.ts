@@ -40,6 +40,7 @@ import {
   hideRow,
   localDayKey,
   localDayRange,
+  encodePeerDayRows,
   pinnedOntoDay,
   matchAttributionRule,
   callBehindRow,
@@ -104,6 +105,8 @@ import {
   concatMap,
   debounceTime,
   defer,
+  distinctUntilChanged,
+  filter,
   groupBy,
   map,
   mergeMap,
@@ -135,9 +138,13 @@ import { readViewState, rememberViewState } from '../view-state';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
+import { ownDayRowsOf, receivedDayRowsOn } from '../peers/day-rows';
 
 /** How long typing settles before a day's edits are written. */
 const SAVE_DEBOUNCE_MS = 300;
+
+/** How long a day's rows settle before they are handed to the paired machines. */
+const SEND_ROWS_DEBOUNCE_MS = 2_000;
 
 const NO_HEAD_BRANCHES: Readonly<Record<string, string>> = {};
 
@@ -757,6 +764,46 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const syncedIds = computed(() => new Set(ledger().map((entry) => entry.proposalId)));
 
+  const peerDayRows = computed(() => {
+    const received = evidence()?.received;
+
+    return received ? receivedDayRowsOn({ received, day: day() }) : {};
+  });
+
+  const ownDayRows = computed(() => {
+    const current = review();
+    const loaded = loadedLedger();
+    const load = evidenceLoad();
+
+    if (!current || !load || load.failure || !editsReady() || loaded?.key !== day()) return null;
+
+    return ownDayRowsOf({
+      day: day(),
+      frozen: !!edits().frozenRows,
+      rows: current.rows,
+      ledger: loaded.entries,
+      standIns: settings.settings().standIns,
+    });
+  });
+
+  toObservable(ownDayRows)
+    .pipe(
+      filter((rows) => rows !== null),
+      map((rows) => ({ rows, encoded: encodePeerDayRows(rows) })),
+      groupBy((sent) => sent.rows.day),
+      mergeMap((perDay) =>
+        perDay.pipe(
+          distinctUntilChanged((before, after) => before.encoded === after.encoded),
+          debounceTime(SEND_ROWS_DEBOUNCE_MS),
+          concatMap(({ rows }) =>
+            ports.peers.setDayRows$(rows, localDayRange(rows.day, boundary()).from).pipe(catchError(() => EMPTY)),
+          ),
+        ),
+      ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
   saves$
     .pipe(
       groupBy((entry) => entry.key),
@@ -1007,6 +1054,8 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
     coverage,
     /** Rows this app has already written to Tempo, by proposal id. */
     syncedIds,
+    /** The rows each paired machine last sent for the day on screen, by machine id, in this machine's lanes. */
+    peerDayRows,
     /** Whether Tempo holds work on the day, `null` until both the ledger and the coverage were read. */
     heldByTempo: computed(() => {
       const ledgerRead = loadedLedger();

@@ -1,10 +1,11 @@
 import { Page } from '@playwright/test';
-import { AgentSessionCursor, TimetrackSettings } from '@ethlete/timetrack';
+import { AgentSessionCursor, PeerDayRows, TimetrackSettings, parsePeerDayRows } from '@ethlete/timetrack';
 import {
   FakeBackend,
   TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
+  TIMETRACK_E2E_DAY_ROWS_KEY,
   TIMETRACK_E2E_SEED_KEY,
   TIMETRACK_E2E_SETTINGS_KEY,
   TIMETRACK_E2E_REPORT_FILE_KEY,
@@ -92,3 +93,13 @@ export const readSavedReport = (page: Page) =>
     (key) => (globalThis as Record<string, unknown>)[key] as { suggestedName: string; text: string } | undefined,
     TIMETRACK_E2E_REPORT_FILE_KEY,
   );
+
+/** The rows this machine last handed its paired machines for `day`, or `null` before it handed any. */
+export const readSentDayRows = async (page: Page, day: string): Promise<PeerDayRows | null> => {
+  const sent = await page.evaluate(
+    ([key, wanted]) => ((globalThis as Record<string, unknown>)[key] as Record<string, string> | undefined)?.[wanted],
+    [TIMETRACK_E2E_DAY_ROWS_KEY, day] as const,
+  );
+
+  return sent ? parsePeerDayRows(sent) : null;
+};

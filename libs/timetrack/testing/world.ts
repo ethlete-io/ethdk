@@ -4,6 +4,7 @@ import {
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
   EditorCli,
+  PeerDayRows,
   ProposalOverride,
   SpecFiles,
   SyncedWorklog,
@@ -139,11 +140,15 @@ export type FakeDiscoveredMachine = {
 /** An event a paired machine collected, as this machine holds it after a pull. */
 export type FakeReceivedEvent = { machineId: string; event: CollectedEvent };
 
+/** The rows of a day a paired machine sent, as this machine holds them after a pull. */
+export type FakeReceivedDayRows = { machineId: string; rows: PeerDayRows };
+
 /**
  * The machines around this one. `code` is the one the other machine shows, so pairing with any
  * other code fails; `offerExpired` makes every code fail as an expired offer. `received` is read under
  * the name of the paired machine it names, and a machine not paired reads nothing. `repoKeys` holds
  * each paired machine's checkout keys by machine id; `ownRepoKeys` is what this machine last wrote.
+ * `dayRows` holds the rows paired machines sent; `ownDayRows` is what this machine last wrote, by day.
  */
 export type FakePeers = {
   paired: FakePairedMachine[];
@@ -153,6 +158,8 @@ export type FakePeers = {
   received: FakeReceivedEvent[];
   repoKeys: Record<string, CheckoutKeys>;
   ownRepoKeys: CheckoutKeys;
+  dayRows: FakeReceivedDayRows[];
+  ownDayRows: Record<string, PeerDayRows>;
 };
 
 /**
@@ -260,6 +267,9 @@ export const TIMETRACK_E2E_APPROVAL_ATTENTION_KEY = '__timetrackE2eApprovalAtten
 
 /** Where the last report written through the save dialog is published, as `{ suggestedName, text }`. */
 export const TIMETRACK_E2E_REPORT_FILE_KEY = '__timetrackE2eReportFile';
+
+/** Where the rows this machine last handed its paired machines are published, by day, in their wire form. */
+export const TIMETRACK_E2E_DAY_ROWS_KEY = '__timetrackE2eDayRows';
 
 /**
  * Where the stored agent-log cursors are published, keyed by pass. A cursor holds a log's last title
@@ -520,6 +530,8 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
     received: [],
     repoKeys: {},
     ownRepoKeys: {},
+    dayRows: [],
+    ownDayRows: {},
     ...seed.peers,
   },
   secrets: seed.secrets ?? {},
@@ -552,11 +564,29 @@ export const parseWorldSeed = (raw: string | null | undefined): TimetrackWorldSe
   return {
     ...seed,
     ...(seed.events ? { events: seed.events.map(reviveEvent) } : {}),
-    ...(seed.peers?.received
+    ...(seed.peers
       ? {
           peers: {
             ...seed.peers,
-            received: seed.peers.received.map((held) => ({ ...held, event: reviveEvent(held.event as SeededEvent) })),
+            ...(seed.peers.received
+              ? {
+                  received: seed.peers.received.map((held) => ({
+                    ...held,
+                    event: reviveEvent(held.event as SeededEvent),
+                  })),
+                }
+              : {}),
+            ...(seed.peers.dayRows
+              ? {
+                  dayRows: seed.peers.dayRows.map((held) => ({
+                    ...held,
+                    rows: {
+                      ...held.rows,
+                      rows: held.rows.rows.map((row) => ({ ...row, from: new Date(row.from), to: new Date(row.to) })),
+                    },
+                  })),
+                }
+              : {}),
           },
         }
       : {}),

@@ -80,8 +80,11 @@ export type PeerLaneBand = {
   span: number;
 };
 
-export const peerBandLabel = (band: PeerBand) =>
-  band.booked ? `Booked on ${band.machineName}` : workedOnLabel(band.machineName);
+export const peerBandLabel = (band: PeerBand) => {
+  const label = band.booked ? `Booked on ${band.machineName}` : workedOnLabel(band.machineName);
+
+  return band.name ? `${label} · ${band.name}` : label;
+};
 
 /** How far a row may overrun a stretch and not carry its label: a snapped row overruns by the odd minute. */
 const CARRY_SLACK = ((5 * 60_000) / DAY_MS) * 100;

@@ -23,7 +23,9 @@ import {
   parseJiraMirror,
   parseTimetrackSettings,
   dedupeKeyOf,
+  encodePeerDayRows,
   localDayKey,
+  localDayRange,
   meteredRunner,
 } from '@ethlete/timetrack';
 import {
@@ -36,6 +38,7 @@ import {
   TIMETRACK_E2E_REPORT_FILE_KEY,
   TIMETRACK_E2E_TRAY_KEY,
   TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
+  TIMETRACK_E2E_DAY_ROWS_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
   isEditorInstallSpec,
@@ -672,9 +675,22 @@ export const createFakePorts = (): HostPorts => {
             ),
           ),
           ownRepoKeys: { ...world.peers.ownRepoKeys },
+          dayRows: world.peers.dayRows.filter(({ machineId, rows }) => {
+            const start = localDayRange(rows.day, MIDNIGHT).from;
+
+            return paired.some((held) => held.machineId === machineId) && start >= from && start < to;
+          }),
         }),
       setRepoKeys$: (keys) => {
         world.peers.ownRepoKeys = { ...keys };
+
+        return ok(undefined);
+      },
+      setDayRows$: (rows) => {
+        world.peers.ownDayRows[rows.day] = rows;
+        (globalThis as Record<string, unknown>)[TIMETRACK_E2E_DAY_ROWS_KEY] = Object.fromEntries(
+          Object.entries(world.peers.ownDayRows).map(([day, sent]) => [day, encodePeerDayRows(sent)]),
+        );
 
         return ok(undefined);
       },

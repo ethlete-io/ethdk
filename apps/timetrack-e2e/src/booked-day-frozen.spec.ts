@@ -1,6 +1,14 @@
 import { AgentApiDayRows, CollectedEvent, DayReviewEdits } from '@ethlete/timetrack';
-import { E2E_ISSUE_BRANCH, E2E_REPO, FakeDiscoveredMachine, tempoWorklogOn } from '@ethlete/timetrack/testing';
-import { E2E_DAY_KEY, E2E_NOW, askAgent, expect, seedWorld, test } from './support';
+import {
+  E2E_ISSUE_BRANCH,
+  E2E_ISSUE_KEY,
+  E2E_REPO,
+  FakeDiscoveredMachine,
+  FakeReceivedDayRows,
+  tempoWorklogOn,
+} from '@ethlete/timetrack/testing';
+import { Page } from '@playwright/test';
+import { E2E_DAY_KEY, E2E_NOW, askAgent, expect, readSentDayRows, seedWorld, test } from './support';
 
 const BOOKED_DAY = '2026-08-11';
 const ELSEWHERE_DAY = '2026-08-10';
@@ -69,6 +77,27 @@ test.describe('a finished day this app booked', () => {
     expect((await inputsOf(page, ELSEWHERE_DAY))?.frozenRows).toBeUndefined();
     expect((await inputsOf(page, E2E_DAY_KEY))?.frozenRows).toBeUndefined();
   });
+
+  test('hands its rows of the day to the paired machines once it is frozen', async ({ page }) => {
+    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
+    await expect.poll(async () => (await readSentDayRows(page, BOOKED_DAY))?.frozen).toBe(true);
+
+    const sent = await readSentDayRows(page, BOOKED_DAY);
+
+    expect(sent?.rows.map((row) => ({ laneKey: row.laneKey, issueKey: row.issueKey }))).toEqual([
+      { laneKey: `repo:${E2E_REPO}`, issueKey: E2E_ISSUE_KEY },
+    ]);
+    expect(JSON.stringify(sent)).not.toContain('evidence');
+  });
+
+  test('hands the day on screen to the paired machines while it is still open', async ({ page }) => {
+    await expect.poll(async () => (await readSentDayRows(page, E2E_DAY_KEY))?.rows.length).toBe(1);
+
+    const sent = await readSentDayRows(page, E2E_DAY_KEY);
+
+    expect(sent?.frozen).toBe(false);
+    expect(sent?.rows[0]?.issueKey).toBe(E2E_ISSUE_KEY);
+  });
 });
 
 test.describe('a booked day a paired machine’s events reach afterwards', () => {
@@ -101,8 +130,34 @@ test.describe('a booked day a paired machine’s events reach afterwards', () =>
     ];
   };
 
-  test('draws the MacBook’s booked work beside the frozen rows and says the day changed', async ({ page }) => {
-    await seedWorld(page, {
+  const loginWindow = (minutes: number): CollectedEvent => ({
+    at: new Date(new Date(`${BOOKED_DAY}T12:00:00.000Z`).getTime() + minutes * 60_000),
+    source: 'window',
+    kind: 'window-focus',
+    appId: 'com.apple.loginwindow',
+    title: 'loginwindow',
+  });
+
+  const pairAfterTheFreeze = async (page: Page) => {
+    await page.goto('/day');
+    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
+
+    await page.getByRole('link', { name: 'Settings' }).click();
+    await page.getByRole('tab', { name: 'Sources' }).click();
+
+    const machines = page.locator('[data-paired-machines]');
+
+    await machines.locator('[data-discovered-machine]', { hasText: 'MacBook' }).click();
+    await machines.locator('[data-pair-code] input').fill(CODE);
+    await machines.getByRole('button', { name: 'Pair', exact: true }).click();
+    await expect(machines.locator('[data-pair-done]')).toHaveText('Paired with MacBook.');
+
+    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: /^Day / }).click();
+    await page.getByRole('button', { name: 'Previous day' }).click();
+  };
+
+  const seedTheMac = (page: Page, dayRows: FakeReceivedDayRows[] = []) =>
+    seedWorld(page, {
       now: E2E_NOW,
       events: hourOn(BOOKED_DAY),
       tempo: {
@@ -123,31 +178,59 @@ test.describe('a booked day a paired machine’s events reach afterwards', () =>
       peers: {
         discovered: [MACBOOK],
         code: CODE,
-        received: Array.from({ length: 25 }, (_, step) => onTheMac(step * 5)).flatMap((events) =>
-          events.map((event) => ({ machineId: MACBOOK.machineId, event })),
-        ),
+        received: [
+          ...Array.from({ length: 25 }, (_, step) => onTheMac(step * 5)).flat(),
+          ...[0, 5, 10].map(loginWindow),
+        ].map((event) => ({ machineId: MACBOOK.machineId, event })),
         repoKeys: { [MACBOOK.machineId]: { [MAC_REPO]: KEY_OF_EVERY_FAKE_CHECKOUT } },
+        dayRows,
       },
     });
-    await page.goto('/day');
-    await expect.poll(async () => !!(await inputsOf(page, BOOKED_DAY))?.frozenRows).toBe(true);
 
-    await page.getByRole('link', { name: 'Settings' }).click();
-    await page.getByRole('tab', { name: 'Sources' }).click();
+  test('draws the rows the MacBook sent as it sent them, booked or named, in the local checkout’s lane', async ({
+    page,
+  }) => {
+    const row = (from: string, to: string) => ({
+      laneKey: `repo:${MAC_REPO}`,
+      from: new Date(`${BOOKED_DAY}T${from}:00.000Z`),
+      to: new Date(`${BOOKED_DAY}T${to}:00.000Z`),
+      description: '',
+    });
 
-    const machines = page.locator('[data-paired-machines]');
+    await seedTheMac(page, [
+      {
+        machineId: MACBOOK.machineId,
+        rows: {
+          day: BOOKED_DAY,
+          frozen: true,
+          rows: [
+            { ...row('13:15', '15:00'), issueKey: 'ABC-3020', state: 'booked', worklogId: 'w-mac' },
+            { ...row('15:00', '18:00'), standInName: 'Bracket spike', state: 'accepted' },
+          ],
+        },
+      },
+    ]);
+    await pairAfterTheFreeze(page);
 
-    await machines.locator('[data-discovered-machine]', { hasText: 'MacBook' }).click();
-    await machines.locator('[data-pair-code] input').fill(CODE);
-    await machines.getByRole('button', { name: 'Pair', exact: true }).click();
-    await expect(machines.locator('[data-pair-done]')).toHaveText('Paired with MacBook.');
+    await expect(page.locator('[data-peer-band]')).toHaveText([
+      'Booked on MacBook · ABC-3020',
+      'Worked on MacBook · Bracket spike',
+    ]);
+    await expect(page.locator(`[data-lane-header][title="repo:${MAC_REPO}"]`)).toHaveCount(0);
+    await expect(page.locator('[data-lane-header][title="app:com.apple.loginwindow"]')).toHaveCount(0);
+    await expect(page.locator('[data-changed-after-booking]')).toHaveCount(0);
+  });
 
-    await page.getByRole('navigation', { name: 'Views' }).getByRole('link', { name: /^Day / }).click();
-    await page.getByRole('button', { name: 'Previous day' }).click();
+  test('draws the MacBook’s booked work from its events when it sent no rows, and no application lane', async ({
+    page,
+  }) => {
+    await seedTheMac(page);
+    await pairAfterTheFreeze(page);
 
     await expect(page.locator('[data-peer-band]')).toHaveCount(1);
     await expect(page.locator('[data-peer-band]')).toHaveText('Booked on MacBook');
-    await expect(page.locator('[data-changed-after-booking]')).toBeVisible();
+    await expect(page.locator('[data-lane-header][title="app:com.apple.loginwindow"]')).toHaveCount(0);
+    await expect(page.locator('[data-changed-after-booking]')).toHaveCount(0);
 
     const rows = await askAgent<AgentApiDayRows>(page, { op: 'day.rows', day: BOOKED_DAY });
     const frozen = await inputsOf(page, BOOKED_DAY);
