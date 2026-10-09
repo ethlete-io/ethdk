@@ -257,6 +257,30 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
        in the mapped lane, raw fallback without app lane, no "Changed after booking" from peer time).
        Snapshot 10-03..10-09: no row changed by this step (10-09 live: one fifagg-frontend row grew one
        increment with new work). Full Timetrack e2e: 493 passed, 1 flaky (`masked-names`, unrelated).
+   - 4i follow-up. Done (aaeb2e55e, d7deeccd0). The day rows recover by themselves, with no day opened by hand: 4i sent rows only
+     from the day screen and a freezing agent read, so a Mac updated from next.10 never sent the days it
+     had booked, and an older receiver's cursor moved past the `dayRows` it skipped. Decisions:
+     - Backfill (`peers/day-rows-backfill.ts`): at startup and whenever a new machine is paired, each
+       machine takes the booked (ledger) days of the last 30 finished ones, and builds through the
+       headless agent read (`agentDay.sendDayRows$`, never navigating) each day whose `day_rows` entry is
+       missing or older than `PEER_DAY_ROWS_VERSION`, one day per 2 s. Only machines with a paired peer
+       run it. The read freezes a booked unfrozen day as any agent read does; frozen rows never change.
+     - Payload version: `encodePeerDayRows` stamps `version` (`PEER_DAY_ROWS_VERSION`, now 1; raise it
+       when the row builder changes what a day sends). Rows stored before carry none and count as 0, so
+       each machine rebuilds them once; the store keeps the change number when the rows are equal.
+     - Cursor gap: no new cursor and no migration. `Frame::Pull` gains optional `dayRowsFromMs`. While a
+       receiver holds no `received_day_rows` of a machine, every pull asks for the rows of the days from
+       30 days ago, and the sender adds those changed at or before the receiver's cursor to the page
+       (later ones arrive through the cursor anyway). The first answer that holds rows ends it, so it
+       runs once; a sender with no rows in the window answers an empty list. An older sender ignores the
+       field. A receiver keeps the raw rows, so a version rise on its side loses nothing; a version rise
+       on the sender's side rebuilds the rows and they arrive through the cursor.
+     - New host command `own_day_rows` (this machine's stored rows from a day on).
+       Tests: `peer-rows.spec.ts` (version stamp, days to rebuild), `cargo test` (catch-up after a
+       skipped page, none outside 30 days, none once held, an older pull frame), e2e
+       `booked-day-frozen.spec.ts` (a booked day nothing opened is sent at startup and drawn "Booked on
+       PC · ABC-3010" on the peer; fails without the backfill). Full Timetrack e2e: 498 passed. Snapshot
+       10-03..10-09: no booked row changed (10-09 live: one ET-772 row grew with new work).
    - 4j. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
      work of a day shows as rows on tank, Mac lanes map onto the local checkout (the Mac build in use
      on 2026-10-09 predates 4b, so its rows sit in `repo:/Users/tom/...` lanes), a private checkout
