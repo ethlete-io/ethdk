@@ -10,6 +10,7 @@ import {
   linkedWorktreesOf,
   parseGitWorktrees,
   readRepoKey$,
+  resolveLocalOrigins,
   withRepoAliases,
 } from '@ethlete/timetrack';
 import {
@@ -122,12 +123,11 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
       ),
       toArray(),
       concatMap((entries) => {
+        const keys = resolveLocalOrigins(Object.fromEntries(entries));
         keyedAliases = aliasesNow();
-        remoteKeys.set(Object.fromEntries(entries));
+        remoteKeys.set(keys);
 
-        return ports.peers.setRepoKeys$(
-          withRepoAliases({ keys: Object.fromEntries(entries), aliases: settings.settings().repoAliases }),
-        );
+        return ports.peers.setRepoKeys$(withRepoAliases({ keys, aliases: settings.settings().repoAliases }));
       }),
       catchError(() => of(null)),
     );

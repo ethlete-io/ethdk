@@ -73,3 +73,19 @@ export const readRepoKey$ = (options: { processes: TimetrackProcessRunner; repoP
     map((url) => repoKeyOf(url, repoPath)),
   );
 };
+
+const lowerPath = (path: string) => path.replace(/[\\/]+$/, '').toLowerCase();
+
+/**
+ * Re-keys every checkout whose origin is the local path of another known checkout to that checkout's
+ * key, so a clone of a repository on this machine counts as the repository itself.
+ */
+export const resolveLocalOrigins = (keys: Record<string, string>): Record<string, string> => {
+  const byPath = new Map(Object.entries(keys).map(([path, key]) => [lowerPath(path), key]));
+  const resolve = (key: string, hops: number): string => {
+    const next = key.startsWith('/') ? byPath.get(lowerPath(key)) : undefined;
+    return next && next !== key && hops > 0 ? resolve(next, hops - 1) : key;
+  };
+
+  return Object.fromEntries(Object.entries(keys).map(([path, key]) => [path, resolve(key, 5)]));
+};

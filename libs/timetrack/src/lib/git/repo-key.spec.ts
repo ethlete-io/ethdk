@@ -1,7 +1,7 @@
 import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { ProcessResult, TimetrackProcessRunner } from '../transport/ports';
-import { readRepoKey$, repoKeyOf } from './repo-key';
+import { readRepoKey$, repoKeyOf, resolveLocalOrigins } from './repo-key';
 
 describe('repoKeyOf', () => {
   it.each([
@@ -64,5 +64,25 @@ describe('readRepoKey$', () => {
     await expect(
       firstValueFrom(readRepoKey$({ processes: runnerOf({ remote: '' }), repoPath: '/home/tom/dev/Notes' })),
     ).resolves.toBe('notes');
+  });
+});
+
+describe('resolveLocalOrigins', () => {
+  it('keys a clone of a local checkout as that checkout', () => {
+    const keys = {
+      '/home/tom/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
+      '/home/tom/dev/tt-booked-clone': repoKeyOf('/home/tom/dev/ethlete-sdk', '/home/tom/dev/tt-booked-clone'),
+      '/home/tom/dev/notes': 'notes',
+    };
+
+    expect(resolveLocalOrigins(keys)).toEqual({
+      '/home/tom/dev/ethlete-sdk': 'github.com/ethlete-io/ethdk',
+      '/home/tom/dev/tt-booked-clone': 'github.com/ethlete-io/ethdk',
+      '/home/tom/dev/notes': 'notes',
+    });
+  });
+
+  it('leaves a local origin that is no known checkout alone', () => {
+    expect(resolveLocalOrigins({ '/a': '/gone' })).toEqual({ '/a': '/gone' });
   });
 });
