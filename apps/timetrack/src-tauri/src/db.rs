@@ -331,6 +331,15 @@ CREATE TABLE IF NOT EXISTS peer_repo_key (
 );
 ";
 
+/// The local mirror of one Jira project's issues, as one JSON document per project read and written
+/// whole, like `approval_queue`. Its shape belongs to the core.
+const SCHEMA_V24: &str = "
+CREATE TABLE IF NOT EXISTS jira_mirror (
+  project_key TEXT PRIMARY KEY,
+  document TEXT NOT NULL
+);
+";
+
 /// `name` is the label the user gave the machine; it wins over `label`, the host name the peer reports.
 /// `last_pull_ms` is when a pull from the machine last succeeded.
 fn add_paired_machine_name_and_pull(connection: &Connection) -> TimetrackResult<()> {
@@ -661,6 +670,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 23, |connection| Ok(connection.execute_batch(SCHEMA_V23)?))?;
     }
 
+    if version < 24 {
+        step(connection, 24, |connection| Ok(connection.execute_batch(SCHEMA_V24)?))?;
+    }
+
     Ok(())
 }
 
@@ -735,7 +748,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            23
+            24
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -859,7 +872,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            23
+            24
         );
     }
 
@@ -1388,7 +1401,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            23
+            24
         );
         assert_eq!(
             connection

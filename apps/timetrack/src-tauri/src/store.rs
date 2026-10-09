@@ -762,10 +762,60 @@ pub async fn set_tempo_sync_run(db: State<'_, Db>, day: String, run: serde_json:
     db.run(move |connection| save_sync_run(connection, &day, &run)).await
 }
 
+fn jira_mirror_documents(connection: &Connection) -> TimetrackResult<Vec<serde_json::Value>> {
+    let mut statement = connection.prepare("SELECT document FROM jira_mirror ORDER BY project_key")?;
+    let documents = statement
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(documents
+        .iter()
+        .filter_map(|document| serde_json::from_str(document).ok())
+        .collect())
+}
+
+fn save_jira_mirror(connection: &Connection, project_key: &str, mirror: &serde_json::Value) -> TimetrackResult<()> {
+    connection.execute(
+        "INSERT INTO jira_mirror (project_key, document) VALUES (?1, ?2)
+         ON CONFLICT (project_key) DO UPDATE SET document = ?2",
+        params![project_key, serde_json::to_string(mirror)?],
+    )?;
+
+    Ok(())
+}
+
+/// Every Jira project mirror the app stored, one document per project.
+#[tauri::command]
+pub async fn jira_mirrors(db: State<'_, Db>) -> TimetrackResult<Vec<serde_json::Value>> {
+    db.run(move |connection| jira_mirror_documents(connection)).await
+}
+
+#[tauri::command]
+pub async fn set_jira_mirror(db: State<'_, Db>, project_key: String, mirror: serde_json::Value) -> TimetrackResult<()> {
+    db.run(move |connection| save_jira_mirror(connection, &project_key, &mirror)).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db;
+
+    #[test]
+    fn keeps_one_jira_mirror_per_project() {
+        let connection = store();
+
+        save_jira_mirror(&connection, "ABC", &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 1 })).unwrap();
+        save_jira_mirror(&connection, "XYZ", &serde_json::json!({ "projectKey": "XYZ" })).unwrap();
+        save_jira_mirror(&connection, "ABC", &serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 2 })).unwrap();
+
+        assert_eq!(
+            jira_mirror_documents(&connection).unwrap(),
+            vec![
+                serde_json::json!({ "projectKey": "ABC", "syncedAtMs": 2 }),
+                serde_json::json!({ "projectKey": "XYZ" }),
+            ]
+        );
+    }
 
     #[test]
     fn keeps_only_the_last_sync_run_of_a_day() {
