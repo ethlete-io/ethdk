@@ -171,7 +171,14 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      (Mac works while the PC is off, both work at once on two checkouts, one checkout on both), new
      e2e `merged-peer-day.spec.ts` seeding `world.peers.received`, `worked-on-paired-machine.spec.ts`
      unchanged, snapshot compare for 10-02..10-08.
-   - 4e. Attendance across machines: a break, an away stretch and an unattended band need every
+   - 4e. Done (12637f9c3). `promptOriginReader({ elsewhere })` reads each other machine's input, so a
+     prompt any seat was touched for is a desk prompt and buys no phone time that cuts a Mac band.
+     `attendedAt({ elsewhere })` keeps an away stretch as a wall only where no paired machine saw a
+     person, so this machine's grace reaches a band left running when the user moved to the Mac. Breaks
+     and gaps were already 4d; the `unattended-time` check already skips a `workedOn` band (3c), and
+     3c's "Worked on" stays for a band no local instant comes near. Snapshot 10-02..10-08 unchanged
+     (10-09 live: one new fifagg stand-in row from work after the baseline, one ET-772 hand edit).
+     Plan as written: Attendance across machines: a break, an away stretch and an unattended band need every
      origin away; `promptOriginAt` reads input from all origins, so a prompt typed at the Mac is not
      phone time on the PC; the `unattended-time` check reads merged attendance. Files:
      `rows/attended.ts`, `stream/prompt-origin.ts`, the break pass in `stream-day.ts`. Tests: unit
