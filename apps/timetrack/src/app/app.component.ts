@@ -19,6 +19,7 @@ import { NudgeBannerComponent } from './nudge-banner.component';
 import { SidebarComponent } from './shell';
 import { injectTrayReadout } from './tray-readout';
 import { UpdateButtonComponent } from './update-button.component';
+import { UpdateCheckButtonComponent } from './update-check-button.component';
 import { rememberViewState } from './view-state';
 import { WindowControlsComponent } from './window-controls.component';
 import { injectWindowLock } from './window-lock';
@@ -73,6 +74,8 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
               <div class="-mt-1">
                 <ethlete-build-stamp />
               </div>
+
+              <ethlete-update-check-button />
             </div>
 
             <ethlete-sidebar />
@@ -95,6 +98,7 @@ const viewPathOf = (route: string) => route.split('/').filter(Boolean)[0];
     SidebarComponent,
     NudgeBannerComponent,
     UpdateButtonComponent,
+    UpdateCheckButtonComponent,
     WindowControlsComponent,
   ],
 })
