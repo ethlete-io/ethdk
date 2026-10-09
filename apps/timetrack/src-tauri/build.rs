@@ -64,6 +64,7 @@ const COMMANDS: &[&str] = &[
     "set_app_settings",
     "set_approval_queue",
     "set_compacted_through",
+    "set_day_rows",
     "set_day_nudge_record",
     "set_day_review_edits",
     "set_jira_mirror",

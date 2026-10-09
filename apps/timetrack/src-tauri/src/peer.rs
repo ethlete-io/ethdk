@@ -281,7 +281,19 @@ enum Frame {
         /// Absent from a peer that predates the map, which then keeps the map stored for it.
         #[serde(default)]
         repo_keys: Option<Vec<RepoKey>>,
+        /// The serving machine's day rows changed in this page. Absent from a peer that predates them.
+        #[serde(default)]
+        day_rows: Option<Vec<DayRows>>,
     },
+}
+
+/// A machine's reviewed rows of one day, as the core wrote them.
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct DayRows {
+    pub day: String,
+    pub day_start_ms: i64,
+    pub rows: String,
 }
 
 /// A checkout path and its `repoKeyOf` key.
@@ -520,11 +532,13 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
            WHERE changed_seq > ?1
          UNION ALL
          SELECT changed_seq, row_id, at_ms, '', '', '', NULL, 1 FROM deleted_event WHERE changed_seq > ?1
+         UNION ALL
+         SELECT changed_seq, 0, day_start_ms, day, '', rows, NULL, 2 FROM day_rows WHERE changed_seq > ?1
          ORDER BY 1
          LIMIT ?2",
     )?;
     let mut rows = statement.query(params![after_seq, i64::from(limit) + 1])?;
-    let (mut events, mut deleted) = (Vec::new(), Vec::new());
+    let (mut events, mut deleted, mut day_rows) = (Vec::new(), Vec::new(), Vec::new());
     let (mut cursor, mut bytes, mut taken, mut more) = (after_seq, 0usize, 0u32, false);
 
     while let Some(row) = rows.next()? {
@@ -536,9 +550,20 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
 
         let seq: i64 = row.get(0)?;
 
-        if row.get::<_, i64>(7)? == 1 {
+        let flag: i64 = row.get(7)?;
+
+        if flag == 1 {
             deleted.push(row.get(1)?);
             bytes += 24;
+        } else if flag == 2 {
+            let rows = DayRows {
+                day: row.get(3)?,
+                day_start_ms: row.get(2)?,
+                rows: row.get(5)?,
+            };
+
+            bytes += serde_json::to_vec(&rows)?.len() + 1;
+            day_rows.push(rows);
         } else {
             let event = PeerEvent {
                 row_id: row.get(1)?,
@@ -563,7 +588,20 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
         cursor,
         more,
         repo_keys: Some(own_repo_keys(connection)?),
+        day_rows: Some(day_rows),
     })
+}
+
+/// Replaces this machine's rows of a day. Unchanged rows keep their change, so no pull resends them.
+fn store_day_rows(connection: &Connection, rows: &DayRows) -> TimetrackResult<()> {
+    connection.execute(
+        "INSERT INTO day_rows (day, day_start_ms, rows) VALUES (?1, ?2, ?3)
+         ON CONFLICT (day) DO UPDATE SET day_start_ms = ?2, rows = ?3
+           WHERE day_start_ms <> ?2 OR rows <> ?3",
+        params![rows.day, rows.day_start_ms, rows.rows],
+    )?;
+
+    Ok(())
 }
 
 fn own_repo_keys(connection: &Connection) -> TimetrackResult<Vec<RepoKey>> {
@@ -610,6 +648,36 @@ pub struct ReceivedRange {
     pub events: Vec<ReceivedEvent>,
     pub repo_keys: Vec<PeerRepoKey>,
     pub own_repo_keys: Vec<RepoKey>,
+    pub day_rows: Vec<ReceivedDayRows>,
+}
+
+/// The last rows of a day a paired machine sent.
+#[derive(Serialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ReceivedDayRows {
+    pub machine_id: String,
+    pub day: String,
+    pub rows: String,
+}
+
+/// The day rows of the days that start in `[from_ms, to_ms)`. A forgotten machine's are left out.
+fn received_day_rows_in(connection: &Connection, from_ms: i64, to_ms: i64) -> TimetrackResult<Vec<ReceivedDayRows>> {
+    let mut statement = connection.prepare(
+        "SELECT received.machine_id, received.day, received.rows
+           FROM received_day_rows received
+           JOIN paired_machine paired ON paired.machine_id = received.machine_id
+          WHERE received.day_start_ms >= ?1 AND received.day_start_ms < ?2
+          ORDER BY received.day, received.machine_id",
+    )?;
+    let rows = statement.query_map(params![from_ms, to_ms], |row| {
+        Ok(ReceivedDayRows {
+            machine_id: row.get(0)?,
+            day: row.get(1)?,
+            rows: row.get(2)?,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
 #[derive(Serialize, Debug)]
@@ -687,6 +755,7 @@ fn apply_changes(
     deleted: &[i64],
     cursor: i64,
     repo_keys: Option<&[RepoKey]>,
+    day_rows: &[DayRows],
 ) -> TimetrackResult<(usize, usize)> {
     let transaction = connection.transaction()?;
     let mut removed = 0;
@@ -724,6 +793,14 @@ fn apply_changes(
                 event.payload,
                 event.dedupe_key
             ],
+        )?;
+    }
+
+    for rows in day_rows {
+        transaction.execute(
+            "INSERT INTO received_day_rows (machine_id, day, day_start_ms, rows) VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT (machine_id, day) DO UPDATE SET day_start_ms = ?3, rows = ?4",
+            params![machine_id, rows.day, rows.day_start_ms, rows.rows],
         )?;
     }
 
@@ -1491,17 +1568,19 @@ impl Peers {
         )
         .await?;
 
-        let (events, deleted, cursor, more, repo_keys) = match read_frame_up_to(&mut tls, MAX_PAGE_FRAME_BYTES).await? {
-            Frame::Changes {
-                events,
-                deleted,
-                cursor,
-                more,
-                repo_keys,
-            } => (events, deleted, cursor, more, repo_keys),
-            Frame::Refused { message } => return Err(rejected(message)),
-            _ => return Err(rejected("the other machine answered out of turn")),
-        };
+        let (events, deleted, cursor, more, repo_keys, day_rows) =
+            match read_frame_up_to(&mut tls, MAX_PAGE_FRAME_BYTES).await? {
+                Frame::Changes {
+                    events,
+                    deleted,
+                    cursor,
+                    more,
+                    repo_keys,
+                    day_rows,
+                } => (events, deleted, cursor, more, repo_keys, day_rows.unwrap_or_default()),
+                Frame::Refused { message } => return Err(rejected(message)),
+                _ => return Err(rejected("the other machine answered out of turn")),
+            };
         let _ = tls.shutdown().await;
 
         if cursor < after_seq {
@@ -1522,6 +1601,7 @@ impl Peers {
                     &deleted,
                     cursor,
                     repo_keys.as_deref(),
+                    &day_rows,
                 )
             })
             .await?;
@@ -1537,6 +1617,7 @@ impl Peers {
                     events: received_in(connection, from_ms, to_ms)?,
                     repo_keys: peer_repo_keys(connection)?,
                     own_repo_keys: own_repo_keys(connection)?,
+                    day_rows: received_day_rows_in(connection, from_ms, to_ms)?,
                 })
             })
             .await
@@ -1548,6 +1629,11 @@ impl Peers {
             .db
             .run(move |connection| store_repo_keys(connection, &keys))
             .await
+    }
+
+    /// Replaces this machine's rows of a day, which the next pull from here carries to the paired machine.
+    pub async fn set_day_rows(&self, rows: DayRows) -> TimetrackResult<()> {
+        self.0.db.run(move |connection| store_day_rows(connection, &rows)).await
     }
 
     pub async fn forget(&self, machine_id: &str) -> TimetrackResult<bool> {
@@ -1772,6 +1858,11 @@ pub async fn received_between(
 #[tauri::command]
 pub async fn set_repo_keys(peers: tauri::State<'_, Peers>, keys: Vec<RepoKey>) -> TimetrackResult<()> {
     peers.set_repo_keys(keys).await
+}
+
+#[tauri::command]
+pub async fn set_day_rows(peers: tauri::State<'_, Peers>, rows: DayRows) -> TimetrackResult<()> {
+    peers.set_day_rows(rows).await
 }
 
 #[tauri::command]
@@ -2143,6 +2234,56 @@ mod tests {
         assert_eq!(b.pull(&a_id).await.unwrap().upserted, 0);
     }
 
+    fn day_rows(day: &str, day_start_ms: i64, rows: &str) -> DayRows {
+        DayRows {
+            day: day.to_string(),
+            day_start_ms,
+            rows: rows.to_string(),
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn a_pull_carries_the_last_rows_each_day_was_sent_with() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let rows_in = |range: ReceivedRange| {
+            range
+                .day_rows
+                .into_iter()
+                .map(|rows| (rows.machine_id, rows.day, rows.rows))
+                .collect::<Vec<_>>()
+        };
+
+        a.set_day_rows(day_rows("2026-10-08", 1_000, "first")).await.unwrap();
+        a.set_day_rows(day_rows("2026-10-09", 5_000, "other")).await.unwrap();
+        b.pull(&a_id).await.unwrap();
+
+        assert_eq!(
+            rows_in(b.received_between(0, 2_000).await.unwrap()),
+            vec![(a_id.clone(), "2026-10-08".to_string(), "first".to_string())]
+        );
+
+        a.set_day_rows(day_rows("2026-10-08", 1_000, "second")).await.unwrap();
+        let changed = b.pull(&a_id).await.unwrap();
+
+        assert_eq!(
+            rows_in(b.received_between(0, 2_000).await.unwrap()),
+            vec![(a_id.clone(), "2026-10-08".to_string(), "second".to_string())]
+        );
+
+        a.set_day_rows(day_rows("2026-10-08", 1_000, "second")).await.unwrap();
+
+        assert_eq!(b.pull(&a_id).await.unwrap().cursor, changed.cursor);
+        assert!(rows_in(a.received_between(0, 10_000).await.unwrap()).is_empty());
+
+        b.forget(&a_id).await.unwrap();
+
+        assert!(rows_in(b.received_between(0, 10_000).await.unwrap()).is_empty());
+    }
+
     #[tokio::test(flavor = "multi_thread")]
     async fn an_updated_event_replaces_its_copy() {
         let (a, b) = (instance("pc"), instance("laptop"));
@@ -2379,13 +2520,20 @@ mod tests {
         let frame: Frame =
             serde_json::from_str(r#"{"type":"changes","events":[],"deleted":[],"cursor":0,"more":false}"#).unwrap();
 
-        assert!(matches!(frame, Frame::Changes { repo_keys: None, .. }));
+        assert!(matches!(
+            frame,
+            Frame::Changes {
+                repo_keys: None,
+                day_rows: None,
+                ..
+            }
+        ));
 
         let mut connection = Connection::open_in_memory().unwrap();
 
         crate::db::migrate(&connection).unwrap();
-        apply_changes(&mut connection, "a", &[], &[], 0, Some(&[repo_key("/x", "k")])).unwrap();
-        apply_changes(&mut connection, "a", &[], &[], 0, None).unwrap();
+        apply_changes(&mut connection, "a", &[], &[], 0, Some(&[repo_key("/x", "k")]), &[]).unwrap();
+        apply_changes(&mut connection, "a", &[], &[], 0, None, &[]).unwrap();
 
         assert_eq!(
             connection
@@ -2475,7 +2623,7 @@ mod tests {
             b.answer(&serde_json::json!({ "op": "peers.received", "fromMs": 0, "toMs": 1 }))
                 .await
                 .unwrap(),
-            serde_json::json!({ "events": [], "repoKeys": [], "ownRepoKeys": [] })
+            serde_json::json!({ "events": [], "repoKeys": [], "ownRepoKeys": [], "dayRows": [] })
         );
         assert_eq!(
             b.answer(&serde_json::json!({ "op": "peers.rename", "machineId": id, "name": "Desk" }))

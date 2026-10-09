@@ -71,6 +71,7 @@
     "allow-set-compacted-through",
     "allow-set-day-nudge-record",
     "allow-set-day-review-edits",
+    "allow-set-day-rows",
     "allow-set-jira-mirror",
     "allow-set-repo-keys",
     "allow-set-tempo-coverage",

@@ -340,6 +340,39 @@ CREATE TABLE IF NOT EXISTS jira_mirror (
 );
 ";
 
+/// Each machine's reviewed rows of a day, as one JSON document whose shape belongs to the core. A machine
+/// sends its own `day_rows` with a pull, by the same change clock as its events, and keeps the last
+/// version a peer sent in `received_day_rows`. `day_start_ms` is where the day begins, for retention.
+const SCHEMA_V25: &str = "
+CREATE TABLE IF NOT EXISTS day_rows (
+  day TEXT PRIMARY KEY,
+  day_start_ms INTEGER NOT NULL,
+  rows TEXT NOT NULL,
+  changed_seq INTEGER
+);
+CREATE INDEX IF NOT EXISTS day_rows_changed_seq ON day_rows (changed_seq);
+
+CREATE TRIGGER IF NOT EXISTS day_rows_changed_insert AFTER INSERT ON day_rows
+BEGIN
+  UPDATE change_clock SET seq = seq + 1 WHERE id = 1;
+  UPDATE day_rows SET changed_seq = (SELECT seq FROM change_clock WHERE id = 1) WHERE day = NEW.day;
+END;
+
+CREATE TRIGGER IF NOT EXISTS day_rows_changed_update AFTER UPDATE OF day_start_ms, rows ON day_rows
+BEGIN
+  UPDATE change_clock SET seq = seq + 1 WHERE id = 1;
+  UPDATE day_rows SET changed_seq = (SELECT seq FROM change_clock WHERE id = 1) WHERE day = NEW.day;
+END;
+
+CREATE TABLE IF NOT EXISTS received_day_rows (
+  machine_id TEXT NOT NULL,
+  day TEXT NOT NULL,
+  day_start_ms INTEGER NOT NULL,
+  rows TEXT NOT NULL,
+  PRIMARY KEY (machine_id, day)
+);
+";
+
 /// `name` is the label the user gave the machine; it wins over `label`, the host name the peer reports.
 /// `last_pull_ms` is when a pull from the machine last succeeded.
 fn add_paired_machine_name_and_pull(connection: &Connection) -> TimetrackResult<()> {
@@ -674,6 +707,10 @@ pub fn migrate(connection: &Connection) -> TimetrackResult<()> {
         step(connection, 24, |connection| Ok(connection.execute_batch(SCHEMA_V24)?))?;
     }
 
+    if version < 25 {
+        step(connection, 25, |connection| Ok(connection.execute_batch(SCHEMA_V25)?))?;
+    }
+
     Ok(())
 }
 
@@ -748,7 +785,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            24
+            25
         );
         assert_eq!(connection.execute(INSERT, params![1_i64, "git-commit:abc"]).unwrap(), 1);
     }
@@ -872,7 +909,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            24
+            25
         );
     }
 
@@ -1401,7 +1438,7 @@ mod tests {
             connection
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, i64>(0))
                 .unwrap(),
-            24
+            25
         );
         assert_eq!(
             connection

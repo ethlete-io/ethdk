@@ -328,6 +328,11 @@ fn delete_events_before(connection: &Connection, before_ms: i64) -> TimetrackRes
     let deleted = connection.execute("DELETE FROM collected_event WHERE at_ms < ?1", params![before_ms])?;
     connection.execute("DELETE FROM received_event WHERE at_ms < ?1", params![before_ms])?;
     connection.execute("DELETE FROM deleted_event WHERE at_ms < ?1", params![before_ms])?;
+    connection.execute("DELETE FROM day_rows WHERE day_start_ms < ?1", params![before_ms])?;
+    connection.execute(
+        "DELETE FROM received_day_rows WHERE day_start_ms < ?1",
+        params![before_ms],
+    )?;
 
     Ok(deleted as i64)
 }
@@ -1448,6 +1453,18 @@ mod tests {
                     params![at_ms],
                 )
                 .unwrap();
+            connection
+                .execute(
+                    "INSERT INTO day_rows (day, day_start_ms, rows) VALUES (?1, ?2, '{}')",
+                    params![format!("day-{at_ms}"), at_ms],
+                )
+                .unwrap();
+            connection
+                .execute(
+                    "INSERT INTO received_day_rows (machine_id, day, day_start_ms, rows) VALUES ('peer', ?1, ?2, '{}')",
+                    params![format!("day-{at_ms}"), at_ms],
+                )
+                .unwrap();
         }
 
         delete_events_before(&connection, 500).unwrap();
@@ -1461,5 +1478,7 @@ mod tests {
         assert_eq!(remaining("received_event"), 1);
         assert_eq!(remaining("collected_event"), 1);
         assert_eq!(remaining("deleted_event"), 0);
+        assert_eq!(remaining("day_rows"), 1);
+        assert_eq!(remaining("received_day_rows"), 1);
     }
 }
