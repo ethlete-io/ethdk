@@ -32,7 +32,7 @@ import {
   joinUnattended,
   mergeBlocks,
 } from './merge';
-import { mergeRequestActivity } from './merge-request-activity';
+import { mergeRequestActivity, reviewedMergeRequests } from './merge-request-activity';
 import { NoWorkContextOptions, dropNoWorkContext } from './no-work-context';
 import { clipBlocks } from './overlap';
 import { PrivateTime, privateTime } from './project-link';
@@ -211,6 +211,7 @@ export const buildRows = (
     ...(options.activity ?? []),
     ...mergeRequestActivity({ events: options.events, config: options.config }),
   ];
+  const reviewed = reviewedMergeRequests({ events: options.events, config: options.config });
   const nameable = dropNoWorkContext({ blocks: reconstructed, ...options.noWorkContext });
   const laddered = nameable.map((block) =>
     attribute({
@@ -218,6 +219,7 @@ export const buildRows = (
       config: options.config,
       resolveBase: options.resolveBase,
       activity,
+      reviewed,
       patterns: options.patterns,
       rules: options.rules,
       standIns: options.standIns,

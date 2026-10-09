@@ -18,6 +18,7 @@ export * from './project-link';
 export * from './propose';
 export * from './remote-booking';
 export * from './repo-naming';
+export * from './reviewed-merge-request';
 export * from './round';
 export * from './rules';
 export * from './snap';

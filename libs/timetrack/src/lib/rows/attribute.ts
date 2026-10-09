@@ -22,6 +22,7 @@ import {
 import { StandIn, findStandIn } from '../model/stand-in';
 import { projectKeyOf } from '../ticket/project';
 import { EpicOptions, branchSlugOf, epicSiblingFor } from './epic-sibling';
+import { ReviewedMergeRequest, reviewedMergeRequestOver } from './reviewed-merge-request';
 
 export type AttributedBlock = {
   block: ActivityBlock;
@@ -76,6 +77,8 @@ export type AttributeOptions = {
   resolveBase?: (branch: string) => string | undefined;
   /** Merge request and issue-view activity for the day, from the Jira and GitLab providers. */
   activity?: IssueActivity[];
+  /** The day's merge requests with the directories their branches changed. See `reviewedMergeRequestOver`. */
+  reviewed?: readonly ReviewedMergeRequest[];
   /** Standing commitments read out of Tempo history by `detectRecurringPatterns`. */
   patterns?: RecurringPattern[];
   /** The user's own context-to-issue rules. */
@@ -346,6 +349,24 @@ export const attribute = (options: { block: ActivityBlock } & AttributeOptions):
   }
 
   const inProject = (issueKey: string) => !projectKey || projectKeyOf(issueKey) === projectKey.toUpperCase();
+  const reviewed = options.reviewed?.length
+    ? reviewedMergeRequestOver({ block, reviewed: options.reviewed, config })
+    : undefined;
+
+  if (reviewed) {
+    const { mergeRequest, nearest } = reviewed;
+
+    evidence.push({
+      kind: 'merge-request',
+      at: nearest.at,
+      detail: `you ${nearest.action} ${mergeRequest.reference} in ${mergeRequest.projectPath}, whose branch \`${mergeRequest.branch}\` changed the directories worked in here`,
+      ...(mergeRequest.title ? { summary: mergeRequest.title } : {}),
+    });
+
+    if (mergeRequest.issueKey && inProject(mergeRequest.issueKey))
+      return { block, issueKey: mergeRequest.issueKey, confidence: 'weak', evidence };
+  }
+
   const during = options.activity?.length
     ? activityDuring({ block, activity: options.activity, inProject })
     : undefined;

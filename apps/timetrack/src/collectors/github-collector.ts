@@ -5,6 +5,7 @@ import {
   ForgeAuth,
   GITHUB_HOST,
   applyExclusionRules,
+  collectMergeRequestChanges$,
   collectGitHubEvents$,
   effectiveExclusionRules,
   forgeLoginFor,
@@ -15,6 +16,7 @@ import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, map, of, s
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
+import { injectGitCollector } from './git-collector';
 
 /** The same interval GitLab uses. Review activity belongs to a day that is reviewed at its end. */
 export const GITHUB_POLL_INTERVAL_MS = 10 * 60_000;
@@ -37,6 +39,7 @@ export type GitHubCollectorRun = {
  */
 const GITHUB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const git = injectGitCollector();
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
   const lastRun = signal<GitHubCollectorRun | null>(null);
@@ -58,6 +61,12 @@ const GITHUB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         });
 
         return ports.events.appendCounted$(kept).pipe(
+          concatMap((stored) =>
+            collectMergeRequestChanges$({ processes: ports.processes, events: kept, repoKeys: git.remoteKeys() }).pipe(
+              concatMap((changes) => ports.events.appendCounted$(changes)),
+              map(() => stored),
+            ),
+          ),
           tap((stored) => {
             lastRun.set({
               at,

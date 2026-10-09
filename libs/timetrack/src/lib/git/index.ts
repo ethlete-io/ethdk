@@ -2,6 +2,7 @@ export * from './dependencies';
 export * from './format';
 export * from './head';
 export * from './log';
+export * from './merge-request-changes';
 export * from './reflog';
 export * from './repo-key';
 export * from './scan';

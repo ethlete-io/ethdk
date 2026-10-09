@@ -46,6 +46,8 @@ export type Evidence = {
   summary?: string;
   /** The agent session that produced it, where the observation proves one: a file it wrote, a commit of such a file. */
   session?: string;
+  /** The checkout-relative directory an `editor` observation names. */
+  directory?: string;
 };
 
 /**

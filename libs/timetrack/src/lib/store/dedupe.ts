@@ -19,6 +19,8 @@ export const dedupeKeyOf = (event: CollectedEvent) => {
   switch (event.kind) {
     case 'git-commit':
       return keyOf([event.kind, event.repoPath, event.sha]);
+    case 'merge-request-changes':
+      return keyOf([event.kind, event.repoPath, event.eventId, event.head]);
     case 'git-branch-update':
       return keyOf([event.kind, event.repoPath, event.at.toISOString(), event.branch]);
     case 'git-checkout':

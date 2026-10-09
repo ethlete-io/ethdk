@@ -421,6 +421,7 @@ const evidenceFor = (sample: ActivityEvent): Evidence | null => {
         kind: 'editor',
         at: sample.at,
         detail: `${sample.editing ? 'edited' : 'read'} ${sample.directory ?? sample.repoPath ?? sample.reporter}`,
+        ...(sample.directory && sample.repoPath ? { directory: sample.directory } : {}),
       };
     case 'git-checkout':
       return {

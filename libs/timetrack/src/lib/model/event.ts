@@ -311,6 +311,22 @@ export type MergeRequestActivityEvent = CollectedEventBase<'gitlab' | 'github', 
   url?: string;
 };
 
+/**
+ * The directories a merge request's branch changed, read from its remote-tracking branch in a checkout of
+ * its project when the forge reported activity on it. `at` and `eventId` are that activity's.
+ */
+export type MergeRequestChangesEvent = CollectedEventBase<'git', 'merge-request-changes'> & {
+  repoPath: string;
+  eventId: string;
+  projectPath: string;
+  mergeRequestIid: string;
+  branch: string;
+  /** The branch's newest commit when it was read. */
+  head: string;
+  /** Relative to `repoPath`. A file at the root of the checkout adds nothing. */
+  directories: string[];
+};
+
 /** An instant a paired machine spent in a private checkout or window, sent with nothing that names it. */
 export type PrivateIntervalEvent = CollectedEventBase<'private', 'private-interval'>;
 
@@ -328,6 +344,7 @@ export type CollectedEvent =
   | CallEvent
   | CalendarOccurrenceEvent
   | MergeRequestActivityEvent
+  | MergeRequestChangesEvent
   | PrivateIntervalEvent;
 
 /** The machine that collected an event: this one, or a paired machine by its id and paired name. */
@@ -360,4 +377,5 @@ export const isActivityEvent = (event: CollectedEvent): event is ActivityEvent =
   event.source !== 'agent-usage' &&
   event.source !== 'agent-prompt' &&
   event.source !== 'input' &&
-  event.kind !== 'git-branch-update';
+  event.kind !== 'git-branch-update' &&
+  event.kind !== 'merge-request-changes';

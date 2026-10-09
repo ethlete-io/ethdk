@@ -4,6 +4,7 @@ import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   ForgeAuth,
   applyExclusionRules,
+  collectMergeRequestChanges$,
   collectGitLabEvents$,
   effectiveExclusionRules,
   forgeHostname,
@@ -15,6 +16,7 @@ import { EMPTY, Observable, catchError, concatMap, defer, exhaustMap, map, of, s
 import { injectCollectionPause } from '../app/collection-pause';
 import { injectTimetrackSettings } from '../app/settings/settings';
 import { injectHostPorts } from '../host';
+import { injectGitCollector } from './git-collector';
 
 /**
  * How often GitLab is asked again. Review activity is not urgent — the day it belongs to is reviewed
@@ -46,6 +48,7 @@ export type GitLabCollectorRun = {
  */
 const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
+  const git = injectGitCollector();
   const settings = injectTimetrackSettings();
   const pause = injectCollectionPause();
   const lastRun = signal<GitLabCollectorRun | null>(null);
@@ -69,6 +72,12 @@ const GITLAB_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         });
 
         return ports.events.appendCounted$(kept).pipe(
+          concatMap((stored) =>
+            collectMergeRequestChanges$({ processes: ports.processes, events: kept, repoKeys: git.remoteKeys() }).pipe(
+              concatMap((changes) => ports.events.appendCounted$(changes)),
+              map(() => stored),
+            ),
+          ),
           tap((stored) => {
             lastRun.set({
               at,

@@ -741,8 +741,8 @@ describe('streamDay, on a day an editor reported', () => {
     });
 
     expect(streamOf(day, `repo:${FUT}`)?.evidence.filter((entry) => entry.kind === 'editor')).toEqual([
-      { kind: 'editor', at: AT(2), detail: 'read src/app/today' },
-      { kind: 'editor', at: AT(4), detail: 'edited src/app/today' },
+      { kind: 'editor', at: AT(2), detail: 'read src/app/today', directory: 'src/app/today' },
+      { kind: 'editor', at: AT(4), detail: 'edited src/app/today', directory: 'src/app/today' },
     ]);
   });
 

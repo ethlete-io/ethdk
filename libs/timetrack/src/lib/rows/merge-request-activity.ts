@@ -1,6 +1,7 @@
 import { DEFAULT_GIT_FLOW_CONFIG, GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
 import { CollectedEvent, MergeRequestActivityEvent } from '../model/event';
 import { IssueActivity, issueKeyInText } from './attribute';
+import { ReviewedMergeRequest } from './reviewed-merge-request';
 
 const isMergeRequestActivity = (event: CollectedEvent): event is MergeRequestActivityEvent =>
   event.kind === 'merge-request-activity';
@@ -47,4 +48,66 @@ export const mergeRequestActivity = (options: {
       summary: event.title,
     };
   });
+};
+
+/**
+ * The day's merge requests whose changed directories a checkout here could read, joined with what the
+ * user did on them. See `reviewedMergeRequestOver`.
+ */
+export const reviewedMergeRequests = (options: {
+  events: readonly CollectedEvent[];
+  config?: GitFlowConfig;
+}): ReviewedMergeRequest[] => {
+  const config = options.config ?? DEFAULT_GIT_FLOW_CONFIG;
+  const referenceOf = (projectPath: string, iid: string) => `${projectPath}!${iid}`;
+  const activity = new Map<string, MergeRequestActivityEvent[]>();
+
+  for (const event of options.events) {
+    if (!isMergeRequestActivity(event) || !event.projectPath || !event.mergeRequestIid) continue;
+
+    const key = referenceOf(event.projectPath, event.mergeRequestIid);
+
+    activity.set(key, [...(activity.get(key) ?? []), event]);
+  }
+
+  const reviewed = new Map<string, ReviewedMergeRequest>();
+
+  for (const event of options.events) {
+    if (event.kind !== 'merge-request-changes') continue;
+
+    const reference = referenceOf(event.projectPath, event.mergeRequestIid);
+    const key = `${event.repoPath}\u001f${reference}`;
+    const known = reviewed.get(key);
+
+    if (known) {
+      reviewed.set(key, {
+        ...known,
+        directories: [...new Set([...known.directories, ...event.directories])].sort(),
+      });
+      continue;
+    }
+
+    const forge = activity.get(reference) ?? [];
+    const title = forge.find((entry) => entry.title)?.title;
+    const issueKey = forge
+      .map(
+        (entry) =>
+          (entry.branch ? parseBranch({ branch: entry.branch, config }).issueKey : undefined) ??
+          issueKeyInText({ text: [entry.title, entry.description].filter(Boolean).join('\n'), config }),
+      )
+      .find((found) => !!found);
+
+    reviewed.set(key, {
+      repoPath: event.repoPath,
+      reference: `!${event.mergeRequestIid}`,
+      projectPath: event.projectPath,
+      branch: event.branch,
+      ...(title ? { title } : {}),
+      ...(issueKey ? { issueKey } : {}),
+      directories: [...event.directories].sort(),
+      activity: forge.map((entry) => ({ at: entry.at, action: entry.action })),
+    });
+  }
+
+  return [...reviewed.values()];
 };
