@@ -160,7 +160,7 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      takes this machine's exclusion rules (`exclusionFilter`); private links apply as for local events.
      `received_between` returns `ownRepoKeys`. Snapshot 10-02..10-08: 12 new unnamed rows on 10-03/04
      in `repo:/Users/tom/dev/ethlete-sdk` (the Mac sends no keys yet, so its paths stay its own until
-     the 4i build); 10-08 is frozen and unchanged (4h). `private-interval` is unused since 4a is dropped.
+     the 4j build); 10-08 is frozen and unchanged (4h). `private-interval` is unused since 4a is dropped.
      Plan as written: The merge in the day, first visible value. `streamDay` takes the merged list and builds
      presence, focus and blocks per origin, so a focused window on the Mac never ends a block on the
      PC; the blocks of all origins go into one `buildRows`. Day presence is the union of the origins;
@@ -225,7 +225,17 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      header. Tests: unit spec, e2e `booked-day-frozen.spec.ts` peer case. Tom, 2026-10-09: the
      frozen day also draws a peer's work as read-only bands labeled "Booked on <machine>", so 10-08
      shows the MacBook's 13:15-18:00 and not an empty gap.
-   - 4i. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
+   - 4i. In progress (Tom approved, 2026-10-09). A booked day draws a paired machine's own rows. On
+     10-08 tank showed no "Booked on" band (it names no issue for the Mac's work: the Mac named its
+     rows with its own rules, auto answers and pins), the bands were raw-block fragments, Mac app ids
+     became lanes, and "Changed after booking" fired for the peer time the bands already showed.
+     Each machine sends its rows of a day (lane key, window, issue or stand-in name, description,
+     state, Tempo worklog id when booked; last version per day wins) on a change (debounced) and on
+     the freeze. Tank draws them as received, read-only, in the lane mapped through 4b/4g: "Booked on
+     <machine> · ISSUE" or "Worked on <machine> · ISSUE/name". Repo lanes only. Raw-block bands stay
+     as the fallback for a day no rows arrived for (an older peer), still without app-only lanes.
+     `changedAfterBooking` leaves out peer-origin time.
+   - 4j. Verify between tank and ethlete-mac (one Mac build, about 10 password prompts): Mac-only
      work of a day shows as rows on tank, Mac lanes map onto the local checkout (the Mac build in use
      on 2026-10-09 predates 4b, so its rows sit in `repo:/Users/tom/...` lanes), a private checkout
      shows as a bare interval. Also check that the rebuild asks for no keychain password.
