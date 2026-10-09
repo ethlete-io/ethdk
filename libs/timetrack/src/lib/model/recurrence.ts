@@ -3,6 +3,7 @@ export type HistoricalWorklog = {
   issueKey: string;
   from: Date;
   durationMs: number;
+  description?: string;
 };
 
 /** An issue the user's own history logged against, with the last line they wrote for it. */

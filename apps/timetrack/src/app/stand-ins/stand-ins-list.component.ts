@@ -80,6 +80,18 @@ import { injectStandIns } from './stand-ins';
             </div>
 
             @if (entry.standIn.state === 'open') {
+              @for (issueKey of entry.worklogKeys; track issueKey) {
+                <div [attr.data-worklog-offer]="issueKey" class="flex flex-wrap items-center gap-2">
+                  <span class="min-w-0 grow text-small">
+                    Tempo holds a worklog named like this on <span class="text-mono">{{ issueKey }}</span>
+                  </span>
+
+                  <button (click)="resolve(entry.id, issueKey)" et-button variant="outline">
+                    Resolve to {{ issueKey }}
+                  </button>
+                </div>
+              }
+
               <div class="flex flex-wrap items-center gap-2">
                 <et-form-field class="min-w-60 grow">
                   <ethlete-issue-select
@@ -251,6 +263,7 @@ export class StandInsListComponent {
     const hidden = this.store.hidden();
     const stale = this.store.stale();
     const booked = this.store.booked();
+    const worklogOffers = this.store.worklogOffers();
     const only = this.only();
     const all = this.store.standIns();
 
@@ -278,6 +291,7 @@ export class StandInsListComponent {
           isStale: stale.has(standIn.id),
           staleLabel: staleLabel(standIn),
           canReopen: this.store.canReopen(standIn),
+          worklogKeys: worklogOffers.get(standIn.id) ?? [],
           duplicate: duplicate && {
             id: duplicate.id,
             name: duplicate.name,

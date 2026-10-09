@@ -18,6 +18,7 @@ import {
   standInJoinTargets,
   standInWaitingDays,
   standInWhere,
+  standInWorklogOffers,
   workdaysBetween,
 } from './stand-in';
 
@@ -84,6 +85,37 @@ describe('standInDuplicateOf', () => {
 
   it('answers nothing for a name no other open one carries', () => {
     expect(standInDuplicateOf({ standIn: standIns[3] as StandIn, standIns })).toBeUndefined();
+  });
+});
+
+describe('standInWorklogOffers', () => {
+  const worklog = (issueKey: string, description: string, day: number) => ({
+    issueKey,
+    description,
+    from: new Date(2026, 8, day, 9, 0),
+  });
+
+  it('offers the issue a worklog with the open stand-in.s name was booked to, newest first', () => {
+    const offers = standInWorklogOffers({
+      standIns: [standIn({ name: 'Revert unintended merge to main' })],
+      worklogs: [
+        worklog('FIP-3001', 'revert  unintended merge to main ', 20),
+        worklog('FIP-3072', 'Revert unintended merge to main', 22),
+        worklog('FIP-3072', 'Revert unintended merge to main', 21),
+        worklog('FIP-3099', 'Revert the unintended merge', 23),
+      ],
+    });
+
+    expect(offers).toEqual(new Map([['stand-in-1', ['FIP-3072', 'FIP-3001']]]));
+  });
+
+  it('offers nothing for a resolved stand-in', () => {
+    const offers = standInWorklogOffers({
+      standIns: [standIn({ state: 'resolved', issueKey: 'FIP-1' })],
+      worklogs: [worklog('FIP-3072', 'Competition Journey', 22)],
+    });
+
+    expect(offers.size).toBe(0);
   });
 });
 

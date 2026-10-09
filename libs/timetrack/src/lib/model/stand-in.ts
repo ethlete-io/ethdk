@@ -1,6 +1,7 @@
 import { ActivityContext } from './block';
 import { FieldSource, storedSourceOf } from './field-source';
 import { AttributionRule, NamingAuthor, matchAttributionRule, standInIdOf } from './attribution';
+import { HistoricalWorklog } from './recurrence';
 
 /**
  * Whether the work still waits for an issue. A resolved stand-in is kept rather than deleted: it is
@@ -208,6 +209,29 @@ export const standInDuplicateOf = (options: { standIn: StandIn; standIns: readon
         .filter((other) => other.id !== options.standIn.id && nameKey(other.name) === nameKey(options.standIn.name))
         .at(-1)
     : undefined;
+
+/**
+ * The issues Tempo holds a worklog for whose text is an open stand-in's name, newest first, keyed by
+ * stand-in id. Each one is an offer to resolve that stand-in to the issue, never a resolution.
+ */
+export const standInWorklogOffers = (options: {
+  standIns: readonly StandIn[];
+  worklogs: readonly Pick<HistoricalWorklog, 'issueKey' | 'from' | 'description'>[];
+}) => {
+  const newestFirst = [...options.worklogs].sort((a, b) => b.from.getTime() - a.from.getTime());
+  const offers = new Map<string, string[]>();
+
+  for (const standIn of openStandIns(options.standIns)) {
+    const name = nameKey(standIn.name);
+    const keys = newestFirst
+      .filter((worklog) => !!name && nameKey(worklog.description ?? '') === name)
+      .map((worklog) => worklog.issueKey);
+
+    if (keys.length) offers.set(standIn.id, [...new Set(keys)]);
+  }
+
+  return offers;
+};
 
 /**
  * The other open stand-ins of the same checkout that `standIn` can be joined into by hand, oldest

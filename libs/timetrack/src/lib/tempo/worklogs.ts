@@ -116,7 +116,9 @@ export const toHistoricalWorklogs = (options: {
   options.worklogs.flatMap((worklog) => {
     const issueKey = options.keysByIssueId.get(worklog.issueId);
 
-    return issueKey ? [{ issueKey, from: worklog.from, durationMs: worklog.durationMs }] : [];
+    return issueKey
+      ? [{ issueKey, from: worklog.from, durationMs: worklog.durationMs, description: worklog.description }]
+      : [];
   });
 
 /**

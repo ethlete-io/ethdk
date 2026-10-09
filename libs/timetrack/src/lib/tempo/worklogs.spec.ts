@@ -138,11 +138,18 @@ describe('toHistoricalWorklogs', () => {
 
   it('keys the recurrence feed by the resolved issue key', () => {
     const history = toHistoricalWorklogs({
-      worklogs: [worklog({})],
+      worklogs: [worklog({ description: 'Revert unintended merge to main' })],
       keysByIssueId: new Map([['10100', 'FIP-3010']]),
     });
 
-    expect(history).toEqual([{ issueKey: 'FIP-3010', from: new Date(2026, 7, 3, 9, 0), durationMs: 1_800_000 }]);
+    expect(history).toEqual([
+      {
+        issueKey: 'FIP-3010',
+        from: new Date(2026, 7, 3, 9, 0),
+        durationMs: 1_800_000,
+        description: 'Revert unintended merge to main',
+      },
+    ]);
   });
 
   it('drops a worklog whose issue id jira could not resolve', () => {

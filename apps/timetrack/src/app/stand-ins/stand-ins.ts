@@ -15,6 +15,7 @@ import {
   standInAge,
   standInHeldMs,
   standInWaitingDays,
+  standInWorklogOffers,
   WriteSource,
   ledgerEntriesForRange$,
 } from '@ethlete/timetrack';
@@ -24,6 +25,7 @@ import { injectHostPorts } from '../../host';
 import { readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 import { injectCheckoutDependencies } from '../checkout-dependencies';
+import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { injectProjectLinks } from '../project-links';
 
 /**
@@ -47,6 +49,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const git = injectGitCollector();
   const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
+  const tempoHistory = injectRecurringPatterns();
   const now = signal(new Date());
 
   timer(AGE_TICK_MS, AGE_TICK_MS)
@@ -219,6 +222,8 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   });
 
+  const worklogOffers = computed(() => standInWorklogOffers({ standIns: open(), worklogs: tempoHistory.worklogs() }));
+
   const hide = (ids: readonly string[]) =>
     settings.setStandInsHidden(ids, localDayKey(new Date(), dayBoundaryOf(settings.settings())));
 
@@ -232,6 +237,8 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     /** The ids of the open stand-ins whose every day is already in Tempo. The list files them as hidden. */
     booked,
     bookedDays,
+    /** The issues Tempo booked an open stand-in's name to, by id. The list offers each as a resolve. */
+    worklogOffers,
     waitingDays: (standIn: Pick<StandIn, 'days'>) => standInWaitingDays({ standIn, bookedDays: bookedDays() }),
     hide: (id: string) => hide([id]),
     show: (id: string) => settings.setStandInsHidden([id], ''),
