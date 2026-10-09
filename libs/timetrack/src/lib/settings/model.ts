@@ -141,6 +141,11 @@ export type TimetrackReasoningSettings = {
    * until the user turns it on, and only while `enabled` is on too. See ADR 0035.
    */
   autoMode: boolean;
+  /**
+   * Whether auto mode may send an excerpt of a call's own transcript when it asks about that call. Off
+   * until the user turns it on, and read only while calls are transcribed.
+   */
+  autoModeTranscripts: boolean;
 };
 
 /**
@@ -435,6 +440,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
     language: DEFAULT_REASONING_OPTIONS.language,
     maskedNames: [],
     autoMode: false,
+    autoModeTranscripts: false,
   },
   actionClasses: {},
   nudge: { enabled: true, atMinute: DEFAULT_NUDGE_AT_MINUTE },

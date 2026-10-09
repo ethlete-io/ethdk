@@ -751,10 +751,11 @@ const fakeTicketAnswer = (spec: ProcessSpec) => {
   const request = JSON.parse(spec.stdin ?? '{}') as {
     branch?: string;
     standIn?: { name: string };
+    call?: { label: string };
     parents?: { key: string }[];
     issues?: { key: string }[];
   };
-  const existingKey = request.standIn ? (request.issues?.[0]?.key ?? null) : null;
+  const existingKey = request.standIn || request.call ? (request.issues?.[0]?.key ?? null) : null;
   const wording = {
     summary: `Drafted ${request.standIn?.name ?? request.branch ?? 'work'}`,
     description: 'Drafted by the fake agent.',

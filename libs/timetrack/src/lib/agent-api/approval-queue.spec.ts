@@ -273,6 +273,18 @@ describe('an auto mode apply in the queue', () => {
     );
   });
 
+  it('reads back an apply for a call, and says it names the call', () => {
+    const call: AutoModeApplyRequest = {
+      ...APPLY,
+      subject: { kind: 'call', rowId: 'unnamed:lane:call@x' },
+      label: 'Weekly',
+    };
+    const queue = enqueueApproval([], { id: 'a0', request: call, client: 'auto mode', at: AT, day: '2026-09-28' });
+
+    expect(parseApprovalQueue(JSON.parse(JSON.stringify(queue)))).toEqual(queue);
+    expect(describeApproval(call)).toBe("Names today's Weekly call with ABC-7");
+  });
+
   it('drops a stored apply that names no subject', () => {
     const [stored] = enqueueApproval([], { id: 'a0', request: APPLY, at: AT, day: '2026-09-28' });
 

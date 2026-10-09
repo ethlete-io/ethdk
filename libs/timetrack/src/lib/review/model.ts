@@ -114,8 +114,12 @@ export type DayReviewEdits = {
   frozenRows?: DayRows;
 };
 
-/** What auto mode asks about: an unnamed context of the day, or an open stand-in the day holds. */
-export type AutoModeSubject = { kind: 'context'; contextId: string } | { kind: 'stand-in'; standInId: string };
+/**
+ * What auto mode asks about: an unnamed context of the day, an open stand-in the day holds, or an
+ * unnamed counted call row, by the id an edit to it is written against.
+ */
+export type AutoModeSubject =
+  { kind: 'context'; contextId: string } | { kind: 'stand-in'; standInId: string } | { kind: 'call'; rowId: string };
 
 /**
  * What the model answered. A `draft` is the ticket auto mode queued for the user's approval;

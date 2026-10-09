@@ -225,9 +225,11 @@ const asAutoModeSubject = (value: unknown): AutoModeSubject | undefined => {
   const raw = typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
   const contextId = textOf(raw['contextId']);
   const standInId = textOf(raw['standInId']);
+  const rowId = textOf(raw['rowId']);
 
   if (raw['kind'] === 'context' && contextId) return { kind: 'context', contextId };
   if (raw['kind'] === 'stand-in' && standInId) return { kind: 'stand-in', standInId };
+  if (raw['kind'] === 'call' && rowId) return { kind: 'call', rowId };
 
   return undefined;
 };
@@ -368,6 +370,8 @@ export const describeApproval = (request: AgentApprovalRequest) => {
     case 'autoMode.apply': {
       const issue = request.summary ? `${request.issueKey} ${request.summary}` : request.issueKey;
       const why = request.reason ? ` — ${request.reason}` : '';
+
+      if (request.subject.kind === 'call') return `Names today's ${request.label} call with ${issue}${why}`;
 
       return request.subject.kind === 'context'
         ? `Names today's ${request.label} band with ${issue}${why}`

@@ -7,6 +7,7 @@ import { TimetrackSettings } from '../settings/model';
 import { gitFlowConfigFor } from '../settings/attribution';
 import { StreamDay } from '../stream/stream-day';
 import { autoStandInDecisions } from '../ticket/auto-stand-in';
+import { isAutoModeCallRow } from './auto-call';
 import { autoModeAsks, autoModeSettledAt, autoModeSubjectKey, autoModeTargetOf } from './auto-mode';
 import { AutoModeAnswer, AutoModeSubject, ReviewedRow } from './model';
 
@@ -103,8 +104,11 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
   const issue = (raw: string | undefined) => name('issue', raw?.toUpperCase());
   const standIn = (raw: string | undefined) => name('stand-in', raw);
   const context = (raw: string | undefined) => name('context', raw);
-  const subjectName = (subject: AutoModeSubject) =>
-    subject.kind === 'context' ? context(subject.contextId) : standIn(subject.standInId);
+  const subjectName = (subject: AutoModeSubject) => {
+    if (subject.kind === 'call') return name('row', subject.rowId);
+
+    return subject.kind === 'context' ? context(subject.contextId) : standIn(subject.standInId);
+  };
 
   const enabled =
     settings.reasoning.enabled &&
@@ -140,6 +144,9 @@ export const anonymousDayReport = (input: AnonymousReportInput) => {
     ...settings.standIns
       .filter((entry) => entry.state === 'open' && entry.days.includes(day))
       .map((entry): AutoModeSubject => ({ kind: 'stand-in', standInId: entry.id })),
+    ...[...new Set(input.rows.filter(isAutoModeCallRow).map((row) => row.recutOf ?? row.id))].map(
+      (rowId): AutoModeSubject => ({ kind: 'call', rowId }),
+    ),
   ];
   const autoModeStatus = (subject: AutoModeSubject) => {
     const key = autoModeSubjectKey(subject);

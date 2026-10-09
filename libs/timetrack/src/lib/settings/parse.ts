@@ -371,6 +371,7 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
     language: asText(raw['language']),
     maskedNames: asTextList(raw['maskedNames']),
     autoMode: raw['autoMode'] === true,
+    autoModeTranscripts: raw['autoModeTranscripts'] === true,
   };
 };
 

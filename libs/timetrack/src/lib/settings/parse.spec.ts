@@ -72,6 +72,7 @@ describe('parseTimetrackSettings', () => {
         language: 'Deutsch',
         maskedNames: ['Fifagg'],
         autoMode: false,
+        autoModeTranscripts: false,
       },
       actionClasses: { 'autoMode.apply': 'external', 'standIn.rename': 'human-only' },
       nudge: { enabled: false, atMinute: 18 * 60 },
@@ -245,6 +246,7 @@ describe('parseTimetrackSettings', () => {
       language: '',
       maskedNames: [],
       autoMode: false,
+      autoModeTranscripts: false,
     });
     expect(parseTimetrackSettings({ reasoning: { command: 'claude' } }).reasoning.enabled).toBe(false);
   });
@@ -430,6 +432,16 @@ describe('parseTimetrackSettings', () => {
   it('reads auto mode as off unless it was turned on', () => {
     expect(parseTimetrackSettings({}).reasoning.autoMode).toBe(false);
     expect(parseTimetrackSettings({ reasoning: { autoMode: true } }).reasoning.autoMode).toBe(true);
+  });
+
+  it('reads the call transcripts as kept from auto mode unless they were let in', () => {
+    expect(parseTimetrackSettings({}).reasoning.autoModeTranscripts).toBe(false);
+    expect(parseTimetrackSettings({ reasoning: { autoModeTranscripts: 'yes' } }).reasoning.autoModeTranscripts).toBe(
+      false,
+    );
+    expect(parseTimetrackSettings({ reasoning: { autoModeTranscripts: true } }).reasoning.autoModeTranscripts).toBe(
+      true,
+    );
   });
 
   it('reads back the branches a placeholder held, so a resolve after a restart still cuts the rule back', () => {

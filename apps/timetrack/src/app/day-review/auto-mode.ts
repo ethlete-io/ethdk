@@ -124,6 +124,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectWindowLock } from '../window-lock';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
 import { injectStandIns } from '../stand-ins/stand-ins';
+import { callTranscriptOf$ } from './call-transcript';
 import { injectDayReview } from './day-review';
 import { createDayReadCache } from './day-read-cache';
 import { ProjectIssues, matchCandidatesOf, readLoggedKeys$, readProjectIssues$ } from './project-issues';
@@ -298,10 +299,22 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const disputeAppliesOn = (day: string) => (dispute: AutoModeDispute) =>
     autoDisputeApplies({ day, dispute, classes: settings.settings().actionClasses, approvals: approvals.items() });
 
-  const labelOf = (subject: AutoModeSubject) =>
-    subject.kind === 'context'
-      ? autoModeContextLabel(subject.contextId)
-      : (settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.name ?? '');
+  const callRowOf = (rowId: string, rows: readonly ReviewedRow[]) =>
+    rows.find((row) => autoDescriptionRowId(row) === rowId);
+
+  const callLabelOf = (row: ReviewedRow | undefined) =>
+    row?.evidence.find((entry) => entry.kind === 'call')?.summary ?? 'call';
+
+  const labelOf = (subject: AutoModeSubject) => {
+    switch (subject.kind) {
+      case 'context':
+        return autoModeContextLabel(subject.contextId);
+      case 'stand-in':
+        return settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.name ?? '';
+      case 'call':
+        return callLabelOf(callRowOf(subject.rowId, dayReview.rows()));
+    }
+  };
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
@@ -499,10 +512,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
   };
 
-  const repoPathOf = (subject: AutoModeSubject, evidence: AskEvidence) =>
-    subject.kind === 'stand-in'
+  const repoPathOf = (subject: AutoModeSubject, evidence: AskEvidence) => {
+    if (subject.kind === 'call') return undefined;
+
+    return subject.kind === 'stand-in'
       ? settings.settings().standIns.find((entry) => entry.id === subject.standInId)?.openedFor
       : evidence?.contexts.find((entry) => entry.id === subject.contextId)?.context.repoPath;
+  };
 
   const issues$ = (options: {
     subject: AutoModeSubject;
@@ -544,6 +560,8 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const projectKeyOf = (subject: AutoModeSubject, evidence: AskEvidence) => {
     const current = settings.settings();
 
+    if (subject.kind === 'call') return undefined;
+
     if (subject.kind === 'stand-in') {
       return current.standIns.find((entry) => entry.id === subject.standInId)?.projectKey;
     }
@@ -568,6 +586,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     evidence: AskEvidence;
     issues: ProjectIssues | null;
     candidates: readonly TicketCandidate[];
+    call?: { label: string; observedMs: number; transcript?: string };
   }) => {
     const { subject, evidence, issues, candidates } = options;
     const current = settings.settings();
@@ -585,10 +604,40 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       parents: issues?.parents ?? [],
       issues: candidates,
       bookedDays: standInStore.bookedDays(),
+      ...(options.call ? { call: options.call } : {}),
     });
   };
 
+  const callTranscript$ = (row: ReviewedRow, evidence: AskEvidence): Observable<string | undefined> => {
+    const current = settings.settings();
+
+    if (!current.transcribeCalls || !current.reasoning.autoModeTranscripts) return of(undefined);
+
+    return callTranscriptOf$({ ports, row, calls: evidence?.rows.calls ?? [] }).pipe(catchError(() => of(undefined)));
+  };
+
+  const prepareCall$ = (rowId: string, evidence: AskEvidence): Observable<Prepared | null> => {
+    const row = evidence && callRowOf(rowId, evidence.reviewed);
+
+    if (!row) return of(null);
+
+    const candidates: TicketCandidate[] = recurring
+      .loggedIssues()
+      .map((issue) => ({ key: issue.issueKey, id: '', summary: issue.summary, issueType: '' }));
+
+    return callTranscript$(row, evidence).pipe(
+      map((transcript) => {
+        const call = { label: callLabelOf(row), observedMs: row.observedMs, ...(transcript ? { transcript } : {}) };
+        const request = requestOf({ subject: { kind: 'call', rowId }, evidence, issues: null, candidates, call });
+
+        return request ? { request, candidates, parentKeys: new Set<string>() } : null;
+      }),
+    );
+  };
+
   const prepare$ = (subject: AutoModeSubject, evidence: AskEvidence): Observable<Prepared | null> => {
+    if (subject.kind === 'call') return prepareCall$(subject.rowId, evidence);
+
     const bare = requestOf({ subject, evidence, issues: null, candidates: [] });
 
     if (!bare) return of(null);
@@ -654,7 +703,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const applyAnswer$ = (day: string, answer: AutoModeAnswer): Observable<void> => {
     const { subject, outcome } = answer;
 
-    if (subject.kind === 'context') {
+    if (subject.kind === 'context' || subject.kind === 'call') {
       if (dayReview.dayKey() !== day) return agentDay.applyAutoModeNames$({ day, applies: appliesOn(day) });
 
       dayReview.applyAutoModeNames(appliesOn(day));

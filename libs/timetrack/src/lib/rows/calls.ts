@@ -303,7 +303,7 @@ const matchOne = (options: {
  * The call a row was built from: the one it shares the most time with, so two calls in one hour still
  * name one each. A row outside the call lane was built from none.
  */
-const callOfRow = (options: {
+export const callOfRow = (options: {
   row: { from: Date; to: Date; laneKey?: string };
   calls: readonly CallMatch[];
 }): CallMatch | undefined => {

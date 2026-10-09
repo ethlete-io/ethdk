@@ -195,7 +195,14 @@ auto-mode.ts` runs `writeTicketWithAgent$` once per band and stand-in, names unn
        classed op shows its op name until it gets a label.
      - No e2e drives `autoMode.apply` at `external` through the queue (the unit specs cover it).
 
-- Call transcripts help name a call. Not started.
+- Call transcripts help name a call. Done (2026-10-09). A third subject kind `call` (`rowId`, the
+  row's edit id) for an unnamed counted call row of today, after the 30-minute settle gate, asked
+  once. The request (`callWritingRequest`) sends the call label, minutes and the issues the user
+  logged recently as candidates, plus, with `reasoning.autoModeTranscripts` on, an excerpt of that
+  call's own chunks (`callTranscriptExcerpt`: its app's chunks, the first 30 s skipped, cut to 1500
+  characters), masked. A match names the row as an `auto` field (`withAutoModeRowNames`), never a
+  `nameCall`; a draft is stored, never filed. The transcript switch sits in the transcription panel.
+  The row editor of a call band shows the same excerpt under its evidence (`edit-call-transcript`).
   - Decided (2026-10-06): a second Settings switch, "Let auto mode read call transcripts", off by
     default and shown only while transcription is on. Only the transcript of the call auto mode
     asks about goes into the prompt, never other calls. `TRANSCRIBE_WHY` must then stop saying

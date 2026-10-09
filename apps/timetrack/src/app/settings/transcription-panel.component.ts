@@ -17,9 +17,11 @@ import { injectTimetrackSettings } from './settings';
 
 const WHY = `During a call, your own microphone is transcribed on this machine, 30 seconds at a
 time. The audio stays in memory and is dropped once its text is written to the encrypted database; the other
-participants are never recorded. Nothing is sent anywhere, and transcripts older than seven days are deleted.
+participants are never recorded. Transcripts older than seven days are deleted.
 
-The text is used by agents that ask for a day's transcript. It does not name or move a row by itself.`;
+The text is used by agents that ask for a day's transcript. It does not name or move a row by itself. With
+"Let auto mode read call transcripts" on, auto mode sends a short excerpt of one call's transcript, names masked,
+to the reasoning command when it asks which ticket that call was. Otherwise nothing of it is sent anywhere.`;
 
 const PHASES: Record<TranscriptionPhase, { label: string; color: 'neutral' | 'success' | 'warning' | 'danger' }> = {
   unavailable: { label: 'Not in this build', color: 'neutral' },
@@ -85,6 +87,16 @@ const clock = (atMs: number) => formatClockTime(new Date(atMs), { seconds: true 
               }
             </et-select>
           </et-form-field>
+
+          <div class="flex items-center gap-2">
+            <et-switch
+              [checked]="store.settings().reasoning.autoModeTranscripts"
+              (checkedChange)="setAutoModeTranscripts($event)"
+              aria-label="Let auto mode read call transcripts"
+              data-auto-mode-transcripts
+            />
+            <span class="text-small">Let auto mode read call transcripts</span>
+          </div>
         }
 
         <div class="flex flex-wrap items-center gap-2">
@@ -160,6 +172,10 @@ export class TranscriptionPanelComponent {
 
   protected excerpt(text: string) {
     return text.length > EXCERPT ? `${text.slice(0, EXCERPT).trimEnd()}…` : text;
+  }
+
+  protected setAutoModeTranscripts(autoModeTranscripts: boolean) {
+    this.store.setReasoning({ ...this.store.settings().reasoning, autoModeTranscripts });
   }
 
   protected setLanguage(value: unknown) {

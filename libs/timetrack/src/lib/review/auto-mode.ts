@@ -13,15 +13,24 @@ import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
 import { setRowIssue } from './edits';
 import { WorklogWritingRequest } from '../ticket/worklog';
-import { TicketWritingRequest, standInWritingRequest, ticketWritingRequest } from '../ticket/write';
+import { TicketWritingRequest, callWritingRequest, standInWritingRequest, ticketWritingRequest } from '../ticket/write';
+import { isAutoModeCallRow } from './auto-call';
 import { AUTO_MODE_SETTLE_MS, autoDescriptionRowId, storedDescriptionSource } from './auto-description';
 import { autoDisputeApplied, autoDisputeDoneChoice, autoDisputeOverruled, autoModeResolveTarget } from './auto-dispute';
 import { DisputeResolvingRequest } from '../ticket/dispute';
 import { disputedTargetLabel } from '../agent-api/approval-queue';
 import { AutoModeAnswer, AutoModeSubject, DayReviewEdits, ReviewedRow } from './model';
 
-export const autoModeSubjectKey = (subject: AutoModeSubject) =>
-  subject.kind === 'context' ? `context:${subject.contextId}` : `stand-in:${subject.standInId}`;
+export const autoModeSubjectKey = (subject: AutoModeSubject) => {
+  switch (subject.kind) {
+    case 'context':
+      return `context:${subject.contextId}`;
+    case 'stand-in':
+      return `stand-in:${subject.standInId}`;
+    case 'call':
+      return `call:${subject.rowId}`;
+  }
+};
 
 /** What the approval queue keys an auto-mode create by, so a second ask for the same subject reuses it. */
 export const autoModeApprovalTarget = (day: string, subject: AutoModeSubject) =>
@@ -36,6 +45,7 @@ const subjectOfTarget = (target: string | undefined, day: string): AutoModeSubje
 
   if (key?.startsWith('stand-in:')) return { kind: 'stand-in', standInId: key.slice('stand-in:'.length) };
   if (key?.startsWith('context:')) return { kind: 'context', contextId: key.slice('context:'.length) };
+  if (key?.startsWith('call:')) return { kind: 'call', rowId: key.slice('call:'.length) };
 
   return null;
 };
@@ -57,6 +67,10 @@ const subjectRowIds = (options: {
 
   if (subject.kind === 'stand-in') {
     return rows.filter((row) => row.standInId === subject.standInId).map((row) => row.id);
+  }
+
+  if (subject.kind === 'call') {
+    return rows.filter((row) => autoDescriptionRowId(row) === subject.rowId).map((row) => row.id);
   }
 
   const ids = new Set(
@@ -261,9 +275,15 @@ export const autoModeSubjectRequest = (options: {
   issues?: readonly JiraIssue[];
   /** The days Tempo already holds, which a stand-in's request does not count. */
   bookedDays?: ReadonlySet<string>;
+  /** The call a `call` subject asks about, with the excerpt of its transcript where one may be sent. */
+  call?: { label: string; observedMs: number; transcript?: string };
 }): TicketWritingRequest | null => {
   const { subject, maskedNames } = options;
   const jira = { parents: options.parents ?? [], issues: options.issues ?? [] };
+
+  if (subject.kind === 'call') {
+    return options.call ? callWritingRequest({ ...options.call, issues: jira.issues, maskedNames }) : null;
+  }
 
   if (subject.kind === 'stand-in') {
     const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
@@ -295,6 +315,7 @@ export const autoModeEvidenceOf = (request: TicketWritingRequest) =>
     [...new Set(request.notes)].sort(),
     request.standIn ? [request.standIn.name, request.standIn.description ?? null] : null,
     request.spec ?? null,
+    request.call ?? null,
   ]);
 
 const escapedForRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -320,6 +341,8 @@ export const autoModeKeyInEvidence = (options: {
     request.spec?.epicKey,
     request.spec?.title,
     request.spec?.intent,
+    request.call?.label,
+    request.call?.transcript,
   ];
 
   return texts.some((text) => !!text && key.test(text));
@@ -348,7 +371,25 @@ const autoModeOwns = (options: { day: string; answer: AutoModeAnswer; approvals:
 };
 
 type AskRow = Pick<ReviewedRow, 'standInId' | 'issueKey' | 'sources'> &
-  Partial<Pick<ReviewedRow, 'id' | 'recutOf' | 'to' | 'activeUntil' | 'observedMs' | 'evidence'>>;
+  Partial<
+    Pick<
+      ReviewedRow,
+      | 'id'
+      | 'recutOf'
+      | 'to'
+      | 'activeUntil'
+      | 'observedMs'
+      | 'evidence'
+      | 'laneKey'
+      | 'hidden'
+      | 'unattended'
+      | 'excluded'
+      | 'state'
+    >
+  >;
+
+/** The id a call row is asked about by: the one an edit to it is written against. */
+const callRowIdOf = (row: AskRow) => row.recutOf ?? row.id;
 
 const contextIdsByRowId = (unattributed: readonly WorkGroup[]) => {
   const contextOfRow = new Map<string, string>();
@@ -418,6 +459,16 @@ export const autoModeSettledAt = (options: {
     }
   }
 
+  for (const row of options.rows) {
+    const rowId = callRowIdOf(row);
+
+    if (rowId && isAutoModeCallRow(row) && row.to) {
+      const key = autoModeSubjectKey({ kind: 'call', rowId });
+
+      lastActivity.set(key, Math.max(lastActivity.get(key) ?? 0, row.to.getTime()));
+    }
+  }
+
   const settledAt = new Map([...lastActivity].map(([key, atMs]) => [key, atMs + AUTO_MODE_SETTLE_MS]));
 
   return (subject: AutoModeSubject) =>
@@ -481,6 +532,8 @@ export const autoModeAskRefusal = (options: {
   standIns: readonly Pick<StandIn, 'id' | 'state' | 'days' | 'resolutionSource'>[];
 }): string | null => {
   const { subject, day } = options;
+
+  if (subject.kind === 'call') return 'Auto mode asks about a call by itself only.';
 
   if (subject.kind === 'stand-in') {
     const id = subject.standInId;
@@ -564,9 +617,12 @@ export const autoModeAsks = (options: {
         (!evidence || standInHasTicketText({ standIn, bands: options.rows, config: evidence.config })),
     )
     .map((standIn): AutoModeSubject => ({ kind: 'stand-in', standInId: standIn.id }));
+  const calls = [
+    ...new Set(options.rows.flatMap((row) => (isAutoModeCallRow(row) ? [callRowIdOf(row) ?? ''] : [])).filter(Boolean)),
+  ].map((rowId): AutoModeSubject => ({ kind: 'call', rowId }));
 
   const outdated = (subject: AutoModeSubject, answer: AutoModeAnswer) => {
-    if (!evidence || !approvals || !handNamed) return false;
+    if (subject.kind === 'call' || !evidence || !approvals || !handNamed) return false;
     if (subject.kind === 'context' && handNamed.has(subject.contextId)) return false;
 
     if (answer.askedAtMs < settledAt(subject) && autoModeOwns({ day: options.day, answer, approvals })) return true;
@@ -588,7 +644,7 @@ export const autoModeAsks = (options: {
     );
   };
 
-  return [...contexts, ...standIns].filter((subject) => {
+  return [...contexts, ...standIns, ...calls].filter((subject) => {
     if (settledAt(subject) > options.nowMs) return false;
 
     const answer = answers.get(autoModeSubjectKey(subject));
@@ -656,6 +712,7 @@ export const autoModeCreateRequest = (
   const { outcome } = answer;
 
   if (outcome.kind !== 'draft' || outcome.approvalId || outcome.createdKey) return null;
+  if (answer.subject.kind === 'call') return null;
 
   return {
     op: 'jira.create',
@@ -708,6 +765,7 @@ export const withAutoModeRowNames = (options: {
   applies?: (answer: AutoModeAnswer) => boolean;
 }): DayReviewEdits => {
   const keys = new Map<string, string>();
+  const callKeys = new Map<string, string>();
 
   for (const answer of options.edits.auto ?? []) {
     if (options.applies && !options.applies(answer)) continue;
@@ -716,6 +774,7 @@ export const withAutoModeRowNames = (options: {
     const issueKey = autoModeIssueKeyOf(answer);
 
     if (answer.subject.kind === 'context' && issueKey) keys.set(answer.subject.contextId, issueKey);
+    if (answer.subject.kind === 'call' && issueKey) callKeys.set(answer.subject.rowId, issueKey);
   }
 
   const superseded = new Map<string, string>();
@@ -728,7 +787,7 @@ export const withAutoModeRowNames = (options: {
     }
   }
 
-  if (!keys.size && !superseded.size) return options.edits;
+  if (!keys.size && !superseded.size && !callKeys.size) return options.edits;
 
   const contextOfRow = new Map<string, string>();
 
@@ -743,6 +802,12 @@ export const withAutoModeRowNames = (options: {
 
     if (row.standInId || row.hidden || row.unattended || row.excluded) return edits;
     if (source === 'human' || (row.issueKey && source !== 'auto')) return edits;
+
+    const callKey = callKeys.get(autoDescriptionRowId(row));
+
+    if (callKey) {
+      return callKey !== row.issueKey ? setRowIssue({ edits, row, issueKey: callKey, source: 'auto' }) : edits;
+    }
 
     const contextId = contextOfRow.get(row.id);
 
@@ -999,18 +1064,27 @@ const ticketReadout = (options: {
   approvals: readonly ApprovalView[];
   classes: ActionClasses;
   standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
+  rows: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'evidence'>[];
 }): AutoModeReadoutEntry[] =>
   (options.edits.auto ?? []).map((answer): AutoModeReadoutEntry => {
     const { subject, outcome } = answer;
     const standIn =
       subject.kind === 'stand-in' ? options.standIns.find((entry) => entry.id === subject.standInId) : undefined;
+    const callRow =
+      subject.kind === 'call' ? options.rows.find((entry) => autoDescriptionRowId(entry) === subject.rowId) : undefined;
+    const label = {
+      context: () => (subject.kind === 'context' ? autoModeContextLabel(subject.contextId) : ''),
+      'stand-in': () => standIn?.name ?? 'a deleted stand-in',
+      call: () =>
+        callRow?.evidence.find((entry) => entry.kind === 'call')?.summary ?? answer.request.call?.label ?? 'a call',
+    }[subject.kind]();
     const base = {
       key: autoModeSubjectKey(subject),
       kind: subject.kind,
-      label:
-        subject.kind === 'context' ? autoModeContextLabel(subject.contextId) : (standIn?.name ?? 'a deleted stand-in'),
+      label,
       askedAtMs: answer.askedAtMs,
       request: answer.request,
+      ...(callRow ? { rowId: callRow.id } : {}),
     };
 
     if (outcome.kind === 'failed') return { ...base, status: 'failed', namedRows: 0 };
@@ -1035,7 +1109,7 @@ const ticketReadout = (options: {
     const found = { ...base, issueKey, namedRows: autoNamedRows(options.edits, issueKey) };
     const approval = applyApprovalOf({ approvals: options.approvals, day: options.day, subject });
     const applied =
-      subject.kind === 'context'
+      subject.kind === 'context' || subject.kind === 'call'
         ? found.namedRows > 0
         : standIn?.state === 'resolved' && standIn.issueKey === issueKey && standIn.resolutionSource === 'auto';
 
@@ -1068,10 +1142,10 @@ export const autoModeReadout = (options: {
   approvals: readonly ApprovalView[];
   classes: ActionClasses;
   standIns: readonly Pick<StandIn, 'id' | 'name' | 'state' | 'issueKey' | 'resolutionSource'>[];
-  rows?: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey'>[];
+  rows?: readonly Pick<ReviewedRow, 'id' | 'recutOf' | 'laneKey' | 'issueKey' | 'evidence'>[];
 }): AutoModeReadoutEntry[] =>
   [
-    ...ticketReadout(options),
+    ...ticketReadout({ ...options, rows: options.rows ?? [] }),
     ...descriptionReadout({ edits: options.edits, rows: options.rows ?? [] }),
     ...disputeReadout({ ...options, rows: options.rows ?? [] }),
   ].sort((left, right) => left.askedAtMs - right.askedAtMs);

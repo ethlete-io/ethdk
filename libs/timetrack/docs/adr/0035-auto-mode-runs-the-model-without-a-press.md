@@ -34,7 +34,8 @@ What stays:
 - **A human edit wins.** Auto mode writes a field only through `mayAutoWrite`; a field whose source is
   `human` is never written. A reset in the UI is the only way back to `auto`.
 - **The naming store is a human click.** Auto mode never writes a remembered meeting or call name
-  (`nameMeeting`, `nameCall`), so a model answer still never becomes a rule by itself.
+  (`nameMeeting`, `nameCall`), so a model answer still never becomes a rule by itself. An unnamed call
+  it asks about gets the issue as an `auto` field on that one row, never as a remembered `nameCall`.
 - **Only the current day.** Auto mode acts on today. A past day changes only on a press, because a
   past day may already be in Tempo and the user reviewed it as it stands. One exception: the worklog
   description of a ticket a standing rule or a background project names waits until its day is over,

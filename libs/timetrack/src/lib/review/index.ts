@@ -1,4 +1,5 @@
 export * from './anonymous-report';
+export * from './auto-call';
 export * from './auto-description';
 export * from './auto-dispute';
 export * from './auto-mode';
