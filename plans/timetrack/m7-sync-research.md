@@ -205,4 +205,27 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      invalid, as the settings screen already does for a rule that does not compile.
 5. One owner and an incomplete day: claim + Tempo marker, the other machine refuses to book, the
    freeze waits for peers, "MacBook not seen since X" (M, 3-4 d).
-6. Settings and stand-ins replicated (M, optional).
+6. Settings and stand-ins replicated (M). Tom approved the design on 2026-10-09; build it after 4h.
+   Today the settings are one JSON row (`app_setting`, `store.rs:550` and `:588`) saved whole, with
+   no timestamps, so a synced write would overwrite the other machine.
+   - Scope per field, fixed in code next to `TimetrackSettings` (`settings/model.ts:269`):
+     `shared` or `machine`. A `machine` field never leaves its machine. `machine`: `gitScanRoots`,
+     `lockWindow`, `lockAfterIdleMs`, `transcribeCalls`, `transcribeLanguage`, `noWorkContextApps`,
+     `holdsWorkApps`. Everything else is `shared`, including `display` (Tom, 2026-10-09). A new field
+     must name its scope; a spec fails when one does not.
+   - Merge per scalar field and per list item, never per document. Each scalar field and each list
+     item (rules, links, stand-ins, namings) carries `updatedAt` and the machine id of the write; the
+     newer write wins, the machine id breaks a tie, and the peer's `clockOffsetMs` corrects the time.
+     A deleted item leaves a tombstone.
+   - A path travels as a repo key, not as a path: `attributionRules` `repoPath`/`workPath`,
+     `projectLinks.path`, `noStandInCheckouts`, `standIns.openedForWorkPath`. The receiver maps the key
+     onto its local checkout through the 4b map and `repoAliases` (4g). With no local checkout the
+     item is stored but inactive, and shows so in the settings.
+   - Wire: a new peer message `settings` next to `hello` and `pull` (dispatch at `peer.rs` ~987),
+     over the same pairing and TLS. Secrets never travel (decision 5).
+   - First sync is reviewed: the two machines already differ, so the first exchange with a peer lists
+     every difference and Tom picks per item. After that, changes apply automatically, and a changed
+     field or item shows "changed on <machine>".
+   - A synced write is a human write from another machine; agents still cannot write settings
+     (`plans/timetrack/auto-mode.md:42`).
+   - Open: the step split (files and tests per step), written when this item starts.
