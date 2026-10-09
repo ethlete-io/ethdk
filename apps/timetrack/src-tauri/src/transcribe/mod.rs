@@ -4,6 +4,7 @@ mod bench;
 mod capture_linux;
 mod model;
 mod pipeline;
+mod segment;
 mod whisper;
 
 use crate::calls::CallSource;
@@ -67,7 +68,8 @@ pub fn start(listener: Listener) {
 
 #[cfg(target_os = "linux")]
 fn listen(listener: &Listener, app_id: String) -> TimetrackResult<()> {
-    use pipeline::{Call, Chunker, Spoken};
+    use pipeline::{Call, Spoken};
+    use segment::Segmenter;
     use std::io::Read;
 
     let model = model::DEFAULT;
@@ -91,31 +93,31 @@ fn listen(listener: &Listener, app_id: String) -> TimetrackResult<()> {
     };
     let (sender, receiver) = std::sync::mpsc::sync_channel::<Spoken>(2);
     let reader = std::thread::spawn(move || {
-        let mut chunker = Chunker::default();
+        let mut segmenter = Segmenter::default();
         let mut buffer = [0u8; 16 * 1024];
-        let send = |audio: Vec<f32>| {
-            let spoken_ms = (audio.len() * 1000 / pipeline::SAMPLE_RATE) as i64;
-
-            sender.send(Spoken {
-                at_ms: chrono::Utc::now().timestamp_millis() - spoken_ms,
-                audio,
-            })
-        };
 
         while let Ok(read) = stdout.read(&mut buffer) {
             if read == 0 {
                 break;
             }
 
-            for audio in chunker.push_bytes(&buffer[..read]) {
-                if send(audio).is_err() {
+            let now_ms = chrono::Utc::now().timestamp_millis();
+
+            for speech in segmenter.push_bytes(&buffer[..read]) {
+                if sender
+                    .send(Spoken::heard(speech, now_ms, segmenter.samples_seen()))
+                    .is_err()
+                {
                     return;
                 }
             }
         }
 
-        if let Some(tail) = chunker.finish() {
-            let _ = send(tail);
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        let seen = segmenter.samples_seen();
+
+        if let Some(tail) = segmenter.finish() {
+            let _ = sender.send(Spoken::heard(tail, now_ms, seen));
         }
     });
 

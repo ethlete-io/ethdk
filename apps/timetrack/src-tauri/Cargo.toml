@@ -38,11 +38,12 @@ thiserror = "2.0.20"
 tokio = { version = "1.53.1", features = ["process", "sync", "time", "net", "rt-multi-thread", "macros"] }
 tokio-rustls = { version = "0.26.4", default-features = false }
 whisper-rs = { version = "0.16.0", optional = true }
+earshot = { version = "1.2.2", optional = true }
 tauri-plugin-updater = "2.12.0"
 mdns-sd = { version = "0.21.5", features = ["async"] }
 
 [features]
-transcribe = ["dep:whisper-rs"]
+transcribe = ["dep:whisper-rs", "dep:earshot"]
 transcribe-vulkan = ["transcribe", "whisper-rs/vulkan"]
 
 [target.'cfg(target_os = "linux")'.dependencies]

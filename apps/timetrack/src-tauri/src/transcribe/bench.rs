@@ -1,8 +1,10 @@
 //! Measures a model on a WAV through the same chunk path the listener uses:
 //! `TT_MODEL=<path> TT_WAV=<16 kHz mono s16 wav> cargo test --release --features transcribe
-//! transcribe::bench -- --ignored --nocapture`. `TT_THREADS`, `TT_PROMPT`, `TT_LANGUAGE` and `TT_NO_GATE=1` vary it.
+//! transcribe::bench -- --ignored --nocapture`. `TT_THREADS`, `TT_PROMPT`, `TT_LANGUAGE` and `TT_NO_GATE=1`
+//! (the former fixed 30 s chunks behind an RMS gate) vary it.
 
-use super::pipeline::{is_silent, Chunker, Transcribe};
+use super::pipeline::{Transcribe, SAMPLE_RATE};
+use super::segment::Segmenter;
 use super::whisper::Whisper;
 use std::time::Instant;
 
@@ -73,25 +75,43 @@ fn bench() {
         .with_prompt(std::env::var("TT_PROMPT").ok());
     let loaded_in = loading.elapsed().as_secs_f64();
 
-    let mut chunker = Chunker::default();
-    let mut chunks = chunker.push_bytes(&samples_of(&wav));
+    let samples = samples_of(&wav);
+    let chunks: Vec<(f64, Vec<f32>)> = if gate {
+        let mut segmenter = Segmenter::default();
+        let mut speech = segmenter.push_bytes(&samples);
 
-    chunks.extend(chunker.finish());
+        speech.extend(segmenter.finish());
+        speech
+            .into_iter()
+            .map(|speech| (speech.start_sample as f64 / SAMPLE_RATE as f64, speech.audio))
+            .collect()
+    } else {
+        samples
+            .chunks(30 * SAMPLE_RATE * 4)
+            .enumerate()
+            .map(|(index, bytes)| {
+                let audio = bytes
+                    .chunks_exact(4)
+                    .map(|sample| f32::from_le_bytes([sample[0], sample[1], sample[2], sample[3]]))
+                    .collect();
 
-    let audio_seconds: f64 = chunks.iter().map(|chunk| chunk.len() as f64 / 16_000.0).sum();
+                (index as f64 * 30.0, audio)
+            })
+            .filter(|(_, audio): &(f64, Vec<f32>)| {
+                (audio.iter().map(|sample| sample * sample).sum::<f32>() / audio.len() as f32).sqrt() >= 0.002
+            })
+            .collect()
+    };
+
+    let audio_seconds = samples.len() as f64 / 4.0 / SAMPLE_RATE as f64;
     let (cpu_before, started) = (cpu_seconds(), Instant::now());
 
-    for (index, chunk) in chunks.iter().enumerate() {
-        if gate && is_silent(chunk) {
-            println!("[{index}] silent, skipped");
-            continue;
-        }
-
+    for (index, (start, chunk)) in chunks.iter().enumerate() {
         let at = Instant::now();
         let heard = whisper.transcribe(chunk).unwrap();
 
         println!(
-            "[{index}] {:.1}s audio in {:.2}s, {:?}: {}",
+            "[{index}] at {start:.1}s, {:.1}s audio in {:.2}s, {:?}: {}",
             chunk.len() as f64 / 16_000.0,
             at.elapsed().as_secs_f64(),
             heard.language,
@@ -103,8 +123,10 @@ fn bench() {
     let cpu = cpu_seconds() - cpu_before;
 
     println!(
-        "RESULT model={name} threads={threads} load={loaded_in:.2}s audio={audio_seconds:.1}s wall={wall:.2}s \
+        "RESULT model={name} threads={threads} gate={gate} chunks={} load={loaded_in:.2}s audio={audio_seconds:.1}s \
+         wall={wall:.2}s cpu_s={cpu:.1} \
          rtf={:.3} cpu={:.0}% (of one core) peak_rss={:.0}MB",
+        chunks.len(),
         wall / audio_seconds,
         cpu / wall * 100.0,
         peak_rss_mb()
