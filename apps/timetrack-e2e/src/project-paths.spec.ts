@@ -1,5 +1,5 @@
 import { E2E_REPO, defaultSettings } from '@ethlete/timetrack/testing';
-import { E2E_NOW, expect, seedWorld, test } from './support';
+import { E2E_NOW, expect, readStoredSettings, seedWorld, test } from './support';
 
 const SIDE = '/Users/e2e/dev/private/weekend-game';
 
@@ -45,5 +45,25 @@ test.describe('the project picker on a path row', () => {
         return panel > field;
       })
       .toBe(true);
+  });
+});
+
+test.describe('a repository alias', () => {
+  test('is set for a checkout as a lower-case key, and taken off again', async ({ page }) => {
+    const aliases = page.locator('ethlete-repo-aliases');
+
+    await aliases.getByRole('textbox', { name: 'Checkout' }).fill(E2E_REPO);
+    await aliases.getByRole('textbox', { name: 'Alias' }).fill('FUT-Frontend');
+    await aliases.getByRole('button', { name: 'Set alias' }).click();
+
+    await expect(aliases.locator(`[data-alias-path="${E2E_REPO}"] [data-alias-key]`)).toHaveText('fut-frontend');
+    await expect
+      .poll(async () => (await readStoredSettings(page))?.repoAliases)
+      .toEqual({ [E2E_REPO]: 'fut-frontend' });
+
+    await aliases.getByRole('button', { name: `Remove the alias of ${E2E_REPO}` }).click();
+
+    await expect(aliases.locator('[data-alias-path]')).toHaveCount(0);
+    await expect.poll(async () => (await readStoredSettings(page))?.repoAliases).toEqual({});
   });
 });

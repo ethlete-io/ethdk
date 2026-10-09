@@ -316,6 +316,12 @@ export type TimetrackSettings = {
   /** Directories the repository discovery walks. Empty means the host decides. */
   gitScanRoots: string[];
   /**
+   * The key a paired machine matches a checkout by, by checkout path, where the origin URL does not
+   * match it: two clones with different remotes, or a checkout with none. It replaces `repoKeyOf` for
+   * that path, and the same alias has to be set on both machines.
+   */
+  repoAliases: Record<string, string>;
+  /**
    * The Jira projects this machine works in, picked from the instance.
    *
    * They are the app's whole notion of "your projects": the keys a branch name or a window title may
@@ -442,6 +448,7 @@ export const DEFAULT_TIMETRACK_SETTINGS: TimetrackSettings = {
   holdsWorkApps: [],
   keepDefaultExclusionRules: true,
   gitScanRoots: [],
+  repoAliases: {},
   favoriteProjects: [],
   backgroundProjects: [],
   meetingNamings: [],

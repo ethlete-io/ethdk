@@ -44,6 +44,7 @@ describe('parseTimetrackSettings', () => {
       holdsWorkApps: ['discord'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
+      repoAliases: { '/home/you/dev/sdk': 'ethlete-sdk' },
       display: { dateStyle: 'iso', clock: '12h' },
     });
 
@@ -81,6 +82,7 @@ describe('parseTimetrackSettings', () => {
       holdsWorkApps: ['discord'],
       keepDefaultExclusionRules: false,
       gitScanRoots: ['/home/you/dev'],
+      repoAliases: { '/home/you/dev/sdk': 'ethlete-sdk' },
       favoriteProjects: [],
       backgroundProjects: [],
       meetingNamings: [],
@@ -168,6 +170,7 @@ describe('parseTimetrackSettings', () => {
       holdsWorkApps: [],
       keepDefaultExclusionRules: true,
       gitScanRoots: [],
+      repoAliases: {},
       favoriteProjects: [],
       backgroundProjects: [],
       meetingNamings: [],
@@ -184,6 +187,21 @@ describe('parseTimetrackSettings', () => {
       display: { dateStyle: 'day-month', clock: '24h' },
     });
     expect(parseTimetrackSettings({ dayTargetMs: 'eight hours' }).dayTargetMs).toBe(DEFAULT_DAY_TARGET_MS);
+  });
+
+  it('reads a repository alias as a lower-case key, and drops one naming no path or no key', () => {
+    expect(
+      parseTimetrackSettings({
+        repoAliases: {
+          ' /home/you/dev/sdk/ ': ' Ethlete-SDK ',
+          'C:\\dev\\fut\\': 'fut',
+          '/home/you/dev/empty': '  ',
+          '': 'nowhere',
+          '/home/you/dev/number': 42,
+        },
+      }).repoAliases,
+    ).toEqual({ '/home/you/dev/sdk': 'ethlete-sdk', 'C:\\dev\\fut': 'fut' });
+    expect(parseTimetrackSettings({ repoAliases: ['ethlete-sdk'] }).repoAliases).toEqual({});
   });
 
   it('keeps a reminder time inside the day, and reminds unless the document turned it off', () => {

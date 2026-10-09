@@ -49,12 +49,21 @@ const sessionRun = (from: number, to: number, cwd = MAC_REPO): CollectedEvent[] 
 
 const band = (page: Page, title: string) => page.locator(`[data-kind="row"][title^="${title}"]`);
 
-const seed = (page: Page, options: { received: CollectedEvent[]; private?: boolean }) =>
+const seed = (
+  page: Page,
+  options: {
+    received: CollectedEvent[];
+    private?: boolean;
+    macKeys?: Record<string, string>;
+    repoAliases?: Record<string, string>;
+  },
+) =>
   seedWorld(page, {
     now: E2E_NOW,
     settings: {
       ...defaultSettings(),
       attributionRules: [NAMES_THE_REPO],
+      repoAliases: options.repoAliases ?? {},
       ...(options.private
         ? { projectLinks: [{ id: 'link-fut', path: E2E_REPO, target: { kind: 'private' }, createdAt: new Date(0) }] }
         : {}),
@@ -63,7 +72,7 @@ const seed = (page: Page, options: { received: CollectedEvent[]; private?: boole
     peers: {
       paired: [MACBOOK],
       received: options.received.map((event) => ({ machineId: MACBOOK.machineId, event })),
-      repoKeys: { [MACBOOK.machineId]: { [MAC_REPO]: REPO_KEY } },
+      repoKeys: { [MACBOOK.machineId]: options.macKeys ?? { [MAC_REPO]: REPO_KEY } },
       ownRepoKeys: { [E2E_REPO]: REPO_KEY },
     },
   });
@@ -101,5 +110,21 @@ test.describe('a day worked only on the paired MacBook', () => {
     await expect(page.locator('body')).not.toContainText('secret-plan');
     await expect(page.locator('body')).not.toContainText('KeePassXC');
     await expect(page.locator('[data-kind="row"][title*="keepass" i]')).toHaveCount(0);
+  });
+
+  test('lands a MacBook clone with another origin on the checkout both machines gave one alias', async ({ page }) => {
+    const fork = '/Users/mac/code/fut-fork';
+
+    await seed(page, {
+      received: [
+        ...focusRun({ from: 0, to: 120, appId: 'com.microsoft.VSCode', title: 'main.ts - Visual Studio Code' }),
+        ...sessionRun(0, 120, fork),
+      ],
+      macKeys: { [fork]: 'fut-alias' },
+      repoAliases: { [E2E_REPO]: 'fut-alias' },
+    });
+    await page.goto('/day');
+
+    await expect(band(page, 'ABC-4040')).toHaveCount(1);
   });
 });

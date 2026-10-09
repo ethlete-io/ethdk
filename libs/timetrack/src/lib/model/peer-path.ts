@@ -3,6 +3,13 @@ export type CheckoutKeys = Readonly<Record<string, string>>;
 
 const SEPARATORS = /[\\/]+/;
 
+/** `keys` with each checkout the user set an alias for keyed by that alias instead. A path `keys` lacks is left out. */
+export const withRepoAliases = (options: {
+  keys: CheckoutKeys;
+  aliases: Readonly<Record<string, string>>;
+}): CheckoutKeys =>
+  Object.fromEntries(Object.entries(options.keys).map(([path, key]) => [path, options.aliases[path] ?? key]));
+
 const trimRoot = (root: string) => root.replace(/[\\/]+$/, '') || root;
 
 const remainderUnder = (path: string, root: string) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { translatePeerPath } from './peer-path';
+import { translatePeerPath, withRepoAliases } from './peer-path';
 
 const SDK = 'gitlab.com/ethlete/sdk';
 const localKeys = { '/home/tom/dev/ethlete-sdk': SDK, '/home/tom/dev/fut': 'gitlab.com/ethlete/fut' };
@@ -87,5 +87,29 @@ describe('translatePeerPath', () => {
         localKeys: { '/home/tom/dev/ethlete-sdk-2': SDK, '/home/tom/dev/sdk': SDK },
       }),
     ).toBe('/home/tom/dev/sdk');
+  });
+});
+
+describe('withRepoAliases', () => {
+  it('keys an aliased checkout by its alias, and leaves the others and an undiscovered path alone', () => {
+    expect(
+      withRepoAliases({
+        keys: localKeys,
+        aliases: { '/home/tom/dev/fut': 'fut-alias', '/home/tom/dev/gone': 'gone' },
+      }),
+    ).toEqual({ '/home/tom/dev/ethlete-sdk': SDK, '/home/tom/dev/fut': 'fut-alias' });
+  });
+
+  it('maps a peer checkout with another origin onto the local checkout both machines aliased alike', () => {
+    expect(
+      translatePeerPath({
+        path: '/Users/tom/code/fork/src/main.ts',
+        peerKeys: withRepoAliases({
+          keys: { '/Users/tom/code/fork': 'github.com/tom/fork' },
+          aliases: { '/Users/tom/code/fork': 'fut-alias' },
+        }),
+        localKeys: withRepoAliases({ keys: localKeys, aliases: { '/home/tom/dev/fut': 'fut-alias' } }),
+      }),
+    ).toBe('/home/tom/dev/fut/src/main.ts');
   });
 });

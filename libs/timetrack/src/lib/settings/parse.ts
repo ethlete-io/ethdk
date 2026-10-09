@@ -372,6 +372,16 @@ const asReasoning = (value: unknown): TimetrackReasoningSettings => {
 const asTextList = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.map(asText).filter((entry) => !!entry))] : [];
 
+const asRepoAliases = (value: unknown): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(Array.isArray(value) ? {} : asRecord(value)).flatMap(([path, key]) => {
+      const checkout = path.trim().replace(/(?<=.)[\\/]+$/, '');
+      const alias = asText(key).toLowerCase();
+
+      return checkout && alias ? [[checkout, alias]] : [];
+    }),
+  );
+
 /**
  * A pattern that does not compile survives the read, for the same reason an exclusion rule does: the
  * settings screen is the only place the user can find the typo, and `classifyCalls` already treats an
@@ -507,6 +517,7 @@ const readTimetrackSettings = (raw: unknown): TimetrackSettings => {
     holdsWorkApps: asTextList(document['holdsWorkApps']),
     keepDefaultExclusionRules: document['keepDefaultExclusionRules'] !== false,
     gitScanRoots: asTextList(document['gitScanRoots']),
+    repoAliases: asRepoAliases(document['repoAliases']),
     favoriteProjects: asFavoriteProjects(document),
     backgroundProjects: [...new Set(asTextList(document['backgroundProjects']).map((key) => key.toUpperCase()))],
     meetingNamings: asMeetingNamings(document['meetingNamings']),

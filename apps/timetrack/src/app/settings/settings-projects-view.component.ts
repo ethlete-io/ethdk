@@ -10,6 +10,7 @@ import { injectProjectLinks } from '../project-links';
 import { AgentSessionResyncComponent } from './agent-session-resync.component';
 import { AttributionRulesComponent } from './attribution-rules.component';
 import { ProjectPathsComponent } from './project-paths.component';
+import { RepoAliasesComponent } from './repo-aliases.component';
 import { YourProjectsComponent } from './your-projects.component';
 import { injectTimetrackSettings } from './settings';
 
@@ -33,6 +34,13 @@ import { injectTimetrackSettings } from './settings';
         (remove)="store.removeProjectLink($event)"
       />
 
+      <ethlete-repo-aliases
+        [repoPaths]="repoPaths()"
+        [aliases]="store.settings().repoAliases"
+        (setAlias)="store.setRepoAlias($event)"
+        class="max-w-4xl"
+      />
+
       <ethlete-agent-session-resync
         [unlinked]="agent.totals().unlinked"
         [links]="projectLinks()"
@@ -49,7 +57,13 @@ import { injectTimetrackSettings } from './settings';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [AgentSessionResyncComponent, AttributionRulesComponent, ProjectPathsComponent, YourProjectsComponent],
+  imports: [
+    AgentSessionResyncComponent,
+    AttributionRulesComponent,
+    ProjectPathsComponent,
+    RepoAliasesComponent,
+    YourProjectsComponent,
+  ],
 })
 export class SettingsProjectsViewComponent {
   protected store = injectTimetrackSettings();

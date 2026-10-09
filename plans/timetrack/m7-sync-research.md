@@ -198,7 +198,15 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      0002). Files: `stream/stream-day.ts` (spend), `day-review/day-streams.component.ts`,
      `sources/inventory.ts`, `store.rs` test. Tests: unit spec, `cargo test` that compaction leaves
      `received_event` alone, e2e `day-streams.spec.ts` peer case.
-   - 4g. In progress (2026-10-09). Manual alias: settings field `repoAliases` (checkout path to key) overrides `repoKeyOf` on
+   - 4g. Done. Settings field `repoAliases` (checkout path to key, trimmed, lower-cased) and
+     `withRepoAliases` (`model/peer-path.ts`). The git collector writes this machine's map with the
+     aliases applied, and writes it again within one poll when an alias changes, so the alias reaches
+     both this machine's reads (`ownRepoKeys`) and the peer (the map in every pull). The readers are
+     unchanged. Set under Settings → Projects, "Same repository on a paired machine"; the same alias is
+     set on each machine. Tests: parse and peer-path specs, e2e `project-paths.spec.ts` (set and
+     remove) and `merged-peer-day.spec.ts` (a Mac clone with another origin lands on the aliased
+     checkout). Slice 6 scope: `repoAliases` names paths, so it is a `machine` field.
+     Plan as written: Manual alias: settings field `repoAliases` (checkout path to key) overrides `repoKeyOf` on
      both sides, set in the project paths view. Coordinate first: another session is editing
      `settings/model.ts` and `settings/parse.ts`. Files: settings model and parse, project paths
      view, the 4b map writer. Tests: parse spec, e2e `project-paths.spec.ts` alias case.

@@ -9,6 +9,7 @@ import {
   linkedWorktreesOf,
   parseGitWorktrees,
   readRepoKey$,
+  withRepoAliases,
 } from '@ethlete/timetrack';
 import {
   EMPTY,
@@ -91,6 +92,9 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
   let discoveredRoots: string | null = null;
   let reconciledAt = 0;
   let scannedOnce = false;
+  let keyedAliases: string | null = null;
+
+  const aliasesNow = () => JSON.stringify(settings.settings().repoAliases);
 
   /**
    * The identity commits are restricted to, per repository: a work checkout and a personal one are
@@ -114,7 +118,13 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
         readRepoKey$({ processes: ports.processes, repoPath: repo.path }).pipe(map((key) => [repo.path, key])),
       ),
       toArray(),
-      concatMap((entries) => ports.peers.setRepoKeys$(Object.fromEntries(entries))),
+      concatMap((entries) => {
+        keyedAliases = aliasesNow();
+
+        return ports.peers.setRepoKeys$(
+          withRepoAliases({ keys: Object.fromEntries(entries), aliases: settings.settings().repoAliases }),
+        );
+      }),
       catchError(() => of(null)),
     );
 
@@ -189,7 +199,12 @@ const GIT_COLLECTOR_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
           if (reconciling) reconciledAt = now;
 
-          const discovered$ = discovering ? discover$() : of(repos);
+          const rekeying = !discovering && keyedAliases !== null && keyedAliases !== aliasesNow();
+          const discovered$ = discovering
+            ? discover$()
+            : rekeying
+              ? writeRepoKeys$(repos).pipe(ignoreElements(), endWith(repos))
+              : of(repos);
 
           return discovered$.pipe(concatMap(() => (reconciling ? scan$(repos.map((repo) => repo.path)) : moved$())));
         }),

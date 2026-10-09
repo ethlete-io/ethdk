@@ -456,6 +456,18 @@ const SETTINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
     removeProjectLink: (id: string) => apply(withoutProjectLink({ settings: settings(), id })),
 
+    /** An empty key takes the alias off the checkout again. */
+    setRepoAlias: (options: { path: string; key: string }) => {
+      const path = options.path.trim();
+      const key = options.key.trim().toLowerCase();
+
+      if (!path) return;
+
+      const { [path]: _replaced, ...rest } = settings().repoAliases;
+
+      patch({ repoAliases: key ? { ...rest, [path]: key } : rest });
+    },
+
     saveJiraToken: (token: string) => secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.jiraToken, value: token.trim() }),
     saveTempoToken: (token: string) =>
       secretWrites$.next({ key: TIMETRACK_SECRET_KEYS.tempoToken, value: token.trim() }),
