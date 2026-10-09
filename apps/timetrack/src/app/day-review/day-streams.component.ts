@@ -5,6 +5,7 @@ import { formatClockTime } from './format';
 import {
   formatAgentSessions,
   formatBranches,
+  formatPeerSpend,
   formatRebuilt,
   formatSpend,
   formatStreamLabel,
@@ -43,6 +44,9 @@ import {
                   }
                   @if (SPEND_OF(stream.spend); as spend) {
                     <span class="text-small text-et-surface-muted" data-spend>{{ spend }}</span>
+                  }
+                  @if (PEER_SPEND_OF(stream.spend); as peers) {
+                    <span class="text-small text-et-surface-muted" data-spend-peers>{{ peers }}</span>
                   }
                   @if (stream.neverFocused) {
                     <span class="text-small text-et-surface-subtle" data-never-focused>
@@ -99,6 +103,7 @@ export class DayStreamsComponent {
 
   protected readonly LABEL_OF = formatStreamLabel;
   protected readonly SPEND_OF = formatSpend;
+  protected readonly PEER_SPEND_OF = formatPeerSpend;
   protected readonly SESSIONS_OF = formatAgentSessions;
   protected readonly CLOCK_OF = formatClockTime;
   protected readonly UNATTENDED_OF = formatUnattended;

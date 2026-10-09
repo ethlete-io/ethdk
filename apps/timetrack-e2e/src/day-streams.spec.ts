@@ -1,5 +1,5 @@
 import { CollectedEvent, GIT_FIELD_SEPARATOR, TIMETRACK_PROVIDER } from '@ethlete/timetrack';
-import { defaultSettings } from '@ethlete/timetrack/testing';
+import { FakePairedMachine, defaultSettings } from '@ethlete/timetrack/testing';
 import { E2E_DAY_KEY, E2E_NOW, expect, openDayNotes, openStreams, openTotals, seedWorld, test } from './support';
 
 /** The checkout the fake git backend discovers, so its subdirectories fold into it. */
@@ -744,5 +744,55 @@ test.describe('the day view, on a day some window named no checkout', () => {
     await page.goto('/day');
 
     await expect(page.locator('[data-unnamed-today]')).toHaveCount(0);
+  });
+});
+
+test.describe('the day view, as streams, with a paired machine', () => {
+  const MAC_SDK = '/Users/mac/code/ethlete-sdk';
+  const KEY_OF_EVERY_FAKE_CHECKOUT = 'gitlab.example.com/braune-digital/fut-frontend';
+  const MACBOOK: FakePairedMachine = {
+    machineId: 'mac-1',
+    label: 'MacBook',
+    certFingerprint: 'fp-mac',
+    lastAddr: '192.168.1.20:52741',
+    lastSeenMs: new Date(E2E_NOW).getTime() - 30_000,
+    clockOffsetMs: 0,
+    pairedAtMs: new Date(E2E_NOW).getTime() - 86_400_000,
+    lastPullMs: null,
+  };
+
+  const macTurn = (minutes: number, turnId: string): CollectedEvent => ({
+    at: at(minutes),
+    source: 'agent-usage',
+    kind: 'agent-usage',
+    provider: 'claude-code',
+    sessionId: 'session-mac',
+    turnId,
+    cwd: MAC_SDK,
+    model: 'claude-opus-5',
+    usage: { input: 1_000, output: 100_000, cacheWrite: 0, cacheRead: 1_000_000, thinking: 0 },
+  });
+
+  test('says how many of a checkout’s turns ran on the paired machine', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: day(),
+      git: DISCOVERED,
+      peers: {
+        paired: [MACBOOK],
+        received: [macTurn(70, 'mac-turn-1'), macTurn(80, 'mac-turn-2')].map((event) => ({
+          machineId: MACBOOK.machineId,
+          event,
+        })),
+        repoKeys: { [MACBOOK.machineId]: { [MAC_SDK]: KEY_OF_EVERY_FAKE_CHECKOUT } },
+        ownRepoKeys: { [SDK]: KEY_OF_EVERY_FAKE_CHECKOUT },
+      },
+    });
+    await page.goto('/day');
+    await openStreams(page);
+
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend]')).toContainText('3 turns');
+    await expect(stream(page, `repo:${SDK}`).locator('[data-spend-peers]')).toHaveText('2 turns on MacBook');
+    await expect(stream(page, `repo:${FUT}`).locator('[data-spend-peers]')).toHaveCount(0);
   });
 });

@@ -155,12 +155,22 @@ export const DEFAULT_STREAM_DAY_OPTIONS: StreamDayOptions = {
   maxAgentGapMs: 15 * 60_000,
 };
 
+/** The part of a spend one paired machine ran. */
+export type MachineSpend = {
+  machineId: string;
+  machineName: string;
+  usage: TokenUsage;
+  turns: number;
+};
+
 /** What a set of turns spent. The five classes are kept apart because they are priced apart. */
 export type StreamSpend = {
   usage: TokenUsage;
   turns: number;
   /** The models the turns ran on, first seen first. */
   models: string[];
+  /** The part of it each paired machine ran, inside the totals above. Absent when this machine ran every turn. */
+  peers?: MachineSpend[];
 };
 
 /** The checkouts a day's streams name no branch for, which the reflog is asked about. */
@@ -1057,6 +1067,7 @@ type OriginDay = Omit<StreamDay, 'rows' | 'peerLanes'> & {
   bookedRemote: BookedRemoteWindow[];
   focusMsByStream: Record<string, number>;
   focusByStream: Record<string, TimeWindow[]>;
+  unattendedByStream: Record<string, TimeWindow[]>;
 };
 
 const streamOrigin = (options: {
@@ -1571,6 +1582,7 @@ const streamOrigin = (options: {
   });
 
   const streams: Stream[] = [];
+  const unattendedByStream: Record<string, TimeWindow[]> = {};
   let focusMs = 0;
 
   for (const draft of drafts.values()) {
@@ -1601,6 +1613,7 @@ const streamOrigin = (options: {
 
     if (!first || !last) continue;
 
+    unattendedByStream[draft.key] = unattended;
     streams.push({
       key: draft.key,
       repoPath: draft.repoPath,
@@ -1755,11 +1768,18 @@ const streamOrigin = (options: {
     bookedRemote: bookedRemoteWindows({ ...remoteOptions, remotePrompts }),
     focusMsByStream,
     focusByStream,
+    unattendedByStream,
   };
 };
 
 const originIdOf = (event: CollectedEvent | OriginEvent) =>
   'origin' in event && event.origin !== 'local' ? event.origin.machineId : 'local';
+
+const machineNameOf = (events: readonly (CollectedEvent | OriginEvent)[]) => {
+  for (const event of events) if ('origin' in event && event.origin !== 'local') return event.origin.machineName;
+
+  return undefined;
+};
 
 const addSpendOf = (into: StreamSpend, from: StreamSpend) => {
   into.usage.input += from.usage.input;
@@ -1770,6 +1790,51 @@ const addSpendOf = (into: StreamSpend, from: StreamSpend) => {
   into.turns += from.turns;
 
   for (const model of from.models) if (!into.models.includes(model)) into.models.push(model);
+
+  for (const peer of from.peers ?? []) {
+    const held = (into.peers ??= []).find((candidate) => candidate.machineId === peer.machineId);
+
+    if (held) {
+      held.usage = {
+        input: held.usage.input + peer.usage.input,
+        output: held.usage.output + peer.usage.output,
+        cacheWrite: held.usage.cacheWrite + peer.usage.cacheWrite,
+        cacheRead: held.usage.cacheRead + peer.usage.cacheRead,
+        thinking: held.usage.thinking + peer.usage.thinking,
+      };
+      held.turns += peer.turns;
+    } else into.peers.push({ ...peer, usage: { ...peer.usage } });
+  }
+};
+
+/** The same spend, marked as run on `machine`. A spend with no turns stays unmarked. */
+const ranOn = (spend: StreamSpend, machine: Omit<MachineSpend, 'usage' | 'turns'>): StreamSpend =>
+  spend.turns ? { ...spend, peers: [{ ...machine, usage: { ...spend.usage }, turns: spend.turns }] } : spend;
+
+const peerDayOf = (day: OriginDay, machine: Omit<MachineSpend, 'usage' | 'turns'>): OriginDay => ({
+  ...day,
+  streams: day.streams.map((stream) => ({ ...stream, spend: ranOn(stream.spend, machine) })),
+  spend: ranOn(day.spend, machine),
+  unattributedSpend: ranOn(day.unattributedSpend, machine),
+  ownSpend: ranOn(day.ownSpend, machine),
+});
+
+/** Each machine's streams keeping as unattended only the agent time no other machine's presence covers. */
+const aloneEverywhere = (days: readonly OriginDay[]) => {
+  const unattendedByStream: Record<string, TimeWindow[]> = {};
+  const streams = days.flatMap((day) => {
+    const elsewhere = mergeWindows(days.filter((other) => other !== day).flatMap((other) => other.presence));
+
+    return day.streams.map((stream) => {
+      const alone = subtractWindows({ windows: day.unattendedByStream[stream.key] ?? [], without: elsewhere });
+
+      (unattendedByStream[stream.key] ??= []).push(...alone);
+
+      return { ...stream, unattendedMs: windowsMs(alone) };
+    });
+  });
+
+  return { streams, unattendedByStream };
 };
 
 const totalSpend = (spends: readonly StreamSpend[]) => {
@@ -1927,6 +1992,7 @@ const publicDayOf = (day: OriginDay): Omit<StreamDay, 'rows' | 'peerLanes'> => {
     bookedRemote: _bookedRemote,
     focusMsByStream: _focusMs,
     focusByStream: _focus,
+    unattendedByStream: _unattended,
     ...shown
   } = day;
 
@@ -1938,7 +2004,8 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
   const presenceMs = windowsMs(presence);
   const seen = mergeWindows(days.flatMap((day) => day.seen));
   const rebuilt = subtractWindows({ windows: mergeWindows(days.flatMap((day) => day.rebuiltWindows)), without: seen });
-  const streams = mergeStreams(days.flatMap((day) => day.streams));
+  const alone = aloneEverywhere(days);
+  const streams = mergeStreams(alone.streams);
   const engagedMs = streams.reduce((sum, stream) => sum + stream.engagedMs, 0);
   const breaks = mergeBreaks(awayEverywhere({ days, windowsOf: (day) => day.breaks }));
   const blocks = blocksFromSpans({
@@ -1990,6 +2057,7 @@ const mergeOrigins = (days: readonly [OriginDay, ...OriginDay[]]): OriginDay => 
     bookedRemote: days.flatMap((day) => day.bookedRemote),
     focusMsByStream,
     focusByStream,
+    unattendedByStream: alone.unattendedByStream,
   };
 };
 
@@ -2037,7 +2105,10 @@ export const streamDay = (options: {
     .filter(([origin]) => origin !== 'local')
     .map(([origin, events]) => ({
       origin,
-      day: streamOrigin({ events, config: peerConfig, elsewhere: elsewhereOf(origin) }),
+      day: peerDayOf(streamOrigin({ events, config: peerConfig, elsewhere: elsewhereOf(origin) }), {
+        machineId: origin,
+        machineName: machineNameOf(events) ?? origin,
+      }),
     }));
 
   if (!peers.length)

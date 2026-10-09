@@ -118,7 +118,8 @@ export const EVIDENCE_SOURCES: EvidenceSource[] = [
   {
     id: 'agent-usage',
     name: 'Coding-agent spend',
-    reads: 'The token counts of every turn in those same session logs, and the model that ran it.',
+    reads:
+      'The token counts of every turn in those same session logs, and the model that ran it. A paired machine’s turns arrive with its events: this price table prices them, a turn both machines hold counts once, and the day’s streams say how many ran on each machine.',
     stores: 'The turn id, the model, and five token counts. No prompt and no message body.',
     state: 'collecting',
     collector: 'agent-usage',

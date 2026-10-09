@@ -169,6 +169,61 @@ describe('streamDay over a paired machine’s events', () => {
     expect(rowsIn(day, `repo:${SDK}`).length).toBeGreaterThan(0);
   });
 
+  describe('spend and agent time across both machines', () => {
+    const turn = (minutes: number, cwd: string, turnId: string): CollectedEvent => ({
+      at: AT(minutes),
+      source: 'agent-usage',
+      kind: 'agent-usage',
+      provider: 'claude-code',
+      sessionId: `session-${turnId}`,
+      turnId,
+      cwd,
+      model: 'claude-opus',
+      usage: { input: 10, output: 100, cacheWrite: 0, cacheRead: 1_000, thinking: 0 },
+    });
+
+    it('splits the spend of a checkout by the machine that ran each turn', () => {
+      const day = dayOf({
+        local: [...focusRun({ from: 0, to: 60, appId: 'code', title: 'ethlete-sdk - Code' }), turn(10, SDK, 'here')],
+        mac: [turn(20, MAC_SDK, 'mac-1'), turn(30, MAC_SDK, 'mac-2')],
+      });
+      const sdk = day.streams.find((stream) => stream.key === `repo:${SDK}`);
+      const share = { machineId: MAC.machineId, machineName: MAC.machineName, turns: 2 };
+
+      expect(sdk?.spend.turns).toBe(3);
+      expect(sdk?.spend.peers).toEqual([expect.objectContaining(share)]);
+      expect(sdk?.spend.peers?.[0]?.usage.output).toBe(200);
+      expect(day.spend.turns).toBe(3);
+      expect(day.spend.peers).toEqual([expect.objectContaining(share)]);
+      expect(day.spendTurns.map((spent) => spent.turnId).sort()).toEqual(['here', 'mac-1', 'mac-2']);
+    });
+
+    it('counts a turn both machines hold once, and leaves a day of this machine’s turns without a split', () => {
+      const day = dayOf({
+        local: [...focusRun({ from: 0, to: 60, appId: 'code', title: 'ethlete-sdk - Code' }), turn(20, SDK, 'shared')],
+        mac: [turn(20, MAC_SDK, 'shared')],
+      });
+
+      expect(day.spend.turns).toBe(1);
+      expect(day.spend.peers).toBeUndefined();
+    });
+
+    it('reads no agent time as alone while a person was at the paired machine', () => {
+      const day = dayOf({
+        local: [
+          ...focusRun({ from: 0, to: 5, appId: 'code', title: 'fut-frontend - Code' }),
+          { at: AT(6), source: 'idle', kind: 'idle-start' },
+          ...sessionRun({ from: 6, to: 60, cwd: FUT, sessionId: 'left-running' }),
+        ],
+        mac: focusRun({ from: 30, to: 60, appId: 'code', title: 'ethlete-sdk - Code' }),
+      });
+      const fut = day.streams.find((stream) => stream.key === `repo:${FUT}`);
+
+      expect(fut?.unattendedMs).toBe(24 * 60_000);
+      expect(day.unattendedMs).toBe(24 * 60_000);
+    });
+  });
+
   describe('attendance across both machines', () => {
     const input = (minutes: number, kind: 'input-active' | 'input-idle'): CollectedEvent => ({
       at: AT(minutes),

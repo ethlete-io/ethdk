@@ -184,9 +184,15 @@ io.ethlete.timetrack`). Every new signature asks for the keychain password about
      `rows/attended.ts`, `stream/prompt-origin.ts`, the break pass in `stream-day.ts`. Tests: unit
      specs, e2e `remote-phone-time.spec.ts` and `unattended-band.spec.ts` gain a peer case,
      snapshot compare.
-   - 4f. In progress (2026-10-09). Also takes the per-machine unattended total (Tom accepted the 4e
-     point): a stream's agent-alone time leaves out what any paired machine's presence covers.
-     Spend per origin: a received turn is priced here and counted once (4c), `StreamSpend`
+   - 4f. Done. `StreamSpend.peers` holds each paired machine's share (`MachineSpend`: turns and
+     usage), on every stream, the day's total, the unattributed and the app's own spend; absent on a
+     day only this machine spent. Received turns were already priced here and counted once (4c). The
+     day streams show "2 turns on MacBook" (`data-spend-peers`); the Sources view says so on the spend
+     source. Unattended per machine (the 4e point Tom accepted): a stream's agent-alone time leaves
+     out what another machine's presence covers, so the day total no longer holds time spent at the
+     Mac. That time is in neither engaged nor unattended on the stream line. No `cargo test`: no
+     compactor exists (ADR 0002 "Not built"), and retention by event time is already tested.
+     Plan as written: Spend per origin: a received turn is priced here and counted once (4c), `StreamSpend`
      carries a split by machine, and the day streams and Sources views show the share spent on each
      machine. Compaction reads only `collected_event`, so a received turn is never compacted (ADR
      0002). Files: `stream/stream-day.ts` (spend), `day-review/day-streams.component.ts`,

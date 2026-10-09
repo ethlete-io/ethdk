@@ -18,6 +18,12 @@ export const formatSpend = (spend: StreamSpend) => {
   )} cached`;
 };
 
+/** The part of a spend each paired machine ran, by name. A spend this machine ran alone reads as nothing. */
+export const formatPeerSpend = (spend: StreamSpend) =>
+  (spend.peers ?? [])
+    .map((peer) => `${peer.turns} ${peer.turns === 1 ? 'turn' : 'turns'} on ${peer.machineName}`)
+    .join(' · ');
+
 export const formatCost = (cost: SpendCost) =>
   cost.cost === undefined
     ? `no price for ${cost.unpriced.map((model) => `${model.provider} · ${model.model}`).join(', ')}`
