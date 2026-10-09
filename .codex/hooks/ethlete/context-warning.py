@@ -7,7 +7,7 @@ the session transcript, and emits a warning (visible to both the user and the
 agent) when it crosses a threshold. Recommends the handoff skill so work can
 continue in a fresh session.
 
-Registered on four events, because a warning the agent cannot see while it works
+Registered on five events, because a warning the agent cannot see while it works
 is not a warning:
 
   * SessionStart - states the budget and how to scope work to it, before the
@@ -20,6 +20,12 @@ is not a warning:
   * Stop - fires as the agent tries to end its turn. Its additionalContext is
     delivered to the model and the conversation continues, so the decision to
     finish or hand off happens without the user having to ask for it.
+
+Inside a Claude sub-agent, PostToolBatch fires with `agent_id` set and the parent's
+`transcript_path`, so the sub-agent's own transcript is read instead and it gets the
+same tiers. Its end of turn arrives as SubagentStop, whose block `reason` becomes its
+next instruction: at the critical tier, hand back a report with the exact remaining
+steps, which is the only handoff a sub-agent has.
 
 Runs under both Claude Code and Codex, selected by `--agent` on the command
 line rather than sniffed from the payload - the generator writes the flag, so
@@ -333,8 +339,11 @@ def tail_lines(path, limit):
     return list(reversed(chunk.split(b"\n"))), start == 0
 
 
-def claude_usage_in(lines):
-    """(usage, model) from the newest main-chain assistant message in `lines`, or (None, None)."""
+def claude_usage_in(lines, sidechain=False):
+    """(usage, model) from the newest assistant message of the chain in `lines`, or (None, None).
+
+    A sub-agent's own transcript marks every entry `isSidechain`, so reading one needs `sidechain`.
+    """
     for line in lines:
         if not line.strip():
             continue
@@ -342,7 +351,7 @@ def claude_usage_in(lines):
             obj = json.loads(line)
         except (json.JSONDecodeError, UnicodeDecodeError):
             continue
-        if obj.get("type") != "assistant" or obj.get("isSidechain"):
+        if obj.get("type") != "assistant" or bool(obj.get("isSidechain")) != sidechain:
             continue
         message = obj.get("message") or {}
         usage = message.get("usage")
@@ -351,7 +360,7 @@ def claude_usage_in(lines):
     return None, None
 
 
-def claude_context_state(transcript_path):
+def claude_context_state(transcript_path, sidechain=False):
     """(tokens, model, window, thread id, is sub-agent) from the main-chain assistant message.
 
     tokens is its total input tokens (fresh + cache read + cache creation). Claude reports no
@@ -362,16 +371,16 @@ def claude_context_state(transcript_path):
     limit = TAIL_BYTES
     while True:
         lines, complete = tail_lines(transcript_path, limit)
-        usage, model = claude_usage_in(lines)
+        usage, model = claude_usage_in(lines, sidechain)
         if usage:
             tokens = (
                 usage.get("input_tokens", 0)
                 + usage.get("cache_read_input_tokens", 0)
                 + usage.get("cache_creation_input_tokens", 0)
             )
-            return tokens, model, None, None, False
+            return tokens, model, None, None, sidechain
         if complete or limit >= MAX_TAIL_BYTES:
-            return 0, None, None, None, False
+            return 0, None, None, None, sidechain
         limit *= GROWTH_FACTOR
 
 
@@ -481,6 +490,26 @@ def starts_handoff(block):
         return is_handoff_save(tool_input.get("skill"), tool_input.get("args"))
     path = tool_input.get("file_path")
     return isinstance(path, str) and path.endswith(".md") and "handoffs" in path.replace("\\", "/").split("/")
+
+
+def subagent_transcript(data):
+    """The transcript of the Claude sub-agent a hook fired in, or None when it cannot be found.
+
+    Inside a sub-agent, `transcript_path` is the parent's. Only SubagentStop carries
+    `agent_transcript_path`; every other event is resolved through the layout Claude Code writes,
+    `<session>.jsonl` next to `<session>/subagents/agent-<agent_id>.jsonl`.
+    """
+    explicit = data.get("agent_transcript_path")
+    if explicit and os.path.isfile(explicit):
+        return explicit
+    parent = data.get("transcript_path")
+    agent_id = str(data.get("agent_id") or "")
+    if not parent or not agent_id:
+        return None
+    session = os.path.splitext(os.path.basename(parent))[0]
+    name = agent_id if agent_id.startswith("agent-") else f"agent-{agent_id}"
+    path = os.path.join(os.path.dirname(parent), session, "subagents", f"{name}.jsonl")
+    return path if os.path.isfile(path) else None
 
 
 def handoff_under_way_in_turn(transcript_path):
@@ -679,22 +708,40 @@ def reminder(tier, tokens, budget, priced):
     )
 
 
+SUBAGENT_HAND_BACK = (
+    "Finish only the atomic edit in flight - start nothing new. Commit what is committable, "
+    "then end your run with the hand-back report to the parent agent: what is done (with the "
+    "commit), the findings, and the exact remaining steps - files, commands, what 'done' means "
+    "- so a fresh sub-agent can carry them out. That report is your handoff; a sub-agent cannot "
+    "hand off to a new session."
+)
+
+
 def subagent_message(tier, tokens, budget, priced):
     k = f"~{tokens // 1000}k"
     pct = round(tokens / budget * 100)
     budget_k = f"{budget // 1000}k"
     next_step = (
-        "Finish only the immediate step, then send the parent agent detailed findings, "
-        "completed work, and remaining work, and stop."
+        SUBAGENT_HAND_BACK
         if tier >= 2
-        else "Keep working normally; at the next natural stopping point, send detailed progress "
-        "and any remaining work to the parent agent."
+        else "Wrap up: keep reads and tool output small, take no detours, and plan to hand back "
+        "to the parent agent before 85%. If the task will not fit, finish the current slice and "
+        "hand back the rest as exact remaining steps."
     )
     return (
         f"[context-warning hook] This warning applies to a sub-agent thread, not the "
         f"parent/main agent. This sub-agent is at {k} tokens - {pct}% of its {budget_k} "
         f"{limit_name(priced)}. {next_step} Do not create a user-facing session handoff or "
         f"claim that the main agent's context is full."
+    )
+
+
+def subagent_stop_message(tier, tokens, budget, priced):
+    return (
+        f"[context-warning hook] This sub-agent is at ~{tokens // 1000}k tokens - "
+        f"{round(tokens / budget * 100)}% of its {budget // 1000}k {limit_name(priced)}. "
+        f"Take on no further task work. {SUBAGENT_HAND_BACK} If your last message already is that "
+        f"report, repeat it unchanged and end."
     )
 
 
@@ -767,14 +814,17 @@ def main():
 
     profile = resolve_profile(profile, handoff_skill(root))
 
-    # PostToolBatch and Stop also fire inside an Agent-tool sub-agent, where the transcript
-    # read here belongs to the parent. Telling a sub-agent to hand off the user's session
-    # would be wrong, and its own token count is not available, so stay silent.
-    if data.get("agent_id") and event in ("PostToolBatch", "Stop"):
-        return
-
-    transcript_path = data.get("transcript_path")
-    session_id = data.get("session_id", "unknown")
+    claude_subagent = agent == "claude" and bool(data.get("agent_id"))
+    if claude_subagent:
+        if event not in ("PostToolBatch", "Stop", "SubagentStop"):
+            return
+        transcript_path = subagent_transcript(data)
+        session_id = f"{data.get('session_id', 'unknown')}-{data.get('agent_id')}"
+    else:
+        if event == "SubagentStop":
+            return
+        transcript_path = data.get("transcript_path")
+        session_id = data.get("session_id", "unknown")
     auto_mode = data.get("permission_mode") in profile["auto_modes"] and not auto_handoff_save_disabled(local_config)
     has_transcript = bool(transcript_path) and os.path.isfile(transcript_path)
 
@@ -783,7 +833,10 @@ def main():
         return
 
     if has_transcript:
-        tokens, model, reported_window, thread_id, is_subagent = CONTEXT_READERS[agent](transcript_path)
+        if claude_subagent:
+            tokens, model, reported_window, thread_id, is_subagent = claude_context_state(transcript_path, True)
+        else:
+            tokens, model, reported_window, thread_id, is_subagent = CONTEXT_READERS[agent](transcript_path)
     else:
         tokens, model, reported_window, thread_id, is_subagent = 0, None, None, None, False
     window = reported_window or profile["default_window"] or window_for(model)
@@ -814,7 +867,18 @@ def main():
             write_state(state_file, state)
         if saving:
             return
-    elif tier and (state["saving"] or (agent == "claude" and handoff_under_way_in_turn(transcript_path))):
+    elif tier and (
+        state["saving"] or (agent == "claude" and not is_subagent and handoff_under_way_in_turn(transcript_path))
+    ):
+        return
+
+    if claude_subagent and event in ("Stop", "SubagentStop"):
+        # A sub-agent's end of turn ends its run, so the critical tier blocks it once per tier
+        # and the reason becomes its next instruction: hand back, do not start new work.
+        if tier < 2 or tier <= state["stop_tier"]:
+            return
+        write_state(state_file, {**state, "stop_tier": tier})
+        print(json.dumps({"decision": "block", "reason": subagent_stop_message(tier, tokens, budget, priced)}))
         return
 
     if event == "Stop":

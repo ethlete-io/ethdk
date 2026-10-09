@@ -1,5 +1,5 @@
 import { execFileSync } from 'child_process';
-import { mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join, resolve } from 'path';
 import { randomUUID } from 'crypto';
@@ -133,7 +133,7 @@ describe('context-warning Codex limits', () => {
     });
 
     expect(output).toContain('This warning applies to a sub-agent thread, not the parent/main agent');
-    expect(output).toContain('send the parent agent detailed findings');
+    expect(output).toContain('hand-back report to the parent agent');
     expect(output).toContain(
       "Do not create a user-facing session handoff or claim that the main agent's context is full",
     );
@@ -262,9 +262,117 @@ describe('context-warning mid-run delivery', () => {
 
     expect(runClaudeHook({ event: 'PostToolBatch', sessionId, tokens: 155_000 })).toBeNull();
   });
+});
 
-  it('stays silent on a tool batch inside a sub-agent, whose tokens it cannot read', () => {
-    expect(runClaudeHook({ agentId: 'agent-1', event: 'PostToolBatch', tokens: 195_000 })).toBeNull();
+type RunSubagentHookOptions = {
+  agentId?: string;
+  event: string;
+  explicitPath?: boolean;
+  parentTokens?: number;
+  sessionId?: string;
+  tokens: number;
+};
+
+const sidechainUsage = (tokens: number) => ({
+  type: 'assistant',
+  isSidechain: true,
+  message: { model: 'claude-opus-5-5', usage: { input_tokens: 2, cache_read_input_tokens: tokens - 2 } },
+});
+
+/** Writes the layout Claude Code uses: `<session>.jsonl` and `<session>/subagents/agent-<id>.jsonl`. */
+const runSubagentHook = (options: RunSubagentHookOptions) => {
+  const {
+    agentId = 'a22eb5154231d1ae9',
+    event,
+    explicitPath = false,
+    parentTokens = 20_000,
+    sessionId = randomUUID(),
+    tokens,
+  } = options;
+  const root = mkdtempSync(join(tmpdir(), 'agent-rules-context-warning-'));
+  const transcriptPath = join(root, `${sessionId}.jsonl`);
+  const subagentDir = join(root, sessionId, 'subagents');
+  const agentTranscriptPath = join(subagentDir, `agent-${agentId}.jsonl`);
+
+  mkdirSync(subagentDir, { recursive: true });
+  writeFileSync(
+    transcriptPath,
+    `${JSON.stringify({ type: 'assistant', message: { model: 'claude-opus-5-5', usage: { input_tokens: parentTokens } } })}\n`,
+    'utf8',
+  );
+  writeFileSync(agentTranscriptPath, `${JSON.stringify(sidechainUsage(tokens))}\n`, 'utf8');
+
+  const output = execFileSync('python3', [hookPath, '--agent', 'claude'], {
+    encoding: 'utf8',
+    input: JSON.stringify({
+      cwd: root,
+      agent_id: agentId,
+      agent_type: 'general-purpose',
+      hook_event_name: event,
+      permission_mode: 'auto',
+      session_id: sessionId,
+      transcript_path: transcriptPath,
+      ...(explicitPath ? { agent_transcript_path: agentTranscriptPath } : {}),
+    }),
+  });
+
+  return output ? (JSON.parse(output) as ClaudeHookOutput & { decision?: string; reason?: string }) : null;
+};
+
+describe('context-warning inside a sub-agent', () => {
+  it("warns on a tool batch from the sub-agent's own transcript, not the parent's", () => {
+    const context =
+      runSubagentHook({ event: 'PostToolBatch', parentTokens: 20_000, tokens: 150_000 })?.hookSpecificOutput
+        .additionalContext ?? '';
+
+    expect(context).toContain('This sub-agent is at ~150k tokens - 75% of its 200k');
+    expect(context).toContain('plan to hand back to the parent agent before 85%');
+  });
+
+  it('stays silent while the sub-agent is small, however large the parent is', () => {
+    expect(runSubagentHook({ event: 'PostToolBatch', parentTokens: 190_000, tokens: 40_000 })).toBeNull();
+  });
+
+  it('tells the sub-agent at the critical tier to commit and hand back its remaining steps', () => {
+    const context =
+      runSubagentHook({ event: 'PostToolBatch', tokens: 175_000 })?.hookSpecificOutput.additionalContext ?? '';
+
+    expect(context).toContain('Finish only the atomic edit in flight');
+    expect(context).toContain('Commit what is committable');
+    expect(context).toContain('exact remaining steps');
+    expect(context).not.toContain('/handoff');
+  });
+
+  it('warns once per tier per sub-agent', () => {
+    const sessionId = randomUUID();
+
+    runSubagentHook({ event: 'PostToolBatch', sessionId, tokens: 150_000 });
+
+    expect(runSubagentHook({ event: 'PostToolBatch', sessionId, tokens: 155_000 })).toBeNull();
+  });
+
+  it('blocks the end of a sub-agent run over the critical tier with the hand-back instruction', () => {
+    const output = runSubagentHook({ event: 'SubagentStop', explicitPath: true, tokens: 175_000 });
+
+    expect(output?.decision).toBe('block');
+    expect(output?.reason).toContain('Take on no further task work');
+    expect(output?.reason).toContain('exact remaining steps');
+  });
+
+  it('blocks the end of a sub-agent run once per tier, so the run can still end', () => {
+    const sessionId = randomUUID();
+
+    runSubagentHook({ event: 'SubagentStop', sessionId, tokens: 175_000 });
+
+    expect(runSubagentHook({ event: 'SubagentStop', sessionId, tokens: 176_000 })).toBeNull();
+  });
+
+  it('lets a sub-agent run end below the critical tier', () => {
+    expect(runSubagentHook({ event: 'SubagentStop', tokens: 150_000 })).toBeNull();
+  });
+
+  it('ignores SubagentStop in the main thread', () => {
+    expect(runClaudeHook({ event: 'SubagentStop', tokens: 195_000 })).toBeNull();
   });
 });
 

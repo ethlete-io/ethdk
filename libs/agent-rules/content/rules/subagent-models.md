@@ -23,6 +23,12 @@ means, and say "keep it brief" for a lookup. Two calls need no `model` of their 
 agent type carries the model and reasoning effort its own definition sets, and a fork always
 inherits the parent's model.
 
+A subagent has the same context budget as the session, measured on its own transcript, and the
+context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
+slice of work, the files it needs named, and "keep your context small - no whole big files".
+Work that will not fit goes to several subagents in sequence, a fresh one per slice; a subagent
+that hands back early names its remaining steps, which become the next one's prompt.
+
 A subagent does not have to be a Claude one. Delegate to a Codex agent where another model
 family would answer better - a second opinion, a review of your own diff, a bug hunt your own
 reading failed - and whenever the Claude usage limit is close, because a Codex run does not draw

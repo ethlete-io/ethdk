@@ -52,7 +52,8 @@ sonnet did not finish.
 expensive of the four, so choosing it asks the user first.
 
 Effort follows the prompt, not a parameter: scope the prompt to one question, name what "done" is, and say \
-"keep it brief" for a lookup. An agent type defined under `.claude/agents/` carries its own model and reasoning \
+"keep it brief" for a lookup. A subagent has the session's context budget on its own transcript and hands back \
+at the critical tier, so size the prompt to one slice that fits; more work means a fresh subagent per slice. An agent type defined under `.claude/agents/` carries its own model and reasoning \
 effort, so a call that names one needs no `model` of its own."""
 
 FABLE_REASON = """This subagent would run on fable, the most expensive model. Approve it where the task is \

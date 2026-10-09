@@ -34,6 +34,7 @@ export const KNOWN_HOOKS: Record<string, HookDefinition> = {
       // reaches a long autonomous run before the user sends a message.
       { event: 'PostToolBatch', agents: ['claude'] },
       { event: 'Stop', agents: ['claude'] },
+      { event: 'SubagentStop', agents: ['claude'] },
     ],
     file: 'context-warning.py',
     timeout: 10,
