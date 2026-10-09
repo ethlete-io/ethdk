@@ -1,5 +1,6 @@
 import { Appointment } from '@ethlete/components';
 import {
+  AgentApproval,
   BehindStretch,
   Confidence,
   ReviewedRow,
@@ -13,6 +14,17 @@ import {
 
 /** What a band with no issue is called, on the timeline and in the label of a boundary beside it. */
 export const UNNAMED_LABEL = 'Not yet named';
+
+export const WAITING_LABEL = 'waits for your approval';
+
+/** The issue key a band's waiting auto mode apply names, if one waits. */
+export const waitingKeyOf = (items: readonly Pick<AgentApproval, 'request'>[]) => {
+  for (const { request } of items) {
+    if (request.op === 'autoMode.apply') return request.issueKey;
+  }
+
+  return undefined;
+};
 
 /**
  * What a band with no issue is called when nobody was at the machine for it. It is a different answer
@@ -42,11 +54,17 @@ export const NOT_LOGGED_LABEL = 'Not logged';
  * ticket. `standInName` is absent when the rule points at a stand-in the user deleted, and the band
  * then reads as unnamed again, exactly as the ladder now reads it.
  */
-export const unnamedLabelOf = (options: { row: ReviewedRow; standInName?: string; excludedReason?: string }) => {
+export const unnamedLabelOf = (options: {
+  row: ReviewedRow;
+  standInName?: string;
+  excludedReason?: string;
+  waitingKey?: string;
+}) => {
   const { row } = options;
 
   if (row.excluded) return options.excludedReason ? `${EXCLUDED_LABEL} · ${options.excludedReason}` : EXCLUDED_LABEL;
   if (row.state === 'rejected') return NOT_LOGGED_LABEL;
+  if (options.waitingKey && !row.unattended) return `${options.waitingKey} · ${WAITING_LABEL}`;
   if (row.standInId && options.standInName) return options.standInName;
   if (!row.unattended) return UNNAMED_LABEL;
 
@@ -91,6 +109,7 @@ export type RowEntry = {
   /** What the row's stand-in is called, so the band reads it without a second lookup per redraw. */
   standInName?: string;
   excludedReason?: string;
+  waitingKey?: string;
   agentUsage?: TokenUsage;
   /** What the parallel sessions on this row's ticket book together, when the row is one of them. */
   sharedMs?: number;
@@ -144,6 +163,7 @@ export const appointmentOf = (options: {
   to?: Date;
   standInName?: string;
   excludedReason?: string;
+  waitingKey?: string;
   agentUsage?: TokenUsage;
   sharedMs?: number;
 }): Appointment<TimelineEntry> => ({
@@ -161,6 +181,7 @@ export const appointmentOf = (options: {
     willSync: syncsInState(options.row.state),
     standInName: options.standInName,
     excludedReason: options.excludedReason,
+    waitingKey: options.waitingKey,
     agentUsage: options.agentUsage,
     sharedMs: options.sharedMs,
   },
@@ -200,6 +221,7 @@ export const appointmentLabel = (appointment: Appointment) => {
       row: entry.row,
       standInName: entry.standInName,
       excludedReason: entry.excludedReason,
+      waitingKey: entry.waitingKey,
     });
   const alone =
     entry.row.issueKey && entry.row.unattended

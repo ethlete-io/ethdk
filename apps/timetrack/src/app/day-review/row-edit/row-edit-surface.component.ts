@@ -9,6 +9,7 @@ import {
 } from '@ethlete/components';
 import { callExclusionReasonOf, isStandInRow } from '@ethlete/timetrack';
 import { injectAutoMode } from '../auto-mode';
+import { injectBandApprovals } from '../band-approvals';
 import { injectDayReview } from '../day-review';
 import { EditApprovalComponent } from './edit-approval.component';
 import { EditCallTranscriptComponent } from './edit-call-transcript.component';
@@ -25,7 +26,7 @@ import { EditUnattendedComponent } from './edit-unattended.component';
 import { EditWhenComponent } from './edit-when.component';
 import { RowAction, rowActionsFor } from './row-actions';
 import { injectRowTicket } from './row-ticket';
-import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
+import { TimelineEntry, rowEntryOf, unnamedLabelOf, waitingKeyOf } from './row-appointment';
 
 /**
  * A row of the day on the scheduler's edit surface: the issue, the rounded duration, whether a sync
@@ -112,6 +113,7 @@ import { TimelineEntry, rowEntryOf, unnamedLabelOf } from './row-appointment';
 export class RowEditSurfaceComponent {
   private store = injectDayReview();
   private autoMode = injectAutoMode();
+  private approvals = injectBandApprovals();
   private ticket = injectRowTicket();
   private overlayRef = inject<OverlayRef>(OVERLAY_REF, { optional: true });
 
@@ -143,7 +145,12 @@ export class RowEditSurfaceComponent {
       : undefined;
     const call = this.store.excludedCallOf(row);
 
-    return unnamedLabelOf({ row, standInName, excludedReason: call && callExclusionReasonOf(call) });
+    return unnamedLabelOf({
+      row,
+      standInName,
+      excludedReason: call && callExclusionReasonOf(call),
+      waitingKey: waitingKeyOf(this.approvals.forRow(row.id)),
+    });
   });
 
   protected title = computed(() => this.surface.currentAppointment().title || this.header());

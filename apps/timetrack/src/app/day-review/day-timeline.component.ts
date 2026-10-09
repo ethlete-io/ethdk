@@ -64,6 +64,7 @@ import {
   rowEntryOf,
   unbookedLabel,
   unnamedLabelOf,
+  waitingKeyOf,
   sharedMsByRow,
 } from './row-edit/row-appointment';
 import { rowActionsFor } from './row-edit/row-actions';
@@ -1011,6 +1012,7 @@ export class DayTimelineComponent {
           to: drag?.boundary.before.id === row.id ? drag.at : row.to,
           standInName: this.standInNameOf(row),
           excludedReason: this.excludedReasonOf(row),
+          waitingKey: waitingKeyOf(this.bandApprovals.forRow(row.id)),
           agentUsage: agentUsage.get(row.id),
           sharedMs: sharedMs.get(row.id),
         });
@@ -1539,7 +1541,12 @@ export class DayTimelineComponent {
   protected labelOf(boundary: TimelineBoundary) {
     const named = (row: ReviewedRow) =>
       row.issueKey ??
-      unnamedLabelOf({ row, standInName: this.standInNameOf(row), excludedReason: this.excludedReasonOf(row) });
+      unnamedLabelOf({
+        row,
+        standInName: this.standInNameOf(row),
+        excludedReason: this.excludedReasonOf(row),
+        waitingKey: waitingKeyOf(this.bandApprovals.forRow(row.id)),
+      });
 
     return `Boundary between ${named(boundary.before)} and ${named(boundary.after)}`;
   }

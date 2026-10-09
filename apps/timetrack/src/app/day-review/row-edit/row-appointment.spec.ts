@@ -1,5 +1,5 @@
 import { ReviewedRow } from '@ethlete/timetrack';
-import { EXCLUDED_THEME, appointmentLabel, appointmentOf, sharedMsByRow } from './row-appointment';
+import { EXCLUDED_THEME, appointmentLabel, appointmentOf, sharedMsByRow, waitingKeyOf } from './row-appointment';
 
 const rowOf = (overrides: Partial<ReviewedRow>) =>
   ({
@@ -97,5 +97,23 @@ describe('a band nobody was at here that a paired machine saw a person for', () 
     const row = rowOf({ unattended: true, workedOn: 'MacBook', issueKey: 'ABC-1' });
 
     expect(appointmentLabel(appointmentOf({ row }))).toBe('ABC-1 · 1h 0m · worked on MacBook');
+  });
+});
+
+describe('a band whose auto mode answer waits for approval', () => {
+  const apply = { request: { op: 'autoMode.apply', issueKey: 'FIP-3072' } } as Parameters<
+    typeof waitingKeyOf
+  >[0][number];
+
+  it('reads the key and that it waits, not that it is unnamed', () => {
+    const entry = appointmentOf({ row: rowOf({}), waitingKey: waitingKeyOf([apply]) });
+
+    expect(appointmentLabel(entry)).toBe('FIP-3072 · waits for your approval · 1h 0m');
+    expect(appointmentLabel(appointmentOf({ row: rowOf({}) }))).toBe('Not yet named · 1h 0m');
+    expect(entry.colorToken).toBe('warning');
+  });
+
+  it('finds no key in an approval that names none', () => {
+    expect(waitingKeyOf([{ request: { op: 'standIn.resolve', issueKey: 'ABC-1' } } as typeof apply])).toBeUndefined();
   });
 });
