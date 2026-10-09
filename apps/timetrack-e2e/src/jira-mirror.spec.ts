@@ -2,13 +2,23 @@ import { Page } from '@playwright/test';
 import {
   E2E_ISSUE_ID,
   E2E_ISSUE_KEY,
+  E2E_KEYLESS_BRANCH,
   E2E_REPO,
   FakeBackend,
   TIMETRACK_E2E_BACKEND_KEY,
   defaultSettings,
 } from '@ethlete/timetrack/testing';
-import { TimetrackSettings } from '@ethlete/timetrack';
-import { E2E_NOW, editSurface, expect, openAutoModeReadout, openStandIns, seedWorld, test } from './support';
+import { CollectedEvent, TimetrackSettings } from '@ethlete/timetrack';
+import {
+  E2E_DAY_KEY,
+  E2E_NOW,
+  editSurface,
+  expect,
+  openAutoModeReadout,
+  openStandIns,
+  seedWorld,
+  test,
+} from './support';
 
 const OLD_KEY = 'ABC-4242';
 
@@ -133,5 +143,46 @@ test.describe('auto mode reading candidates from the Jira mirror', () => {
 
     await expect(await refusalOf(page)).toContainText('Jira no longer holds ABC-4242');
     await expect(await standInState(page)).toHaveAttribute('data-state', 'open');
+  });
+});
+
+test.describe('auto mode on a stand-in whose branch names one mirror issue while the work still runs', () => {
+  const at = (clock: string) => new Date(`${E2E_DAY_KEY}T${clock}:00.000Z`);
+  const events: CollectedEvent[] = [
+    { at: at('09:00'), source: 'git', kind: 'git-checkout', repoPath: E2E_REPO, branch: E2E_KEYLESS_BRANCH },
+    {
+      at: at('09:01'),
+      source: 'window',
+      kind: 'window-focus',
+      appId: 'com.microsoft.VSCode',
+      title: 'invoice.ts - fut-frontend - Visual Studio Code',
+    },
+    {
+      at: at('09:40'),
+      source: 'git',
+      kind: 'git-commit',
+      repoPath: E2E_REPO,
+      branch: E2E_KEYLESS_BRANCH,
+      sha: 'a1b2c3d',
+      subject: 'Try pdfkit for the invoice export',
+    },
+    { at: at('09:45'), source: 'idle', kind: 'idle-start' },
+  ];
+
+  test.beforeEach(async ({ page }) => {
+    await seedWorld(page, {
+      now: at('09:55'),
+      collectionPausedAt: at('09:50'),
+      events,
+      settings: settings(),
+      jira: JIRA,
+    });
+    await page.goto('/day');
+  });
+
+  test('asks about it before it settles', async ({ page }) => {
+    await expect(page.locator('[data-band-approval][data-op="autoMode.apply"]')).toContainText(
+      `Auto · Name ${OLD_KEY}`,
+    );
   });
 });

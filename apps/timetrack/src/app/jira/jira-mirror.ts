@@ -128,6 +128,8 @@ const JIRA_MIRROR_DEF = /* @__PURE__ */ defineRootProvider(() => {
     .subscribe();
 
   return {
+    /** The issues of the mirror held for a project, `undefined` while none is. Reactive. */
+    issuesOf: (projectKey: string) => mirrors().get(projectKey.trim().toUpperCase())?.issues,
     /** The mirror of one project, read first where none is held yet. `null` when Jira cannot be read. */
     mirror$: (projectKey: string): Observable<JiraMirror | null> =>
       loaded$.pipe(

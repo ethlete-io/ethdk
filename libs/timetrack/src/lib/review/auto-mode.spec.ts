@@ -4,6 +4,7 @@ import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { StandIn, openStandIn } from '../model/stand-in';
 import { DayRows } from '../rows/build-rows';
+import { JiraMirrorIssue } from '../jira/mirror';
 import { WorkGroup } from '../rows/merge';
 import { unnamedRowId } from '../rows/propose';
 import { reopenStandIn, resolveStandIn } from '../settings/stand-in';
@@ -22,6 +23,7 @@ import {
   autoModeKeyInEvidence,
   autoModeReadout,
   autoModeAsks,
+  mirrorMatchedStandInIds,
   autoModeSubjectRequest,
   autoModeTargetOf,
   autoModeCreateRequest,
@@ -316,7 +318,10 @@ describe('autoModeAsks while a stand-in still runs', () => {
     at: at('09:10'),
     day: TODAY,
   });
-  const asksAt = (time: string, options: { answers?: AutoModeAnswer[]; approvals?: AgentApproval[] } = {}) =>
+  const asksAt = (
+    time: string,
+    options: { answers?: AutoModeAnswer[]; approvals?: AgentApproval[]; matched?: ReadonlySet<string> } = {},
+  ) =>
     autoModeAsks({
       enabled: true,
       day: TODAY,
@@ -328,11 +333,20 @@ describe('autoModeAsks while a stand-in still runs', () => {
       answers: options.answers ?? [],
       evidence: { unattributed: DAY.unattributed, config: CONFIG, maskedNames: [] },
       approvals: options.approvals ?? queue,
+      mirrorMatchedStandInIds: options.matched,
     });
 
   it('asks nothing about a stand-in until its rows have been quiet for the settle window', () => {
     expect(asksAt('10:09')).toEqual([]);
     expect(asksAt('10:10')).toEqual([SUBJECT]);
+  });
+
+  it('asks a stand-in whose branch names one mirror issue while it runs, and asks it again only once it settles', () => {
+    const matched = new Set([standIn.id]);
+
+    expect(asksAt('09:20', { matched })).toEqual([SUBJECT]);
+    expect(asksAt('09:50', { matched, answers: [draftAskedAt('09:20')] })).toEqual([]);
+    expect(asksAt('10:10', { matched, answers: [draftAskedAt('09:20')] })).toEqual([SUBJECT]);
   });
 
   it('asks a stand-in again once it settles when its answer was asked while it ran, and the queued draft expires', () => {
@@ -1543,5 +1557,46 @@ describe('autoModeSubjectRequest for a stand-in with several bands', () => {
 
   it('leaves out the description the app drafted from the first band', () => {
     expect(request?.standIn).toEqual({ name: 'Bracket challenge', days: 1 });
+  });
+});
+
+describe('mirrorMatchedStandInIds', () => {
+  const CONFIG = resolveGitFlowConfig({});
+  const mirrorIssue = (key: string, summary: string): JiraMirrorIssue => ({
+    key,
+    id: key,
+    summary,
+    issueType: 'Story',
+    done: false,
+    updatedMs: 1,
+  });
+  const standIn = (id: string, openedForBranch: string): StandIn => ({
+    ...openStandIn({ name: 'Reward frontend', day: TODAY, now: at('07:00') }),
+    id,
+    projectKey: 'FIFAGG',
+    openedForBranch,
+  });
+  const issues = [
+    mirrorIssue('FIFAGG-12704', 'Reward-System im Frontend umsetzen'),
+    mirrorIssue('FIFAGG-12705', 'Reward-System im Backend umsetzen'),
+    mirrorIssue('FIFAGG-12706', 'Frontend Login überarbeiten'),
+  ];
+  const matchedOf = (held: readonly JiraMirrorIssue[] | undefined) =>
+    mirrorMatchedStandInIds({
+      standIns: [
+        standIn('s-1', 'feat/reward-frontend'),
+        standIn('s-2', 'feat/reward'),
+        standIn('s-3', 'feat/frontend-login-misc'),
+      ],
+      issuesOf: (projectKey) => (projectKey === 'FIFAGG' ? held : undefined),
+      config: CONFIG,
+    });
+
+  it('names the stand-ins whose branch subject every word of exactly one open issue carries', () => {
+    expect([...matchedOf(issues)]).toEqual(['s-1']);
+  });
+
+  it('names none while no mirror is held for the project', () => {
+    expect([...matchedOf(undefined)]).toEqual([]);
   });
 });

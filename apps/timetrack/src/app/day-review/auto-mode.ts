@@ -30,6 +30,7 @@ import {
   autoModeApprovalTarget,
   autoModeAskRefusal,
   autoModeAsks,
+  mirrorMatchedStandInIds,
   autoModeCreateRequest,
   autoModeContextLabel,
   autoModeCreatedKeys,
@@ -357,6 +358,16 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       : undefined;
   });
 
+  const mirrorMatched = computed(() => {
+    const current = settings.settings();
+
+    return mirrorMatchedStandInIds({
+      standIns: current.standIns,
+      issuesOf: jiraMirror.issuesOf,
+      config: gitFlowConfigFor(current),
+    });
+  });
+
   const askedNow = (day: string) => {
     const answers = dayReview.autoAnswers();
 
@@ -384,6 +395,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         workFacts: screenWorkFacts(),
       },
       transcribedCalls: transcribedCalls(),
+      mirrorMatchedStandInIds: mirrorMatched(),
       ...(approvals.isLoaded() ? { approvals: approvals.items() } : {}),
     });
   };
@@ -1299,6 +1311,7 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           },
           approvals: approvals.items(),
           transcribedCalls: transcribed,
+          mirrorMatchedStandInIds: mirrorMatched(),
         });
 
         for (const subject of subjects) {

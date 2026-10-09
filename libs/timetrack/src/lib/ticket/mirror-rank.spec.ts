@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { JiraMirrorIssue } from '../jira/mirror';
-import { rankMirrorCandidates, rankingTokensOf, ticketRequestText } from './mirror-rank';
+import { rankMirrorCandidates, rankingTokensOf, strongMirrorMatchOf, ticketRequestText } from './mirror-rank';
 
 const issue = (key: string, summary: string, extra: Partial<JiraMirrorIssue> = {}): JiraMirrorIssue => ({
   key,
@@ -112,5 +112,31 @@ describe('ticketRequestText', () => {
     });
 
     expect(text).toBe('feature/rewards Claim flow Shop Layout Spec title bracket');
+  });
+});
+
+describe('strongMirrorMatchOf', () => {
+  const issues = [
+    ...busy,
+    issue('FIFAGG-12704', 'Reward-System im Frontend umsetzen'),
+    issue('FIFAGG-12705', 'Reward-System im Backend umsetzen'),
+    issue('FIFAGG-12706', 'Reward frontend polish', { done: true }),
+  ];
+  const matchOf = (text: string) => strongMirrorMatchOf({ issues, projectKey: 'FIFAGG', text });
+
+  it('names the one open issue that carries every word of the text', () => {
+    expect(matchOf('reward-frontend')).toBe('FIFAGG-12704');
+  });
+
+  it('names nothing when several issues carry every word', () => {
+    expect(matchOf('reward-system')).toBeUndefined();
+  });
+
+  it('names nothing for a text of one word', () => {
+    expect(matchOf('frontend')).toBeUndefined();
+  });
+
+  it('names nothing when no issue carries every word', () => {
+    expect(matchOf('reward-mobile')).toBeUndefined();
   });
 });

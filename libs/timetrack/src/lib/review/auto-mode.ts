@@ -1,8 +1,10 @@
 import { AUTO_MODE_CLIENT, ActionClasses, actionClassOf } from '../agent-api/action-classes';
 import { AgentApproval, AgentApprovalRequest, AutoModeApplyRequest } from '../agent-api/approval-queue';
 import { AgentApiRequest } from '../agent-api/model';
-import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
+import { GitFlowConfig, parseBranch } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
+import { JiraMirrorIssue } from '../jira/mirror';
+import { strongMirrorMatchOf } from '../ticket/mirror-rank';
 import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
 import { StandInBand, contextHasTicketText, draftTicket, standInHasTicketText } from '../ticket/draft';
 import { WorkFacts } from '../ticket/work-facts';
@@ -611,6 +613,8 @@ export const autoModeAsks = (options: {
   approvals?: readonly ApprovalView[];
   /** The call rows an excerpt of transcript exists for now, where auto mode may send it. */
   transcribedCalls?: ReadonlySet<string>;
+  /** The stand-ins {@link mirrorMatchedStandInIds} names, asked a first time before their work settles. */
+  mirrorMatchedStandInIds?: ReadonlySet<string>;
 }): AutoModeSubject[] => {
   if (!options.enabled || options.day !== options.today) return [];
 
@@ -673,16 +677,40 @@ export const autoModeAsks = (options: {
   };
 
   return [...contexts, ...standIns, ...calls].filter((subject) => {
-    if (settledAt(subject) > options.nowMs) return false;
-    if (leavesUnnamed(evidence?.workFacts?.get(autoModeSubjectKey(subject)))) return false;
-
     const answer = answers.get(autoModeSubjectKey(subject));
+    const askedEarly =
+      !answer && subject.kind === 'stand-in' && !!options.mirrorMatchedStandInIds?.has(subject.standInId);
+
+    if (settledAt(subject) > options.nowMs && !askedEarly) return false;
+    if (leavesUnnamed(evidence?.workFacts?.get(autoModeSubjectKey(subject)))) return false;
 
     if (!answer || outdated(subject, answer)) return true;
 
     return subject.kind === 'call' && !!options.transcribedCalls?.has(subject.rowId) && !autoModeSentTranscript(answer);
   });
 };
+
+/**
+ * The open stand-ins whose branch subject names exactly one open issue in their project's mirror, by
+ * {@link strongMirrorMatchOf}. `issuesOf` reads the mirror held for a project, `undefined` while none is.
+ */
+export const mirrorMatchedStandInIds = (options: {
+  standIns: readonly Pick<StandIn, 'id' | 'state' | 'projectKey' | 'openedForBranch'>[];
+  issuesOf: (projectKey: string) => readonly JiraMirrorIssue[] | undefined;
+  config: GitFlowConfig;
+}): ReadonlySet<string> =>
+  new Set(
+    options.standIns.flatMap((standIn) => {
+      const { projectKey, openedForBranch } = standIn;
+
+      if (standIn.state !== 'open' || !projectKey || !openedForBranch) return [];
+
+      const issues = options.issuesOf(projectKey.trim().toUpperCase());
+      const text = parseBranch({ branch: openedForBranch, config: options.config }).subject ?? '';
+
+      return issues && strongMirrorMatchOf({ issues, projectKey, text }) ? [standIn.id] : [];
+    }),
+  );
 
 /** Whether an answer holds an ask that sent an excerpt of the call's transcript, or already was the re-ask for one. */
 export const autoModeSentTranscript = (answer: AutoModeAnswer) =>

@@ -76,6 +76,38 @@ export const ticketRequestText = (request: Pick<TicketWritingRequest, 'branch' |
 const documentOf = (issue: JiraMirrorIssue) =>
   rankingTokensOf([issue.summary, issue.parentSummary ?? '', issue.subject ?? ''].join(' '));
 
+const rankingPoolOf = (options: { issues: readonly JiraMirrorIssue[]; projectKey: string }) => {
+  const projectKey = options.projectKey.trim().toUpperCase();
+
+  return options.issues.filter((issue) => !issue.done && !issue.isSubtask && projectKeyOf(issue.key) === projectKey);
+};
+
+/** The fewest word stems a text needs before {@link strongMirrorMatchOf} names an issue for it. */
+export const STRONG_MATCH_MIN_TOKENS = 2;
+
+/**
+ * The key of the one issue {@link rankMirrorCandidates} could offer for `text` whose summary, parent
+ * summary and subject carry every word stem of `text`. `undefined` when `text` holds fewer than
+ * {@link STRONG_MATCH_MIN_TOKENS} stems, or when no issue or several carry them all.
+ */
+export const strongMirrorMatchOf = (options: {
+  issues: readonly JiraMirrorIssue[];
+  projectKey: string;
+  text: string;
+}): string | undefined => {
+  const query = [...new Set(rankingTokensOf(options.text))];
+
+  if (query.length < STRONG_MATCH_MIN_TOKENS) return undefined;
+
+  const matches = rankingPoolOf(options).filter((issue) => {
+    const tokens = new Set(documentOf(issue));
+
+    return query.every((term) => tokens.has(term));
+  });
+
+  return matches.length === 1 ? matches[0]?.key : undefined;
+};
+
 /**
  * The open issues of `projectKey` in the mirror a ticket call offers, best first: BM25 over summary,
  * parent summary and subject against `text`, a child of `epicKeys` boosted and marked `inEpic`, an issue
@@ -89,11 +121,8 @@ export const rankMirrorCandidates = (options: {
   epicKeys?: readonly string[];
   limit?: number;
 }): TicketCandidate[] => {
-  const projectKey = options.projectKey.trim().toUpperCase();
   const epicKeys = new Set((options.epicKeys ?? []).map((key) => key.trim().toUpperCase()));
-  const pool = options.issues.filter(
-    (issue) => !issue.done && !issue.isSubtask && projectKeyOf(issue.key) === projectKey,
-  );
+  const pool = rankingPoolOf(options);
   const documents = pool.map(documentOf);
   const averageLength = documents.reduce((sum, tokens) => sum + tokens.length, 0) / Math.max(1, documents.length);
   const frequency = new Map<string, number>();
