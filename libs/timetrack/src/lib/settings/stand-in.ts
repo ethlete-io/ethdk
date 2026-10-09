@@ -11,8 +11,8 @@ import {
   standInParentSourceOf,
   standInResolutionSourceOf,
 } from '../model/stand-in';
-import { humanized } from '../ticket/draft';
-import { withReplacedAttributionRule } from './attribution';
+import { humanized, readableStandInDraft } from '../ticket/draft';
+import { gitFlowConfigFor, withReplacedAttributionRule } from './attribution';
 import { TimetrackSettings } from './model';
 
 /**
@@ -192,6 +192,26 @@ export const withoutOrphanedStandIns = (settings: TimetrackSettings): TimetrackS
   );
 
   return kept.length === settings.standIns.length ? settings : { ...settings, standIns: kept };
+};
+
+/**
+ * Renames each placeholder the app named after a note that does not read as words, such as `(click)=`,
+ * and drops that note from its description. See {@link readableStandInDraft}.
+ */
+export const withReadableStandInNames = (settings: TimetrackSettings): TimetrackSettings => {
+  const config = gitFlowConfigFor(settings);
+  let changed = false;
+  const standIns = settings.standIns.map((standIn) => {
+    const readable = readableStandInDraft({ standIn, config });
+
+    if (!readable) return standIn;
+
+    changed = true;
+
+    return { ...standIn, ...readable };
+  });
+
+  return changed ? { ...settings, standIns } : settings;
 };
 
 /** One of the pieces of work a record that named several is cut into. */

@@ -28,7 +28,7 @@ import {
   clampStandInOverdueMs,
   clampStandInOverdueWorkdays,
 } from './model';
-import { withoutOrphanedStandIns } from './stand-in';
+import { withReadableStandInNames, withoutOrphanedStandIns } from './stand-in';
 import { migrateTranscribeLanguage } from './transcription';
 
 const asRecord = (value: unknown) =>
@@ -481,14 +481,15 @@ const asPriceTable = (value: unknown): PriceTable => {
 };
 
 /**
- * Reads the stored document back, and sweeps the placeholders it holds that nothing names any more.
+ * Reads the stored document back, sweeps the placeholders it holds that nothing names any more, and
+ * renames the ones the app named after a note that does not read as words.
  *
  * The sweep is here rather than at a call site because a dead placeholder is a property of the
  * document, and every screen that reads the document would otherwise have to know about it.
  */
 
 export const parseTimetrackSettings = (raw: unknown): TimetrackSettings =>
-  withoutOrphanedStandIns(readTimetrackSettings(raw));
+  withReadableStandInNames(withoutOrphanedStandIns(readTimetrackSettings(raw)));
 
 /**
  * Falls back to the default for every field it cannot make sense of. Nothing here throws: a document

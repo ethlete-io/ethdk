@@ -4,7 +4,16 @@ import { WorkGroup } from '../rows/merge';
 import { UnnamedContext } from '../model/attribution';
 import { ActivityBlock, contextKey } from '../model/block';
 import { Evidence } from '../model/evidence';
-import { contextHasTicketText, draftParentDescription, draftTicket, humanized, standInNameFor } from './draft';
+import {
+  contextHasTicketText,
+  draftParentDescription,
+  draftRepoTicket,
+  draftTicket,
+  humanized,
+  readableStandInDraft,
+  standInHasTicketText,
+  standInNameFor,
+} from './draft';
 
 const REPO = '/Users/tom/dev/ea-frontend';
 const CONFIG = resolveGitFlowConfig({ keyPrefixes: ['FIP'] });
@@ -253,5 +262,71 @@ describe('standInNameFor', () => {
 
   it('names the application for work no checkout holds', () => {
     expect(standInNameFor({ context: { appId: 'com.slack.Slack' }, config: CONFIG })).toBe('com.slack.Slack');
+  });
+});
+
+describe('stand-ins drafted from a note that does not read as words', () => {
+  const onMain = { repoPath: REPO, branch: 'main' };
+  const drafted = (notes: string[]) =>
+    draftRepoTicket({
+      repoPath: REPO,
+      contexts: [unnamed(onMain)],
+      unattributed: [
+        group([
+          block(
+            onMain,
+            notes.map((note) => evidence('agent-session', note, note)),
+          ),
+        ]),
+      ],
+      config: CONFIG,
+    });
+  const stored = {
+    id: 'stand-in-1',
+    name: '(click)=',
+    description: 'What the work says it was:\n\n- (click)=\n\nCovers main.\n\nRecorded from 7m of work in ea-frontend.',
+    author: 'app' as const,
+    openedFor: REPO,
+    openedForBranch: 'main',
+  };
+
+  it('renames a stored one after where the work happened, and quotes the note no more', () => {
+    expect(readableStandInDraft({ standIn: stored, config: CONFIG })).toEqual({
+      name: 'ea-frontend',
+      description:
+        'Nothing in the day names this work beyond where it happened.\n\nCovers main.\n\nRecorded from 7m of work in ea-frontend.',
+    });
+  });
+
+  it('renames one after the first note that reads as words', () => {
+    const description = 'What the work says it was:\n\n- (click)=\n- Bind the click event in the hub\n\nCovers main.';
+
+    expect(readableStandInDraft({ standIn: { ...stored, description }, config: CONFIG })).toEqual({
+      name: 'Bind the click event in the hub',
+      description: 'What the work says it was:\n\n- Bind the click event in the hub\n\nCovers main.',
+    });
+  });
+
+  it('keeps a name the user gave, one the user renamed, and one drafted from where the work happened', () => {
+    expect(readableStandInDraft({ standIn: { ...stored, author: 'user' }, config: CONFIG })).toBeNull();
+    expect(readableStandInDraft({ standIn: { ...stored, name: 'Lantern' }, config: CONFIG })).toBeNull();
+    expect(readableStandInDraft({ standIn: { ...stored, name: drafted([]).summary }, config: CONFIG })).toBeNull();
+  });
+
+  it('says nothing a ticket could be written from, until a note or the user says more', () => {
+    const band = (note: string) => ({
+      standInId: stored.id,
+      observedMs: 60_000,
+      evidence: [evidence('agent-session', note, note)],
+    });
+    const hasText = (standIn: Parameters<typeof standInHasTicketText>[0]['standIn'], note = '(click)=') =>
+      standInHasTicketText({ standIn, bands: [band(note)], config: CONFIG });
+
+    expect(hasText({ ...stored, name: 'ea-frontend' })).toBe(false);
+    expect(hasText(stored)).toBe(false);
+    expect(hasText({ ...stored, name: 'ea-frontend' }, 'Bind the click event in the hub')).toBe(true);
+    expect(hasText({ ...stored, name: 'Bind the click event in the hub' })).toBe(true);
+    expect(hasText({ ...stored, openedForBranch: 'feat/user-management' })).toBe(true);
+    expect(hasText({ ...stored, author: 'user' })).toBe(true);
   });
 });

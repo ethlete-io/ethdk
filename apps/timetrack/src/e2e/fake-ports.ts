@@ -127,7 +127,7 @@ export const createFakePorts = (): HostPorts => {
 
   const agentRequests$ = new Subject<AgentRequestEvent>();
   const agentReplies = new Map<number, (answer: AgentApiAnswer) => void>();
-  let approvalQueue: string | null = null;
+  let approvalQueue: string | null = world.approvals.length ? JSON.stringify(world.approvals) : null;
   const jiraMirrors = new Map<string, string>();
   let agentRequestCount = 0;
 

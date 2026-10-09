@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AttributionRule, matchAttributionRule, standInIdOf } from '../model/attribution';
 import { StandIn, findStandIn } from '../model/stand-in';
 import { DEFAULT_TIMETRACK_SETTINGS } from './model';
+import { parseTimetrackSettings } from './parse';
 import {
   mergeStandIn,
   reopenStandIn,
@@ -905,5 +906,30 @@ describe('withStandInsHidden', () => {
     expect(withStandInsHidden({ settings: hidden, ids: ['stand-in-1'], day: '' }).standIns[0]).not.toHaveProperty(
       'hiddenOn',
     );
+  });
+});
+
+describe('reading back a stand-in the app named after a note that does not read as words', () => {
+  it('renames it after where the work happened, and keeps every other record as written', () => {
+    const clicked = standIn({
+      id: 'stand-in-2',
+      name: '(click)=',
+      description: 'What the work says it was:\n\n- (click)=\n\nCovers main.',
+      author: 'app',
+      openedFor: '/home/tom/dev/ea-frontend',
+      openedForBranch: 'main',
+    });
+    const settings = parseTimetrackSettings({
+      standIns: [standIn(), clicked],
+      attributionRules: [rule({ target: { kind: 'stand-in', standInId: 'stand-in-2' } })],
+    });
+
+    expect(settings.standIns.map(({ name, description }) => ({ name, description }))).toEqual([
+      { name: 'Competition Journey', description: undefined },
+      {
+        name: 'ea-frontend',
+        description: 'Nothing in the day names this work beyond where it happened.\n\nCovers main.',
+      },
+    ]);
   });
 });

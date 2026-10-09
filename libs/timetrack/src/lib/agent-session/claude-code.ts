@@ -672,8 +672,12 @@ export const parseClaudeCodeSessionLog: AgentSessionLogParser = (options) => {
 
   const carriedCustom = options.resume?.session?.titleIsCustom ? options.resume.title : undefined;
   const custom = titles.custom ?? carriedCustom;
+  const resumed = options.resume?.title;
   const title =
-    custom ?? titles.generated ?? options.resume?.title ?? fromPrompt(titles.firstPrompt, options.promptFallback);
+    custom ??
+    titles.generated ??
+    (resumed && isReadableSummary(resumed) ? resumed : undefined) ??
+    fromPrompt(titles.firstPrompt, options.promptFallback);
   const session: AgentLogSessionState = {
     ...(workedIn ? { workedIn } : {}),
     ...(custom !== undefined ? { titleIsCustom: true } : {}),

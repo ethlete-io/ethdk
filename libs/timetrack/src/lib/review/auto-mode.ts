@@ -4,7 +4,7 @@ import { AgentApiRequest } from '../agent-api/model';
 import { GitFlowConfig } from '@ethlete/agent-rules/git-flow';
 import { JiraIssue } from '../jira/issue';
 import { maskIssueKey, pseudonymMap } from '../reason/pseudonym';
-import { StandInBand, contextHasTicketText, draftTicket } from '../ticket/draft';
+import { StandInBand, contextHasTicketText, draftTicket, standInHasTicketText } from '../ticket/draft';
 import { UnnamedContext } from '../model/attribution';
 import { contextKey, dominantContext, streamKeyLabel } from '../model/block';
 import { RowFieldSources, mayAutoWrite, rowFieldSourceOf } from '../model/field-source';
@@ -200,6 +200,48 @@ export const withNamedContextItemsExpired = (
     return subject?.kind === 'context' && !options.openContextIds.has(subject.contextId)
       ? { ...item, state: 'expired' }
       : item;
+  });
+
+type TextlessOptions = {
+  day: string;
+  contexts: readonly UnnamedContext[];
+  standIns: readonly AskStandIn[];
+  bands: readonly StandInBand[];
+  unattributed: readonly WorkGroup[];
+  config: GitFlowConfig;
+};
+
+const isTextless = (subject: AutoModeSubject | null, options: TextlessOptions) => {
+  if (subject?.kind === 'context') {
+    const context = options.contexts.find((entry) => entry.id === subject.contextId);
+
+    return !!context && !contextHasTicketText({ context, unattributed: options.unattributed, config: options.config });
+  }
+
+  if (subject?.kind === 'stand-in') {
+    const standIn = options.standIns.find((entry) => entry.id === subject.standInId);
+
+    return !!standIn && !standInHasTicketText({ standIn, bands: options.bands, config: options.config });
+  }
+
+  return false;
+};
+
+/**
+ * Expires each waiting auto mode create and apply of `day` whose context or stand-in no longer says
+ * anything a ticket could be written from, such as one asked about a note that does not read as words.
+ */
+export const withTextlessSubjectItemsExpired = (
+  queue: readonly AgentApproval[],
+  options: TextlessOptions,
+): AgentApproval[] =>
+  queue.map((item) => {
+    if (item.state !== 'queued' || item.client !== AUTO_MODE_CLIENT || item.day !== options.day) return item;
+    if (item.request.op !== 'jira.create' && item.request.op !== 'autoMode.apply') return item;
+
+    const subject = subjectOfTarget(item.target?.replace(/\|apply$/, ''), options.day);
+
+    return isTextless(subject, options) ? { ...item, state: 'expired' } : item;
   });
 
 /** The payload an ask about a subject sends. `null` for a context or stand-in the day no longer holds. */
@@ -518,7 +560,8 @@ export const autoModeAsks = (options: {
         standIn.state === 'open' &&
         standIn.days.includes(options.day) &&
         !keyedByHand.has(standIn.id) &&
-        mayAutoWrite(standInResolutionSourceOf(standIn)),
+        mayAutoWrite(standInResolutionSourceOf(standIn)) &&
+        (!evidence || standInHasTicketText({ standIn, bands: options.rows, config: evidence.config })),
     )
     .map((standIn): AutoModeSubject => ({ kind: 'stand-in', standInId: standIn.id }));
 

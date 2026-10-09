@@ -5,6 +5,7 @@ import { ActivityContext, contextKey } from '../model/block';
 import { formatDurationMs } from '../model/duration';
 import { isQuotableNote } from '../model/acknowledgement';
 import { Evidence, QUOTABLE_EVIDENCE_KINDS } from '../model/evidence';
+import { StandIn } from '../model/stand-in';
 
 /** Jira refuses a longer summary, and a summary that long is a description anyway. */
 export const MAX_TICKET_SUMMARY_LENGTH = 255;
@@ -73,6 +74,9 @@ const notesForAll = (options: { groups: readonly WorkGroup[]; contextIds: readon
 
   return notes;
 };
+
+const NOTES_HEADING = 'What the work says it was:';
+const NO_NOTES_LINE = 'Nothing in the day names this work beyond where it happened.';
 
 /** A band of the day, as far as {@link standInNotes} reads one. */
 export type StandInBand = {
@@ -160,6 +164,50 @@ export const standInNameFor = (options: { context: ActivityContext; config: GitF
   return (fromBranch || (repoPath ? repoNameOf(repoPath) : (appId ?? ''))).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 };
 
+/**
+ * Whether a stand-in says anything a ticket could be written from: the user's own name for it, a branch
+ * subject, a quotable note on the day's bands, or a name the app drafted from a note rather than from
+ * where the work happened.
+ */
+export const standInHasTicketText = (options: {
+  standIn: Pick<StandIn, 'id' | 'name'> & Partial<Pick<StandIn, 'author' | 'openedFor' | 'openedForBranch'>>;
+  bands: readonly StandInBand[];
+  config: GitFlowConfig;
+}) => {
+  const { standIn, config } = options;
+
+  if (standIn.author !== 'app') return true;
+  if (branchSubjectOf({ branch: standIn.openedForBranch, config })?.trim()) return true;
+  if (standInNotes({ bands: options.bands, standInId: standIn.id, max: 1 }).length) return true;
+
+  const where = standInNameFor({ context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch }, config });
+
+  return isQuotableNote(standIn.name) && standIn.name !== where;
+};
+
+/**
+ * The name and description an app-drafted stand-in carries once a note that does not read as words is
+ * taken out of them, or `null` when its name was not drafted from such a note.
+ */
+export const readableStandInDraft = (options: {
+  standIn: Pick<StandIn, 'name' | 'description' | 'author' | 'openedFor' | 'openedForBranch'>;
+  config: GitFlowConfig;
+}): Pick<StandIn, 'name' | 'description'> | null => {
+  const { standIn, config } = options;
+  const lines = (standIn.description ?? '').split('\n');
+
+  if (standIn.author !== 'app' || isQuotableNote(standIn.name) || !lines.includes(`- ${standIn.name}`)) return null;
+
+  const kept = lines.filter((line) => !line.startsWith('- ') || isQuotableNote(line.slice(2)));
+  const firstNote = kept.find((line) => line.startsWith('- '))?.slice(2);
+  const description = (firstNote ? kept : kept.map((line) => (line === NOTES_HEADING ? NO_NOTES_LINE : line)))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n');
+  const where = standInNameFor({ context: { repoPath: standIn.openedFor, branch: standIn.openedForBranch }, config });
+
+  return { name: (firstNote ?? where).slice(0, MAX_TICKET_SUMMARY_LENGTH), description };
+};
+
 const whereFor = (context: UnnamedContext) => {
   const { repoPath, branch, appId } = context.context;
 
@@ -210,9 +258,7 @@ export const draftTicket = (options: {
   });
   const summary = summaryFor({ context, notes, config });
   const provenance = `Recorded from ${formatDurationMs(context.observedMs)} of work in ${whereFor(context)}.`;
-  const body = notes.length
-    ? ['What the work says it was:', '', ...notes.map((note) => `- ${note}`), '']
-    : ['Nothing in the day names this work beyond where it happened.', ''];
+  const body = notes.length ? [NOTES_HEADING, '', ...notes.map((note) => `- ${note}`), ''] : [NO_NOTES_LINE, ''];
 
   return {
     summary,
@@ -253,9 +299,7 @@ export const draftRepoTicket = (options: {
   const fromBranch = humanized(branchSubjectOf({ branch: leading?.context.branch, config }) ?? '');
   const summary = (fromBranch || notes[0] || repoNameOf(repoPath)).slice(0, MAX_TICKET_SUMMARY_LENGTH);
 
-  const body = notes.length
-    ? ['What the work says it was:', '', ...notes.map((note) => `- ${note}`), '']
-    : ['Nothing in the day names this work beyond where it happened.', ''];
+  const body = notes.length ? [NOTES_HEADING, '', ...notes.map((note) => `- ${note}`), ''] : [NO_NOTES_LINE, ''];
   const covers = branches.length ? [`Covers ${branches.join(', ')}.`, ''] : [];
 
   return {

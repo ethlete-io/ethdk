@@ -83,6 +83,7 @@ import {
   withAutoModeAnswer,
   withAutoModeSubjectItemsExpired,
   withNamedContextItemsExpired,
+  withTextlessSubjectItemsExpired,
   withAutoModeCreated,
   withAutoModeDescription,
   writeTicketWithAgent$,
@@ -1143,7 +1144,21 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
         .map((context) => context.id),
     );
 
-    untracked(() => approvals.revise((queue) => withNamedContextItemsExpired(queue, { day, openContextIds })));
+    const current = settings.settings();
+    const textless = {
+      day,
+      contexts: dayReview.unnamed(),
+      standIns: current.standIns,
+      bands: dayReview.rows(),
+      unattributed: dayReview.deterministic()?.unattributed ?? [],
+      config: gitFlowConfigFor(current),
+    };
+
+    untracked(() =>
+      approvals.revise((queue) =>
+        withTextlessSubjectItemsExpired(withNamedContextItemsExpired(queue, { day, openContextIds }), textless),
+      ),
+    );
   });
 
   effect(() => {

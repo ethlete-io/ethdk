@@ -1,4 +1,5 @@
 import {
+  AgentApproval,
   CheckoutKeys,
   CollectedEvent,
   DEFAULT_TIMETRACK_SETTINGS,
@@ -212,6 +213,8 @@ export type TimetrackWorldSeed = {
   tempoCoverage?: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
   /** The worklogs this app already wrote to Tempo. */
   ledger?: SyncedWorklog[];
+  /** The approval queue an earlier session left. Empty by default. */
+  approvals?: AgentApproval[];
 };
 
 export type FakeWorld = {
@@ -237,6 +240,7 @@ export type FakeWorld = {
   reviewOverrides: Record<string, Record<string, ProposalOverride>>;
   tempoCoverage: Record<string, { issues: { issueKey: string; coveredMs: number }[] }>;
   ledger: SyncedWorklog[];
+  approvals: AgentApproval[];
 };
 
 /** Where `seedWorld` leaves the seed, as a JSON string, for `createFakeWorld` to read before boot. */
@@ -523,6 +527,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
   reviewOverrides: seed.reviewOverrides ?? {},
   tempoCoverage: seed.tempoCoverage ?? {},
   ledger: seed.ledger ?? [],
+  approvals: seed.approvals ?? [],
   glab: { ...defaultGlab(), ...seed.glab },
   gh: { ...defaultGh(), ...seed.gh },
   editors: seedEditors(seed.editors),

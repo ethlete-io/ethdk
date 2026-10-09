@@ -325,6 +325,15 @@ describe('parseClaudeCodeSessionLog', () => {
 
       expect(result.title).toBe('Agent collector');
     });
+
+    it('drops a carried title that does not read as words', () => {
+      const result = parse([record({ minute: 10 }), lastPrompt('how did this transfer button get into main')], {
+        resume: { after: at(5), title: '(click)=' },
+        promptFallback: { maxLength: 60 },
+      });
+
+      expect(result.events[0]?.title).toBe('how did this transfer button get into main');
+    });
   });
 });
 
