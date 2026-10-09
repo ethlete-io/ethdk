@@ -131,6 +131,7 @@ import { dayRowsOptionsOf, streamDayOptionsOf } from '../stream-day-options';
 import { heardChunksOf, transcriptBetween$ } from '../transcript-chunks';
 import { injectTimer } from '../timer';
 import { readViewState, rememberViewState } from '../view-state';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { runStandInPass } from '../stand-ins/stand-in-pass';
 
@@ -195,6 +196,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const prompts = injectAgentPromptBackfill();
   const codexPrompts = injectCodexPromptBackfill();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
   const timers = injectTimer();
   const settings = injectTimetrackSettings();
@@ -449,6 +451,7 @@ const DAY_REVIEW_DEF = /* @__PURE__ */ defineRootProvider(() => {
             settings: daySettings(),
             links: projectLinks(),
             worktrees: git.worktrees(),
+            dependencies: dependencies(),
             patterns: recurring.patterns(),
             epics: epics.optionsFor(day()),
             windowsSeenThroughMs: windows.lastRun()?.at.getTime(),

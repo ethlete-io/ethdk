@@ -22,6 +22,7 @@ import { injectTimetrackSettings } from '../settings/settings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
 import { streamDayOptionsOf } from '../stream-day-options';
 import { formatShare } from './format';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 
 /** How far back the panel reads. Long enough that one unusual day cannot decide which rung to build. */
@@ -205,6 +206,7 @@ export class UnnamedFocusComponent {
   private windows = injectWindowCollector();
   private calls = injectCallCollector();
   private git = injectGitCollector();
+  private dependencies = injectCheckoutDependencies();
   private projectLinks = injectProjectLinks();
   private settings = injectTimetrackSettings();
   private recurring = injectRecurringPatterns();
@@ -221,6 +223,7 @@ export class UnnamedFocusComponent {
     repoRoots: this.git.discovery()?.repos ?? [],
     links: this.projectLinks(),
     worktrees: this.git.worktrees(),
+    dependencies: this.dependencies(),
     settings: this.settings.settings(),
     patterns: this.recurring.patterns(),
     windows: this.windows.lastRun(),
@@ -240,6 +243,7 @@ export class UnnamedFocusComponent {
           settings: current.settings,
           links: current.links,
           worktrees: current.worktrees,
+          dependencies: current.dependencies,
           patterns: current.patterns,
           windowsSeenThroughMs: current.windows?.at.getTime(),
         });

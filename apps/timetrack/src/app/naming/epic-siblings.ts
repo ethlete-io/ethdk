@@ -17,6 +17,7 @@ import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { DayReadOptions, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 
 const NOTHING: EpicOptions = { siblings: [], claimed: [] };
@@ -143,6 +144,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const settings = injectTimetrackSettings();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
 
   const watched = signal<string | undefined>(undefined);
@@ -153,6 +155,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
     worktrees: git.worktrees(),
+    dependencies: dependencies(),
   }));
 
   const read = toSignal(
@@ -165,6 +168,7 @@ const EPIC_SIBLINGS_DEF = /* @__PURE__ */ defineRootProvider(() => {
               repoRoots: current.repoRoots,
               links: current.links,
               worktrees: current.worktrees,
+              dependencies: current.dependencies,
               day: current.day,
             }).pipe(
               map((options): EpicSiblingsState => ({ state: 'ready', options })),

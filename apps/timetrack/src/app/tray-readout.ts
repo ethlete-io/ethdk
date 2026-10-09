@@ -29,6 +29,7 @@ import { injectTimetrackSettings } from './settings/settings';
 import { injectTimer } from './timer';
 import { readToday$ } from './read-day';
 import { injectWindowLock } from './window-lock';
+import { injectCheckoutDependencies } from './checkout-dependencies';
 import { injectProjectLinks } from './project-links';
 
 /**
@@ -161,6 +162,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const windows = injectWindowCollector();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
   const agentSessions = injectAgentSessionCollector();
   const calendar = injectCalendarCollector();
@@ -199,6 +201,7 @@ const TRAY_READOUT_DEF = /* @__PURE__ */ defineRootProvider(() => {
       repoRoots: git.discovery()?.repos ?? [],
       links: projectLinks(),
       worktrees: git.worktrees(),
+      dependencies: dependencies(),
       windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
     }).pipe(
       map(({ events, day, review }) => {

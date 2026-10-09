@@ -1,5 +1,6 @@
 import {
   BuildRowsOptions,
+  CheckoutDependencies,
   EpicOptions,
   HeardChunk,
   RecurringPattern,
@@ -75,6 +76,8 @@ export const streamDayOptionsOf = (options: {
   links: readonly TimetrackProjectLink[];
   /** Each linked worktree mapped to its main checkout, from the git collector's `worktrees()`. */
   worktrees: Readonly<Record<string, string>>;
+  /** Which checkout uses which as a package, from `injectCheckoutDependencies`. */
+  dependencies: CheckoutDependencies;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /** What a sibling checkout on the same branch name books, from `injectEpicSiblings`. */
@@ -112,6 +115,7 @@ export const streamDayOptionsOf = (options: {
       through: options.through,
     }),
     worktrees: options.worktrees,
+    dependencies: options.dependencies,
     ...options.rows,
   },
 });

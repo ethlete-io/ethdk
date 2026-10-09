@@ -18,6 +18,7 @@ import { injectHostPorts } from '../../host';
 import { DayReadOptions, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
 import { readViewState, rememberViewState } from '../view-state';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
@@ -41,6 +42,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
   const windows = injectWindowCollector();
   const agentSessions = injectAgentSessionCollector();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
   const settings = injectTimetrackSettings();
 
@@ -77,6 +79,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
     worktrees: git.worktrees(),
+    dependencies: dependencies(),
     windows: windows.lastRun(),
     sessions: agentSessions.lastRun(),
     git: git.lastRun(),
@@ -91,6 +94,7 @@ const WEEK_REVIEW_DEF = /* @__PURE__ */ defineProvider(() => {
           repoRoots: current.repoRoots,
           links: current.links,
           worktrees: current.worktrees,
+          dependencies: current.dependencies,
           start: current.start,
         }).pipe(
           map((value): Loaded => ({ start: current.start, value, failure: null })),

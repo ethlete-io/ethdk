@@ -472,6 +472,7 @@ export const createFakePorts = (): HostPorts => {
     git: {
       repos$: () => ok({ repos: [backend.git.repoPath, ...backend.git.extraRepos], kind: 'watching', detail: null }),
       changes$: (afterSeq) => ok({ repos: [], seq: afterSeq }),
+      manifests$: () => ok([]),
     },
 
     nudge: {

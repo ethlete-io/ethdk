@@ -1,5 +1,6 @@
 import {
   AgedNaming,
+  CheckoutDependencies,
   CollectedEvent,
   CutOptions,
   DayReview,
@@ -50,6 +51,8 @@ export type DayReadOptions = {
   links: readonly TimetrackProjectLink[];
   /** Each linked worktree mapped to its main checkout, from the git collector's `worktrees()`. */
   worktrees: Readonly<Record<string, string>>;
+  /** Which checkout uses which as a package, from `injectCheckoutDependencies`. */
+  dependencies: CheckoutDependencies;
   /** The standing commitments the user's Tempo history holds, from `injectRecurringPatterns`. */
   patterns?: readonly RecurringPattern[];
   /**
@@ -106,6 +109,7 @@ export const readDay$ = (options: DayReadOptions & { day: string }): Observable<
             settings,
             links: options.links,
             worktrees: options.worktrees,
+            dependencies: options.dependencies,
             patterns: options.patterns,
             epics: options.epics,
             windowsSeenThroughMs: options.windowsSeenThroughMs,

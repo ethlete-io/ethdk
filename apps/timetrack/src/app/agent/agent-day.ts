@@ -41,6 +41,7 @@ import { injectDayReview } from '../day-review/day-review';
 import { injectLaneIssueHistory } from '../jira';
 import { readEpicOptions$ } from '../naming/epic-siblings';
 import { injectRecurringPatterns } from '../naming/recurring-patterns';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 import { DayRead, readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
@@ -85,6 +86,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const recurring = injectRecurringPatterns();
   const laneIssues = injectLaneIssueHistory();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const windows = injectWindowCollector();
 
   const discovery$ = toObservable(git.discovery).pipe(
@@ -140,6 +142,7 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
               repoRoots: discovery?.repos ?? [],
               links: projectLinks(),
               worktrees: git.worktrees(),
+              dependencies: dependencies(),
               patterns: recurring.patterns(),
               windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
               day,

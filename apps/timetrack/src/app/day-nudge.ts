@@ -28,6 +28,7 @@ import { injectGitCollector, injectWindowCollector } from '../collectors';
 import { injectHostPorts } from '../host';
 import { injectTimetrackSettings } from './settings/settings';
 import { readToday$ } from './read-day';
+import { injectCheckoutDependencies } from './checkout-dependencies';
 import { injectProjectLinks } from './project-links';
 import { injectDayReview } from './day-review/day-review';
 import { injectTempoSync } from './sync/sync';
@@ -45,6 +46,7 @@ const NUDGE_INTERVAL_MS = 60_000;
 const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const ports = injectHostPorts();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
   const windows = injectWindowCollector();
   const settings = injectTimetrackSettings();
@@ -64,6 +66,7 @@ const DAY_NUDGE_DEF = /* @__PURE__ */ defineRootProvider(() => {
       repoRoots: git.discovery()?.repos ?? [],
       links: projectLinks(),
       worktrees: git.worktrees(),
+      dependencies: dependencies(),
       windowsSeenThroughMs: windows.lastRun()?.at.getTime(),
     }).pipe(
       switchMap(({ key, review }) =>

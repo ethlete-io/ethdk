@@ -1,3 +1,4 @@
+import { CheckoutManifests } from '@ethlete/timetrack';
 import { Observable } from 'rxjs';
 import { invokeHost$ } from './invoke';
 
@@ -29,9 +30,12 @@ export type TauriGitSource = {
    */
   repos$(roots: string[]): Observable<GitRepoDiscovery>;
   changes$(afterSeq: number): Observable<GitRepoChanges>;
+  /** The package manifests of each checkout, for `checkoutDependenciesOf`. */
+  manifests$(repos: string[]): Observable<CheckoutManifests[]>;
 };
 
 export const createTauriGitSource = (): TauriGitSource => ({
   repos$: (roots) => invokeHost$<GitRepoDiscovery>('git_repos', { roots }),
   changes$: (afterSeq) => invokeHost$<GitRepoChanges>('git_changes', { afterSeq }),
+  manifests$: (repos) => invokeHost$<CheckoutManifests[]>('repo_manifests', { repos }),
 });

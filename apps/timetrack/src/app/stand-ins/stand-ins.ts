@@ -23,6 +23,7 @@ import { injectGitCollector } from '../../collectors';
 import { injectHostPorts } from '../../host';
 import { readDay$ } from '../read-day';
 import { injectTimetrackSettings } from '../settings/settings';
+import { injectCheckoutDependencies } from '../checkout-dependencies';
 import { injectProjectLinks } from '../project-links';
 
 /**
@@ -44,6 +45,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const settings = injectTimetrackSettings();
   const ports = injectHostPorts();
   const git = injectGitCollector();
+  const dependencies = injectCheckoutDependencies();
   const projectLinks = injectProjectLinks();
   const now = signal(new Date());
 
@@ -132,6 +134,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
     repoRoots: git.discovery()?.repos ?? [],
     links: projectLinks(),
     worktrees: git.worktrees(),
+    dependencies: dependencies(),
   }));
 
   /**
@@ -152,6 +155,7 @@ const STAND_INS_DEF = /* @__PURE__ */ defineRootProvider(() => {
                   repoRoots: probe.repoRoots,
                   links: probe.links,
                   worktrees: probe.worktrees,
+                  dependencies: probe.dependencies,
                   day,
                 }).pipe(
                   map((read) => read.review.rows),
