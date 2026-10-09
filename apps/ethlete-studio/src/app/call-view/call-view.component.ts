@@ -45,6 +45,7 @@ import {
   unsettledCalls,
 } from './grouping';
 import { UpdateButtonComponent } from '../update-button.component';
+import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
 import { ProjectPickerComponent } from './project-picker.component';
 import {
@@ -92,6 +93,7 @@ const SETTLE_MS = 300;
           </div>
 
           <ethlete-update-button />
+          <ethlete-update-check-button />
 
           <div class="studio__search">
             <svg viewBox="0 0 24 24">
@@ -561,6 +563,7 @@ const SETTLE_MS = 300;
     ProvideColorDirective,
     ProvideSurfaceDirective,
     UpdateButtonComponent,
+    UpdateCheckButtonComponent,
   ],
   host: { class: 'studio', '(window:message)': 'trackFrameScroll($event)' },
 })

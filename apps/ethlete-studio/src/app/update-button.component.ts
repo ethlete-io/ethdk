@@ -1,7 +1,7 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { EMPTY, catchError, of } from 'rxjs';
-import { updateInstall$, updateReady$ } from '../host/update';
+import { EMPTY, catchError } from 'rxjs';
+import { updateInstall$ } from '../host/update';
+import { injectUpdateCheck } from './update-check';
 
 /** Offers the restart once a newer release is downloaded, and shows nothing before that. */
 @Component({
@@ -22,7 +22,7 @@ import { updateInstall$, updateReady$ } from '../host/update';
   encapsulation: ViewEncapsulation.None,
 })
 export class UpdateButtonComponent {
-  protected version = toSignal(updateReady$().pipe(catchError(() => of(null))), { initialValue: null });
+  protected version = injectUpdateCheck().version;
   protected installing = signal(false);
   protected failure = signal<string | null>(null);
 
