@@ -249,6 +249,41 @@ describe('reviewDay folding single-increment rows', () => {
     expect(row?.sources?.description).toBe('auto');
   });
 
+  it('keeps a short row with an auto description in place on a frozen day', () => {
+    const unfolded = dayRows({ unnamed: [band({ from: '12:15', to: '13:45' }), band({ from: '14:45', to: '15:00' })] });
+    const described = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { ...unfolded.unnamed[1]!, edited: false, hidden: false },
+      description: 'auto line',
+      source: 'auto',
+    });
+
+    expect(spans(review(unfolded, { ...described, frozenRows: unfolded }))).toEqual([
+      '12:15-13:45 90m',
+      '14:45-15:00 15m',
+    ]);
+  });
+
+  it('keeps a weak row with an auto description edited and logged on a frozen day', () => {
+    const booked = dayRows({
+      proposals: [{ ...proposal({ issueKey: 'ET-1', from: '17:00', to: '17:45' }), confidence: 'weak' }],
+    });
+    const edits = setRowDescription({
+      edits: EMPTY_DAY_REVIEW_EDITS,
+      row: { ...booked.proposals[0]!, edited: false, hidden: false },
+      description: 'auto line',
+      source: 'auto',
+    });
+    const frozen = review(booked, { ...edits, frozenRows: booked });
+    const open = review(booked, edits);
+
+    expect(frozen.rows[0]?.state).toBe('edited');
+    expect(frozen.rows[0]?.edited).toBe(true);
+    expect(frozen.check.loggedMs).toBe(45 * MINUTE);
+    expect(open.rows[0]?.state).toBe('suggested');
+    expect(open.check.loggedMs).toBe(0);
+  });
+
   it('keeps folding into a neighbour the reviewer edited in place', () => {
     const [grown] = review(day).rows;
     const edits = setRowDescription({ edits: EMPTY_DAY_REVIEW_EDITS, row: grown!, description: 'mine' });

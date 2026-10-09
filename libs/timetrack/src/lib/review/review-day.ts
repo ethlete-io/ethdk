@@ -55,24 +55,31 @@ const MOST_PARALLEL_SIBLINGS = 3;
 const defaultState = (row: RowSource): WorklogProposalState =>
   row.issueKey && syncsWithoutReview(row.confidence) ? 'accepted' : 'suggested';
 
-const describedByHand = (override: ProposalOverride) =>
-  override.description !== undefined && override.sources?.description !== 'auto';
+// A frozen day keeps the rule it was booked under: any description reads as the reviewer's, and
+// any override pins its row, so a later change to that rule never re-cuts or un-books it.
+const describedByHand = (override: ProposalOverride, frozen: boolean) =>
+  override.description !== undefined && (frozen || override.sources?.description !== 'auto');
 
-/** Whether a row may fold: nothing overrides it, or only a description auto mode wrote. */
-const foldableOverride = (override: ProposalOverride | undefined) =>
+/** Whether a row may fold: nothing overrides it, or, on an open day, only a description auto mode wrote. */
+const foldableOverride = (override: ProposalOverride | undefined, frozen: boolean) =>
   !override ||
-  (!describedByHand(override) &&
+  (!frozen &&
+    !describedByHand(override, frozen) &&
     override.issueKey === undefined &&
     override.standInId === undefined &&
     override.state === undefined &&
     override.hidden !== true);
 
-const withOverride = (row: RowSource, override: ProposalOverride | undefined): ReviewedRow => {
+const withOverride = (
+  row: RowSource,
+  { override, frozen }: { override: ProposalOverride | undefined; frozen: boolean },
+): ReviewedRow => {
   const proposed = row.issueKey ? { ...row, issueKey: row.issueKey } : undefined;
 
   if (!override) return { ...row, state: defaultState(row), edited: false, hidden: false };
 
-  const changed = override.issueKey !== undefined || override.standInId !== undefined || describedByHand(override);
+  const changed =
+    override.issueKey !== undefined || override.standInId !== undefined || describedByHand(override, frozen);
 
   // An override that names a placeholder names no issue. The form blanks its issue field to say so,
   // and an empty key is not `undefined`, so without this it wins the `??` below and the row reads
@@ -518,6 +525,7 @@ export const reviewDay = (options: ReviewDayOptions): DayReview =>
 
 const reviewRows = (options: ReviewDayOptions): DayReview => {
   const { edits, ended } = foldEndedRests(options.edits ?? EMPTY_DAY_REVIEW_EDITS);
+  const frozen = !!edits.frozenRows;
   const standIns = options.standIns ?? [];
   const rules = options.rules ?? [];
   const pinnedIds = new Set(edits.pinned.flatMap((row) => [row.id, ...row.replaces]));
@@ -540,11 +548,11 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
       most: MOST_PARALLEL_SIBLINGS,
       incrementMs,
       fixed: (row) => pinnedIds.has(row.id),
-      canFold: (row) => foldableOverride(edits.overrides[row.id]),
+      canFold: (row) => foldableOverride(edits.overrides[row.id], frozen),
     }),
     incrementMs,
     fixed: (row) => pinnedIds.has(row.id),
-    canFold: (row) => foldableOverride(edits.overrides[row.id]),
+    canFold: (row) => foldableOverride(edits.overrides[row.id], frozen),
     blockers: edits.pinned.filter((row) => !row.hidden),
     // The re-cut below hands a background row's minutes to any foreground row over them, so a growth
     // across that divide would take minutes a background row books, or be cut away again.
@@ -570,7 +578,7 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
   const reviewed = [
     ...sources
       .filter((row) => !consumed.has(row.id))
-      .map((row) => withOverride(settledRow(row), edits.overrides[row.id])),
+      .map((row) => withOverride(settledRow(row), { override: edits.overrides[row.id], frozen })),
     ...tracked.rows
       .map((pin) => {
         const row = describeOwnSpan(fromPinned(pin));
@@ -579,7 +587,7 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
       })
       .map((row) => nameFromStandInRule({ row, rules, standIns })),
     ...tracked.leftovers.map((row) =>
-      withOverride(settledRow(describeCallPiece({ row, calls })), edits.overrides[row.id]),
+      withOverride(settledRow(describeCallPiece({ row, calls })), { override: edits.overrides[row.id], frozen }),
     ),
   ]
     .map((row) => withoutSelfDispute(readStandIn(row, standIns)))
