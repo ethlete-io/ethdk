@@ -71,3 +71,22 @@ test.describe('a window lock the host did not answer for', () => {
     await expect(page.getByText('the host did not answer')).toBeVisible();
   });
 });
+
+/** A request that hit the lock bounces the app; the lock screen is where the user learns why. */
+test.describe('an agent waiting for the unlock', () => {
+  test('says so on the lock screen', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, windowLock: 'locked', agentsWaitingForUnlock: 1 });
+    await page.goto('/day');
+
+    await expect(page.getByRole('heading', { name: 'Locked' })).toBeVisible();
+    await expect(page.getByText('An agent is waiting.')).toBeVisible();
+  });
+
+  test('says nothing while no agent waits', async ({ page }) => {
+    await seedWorld(page, { now: E2E_NOW, windowLock: 'locked' });
+    await page.goto('/day');
+
+    await expect(page.getByRole('heading', { name: 'Locked' })).toBeVisible();
+    await expect(page.getByText('An agent is waiting.')).toHaveCount(0);
+  });
+});

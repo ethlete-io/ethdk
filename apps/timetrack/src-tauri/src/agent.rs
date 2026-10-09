@@ -2,7 +2,7 @@ use crate::error::{TimetrackError, TimetrackResult};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -22,6 +22,9 @@ const PROOF_PATH: &str = "/agent/proof?nonce=";
 /// The event the window answers. Matches `AGENT_REQUEST_EVENT` in `events.ts`.
 const REQUEST_EVENT: &str = "agent-request";
 
+/// How many requests wait for the window to unlock. Matches `AGENTS_WAITING_EVENT` in `events.ts`.
+const WAITING_EVENT: &str = "agents-waiting";
+
 /// The window that carries out an operation. Named rather than broadcast: a second window would run
 /// the same operation a second time, and creating one issue twice is not a mistake a reply can undo.
 const WINDOW_LABEL: &str = "main";
@@ -36,6 +39,10 @@ const READ_TIMEOUT: Duration = Duration::from_secs(5);
 /// How long the window may take to answer. A Jira search behind a slow instance is the long case, and
 /// a caller waiting forever for a window that will never answer is the case this bounds.
 const ANSWER_TIMEOUT: Duration = Duration::from_secs(60);
+
+const UNLOCK_TIMEOUT: Duration = Duration::from_secs(60);
+
+const LOCKED_MESSAGE: &str = "Timetrack is locked. Unlock it, then ask again.";
 
 /// How many connections may be open at once, authorized or not.
 ///
@@ -122,6 +129,9 @@ pub struct AgentEndpoint {
     tallies: Arc<Mutex<Tallies>>,
     pending: Arc<Mutex<HashMap<u64, oneshot::Sender<AgentAnswer>>>>,
     next_id: Arc<AtomicU64>,
+    waiting_for_unlock: Arc<AtomicUsize>,
+    unlock_attention: Arc<crate::attention::AttentionGate>,
+    approval_attention: Arc<crate::attention::AttentionGate>,
 }
 
 impl AgentEndpoint {
@@ -141,7 +151,23 @@ impl AgentEndpoint {
             })),
             pending: Arc::new(Mutex::new(HashMap::new())),
             next_id: Arc::new(AtomicU64::new(1)),
+            waiting_for_unlock: Arc::new(AtomicUsize::new(0)),
+            unlock_attention: Arc::new(crate::attention::AttentionGate::new()),
+            approval_attention: Arc::new(crate::attention::AttentionGate::new()),
         }
+    }
+
+    async fn wait_for_unlock(&self, app: &AppHandle, lock: &crate::lock::WindowLock) -> bool {
+        let _waiting = WaitingForUnlock::enter(self, app);
+
+        crate::attention::surface(
+            app,
+            &self.unlock_attention,
+            "An agent needs Timetrack unlocked",
+            "Unlock within a minute and the request carries on.",
+        );
+
+        lock.wait_until_unlocked(UNLOCK_TIMEOUT).await
     }
 
     fn refuse(&self) {
@@ -257,6 +283,28 @@ impl AgentEndpoint {
 impl Default for AgentEndpoint {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+/// A guard, so a request dropped mid-wait by a caller that hung up still leaves the count.
+struct WaitingForUnlock<'a> {
+    endpoint: &'a AgentEndpoint,
+    app: &'a AppHandle,
+}
+
+impl<'a> WaitingForUnlock<'a> {
+    fn enter(endpoint: &'a AgentEndpoint, app: &'a AppHandle) -> Self {
+        let waiting = endpoint.waiting_for_unlock.fetch_add(1, Ordering::SeqCst) + 1;
+        let _ = app.emit_to(WINDOW_LABEL, WAITING_EVENT, waiting);
+
+        Self { endpoint, app }
+    }
+}
+
+impl Drop for WaitingForUnlock<'_> {
+    fn drop(&mut self) {
+        let waiting = self.endpoint.waiting_for_unlock.fetch_sub(1, Ordering::SeqCst) - 1;
+        let _ = self.app.emit_to(WINDOW_LABEL, WAITING_EVENT, waiting);
     }
 }
 
@@ -437,24 +485,6 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
         return respond(stream, "401 Unauthorized").await;
     }
 
-    // The token is this run's, and it sits in a file every process of this account can read once the
-    // app has started. The lock is therefore what decides whether an operation runs at all: a locked
-    // app is one whose owner is away, and every operation here either reads the day's own evidence or
-    // writes something to Jira in their name.
-    if app
-        .try_state::<crate::lock::WindowLock>()
-        .is_some_and(|lock| lock.is_locked())
-    {
-        endpoint.refuse();
-
-        return respond_json(
-            stream,
-            "200 OK",
-            &AgentAnswer::failed("Timetrack is locked. Unlock it, then ask again.".to_string()),
-        )
-        .await;
-    }
-
     if head.target != PATH {
         return respond(stream, "404 Not Found").await;
     }
@@ -482,6 +512,19 @@ async fn serve(stream: &mut TcpStream, endpoint: &AgentEndpoint, app: &AppHandle
     let Ok(request) = serde_json::from_slice::<serde_json::Value>(&body[..head.content_length]) else {
         return respond(stream, "400 Bad Request").await;
     };
+
+    // The token is this run's, and it sits in a file every process of this account can read once the
+    // app has started. The lock is therefore what decides whether an operation runs at all: a locked
+    // app is one whose owner is away, and every operation here either reads the day's own evidence or
+    // writes something to Jira in their name. The body is read first because the wait outlasts the
+    // request deadline.
+    if let Some(lock) = app.try_state::<crate::lock::WindowLock>() {
+        if lock.is_locked() && !endpoint.wait_for_unlock(app, &lock).await {
+            endpoint.refuse();
+
+            return respond_json(stream, "200 OK", &AgentAnswer::failed(LOCKED_MESSAGE.to_string())).await;
+        }
+    }
 
     // What an operation means belongs to the window, which is also what keeps a caller from reaching
     // Jira through a shape invented here. Pairing is the exception: the keys and the LAN listener live
@@ -575,9 +618,9 @@ pub fn start(endpoint: AgentEndpoint, app: AppHandle, data_dir: PathBuf) {
             let token = token.clone();
 
             tauri::async_runtime::spawn(async move {
-                // Long enough to cover both halves: reading the request, which has its own deadline
-                // inside `serve`, and the window's for answering it inside `ask`.
-                let deadline = READ_TIMEOUT + ANSWER_TIMEOUT;
+                // Long enough to cover every stage: reading the request, which has its own deadline
+                // inside `serve`, waiting for an unlock, and the window's deadline for answering.
+                let deadline = READ_TIMEOUT + UNLOCK_TIMEOUT + ANSWER_TIMEOUT;
                 let served = serve(&mut stream, &endpoint, &app, &token);
 
                 let _ = tokio::time::timeout(deadline, served).await;
@@ -590,6 +633,18 @@ pub fn start(endpoint: AgentEndpoint, app: AppHandle, data_dir: PathBuf) {
 #[tauri::command]
 pub async fn agent_reply(endpoint: State<'_, AgentEndpoint>, id: u64, answer: AgentAnswer) -> TimetrackResult<()> {
     endpoint.reply(id, answer)
+}
+
+#[tauri::command]
+pub async fn agent_approval_queued(app: AppHandle, endpoint: State<'_, AgentEndpoint>) -> TimetrackResult<()> {
+    crate::attention::surface(
+        &app,
+        &endpoint.approval_attention,
+        "An agent is waiting for your approval",
+        "Approve or reject it in Timetrack.",
+    );
+
+    Ok(())
 }
 
 #[tauri::command]

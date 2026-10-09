@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import { EMPTY, Subject, catchError, exhaustMap, tap } from 'rxjs';
@@ -23,6 +23,7 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const isChecking = signal(false);
   const wasRefused = signal(false);
   const failure = signal<string | null>(null);
+  const agentsWaiting = signal(0);
   const attempts$ = new Subject<string | undefined>();
 
   const failed = (error: unknown) => {
@@ -51,6 +52,15 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
         return failed(error);
       }),
+      takeUntilDestroyed(),
+    )
+    .subscribe();
+
+  ports.windowLock
+    .agentsWaiting$()
+    .pipe(
+      tap((waiting) => agentsWaiting.set(waiting)),
+      catchError(() => EMPTY),
       takeUntilDestroyed(),
     )
     .subscribe();
@@ -101,6 +111,7 @@ const WINDOW_LOCK_DEF = /* @__PURE__ */ defineRootProvider(() => {
     isChecking: isChecking.asReadonly(),
     wasRefused: wasRefused.asReadonly(),
     failure: failure.asReadonly(),
+    isAgentWaiting: computed(() => agentsWaiting() > 0),
 
     unlock: (password?: string) => attempts$.next(password),
 

@@ -14,8 +14,8 @@ const DISCOVERY_FILENAME = 'agent.json';
  */
 const PROTOCOL_VERSION = 3;
 
-/** A Jira search behind a slow instance is the long case; the app's own deadline is 60 seconds. */
-const TIMEOUT_MS = 70_000;
+/** Covers the app's own deadlines: up to 60 seconds for the user to unlock it, then 60 to answer. */
+const TIMEOUT_MS = 130_000;
 
 const PATH = '/agent';
 const PROOF_PATH = '/agent/proof';

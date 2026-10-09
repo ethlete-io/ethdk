@@ -14,12 +14,14 @@ const setup = (windowLock: {
   state$?: () => Observable<WindowLockState>;
   unlock$?: (password?: string) => Observable<boolean>;
   lock$?: () => Observable<void>;
+  agentsWaiting$?: () => Observable<number>;
 }) => {
   const ports = {
     windowLock: {
       state$: windowLock.state$ ?? (() => of(UNLOCKED_CAPABLE)),
       unlock$: windowLock.unlock$ ?? (() => of(true)),
       lock$: windowLock.lock$ ?? (() => of(undefined)),
+      agentsWaiting$: windowLock.agentsWaiting$ ?? (() => of(0)),
     },
   } as unknown as HostPorts;
 
@@ -101,6 +103,20 @@ describe('injectWindowLock', () => {
     answer$.complete();
 
     expect(lock.isLocked()).toBe(false);
+    injector.destroy();
+  });
+
+  it('says an agent waits for as long as the host counts one', () => {
+    const waiting$ = new Subject<number>();
+    const { lock, injector } = setup({ agentsWaiting$: () => waiting$ });
+
+    expect(lock.isAgentWaiting()).toBe(false);
+
+    waiting$.next(2);
+    expect(lock.isAgentWaiting()).toBe(true);
+
+    waiting$.next(0);
+    expect(lock.isAgentWaiting()).toBe(false);
     injector.destroy();
   });
 

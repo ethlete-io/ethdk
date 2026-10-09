@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { AGENT_API_LOCKED_MESSAGE, agentApiLockRefusal } from './lock-gate';
+import { BehaviorSubject } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AGENT_API_LOCKED_MESSAGE, agentApiLockRefusal, agentApiLockRefusal$ } from './lock-gate';
 import { AGENT_API_OP_CLASSES, AgentApiOp, OpClass } from './model';
 
 const opsOf = (opClass: OpClass) =>
@@ -12,6 +13,42 @@ describe('agentApiLockRefusal', () => {
 
   it('lets every op through while unlocked', () => {
     expect(agentApiLockRefusal({ locked: false })).toBeNull();
+  });
+});
+
+describe('agentApiLockRefusal$', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const answerOf = (locked$: BehaviorSubject<boolean>) => {
+    const answers: (string | null)[] = [];
+
+    agentApiLockRefusal$(locked$, 5_000).subscribe((answer) => answers.push(answer));
+
+    return answers;
+  };
+
+  it('lets the op through at once while the window is unlocked', () => {
+    expect(answerOf(new BehaviorSubject(false))).toEqual([null]);
+  });
+
+  it('lets the op through once the window hears of the unlock inside the grace', () => {
+    const locked$ = new BehaviorSubject(true);
+    const answers = answerOf(locked$);
+
+    vi.advanceTimersByTime(4_000);
+    expect(answers).toEqual([]);
+
+    locked$.next(false);
+    expect(answers).toEqual([null]);
+  });
+
+  it('refuses once the grace runs out with the window still locked', () => {
+    const answers = answerOf(new BehaviorSubject(true));
+
+    vi.advanceTimersByTime(5_000);
+
+    expect(answers).toEqual([AGENT_API_LOCKED_MESSAGE]);
   });
 });
 

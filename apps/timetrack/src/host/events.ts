@@ -17,6 +17,9 @@ export const WINDOW_LOCKED_EVENT = 'window-locked';
  */
 export const AGENT_REQUEST_EVENT = 'agent-request';
 
+/** How many agent requests wait for the window to unlock. Matches `WAITING_EVENT` in `agent.rs`. */
+export const AGENTS_WAITING_EVENT = 'agents-waiting';
+
 /**
  * An event the host emits, as a cold Observable that unlistens when the last subscriber leaves.
  *

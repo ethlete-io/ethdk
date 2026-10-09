@@ -1,4 +1,5 @@
 mod agent;
+mod attention;
 mod auth;
 mod calls;
 #[cfg(target_os = "linux")]
@@ -164,6 +165,7 @@ pub fn run() {
             tray::hide_instead_of_closing(window, event);
         })
         .invoke_handler(tauri::generate_handler![
+            agent::agent_approval_queued,
             agent::agent_reply,
             agent::agent_status,
             calls::call_events,

@@ -1,5 +1,5 @@
 import { DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { defineRootProvider, toInjectFn } from '@ethlete/core';
 import {
   AGENT_API_VERSION,
@@ -22,7 +22,7 @@ import {
   AgentApiTempoWorklogs,
   AgentApiCalendarEvents,
   agentApiCallerOf,
-  agentApiLockRefusal,
+  agentApiLockRefusal$,
   AutoModeSubject,
   DayReview,
   JiraCredentials,
@@ -71,6 +71,7 @@ import {
   Observable,
   catchError,
   concatMap,
+  filter,
   forkJoin,
   from,
   map,
@@ -140,6 +141,7 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const recurring = injectRecurringPatterns();
   const googleAccount = injectGoogleAccount();
   const windowLock = injectWindowLock();
+  const isLocked$ = toObservable(windowLock.isLocked);
   const approvals = injectApprovalQueue();
   const autoMode = injectAutoMode();
   const standInStore = injectStandIns();
@@ -868,10 +870,14 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
     );
 
   const answer$ = (body: unknown): Observable<AgentApiAnswer> => {
-    const refusal = agentApiLockRefusal({ locked: windowLock.isLocked() });
+    if (!windowLock.isLocked()) return unlockedAnswer$(body);
 
-    if (refusal) return of({ ok: false, message: refusal });
+    return agentApiLockRefusal$(isLocked$).pipe(
+      switchMap((refusal) => (refusal ? of<AgentApiAnswer>({ ok: false, message: refusal }) : unlockedAnswer$(body))),
+    );
+  };
 
+  const unlockedAnswer$ = (body: unknown): Observable<AgentApiAnswer> => {
     const parsed = parseAgentRequest(body);
 
     if (!parsed.ok) return of({ ok: false, message: parsed.message });
@@ -904,6 +910,14 @@ const AGENT_ENDPOINT_DEF = /* @__PURE__ */ defineRootProvider(() => {
           catchError(() => of(undefined)),
         ),
       ),
+      takeUntilDestroyed(destroyRef),
+    )
+    .subscribe();
+
+  approvals.queued$
+    .pipe(
+      filter(({ request }) => isAgentApiRequest(request)),
+      mergeMap(() => ports.agent.approvalQueued$().pipe(catchError(() => EMPTY))),
       takeUntilDestroyed(destroyRef),
     )
     .subscribe();

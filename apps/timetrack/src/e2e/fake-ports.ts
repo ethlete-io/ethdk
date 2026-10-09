@@ -33,6 +33,7 @@ import {
   TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_REPORT_FILE_KEY,
   TIMETRACK_E2E_TRAY_KEY,
+  TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
   cliNotInstalledMessage,
   createFakeWorld,
   isEditorInstallSpec,
@@ -173,6 +174,14 @@ export const createFakePorts = (): HostPorts => {
       reply$: (id, answer) => {
         agentReplies.get(id)?.(answer);
         agentReplies.delete(id);
+
+        return done();
+      },
+      approvalQueued$: () => {
+        const published = globalThis as Record<string, unknown>;
+
+        published[TIMETRACK_E2E_APPROVAL_ATTENTION_KEY] =
+          ((published[TIMETRACK_E2E_APPROVAL_ATTENTION_KEY] as number | undefined) ?? 0) + 1;
 
         return done();
       },
@@ -556,6 +565,7 @@ export const createFakePorts = (): HostPorts => {
           : ok({ locked: world.windowLock === 'locked', promptsItself: false, available: true }),
       lock$: () => done(),
       unlock$: () => ok(true),
+      agentsWaiting$: () => ok(world.agentsWaitingForUnlock),
     },
 
     // Answers with the host's own refusals, word for word, so a spec reads what the user would.

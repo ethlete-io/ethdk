@@ -6,6 +6,7 @@ import {
   expect,
   openApprovals,
   queuedId,
+  readApprovalAttention,
   readBackend,
   seedWorld,
   test,
@@ -44,6 +45,17 @@ test.describe('a write an agent asks for', () => {
         result: { issue: { key: expect.any(String), id: expect.any(String) } },
       },
     });
+  });
+
+  test('surfaces the app once for each write it queues, and not for a read', async ({ page }) => {
+    const id = queuedId(await askAgent(page, CREATE));
+
+    await expect.poll(() => readApprovalAttention(page)).toBe(1);
+
+    await askAgent(page, { op: 'approval.status', id });
+    queuedId(await askAgent(page, { ...CREATE, summary: 'Csv export' }));
+
+    await expect.poll(() => readApprovalAttention(page)).toBe(2);
   });
 
   test('files nothing once rejected', async ({ page }) => {

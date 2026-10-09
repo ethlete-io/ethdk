@@ -2,6 +2,7 @@ import { Page } from '@playwright/test';
 import { AgentSessionCursor, TimetrackSettings } from '@ethlete/timetrack';
 import {
   FakeBackend,
+  TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
   TIMETRACK_E2E_BACKEND_KEY,
   TIMETRACK_E2E_CURSORS_KEY,
   TIMETRACK_E2E_SEED_KEY,
@@ -78,6 +79,13 @@ export type TrayLines = { activity: string; total: string; timer: string; pause:
 /** What the tray menu last said about today. A browser tab has no tray, so the fake port keeps it. */
 export const readTray = (page: Page): Promise<TrayLines | undefined> =>
   page.evaluate((key) => (globalThis as Record<string, unknown>)[key] as TrayLines | undefined, TIMETRACK_E2E_TRAY_KEY);
+
+/** How often the window asked the host to surface the app for a newly queued approval. */
+export const readApprovalAttention = (page: Page): Promise<number> =>
+  page.evaluate(
+    (key) => ((globalThis as Record<string, unknown>)[key] as number | undefined) ?? 0,
+    TIMETRACK_E2E_APPROVAL_ATTENTION_KEY,
+  );
 
 export const readSavedReport = (page: Page) =>
   page.evaluate(

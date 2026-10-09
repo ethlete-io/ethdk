@@ -193,6 +193,8 @@ export type TimetrackWorldSeed = {
    * which a window must not read as an unlocked one.
    */
   windowLock?: FakeWindowLock;
+  /** How many agent requests the host says wait for the unlock. None by default. */
+  agentsWaitingForUnlock?: number;
   /** When collection was paused. Absent: the app starts collecting. */
   collectionPausedAt?: Date | string;
   /** No machine paired or discovered by default. */
@@ -226,6 +228,7 @@ export type FakeWorld = {
   callSource: FakeCallSourceStatus;
   transcription: FakeTranscription;
   windowLock: FakeWindowLock;
+  agentsWaitingForUnlock: number;
   collectionPausedAt: Date | null;
   peers: FakePeers;
   backend: FakeBackend;
@@ -247,6 +250,9 @@ export const TIMETRACK_E2E_BACKEND_KEY = '__timetrackE2eBackend';
  * sentence the app says about the whole day outside its window is unreadable from a spec.
  */
 export const TIMETRACK_E2E_TRAY_KEY = '__timetrackE2eTray';
+
+/** Where the count of approvals the window asked the host to surface it for is published. */
+export const TIMETRACK_E2E_APPROVAL_ATTENTION_KEY = '__timetrackE2eApprovalAttention';
 
 /** Where the last report written through the save dialog is published, as `{ suggestedName, text }`. */
 export const TIMETRACK_E2E_REPORT_FILE_KEY = '__timetrackE2eReportFile';
@@ -500,6 +506,7 @@ export const createFakeWorld = (seed: TimetrackWorldSeed = {}): FakeWorld => ({
     chunks: seed.transcription?.chunks ?? [],
   },
   windowLock: seed.windowLock ?? 'unlocked',
+  agentsWaitingForUnlock: seed.agentsWaitingForUnlock ?? 0,
   collectionPausedAt: seed.collectionPausedAt === undefined ? null : new Date(seed.collectionPausedAt),
   peers: {
     paired: [],

@@ -1,4 +1,5 @@
 import { Observable } from 'rxjs';
+import { AGENTS_WAITING_EVENT, hostEventWith$ } from './events';
 import { invokeHost$ } from './invoke';
 
 /** Whether the window may show what it holds, and whether the platform asks for the secret itself. */
@@ -21,10 +22,13 @@ export type TauriWindowLock = {
   lock$(): Observable<void>;
   /** Resolves `false` for a wrong password. Only a platform that cannot check at all fails. */
   unlock$(password?: string): Observable<boolean>;
+  /** How many agent requests wait for the unlock, on every change. */
+  agentsWaiting$(): Observable<number>;
 };
 
 export const createTauriWindowLock = (): TauriWindowLock => ({
   state$: () => invokeHost$<WindowLockState>('lock_state'),
   lock$: () => invokeHost$<void>('lock_window'),
   unlock$: (password) => invokeHost$<boolean>('unlock_window', { password: password ?? null }),
+  agentsWaiting$: () => hostEventWith$<number>(AGENTS_WAITING_EVENT),
 });

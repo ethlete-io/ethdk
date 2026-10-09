@@ -59,6 +59,7 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
   const failure = signal<string | null>(null);
   const saves$ = new Subject<void>();
   const approved$ = new Subject<AgentApproval>();
+  const queued$ = new Subject<AgentApproval>();
 
   const today = () => localDayKey(new Date(), dayBoundaryOf(settings.settings()));
 
@@ -164,6 +165,8 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
     approvableByAll: computed(() => approvableByAll(queue(), settings.settings().actionClasses)),
     failure: failure.asReadonly(),
     approved$: approved$.asObservable(),
+    /** Each item as it is newly queued. An ask its open item already answers queues nothing. */
+    queued$: queued$.asObservable(),
 
     /** Replaces the stored queue with what `next` makes of it. Nothing changes before the queue is read. */
     revise,
@@ -186,6 +189,10 @@ const APPROVAL_QUEUE_DEF = /* @__PURE__ */ defineRootProvider(() => {
           const id = crypto.randomUUID();
 
           change(enqueueApproval(queue(), { id, ...options, at: new Date(), day: today() }));
+
+          const queuedItem = find(id);
+
+          if (queuedItem) queued$.next(queuedItem);
 
           return { status: 'queued', approvalId: id };
         }),

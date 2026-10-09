@@ -4,6 +4,7 @@
 /// so a command left out of this list - or out of `capabilities/default.json` - is refused for every
 /// window. A test in `lib.rs` fails when the three lists drift apart.
 const COMMANDS: &[&str] = &[
+    "agent_approval_queued",
     "agent_log_lines",
     "agent_logs",
     "agent_reply",

@@ -29,6 +29,10 @@ import { injectWindowLock } from './window-lock';
           </p>
         </div>
 
+        @if (lock.isAgentWaiting()) {
+          <p class="text-small">An agent is waiting.</p>
+        }
+
         @if (lock.promptsItself()) {
           <p class="text-small">Unlock to let the system ask you for it.</p>
         } @else {

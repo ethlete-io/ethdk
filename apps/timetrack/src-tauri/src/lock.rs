@@ -12,6 +12,7 @@ use crate::error::TimetrackResult;
 use serde::Serialize;
 use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, Runtime, State};
 
 /// Told to the webview so it can clear the view it is showing before the window goes away.
@@ -108,6 +109,7 @@ pub struct WindowLock {
     idle_since_ms: Arc<AtomicI64>,
     enabled: Arc<AtomicBool>,
     after_idle_ms: Arc<AtomicI64>,
+    unlocked: Arc<tokio::sync::Notify>,
 }
 
 impl WindowLock {
@@ -122,6 +124,7 @@ impl WindowLock {
             idle_since_ms: Arc::new(AtomicI64::new(0)),
             enabled: Arc::new(AtomicBool::new(usable)),
             after_idle_ms: Arc::new(AtomicI64::new(DEFAULT_LOCK_AFTER_IDLE_MS)),
+            unlocked: Arc::new(tokio::sync::Notify::new()),
         }
     }
 
@@ -139,6 +142,33 @@ impl WindowLock {
 
         if !enabled {
             self.locked.store(false, Ordering::SeqCst);
+            self.unlocked.notify_waiters();
+        }
+    }
+
+    fn unlock(&self) {
+        self.locked.store(false, Ordering::SeqCst);
+        self.came_back();
+        self.unlocked.notify_waiters();
+    }
+
+    pub async fn wait_until_unlocked(&self, within: Duration) -> bool {
+        let deadline = tokio::time::Instant::now() + within;
+
+        loop {
+            let notified = self.unlocked.notified();
+            tokio::pin!(notified);
+            // Registered before the check: an unlock between the check and the await would otherwise
+            // wake nobody and leave this waiting out the whole deadline.
+            notified.as_mut().enable();
+
+            if !self.is_locked() {
+                return true;
+            }
+
+            if tokio::time::timeout_at(deadline, notified).await.is_err() {
+                return !self.is_locked();
+            }
         }
     }
 
@@ -252,8 +282,7 @@ pub async fn unlock_window<R: Runtime>(app: AppHandle<R>, password: Option<Strin
     }
 
     if let Some(state) = app.try_state::<WindowLock>() {
-        state.locked.store(false, Ordering::SeqCst);
-        state.came_back();
+        state.unlock();
     }
 
     crate::tray::reveal(&app);
@@ -360,6 +389,64 @@ mod tests {
 
         lock.came_back();
         assert_eq!(lock.idle_since(), None);
+    }
+
+    fn locked() -> WindowLock {
+        let lock = WindowLock::new();
+
+        lock.enabled.store(true, Ordering::SeqCst);
+        lock.locked.store(true, Ordering::SeqCst);
+
+        lock
+    }
+
+    #[tokio::test]
+    async fn waits_for_nothing_while_the_window_is_unlocked() {
+        let lock = locked();
+
+        lock.unlock();
+
+        assert!(lock.wait_until_unlocked(Duration::ZERO).await);
+    }
+
+    #[tokio::test]
+    async fn gives_up_once_the_window_stays_locked_past_the_wait() {
+        let lock = locked();
+        let started = std::time::Instant::now();
+
+        assert!(!lock.wait_until_unlocked(Duration::from_millis(50)).await);
+        assert!(started.elapsed() >= Duration::from_millis(50));
+        assert!(lock.is_locked());
+    }
+
+    #[tokio::test]
+    async fn carries_on_as_soon_as_the_window_unlocks() {
+        let lock = locked();
+        let unlocking = lock.clone();
+        let started = std::time::Instant::now();
+
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            unlocking.unlock();
+        });
+
+        assert!(lock.wait_until_unlocked(Duration::from_secs(10)).await);
+        assert!(started.elapsed() < Duration::from_secs(5));
+    }
+
+    #[tokio::test]
+    async fn carries_on_once_the_user_turns_the_lock_off_while_it_waits() {
+        let lock = locked();
+        let turning_off = lock.clone();
+        let started = std::time::Instant::now();
+
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(20)).await;
+            turning_off.apply(&off());
+        });
+
+        assert!(lock.wait_until_unlocked(Duration::from_secs(10)).await);
+        assert!(started.elapsed() < Duration::from_secs(5));
     }
 
     #[test]

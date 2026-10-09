@@ -10,9 +10,12 @@ export type AgentRequestEvent = { id: number; body: unknown };
 export type TauriAgentChannel = {
   requests$(): Observable<AgentRequestEvent>;
   reply$(id: number, answer: AgentApiAnswer): Observable<void>;
+  /** Surfaces the app for a write that now waits for the user's approval. */
+  approvalQueued$(): Observable<void>;
 };
 
 export const createTauriAgentChannel = (): TauriAgentChannel => ({
   requests$: () => hostEventWith$<AgentRequestEvent>(AGENT_REQUEST_EVENT),
   reply$: (id, answer) => invokeHost$<void>('agent_reply', { id, answer }),
+  approvalQueued$: () => invokeHost$<void>('agent_approval_queued'),
 });
