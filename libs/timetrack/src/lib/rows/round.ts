@@ -322,6 +322,11 @@ const agedDetail = (options: { aged: readonly AgedNaming[]; proposals: readonly 
  */
 export const checkDay = (options: {
   proposals: WorklogProposal[];
+  /**
+   * The worklogs a sync would write for `proposals`, rows that overlap already separated. They count
+   * toward `proposedMs` in place of the rows, so time two rows share is counted once, as Tempo holds it.
+   */
+  writes?: readonly WorklogProposal[];
   unattributed?: WorkGroup[];
   options?: CheckDayOptions;
 }): DayCheck => {
@@ -329,7 +334,7 @@ export const checkDay = (options: {
     options.options ?? {};
   const unattributed = options.unattributed ?? [];
   const bookable = unattributed.filter(isBookable);
-  const proposedMs = options.proposals.reduce((sum, proposal) => sum + proposal.durationMs, 0);
+  const proposedMs = (options.writes ?? options.proposals).reduce((sum, proposal) => sum + proposal.durationMs, 0);
   const coveredMs = options.options?.coveredMs ?? 0;
   const loggedMs = proposedMs + coveredMs;
   const waiting = bookable.filter((group) => group.attended !== false);

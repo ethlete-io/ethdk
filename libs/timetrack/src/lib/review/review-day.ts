@@ -36,6 +36,7 @@ import {
 } from './model';
 import { isManualRow } from './edits';
 import { autoDisputeSettles } from './auto-dispute';
+import { separateOverlappingProposals } from '../tempo/separate';
 import { foldEndedRests } from './end-call';
 import { mayAutoWrite, rowFieldSourceOf, storedSourceOf } from '../model/field-source';
 
@@ -628,8 +629,14 @@ const reviewRows = (options: ReviewDayOptions): DayReview => {
   ];
   const settled = new Set([...answeredIds, ...answeredIds.flatMap((id) => formerIds.get(id) ?? [])]);
 
+  const writing = rows.filter(isNamedRow).filter((row) => syncsInState(row.state));
   const check = checkDay({
-    proposals: rows.filter(isNamedRow).filter((row) => syncsInState(row.state)),
+    proposals: writing,
+    writes: separateOverlappingProposals({
+      proposals: writing,
+      backgroundProjects: options.cut?.backgroundProjects,
+      incrementMs,
+    }),
     unattributed: options.rows.unattributed.flatMap((group) => {
       const id = unnamedRowId(group);
 
