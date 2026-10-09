@@ -915,7 +915,13 @@ const AUTO_MODE_DEF = /* @__PURE__ */ defineRootProvider(() => {
               approvals.revise((queue) => withAutoModeSubjectItemsExpired(queue, ask));
             }
           }),
-          map(() => answer),
+          map((held) => {
+            const key = autoModeSubjectKey(ask.subject);
+            const reAsk =
+              ask.subject.kind === 'call' && held.some((entry) => autoModeSubjectKey(entry.subject) === key);
+
+            return reAsk ? { ...answer, transcriptTried: true as const } : answer;
+          }),
         ),
       ),
       switchMap((answer) => queued$(ask.day, answer)),

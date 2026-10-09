@@ -181,6 +181,8 @@ export type AutoModeAnswer = {
   /** The masked payload that left the machine: what the "Ask AI" press would have shown. */
   request: TicketWritingRequest;
   outcome: AutoModeOutcome;
+  /** Set on a call answer that already was a re-ask for a transcript excerpt: the call is not asked again for one. */
+  transcriptTried?: true;
 };
 
 /** The other answer of a disputed band: the issue or the stand-in a second rung named. */

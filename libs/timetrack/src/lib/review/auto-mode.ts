@@ -684,8 +684,9 @@ export const autoModeAsks = (options: {
   });
 };
 
-/** Whether the ask an answer holds sent an excerpt of the call's transcript. */
-export const autoModeSentTranscript = (answer: AutoModeAnswer) => !!answer.request.call?.transcript;
+/** Whether an answer holds an ask that sent an excerpt of the call's transcript, or already was the re-ask for one. */
+export const autoModeSentTranscript = (answer: AutoModeAnswer) =>
+  !!answer.request.call?.transcript || !!answer.transcriptTried;
 
 /** The issue an answer names: the one the match found, or the one its approved create filed. */
 export const autoModeIssueKeyOf = (answer: AutoModeAnswer) => {

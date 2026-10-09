@@ -99,6 +99,13 @@ describe('auto mode on an unnamed call', () => {
     expect(asks({ answers: [sent], transcribedCalls })).toEqual([]);
   });
 
+  it('does not ask again for an excerpt a re-ask already tried, whether or not it sent one', () => {
+    const transcribedCalls = new Set([CALL_ID]);
+    const tried: AutoModeAnswer = { ...answer({ kind: 'failed' }), transcriptTried: true };
+
+    expect(asks({ answers: [tried], transcribedCalls })).toEqual([]);
+  });
+
   it('asks again only a call still unnamed and not named by the user', () => {
     const [row] = rowsOf();
 
