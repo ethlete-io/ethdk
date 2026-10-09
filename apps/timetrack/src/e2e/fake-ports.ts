@@ -694,6 +694,14 @@ export const createFakePorts = (): HostPorts => {
 
         return ok(undefined);
       },
+      ownDayRowsFrom$: (from) =>
+        ok(
+          Object.fromEntries(
+            Object.entries(world.peers.ownDayRows)
+              .filter(([day]) => localDayRange(day, MIDNIGHT).from >= from)
+              .map(([day, sent]) => [day, encodePeerDayRows(sent)]),
+          ),
+        ),
     },
 
     transcription: {

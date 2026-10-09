@@ -202,6 +202,7 @@ pub fn run() {
             peer::received_between,
             peer::set_repo_keys,
             peer::set_day_rows,
+            peer::own_day_rows,
             process::run_process,
             reporter::reporter_vsix_path,
             reporter::save_report_file,

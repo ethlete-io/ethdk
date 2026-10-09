@@ -75,6 +75,8 @@ export type TauriPeers = {
   setRepoKeys$(keys: CheckoutKeys): Observable<void>;
   /** Replaces this machine's rows of a day starting at `dayStart`, which the next pull from here carries. */
   setDayRows$(rows: PeerDayRows, dayStart: Date): Observable<void>;
+  /** This machine's stored rows of the days that start at or after `from`, in their wire form, by day. */
+  ownDayRowsFrom$(from: Date): Observable<Readonly<Record<string, string>>>;
 };
 
 export const createTauriPeers = (): TauriPeers => ({
@@ -112,4 +114,8 @@ export const createTauriPeers = (): TauriPeers => ({
     invokeHost$<void>('set_day_rows', {
       rows: { day: rows.day, dayStartMs: dayStart.getTime(), rows: encodePeerDayRows(rows) },
     }),
+  ownDayRowsFrom$: (from) =>
+    invokeHost$<{ day: string; rows: string }[]>('own_day_rows', { fromMs: from.getTime() }).pipe(
+      map((stored) => Object.fromEntries(stored.map((sent) => [sent.day, sent.rows]))),
+    ),
 });

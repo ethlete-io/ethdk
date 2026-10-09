@@ -12,6 +12,7 @@ import { ApprovalBannerComponent, injectAgentEndpoint } from './agent';
 import { BuildStampComponent } from './build-stamp.component';
 import { injectAutoMode } from './day-review/auto-mode';
 import { injectStandInPins } from './stand-ins/stand-in-pins';
+import { injectDayRowsBackfill } from './peers/day-rows-backfill';
 import { injectCollectionPause } from './collection-pause';
 import { LockViewComponent } from './lock-view.component';
 import { LogoComponent } from './logo.component';
@@ -116,6 +117,7 @@ export class AppComponent {
     injectAgentEndpoint();
     injectAutoMode();
     injectStandInPins();
+    injectDayRowsBackfill();
 
     // Nor any backfill pass, each of which has to converge whether or not anybody opens the Sources screen.
     injectAgentSpendBackfill();

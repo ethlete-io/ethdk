@@ -4,6 +4,7 @@ import {
   E2E_ISSUE_KEY,
   E2E_REPO,
   FakeDiscoveredMachine,
+  FakePairedMachine,
   FakeReceivedDayRows,
   tempoWorklogOn,
 } from '@ethlete/timetrack/testing';
@@ -236,5 +237,64 @@ test.describe('a booked day a paired machine’s events reach afterwards', () =>
     const frozen = await inputsOf(page, BOOKED_DAY);
 
     expect(rows.ok && rows.value.rows.map((row) => row.id)).toEqual(frozen?.frozenRows?.proposals.map((row) => row.id));
+  });
+});
+
+test.describe('a booked day nothing opened since this app could send rows', () => {
+  const MACBOOK: FakePairedMachine = {
+    machineId: 'mac-1',
+    label: 'MacBook',
+    certFingerprint: 'fp-mac',
+    lastAddr: '192.168.1.20:52741',
+    lastSeenMs: new Date(E2E_NOW).getTime(),
+    clockOffsetMs: 0,
+    pairedAtMs: new Date(E2E_NOW).getTime(),
+    lastPullMs: null,
+  };
+  const PC: FakePairedMachine = { ...MACBOOK, machineId: 'pc-1', label: 'PC', certFingerprint: 'fp-pc' };
+
+  test('sends its rows at startup, and the paired machine draws them booked', async ({ page }) => {
+    await seedWorld(page, {
+      now: E2E_NOW,
+      events: hourOn(BOOKED_DAY),
+      tempo: { worklogs: [tempoWorklogOn({ day: BOOKED_DAY, minutes: 60, startTime: '11:00:00', id: 'w-1' })] },
+      ledger: [
+        {
+          proposalId: `${E2E_ISSUE_KEY}@${BOOKED_DAY}T11:00:00.000Z`,
+          day: BOOKED_DAY,
+          tempoWorklogId: 'w-1',
+          contentHash: 'booked',
+          syncedAt: new Date(`${BOOKED_DAY}T16:00:00.000Z`),
+        },
+      ],
+      peers: { paired: [MACBOOK] },
+    });
+    await page.goto('/settings');
+
+    await expect.poll(async () => (await readSentDayRows(page, BOOKED_DAY))?.frozen, { timeout: 15_000 }).toBe(true);
+
+    const sent = await readSentDayRows(page, BOOKED_DAY);
+
+    expect(sent?.rows.map((row) => ({ issueKey: row.issueKey, state: row.state }))).toEqual([
+      { issueKey: E2E_ISSUE_KEY, state: 'booked' },
+    ]);
+
+    await seedWorld(page, {
+      events: hourOn(BOOKED_DAY).map((event) => ({ ...event, at: new Date(event.at.getTime() - 3 * 3_600_000) })),
+      ledger: [
+        {
+          proposalId: `booked@${BOOKED_DAY}`,
+          day: BOOKED_DAY,
+          tempoWorklogId: 'w-2',
+          contentHash: 'booked',
+          syncedAt: new Date(`${BOOKED_DAY}T16:00:00.000Z`),
+        },
+      ],
+      peers: { paired: [PC], dayRows: sent ? [{ machineId: PC.machineId, rows: sent }] : [] },
+    });
+    await page.goto('/day');
+    await page.getByRole('button', { name: 'Previous day' }).click();
+
+    await expect(page.locator('[data-peer-band]')).toHaveText([`Booked on PC · ${E2E_ISSUE_KEY}`]);
   });
 });

@@ -31,6 +31,8 @@ const MAX_FRAME_BYTES: usize = 64 * 1024;
 const MAX_PAGE_FRAME_BYTES: usize = 4 * 1024 * 1024;
 const PAGE_BYTES: usize = 1024 * 1024;
 const MAX_PAGE_ROWS: u32 = 500;
+/// How far back a machine that holds no day rows from a peer asks for them, whatever their change.
+const DAY_ROWS_CATCH_UP_MS: i64 = 30 * 24 * 60 * 60 * 1000;
 const EXCHANGE_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_CONNECTIONS: usize = 8;
 
@@ -271,6 +273,11 @@ enum Frame {
         machine_id: String,
         after_seq: i64,
         limit: u32,
+        /// Asks for the day rows of the days that start at or after this, also those changed before
+        /// `after_seq`: a machine that predates day rows moved its cursor past them. Absent from such a
+        /// machine, and from one that already holds the peer's rows.
+        #[serde(default)]
+        day_rows_from_ms: Option<i64>,
     },
     #[serde(rename_all = "camelCase")]
     Changes {
@@ -524,8 +531,14 @@ fn split_address(address: &str) -> TimetrackResult<(String, u16)> {
 
 /// The changes after `after_seq` among this machine's own events, oldest first, as one frame that
 /// stays within `PAGE_BYTES` unless its first row alone is larger. `received_event` is never read:
-/// a machine serves only what it collected (ADR 0039).
-fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> TimetrackResult<Frame> {
+/// a machine serves only what it collected (ADR 0039). With `day_rows_from_ms` the frame also carries the
+/// day rows of the days from there on that changed at or before `after_seq`.
+fn changes_after(
+    connection: &Connection,
+    after_seq: i64,
+    limit: u32,
+    day_rows_from_ms: Option<i64>,
+) -> TimetrackResult<Frame> {
     let limit = limit.clamp(1, MAX_PAGE_ROWS);
     let mut statement = connection.prepare(
         "SELECT changed_seq, id, at_ms, source, kind, payload, dedupe_key, 0 FROM collected_event
@@ -538,7 +551,11 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
          LIMIT ?2",
     )?;
     let mut rows = statement.query(params![after_seq, i64::from(limit) + 1])?;
-    let (mut events, mut deleted, mut day_rows) = (Vec::new(), Vec::new(), Vec::new());
+    let (mut events, mut deleted) = (Vec::new(), Vec::new());
+    let mut day_rows = match day_rows_from_ms {
+        Some(from_ms) => day_rows_through(connection, after_seq, from_ms)?,
+        None => Vec::new(),
+    };
     let (mut cursor, mut bytes, mut taken, mut more) = (after_seq, 0usize, 0u32, false);
 
     while let Some(row) = rows.next()? {
@@ -590,6 +607,42 @@ fn changes_after(connection: &Connection, after_seq: i64, limit: u32) -> Timetra
         repo_keys: Some(own_repo_keys(connection)?),
         day_rows: Some(day_rows),
     })
+}
+
+fn day_rows_through(connection: &Connection, through_seq: i64, from_ms: i64) -> TimetrackResult<Vec<DayRows>> {
+    let mut statement = connection.prepare(
+        "SELECT day, day_start_ms, rows FROM day_rows
+          WHERE changed_seq <= ?1 AND day_start_ms >= ?2
+          ORDER BY day_start_ms",
+    )?;
+    let rows = statement.query_map(params![through_seq, from_ms], |row| {
+        Ok(DayRows {
+            day: row.get(0)?,
+            day_start_ms: row.get(1)?,
+            rows: row.get(2)?,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+/// This machine's own day rows of the days that start at or after `from_ms`.
+fn own_day_rows_from(connection: &Connection, from_ms: i64) -> TimetrackResult<Vec<DayRows>> {
+    day_rows_through(connection, i64::MAX, from_ms)
+}
+
+/// Where to ask a peer for its day rows outside the cursor: from `DAY_ROWS_CATCH_UP_MS` ago while this
+/// machine holds none of them, else nowhere.
+fn day_rows_catch_up_from(connection: &Connection, machine_id: &str, now_ms: i64) -> TimetrackResult<Option<i64>> {
+    let held = connection
+        .query_row(
+            "SELECT 1 FROM received_day_rows WHERE machine_id = ?1 LIMIT 1",
+            params![machine_id],
+            |_| Ok(()),
+        )
+        .optional()?;
+
+    Ok(held.is_none().then(|| now_ms - DAY_ROWS_CATCH_UP_MS))
 }
 
 /// Replaces this machine's rows of a day. Unchanged rows keep their change, so no pull resends them.
@@ -1053,6 +1106,7 @@ impl Peers {
                 machine_id,
                 after_seq,
                 limit,
+                day_rows_from_ms,
             } => {
                 let client = Party {
                     fingerprint: client_fingerprint,
@@ -1061,7 +1115,8 @@ impl Peers {
                     addr: None,
                 };
 
-                self.answer_pull(&mut tls, &client, after_seq, limit).await
+                self.answer_pull(&mut tls, &client, after_seq, limit, day_rows_from_ms)
+                    .await
             }
             _ => refuse(&mut tls, "expected a pairing, a hello or a pull").await,
         }
@@ -1209,6 +1264,7 @@ impl Peers {
         client: &Party,
         after_seq: i64,
         limit: u32,
+        day_rows_from_ms: Option<i64>,
     ) -> TimetrackResult<()> {
         if !self.is_paired(client).await? {
             return refuse(tls, NOT_PAIRED).await;
@@ -1217,7 +1273,7 @@ impl Peers {
         let page = self
             .0
             .db
-            .run(move |connection| changes_after(connection, after_seq, limit))
+            .run(move |connection| changes_after(connection, after_seq, limit, day_rows_from_ms))
             .await?;
 
         if serde_json::to_vec(&page)?.len() > MAX_PAGE_FRAME_BYTES {
@@ -1555,7 +1611,16 @@ impl Peers {
 
     async fn pull_page(&self, machine_id: &str, limit: u32) -> TimetrackResult<(usize, usize, i64, bool)> {
         let wanted = machine_id.to_string();
-        let after_seq = self.0.db.run(move |connection| cursor_of(connection, &wanted)).await?;
+        let (after_seq, day_rows_from_ms) = self
+            .0
+            .db
+            .run(move |connection| {
+                Ok((
+                    cursor_of(connection, &wanted)?,
+                    day_rows_catch_up_from(connection, &wanted, now_ms())?,
+                ))
+            })
+            .await?;
         let (identity, peer, _, mut tls) = self.connect_paired(machine_id).await?;
 
         write_frame(
@@ -1564,6 +1629,7 @@ impl Peers {
                 machine_id: identity.machine_id.clone(),
                 after_seq,
                 limit,
+                day_rows_from_ms,
             },
         )
         .await?;
@@ -1634,6 +1700,14 @@ impl Peers {
     /// Replaces this machine's rows of a day, which the next pull from here carries to the paired machine.
     pub async fn set_day_rows(&self, rows: DayRows) -> TimetrackResult<()> {
         self.0.db.run(move |connection| store_day_rows(connection, &rows)).await
+    }
+
+    /// This machine's own rows of the days that start at or after `from_ms`, as it last stored them.
+    pub async fn own_day_rows(&self, from_ms: i64) -> TimetrackResult<Vec<DayRows>> {
+        self.0
+            .db
+            .run(move |connection| own_day_rows_from(connection, from_ms))
+            .await
     }
 
     pub async fn forget(&self, machine_id: &str) -> TimetrackResult<bool> {
@@ -1863,6 +1937,11 @@ pub async fn set_repo_keys(peers: tauri::State<'_, Peers>, keys: Vec<RepoKey>) -
 #[tauri::command]
 pub async fn set_day_rows(peers: tauri::State<'_, Peers>, rows: DayRows) -> TimetrackResult<()> {
     peers.set_day_rows(rows).await
+}
+
+#[tauri::command]
+pub async fn own_day_rows(peers: tauri::State<'_, Peers>, from_ms: i64) -> TimetrackResult<Vec<DayRows>> {
+    peers.own_day_rows(from_ms).await
 }
 
 #[tauri::command]
@@ -2285,6 +2364,74 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
+    async fn a_machine_that_holds_none_of_a_peers_rows_asks_for_the_last_thirty_days_once() {
+        let (a, b) = (instance("pc"), instance("laptop"));
+
+        pair(&a, &b).await;
+
+        let a_id = machine_id(&a).await;
+        let now = now_ms();
+        let days_in = |range: ReceivedRange| range.day_rows.into_iter().map(|rows| rows.day).collect::<Vec<_>>();
+
+        a.set_day_rows(day_rows("2026-08-01", now - DAY_ROWS_CATCH_UP_MS - 1, "old"))
+            .await
+            .unwrap();
+        a.set_day_rows(day_rows("2026-10-08", now - 1_000, "booked"))
+            .await
+            .unwrap();
+        let first = b.pull(&a_id).await.unwrap();
+
+        b.0.db
+            .run(|connection| Ok(connection.execute("DELETE FROM received_day_rows", [])?))
+            .await
+            .unwrap();
+        assert!(days_in(b.received_between(0, now).await.unwrap()).is_empty());
+
+        assert_eq!(b.pull(&a_id).await.unwrap().cursor, first.cursor);
+        assert_eq!(
+            days_in(b.received_between(0, now).await.unwrap()),
+            vec!["2026-10-08".to_string()]
+        );
+
+        let a_id_held = a_id.clone();
+        assert_eq!(
+            b.0.db
+                .run(move |connection| day_rows_catch_up_from(connection, &a_id_held, now))
+                .await
+                .unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn a_pull_from_a_machine_that_predates_day_rows_asks_for_none_outside_the_cursor() {
+        let frame: Frame = serde_json::from_str(r#"{"type":"pull","machineId":"m","afterSeq":3,"limit":10}"#).unwrap();
+
+        assert!(matches!(
+            frame,
+            Frame::Pull {
+                day_rows_from_ms: None,
+                ..
+            }
+        ));
+
+        let connection = Connection::open_in_memory().unwrap();
+
+        crate::db::migrate(&connection).unwrap();
+        store_day_rows(&connection, &day_rows("2026-10-08", 1_000, "booked")).unwrap();
+
+        let rows_of = |frame: Frame| match frame {
+            Frame::Changes { day_rows, .. } => day_rows.unwrap_or_default().len(),
+            _ => panic!("not a page"),
+        };
+
+        assert_eq!(rows_of(changes_after(&connection, 99, 10, None).unwrap()), 0);
+        assert_eq!(rows_of(changes_after(&connection, 99, 10, Some(0)).unwrap()), 1);
+        assert_eq!(rows_of(changes_after(&connection, 99, 10, Some(2_000)).unwrap()), 0);
+        assert_eq!(rows_of(changes_after(&connection, 0, 10, Some(0)).unwrap()), 1);
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
     async fn an_updated_event_replaces_its_copy() {
         let (a, b) = (instance("pc"), instance("laptop"));
 
@@ -2366,7 +2513,11 @@ mod tests {
         assert_eq!(received(&b).await.len(), 6);
         assert!(received(&b).await.iter().all(|(_, _, at_ms, _)| *at_ms != 3));
 
-        let page = a.0.db.run(|connection| changes_after(connection, 0, 3)).await.unwrap();
+        let page =
+            a.0.db
+                .run(|connection| changes_after(connection, 0, 3, None))
+                .await
+                .unwrap();
 
         assert!(matches!(page, Frame::Changes { ref events, more: true, .. } if events.len() == 3));
     }

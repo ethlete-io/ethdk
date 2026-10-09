@@ -346,7 +346,39 @@ const AGENT_DAY_DEF = /* @__PURE__ */ defineRootProvider(() => {
 
   const freeze$ = (day: string): Observable<void> => read$(day).pipe(map(() => undefined));
 
-  return { review$, inputs$, namingDecisions$, editRows$, addRow$, askEvidence$, applyAutoModeNames$, freeze$ };
+  const sendDayRows$ = (day: string): Observable<void> =>
+    read$(day).pipe(
+      concatMap((read) =>
+        ledgerOf$(day).pipe(
+          concatMap((ledger) => {
+            const edits = editsOf(read);
+
+            return ports.peers.setDayRows$(
+              ownDayRowsOf({
+                day,
+                frozen: !!edits.frozenRows,
+                rows: read.reviewWith(edits).rows,
+                ledger,
+                standIns: settings.settings().standIns,
+              }),
+              localDayRange(day, dayBoundaryOf(settings.settings())).from,
+            );
+          }),
+        ),
+      ),
+    );
+
+  return {
+    review$,
+    inputs$,
+    namingDecisions$,
+    editRows$,
+    addRow$,
+    askEvidence$,
+    applyAutoModeNames$,
+    freeze$,
+    sendDayRows$,
+  };
 });
 
 export const injectAgentDay = /* @__PURE__ */ toInjectFn(AGENT_DAY_DEF);

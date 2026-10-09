@@ -43,6 +43,7 @@ const COMMANDS: &[&str] = &[
     "oauth_authorize",
     "oauth_cancel",
     "oauth_pending_url",
+    "own_day_rows",
     "pair_accept",
     "pair_offer",
     "peers_discovered",
