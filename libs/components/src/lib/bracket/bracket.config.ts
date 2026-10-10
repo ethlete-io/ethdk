@@ -40,7 +40,8 @@ export type BracketConfig<TRoundData = any, TMatchData = any> = {
   rowSpanRoundId?: string | null;
   /**
    * How far below the top of the final's card a third place match sits, in px, folding it into the
-   * final's column and moving its round header above its own card. `null` gives it a column of its own.
+   * final's column and moving its round header above its own card. `null` gives it a column of its own,
+   * except in a mirrored layout, which always folds it, one row gap below the final's card.
    *
    * Only a single elimination layout has a column to fold: a double elimination grid already hangs the
    * third place under its final.

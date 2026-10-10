@@ -231,11 +231,13 @@ const getNavigationContext = <TRoundData, TMatchData>(params: {
   // A folded half already resolved its own direction, so the swap that turns array order into flow
   // order for a right-hand round must not be applied twice.
   const previousUpperRound = isFolded || isLeftToRight ? relativePrevious : relativeNext;
-  const nextUpperRound = isFolded || isLeftToRight ? relativeNext : relativePrevious;
+  const flowNext = isFolded || isLeftToRight ? relativeNext : relativePrevious;
 
-  const isLastUpperRound =
-    !nextUpperRound ||
-    (nextUpperRound.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT && !currentUpperRound.mirrorRoundType);
+  // An unfolded round sits in the middle of the fold, so a right half beside it in the array feeds it
+  // rather than following it.
+  const nextUpperRound = !isFolded && flowNext?.mirrorRoundType === BRACKET_ROUND_MIRROR_TYPE.RIGHT ? null : flowNext;
+
+  const isLastUpperRound = !nextUpperRound;
 
   const isFinal = currentUpperRound.type === COMMON_BRACKET_ROUND_TYPE.FINAL;
 

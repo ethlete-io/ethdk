@@ -1,6 +1,7 @@
 import {
   BRACKET_DATA_LAYOUT,
   BracketDataLayout,
+  BracketMatchId,
   BracketRoundId,
   BracketRoundType,
   COMMON_BRACKET_ROUND_TYPE,
@@ -160,5 +161,34 @@ describe('generateRoundRelations', () => {
 
     expect(relationOf(source, 'rf')).toBe('one-to-nothing prev=gf');
     expect(relationOf(source, 't')).toBe('none');
+  });
+
+  it('ends a mirrored double elimination without a reset at the grand final', () => {
+    const source = doubleElimination([
+      { id: 'u1', type: UPPER_BRACKET, matchCount: 2 },
+      { id: 'u2', type: UPPER_BRACKET, matchCount: 1 },
+      { id: 'l1', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'l2', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'gf', type: 'final', matchCount: 1 },
+      { id: 't', type: COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE, matchCount: 1 },
+    ]);
+    const bracket = createBracket(source, { layout: BRACKET_DATA_LAYOUT.MIRRORED });
+
+    expect(describeRelation(bracket.rounds.getOrThrow('gf' as BracketRoundId).relation)).toBe('two-to-nothing');
+    expect(bracket.matches.getOrThrow('gfm0' as BracketMatchId).relation).not.toHaveProperty('nextMatch');
+  });
+
+  it('links a mirrored double elimination with a reset from the grand final to the reset', () => {
+    const source = doubleElimination([
+      { id: 'u1', type: UPPER_BRACKET, matchCount: 2 },
+      { id: 'u2', type: UPPER_BRACKET, matchCount: 1 },
+      { id: 'l1', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'l2', type: LOWER_BRACKET, matchCount: 1 },
+      { id: 'gf', type: 'final', matchCount: 1 },
+      { id: 'rf', type: REVERSE_FINAL, matchCount: 1 },
+    ]);
+
+    expect(relationOf(source, 'gf', BRACKET_DATA_LAYOUT.MIRRORED)).toBe('two-to-one next=rf');
+    expect(relationOf(source, 'rf', BRACKET_DATA_LAYOUT.MIRRORED)).toBe('one-to-nothing prev=gf');
   });
 });

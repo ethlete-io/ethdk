@@ -4,7 +4,7 @@ import { BracketComponents } from './drawing/grid/core';
 import { createDoubleEliminationGrid } from './drawing/grid/double-elimination';
 import { createStackedDoubleEliminationGrid } from './drawing/grid/double-elimination-stacked';
 import { createSingleEliminationGrid } from './drawing/grid/single-elimination';
-import { CreateBracketGridConfig } from './drawing/grid/types';
+import { ComputedBracketGrid, CreateBracketGridConfig } from './drawing/grid/types';
 import { BracketDataSource, bracketSlot } from './integrations';
 import { createBracket, migrateBracketPicks, resolveBracketSlot } from './linked';
 
@@ -88,6 +88,103 @@ const singleElimination = (participants: number): BracketDataSource<null, null> 
   }
   return { mode: 'single-elimination', rounds, matches };
 };
+
+const withThirdPlace = (source: BracketDataSource<null, null>): BracketDataSource<null, null> => {
+  const finalIndex = source.rounds.length - 1;
+  const semiFinal = finalIndex > 0 ? `r${finalIndex - 1}` : null;
+
+  return {
+    ...source,
+    rounds: [...source.rounds, { id: 'third', name: 'Third', type: 'third-place', data: null }],
+    matches: [
+      ...source.matches,
+      {
+        id: 'thirdm0',
+        roundId: 'third',
+        home: null,
+        away: null,
+        winner: null,
+        status: 'pending',
+        data: null,
+        ...(semiFinal
+          ? {
+              homeSource: bracketSlot.matchOutcome(`${semiFinal}m0`, 'loser'),
+              awaySource: bracketSlot.matchOutcome(`${semiFinal}m1`, 'loser'),
+            }
+          : {}),
+      },
+    ],
+  };
+};
+
+const doubleElimination = (withReset: boolean): BracketDataSource<null, null> => ({
+  mode: 'double-elimination',
+  rounds: [
+    { id: 'u1', name: 'U1', type: 'upper-bracket', data: null },
+    { id: 'u2', name: 'U2', type: 'upper-bracket', data: null },
+    { id: 'l1', name: 'L1', type: 'lower-bracket', data: null },
+    { id: 'l2', name: 'L2', type: 'lower-bracket', data: null },
+    { id: 'f', name: 'F', type: 'final', data: null },
+    ...(withReset ? [{ id: 'rf', name: 'RF', type: 'reverse-final' as const, data: null }] : []),
+    { id: 'third', name: 'Third', type: 'third-place', data: null },
+  ],
+  matches: [
+    { id: 'u1a', roundId: 'u1', home: 'a', away: 'b', winner: null, status: 'pending', data: null },
+    { id: 'u1b', roundId: 'u1', home: 'c', away: 'd', winner: null, status: 'pending', data: null },
+    { id: 'u2a', roundId: 'u2', home: null, away: null, winner: null, status: 'pending', data: null },
+    { id: 'l1a', roundId: 'l1', home: null, away: null, winner: null, status: 'pending', data: null },
+    { id: 'l2a', roundId: 'l2', home: null, away: null, winner: null, status: 'pending', data: null },
+    { id: 'fa', roundId: 'f', home: null, away: null, winner: null, status: 'pending', data: null },
+    ...(withReset
+      ? [{ id: 'rfa', roundId: 'rf', home: null, away: null, winner: null, status: 'pending' as const, data: null }]
+      : []),
+    { id: 'ta', roundId: 'third', home: null, away: null, winner: null, status: 'pending', data: null },
+  ],
+});
+
+type Rect = { left: number; top: number; width: number; height: number };
+
+/** Each match's `nextMatch` is in a later source round, and no third card sits in the gap between the two. */
+const expectForwardLinksWithClearGaps = (
+  source: BracketDataSource<null, null>,
+  bracket: ReturnType<typeof createBracket<null, null>>,
+  rects: Map<string, Rect>,
+) => {
+  const sourceRoundIndex = (roundId: string) =>
+    source.rounds.findIndex((round) => round.id === roundId.replace(/--half-\d+$/, ''));
+
+  for (const match of bracket.matches.values()) {
+    const next = (match.relation as { nextMatch?: typeof match }).nextMatch;
+
+    if (!next) continue;
+
+    expect(sourceRoundIndex(next.round.id), `${match.id} -> ${next.id}`).toBeGreaterThan(
+      sourceRoundIndex(match.round.id),
+    );
+
+    const a = rects.get(match.id);
+    const b = rects.get(next.id);
+
+    if (!a || !b) continue;
+
+    const gapStart = Math.min(a.left + a.width, b.left + b.width);
+    const gapEnd = Math.max(a.left, b.left);
+    const bandTop = Math.min(a.top + a.height / 2, b.top + b.height / 2);
+    const bandBottom = Math.max(a.top + a.height / 2, b.top + b.height / 2);
+
+    for (const [id, rect] of rects) {
+      if (id === match.id || id === next.id) continue;
+
+      const overlapsGap = rect.left < gapEnd && rect.left + rect.width > gapStart;
+      const overlapsBand = rect.top <= bandBottom && rect.top + rect.height >= bandTop;
+
+      expect(overlapsGap && overlapsBand, `${id} sits on ${match.id} -> ${next.id}`).toBe(false);
+    }
+  }
+};
+
+const rectsOf = (grid: ComputedBracketGrid<null, null>) =>
+  new Map<string, Rect>([...grid.matchElementMap.entries()].map(([id, element]) => [id, element.dimensions]));
 
 describe('bracket edge cases', () => {
   for (const n of [1, 2, 3, 5, 6, 7, 12]) {
@@ -200,6 +297,39 @@ describe('bracket edge cases', () => {
           }
         }
         expect(linked).toMatchSnapshot();
+      });
+    }
+  }
+
+  for (const n of [4, 5, 8]) {
+    for (const layout of [BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, BRACKET_DATA_LAYOUT.MIRRORED]) {
+      it(`lays out a ${n} participant single elimination with a third place (${layout})`, () => {
+        const src = withThirdPlace(singleElimination(n));
+        const bracket = createBracket(src, { layout });
+        const grid = createSingleEliminationGrid(bracket, config(layout), COMPONENTS);
+
+        expect(grid.matchElementMap.size).toBe(bracket.matches.size);
+        expectForwardLinksWithClearGaps(src, bracket, rectsOf(grid));
+        expect(JSON.stringify(drawMan({ ...DRAW_OPTIONS, bracketGrid: grid }))).not.toContain('NaN');
+      });
+    }
+  }
+
+  for (const withReset of [true, false]) {
+    const layouts = [
+      { layout: BRACKET_DATA_LAYOUT.LEFT_TO_RIGHT, create: createDoubleEliminationGrid },
+      { layout: BRACKET_DATA_LAYOUT.MIRRORED, create: createStackedDoubleEliminationGrid },
+    ];
+
+    for (const { layout, create } of layouts) {
+      it(`links a double elimination ${withReset ? 'with' : 'without'} a reset forward (${layout})`, () => {
+        const src = doubleElimination(withReset);
+        const bracket = createBracket(src, { layout });
+        const grid = create(bracket, config(layout), COMPONENTS);
+
+        expect(grid.matchElementMap.size).toBe(bracket.matches.size);
+        expectForwardLinksWithClearGaps(src, bracket, rectsOf(grid));
+        expect(JSON.stringify(drawMan({ ...DRAW_OPTIONS, bracketGrid: grid }))).not.toContain('NaN');
       });
     }
   }

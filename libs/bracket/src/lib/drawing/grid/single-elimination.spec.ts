@@ -226,6 +226,22 @@ describe('createSingleEliminationGrid, a folded third place', () => {
     ).toHaveLength(1);
   });
 
+  it('folds the third place under the final in a mirrored layout while the offset is unset', () => {
+    const grid = createSingleEliminationGrid(
+      createBracket(withThirdPlace(singleElimination([4, 2, 1])), { layout: BRACKET_DATA_LAYOUT.MIRRORED }),
+      CONFIG,
+      COMPONENTS,
+    );
+    const final = grid.matchElementMap.getOrThrow('r2m0').dimensions;
+    const thirdPlace = grid.matchElementMap.getOrThrow('thirdm0').dimensions;
+    const rightSemiFinal = grid.matchElementMap.getOrThrow('r1m1').dimensions;
+
+    expect(thirdPlace.left).toBe(final.left);
+    expect(thirdPlace.top).toBeGreaterThanOrEqual(final.top + final.height);
+    expect(rightSemiFinal.left).toBe(final.left + COLUMN_WIDTH + COLUMN_GAP);
+    expect(grid.raw.grid.dimensions.height).toBeGreaterThanOrEqual(thirdPlace.top + thirdPlace.height);
+  });
+
   it('leaves the fold alone when the source has no final to fold it into', () => {
     const noFinal: BracketDataSource<null, null> = {
       ...withThirdPlace(singleElimination([4, 2])),

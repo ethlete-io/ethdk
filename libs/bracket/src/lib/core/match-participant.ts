@@ -28,6 +28,15 @@ export type BracketMatchParticipantBase = BracketParticipantBase & {
 export type BracketMatchParticipantWithRelationsBase = BracketMatchParticipantBase &
   BracketParticipantWithRelationsBase;
 
+const thirdPlaceFeederRoundId = <TRoundData, TMatchData>(source: BracketDataSource<TRoundData, TMatchData>) => {
+  if (!source.rounds.some((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE)) return null;
+
+  const chain = source.rounds.filter((round) => round.type !== COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE);
+  const finalIndex = chain.findIndex((round) => round.type === COMMON_BRACKET_ROUND_TYPE.FINAL);
+
+  return finalIndex > 0 ? (chain[finalIndex - 1]?.id ?? null) : null;
+};
+
 export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
   source: BracketDataSource<TRoundData, TMatchData>,
   participantId: MatchParticipantId | null,
@@ -98,8 +107,8 @@ export const createNewMatchParticipantBase = <TRoundData, TMatchData>(
   if (hasElimination) {
     switch (source.mode) {
       case TOURNAMENT_MODE.SINGLE_ELIMINATION: {
-        isEliminationMatch = true;
-        isEliminated = isLooser ?? false;
+        isEliminationMatch = match.roundId !== thirdPlaceFeederRoundId(source);
+        isEliminated = (isEliminationMatch && isLooser) ?? false;
         break;
       }
       case TOURNAMENT_MODE.DOUBLE_ELIMINATION: {

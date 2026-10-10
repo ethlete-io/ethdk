@@ -348,6 +348,10 @@ final's column width, and the grid gets narrower by the column and gap it saves 
 Only a single elimination layout has a column to fold: a double elimination grid already hangs the
 third place under its grand final, and ignores the setting.
 
+A mirrored single elimination layout always folds the third place, since a column of its own would sit
+between the final and the right half. Unset, the third place card sits one `rowGap` below the final's
+card, with its round header in between.
+
 ```html
 <et-bracket [source]="source()" [thirdPlaceTopOffset]="260" [finalRoundHeaderGap]="60" />
 ```

@@ -1,4 +1,4 @@
-import { COMMON_BRACKET_ROUND_TYPE } from '../../core';
+import { BRACKET_DATA_LAYOUT, COMMON_BRACKET_ROUND_TYPE } from '../../core';
 import { Bracket, BracketRound } from '../../linked';
 import {
   BracketComponents,
@@ -21,11 +21,25 @@ import { resolveBracketGridRowSpan } from './row-span';
 import { BracketRuntimeError } from '../../bracket-runtime-error';
 import { BRACKET_ERROR_CODES } from '../../bracket-errors';
 
+// A mirrored grid has no free column for the third place: one between the final and a right half would
+// sit on the straight connector between them.
+const resolveThirdPlaceTopOffset = (options: CreateBracketGridConfig) => {
+  if (options.thirdPlaceTopOffset !== null && options.thirdPlaceTopOffset !== undefined) {
+    return options.thirdPlaceTopOffset;
+  }
+
+  if (options.layout !== BRACKET_DATA_LAYOUT.MIRRORED) return null;
+
+  const headerOffset = options.roundHeaderHeight > 0 ? options.roundHeaderHeight + options.roundHeaderGap : 0;
+
+  return options.finalMatchHeight + options.rowGap + headerOffset;
+};
+
 const resolveFoldedThirdPlaceRound = <TRoundData, TMatchData>(
   rounds: BracketRound<TRoundData, TMatchData>[],
-  options: CreateBracketGridConfig,
+  topOffset: number | null,
 ) => {
-  if (options.thirdPlaceTopOffset === null || options.thirdPlaceTopOffset === undefined) return null;
+  if (topOffset === null) return null;
   if (!rounds.some((round) => round.type === COMMON_BRACKET_ROUND_TYPE.FINAL)) return null;
 
   return rounds.find((round) => round.type === COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE) ?? null;
@@ -46,7 +60,8 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
   }
 
   const resolvedOptions = resolveBracketGridRowSpan(bracketData, options);
-  const foldedThirdPlaceRound = resolveFoldedThirdPlaceRound(rounds, options);
+  const thirdPlaceTopOffset = resolveThirdPlaceTopOffset(options);
+  const foldedThirdPlaceRound = resolveFoldedThirdPlaceRound(rounds, thirdPlaceTopOffset);
   const columnRounds = rounds.filter((round) => round !== foldedThirdPlaceRound);
 
   let pushSectionToFinal: ((...sections: BracketMasterColumnSection<TRoundData, TMatchData>[]) => void) | null = null;
@@ -108,7 +123,7 @@ export const createSingleEliminationGrid = <TRoundData, TMatchData>(
       createFoldedThirdPlaceSection({
         finalSubColumn,
         round: foldedThirdPlaceRound,
-        topOffset: options.thirdPlaceTopOffset ?? 0,
+        topOffset: thirdPlaceTopOffset ?? 0,
         options: resolvedOptions,
         components,
       }),
