@@ -1,4 +1,4 @@
-import { Component, input, output, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, ElementRef, input, output, viewChild, ViewEncapsulation } from '@angular/core';
 import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 
 /**
@@ -14,7 +14,17 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 @Component({
   selector: 'et-query-devtools-toggle',
   template: `
-    <button (click)="openChange.emit()" type="button" title="Open query devtools ({{ shortcut }})">
+    <button
+      #button
+      [title]="
+        loadFailed()
+          ? 'The devtools panel failed to load. Click to reload the page.'
+          : 'Open query devtools (' + shortcut + ')'
+      "
+      [class.failed]="loadFailed()"
+      (click)="openChange.emit()"
+      type="button"
+    >
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <ellipse cx="12" cy="6" rx="7.5" ry="3" />
         <path d="M4.5 6v6c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3V6" />
@@ -89,6 +99,10 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
       transition: opacity 0.2s ease;
     }
 
+    button.failed {
+      --_accent: #f87171;
+    }
+
     button:hover {
       transform: translateY(-2px);
       box-shadow:
@@ -145,7 +159,15 @@ import { queryDevtoolsShortcutLabel } from './query-devtools-shortcut';
 })
 export class QueryDevtoolsToggleComponent {
   public tampered = input(false);
+  public loadFailed = input(false, { transform: booleanAttribute });
   public openChange = output<void>();
 
+  private button = viewChild.required<ElementRef<HTMLButtonElement>>('button');
+
   protected shortcut = queryDevtoolsShortcutLabel();
+
+  /** Moves keyboard focus to the toggle button. */
+  public focus() {
+    this.button().nativeElement.focus();
+  }
 }

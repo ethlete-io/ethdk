@@ -105,6 +105,10 @@ listeners. It keeps the panel's behaviour intact, including the
 that was open when the tab was last reloaded - without a click and without you
 storing anything.
 
+If the panel chunk fails to load - an offline dev server, or a redeploy that
+changed the chunk's hash under an open tab - the toggle turns red and says so.
+Angular never retries a failed `@defer`, so clicking it reloads the page.
+
 The three entry points exist because bundlers split along module boundaries, and a
 library flattened into one file has none:
 
@@ -164,6 +168,11 @@ discoverable without reading this page. The shortcut is matched on the physical
 key, which keeps it working on layouts where holding <kbd>Alt</kbd> rewrites the
 character the keyboard reports. <kbd>AltGr</kbd> + <kbd>Q</kbd> is left to the page,
 because it types `@` on a German layout.
+
+Opening the panel moves keyboard focus to its active tab; closing it gives focus
+back to the element that had it before, or to the floating button if that element
+is gone. Closing the panel also turns [**Inspect**](#beyond-a-read-only-view) off, so a
+click in the app reaches the app again.
 
 ## Where the panel sits
 
@@ -349,8 +358,9 @@ that stack:
   `post` alone also matches. The origin and the client name are deliberately not
   matched - they repeat across nearly every entry, so a one-letter term would hit
   everything through the host name. Scoping to a client is the picker's job.
-- **The status chips** - **Failing**, **Loading**, **Stale**, **Idle** (never
-  executed), **Gone** ([destroyed](#a-destroyed-query-leaves-a-tombstone)) - each
+- **The status chips** - **Failing**, **Loading**, **Stale**, **Parked** (a
+  [`withArgs`](/query/features#withargs) source returns `null`, so the query waits
+  for it), **Idle** (never executed), **Gone** ([destroyed](#a-destroyed-query-leaves-a-tombstone)) - each
   carry the number of queries they would leave. Picking several _widens_ the result
   (failing **or** stale), the way a network panel's type chips do. The counts are
   computed before the chips are applied, so a chip always states what picking it
@@ -577,6 +587,11 @@ declares:
 ```json
 { "pathParams": { "postId": "" } }
 ```
+
+A **parked** query - its `withArgs` source returns `null` - has no args either, and
+the query itself drops any execution without args. **Execute** and **Cached** open
+the args editor there too, with a hint that the query is parked. Its status dot is
+a hollow ring, and the detail reads `parked` rather than `idle`.
 
 Fill them in and run it from there. Nothing a panel button does escapes into the
 application's `ErrorHandler`: a failure is reported in the editor, and it names

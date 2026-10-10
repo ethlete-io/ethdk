@@ -1,5 +1,5 @@
 import { provideZonelessChangeDetection } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideQueryDevtools } from '@ethlete/query';
 import { QueryDevtoolsComponent } from '../src/lib/query-devtools.component';
@@ -224,5 +224,38 @@ describe('QueryDevtoolsLazyComponent loading the panel', () => {
     await settle(fixture);
 
     expect(wasQueryDevtoolsOpen()).toBe(false);
+  });
+});
+
+describe('QueryDevtoolsLazyComponent when the panel chunk fails to load', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [QueryDevtoolsLazyComponent],
+      providers: [provideZonelessChangeDetection(), provideQueryDevtools()],
+      deferBlockBehavior: DeferBlockBehavior.Manual,
+    });
+  });
+
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('should render a toggle that names the failure and reloads the page on click', async () => {
+    const fixture = TestBed.createComponent(QueryDevtoolsLazyComponent);
+    await fixture.whenStable();
+
+    const [deferBlock] = await fixture.getDeferBlocks();
+    await deferBlock?.render(DeferBlockState.Error);
+
+    const reload = vi
+      .spyOn(fixture.componentInstance as unknown as { reload: () => void }, 'reload')
+      .mockImplementation(() => undefined);
+    const button = (fixture.nativeElement as HTMLElement)
+      .querySelector('et-query-devtools-toggle')
+      ?.shadowRoot?.querySelector('button');
+
+    expect(button?.title).toContain('failed to load');
+
+    button?.click();
+
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });

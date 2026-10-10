@@ -2,6 +2,7 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { headerEntries, inlineExoticOf, isHeadersValue } from './query-devtools-exotic';
 import { DOCUMENT } from '@angular/common';
 import {
+  afterNextRender,
   booleanAttribute,
   Component,
   computed,
@@ -9,12 +10,14 @@ import {
   effect,
   ElementRef,
   inject,
+  Injector,
   input,
   NgZone,
   OnInit,
   signal,
   untracked,
   viewChild,
+  viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -47,6 +50,7 @@ import {
   createQueryErrorResponse,
   createQueryKeyLockManager,
   QueryClient,
+  QueryFeatureType,
   QueryKeyLockHold,
   QueryKeyLockState,
   QueryRefreshCause,
@@ -264,6 +268,9 @@ type PersistedState = {
 const MAX_BATCH_ITEM_ROWS = 100;
 
 const LOCATE_HOLD_MS = 2500;
+
+const PARKED_EXECUTE_HINT =
+  'Parked: its withArgs source returns null. Run it with args from here, or set what the source reads.';
 
 const LOCATE_MAX_DEPTH = 4;
 
@@ -665,6 +672,7 @@ export class QueryDevtoolsComponent implements OnInit {
   private zone = inject(NgZone);
   private destroyRef = inject(DestroyRef);
   private document = inject(DOCUMENT);
+  private injector = inject(Injector);
 
   private viewport = injectViewportSize();
 
@@ -677,6 +685,9 @@ export class QueryDevtoolsComponent implements OnInit {
   public startOpen = input(false, { transform: booleanAttribute });
 
   private panelEl = viewChild<ElementRef<HTMLElement>>('panel');
+  private toggle = viewChild(QueryDevtoolsToggleComponent);
+  private tabButtons = viewChildren<ElementRef<HTMLElement>>('tabButton');
+  private focusBeforeOpen: HTMLElement | null = null;
 
   private eventIdCounter = 0;
   private lastSelectionKey = '';
@@ -961,6 +972,14 @@ export class QueryDevtoolsComponent implements OnInit {
   public inspectFilterIds = signal<string[] | null>(this.persisted.inspectFilterIds ?? null);
 
   private queryEntries = computed(() => queryDevtoolsEntries().filter((e) => e.kind === 'query'));
+  private argsSourceQueries = computed(
+    () =>
+      new Set(
+        this.queryEntries()
+          .filter((e) => e.meta.features?.some((feature) => feature.type === QueryFeatureType.WITH_ARGS))
+          .map((e) => e.handle),
+      ),
+  );
 
   /**
    * The queries that still exist. Everything that measures what the application is doing right now -
@@ -1510,7 +1529,7 @@ export class QueryDevtoolsComponent implements OnInit {
   }
 
   public ngOnInit() {
-    if (this.startOpen()) this.open.set(true);
+    if (this.startOpen()) this.openPanel();
   }
 
   public overridesPersist() {
@@ -1607,7 +1626,11 @@ export class QueryDevtoolsComponent implements OnInit {
       return;
     }
 
-    this.open.update((v) => !v);
+    if (this.open()) {
+      this.closePanel();
+    } else {
+      this.openPanel();
+    }
   }
 
   protected floatPanel() {
@@ -1809,10 +1832,14 @@ export class QueryDevtoolsComponent implements OnInit {
 
   public queryStatus(query: AnyQuery): QueryStatus {
     const state = query.executionState();
-    if (!state) return 'idle';
+    if (!state) return this.isParked(query) ? 'parked' : 'idle';
     if (state.type === 'loading') return 'loading';
     if (state.type === 'failure') return 'error';
     return 'success';
+  }
+
+  public isParked(query: AnyQuery) {
+    return this.argsSourceQueries().has(query) && this.queryArgs(query) === null;
   }
 
   public isStale(query: AnyQuery) {
@@ -2041,6 +2068,13 @@ export class QueryDevtoolsComponent implements OnInit {
    */
   public executeQuery(selection: QueryDevtoolsSelection, allowCache: boolean) {
     const { query } = selection;
+
+    if (this.isParked(query)) {
+      this.openArgsEditor(selection);
+      this.editError.set(PARKED_EXECUTE_HINT);
+
+      return;
+    }
 
     try {
       query.execute({ args: this.queryArgs(query), options: allowCache ? { allowCache: true } : undefined });
@@ -2762,6 +2796,45 @@ export class QueryDevtoolsComponent implements OnInit {
     this.eventOwners.set(event, id);
 
     return id;
+  }
+
+  private openPanel() {
+    const active = this.document.activeElement;
+
+    this.focusBeforeOpen =
+      active instanceof HTMLElement && active !== this.document.body && !this.hostEl.nativeElement.contains(active)
+        ? active
+        : null;
+    this.open.set(true);
+
+    afterNextRender(
+      () => {
+        const tabs = this.tabButtons().map((ref) => ref.nativeElement);
+        const tab = tabs.find((el) => el.getAttribute('aria-selected') === 'true') ?? tabs[0];
+
+        tab?.focus();
+      },
+      { injector: this.injector },
+    );
+  }
+
+  private closePanel() {
+    const returnTo = this.focusBeforeOpen;
+
+    this.focusBeforeOpen = null;
+    this.inspectActive.set(false);
+    this.open.set(false);
+
+    afterNextRender(
+      () => {
+        if (returnTo?.isConnected) {
+          returnTo.focus();
+        } else {
+          this.toggle()?.focus();
+        }
+      },
+      { injector: this.injector },
+    );
   }
 
   private resolvedHeaders(

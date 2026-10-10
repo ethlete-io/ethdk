@@ -47,6 +47,7 @@
         @for (tab of visibleTabs(); track tab.id) {
           @let badge = tabBadges()[tab.id];
           <button
+            #tabButton
             [class.et-query-devtools-tab--active]="activeTab() === tab.id"
             [attr.aria-selected]="activeTab() === tab.id"
             (click)="activeTab.set(tab.id)"

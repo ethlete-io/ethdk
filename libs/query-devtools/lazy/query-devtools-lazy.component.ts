@@ -45,6 +45,8 @@ let warnedMissingProvider = false;
         <et-query-devtools-toggle [tampered]="tampered()" (openChange)="open()" />
       } @loading {
         <et-query-devtools-toggle [tampered]="tampered()" />
+      } @error {
+        <et-query-devtools-toggle [tampered]="tampered()" (openChange)="reload()" loadFailed />
       }
     }
   `,
@@ -117,5 +119,10 @@ export class QueryDevtoolsLazyComponent {
   protected open() {
     this.openOnLoad.set(true);
     this.load.set(true);
+  }
+
+  /** Angular never retries a failed `@defer`, so only a page load can fetch the panel chunk again. */
+  protected reload() {
+    this.document.defaultView?.location.reload();
   }
 }

@@ -63,14 +63,14 @@ export type PaneTarget = 'list' | 'drawer';
 /** The axis a two-pane tab splits along: the panes sit side by side, or stack in a side dock. */
 export type PaneAxis = 'inline' | 'block';
 
-export type QueryStatus = 'idle' | 'loading' | 'success' | 'error';
+export type QueryStatus = 'idle' | 'parked' | 'loading' | 'success' | 'error';
 
 /**
- * A facet the Queries list can be narrowed to. The first four describe live state; `gone` is the odd
+ * A facet the Queries list can be narrowed to. All but `gone` describe live state; `gone` is the odd
  * one out - it is the only way a destroyed query's tombstone enters the list at all, which is why it
  * is off by default rather than just another filter over what is already shown.
  */
-export type QueryListFacet = 'error' | 'loading' | 'stale' | 'idle' | 'gone';
+export type QueryListFacet = 'error' | 'loading' | 'stale' | 'parked' | 'idle' | 'gone';
 
 /** The fault fields the panel arms from a number input, as opposed to the status it picks from a list. */
 export type NumericFaultField = 'latencyMs' | 'failNext' | 'failRate';

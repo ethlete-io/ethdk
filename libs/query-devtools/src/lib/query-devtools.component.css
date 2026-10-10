@@ -944,6 +944,11 @@
     background: var(--_et-qdt-error);
   }
 
+  .et-query-devtools-status[data-status='parked'] {
+    background: transparent;
+    box-shadow: inset 0 0 0 2px var(--_et-qdt-subtle);
+  }
+
   .et-query-devtools-status[data-status='loading'],
   .et-query-devtools-status[data-status='running'] {
     background: var(--_et-qdt-loading);

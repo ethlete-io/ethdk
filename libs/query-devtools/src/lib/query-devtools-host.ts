@@ -40,6 +40,7 @@ import {
   QueryDevtoolsTokenLifetime,
   QueryLink,
   QueryListFacet,
+  QueryStatus,
   RepositoryInfo,
   RequestProgress,
   RouteSegment,
@@ -145,7 +146,7 @@ export type QueryDevtoolsHost = {
   /** The multi-tab leadership chip, or `null` for a provider without `withBearerAuthMultiTabSync`. */
   authLeadership(auth: AnyBearerAuthProvider): QueryDevtoolsChip | null;
 
-  queryStatus(query: AnyQuery): 'idle' | 'loading' | 'success' | 'error';
+  queryStatus(query: AnyQuery): QueryStatus;
   isStale(query: AnyQuery): boolean;
   /** Whether an entry is showing an armed response override or a devtools-faulted outcome. */
   isTampered(entry: QueryDevtoolsEntry): boolean;

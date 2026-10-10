@@ -37,6 +37,7 @@ export class QueryDevtoolsQueriesTabComponent {
     { id: 'error', label: 'Failing' },
     { id: 'loading', label: 'Loading' },
     { id: 'stale', label: 'Stale' },
+    { id: 'parked', label: 'Parked' },
     { id: 'idle', label: 'Idle' },
     { id: 'gone', label: 'Gone' },
   ] satisfies { id: QueryListFacet; label: string }[];
@@ -63,7 +64,7 @@ export class QueryDevtoolsQueriesTabComponent {
     // the counts age with it - without it a chip would keep the number it happened to be built with.
     this.host.clock();
 
-    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, idle: 0, gone: 0 };
+    const counts: Record<QueryListFacet, number> = { error: 0, loading: 0, stale: 0, parked: 0, idle: 0, gone: 0 };
 
     for (const { entry, query } of this.searchedQueries()) {
       // A tombstone's frozen state is not live state: counting it as failing or idle would put a query
@@ -77,6 +78,7 @@ export class QueryDevtoolsQueriesTabComponent {
 
       if (status === 'error') counts.error++;
       if (status === 'loading') counts.loading++;
+      if (status === 'parked') counts.parked++;
       if (status === 'idle') counts.idle++;
       if (this.host.isStale(query)) counts.stale++;
     }
@@ -256,6 +258,7 @@ export class QueryDevtoolsQueriesTabComponent {
     if (statuses.includes('error')) return 'error';
     if (statuses.includes('loading')) return 'loading';
     if (statuses.includes('success')) return 'success';
+    if (statuses.includes('parked')) return 'parked';
 
     return 'idle';
   }
@@ -342,6 +345,7 @@ export class QueryDevtoolsQueriesTabComponent {
     return (
       (facets.has('error') && status === 'error') ||
       (facets.has('loading') && status === 'loading') ||
+      (facets.has('parked') && status === 'parked') ||
       (facets.has('idle') && status === 'idle') ||
       (facets.has('stale') && this.host.isStale(item.query))
     );

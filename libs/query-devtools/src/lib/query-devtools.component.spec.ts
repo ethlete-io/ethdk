@@ -1,5 +1,8 @@
-import { provideZonelessChangeDetection, WritableSignal } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { createGetQuery, createQueryClient, provideQueryDevtools, withArgs } from '@ethlete/query';
 import { QueryDevtoolsEntry } from '@ethlete/query/devtools-contract';
 import { ɵQUERY_DEVTOOLS_VIEW_STATE_KEY as QUERY_DEVTOOLS_VIEW_STATE_KEY } from '@ethlete/query-devtools/toggle';
 import { QueryDevtoolsComponent } from './query-devtools.component';
@@ -230,6 +233,61 @@ describe('QueryDevtoolsComponent', () => {
     fixture.destroy();
   });
 
+  it('should leave inspect mode when the panel closes', () => {
+    const fixture = mount(true);
+    const panel = fixture.componentInstance as unknown as { inspectActive: WritableSignal<boolean> };
+    const target = document.body.appendChild(document.createElement('button'));
+    const appClick = vi.fn();
+
+    target.addEventListener('click', appClick);
+
+    panel.inspectActive.set(true);
+    fixture.detectChanges();
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'q', code: 'KeyQ', ctrlKey: true, altKey: true, bubbles: true }),
+    );
+    fixture.detectChanges();
+
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(panel.inspectActive()).toBe(false);
+    expect(appClick).toHaveBeenCalledTimes(1);
+
+    target.remove();
+    fixture.destroy();
+  });
+
+  it('should move focus into the panel on open and back on close', async () => {
+    const fixture = mount(false);
+    const panel = fixture.componentInstance as unknown as { toggleOpen: () => void };
+    const trigger = document.body.appendChild(document.createElement('button'));
+
+    trigger.focus();
+
+    panel.toggleOpen();
+    await fixture.whenStable();
+
+    expect(document.activeElement?.classList.contains('et-query-devtools-tab')).toBe(true);
+
+    panel.toggleOpen();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+    panel.toggleOpen();
+    await fixture.whenStable();
+    panel.toggleOpen();
+    await fixture.whenStable();
+
+    const toggleButton = fixture.nativeElement.querySelector('et-query-devtools-toggle')?.shadowRoot?.activeElement;
+
+    expect(toggleButton?.tagName).toBe('BUTTON');
+
+    fixture.destroy();
+  });
+
   it('should write the view state once a resize ends, not on every move', () => {
     const fixture = mount(true);
     const panel = fixture.componentInstance as unknown as {
@@ -347,6 +405,47 @@ describe('QueryDevtoolsComponent', () => {
       expect(vi.getTimerCount()).toBeLessThan(whileVisible);
 
       teardown();
+    });
+  });
+
+  describe('a parked withArgs query', () => {
+    type ParkedPanel = {
+      queryStatus: (query: AnyQuery) => string;
+      executeQuery: (selection: { entry: QueryDevtoolsEntry; query: AnyQuery }, allowCache: boolean) => void;
+      editorMode: () => string;
+      editError: () => string | null;
+    };
+
+    const client = createQueryClient({ baseUrl: 'https://example.com', name: 'parked-test' });
+    const getUser = createGetQuery(client)<{ pathParams: { id: string }; response: { id: string } }>(
+      (p) => `/users/${p.id}`,
+    );
+
+    it('should show as parked and open the args editor on Execute instead of doing nothing', () => {
+      TestBed.configureTestingModule({
+        providers: [provideHttpClient(), provideHttpClientTesting(), provideQueryDevtools()],
+      });
+
+      const userId = signal<string | null>(null);
+      const query = TestBed.runInInjectionContext(() =>
+        getUser(withArgs(() => (userId() ? { pathParams: { id: userId() ?? '' } } : null))),
+      ) as unknown as AnyQuery;
+      const fixture = mount(true);
+      const panel = fixture.componentInstance as unknown as ParkedPanel;
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+      TestBed.tick();
+
+      expect(panel.queryStatus(query)).toBe('parked');
+
+      panel.executeQuery({ entry: { meta: {} } as QueryDevtoolsEntry, query }, false);
+
+      expect(panel.editorMode()).toBe('args');
+      expect(panel.editError()).toContain('Parked');
+      expect(warn).not.toHaveBeenCalled();
+
+      warn.mockRestore();
+      fixture.destroy();
     });
   });
 });
