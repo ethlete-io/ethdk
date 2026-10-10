@@ -11,14 +11,14 @@ Folders picked (source files vs `*.spec.ts`, then checked against `libs/core/src
 
 Also read and found clean: `resize-handles`, `drag-handle` (teardown, `exhaustMap`, selection suppression, pointer capture all hold), `animated-if`, `animatable`, `flip-animation` (group replay settles correctly), `scroll-observer*`, `restore-scroll`, `injectViewportSize`, `memoizeSignal`, `text-selection`.
 
-| ID    | Sev    | Kind     | Decision | Title                                                                                                              |
-| ----- | ------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
-| HC-01 | Medium | bug      | no       | `AnimatedLifecycle` force/skip paths leave the opposite `-done`/`-interrupt` classes on the element                |
-| HC-02 | Medium | bug      | no       | `getScrollSnapTarget` treats a hidden (zero-rect) item as already aligned and returns `null`                       |
-| HC-03 | Low    | bug      | no       | `[etClickOutside]` keeps `pressStartedInside` after a press with no click and swallows the next keyboard click     |
-| HC-04 | Low    | bug      | no       | `signalElementIntersection` appends entries out of DOM order when `rootMargin` is non-zero                         |
-| HC-05 | Low    | bug      | no       | `isElementVisible().intersectionRatio` is `min(inline, block)`, not an area ratio, so it disagrees with the IO     |
-| HC-06 | Low    | bug      | no       | `createUnsavedChangesTracker({ defaultValue: null })` never captures a baseline and is never dirty                 |
+| ID    | Sev    | Kind     | Decision | Title                                                                                                               |
+| ----- | ------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| HC-01 | Medium | bug      | no       | `AnimatedLifecycle` force/skip paths leave the opposite `-done`/`-interrupt` classes on the element                 |
+| HC-02 | Medium | bug      | no       | `getScrollSnapTarget` treats a hidden (zero-rect) item as already aligned and returns `null`                        |
+| HC-03 | Low    | bug      | no       | `[etClickOutside]` keeps `pressStartedInside` after a press with no click and swallows the next keyboard click      |
+| HC-04 | Low    | bug      | no       | `signalElementIntersection` appends entries out of DOM order when `rootMargin` is non-zero                          |
+| HC-05 | Low    | bug      | no       | `isElementVisible().intersectionRatio` is `min(inline, block)`, not an area ratio, so it disagrees with the IO      |
+| HC-06 | Low    | bug      | no       | `createUnsavedChangesTracker({ defaultValue: null })` never captures a baseline and is never dirty                  |
 | HC-07 | Low    | test-gap | no       | No spec for `getScrollSnapTarget` with a hidden item, scroll-observer directives, or intersection order with margin |
 
 ## HC-01 `AnimatedLifecycle` force/skip paths leave the opposite `-done`/`-interrupt` classes on the element
