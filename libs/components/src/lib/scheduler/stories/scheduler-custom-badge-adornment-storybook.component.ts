@@ -19,9 +19,9 @@ type TicketExtra = { ticket: string };
   encapsulation: ViewEncapsulation.None,
 })
 class SchedulerTicketBadgeComponent {
-  public node = input.required<AppointmentTreeNode<TicketExtra>>();
+  public node = input.required<AppointmentTreeNode>();
 
-  protected ticket = computed(() => this.node().appointment.extra?.ticket ?? null);
+  protected ticket = computed(() => (this.node().appointment.extra as TicketExtra | undefined)?.ticket ?? null);
 }
 
 @Directive({ selector: '[etSbSchedulerTicketBadge]' })

@@ -191,7 +191,7 @@ export class OverlayOpenerStorybookComponent {
 
   public mergeDemo = createOverlayOpener(mergeDemoOverlay, {
     panelClass: 'et-sb-merge-panel-opener',
-    afterClosed: (result) => this.lastMergeResult.set(result),
+    afterClosed: (result) => this.lastMergeResult.set(result ?? null),
   });
 
   protected openMergeDemo(event: Event) {
