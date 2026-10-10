@@ -244,6 +244,39 @@ describe('table edge cases', { timeout: 30_000 }, () => {
       expect(indexOf('.et-table-row').slice(0, 4)).toEqual(['2', '4', '5', '7']);
       expect(indexOf('.et-table-detail-row')).toEqual(['3', '6']);
     });
+
+    it('keeps a measured detail row in the start spacer once its row scrolls out of the window', () => {
+      const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+
+      Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+        get(this: HTMLElement) {
+          return this.classList.contains('et-table-detail-row') ? 300 : 40;
+        },
+        configurable: true,
+      });
+
+      try {
+        const fixture = create((host) => {
+          host.virtual.set(true);
+          host.data.set(many(50));
+          host.expanded.set(new Set([1]));
+        });
+
+        expect(queryAll(fixture, '.et-table-detail-row')).toHaveLength(1);
+
+        const host = createTableDriver(fixture).host();
+
+        host.scrollTop = 600;
+        host.dispatchEvent(new Event('scroll'));
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.table().rowIndexOffset()).toBe(5);
+        expect(queryAll(fixture, '.et-table-detail-row')).toHaveLength(0);
+        expect(queryAll(fixture, '.et-table-spacer')[0]!.style.blockSize).toBe(`${5 * 40 + 300}px`);
+      } finally {
+        if (offsetHeight) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', offsetHeight);
+      }
+    });
   });
 
   describe('virtual scroll with a zero-height viewport', () => {

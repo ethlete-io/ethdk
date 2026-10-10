@@ -1175,6 +1175,22 @@ export class TableComponent<T> implements TableFeatureHost {
     return indices;
   });
 
+  private measuredDetailHeights = signal<ReadonlyMap<unknown, number>>(new Map());
+
+  private openDetailHeights = computed<ReadonlyMap<number, number>>(() => {
+    const open = this.openDetailIndices();
+
+    if (!open.length) return new Map();
+
+    const measured = this.measuredDetailHeights();
+    const rows = this.rows();
+    const fallback = measured.size
+      ? [...measured.values()].reduce((sum, height) => sum + height, 0) / measured.size
+      : 0;
+
+    return new Map(open.map((index) => [index, measured.get(this.rowIdentity(rows[index] as T)) ?? fallback]));
+  });
+
   protected headerRowCount = computed(() => this.headerRows().length + 1);
 
   /**
@@ -1415,6 +1431,20 @@ export class TableComponent<T> implements TableFeatureHost {
   /** The `aria-rowindex` of an open row's detail row, or `null` while every row is in the DOM. Part of the feature contract. */
   public detailAriaRowIndex(row: unknown) {
     return this.detailAriaRowIndices().get(row as T) ?? null;
+  }
+
+  /** Record a detail row's rendered height. Part of the feature contract. */
+  public setDetailRowHeight(row: unknown, height: number) {
+    const key = this.rowIdentity(row as T);
+
+    if (this.measuredDetailHeights().get(key) === height) return;
+
+    this.measuredDetailHeights.update((heights) => new Map(heights).set(key, height));
+  }
+
+  /** The height each open detail row adds, by absolute row index. Part of the feature contract. */
+  public detailRowHeights() {
+    return this.openDetailHeights();
   }
 
   protected syncScrollState() {

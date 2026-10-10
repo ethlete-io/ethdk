@@ -43,6 +43,7 @@ export class TableVirtualScrollDirective {
     itemCount: computed(() => this.table.rows().length),
     estimateItemHeight: computed(() => this.config().estimateRowHeight ?? 48),
     overscan: computed(() => this.config().overscan ?? 6),
+    extraItemHeights: computed(() => this.table.detailRowHeights()),
   });
 
   constructor() {

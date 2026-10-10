@@ -455,6 +455,15 @@ export type TableFeatureHost = {
   /** The `aria-rowindex` an open row's detail row carries while a window renders a slice, else `null`. */
   detailAriaRowIndex(row: unknown): number | null;
 
+  /** Record the rendered height of a row's detail row, so a row window can count it once the row leaves. */
+  setDetailRowHeight(row: unknown, height: number): void;
+
+  /**
+   * The height each open detail row adds, by absolute row index - measured, else the average of the
+   * measured ones. Empty unless a row window is active.
+   */
+  detailRowHeights(): ReadonlyMap<number, number>;
+
   /**
    * Bring an absolute row index into the viewport - through the registered row window when there is
    * one (which also renders it), else by scrolling the rendered row element into view. Returns whether

@@ -22,6 +22,7 @@ const QUICK_FILTER_STORY_ID = 'components-data-display-table--quick-filter';
 const PIN_COLUMNS_STORY_ID = 'components-data-display-table--pin-columns-at-runtime';
 const DEFAULT_STORY_ID = 'components-data-display-table--default';
 const VIRTUALIZED_STORY_ID = 'components-data-display-table--virtualized';
+const VIRTUALIZED_KEYBOARD_NAV_STORY_ID = 'components-data-display-table--virtualized-keyboard-navigation';
 const REFETCHING_STORY_ID = 'components-data-display-table--refetching';
 const GROUPED_HEADERS_STORY_ID = 'components-data-display-table--grouped-headers';
 const PAGE_STICKY_HEADER_STORY_ID = 'components-data-display-table--page-sticky-header';
@@ -255,6 +256,35 @@ test.describe('table / keyboard', () => {
 
     await pressKey(page, 'Control+Home');
     await expect(cell(root, 0, 'name')).toBeFocused();
+  });
+
+  test('keyboard navigation crosses a virtual window and lands on the true row', async ({ page }) => {
+    const root = await openStory(page, VIRTUALIZED_KEYBOARD_NAV_STORY_ID);
+    const focusedRowIndex = () =>
+      page.evaluate(() => document.activeElement?.closest('[role="row"]')?.getAttribute('aria-rowindex') ?? null);
+
+    await tabUntilFocused(page, cell(root, 0, 'name'));
+    await expect(root.locator('[aria-rowcount]')).toHaveAttribute('aria-rowcount', String(VIRTUAL_ROW_COUNT + 1));
+    expect(await focusedRowIndex()).toBe('2');
+
+    await pressKey(page, 'Control+End');
+    await expect.poll(focusedRowIndex).toBe(String(VIRTUAL_ROW_COUNT + 1));
+
+    await pressKey(page, 'ArrowUp');
+    await expect.poll(focusedRowIndex).toBe(String(VIRTUAL_ROW_COUNT));
+
+    await pressKey(page, 'Control+Home');
+    await expect.poll(focusedRowIndex).toBe('2');
+
+    for (let press = 0; press < 8; press++) await pressKey(page, 'PageDown');
+
+    const afterPaging = Number(await focusedRowIndex());
+
+    expect(afterPaging).toBeGreaterThan(40);
+    expect(await root.locator('.et-table-row').count()).toBeLessThan(40);
+
+    await pressKey(page, 'ArrowDown');
+    await expect.poll(focusedRowIndex).toBe(String(afterPaging + 1));
   });
 
   test('the selection checkbox is a grid cell: one tab stop, reached with the arrows', async ({ page }) => {
@@ -687,6 +717,27 @@ test.describe('table / layout', () => {
       VIRTUAL_ROW_COUNT * deep.rowHeight,
       -1,
     );
+  });
+
+  test('a virtualized table keeps an expanded row in its scroll height once the row scrolls out', async ({ page }) => {
+    const root = await openStory(page, VIRTUALIZED_STORY_ID, { args: { expandable: true } });
+    const table = root.locator('et-table');
+
+    await root.locator('.et-table-row').first().locator('.et-table-expander').click();
+    await expect(root.locator('.et-table-detail-row')).toHaveCount(1);
+
+    const detailHeight = await root
+      .locator('.et-table-detail-row')
+      .evaluate((row) => row.getBoundingClientRect().height);
+    await expect.poll(() => table.evaluate((element) => element.scrollHeight)).toBeGreaterThan(0);
+
+    const expandedHeight = await table.evaluate((element) => element.scrollHeight);
+
+    await scrollTableTo(root, 20_000);
+    await expect(root.locator('.et-table-detail-row')).toHaveCount(0);
+
+    expect(detailHeight).toBeGreaterThan(20);
+    expect(await table.evaluate((element) => element.scrollHeight)).toBeCloseTo(expandedHeight, -1);
   });
 
   test('a refetch over rows on screen runs a 2px busy bar that moves no row', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, inject, input, ViewEncapsulation } from '@angular/core';
+import { Component, computed, effect, inject, input, untracked, ViewEncapsulation } from '@angular/core';
+import { signalHostElementDimensions } from '@ethlete/core';
 import { injectTableFeatureHost } from './headless/table-features';
 import { TableRowExpansionDirective } from './table-row-expansion.directive';
 
@@ -46,4 +47,15 @@ export class TableRowDetailComponent {
   public row = input.required<unknown>();
 
   protected animated = computed(() => this.expansion.animates(this.row()));
+
+  private dimensions = signalHostElementDimensions();
+
+  constructor() {
+    effect(() => {
+      const height = this.dimensions().offset?.height;
+      const row = this.row();
+
+      if (height !== undefined) untracked(() => this.table.setDetailRowHeight(row, height));
+    });
+  }
 }

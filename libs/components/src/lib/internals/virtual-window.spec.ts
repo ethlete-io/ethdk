@@ -140,6 +140,35 @@ describe('createVirtualWindow', () => {
     expect(window.range().start).toBeGreaterThan(0);
   });
 
+  it('counts extra item heights in the range, the paddings and scrollToIndex', () => {
+    const extraItemHeights = signal<ReadonlyMap<number, number>>(new Map([[0, 300]]));
+    const extraWindow = runInInjectionContext(TestBed.inject(Injector), () =>
+      createVirtualWindow({ container, itemCount, estimateItemHeight: 10, overscan: 2, extraItemHeights }),
+    );
+    const element = createScrollContainer();
+
+    container.set(element);
+    tick();
+
+    element.scrollTop = 50;
+    element.dispatchEvent(new Event('scroll'));
+
+    // still inside item 0's 300px extra: item 0 must stay rendered, or everything below it jumps up
+    expect(extraWindow.range().start).toBe(0);
+    expect(extraWindow.paddingTop()).toBe(0);
+
+    element.scrollTop = 400;
+    element.dispatchEvent(new Event('scroll'));
+
+    expect(extraWindow.range()).toEqual({ start: 8, end: 32 });
+    expect(extraWindow.paddingTop()).toBe(8 * 10 + 300);
+    expect(extraWindow.paddingBottom()).toBe((100 - 32) * 10);
+
+    element.scrollTop = 0;
+    extraWindow.scrollToIndex(5);
+    expect(element.scrollTop).toBe(5 * 10 + 300 + 10 - 200);
+  });
+
   it('keeps a finite range when the height estimate is zero', () => {
     const zeroEstimateWindow = runInInjectionContext(TestBed.inject(Injector), () =>
       createVirtualWindow({ container, itemCount, estimateItemHeight: 0, overscan: 2 }),

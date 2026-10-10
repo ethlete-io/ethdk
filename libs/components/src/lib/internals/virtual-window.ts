@@ -14,6 +14,11 @@ export type VirtualWindowConfig = {
   estimateItemHeight: number | Signal<number>;
   /** Rows kept rendered beyond the visible range on both sides. Reactive so a host input can drive it. */
   overscan: number | Signal<number>;
+  /**
+   * Height some items take on top of the uniform row height, by item index (a table's open detail rows).
+   * Counted in the paddings and the scroll math, so the window holds still when such an item leaves it.
+   */
+  extraItemHeights?: Signal<ReadonlyMap<number, number>>;
 };
 
 export type VirtualWindowRange = {
@@ -58,6 +63,42 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
   const scrollOffset = signal(0);
   const containerDimensions = signalElementDimensions(config.container);
   const viewportSize = computed(() => containerDimensions().client?.height ?? 0);
+  const extras = computed(() =>
+    [...(config.extraItemHeights?.() ?? new Map<number, number>())]
+      .filter(([, height]) => height > 0)
+      .sort(([a], [b]) => a - b),
+  );
+  const totalExtra = computed(() => extras().reduce((sum, [, height]) => sum + height, 0));
+
+  const extraBefore = (index: number) => {
+    let sum = 0;
+
+    for (const [extraIndex, height] of extras()) {
+      if (extraIndex >= index) break;
+
+      sum += height;
+    }
+
+    return sum;
+  };
+
+  const topOf = (index: number) => index * itemHeight() + extraBefore(index);
+
+  // `floor` finds the item an offset falls on, `ceil` the end of the range an edge at that offset closes.
+  const indexAt = (offset: number, round: typeof Math.floor | typeof Math.ceil) => {
+    const height = itemHeight();
+    let before = 0;
+
+    for (const [extraIndex, extra] of extras()) {
+      if (offset < extraIndex * height + before + height + extra) {
+        return Math.min(round((offset - before) / height), round === Math.ceil ? extraIndex + 1 : extraIndex);
+      }
+
+      before += extra;
+    }
+
+    return round((offset - before) / height);
+  };
 
   // a scroll request that arrived before the container existed (e.g. scrolling the selected
   // option into view while the panel is still mounting) - replayed once it does
@@ -72,10 +113,9 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
       return;
     }
 
-    const height = itemHeight();
     const viewport = viewportSize() || FALLBACK_VIEWPORT_SIZE;
-    const rowTop = index * height;
-    const rowBottom = rowTop + height;
+    const rowTop = topOf(index);
+    const rowBottom = rowTop + itemHeight();
     const current = container.scrollTop;
     let next = current;
 
@@ -124,21 +164,22 @@ export const createVirtualWindow = (config: VirtualWindowConfig): VirtualWindow 
       return { start: 0, end: count };
     }
 
-    const height = itemHeight();
     const viewport = viewportSize() || FALLBACK_VIEWPORT_SIZE;
     const offset = scrollOffset();
     // clamp into the item range: when the count shrinks while scrolled far down (filtering a
     // long list), the stale offset would otherwise start past the end - the browser's own
     // clamp-scroll event arrives a frame later, but the window must never be empty until then
     const rows = overscan();
-    const start = Math.min(Math.max(0, Math.floor(offset / height) - rows), Math.max(0, count - 1));
-    const end = Math.min(count, Math.max(Math.ceil((offset + viewport) / height) + rows, start + 1));
+    const start = Math.min(Math.max(0, indexAt(offset, Math.floor) - rows), Math.max(0, count - 1));
+    const end = Math.min(count, Math.max(indexAt(offset + viewport, Math.ceil) + rows, start + 1));
 
     return { start, end };
   });
 
-  const paddingTop = computed(() => range().start * itemHeight());
-  const paddingBottom = computed(() => Math.max(0, (config.itemCount() - range().end) * itemHeight()));
+  const paddingTop = computed(() => topOf(range().start));
+  const paddingBottom = computed(() =>
+    Math.max(0, config.itemCount() * itemHeight() + totalExtra() - topOf(range().end)),
+  );
 
   const measureItem = (element: HTMLElement) => {
     const height = element.offsetHeight;

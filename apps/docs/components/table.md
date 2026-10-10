@@ -1623,9 +1623,10 @@ render - both options on the directive:
 ```
 
 Virtualization composes with [row expansion](#row-expansion) - expanded rows
-render within the window as you scroll to them. Because the window assumes a
-uniform row height, lists where many rows are expanded at once scroll most
-smoothly when expanded content is modest.
+render within the window as you scroll to them. The window measures each open
+detail row and keeps its height in the spacers once its row scrolls out, so the
+view holds still. A row expanded while far outside the window is counted at the
+average measured detail height until it first renders.
 
 ## CSV export
 
