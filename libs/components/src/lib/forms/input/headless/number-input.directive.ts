@@ -1,4 +1,15 @@
-import { computed, Directive, ElementRef, inject, input, linkedSignal, model, signal } from '@angular/core';
+import {
+  computed,
+  Directive,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  model,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormValueControl } from '@angular/forms/signals';
 import { FORM_FIELD_CONTROL_TYPES, TextFieldControlDirective } from '../../form-field/headless';
 import { injectInputLabels } from '../input-labels';
@@ -127,16 +138,51 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
       this.nativeControl.set(hostElement as HTMLInputElement);
       this.focusTarget.set(hostElement);
       this.mirrorOntoNativeHost(hostElement as HTMLInputElement, {
-        value: () => `${this.displayValue()}`,
         placeholder: this.effectivePlaceholder,
         attributes: () => ({
           min: this.min()?.toString() ?? null,
           max: this.max()?.toString() ?? null,
           step: this.step()?.toString() ?? null,
           inputmode: this.inputMode(),
+          autocomplete: this.autocomplete() || null,
         }),
       });
     }
+
+    effect(() => {
+      const element = this.nativeControl();
+
+      this.displayValue();
+
+      if (element) untracked(() => this.writeNativeTextUnlessInSync(element));
+    });
+
+    effect(() => {
+      if (this.touched()) return;
+
+      untracked(() => this.clearParseError());
+    });
+  }
+
+  /**
+   * @internal Rewrites the native text in the model's own form - `2.0` becomes `2` - once the user
+   * leaves the input. Text that is not a number stays, so the parse error can name it.
+   */
+  public normalizeNativeText() {
+    const element = this.nativeControl();
+
+    if (!element || this.mixed() || element.validity.badInput) return;
+
+    const canonical = `${this.displayValue()}`;
+
+    if (element.value !== canonical) element.value = canonical;
+  }
+
+  protected override handleNativeBlur(event: FocusEvent) {
+    if (event.target !== this.focusTarget()) return;
+
+    super.handleNativeBlur(event);
+    this.normalizeNativeText();
   }
 
   /**
@@ -262,6 +308,33 @@ export class NumberInputDirective extends TextFieldControlDirective implements F
 
     this.value.set(Number.isNaN(parsed) ? null : parsed);
     this.parseError.set(inputElement.validity.badInput);
+  }
+
+  /** Writing on every keystroke would turn `2.0` into `2`, eat the `-` of `-0.5` and move the caret. */
+  private writeNativeTextUnlessInSync(element: HTMLInputElement) {
+    if (this.nativeTextMatchesModel(element)) return;
+
+    element.value = `${this.displayValue()}`;
+  }
+
+  private nativeTextMatchesModel(element: HTMLInputElement) {
+    if (this.mixed()) return element.value === '';
+
+    const value = this.value();
+
+    if (value === null) return element.value === '' || element.validity.badInput;
+
+    return element.value !== '' && element.valueAsNumber === value;
+  }
+
+  private clearParseError() {
+    if (!this.parseError()) return;
+
+    const element = this.nativeControl();
+
+    if (element) element.value = `${this.displayValue()}`;
+
+    this.parseError.set(false);
   }
 
   private exceedsDecimals(text: string) {

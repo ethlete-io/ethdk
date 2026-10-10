@@ -1,6 +1,7 @@
 import { Locator, Page, expect, test } from '@playwright/test';
 import { boxOf, expectTouchMode, openStory, settle, touchDrag } from '../support';
 
+const NUMBER_DEFAULT_ID = 'components-forms-number-input--default';
 const NUMBER_STEPPER_ID = 'components-forms-number-input--stepper';
 const NUMBER_COARSE_ID = 'components-forms-number-input--coarse-and-fine-stepping';
 const PASSWORD_DEFAULT_ID = 'components-forms-password-input--default';
@@ -39,6 +40,60 @@ async function typeWithCapsLock(field: Locator, capsLock: boolean) {
     }
   }, capsLock);
 }
+
+test.describe('number input / typing', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: hardware keyboard');
+
+  test('Backspace removes one fraction digit and keeps the separator', async ({ page }) => {
+    const field = numberField(await openStory(page, NUMBER_DEFAULT_ID));
+
+    await field.click();
+    await page.keyboard.type('2.05');
+    await page.keyboard.press('Backspace');
+
+    await expect(field).toHaveValue('2.0');
+  });
+
+  test('the caret stays at the end while editing a fraction', async ({ page }) => {
+    const field = numberField(await openStory(page, NUMBER_DEFAULT_ID));
+
+    await field.click();
+    await page.keyboard.type('1.5');
+    await page.keyboard.press('Backspace');
+    await page.keyboard.type('7');
+
+    await expect(field).toHaveValue('1.7');
+  });
+
+  test('a negative number between -1 and 0 can be typed', async ({ page }) => {
+    const field = numberField(await openStory(page, NUMBER_DEFAULT_ID));
+
+    await field.click();
+    await page.keyboard.type('-0.5');
+
+    await expect(field).toHaveValue('-0.5');
+  });
+
+  test('leaving the field writes the number in its plain form', async ({ page }) => {
+    const field = numberField(await openStory(page, NUMBER_DEFAULT_ID));
+
+    await field.click();
+    await page.keyboard.type('2.0');
+    await field.blur();
+
+    await expect(field).toHaveValue('2');
+  });
+
+  test('a step while focused rewrites the typed text', async ({ page }) => {
+    const field = numberField(await openStory(page, NUMBER_STEPPER_ID));
+
+    await field.click();
+    await page.keyboard.type('2.0');
+    await page.keyboard.press('ArrowUp');
+
+    await expect(field).toHaveValue('3');
+  });
+});
 
 test.describe('number input / stepper hold', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse press and hold');

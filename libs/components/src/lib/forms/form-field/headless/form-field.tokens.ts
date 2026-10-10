@@ -74,6 +74,8 @@ export type FormFieldControl = {
   hasCustomAccessibleName?: Signal<boolean>;
   /** The control's current value. */
   value?: Signal<unknown>;
+  /** True while the control masks a mixed value - the raw `value` must not reach the UI. */
+  mixed?: Signal<boolean>;
   /**
    * The bound field's `maxLength()` limit. Signal forms binds this automatically into any control
    * that declares a `maxLength` input.

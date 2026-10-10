@@ -137,7 +137,8 @@ export class RangeSliderDirective
       return [min, min];
     }
 
-    const snapped = this.value().map((end) => this.snapValue(end));
+    const range = this.value() ?? [this.effectiveMin(), this.effectiveMax()];
+    const snapped = range.map((end) => this.snapValue(end));
 
     return [Math.min(...snapped), Math.max(...snapped)];
   });

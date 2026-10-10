@@ -58,20 +58,24 @@ export abstract class TextFieldControlDirective extends TextShellControlDirectiv
   protected mirrorOntoNativeHost(
     element: HTMLInputElement | HTMLTextAreaElement,
     state: {
-      value: () => string;
+      value?: () => string;
       placeholder: () => string;
       type?: () => string;
       attributes?: () => Record<string, string | null>;
       skip?: () => boolean;
     },
   ) {
-    effect(() => {
-      const value = state.value();
+    const readValue = state.value;
 
-      if (!state.skip?.() && element.value !== value) {
-        this.nativeHostRenderer.setProperty(element, 'value', value);
-      }
-    });
+    if (readValue) {
+      effect(() => {
+        const value = readValue();
+
+        if (!state.skip?.() && element.value !== value) {
+          this.nativeHostRenderer.setProperty(element, 'value', value);
+        }
+      });
+    }
 
     const type = state.type;
 

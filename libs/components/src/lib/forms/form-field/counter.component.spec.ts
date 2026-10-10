@@ -26,6 +26,12 @@ import { FORM_FIELD_IMPORTS } from './form-field.imports';
       <et-input [formField]="noteForm.note" />
       <et-counter />
     </et-form-field>
+
+    <et-form-field>
+      <et-label>Title</et-label>
+      <et-input [(value)]="title" [mixed]="titleMixed()" />
+      <et-counter max="4" />
+    </et-form-field>
   `,
   imports: [FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField],
 })
@@ -34,6 +40,8 @@ class CounterHost {
   bio = signal({ bio: '' });
   handle = signal({ handle: '' });
   note = signal({ note: '' });
+  title = signal('a hidden raw value');
+  titleMixed = signal(true);
 
   bioForm = form(this.bio, (s) => maxLength(s.bio, 20));
   handleForm = form(this.handle, (s) => maxLength(s.handle, 5));
@@ -128,5 +136,21 @@ describe('CounterComponent', () => {
 
     expect(text(note)).toBe('5');
     expect(announcement(note)).toBe('');
+  });
+
+  it('takes a static max attribute and counts 0 while the control is mixed', () => {
+    const { host, counters, text, announcement, fixture } = setup();
+
+    const title = counters()[3]!;
+
+    expect(text(title)).toBe('0 / 4');
+    expect(title.hasAttribute('data-over-limit')).toBe(false);
+    expect(announcement(title)).toBe('');
+
+    host.titleMixed.set(false);
+    fixture.detectChanges();
+
+    expect(text(title)).toBe('18 / 4');
+    expect(title.hasAttribute('data-over-limit')).toBe(true);
   });
 });

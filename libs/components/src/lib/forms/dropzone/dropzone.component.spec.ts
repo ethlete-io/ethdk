@@ -386,6 +386,52 @@ describe('DropzoneComponent with a localized upload failure', () => {
   });
 });
 
+@Component({
+  template: `
+    <et-dropzone [formField]="demoForm.media" [upload]="upload()!" [maxFileSize]="8" accept="image/*">
+      <et-label>Media</et-label>
+    </et-dropzone>
+  `,
+  imports: [DropzoneComponent, LabelDirective, FormField],
+})
+class DropzoneInputConstraintsTestHost {
+  upload = signal<AnyDropzoneUploadConfig<string> | null>(null);
+  model = signal<{ media: string | null }>({ media: null });
+  demoForm = form(this.model);
+}
+
+describe('DropzoneComponent with constraint inputs and no dropzoneFiles() rule', () => {
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
+    URL.revokeObjectURL = vi.fn();
+  });
+
+  it('should render its own rejection messages', () => {
+    const driver = mountDropzone(DropzoneInputConstraintsTestHost, {
+      upload: (query) =>
+        createDropzoneUpload<UploadArgs, string>({
+          queryCreator: query.createPost<UploadArgs>('/upload'),
+          selectValue: (response) => response.uuid,
+        }),
+    });
+    const internalErrors = () =>
+      (driver.fixture.nativeElement as HTMLElement).querySelector('.et-dropzone-internal-errors')?.textContent ?? '';
+
+    driver.pickFiles([createFile('doc.pdf', 'application/pdf')]);
+
+    expect(internalErrors()).toContain('"doc.pdf" has an unsupported file type.');
+
+    driver.pickFiles([createFile('huge.png', 'image/png', 16)]);
+
+    expect(internalErrors()).toContain('"huge.png" is too large (max 8 B).');
+    expect(internalErrors()).not.toContain('doc.pdf');
+    driver.query.httpTesting.expectNone(UPLOAD_URL);
+
+    driver.fixture.destroy();
+    driver.query.httpTesting.verify();
+  });
+});
+
 describe('DropzoneComponent with schema constraints', () => {
   beforeEach(() => {
     URL.createObjectURL = vi.fn(() => `blob:mock-${Math.random()}`);
@@ -409,6 +455,7 @@ describe('DropzoneComponent with schema constraints', () => {
 
     expect(driver.errorsText()).toContain('doc.pdf');
     expect(driver.errorsText()).toContain('unsupported');
+    expect((driver.fixture.nativeElement as HTMLElement).querySelector('.et-dropzone-internal-errors')).toBeNull();
     driver.query.httpTesting.expectNone(UPLOAD_URL);
 
     driver.fixture.destroy();

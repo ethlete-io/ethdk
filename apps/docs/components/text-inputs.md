@@ -144,6 +144,15 @@ control is touched, with the message from `parseErrorMessage` (unset →
 Like the date and time inputs' parse error, it lives on the control and the form
 field - it does not enter the signal-forms field's `errors()`.
 
+While the input has focus, the text stays exactly as typed: `2.0` stays `2.0`, a
+leading `-` of `-0.5` stays, and the caret does not move. The model still updates on
+every keystroke. A write from code (a step, a model change) replaces the text only
+when the text does not already read as the new number. On blur the text is rewritten
+in the model's own form - `2.0` becomes `2`. Text that is not a number stays, so the
+parse error can point at it. A `reset()` that marks the control untouched clears that
+text and the parse error. Setting the value to `null` while it is already `null` does
+not: Angular reports no change for an equal write, so reset the field instead.
+
 ```html
 <et-number-input [formField]="demoForm.amount" [decimals]="2" parseErrorMessage="Enter an amount" />
 ```
@@ -186,6 +195,10 @@ value is a plain `string`; `autocomplete` defaults to `'current-password'` (set
   score from a pure length + character-class heuristic (deliberately not a
   zxcvbn-style security estimate). Grab it via the `etPasswordInput` export and
   render any meter you like next to the field (see the `Strength Meter` story).
+- **Headless `input[etPasswordInput]`**: the directive writes `type` (`password`, or
+  `text` while revealed) and `autocomplete` onto its own `<input>`, so
+  `toggleRevealed()` works without binding `[type]` yourself. `input[etInput]` and
+  `input[etNumberInput]` write `autocomplete` the same way.
 
 Design token: `--et-password-input-reveal-size` (default `16px`).
 

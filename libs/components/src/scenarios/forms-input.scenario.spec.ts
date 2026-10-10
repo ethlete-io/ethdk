@@ -60,7 +60,7 @@ class PlayerSignupComponent {
   template: `
     <input [(value)]="search" etInput type="search" aria-label="Search teams" />
     <input [(value)]="goals" [step]="0.5" [min]="0" etNumberInput aria-label="Goals" type="number" />
-    <input #pw="etPasswordInput" [(value)]="secret" [type]="pw.inputType()" etPasswordInput aria-label="Secret" />
+    <input [(value)]="secret" etPasswordInput aria-label="Secret" />
   `,
 })
 class NativeInputsComponent {
@@ -384,6 +384,7 @@ describe('forms input scenarios', () => {
     expect(numberInputStepMultiplierFrom({ shiftKey: false, altKey: false })).toBe(1);
 
     expect(secret.type).toBe('password');
+    expect(secret.getAttribute('autocomplete')).toBe('current-password');
     typeInto(s, secret, 'abc');
     expect(app.secret()).toBe('abc');
     app.password().toggleRevealed();

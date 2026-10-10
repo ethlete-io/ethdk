@@ -45,6 +45,7 @@ import { DropzoneReadonlyStylesComponent } from './dropzone-readonly-styles.comp
 import { DropzoneEntry, DROPZONE_ENTRY_STATUSES, formatFileSize } from './headless/dropzone-entry';
 import { DropzoneDirective } from './headless/dropzone.directive';
 import { AnyDropzoneUploadConfig } from './headless/dropzone-upload';
+import { rejectionMessage } from './headless/dropzone-validation';
 import { DropzoneLabels, injectDropzoneLabels } from './dropzone-labels';
 import { FIELD_STATE_INPUTS } from '../form-field/headless/field-state-control.directive';
 
@@ -162,6 +163,13 @@ export class DropzoneComponent<TValue = unknown> {
       if (entry.status() === DROPZONE_ENTRY_STATUSES.ERROR) {
         messages.push(this.uploadErrorMessage()?.(entry) ?? this.defaultUploadErrorMessage(entry));
       }
+    }
+
+    const labels = this.resolvedLabels();
+    const constraints = this.dropzoneDir.fileConstraints();
+
+    for (const rejection of this.dropzoneDir.unhandledRejections()) {
+      messages.push(rejectionMessage(rejection, { constraints, labels }));
     }
 
     return messages;

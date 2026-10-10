@@ -66,6 +66,8 @@ export class PasswordInputDirective extends TextFieldControlDirective implements
       this.mirrorOntoNativeHost(hostElement as HTMLInputElement, {
         value: this.displayValue,
         placeholder: this.effectivePlaceholder,
+        type: this.inputType,
+        attributes: () => ({ autocomplete: this.autocomplete() || null }),
       });
     }
   }

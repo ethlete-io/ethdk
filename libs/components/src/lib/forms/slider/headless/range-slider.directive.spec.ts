@@ -67,6 +67,13 @@ describe('RangeSliderDirective', () => {
     expect(driver.thumbAttrs('aria-valuemax')).toEqual(['80', '100']);
   });
 
+  it('parks both thumbs at the bounds for a null value that escaped the type', () => {
+    driver.host.value.set(null as unknown as RangeSliderValue);
+    driver.tick();
+
+    expect(driver.thumbAttrs('aria-valuenow')).toEqual(['0', '100']);
+  });
+
   it('normalizes a reversed value tuple for display', () => {
     driver.host.value.set([90, 10]);
     driver.tick();

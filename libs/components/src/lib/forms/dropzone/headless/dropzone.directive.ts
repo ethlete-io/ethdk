@@ -161,7 +161,11 @@ export class DropzoneDirective<TValue = unknown>
     return state?.metadata(DROPZONE_FILE_CONSTRAINTS) ?? null;
   });
 
-  private fileConstraints = computed(() => {
+  /** The rejections no bound `dropzoneFiles()` rule turns into field errors - the dropzone reports these itself. */
+  public unhandledRejections = computed(() => (this.fileValidation() ? [] : this.lastRejections()));
+
+  /** @internal */
+  public fileConstraints = computed(() => {
     const schema = this.fileValidation()?.constraints();
 
     return {

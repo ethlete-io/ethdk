@@ -570,6 +570,55 @@ describe('NumberInputDirective', () => {
       driver = mountNumberInput(hostType, { directiveSelector: '[etNumberInput], et-number-input' });
     });
 
+    it('keeps the typed text while the parsed number changes', () => {
+      driver.focus();
+      driver.type('2.05');
+      driver.type('2.0');
+
+      expect(driver.fieldValue()).toBe('2.0');
+      expect(driver.host.value()).toBe(2);
+
+      driver.type('-0');
+      driver.type('-0.5');
+
+      expect(driver.fieldValue()).toBe('-0.5');
+      expect(driver.host.value()).toBe(-0.5);
+    });
+
+    it('rewrites the text in the model form on blur', () => {
+      driver.focus();
+      driver.type('2.0');
+      driver.blur();
+
+      expect(driver.fieldValue()).toBe('2');
+      expect(driver.host.value()).toBe(2);
+    });
+
+    it('rewrites the text for a code write while focused', () => {
+      driver.focus();
+      driver.type('2.0');
+      driver.host.value.set(3);
+      driver.tick();
+
+      expect(driver.fieldValue()).toBe('3');
+    });
+
+    it('clears a parse error and its text when the control is reset to untouched', () => {
+      driver.focus();
+      setBadInput(driver.field(), true);
+      driver.type('');
+      driver.blur();
+
+      expect(driver.numberInput.shouldDisplayError()).toBe(true);
+
+      setBadInput(driver.field(), false);
+      driver.numberInput.touched.set(false);
+      driver.tick();
+
+      expect(driver.numberInput.parseError()).toBe(false);
+      expect(driver.fieldValue()).toBe('');
+    });
+
     it('blocks exponent notation and a plus sign, but not a minus', () => {
       for (const data of ['e', 'E', '+']) {
         expect(beforeInput(driver.field(), { inputType: 'insertText', data })).toBe(true);

@@ -1,6 +1,5 @@
 <input
   #nativeInput
-  [value]="numberInputDir.displayValue()"
   [disabled]="numberInputDir.disabled()"
   [readOnly]="numberInputDir.readonly()"
   [required]="numberInputDir.required()"
@@ -17,7 +16,7 @@
   [attr.aria-labelledby]="numberInputDir.labelId() || null"
   [attr.data-text-align]="numberInputDir.textAlign()"
   (focus)="numberInputDir.focused.set(true)"
-  (blur)="numberInputDir.focused.set(false); numberInputDir.touched.set(true)"
+  (blur)="numberInputDir.focused.set(false); numberInputDir.touched.set(true); numberInputDir.normalizeNativeText()"
   class="et-number-input-native"
   type="number"
 />

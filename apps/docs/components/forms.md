@@ -242,16 +242,18 @@ const bioForm = form(model, (s) => {
 
 <StoryEmbed id="components-forms-counter--with-hint" height="360px" />
 
-| Input      | Type                         | Notes                                                                                         |
-| ---------- | ---------------------------- | --------------------------------------------------------------------------------------------- |
-| `max`      | `number \| undefined`        | Wins over the schema's `maxLength()`. Use it for an unvalidated or softer limit.              |
-| `lengthOf` | `(value: unknown) => number` | How the value is measured. Defaults to string length / array & set size / stringified length. |
+| Input      | Type                         | Notes                                                                                                            |
+| ---------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `max`      | `number \| undefined`        | Wins over the schema's `maxLength()`. Use it for an unvalidated or softer limit. A static `max="100"` works too. |
+| `lengthOf` | `(value: unknown) => number` | How the value is measured. Defaults to string length / array & set size / stringified length.                    |
 
 From 90% of the limit on, the counter announces the remaining count through a polite live region. The three messages are `counterRemaining`, `counterLimitReached` and `counterOverLimit` in [`FORM_FIELD_LABELS`](/components/localization) - localize them with `provideFormFieldLabels({ … })`, or word them as tags for an `et-tag-input`.
 
 The counter is **persistent** - unlike the hint, it does not swap out when an error appears, so a reader who just crossed the limit sees the message and the count that caused it together. Past the limit it takes `data-over-limit` and the [semantic error color](/core/theming).
 
 "Past the limit" is the control's own `maxLength` validation error, not a second length check, so the count can never turn red while the field reports itself valid. An explicit `[max]` has no validator behind it and is compared against `lengthOf` directly.
+
+While the control is [mixed](/components/mixed-state), the counter shows `0` and never turns red or announces anything, so the hidden raw value's length does not leak. The field's validation still sees that value.
 
 Because the default `lengthOf` counts array elements, the same element counts tags in an `et-tag-input`. The controls deliberately do **not** forward `maxLength` to the native `maxlength` attribute: truncating typed input would stop the validator from ever reporting the violation the counter exists to make visible. Set `maxlength` on the control yourself if you want the browser to clamp instead.
 

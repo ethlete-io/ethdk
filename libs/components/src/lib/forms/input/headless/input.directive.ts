@@ -82,6 +82,7 @@ export class InputDirective extends TextFieldControlDirective implements FormVal
         value: this.displayValue,
         placeholder: this.effectivePlaceholder,
         type: this.type,
+        attributes: () => ({ autocomplete: this.autocomplete() || null }),
         skip: () => this.nativeSyncSuppressed,
       });
     }

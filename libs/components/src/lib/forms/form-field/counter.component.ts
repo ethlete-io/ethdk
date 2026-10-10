@@ -1,6 +1,7 @@
 import { Component, computed, DestroyRef, inject, input, ViewEncapsulation } from '@angular/core';
 import { mountVisuallyHidden } from '@ethlete/core';
 import { injectFormFieldLabels } from './form-field-labels';
+import { optionalNumberAttribute } from '../../internals/number-attributes';
 import { CounterComponentBase, FORM_FIELD_TOKEN } from './headless';
 
 const defaultLengthOf = (value: unknown) => {
@@ -51,7 +52,7 @@ export class CounterComponent implements CounterComponentBase {
    * The limit to count towards. Wins over the schema's `maxLength()` - use it for a control whose
    * length isn't schema-validated, or to count towards a softer limit than the one that validates.
    */
-  public max = input<number | undefined>(undefined);
+  public max = input(undefined, { transform: optionalNumberAttribute });
 
   /** Measures the control's value. Override for a value type the default can't count. */
   public lengthOf = input<(value: unknown) => number>(defaultLengthOf);
@@ -59,14 +60,18 @@ export class CounterComponent implements CounterComponentBase {
   /** The limit actually in effect: the explicit `[max]`, else the bound field's `maxLength()`. */
   public resolvedMax = computed(() => this.max() ?? this.formField?.controlMaxLength());
 
-  /** The current length of the control's value. */
-  public current = computed(() => this.lengthOf()(this.formField?.controlValue() ?? null));
+  private controlMixed = computed(() => this.formField?.registeredControl()?.mixed?.() ?? false);
+
+  /** The current length of the control's value - `0` while mixed, so the hidden raw value never shows. */
+  public current = computed(() => (this.controlMixed() ? 0 : this.lengthOf()(this.formField?.controlValue() ?? null)));
 
   /**
    * Whether the value is past the limit. With a schema `maxLength()` this is the control's own
    * validation error.
    */
   public isOverLimit = computed(() => {
+    if (this.controlMixed()) return false;
+
     const explicitMax = this.max();
 
     if (explicitMax !== undefined) {

@@ -67,7 +67,8 @@ export const DROPZONE_FILE_CONSTRAINTS = /* @__PURE__ */ createManagedMetadataKe
   labels: signal(DEFAULT_DROPZONE_LABELS),
 }));
 
-const rejectionMessage = (
+/** @internal */
+export const rejectionMessage = (
   rejection: DropzoneFileRejection,
   context: { constraints: DropzoneFileConstraints | undefined; labels: DropzoneLabels },
 ) => {
