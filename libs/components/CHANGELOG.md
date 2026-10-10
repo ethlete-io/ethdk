@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0-next.69
+
+### Major Changes
+
+- `<et-scheduler>` now takes `TExtra` from `[appointments]`, so its outputs and `SchedulerFeatureHost<TExtra>` are typed; `SchedulerFeatureHost.appointments()` is renamed to `visibleAppointments()`.
+
+### Minor Changes
+
+- Week presets and week numbers now follow the picker's Monday-first ISO rows without a locale, date inputs reject two-digit years, `dateBounds`/`dateRangeBounds` compare on the control's zone calendar, and an empty time ring keeps 02:30 on a DST day.
+- Add `displayWith` to `et-select`, labelling a value that no loaded option carries.
+
+### Patch Changes
+
+- Document that a mirrored `et-bracket` always folds the third place match under the final.
+- Fix carousel freezing after an interrupted navigation, headless tabs showing the wrong panel after insert or reorder, invalid tab `selectedIndex` values hiding every panel, and `notificationManager.promise` loading toasts never dismissing on abort.
+- Fix select commits, pastes, windowed rows and typeahead, cascader search under disabled branches, and `et-tag-input` throwing on a `null` value.
+- Fix the dropzone's too-large and too-small messages omitting the limit when it comes from the `maxFileSize` or `minFileSize` input instead of the `dropzoneFiles()` rule.
+- Keep a number input's typed text while focused, show dropzone rejections no `dropzoneFiles()` rule reports, and fix the counter while mixed, a `null` range slider value and the headless password reveal.
+- A menu closed by a route navigation stays closed, a menu item disabled while active no longer breaks arrow keys or opens its submenu, Mod+K reopens a leaving command palette, and a modal keeps the page's horizontal scroll.
+- Fix the menu activating the focused item when Space is pressed during a typeahead, which made multi-word labels impossible to match.
+- Complete `OverlayRef.afterOpened()` when the overlay closes before it finished opening, so subscribers no longer wait forever.
+- Fix rich text editor empty heading and list markers, pasted alignment, IME composition, externally written values and `requiredLanguages` throwing on a `null` record.
+- The month, time-grid and agenda views inside a bare `[etScheduler]` now show each appointment's title and time instead of an empty badge.
+- Fix virtualized table `aria-rowcount`/`aria-rowindex`, silent client sort of non-primitive values (now `ET3514`), hidden columns keeping filters and sorts, and grid `restoreState()` during a leave animation.
+- A virtualized table now counts open detail row heights in its scroll math, so the view no longer jumps and keyboard navigation reaches the right row.
+
 ## 1.0.0-next.68
 
 ### Patch Changes

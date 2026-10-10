@@ -1,5 +1,11 @@
 # @ethlete/bracket
 
+## 1.0.0-next.4
+
+### Patch Changes
+
+- Fix mirrored single elimination third-place placement, mirrored double elimination without a reset ending at the grand final, and semi-final losers wrongly marked `isEliminated` when a third place match follows.
+
 ## 1.0.0-next.3
 
 ### Major Changes
