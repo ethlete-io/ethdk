@@ -18,5 +18,6 @@
   "provideKbdLabels": "spec: libs/components/src/lib/kbd/kbd.component.spec.ts",
   "providePipChromeManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
   "providePipManager": "S8b stream: plumbing of provideStreamPip, no standalone consumer use",
-  "provideRichTextEditorTool": "scenario: forms-multi-language-rich-text-editor.scenario.spec.ts, through provideRichTextEditorLanguageTool"
+  "provideRichTextEditorTool": "scenario: forms-multi-language-rich-text-editor.scenario.spec.ts, through provideRichTextEditorLanguageTool",
+  "rejectionMessage": "internal: builds the rejection text inside et-dropzone and defaultDropzoneRejectionMessage"
 }
