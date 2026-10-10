@@ -2,4 +2,4 @@
 '@ethlete/agent-rules': patch
 ---
 
-Name the `take-until-destroyed-last` lint rule in the styleguide lint lookup and the RxJS skill.
+The `rxjs-signals` skill says which operators may follow `takeUntilDestroyed()`.
