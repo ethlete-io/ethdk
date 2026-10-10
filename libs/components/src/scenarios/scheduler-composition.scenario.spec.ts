@@ -236,7 +236,7 @@ class ShellComponent implements SchedulerFeatureHost {
   appointmentTree = () => this.calendar().appointmentTree();
   selectedAppointment = () => this.calendar().selectedAppointment();
 
-  appointments() {
+  visibleAppointments() {
     return this.calendar().visibleAppointments();
   }
 
@@ -508,7 +508,7 @@ describe('scheduler composition scenarios', { timeout: 15_000 }, () => {
     s.tick();
     expect(shell.selectedId()).toBe('review');
     expect(shell.selectedAppointment()?.title).toBe('Review');
-    expect(shell.appointments().map((entry) => entry.id)).toEqual(['review', 'draft', 'notes', 'retreat']);
+    expect(shell.visibleAppointments().map((entry) => entry.id)).toEqual(['review', 'draft', 'notes', 'retreat']);
 
     shell.view.set('week');
     s.tick();

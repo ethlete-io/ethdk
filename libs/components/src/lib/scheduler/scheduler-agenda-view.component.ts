@@ -5,6 +5,7 @@ import { format, isSameMonth } from 'date-fns';
 import { SCHEDULER_FEATURE_HOST, SchedulerAgendaDirective, SchedulerDirective } from './headless';
 import { buildSchedulerAgendaGuides } from './headless/internals/scheduler-agenda';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
+import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { Appointment } from './scheduler.types';
 
 /** The default agenda list: one section per visible day, appointments as full-width badges indented by chain depth. */
@@ -45,7 +46,7 @@ export class SchedulerAgendaViewComponent {
   }
 
   protected badgeAdornments() {
-    return this.featureHost?.badgeAdornments() ?? [];
+    return this.featureHost?.badgeAdornments() ?? SCHEDULER_FALLBACK_BADGE_ADORNMENTS;
   }
 
   protected weekdayLabel(date: Date) {

@@ -89,13 +89,13 @@ export type SchedulerToolbarAction = {
  * `TableFeatureHost`: the read-only surface every feature needs, plus the badge adornment and
  * toolbar action registration points.
  */
-export type SchedulerFeatureHost = {
+export type SchedulerFeatureHost<TExtra = unknown> = {
   /** The appointments currently in view - already filtered to the visible range. */
-  appointments(): readonly Appointment[];
-  /** {@link appointments}, arranged into sub-appointment chains - see `buildAppointmentTree`. */
-  appointmentTree(): AppointmentTreeNode[];
+  visibleAppointments(): readonly Appointment<TExtra>[];
+  /** Every appointment the scheduler knows about, arranged into sub-appointment chains - see `buildAppointmentTree`. */
+  appointmentTree(): AppointmentTreeNode<TExtra>[];
   /** The currently selected appointment, or `null`. */
-  selectedAppointment(): Appointment | null;
+  selectedAppointment(): Appointment<TExtra> | null;
   /** The scheduler's host element - a feature is a directive on it, so this is also what it can listen on or measure. */
   readonly element: HTMLElement;
   /** Add a piece of content to every appointment badge/block. Call once, from the feature's constructor. */
@@ -144,7 +144,7 @@ export const schedulerFeatureConfig = <TConfig extends SchedulerFeatureConfig>(v
  * Inject the host scheduler from inside a feature. Throws a labelled error when the feature was
  * placed outside an `<et-scheduler>`, where it could only ever silently do nothing.
  */
-export const injectSchedulerFeatureHost = (feature: string): SchedulerFeatureHost => {
+export const injectSchedulerFeatureHost = <TExtra = unknown>(feature: string): SchedulerFeatureHost<TExtra> => {
   const host = inject(SCHEDULER_FEATURE_HOST, { optional: true });
 
   if (!host) {
@@ -154,5 +154,5 @@ export const injectSchedulerFeatureHost = (feature: string): SchedulerFeatureHos
     );
   }
 
-  return host;
+  return host as SchedulerFeatureHost<TExtra>;
 };

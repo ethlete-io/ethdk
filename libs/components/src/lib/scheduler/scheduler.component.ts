@@ -1,4 +1,15 @@
-import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, output, untracked } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  untracked,
+} from '@angular/core';
+import { outputFromObservable, outputToObservable } from '@angular/core/rxjs-interop';
 import { randomId, signalHostElementDimensions, mountVisuallyHidden } from '@ethlete/core';
 import { addHours, format, isSameDay, setHours, setMinutes, startOfDay } from 'date-fns';
 import { BUTTON_IMPORTS } from '../button';
@@ -64,7 +75,7 @@ const NARROW_CONTAINER_WIDTH = 480;
         'businessHours',
         'nowIndicator',
       ],
-      outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange', 'appointmentReschedule'],
+      outputs: ['viewChange', 'focusedDateChange', 'selectedAppointmentIdChange'],
     },
     { directive: SchedulerBadgeColorDotDirective, inputs: ['etSchedulerBadgeColorDot'] },
     { directive: SchedulerBadgeTitleDirective, inputs: ['etSchedulerBadgeTitle'] },
@@ -79,23 +90,29 @@ const NARROW_CONTAINER_WIDTH = 480;
     class: 'et-scheduler',
   },
 })
-export class SchedulerComponent implements SchedulerFeatureHost {
+export class SchedulerComponent<TExtra = unknown> implements SchedulerFeatureHost<TExtra> {
   private labels = injectSchedulerLabels();
-  private editSurfaceOpener = injectSchedulerEditSurfaceOpener();
+  private editSurfaceOpener = injectSchedulerEditSurfaceOpener<TExtra>();
 
   /**
    * The headless directive behind this scheduler - everything `[etScheduler]` exposes, for chrome
    * of your own around or instead of the default toolbar (`<et-scheduler #s>` then `s.headless`).
    */
-  public headless = inject(SchedulerDirective);
+  public headless = inject<SchedulerDirective<TExtra>>(SchedulerDirective);
 
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  /** Every appointment the scheduler knows about - not pre-filtered to the visible range. */
+  public appointments = input<readonly Appointment<TExtra>[]>([]);
+
   /** Emits the edited or newly-added appointment once the edit surface saves. */
-  public appointmentSave = output<Appointment>();
+  public appointmentSave = output<Appointment<TExtra>>();
 
   /** Emits every id to remove once the edit surface deletes a chain. */
   public appointmentsDelete = output<readonly AppointmentId[]>();
+
+  /** Emits when a move or resize lands an appointment somewhere else - see `SchedulerDirective.appointmentReschedule`. */
+  public appointmentReschedule = outputFromObservable(outputToObservable(this.headless.appointmentReschedule));
 
   private dimensions = signalHostElementDimensions();
 
@@ -212,7 +229,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return this.headless.selectedAppointment;
   }
 
-  public appointments(): readonly Appointment[] {
+  public visibleAppointments(): readonly Appointment<TExtra>[] {
     return this.headless.visibleAppointments();
   }
 
@@ -272,7 +289,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.headless.selectedAppointmentId.set(id);
   }
 
-  private openAddSurface(appointment: Appointment) {
+  private openAddSurface(appointment: Appointment<TExtra>) {
     this.editSurfaceOpener.openAdd({
       appointment,
       appointments: this.headless.appointments,
@@ -305,7 +322,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     });
   }
 
-  private appointmentFromDraft(draft: SchedulerDraftRange): Appointment {
+  private appointmentFromDraft(draft: SchedulerDraftRange): Appointment<TExtra> {
     return { id: randomId(), parentId: null, title: '', start: draft.start, end: draft.end, allDay: draft.allDay };
   }
 
@@ -317,7 +334,7 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     return anchor;
   }
 
-  private handleEditSurfaceClosed(surface: object, result: SchedulerEditSurfaceResult | null | undefined) {
+  private handleEditSurfaceClosed(surface: object, result: SchedulerEditSurfaceResult<TExtra> | null | undefined) {
     if (surface !== this.openEditSurfaceToken) {
       this.emitEditSurfaceResult(result);
 
@@ -328,14 +345,14 @@ export class SchedulerComponent implements SchedulerFeatureHost {
     this.handleEditSurfaceResult(result);
   }
 
-  private handleEditSurfaceResult(result: SchedulerEditSurfaceResult | null | undefined) {
+  private handleEditSurfaceResult(result: SchedulerEditSurfaceResult<TExtra> | null | undefined) {
     this.emitEditSurfaceResult(result);
 
     this.handledSelectionId = null;
     this.headless.selectedAppointmentId.set(null);
   }
 
-  private emitEditSurfaceResult(result: SchedulerEditSurfaceResult | null | undefined) {
+  private emitEditSurfaceResult(result: SchedulerEditSurfaceResult<TExtra> | null | undefined) {
     if (result?.kind === 'save') {
       this.appointmentSave.emit(result.appointment);
     } else if (result?.kind === 'delete') {

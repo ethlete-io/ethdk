@@ -56,7 +56,7 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 
 | Input                   | Type                                        | Default             | Description                                                                                                             |
 | ----------------------- | ------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `appointments`          | `readonly Appointment[]`                    | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                                    |
+| `appointments`          | `readonly Appointment<TExtra>[]`            | `[]`                | Every appointment the scheduler knows about - not pre-filtered to the visible range.                                    |
 | `view`                  | `SchedulerView`                             | `'month'`           | Which view is on screen - `'month' \| 'week' \| 'day' \| 'agenda'`.                                                     |
 | `focusedDate`           | `Date`                                      | today               | The date the visible period is derived from.                                                                            |
 | `selectedAppointmentId` | `AppointmentId \| null`                     | `null`              | The currently selected appointment.                                                                                     |
@@ -72,13 +72,13 @@ On `et-scheduler` (forwarded from the headless `[etScheduler]` directive):
 | `selectedAppointmentId` | `AppointmentId \| null` | The selected appointment's id.               |
 | `focusedDate`           | `Date`                  | The date the visible period is derived from. |
 
-| Output                  | Payload                                               | Fires when                                                                                                      |
-| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `appointmentSave`       | `Appointment`                                         | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
-| `appointmentsDelete`    | `readonly AppointmentId[]`                            | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
-| `appointmentReschedule` | `{ appointment: Appointment; previous: Appointment }` | An appointment was [dragged](#move-and-resize) to another time, or resized by one of its edges.                 |
+| Output                  | Payload                                  | Fires when                                                                                                      |
+| ----------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `appointmentSave`       | `Appointment<TExtra>`                    | The default [edit surface](#edit-surface) saves an edit, a new sub-appointment, or a new top-level appointment. |
+| `appointmentsDelete`    | `readonly AppointmentId[]`               | The edit surface's "Delete (with descendants)" action removes an appointment and its chain.                     |
+| `appointmentReschedule` | `SchedulerAppointmentReschedule<TExtra>` | An appointment was [dragged](#move-and-resize) to another time, or resized by one of its edges.                 |
 
-The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete`/`appointmentReschedule` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
+The toolbar's Month/Week/Day/Agenda control (an [`et-segmented-button-group`](/components/choice-inputs#selection-lists)) writes straight into `view` - there's no separate switch input to wire up yourself. `<et-scheduler>` takes `TExtra` from `appointments`, so with `[appointments]` typed `Appointment<IssueExtra>[]` the outputs emit `Appointment<IssueExtra>` and a strict template accepts `(appointmentSave)="save($event)"` for `save(a: Appointment<IssueExtra>)`. `appointments` is one-way: the scheduler never mutates it, so applying `appointmentSave`/`appointmentsDelete`/`appointmentReschedule` back onto your own signal is on you - see the [edit surface](#edit-surface) section.
 
 ## Toolbar
 
@@ -127,7 +127,7 @@ A day cell per day of the padded month, leading/trailing days from adjacent mont
 | ------------------- | -------- | ------- | ---------------------------------------------------------------- |
 | `maxVisiblePerCell` | `number` | `3`     | How many appointments a day cell shows before the rest overflow. |
 
-Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI. Its badges are built from the registered [badge adornments](#badge-composability), which only `<et-scheduler>` (or a shell of your own that provides [`SCHEDULER_FEATURE_HOST`](#own-feature-host)) supplies - inside a bare `[etScheduler]` the badges render empty.
+Clicking a badge (in the grid or the overflow popover) sets `selectedAppointmentId`, which `<et-scheduler>` reacts to by opening the [edit surface](#edit-surface); dragging one moves it to another day, see [move and resize](#move-and-resize) - see that section for what a bare `[etScheduler]` composition needs to do instead. `<et-scheduler-month-view>` reads its host `[etScheduler]` via DI. Its badges are built from the registered [badge adornments](#badge-composability), which `<et-scheduler>` (or a shell of your own that provides [`SCHEDULER_FEATURE_HOST`](#own-feature-host)) supplies. Inside a bare `[etScheduler]` with no feature host, the month, time-grid and agenda views fall back to the built-in title and time range, so every badge still has a title, a time and an accessible name. Storybook's **Scheduler → Headless** story is that setup.
 
 ## Time grid: week & day view
 
@@ -538,7 +538,7 @@ Every appointment badge/block, in every view, is built from the same five pieces
 
 Each takes the same `{ enabled?: boolean }` config, bound on `<et-scheduler>` under its own selector. The month view hides the color dot and the location piece in its compact one-line badge (a per-view CSS choice, not a config flag) - both still render in the time grid and the agenda view.
 
-Adding your own piece is the same mechanism: write a directive that injects `SCHEDULER_FEATURE_HOST` (via `injectSchedulerFeatureHost()`) and calls `registerBadgeAdornment({ component, order, enabled })` from its constructor, where `component` declares a `node: InputSignal<AppointmentTreeNode>` input - the tree node the badge renders, giving it the appointment plus its depth and children.
+Adding your own piece is the same mechanism: write a directive that injects `SCHEDULER_FEATURE_HOST` (via `injectSchedulerFeatureHost()`) and calls `registerBadgeAdornment({ component, order, enabled })` from its constructor, where `component` declares a `node: InputSignal<AppointmentTreeNode>` input - the tree node the badge renders, giving it the appointment plus its depth and children. `injectSchedulerFeatureHost<TExtra>()` and `AppointmentTreeNode<TExtra>` type `extra` for the piece. Storybook's **Scheduler → Custom Badge Adornment** story adds a ticket-key piece this way.
 
 ## Headless usage {#headless-usage}
 
@@ -562,7 +562,7 @@ Adding your own piece is the same mechanism: write a directive that injects `SCH
 
 ### Feature host
 
-`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `appointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the registered [edit surface](#edit-surface) for a brand-new appointment, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The optional `canAddAppointment()` hides that action when it returns `false`; `<et-scheduler>` returns `false` without `provideSchedulerEditSurface()`.
+`SCHEDULER_FEATURE_HOST` (injected via `injectSchedulerFeatureHost()`) is the read-only surface an opt-in scheduler feature reaches on its host `<et-scheduler>`: `visibleAppointments()` (visible-range-filtered), `appointmentTree()`, `selectedAppointment()`, the scheduler's own `element`, `registerBadgeAdornment()` / `badgeAdornments()` (see [badge composability](#badge-composability)), and `registerToolbarAction()` / `toolbarActions()` (see [toolbar](#toolbar)). It's modeled on the [table](/components/table)'s feature host. `addAppointment()` opens the registered [edit surface](#edit-surface) for a brand-new appointment, exposed here so the built-in toolbar action can call it without importing `SchedulerComponent` directly. The optional `canAddAppointment()` hides that action when it returns `false`; `<et-scheduler>` returns `false` without `provideSchedulerEditSurface()`.
 
 ### Hosting features on your own component {#own-feature-host}
 
@@ -581,7 +581,7 @@ export class MyShellComponent implements SchedulerFeatureHost {
   registerBadgeAdornment = this.adornments.register;
   toolbarActions = this.actions.entries;
   registerToolbarAction = this.actions.register;
-  // appointments(), appointmentTree(), selectedAppointment(), element, addAppointment()
+  // visibleAppointments(), appointmentTree(), selectedAppointment(), element, addAppointment()
 }
 ```
 

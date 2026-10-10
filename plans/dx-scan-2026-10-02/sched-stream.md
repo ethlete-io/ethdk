@@ -86,8 +86,8 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   fall back to the built-in title/time adornments when no host exists. (c) At minimum, raise a dev-mode error from
   the views when `featureHost` is null, and correct the guide sentence.
 - Breaking: no. Decision: yes (pick a, b or c).
-- Status: open: user decision.
-- Review: open (user decision).
+- Status: fixed (2026-10-10, option b, user decision): without a `SCHEDULER_FEATURE_HOST` the month, time-grid and agenda views fall back to the built-in title and time-range adornments (`scheduler-fallback-badge-adornments.ts`). Spec `scheduler-bare-host.spec.ts` (3 fail without the fix). Guide sentence corrected; `Headless` and `CustomBadgeAdornment` stories added.
+- Review: open.
 
 ## SS-04 `TExtra` is lost at `<et-scheduler>`, its outputs and the edit-field contract
 
@@ -103,8 +103,8 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   `appointmentSave` / `appointmentsDelete` / `SchedulerEditSurfaceResult<TExtra>` with it. Make `SchedulerEditField`,
   `SchedulerFeatureHost` and `SchedulerEditSurfaceHost` generic over `TExtra` with an `unknown` default.
 - Breaking: no (defaults keep today's types). Decision: no.
-- Status: open: not fixed. Making `SchedulerComponent<TExtra>` generic gives nothing in templates, because Angular infers a component generic only from the component's own inputs, and `appointments` is a host-directive input. The component would have to own `appointments`, which collides with `SchedulerFeatureHost.appointments()` (the visible ones). Needs a rename such as `visibleAppointments()` (breaking), so it is a design call. The edit-field half is fixed (cf60c5882): fields take a typed `draft`, `injectSchedulerEditSurface<TExtra>()` and the opener are generic, and `SchedulerEditSurfaceResult<TExtra>`. The `<et-scheduler>` outputs half stays open.
-- Review: ok (left open, design call).
+- Status: fixed (2026-10-10, user decision, breaking): `SchedulerComponent<TExtra = unknown>` owns an `appointments` input (still forwarded to the host directive) so the template infers `TExtra`; `appointmentSave` and `appointmentReschedule` (now the component's own output, re-emitted from the directive) carry it. `SchedulerFeatureHost<TExtra>` with `appointments()` renamed to `visibleAppointments()`; `injectSchedulerFeatureHost<TExtra>()`. Edit-field half was already done (cf60c5882). Type spec `scheduler-extra-type.spec.ts` (fails before: component not generic); strict-template inference checked with ngtsc. timetrack and fut-frontend do not use the renamed member.
+- Review: open.
 
 ## SS-05 The PiP slot placeholder is off by default, and the guide never mentions it
 
@@ -220,4 +220,4 @@ Scope: `libs/components/src/lib/scheduler`, `libs/components/src/lib/stream`, `a
   `<StoryEmbed>` where the page cap allows, otherwise name them in text.
 - Breaking: no. Decision: no.
 - Status: fixed (partly): `ReadOnly` scheduler story and YouTube `SlotControls` stream story. Not added: headless, custom adornment and custom edit field (blocked by SS-02/SS-03), consent provider, custom PiP chrome.
-- Review: fixed (partly): added the YouTube `ConsentProvider` story (a fake CMP through `createUserConsentProvider`), and embedded `SlotControls` and `ConsentProvider` in the stream guide; the scheduler guide names the `ReadOnly` story (page already has 6 embeds). Left: `Headless`, `CustomBadgeAdornment` scheduler stories (wait for SS-03); `CustomEditField` added with the SS-02 fix. Also added the `CustomPipChrome` stream story (the app-built `PipChromeRef` chrome from `stream-pip.scenario.spec.ts`), embedded in the stream guide.
+- Review: fixed (partly): added the YouTube `ConsentProvider` story (a fake CMP through `createUserConsentProvider`), and embedded `SlotControls` and `ConsentProvider` in the stream guide; the scheduler guide names the `ReadOnly` story (page already has 6 embeds). `Headless` and `CustomBadgeAdornment` scheduler stories added with SS-03 (2026-10-10); `CustomEditField` added with the SS-02 fix. Also added the `CustomPipChrome` stream story (the app-built `PipChromeRef` chrome from `stream-pip.scenario.spec.ts`), embedded in the stream guide.

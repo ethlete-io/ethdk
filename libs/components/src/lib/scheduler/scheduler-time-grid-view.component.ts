@@ -34,6 +34,7 @@ import {
 } from './headless/internals/scheduler-keyboard';
 import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
+import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
 import { injectSchedulerLabels } from './scheduler-labels';
 import { Appointment, SchedulerAppointmentDragMode } from './scheduler.types';
 
@@ -209,7 +210,7 @@ export class SchedulerTimeGridViewComponent {
   }
 
   protected badgeAdornments() {
-    return this.featureHost?.badgeAdornments() ?? [];
+    return this.featureHost?.badgeAdornments() ?? SCHEDULER_FALLBACK_BADGE_ADORNMENTS;
   }
 
   protected weekdayLabel(date: Date) {

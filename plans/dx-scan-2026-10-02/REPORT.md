@@ -18,14 +18,11 @@ The scan plan is `README.md`. Each domain file in this folder holds the findings
   - `libs/theme/src/lib/shared/ethlete-components/segmented-button-group.css`
   - `libs/theme/src/lib/shared/ethlete-components/table.css`
 
-## 2. Open user decisions (2)
+## 2. Open user decisions (0)
 
-The domain file of each ID has the full problem and the proposed fix. The user put both aside on 2026-10-08.
-
-| ID    | Question                                                                                                                                                                                                                                                          |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SS-03 | Default views in a bare `[etScheduler]` render empty badges. Options: (a) a registry-backed feature host, (b) fall back to built-in adornments, (c) a dev-mode error only.                                                                                        |
-| SS-04 | `TExtra` is lost at the outputs of `<et-scheduler>`. A generic component needs `appointments` renamed in `SchedulerFeatureHost` (for example `visibleAppointments()`, breaking). Do it? `plans/scheduler-edit-surface-composition.md` closed the edit-field half. |
+The user decided both on 2026-10-10: SS-03 option (b), the default views fall back to the built-in title and time
+adornments; SS-04 yes, `<et-scheduler>` is generic over `TExtra` and `SchedulerFeatureHost.appointments()` is renamed to
+`visibleAppointments()` (breaking). Both are fixed; see `sched-stream.md`.
 
 ## 3. Calls the coordinator made
 
@@ -39,7 +36,6 @@ A human can reverse each of these.
 
 ## 4. Known gaps
 
-- The scheduler stories Headless and CustomBadgeAdornment wait on SS-03. CustomEditField shipped with `plans/scheduler-edit-surface-composition.md`.
 - Overlay router (`syncUrl: true`): after overlay B closes, the stale param of overlay A can come back from the old history entry of A. The browser cannot remove that entry.
 - Commit `b53c99304` has the subject `test(components)` but also holds the SEL-02 source fix.
 
