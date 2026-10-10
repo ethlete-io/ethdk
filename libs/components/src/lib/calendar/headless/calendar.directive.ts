@@ -382,7 +382,7 @@ export class CalendarDirective {
     const locale = this.effectiveLocale();
     const labelOptions = locale ? { locale } : undefined;
     const weekStartsOn = this.effectiveFirstDayOfWeek();
-    const firstWeekContainsDate = locale?.options?.firstWeekContainsDate ?? 1;
+    const firstWeekContainsDate = locale ? (locale.options?.firstWeekContainsDate ?? 1) : 4;
     const readSelection = this.selectionReader('month');
 
     return Array.from({ length: this.monthsShown() }, (_, offset) => {

@@ -4,7 +4,13 @@ import { form } from '@angular/forms/signals';
 import '../../../test-helpers';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { provideDateFormat, provideDateLocale, provideDateTimeFormat, provideTimeFormat } from './date-time-formats';
+import {
+  provideDateFormat,
+  provideDateLocale,
+  provideDateTimeFormat,
+  provideDateTimeZone,
+  provideTimeFormat,
+} from './date-time-formats';
 import { provideDateTimeLabels } from './date-time-labels';
 import {
   dateBounds,
@@ -348,6 +354,28 @@ describe('dateBounds and dateTimeBounds', () => {
       { kind: 'rangeMin', message: 'Choose dates on or after 03/05/2026, 12:00 PM' },
     ]);
     expect(singleErrors('2026-03-05T12:00', apply)).toEqual([]);
+  });
+
+  it('compares a date-only value on the calendar of the provided zone, as the picker shows it', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideDateTimeZone('America/New_York')] });
+
+    const lateEveningInNewYork = new Date('2026-10-10T01:30:00+02:00');
+    const apply = (path: Parameters<typeof dateBounds>[0]) => dateBounds(path, { min: lateEveningInNewYork });
+
+    expect(singleErrors('2026-10-09', apply)).toEqual([]);
+    expect(singleErrors('2026-10-08', apply)).toEqual([
+      { kind: 'rangeMin', message: 'Choose dates on or after 10/09/2026' },
+    ]);
+  });
+
+  it('compares a date-only range on the calendar of the given timeZone', () => {
+    const earlyMorningInTokyo = new Date('2026-10-09T20:00:00+02:00');
+    const errors = errorsFor(range('2026-10-09', '2026-10-12'), (path) =>
+      dateRangeBounds(path, { min: earlyMorningInTokyo, timeZone: 'Asia/Tokyo' }),
+    );
+
+    expect(errors).toEqual([{ kind: 'rangeMin', message: 'Choose dates on or after 10/10/2026' }]);
   });
 
   it('orders a range in the given timeZone', () => {

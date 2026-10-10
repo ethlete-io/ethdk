@@ -91,6 +91,13 @@ describe('DateTimeInputDirective', () => {
     expect(driver.field().value).toBe('07/16/2026, 09:30');
   });
 
+  it('raises parseError for a two-digit year', () => {
+    driver.typeAndBlur('2/1/26, 14:30');
+
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(true);
+  });
+
   it('keeps unparseable text visible and raises parseError with a null value', () => {
     driver.typeAndBlur('07/16/2026, 14:30');
     driver.typeAndBlur('not a date');

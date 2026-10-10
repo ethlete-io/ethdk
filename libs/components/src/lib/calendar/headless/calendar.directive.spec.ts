@@ -979,6 +979,13 @@ describe('CalendarDirective', () => {
 
       expect(calendar.weekNumbers()[0]).toBe(1);
     });
+
+    it('numbers the weeks by ISO 8601 without a locale', () => {
+      host.activeMonth.set(new Date(2026, 11, 1));
+      fixture.detectChanges();
+
+      expect(calendar.weekNumbers().at(-1)).toBe(53);
+    });
   });
 
   describe('precision', () => {

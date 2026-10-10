@@ -140,6 +140,7 @@ export class DateTimeRangeInputDirective
     host: this,
     presets: this.presets,
     labels: this.dateTimeLabels,
+    firstDayOfWeek: this.firstDayOfWeek,
     normalize: (date) => date,
   });
 

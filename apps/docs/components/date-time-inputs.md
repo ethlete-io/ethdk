@@ -35,7 +35,9 @@ scalar - see below) shares one design:
   `'09:30:00'` on `HH:mm` - renders as a blank field. Dev mode warns once per control
   with the value, the format in effect and an example of a value that matches.
 - **Typed entry + anchored picker.** Typed text is parsed against `displayFormat`
-  (strictly for dates, leniently for times). Unparseable text stays visible, the
+  (strictly for dates, leniently for times). A year needs all four digits unless the format
+  asks for two (`yy`): `1.2.26` against `dd.MM.y` is a parse error, never the year 26.
+  Unparseable text stays visible, the
   `parseError` signal turns on and the value clears to `null` - once touched,
   it's announced as a real error (`parseErrorMessage`, in place of the field's
   own errors such as `required`) with matching `aria-invalid`/`aria-describedby`. <kbd>Alt</kbd>+<kbd>ArrowDown</kbd> opens the
@@ -114,17 +116,17 @@ check. Read the value in effect with `injectDateFormat()`, `injectDateTimeFormat
 
 Every validator takes a `valueFormat` (defaulting to the token of its control) and a `message`:
 
-| Validator                            | Control                    | Also takes                 |
-| ------------------------------------ | -------------------------- | -------------------------- |
-| `dateBounds(path, options?)`         | `et-date-input`            | `min`, `max`, `precision`  |
-| `dateTimeBounds(path, options?)`     | `et-date-time-input`       | `min`, `max`, `timeZone`   |
-| `dateRangeBounds(path, options)`     | `et-date-range-input`      | `min`, `max`, `precision`  |
-| `dateTimeRangeBounds(path, options)` | `et-date-time-range-input` | `min`, `max`, `timeZone`   |
-| `dateRangeOrder(path, options?)`     | `et-date-range-input`      | `strict`                   |
-| `dateTimeRangeOrder(path, options?)` | `et-date-time-range-input` | `strict`, `timeZone`       |
-| `timeRangeOrder(path, options?)`     | `et-time-range-input`      | `strict`, `allowOvernight` |
-| `timeBounds(path, options?)`         | `et-time-input`            | `min`, `max`               |
-| `timeRangeBounds(path, options?)`    | `et-time-range-input`      | `min`, `max`               |
+| Validator                            | Control                    | Also takes                            |
+| ------------------------------------ | -------------------------- | ------------------------------------- |
+| `dateBounds(path, options?)`         | `et-date-input`            | `min`, `max`, `precision`, `timeZone` |
+| `dateTimeBounds(path, options?)`     | `et-date-time-input`       | `min`, `max`, `timeZone`              |
+| `dateRangeBounds(path, options)`     | `et-date-range-input`      | `min`, `max`, `precision`, `timeZone` |
+| `dateTimeRangeBounds(path, options)` | `et-date-time-range-input` | `min`, `max`, `timeZone`              |
+| `dateRangeOrder(path, options?)`     | `et-date-range-input`      | `strict`                              |
+| `dateTimeRangeOrder(path, options?)` | `et-date-time-range-input` | `strict`, `timeZone`                  |
+| `timeRangeOrder(path, options?)`     | `et-time-range-input`      | `strict`, `allowOvernight`            |
+| `timeBounds(path, options?)`         | `et-time-input`            | `min`, `max`                          |
+| `timeRangeBounds(path, options?)`    | `et-time-range-input`      | `min`, `max`                          |
 
 `min` and `max` are a `Date` or a function of the field context returning one. Failures report
 `kind: 'rangeMin'` / `'rangeMax'` / `'rangeOrder'`. `timeBounds` and `timeRangeBounds` read only the
@@ -321,9 +323,10 @@ The date-only controls take `timeZone` too, and what they write depends on the `
   and `2026-07-15T23:30:00+00:00` shows as July 15th even in Berlin, where that instant is already the
   16th.
 
-The picker calendar, `minDate`/`maxDate` and range presets follow the same zone. The date-only
-controls show no second reading, and `dateBounds`/`dateRangeBounds` still compare in the runtime's
-calendar, so keep such a value date-only where you can.
+The picker calendar, `minDate`/`maxDate` and range presets follow the same zone, and so do
+`dateBounds`/`dateRangeBounds`: they compare the value and their bounds on the zone's calendar, so a
+`min` of "now" admits the zone's today, the day the picker enables. A control's own `timeZone` needs
+the same `timeZone` option on the validator. The date-only controls show no second reading.
 
 #### What `timeZone` is not for {#time-zone-limits}
 
@@ -425,20 +428,21 @@ protected presets = [todayPreset(), lastDaysPreset(7), lastDaysPreset(30), thisM
 
 <StoryEmbed id="components-forms-date-range-input--presets" height="480px" />
 
-| Factory                                                        | Range                                            |
-| -------------------------------------------------------------- | ------------------------------------------------ |
-| `todayPreset()` / `yesterdayPreset()`                          | That one day                                     |
-| `lastDaysPreset(count)`                                        | The last `count` days, today included            |
-| `nextDaysPreset(count)`                                        | The next `count` days, from tomorrow             |
-| `thisWeekPreset()` / `lastWeekPreset()`                        | A whole week, starting on the locale's first day |
-| `thisMonthPreset()` / `lastMonthPreset()` / `thisYearPreset()` | A whole calendar month or year                   |
+| Factory                                                        | Range                                          |
+| -------------------------------------------------------------- | ---------------------------------------------- |
+| `todayPreset()` / `yesterdayPreset()`                          | That one day                                   |
+| `lastDaysPreset(count)`                                        | The last `count` days, today included          |
+| `nextDaysPreset(count)`                                        | The next `count` days, from tomorrow           |
+| `thisWeekPreset()` / `lastWeekPreset()`                        | A whole week, along the picker calendar's rows |
+| `thisMonthPreset()` / `lastMonthPreset()` / `thisYearPreset()` | A whole calendar month or year                 |
 
 Every factory takes `{ label }` to replace its text. A range each factory returns runs from
 00:00 on its first day to 23:59 on its last - `et-date-range-input` keeps the days (in its
 `precision`), `et-date-time-range-input` keeps the times too. Anything else is a plain
 object: a `label` (a string, or a function of the labels in effect) and
-`resolve(now, { locale })` returning `{ start, end }` as wall-clock dates. `now` is read in
-the control's `timeZone` where it has one.
+`resolve(now, { locale, weekStartsOn })` returning `{ start, end }` as wall-clock dates. `now` is
+read in the control's `timeZone` where it has one, and `weekStartsOn` is the first day of the
+picker calendar's rows: the control's `firstDayOfWeek`, else the locale's, else Monday.
 
 ```ts
 const nextWeekend: DateRangePreset = {

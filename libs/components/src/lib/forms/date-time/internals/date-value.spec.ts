@@ -35,6 +35,17 @@ describe('parseDateValue', () => {
     expect(parseDateValue('  2026-07-16 ', DAY)).toEqual(new Date(2026, 6, 16));
   });
 
+  it('rejects a year of fewer than four digits where the format asks for a full year', () => {
+    expect(parseDateValue('1.2.26', { ...DAY, format: 'P', locale: de })).toBeNull();
+    expect(parseDateValue('2/1/26', { ...DAY, format: 'P' })).toBeNull();
+    expect(parseDateValue('01.02.202', { ...DAY, format: 'dd.MM.yyyy' })).toBeNull();
+    expect(parseDateValue('0026-02-01', DAY)).toBeNull();
+  });
+
+  it('keeps reading a two-digit year where the format asks for one', () => {
+    expect(parseDateValue('01.02.26', { ...DAY, format: 'dd.MM.yy' })).toEqual(new Date(2026, 1, 1));
+  });
+
   it('parses localized display formats with a locale', () => {
     expect(parseDateValue('16.07.2026', { ...DAY, format: 'P', locale: de })).toEqual(new Date(2026, 6, 16));
   });

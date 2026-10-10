@@ -1,4 +1,4 @@
-import { setHours, setMinutes, setSeconds } from 'date-fns';
+import { endOfDay, setHours, setMinutes, setSeconds, startOfDay, subWeeks } from 'date-fns';
 
 export type TimeCandidate = {
   /** `0–23`, regardless of the picker's hour cycle. */
@@ -15,6 +15,16 @@ export type TimeBoundsOptions = {
 };
 
 export const secondsOfDay = (date: Date) => date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+
+/**
+ * The start of `date`'s day, or of the same weekday a week earlier when the runtime's clocks change on it,
+ * so every wall-clock time exists on the returned day.
+ */
+export const clockSafeDay = (date: Date) => {
+  const day = startOfDay(date);
+
+  return day.getTimezoneOffset() === endOfDay(day).getTimezoneOffset() ? day : subWeeks(day, 1);
+};
 
 export const setTimeOfDay = (day: Date, candidate: TimeCandidate) =>
   setSeconds(setMinutes(setHours(day, candidate.hour), candidate.minute), candidate.second);

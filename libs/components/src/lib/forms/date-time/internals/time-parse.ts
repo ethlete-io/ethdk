@@ -1,16 +1,13 @@
 import { TZDate } from '@date-fns/tz';
-import { endOfDay, setHours, setMinutes, setSeconds, startOfDay, subWeeks } from 'date-fns';
+import { setHours, setMinutes, setSeconds, startOfDay } from 'date-fns';
+import { clockSafeDay } from '../../../time-picker/headless/internals/time-availability';
 import { ParseDateValueOptions, parseDateValue } from './date-value';
 
 /**
  * The day time-only values are read on: today, or the same weekday a week earlier when the
  * runtime's clocks change today, so every wall-clock time exists on it.
  */
-export const timeReferenceDay = () => {
-  const today = startOfDay(new Date());
-
-  return today.getTimezoneOffset() === endOfDay(today).getTimezoneOffset() ? today : subWeeks(today, 1);
-};
+export const timeReferenceDay = () => clockSafeDay(new Date());
 
 type LenientTimeParts = {
   hour: number;

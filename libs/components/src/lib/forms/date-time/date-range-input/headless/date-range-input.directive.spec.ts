@@ -117,6 +117,13 @@ describe('DateRangeInputDirective', () => {
     expect(driver.control.touched()).toBe(true);
   });
 
+  it('raises a parse error for a two-digit year', () => {
+    driver.typeAndBlur('2/1/26', '.start');
+
+    expect(driver.host.value()).toEqual({ start: null, end: null });
+    expect(driver.control.startParseError()).toBe(true);
+  });
+
   it('tracks a per-side parse error without touching the other side', () => {
     driver.typeAndBlur('07/08/2026', '.start');
     driver.typeAndBlur('garbage', '.end');

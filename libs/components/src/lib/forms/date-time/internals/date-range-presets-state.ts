@@ -1,4 +1,5 @@
 import { computed, Signal } from '@angular/core';
+import { CalendarWeekStartsOn } from '../../../calendar/headless';
 import { DateRangePreset, DateRangePresetOption, DateRangePresetRange } from '../date-range-presets';
 import { DateTimeLabels } from '../date-time-labels';
 import { DateRangePickerInputDirective } from './date-range-picker-input.directive';
@@ -8,16 +9,27 @@ export type CreateDateRangePresetsOptions = {
   host: DateRangePickerInputDirective;
   presets: Signal<readonly DateRangePreset[]>;
   labels: Signal<DateTimeLabels>;
+  firstDayOfWeek: Signal<CalendarWeekStartsOn | undefined>;
   /** Snaps a resolved wall-clock end onto what the control stores - a day range drops the time. */
   normalize: (date: Date) => Date;
 };
 
 /** The preset state a range input shares with its styled component. Call in an injection context. */
-export const createDateRangePresets = ({ host, presets, labels, normalize }: CreateDateRangePresetsOptions) => {
+export const createDateRangePresets = ({
+  host,
+  presets,
+  labels,
+  firstDayOfWeek,
+  normalize,
+}: CreateDateRangePresetsOptions) => {
   const resolveInstants = (preset: DateRangePreset): DateRangePresetRange => {
     const timeZone = host.effectiveTimeZone();
     const now = timeZone === null ? new Date() : zonedProxy(new Date(), timeZone);
-    const range = preset.resolve(now, { locale: host.effectiveLocale() });
+    const locale = host.effectiveLocale();
+    const range = preset.resolve(now, {
+      locale,
+      weekStartsOn: firstDayOfWeek() ?? locale?.options?.weekStartsOn ?? 1,
+    });
 
     return {
       start: reinterpretInZone(normalize(range.start), timeZone),

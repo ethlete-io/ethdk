@@ -296,6 +296,14 @@ describe('TimeInputDirective on the runtime daylight-saving day', () => {
 
     expect(driver.host.value()).toBe('02:30');
   });
+
+  it('commits a time in the skipped hour picked on an empty ring as picked', async () => {
+    await driver.open();
+
+    pickTime(2, 30);
+
+    expect(driver.host.value()).toBe('02:30');
+  });
 });
 
 describe('TimeInputDirective mixed state', () => {

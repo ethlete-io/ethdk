@@ -1,7 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { Locale } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { de, enUS } from 'date-fns/locale';
 import '../../../test-helpers';
+import { CalendarWeekStartsOn } from '../../calendar/headless';
 import { DatePickerDriver, mountDatePicker } from '../testing/date-picker-driver';
 import { DateRangeInputComponent } from './date-range-input/date-range-input.component';
 import { DateRangeInputDirective, DateRangeValue } from './date-range-input/headless';
@@ -50,10 +51,21 @@ describe('preset factories', () => {
     expect(resolved(preset)).toEqual(dayRange(start, end));
   });
 
+  it('starts the week on Monday without a locale, like the calendar', () => {
+    expect(resolved(thisWeekPreset())).toEqual(dayRange(new Date(2026, 6, 13), new Date(2026, 6, 19)));
+    expect(resolved(lastWeekPreset())).toEqual(dayRange(new Date(2026, 6, 6), new Date(2026, 6, 12)));
+  });
+
   it('starts the week where the locale does', () => {
-    expect(resolved(thisWeekPreset())).toEqual(dayRange(new Date(2026, 6, 12), new Date(2026, 6, 18)));
+    expect(resolved(thisWeekPreset(), enUS)).toEqual(dayRange(new Date(2026, 6, 12), new Date(2026, 6, 18)));
     expect(resolved(thisWeekPreset(), de)).toEqual(dayRange(new Date(2026, 6, 13), new Date(2026, 6, 19)));
     expect(resolved(lastWeekPreset(), de)).toEqual(dayRange(new Date(2026, 6, 6), new Date(2026, 6, 12)));
+  });
+
+  it('starts the week on weekStartsOn over the locale', () => {
+    const { start, end } = thisWeekPreset().resolve(NOW, { locale: de, weekStartsOn: 0 });
+
+    expect([start.toString(), end.toString()]).toEqual(dayRange(new Date(2026, 6, 12), new Date(2026, 6, 18)));
   });
 
   it('reads its label from DATE_TIME_LABELS unless given one', () => {
@@ -66,13 +78,20 @@ describe('preset factories', () => {
 
 @Component({
   template: `
-    <et-date-range-input [(value)]="value" [presets]="presets()" aria-label="Stay" valueFormat="yyyy-MM-dd" />
+    <et-date-range-input
+      [(value)]="value"
+      [presets]="presets()"
+      [firstDayOfWeek]="firstDayOfWeek()"
+      aria-label="Stay"
+      valueFormat="yyyy-MM-dd"
+    />
   `,
   imports: [DateRangeInputComponent],
 })
 class DateRangePresetsHost {
   value = signal<DateRangeValue>({ start: null, end: null });
   presets = signal<DateRangePreset[]>([lastDaysPreset(7), thisMonthPreset()]);
+  firstDayOfWeek = signal<CalendarWeekStartsOn | undefined>(undefined);
 }
 
 @Component({
@@ -146,6 +165,20 @@ describe('et-date-range-input presets', () => {
     await driver.open();
 
     expect(pressedStates()).toEqual(['false', 'false']);
+  });
+
+  it('runs a week preset along the rows of the picker calendar', async () => {
+    driver.host.presets.set([thisWeekPreset()]);
+    await driver.open();
+    driver.click(presetButtons()[0]!);
+
+    expect(driver.host.value()).toEqual({ start: '2026-07-13', end: '2026-07-19' });
+
+    driver.host.firstDayOfWeek.set(0);
+    await driver.open();
+    driver.click(presetButtons()[0]!);
+
+    expect(driver.host.value()).toEqual({ start: '2026-07-12', end: '2026-07-18' });
   });
 
   it('renders no preset list without presets', async () => {

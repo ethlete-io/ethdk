@@ -12,12 +12,18 @@ import {
   subMonths,
   subWeeks,
 } from 'date-fns';
+import { CalendarWeekStartsOn } from '../../calendar/headless';
 import { DateTimeLabels } from './date-time-labels';
 
 /** What a preset's `resolve` receives besides `now`. */
 export type DateRangePresetContext = {
-  /** The control's date-fns locale in effect - it decides where a week starts. */
+  /** The control's date-fns locale in effect. */
   locale: Locale | null;
+  /**
+   * The first day of the control's calendar rows, `0` for Sunday. Left out, the locale's first day applies,
+   * and Monday without a locale.
+   */
+  weekStartsOn?: CalendarWeekStartsOn;
 };
 
 /** The range a preset stands for, as local wall-clock dates. */
@@ -62,7 +68,10 @@ const dayRange = (start: Date, end: Date): DateRangePresetRange => ({
   end: endOfDayMinute(end),
 });
 
-const weekOptions = ({ locale }: DateRangePresetContext) => (locale ? { locale } : undefined);
+const weekOptions = ({ locale, weekStartsOn }: DateRangePresetContext) => ({
+  locale: locale ?? undefined,
+  weekStartsOn: weekStartsOn ?? locale?.options?.weekStartsOn ?? 1,
+});
 
 type CreatePresetConfig = {
   defaultLabel: (labels: DateTimeLabels) => string;
@@ -103,7 +112,7 @@ export const nextDaysPreset = (count: number, options: DateRangePresetOptions = 
     options,
   });
 
-/** The current week, starting on the locale's first day of the week. */
+/** The current week, starting on the first day of the control's calendar rows. */
 export const thisWeekPreset = (options: DateRangePresetOptions = {}) =>
   createPreset({
     defaultLabel: (labels) => labels.presetThisWeek,

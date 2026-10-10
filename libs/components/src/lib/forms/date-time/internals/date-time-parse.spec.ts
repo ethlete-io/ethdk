@@ -24,6 +24,11 @@ describe('parseDateTimeText', () => {
     expect(parse('07/16/2026 93015')).toEqual(dateTime(9, 30, 15));
   });
 
+  it('rejects a two-digit year on the lenient pass too', () => {
+    expect(parse('2/1/26 14:30')).toBeNull();
+    expect(parseDateTimeText('1.2.26 14:30', { format: 'Pp', locale: de })).toBeNull();
+  });
+
   it('commits a bare date at midnight', () => {
     expect(parse('07/16/2026')).toEqual(dateTime(0, 0));
   });

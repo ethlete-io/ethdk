@@ -1,6 +1,7 @@
 import { tz } from '@date-fns/tz';
 import { format as formatDate, isValid, parse } from 'date-fns';
 import { Locale } from 'date-fns';
+import { formatTokens } from './date-time-format-split';
 
 export type ParseDateValueOptions = {
   /** date-fns format string the value must match. */
@@ -18,9 +19,21 @@ export type FormatDateValueOptions = {
   locale?: Locale | null;
 };
 
+// date-fns' `y`/`yyyy` parsers take one to four digits as the literal year, so `1.2.26` would read as 0026
+const isShortYear = (parsed: Date, { format, locale }: Pick<ParseDateValueOptions, 'format' | 'locale'>) => {
+  if (parsed.getFullYear() >= 1000) {
+    return false;
+  }
+
+  const yearTokens = formatTokens(format, locale ?? null).filter((token) => token[0] === 'y');
+
+  return yearTokens.length > 0 && !yearTokens.includes('yy');
+};
+
 /**
  * Strictly parses `value` against a date-fns format string. Returns `null` for
- * empty input, leftover characters, or anything date-fns considers invalid.
+ * empty input, leftover characters, a year of fewer than four digits where the format
+ * asks for a full one, or anything date-fns considers invalid.
  */
 export const parseDateValue = (value: string, options: ParseDateValueOptions): Date | null => {
   const trimmed = value.trim();
@@ -36,7 +49,7 @@ export const parseDateValue = (value: string, options: ParseDateValueOptions): D
     in: timeZone === null ? undefined : tz(timeZone),
   });
 
-  if (!isValid(parsed)) {
+  if (!isValid(parsed) || isShortYear(parsed, options)) {
     return null;
   }
 

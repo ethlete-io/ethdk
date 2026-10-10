@@ -3,7 +3,7 @@ import { injectHostElement } from '@ethlete/core';
 import { Locale, isSameDay, setMilliseconds, startOfDay } from 'date-fns';
 import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
-import { setTimeOfDay } from './internals/time-availability';
+import { clockSafeDay, setTimeOfDay } from './internals/time-availability';
 import { deriveTimeFormatSpec } from './internals/time-format';
 import { TimeRingStops, createTimeRingStops, isStopOpen, timeRingOpenCheck } from './internals/time-ring';
 import { injectTimePickerLabels } from '../../time-picker/time-picker-labels';
@@ -132,8 +132,9 @@ export class TimePickerDirective {
     return spec.hourCycle === 12 ? `h:mm${spec.showSeconds ? ':ss' : ''} a` : `HH:mm${spec.showSeconds ? ':ss' : ''}`;
   });
 
-  private startRingDay = computed(() => startOfDay(this.ringValue('start') ?? this.now()).getTime());
-  private endRingDay = computed(() => startOfDay(this.ringValue('end') ?? this.now()).getTime());
+  private emptyRingDay = computed(() => clockSafeDay(this.now()));
+  private startRingDay = computed(() => startOfDay(this.ringValue('start') ?? this.emptyRingDay()).getTime());
+  private endRingDay = computed(() => startOfDay(this.ringValue('end') ?? this.emptyRingDay()).getTime());
 
   private sameDayRange = computed(() => {
     const days = this.rangeDays();
@@ -193,7 +194,7 @@ export class TimePickerDirective {
 
     const current = this.ringValue(side);
     const next = setMilliseconds(
-      setTimeOfDay(current ?? startOfDay(this.now()), {
+      setTimeOfDay(current ?? this.emptyRingDay(), {
         hour: Math.floor(minute / 60),
         minute: minute % 60,
         second: 0,

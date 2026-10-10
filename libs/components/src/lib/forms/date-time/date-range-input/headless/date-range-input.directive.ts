@@ -125,6 +125,7 @@ export class DateRangeInputDirective extends DateRangePickerInputDirective imple
     host: this,
     presets: this.presets,
     labels: this.dateTimeLabels,
+    firstDayOfWeek: this.firstDayOfWeek,
     normalize: (date) => startOfCalendarUnit(date, this.precision()),
   });
 

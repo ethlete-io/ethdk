@@ -7,7 +7,7 @@ import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
 import { displayFormatForPrecision } from './internals/precision-format';
-import { formatInZone, isValidTimeZone } from './internals/time-zone';
+import { formatInZone, isValidTimeZone, zonedProxy } from './internals/time-zone';
 
 type DateValue = string | null;
 
@@ -64,6 +64,11 @@ export type DateRangeBoundsOptions = {
 
 export type DateOnlyRangeBoundsOptions = Omit<DateRangeBoundsOptions, 'timeZone'> & {
   /**
+   * The `timeZone` of the control: the value and the bounds are compared on that zone's calendar, the one the
+   * picker shows. Unset, it follows `provideDateTimeZone()`.
+   */
+  timeZone?: string | null;
+  /**
    * The unit both ends and the bounds are compared in - the control's `precision`. At `'day'` a
    * `min` of "now" still admits today.
    * @default 'day'
@@ -79,6 +84,11 @@ export type DateBoundsOptions = Omit<DateRangeBoundsOptions, 'min' | 'max'> & {
 };
 
 export type DateOnlyBoundsOptions = Omit<DateBoundsOptions, 'timeZone'> & {
+  /**
+   * The `timeZone` of the control: the value and the bounds are compared on that zone's calendar, the one the
+   * picker shows. Unset, it follows `provideDateTimeZone()`.
+   */
+  timeZone?: string | null;
   /**
    * The unit the value and the bounds are compared in - the control's `precision`. At `'day'` a
    * `min` of "now" still admits today.
@@ -208,32 +218,35 @@ type BoundsConfig<TValue> = {
   valueFormat: string;
   options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string; timeZone?: string | null };
   unit: (date: Date) => Date;
+  onZoneCalendar?: boolean;
   label: string;
 };
 
 const resolveBound = <TValue>(bound: Bound<TValue> | undefined, ctx: FieldContext<TValue>) =>
   typeof bound === 'function' ? bound(ctx) : (bound ?? null);
 
-const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, label }: BoundsConfig<TValue>) => {
+const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, onZoneCalendar, label }: BoundsConfig<TValue>) => {
   const labels = injectDateTimeLabels();
   const locale = inject(DATE_LOCALE);
   const timeZone = knownTimeZone(options.timeZone);
   const formatBound = (bound: Date) => formatInZone(bound, { format: label, locale, timeZone }) ?? '';
+  const unitOf = (date: Date) =>
+    unit(onZoneCalendar && timeZone !== null ? zonedProxy(date, timeZone) : date).getTime();
 
   validate(path, (ctx): RangeMinError | RangeMaxError | undefined => {
     const sides = sidesOf(ctx.value())
       .map((side) => parseSide(side, { valueFormat, timeZone }))
       .filter((side) => side !== null)
-      .map((side) => unit(side).getTime());
+      .map(unitOf);
 
     const min = resolveBound(options.min, ctx);
     const max = resolveBound(options.max, ctx);
 
-    if (min !== null && sides.some((side) => side < unit(min).getTime())) {
+    if (min !== null && sides.some((side) => side < unitOf(min))) {
       return { kind: 'rangeMin', min, message: options.message ?? labels().rangeMin(formatBound(min)) };
     }
 
-    if (max !== null && sides.some((side) => side > unit(max).getTime())) {
+    if (max !== null && sides.some((side) => side > unitOf(max))) {
       return { kind: 'rangeMax', max, message: options.message ?? labels().rangeMax(formatBound(max)) };
     }
 
@@ -264,8 +277,9 @@ export const dateRangeBounds = (path: RangeFieldPath, options: DateOnlyRangeBoun
   rangeBounds({
     path,
     valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
-    options,
+    options: withControlTimeZone(options),
     unit: (date) => startOfCalendarUnit(date, precision),
+    onZoneCalendar: true,
     label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
   });
 };
@@ -310,8 +324,9 @@ export const dateBounds = (path: DateFieldPath, options: DateOnlyBoundsOptions =
     path,
     sidesOf: (value) => [value],
     valueFormat: options.valueFormat ?? inject(DATE_FORMAT),
-    options,
+    options: withControlTimeZone(options),
     unit: (date) => startOfCalendarUnit(date, precision),
+    onZoneCalendar: true,
     label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
   });
 };

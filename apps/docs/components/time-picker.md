@@ -65,7 +65,7 @@ const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
 
 <StoryEmbed id="components-date-time-time-picker--opening-hours" height="420px" />
 
-- `timeFilter` receives the whole timestamp (the candidate time of day on the day of the value being set, today while empty), so opening hours can differ per weekday.
+- `timeFilter` receives the whole timestamp (the candidate time of day on the day of the value being set; while empty, today, or the same weekday a week earlier when the runtime's clocks change today, so a tap on 02:30 keeps 02:30), so opening hours can differ per weekday.
 - Every step is evaluated, so a filter can carve out any set of times; runs of blocked steps merge into one span, also across midnight.
 - A value set from outside that falls out of bounds is still shown as the selection - bounds gate what a user can pick, they never rewrite the model.
 

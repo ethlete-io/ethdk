@@ -92,6 +92,13 @@ describe('DateInputDirective', () => {
     expect(driver.control.hasValue()).toBe(true);
   });
 
+  it('raises parseError for a two-digit year instead of committing year 0026', () => {
+    driver.typeAndBlur('2/1/26');
+
+    expect(driver.host.value()).toBeNull();
+    expect(driver.control.parseError()).toBe(true);
+  });
+
   it('clears the value on empty input', () => {
     driver.typeAndBlur('07/16/2026');
     driver.typeAndBlur('');

@@ -101,14 +101,18 @@ const kindOf = (token: string): TokenKind => {
   return /[a-zA-Z]/.test(first) ? 'unsplittable' : 'literal';
 };
 
+/** The format's date-fns tokens, with the `P`/`p` locale formats expanded. */
+export const formatTokens = (format: string, locale: Locale | null) =>
+  expandLongFormats(format, locale ?? enUS).match(TOKEN_PATTERN) ?? [];
+
 /**
  * Splits a combined date & time format into the span carrying the time and the date format around
  * it. `null` when the format has no time half, no date half, or interleaves the two.
  */
 export const splitDateTimeFormat = (format: string, locale: Locale | null): DateTimeFormatSplit | null => {
-  const tokens = expandLongFormats(format, locale ?? enUS).match(TOKEN_PATTERN);
+  const tokens = formatTokens(format, locale);
 
-  if (tokens === null) {
+  if (tokens.length === 0) {
     return null;
   }
 
