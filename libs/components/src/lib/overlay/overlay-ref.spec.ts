@@ -39,7 +39,7 @@ describe('createOverlayRef', () => {
       {
         id: 'x',
         elements: { paneElement: document.createElement('div') },
-        registerCloseGuard: () => () => {},
+        registerCloseGuard: () => () => undefined,
         afterOpened: () => afterOpened,
         beforeClosed: () => never,
         afterClosed: () => afterClosed,
