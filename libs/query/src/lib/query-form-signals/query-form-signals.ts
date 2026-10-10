@@ -298,10 +298,12 @@ const createBranch = <TFields extends QueryFormFields>(
   const tree = form(model, { injector });
   let pendingTimer: ReturnType<typeof setTimeout> | null = null;
 
+  const defaultsRevision = signal(0);
   const defaultFor = (key: string) => {
     const value = resolveDefault(fields[key] as QueryFieldDef<unknown>);
 
     defaults[key] = value;
+    defaultsRevision.update((revision) => revision + 1);
 
     return value;
   };
@@ -367,7 +369,11 @@ const createBranch = <TFields extends QueryFormFields>(
     fields: tree,
     value: committed.asReadonly(),
     liveValue: model.asReadonly(),
-    activeFilterCount: computed(() => computeFilterCount(fields, committed() as Dict, defaults)),
+    activeFilterCount: computed(() => {
+      defaultsRevision();
+
+      return computeFilterCount(fields, committed() as Dict, defaults);
+    }),
     setValue: (value, options) => write(clone(value), options),
     patchValue: (value, options) => write({ ...model(), ...value }, options),
     resetFieldToDefault: (key, options) => write({ ...model(), [key]: defaultFor(key as string) }, options),
@@ -495,10 +501,12 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
   const prefix = config.queryParamPrefix;
   const defaults = buildDefaults(fieldDefs);
   const defaultValue = clone(defaults) as QueryFormModel<TFields>;
+  const defaultsRevision = signal(0);
   const defaultFor = (key: string) => {
     const value = resolveDefault(fieldDefs[key] as QueryFieldDef<unknown>);
 
     defaults[key] = value;
+    defaultsRevision.update((revision) => revision + 1);
     (defaultValue as Dict)[key] = clone(value);
 
     return value;
@@ -525,7 +533,11 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
   const fields = form(model);
 
-  const activeFilterCount = computed(() => computeFilterCount(fieldDefs, committed() as Dict, defaults));
+  const activeFilterCount = computed(() => {
+    defaultsRevision();
+
+    return computeFilterCount(fieldDefs, committed() as Dict, defaults);
+  });
 
   const paramKey = (key: string) => {
     if (!prefix) return key;

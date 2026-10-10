@@ -245,6 +245,25 @@ describe('query forms scenario', () => {
     c.destroy();
   });
 
+  it('recounts active filters when a function default re-resolves to the committed value', () => {
+    const s = scenario();
+    let now = 1;
+
+    const fields = { stamp: queryField<number>({ defaultValue: () => now }) };
+    const qf = s.run(() => defineQueryForm({ fields }).observe({ writeToQueryParams: false }));
+
+    qf.setValue({ stamp: 2 });
+    s.tick();
+    expect(qf.activeFilterCount()).toBe(1);
+
+    now = 2;
+    qf.resetFieldToDefault('stamp');
+    s.tick();
+
+    expect(qf.value().stamp).toBe(2);
+    expect(qf.activeFilterCount()).toBe(0);
+  });
+
   it('commits a Date field away from its default', () => {
     const s = scenario();
 
