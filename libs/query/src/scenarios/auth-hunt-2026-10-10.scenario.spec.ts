@@ -96,6 +96,30 @@ describe('auth hunt 2026-10-10', () => {
     c.destroy();
   });
 
+  it('keeps the secure cache and the session id across a refresh of tokens without a sub claim', async () => {
+    const s = scenario();
+    const { auth, getProfile, c } = boot(s);
+
+    c.run(() => auth.queries.login.execute({ body: {} }));
+    await s.settle();
+    const mounted = c.run(() => getProfile());
+    s.flush();
+    await s.settle();
+    const session = auth.sessionId();
+
+    c.run(() => auth.queries.refresh.execute({ body: {} }));
+    await s.settle();
+    s.flush();
+    await s.settle();
+
+    expect(s.api.requestCount('POST', '/auth/refresh')).toBe(1);
+    expect(auth.sessionId()).toBe(session);
+    expect(s.api.requestCount('GET', '/secure/profile')).toBe(1);
+    expect(mounted.response()).toEqual({ name: 'x' });
+
+    c.destroy();
+  });
+
   it('keeps the session id across a token refresh', async () => {
     const s = scenario();
     const { auth, c, login } = boot(s);
