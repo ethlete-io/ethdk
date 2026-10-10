@@ -62,6 +62,7 @@
   "createSecureGqlQueryCreator": "spec: libs/query/src/lib/gql/secure-gql-query-creator.spec.ts",
   "createSecureQuery": "spec: libs/query/src/lib/http/secure-query.spec.ts",
   "createSecureQueryCreator": "spec: libs/query/src/lib/http/secure-query-creator.spec.ts",
+  "createSkippedSnapshot": "internal: built by executeAndSettle$ when a parked query drops an execute()",
   "deepFreeze": "internal: not used anywhere",
   "detectContentTypeHeader": "internal: v2 request plumbing, reached through V2QueryClient in the legacy scenarios",
   "emptyQueryArgs": "constant: returns an empty args object",
