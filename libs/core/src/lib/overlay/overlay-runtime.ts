@@ -350,7 +350,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
 
             element.focus({ preventScroll: true });
 
-            if (targetDocument.activeElement === element) break;
+            if (element.contains(targetDocument.activeElement)) break;
           }
         }
 
