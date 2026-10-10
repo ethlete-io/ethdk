@@ -2,6 +2,7 @@ import { untracked } from '@angular/core';
 import { defaultIfEmpty, defer, filter, finalize, firstValueFrom, map, Observable, take } from 'rxjs';
 import { Query, QueryArgs, QuerySnapshot } from './query';
 import { QueryExecuteArgs } from './query-execute';
+import { createSkippedSnapshot } from './query-snapshot';
 
 const isAbortedSnapshot = (snapshot: QuerySnapshot<QueryArgs>) =>
   snapshot.latestHttpEvent()?.type === 'cancel' && snapshot.error() === null;
@@ -12,9 +13,10 @@ const executeAndSettle$ = <TArgs extends QueryArgs>(
   emitAborted: boolean,
 ): Observable<QuerySnapshot<TArgs>> =>
   defer(() => {
-    query.execute(executeArgs);
+    const ran: unknown = query.execute(executeArgs);
 
-    const snapshot = query.createSnapshot();
+    // `false` means a parked query dropped the call: nothing runs, so a live snapshot would never settle.
+    const snapshot = ran === false ? createSkippedSnapshot(query) : query.createSnapshot();
 
     return snapshot.isAlive.asObservable().pipe(
       filter((isAlive) => !isAlive),
@@ -38,7 +40,7 @@ const executeAndSettle$ = <TArgs extends QueryArgs>(
  *
  * Unsubscribing before it settles aborts the execution like `query.abort()`, the way unsubscribing
  * from `HttpClient` cancels its request. An execution stopped by `query.abort()` completes the stream
- * without a value.
+ * without a value, and so does a call a parked query (a `withArgs` source returning `null`) drops.
  *
  * A cancelled execution settles too - the entry was evicted, unbound by a logout, or the scope that
  * owns the query was destroyed. The snapshot then reports the execution as a failure whose error
@@ -54,8 +56,8 @@ export const executeUntilSettled$ = <TArgs extends QueryArgs>(
  * signal-forms `submit()` action mapping server violations onto the form via
  * `mapViolationsToFormErrors`. Executes immediately. Prefer {@link executeUntilSettled$} in RxJS code.
  *
- * An execution stopped by `query.abort()` resolves with a snapshot that has no response, no error, a
- * `null` `executionState()` and `latestHttpEvent()` `{ type: 'cancel' }`.
+ * An execution stopped by `query.abort()`, or dropped by a parked query, resolves with a snapshot that
+ * has no response, no error, a `null` `executionState()` and `latestHttpEvent()` `{ type: 'cancel' }`.
  */
 export const executeUntilSettled = <TArgs extends QueryArgs>(
   query: Query<TArgs>,

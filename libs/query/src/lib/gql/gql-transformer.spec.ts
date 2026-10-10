@@ -49,6 +49,13 @@ describe('transformGql', () => {
   });
 
   describe('variables handling', () => {
+    it('serializes GET variables independent of their key order', () => {
+      const transformer = transformGql('query Q($a: Int, $b: Int) { q(a: $a, b: $b) }');
+
+      expect(transformer({ b: 2, a: 1 }, 'GET').variables).toBe(transformer({ a: 1, b: 2 }, 'GET').variables);
+      expect(transformer({ b: 2, a: 1 }, 'GET').variables).toBe('{"a":1,"b":2}');
+    });
+
     it('should add variables when provided', () => {
       const query = 'query GetUser($id: ID!) { user(id: $id) { name } }';
       const transformer = transformGql(query);
@@ -70,7 +77,7 @@ describe('transformGql', () => {
         },
       };
 
-      expect(transformer(variables, 'GET').variables).toBe(JSON.stringify(variables));
+      expect(JSON.parse(transformer(variables, 'GET').variables as string)).toEqual(variables);
       expect(transformer(variables, 'POST').variables).toEqual(variables);
     });
 
@@ -362,6 +369,12 @@ describe('transformGql', () => {
 });
 
 describe('gql', () => {
+  it('drops a false interpolation like null and undefined', () => {
+    const showB = false;
+
+    expect(gql`query A { a ${showB && 'b'} }`).toBe('query A { a  }');
+  });
+
   it('should create a tagged template literal', () => {
     const result = gql`
       query GetUser {

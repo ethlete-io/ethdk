@@ -96,7 +96,8 @@ export type CreateQueryClientConfigOptions = {
    * freshness TTL (`cacheAdapter`) this is independent of `cache-control`, so it also applies to
    * private/authenticated responses.
    *
-   * Set to `0` to destroy entries as soon as their last consumer goes away. Only entries that
+   * Set to `0` to destroy entries as soon as their last consumer goes away, or to `Infinity` to keep
+   * them for the rest of the session. Only entries that
    * actually hold a response are retained, and at most 50 unused entries are kept per client
    * (least recently orphaned dropped first). Always `0` on the server.
    *

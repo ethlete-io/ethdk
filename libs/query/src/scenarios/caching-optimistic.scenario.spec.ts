@@ -70,6 +70,28 @@ describe('withOptimisticUpdate', () => {
     return { s, c, opportunity, patchPerson, getOpportunity };
   };
 
+  it('rolls the update back when building the request throws', () => {
+    const { s, c, opportunity, getOpportunity } = setup();
+    const patchWithoutPathParams = createPatchQuery(s.clientRef)<PatchPersonArgs>(
+      (p) => `/opportunities/${p.uuid}/people/${p.peopleUuid}`,
+    );
+    const patch = c.run(() =>
+      patchWithoutPathParams(
+        withArgs(() => ({ body: { role: 'lead' } }) as never),
+        withOptimisticUpdate({
+          read: getOpportunity,
+          target: () => ({ tag: 'opportunity:9' }),
+          update: ({ current }) => ({ ...current, people: [...current.people, 'p2'] }),
+        }),
+      ),
+    );
+
+    expect(() => patch.execute()).toThrow();
+
+    expect(opportunity.response()).toEqual({ uuid: '9', people: ['p1'] });
+    expect(s.api.requestCount('PATCH', '/opportunities/9/people/p2')).toBe(0);
+  });
+
   it('applies the update before the request and keeps it through the invalidates refetch', () => {
     const { s, opportunity, patchPerson } = setup();
     const patch = patchPerson('p2');

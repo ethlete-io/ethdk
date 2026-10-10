@@ -345,6 +345,18 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
     expect(repo.subtle.cacheEntries()[0]?.isUnused).toBe(false);
   });
 
+  it.each([Infinity, 2 ** 31])('keeps an unused entry when keepUnusedFor is %s', (keepUnusedFor) => {
+    const repo = createRepo({ keepUnusedFor });
+
+    const first = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+    flushAll({ id: 1 });
+
+    repo.unbind(first.key, destroyRef);
+    vi.advanceTimersByTime(60_000);
+
+    expect(repo.subtle.cacheEntries()[0]?.request.response()).toEqual({ id: 1 });
+  });
+
   it('evicts the entry once the window elapsed', () => {
     const repo = createRepo({ keepUnusedFor: 1000 });
 

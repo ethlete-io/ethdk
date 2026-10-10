@@ -24,10 +24,10 @@ export const request = <Response = unknown>(config: RequestConfig): Observable<R
   const body = config.body ?? null;
   const url = config.urlWithParams.split('?')[0] || '';
   const retryFn = config.retryFn || v2ShouldRetryRequest;
-  let currentRetryCount = 0;
-  let retryTimeout: number | null = null;
 
   return new Observable((observer: Observer<RequestEvent<Response>>) => {
+    let currentRetryCount = 0;
+    let retryTimeout: number | null = null;
     const xhr = new XMLHttpRequest();
     const reqBody = serializeBody(body);
 

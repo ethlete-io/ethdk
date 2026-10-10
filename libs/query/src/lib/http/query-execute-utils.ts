@@ -84,21 +84,30 @@ export const queryExecute = <TArgs extends QueryArgs>(options: QueryExecuteOptio
 
   const onRequest = state.subtle.beforeExecute()?.(args);
 
-  const { key, request, executed } = deps.client.repository.request({
-    route: creatorInternals.route,
-    method: creatorInternals.method,
-    args,
-    creatorOptions: creator,
-    retryFn: creator?.retryFn,
-    consumerDestroyRef: deps.destroyRef,
-    key: queryConfig.key,
-    previousKey: executeState.previousKey(),
-    runQueryOptions,
-    isSecure,
-    isRefreshable,
-    silenceUncacheableAllowCacheError: queryConfig.silenceUncacheableAllowCacheError,
-    tags: creator?.tags ? resolveQueryTags(creator.tags, args) : undefined,
-  });
+  let requestResult: ReturnType<typeof deps.client.repository.request<TArgs>>;
+
+  try {
+    requestResult = deps.client.repository.request({
+      route: creatorInternals.route,
+      method: creatorInternals.method,
+      args,
+      creatorOptions: creator,
+      retryFn: creator?.retryFn,
+      consumerDestroyRef: deps.destroyRef,
+      key: queryConfig.key,
+      previousKey: executeState.previousKey(),
+      runQueryOptions,
+      isSecure,
+      isRefreshable,
+      silenceUncacheableAllowCacheError: queryConfig.silenceUncacheableAllowCacheError,
+      tags: creator?.tags ? resolveQueryTags(creator.tags, args) : undefined,
+    });
+  } catch (error) {
+    onRequest?.(null);
+    throw error;
+  }
+
+  const { key, request, executed } = requestResult;
 
   executeState.previousKey.set(key);
   state.lastTimeExecutedAt.set(Date.now());

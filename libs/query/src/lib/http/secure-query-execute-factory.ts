@@ -216,8 +216,6 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
       options: executeArgs?.options,
     };
 
-    if (skipParkedExecution(options.state, execArgsWithDefaults.args, options.route)) return;
-
     circularChecker.check(execArgsWithDefaults.args);
 
     hasExecuted = true;
@@ -321,7 +319,14 @@ export const createSecureExecuteFactory = <TArgs extends QueryArgs>(
     }
   };
 
-  const untrackedExec = (executeArgs?: QueryExecuteArgs<TArgs>) => untracked(() => exec(executeArgs));
+  const untrackedExec = (executeArgs?: QueryExecuteArgs<TArgs>) =>
+    untracked(() => {
+      if (skipParkedExecution(options.state, executeArgs?.args ?? options.state.args(), options.route)) return false;
+
+      exec(executeArgs);
+
+      return true;
+    });
 
   untrackedExec['reset'] = () => untracked(reset);
   untrackedExec['abort'] = () => aborter.abort(cancelPending);

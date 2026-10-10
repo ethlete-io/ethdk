@@ -51,7 +51,7 @@ export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
   let expiresIn: number | null = null;
   let maxAge: number | null = null;
 
-  if (cacheControl?.includes('no-cache')) {
+  if (cacheControl?.includes('no-cache') || cacheControl?.includes('no-store')) {
     return null;
   }
 
@@ -69,11 +69,11 @@ export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
     }
   }
 
-  if (maxAge && age) {
+  if (maxAge !== null && age) {
     const ageSeconds = parseInt(age);
 
     expiresIn = maxAge - ageSeconds;
-  } else if (maxAge) {
+  } else if (maxAge !== null) {
     expiresIn = maxAge / 2; // We assume the response is half way to its expiration
   } else if (expires) {
     // Used by some apis to tell the response will never expire
@@ -99,6 +99,10 @@ export const v2ExtractExpiresInSeconds = (headers: RequestHeaders) => {
 export const serializeBody = (body: unknown): ArrayBuffer | URLSearchParams | Blob | FormData | string | null => {
   if (body === null || body === undefined) {
     return null;
+  }
+
+  if (ArrayBuffer.isView(body)) {
+    return body as unknown as ArrayBuffer;
   }
 
   if (
@@ -152,8 +156,11 @@ export const detectContentTypeHeader = (body: unknown) => {
     return body.type || null;
   }
   // Array buffers have unknown contents and thus no type can be inferred.
-  if (body instanceof ArrayBuffer) {
+  if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) {
     return null;
+  }
+  if (body instanceof URLSearchParams) {
+    return 'application/x-www-form-urlencoded;charset=UTF-8';
   }
   // Technically, strings could be a form of JSON data, but it's safe enough
   // to assume they're plain strings.

@@ -486,6 +486,8 @@ export const DEFAULT_KEEP_UNUSED_FOR = 300_000;
  */
 export const MAX_UNUSED_ENTRIES = 50;
 
+const MAX_TIMEOUT_DELAY = 2 ** 31 - 1;
+
 export const createQueryRepository = (config: CreateQueryRepositoryConfig): QueryRepository => {
   const cache = new Map<QueryKey, DestroyListenerMapItem>();
   const eventsSubject = new Subject<QueryRepositoryEvent>();
@@ -671,8 +673,6 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   };
 
   const cancelEviction = (cacheEntry: DestroyListenerMapItem) => {
-    if (cacheEntry.evictTimer === undefined) return;
-
     clearTimeout(cacheEntry.evictTimer);
     cacheEntry.evictTimer = undefined;
     cacheEntry.unusedSince = undefined;
@@ -694,7 +694,9 @@ export const createQueryRepository = (config: CreateQueryRepositoryConfig): Quer
   const retain = (key: QueryKey, cacheEntry: DestroyListenerMapItem) => {
     clearTimeout(cacheEntry.evictTimer);
     cacheEntry.unusedSince = Date.now();
-    cacheEntry.evictTimer = setTimeout(() => evict(key, 'expired'), cacheEntry.keepUnusedFor);
+    cacheEntry.evictTimer = Number.isFinite(cacheEntry.keepUnusedFor)
+      ? setTimeout(() => evict(key, 'expired'), Math.min(cacheEntry.keepUnusedFor, MAX_TIMEOUT_DELAY))
+      : undefined;
 
     enforceUnusedEntryLimit();
   };

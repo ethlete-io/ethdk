@@ -1,7 +1,15 @@
 import { signal } from '@angular/core';
 import { form, submit } from '@angular/forms/signals';
 import { describe, expect, it, vi } from 'vitest';
-import { createQuerySubmission, executeUntilSettled, querySequence, queryErrorMessage } from '../index';
+import { firstValueFrom, toArray } from 'rxjs';
+import {
+  createQuerySubmission,
+  executeUntilSettled,
+  executeUntilSettled$,
+  querySequence,
+  queryErrorMessage,
+  withArgs,
+} from '../index';
 import { Scenario, useScenario } from './harness';
 
 type Model = { name: string };
@@ -140,6 +148,45 @@ describe('abort helpers scenario', () => {
       expect(snapshot.latestHttpEvent()).toEqual({ type: 'cancel' });
       expect(queryErrorMessage(snapshot.error())).toBe('The request was cancelled.');
       expect(s.api.requestCount('POST', '/items')).toBe(0);
+    });
+  });
+
+  describe('executeUntilSettled on a parked query', () => {
+    type GetUserArgs = { response: { id: string }; pathParams: { id: string } };
+
+    it('resolves with an aborted-style snapshot instead of hanging', async () => {
+      const s = scenario();
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const c = s.consumer();
+      const query = c.run(() => getUser(withArgs(() => null)));
+      s.tick();
+
+      const snapshot = await drive(s, executeUntilSettled(query));
+
+      expect(snapshot?.isAlive()).toBe(false);
+      expect(snapshot?.response()).toBeNull();
+      expect(snapshot?.error()).toBeNull();
+      expect(snapshot?.executionState()).toBeNull();
+      expect(snapshot?.latestHttpEvent()).toEqual({ type: 'cancel' });
+      expect(s.api.requests.length).toBe(0);
+
+      c.destroy();
+    });
+
+    it('completes the observable form without a value', async () => {
+      const s = scenario();
+      vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const getUser = s.get<GetUserArgs>((p) => `/users/${p.id}`);
+      const c = s.consumer();
+      const query = c.run(() => getUser(withArgs(() => null)));
+      s.tick();
+
+      const emitted = await drive(s, firstValueFrom(executeUntilSettled$(query).pipe(toArray())));
+
+      expect(emitted).toEqual([]);
+
+      c.destroy();
     });
   });
 });

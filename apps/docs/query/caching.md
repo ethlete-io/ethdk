@@ -20,14 +20,14 @@ An entry that lost its last consumer is **kept for `keepUnusedFor` milliseconds 
 export const client = createQueryClient({
   name: 'api',
   baseUrl: 'https://api.example.com/v1',
-  keepUnusedFor: 60_000, // or 0 to release entries immediately
+  keepUnusedFor: 60_000, // 0 releases entries immediately, Infinity keeps them for the session
 });
 
 // per query, overriding the client
 export const getHugeReport = createGetQuery(client)<ReportQueryArgs>('/report', { keepUnusedFor: 0 });
 ```
 
-The default is exported as `DEFAULT_KEEP_UNUSED_FOR` and the per-client cap as `MAX_UNUSED_ENTRIES`.
+With `Infinity` an unused entry is only dropped by the per-client cap. The default is exported as `DEFAULT_KEEP_UNUSED_FOR` and the per-client cap as `MAX_UNUSED_ENTRIES`.
 
 Unlike the freshness TTL below, this is independent of `cache-control` - so it also applies to private/authenticated responses, where the header-derived TTL does nothing.
 

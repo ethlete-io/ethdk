@@ -4,7 +4,7 @@ import { filter, of, Subscription } from 'rxjs';
 import { HttpCancelEvent } from './http-request';
 import { ObservableSignal } from './observable-signal';
 import { createObservableSignalWatcher } from './observable-signal-watcher';
-import { QueryArgs, QuerySnapshot } from './query';
+import { Query, QueryArgs, QuerySnapshot } from './query';
 import { injectQueryContext } from './query-context';
 import { QueryDependencies } from './query-dependencies';
 import { createQueryErrorResponse } from './query-error-response';
@@ -47,6 +47,20 @@ const createDestroyedSnapshot = <TArgs extends QueryArgs>(
     executionState: frozenObservableSignal({ type: 'failure', error, hasCachedResponse: false }),
   };
 };
+
+/** A settled snapshot for an execution that never started, reporting it the way an aborted one reads. */
+export const createSkippedSnapshot = <TArgs extends QueryArgs>(query: Query<TArgs>): QuerySnapshot<TArgs> => ({
+  args: frozenObservableSignal(query.args()),
+  response: frozenObservableSignal(null),
+  latestHttpEvent: frozenObservableSignal(CANCEL_EVENT),
+  loading: frozenObservableSignal(null),
+  error: frozenObservableSignal(null),
+  lastTimeExecutedAt: frozenObservableSignal(query.lastTimeExecutedAt()),
+  triggeredBy: frozenObservableSignal(query.triggeredBy()),
+  isAlive: frozenObservableSignal(false),
+  id: frozenObservableSignal(query.id()),
+  executionState: frozenObservableSignal(null),
+});
 
 export const createQuerySnapshotFn = <TArgs extends QueryArgs>(options: CreateQuerySnapshotOptions<TArgs>) => {
   const { state } = options;

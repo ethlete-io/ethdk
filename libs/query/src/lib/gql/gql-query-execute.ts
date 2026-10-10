@@ -43,7 +43,7 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
     untracked(() => {
       const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-      if (skipParkedExecution(executeOptions.state, args, executeOptions.creator?.route)) return;
+      if (skipParkedExecution(executeOptions.state, args, executeOptions.creator?.route)) return false;
 
       circularChecker.check(args);
 
@@ -93,6 +93,8 @@ export const createGqlExecuteFn = <TArgs extends GqlQueryArgs>(
         options,
         isRefreshable: executeOptions.creatorInternals.method === 'QUERY',
       });
+
+      return true;
     });
 
   exec['reset'] = reset;

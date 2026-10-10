@@ -1,6 +1,13 @@
 import { invalidBaseRouteError, invalidRouteError, pathParamsMissingInRouteFunctionError } from '../logger';
 import { V2RouteString } from '../query';
-import { buildQueryString, buildRoute, isRequestError } from './request.util';
+import {
+  buildQueryString,
+  buildRoute,
+  detectContentTypeHeader,
+  isRequestError,
+  serializeBody,
+  v2ExtractExpiresInSeconds,
+} from './request.util';
 
 describe('isRequestError', () => {
   it('should be falsy', () => {
@@ -173,5 +180,49 @@ describe('buildRoute', () => {
         route: 'foo' as V2RouteString,
       });
     }).toThrow(invalidRouteError('foo'));
+  });
+});
+
+describe('serializeBody', () => {
+  it('passes a URLSearchParams body through', () => {
+    const body = new URLSearchParams('a=1');
+
+    expect(serializeBody(body)).toBe(body);
+  });
+
+  it('passes a typed array body through instead of stringifying it', () => {
+    const body = new Uint8Array([1, 2]);
+
+    expect(serializeBody(body)).toBe(body);
+  });
+});
+
+describe('detectContentTypeHeader', () => {
+  it('detects a form-encoded URLSearchParams body', () => {
+    expect(detectContentTypeHeader(new URLSearchParams('a=1'))).toBe('application/x-www-form-urlencoded;charset=UTF-8');
+  });
+
+  it('infers no type for a typed array body', () => {
+    expect(detectContentTypeHeader(new Uint8Array([1, 2]))).toBeNull();
+  });
+});
+
+describe('v2ExtractExpiresInSeconds', () => {
+  it('honours max-age=0 over a far-future Expires header', () => {
+    expect(v2ExtractExpiresInSeconds({ 'cache-control': 'max-age=0', expires: 'Fri, 01 Jan 2100 00:00:00 GMT' })).toBe(
+      0,
+    );
+  });
+
+  it('does not cache a no-store response', () => {
+    expect(v2ExtractExpiresInSeconds({ 'cache-control': 'no-store, max-age=60' })).toBeNull();
+  });
+
+  it('halves max-age when no age header is present', () => {
+    expect(v2ExtractExpiresInSeconds({ 'cache-control': 'max-age=60' })).toBe(30);
+  });
+
+  it('subtracts the age header from max-age', () => {
+    expect(v2ExtractExpiresInSeconds({ 'cache-control': 'max-age=60', age: '20' })).toBe(40);
   });
 });

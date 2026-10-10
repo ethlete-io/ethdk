@@ -1,4 +1,5 @@
 import { isDevMode } from '@angular/core';
+import { sortQueryParamKeys } from '../http/internal/request-route';
 import { GqlQueryTransport } from './gql-query-creator';
 
 const getOpName = /\b(?:query|mutation)\s+([\w-]+)(?:\s*\([^)]*\))?(?:\s*@\w+(?:\s*\([^)]*\))?)*\s*\{/;
@@ -60,7 +61,7 @@ export const transformGql = (str: string | string[]): GqlTransformer => {
     const data: TransformedGqlQuery = { query: isDevMode() ? normalizedStr : (minified ??= minifyGql(normalizedStr)) };
 
     if (variables) {
-      data['variables'] = transport === 'GET' ? JSON.stringify(variables) : variables;
+      data['variables'] = transport === 'GET' ? JSON.stringify(sortQueryParamKeys(variables)) : variables;
     }
 
     if (operationName) {
@@ -96,7 +97,9 @@ export type GQL = string & { readonly __gql: unique symbol };
 
 export const gql = (strings: TemplateStringsArray, ...values: unknown[]): GQL => {
   const str = strings.reduce((acc, cur, i) => {
-    return acc + cur + (values[i] ?? '');
+    const value = values[i];
+
+    return acc + cur + (value === false || value === null || value === undefined ? '' : value);
   }, '');
   return str as GQL;
 };

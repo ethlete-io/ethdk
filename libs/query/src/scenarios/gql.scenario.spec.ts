@@ -96,6 +96,30 @@ describe('gql scenario', () => {
 
       c.destroy();
     });
+    it('shares one request between two consumers whose variables differ only in key order', () => {
+      const s = scenario();
+      s.api.on('GET', '/', () => ({ body: { data: { users: [] } } }));
+
+      const getUsers = createGqlQueryViaGet(s.clientRef)<{
+        response: { users: [] };
+        variables: { first: number; after: string };
+      }>(gql`
+        query GetUsers($first: Int!, $after: String!) {
+          users(first: $first, after: $after) {
+            id
+          }
+        }
+      `);
+
+      const c = s.consumer();
+      c.run(() => getUsers(withArgs(() => ({ variables: { first: 10, after: 'a' } }))));
+      c.run(() => getUsers(withArgs(() => ({ variables: { after: 'a', first: 10 } }))));
+      s.tick();
+
+      expect(s.api.requests).toHaveLength(1);
+
+      c.destroy();
+    });
   });
 
   describe('POST transport', () => {

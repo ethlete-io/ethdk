@@ -172,7 +172,7 @@ export const withOptimisticUpdate = <TArgs extends QueryArgs, TRead extends Quer
         };
 
         return (request) => {
-          if (!request.loading()) return settle(null);
+          if (!request?.loading()) return settle(null);
 
           let settled = false;
 

@@ -63,8 +63,8 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
   autoExecuteGuard: WritableSignal<(() => boolean) | null>;
 
   /**
-   * Called by every execution before its request is made; a function it returns is called with that request.
-   * Set by a feature during creation (`withOptimisticUpdate` writes the cache before the request leaves).
+   * Called by every execution before its request is made; a function it returns is called with that request,
+   * or with `null` when building the request threw. Set by a feature during creation (`withOptimisticUpdate` writes the cache before the request leaves).
    */
   beforeExecute: WritableSignal<QueryBeforeExecuteFn<TArgs> | null>;
 
@@ -97,7 +97,7 @@ export type QueryStateSubtle<TArgs extends QueryArgs> = {
 
 export type QueryBeforeExecuteFn<TArgs extends QueryArgs> = (
   args: RequestArgs<TArgs> | null,
-) => ((request: HttpRequest<TArgs>) => void) | null;
+) => ((request: HttpRequest<TArgs> | null) => void) | null;
 
 export type QueryState<TArgs extends QueryArgs> = {
   rawResponse: WritableSignal<RawResponseType<TArgs> | null>;

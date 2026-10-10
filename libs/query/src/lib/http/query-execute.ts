@@ -30,7 +30,8 @@ export type QueryExecuteArgs<TArgs extends QueryArgs> = {
 };
 
 export type InternalQueryExecute<TArgs extends QueryArgs> = {
-  (executeArgs?: QueryExecuteArgs<TArgs>): void;
+  /** Returns `false` when the call was dropped because the query is parked. */
+  (executeArgs?: QueryExecuteArgs<TArgs>): boolean;
   reset: () => void;
   abort: () => boolean;
   aborted$: Observable<void>;
@@ -52,13 +53,15 @@ export const createExecuteFn = <TArgs extends QueryArgs>(
     untracked(() => {
       const { args = executeOptions.state.args(), options } = executeArgs ?? {};
 
-      if (skipParkedExecution(executeOptions.state, args, executeOptions.creatorInternals.route)) return;
+      if (skipParkedExecution(executeOptions.state, args, executeOptions.creatorInternals.route)) return false;
 
       circularChecker.check(args);
 
       aborter.capture();
       recordExecutionArgs(executeOptions.state, args, options);
       queryExecute({ executeOptions, executeState, args, options });
+
+      return true;
     });
 
   exec['reset'] = reset;
