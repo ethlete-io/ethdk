@@ -190,7 +190,10 @@ export class MenuDirective {
         this.parent.openSubmenu.set(null);
       }
 
-      this.overlayRef()?.close();
+      const overlayRef = this.overlayRef();
+
+      this.overlayRef.set(null);
+      overlayRef?.close();
     });
 
     if (ngDevMode) {
@@ -388,7 +391,8 @@ export class MenuDirective {
         const opensSubmenu = (event.key === 'ArrowRight') !== this.isRtl();
 
         if (opensSubmenu) {
-          const submenu = this.activeItem()?.submenu ?? null;
+          const activeItem = this.activeItem();
+          const submenu = activeItem && !activeItem.isDisabled() ? activeItem.submenu : null;
 
           if (submenu) {
             event.preventDefault();
@@ -432,7 +436,9 @@ export class MenuDirective {
         event.preventDefault();
 
         if (item.submenu) {
-          item.submenu.show({ source: 'keyboard' });
+          if (!item.isDisabled()) {
+            item.submenu.show({ source: 'keyboard' });
+          }
         } else {
           item.activateFromKeyboard(event.key === 'Enter' ? 'keyboard-enter' : 'keyboard-space');
         }
@@ -609,29 +615,33 @@ export class MenuDirective {
     }
 
     const current = this.activeItem();
-    const index = current ? items.indexOf(current) : -1;
+    const sorted = this.sortedItems();
+    const position = current ? sorted.indexOf(current) : -1;
 
-    if (index === -1) {
+    if (position === -1) {
       this.setActiveToEdge(delta === 1 ? 'first' : 'last');
 
       return;
     }
 
-    const nextIndex = index + delta;
+    let next: MenuItemDirective | undefined;
 
-    if (search && (nextIndex < 0 || nextIndex >= items.length)) {
+    for (let index = position + delta; index >= 0 && index < sorted.length && !next; index += delta) {
+      next = sorted[index]?.isDisabled() ? undefined : sorted[index];
+    }
+
+    if (!next && search) {
       this.activeItem.set(null);
       search.focus();
 
       return;
     }
 
-    if (!this.loop() && (nextIndex < 0 || nextIndex >= items.length)) {
+    if (!next && !this.loop()) {
       return;
     }
 
-    const wrappedIndex = (nextIndex + items.length) % items.length;
-    const next = items[wrappedIndex];
+    next ??= delta === 1 ? items[0] : items.at(-1);
 
     if (next) {
       this.setActiveItem(next);
@@ -694,6 +704,20 @@ export class MenuDirective {
     const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
 
     this.overlayRef.set(overlayRef);
+
+    overlayRef
+      .beforeClosed()
+      .pipe(
+        take(1),
+        tap(() => {
+          if (this.overlayRef() === overlayRef && this.open()) {
+            this.openSubmenu()?.hide();
+            this.open.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
 
     if (this.isRoot) {
       this.attachRootInteractionListeners();

@@ -111,6 +111,28 @@ describe('overlay scroll blocker', () => {
     expect(isLocked()).toBe(false);
   });
 
+  it('keeps the horizontal scroll position while locked and restores it on close', async () => {
+    vi.spyOn(window, 'scrollX', 'get').mockReturnValue(300);
+    vi.spyOn(window, 'scrollY', 'get').mockReturnValue(500);
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+
+    setup();
+    const overlayRef = open({ mode: 'modal' });
+
+    expect(document.documentElement.style.left).toBe('-300px');
+    expect(document.documentElement.style.right).toBe('300px');
+    expect(document.documentElement.style.top).toBe('-500px');
+
+    overlayRef.close();
+    openedRef = null;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    TestBed.tick();
+
+    expect(scrollToSpy).toHaveBeenCalledWith(300, 500);
+
+    vi.restoreAllMocks();
+  });
+
   describe('in a pop-up window', () => {
     let frame: HTMLIFrameElement;
     let popupDocument: Document;

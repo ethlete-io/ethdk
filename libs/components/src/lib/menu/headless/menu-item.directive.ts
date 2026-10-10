@@ -77,7 +77,7 @@ export class MenuItemDirective {
 
     const active = owner.activeItem();
 
-    if (active) {
+    if (active && !active.isDisabled()) {
       return active === this ? 0 : -1;
     }
 

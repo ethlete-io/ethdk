@@ -53,10 +53,27 @@ export const isFocusable = (element: HTMLElement, document: Document) => {
   return isVisible && !element.hasAttribute('disabled') && element.tabIndex >= 0;
 };
 
+const isNamedRadio = (element: Element): element is HTMLInputElement =>
+  element.tagName === 'INPUT' && (element as HTMLInputElement).type === 'radio' && !!(element as HTMLInputElement).name;
+
+const isSameTabStop = (a: Element, b: Element) =>
+  a === b || (isNamedRadio(a) && isNamedRadio(b) && a.name === b.name && a.form === b.form);
+
+/** The elements Tab stops on inside `container`, with each named radio group collapsed to its checked (else first) radio. */
 export const getFocusableElements = (container: HTMLElement, document: Document) => {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((el) =>
+  const elements = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter((el) =>
     isFocusable(el, document),
   );
+
+  return elements.filter((element) => {
+    if (!isNamedRadio(element)) {
+      return true;
+    }
+
+    const group = elements.filter((other): other is HTMLInputElement => isSameTabStop(element, other));
+
+    return (group.find((radio) => radio.checked) ?? group[0]) === element;
+  });
 };
 
 export const getHeadingElement = (container: HTMLElement) => {
@@ -140,14 +157,14 @@ export const setupFocusTrap = (
       return;
     }
 
-    if (event.shiftKey && activeElement === firstElement) {
+    if (event.shiftKey && firstElement && isSameTabStop(activeElement, firstElement)) {
       event.preventDefault();
       focusElement(lastElement ?? null);
 
       return;
     }
 
-    if (!event.shiftKey && activeElement === lastElement) {
+    if (!event.shiftKey && lastElement && isSameTabStop(activeElement, lastElement)) {
       event.preventDefault();
       focusElement(firstElement ?? null);
     }

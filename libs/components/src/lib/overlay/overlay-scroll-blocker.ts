@@ -38,7 +38,7 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
       { equal: (a, b) => a.size === b.size && [...a].every((entry) => b.has(entry)) },
     );
 
-    const savedTops = new Map<Document, number>();
+    const savedOffsets = new Map<Document, { top: number; left: number }>();
 
     const canScrollVertically = (target: Document, mainDocumentCanScroll: boolean) => {
       if (target === document) return mainDocumentCanScroll;
@@ -50,24 +50,25 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
 
     const lock = (target: Document) => {
       const top = target.defaultView?.scrollY ?? 0;
+      const left = target.defaultView?.scrollX ?? 0;
 
-      savedTops.set(target, top);
+      savedOffsets.set(target, { top, left });
 
       renderer.setStyle(target.documentElement, {
         position: 'fixed',
         top: `-${top}px`,
-        left: '0',
-        right: '0',
+        left: `${-left}px`,
+        right: `${left}px`,
         overflowY: 'scroll',
       });
     };
 
     const unlock = (target: Document) => {
-      const top = savedTops.get(target);
+      const offsets = savedOffsets.get(target);
 
-      if (top === undefined) return;
+      if (!offsets) return;
 
-      savedTops.delete(target);
+      savedOffsets.delete(target);
 
       const root = target.documentElement;
 
@@ -80,22 +81,22 @@ const OVERLAY_SCROLL_BLOCKER_DEF = /* @__PURE__ */ defineRootProvider(
         scrollBehavior: 'auto',
       });
 
-      target.defaultView?.scrollTo(0, top);
+      target.defaultView?.scrollTo(offsets.left, offsets.top);
 
       renderer.setStyle(root, { scrollBehavior: null });
     };
 
-    inject(DestroyRef).onDestroy(() => [...savedTops.keys()].forEach(unlock));
+    inject(DestroyRef).onDestroy(() => [...savedOffsets.keys()].forEach(unlock));
 
     combineLatest([toObservable(blockedDocuments), toObservable(documentScrollState)])
       .pipe(
         tap(([blocked, scrollState]) => {
-          for (const target of [...savedTops.keys()]) {
+          for (const target of [...savedOffsets.keys()]) {
             if (!blocked.has(target)) unlock(target);
           }
 
           for (const target of blocked) {
-            if (!savedTops.has(target) && canScrollVertically(target, scrollState.canScrollVertically)) {
+            if (!savedOffsets.has(target) && canScrollVertically(target, scrollState.canScrollVertically)) {
               lock(target);
             }
           }

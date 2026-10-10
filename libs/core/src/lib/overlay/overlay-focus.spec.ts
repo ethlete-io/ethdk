@@ -61,4 +61,50 @@ describe('isHTMLElement', () => {
     expect(isHTMLElement(window)).toBe(false);
     expect(isHTMLElement(document.createTextNode('text'))).toBe(false);
   });
+
+  it('wraps Tab from the checked radio of a trailing native radio group', () => {
+    const pane = document.createElement('div');
+    const button = document.createElement('button');
+    const radios = ['a', 'b', 'c'].map((value) => {
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'choice';
+      radio.value = value;
+
+      return radio;
+    });
+    const [firstRadio, checkedRadio] = radios as [HTMLInputElement, HTMLInputElement, HTMLInputElement];
+    checkedRadio.checked = true;
+    pane.append(button, ...radios);
+    document.body.append(pane);
+
+    for (const element of [button, ...radios]) {
+      vi.spyOn(element, 'getClientRects').mockReturnValue([{} as DOMRect] as unknown as DOMRectList);
+    }
+
+    const cleanup = setupFocusTrap(pane, {} as OverlayRuntimeRef<object, unknown>, true, () => true, document);
+    const pressTab = (target: HTMLElement, shiftKey = false) => {
+      target.focus();
+      const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey, bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+
+      return event;
+    };
+
+    expect(pressTab(checkedRadio).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(button);
+
+    expect(pressTab(button, true).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(checkedRadio);
+
+    checkedRadio.checked = false;
+
+    expect(pressTab(radios[2] as HTMLInputElement).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(button);
+    expect(pressTab(button, true).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(firstRadio);
+
+    cleanup();
+    pane.remove();
+  });
 });

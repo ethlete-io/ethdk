@@ -1,4 +1,5 @@
 import { ApplicationRef, Component, signal } from '@angular/core';
+import { provideRouter, Router } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import '../../../test-helpers';
@@ -453,6 +454,52 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(query('.submenu-trigger'));
   });
 
+  describe('an active item that turns disabled', () => {
+    it('moves on to its neighbours instead of jumping to an edge', async () => {
+      await openMenu();
+
+      keydown(query('.item-alpha'), 'ArrowDown');
+      tick();
+      fixture.componentInstance.bravoDisabled.set(true);
+      tick();
+
+      expect(query('.item-alpha').getAttribute('tabindex')).toBe('0');
+
+      keydown(query('.item-bravo'), 'ArrowDown');
+      tick();
+
+      expect(document.activeElement).toBe(query('.item-charlie'));
+
+      fixture.componentInstance.bravoDisabled.set(false);
+      tick();
+      keydown(query('.item-charlie'), 'ArrowUp');
+      tick();
+      fixture.componentInstance.bravoDisabled.set(true);
+      tick();
+      keydown(query('.item-bravo'), 'ArrowUp');
+      tick();
+
+      expect(document.activeElement).toBe(query('.item-alpha'));
+    });
+
+    it('opens no submenu from the keyboard', async () => {
+      await openMenu();
+
+      keydown(query('.item-alpha'), 'End');
+      tick();
+      fixture.componentInstance.submenuTriggerDisabled.set(true);
+      tick();
+
+      keydown(query('.submenu-trigger'), 'ArrowRight');
+      keydown(query('.submenu-trigger'), 'Enter');
+      tick();
+      await flushFrames();
+
+      expect(menu.openSubmenu()).toBeNull();
+      expect(document.querySelector('.sub-panel')).toBeNull();
+    });
+  });
+
   describe('programmatic open', () => {
     const settle = async () => {
       tick();
@@ -639,5 +686,51 @@ describe('MenuItemDirective closeOnActivate', () => {
 
     expect(item('.bare')).toBe(true);
     expect(item('.unset')).toBeUndefined();
+  });
+});
+
+@Component({ template: '' })
+class EmptyRouteComponent {}
+
+describe('MenuDirective router navigation', () => {
+  it('stays closed after a navigation closed it', async () => {
+    TestBed.configureTestingModule({
+      imports: [MenuDirectiveTestHost],
+      providers: [
+        provideRouter([
+          { path: '', component: EmptyRouteComponent },
+          { path: 'other', component: EmptyRouteComponent },
+        ]),
+      ],
+    });
+
+    const appRef = TestBed.inject(ApplicationRef);
+    const fixture = TestBed.createComponent(MenuDirectiveTestHost);
+    fixture.detectChanges();
+
+    const menu = fixture.debugElement.query(By.directive(MenuDirective)).injector.get(MenuDirective);
+    const trigger: HTMLButtonElement = fixture.nativeElement.querySelector('.root-trigger');
+
+    trigger.click();
+    appRef.tick();
+    await flushFrames();
+    appRef.tick();
+
+    expect(document.querySelector('.root-panel')).not.toBeNull();
+
+    await TestBed.inject(Router).navigate(['/other']);
+
+    for (let round = 0; round < 4; round++) {
+      appRef.tick();
+      await flushFrames();
+    }
+
+    appRef.tick();
+
+    expect(menu.open()).toBe(false);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelector('.root-panel')).toBeNull();
+
+    document.querySelectorAll('.et-overlay-runtime-root').forEach((element) => element.remove());
   });
 });

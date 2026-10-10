@@ -77,4 +77,15 @@ describe('CommandPaletteShortcutDirective', () => {
 
     expect(openPalettes()).toBe(0);
   });
+
+  it('reopens the palette on a chord pressed while the last one is still leaving', async () => {
+    await driver.openVia(() => pressChord());
+
+    pressChord();
+    pressChord();
+    await driver.settle();
+    await driver.settle();
+
+    expect(openPalettes()).toBe(1);
+  });
 });

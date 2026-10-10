@@ -4,6 +4,7 @@ import { RuntimeError } from '@ethlete/core';
 import { filter, fromEvent, tap } from 'rxjs';
 import { KBD_PLATFORM, matchesKbdChord, parseKbdKeys } from '../kbd';
 import { injectOverlayManager } from '../overlay';
+import { getOverlayRefInternals } from '../overlay/overlay-ref-internal';
 import { CommandPaletteComponent } from './command-palette.component';
 import { COMMAND_PALETTE_ERROR_CODES } from './command-palette-errors';
 import { createCommandPaletteOpener } from './command-palette.overlay';
@@ -89,7 +90,11 @@ export class CommandPaletteShortcutDirective {
   public toggle() {
     const openPalette = this.overlayManager
       .openOverlays()
-      .find((overlayRef) => overlayRef.componentInstance() instanceof CommandPaletteComponent);
+      .find(
+        (overlayRef) =>
+          overlayRef.componentInstance() instanceof CommandPaletteComponent &&
+          !getOverlayRefInternals(overlayRef)?.isClosing(),
+      );
 
     if (openPalette) {
       openPalette.close();
