@@ -452,6 +452,9 @@ export type TableFeatureHost = {
    */
   renderedRowOffset(): number;
 
+  /** The `aria-rowindex` an open row's detail row carries while a window renders a slice, else `null`. */
+  detailAriaRowIndex(row: unknown): number | null;
+
   /**
    * Bring an absolute row index into the viewport - through the registered row window when there is
    * one (which also renders it), else by scrolling the rendered row element into view. Returns whether

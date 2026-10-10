@@ -309,7 +309,9 @@ block, so `@if` around one turns that cell off.
 
 **Sort and filter still work on rich cells.** The display template is decoupled
 from the values sorted/filtered on - set `sortValue` / `filterValue` on the column
-so a cell that renders an avatar can still sort by name, or a badge by status.
+so a cell that renders an avatar can still sort by name, or a badge by status. A sortable column
+whose `value` returns an object, list or function and has no `sortValue` throws
+[`ET3514`](/components/error-codes#table-et35xx) in dev mode rather than sort as a silent no-op.
 
 #### Cookbook
 
@@ -432,7 +434,8 @@ already there on the first paint.
 
 For explicit "sort ascending / descending / clear" entries, add the
 [column menu](#column-menu). `setSort(key, direction | null)` does the same
-programmatically, without `toggleSort`'s cycle.
+programmatically, without `toggleSort`'s cycle; `setSort(key, null)` drops only that
+column's entry and leaves the rest of a multi-sort in place.
 
 - **Client mode** (default) sorts rows in the browser. Nullish values, `NaN` and
   invalid dates always sink to the bottom.
@@ -676,6 +679,10 @@ Turn any of the last four off per table with
 `[etTableColumnMenu]="{ autosize: false }"`, `{ pinColumn: false }`, `{ resetWidth: false }` or
 `{ hideColumn: false }`. Bringing a hidden column _back_ is the
 [column chooser](#column-chooser)'s job, not this menu's.
+
+**Hide column** also clears the column's filter and its sort entry: both controls lived in the
+header that goes away, and rows filtered or ordered by a column nobody can see have no visible
+cause. Other columns' sort entries stay.
 
 **Autosize** fits a column to its widest _rendered_ content and keeps that as a width
 override, so it round-trips through [`state()`](#table-state) like a manual resize.
@@ -1593,6 +1600,8 @@ For long lists, import `TABLE_VIRTUAL_SCROLL_IMPORTS` and drop
 a few dozen `<div role="row">`s stay in the DOM no matter how many rows `data` holds,
 with block-padding spacers standing in for the rest so the scrollbar still reflects the
 full count.
+Screen readers get the full count too: while a window is active the table carries
+`aria-rowcount` and every rendered row (detail rows included) its true `aria-rowindex`.
 
 As always, the table is its own scroll container - give it a bounded height so the
 window has a viewport to track:

@@ -180,6 +180,23 @@ describe('table edge cases', { timeout: 30_000 }, () => {
 
       expect(sorted.map((row) => row.id)).toEqual([2, 1, 0]);
     });
+
+    it('throws ET3514 when a sortable column without sortValue reads an object', () => {
+      const rows = [
+        { id: 1, address: { city: 'B' } },
+        { id: 2, address: { city: 'A' } },
+      ];
+      const columns = { address: { header: 'Address', value: (row: (typeof rows)[number]) => row.address } };
+
+      expect(() => sortRows({ rows, sort: [{ key: 'address', direction: 'asc' }], columns })).toThrow(/ET3514/);
+      expect(
+        sortRows({
+          rows,
+          sort: [{ key: 'address', direction: 'asc' }],
+          columns: { address: { ...columns.address, sortValue: (row) => row.address.city } },
+        }).map((row) => row.id),
+      ).toEqual([2, 1]);
+    });
   });
 
   describe('expandable rows after the data changes', () => {
@@ -209,6 +226,23 @@ describe('table edge cases', { timeout: 30_000 }, () => {
       fixture.componentInstance.data.set(people());
       fixture.detectChanges();
       expect(queryAll(fixture, '.et-table-detail-row')).toHaveLength(1);
+    });
+  });
+
+  describe('virtual scroll with expanded rows', () => {
+    it('counts open detail rows in aria-rowcount and in every aria-rowindex', () => {
+      const fixture = create((host) => {
+        host.virtual.set(true);
+        host.data.set(many(50));
+        host.expanded.set(new Set([1, 3]));
+      });
+
+      const indexOf = (selector: string) =>
+        queryAll(fixture, selector).map((element) => element.getAttribute('aria-rowindex'));
+
+      expect(queryAll(fixture, '[role="table"]')[0]!.getAttribute('aria-rowcount')).toBe('53');
+      expect(indexOf('.et-table-row').slice(0, 4)).toEqual(['2', '4', '5', '7']);
+      expect(indexOf('.et-table-detail-row')).toEqual(['3', '6']);
     });
   });
 

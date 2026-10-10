@@ -105,6 +105,8 @@ export class TableColumnMenuDirective {
   }
 
   public hide(column: TableColumnMeta) {
+    this.table.setSort(column.key, null);
+    if (this.table.filterValuesFor(column.key).length) this.table.setFilterValues(column.key, []);
     this.table.setColumnVisible(column.key, false);
   }
 

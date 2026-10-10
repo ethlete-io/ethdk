@@ -391,6 +391,7 @@ Runtime errors from the bracket data pipeline and layout engine. They indicate a
 | `ET3511` | `pinColumn()` was called on a table without `etTableStickyColumns`.                   | Add `etTableStickyColumns` and import `TABLE_STICKY_COLUMNS_IMPORTS` - see [Pinning at runtime](/components/table#pinning-at-runtime).                                         |
 | `ET3512` | A column sets `filterable`, `sticky`, `group` or `editable`, but no feature reads it. | Add the directive the message names (`etTableFilters`, `etTableStickyColumns`, `etTableGroupHeaders`, `etTableInlineEdit`) and import its `TABLE_*_IMPORTS`, or drop the flag. |
 | `ET3513` | A CSV export read an object, list or function from a column with no `exportValue`.    | Add `exportValue` to the column - see [What each cell says](/components/table#what-each-cell-says).                                                                            |
+| `ET3514` | Client sorting read an object, list or function from a column with no `sortValue`.    | Add `sortValue` returning a string, number, `Date` or boolean - see [Custom cells](/components/table#custom-cells).                                                            |
 
 `ET3500` is retired: it flagged duplicate column keys, which the keyed
 `TableColumns` record makes impossible.

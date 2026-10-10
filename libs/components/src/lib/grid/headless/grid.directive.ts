@@ -797,6 +797,8 @@ export class GridDirective<TData = unknown> {
       }
     }
 
+    for (const id of this.leavingIds()) this.cancelLeave(id);
+
     const items: GridItemConfig<string, TData>[] = state.items.map((item) => ({
       id: item.id,
       type: item.type,

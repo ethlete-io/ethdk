@@ -165,6 +165,8 @@ type TableBodyRowVm<T> = {
   linkLabelId: string;
   /** The registered detail row to stamp under this row, while it is open. */
   detail: TableRowDetail | null;
+  /** The row's 1-based position among all rows of the table, while a window renders a slice; else `null`. */
+  ariaRowIndex: number | null;
   leads: TableLeadCellVm[];
   cells: TableBodyCellVm<T>[];
   trails: TableLeadCellVm[];
@@ -292,6 +294,7 @@ let uniqueTableId = 0;
     '[attr.data-density]': 'density()',
     '[attr.aria-busy]': 'resolvedLoading() ? "true" : null',
     '[attr.role]': 'pageStickyHeader() ? tableRole() : null',
+    '[attr.aria-rowcount]': 'pageStickyHeader() ? ariaRowCount() : null',
     '[class.et-table-host--scrolled-block-start]': 'blockScrollShadows().blockStart',
     '[class.et-table-host--scrolled-block-end]': 'blockScrollShadows().blockEnd',
     '[class.et-table-host--scrolled-inline-start]': 'scrollFades().start',
@@ -1158,6 +1161,32 @@ export class TableComponent<T> implements TableFeatureHost {
     return { start: window.paddingStart(), end: window.paddingEnd() };
   });
 
+  private openDetailIndices = computed(() => {
+    const detail = this.rowDetail();
+
+    if (!detail || !this.rowWindow()) return [];
+
+    const indices: number[] = [];
+
+    this.rows().forEach((row, index) => {
+      if (detail.isOpen(row)) indices.push(index);
+    });
+
+    return indices;
+  });
+
+  protected headerRowCount = computed(() => this.headerRows().length + 1);
+
+  /**
+   * The full row count a windowed table announces through `aria-rowcount` - header rows, every body row,
+   * every open detail row and the footer row - or `null` while every row is in the DOM anyway.
+   */
+  protected ariaRowCount = computed(() => {
+    if (!this.spacers()) return null;
+
+    return this.headerRowCount() + this.rows().length + this.openDetailIndices().length + (this.hasFooter() ? 1 : 0);
+  });
+
   protected bodyRows = computed<TableBodyRowVm<T>[]>(() => {
     const pinning = this.columnPinning();
     const templates = this.columnTemplates().cell;
@@ -1176,6 +1205,7 @@ export class TableComponent<T> implements TableFeatureHost {
     const rendered = this.renderedRows();
     // A footer row separates itself with this rule, and an end spacer stands in for rows still below.
     const endsWithRows = !this.hasFooter() && !this.spacers()?.end;
+    const announcesIndex = this.ariaRowCount() !== null;
 
     return rendered.map((row, index) => {
       const key = this.rowIdentity(row);
@@ -1198,6 +1228,7 @@ export class TableComponent<T> implements TableFeatureHost {
         stripe: (indexOffset + index) % 2 === 1,
         last: endsWithRows && index === rendered.length - 1,
         detail: detail?.isOpen(row) ? detail : null,
+        ariaRowIndex: announcesIndex ? this.ariaRowIndexOf(indexOffset + index) : null,
         leads,
         trails,
         cells: columns.map((column) => {
@@ -1228,6 +1259,11 @@ export class TableComponent<T> implements TableFeatureHost {
       };
     });
   });
+
+  private detailAriaRowIndices = computed(
+    () =>
+      new Map(this.bodyRows().flatMap((vm) => (vm.detail && vm.ariaRowIndex ? [[vm.row, vm.ariaRowIndex + 1]] : []))),
+  );
 
   /**
    * The keys of the currently hidden columns, in declared order. Nothing in the table's own chrome
@@ -1374,6 +1410,11 @@ export class TableComponent<T> implements TableFeatureHost {
       this.pageStickyHeader();
       afterNextRender({ read: () => this.syncScrollState() }, { injector: this.injector });
     });
+  }
+
+  /** The `aria-rowindex` of an open row's detail row, or `null` while every row is in the DOM. Part of the feature contract. */
+  public detailAriaRowIndex(row: unknown) {
+    return this.detailAriaRowIndices().get(row as T) ?? null;
   }
 
   protected syncScrollState() {
@@ -1817,10 +1858,15 @@ export class TableComponent<T> implements TableFeatureHost {
   /**
    * Set a column's sort direction outright, or clear it with `null` - what a column menu's explicit
    * "Sort ascending / descending / Clear" entries need, where {@link toggleSort}'s cycle would make
-   * the result depend on the column's current state. Layers like a plain header activation does.
+   * the result depend on the column's current state. Layers like a plain header activation does;
+   * clearing drops only this column's entry from a layered sort.
    */
   public setSort(key: string, direction: TableSortDirection | null) {
-    this.applySort(this.nextSort({ key, direction, additive: false }));
+    if (direction) {
+      this.applySort(this.nextSort({ key, direction, additive: false }));
+    } else if (this.sort().some((entry) => entry.key === key)) {
+      this.applySort(this.sort().filter((entry) => entry.key !== key));
+    }
   }
 
   protected activateSortHeader(key: string, event: Event) {
@@ -2156,6 +2202,21 @@ export class TableComponent<T> implements TableFeatureHost {
 
       return next;
     });
+  }
+
+  private ariaRowIndexOf(index: number) {
+    const open = this.openDetailIndices();
+    let low = 0;
+    let high = open.length;
+
+    while (low < high) {
+      const mid = (low + high) >> 1;
+
+      if ((open[mid] ?? Infinity) < index) low = mid + 1;
+      else high = mid;
+    }
+
+    return this.headerRowCount() + index + low + 1;
   }
 
   // Must stay a same-tick write on the header grid. A requestAnimationFrame hop defers it past the

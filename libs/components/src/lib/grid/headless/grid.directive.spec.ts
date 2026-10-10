@@ -376,6 +376,39 @@ describe('GridDirective', () => {
           .map((item) => item.id),
       ).toEqual(['a', 'b']);
     });
+
+    it('keeps an item restoreState brings back while it is still leaving', () => {
+      vi.useFakeTimers();
+
+      const a: GridItemConfig = { id: 'a', type: 'test', data: undefined, layout: {} };
+      const b: GridItemConfig = { id: 'b', type: 'test', data: undefined, layout: {} };
+
+      fixture.componentRef.setInput('items', [a, b]);
+      fixture.detectChanges();
+      measureGrid();
+      fixture.detectChanges();
+      vi.advanceTimersByTime(1000);
+      fixture.detectChanges();
+
+      const snapshot = getDirective().getSerializedState();
+
+      getDirective().removeItem('b');
+      fixture.detectChanges();
+
+      expect(getDirective().leavingIds().has('b')).toBe(true);
+
+      getDirective().restoreState(snapshot);
+      fixture.detectChanges();
+      vi.advanceTimersByTime(1000);
+      fixture.detectChanges();
+
+      expect(getDirective().leavingIds().has('b')).toBe(false);
+      expect(
+        getDirective()
+          .currentItems()
+          .map((item) => item.id),
+      ).toEqual(['a', 'b']);
+    });
   });
 
   describe('layout', () => {

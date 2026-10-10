@@ -7,7 +7,7 @@
     <ng-container *ngComponentOutlet="headerRow.component; injector: headerRow.injector" />
   }
 
-  <div class="et-table-header-row" role="row">
+  <div [attr.aria-rowindex]="ariaRowCount() === null ? null : headerRowCount()" class="et-table-header-row" role="row">
     <!-- Leading utility columns (selection from a feature, the expander when expansion is on). The
          table owns the cell chrome; the feature only supplies what goes inside. -->
     @for (lead of leadCells(); track lead.key) {
@@ -183,6 +183,7 @@
         [class.et-table-row--link]="rowVm.href !== null"
         [etTableCardSurface]="cardRows()"
         [attr.tabindex]="rowInteractive() && !cellNavigation() && rowVm.href === null ? 0 : null"
+        [attr.aria-rowindex]="rowVm.ariaRowIndex"
         (click)="activateRow(rowVm.row, $event)"
         (keydown.enter)="activateRow(rowVm.row, $event)"
         (keydown.space)="activateRow(rowVm.row, $event)"
@@ -342,7 +343,7 @@
   </div>
 
   @if (hasFooter()) {
-    <div class="et-table-footer-row" role="row">
+    <div [attr.aria-rowindex]="ariaRowCount()" class="et-table-footer-row" role="row">
       @for (lead of leadCells(); track lead.key) {
         <div
           [class]="lead.cellClass"
@@ -402,7 +403,13 @@
     </div>
   </div>
 } @else {
-  <div #grid [style.grid-template-columns]="templateColumns()" [attr.role]="tableRole()" class="et-table">
+  <div
+    #grid
+    [style.grid-template-columns]="templateColumns()"
+    [attr.role]="tableRole()"
+    [attr.aria-rowcount]="ariaRowCount()"
+    class="et-table"
+  >
     <ng-container *ngTemplateOutlet="headerContent" />
     <ng-container *ngTemplateOutlet="bodyContent" />
   </div>

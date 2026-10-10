@@ -130,4 +130,28 @@ describe('TableVirtualScrollDirective', () => {
     // the rendered slice lines up with the window over the source rows
     expect(table.renderedRows()[0]).toBe(MANY[start]);
   });
+
+  it("announces the full row count and each rendered row's true position while windowed", () => {
+    const fixture = create();
+    const host = tableElement(fixture);
+
+    host.scrollTop = 400;
+    host.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    const start = fixture.componentInstance.table().rowIndexOffset();
+    const rows = queryAll(fixture, '.et-table-row');
+
+    expect(queryAll(fixture, '[role="table"]')[0]!.getAttribute('aria-rowcount')).toBe('101');
+    expect(queryAll(fixture, '.et-table-header-row')[0]!.getAttribute('aria-rowindex')).toBe('1');
+    expect(rows[0]!.getAttribute('aria-rowindex')).toBe(String(start + 2));
+    expect(rows[1]!.getAttribute('aria-rowindex')).toBe(String(start + 3));
+  });
+
+  it('sets no row count or row indices while every row is rendered', () => {
+    const fixture = create(false);
+
+    expect(queryAll(fixture, '[aria-rowcount]')).toHaveLength(0);
+    expect(queryAll(fixture, '[aria-rowindex]')).toHaveLength(0);
+  });
 });

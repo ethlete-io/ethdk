@@ -28,4 +28,6 @@ export const TABLE_ERROR_CODES = {
   MISSING_COLUMN_FEATURE: 3512,
   /** A CSV export read an object, list or function from a column that has no `exportValue`. */
   UNSERIALIZABLE_EXPORT_VALUE: 3513,
+  /** Client sorting read an object, list or function from a sortable column that has no `sortValue`. */
+  UNSORTABLE_COLUMN_VALUE: 3514,
 } as const;

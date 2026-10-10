@@ -250,6 +250,31 @@ describe('table feature scenarios: columns', () => {
     ).toBe(true);
   });
 
+  it("clears a column's filter and sort when its header menu hides it", () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(InventoryComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const inventory = fixture.componentInstance;
+
+    inventory.filters.set([{ key: 'category', values: ['Furniture'] }]);
+    inventory.sort.set([
+      { key: 'category', direction: 'asc' },
+      { key: 'name', direction: 'desc' },
+    ]);
+    s.flush();
+
+    expect(names(host)).toEqual(['Desk', 'Chair']);
+
+    openMenu(s, query(headerCell(host, 'category'), '.et-table-column-menu-trigger'));
+    menuItem('Hide column').click();
+    s.flush();
+
+    expect(headerKeys(host)).toEqual(['name', 'stock']);
+    expect(inventory.filters()).toEqual([]);
+    expect(inventory.sort()).toEqual([{ key: 'name', direction: 'desc' }]);
+    expect(names(host)).toEqual(['Lamp', 'Desk', 'Chair']);
+  });
+
   it('filters rows from a header filter menu with a templated option', () => {
     const s = scenario();
     const fixture = TestBed.createComponent(InventoryComponent);

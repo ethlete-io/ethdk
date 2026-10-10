@@ -31,6 +31,7 @@ import { TableRowExpansionDirective } from './table-row-expansion.directive';
   host: {
     class: 'et-table-detail-row',
     role: 'row',
+    '[attr.aria-rowindex]': 'table.detailAriaRowIndex(row())',
     // Animated only for the row the user just toggled - a re-mount from paging/sorting must not replay
     // the reveal (see TableRowExpansionDirective.animates).
     '[animate.enter]': "animated() ? 'et-table-detail--enter' : ''",
