@@ -90,7 +90,7 @@ Use `content` with `richTextPath`, `gqlRichText`, or `richText` with `includes` 
 
 An absent rich-text field renders nothing. In dev mode, a path whose parent does not resolve either (`item[0].fields.html`, or an `items[1]` the response does not have) also logs a warning naming the deepest part that resolved, since that is almost always a typo.
 
-The component has an empty template and renders imperatively. Its host carries `ngSkipHydration`, so with `provideClientHydration()` the client discards the server-rendered rich text and renders it again instead of hydrating it.
+The component has an empty template and renders imperatively. Its host carries `ngSkipHydration`, so with `provideClientHydration()` the client discards the server-rendered rich text and renders it again instead of hydrating it. The server HTML still serves first paint and crawlers, but the whole subtree pays for it on the client: embedded custom components are created anew (constructors, effects and data loading run again, `@defer (hydrate …)` triggers inside never apply), and if the renderer's input arrives later on the client than on the server - a query without the HTTP transfer cache, say - the text disappears until it does.
 
 Each node type maps to a plain HTML element:
 
