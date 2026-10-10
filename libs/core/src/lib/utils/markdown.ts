@@ -91,8 +91,18 @@ const alignClass = (align: string | null) => (align ? ` class="et-rte-align-${al
 const alignOf = (attrs: string) =>
   (
     /\bclass\s*=\s*["'][^"']*\bet-rte-align-([a-z]+)/i.exec(attrs)?.[1] ??
-    /\bstyle\s*=\s*["'][^"']*text-align:\s*([a-z]+)/i.exec(attrs)?.[1]
+    /\bstyle\s*=\s*["'][^"']*text-align:\s*(?:-[a-z]+-)?([a-z]+)/i.exec(attrs)?.[1]
   )?.toLowerCase() ?? null;
+
+const BLOCK_ALIGNS = /* @__PURE__ */ new Set(['center', 'right', 'justify']);
+
+const blockAlignOf = (attrs: string) => {
+  const align = alignOf(attrs);
+
+  return align && BLOCK_ALIGNS.has(align) ? align : null;
+};
+
+const isBlankHtml = (html: string) => !/<img\b/i.test(html) && !stripTags(html.replace(/&nbsp;/gi, ' ')).trim();
 
 /** Wraps `content` in an emphasis `marker`, hoisting boundary whitespace outside the delimiters -
  *  CommonMark emphasis must not face whitespace on the inside (`** fett**` doesn't parse), and
@@ -355,19 +365,23 @@ const listToMarkdown = (inner: string, ordered: boolean, startNumber: number, de
   let n = startNumber;
 
   return findListItems(inner)
-    .map((itemInner) => {
+    .flatMap((itemInner) => {
       let content = itemInner;
       let nestedMarkdown = '';
 
       for (let nested = findList(content); nested; nested = findList(content)) {
-        nestedMarkdown += `\n${listToMarkdown(nested.inner, nested.ordered, nested.startNumber, depth + 1)}`;
+        const nestedItems = listToMarkdown(nested.inner, nested.ordered, nested.startNumber, depth + 1);
+
+        if (nestedItems) nestedMarkdown += `\n${nestedItems}`;
         content = content.slice(0, nested.start) + content.slice(nested.end);
       }
+
+      if (!nestedMarkdown && isBlankHtml(content)) return [];
 
       const marker = ordered ? `${n++}. ` : '- ';
 
       // list items are single-line in this serializer, so a <br> degrades to a space
-      return `${indent}${marker}${stripTags(content.replace(/<br\s*\/?>/gi, ' ')).trim()}${nestedMarkdown}`;
+      return [`${indent}${marker}${stripTags(content.replace(/<br\s*\/?>/gi, ' ')).trim()}${nestedMarkdown}`];
     })
     .join('\n');
 };
@@ -515,7 +529,7 @@ export const markdownToHtml = (markdown: string, options: { verbatim?: RegExp } 
       if (aligned && align) {
         const tag = (aligned[1] ?? 'p').toLowerCase();
 
-        return `<${tag}${alignClass(align)}>${sanitizeInlineHtml(aligned[3] ?? '')}</${tag}>`;
+        return `<${tag}${alignClass(BLOCK_ALIGNS.has(align) ? align : null)}>${sanitizeInlineHtml(aligned[3] ?? '')}</${tag}>`;
       }
 
       // Heading
@@ -603,13 +617,14 @@ export const htmlToMarkdown = (html: string) => {
   const alignedBlocks: string[] = [];
   md = md.replace(
     /<(p|h[1-6]|div)\b([^>]*\b(?:style="[^"]*text-align|class="[^"]*\bet-rte-align-)[^>]*)>([\s\S]*?)<\/\1>/gi,
-    (_, tag: string, attrs: string, inner: string) => {
+    (block: string, tag: string, attrs: string, inner: string) => {
+      const align = blockAlignOf(attrs);
+
+      if (!align) return block.replace(/^<[a-z0-9]+\b[^>]*>/i, `<${tag}>`);
+
       const name = tag.toLowerCase();
 
-      return makePlaceholder(
-        'ALIGN',
-        alignedBlocks.push(`<${name}${alignClass(alignOf(attrs))}>${inner}</${name}>`) - 1,
-      );
+      return makePlaceholder('ALIGN', alignedBlocks.push(`<${name}${alignClass(align)}>${inner}</${name}>`) - 1);
     },
   );
 
@@ -632,9 +647,8 @@ export const htmlToMarkdown = (html: string) => {
   // Headings - keep the inner markup so the inline passes below turn any nested
   // bold/italic/link/code into markdown; leftover tags are stripped at the end.
   for (let i = 6; i >= 1; i--) {
-    md = md.replace(
-      new RegExp(`<h${i}[^>]*>([\\s\\S]*?)<\\/h${i}>`, 'gi'),
-      (_, content: string) => `\n${'#'.repeat(i)} ${content.trim()}\n`,
+    md = md.replace(new RegExp(`<h${i}[^>]*>([\\s\\S]*?)<\\/h${i}>`, 'gi'), (_, content: string) =>
+      isBlankHtml(content) ? '\n' : `\n${'#'.repeat(i)} ${content.trim()}\n`,
     );
   }
 

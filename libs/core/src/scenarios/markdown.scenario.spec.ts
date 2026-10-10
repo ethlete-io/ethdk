@@ -171,4 +171,38 @@ describe('markdown scenarios', () => {
       '<ol start="5"><li>a<ol start="2"><li>b</li></ol></li></ol>',
     );
   });
+
+  it('stores an empty heading or list item as nothing, never as a literal marker', () => {
+    scenario();
+
+    for (const html of ['<h1><br></h1>', '<ul><li><br></li></ul>', '<ol><li><br></li></ol>']) {
+      expect(htmlToMarkdown(html)).toBe('');
+    }
+
+    expect(htmlToMarkdown('<p>x</p><h2><br></h2>')).toBe('x');
+    expect(roundTrip('<p>x</p><h2><br></h2>')).toBe('<p>x</p>');
+    expect(htmlToMarkdown('<ol><li>a</li><li><br></li><li>b</li></ol>')).toBe('1. a\n2. b');
+    expect(htmlToMarkdown('<ul><li>a<ul><li><br></li></ul></li></ul>')).toBe('- a');
+  });
+
+  it('keeps only the block alignments that change the rendering, vendor prefixes included', () => {
+    scenario();
+
+    expect(roundTrip('<p style="text-align: -webkit-center;">Hi <b>bold</b></p>')).toBe(
+      '<p class="et-rte-align-center">Hi <b>bold</b></p>',
+    );
+    expect(roundTrip('<h2 style="text-align: justify">J</h2>')).toBe('<h2 class="et-rte-align-justify">J</h2>');
+
+    const dropped: [html: string, stored: string][] = [
+      ['<p style="text-align: left;">L <b>b</b></p>', 'L **b**'],
+      ['<p style="text-align: start;">S</p>', 'S'],
+      ['<p style="text-align: inherit;">I</p>', 'I'],
+      ['<p style="text-align: -webkit-match-parent;">M</p>', 'M'],
+      ['<p class="et-rte-align-left">old</p>', 'old'],
+    ];
+
+    for (const [html, stored] of dropped) expect(htmlToMarkdown(html)).toBe(stored);
+
+    expect(markdownToHtml('<p class="et-rte-align-left">old</p>')).toBe('<p>old</p>');
+  });
 });
