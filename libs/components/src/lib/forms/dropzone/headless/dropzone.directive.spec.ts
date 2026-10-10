@@ -944,6 +944,19 @@ describe('DropzoneDirective', () => {
       expect(driver.dropzone.resolvedAccept()).toBe('image/*');
     });
 
+    it('should name the maxFileSize input in the message when the rule sets no limit', () => {
+      driver.host.maxFileSize.set(2);
+      driver.host.constraints.set({ accept: 'image/*' });
+      driver.tick();
+
+      driver.dropzone.selectFiles([createFile('big.png', 'image/png', 10)]);
+      driver.tick();
+
+      expect(driver.host.demoForm.media().errors()).toEqual([
+        expect.objectContaining({ kind: 'dropzoneFiles', message: '"big.png" is too large (max 2 B).' }),
+      ]);
+    });
+
     it('should fall back to the inputs for a constraint the rule leaves out', () => {
       driver.host.maxFileSize.set(2);
       driver.host.constraints.set({ accept: 'image/*' });

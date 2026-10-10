@@ -55,6 +55,7 @@ export type DropzoneFileValidationChannel = {
   constraints: Signal<DropzoneFileConstraints | undefined>;
   rejections: WritableSignal<DropzoneFileRejection[]>;
   labels: WritableSignal<DropzoneLabels>;
+  effectiveConstraints: WritableSignal<DropzoneFileConstraints | undefined>;
 };
 
 /** @internal Read by the dropzone directive via the bound field's metadata. */
@@ -65,6 +66,7 @@ export const DROPZONE_FILE_CONSTRAINTS = /* @__PURE__ */ createManagedMetadataKe
   constraints: data,
   rejections: signal<DropzoneFileRejection[]>([]),
   labels: signal(DEFAULT_DROPZONE_LABELS),
+  effectiveConstraints: signal<DropzoneFileConstraints | undefined>(undefined),
 }));
 
 /** @internal */
@@ -129,7 +131,7 @@ export const dropzoneFiles = <TValue, TPathKind extends PathKind = PathKind.Root
       kind: DROPZONE_FILES_ERROR_KIND,
       message:
         currentConstraints?.message?.(rejection) ??
-        rejectionMessage(rejection, { constraints: currentConstraints, labels }),
+        rejectionMessage(rejection, { constraints: channel.effectiveConstraints() ?? currentConstraints, labels }),
     }));
   });
 };

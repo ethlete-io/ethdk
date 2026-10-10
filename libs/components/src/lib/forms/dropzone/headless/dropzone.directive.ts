@@ -217,6 +217,13 @@ export class DropzoneDirective<TValue = unknown>
     });
 
     effect(() => {
+      const channel = this.fileValidation();
+      const constraints = this.fileConstraints();
+
+      untracked(() => channel?.effectiveConstraints.set(constraints));
+    });
+
+    effect(() => {
       const incoming = this.value();
 
       untracked(() => this.reconcileValue(incoming));
