@@ -67,7 +67,7 @@ export class ColorPickerPanelComponent {
 
   protected opaqueHex = computed(() => formatHsvToHex({ ...this.colorInput.picker.hsv(), alpha: 1 }));
 
-  protected notation = linkedSignal<readonly [ColorNotation, ...ColorNotation[]], ColorNotation>({
+  private notation = linkedSignal<readonly [ColorNotation, ...ColorNotation[]], ColorNotation>({
     source: () => this.colorInput.resolvedNotations(),
     // untracked: a linkedSignal computation tracks what it reads, and committing writes hex back to
     // the value - tracking it would pull the display to hex after every entry
