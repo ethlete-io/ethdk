@@ -104,6 +104,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
           const event = withDismissResult(rawEvent);
 
           busyAttributeEffect.destroy();
+          afterOpened$.complete();
           afterClosed$.next(event.result);
           afterClosed$.complete();
           afterClosedEvent$.next(event);
