@@ -29,7 +29,7 @@ scrollToElement({
 ## Visibility & scrollability checks
 
 - `elementCanScroll(element?, direction?)` - whether an element (default: the document) can scroll, optionally per axis (`'x'` / `'y'`).
-- `isElementVisible({ element, container? })` - how visible an element is inside a container (or the viewport): returns `inline` / `block` flags (fully inside on that axis), per-axis `inlineIntersection` / `blockIntersection` ratios, `isIntersecting` and an overall `intersectionRatio`, or `null` without an element.
+- `isElementVisible({ element, container? })` - how visible an element is inside a container (or the viewport): returns `inline` / `block` flags (fully inside on that axis), per-axis `inlineIntersection` / `blockIntersection` ratios, `isIntersecting` and an overall `intersectionRatio` (the visible share of the element's area, like an `IntersectionObserver` entry), or `null` without an element.
 
 ## Snap targets <Badge type="info" text="advanced" />
 

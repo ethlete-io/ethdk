@@ -114,6 +114,15 @@ export const signalElementIntersection = (el: SignalElementBindingType, options?
       }
     }
 
+    const domOrder = untracked(elements).currentElements;
+    const orderOf = (target: Element) => {
+      const index = domOrder.indexOf(target as HTMLElement);
+
+      return index === -1 ? domOrder.length : index;
+    };
+
+    currentValues.sort((a, b) => orderOf(a.target) - orderOf(b.target));
+
     zone.run(() => elementIntersectionSignal.set(currentValues));
   };
 

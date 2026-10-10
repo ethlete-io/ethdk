@@ -48,7 +48,7 @@ export type CreateUnsavedChangesTrackerConfig<T> = {
 
   /**
    * The baseline the current value is compared against.
-   * If omitted, the first non-null value the source produces is captured automatically (so
+   * If omitted or `null`, the first non-null value the source produces is captured automatically (so
    * async-filled forms work without wiring). A function is evaluated once, eagerly.
    */
   defaultValue?: T | (() => T);
@@ -173,12 +173,10 @@ export const createUnsavedChangesTracker = <T>(
 
   const normalized = normalizeUnsavedChangesSource(config.source);
 
-  const hasExplicitDefault = config.defaultValue !== undefined;
-  const initialDefault = hasExplicitDefault
-    ? typeof config.defaultValue === 'function'
-      ? (config.defaultValue as () => T)()
-      : (config.defaultValue as T)
-    : untracked(normalized.value);
+  const explicitDefault =
+    typeof config.defaultValue === 'function' ? (config.defaultValue as () => T)() : config.defaultValue;
+  const hasExplicitDefault = explicitDefault !== undefined && explicitDefault !== null;
+  const initialDefault = hasExplicitDefault ? explicitDefault : untracked(normalized.value);
 
   const _defaultValue = signal<T | null>(initialDefault);
 

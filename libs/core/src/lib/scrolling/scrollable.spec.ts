@@ -102,7 +102,7 @@ describe('isElementVisible', () => {
       blockIntersection: 0.5,
       inline: false,
       inlineIntersection: 0.5,
-      intersectionRatio: 0.5,
+      intersectionRatio: 0.25,
       isIntersecting: true,
     });
   });

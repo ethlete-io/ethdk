@@ -37,6 +37,9 @@ export const getScrollSnapTarget = (
 
   for (const item of items) {
     const itemRect = item.getBoundingClientRect();
+
+    if (!itemRect.width && !itemRect.height) continue;
+
     const itemSize = direction === 'horizontal' ? itemRect.width : itemRect.height;
 
     const relativeStart =

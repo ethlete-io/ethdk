@@ -24,6 +24,13 @@ export class ClickOutsideDirective {
       )
       .subscribe();
 
+    fromEvent<PointerEvent>(this.document.documentElement, 'pointercancel', { capture: true })
+      .pipe(
+        tap(() => (this.pressStartedInside = false)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     fromEvent<MouseEvent>(this.document.documentElement, 'click')
       .pipe(
         tap((event) => {

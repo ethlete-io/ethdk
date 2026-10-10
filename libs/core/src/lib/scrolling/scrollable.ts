@@ -90,7 +90,7 @@ export type CurrentElementVisibility = {
   isIntersecting: boolean;
 
   /**
-   * The ratio of the element that is intersecting the container.
+   * The share of the element's area inside the container, like `IntersectionObserverEntry.intersectionRatio`.
    */
   intersectionRatio: number;
 
@@ -152,7 +152,7 @@ export const isElementVisible = (options: IsElementVisibleOptions): CurrentEleme
     elementRect,
 
     // Round the intersection ratio to the nearest 0.01 to avoid floating point errors and system scaling issues.
-    intersectionRatio: Math.round(Math.min(inlineIntersectionPercentage, blockIntersectionPercentage) * 100) / 100,
+    intersectionRatio: Math.round(inlineIntersectionPercentage * blockIntersectionPercentage * 100) / 100,
   };
 };
 

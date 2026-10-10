@@ -23,6 +23,8 @@ const ANIMATION_CLASSES = {
   leaveInterrupt: 'et-animation-leave-interrupt',
 } as const;
 
+const ALL_ANIMATION_CLASSES = /* @__PURE__ */ Object.values(ANIMATION_CLASSES);
+
 const FORCE_INVISIBLE_CLASS = 'et-force-invisible';
 
 export type AnimatedLifecycleState = 'entering' | 'entered' | 'leaving' | 'left' | 'init';
@@ -96,9 +98,9 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     if ((currentState === 'init' && !this.isConstructed) || this.skipNextEnter()) {
       this.debugLog('enter: instant (not constructed or skipNextEnter)', { currentState });
-      this.updateState('entered');
+      this.cancelCurrentAnimation$.next();
+      this.settleInstantly('entered');
       this.skipNextEnter.set(false);
-      this.addClass(ANIMATION_CLASSES.enterDone);
       this.forcedThisFrame = false;
 
       return;
@@ -127,14 +129,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     );
 
     if (skipAnimation) {
-      this.removeClasses(
-        ANIMATION_CLASSES.leaveFrom,
-        ANIMATION_CLASSES.leaveActive,
-        ANIMATION_CLASSES.leaveTo,
-        ANIMATION_CLASSES.leaveInterrupt,
-      );
-      this.updateState('entered');
-      this.addClass(ANIMATION_CLASSES.enterDone);
+      this.settleInstantly('entered');
       previousCancel$.next();
       previousCancel$.complete();
 
@@ -186,8 +181,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
     if (currentState === 'init') {
       this.debugLog('leave: instant (state is init, enter never ran)');
-      this.updateState('left');
-      this.addClass(ANIMATION_CLASSES.leaveDone);
+      this.settleInstantly('left');
       this.forcedThisFrame = false;
 
       return;
@@ -216,14 +210,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     );
 
     if (skipAnimation) {
-      this.removeClasses(
-        ANIMATION_CLASSES.enterFrom,
-        ANIMATION_CLASSES.enterActive,
-        ANIMATION_CLASSES.enterTo,
-        ANIMATION_CLASSES.enterInterrupt,
-      );
-      this.updateState('left');
-      this.addClass(ANIMATION_CLASSES.leaveDone);
+      this.settleInstantly('left');
       previousCancel$.next();
       previousCancel$.complete();
 
@@ -270,34 +257,22 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
 
   forceEnteredState() {
     this.cancelCurrentAnimation$.next();
-
-    this.updateState('entered');
-    this.removeClasses(
-      ANIMATION_CLASSES.enterFrom,
-      ANIMATION_CLASSES.enterActive,
-      ANIMATION_CLASSES.enterTo,
-      ANIMATION_CLASSES.leaveFrom,
-      ANIMATION_CLASSES.leaveActive,
-      ANIMATION_CLASSES.leaveTo,
-    );
-    this.addClass(ANIMATION_CLASSES.enterDone);
+    this.settleInstantly('entered');
     this.markForcedThisFrame();
   }
 
   forceLeftState() {
     this.cancelCurrentAnimation$.next();
-
-    this.updateState('left');
-    this.removeClasses(
-      ANIMATION_CLASSES.enterFrom,
-      ANIMATION_CLASSES.enterActive,
-      ANIMATION_CLASSES.enterTo,
-      ANIMATION_CLASSES.leaveFrom,
-      ANIMATION_CLASSES.leaveActive,
-      ANIMATION_CLASSES.leaveTo,
-    );
-    this.addClass(ANIMATION_CLASSES.leaveDone);
+    this.settleInstantly('left');
     this.markForcedThisFrame();
+  }
+
+  private settleInstantly(state: 'entered' | 'left') {
+    const doneClass = state === 'entered' ? ANIMATION_CLASSES.enterDone : ANIMATION_CLASSES.leaveDone;
+
+    this.updateState(state);
+    this.removeClasses(...ALL_ANIMATION_CLASSES.filter((cls) => cls !== doneClass));
+    this.addClass(doneClass);
   }
 
   private markForcedThisFrame() {

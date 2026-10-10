@@ -42,6 +42,17 @@ describe('getScrollSnapTarget', () => {
     expect(getScrollSnapTarget([aligned], container, 'horizontal', 'start')).toBeNull();
   });
 
+  it('skips an item without a box instead of treating it as aligned', () => {
+    const container = elementAt(0, 0, 100, 100);
+    const hidden = elementAt(0, 0, 0, 0);
+    const misaligned = elementAt(37, 0, 20, 20);
+
+    expect(getScrollSnapTarget([hidden, misaligned], container, 'horizontal', 'start')).toEqual({
+      element: misaligned,
+      origin: 'start',
+    });
+  });
+
   it('selects the closest item and origin in auto mode', () => {
     const container = elementAt(0, 0, 100, 100);
     const nearStart = elementAt(12, 0, 20, 20);

@@ -379,6 +379,51 @@ describe('AnimatedLifecycleDirective transitions', () => {
       expect(hasClass('enter-done')).toBe(true);
     });
 
+    it('forceEnteredState from left drops every leave class', () => {
+      lifecycle.forceLeftState();
+      vi.advanceTimersByTime(20);
+      lifecycle.forceEnteredState();
+
+      expect(hasClass('enter-done')).toBe(true);
+      expect(hasClass('leave-done')).toBe(false);
+    });
+
+    it('forceLeftState from entered drops every enter class', () => {
+      lifecycle.forceEnteredState();
+      vi.advanceTimersByTime(20);
+      lifecycle.forceLeftState();
+
+      expect(hasClass('leave-done')).toBe(true);
+      expect(hasClass('enter-done')).toBe(false);
+    });
+
+    it('drops the interrupt class when forced out of an interrupted transition', () => {
+      lifecycle.enter();
+      frames(2);
+      lifecycle.leave();
+      lifecycle.enter();
+      expect(hasClass('enter-interrupt')).toBe(true);
+
+      lifecycle.forceEnteredState();
+
+      expect(hasClass('enter-interrupt')).toBe(false);
+      expect(hasClass('leave-interrupt')).toBe(false);
+    });
+
+    it('clears a running leave when an instant enter takes over', () => {
+      lifecycle.enter();
+      frames(2);
+      lifecycle.leave();
+      frames(1);
+      lifecycle.skipNextEnter.set(true);
+      lifecycle.enter();
+
+      expect(lifecycle.state()).toBe('entered');
+      expect(hasClass('enter-done')).toBe(true);
+      expect(hasClass('leave-active')).toBe(false);
+      expect(hasClass('leave-to')).toBe(false);
+    });
+
     it('animates a transition started a frame after a force', () => {
       lifecycle.forceEnteredState();
       vi.advanceTimersByTime(20);
