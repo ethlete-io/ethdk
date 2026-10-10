@@ -2,4 +2,4 @@
 '@ethlete/agent-rules': patch
 ---
 
-Fix `sync` deleting hand-written hooks whose file name starts with `ethlete`, pruning empty skill folders when `--root` is relative, and name the offending key when `ethlete-agents.config.json` has a value of the wrong type. `migrate` now validates the config before changing anything and leaves a symlinked `CLAUDE.md` alone.
+Fix `sync` deleting hand-written hooks named `ethlete*` and mis-pruning skill folders with a relative `--root`; `migrate` now validates the config first and leaves a symlinked `CLAUDE.md` alone.
