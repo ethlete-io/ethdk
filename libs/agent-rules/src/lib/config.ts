@@ -93,6 +93,45 @@ const parseJson = (text: string): { value: unknown } | { error: string } => {
   }
 };
 
+const assertConfigShapes = (value: Record<string, unknown>) => {
+  const arrays = ['exclude', 'hooks', 'gitHooks'];
+  const objects = ['vars', 'gitFlow', 'jira'];
+
+  for (const key of arrays) {
+    const entry = value[key];
+
+    if (entry !== undefined && (!Array.isArray(entry) || entry.some((item) => typeof item !== 'string'))) {
+      throw new Error(`${CONFIG_FILE_NAME}: "${key}" must be an array of strings.`);
+    }
+  }
+
+  const targets = value['targets'];
+
+  if (
+    targets !== undefined &&
+    targets !== 'auto' &&
+    (!Array.isArray(targets) || targets.some((t) => typeof t !== 'string'))
+  ) {
+    throw new Error(`${CONFIG_FILE_NAME}: "targets" must be "auto" or an array of strings.`);
+  }
+
+  for (const key of objects) {
+    const entry = value[key];
+
+    if (entry !== undefined && (typeof entry !== 'object' || entry === null || Array.isArray(entry))) {
+      throw new Error(`${CONFIG_FILE_NAME}: "${key}" must be an object.`);
+    }
+  }
+
+  if (value['profile'] !== undefined && value['profile'] !== 'consumer' && value['profile'] !== 'sdk') {
+    throw new Error(`${CONFIG_FILE_NAME}: "profile" must be "consumer" or "sdk".`);
+  }
+
+  if (value['claudeMdImportsAgentsMd'] !== undefined && typeof value['claudeMdImportsAgentsMd'] !== 'boolean') {
+    throw new Error(`${CONFIG_FILE_NAME}: "claudeMdImportsAgentsMd" must be a boolean.`);
+  }
+};
+
 const readRawConfig = (root: string): RawConfig => {
   const path = join(root, CONFIG_FILE_NAME);
 
@@ -107,6 +146,8 @@ const readRawConfig = (root: string): RawConfig => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new Error(`${CONFIG_FILE_NAME}: expected a JSON object.`);
   }
+
+  assertConfigShapes(value as Record<string, unknown>);
 
   return value as RawConfig;
 };

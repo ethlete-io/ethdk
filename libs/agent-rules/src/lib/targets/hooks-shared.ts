@@ -102,7 +102,7 @@ export const mergeHookSettings = (options: {
     const kept = groups
       .map((group) => ({
         ...group,
-        hooks: (group.hooks ?? []).filter((hook) => !(hook.command ?? '').includes(hooksDir)),
+        hooks: (group.hooks ?? []).filter((hook) => !(hook.command ?? '').includes(`${hooksDir}/`)),
       }))
       .filter((group) => group.hooks.length > 0);
 

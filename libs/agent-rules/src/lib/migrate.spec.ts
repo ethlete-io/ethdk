@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -68,5 +68,32 @@ describe('migrate', () => {
     expect(readFileSync(join(root, '.claude/skills/mine/SKILL.md'), 'utf8')).toBe('skill');
     expect(existsSync(join(root, '.agents/skills/mine'))).toBe(false);
     expect(log).toHaveBeenCalledWith(expect.stringContaining('creating the symlink failed (EPERM)'));
+  });
+
+  it('fails on a malformed config before touching CLAUDE.md', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-migrate-'));
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), '{"targets": ["claude"],}', 'utf8');
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }), 'utf8');
+    writeFileSync(join(root, 'CLAUDE.md'), '# Notes\n', 'utf8');
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    expect(() => migrate({ root })).toThrow(CONFIG_FILE_NAME);
+    expect(readFileSync(join(root, 'CLAUDE.md'), 'utf8')).toBe('# Notes\n');
+  });
+
+  it('does not overwrite the target of a CLAUDE.md symlink', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-migrate-'));
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ targets: ['claude'] }), 'utf8');
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }), 'utf8');
+    writeFileSync(join(root, 'OTHER.md'), '# Other\n', 'utf8');
+    symlinkSync('OTHER.md', join(root, 'CLAUDE.md'));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    migrate({ root });
+
+    expect(readFileSync(join(root, 'OTHER.md'), 'utf8')).toBe('# Other\n');
   });
 });

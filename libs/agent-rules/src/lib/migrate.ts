@@ -9,7 +9,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { dirname, join, relative } from 'path';
-import { AgentTarget, CONFIG_FILE_NAME } from './config';
+import { AgentTarget, CONFIG_FILE_NAME, loadConfig } from './config';
 import { claudeMdImportsAgentsMd } from './plan';
 import { END_MARKER, START_MARKER } from './render';
 import { RunOptions, sync } from './sync';
@@ -41,6 +41,12 @@ const migrateClaudeMd = (options: { root: string; dryRun: boolean }) => {
     log(`create ${CLAUDE_MD} — "@${AGENTS_MD}" import`);
 
     if (!dryRun) writeFileSync(claudePath, `@${AGENTS_MD}\n`, 'utf8');
+
+    return;
+  }
+
+  if (lstatSync(claudePath).isSymbolicLink()) {
+    log(`skip   ${CLAUDE_MD} — a symlink, left untouched`);
 
     return;
   }
@@ -179,6 +185,8 @@ export const migrate = (options: RunOptions) => {
   const { root, dryRun = false } = options;
 
   console.log(dryRun ? 'Migration plan (dry run):' : 'Migrating to the AGENTS.md + .agents/skills layout:');
+
+  loadConfig({ root });
 
   migrateClaudeMd({ root, dryRun });
   migrateSkills({ root, dryRun });

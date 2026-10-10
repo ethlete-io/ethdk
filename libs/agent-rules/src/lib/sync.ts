@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'fs';
-import { dirname, join, relative } from 'path';
+import { dirname, isAbsolute, join, relative, resolve } from 'path';
 import { AgentTarget, loadConfig } from './config';
 import { collectOwnedPaths } from './owned-paths';
 import { buildPlan, SyncPlan } from './plan';
@@ -39,9 +39,15 @@ const diffPlan = (options: { root: string; files: { path: string; contents: stri
 
 /** Removing the last generated file from a skill folder must not leave the folder behind. */
 const pruneEmptyDirs = (options: { root: string; from: string }) => {
-  let current = dirname(options.from);
+  const root = resolve(options.root);
+  let current = resolve(dirname(options.from));
+  const isInsideRoot = (path: string) => {
+    const rel = relative(root, path);
 
-  while (current.startsWith(options.root) && relative(options.root, current) !== '') {
+    return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+  };
+
+  while (isInsideRoot(current)) {
     if (!existsSync(current) || readdirSync(current).length > 0) return;
 
     rmdirSync(current);
