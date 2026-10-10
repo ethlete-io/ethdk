@@ -5,6 +5,18 @@ import { ScrollableDirective } from '../../../scrollable';
 
 const SCROLL_IDLE_DURATION = 140;
 
+const SCROLL_KEYS = /* @__PURE__ */ new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'PageUp',
+  'PageDown',
+  'Home',
+  'End',
+  ' ',
+]);
+
 /** In its own function so the `in` check doesn't narrow the element away for everything after it. */
 const supportsScrollEnd = (element: HTMLElement) => 'onscrollend' in element;
 
@@ -12,6 +24,8 @@ export type CarouselScrollSettledConfig = {
   scrollable: Signal<ScrollableDirective | null | undefined>;
   onSettled: () => void;
   onPointerDown?: () => void;
+  /** A wheel, trackpad or scroll key on the track - input that takes over any scroll still running. */
+  onScrollInput?: () => void;
 };
 
 /**
@@ -66,6 +80,12 @@ export const useCarouselScrollSettled = (config: CarouselScrollSettledConfig) =>
             tap(() => {
               isPointerDown.set(true);
               config.onPointerDown?.();
+            }),
+          ),
+          fromEvent(scrollContainer, 'wheel', { passive: true }).pipe(tap(() => config.onScrollInput?.())),
+          fromEvent<KeyboardEvent>(scrollContainer, 'keydown').pipe(
+            tap((event) => {
+              if (SCROLL_KEYS.has(event.key)) config.onScrollInput?.();
             }),
           ),
           // on the document, because a drag that starts on the track routinely ends off it

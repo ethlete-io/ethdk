@@ -3,6 +3,7 @@ import {
   ElementRef,
   afterNextRender,
   booleanAttribute,
+  computed,
   effect,
   inject,
   input,
@@ -10,7 +11,8 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RuntimeError, canUseSessionMemory, createSessionMemory } from '@ethlete/core';
+import { RuntimeError, canUseSessionMemory, createSessionMemory, signalElementMutations } from '@ethlete/core';
+import { isSameOrder, sortByDomOrder } from '../../../internals/dom-order';
 import { TabBarDirective } from '../../headless/tab-bar.directive';
 import { TAB_ERROR_CODES } from '../../tab-errors';
 import { TAB_GROUP_TOKEN } from './tab-group.tokens';
@@ -32,8 +34,22 @@ export class TabGroupDirective {
   public sessionMemoryKey = input<string | null>(null);
   private sessionMemoryAvailable = canUseSessionMemory();
 
-  /** @internal */
-  public panels = signal<TabPanelDirective[]>([]);
+  private registeredPanels = signal<TabPanelDirective[]>([]);
+
+  private childMutations = signalElementMutations(inject<ElementRef<HTMLElement>>(ElementRef), {
+    childList: true,
+    subtree: true,
+  });
+
+  /** @internal The panels in DOM order, which a keyed `@for` can change without re-registering any. */
+  public panels = computed(
+    () => {
+      this.childMutations();
+
+      return sortByDomOrder(this.registeredPanels(), (panel) => panel.hostElement);
+    },
+    { equal: isSameOrder },
+  );
 
   /** @internal Set by composing components (e.g. et-tab-group) that render panel content themselves instead of registering [etTabPanel] directives. */
   public managesPanelsInternally = signal(false);
@@ -144,12 +160,12 @@ export class TabGroupDirective {
 
   /** @internal */
   public registerPanel(panel: TabPanelDirective) {
-    this.panels.update((list) => [...list, panel]);
+    this.registeredPanels.update((list) => [...list, panel]);
   }
 
   /** @internal */
   public unregisterPanel(panel: TabPanelDirective) {
-    this.panels.update((list) => list.filter((p) => p !== panel));
+    this.registeredPanels.update((list) => list.filter((p) => p !== panel));
   }
 
   private resolveSelectedIndex(index: number) {
@@ -159,7 +175,8 @@ export class TabGroupDirective {
       return null;
     }
 
-    const clampedIndex = Math.min(Math.max(index, 0), triggers.length - 1);
+    const wholeIndex = Number.isFinite(index) ? Math.trunc(index) : 0;
+    const clampedIndex = Math.min(Math.max(wholeIndex, 0), triggers.length - 1);
     const selectedTrigger = triggers[clampedIndex];
 
     if (selectedTrigger && !selectedTrigger.disabled()) {

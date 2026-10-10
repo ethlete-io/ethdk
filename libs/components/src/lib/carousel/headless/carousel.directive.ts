@@ -260,6 +260,8 @@ export class CarouselDirective {
    */
   private requestedDomIndex = signal<number | null>(null);
 
+  private readSettled: (() => { restsOn: (domIndex: number) => boolean } | null) | null = null;
+
   /** @internal Which child the intersections say is in view - the truth, a frame or two late. */
   public observedDomIndex = computed(() => {
     const scrollable = this.scrollable();
@@ -363,7 +365,10 @@ export class CarouselDirective {
         if (settled?.crossSeam()) slideProgress.flush();
       },
       onPointerDown: () => this.requestedDomIndex.set(null),
+      onScrollInput: () => this.requestedDomIndex.set(null),
     });
+
+    this.readSettled = loop.readSettled;
 
     let agreedIndex: number | null = null;
 
@@ -493,6 +498,15 @@ export class CarouselDirective {
     const scrollable = this.scrollable();
 
     if (!scrollable || domIndex < 0 || domIndex >= this.domCount()) return;
+
+    // The track does not scroll to where it already rests, so no settle would ever clear this request.
+    if (
+      this.requestedDomIndex() === null &&
+      domIndex === this.observedDomIndex() &&
+      this.readSettled?.()?.restsOn(domIndex)
+    ) {
+      return;
+    }
 
     const from = this.activeDomIndex();
     const origin = this.scrollOriginOf(scrollable);

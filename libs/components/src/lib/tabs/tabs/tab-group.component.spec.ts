@@ -173,6 +173,24 @@ describe('TabGroupComponent', () => {
     expect(hostComponent.selectedIndex).toBe(0);
   });
 
+  it('selects the first tab for a NaN bound selectedIndex', () => {
+    hostComponent.selectedIndex = NaN;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(0);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+  });
+
+  it('truncates a fractional bound selectedIndex', () => {
+    hostComponent.selectedIndex = 1.5;
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(getTabGroupDirective().selectedIndex()).toBe(1);
+    expect(getTriggerButtons().map((b) => b.getAttribute('aria-selected'))).toEqual(['false', 'true', 'false']);
+  });
+
   it('skips a disabled tab bound as the initial selection', () => {
     hostComponent.selectedIndex = 1;
     hostComponent.secondTabDisabled = true;
@@ -388,6 +406,45 @@ describe('TabBarDirective trigger order', () => {
       'Second',
       'Third',
     ]);
+  });
+
+  it('shows the matching panel when a tab is inserted before existing ones', () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    fixture.componentInstance.labels.set(['Zeroth', 'First', 'Second', 'Third']);
+    fixture.detectChanges();
+    group.selectedIndex.set(0);
+    fixture.detectChanges();
+
+    const visiblePanels = fixture.debugElement
+      .queryAll(By.directive(TabPanelDirective))
+      .map((panel) => panel.nativeElement as HTMLElement)
+      .filter((panel) => !panel.hasAttribute('hidden'));
+
+    expect(visiblePanels.map((panel) => panel.textContent?.trim())).toEqual(['Zeroth content']);
+  });
+
+  it('shows the matching panel after a keyed re-order', async () => {
+    const fixture = TestBed.createComponent(HeadlessTabsHostComponent);
+    fixture.detectChanges();
+
+    const group = fixture.debugElement.query(By.directive(TabGroupDirective)).injector.get(TabGroupDirective);
+
+    fixture.componentInstance.labels.set(['Third', 'First', 'Second']);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    group.selectedIndex.set(0);
+    fixture.detectChanges();
+
+    const visiblePanels = fixture.debugElement
+      .queryAll(By.directive(TabPanelDirective))
+      .map((panel) => panel.nativeElement as HTMLElement)
+      .filter((panel) => !panel.hasAttribute('hidden'));
+
+    expect(visiblePanels.map((panel) => panel.textContent?.trim())).toEqual(['Third content']);
   });
 });
 

@@ -1,3 +1,4 @@
+import { HttpResponse } from '@angular/common/http';
 import { ApplicationRef, EnvironmentInjector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AnyLegacyQuery, QueryArgs, ReadonlyQuery } from '@ethlete/query';
@@ -126,10 +127,18 @@ describe('notification promise', () => {
   describe('with a query', () => {
     const createFakeQuery = (initial: QueryExecutionState | null = null) => {
       const executionState = signal<QueryExecutionState | null>(initial);
+      const latestHttpEvent = signal<HttpResponse<unknown> | null>(null);
+
+      const respond = (response: unknown) => {
+        latestHttpEvent.set(new HttpResponse({ body: response }));
+        executionState.set({ type: 'success', response } as QueryExecutionState);
+      };
 
       return {
         executionState,
-        query: { executionState } as unknown as ReadonlyQuery<QueryArgs>,
+        latestHttpEvent,
+        respond,
+        query: { executionState, latestHttpEvent } as unknown as ReadonlyQuery<QueryArgs>,
       };
     };
 
@@ -146,14 +155,14 @@ describe('notification promise', () => {
     });
 
     it('settles on the query’s success, handing the response to the success content', () => {
-      const { executionState, query } = createFakeQuery(loadingState());
+      const { respond, query } = createFakeQuery(loadingState());
 
       promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
 
       flushEffects();
       expect(ref.entry().config.status).toBe('loading');
 
-      executionState.set({ type: 'success', response: { name: 'Report' } });
+      respond({ name: 'Report' });
       flushEffects();
 
       expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved Report' });
@@ -200,11 +209,11 @@ describe('notification promise', () => {
     });
 
     it('stops following once it has settled, so a later execution leaves the notification alone', () => {
-      const { executionState, query } = createFakeQuery(loadingState());
+      const { executionState, respond, query } = createFakeQuery(loadingState());
 
       promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
 
-      executionState.set({ type: 'success', response: {} });
+      respond({});
       flushEffects();
 
       executionState.set({ type: 'failure', error: { code: 500 } } as QueryExecutionState);
@@ -214,21 +223,76 @@ describe('notification promise', () => {
     });
 
     it('says nothing once the notification has been dismissed', () => {
-      const { executionState, query } = createFakeQuery(loadingState());
+      const { respond, query } = createFakeQuery(loadingState());
 
       promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
 
       ref.dismiss();
       ref.markDismissed();
 
-      executionState.set({ type: 'success', response: {} });
+      respond({});
       flushEffects();
 
       expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
     });
 
-    it('follows a legacy interop query through the query it wraps', () => {
+    it('dismisses the notification silently when the first execution is aborted', () => {
       const { executionState, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+      flushEffects();
+
+      executionState.set(null);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('dismisses the notification silently when a re-execution is aborted, never showing the previous response', () => {
+      const { executionState, latestHttpEvent, query } = createFakeQuery();
+      const previousResponse = new HttpResponse({ body: { name: 'Old' } });
+
+      latestHttpEvent.set(previousResponse);
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+      flushEffects();
+
+      executionState.set({ type: 'success', response: { name: 'Old' } } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('settles a re-execution on its own new response', () => {
+      const { executionState, latestHttpEvent, respond, query } = createFakeQuery();
+
+      latestHttpEvent.set(new HttpResponse({ body: { name: 'Old' } }));
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+      flushEffects();
+
+      respond({ name: 'New' });
+      flushEffects();
+
+      expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved New' });
+    });
+
+    it('follows a legacy interop query through the query it wraps', () => {
+      const { respond, query } = createFakeQuery(loadingState());
       const legacyQuery = { newQuery: query } as unknown as AnyLegacyQuery;
 
       promise()(legacyQuery, { loading: 'Saving…', success: 'Saved', error: (e) => `Failed: ${e.code}` });
@@ -236,7 +300,7 @@ describe('notification promise', () => {
       flushEffects();
       expect(ref.entry().config.status).toBe('loading');
 
-      executionState.set({ type: 'success', response: {} });
+      respond({});
       flushEffects();
 
       expect(ref.entry().config).toEqual({ status: 'success', title: 'Saved' });

@@ -125,7 +125,7 @@ It accepts three kinds of work:
 | `Query` (`@ethlete/query`)       | Its execution state reaches success or failure                                                          |
 | `createLegacyQueryCreator` query | The query it wraps (`newQuery`) reaches success or failure                                              |
 
-A query is **followed, not executed** - trigger it yourself (or let a `GET` auto-execute) and the notification mirrors its execution state, settling on the first success or failure it sees. The error callback gets the typed `QueryErrorResponse`, so [`queryErrorMessage`](/query/errors) is usually what you want in the message:
+A query is **followed, not executed** - trigger it yourself (or let a `GET` auto-execute) and the notification mirrors its execution state, settling on the first success or failure it sees. An aborted execution (`reset()`, args parked to `null`, the owning component destroyed) is not a failure: the notification is dismissed without a success or error toast, and a cancelled re-execution never reports the previous response as its success. The error callback gets the typed `QueryErrorResponse`, so [`queryErrorMessage`](/query/errors) is usually what you want in the message:
 
 ```ts
 save() {

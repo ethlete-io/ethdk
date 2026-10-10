@@ -1,3 +1,4 @@
+import { HttpEventType } from '@angular/common/http';
 import { EffectRef, Injector, effect, untracked } from '@angular/core';
 import {
   AnyLegacyQuery,
@@ -42,7 +43,8 @@ export type NotificationPromiseWork<TValue> = PromiseLike<TValue> | Observable<T
  * too). A query is *followed*, never
  * executed: trigger it yourself (or let a GET auto-execute) and the notification mirrors its
  * execution state, settling on the first success or failure it sees. If the query already carries a
- * response by then, the notification skips straight to success.
+ * response by then, the notification skips straight to success. An aborted execution dismisses the
+ * notification without a success or error.
  *
  * Dismissing the notification detaches it - the work keeps running (dismissing a toast must not
  * cancel a request), it just no longer has anything to say.
@@ -121,8 +123,22 @@ const runNotificationPromise = ({
     ref.replaceConfig({ ...toNotificationContent(resolved), status });
   };
 
+  const cancel = () => {
+    if (isReplacedByLaterOpen()) return;
+
+    ref.dismiss();
+  };
+
   if (isQuery(work)) {
-    followQuery({ query: work, ref, settle, updateProgress, followProgress: loading.progress !== undefined, injector });
+    followQuery({
+      query: work,
+      ref,
+      settle,
+      cancel,
+      updateProgress,
+      followProgress: loading.progress !== undefined,
+      injector,
+    });
   } else if (isObservable(work)) {
     let lastValue: unknown;
     let hasValue = false;
@@ -168,6 +184,7 @@ const followQuery = ({
   query,
   ref,
   settle,
+  cancel,
   updateProgress,
   followProgress,
   injector,
@@ -175,6 +192,7 @@ const followQuery = ({
   query: ReadonlyQuery<QueryArgs>;
   ref: NotificationRef;
   settle: (status: 'success' | 'error', result: unknown) => void;
+  cancel: () => void;
   updateProgress: (progress: number) => void;
   followProgress: boolean;
   injector: Injector;
@@ -187,13 +205,34 @@ const followQuery = ({
     effectRef = null;
   };
 
+  let hasSeenLoading = false;
+  let eventBeforeLoading: unknown = null;
+
   effectRef = effect(
     () => {
       const state = query.executionState();
 
-      if (!state || hasSettled) return;
+      if (hasSettled) return;
+
+      if (!state) {
+        if (!hasSeenLoading) return;
+
+        hasSettled = true;
+
+        untracked(() => {
+          cancel();
+          stopFollowing();
+        });
+
+        return;
+      }
 
       if (state.type === 'loading') {
+        if (!hasSeenLoading) {
+          hasSeenLoading = true;
+          eventBeforeLoading = untracked(() => query.latestHttpEvent());
+        }
+
         const percentage = state.loading.progress?.percentage;
 
         if (followProgress && percentage !== undefined) {
@@ -206,7 +245,16 @@ const followQuery = ({
       hasSettled = true;
 
       untracked(() => {
-        if (state.type === 'success') {
+        const latestEvent = query.latestHttpEvent();
+
+        // An aborted re-execution falls back to the previous round's response, which reads as a success.
+        if (
+          state.type === 'success' &&
+          hasSeenLoading &&
+          (latestEvent === eventBeforeLoading || latestEvent?.type !== HttpEventType.Response)
+        ) {
+          cancel();
+        } else if (state.type === 'success') {
           settle('success', state.response);
         } else {
           settle('error', state.error);

@@ -437,6 +437,62 @@ describe('carousel scenarios', () => {
     expect(activeDot()).toBe(3);
   });
 
+  it('follows a wheel scroll that interrupts a button press to another slide', async () => {
+    const s = scenario();
+    const { measure } = layOut(s);
+
+    TestBed.createComponent(TeamCarouselComponent);
+    await measure();
+
+    const container = query('.et-scrollable-container');
+
+    showOnly(s, realSlides()[0] as HTMLElement);
+    query<HTMLButtonElement>('[etCarouselNext]').click();
+    step(s);
+    expect(activeDot()).toBe(1);
+
+    container.dispatchEvent(new WheelEvent('wheel', { deltaX: 400 }));
+    container.scrollLeft = 2 * SLIDE;
+    showOnly(s, realSlides()[2] as HTMLElement);
+    container.dispatchEvent(new Event('scrollend'));
+    step(s);
+
+    expect(activeDot()).toBe(2);
+
+    container.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+    container.scrollLeft = SLIDE;
+    showOnly(s, realSlides()[1] as HTMLElement);
+    container.dispatchEvent(new Event('scrollend'));
+    step(s);
+
+    expect(activeDot()).toBe(1);
+  });
+
+  it('keeps following the track after a press on the dot of the slide already in view', async () => {
+    const s = scenario();
+    const { scroll, measure } = layOut(s);
+
+    TestBed.createComponent(TeamCarouselComponent);
+    await measure();
+
+    const container = query('.et-scrollable-container');
+
+    showOnly(s, realSlides()[0] as HTMLElement);
+
+    const calls = scroll.calls().length;
+
+    all('.et-carousel-dot')[0]?.click();
+    step(s);
+    expect(scroll.calls()).toHaveLength(calls);
+
+    container.scrollLeft = SLIDE;
+    showOnly(s, realSlides()[1] as HTMLElement);
+    container.dispatchEvent(new Event('scrollend'));
+    step(s);
+
+    expect(activeDot()).toBe(1);
+  });
+
   it('loops seamlessly with clones that stay hidden, and wraps the controls round the seam', async () => {
     const s = scenario();
     const { scroll, measure } = layOut(s);
