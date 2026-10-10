@@ -37,6 +37,7 @@ const IGNORED = new Set([
   'createSecureGqlQueryCreator',
   'createSecureQuery',
   'createSecureQueryCreator',
+  'createSkippedSnapshot',
   'createTrackingFeature',
   'injectQueryContext',
   'queryBatchAlreadyRunning',
