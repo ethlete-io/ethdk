@@ -749,7 +749,7 @@ export class CallViewComponent {
   protected readonly THUMB_HEIGHT = Math.round(THUMB_WIDTH * THUMB_ASPECT);
 
   /** Every variant of the open call, each with the frame its tile draws small. */
-  protected tiles = computed(() => {
+  private tiles = computed(() => {
     const call = this.call();
 
     if (!call) return [];

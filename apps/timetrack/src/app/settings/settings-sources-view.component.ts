@@ -217,7 +217,7 @@ export class SettingsSourcesViewComponent {
   protected store = injectTimetrackSettings();
 
   public git = injectGitCollector();
-  protected gitlab = injectGitLabCollector();
+  private gitlab = injectGitLabCollector();
   protected lock = injectWindowLock();
 
   protected readonly GITLAB_WHY = GITLAB_WHY;
