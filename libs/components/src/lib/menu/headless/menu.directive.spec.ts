@@ -444,6 +444,26 @@ describe('MenuDirective', () => {
     expect(document.activeElement).toBe(query('.item-extra'));
   });
 
+  it('treats Space as a typeahead character while a typeahead is running', async () => {
+    fixture.componentInstance.extraLabels.set(['Delta one', 'Delta two']);
+    fixture.detectChanges();
+    await openMenu();
+
+    const [first, second] = Array.from(document.querySelectorAll<HTMLElement>('.item-extra'));
+
+    keydown(query('.item-alpha'), 'd');
+    keydown(first!, 'e');
+    keydown(first!, 'l');
+    keydown(first!, 't');
+    keydown(first!, 'a');
+    keydown(first!, ' ');
+    keydown(first!, 't');
+    tick();
+
+    expect(menu.open()).toBe(true);
+    expect(document.activeElement).toBe(second);
+  });
+
   it('opens via keyboard on the trigger and focuses the last item with ArrowUp', async () => {
     keydown(trigger, 'ArrowUp');
     tick();

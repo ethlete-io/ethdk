@@ -427,6 +427,18 @@ export class MenuDirective {
           return;
         }
 
+        if (event.key === ' ' && !search && this.typeahead.isRunning()) {
+          const match = this.findTypeaheadMatch(this.typeahead.append(event.key));
+
+          event.preventDefault();
+
+          if (match) {
+            this.setActiveItem(match);
+          }
+
+          return;
+        }
+
         const item = this.activeItem();
 
         if (!item) {
