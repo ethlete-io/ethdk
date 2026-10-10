@@ -208,6 +208,14 @@ const followQuery = ({
   let hasSeenLoading = false;
   let eventBeforeLoading: unknown = null;
 
+  const markLoading = () => {
+    hasSeenLoading = true;
+    eventBeforeLoading = untracked(() => query.latestHttpEvent());
+  };
+
+  // Read before the effect's first run, which an abort can beat.
+  if (untracked(() => query.executionState())?.type === 'loading') markLoading();
+
   effectRef = effect(
     () => {
       const state = query.executionState();
@@ -228,10 +236,7 @@ const followQuery = ({
       }
 
       if (state.type === 'loading') {
-        if (!hasSeenLoading) {
-          hasSeenLoading = true;
-          eventBeforeLoading = untracked(() => query.latestHttpEvent());
-        }
+        if (!hasSeenLoading) markLoading();
 
         const percentage = state.loading.progress?.percentage;
 

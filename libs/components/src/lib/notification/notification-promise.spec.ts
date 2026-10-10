@@ -271,6 +271,38 @@ describe('notification promise', () => {
       expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
     });
 
+    it('dismisses the notification silently when the execution is aborted before the first effect run', () => {
+      const { executionState, query } = createFakeQuery(loadingState());
+
+      promise()(query, { loading: 'Saving…', success: 'Saved', error: 'Failed' });
+
+      executionState.set(null);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
+    it('never shows the previous response when a re-execution is aborted before the first effect run', () => {
+      const { executionState, latestHttpEvent, query } = createFakeQuery();
+
+      latestHttpEvent.set(new HttpResponse({ body: { name: 'Old' } }));
+      executionState.set({
+        type: 'loading',
+        hasCachedResponse: true,
+        cachedResponse: { name: 'Old' },
+        loading: { executeTime: 0, progress: null },
+      } as QueryExecutionState);
+
+      promise()(query, { loading: 'Saving…', success: (res) => `Saved ${res.name}`, error: 'Failed' });
+
+      executionState.set({ type: 'success', response: { name: 'Old' } } as QueryExecutionState);
+      flushEffects();
+
+      expect(ref.entry().isDismissing).toBe(true);
+      expect(ref.entry().config).toEqual({ status: 'loading', title: 'Saving…' });
+    });
+
     it('settles a re-execution on its own new response', () => {
       const { executionState, latestHttpEvent, respond, query } = createFakeQuery();
 
