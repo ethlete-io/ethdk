@@ -85,6 +85,28 @@ describe('RichTextEditorTriggersDirective', () => {
     expect(chip()).toBeNull();
   });
 
+  it('leaves an Enter that commits an IME composition to the IME while the popup is open', () => {
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => new DOMRect(),
+    });
+    onTestFinished(() => {
+      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+    });
+
+    driver.focus();
+    driver.caretAtEnd();
+    driver.type('#');
+    driver.detectChanges();
+
+    expect(driver.editable().getAttribute('aria-activedescendant')).toMatch(/-option-0$/);
+
+    const event = driver.press('Enter', { isComposing: true });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(driver.editable().querySelector('[data-et-token]')).toBeNull();
+  });
+
   it('points aria-activedescendant at an option only while the popup lists one', () => {
     Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
       configurable: true,

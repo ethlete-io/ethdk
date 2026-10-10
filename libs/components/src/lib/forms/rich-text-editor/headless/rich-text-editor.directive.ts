@@ -10,6 +10,7 @@ import {
   model,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormValueControl, ValidationError } from '@angular/forms/signals';
@@ -43,7 +44,12 @@ import {
   provideRichTextEditorDom,
   RichTextMarkStates,
 } from './internals/rich-text-editor-dom';
-import { EditorRenderer, RichTextEditorHeadingLevel } from './internals/rich-text-editor-dom-core';
+import {
+  ALIGN_CLASS_PREFIX,
+  EditableSelection,
+  EditorRenderer,
+  RichTextEditorHeadingLevel,
+} from './internals/rich-text-editor-dom-core';
 import { injectRegisteredRichTextEditorTools } from './internals/rich-text-editor-registered-tools';
 import { clipboardPlainText } from './internals/rich-text-editor-dom-paste';
 import { createRichTextEditorHistory, RichTextEditorHistoryEntry } from './internals/rich-text-editor-history';
@@ -109,6 +115,37 @@ const renameStyleAttributes = (html: string) =>
   html.replace(HTML_START_TAG, (tag) => tag.replace(HTML_ATTRIBUTE, renameStyleAttribute));
 
 const restoreStyleAttributes = (html: string) => html.replaceAll(` ${INERT_STYLE_ATTRIBUTE}="`, ' style="');
+
+const stripPastedAlignment = (body: HTMLElement, renderer: EditorRenderer) => {
+  // eslint-disable-next-line ethlete/no-dom-query -- parsed clipboard document, not the editor's DOM
+  for (const el of body.querySelectorAll<HTMLElement>(`[${INERT_STYLE_ATTRIBUTE}], [class*="${ALIGN_CLASS_PREFIX}"]`)) {
+    renderer.removeAttribute(el, INERT_STYLE_ATTRIBUTE);
+
+    for (const name of [...el.classList]) {
+      if (name.startsWith(ALIGN_CLASS_PREFIX)) renderer.removeClass(el, name);
+    }
+  }
+};
+
+const takeTextBeforeCaret = (editable: EditableSelection | null, text: string) => {
+  if (!editable?.range.collapsed) return null;
+
+  const { startContainer: node, startOffset: end } = editable.range;
+
+  if (node.nodeType !== Node.TEXT_NODE || !(node as Text).data.slice(0, end).endsWith(text)) return null;
+
+  const start = end - text.length;
+
+  (node as Text).deleteData(start, text.length);
+  editable.selection.collapse(node, start);
+
+  return () => {
+    (node as Text).insertData(start, text);
+    editable.selection.collapse(node, end);
+  };
+};
+
+const AUTOFORMAT_CHARS = ' *_~`';
 
 const collectTextNodes = (root: HTMLElement) => {
   const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -363,7 +400,7 @@ export class RichTextEditorDirective
 
       if (markdown === this.lastEmittedMarkdown) return;
 
-      this.renderExternalValue(markdown);
+      untracked(() => this.renderExternalValue(markdown));
     });
   }
 
@@ -457,9 +494,17 @@ export class RichTextEditorDirective
 
   /** @internal Restarts the history: an outside write is a new document, so undo must not reach back into the previous one's states. */
   public renderExternalValue(markdown = this.value() ?? '') {
+    const root = this.editorDom.root();
+    const caret = root && root.ownerDocument.activeElement === root ? this.editorDom.readSelectionOffsets() : null;
+
     if (!this.writeValueToDom(markdown)) return;
 
     this.history.reset(markdown);
+    this.pendingMarks.set(null);
+
+    if (caret) this.editorDom.restoreSelectionOffsets(caret);
+
+    this.refreshActiveMarks();
   }
 
   public refreshActiveMarks() {
@@ -704,6 +749,8 @@ export class RichTextEditorDirective
     // eslint-disable-next-line ethlete/no-dom-query -- clipboard HTML (e.g. from Word) embeds <style> blocks whose CSS text would survive the tag-strip as plain text
     body.querySelectorAll('style, script, noscript, meta, link, title').forEach((junk) => junk.remove());
 
+    if (!this.toolDefs.has(RICH_TEXT_EDITOR_TOOLS.ALIGN)) stripPastedAlignment(body, this.renderer);
+
     if (this.editorDom.markStates()?.codeBlock) return this.pasteIntoCodeBlock(clipboardPlainText(body));
 
     const codec = this.tokenCodec();
@@ -802,7 +849,12 @@ export class RichTextEditorDirective
 
   private listenToEditable(element: HTMLElement) {
     const listeners = [
-      this.renderer.listen(element, 'input', () => this.syncFromDom()),
+      this.renderer.listen(element, 'input', (event) => {
+        if (!(event as InputEvent).isComposing) this.syncFromDom();
+      }),
+      this.renderer.listen(element, 'compositionend', (event) =>
+        this.finishComposition((event as CompositionEvent).data),
+      ),
       this.renderer.listen(element, 'beforeinput', (event) => this.interceptBeforeInput(event as InputEvent)),
       this.renderer.listen(element, 'keydown', (event) => this.interceptKeydown(event as KeyboardEvent)),
       this.renderer.listen(element, 'paste', (event) => this.interceptPaste(event as ClipboardEvent)),
@@ -821,6 +873,9 @@ export class RichTextEditorDirective
   }
 
   private interceptKeydown(event: KeyboardEvent) {
+    // The keystrokes of an IME composition (Safari reports its commit as Enter) belong to the IME.
+    if (event.isComposing || event.keyCode === 229) return;
+
     // History first, and always prevented: the native contenteditable undo stack must never run,
     // since paste normalization and autoformat rewrite the DOM behind its back and it would restore
     // a state the value model never had. Ctrl/Cmd+Z undoes, Ctrl+Y and Ctrl/Cmd+Shift+Z redo.
@@ -999,6 +1054,7 @@ export class RichTextEditorDirective
         this.redo();
         break;
       case 'insertText':
+      case 'insertFromComposition':
         if (event.data !== null && this.handleAutoformat(event.data)) {
           event.preventDefault();
           break;
@@ -1009,6 +1065,28 @@ export class RichTextEditorDirective
         }
         break;
     }
+  }
+
+  private finishComposition(data: string) {
+    if (!this.canEdit()) return;
+
+    const pending = this.pendingMarks();
+
+    if (pending !== null && data && takeTextBeforeCaret(this.editorDom.getSelection(), data)) {
+      this.pendingMarks.set(null);
+      this.runCommand(() => this.editorDom.insertInlineText(data, pending));
+
+      return;
+    }
+
+    const last = data.at(-1);
+    const restore = last && AUTOFORMAT_CHARS.includes(last) && takeTextBeforeCaret(this.editorDom.getSelection(), last);
+
+    if (restore && last && this.handleAutoformat(last)) return;
+
+    if (restore) restore();
+
+    this.syncFromDom();
   }
 
   private warnAboutMissingTools() {

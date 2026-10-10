@@ -10,6 +10,7 @@ import { FORM_FIELD_CONTROL_TYPES, FormFieldDirective, LabelDirective } from '..
 import { RICH_TEXT_EDITOR_ERROR_CODES } from '../rich-text-editor-errors';
 import { provideRichTextEditorTool, RICH_TEXT_EDITOR_TOOL } from '../rich-text-editor-tools';
 import { RichTextEditorTrigger, RichTextEditorTriggerItem } from '../rich-text-editor-trigger';
+import { provideRichTextEditorAlignmentTool } from '../tools/rich-text-editor-align.provider';
 import { provideRichTextEditorAutoformat } from '../tools/rich-text-editor-autoformat.provider';
 import { provideRichTextEditorDefaultTools } from '../tools/rich-text-editor-default-tools.provider';
 import { createRichTextEditorTokenCodec } from './internals/rich-text-editor-token';
@@ -32,6 +33,13 @@ class EditorInFormFieldTestHost {}
   providers: [provideRichTextEditorDefaultTools()],
 })
 class StandaloneEditorTestHost {}
+
+@Component({
+  template: `<div etRichTextEditor></div>`,
+  imports: [RichTextEditorDirective],
+  providers: [provideRichTextEditorDefaultTools(), provideRichTextEditorAlignmentTool()],
+})
+class AlignableEditorTestHost {}
 
 @Component({
   template: `<div etRichTextEditor placeholder="minimal"></div>`,
@@ -348,15 +356,13 @@ describe('RichTextEditorDirective', () => {
       expect(editable.innerHTML).toContain('<strong>world</strong>');
     });
 
-    it('keeps the alignment of pasted inline styles without rewriting other attributes or text', () => {
+    it('drops every pasted alignment when the alignment tool is not provided', () => {
       dir.pasteHtml(
-        '<p title="a style=x" STYLE="text-align: center">style="kept" text</p><p style=\'text-align:right\'>right</p>',
+        '<p style="text-align: center">C</p><h2 class="et-rte-align-right">R</h2><table><thead><tr><th style="text-align: right">A</th></tr></thead></table>',
       );
 
-      expect(dir.value()).toContain('style="kept" text');
-      expect(editable.innerHTML).toContain('et-rte-align-center');
-      expect(editable.innerHTML).toContain('et-rte-align-right');
-      expect(editable.innerHTML).not.toContain('data-et-paste-style');
+      expect(editable.innerHTML).not.toContain('et-rte-align-');
+      expect(dir.value()).toBe('C\n\n## R\n\n| A |\n| --- |');
     });
 
     it('drops style and script elements including their text content', () => {
@@ -420,6 +426,187 @@ describe('RichTextEditorDirective', () => {
 
       caretInside('td');
       expect(dir.headingToolDisabled()).toBe(true);
+    });
+  });
+
+  describe('pasteHtml with the alignment tool', () => {
+    let dir: RichTextEditorDirective;
+    let editable: HTMLElement;
+
+    beforeEach(() => {
+      const driver = mountRichTextEditor(AlignableEditorTestHost, { attachEditable: true });
+
+      dir = driver.editor;
+      editable = driver.editable();
+      driver.caretAtStart();
+    });
+
+    it('keeps the alignment of pasted inline styles without rewriting other attributes or text', () => {
+      dir.pasteHtml(
+        '<p title="a style=x" STYLE="text-align: center">style="kept" text</p><p style=\'text-align:right\'>right</p>',
+      );
+
+      expect(dir.value()).toContain('style="kept" text');
+      expect(editable.innerHTML).toContain('et-rte-align-center');
+      expect(editable.innerHTML).toContain('et-rte-align-right');
+      expect(editable.innerHTML).not.toContain('data-et-paste-style');
+    });
+
+    it('keeps a vendor-prefixed alignment and drops the default and unknown ones as plain Markdown', () => {
+      dir.pasteHtml(
+        '<p style="text-align: -webkit-center;">Hi <b>bold</b></p><p style="text-align: left">L <b>b</b></p><p style="text-align: start">S</p><p style="text-align: weird-value">W</p>',
+      );
+
+      expect(dir.value()).toBe('<p class="et-rte-align-center">Hi <b>bold</b></p>\n\nL **b**\n\nS\n\nW');
+      expect(editable.textContent).not.toContain('<');
+    });
+  });
+
+  describe('IME composition', () => {
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
+
+    const insertAtCaret = (text: string) => {
+      const range = document.getSelection()?.getRangeAt(0);
+
+      if (!range) throw new Error('No caret.');
+
+      if (range.startContainer.nodeType === Node.TEXT_NODE) {
+        const node = range.startContainer as Text;
+        const offset = range.startOffset;
+
+        node.insertData(offset, text);
+        caretIn(node, offset + text.length);
+
+        return;
+      }
+
+      const node = document.createTextNode(text);
+
+      range.insertNode(node);
+      caretIn(node, text.length);
+    };
+
+    let now = 0;
+
+    const compose = (...steps: string[]) => {
+      const editable = driver.editable();
+      let committed = '';
+
+      editable.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true, data: '' }));
+
+      for (const step of steps) {
+        now += 1000;
+        insertAtCaret(step);
+        committed += step;
+        editable.dispatchEvent(
+          new InputEvent('input', { bubbles: true, inputType: 'insertCompositionText', data: step, isComposing: true }),
+        );
+      }
+
+      editable.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: committed }));
+      driver.detectChanges();
+    };
+
+    beforeEach(() => {
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      driver.caretAtStart();
+    });
+
+    it('wraps composed text in the marks toggled before the composition', () => {
+      driver.editor.toggleBold();
+
+      compose('東', '京');
+
+      expect(driver.value()).toBe('**東京**');
+      expect(driver.html()).toContain('<strong>東京</strong>');
+      expect(driver.editor.pendingMarks()).toBeNull();
+    });
+
+    it('commits a composition to the value and the history once, at its end', () => {
+      compose('t', 'o', 'u');
+
+      expect(driver.value()).toBe('tou');
+
+      driver.editor.undo();
+
+      expect(driver.value()).toBe('');
+    });
+
+    it('runs block autoformat for a space committed through the IME', () => {
+      driver.type('#');
+
+      compose(' ');
+
+      expect(driver.editable().querySelector('h1')).not.toBeNull();
+    });
+
+    it('leaves an Enter that commits a composition to the IME', () => {
+      driver.setHtml('<ul><li><br></li></ul>');
+      caretIn(driver.editable().querySelector('li') as Node, 0);
+
+      const event = driver.press('Enter', { isComposing: true });
+
+      expect(event.defaultPrevented).toBe(false);
+      expect(driver.editable().querySelector('li')).not.toBeNull();
+    });
+  });
+
+  describe('empty blocks', () => {
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
+
+    beforeEach(() => {
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      driver.caretAtStart();
+    });
+
+    it('stores an empty heading as no value and never brings back a literal marker on undo', () => {
+      driver.type('# ');
+
+      expect(driver.editable().querySelector('h1')).not.toBeNull();
+      expect(driver.value()).toBe('');
+
+      driver.type('a');
+
+      expect(driver.value()).toBe('# a');
+
+      driver.editor.undo();
+
+      expect(driver.value()).toBe('');
+      expect(driver.editableText()).not.toContain('#');
+    });
+
+    it('stores an empty list as no value', () => {
+      driver.editor.toggleUnorderedList();
+
+      expect(driver.editable().querySelector('ul')).not.toBeNull();
+      expect(driver.value()).toBe('');
+    });
+  });
+
+  describe('a value written from outside', () => {
+    let driver: RichTextEditorDriver<StandaloneEditorTestHost>;
+
+    beforeEach(() => {
+      driver = mountRichTextEditor(StandaloneEditorTestHost, { attachEditable: true });
+      driver.caretAtStart();
+    });
+
+    it('drops the marks toggled for the previous document and refreshes the toolbar state', () => {
+      driver.editor.toggleBold();
+
+      expect(driver.editor.boldActive()).toBe(true);
+
+      driver.editor.value.set('fresh');
+      driver.detectChanges();
+
+      expect(driver.editor.pendingMarks()).toBeNull();
+      expect(driver.editor.boldActive()).toBe(false);
+
+      driver.caretAtEnd();
+      driver.type('x');
+
+      expect(driver.value()).toBe('freshx');
     });
   });
 

@@ -490,4 +490,20 @@ describe('requiredLanguages', () => {
         .map((error) => error.message),
     ).toEqual(['Fehlt: de/fr']);
   });
+
+  it('reports the required languages as missing on a null record instead of throwing', () => {
+    const model = signal<{ translations: MultiLanguageRichTextEditorValue | null }>({ translations: null });
+    const entry = TestBed.runInInjectionContext(() =>
+      form(model, (path) => {
+        requiredLanguages(path.translations, { codes: ['en'] });
+      }),
+    );
+
+    expect(
+      entry
+        .translations()
+        .errors()
+        .map((error) => error.kind),
+    ).toEqual(['requiredLanguages']);
+  });
 });

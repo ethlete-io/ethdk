@@ -227,6 +227,8 @@ export class RichTextEditorTriggersDirective {
   }
 
   private interceptPopupKeys(event: KeyboardEvent) {
+    if (event.isComposing || event.keyCode === 229) return;
+
     if (event.key === 'Backspace' && this.deletePrecedingChip()) {
       event.preventDefault();
       event.stopPropagation();

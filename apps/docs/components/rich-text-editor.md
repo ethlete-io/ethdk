@@ -29,7 +29,7 @@ import { FORM_FIELD_IMPORTS, RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/component
 
 <StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
 
-The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time. **Enter** at the start or end of a heading begins a plain paragraph instead of continuing the heading (mid-heading it splits, as everywhere else); **Shift+Enter** is always a soft line break.
+The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time. **Enter** at the start or end of a heading begins a plain paragraph instead of continuing the heading (mid-heading it splits, as everywhere else); **Shift+Enter** is always a soft line break. IME input (Japanese, Chinese, Korean, and Android keyboards that compose every word) commits to the value and the undo history once the composition ends; marks toggled before it, and Markdown-as-you-type, apply to the committed text, and keys pressed while composing belong to the IME. An empty heading or list item is caret scaffolding only: it never reaches the value, so a field holding just one counts as empty.
 
 Pasted HTML is normalized into the editor's own schema before it is inserted: the clipboard markup is reduced through the Markdown pipeline, so foreign tags, inline styles, classes and scripts never enter the editor - only formatting the editor itself can produce survives (token chips copied from an editor keep their identity). Plain-text pastes stay literal text - the one exception being text that spells out a [token](#building-blocks-triggers).
 
@@ -315,7 +315,10 @@ that needs the menu system - the single largest graph the editor could pull in (
 - **`'align'`** - a block-alignment menu (left / center / right / justify). Block alignment persists
   in the value as raw HTML with an `et-rte-align-*` class (Markdown has no block-alignment syntax),
   never as an inline `text-align` style, so a strict `style-src` does not drop it. A value written
-  with a `style="text-align: …"` still reads as aligned. Inside a table it applies
+  with a `style="text-align: …"` still reads as aligned. Only center, right and justify are stored:
+  left is the default, so a pasted `text-align: left` / `start` (common in text copied from web
+  pages and Word) pastes as plain Markdown. Without this provider, pasted alignment is dropped
+  altogether, since the editor would offer no way to remove it. Inside a table it applies
   to the whole column and persists as GFM column alignment (`:---`, `:---:`, `---:`). It disables
   inside lists, where alignment has no serialized form.
 

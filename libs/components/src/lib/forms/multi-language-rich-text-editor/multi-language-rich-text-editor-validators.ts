@@ -3,7 +3,7 @@ import { MultiLanguageRichTextEditorValue } from './multi-language-rich-text-edi
 
 /** The path type `validate` accepts for a {@link MultiLanguageRichTextEditorValue} field. Derived so
  *  we don't depend on a non-exported path type name from `@angular/forms/signals`. */
-type MultiLanguageRichTextEditorFieldPath = Parameters<typeof validate<MultiLanguageRichTextEditorValue>>[0];
+type MultiLanguageRichTextEditorFieldPath = Parameters<typeof validate<MultiLanguageRichTextEditorValue | null>>[0];
 
 export type RequiredLanguagesOptions = {
   /** Language codes that must have content for the field to be valid. Pass a function to read
@@ -31,8 +31,9 @@ export const requiredLanguages = (
   { codes, message }: RequiredLanguagesOptions,
 ) =>
   validate(path, ({ value }) => {
+    const record = value() ?? {};
     const missing = (typeof codes === 'function' ? codes() : codes).filter(
-      (code) => (value()[code] ?? '').trim().length === 0,
+      (code) => (record[code] ?? '').trim().length === 0,
     );
 
     if (missing.length === 0) return undefined;
