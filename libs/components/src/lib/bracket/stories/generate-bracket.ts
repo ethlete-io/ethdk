@@ -49,7 +49,7 @@ const seedId = (
 };
 
 /** Single elimination for a power-of-two field. */
-export const generateSingleEliminationBracket = (participantCount = 8): Source => {
+export const generateSingleEliminationBracket = (participantCount = 8, includeThirdPlace = false): Source => {
   const rounds: Round[] = [];
   const matches: Match[] = [];
   const counts = halvingCounts(participantCount);
@@ -72,6 +72,19 @@ export const generateSingleEliminationBracket = (participantCount = 8): Source =
       matches.push({ id: `${roundId}-m${m}`, roundId, home, away, winner: 'home', status: 'completed', data: null });
     }
   });
+
+  if (includeThirdPlace) {
+    rounds.push({ id: 'third-place', type: COMMON_BRACKET_ROUND_TYPE.THIRD_PLACE, name: 'Third place', data: null });
+    matches.push({
+      id: 'third-place-m0',
+      roundId: 'third-place',
+      home: 'tp-h',
+      away: 'tp-a',
+      winner: null,
+      status: 'pending',
+      data: null,
+    });
+  }
 
   return { mode: TOURNAMENT_MODE.SINGLE_ELIMINATION, rounds, matches };
 };

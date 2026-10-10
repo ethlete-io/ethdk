@@ -141,6 +141,15 @@ export const MirroredSingleElimination = {
   },
 };
 
+/** A folded single elimination with a third place match, which sits under the final. */
+export const MirroredSingleEliminationThirdPlace = {
+  render: Template,
+  args: {
+    source: generateSingleEliminationBracket(16, true),
+    layout: BRACKET_DATA_LAYOUT.MIRRORED,
+  },
+};
+
 /**
  * A folded double elimination: two stacked blocks, the winners bracket above the losers bracket, each
  * folded around its own centre. The grand final and the bracket reset hang below the winners final, in
