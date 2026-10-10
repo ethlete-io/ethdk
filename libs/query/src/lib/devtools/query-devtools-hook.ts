@@ -211,10 +211,10 @@ const noop = () => undefined;
 let registrar: QueryDevtoolsRegistrar | null = null;
 
 /**
- * Installs the real registry. Called by `provideQueryDevtools()`; nothing else may call it.
+ * Installs the real registry, or removes it with `null`. Called by `provideQueryDevtools()` and its test reset only.
  * @internal
  */
-export const setQueryDevtoolsRegistrar = (fn: QueryDevtoolsRegistrar) => {
+export const setQueryDevtoolsRegistrar = (fn: QueryDevtoolsRegistrar | null) => {
   registrar = fn;
 };
 

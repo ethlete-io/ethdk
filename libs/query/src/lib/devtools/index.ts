@@ -143,6 +143,7 @@ export {
 export {
   clearQueryDevtoolsTombstones as ɵclearQueryDevtoolsTombstones,
   queryDevtoolsEntries as ɵqueryDevtoolsEntries,
+  resetQueryDevtoolsForTesting as ɵresetQueryDevtoolsForTesting,
   stringifyQueryRouteParts as ɵstringifyQueryRouteParts,
 } from './query-devtools-registry';
 export {

@@ -1,7 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, DeferBlockBehavior, DeferBlockState, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { provideQueryDevtools } from '@ethlete/query';
+import { provideQueryDevtools, ɵresetQueryDevtoolsForTesting } from '@ethlete/query';
 import { QueryDevtoolsComponent } from '../src/lib/query-devtools.component';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryDevtoolsLazyComponent } from '../lazy/query-devtools-lazy.component';
@@ -10,8 +10,10 @@ import { QUERY_DEVTOOLS_VIEW_STATE_KEY, wasQueryDevtoolsOpen } from '../toggle/q
 const pressShortcut = () =>
   document.dispatchEvent(new KeyboardEvent('keydown', { key: 'q', code: 'KeyQ', ctrlKey: true, altKey: true }));
 
-// `provideQueryDevtools()` latches a module-level flag that nothing resets, so the disabled suite has to
-// run before the enabled one - moving it below turns its assertions into the opposite of what they mean.
+// The spec runner shares one module graph between the files of a worker, so the latch
+// `provideQueryDevtools()` sets would leak into the next file without this.
+afterEach(() => ɵresetQueryDevtoolsForTesting());
+
 describe('QueryDevtoolsLazyComponent without provideQueryDevtools()', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({

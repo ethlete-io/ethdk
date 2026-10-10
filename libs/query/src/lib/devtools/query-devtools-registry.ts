@@ -369,6 +369,16 @@ const warnAboutIgnoredOptions = (options: QueryDevtoolsOptions | undefined) => {
 };
 
 /**
+ * Undoes the latch `provideQueryDevtools()` sets, so a later spec in the same worker sees the devtools
+ * disabled again. For specs only.
+ * @internal
+ */
+export const resetQueryDevtoolsForTesting = () => {
+  queryDevtoolsInitialized = false;
+  setQueryDevtoolsRegistrar(null);
+};
+
+/**
  * Enables the `@ethlete/query` devtools. Add this to your application providers (e.g. in
  * `bootstrapApplication`) to make query clients, queries, stacks, sequences and auth providers
  * appear in the `<et-query-devtools>` panel.
