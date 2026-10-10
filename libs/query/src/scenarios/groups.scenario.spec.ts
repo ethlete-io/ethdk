@@ -2,8 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, InjectionToken, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { tap } from 'rxjs';
-import { describe, expect, it } from 'vitest';
-import { createQueryGroup, QueryCreator, queryErrorMessage, withArgs } from '../index';
+import { describe, expect, it, vi } from 'vitest';
+import { createQueryGroup, executeUntilSettled, QueryCreator, queryErrorMessage, withArgs } from '../index';
 import { Scenario, useScenario } from './harness';
 
 type AcceptArgs = { response: { status: 'accepted' }; pathParams: { invitationId: string } };
@@ -54,6 +54,29 @@ describe('query groups', () => {
 
     expect(group.error()).toBeNull();
     expect(group.latest()).toEqual({ key: 'accept', response: { status: 'accepted' } });
+  });
+
+  it('ignores a call a parked member drops, and executeUntilSettled on it settles', async () => {
+    const s = scenario();
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const postAccept = s.post<AcceptArgs>((p) => `/invitations/${p.invitationId}/accept`);
+    const c = s.consumer();
+    const group = c.run(() => createQueryGroup({ accept: postAccept(withArgs(() => null)) }));
+    s.tick();
+
+    const succeeded: unknown[] = [];
+    group.succeeded$.subscribe((success) => succeeded.push(success));
+
+    group.members.accept.execute();
+    const snapshot = await executeUntilSettled(group.members.accept);
+
+    expect(group.latest()).toBeNull();
+    expect(snapshot.isAlive()).toBe(false);
+    expect(snapshot.error()).toBeNull();
+    expect(succeeded).toEqual([]);
+    expect(s.api.requests).toHaveLength(0);
+
+    c.destroy();
   });
 
   it('switches latest to whichever member ran last', () => {

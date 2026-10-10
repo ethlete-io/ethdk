@@ -96,6 +96,7 @@ describe('gql scenario', () => {
 
       c.destroy();
     });
+
     it('shares one request between two consumers whose variables differ only in key order', () => {
       const s = scenario();
       s.api.on('GET', '/', () => ({ body: { data: { users: [] } } }));

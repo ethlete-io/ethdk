@@ -357,6 +357,18 @@ describe('createQueryRepository - keepUnusedFor (unused entry retention)', () =>
     expect(repo.subtle.cacheEntries()[0]?.request.response()).toEqual({ id: 1 });
   });
 
+  it('arms no eviction timer for keepUnusedFor Infinity', () => {
+    const repo = createRepo({ keepUnusedFor: Infinity });
+
+    const first = repo.request({ consumerDestroyRef: destroyRef, method: 'GET', route: '/test' });
+    flushAll({ id: 1 });
+    const timersBefore = vi.getTimerCount();
+
+    repo.unbind(first.key, destroyRef);
+
+    expect(vi.getTimerCount()).toBe(timersBefore);
+  });
+
   it('evicts the entry once the window elapsed', () => {
     const repo = createRepo({ keepUnusedFor: 1000 });
 

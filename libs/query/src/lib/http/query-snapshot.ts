@@ -48,7 +48,7 @@ const createDestroyedSnapshot = <TArgs extends QueryArgs>(
   };
 };
 
-/** A settled snapshot for an execution that never started, reporting it the way an aborted one reads. */
+/** @internal */
 export const createSkippedSnapshot = <TArgs extends QueryArgs>(query: Query<TArgs>): QuerySnapshot<TArgs> => ({
   args: frozenObservableSignal(query.args()),
   response: frozenObservableSignal(null),

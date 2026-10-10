@@ -76,9 +76,14 @@ export const createQueryGroup = <TMembers extends QueryGroupMembers>(members: TM
       key,
       query,
       execute: (executeArgs) => {
-        query.execute(executeArgs);
+        const ran: unknown = query.execute(executeArgs);
+
+        if (ran === false) return false;
+
         latestMember.set(member);
         executions.next(member);
+
+        return true;
       },
     };
 
