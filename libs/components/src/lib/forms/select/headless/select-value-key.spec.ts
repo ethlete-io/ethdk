@@ -70,6 +70,13 @@ describe('SelectDirective (valueKey)', () => {
     await driver.close();
   });
 
+  it('attaches the element of a windowed row', async () => {
+    await driver.open();
+
+    expect(driver.options().length).toBeLessThan(OPTION_COUNT);
+    expect(driver.select.selection.items()[0]!.element()).toBe(driver.options()[0]);
+  });
+
   it('syncs a refetched list of fresh instances in linear time and reuses every row', () => {
     const itemsBefore = driver.select.selection.items();
 

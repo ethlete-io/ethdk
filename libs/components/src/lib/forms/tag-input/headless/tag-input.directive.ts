@@ -10,6 +10,9 @@ const defaultNormalizeValue = (raw: string) => {
   return trimmed.length ? trimmed : null;
 };
 
+// a form model can hold `null` for a `string[]` field (a JSON `null` from an API)
+const tagsOf = (value: readonly string[] | null | undefined): readonly string[] => value ?? [];
+
 @Directive({
   selector: '[etTagInput]',
   exportAs: 'etTagInput',
@@ -49,7 +52,7 @@ export class TagInputDirective extends TextShellControlDirective implements Form
   public maxSelection = input<number | undefined>(undefined);
 
   /** The raw value normalized to the tags the control currently shows. Mixed has no effective tags. */
-  public effectiveValues = computed<readonly string[]>(() => (this.mixed() ? [] : this.value()));
+  public effectiveValues = computed<readonly string[]>(() => (this.mixed() ? [] : tagsOf(this.value())));
 
   public hasValue = computed(() => this.mixed() || this.effectiveValues().length > 0);
 
@@ -134,7 +137,7 @@ export class TagInputDirective extends TextShellControlDirective implements Form
       return;
     }
 
-    const current = this.value();
+    const current = tagsOf(this.value());
 
     // a no-op removal must not write: `filter` always allocates, so the model would notify with
     // an equal-but-new array and dirty the bound form field on a keystroke that changed nothing

@@ -690,6 +690,28 @@ describe('CascaderDirective', () => {
       expect(driver.host.value()).toBe('euro-group-a');
     });
 
+    it('treats a result under a disabled branch as disabled', async () => {
+      const underDisabledBranch: CascaderDataSource<string> = {
+        loadChildren: syncSource.loadChildren,
+        search: (query) =>
+          searchTree(query).map((path) =>
+            path.map((node, depth) => (depth === 0 ? { ...node, disabled: true } : node)),
+          ),
+      };
+
+      driver.host.dataSource.set(underDisabledBranch);
+      driver.detectChanges();
+
+      await driver.type('final');
+
+      expect(driver.results()[0]!.getAttribute('aria-disabled')).toBe('true');
+
+      driver.pressInSearch('Enter');
+      await flushFrames();
+
+      expect(driver.host.value()).toBeNull();
+    });
+
     it('Enter in the input activates the first result', async () => {
       await driver.type('final');
 

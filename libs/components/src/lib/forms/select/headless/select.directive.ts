@@ -54,7 +54,14 @@ import { SelectSurfaceContext, SelectSurfaceDirective } from './select-surface.d
 import { SelectTriggerDirective } from './select-trigger.directive';
 import { SelectValueDirective } from './select-value.directive';
 import { SelectViewportDirective } from './select-viewport.directive';
-import { SelectCompareWith, SelectItem, SelectOptionData, SelectSelectedEntry, SelectValueKey } from './select.tokens';
+import {
+  SelectCompareWith,
+  SelectDisplayWith,
+  SelectItem,
+  SelectOptionData,
+  SelectSelectedEntry,
+  SelectValueKey,
+} from './select.tokens';
 import { injectFormFieldLabels } from '../../../forms/form-field/form-field-labels';
 import { mountTextFieldShellStyles } from '../../form-field/form-field-text-shell-styles.component';
 import { controlTouches } from '../../../internals/touch-output';
@@ -166,6 +173,12 @@ export class SelectDirective<TValue = unknown>
    * data-driven `options` lists linear.
    */
   public valueKey = input<SelectValueKey<never> | null>(null);
+
+  /**
+   * Labels a value no loaded option carries (e.g. a stored id whose option is on a page not yet
+   * fetched): the trigger text in single mode, the chip label in multi mode.
+   */
+  public displayWith = input<SelectDisplayWith<never> | null>(null);
 
   public filterModeInput = input<SelectFilterMode>(SELECT_FILTER_MODES.INTERNAL, { alias: 'filterMode' });
   /** Enter with a search query that matches no option commits the raw query string as the value. */
@@ -610,12 +623,14 @@ export class SelectDirective<TValue = unknown>
     const items = this.sortedItems();
     const cache = this.labelCache();
     const valuesMatch = this.valuesMatch();
+    const displayWith = this.displayWith() as SelectDisplayWith | null;
 
     return values.map((entryValue) => {
       const item = items.find((candidate) => valuesMatch(candidate.value(), entryValue)) ?? null;
       const label =
         item?.label() ||
         this.findCachedLabel(cache, entryValue) ||
+        displayWith?.(entryValue) ||
         (typeof entryValue === 'string' && entryValue !== '' ? entryValue : null);
 
       return { value: entryValue, label, item };
@@ -1110,7 +1125,7 @@ export class SelectDirective<TValue = unknown>
 
   /** @internal A rendered virtual row attaches its element to its item while it is windowed in. */
   public attachVirtualOptionElement(item: SelectItem, element: HTMLElement) {
-    const entry = this.dataItemRegistry.get(item.value());
+    const entry = this.dataItemRegistry.get(this.valueIdentity()(item.value()));
 
     if (!entry || entry.item !== item) {
       return;
@@ -1127,7 +1142,7 @@ export class SelectDirective<TValue = unknown>
 
   /** @internal */
   public detachVirtualOptionElement(item: SelectItem, element: HTMLElement) {
-    const entry = this.dataItemRegistry.get(item.value());
+    const entry = this.dataItemRegistry.get(this.valueIdentity()(item.value()));
 
     if (!entry || entry.item !== item || entry.element() !== element) {
       return;
@@ -1379,7 +1394,7 @@ export class SelectDirective<TValue = unknown>
         return;
       }
       default: {
-        if (event.key.length !== 1 || searchFocused || this.multiple()) {
+        if (event.key.length !== 1 || searchFocused || this.multiple() || this.pickOnly()) {
           return;
         }
 
@@ -1423,6 +1438,12 @@ export class SelectDirective<TValue = unknown>
       return false;
     }
 
+    const matchingOption = this.findOptionByLabel(value);
+
+    if (matchingOption) {
+      return this.commitMatchingOption(matchingOption);
+    }
+
     this.labelCache.update((cache) => new Map(cache).set(value, value));
 
     if (this.multiple()) {
@@ -1444,6 +1465,50 @@ export class SelectDirective<TValue = unknown>
     return true;
   }
 
+  private findOptionByLabel(label: string) {
+    const lowered = label.toLowerCase();
+
+    return this.visibleItems().find(
+      (item) => !item.custom?.() && !item.disabled() && item.label().toLowerCase() === lowered,
+    );
+  }
+
+  private commitMatchingOption(item: SelectItem) {
+    if (this.mixed()) {
+      const committed = this.commitMixedOption(item);
+
+      if (committed && this.multiple()) {
+        this.registeredSearch()?.clear();
+      }
+
+      return committed;
+    }
+
+    if (!this.multiple()) {
+      this.pickSingleOption(item);
+
+      return true;
+    }
+
+    const current = this.value();
+    const values = Array.isArray(current) ? current : [];
+    const itemValue = item.value();
+
+    if (this.includesValue(values, itemValue)) {
+      return false;
+    }
+
+    if (this.pickOnly()) {
+      this.pickOption.emit(itemValue);
+    } else {
+      this.writeValue([...values, itemValue]);
+    }
+
+    this.registeredSearch()?.clear();
+
+    return true;
+  }
+
   private commitOptionWhileClosed(item: SelectItem) {
     if (this.disabled() || this.readonly() || item.disabled()) {
       return;
@@ -1452,6 +1517,10 @@ export class SelectDirective<TValue = unknown>
     if (this.mixed()) {
       this.commitMixedOption(item);
 
+      return;
+    }
+
+    if (this.selectedItems()[0] === item) {
       return;
     }
 

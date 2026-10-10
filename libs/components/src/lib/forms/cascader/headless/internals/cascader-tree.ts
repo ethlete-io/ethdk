@@ -102,3 +102,5 @@ export const toSearchObservable = <T>(
 export const toPathObservable = <T>(
   result: CascaderNode<T>[] | null | Promise<CascaderNode<T>[] | null> | Observable<CascaderNode<T>[] | null>,
 ) => toObservableResult(result);
+
+export const isPathDisabled = <T>(path: readonly CascaderNode<T>[]) => path.some((node) => node.disabled);

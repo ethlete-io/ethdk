@@ -311,8 +311,12 @@ export class SelectSearchDirective {
     event.preventDefault();
     this.clear();
 
-    for (const part of parts) {
-      select.commitCustomValue(part);
+    const refused = parts.filter((part) => part.trim() && !select.commitCustomValue(part));
+    const pending = refused.map((part) => part.trim()).join(' ');
+
+    if (pending) {
+      this.query.set(pending);
+      select.queryChange.emit(pending);
     }
   }
 

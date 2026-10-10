@@ -35,6 +35,7 @@ On `et-select` (forwarded from the headless `[etSelect]` directive), plus the st
 | `options`                  | `SelectOptionData[] \| null`         | `null`       | Data-driven options (`{ value, label, disabled? }`) - the select renders the rows itself, virtualizing long lists. See [large option lists](#large-option-lists-virtualization).                                                                          |
 | `compareWith`              | `(optionValue, value) => boolean`    | `===`        | Decides whether an option's value and a model value are the same choice - set it for object values that are not the same instance. See [object values](#object-values).                                                                                   |
 | `valueKey`                 | `(value) => string \| number`        | `null`       | Derives a value's stable identity; two values with the same key are the same choice. Takes precedence over `compareWith` and keeps large data-driven `options` lists fast. See [object values](#object-values).                                           |
+| `displayWith`              | `(value) => string`                  | `null`       | Labels a value no loaded option carries - the trigger text in single mode, the chip label in multi mode. See [values without a loaded option](#values-without-a-loaded-option).                                                                           |
 | `multiple`                 | `boolean`                            | `false`      | Multi-select: `value` is an array, options toggle (the panel stays open) and the trigger renders removable chips.                                                                                                                                         |
 | `filterMode`               | `'none' \| 'internal' \| 'external'` | `'internal'` | How a search query filters: `internal` hides non-matching options, `external` leaves the option list to you (react to `queryChange`), `none` never filters.                                                                                               |
 | `allowCustomValues`        | `boolean`                            | `false`      | Enter with a query that matches no option commits the raw string as the value.                                                                                                                                                                            |
@@ -307,6 +308,18 @@ settles), and the panel exposes which wait it is in through `SelectDirective`: `
 flag, `showLoadingIndicator()` is the deferred one to paint from, `loadingMore()` says whether the
 reader asked for the next page. A headless composition can read the same three.
 
+#### Values without a loaded option
+
+An edit form usually holds a stored id whose option is not on the first page (or `args` returns `null` for the empty query, so nothing loads before a search). With no option for the value, the select falls back to a label it saw earlier, then to the raw value itself if it is a string - so the trigger reads `u_42` - and shows nothing for a number. Pass `displayWith` to name such values; a loaded option's label always wins over it:
+
+```html
+<et-select [formField]="demoForm.assignee" [etSelectOptions]="users" [displayWith]="userName">…</et-select>
+```
+
+```ts
+protected userName = (id: string) => this.assigneeName() ?? id;
+```
+
 Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFromV2Query` instead - same config shape and returned signal bundle, but `queryCreator` takes a legacy creator (from `client.get(...)` or a `createLegacyQueryCreator` interop wrapper) and `args` builds the `prepare()` arguments. Options stay rendered while the next request loads, matching the current-system adapter.
 
 ### Custom values
@@ -317,7 +330,7 @@ With `allowCustomValues`, the query becomes committable as a value of its own. W
 
 The tag-input ergonomics are available on top:
 
-- **`separators`** - the same input as the tag input's, default `[]`. Single characters (e.g. `[',']`) commit the pending text the moment they are typed, and split pasted text on separators/newlines into several values (multi mode). A paste is spliced into the text already in the field at the caret, as in the tag input. Multi-character entries are key names (`['Tab']`) that commit the pending text on keydown. Enter always commits, listed or not.
+- **`separators`** - the same input as the tag input's, default `[]`. Single characters (e.g. `[',']`) commit the pending text the moment they are typed, and split pasted text on separators/newlines into several values (multi mode). A paste is spliced into the text already in the field at the caret, as in the tag input. Multi-character entries are key names (`['Tab']`) that commit the pending text on keydown. Enter always commits, listed or not. Text that matches the label of a visible option (case-insensitively) commits that option's value, never the label as a string - through a separator, a paste, or a close commit alike. Pasted pieces the select refuses (a duplicate, one past `maxSelection`, one `normalizeValue` rejects) stay in the search field so they can be fixed, as in the tag input.
 - **`commitCustomValueOnClose`** - pending text commits instead of being discarded when the panel closes via <kbd>Tab</kbd> or an outside click (an <kbd>Escape</kbd> close never commits - it clears the query first).
 - **`normalizeValue`** - maps raw text to the stored value, return `null` to reject; defaults to trimming.
 - **`maxSelection`** - caps the number of selected values (multi mode); at the cap the search input locks (like the tag input's `maxSelection`) and every still-unselected option renders disabled (skipped by keyboard navigation, like any disabled option) until a value is removed. Selected options stay enabled for deselection.

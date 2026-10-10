@@ -404,3 +404,25 @@ describe('tag input support region', () => {
     expectDescribedByPointsAtErrors(host);
   });
 });
+
+@Component({
+  template: `<et-tag-input [value]="value()" (valueChange)="value.set($event)" placeholder="Add tags" />`,
+  imports: [TAG_INPUT_IMPORTS],
+})
+class NullValueTagInputTestHost {
+  value = signal<string[]>(null as unknown as string[]);
+}
+
+describe('tag input with a null value', () => {
+  it('renders, adds and removes tags', () => {
+    const driver = mountTagInput(NullValueTagInputTestHost);
+
+    expect(driver.chips()).toHaveLength(0);
+
+    driver.typeAndPress('a', 'Enter');
+    expect(driver.host.value()).toEqual(['a']);
+
+    driver.removeChip(0);
+    expect(driver.host.value()).toEqual([]);
+  });
+});

@@ -43,3 +43,5 @@ export type SelectCompareWith<TValue = unknown> = (optionValue: TValue, value: T
 
 /** A value's stable identity - see the select's `valueKey` input. */
 export type SelectValueKey<TValue = unknown> = (value: TValue) => string | number;
+
+export type SelectDisplayWith<TValue = unknown> = (value: TValue) => string;

@@ -39,6 +39,7 @@ import {
   CascaderDataSource,
   CascaderNode,
   canHaveChildren,
+  isPathDisabled,
   defaultCompareWith,
   indexOfNode,
   nodesEqual,
@@ -1094,7 +1095,7 @@ export class CascaderDirective<T = unknown, TValue extends T | readonly T[] | nu
   public activateSearchResult(path: CascaderNode<T>[]) {
     const node = path[path.length - 1];
 
-    if (!node || node.disabled || this.disabled() || this.readonly()) {
+    if (!node || isPathDisabled(path) || this.disabled() || this.readonly()) {
       return;
     }
 
@@ -1120,8 +1121,7 @@ export class CascaderDirective<T = unknown, TValue extends T | readonly T[] | nu
   /** @internal Enter in the search input activates the focused result, or the first enabled one. */
   public activateFocusedSearchResult() {
     const results = this.searchState().results;
-    const path =
-      results[this.focusedSearchIndex()] ?? results.find((candidate) => !candidate[candidate.length - 1]?.disabled);
+    const path = results[this.focusedSearchIndex()] ?? results.find((candidate) => !isPathDisabled(candidate));
 
     if (path) {
       this.activateSearchResult(path);
@@ -1221,7 +1221,7 @@ export class CascaderDirective<T = unknown, TValue extends T | readonly T[] | nu
     for (let index = from; index >= 0 && index < results.length; index += step) {
       const path = results[index];
 
-      if (path && !path[path.length - 1]?.disabled) {
+      if (path && !isPathDisabled(path)) {
         return index;
       }
     }

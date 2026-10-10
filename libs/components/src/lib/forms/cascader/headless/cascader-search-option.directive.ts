@@ -2,7 +2,7 @@ import { Directive, ElementRef, afterNextRender, computed, effect, inject, input
 import { RuntimeError } from '@ethlete/core';
 import { CASCADER_ERROR_CODES } from '../cascader-errors';
 import { CascaderDirective } from './cascader.directive';
-import { CascaderNode } from './internals/cascader-tree';
+import { CascaderNode, isPathDisabled } from './internals/cascader-tree';
 
 /**
  * One flat search result - a full root → node path. Bind the `[path]` it represents and its
@@ -37,7 +37,7 @@ export class CascaderSearchOptionDirective<T = unknown> {
   /** The path's final node - the one an activation commits (or drills into). */
   public node = computed(() => this.path()[this.path().length - 1] ?? null);
 
-  protected disabled = computed(() => this.node()?.disabled ?? false);
+  protected disabled = computed(() => isPathDisabled(this.path()));
 
   protected selected = computed(() => {
     const node = this.node();

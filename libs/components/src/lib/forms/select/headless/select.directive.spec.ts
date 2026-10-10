@@ -986,6 +986,87 @@ describe('SelectDirective (search)', () => {
     expect(driver.searchInput().value).toBe('');
   });
 
+  it('commits the matching option instead of its label on a separator character', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('Apple,');
+    expect(driver.host.value()).toEqual(['apple']);
+
+    driver.type('apple,');
+    expect(driver.host.value()).toEqual(['apple']);
+  });
+
+  it('commits the matching option on a separator character in single mode', async () => {
+    driver.host.allowCustom.set(true);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('Banana,');
+    await driver.settle();
+
+    expect(driver.host.value()).toBe('banana');
+  });
+
+  it('commits the matching option instead of its label on a key-name separator', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.separators.set(['Tab']);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('Apple');
+    driver.pressInSearch('Tab');
+
+    expect(driver.host.value()).toEqual(['apple']);
+  });
+
+  it('commits the matching options instead of their labels on paste', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.paste('Apple, Pear');
+
+    expect(driver.host.value()).toEqual(['apple', 'Pear']);
+  });
+
+  it('commits the matching option instead of its label on close with commitCustomValueOnClose', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.commitOnClose.set(true);
+    driver.host.multiple.set(true);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.type('Banana');
+    await driver.close();
+
+    expect(driver.host.value()).toEqual(['banana']);
+  });
+
+  it('keeps the pasted pieces it refused in the search field', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.maxSelection.set(2);
+    driver.detectChanges();
+
+    await driver.open();
+
+    driver.paste('a,b,c');
+
+    expect(driver.host.value()).toEqual(['a', 'b']);
+    expect(driver.searchInput().value).toBe('c');
+    expect(driver.select.query()).toBe('c');
+  });
+
   it('emits afterOpen once the panel is mounted and afterClose once it has closed', async () => {
     await driver.open();
 
@@ -1769,6 +1850,30 @@ describe('SelectDirective (pickOnly)', () => {
 
     expect(driver.host.picked).toEqual(['apple', 'banana']);
     expect(driver.host.value()).toBeNull();
+  });
+});
+
+describe('SelectDirective (closed typeahead picks)', () => {
+  it('does not emit pickOption on closed typeahead in pickOnly mode', () => {
+    const driver = mountSelect(PickOnlyTestHost);
+
+    driver.press('a');
+    driver.press('p');
+
+    expect(driver.host.picked).toEqual([]);
+    expect(driver.select.open()).toBe(false);
+  });
+
+  it('does not re-emit pickOption when closed typeahead matches the current value', () => {
+    const driver = mountSelect(SelectTestHost);
+    const picked: unknown[] = [];
+    driver.select.pickOption.subscribe((value) => picked.push(value));
+
+    driver.press('a');
+    driver.press('a');
+
+    expect(picked).toEqual(['apple']);
+    expect(driver.host.value()).toBe('apple');
   });
 });
 

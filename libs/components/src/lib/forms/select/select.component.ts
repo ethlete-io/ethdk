@@ -71,6 +71,7 @@ import { SemanticThemesDirective } from '../../internals/semantic-themes.directi
         'options',
         'compareWith',
         'valueKey',
+        'displayWith',
         'filterMode',
         'allowCustomValues',
         'separators',
