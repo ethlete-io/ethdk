@@ -371,9 +371,8 @@ const warnAboutIgnoredOptions = (options: QueryDevtoolsOptions | undefined) => {
 /**
  * Undoes the latch `provideQueryDevtools()` sets, so a later spec in the same worker sees the devtools
  * disabled again. For specs only.
- * @internal
  */
-export const resetQueryDevtoolsForTesting = () => {
+export const ɵresetQueryDevtoolsForTesting = () => {
   queryDevtoolsInitialized = false;
   setQueryDevtoolsRegistrar(null);
 };
