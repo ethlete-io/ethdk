@@ -128,7 +128,7 @@ const buildAppendPropertyFix = (sourceCode, objectExpression, entryText) => {
   const closingIndent = closingBrace ? getIndent(sourceCode, closingBrace) : '';
   const lastProperty = properties.at(-1);
 
-  if (!lastProperty || !closingBrace) {
+  if (!lastProperty) {
     const insertion = isMultiline ? `\n${closingIndent}  ${entryText}\n${closingIndent}` : ` ${entryText} `;
     return (fixer) => [
       fixer.replaceTextRange([objectExpression.range[0] + 1, objectExpression.range[1] - 1], insertion),

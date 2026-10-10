@@ -2,7 +2,7 @@
 
 Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used with the `ethlete/` prefix (e.g. `ethlete/no-inject-chain`). Only `no-impure-top-level-provider`, `no-legacy-prepare-without-injector` and the two [migration rules](#legacy-packages-migration) take options; the rest take none.
 
-- **Fix** - 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`.
+- **Fix** - 🔧 means the rule has an auto-fixer applied by `eslint --fix` / `nx lint --fix`; 💡 means it only offers an editor suggestion, which `--fix` does not apply.
 - **Default** - the severity set by the [`recommended` config](/eslint/). `warn` is used for migration-style rules where existing code may reasonably still violate them.
 
 ## TypeScript & code style
@@ -11,7 +11,7 @@ Reference for all custom rules in `@ethlete/eslint-plugin`. Every rule is used w
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- | ------- |
 | `consistent-type-definitions`       | `type` instead of `interface`; an interface inside `declare module`, `declare global` or a `namespace` is exempt, because only an interface merges into an augmented declaration                                                           | 🔧  | error   |
 | `no-enum`                           | No `enum` and no `const enum` - use a const object with `as const` plus a derived union type                                                                                                                                               | 🔧  | error   |
-| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract                                                                                          | 🔧  | error   |
+| `no-trivial-return-type`            | No explicit return types TypeScript can infer on block-bodied implementations; concise arrows keep annotations that may narrow their API contract                                                                                          | 💡  | error   |
 | `no-type-only-import`               | No `import type { Foo }` or `import { type Foo }` - use a regular value import                                                                                                                                                             | 🔧  | error   |
 | `no-trivial-wrapper-method`         | No wrapper methods that only forward all arguments to another call; a method more visible than the member it calls through (a public `setItems` over a private signal), inherited, implemented and Angular/DOM contract methods are exempt |     | error   |
 | `no-screaming-case-local`           | No SCREAMING_CASE variable names inside function bodies, or for function-valued variables at any scope                                                                                                                                     |     | error   |
