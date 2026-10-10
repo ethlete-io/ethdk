@@ -322,13 +322,18 @@ describe('bearer-auth-query-builders', () => {
     it('does not refresh for a 401 from a request sent with an older access token', () => {
       const authSetup = setupAuthTest({ querySetup: setup, autoRetryOn401: true });
 
-      authSetup.login({ username: 'test', password: 'pass' }, { accessToken: 'access-1', refreshToken: 'refresh-1' });
+      const sameUserToken = (jti: number) => `e30.${btoa(JSON.stringify({ sub: 'u', jti }))}.`;
 
-      makeSecureRequestWithToken('/api/slow', 'access-1');
+      authSetup.login(
+        { username: 'test', password: 'pass' },
+        { accessToken: sameUserToken(1), refreshToken: 'refresh-1' },
+      );
+
+      makeSecureRequestWithToken('/api/slow', sameUserToken(1));
 
       // The refresh already happened by the time the 401 lands - refreshing again would spend the
       // token pair it just produced.
-      authSetup.auth.setTokens('access-2', 'refresh-2');
+      authSetup.auth.setTokens(sameUserToken(2), 'refresh-2');
       TestBed.tick();
 
       setup.httpTesting

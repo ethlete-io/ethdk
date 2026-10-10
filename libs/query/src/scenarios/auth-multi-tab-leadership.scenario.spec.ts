@@ -193,7 +193,7 @@ const setVisibility = (state: 'visible' | 'hidden') => {
 
 const issueTokens = (accessTokenExpiresInMs: number) => () => ({
   body: {
-    accessToken: mintToken({ expiresInMs: accessTokenExpiresInMs }),
+    accessToken: mintToken({ expiresInMs: accessTokenExpiresInMs, claims: { sub: 'me' } }),
     refreshToken: mintToken({ expiresInMs: 60 * 60 * 1000 }),
   },
 });

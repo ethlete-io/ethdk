@@ -76,6 +76,7 @@ export class LoginFormComponent {
 | `latestNonInternalQuery()`         | The same, but only for runs the app started with `execute()` - the provider's own runs do not count.                                                                                                                                     |
 | `features`                         | Registry of the configured [features](#features).                                                                                                                                                                                        |
 | `setTokens(access, refresh)`       | Seeds tokens issued outside the provider - see [External tokens](#external-tokens).                                                                                                                                                      |
+| `sessionId()`                      | Increments whenever a session starts - see [Switching users](#switching-users).                                                                                                                                                          |
 | `logout(cause?)`                   | Clears tokens, unbinds all secure queries from the cache, and resets the ones still bound. `cause` defaults to `'user'`.                                                                                                                 |
 | `afterTokenRefresh$`               | Emits after every successful token refresh.                                                                                                                                                                                              |
 
@@ -146,7 +147,15 @@ It is `null` before any session has ended, and cleared again as soon as tokens a
 
 A logout that arrives over [multi-tab sync](#multi-tab-sync) carries the cause it had in the tab it started in. A session that ended **on its own** ended for every tab, so `'inactivity'` and `'expired'` are reported as they are - only a deliberate `logout()` elsewhere reads as `'otherTab'` here, which is what keeps "someone signed out in another tab" distinguishable from "this session is over".
 
-A socket.io client follows the session when you pass the provider as [`authProvider`](/query/ws#authenticating-the-handshake): it waits out `'unknown'` and `'restoring'`, reconnects with the token when a session starts, and disconnects on logout.
+A socket.io client follows the session when you pass the provider as [`authProvider`](/query/ws#authenticating-the-handshake): it waits out `'unknown'` and `'restoring'`, reconnects with the token when a session starts, and on logout ends its rooms and reconnects as anonymous.
+
+### Switching users
+
+`sessionId()` is a counter that increments whenever a session starts: tokens arrive while there were none, or a pair for a **different user** replaces the live one. A token refresh keeps it.
+
+A different user is a token whose `sub` claim differs from the live token's. When either token carries no `sub`, a login or [`setTokens()`](#external-tokens) over a live session counts as a different user, and a rotation (a refresh, or a pair applied from another tab) does not.
+
+A different user gets the same secure-cache teardown as a logout: every secure cache entry is dropped and the secure queries still mounted fetch again with the new token, so nobody sees the previous user's data. A login as the same user keeps the cache.
 
 ## Route guards
 

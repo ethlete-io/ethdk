@@ -140,6 +140,9 @@ export const createWebSocketTestDouble = (): WebSocketTestDouble => {
     get active() {
       return active;
     },
+    get sendBuffer() {
+      return buffered;
+    },
   };
 
   return {

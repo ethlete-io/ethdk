@@ -1114,7 +1114,7 @@ describe('ws scenario with an auth provider', () => {
     consumer.destroy();
   });
 
-  it('disconnects on logout and completes the joined rooms, and stays down', () => {
+  it('completes the joined rooms on logout and reconnects as anonymous', () => {
     const s = scenario();
     const { auth, double, instance, consumer, login } = boot(s);
 
@@ -1124,17 +1124,20 @@ describe('ws scenario with an auth provider', () => {
     const room = consumer.run(() => instance.joinRoom('lobby'));
     let completed = false;
     room()?.messages$.subscribe({ complete: () => (completed = true) });
+    const connectCalls = double.state().connectCalls;
 
     auth.logout();
     s.tick();
 
     expect(completed).toBe(true);
-    expect(double.state().disconnected).toBe(true);
+    expect(room()).toBeNull();
     expect(instance.isConnected()).toBe(false);
+    expect(double.state().connectCalls).toBe(connectCalls + 1);
 
-    const connectCalls = double.state().connectCalls;
-    s.tick(60_000);
-    expect(double.state().connectCalls).toBe(connectCalls);
+    double.serverConnect();
+
+    expect(tokenOf(double.handshakes().at(-1) ?? null)).toBeNull();
+    expect(instance.isConnected()).toBe(true);
 
     consumer.destroy();
     s.tick();

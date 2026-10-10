@@ -82,6 +82,9 @@ export type WebSocketClientSocket = {
 
   /** `false` once socket.io gave up reconnecting on its own - after a rejected handshake, for example. */
   readonly active?: boolean;
+
+  /** The emits socket.io holds while disconnected and flushes on the next connect. */
+  readonly sendBuffer?: unknown[];
 };
 
 /**
@@ -137,9 +140,11 @@ export type CreateWebSocketClientConfigOptions = {
   /**
    * A bearer auth provider whose session the socket follows. The handshake carries
    * `{ token: accessToken() }`. The socket does not connect while the session is `'unknown'` or
-   * `'restoring'`, reconnects when a session starts (a login, or a different user), and disconnects and
-   * completes its rooms on logout. A token rotation within a session does not reconnect; the next
-   * reconnect reads the fresh token.
+   * `'restoring'` and reconnects when a session starts (a login, a seed, or a different user). On logout
+   * it completes its rooms, sets every `joinRoom()` signal to `null` until the next session re-joins it,
+   * and reconnects as anonymous. Emits still buffered from the ended session are dropped. A token
+   * rotation within a session does not reconnect; the next reconnect reads the fresh token. A client
+   * without `authProvider` ignores the auth session entirely.
    *
    * @example
    * ```ts
@@ -177,7 +182,10 @@ export type WebSocketClient<TMessageData extends SocketMessageView> = {
   /** Whether the client is connected to the server */
   isConnected: Signal<boolean>;
 
-  /** Sends a message to the server. socket.io buffers it while the connection is down. */
+  /**
+   * Sends a message to the server. socket.io buffers it while the connection is down; with an
+   * `authProvider`, a buffered message is dropped when the session ends.
+   */
   send: (message: { event: string; data: unknown }) => void;
 
   /** Advanced web socket features. **WARNING!** Incorrectly using these features will likely **BREAK** your application. You have been warned! */
@@ -230,7 +238,7 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       });
 
       const rooms = new Map<string, InternalWebSocketRoom<TMessageData>>();
-      const endedRoomHolders = new Map<string, number>();
+      const holds = new Set<RoomHold<TMessageData>>();
       const joinsDeliveredThisConnection = new Set<string>();
       const joinsDeliveredToClosedConnection = new Set<string>();
       const isConnected = signal(false);
@@ -291,62 +299,53 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         return newRoom;
       };
 
-      const joinStaticRoom = (name: string) => {
-        const destroyRef = inject(DestroyRef);
-        const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(join(name));
+      const holdRoom = (hold: RoomHold<TMessageData>, name: string | null) => {
+        if (name === hold.name) return;
 
-        destroyRef.onDestroy(() => {
-          leaveRoom(name);
-          roomData.set(null);
+        if (hold.name !== null && !hold.parked) leaveRoom(hold.name);
+
+        hold.name = name;
+
+        if (name === null) hold.parked = false;
+        if (hold.parked) return;
+
+        hold.room.set(name === null ? null : join(name));
+      };
+
+      const createHold = () => {
+        const hold: RoomHold<TMessageData> = { name: null, parked: false, room: signal(null) };
+
+        holds.add(hold);
+        inject(DestroyRef).onDestroy(() => {
+          holdRoom(hold, null);
+          holds.delete(hold);
         });
 
-        return roomData.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
+        return hold;
       };
 
       const joinRoom = (room: string | (() => string | null)) => {
-        if (typeof room === 'string') return joinStaticRoom(room);
+        const hold = createHold();
 
-        const roomFn = room;
-        const roomData = signal<InternalWebSocketRoom<TMessageData> | null>(null);
-        let joinedRoomName: string | null = null;
+        if (typeof room === 'string') {
+          holdRoom(hold, room);
+        } else {
+          effect(() => {
+            const current = room() || null;
 
-        effect(() => {
-          const current = roomFn() || null;
-
-          untracked(() => {
-            if (current === joinedRoomName) return;
-
-            if (joinedRoomName) {
-              leaveRoom(joinedRoomName);
-              joinedRoomName = null;
-            }
-
-            if (current) {
-              joinedRoomName = current;
-              roomData.set(join(current));
-            } else {
-              roomData.set(null);
-            }
+            untracked(() => holdRoom(hold, current));
           });
-        });
+        }
 
-        inject(DestroyRef).onDestroy(() => {
-          if (joinedRoomName) {
-            leaveRoom(joinedRoomName);
-            joinedRoomName = null;
-            roomData.set(null);
-          }
-        });
-
-        return roomData.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
+        return hold.room.asReadonly() as Signal<WebSocketRoom<TMessageData> | null>;
       };
 
       const leaveRoom = (room: string) => {
-        const endedHolders = endedRoomHolders.get(room);
+        const parkedHold = [...holds].find((hold) => hold.parked && hold.name === room);
 
-        if (endedHolders !== undefined) {
-          if (endedHolders > 1) endedRoomHolders.set(room, endedHolders - 1);
-          else endedRoomHolders.delete(room);
+        if (parkedHold) {
+          parkedHold.name = null;
+          parkedHold.parked = false;
 
           return;
         }
@@ -375,11 +374,10 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
       let connectedAt: number | null = null;
       let destroyed = false;
-      let suspended = false;
 
       /** socket.io stops reconnecting after a server disconnect or a rejected handshake, so the client takes over. */
       const scheduleReconnect = () => {
-        if (reconnectTimer !== null || destroyed || suspended) return;
+        if (reconnectTimer !== null || destroyed) return;
 
         const delay = Math.min(RECONNECT_BASE_DELAY * 2 ** reconnectAttempt, RECONNECT_MAX_DELAY);
         reconnectAttempt++;
@@ -485,27 +483,44 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       setupWebSocketConnectionListener();
       setupWebSocketListener();
 
-      const endSession = () => {
-        suspended = true;
+      const dropBufferedEmits = () => {
+        if (socket.sendBuffer) socket.sendBuffer.length = 0;
+      };
 
+      const endSession = () => {
         if (reconnectTimer !== null) {
           clearTimeout(reconnectTimer);
           reconnectTimer = null;
         }
 
+        dropBufferedEmits();
         socket.disconnect();
 
-        for (const [name, room] of rooms) {
-          endedRoomHolders.set(name, (endedRoomHolders.get(name) ?? 0) + room.joinCount);
-          room.messages.complete();
+        for (const hold of holds) {
+          if (hold.name === null || hold.parked) continue;
+
+          hold.parked = true;
+          hold.room.set(null);
         }
 
+        for (const room of rooms.values()) room.messages.complete();
+
         rooms.clear();
+        joinsDeliveredThisConnection.clear();
+        joinsDeliveredToClosedConnection.clear();
         syncDevtoolsRooms();
       };
 
+      const rejoinParkedRooms = () => {
+        for (const hold of holds) {
+          if (!hold.parked || hold.name === null) continue;
+
+          hold.parked = false;
+          hold.room.set(join(hold.name));
+        }
+      };
+
       const startConnection = () => {
-        suspended = false;
         reconnectAttempt = 0;
         socket.connect();
       };
@@ -514,17 +529,23 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
         let hasConnected = false;
         let wasAuthenticated = false;
         let handledLogin: unknown = null;
+        let handledSessionId: number | null = null;
 
         effect(() => {
           const status = authProvider.sessionStatus();
           const execution = authProvider.executionState();
+          const sessionId = authProvider.sessionId();
 
           untracked(() => {
             if (destroyed || status === 'unknown' || status === 'restoring') return;
 
             if (status === 'anonymous') {
-              if (wasAuthenticated) endSession();
-              else if (!hasConnected) startConnection();
+              if (wasAuthenticated) {
+                endSession();
+                startConnection();
+              } else if (!hasConnected) {
+                startConnection();
+              }
 
               wasAuthenticated = false;
               hasConnected = true;
@@ -532,15 +553,23 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
               return;
             }
 
-            const login = execution?.type === 'login' && execution.state === 'success' ? execution : null;
-            const startedSession = !wasAuthenticated || (login !== null && login !== handledLogin);
+            const login =
+              (execution?.type === 'login' || execution?.type === 'tokenSeed') && execution.state === 'success'
+                ? execution
+                : null;
+            const startedSession =
+              !wasAuthenticated || sessionId !== handledSessionId || (login !== null && login !== handledLogin);
 
             if (login) handledLogin = login;
+            handledSessionId = sessionId;
             wasAuthenticated = true;
 
-            if (!hasConnected) startConnection();
-            else if (startedSession) {
+            if (!hasConnected) {
+              startConnection();
+            } else if (startedSession) {
+              dropBufferedEmits();
               socket.disconnect();
+              rejoinParkedRooms();
               startConnection();
             }
 
@@ -583,6 +612,12 @@ export const createWebSocketClient = <TMessageData extends SocketMessageView = S
       name: `WebSocketClient_${options.name}`,
     },
   );
+};
+
+type RoomHold<TMessageData extends SocketMessageView> = {
+  name: string | null;
+  parked: boolean;
+  room: WritableSignal<InternalWebSocketRoom<TMessageData> | null>;
 };
 
 const createServerWebSocketClient = <TMessageData extends SocketMessageView>(): WebSocketClient<TMessageData> => {

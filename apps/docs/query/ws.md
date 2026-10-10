@@ -75,9 +75,19 @@ const MATCH_SOCKET = createWebSocketClient({
 The handshake carries `{ token: accessToken() }`, and the socket follows the session:
 
 - It does not connect while `sessionStatus()` is `'unknown'` or `'restoring'`, so a page load never opens an anonymous socket just before the restore finishes.
-- When a session starts - a login after being anonymous, or a different user - it reconnects, so the handshake carries the new token.
-- On logout it disconnects and completes the joined rooms: `messages$` completes and the rooms are no longer joined. Join again after the next login.
+- When a session starts it reconnects, so the handshake carries the new token. A session starts on a login, a [`setTokens()`](/query/auth#external-tokens) seed, and a token pair for a different user arriving from another tab - whenever the provider's [`sessionId()`](/query/auth#switching-users) changes.
+- On logout it completes the joined rooms (`messages$` completes) and every `joinRoom()` signal reads `null`. The component keeps its hold: the room is joined again after the next login, and the signal then holds a fresh room object.
+- After a logout it reconnects as anonymous, like a fresh anonymous page load. Rooms joined while logged out are joined on that anonymous connection.
+- Emits still buffered from the ended session - a `send()` or a room join made while the connection was down - are dropped, never delivered on the next user's connection.
 - A token rotation inside a session does **not** reconnect. The next natural reconnect reads the fresh token, so the server must accept a socket whose handshake token has since expired.
+
+### Public sockets
+
+A client created without `authProvider` ignores the auth session entirely. A login, a logout, a token
+rotation or a user switch never disconnects it, never re-handshakes and never touches its rooms or the
+messages socket.io buffers. That is the right setup for a public socket.io server (live scores, a
+lobby) that needs no token. An app can run both: one client for the public server, one with
+`authProvider` for the private one.
 
 Setting both `auth` and `authProvider` is a dev-mode error (`1002`); `authProvider` wins.
 

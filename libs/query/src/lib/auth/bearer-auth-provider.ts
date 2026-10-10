@@ -443,6 +443,13 @@ export type BearerAuthProvider<
    */
   sessionEndCause: Signal<BearerAuthSessionEndCause | null>;
 
+  /**
+   * Increments whenever a session starts: tokens arrive while there were none, or a login, seed or
+   * other tab hands over a pair for a different user (another `sub` claim). A token refresh keeps it.
+   * A new user also clears the previous user's secure cache entries.
+   */
+  sessionId: Signal<number>;
+
   /** {@link sessionStatus}, {@link sessionEndCause} and {@link executionState} as one signal. */
   session: Signal<
     BearerAuthSession<
@@ -575,6 +582,23 @@ const defaultExtractTokens = (response: unknown): BearerAuthProviderTokens => {
   return { accessToken: response['accessToken'], refreshToken: response['refreshToken'] };
 };
 
+type TokenSource = 'session' | 'rotation';
+
+const subjectOf = (token: string) => {
+  const payload = decryptBearer<{ sub?: unknown }>(token);
+
+  return typeof payload?.sub === 'string' || typeof payload?.sub === 'number' ? payload.sub : null;
+};
+
+const isDifferentUser = (options: { previous: string; next: string; source: TokenSource }) => {
+  const previous = subjectOf(options.previous);
+  const next = subjectOf(options.next);
+
+  if (previous !== null && next !== null) return previous !== next;
+
+  return options.source === 'session';
+};
+
 const deriveExecutionStateType = (builder: AnyQueryBuilder, triggeredBy: string | undefined) => {
   if (triggeredBy === 'persistent-auth') return 'autoLogin';
   if (builder._type === 'tokenRefreshQuery') return 'tokenRefresh';
@@ -586,7 +610,7 @@ type BearerQueryRegistryContext = {
   injector: Injector;
   latestExecutedQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
   latestNonInternalQuery: WritableSignal<{ key: string; snapshot: QuerySnapshot<QueryArgs> } | null>;
-  applyTokens: (access: string, refresh: string) => void;
+  applyTokens: (access: string, refresh: string, source: TokenSource) => void;
   executionState: WritableSignal<BearerAuthExecutionState | null>;
   sessionStatus: WritableSignal<BearerAuthSessionStatus>;
   isAuthenticated: Signal<boolean>;
@@ -642,7 +666,7 @@ const setupBearerQueryRegistry = <TBuilders extends readonly AnyQueryBuilder[]>(
 
           try {
             const tokens = extractTokens(response);
-            applyTokens(tokens.accessToken, tokens.refreshToken);
+            applyTokens(tokens.accessToken, tokens.refreshToken, type === 'tokenRefresh' ? 'rotation' : 'session');
             executionState.set({ type, state: 'success', response });
           } catch (extractError) {
             executionState.set({ type, state: 'error', error: createQueryErrorResponse(extractError) });
@@ -847,11 +871,26 @@ const createBearerAuthProviderImpl = <
   const sessionEndCause = signal<BearerAuthSessionEndCause | null>(null);
   const sessionEnd = signal<SessionEndEvent | null>(null);
 
-  const applyTokens = (access: string, refresh: string) => {
+  const sessionId = signal(0);
+
+  const applyTokens = (access: string, refresh: string, source: TokenSource = 'rotation') => {
+    const previousAccess = untracked(accessToken);
+    const startsSession =
+      previousAccess === null || isDifferentUser({ previous: previousAccess, next: access, source });
+
     accessToken.set(access);
     refreshToken.set(refresh);
     sessionStatus.set('authenticated');
     sessionEndCause.set(null);
+
+    if (startsSession) sessionId.update((id) => id + 1);
+
+    // After the new tokens are in force: unbindAllSecure re-arms every auto-executing secure query, which
+    // would otherwise run again on the previous user's token.
+    if (previousAccess !== null && startsSession) {
+      untracked(() => queryClient.repository.unbindAllSecure());
+    }
+
     // Emit on the next microtask so that synchronous reactive work triggered by applying
     // the tokens (signals/effects) has a chance to settle before subscribers react.
     // This avoids rare races where a subscriber reacting to the emission would run
@@ -867,7 +906,7 @@ const createBearerAuthProviderImpl = <
     // auto-login or a refresh still out with an older token can only report a failure that no longer
     // means anything - or apply the pair it comes back with over this one.
     invalidateTokenIssuingExecutions();
-    applyTokens(access, refresh);
+    applyTokens(access, refresh, 'session');
     executionState.set({ type: 'tokenSeed', state: 'success' });
   };
 
@@ -1039,6 +1078,7 @@ const createBearerAuthProviderImpl = <
     executionState: executionState.asReadonly(),
     sessionStatus: sessionStatus.asReadonly(),
     sessionEndCause: sessionEndCause.asReadonly(),
+    sessionId: sessionId.asReadonly(),
     session: computed<BearerAuthSession>(() => ({
       status: sessionStatus(),
       endCause: sessionEndCause(),
