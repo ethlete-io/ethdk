@@ -360,6 +360,9 @@ const uniqueCases = (cases) => [
 
 tester.run('template-member-accessibility', rule, {
   valid: uniqueCases([
+    `@Component({ template: '{{ value$ | async }} @for (i of items(); track trackItem(i)) {}' }) class C { protected value$ = of(1); protected trackItem(i: number) { return i; } }`,
+    `@Component({ template: '{{ $count }}' }) class C { protected $count = 1; }`,
+    `@Component({ template: '<input [value]="other" /> <p>secret</p> {{ a.secret }}' }) class C { private secret = 1; private value = 2; }`,
     `@Directive({}) abstract class C { protected abstract x: number; }`,
     `@Directive({}) abstract class C { protected abstract x(): void; }`,
     `@Directive({}) abstract class BaseDirective { protected label = 'x'; }`,

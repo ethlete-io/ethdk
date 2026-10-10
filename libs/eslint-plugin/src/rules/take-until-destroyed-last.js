@@ -19,6 +19,33 @@ const { isImportedAs } = require('./internals/import-resolution');
  *   ).subscribe();
  */
 
+const ALLOWED_AFTER = new Set([
+  'finalize',
+  'defaultIfEmpty',
+  'endWith',
+  'toArray',
+  'last',
+  'count',
+  'reduce',
+  'takeLast',
+]);
+
+/**
+ * @param {any} node
+ */
+const isPipeCall = (node) =>
+  node?.type === 'CallExpression' &&
+  node.callee.type === 'MemberExpression' &&
+  !node.callee.computed &&
+  node.callee.property.type === 'Identifier' &&
+  node.callee.property.name === 'pipe';
+
+/**
+ * @param {any} node
+ */
+const isAllowedAfter = (node) =>
+  node.type === 'CallExpression' && node.callee.type === 'Identifier' && ALLOWED_AFTER.has(node.callee.name);
+
 /** @type {import('eslint').Rule.RuleModule} */
 const takeUntilDestroyedLast = {
   meta: {
@@ -29,7 +56,7 @@ const takeUntilDestroyedLast = {
     },
     messages: {
       takeUntilDestroyedLast:
-        'takeUntilDestroyed() must be the last operator in the pipe. An operator after it (switchMap, shareReplay, …) can keep the subscription alive after destroy.',
+        'takeUntilDestroyed() must be the last operator in the pipe. An operator after it that subscribes to an inner or shared source (switchMap, mergeMap, share without refCount, …) outlives destroy. Move takeUntilDestroyed() after it.',
     },
     schema: [],
   },
@@ -41,20 +68,22 @@ const takeUntilDestroyedLast = {
 
     return {
       CallExpression(node) {
-        const { callee } = node;
-        if (
-          callee.type !== 'MemberExpression' ||
-          callee.property.type !== 'Identifier' ||
-          callee.property.name !== 'pipe'
-        ) {
-          return;
+        if (!isPipeCall(node)) return;
+
+        const parent = /** @type {any} */ (node).parent;
+        if (parent?.type === 'MemberExpression' && parent.object === node && isPipeCall(parent.parent)) return;
+
+        /** @type {any[]} */
+        const operators = [];
+        for (let call = /** @type {any} */ (node); isPipeCall(call); call = call.callee.object) {
+          operators.unshift(...call.arguments);
         }
 
-        const lastIndex = node.arguments.length - 1;
-        node.arguments.forEach((arg, index) => {
-          if (index < lastIndex && isTakeUntilDestroyedCall(arg)) {
-            context.report({ node: arg, messageId: 'takeUntilDestroyedLast' });
-          }
+        operators.forEach((operator, index) => {
+          if (!isTakeUntilDestroyedCall(operator)) return;
+          if (operators.slice(index + 1).every(isAllowedAfter)) return;
+
+          context.report({ node: operator, messageId: 'takeUntilDestroyedLast' });
         });
       },
     };

@@ -233,6 +233,59 @@ class Foo {
       errors: [{ messageId: 'useHostBinding' }],
     },
 
+    {
+      code: `
+@Component({
+  host: {
+    // focus ring is drawn by the parent
+    '[class.focused]': 'focused()',
+    '(click)': 'toggle()', // keep
+  },
+})
+class C {
+  @HostBinding('class.active') active = false;
+}
+`,
+      output: `
+@Component({
+  host: {
+    // focus ring is drawn by the parent
+    '[class.focused]': 'focused()',
+    '(click)': 'toggle()', // keep
+    '[class.active]': 'active',
+  },
+})
+class C {
+  active = false;
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+    {
+      code: `
+@Component({
+  host: {
+    '(click)': 'toggle()' // keep
+  },
+})
+class C {
+  @HostBinding('class.active') active = false;
+}
+`,
+      output: `
+@Component({
+  host: {
+    '(click)': 'toggle()', // keep
+    '[class.active]': 'active'
+  },
+})
+class C {
+  active = false;
+}
+`,
+      errors: [{ messageId: 'useHostBinding' }],
+    },
+
     // ── @HostListener → host: {} ─────────────────────────────────────────────
 
     {

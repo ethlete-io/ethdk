@@ -157,17 +157,18 @@ const recommendedTs = {
       // No route guards — handle access control inside the component itself
       {
         selector:
-          'TSClassImplements > Identifier.expression[name=/^CanActivate$|^CanDeactivate$|^CanActivateChild$|^CanMatch$|^CanLoad$/]',
+          'TSClassImplements > Identifier.expression[name=/^CanActivate$|^CanDeactivate$|^CanActivateChild$|^CanMatch$|^CanLoad$/], TSTypeReference > Identifier.typeName[name=/^(CanActivate|CanActivateChild|CanMatch)Fn$/], ObjectExpression:has(> Property[key.name=/^(path|component|loadComponent|children|loadChildren)$/]) > Property[key.name=/^(canActivate|canActivateChild|canMatch|canLoad)$/]',
         message: 'No route guards. Handle access control inside the component itself.',
       },
       // No route resolvers — use the query library to fetch data
       {
-        selector: "TSClassImplements > Identifier.expression[name='Resolve']",
+        selector:
+          "TSClassImplements > Identifier.expression[name='Resolve'], TSTypeReference > Identifier.typeName[name='ResolveFn'], ObjectExpression:has(> Property[key.name=/^(path|component|loadComponent|children|loadChildren)$/]) > Property[key.name='resolve']",
         message: 'No route resolvers. Use the query library to fetch data instead.',
       },
       // No barrel imports — import directly from the source file
       {
-        selector: 'ImportDeclaration[source.value=/(^|[/])index$/]',
+        selector: 'ImportDeclaration[source.value=/(^|[/])(index([.][cm]?[jt]s)?|[.]|[.][.])?[/]?$/]',
         message:
           'No barrel imports (index files). Import directly from the source file to avoid breaking lazy loading.',
       },

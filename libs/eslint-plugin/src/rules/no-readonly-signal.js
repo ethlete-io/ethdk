@@ -70,7 +70,7 @@ const noReadonlySignal = {
     },
     messages: {
       noReadonlySignal:
-        "Remove `readonly` from '{{name}}' — reactive APIs return mutable references, and `readonly` gives a false sense of immutability.",
+        "Remove `readonly` from '{{name}}' — {{api}}() returns a mutable reference, and `readonly` gives a false sense of immutability.",
     },
     schema: [],
   },
@@ -99,7 +99,7 @@ const noReadonlySignal = {
           context.report({
             node,
             messageId: 'noReadonlySignal',
-            data: { name: apiName },
+            data: { name: context.sourceCode.getText(node.key), api: apiName },
             fix(fixer) {
               const sourceCode = context.sourceCode;
               const tokens = sourceCode.getTokens(node);

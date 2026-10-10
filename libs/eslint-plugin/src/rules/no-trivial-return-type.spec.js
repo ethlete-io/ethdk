@@ -39,30 +39,69 @@ tester.run('no-trivial-return-type', rule, {
   ],
   invalid: [
     {
+      code: `class C { private data: any; name(): string { return this.data.name; } }`,
+      output: null,
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [
+            {
+              messageId: 'removeReturnType',
+              output: `class C { private data: any; name() { return this.data.name; } }`,
+            },
+          ],
+        },
+      ],
+    },
+    {
       code: `const disabled = (v: any): boolean => { return v.disabled; };`,
-      output: `const disabled = (v: any) => { return v.disabled; };`,
-      errors: [{ messageId: 'trivialReturnType' }],
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [
+            { messageId: 'removeReturnType', output: `const disabled = (v: any) => { return v.disabled; };` },
+          ],
+        },
+      ],
     },
     {
       code: `const disabled = (v: any): boolean => { return { disabled: 1 } && v; };`,
-      output: `const disabled = (v: any) => { return { disabled: 1 } && v; };`,
-      errors: [{ messageId: 'trivialReturnType' }],
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [
+            { messageId: 'removeReturnType', output: `const disabled = (v: any) => { return { disabled: 1 } && v; };` },
+          ],
+        },
+      ],
     },
     {
       code: `const fn = (): void => {};`,
-      output: `const fn = () => {};`,
-      errors: [{ messageId: 'trivialReturnType' }],
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [{ messageId: 'removeReturnType', output: `const fn = () => {};` }],
+        },
+      ],
     },
     // Non-recursive class method — still stripped
     {
       code: `class A { check(): boolean { return true; } }`,
-      output: `class A { check() { return true; } }`,
-      errors: [{ messageId: 'trivialReturnType' }],
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [{ messageId: 'removeReturnType', output: `class A { check() { return true; } }` }],
+        },
+      ],
     },
     {
       code: `export function go(): boolean { return true; }`,
-      output: `export function go() { return true; }`,
-      errors: [{ messageId: 'trivialReturnType' }],
+      errors: [
+        {
+          messageId: 'trivialReturnType',
+          suggestions: [{ messageId: 'removeReturnType', output: `export function go() { return true; }` }],
+        },
+      ],
     },
   ],
 });

@@ -19,6 +19,21 @@ tester.run('no-enum', rule, {
   ],
   invalid: [
     {
+      code: `export enum S {
+  Live = 'live', // currently running
+  Done = 'done',
+  // Paused = 'paused',
+}`,
+      output: `export const S = {
+  Live: 'live', // currently running
+  Done: 'done',
+  // Paused = 'paused',
+} as const;
+
+export type S = (typeof S)[keyof typeof S];`,
+      errors: [{ messageId: 'noEnum' }],
+    },
+    {
       code: `enum A {\n  X = 'x',\n}`,
       errors: [{ messageId: 'noEnum', data: { name: 'A' } }],
       output: `const A = {\n  X: 'x',\n} as const;\n\ntype A = (typeof A)[keyof typeof A];`,

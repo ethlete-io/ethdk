@@ -20,6 +20,16 @@ tester.run('no-leading-underscore-class-member', rule, {
   ],
   invalid: [
     {
+      code: `class C { private _v = 1; read() { const o = { _v: 2, get() { return this._v; } }; return o.get() + this._v; } }`,
+      output: null,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
+      code: `class C { private _v = 1; read() { const run = function () { return this._v; }; return [run, this._v]; } }`,
+      output: null,
+      errors: [{ messageId: 'noLeadingUnderscore' }],
+    },
+    {
       code: `class Foo { constructor(private _dep: Dep) {} run() { return this._dep; } }`,
       errors: [{ messageId: 'noLeadingUnderscore' }],
     },

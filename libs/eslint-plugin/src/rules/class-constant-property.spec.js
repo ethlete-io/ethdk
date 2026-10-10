@@ -12,6 +12,12 @@ const tester = new RuleTester({
 tester.run('class-constant-property', rule, {
   valid: [
     {
+      code: `@Component({ template: '<button (click)="isOpen = !isOpen">x</button><input [(ngModel)]="query">' })
+class C { protected isOpen = false; protected query = ''; }`,
+    },
+    { code: `@Directive({ host: { '(click)': 'pressed = true' } }) class D { protected pressed = false; }` },
+    { code: `@Component({ template: '' }) class C { label = 'x'; public size = 'md'; }` },
+    {
       code: `import { Pipe as NgPipe } from '@angular/core';
 @NgPipe({ name: 'x' }) class P { transform = identity; }`,
     },
@@ -28,6 +34,11 @@ tester.run('class-constant-property', rule, {
     { code: `class Foo { protected activeId = null; }` },
   ],
   invalid: [
+    {
+      code: `@Component({ template: '<button (click)="toggle()">{{ isOpen }}</button>' }) class C { protected isOpen = false; }`,
+      output: `@Component({ template: '<button (click)="toggle()">{{ isOpen }}</button>' }) class C { protected readonly isOpen = false; }`,
+      errors: [{ messageId: 'shouldBeReadonly' }],
+    },
     {
       code: `class Foo { #limit = 1; }`,
       output: `class Foo { readonly #limit = 1; }`,

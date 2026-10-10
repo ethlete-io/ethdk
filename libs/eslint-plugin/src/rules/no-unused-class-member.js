@@ -112,10 +112,10 @@ const noUnusedClassMember = {
     },
     messages: {
       noUnused:
-        "'{{name}}' is declared but never referenced through `this` within this class. " +
+        "'{{name}}' is declared but never referenced within this class. " +
         'Remove it, or widen its accessibility if it is intentionally used externally.',
       noUnusedProtected:
-        "'{{name}}' is protected but never referenced through `this` within this class. " +
+        "'{{name}}' is protected but never referenced within this class. " +
         'If a subclass reads it, mark this class `abstract`; otherwise remove it.',
     },
     schema: [],
@@ -199,7 +199,6 @@ const noUnusedClassMember = {
       AccessorProperty: registerMember,
 
       MemberExpression(node) {
-        if (node.object?.type !== 'ThisExpression') return;
         const name =
           !node.computed && node.property?.type === 'Identifier'
             ? node.property.name
@@ -207,6 +206,11 @@ const noUnusedClassMember = {
               ? node.property.value
               : null;
         if (!name) return;
+
+        if (node.object?.type !== 'ThisExpression') {
+          for (const frame of classStack) frame.usedNames.add(name);
+          return;
+        }
 
         // Mark used in the innermost class frame. Arrow functions don't push a
         // new frame so they correctly share the enclosing class's `this`.

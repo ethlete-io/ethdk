@@ -26,6 +26,20 @@ const getReferencedName = (key, computed) => {
   return null;
 };
 
+/**
+ * @param {any} thisExpression
+ * @param {any} classBody
+ */
+const isClassThis = (thisExpression, classBody) => {
+  for (let node = thisExpression.parent; node && node !== classBody; node = node.parent) {
+    if (node.type === 'FunctionExpression' || node.type === 'FunctionDeclaration') {
+      return node.parent?.type.endsWith('MethodDefinition') && node.parent.parent === classBody;
+    }
+  }
+
+  return true;
+};
+
 /** @type {import('eslint').Rule.RuleModule} */
 const noLeadingUnderscoreClassMember = {
   meta: {
@@ -155,7 +169,8 @@ const noLeadingUnderscoreClassMember = {
         if (!frame) return;
 
         if (node.object?.type === 'ThisExpression' && !node.computed && node.property?.type === 'Identifier') {
-          frame.memberReads.push(node);
+          if (isClassThis(node.object, frame.classBody)) frame.memberReads.push(node);
+          else frame.untrackedNames.add(node.property.name);
           return;
         }
 

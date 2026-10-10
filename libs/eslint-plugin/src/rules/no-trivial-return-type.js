@@ -40,14 +40,16 @@ const TRIVIAL_LABELS = {
 const noTrivialReturnType = {
   meta: {
     type: 'suggestion',
-    fixable: 'code',
+    hasSuggestions: true,
     docs: {
       description:
         'Disallow explicit return type annotations that TypeScript can infer (void, boolean, string, number, undefined, null).',
       recommended: true,
     },
     messages: {
-      trivialReturnType: "Omit the explicit ': {{type}}' return type — TypeScript infers it.",
+      trivialReturnType:
+        "Omit the explicit ': {{type}}' return type — TypeScript infers it. Keep it when the returned value is `any`, or the inferred type would differ.",
+      removeReturnType: "Remove the ': {{type}}' return type.",
     },
     schema: [],
   },
@@ -199,9 +201,13 @@ const noTrivialReturnType = {
         node: fn.returnType,
         messageId: 'trivialReturnType',
         data: { type: label },
-        fix(fixer) {
-          return fixer.remove(fn.returnType);
-        },
+        suggest: [
+          {
+            messageId: 'removeReturnType',
+            data: { type: label },
+            fix: (fixer) => fixer.remove(fn.returnType),
+          },
+        ],
       });
     };
 

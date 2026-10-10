@@ -42,6 +42,8 @@ const data = toSignal(obs$);
   intended semantics.
 - **`takeUntilDestroyed()` goes last in its pipe** (`ethlete/take-until-destroyed-last`), so
   higher-order operators such as `switchMap` and their inner subscriptions are covered.
+  Completion-only operators (`finalize`, `defaultIfEmpty`, `toArray`, …) may follow it, and
+  chained `.pipe(...).pipe(...)` calls count as one pipe.
   Other limiting and finalization operators do not have a universal “last” position;
   place them where their semantics belong.
 - **Side effects go in `tap()`**, never in the `subscribe()` callback - keep

@@ -11,6 +11,20 @@ const tester = new RuleTester({
 
 tester.run('no-unused-class-member', rule, {
   valid: [
+    {
+      code: `class Point {
+  private id = 1;
+  private reset() {}
+  static origin() {
+    const p = new Point();
+    p.reset();
+    return p;
+  }
+  equals(o: Point) {
+    return o.id === 1;
+  }
+}`,
+    },
     { code: `class C { private accessor x = 1; read() { return this.x; } }` },
     // private — used in a method
     { code: `class C { private doc = inject(DOCUMENT); doThing() { this.doc.createElement('div'); } }` },

@@ -100,35 +100,55 @@ const findObjectProperty = (objectExpression, propertyName) =>
 
 /**
  * @param {import('eslint').SourceCode} sourceCode
+ * @param {any} token
+ */
+const getEndOfSameLineComments = (sourceCode, token) => {
+  let end = token.range[1];
+
+  for (const comment of sourceCode.getCommentsAfter(token)) {
+    if (comment.loc?.start.line !== token.loc.end.line) break;
+    end = comment.range?.[1] ?? end;
+  }
+
+  return end;
+};
+
+/**
+ * @param {import('eslint').SourceCode} sourceCode
  * @param {any} objectExpression
  * @param {string} entryText
+ * @returns {(fixer: import('eslint').Rule.RuleFixer) => import('eslint').Rule.Fix[]}
  */
-const buildObjectTextWithAppendedProperty = (sourceCode, objectExpression, entryText) => {
+const buildAppendPropertyFix = (sourceCode, objectExpression, entryText) => {
   const properties = objectExpression.properties;
   const isMultiline = Boolean(
     objectExpression.loc && objectExpression.loc.start.line !== objectExpression.loc.end.line,
   );
-
-  if (!isMultiline) {
-    const existingText = properties.map((property) => sourceCode.getText(property));
-    return existingText.length === 0 ? `{ ${entryText} }` : `{ ${existingText.join(', ')}, ${entryText} }`;
-  }
-
   const closingBrace = sourceCode.getLastToken(objectExpression);
   const closingIndent = closingBrace ? getIndent(sourceCode, closingBrace) : '';
-  const propertyIndent = properties[0] ? getIndent(sourceCode, properties[0]) : `${closingIndent}  `;
-  const existingText = properties.map((property) => `${propertyIndent}${sourceCode.getText(property)}`);
+  const lastProperty = properties.at(-1);
 
-  if (existingText.length === 0) {
-    return `{
-${propertyIndent}${entryText}
-${closingIndent}}`;
+  if (!lastProperty || !closingBrace) {
+    const insertion = isMultiline ? `\n${closingIndent}  ${entryText}\n${closingIndent}` : ` ${entryText} `;
+    return (fixer) => [
+      fixer.replaceTextRange([objectExpression.range[0] + 1, objectExpression.range[1] - 1], insertion),
+    ];
   }
 
-  return `{
-${existingText.join(',\n')},
-${propertyIndent}${entryText}
-${closingIndent}}`;
+  const propertyIndent = getIndent(sourceCode, properties[0]);
+  const tokenAfter = sourceCode.getTokenAfter(lastProperty);
+  const hasComma = tokenAfter?.type === 'Punctuator' && tokenAfter.value === ',';
+  const anchorToken = hasComma ? tokenAfter : sourceCode.getLastToken(lastProperty);
+  const insertAt = isMultiline ? getEndOfSameLineComments(sourceCode, anchorToken) : anchorToken.range[1];
+  const entry = isMultiline
+    ? `\n${propertyIndent}${entryText}${hasComma ? ',' : ''}`
+    : ` ${entryText}${hasComma ? ',' : ''}`;
+
+  if (hasComma || insertAt === lastProperty.range[1]) {
+    return (fixer) => [fixer.insertTextAfterRange([insertAt, insertAt], `${hasComma ? '' : ','}${entry}`)];
+  }
+
+  return (fixer) => [fixer.insertTextAfter(lastProperty, ','), fixer.insertTextAfterRange([insertAt, insertAt], entry)];
 };
 
 /**
@@ -172,12 +192,7 @@ const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, 
       return null;
     }
 
-    fixes.push((fixer) =>
-      fixer.replaceText(
-        hostProperty.value,
-        buildObjectTextWithAppendedProperty(sourceCode, hostProperty.value, hostEntryText),
-      ),
-    );
+    fixes.push(buildAppendPropertyFix(sourceCode, hostProperty.value, hostEntryText));
   } else {
     const closingBrace = sourceCode.getLastToken(metadata);
     if (!closingBrace) return null;
@@ -216,7 +231,7 @@ const buildHostBindingFix = (sourceCode, decoratorNode, memberNode, bindingKey, 
       : (fixer) => fixer.remove(decoratorNode),
   );
 
-  return (fixer) => fixes.map((applyFix) => applyFix(fixer));
+  return (fixer) => fixes.flatMap((applyFix) => applyFix(fixer));
 };
 
 /** @type {import('eslint').Rule.RuleModule} */

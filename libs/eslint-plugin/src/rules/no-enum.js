@@ -73,20 +73,48 @@ const noEnum = {
       const memberIndent = `${indent}  `;
       const exported = target.type === 'ExportNamedDeclaration' ? 'export ' : '';
 
-      const lines = membersOf(node).flatMap((member) => {
-        const comments = sourceCode.getCommentsBefore(member).flatMap((comment) =>
-          sourceCode
-            .getText(comment)
-            .split('\n')
-            // A block comment's continuation lines carry one more space so the leading `*` stays aligned.
-            .map((line, index) => `${memberIndent}${index === 0 ? '' : ' '}${line.trim()}`),
+      const members = membersOf(node);
+      const openBrace = sourceCode.getTokenBefore(members[0], { filter: (token) => token.value === '{' });
+      const bodyStart = openBrace ? openBrace.range[1] : node.id.range[1];
+      const bodyComments = sourceCode.getCommentsInside(node).filter((comment) => comment.range[0] >= bodyStart);
+
+      const formatComment = (comment) =>
+        sourceCode
+          .getText(comment)
+          .split('\n')
+          // A block comment's continuation lines carry one more space so the leading `*` stays aligned.
+          .map((line, index) => `${memberIndent}${index === 0 ? '' : ' '}${line.trim()}`);
+
+      const trailingOf = new Map(members.map((member) => [member, []]));
+      const leadingOf = new Map(members.map((member) => [member, []]));
+      const afterLast = [];
+
+      for (const comment of bodyComments) {
+        const owner = members.find(
+          (member) => member.loc.end.line === comment.loc.start.line && member.range[1] <= comment.range[0],
         );
 
+        if (owner) {
+          trailingOf.get(owner).push(comment);
+          continue;
+        }
+
+        const next = members.find((member) => member.range[0] >= comment.range[1]);
+        (next ? leadingOf.get(next) : afterLast).push(comment);
+      }
+
+      const lines = members.flatMap((member) => {
         const key = sourceCode.getText(member.id);
         const value = sourceCode.getText(member.initializer);
+        const trailing = trailingOf
+          .get(member)
+          .map((comment) => ` ${sourceCode.getText(comment)}`)
+          .join('');
 
-        return [...comments, `${memberIndent}${key}: ${value},`];
+        return [...leadingOf.get(member).flatMap(formatComment), `${memberIndent}${key}: ${value},${trailing}`];
       });
+
+      lines.push(...afterLast.flatMap(formatComment));
 
       return [
         `${exported}const ${name} = {`,

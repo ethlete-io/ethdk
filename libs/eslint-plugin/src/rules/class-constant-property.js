@@ -1,6 +1,7 @@
 // @ts-check
 'use strict';
 
+const { getAngularMetadata, isWrittenFromTemplateOrHost } = require('./internals/angular-member-visibility');
 const { getAngularDecoratorName } = require('./internals/import-resolution');
 
 const SCREAMING_CASE_RE = /^[A-Z][A-Z0-9_]*$/;
@@ -327,6 +328,7 @@ const classConstantProperty = {
     return {
       ClassBody(node) {
         const writtenMembers = getWrittenMembers(node);
+        const isAngularClass = getAngularMetadata(context.sourceCode, node.parent) !== null;
 
         for (const member of node.body) {
           if (!isConstantProperty(member)) {
@@ -345,6 +347,11 @@ const classConstantProperty = {
               (member.value.type === 'Identifier' && member.value.name === 'undefined'))
           ) {
             continue;
+          }
+
+          if (isAngularClass && !member.readonly) {
+            if (member.accessibility !== 'private' && member.accessibility !== 'protected') continue;
+            if (isWrittenFromTemplateOrHost(node.parent, memberName, context)) continue;
           }
 
           if (memberName === 'transform' && hasPipeDecorator(context.sourceCode, node.parent)) {

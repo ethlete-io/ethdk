@@ -392,6 +392,45 @@ test('no-restricted-syntax: root index barrel import is flagged', () => {
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('barrel'))).toBe(true);
 });
 
+test.each([`.`, `..`, `./`, `../`, `../..`, `./index.js`, `./lib/index.ts`])(
+  'no-restricted-syntax: directory import %s is flagged as a barrel',
+  (source) => {
+    const msgs = lint(`import { Foo } from '${source}';`);
+    expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('barrel'))).toBe(true);
+  },
+);
+
+test.each([`./foo`, `../foo.service`, `./indexer`, `@angular/core`, `rxjs`])(
+  'no-restricted-syntax: file import %s is not a barrel',
+  (source) => {
+    const msgs = lint(`import { Foo } from '${source}';`);
+    expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('barrel'))).toBe(false);
+  },
+);
+
+test.each([
+  ['a CanActivateFn', `export const authGuard: CanActivateFn = () => true;`, 'route guards'],
+  ['a CanMatchFn', `export const g: CanMatchFn = () => true;`, 'route guards'],
+  ['a canActivate route key', `export const routes = [{ path: 'a', canActivate: [authGuard] }];`, 'route guards'],
+  ['a ResolveFn', `export const userResolver: ResolveFn<User> = () => user;`, 'route resolvers'],
+  ['a resolve route key', `export const routes = [{ path: 'a', resolve: { user: userResolver } }];`, 'route resolvers'],
+])('no-restricted-syntax: %s is flagged', (_label, code, text) => {
+  const msgs = lint(code);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes(text))).toBe(true);
+});
+
+test('no-restricted-syntax: a functional canDeactivate guard is valid', () => {
+  const msgs = lint(
+    `export const g: CanDeactivateFn<unknown> = () => true; export const routes = [{ path: 'a', canDeactivate: [g] }];`,
+  );
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('route guards'))).toBe(false);
+});
+
+test('no-restricted-syntax: a resolve key outside a route is valid', () => {
+  const msgs = lint(`export const deferred = { promise, resolve, reject };`);
+  expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('route resolvers'))).toBe(false);
+});
+
 test('no-restricted-syntax: non-index import is valid', () => {
   const msgs = lint(`import { Foo } from './components/foo.component';`);
   expect(msgs.some((m) => m.ruleId === 'no-restricted-syntax' && m.message.includes('barrel'))).toBe(false);

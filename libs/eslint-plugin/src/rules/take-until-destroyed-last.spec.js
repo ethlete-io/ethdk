@@ -21,8 +21,18 @@ a$.pipe(takeUntilDestroyed(), map((x) => x));`,
     { code: `obs$.pipe(takeUntil(destroy$), switchMap(() => other$)).subscribe();` },
     { code: `obs$.pipe(switchMap(() => inner$.pipe(takeUntilDestroyed())), takeUntilDestroyed()).subscribe();` },
     { code: `obs$.pipe(map(x => x), shareReplay(1));` },
+    { code: `a$.pipe(takeUntilDestroyed(), finalize(() => log()), defaultIfEmpty(0)).subscribe();` },
+    { code: `a$.pipe(takeUntilDestroyed()).pipe(finalize(() => log())).subscribe();` },
   ],
   invalid: [
+    {
+      code: `b$.pipe(takeUntilDestroyed()).pipe(switchMap(() => c$)).subscribe();`,
+      errors: [{ messageId: 'takeUntilDestroyedLast' }],
+    },
+    {
+      code: `b$.pipe(takeUntilDestroyed(), finalize(() => log()), switchMap(() => c$)).subscribe();`,
+      errors: [{ messageId: 'takeUntilDestroyedLast' }],
+    },
     {
       code: `import { takeUntilDestroyed as untilDestroyed } from '@angular/core/rxjs-interop';
 a$.pipe(untilDestroyed(), map((x) => x));`,

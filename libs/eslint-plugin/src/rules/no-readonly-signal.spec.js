@@ -44,7 +44,7 @@ tester.run('no-readonly-signal', rule, {
     {
       code: `class Foo { readonly myModel = model(null); }`,
       output: `class Foo { myModel = model(null); }`,
-      errors: [{ messageId: 'noReadonlySignal' }],
+      errors: [{ messageId: 'noReadonlySignal', data: { name: 'myModel', api: 'model' } }],
     },
     {
       code: `class Foo { readonly data$ = toSignal(obs$); }`,

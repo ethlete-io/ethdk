@@ -54,6 +54,11 @@ fs.writeFileSync(
 tester.run('inject-member-accessibility', rule, {
   valid: [
     {
+      code: `@Component({ template: "@if (open() && config.enabled) { x } @for (r of rows(); track tracker.id(r)) {} {{ store$ | async }} {{ 'k' | translate: { n: labels.n } }}" })
+class C { protected config = inject(Cfg); protected tracker = inject(T); protected store$ = inject(S); protected labels = inject(L); }`,
+    },
+    { code: `@Component({ template: '{{ $count }}' }) class C { protected $count = inject(Counter); }` },
+    {
       code: `import { inject } from 'some-other-lib';
 class Foo { service = inject(MyService); }`,
     },
