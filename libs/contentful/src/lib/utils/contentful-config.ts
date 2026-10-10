@@ -9,6 +9,7 @@ import { ContentfulConfig, ContentfulConfigOptions } from '../types';
  */
 const CONTENTFUL_FALLBACK_CONFIG: ContentfulConfig = {
   internalHosts: [],
+  entryHref: null,
   components: {},
   customComponents: {},
   imageOptions: {

@@ -10,32 +10,44 @@ export const parseWebUrl = (href: string): URL | null => {
   }
 };
 
-const normalizeHostname = (host: string) => {
+const parseConfiguredHost = (host: string) => {
   const value = host.trim().toLowerCase();
+  const wildcard = value.startsWith('*.');
+  const bare = wildcard ? value.slice(2) : value;
 
   try {
-    return new URL(value.includes('://') ? value : 'https://' + value).hostname;
+    const url = new URL(bare.includes('://') ? bare : 'https://' + bare);
+
+    return { hostname: url.hostname, port: url.port, wildcard };
   } catch {
-    return value.split(':')[0] ?? value;
+    return { hostname: bare.split(':')[0] ?? bare, port: '', wildcard };
   }
 };
 
-const matchesHostname = (hostname: string, configuredHost: string) => {
-  const normalizedHost = normalizeHostname(configuredHost);
+const matchesConfiguredHost = (url: URL, configuredHost: string) => {
+  const { hostname, port, wildcard } = parseConfiguredHost(configuredHost);
 
-  return hostname === normalizedHost || hostname.endsWith('.' + normalizedHost);
+  if (!hostname || (port && url.port !== port)) return false;
+
+  return wildcard ? url.hostname.endsWith('.' + hostname) : url.hostname === hostname;
 };
 
 export type WebUrlContext = { location: Location; internalHosts: string[] };
 
 export const isInternalWebUrl = (url: URL, { location, internalHosts }: WebUrlContext) =>
   (url.hostname === location.hostname && url.port === location.port) ||
-  internalHosts.some((host) => matchesHostname(url.hostname, host));
+  internalHosts.some((host) => matchesConfiguredHost(url, host));
 
 export const isExternalWebHref = (href: string, context: WebUrlContext) => {
   const url = parseWebUrl(href);
 
   return url !== null && !isInternalWebUrl(url, context);
+};
+
+export const internalWebHrefPath = (href: string, context: WebUrlContext) => {
+  const url = parseWebUrl(href);
+
+  return url && isInternalWebUrl(url, context) ? url.pathname + url.search + url.hash : null;
 };
 
 export const hasUrlScheme = (href: string) => /^[a-z][a-z\d+.-]*:/i.test(href);

@@ -4,6 +4,8 @@ import {
   ComponentRef,
   ElementRef,
   EmbeddedViewRef,
+  InjectionToken,
+  Injector,
   Type,
   ViewContainerRef,
   ViewEncapsulation,
@@ -28,7 +30,12 @@ import {
   RichTextResponse,
 } from '../../types';
 import { injectContentfulConfig } from '../../utils/contentful-config';
-import { isExternalWebHref, isRouteRelativeHref, resolveHrefAgainstRoute } from '../link/contentful-link.util';
+import {
+  internalWebHrefPath,
+  isExternalWebHref,
+  isRouteRelativeHref,
+  resolveHrefAgainstRoute,
+} from '../link/contentful-link.util';
 import { CF_BLOCKS, CF_INLINES } from './rich-text-node-types';
 import { richTextRendererError } from './rich-text-renderer.errors';
 import { ContentfulGqlRichText, mapContentfulGqlLinks } from './rich-text-renderer.gql';
@@ -71,6 +78,7 @@ type ComponentRenderCommand = {
   parentId: string | null;
   component: Type<unknown>;
   inputs: Record<string, unknown>;
+  entryId?: string;
   id: string;
 };
 
@@ -209,6 +217,23 @@ export type ContentfulIncludeMap = {
   getAssets: (ids: string[]) => ContentfulRestAsset[];
 };
 
+type IncludeMapLookup = {
+  entry: (id: string) => ContentfulEntry | null;
+  asset: (id: string) => ContentfulRestAsset | null;
+};
+
+const includeMapLookups = /* @__PURE__ */ new WeakMap<ContentfulIncludeMap, IncludeMapLookup>();
+
+const lookupOf = (includes: ContentfulIncludeMap): IncludeMapLookup =>
+  includeMapLookups.get(includes) ?? {
+    entry: (id) => includes.getEntry(id, ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID),
+    asset: (id) => includes.getAsset(id),
+  };
+
+const ANCESTOR_ENTRY_IDS = /* @__PURE__ */ new InjectionToken<ReadonlySet<string>>(
+  'ContentfulRichTextAncestorEntryIds',
+);
+
 export type CreateContentfulIncludeMapConfig = {
   /** The entries that should be present inside the map  */
   entries: ContentfulEntry[];
@@ -280,12 +305,14 @@ export const createContentfulIncludeMap = (config: CreateContentfulIncludeMapCon
     return ids.map((id) => getAsset(id)).filter((asset): asset is ContentfulRestAsset => asset !== null);
   };
 
-  return {
-    getEntry,
-    getEntries,
-    getAsset,
-    getAssets,
-  };
+  const includeMap: ContentfulIncludeMap = { getEntry, getEntries, getAsset, getAssets };
+
+  includeMapLookups.set(includeMap, {
+    entry: (id) => entryMap.get(id) ?? null,
+    asset: (id) => assetMap.get(id) ?? null,
+  });
+
+  return includeMap;
 };
 
 const warnedRichTextPaths = /* @__PURE__ */ new Set<string>();
@@ -322,6 +349,7 @@ const warnOnUnresolvedParentPath = (content: ContentfulCollection, richTextPath:
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-contentful-rich-text-renderer',
+    ngSkipHydration: 'true',
   },
 })
 export class ContentfulRichTextRendererComponent {
@@ -332,6 +360,7 @@ export class ContentfulRichTextRendererComponent {
   private document = inject(DOCUMENT);
   private location = inject(Location);
   private url = injectUrl();
+  private injector = inject(Injector);
 
   /**
    * The contentful response gotten via their REST api.
@@ -352,31 +381,63 @@ export class ContentfulRichTextRendererComponent {
    */
   gqlRichText = input<ContentfulGqlRichText | null | undefined>();
 
+  /**
+   * A bare rich-text document, e.g. a rich-text field of an embedded entry. Pair it with `includes` so its
+   * embeds resolve. An alternative to `content` / `richTextPath` and `gqlRichText`.
+   * @example <et-contentful-rich-text-renderer [richText]="fields().body" [includes]="includes()" />
+   */
+  richText = input<RichTextResponse | null | undefined>();
+
+  /** The linked entries and assets `richText` resolves its embeds against, e.g. a custom component's `includes`. */
+  includes = input<ContentfulIncludeMap | null | undefined>();
+
+  private ancestorEntryIds = inject(ANCESTOR_ENTRY_IDS, { optional: true }) ?? new Set<string>();
+
   private readonly executedCommandsCache = new Map<string, ExecutedCommandCacheItem>();
 
-  private includes = computed(() => {
+  private contentIncludesMap = computed<ContentfulIncludeMap>(() => {
+    const includes = this.includes();
+
+    if (includes) {
+      return includes;
+    }
+
     const gqlRichText = this.gqlRichText();
 
     if (gqlRichText) {
-      return mapContentfulGqlLinks(gqlRichText.links);
+      return createContentfulIncludeMap(
+        mapContentfulGqlLinks(gqlRichText.links, Object.keys(this.config.customComponents)),
+      );
     }
 
-    const includes = this.content()?.includes;
+    const content = this.content();
+    const entries = new Map<string, ContentfulEntry>();
 
-    return { assets: includes?.Asset ?? [], entries: includes?.Entry ?? [] };
+    for (const entry of [...(content?.items ?? []), ...(content?.includes?.Entry ?? [])]) {
+      entries.set(entry.sys.id, entry);
+    }
+
+    return createContentfulIncludeMap({ assets: content?.includes?.Asset ?? [], entries: [...entries.values()] });
   });
 
-  private contentIncludesMap = computed<ContentfulIncludeMap>(() => createContentfulIncludeMap(this.includes()));
-
-  private includedEntries = computed(() => new Map(this.includes().entries.map((entry) => [entry.sys.id, entry])));
+  private linkLookup = computed(() => lookupOf(this.contentIncludesMap()));
 
   private richTextData = computed(() => {
     const gqlRichText = this.gqlRichText();
     const content = this.content();
     const richTextPath = this.richTextPath();
+    const richText = this.richText();
 
-    if (ngDevMode && gqlRichText && (content || richTextPath)) {
-      throw richTextRendererError('rich_text_conflicting_inputs', { gqlRichText, content, richTextPath });
+    if (ngDevMode && [gqlRichText, content || richTextPath, richText].filter(Boolean).length > 1) {
+      throw richTextRendererError('rich_text_conflicting_inputs', { gqlRichText, content, richTextPath, richText });
+    }
+
+    if (richText) {
+      if (!isRichTextRootNode(richText)) {
+        throw richTextRendererError('rich_text_wrong_type', { richText });
+      }
+
+      return richText;
     }
 
     if (gqlRichText) {
@@ -401,25 +462,25 @@ export class ContentfulRichTextRendererComponent {
       return null;
     }
 
-    const richText = getObjectProperty(content as unknown as Record<string, unknown>, richTextPath);
+    const pathValue = getObjectProperty(content as unknown as Record<string, unknown>, richTextPath);
 
-    if (richText === null || richText === undefined) {
-      if (ngDevMode && richText === undefined) {
+    if (pathValue === null || pathValue === undefined) {
+      if (ngDevMode && pathValue === undefined) {
         warnOnUnresolvedParentPath(content, richTextPath);
       }
 
       return null;
     }
 
-    if (!isObject(richText)) {
-      throw richTextRendererError('rich_text_not_object', { content, richTextPath, type: typeof richText });
+    if (!isObject(pathValue)) {
+      throw richTextRendererError('rich_text_not_object', { content, richTextPath, type: typeof pathValue });
     }
 
-    if (!isRichTextRootNode(richText)) {
+    if (!isRichTextRootNode(pathValue)) {
       throw richTextRendererError('rich_text_wrong_type', { content, richTextPath });
     }
 
-    return richText as RichTextResponse;
+    return pathValue as RichTextResponse;
   });
 
   private renderCommands = computed(() => {
@@ -580,7 +641,7 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('asset_id_not_found', { node });
           }
 
-          const asset = this.contentIncludesMap().getAsset(assetId);
+          const asset = this.linkLookup().asset(assetId);
 
           if (!asset) {
             if (isDevMode()) {
@@ -659,9 +720,14 @@ export class ContentfulRichTextRendererComponent {
             href = normalizeHref((node.data['uri'] as string) ?? '');
           } else if (node.nodeType === CF_INLINES.ASSET_HYPERLINK) {
             const assetId = node.data['target']?.sys?.id;
-            const asset = assetId ? this.contentIncludesMap().getAsset(assetId) : null;
+            const asset = assetId ? this.linkLookup().asset(assetId) : null;
             const url = asset?.fields.file?.url;
             href = url ? normalizeHref(url) : null;
+          } else if (this.config.entryHref) {
+            const entryId = node.data['target']?.sys?.id;
+            const entry = entryId ? this.linkLookup().entry(entryId) : null;
+            const entryHref = entry ? this.config.entryHref(entry) : null;
+            href = entryHref ? normalizeHref(entryHref) : null;
           }
 
           const linkTexts = node.content.filter(
@@ -675,14 +741,17 @@ export class ContentfulRichTextRendererComponent {
           const linkComponent = href ? this.config.components.link : null;
 
           if (href && !linkComponent) {
-            const anchorHref = isRouteRelativeHref(href)
-              ? this.location.prepareExternalUrl(resolveHrefAgainstRoute(href, this.url()))
-              : href;
+            const webUrlContext = { location: this.document.location, internalHosts: this.config.internalHosts };
+            const internalPath = internalWebHrefPath(href, webUrlContext);
+            const anchorHref =
+              internalPath !== null
+                ? this.location.prepareExternalUrl(internalPath)
+                : isRouteRelativeHref(href)
+                  ? this.location.prepareExternalUrl(resolveHrefAgainstRoute(href, this.url()))
+                  : href;
             const attributes: Record<string, string> = { class: DEFAULT_ANCHOR_CLASS, href: anchorHref };
 
-            if (
-              isExternalWebHref(href, { location: this.document.location, internalHosts: this.config.internalHosts })
-            ) {
+            if (isExternalWebHref(href, webUrlContext)) {
               attributes['target'] = '_blank';
               attributes['rel'] = 'noopener noreferrer';
             }
@@ -769,7 +838,18 @@ export class ContentfulRichTextRendererComponent {
             throw richTextRendererError('entry_id_not_found', { node });
           }
 
-          const entry = this.includedEntries().get(entryId);
+          if (this.ancestorEntryIds.has(entryId)) {
+            if (isDevMode()) {
+              console.warn(
+                'Embedded entry embeds itself through its own rich text! The nested occurrence is skipped to stop the cycle.',
+                { entryId, node },
+              );
+            }
+
+            break;
+          }
+
+          const entry = this.linkLookup().entry(entryId);
 
           if (!entry) {
             if (isDevMode()) {
@@ -814,10 +894,23 @@ export class ContentfulRichTextRendererComponent {
               sys: entry.sys,
               includes: this.contentIncludesMap(),
             },
+            entryId,
             id,
           });
 
           domPosition++;
+
+          break;
+        }
+
+        case CF_BLOCKS.EMBEDDED_RESOURCE:
+        case CF_INLINES.EMBEDDED_RESOURCE: {
+          if (isDevMode()) {
+            console.warn(`Rich text node type "${node.nodeType}" is not supported and is skipped.`, {
+              urn: node.data['target']?.sys?.urn,
+              node,
+            });
+          }
 
           break;
         }
@@ -929,7 +1022,16 @@ export class ContentfulRichTextRendererComponent {
         .filter((declared) => declared.propName in command.inputs)
         .map((declared) => inputBinding(declared.templateName, () => inputs()[declared.propName]));
 
-      const componentRef = this.viewContainerRef.createComponent(command.component, { bindings });
+      const injector = command.entryId
+        ? Injector.create({
+            providers: [
+              { provide: ANCESTOR_ENTRY_IDS, useValue: new Set([...this.ancestorEntryIds, command.entryId]) },
+            ],
+            parent: this.injector,
+          })
+        : undefined;
+
+      const componentRef = this.viewContainerRef.createComponent(command.component, { bindings, injector });
 
       const rootNode = this.getComponentRootNode(componentRef);
 

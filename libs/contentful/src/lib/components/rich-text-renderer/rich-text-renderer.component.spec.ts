@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { Block, Inline, Mark, Text } from '@contentful/rich-text-types';
 import {
   ContentfulCollection,
+  ContentfulConfigOptions,
   ContentfulEntry,
   ContentfulEntrySys,
   ContentfulMetadata,
@@ -151,6 +152,22 @@ class StubPartialComponent {
   }
 }
 
+@Component({
+  selector: 'et-stub-section',
+  template: `<et-contentful-rich-text-renderer [richText]="fields()?.body" [includes]="includes()" class="section" />`,
+  imports: [ContentfulRichTextRendererComponent],
+})
+class StubSectionComponent {
+  static instances: StubSectionComponent[] = [];
+
+  fields = input<Record<string, any> | null>(null);
+  includes = input<ContentfulIncludeMap | null>(null);
+
+  constructor() {
+    StubSectionComponent.instances.push(this);
+  }
+}
+
 @Component({ template: '' })
 class EmptyRouteComponent {}
 
@@ -173,6 +190,7 @@ type SetupOptions = {
   useStubAssetComponents?: boolean;
   withoutConfig?: boolean;
   withoutDefaultComponents?: boolean;
+  config?: ContentfulConfigOptions;
   providers?: Provider[];
 };
 
@@ -198,6 +216,7 @@ const setup = (options: SetupOptions = {}) => {
               ...(options.withoutDefaultComponents ? {} : CONTENTFUL_DEFAULT_COMPONENTS),
               ...(components ? { components } : {}),
               customComponents: options.customComponents ?? {},
+              ...options.config,
             }),
           ]),
       ...(options.providers ?? []),
@@ -264,6 +283,13 @@ describe('ContentfulRichTextRendererComponent', () => {
     StubTeaserComponent.destroyed = 0;
     StubPartialComponent.instances = [];
     StubLinkComponent.instances = [];
+    StubSectionComponent.instances = [];
+  });
+
+  it('opts its host out of hydration, so a server render is replaced instead of duplicated', () => {
+    const { fixture } = setup({ richText: doc(paragraph('Body')) });
+
+    expect(renderRoot(fixture).getAttribute('ngSkipHydration')).toBe('true');
   });
 
   describe('static rendering', () => {
@@ -577,7 +603,165 @@ describe('ContentfulRichTextRendererComponent', () => {
     });
   });
 
+  describe('embedded entries from the collection items', () => {
+    it('resolves an embedded entry that is one of the items and not repeated in the includes', () => {
+      const related = createEntry('item-2', 'teaser', { title: 'Related article' });
+      const content = createCollection(doc(embeddedEntry('item-2')));
+      delete content.includes;
+      content.items.push(related);
+
+      const { fixture } = setup({ content, customComponents: { teaser: StubTeaserComponent } });
+
+      expect(renderRoot(fixture).querySelectorAll('.teaser')).toHaveLength(1);
+      expect(renderRoot(fixture).querySelector('.teaser')?.textContent).toBe('Related article');
+      expect(StubTeaserComponent.instances[0]?.includes()?.getEntry('item-2', 'teaser')).toBe(related);
+    });
+
+    it('prefers the includes copy of an entry that is also an item', () => {
+      const item = createEntry('item-2', 'teaser', { title: 'Item copy' });
+      const included = createEntry('item-2', 'teaser', { title: 'Included copy' });
+      const content = createCollection(doc(embeddedEntry('item-2')), { Entry: [included] });
+      content.items.push(item);
+
+      const { fixture } = setup({ content, customComponents: { teaser: StubTeaserComponent } });
+
+      expect(renderRoot(fixture).querySelector('.teaser')?.textContent).toBe('Included copy');
+    });
+  });
+
+  describe('rich text of an embedded entry', () => {
+    it('renders the rich text of an embedded entry with its own embeds', () => {
+      const section = createEntry('s1', 'section', { body: doc(paragraph('Section body'), embeddedAsset('a1')) });
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        customComponents: { section: StubSectionComponent },
+        richText: doc(embeddedEntry('s1')),
+        includes: { Entry: [section], Asset: [createAsset('a1', 'image/png')] },
+      });
+
+      const nested = renderRoot(fixture).querySelector('et-contentful-rich-text-renderer.section') as HTMLElement;
+
+      expect(nested.querySelector('p')?.textContent).toBe('Section body');
+      expect(nested.querySelector('et-stub-image')).not.toBeNull();
+    });
+
+    it('skips an entry that embeds itself through another entry', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const a = createEntry('a', 'section', { body: doc(paragraph('A'), embeddedEntry('b')) });
+      const b = createEntry('b', 'section', { body: doc(paragraph('B'), embeddedEntry('a')) });
+      const { fixture } = setup({
+        customComponents: { section: StubSectionComponent },
+        richText: doc(embeddedEntry('a')),
+        includes: { Entry: [a, b] },
+      });
+
+      expect(StubSectionComponent.instances.map((instance) => instance.fields())).toEqual([a.fields, b.fields]);
+      expect(renderRoot(fixture).textContent).toBe('AB');
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('embeds itself'),
+        expect.objectContaining({ entryId: 'a' }),
+      );
+
+      warn.mockRestore();
+    });
+
+    it('throws ET011 in dev mode when richText is combined with content', () => {
+      TestBed.configureTestingModule({ providers: [provideRouter([])] });
+
+      const fixture = TestBed.createComponent(ContentfulRichTextRendererComponent);
+      fixture.componentRef.setInput('richText', doc(paragraph('x')));
+      fixture.componentRef.setInput('content', createCollection(doc()));
+
+      expect(() => fixture.detectChanges()).toThrow(/Set exactly one rich-text source/);
+    });
+  });
+
+  describe('embedded resources', () => {
+    it.each(['embedded-resource-block', 'embedded-resource-inline'])('skips %s and says so', (nodeType) => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
+      const urn = 'crn:contentful:::content:spaces/s/entries/e';
+      const resource = block(nodeType, [], { target: { sys: { type: 'ResourceLink', urn } } });
+      const richText =
+        nodeType === 'embedded-resource-block'
+          ? doc(paragraph('Before'), resource)
+          : doc(block('paragraph', [text('Before'), resource as unknown as Inline]));
+      const { fixture } = setup({ richText });
+
+      expect(renderRoot(fixture).textContent).toBe('Before');
+      expect(renderRoot(fixture).querySelector('div')).toBeNull();
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining(`"${nodeType}" is not supported and is skipped`),
+        expect.objectContaining({ urn }),
+      );
+
+      warn.mockRestore();
+    });
+  });
+
   describe('hyperlinks', () => {
+    it('renders an entry hyperlink as a fallback anchor through entryHref', () => {
+      const page = createEntry('e1', 'page', { slug: 'pricing' });
+      const { fixture } = setup({
+        withoutDefaultComponents: true,
+        config: { entryHref: (entry) => `/${entry.fields['slug']}` },
+        richText: doc(block('paragraph', [targetHyperlink('entry-hyperlink', 'e1', 'Pricing')])),
+        includes: { Entry: [page] },
+      });
+
+      const anchor = renderRoot(fixture).querySelector('p > a');
+
+      expect(anchor?.getAttribute('href')).toBe('/pricing');
+      expect(anchor?.textContent).toBe('Pricing');
+    });
+
+    it('hands an entryHref href to the link component', () => {
+      const { fixture } = setup({
+        useStubAssetComponents: true,
+        config: { entryHref: (entry) => `/pages/${entry.sys.id}` },
+        richText: doc(block('paragraph', [targetHyperlink('entry-hyperlink', 'e1', 'Page')])),
+        includes: { Entry: [createEntry('e1', 'page')] },
+      });
+
+      expect(renderRoot(fixture).querySelector('et-stub-link')).not.toBeNull();
+      expect(StubLinkComponent.instances[0]?.href()).toBe('/pages/e1');
+    });
+
+    it.each([
+      ['null', () => null],
+      ['an unsafe href', () => 'javascript:alert(1)'],
+    ])('renders an entry hyperlink as text when entryHref returns %s', (_, entryHref) => {
+      const { fixture } = setup({
+        withoutDefaultComponents: true,
+        config: { entryHref },
+        richText: doc(block('paragraph', [targetHyperlink('entry-hyperlink', 'e1', 'Page')])),
+        includes: { Entry: [createEntry('e1', 'page')] },
+      });
+
+      expect(renderRoot(fixture).querySelector('a')).toBeNull();
+      expect(renderRoot(fixture).querySelector('p')?.textContent).toBe('Page');
+    });
+
+    it('points a fallback anchor to a configured internal host at the same path the link component routes to', () => {
+      const { fixture } = setup({
+        withoutDefaultComponents: true,
+        config: { internalHosts: ['example.com'] },
+        providers: [{ provide: APP_BASE_HREF, useValue: '/app/' }],
+        richText: doc(
+          block('paragraph', [
+            hyperlink('https://example.com/news?id=1#intro', 'Internal'),
+            hyperlink('https://shop.example.com/cart', 'Shop'),
+          ]),
+        ),
+      });
+
+      const [internal, shop] = [...renderRoot(fixture).querySelectorAll('p > a')] as HTMLAnchorElement[];
+
+      expect(internal?.getAttribute('href')).toBe('/app/news?id=1#intro');
+      expect(internal?.hasAttribute('target')).toBe(false);
+      expect(shop?.getAttribute('href')).toBe('https://shop.example.com/cart');
+      expect(shop?.target).toBe('_blank');
+    });
+
     it('renders the link component with href, text and marks', () => {
       const { fixture } = setup({
         useStubAssetComponents: true,
@@ -1309,14 +1493,18 @@ describe('ContentfulRichTextRendererComponent', () => {
       },
     };
 
-    const setupGql = (gqlRichText: unknown, extraInputs: Record<string, unknown> = {}) => {
+    const setupGql = (
+      gqlRichText: unknown,
+      extraInputs: Record<string, unknown> = {},
+      customComponents: Record<string, unknown> = { productTeaser: StubTeaserComponent },
+    ) => {
       TestBed.configureTestingModule({
         providers: [
           provideRouter([]),
           provideContentfulConfig({
             ...CONTENTFUL_DEFAULT_COMPONENTS,
             components: { ...CONTENTFUL_DEFAULT_COMPONENTS.components, image: StubImageComponent as any },
-            customComponents: { productTeaser: StubTeaserComponent as any },
+            customComponents: customComponents as any,
           }),
         ],
       });
@@ -1354,6 +1542,16 @@ describe('ContentfulRichTextRendererComponent', () => {
       });
     });
 
+    it.each(['product-teaser', 'product_teaser', 'ProductTeaser'])(
+      'finds the custom component registered under the content type id %s',
+      (contentTypeId) => {
+        const fixture = setupGql(gqlField, {}, { [contentTypeId]: StubTeaserComponent });
+
+        expect((fixture.nativeElement as HTMLElement).querySelector('.teaser')?.textContent).toBe('Gql teaser');
+        expect(StubTeaserComponent.instances.at(-1)?.sys()?.contentType.sys.id).toBe(contentTypeId);
+      },
+    );
+
     it('skips an embedded entry that has no __typename', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => void 0);
       const fixture = setupGql({
@@ -1369,7 +1567,7 @@ describe('ContentfulRichTextRendererComponent', () => {
     it('throws ET011 in dev mode when combined with content', () => {
       expect(() =>
         setupGql(gqlField, { content: createCollection(doc()), richTextPath: 'items[0].fields.html' }),
-      ).toThrow(/gqlRichText cannot be combined with content or richTextPath/);
+      ).toThrow(/Set exactly one rich-text source/);
     });
   });
 });

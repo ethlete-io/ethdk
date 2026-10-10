@@ -72,12 +72,26 @@ describe('ContentfulLinkComponent', () => {
     expect(fixture.debugElement.query(By.directive(RouterLink))).not.toBeNull();
   });
 
-  it('uses router navigation for configured hosts and their subdomains', () => {
-    const fixture = setup('https://media.example.co.uk/news?id=1#intro', ['example.co.uk']);
+  it('uses router navigation for a configured host', () => {
+    const fixture = setup('https://example.co.uk/news?id=1#intro', ['example.co.uk']);
     const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
 
     expect(fixture.debugElement.query(By.directive(RouterLink))).not.toBeNull();
     expect(anchor.getAttribute('href')).toContain('/news?id=1#intro');
+  });
+
+  it('keeps the full href of a subdomain the configured host does not list', () => {
+    const fixture = setup('https://shop.example.com/cart', ['example.com']);
+    const anchor = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
+
+    expect(fixture.debugElement.query(By.directive(RouterLink))).toBeNull();
+    expect(anchor.getAttribute('href')).toBe('https://shop.example.com/cart');
+  });
+
+  it('uses router navigation for a subdomain matched by a *. pattern', () => {
+    const fixture = setup('https://media.example.co.uk/news', ['*.example.co.uk']);
+
+    expect(fixture.debugElement.query(By.directive(RouterLink))).not.toBeNull();
   });
 
   it('uses router navigation for the current host', () => {

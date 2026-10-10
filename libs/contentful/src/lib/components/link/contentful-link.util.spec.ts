@@ -38,11 +38,28 @@ describe('isInternalWebUrl', () => {
   });
 
   it('normalizes configured hosts with a scheme, port, case or whitespace', () => {
-    const url = new URL('https://www.example.com/x');
+    const url = new URL('https://example.com/x');
 
     expect(isInternalWebUrl(url, context(['https://example.com']))).toBe(true);
     expect(isInternalWebUrl(url, context(['example.com:443']))).toBe(true);
     expect(isInternalWebUrl(url, context(['  EXAMPLE.com ']))).toBe(true);
+  });
+
+  it('matches a configured host exactly, so a subdomain needs its own entry', () => {
+    expect(isInternalWebUrl(new URL('https://shop.example.com/cart'), context(['example.com']))).toBe(false);
+    expect(isInternalWebUrl(new URL('https://shop.example.com/cart'), context(['shop.example.com']))).toBe(true);
+  });
+
+  it('matches every subdomain, but not the bare host, for a *. pattern', () => {
+    expect(isInternalWebUrl(new URL('https://shop.example.com/cart'), context(['*.example.com']))).toBe(true);
+    expect(isInternalWebUrl(new URL('https://a.b.example.com/'), context(['*.example.com']))).toBe(true);
+    expect(isInternalWebUrl(new URL('https://example.com/'), context(['*.example.com']))).toBe(false);
+    expect(isInternalWebUrl(new URL('https://notexample.com/'), context(['*.example.com']))).toBe(false);
+  });
+
+  it('requires the port when a configured host names one', () => {
+    expect(isInternalWebUrl(new URL('http://cms.test:8080/x'), context(['cms.test:8080']))).toBe(true);
+    expect(isInternalWebUrl(new URL('http://cms.test:9090/x'), context(['cms.test:8080']))).toBe(false);
   });
 
   it('ignores an empty internal host list and empty entries', () => {

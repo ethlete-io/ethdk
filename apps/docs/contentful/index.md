@@ -47,7 +47,8 @@ All config options (defaults from `createContentfulConfig()`):
 | ------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `components`                   | `{}`                                  | Components for embedded assets and hyperlinks. Spread `CONTENTFUL_DEFAULT_COMPONENTS` for the built-in ones. |
 | `customComponents`             | `{}`                                  | Map of Contentful content-type id → component for [embedded entries](#embedded-entries-custom-components).   |
-| `internalHosts`                | `[]`                                  | Extra hostnames the [link component](#links) treats as internal (router navigation instead of `<a href>`).   |
+| `internalHosts`                | `[]`                                  | Extra hosts the [link component](#links) treats as internal (router navigation instead of `<a href>`).       |
+| `entryHref`                    | `null`                                | Turns the entry an `entry-hyperlink` points at into an href, see [Links](#links).                            |
 | `imageOptions.srcsetSizes`     | `['375w', '1280w', '1920w', '2560w']` | Default srcset candidates for [images](#images).                                                             |
 | `imageOptions.sizes`           | `['100vw']`                           | Default `sizes` attribute entries for images.                                                                |
 | `imageOptions.backgroundColor` | `null`                                | Background color (`bg=rgb:…`) applied by the Contentful Images API.                                          |
@@ -82,25 +83,30 @@ Everything else falls back to the defaults above without the provider. The stand
 | `content`      | `ContentfulCollection \| null \| undefined`  | The full collection response. `includes` may be omitted when there are no linked entities.                  |
 | `richTextPath` | `string`                                     | Dot/array path to the rich-text `document` field, e.g. `items[0].fields.html`.                              |
 | `gqlRichText`  | `ContentfulGqlRichText \| null \| undefined` | A GraphQL rich-text field, see [Rendering a GraphQL rich-text field](#rendering-a-graphql-rich-text-field). |
+| `richText`     | `RichTextResponse \| null \| undefined`      | A bare rich-text document, see [Rich text inside an embedded entry](#rich-text-inside-an-embedded-entry).   |
+| `includes`     | `ContentfulIncludeMap \| null \| undefined`  | The linked entries and assets `richText` resolves its embeds against.                                       |
 
-Use `content` with `richTextPath`, or `gqlRichText` - not both. In dev mode, setting `gqlRichText` together with either REST input throws ET011.
+Use `content` with `richTextPath`, `gqlRichText`, or `richText` with `includes` - one source only. In dev mode, setting more than one throws ET011.
 
 An absent rich-text field renders nothing. In dev mode, a path whose parent does not resolve either (`item[0].fields.html`, or an `items[1]` the response does not have) also logs a warning naming the deepest part that resolved, since that is almost always a typo.
 
-The component has an empty template and renders imperatively. Each node type maps to a plain HTML element:
+The component has an empty template and renders imperatively. Its host carries `ngSkipHydration`, so with `provideClientHydration()` the client discards the server-rendered rich text and renders it again instead of hydrating it.
 
-| Node type                                               | Element                         |
-| ------------------------------------------------------- | ------------------------------- |
-| `heading-1` … `heading-6`                               | `h1` … `h6`                     |
-| `paragraph`                                             | `p`                             |
-| `unordered-list` / `ordered-list` / `list-item`         | `ul` / `ol` / `li`              |
-| `blockquote`, `hr`                                      | `blockquote`, `hr`              |
-| `table`, `table-row`, `table-cell`, `table-header-cell` | `table`, `tr`, `td`, `th`       |
-| `hyperlink`, `asset-hyperlink`                          | `a` (see [Links](#links))       |
-| `entry-hyperlink`                                       | Text (no generic route exists)  |
-| `text`                                                  | `span` (newlines become `<br>`) |
-| any other inline (e.g. `resource-hyperlink`)            | `span`, with a dev-mode warning |
-| any other block (e.g. `embedded-resource-block`)        | `div`, with a dev-mode warning  |
+Each node type maps to a plain HTML element:
+
+| Node type                                               | Element                                    |
+| ------------------------------------------------------- | ------------------------------------------ |
+| `heading-1` … `heading-6`                               | `h1` … `h6`                                |
+| `paragraph`                                             | `p`                                        |
+| `unordered-list` / `ordered-list` / `list-item`         | `ul` / `ol` / `li`                         |
+| `blockquote`, `hr`                                      | `blockquote`, `hr`                         |
+| `table`, `table-row`, `table-cell`, `table-header-cell` | `table`, `tr`, `td`, `th`                  |
+| `hyperlink`, `asset-hyperlink`                          | `a` (see [Links](#links))                  |
+| `entry-hyperlink`                                       | `a` through `entryHref`, else text         |
+| `text`                                                  | `span` (newlines become `<br>`)            |
+| `embedded-resource-block`, `embedded-resource-inline`   | Nothing (skipped, with a dev-mode warning) |
+| any other inline (e.g. `resource-hyperlink`)            | `span`, with a dev-mode warning            |
+| any other block                                         | `div`, with a dev-mode warning             |
 
 Every element gets the classes `et-contentful-rich-text-default-element` and `et-contentful-rich-text-default-<tag>` for styling. Elements that end up empty are pruned, except `td`, `th` and `hr`. Whitespace-only text nodes and every authored newline are preserved.
 
@@ -120,7 +126,7 @@ Marks inside a hyperlink rendered by the link component are the exception: it re
 
 ## Embedded entries (custom components)
 
-`embedded-entry-block` / `embedded-entry-inline` nodes are rendered by looking up the entry's content-type id in `config.customComponents`. An entry with no registered component, or one missing from `includes` (unpublished or deleted), is skipped with a dev-mode warning; the rest of the document still renders. A custom component declares **any subset** of these inputs - only the ones it declares are set:
+`embedded-entry-block` / `embedded-entry-inline` nodes are rendered by looking up the entry's content-type id in `config.customComponents`. The entry is looked up in the collection's `items` and `includes.Entry` (the delivery API does not repeat an entry in `includes` when it is already one of the `items`; the `includes` copy wins on a duplicate). An entry with no registered component, or one missing from both (unpublished or deleted), is skipped with a dev-mode warning; the rest of the document still renders. A custom component declares **any subset** of these inputs - only the ones it declares are set:
 
 ```ts
 @Component({/* … */})
@@ -132,12 +138,30 @@ export class TeaserCollectionComponent {
 }
 ```
 
-The `ContentfulIncludeMap` resolves links against the collection's optional `includes`:
+The `ContentfulIncludeMap` resolves links against the collection's `items` and its optional `includes`:
 
 - `getEntry<T>(id, contentTypeId)` / `getEntries<T>(ids, contentTypeId)` - pass `ET_CONTENTFUL_ANY_ENTRY_CONTENT_TYPE_SYS_ID` to match any content type. Missing or mismatched entries dev-warn and return `null` (or are omitted from the array).
 - `getAsset(id)` / `getAssets(ids)`
 
-The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its content-type id. To resolve links outside the renderer (e.g. in a page component working with the raw collection), build a map yourself with `createContentfulIncludeMap({ entries: content.includes?.Entry ?? [], assets: content.includes?.Asset ?? [] })`.
+The `isContentfulEntryType<T>(entry, type)` guard narrows an entry by its content-type id. To resolve links outside the renderer (e.g. in a page component working with the raw collection), build a map yourself with `createContentfulIncludeMap({ entries: [...content.items, ...(content.includes?.Entry ?? [])], assets: content.includes?.Asset ?? [] })`.
+
+### Rich text inside an embedded entry
+
+An embedded entry can carry its own rich-text field - a "Section" entry with a `body` that embeds images, say. Its custom component renders that field with a nested renderer: pass the document to `richText` and its own `includes` input on, so the nested embeds resolve against the same response:
+
+```ts
+@Component({
+  selector: 'app-section',
+  imports: [ContentfulRichTextRendererComponent],
+  template: `<et-contentful-rich-text-renderer [richText]="fields().body" [includes]="includes()" />`,
+})
+export class SectionComponent {
+  fields = input.required<{ body: RichTextResponse }>();
+  includes = input.required<ContentfulIncludeMap>();
+}
+```
+
+Entries that embed each other (A embeds B, B embeds A) do not recurse forever: a nested renderer skips an entry that is already one of its ancestors, with a dev-mode warning.
 
 ## Embedded assets
 
@@ -180,13 +204,23 @@ There are no class inputs - target the static classes in parentheses with CSS in
 
 The link decides between router navigation and a plain anchor:
 
-- Application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. Only a configured hostname covers its subdomains, but never unrelated hosts that merely share a public suffix.
+- Application paths and absolute HTTP(S) URLs whose host matches the current page exactly (hostname and port) or a configured `internalHosts` entry use `[routerLink]`. An `internalHosts` entry matches its host exactly, so `example.com` does not cover `shop.example.com` - list the subdomain, or write `*.example.com` to match every subdomain (but not `example.com` itself). An entry with a port (`cms.test:8080`) also requires that port.
 - Native destinations such as `mailto:`, `tel:` and `ftp:` use a plain `<a href>`. External HTTP(S) links open in a new tab with `rel="noopener noreferrer"`.
 - A fragment-only link (`#comments`) is a plain `<a>` whose `href` is the current page plus the fragment (`/news/article-1#comments`, prefixed with the `<base href>`), so it scrolls on the page instead of resolving against the base URL.
 - Paths that do not start with `/` (`?page=2`, `./next`, `../list`) resolve against the current router URL, like a browser resolves them against the page, and follow later navigations.
-- Without a `components.link` in the config, the renderer falls back to a plain anchor, which opens external HTTP(S) links in a new tab the same way and resolves `#fragment`, `?query` and `./relative` hrefs against the current router URL (prefixed with the `<base href>`). Unsafe URL schemes are rendered as text without an `href`.
+- Without a `components.link` in the config, the renderer falls back to a plain anchor, which opens external HTTP(S) links in a new tab the same way and resolves `#fragment`, `?query` and `./relative` hrefs against the current router URL (prefixed with the `<base href>`). An internal absolute URL points at its path in this app (prefixed with the `<base href>`), the same place the link component routes to. Unsafe URL schemes are rendered as text without an `href`.
 - Internal absolute URLs are reduced to path + query + hash and passed as an Angular `UrlTree`, so content authored against the production domain works on localhost or a preview host without encoding the query or fragment.
-- Asset hyperlinks resolve to the included asset URL. Entry hyperlinks render their label as text because Contentful entries have no generic URL; render entry links through a custom embedded-entry component when the content model defines routing.
+- Asset hyperlinks resolve to the included asset URL.
+- Entry hyperlinks have no generic URL, so they render their label as text unless the config sets `entryHref`. It receives the linked entry and returns an href (or `null` for text), which then renders like a `hyperlink` - through the link component or the fallback anchor:
+
+```ts
+provideContentfulConfig({
+  ...CONTENTFUL_DEFAULT_COMPONENTS,
+  entryHref: (entry) => (entry.sys.contentType.sys.id === 'page' ? `/${entry.fields['slug']}` : null),
+});
+```
+
+With GraphQL, select the fields `entryHref` reads under `links.entries.hyperlink`.
 
 ## GraphQL helpers
 
@@ -227,19 +261,19 @@ body {
 }
 ```
 
-`links.assets.block`, `links.assets.hyperlink`, `links.entries.block`, `links.entries.inline` and `links.entries.hyperlink` are all read. Embedded entries are matched to `customComponents` by the `__typename` with its first letter lower-cased (`ProductTeaser` becomes `productTeaser`), which is how Contentful derives the type name from a content type id. Select `__typename` on every linked entry; one without it is skipped. The custom component receives the entry's selected fields (everything except `__typename` and `sys`) as `fields`.
+`links.assets.block`, `links.assets.hyperlink`, `links.entries.block`, `links.entries.inline` and `links.entries.hyperlink` are all read. Embedded entries are matched to `customComponents` by the `__typename`: the key whose GraphQL type name equals it wins. Contentful derives the type name by PascalCasing the content type id and dropping separators, so `product-teaser`, `product_teaser` and `productTeaser` all match `ProductTeaser`. Without a matching key, the content type id is the `__typename` with its first letter lower-cased. Select `__typename` on every linked entry; one without it is skipped. The custom component receives the entry's selected fields (everything except `__typename` and `sys`) as `fields`.
 
 ## Error codes
 
 The rich-text renderer throws `RuntimeError`s with renderer-local codes (`ET` + 3 digits - a separate namespace from the [`@ethlete/components` ranges](/components/error-codes)), all prefixed `<et-contentful-rich-text-renderer>:`.
 
-| Code  | Thrown when                                                                          |
-| ----- | ------------------------------------------------------------------------------------ |
-| ET000 | The value at `richTextPath` exists but is not an object; the message names its type. |
-| ET001 | The value is not a rich-text root (`nodeType: 'document'`).                          |
-| ET002 | An embedded asset node has no asset id.                                              |
-| ET003 | An embedded entry node has no entry id.                                              |
-| ET007 | A text node's parent node was not found.                                             |
-| ET009 | An internal render update found no rendered node for its command.                    |
-| ET010 | An internal render update expected a component but found a plain node.               |
-| ET011 | `gqlRichText` is set together with `content` or `richTextPath` (dev mode only).      |
+| Code  | Thrown when                                                                                                 |
+| ----- | ----------------------------------------------------------------------------------------------------------- |
+| ET000 | The value at `richTextPath` exists but is not an object; the message names its type.                        |
+| ET001 | The value is not a rich-text root (`nodeType: 'document'`).                                                 |
+| ET002 | An embedded asset node has no asset id.                                                                     |
+| ET003 | An embedded entry node has no entry id.                                                                     |
+| ET007 | A text node's parent node was not found.                                                                    |
+| ET009 | An internal render update found no rendered node for its command.                                           |
+| ET010 | An internal render update expected a component but found a plain node.                                      |
+| ET011 | More than one rich-text source is set: `gqlRichText`, `content`/`richTextPath`, `richText` (dev mode only). |

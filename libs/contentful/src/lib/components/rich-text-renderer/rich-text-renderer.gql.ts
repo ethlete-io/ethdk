@@ -31,6 +31,15 @@ export type ContentfulGqlRichText = {
 
 const lowerCaseFirst = (value: string) => value.charAt(0).toLowerCase() + value.slice(1);
 
+const toGqlTypeName = (contentTypeId: string) => {
+  const pascal = contentTypeId.replace(/[^a-z0-9]+(.)?/gi, (_, next: string | undefined) => next?.toUpperCase() ?? '');
+
+  return pascal.charAt(0).toUpperCase() + pascal.slice(1);
+};
+
+const toContentTypeId = (typename: string, contentTypeIds: readonly string[]) =>
+  contentTypeIds.find((id) => toGqlTypeName(id) === typename) ?? lowerCaseFirst(typename);
+
 const toRestAsset = (asset: ContentfulGqlAsset): ContentfulRestAsset => ({
   sys: { type: 'Asset', id: asset.sys.id, createdAt: '', updatedAt: '', locale: '' },
   fields: {
@@ -51,7 +60,7 @@ const toRestAsset = (asset: ContentfulGqlAsset): ContentfulRestAsset => ({
   metadata: { tags: [] },
 });
 
-const toRestEntry = (entry: ContentfulGqlRichTextEntry): ContentfulEntry | null => {
+const toRestEntry = (entry: ContentfulGqlRichTextEntry, contentTypeIds: readonly string[]): ContentfulEntry | null => {
   const { __typename, sys, ...fields } = entry;
 
   if (!__typename) {
@@ -65,7 +74,7 @@ const toRestEntry = (entry: ContentfulGqlRichTextEntry): ContentfulEntry | null 
       createdAt: '',
       updatedAt: '',
       locale: '',
-      contentType: { sys: { type: 'Link', linkType: 'ContentType', id: lowerCaseFirst(__typename) } },
+      contentType: { sys: { type: 'Link', linkType: 'ContentType', id: toContentTypeId(__typename, contentTypeIds) } },
     },
     fields,
     metadata: { tags: [] },
@@ -77,11 +86,14 @@ const present = <T>(items: ContentfulGqlLinkList<T> | undefined) =>
 
 /**
  * Maps the `links` of a GraphQL rich-text field to the entries and assets the renderer resolves
- * embeds against. An entry's content type id is its `__typename` with the first letter lower-cased,
- * which is how Contentful derives a GraphQL type name from a content type id. Entries without a
- * `__typename` are dropped.
+ * embeds against. An entry's content type id is the id in `contentTypeIds` whose GraphQL type name
+ * (PascalCase, separators dropped: `product-teaser` → `ProductTeaser`) equals its `__typename`, else the
+ * `__typename` with the first letter lower-cased. Entries without a `__typename` are dropped.
  */
-export const mapContentfulGqlLinks = (links: ContentfulGqlRichText['links']) => {
+export const mapContentfulGqlLinks = (
+  links: ContentfulGqlRichText['links'],
+  contentTypeIds: readonly string[] = [],
+) => {
   const assets = new Map<string, ContentfulRestAsset>();
   const entries = new Map<string, ContentfulEntry>();
 
@@ -94,7 +106,7 @@ export const mapContentfulGqlLinks = (links: ContentfulGqlRichText['links']) => 
     ...present(links?.entries?.inline),
     ...present(links?.entries?.hyperlink),
   ]) {
-    const entry = toRestEntry(gqlEntry);
+    const entry = toRestEntry(gqlEntry, contentTypeIds);
 
     if (entry) {
       entries.set(entry.sys.id, entry);

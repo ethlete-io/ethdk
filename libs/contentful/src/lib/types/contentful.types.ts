@@ -58,14 +58,22 @@ export type ContentfulConfig = {
   customComponents: Record<string, ComponentLikeWithContentfulRendererInputs>;
 
   /**
-   * Additional hostnames that should be treated as internal links (in addition to the current page's host).
+   * Additional hosts that should be treated as internal links (in addition to the current page's host).
    * Useful when the app runs on localhost during development but Contentful content references the production domain.
-   * A configured hostname also covers its subdomains, so adding "example.com" treats
-   * "foo.example.com" as internal without matching unrelated public-suffix siblings.
+   * A host matches exactly, so a subdomain needs its own entry; `'*.example.com'` matches every subdomain of
+   * `example.com` (but not `example.com` itself).
    *
-   * @example ['example.com']
+   * @example ['example.com', '*.example.com']
    */
   internalHosts: string[];
+
+  /**
+   * Turns the entry an `entry-hyperlink` points at into an href. Return `null` to render the link text without a link.
+   * Without it, entry hyperlinks render as text.
+   *
+   * @example (entry) => (entry.sys.contentType.sys.id === 'page' ? `/${entry.fields.slug}` : null)
+   */
+  entryHref: ((entry: ContentfulEntry) => string | null) | null;
 
   /**
    * Default options for the contentful image api
