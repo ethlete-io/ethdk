@@ -81,8 +81,20 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
     const r = raw();
 
     if (!cachedSig) {
-      const instance = injector.get(BREAKPOINT_INSTANCE_TOKEN, null) as any;
-      if (!instance) {
+      const instance = injector.get(BREAKPOINT_INSTANCE_TOKEN, null, { self: true }) as any;
+
+      if (instance) {
+        for (const key of Object.keys(instance)) {
+          const val = instance[key];
+
+          if (val && typeof val === 'function' && (val as any)[SIGNAL]?.transformFn === transformFn) {
+            cachedSig = val as InputSignalWithTransform<T, any>;
+            break;
+          }
+        }
+      }
+
+      if (!cachedSig) {
         if (ngDevMode && r !== undefined && !warnedMissingInstance) {
           warnedMissingInstance = true;
           console.warn(
@@ -92,14 +104,6 @@ export const breakpointTransformBase = <T, WriteT = BreakpointInput<T>>(
         }
 
         return;
-      }
-      for (const key of Object.keys(instance)) {
-        const val = instance[key];
-
-        if (val && typeof val === 'function' && (val as any)[SIGNAL]?.transformFn === transformFn) {
-          cachedSig = val as InputSignalWithTransform<T, any>;
-          break;
-        }
       }
     }
 

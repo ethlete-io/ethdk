@@ -72,7 +72,7 @@ The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `in
 
 `injectQueryParamChanges()` / `injectPathParamChanges()` emit only the keys that changed in the latest navigation; removed keys carry the `ET_PROPERTY_REMOVED` sentinel.
 
-For synchronous, non-injected use inside `router.events` handlers there are `createRouterState(router)` and `createRoute(router)`.
+For synchronous, non-injected use inside `router.events` handlers there are `createRouterState(router)` and `createRoute(router, location?)`. Pass `Location` to `createRoute` so a read before the first navigation leaves out the base href.
 
 `injectRouterNavigationState<T>()` reads the state a navigation was given - what `router.navigate(…, { state })` passed. It returns `T | null` **synchronously** and is deliberately not a signal: navigation state exists only for the duration of the navigation carrying it, so by the time an effect flushed the answer would always be `null`. Call it in a constructor or a resolver, and always handle `null` - a page arrived at by typing its URL has no navigation state.
 

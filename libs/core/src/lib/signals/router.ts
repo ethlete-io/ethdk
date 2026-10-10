@@ -47,7 +47,11 @@ const createInitialRoute = () => {
     return router.url;
   }
 
-  const path = inject(Location).path(true);
+  return readLocationPath(inject(Location));
+};
+
+const readLocationPath = (location: Location) => {
+  const path = location.path(true);
 
   return path.startsWith('/') ? path : `/${path}`;
 };
@@ -155,16 +159,23 @@ export const createRouterState = (router: Router): RouterState => {
 /**
  * Read the current route (the committed url without query params and fragment) straight from the router.
  * Unlike the `injectRoute` signal this reads synchronously, so it can be used inside a `router.events` handler
- * where `router.url` is already committed. Falls back to the browser location before the first navigation commits.
+ * where `router.url` is already committed. Before the first navigation commits it falls back to `location`
+ * (without the base href) when given, else to the browser location.
  */
-export const createRoute = (router: Router) => {
-  const browserUrl =
-    typeof window === 'undefined'
-      ? router.url
-      : window.location.pathname + window.location.search + window.location.hash;
-  const url = router.navigated ? router.url : browserUrl;
+export const createRoute = (router: Router, location?: Location) => {
+  const url = router.navigated ? router.url : readUncommittedUrl(router, location);
 
   return url.split('?')[0]?.split('#')[0] ?? '';
+};
+
+const readUncommittedUrl = (router: Router, location: Location | undefined) => {
+  if (location) {
+    return readLocationPath(location);
+  }
+
+  return typeof window === 'undefined'
+    ? router.url
+    : window.location.pathname + window.location.search + window.location.hash;
 };
 
 /**

@@ -149,6 +149,7 @@ export const createOverlayRuntimeRef = <TComponent extends object, TResult = unk
 
       _state.set('closed');
       _componentInstance.set(null);
+      afterOpenedSubject.complete();
       afterClosedSubject.next(closeEvent);
       afterClosedSubject.complete();
     },

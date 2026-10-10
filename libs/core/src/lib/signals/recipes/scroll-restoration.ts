@@ -1,4 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, Location } from '@angular/common';
 import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
@@ -218,6 +218,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   }
 
   const router = inject(Router);
+  const location = inject(Location);
   const document = inject(DOCUMENT);
   const injector = inject(Injector);
   const destroyRef = inject(DestroyRef);
@@ -253,7 +254,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
   let prev = {
     state: createRouterState(router),
-    route: createRoute(router),
+    route: createRoute(router, location),
     routeConfig: getDeepestRouteConfig(router),
   };
 
@@ -403,7 +404,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   const onNavigationEnd = (event: NavigationEnd | NavigationSkipped) => {
     const curr = {
       state: createRouterState(router),
-      route: createRoute(router),
+      route: createRoute(router, location),
       routeConfig: getDeepestRouteConfig(router),
     };
 

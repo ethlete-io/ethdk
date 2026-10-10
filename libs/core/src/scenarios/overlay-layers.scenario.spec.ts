@@ -92,7 +92,7 @@ describe('overlay layer scenarios', () => {
     expect(roots()).toEqual([]);
   });
 
-  it('answers Escape only on the top-most layer, whatever order the layers opened in', () => {
+  it('answers Escape on the highest layer first, whatever order the layers opened in', () => {
     const s = scenario();
     const high = open(s, { id: 'high', zIndex: DEFAULT_OVERLAY_LAYER + 5 });
     const low = open(s, { id: 'low' });
@@ -102,13 +102,13 @@ describe('overlay layer scenarios', () => {
     s.keydown('Escape');
     s.flush();
 
-    expect(lowSources).toEqual(['escape']);
-    expect(highSources).toEqual([]);
+    expect(highSources).toEqual(['escape']);
+    expect(lowSources).toEqual([]);
 
     s.keydown('Escape');
     s.flush();
 
-    expect(highSources).toEqual(['escape']);
+    expect(lowSources).toEqual(['escape']);
   });
 
   it('swallows only the click that ends the press which closed an anchored overlay', () => {

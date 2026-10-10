@@ -122,17 +122,21 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
     };
 
     const isTopMost = (overlayRef: OverlayRuntimeRef<object, unknown>) => {
-      const entries = openEntriesState();
+      let topMost: OverlayRuntimeRef<object, unknown> | null = null;
+      let topMostLayer = -Infinity;
 
-      for (let index = entries.length - 1; index >= 0; index--) {
-        const entry = entries[index];
+      for (const entry of openEntriesState()) {
+        if (entry.config.passive || entry.state() === 'closing' || entry.state() === 'closed') continue;
 
-        if (!entry || entry.config.passive || entry.state() === 'closing' || entry.state() === 'closed') continue;
+        const entryLayer = entry.config.zIndex ?? DEFAULT_OVERLAY_LAYER;
 
-        return entry === overlayRef;
+        if (entryLayer >= topMostLayer) {
+          topMost = entry;
+          topMostLayer = entryLayer;
+        }
       }
 
-      return false;
+      return topMost === overlayRef;
     };
 
     const getAnimatedLifecycle = (componentRef: ReturnType<typeof createComponent>) => {
@@ -341,7 +345,13 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
         maybeDestroyRootElements(targetDocument);
 
         if (config.restoreFocus !== false && overlayStillOwnsFocus) {
-          focusRestoreChain.find((element) => element.isConnected)?.focus({ preventScroll: true });
+          for (const element of focusRestoreChain) {
+            if (!element.isConnected) continue;
+
+            element.focus({ preventScroll: true });
+
+            if (targetDocument.activeElement === element) break;
+          }
         }
 
         overlayRef.finishClose(closeEvent);
@@ -521,7 +531,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
           lifecycle.enter();
         }
 
-        lifecycle.state$
+        const enteredSubscription = lifecycle.state$
           .pipe(
             filter((state) => state === 'entered'),
             take(1),
@@ -531,6 +541,7 @@ const OVERLAY_RUNTIME_DEF = /* @__PURE__ */ defineRootProvider(
             }),
           )
           .subscribe();
+        cleanupFns.push(() => enteredSubscription.unsubscribe());
       });
 
       return overlayRef;

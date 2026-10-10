@@ -9,8 +9,11 @@ export const FOCUSABLE_SELECTOR = /* @__PURE__ */ [
   'select:not([disabled])',
   'textarea:not([disabled])',
   'iframe',
+  'audio[controls]',
+  'video[controls]',
+  'details > summary:first-of-type',
   '[tabindex]:not([tabindex="-1"])',
-  '[contenteditable="true"]',
+  '[contenteditable]:not([contenteditable="false"])',
 ].join(',');
 
 export const isHTMLElement = (value: unknown): value is HTMLElement => {
@@ -50,7 +53,13 @@ export const isFocusable = (element: HTMLElement, document: Document) => {
   const style = view?.getComputedStyle(element);
   const isVisible = style?.display !== 'none' && style?.visibility !== 'hidden' && element.getClientRects().length > 0;
 
-  return isVisible && !element.hasAttribute('disabled') && element.tabIndex >= 0;
+  return (
+    isVisible &&
+    !element.hasAttribute('disabled') &&
+    !element.matches(':disabled') &&
+    !element.closest('[inert]') &&
+    element.tabIndex >= 0
+  );
 };
 
 const isNamedRadio = (element: Element): element is HTMLInputElement =>
