@@ -18,6 +18,11 @@ export interface GameListView {
     isActive: boolean;
     matchGameNumber: number | null;
     groupName: string | null;
+
+    /**
+     * @default null
+     */
+    matchIdentifier?: string | null;
 }
 
 export default GameListView;
