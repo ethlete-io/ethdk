@@ -1,5 +1,11 @@
 # @ethlete/contentful
 
+## 4.0.0-next.14
+
+### Major Changes
+
+- **Breaking:** an `internalHosts` entry now matches its host exactly; list a subdomain or write `*.example.com`. Also adds `entryHref`, embedded entry rich text, and fixes several embed and SSR hydration bugs.
+
 ## 4.0.0-next.13
 
 ### Major Changes

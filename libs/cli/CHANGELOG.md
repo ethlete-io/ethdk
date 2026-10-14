@@ -1,5 +1,11 @@
 # @ethlete/cli
 
+## 3.0.0-next.17
+
+### Minor Changes
+
+- Add `et api seed` and `et api fixtures`, which copy `.ethlete/seeds/<api>/` into the API container and run the seeds its `seeds.json` names. A clone now gitignores only its own `/.ethlete/<api>/`.
+
 ## 3.0.0-next.16
 
 ### Major Changes

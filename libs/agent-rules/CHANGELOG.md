@@ -1,5 +1,14 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.22
+
+### Patch Changes
+
+- Fix `sync` deleting hand-written hooks named `ethlete*` and mis-pruning skill folders with a relative `--root`; `migrate` now validates the config first and leaves a symlinked `CLAUDE.md` alone.
+- The context-warning hook now warns a Claude sub-agent from its own transcript and, at the critical tier, makes it commit and hand back its remaining steps instead of growing past the budget.
+- The `rxjs-signals` skill says which operators may follow `takeUntilDestroyed()`.
+- A locked Timetrack asks to be unlocked when an agent calls it and holds the request up to a minute, and a write queued for approval surfaces the app; the `timetrack` CLI waits long enough for both.
+
 ## 0.1.0-next.21
 
 ### Patch Changes

@@ -1,5 +1,57 @@
 # @ethlete/timetrack
 
+## 0.1.0-next.15
+
+### Minor Changes
+
+- A locked Timetrack asks to be unlocked when an agent calls it and holds the request up to a minute, and a write queued for approval surfaces the app; the `timetrack` CLI waits long enough for both.
+- The row editor marks a description auto mode wrote, and each description in the auto mode readout opens its row.
+- Auto mode describes rows of a rule or background-project ticket once per ticket, after the day is over and before it is booked.
+- Auto mode asks which issue an unnamed call was, optionally with an excerpt of its transcript, and the call band's editor shows that transcript.
+- A booked Timetrack day can store the review it was booked with, with each written row as Tempo holds it, and is then drawn from that alone.
+- A booked Timetrack day draws each worklog the app wrote that no row carries any more as a read-only row, from the worklog as Tempo holds it, and a sync no longer plans to delete it.
+- Mark a booked day's accepted or edited row that Tempo holds none of as "not in Tempo". It still counts in the day's totals, and a sync may still write it.
+- Timetrack proposes unnamed work in a library under the ticket of the next work that day in a checkout using it, as a weak match.
+- Auto mode offers the open issues under the checkout's epics first, and a match no evidence names waits for your approval with its summary and reason.
+- A booked Timetrack day draws a paired machine's work that arrived afterwards as read-only "Booked on" or "Worked on" bands, and says "Changed after booking", without re-cutting its rows.
+- Timetrack opens and changes GitLab merge requests through the `glab` login, and deletes the stored GitLab token on start. Removes `GitLabCredentials`, `readGitLabCredentials$`, `gitlabRequest$`, `gitlabPaged$` and `normalizeGitLabHost`.
+- A call with at least two transcript chunks inside it counts as attended, so a call taken from another window is no longer dropped as never in front.
+- Auto mode ranks the issues of a local Jira mirror against the work and sends the best 25, and reads a matched issue again before it applies, refusing one that is done, deleted or moved.
+- Timetrack stamps the day rows it sends with a version and names the booked days whose rows a machine still has to build.
+- A booked Timetrack day draws a paired machine's own rows as it sent them, only in repository lanes, and "Changed after booking" leaves that machine's time out.
+- Timetrack takes a repository alias per checkout in the Projects settings, so a paired machine's clone with another origin, or with none, lands on the same checkout.
+- Timetrack's day streams say how many of a checkout's agent turns ran on each paired machine, and agent time no longer reads as unattended while you were at another machine.
+- Timetrack offers to resolve an open stand-in to the issue a Tempo worklog carrying its name was booked to.
+- Timetrack judges a browser's or a file manager's unnamed focus per window title, so only a page that named a checkout counts as a gap.
+
+### Patch Changes
+
+- Timetrack reads stored agent session logs again by itself when its parse rules change, and leaves a finished day it booked as it was.
+- A booked Timetrack day is drawn from the review stored when it was booked, with each written row as Tempo holds it.
+- Auto mode asks about a stand-in before its work settles when its branch subject names exactly one open issue in the Jira mirror.
+- Timetrack reads a prompt typed at a paired machine as desk time, not phone time, and an away stretch holds only where every machine was away.
+- A row whose only change is a description auto mode wrote no longer reads as edited, still folds into its neighbour, and offers "Reset to the proposal".
+- The approval for an unnamed call that auto mode names reads as the call and the issue key, such as `Meeting #3 → FIP-3072`, instead of an English sentence that ran the issue summary and the reason together.
+- Auto mode asks an unnamed call of today once more with its transcript excerpt when "Let auto mode read call transcripts" is turned on after the call was first asked without one.
+- An auto mode match on an issue Jira no longer holds, deleted or moved to another project, is never applied or queued, and reads out as failed.
+- Timetrack names a band on `main` after the same day's merge request that changed its directories, and otherwise by those directories instead of "unattributed activity".
+- A booked day's row that holds an auto mode description reads edited and stays in place again, so the day keeps the logged time it was booked with.
+- Timetrack's auto mode tells the model whether each agent session wrote a file, and names a stretch that changed nothing with the issue of a merge request you worked on that day instead of drafting a ticket.
+- A call's evidence line now says why the call is not counted, such as never in front, instead of always blaming a missing rule.
+- Auto mode re-asks a call for its transcript excerpt at most once, even when the excerpt never reaches the ask.
+- Timetrack proposes a consumer checkout's ticket over a rule covering a library's whole checkout, and keeps the rule's issue on the row to switch back in one press.
+- An approval to file a Jira issue now reads `<summary> → new issue in <PROJECT>`, like the other approvals.
+- Timetrack gives a base branch a work path when a day with no commit was spent in one edited directory, so a rule naming that directory matches.
+- Timetrack reads the directory a base branch worked in from the edited directories on a day with no commit, so a rule naming one directory matches that day.
+- The GitLab and GitHub collectors resume a day before their newest stored event instead of re-reading a month after every restart, and report a cap only when it cuts off what the store does not hold.
+- A checkout cloned from another checkout on the same machine now counts as that checkout's work instead of appearing as its own project.
+- A Timetrack day counts the minutes two rows share once, as the sync writes them, so its logged time no longer runs past what Tempo holds.
+- Timetrack auto mode no longer sends a note that does not read as words, and asks nothing about a context that has no other text.
+- Timetrack no longer quotes a summary that does not read as words, such as a degenerate generated session title, and reads a session's first prompt past a blank one.
+- Timetrack's approval list names a band or stand-in match as its name and the issue key, and leaves the issue summary and the model's reason to the Ticket and Why lines.
+- Short work on a branch gets its auto stand-in once its drawn row reaches 15 minutes or the day holds a commit, merge request or agent write on it, and a merge request's title or description can name the issue.
+- Timetrack renames a stand-in it named after a note that does not read as words, asks auto mode nothing about such a stand-in, and withdraws a proposal auto mode built from one.
+
 ## 0.1.0-next.14
 
 ### Minor Changes

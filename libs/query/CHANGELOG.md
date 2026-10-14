@@ -1,5 +1,17 @@
 # @ethlete/query
 
+## 6.0.0-next.56
+
+### Minor Changes
+
+- A web socket client with an `authProvider` now reconnects on user switches and logouts, rejoins rooms after login and drops stale emits; the bearer auth provider gains `sessionId()`.
+
+### Patch Changes
+
+- Add the internal `ɵresetQueryDevtoolsForTesting()`, which undoes `provideQueryDevtools()` so a spec that shares a worker with another sees the devtools disabled again.
+- Fix a query form's `activeFilterCount` staying stale when a function `defaultValue` re-resolves to the value already committed.
+- Fix `keepUnusedFor: Infinity` evicting at once, hanging `executeUntilSettled`, leftover optimistic updates, `gql` printing `false`, GET variable order splitting the cache, and legacy `request()` bugs.
+
 ## 6.0.0-next.55
 
 ### Major Changes

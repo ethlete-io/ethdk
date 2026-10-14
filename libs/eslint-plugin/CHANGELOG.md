@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0-next.28
+
+### Minor Changes
+
+- The recommended config now also bans functional route guards and resolvers (`canDeactivate` stays allowed), and barrel imports through `'.'`, `'..'` or `./index.js`.
+
+### Patch Changes
+
+- Fix wrong reports and unsafe autofixes in ten rules: `--fix` no longer makes template members `private`, adds `readonly` to template-written fields, widens a return type to `any`, or drops comments.
+
 ## 1.0.0-next.27
 
 ### Minor Changes

@@ -1,5 +1,56 @@
 # timetrack-app
 
+## 0.2.0-next.11
+
+### Minor Changes
+
+- A locked Timetrack asks to be unlocked when an agent calls it and holds the request up to a minute, and a write queued for approval surfaces the app; the `timetrack` CLI waits long enough for both.
+- A booked Timetrack day is drawn from the review stored when it was booked, with each written row as Tempo holds it.
+- Timetrack reads each checkout's package manifests to learn which checkouts use which, and names the evidence of a row named after a consuming checkout.
+- The row editor marks a description auto mode wrote, and each description in the auto mode readout opens its row.
+- Auto mode describes rows of a rule or background-project ticket once per ticket, after the day is over and before it is booked.
+- Auto mode asks which issue an unnamed call was, optionally with an excerpt of its transcript, and the call band's editor shows that transcript.
+- Mark a booked day's accepted or edited row that Tempo holds none of as "not in Tempo". It still counts in the day's totals, and a sync may still write it.
+- Auto mode offers the open issues under the checkout's epics first, and a match no evidence names waits for your approval with its summary and reason.
+- Timetrack opens and changes GitLab merge requests through the `glab` login, and deletes the stored GitLab token on start. Removes `GitLabCredentials`, `readGitLabCredentials$`, `gitlabRequest$`, `gitlabPaged$` and `normalizeGitLabHost`.
+- Auto mode ranks the issues of a local Jira mirror against the work and sends the best 25, and reads a matched issue again before it applies, refusing one that is done, deleted or moved.
+- Timetrack offers to resolve an open stand-in to the issue a Tempo worklog carrying its name was booked to.
+- Call transcription sends only detected speech to whisper, cut at pauses instead of every 30 seconds, and dates each chunk by its first word.
+- Check for a newer release every 30 minutes while the app runs, not only at start, and add a "Check for updates" button under the version in the sidebar.
+
+### Patch Changes
+
+- Timetrack reads stored agent session logs again by itself when its parse rules change, and leaves a finished day it booked as it was.
+- Auto mode asks about a stand-in before its work settles when its branch subject names exactly one open issue in the Jira mirror.
+- A row whose only change is a description auto mode wrote no longer reads as edited, still folds into its neighbour, and offers "Reset to the proposal".
+- The approval for an unnamed call that auto mode names reads as the call and the issue key, such as `Meeting #3 → FIP-3072`, instead of an English sentence that ran the issue summary and the reason together.
+- Auto mode asks an unnamed call of today once more with its transcript excerpt when "Let auto mode read call transcripts" is turned on after the call was first asked without one.
+- Timetrack names a band on `main` after the same day's merge request that changed its directories, and otherwise by those directories instead of "unattributed activity".
+- A booked Timetrack day draws each worklog the app wrote that no row carries any more as a read-only row, from the worklog as Tempo holds it, and a sync no longer plans to delete it.
+- Timetrack's auto mode tells the model whether each agent session wrote a file, and names a stretch that changed nothing with the issue of a merge request you worked on that day instead of drafting a ticket.
+- Auto mode re-asks a call for its transcript excerpt at most once, even when the excerpt never reaches the ask.
+- The GitLab and GitHub collectors resume a day before their newest stored event instead of re-reading a month after every restart, and report a cap only when it cuts off what the store does not hold.
+- A booked Timetrack day draws a paired machine's work that arrived afterwards as read-only "Booked on" or "Worked on" bands, and says "Changed after booking", without re-cutting its rows.
+- The Timetrack host lets a forge `api` call read a request body only from stdin and refuses a `-F`/`--field` value that names a local file.
+- While Google Calendar waits for the browser sign-in, the settings card now offers Cancel and Copy link. Before, a closed or wrong browser left the Connect button disabled until the 5-minute timeout.
+- A call with at least two transcript chunks inside it counts as attended, so a call taken from another window is no longer dropped as never in front.
+- The host stores a mirror of each Jira project's issues in the encrypted store.
+- A checkout cloned from another checkout on the same machine now counts as that checkout's work instead of appearing as its own project.
+- A booked Timetrack day shows "Booked on <machine> · ISSUE" for the rows a paired machine booked, never an application as a lane, and no longer says "Changed after booking" for that machine's work.
+- Timetrack sends the rows of each booked day of the last 30 to its paired machines by itself, and a machine that missed them asks for them once.
+- Timetrack sends each day's reviewed rows to its paired machines with every pull and keeps the last rows a paired machine sent per day.
+- Timetrack takes a repository alias per checkout in the Projects settings, so a paired machine's clone with another origin, or with none, lands on the same checkout.
+- Settings tabs are now routes (`/settings/day`, `/jira`, `/projects`, `/sources`, `/suggestions`), and each info button sits next to its field instead of wrapping below it.
+- Remove needless nullish fallbacks in the settings view that caused NG8102 build warnings.
+- Timetrack's approval list names a band or stand-in match as its name and the issue key, and leaves the issue summary and the model's reason to the Ticket and Why lines.
+- Timetrack's day streams say how many of a checkout's agent turns ran on each paired machine, and agent time no longer reads as unattended while you were at another machine.
+- Short work on a branch gets its auto stand-in once its drawn row reaches 15 minutes or the day holds a commit, merge request or agent write on it, and a merge request's title or description can name the issue.
+- A worklog row on a booked Timetrack day takes no edit: a click opens no edit surface, a press does not drag or resize it, it merges with no neighbour, and its menu offers only the anonymous report.
+- The unnamed focus panel calls a gap "names one at other times" instead of "names one elsewhere".
+- Timetrack judges a browser's or a file manager's unnamed focus per window title, so only a page that named a checkout counts as a gap.
+- Timetrack renames a stand-in it named after a note that does not read as words, asks auto mode nothing about such a stand-in, and withdraws a proposal auto mode built from one.
+- A band whose auto mode answer waits for approval reads the key and that it waits, not "Not yet named".
+
 ## 0.2.0-next.10
 
 ### Minor Changes

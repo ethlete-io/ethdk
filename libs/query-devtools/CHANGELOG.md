@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.16
+
+### Minor Changes
+
+- A parked `withArgs` query now shows as parked, closing the panel turns Inspect off, open and close move focus, and a failed lazy panel load offers a page reload.
+
 ## 1.0.0-next.15
 
 ### Major Changes

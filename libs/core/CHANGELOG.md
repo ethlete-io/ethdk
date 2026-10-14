@@ -1,5 +1,14 @@
 # @ethlete/core
 
+## 5.0.0-next.63
+
+### Patch Changes
+
+- Fix modal focus trap tab stops, overlay stacking order for Escape and outside clicks, focus restore to disabled openers, `afterOpened()` on early close, and scroll restoration under a base href.
+- Fix edge cases in `AnimatedLifecycleDirective` classes, `getScrollSnapTarget`, `[etClickOutside]`, `signalElementIntersection` order, `isElementVisible().intersectionRatio` and `createUnsavedChangesTracker` with a `null` default.
+- `htmlToMarkdown` drops empty headings and list items, and normalizes block alignment to `center`, `right` or `justify`; other values serialize as plain Markdown.
+- The modal focus trap treats a native radio group as one Tab stop, so Tab no longer escapes a dialog through it.
+
 ## 5.0.0-next.62
 
 ### Major Changes
