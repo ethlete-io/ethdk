@@ -200,4 +200,15 @@ describe('et api doctor', () => {
     expect(calls).toHaveLength(1);
     expect(errors[0]).toContain('et api up hub');
   });
+
+  it('points at up for the text podman prints for a stopped container', async () => {
+    respond = () => ({
+      status: 255,
+      stderr: 'Error: can only create exec sessions on running containers: container state improper',
+    });
+
+    expect(await run(api([{ name: 'first', check: 'probe' }]), [])).toBe(1);
+
+    expect(errors[0]).toContain('et api up hub');
+  });
 });
