@@ -95,5 +95,5 @@ the changeset, lint with no new warnings, `tsc -p libs/cli/tsconfig.spec.json`, 
 2. [x] Schema validation for `checks`, `profiles`, `migrationsDir`; `doctor [--fix]`.
 3. [x] State and lock module (`api-state.ts`, `lock.ts`); `run --lock [--wait]` (`run-locked.ts`); `seed` and `fixtures` mark dirty.
 4. [x] Fingerprint (`fingerprint.ts`); `snapshot save|restore` (`snapshot.ts`, `run-snapshot.ts`); `status` (`run-status.ts`); atomic stale-lock claim.
-5. [ ] `ready --profile` with the health check.
+5. [x] `ready --profile` with the health check (`run-ready.ts`); `status` reports an unreadable `lock.json`.
 6. [ ] Check against the real fifagg API, with the fifagg session's agreement first.

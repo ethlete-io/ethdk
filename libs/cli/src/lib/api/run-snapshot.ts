@@ -53,6 +53,15 @@ export const chooseSnapshotProfile = (options: {
   };
 };
 
+export const warnUnlessSnapshotIgnored = (root: string, file: string) => {
+  if (ignoredByGit(root, relative(root, file)) === false) {
+    console.warn(
+      `${relative(root, file)} is not gitignored, so a snapshot could be committed. ` +
+        `Add "/.ethlete/snapshots/" to .gitignore.\n`,
+    );
+  }
+};
+
 export type RunSnapshotOptions = {
   root: string;
   name: string;
@@ -123,12 +132,7 @@ export const runSnapshotCommand = async (options: RunSnapshotOptions): Promise<n
     env: { ...engineEnv(tool.engine), ...process.env, ...definedEntries(api.env?.() ?? {}) },
   };
 
-  if (ignoredByGit(root, relative(root, file)) === false) {
-    console.warn(
-      `${relative(root, file)} is not gitignored, so a snapshot could be committed. ` +
-        `Add "/.ethlete/snapshots/" to .gitignore.\n`,
-    );
-  }
+  warnUnlessSnapshotIgnored(root, file);
 
   if (action === 'save') return saveSnapshot({ file, snapshot: profile.snapshot, compose });
 

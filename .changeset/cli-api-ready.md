@@ -2,4 +2,4 @@
 '@ethlete/cli': minor
 ---
 
-Add `et api exec`, `doctor [--fix]`, `run --lock`, `snapshot save|restore` to save and restore a profile's databases as fingerprinted gzip files, and `status` to show the stored state, fingerprint and lock holder.
+Add `et api ready --profile` to bring an API's data up to date from a snapshot or its seeds, plus `exec`, `doctor [--fix]`, `run --lock`, `snapshot save|restore` and `status`, with a machine-wide lock and state.

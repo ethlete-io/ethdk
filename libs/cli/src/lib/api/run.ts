@@ -51,6 +51,7 @@ import { markApiStateDirty } from './api-state';
 import { runLocked } from './run-locked';
 import { runSnapshotCommand } from './run-snapshot';
 import { runStatusCommand } from './run-status';
+import { runReadyCommand } from './run-ready';
 import { definedEntries, stateDirectoryOf } from './api-context';
 
 export type RunApiCommandOptions = {
@@ -603,6 +604,39 @@ export const runApiCommand = async ({
       command: parsed.rest ?? [],
       cwd: root,
       wait: parseWait(parsed.wait).seconds,
+    });
+  }
+
+  if (command === 'ready') {
+    const [target] = targets;
+
+    if (target === undefined) return 1;
+
+    if (targets.length > 1) {
+      console.error(`ready works on one API at a time, but ${targets.length} were named.`);
+
+      return 1;
+    }
+
+    if (!parseWait(parsed.wait).ok) {
+      console.error(`--wait takes a number of seconds.`);
+
+      return 1;
+    }
+
+    const single = { argv, root, invocation, name: target.name, api: target.api, service: undefined };
+
+    return runReadyCommand({
+      root,
+      ...target,
+      invocation,
+      profile: parsed.profile,
+      wait: parseWait(parsed.wait).seconds,
+      up: () => runOneApiCommand({ ...single, command: 'up' }),
+      runSeeds: (unit) =>
+        unit.kind === 'exec'
+          ? runOneApiCommand({ ...single, command: unit.name })
+          : runOneApiCommand({ ...single, command: 'seed', seedSteps: unit.steps }),
     });
   }
 

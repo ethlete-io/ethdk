@@ -191,4 +191,14 @@ describe('et api status', () => {
     expect(logs.join('\n')).toMatch(/profile\s+none/);
     expect(logs.join('\n')).toMatch(/dirty\s+unknown/);
   });
+
+  it('says unreadable for a lock file it cannot parse, as acquiring treats it as held', async () => {
+    const { directory, run } = setup();
+
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(lockPath(directory), '{ broken', 'utf8');
+
+    expect(await run(['status', 'hub'])).toBe(0);
+    expect(logs.join('\n')).toContain(`unreadable (${lockPath(directory)})`);
+  });
 });

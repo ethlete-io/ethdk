@@ -73,6 +73,7 @@ export const BUILT_IN_API_COMMANDS = [
   'exec',
   'doctor',
   'run',
+  'ready',
   'snapshot',
   'status',
 ] as const;

@@ -110,25 +110,25 @@ module.exports = {
 
 Adding an API is an entry in this map. Nothing else changes.
 
-| Field           | Required | Meaning                                                                                                               |
-| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `composeDir`    | yes      | Directory inside the checkout that holds the compose file.                                                            |
-| `services`      | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.      |
-| `execService`   | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                           |
-| `port`          | yes      | Published host port, not the port inside the container. Used for the printed url.                                     |
-| `envFile`       | no       | File that must exist in `composeDir` before the API can start.                                                        |
-| `setupCommand`  | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                       |
-| `network`       | no       | External container network created before the first `up`.                                                             |
-| `repoUrl`       | no       | Where to clone this API from when the developer has no checkout of their own.                                         |
-| `envKey`        | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                  |
-| `examplePath`   | no       | Example path shown in the error that asks for this API's checkout.                                                    |
-| `env`           | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
-| `exec`          | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
-| `checks`        | no       | Ordered preconditions run by [`doctor`](#checking-the-setup).                                                         |
-| `profiles`      | no       | Named states (`seeds`, `health`, `snapshot`) used by [`snapshot`](#snapshots) and [`status`](#status).                |
-| `migrationsDir` | no       | Migrations folder relative to the checkout root. Its contents are part of the [fingerprint](#the-fingerprint).        |
+| Field           | Required | Meaning                                                                                                                                     |
+| --------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `composeDir`    | yes      | Directory inside the checkout that holds the compose file.                                                                                  |
+| `services`      | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.                            |
+| `execService`   | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                                                 |
+| `port`          | yes      | Published host port, not the port inside the container. Used for the printed url.                                                           |
+| `envFile`       | no       | File that must exist in `composeDir` before the API can start.                                                                              |
+| `setupCommand`  | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                                             |
+| `network`       | no       | External container network created before the first `up`.                                                                                   |
+| `repoUrl`       | no       | Where to clone this API from when the developer has no checkout of their own.                                                               |
+| `envKey`        | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                                        |
+| `examplePath`   | no       | Example path shown in the error that asks for this API's checkout.                                                                          |
+| `env`           | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`.                       |
+| `exec`          | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                                           |
+| `checks`        | no       | Ordered preconditions run by [`doctor`](#checking-the-setup).                                                                               |
+| `profiles`      | no       | Named states (`seeds`, `health`, `snapshot`) used by [`ready`](#getting-a-profile-ready), [`snapshot`](#snapshots) and [`status`](#status). |
+| `migrationsDir` | no       | Migrations folder relative to the checkout root. Its contents are part of the [fingerprint](#the-fingerprint).                              |
 
-Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`, `doctor`, `run`, `snapshot`, `status`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
+Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`, `doctor`, `run`, `ready`, `snapshot`, `status`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
 
 ## Where the checkout comes from
 
@@ -255,6 +255,7 @@ An `exec` entry named `seed` or `fixtures` in `ethlete.apis.js` runs instead of 
 | `exec`   | Runs one command in a service without a TTY. See [Running a command](#running-a-command).        |
 | `doctor` | Runs the API's `checks`. See [Checking the setup](#checking-the-setup).                          |
 | `run`    | Runs a host command under the API lock. See [Running under the lock](#running-under-the-lock).   |
+| `ready`  | Brings a profile's data up to date. See [Getting a profile ready](#getting-a-profile-ready).     |
 
 `logs` and `shell` take a service as a third argument, so `yarn et api logs hub database` follows the database rather than the app. A name that is not in `services` is reported with the list of names that are.
 
@@ -298,6 +299,45 @@ The command gets the lock's token as `ETHLETE_API_LOCK`, so a command that calls
 
 The state and the lock live outside the repo, in `${XDG_STATE_HOME:-~/.local/state}/ethlete/api/<compose project>/` as `state.json` (`{ profile, fingerprint, dirty, updatedAt }`) and `lock.json` (`{ pid, hostname, command, cwd, startedAt, token }`). The compose project is the name compose itself gives the API's `composeDir`: `COMPOSE_PROJECT_NAME` from the environment, the API's `env` or `composeDir/.env`, then the compose file's top-level `name:`, then the directory name. Two checkouts whose containers compose sees as one project share one state and one lock. `seed` and `fixtures` mark the state dirty too, whether they succeed or not.
 
+### Getting a profile ready
+
+```js
+profiles: {
+  e2e: {
+    seeds: ['fixtures', 'users', 'warmup'],
+    health: { url: 'http://localhost:8040/health', expect: 200 },
+    snapshot: { service: 'database', databases: ['app'], save: '…', restore: '…' },
+  },
+},
+```
+
+`ready <api> --profile <profile> [--wait <seconds>]` brings the API into the state the profile describes, as fast as it can. It takes the [API lock](#running-under-the-lock) unless `ETHLETE_API_LOCK` names the held one, runs `up`, then `doctor --fix`, computes the profile's [fingerprint](#the-fingerprint) and decides:
+
+| Stored state                                          | What `ready` does                                                                             |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| clean, same profile, same fingerprint                 | Nothing.                                                                                      |
+| anything else, and the profile's snapshot file exists | Restores `.ethlete/snapshots/<api>/<profile>-<fingerprint>.sql.gz`.                           |
+| anything else, and no snapshot file                   | Runs the profile's `seeds` in order, then saves that snapshot when it has a `snapshot` block. |
+
+Then the state is clean for that profile and fingerprint, and `health.url` is fetched every 2 s until it answers `health.expect` (default `200`), for up to 60 s. Each entry of `seeds` is `fixtures` (the manifest's fixtures list), a seed from `.ethlete/seeds/<api>/seeds.json`, or an `exec` entry of the API, checked in that order. A name that is none of them fails before anything runs. The state is marked dirty before the first seed runs, so an interrupted or failed seed leaves it dirty and the next `ready` seeds again.
+
+Each step prints a heading on stderr; the last line, on stdout, names the profile, the fingerprint and the time taken. The exit code is `0` when the API is ready, the exit code of `up`, a seed or the snapshot command when one fails, `1` for a failed check, a failed health check or an unknown profile, and `75` when `--wait` ran out.
+
+An end-to-end run holds the lock for the whole test run and lets its global setup call `ready` under it:
+
+```sh
+yarn et api run hub --lock -- npx playwright test
+```
+
+```ts
+// global-setup.ts
+import { execFileSync } from 'node:child_process';
+
+export default () => {
+  execFileSync('yarn', ['et', 'api', 'ready', 'hub', '--profile', 'e2e'], { stdio: 'inherit' });
+};
+```
+
 ### Snapshots
 
 ```js
@@ -335,7 +375,7 @@ The fingerprint is the first 12 hex characters of a sha256 over: `git rev-parse 
 yarn et api status hub
 ```
 
-`status <api> [--profile <profile>]` prints one aligned line each for the profile (the stored one, or `--profile`), the stored fingerprint, the current fingerprint of that profile, `dirty`, the snapshot files that match the current fingerprint, and the lock holder or `free`. It always exits 0 once the checkout resolves.
+`status <api> [--profile <profile>]` prints one aligned line each for the profile (the stored one, or `--profile`), the stored fingerprint, the current fingerprint of that profile, `dirty`, the snapshot files that match the current fingerprint, and the lock holder, `free`, or `unreadable (<path>)` for a lock file it cannot parse, which `run`, `ready` and `restore` treat as held. It always exits 0 once the checkout resolves.
 
 ### What `up` prints
 

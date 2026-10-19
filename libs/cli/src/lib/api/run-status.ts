@@ -2,7 +2,8 @@ import { stateDirectoryOf } from './api-context';
 import { readApiState } from './api-state';
 import { ApiDefinition } from './definition';
 import { fingerprintApi } from './fingerprint';
-import { describeApiLock, readApiLock } from './lock';
+import { existsSync } from 'fs';
+import { describeApiLock, lockPath, readApiLock } from './lock';
 import { checkoutProblem } from './resolve-checkout';
 import { listSnapshots } from './snapshot';
 
@@ -44,7 +45,14 @@ export const runStatusCommand = (options: {
     ['current', current ?? (profileName === undefined ? 'none' : `no profile "${profileName}"`)],
     ['dirty', state ? (state.dirty ? 'yes' : 'no') : 'unknown'],
     ['snapshot', snapshots.length > 0 ? snapshots.join(', ') : 'none for the current fingerprint'],
-    ['lock', lock ? describeApiLock(lock, directory) : 'free'],
+    [
+      'lock',
+      lock
+        ? describeApiLock(lock, directory)
+        : existsSync(lockPath(directory))
+          ? `unreadable (${lockPath(directory)})`
+          : 'free',
+    ],
   ];
   const width = Math.max(...rows.map(([label]) => label.length));
 

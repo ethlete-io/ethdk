@@ -23,7 +23,7 @@ describe('apiHelp', () => {
     const help = apiHelp({ hub: definition({ install: ['composer', 'install'] }) }, 'et api');
 
     expect(help).toContain(
-      'hub       up, down, logs, shell, clone, clear, checkout, pull, exec, doctor, run, snapshot, status, seed, fixtures, install',
+      'hub       up, down, logs, shell, clone, clear, checkout, pull, exec, doctor, run, ready, snapshot, status, seed, fixtures, install',
     );
   });
 
