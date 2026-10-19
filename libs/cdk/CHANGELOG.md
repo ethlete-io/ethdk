@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 4.72.1
+
+### Patch Changes
+
+- [`ba5501f`](https://github.com/ethlete-io/ethdk/commit/ba5501f9d86878d1d02a2dea68ccaf591ff48611) Thanks [@TomTomB](https://github.com/TomTomB)! - Keep a combobox control's value while its async options load, instead of overwriting it with `null`.
+
 ## 4.72.0
 
 ### Minor Changes
