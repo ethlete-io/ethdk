@@ -96,7 +96,7 @@ the changeset, lint with no new warnings, `tsc -p libs/cli/tsconfig.spec.json`, 
 3. [x] State and lock module (`api-state.ts`, `lock.ts`); `run --lock [--wait]` (`run-locked.ts`); `seed` and `fixtures` mark dirty.
 4. [x] Fingerprint (`fingerprint.ts`); `snapshot save|restore` (`snapshot.ts`, `run-snapshot.ts`); `status` (`run-status.ts`); atomic stale-lock claim.
 5. [x] `ready --profile` with the health check (`run-ready.ts`); `status` reports an unreadable `lock.json`.
-6. [ ] Check against the real fifagg API, with the fifagg session's agreement first.
+6. [x] Check against the real fifagg API (cli 3.0.0-next.18, fifagg-frontend 04956a17d1, 2026-10-19): `doctor`, `status`, first `ready` seeded and saved in 149 s, second `ready` was a no-op in 1.1 s, a `run --lock` that wrote marked the state dirty, the next `ready` restored in 48 s. The restore left a table that the dump did not name, because `mysqldump --databases` emits no `DROP DATABASE`; the docs now ask for `--add-drop-database` (`pg_dump --clean --create`), and fifagg's `save` line still needs it.
    - Done on a throwaway podman project (c14a330c1): every command passed; ready took 1.6 s,
      0.9 s, and 1.2 s for a restore. Waiting for the fifagg session: its seed and its `checks`
      and `e2e` profile in `ethlete.apis.js`. Docker is not tested.

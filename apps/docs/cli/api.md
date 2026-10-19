@@ -347,8 +347,8 @@ profiles: {
     snapshot: {
       service: 'database',
       databases: ['app', 'audit'],
-      save: 'for db in $DATABASES; do pg_dump -U app "$db"; done',
-      restore: 'psql -U app postgres',
+      save: 'for db in $DATABASES; do pg_dump -U app --clean --create "$db"; done',
+      restore: 'psql -U app -v ON_ERROR_STOP=1 postgres',
     },
   },
 },
@@ -360,6 +360,8 @@ yarn et api snapshot restore hub base --profile e2e --wait 600
 ```
 
 `snapshot save|restore <api> <name> [--profile <profile>]` dumps and loads the databases of a profile. `--profile` defaults to the only profile that has a `snapshot` block; with none or several it exits 1 and says so. `save` runs `snapshot.save` with `sh -c` in `snapshot.service` through `compose exec -T`, gzips what it writes to stdout and renames the result into place only when the command exits 0, so a failed dump leaves no file. `restore` gunzips the file into the stdin of `snapshot.restore`. Both lines see `$DATABASES`, the names from `databases` separated by spaces. A name takes letters, digits, `.`, `-` and `_`.
+
+The dump must drop and create each database, because `restore` only runs what the dump holds. A dump without that leaves every table it does not name, such as one a migration on another branch added, in place after a restore. With MySQL, use `mysqldump --add-drop-database --databases $DATABASES` and restore with `mysql`. With PostgreSQL, use `pg_dump --clean --create` as above. PostgreSQL refuses to drop a database while a connection is open, so stop the services that use it before a restore.
 
 The file is `.ethlete/snapshots/<api>/<name>-<fingerprint>.sql.gz`, with the fingerprint of that profile, so a snapshot made for other migrations, seeds or API commit is never picked up by accident. A path that git does not ignore prints a warning on stderr, because dumps hold real data: add `/.ethlete/snapshots/` to `.gitignore`. Restoring a missing file lists the snapshots that exist for the API and exits 1.
 
