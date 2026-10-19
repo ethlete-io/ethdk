@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -105,6 +105,48 @@ describe('acquireApiLock', () => {
     expect(sleeps).toEqual([]);
     expect(readApiLock(path)?.pid).toBe(100);
     expect(readApiState(path)?.dirty).toBe(true);
+  });
+
+  it('leaves a live lock alone that a faster waiter created after the stale one was read', async () => {
+    const path = directory();
+
+    plant(path, { pid: 7 });
+
+    const { system } = fakeSystem({ dead: [7] });
+    const kill = system.kill;
+
+    system.kill = (pid, signal) => {
+      if (pid === 7) plant(path, { pid: 8, token: 'faster' });
+
+      kill(pid, signal);
+    };
+
+    const result = await acquireApiLock({ directory: path, command: 'x', cwd: '/repo', wait: 0, system });
+
+    expect(result.ok).toBe(false);
+    expect(readApiLock(path)?.token).toBe('faster');
+    expect(readApiState(path)).toBeUndefined();
+    expect(readdirSync(path)).toEqual(['lock.json']);
+  });
+
+  it('goes back to the lock when another waiter already claimed the stale one', async () => {
+    const path = directory();
+
+    plant(path, { pid: 7 });
+
+    const { system } = fakeSystem({ dead: [7] });
+    const kill = system.kill;
+
+    system.kill = (pid, signal) => {
+      if (pid === 7) rmSync(lockPath(path));
+
+      kill(pid, signal);
+    };
+
+    const result = await acquireApiLock({ directory: path, command: 'x', cwd: '/repo', wait: 0, system });
+
+    expect(result.ok).toBe(true);
+    expect(readdirSync(path)).toEqual(['lock.json']);
   });
 
   it('does not judge a pid on another host', async () => {

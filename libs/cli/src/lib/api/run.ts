@@ -47,8 +47,11 @@ import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config
 import { clearApiCheckouts } from './clear';
 import { portsInUse, publishedPorts } from './ports';
 import { serviceStateTable, serviceStates } from './state';
-import { apiStateDirectory, composeProjectName, markApiStateDirty } from './api-state';
+import { markApiStateDirty } from './api-state';
 import { runLocked } from './run-locked';
+import { runSnapshotCommand } from './run-snapshot';
+import { runStatusCommand } from './run-status';
+import { definedEntries, stateDirectoryOf } from './api-context';
 
 export type RunApiCommandOptions = {
   apis: ApiDefinitions;
@@ -62,28 +65,11 @@ export type RunApiCommandOptions = {
 const confirmFix = (options: { problem: string; question: string; hint: string }) =>
   confirm({ ...options, defaultsToYes: true });
 
-const definedEntries = (record: Record<string, string | undefined>) =>
-  Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined)) as Record<string, string>;
-
 const namedApis = (argument: string) =>
   argument
     .split(',')
     .map((name) => name.trim())
     .filter((name) => name !== '');
-
-const stateDirectoryOf = (options: { root: string; name: string; api: ApiDefinition }) => {
-  const { api } = options;
-  const checkout = resolveApiCheckout({ ...options, needs: 'compose' });
-
-  if (!checkout.ok) return checkout;
-
-  const env = { ...process.env, ...definedEntries(api.env?.() ?? {}) };
-
-  return {
-    ok: true as const,
-    directory: apiStateDirectory({ project: composeProjectName({ composePath: checkout.checkout.composePath, env }) }),
-  };
-};
 
 const parseWait = (wait: string | undefined) => {
   if (wait === undefined) return { ok: true as const, seconds: undefined };
@@ -474,7 +460,11 @@ export const runApiCommand = async ({
 }: RunApiCommandOptions): Promise<number> => {
   const parsed = parseApiArgv(rawArgv);
   const argv = parsed.head;
-  const [command, nameArgument, service] = parsed.positionals;
+  const positionals =
+    parsed.positionals[0] === 'snapshot' && ['save', 'restore'].includes(parsed.positionals[1] ?? '')
+      ? ['snapshot', parsed.positionals[2], parsed.positionals[1], parsed.positionals[3]]
+      : parsed.positionals;
+  const [command, nameArgument, service] = positionals as (string | undefined)[];
   const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
 
   if (wantsHelp && nameArgument === undefined) {
@@ -612,6 +602,38 @@ export const runApiCommand = async ({
       directory: state.directory,
       command: parsed.rest ?? [],
       cwd: root,
+      wait: parseWait(parsed.wait).seconds,
+    });
+  }
+
+  if (command === 'snapshot' || command === 'status') {
+    const [target] = targets;
+
+    if (target === undefined) return 1;
+
+    if (targets.length > 1) {
+      console.error(`${command} works on one API at a time, but ${targets.length} were named.`);
+
+      return 1;
+    }
+
+    if (command === 'status') {
+      return runStatusCommand({ root, ...target, invocation, profile: parsed.profile });
+    }
+
+    if (!parseWait(parsed.wait).ok) {
+      console.error(`--wait takes a number of seconds.`);
+
+      return 1;
+    }
+
+    return runSnapshotCommand({
+      root,
+      ...target,
+      invocation,
+      action: service,
+      snapshotName: positionals[3],
+      profile: parsed.profile,
       wait: parseWait(parsed.wait).seconds,
     });
   }

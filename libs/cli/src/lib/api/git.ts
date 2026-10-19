@@ -20,6 +20,13 @@ export const currentBranch = (cwd: string) => {
   return result.status === 0 ? result.stdout : undefined;
 };
 
+/** The commit `HEAD` names, or `undefined` outside a git checkout. */
+export const headCommit = (cwd: string) => {
+  const result = git(cwd, ['rev-parse', 'HEAD']);
+
+  return result.status === 0 && result.stdout !== '' ? result.stdout : undefined;
+};
+
 /** Modified tracked files and untracked files, as git's own porcelain lines, or `undefined` when git fails. */
 export const uncommittedChanges = (cwd: string) => {
   const { status, stdout } = git(cwd, ['status', '--porcelain']);

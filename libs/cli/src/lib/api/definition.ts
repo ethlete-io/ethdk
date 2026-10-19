@@ -73,6 +73,8 @@ export const BUILT_IN_API_COMMANDS = [
   'exec',
   'doctor',
   'run',
+  'snapshot',
+  'status',
 ] as const;
 
 /** These act on the checkout itself, so they run before `setupCommand` and need no container engine. */

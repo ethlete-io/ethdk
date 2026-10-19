@@ -94,6 +94,6 @@ the changeset, lint with no new warnings, `tsc -p libs/cli/tsconfig.spec.json`, 
 1. [x] Argument parser with `--` and value flags (`parseApiArgv` in `parse-argv.ts`); `exec`. Only `exec` joined `BUILT_IN_API_COMMANDS`; slices 2-5 add `doctor`, `run`, `snapshot`, `status`, `ready` with their implementations.
 2. [x] Schema validation for `checks`, `profiles`, `migrationsDir`; `doctor [--fix]`.
 3. [x] State and lock module (`api-state.ts`, `lock.ts`); `run --lock [--wait]` (`run-locked.ts`); `seed` and `fixtures` mark dirty.
-4. [ ] Fingerprint; `snapshot save|restore`; `status`.
+4. [x] Fingerprint (`fingerprint.ts`); `snapshot save|restore` (`snapshot.ts`, `run-snapshot.ts`); `status` (`run-status.ts`); atomic stale-lock claim.
 5. [ ] `ready --profile` with the health check.
 6. [ ] Check against the real fifagg API, with the fifagg session's agreement first.

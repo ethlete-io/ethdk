@@ -23,6 +23,8 @@ describe('apiCommandNames', () => {
       'exec',
       'doctor',
       'run',
+      'snapshot',
+      'status',
       'seed',
       'fixtures',
     ]);
@@ -42,6 +44,8 @@ describe('apiCommandNames', () => {
       'exec',
       'doctor',
       'run',
+      'snapshot',
+      'status',
       'seed',
       'fixtures',
     ]);
@@ -60,6 +64,8 @@ describe('apiCommandNames', () => {
       'exec',
       'doctor',
       'run',
+      'snapshot',
+      'status',
       'seed',
       'fixtures',
       'install',

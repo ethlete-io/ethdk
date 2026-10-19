@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'fs';
 import { hostname } from 'os';
 import { join } from 'path';
 import { setTimeout as delay } from 'timers/promises';
@@ -38,9 +38,9 @@ const POLL_MS = 1000;
 export const lockPath = (directory: string) => join(directory, 'lock.json');
 
 /** The current lock, or `undefined` when there is none or it cannot be read. */
-export const readApiLock = (directory: string): ApiLock | undefined => {
+export const readApiLock = (directory: string, path = lockPath(directory)): ApiLock | undefined => {
   try {
-    const value = JSON.parse(readFileSync(lockPath(directory), 'utf8')) as Partial<ApiLock>;
+    const value = JSON.parse(readFileSync(path, 'utf8')) as Partial<ApiLock>;
 
     return typeof value.token === 'string' && typeof value.pid === 'number' ? (value as ApiLock) : undefined;
   } catch {
@@ -76,6 +76,39 @@ const tryCreate = (directory: string, lock: ApiLock) => {
     if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
 
     throw error;
+  }
+};
+
+/**
+ * Renames the stale lock away, so of several waiters only the one whose rename succeeds removes it.
+ * A rename that took a live lock a faster waiter had just created is linked back.
+ */
+const claimStaleLock = (options: { directory: string; stale: ApiLock; system: LockSystem }) => {
+  const { directory, stale, system } = options;
+  const claimed = `${lockPath(directory)}.stale-${system.pid}-${randomUUID()}`;
+
+  try {
+    renameSync(lockPath(directory), claimed);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+
+    throw error;
+  }
+
+  try {
+    if (readApiLock(directory, claimed)?.token === stale.token) {
+      markApiStateDirty(directory, new Date(system.now()));
+
+      return;
+    }
+
+    try {
+      linkSync(claimed, lockPath(directory));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    }
+  } finally {
+    rmSync(claimed, { force: true });
   }
 };
 
@@ -115,10 +148,7 @@ export const acquireApiLock = async (options: {
     const holder = readApiLock(directory);
 
     if (holder && isStale(system, holder)) {
-      if (readApiLock(directory)?.token === holder.token) {
-        rmSync(lockPath(directory), { force: true });
-        markApiStateDirty(directory, new Date(system.now()));
-      }
+      claimStaleLock({ directory, stale: holder, system });
 
       continue;
     }
