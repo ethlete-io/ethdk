@@ -91,7 +91,7 @@ the contents of `ethlete.apis.js`, the CLI major version.
 Each slice: specs next to the code, help text in `help.ts`, its section in `apps/docs/cli/api.md`,
 the changeset, lint with no new warnings, `tsc -p libs/cli/tsconfig.spec.json`, then a commit.
 
-1. [ ] Argument parser with `--` and value flags; new built-in names; `exec`.
+1. [x] Argument parser with `--` and value flags (`parseApiArgv` in `parse-argv.ts`); `exec`. Only `exec` joined `BUILT_IN_API_COMMANDS`; slices 2-5 add `doctor`, `run`, `snapshot`, `status`, `ready` with their implementations.
 2. [ ] Schema validation for `checks`, `profiles`, `migrationsDir`; `doctor [--fix]`.
 3. [ ] State and lock module; `run --lock [--wait]`; `seed` and `fixtures` mark dirty.
 4. [ ] Fingerprint; `snapshot save|restore`; `status`.

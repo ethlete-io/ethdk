@@ -11,6 +11,7 @@ yarn et api down hub            # stop them
 yarn et api logs hub            # follow the log of the API container
 yarn et api logs hub database   # follow the log of another service
 yarn et api shell hub           # a shell in the API container
+yarn et api exec hub app -- ls  # one command in a service, no TTY
 yarn et api install hub         # an entry from that API's own "exec" map
 yarn et api up hub --host       # also print the address other devices can use
 yarn et api checkout hub        # switch the checkout to its configured branch
@@ -124,7 +125,7 @@ Adding an API is an entry in this map. Nothing else changes.
 | `env`          | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
 | `exec`         | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
 
-Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
+Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
 
 ## Where the checkout comes from
 
@@ -248,8 +249,20 @@ An `exec` entry named `seed` or `fixtures` in `ethlete.apis.js` runs instead of 
 | `down`  | Stops and removes the containers.                                                                |
 | `logs`  | Follows the log of `execService`, or of a service you name.                                      |
 | `shell` | Opens `bash` in `execService`, or in a service you name.                                         |
+| `exec`  | Runs one command in a service without a TTY. See [Running a command](#running-a-command).        |
 
 `logs` and `shell` take a service as a third argument, so `yarn et api logs hub database` follows the database rather than the app. A name that is not in `services` is reported with the list of names that are.
+
+### Running a command
+
+```sh
+yarn et api exec hub app -- php artisan about
+echo "select 1" | yarn et api exec hub database -- psql -U app
+```
+
+`exec <api> <service> -- <command> [<args>...]` is meant for scripts and test helpers. It never allocates a TTY, forwards its stdin to the command, passes the command's stdout and stderr through, and exits with the command's exit code. The CLI itself writes nothing to stdout, so the output is exactly the command's; its own errors go to stderr.
+
+Everything after the first `--` goes to the command unchanged, so `--help` or `-h` there is the command's, not the CLI's. Without a `--` and a command, or without a service from `services`, `exec` exits with 1 and a usage line on stderr. It runs in one API at a time.
 
 ### What `up` prints
 

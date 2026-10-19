@@ -21,6 +21,7 @@ import { checkoutApiBranch, pullApiBranch } from './git';
 import { apiHelp, singleApiHelp } from './help';
 import { checkoutProblem, resolveApiCheckout } from './resolve-checkout';
 import { runApiSetup } from './setup';
+import { parseApiArgv } from './parse-argv';
 import { didYouMean } from './suggest';
 import { cloneApiRepo, DEFAULT_CHECKOUT_DIR } from './clone';
 import { ignoredByGit } from './git';
@@ -97,10 +98,11 @@ type SingleApiOptions = {
   api: ApiDefinition;
   service: string | undefined;
   seedSteps?: SeedStep[];
+  commandArgs?: string[];
 };
 
 const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
-  const { argv, root, invocation, command, name, api, service, seedSteps: steps } = options;
+  const { argv, root, invocation, command, name, api, service, seedSteps: steps, commandArgs = [] } = options;
   const exposeOnLan = argv.includes('--host');
 
   const isGitCommand = GIT_API_COMMANDS.includes(command);
@@ -373,6 +375,19 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
 
     if (command === 'logs') runCompose('logs', '-f', target);
     else runCompose('exec', target, 'bash');
+  } else if (command === 'exec') {
+    if (service === undefined || !api.services.includes(service)) {
+      console.error(
+        service === undefined
+          ? `Name the service to run in: ${invocation} exec ${name} <service> -- <command>`
+          : `The ${name} API does not start "${service}".${didYouMean(service, api.services)}`,
+      );
+      console.error(`Services: ${api.services.join(', ')}`);
+
+      return 1;
+    }
+
+    runCompose('exec', '-T', service, ...commandArgs);
   } else if (steps !== undefined) {
     const directory = containerSeedDirectory(name);
     const copied = spawnSync(binary, [...composePrefix, ...seedCopyArgs(api.execService, directory)], {
@@ -424,11 +439,13 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
 
 export const runApiCommand = async ({
   apis,
-  argv,
+  argv: rawArgv,
   root = process.cwd(),
   invocation = 'et api',
 }: RunApiCommandOptions): Promise<number> => {
-  const [command, nameArgument, service] = argv.filter((arg) => !arg.startsWith('-'));
+  const parsed = parseApiArgv(rawArgv);
+  const argv = parsed.head;
+  const [command, nameArgument, service] = parsed.positionals;
   const wantsHelp = argv.includes('--help') || argv.includes('-h') || command === 'help';
 
   if (wantsHelp && nameArgument === undefined) {
@@ -456,6 +473,22 @@ export const runApiCommand = async ({
     console.error(apiHelp(apis, invocation));
 
     return 1;
+  }
+
+  if (command === 'exec' && !wantsHelp) {
+    if (names.length > 1) {
+      console.error(`exec runs in one API at a time, but ${names.length} were named.`);
+
+      return 1;
+    }
+
+    if (parsed.rest === undefined || parsed.rest.length === 0) {
+      console.error(
+        `exec needs a command after "--": ${invocation} exec ${names[0]} <service> -- <command> [<args>...]`,
+      );
+
+      return 1;
+    }
   }
 
   const known = Object.keys(apis);
@@ -569,6 +602,7 @@ export const runApiCommand = async ({
       api,
       service,
       seedSteps: seedStepsOfApi,
+      commandArgs: parsed.rest,
     });
 
     if (code !== 0) exitCode = code;

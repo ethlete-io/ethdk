@@ -43,4 +43,10 @@ describe('loadApiDefinitions', () => {
 
     expect(() => loadApiDefinitions(root)).toThrow('hub.exec declares "up", "help", which are built-in commands');
   });
+
+  it('rejects an exec entry named exec', () => {
+    const root = rootWithModule('ethlete.apis.js', "module.exports = { hub: { exec: { exec: ['x'] } } };");
+
+    expect(() => loadApiDefinitions(root)).toThrow('hub.exec declares "exec", which is a built-in command');
+  });
 });

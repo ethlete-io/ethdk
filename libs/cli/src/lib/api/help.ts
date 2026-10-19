@@ -11,6 +11,7 @@ const BUILT_IN_DESCRIPTIONS: Record<(typeof BUILT_IN_API_COMMANDS)[number], stri
   checkout: 'Switch the checkout to the branch apiRepoBranches names',
   pull: 'Fetch and fast-forward the checked-out branch',
   setup: "Run the API's own setupCommand in its compose directory",
+  exec: 'Run a command in a service without a TTY: exec <api> <service> -- <cmd...>',
 };
 
 const SEED_DESCRIPTIONS: Record<(typeof SEED_API_COMMANDS)[number], string> = {
@@ -41,6 +42,7 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
 
   return [
     `Usage: ${invocation} <command> <api>[,<api>] [<service> | <seed>[,<seed>]] [--host]`,
+    `       ${invocation} exec <api> <service> -- <command> [<args>...]`,
     '',
     'Commands',
     ...BUILT_IN_API_COMMANDS.map((command) => `  ${pad(command, commandWidth)}  ${BUILT_IN_DESCRIPTIONS[command]}`),
@@ -48,6 +50,7 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
     ...execNames.map((command) => `  ${pad(command, commandWidth)}  Declared by the API itself`),
     `  ${pad('help', commandWidth)}  What one API accepts, and where its checkout is`,
     '',
+    'Everything after -- goes to the command unchanged, and nothing else is written to stdout.',
     `An exec entry named seed or fixtures in ethlete.apis.js runs instead of the built-in command.`,
     '',
     'APIs',
