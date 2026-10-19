@@ -997,6 +997,30 @@ describe('legacy scenario', () => {
       });
     });
 
+    it('fails the refresh query once when the refresh token is rejected', () => {
+      const s = scenario();
+      s.api.on('POST', '/auth/refresh', () => ({ status: 401, body: { message: 'unknown refresh token' } }));
+
+      withLegacyClient(s, {}, (client) => {
+        const provider = new V2BearerAuthProvider({
+          refreshConfig: { queryCreator: createRefreshQuery(client), token: mintToken() },
+        });
+        client.setAuthProvider(provider);
+
+        const refreshQuery = provider.currentRefreshQuery;
+        if (!refreshQuery) throw new Error('The provider did not start a refresh');
+        const recorder = recordStates(refreshQuery);
+
+        s.flush();
+        recorder.stop();
+
+        expect(s.api.requests.map((r) => `${r.method} ${r.path} ${r.status}`)).toEqual(['POST /auth/refresh 401']);
+        expect(recorder.types().filter((type) => type === QueryStateType.Failure)).toHaveLength(1);
+        expect(refreshQuery.rawState.type).toBe(QueryStateType.Failure);
+        expect(provider.tokens).toEqual({ token: null, refreshToken: null });
+      });
+    });
+
     it('runs a secure query executed while logged out once it is executed again after login', () => {
       const s = scenario();
       s.api.on('GET', '/secure', () => ({ body: { ok: true } }));
