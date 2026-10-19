@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 4.32.1
+
+### Patch Changes
+
+- [`ba5501f`](https://github.com/ethlete-io/ethdk/commit/ba5501f9d86878d1d02a2dea68ccaf591ff48611) Thanks [@TomTomB](https://github.com/TomTomB)! - Let a user selection change in `SelectionModel` cancel a pending `setSelectionFromValue$`, and expose `isSyncingSelectionFromValue` while it waits for options.
+
 ## 4.32.0
 
 ### Minor Changes
