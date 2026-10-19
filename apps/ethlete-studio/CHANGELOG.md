@@ -1,5 +1,11 @@
 # ethlete-studio
 
+## 0.2.0-next.5
+
+### Patch Changes
+
+- Update rustls to 0.23.46 and quinn-proto to 0.11.18 to fix the RUSTSEC-2026-0338 to 0349 advisories.
+
 ## 0.2.0-next.4
 
 ### Minor Changes
