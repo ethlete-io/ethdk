@@ -13,6 +13,7 @@ const BUILT_IN_DESCRIPTIONS: Record<(typeof BUILT_IN_API_COMMANDS)[number], stri
   setup: "Run the API's own setupCommand in its compose directory",
   exec: 'Run a command in a service without a TTY: exec <api> <service> -- <cmd...>',
   doctor: 'Run the checks the API declares: doctor <api> [--fix]',
+  run: 'Run a host command under the API lock: run <api> --lock [--wait <s>] -- <cmd...>',
 };
 
 const SEED_DESCRIPTIONS: Record<(typeof SEED_API_COMMANDS)[number], string> = {
@@ -44,6 +45,7 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
   return [
     `Usage: ${invocation} <command> <api>[,<api>] [<service> | <seed>[,<seed>]] [--host]`,
     `       ${invocation} exec <api> <service> -- <command> [<args>...]`,
+    `       ${invocation} run <api> --lock [--wait <seconds>] -- <command> [<args>...]`,
     '',
     'Commands',
     ...BUILT_IN_API_COMMANDS.map((command) => `  ${pad(command, commandWidth)}  ${BUILT_IN_DESCRIPTIONS[command]}`),
@@ -61,6 +63,7 @@ export const apiHelp = (apis: ApiDefinitions, invocation: string) => {
     `  ${pad('--host', commandWidth)}  Also print the address another device on this network can use`,
     `  ${pad('--force', commandWidth)}  With up: start even when a port is taken. With pull or clear: lose local work`,
     `  ${pad('--all', commandWidth)}  With clear: every API at once`,
+    `  ${pad('--wait', commandWidth)}  With run: give up after this many seconds, with exit code 75`,
     `  ${pad('--clone', commandWidth)}  Clone a missing checkout without asking first`,
     `  ${pad('--setup', commandWidth)}  Run the setup command for a missing env file without asking first`,
     `  ${pad('--help', commandWidth)}  Show this text`,

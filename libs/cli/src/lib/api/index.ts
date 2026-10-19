@@ -1,4 +1,5 @@
 export * from './api-command';
+export * from './api-state';
 export * from './compose';
 export * from './auth-hint';
 export * from './clear';
@@ -7,9 +8,11 @@ export * from './definition';
 export * from './git';
 export * from './help';
 export * from './load-definitions';
+export * from './lock';
 export * from './ports';
 export * from './resolve-checkout';
 export * from './run';
+export * from './run-locked';
 export * from './seeds';
 export * from './setup';
 export * from './state';

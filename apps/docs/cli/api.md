@@ -254,6 +254,7 @@ An `exec` entry named `seed` or `fixtures` in `ethlete.apis.js` runs instead of 
 | `shell`  | Opens `bash` in `execService`, or in a service you name.                                         |
 | `exec`   | Runs one command in a service without a TTY. See [Running a command](#running-a-command).        |
 | `doctor` | Runs the API's `checks`. See [Checking the setup](#checking-the-setup).                          |
+| `run`    | Runs a host command under the API lock. See [Running under the lock](#running-under-the-lock).   |
 
 `logs` and `shell` take a service as a third argument, so `yarn et api logs hub database` follows the database rather than the app. A name that is not in `services` is reported with the list of names that are.
 
@@ -281,6 +282,21 @@ checks: [
 `doctor <api> [--fix]` runs the checks in order and prints one line each: `ok`, `FAIL`, `fixed` or `fix failed`. A failure also prints the last lines of the check's stderr. `check` and `fix` are one shell line each. They run with `sh -c` in `service` (default `execService`) through `compose exec -T`, or on the host in `composeDir` with the API's `env` when `host` is `true`. The containers must already run; if not, `doctor` says so and points at `up`, it never starts them.
 
 Without `--fix` every check runs and the exit code is 1 if any failed. With `--fix`, a failed check that has a `fix` runs it (its output streams through) and is checked again. `doctor --fix` stops at the first failed check without a `fix`, the first fix that fails and the first check that still fails after its fix, because later checks may depend on it. Check names must be unique, and `service` must be one of `services`; a wrong shape in `checks`, `profiles` or `migrationsDir` fails the load with an error that names the field, such as `fifagg.checks[2].fix must be a shell line`.
+
+### Running under the lock
+
+```sh
+yarn et api run hub --lock -- yarn playwright test
+yarn et api run hub --lock --wait 600 -- yarn e2e
+```
+
+Several frontend checkouts and agent sessions can drive the same API containers. `run <api> --lock [--wait <seconds>] -- <command> [<args>...]` lets one of them at a time change the API's data: it takes the lock, runs the command on the host in the repo root with stdio inherited, and exits with the command's exit code (128 plus the signal number when a signal ended it). `SIGINT` and `SIGTERM` are forwarded to the command. When the command ends, the lock is released and the state is marked dirty, so the next `ready` rebuilds it. The containers do not have to run, and the API's checkout must exist.
+
+When another process holds the lock, `run` prints the holder once on stderr and checks again every second. Without `--wait` it waits without end; with `--wait <seconds>` it gives up after that time, prints the holder again and exits with `75`. A lock whose process is dead on this machine is stale: the next `run` takes it over and marks the state dirty, because the dead command may have left the data half-changed.
+
+The command gets the lock's token as `ETHLETE_API_LOCK`, so a command that calls `et api ready` itself does not wait for the lock its own parent holds. Without `--lock`, or without a command after `--`, `run` exits with 1. It locks one API at a time.
+
+The state and the lock live outside the repo, in `${XDG_STATE_HOME:-~/.local/state}/ethlete/api/<compose project>/` as `state.json` (`{ profile, fingerprint, dirty, updatedAt }`) and `lock.json` (`{ pid, hostname, command, cwd, startedAt, token }`). The compose project is the name compose itself gives the API's `composeDir`: `COMPOSE_PROJECT_NAME` from the environment, the API's `env` or `composeDir/.env`, then the compose file's top-level `name:`, then the directory name. Two checkouts whose containers compose sees as one project share one state and one lock. `seed` and `fixtures` mark the state dirty too, whether they succeed or not.
 
 ### What `up` prints
 

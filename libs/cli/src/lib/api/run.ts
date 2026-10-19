@@ -47,6 +47,8 @@ import { configuredApiRepoBranch, readLocalConfig } from '../config/local-config
 import { clearApiCheckouts } from './clear';
 import { portsInUse, publishedPorts } from './ports';
 import { serviceStateTable, serviceStates } from './state';
+import { apiStateDirectory, composeProjectName, markApiStateDirty } from './api-state';
+import { runLocked } from './run-locked';
 
 export type RunApiCommandOptions = {
   apis: ApiDefinitions;
@@ -68,6 +70,30 @@ const namedApis = (argument: string) =>
     .split(',')
     .map((name) => name.trim())
     .filter((name) => name !== '');
+
+const stateDirectoryOf = (options: { root: string; name: string; api: ApiDefinition }) => {
+  const { api } = options;
+  const checkout = resolveApiCheckout({ ...options, needs: 'compose' });
+
+  if (!checkout.ok) return checkout;
+
+  const env = { ...process.env, ...definedEntries(api.env?.() ?? {}) };
+
+  return {
+    ok: true as const,
+    directory: apiStateDirectory({ project: composeProjectName({ composePath: checkout.checkout.composePath, env }) }),
+  };
+};
+
+const parseWait = (wait: string | undefined) => {
+  if (wait === undefined) return { ok: true as const, seconds: undefined };
+
+  const seconds = Number(wait);
+
+  return wait.trim() !== '' && Number.isFinite(seconds) && seconds >= 0
+    ? { ok: true as const, seconds }
+    : { ok: false as const };
+};
 
 const composeProjectHasContainers = (composePath: string) => {
   const tool = resolveComposeTool();
@@ -494,6 +520,28 @@ export const runApiCommand = async ({
     }
   }
 
+  const runUsage = `${invocation} run <api> --lock [--wait <seconds>] -- <command> [<args>...]`;
+
+  if (command === 'run' && !wantsHelp) {
+    if (names.length > 1) {
+      console.error(`run locks one API at a time, but ${names.length} were named.`);
+
+      return 1;
+    }
+
+    if (!argv.includes('--lock') || parsed.rest === undefined || parsed.rest.length === 0) {
+      console.error(`run needs --lock and a command after "--": ${runUsage}`);
+
+      return 1;
+    }
+
+    if (!parseWait(parsed.wait).ok) {
+      console.error(`--wait takes a number of seconds: ${runUsage}`);
+
+      return 1;
+    }
+  }
+
   const known = Object.keys(apis);
   const unknown = names.find((candidate) => !Object.prototype.hasOwnProperty.call(apis, candidate));
 
@@ -546,6 +594,27 @@ export const runApiCommand = async ({
   }
 
   if (command === 'clear') return clear(names);
+
+  if (command === 'run') {
+    const [target] = targets;
+
+    if (target === undefined) return 1;
+
+    const state = stateDirectoryOf({ root, ...target });
+
+    if (!state.ok) {
+      console.error(checkoutProblem({ failure: state, name: target.name, invocation }));
+
+      return 1;
+    }
+
+    return runLocked({
+      directory: state.directory,
+      command: parsed.rest ?? [],
+      cwd: root,
+      wait: parseWait(parsed.wait).seconds,
+    });
+  }
 
   const stepsByApi = new Map<string, SeedStep[]>();
   const isSeedCommand = SEED_API_COMMANDS.some((candidate) => candidate === command);
@@ -607,6 +676,12 @@ export const runApiCommand = async ({
       seedSteps: seedStepsOfApi,
       commandArgs: parsed.rest,
     });
+
+    if (isSeedCommand) {
+      const state = stateDirectoryOf({ root, name, api });
+
+      if (state.ok) markApiStateDirty(state.directory);
+    }
 
     if (code !== 0) exitCode = code;
   }

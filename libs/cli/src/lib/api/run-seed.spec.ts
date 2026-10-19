@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
+import { apiStateDirectory, readApiState, writeApiState } from './api-state';
 import { ApiDefinition } from './definition';
 import { runApiCommand } from './run';
 
@@ -72,6 +73,11 @@ const makeRoot = (manifest: unknown = MANIFEST) => {
 const run = (argv: string[], root: string, api: Partial<ApiDefinition> = {}) =>
   runApiCommand({ apis: { hub: { ...HUB, ...api } }, argv, root });
 
+const hubState = () => apiStateDirectory({ project: 'development' });
+
+const cleanState = () =>
+  writeApiState({ directory: hubState(), state: { profile: 'e2e', fingerprint: 'abc123def456', dirty: false } });
+
 const scriptOf = (call: ComposeCallRecord | undefined) => call?.args[call.args.length - 1] ?? '';
 
 describe('et api seed', () => {
@@ -115,6 +121,27 @@ describe('et api seed', () => {
     expect(composeCalls).toHaveLength(2);
   });
 
+  it('marks the state dirty after a seed ran, and after one failed', async () => {
+    cleanState();
+
+    expect(await run(['seed', 'hub', 'rewards'], makeRoot())).toBe(0);
+    expect(readApiState(hubState())).toMatchObject({ profile: 'e2e', dirty: true });
+
+    cleanState();
+    composeCalls.length = 0;
+    failingCall = 2;
+
+    expect(await run(['seed', 'hub', 'rewards'], makeRoot())).toBe(7);
+    expect(readApiState(hubState())?.dirty).toBe(true);
+  });
+
+  it('leaves the state clean when it only lists the seeds', async () => {
+    cleanState();
+
+    expect(await run(['seed', 'hub'], makeRoot())).toBe(0);
+    expect(readApiState(hubState())?.dirty).toBe(false);
+  });
+
   it('runs an exec entry named seed instead of the manifest', async () => {
     const root = makeRoot({ seeds: 'not even valid' });
 
@@ -132,9 +159,12 @@ describe('et api fixtures', () => {
     expect(scriptOf(composeCalls[2])).toContain('php $SEED_DIR/r.php');
   });
 
-  it('runs only the fixtures when no seed is named', async () => {
+  it('runs only the fixtures when no seed is named, and marks the state dirty', async () => {
+    cleanState();
+
     expect(await run(['fixtures', 'hub'], makeRoot())).toBe(0);
     expect(composeCalls).toHaveLength(2);
+    expect(readApiState(hubState())?.dirty).toBe(true);
   });
 
   it('runs an exec entry named fixtures instead of the manifest', async () => {
