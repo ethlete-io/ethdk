@@ -142,11 +142,23 @@ describe('et api seed', () => {
     expect(readApiState(hubState())?.dirty).toBe(false);
   });
 
+  it('keeps the terminal for an exec entry when stdin is a TTY', async () => {
+    process.stdin.isTTY = true;
+
+    try {
+      expect(await run(['seed', 'hub'], makeRoot(), { exec: { seed: ['make', 'seed'] } })).toBe(0);
+    } finally {
+      process.stdin.isTTY = false;
+    }
+
+    expect(composeCalls.map(({ args }) => args)).toEqual([['compose', 'exec', 'app', 'make', 'seed']]);
+  });
+
   it('runs an exec entry named seed instead of the manifest', async () => {
     const root = makeRoot({ seeds: 'not even valid' });
 
     expect(await run(['seed', 'hub'], root, { exec: { seed: ['make', 'seed'] } })).toBe(0);
-    expect(composeCalls.map(({ args }) => args)).toEqual([['compose', 'exec', 'app', 'make', 'seed']]);
+    expect(composeCalls.map(({ args }) => args)).toEqual([['compose', 'exec', '-T', 'app', 'make', 'seed']]);
   });
 });
 
@@ -169,7 +181,7 @@ describe('et api fixtures', () => {
 
   it('runs an exec entry named fixtures instead of the manifest', async () => {
     expect(await run(['fixtures', 'hub'], makeRoot(), { exec: { fixtures: ['make', 'fixtures'] } })).toBe(0);
-    expect(composeCalls.map(({ args }) => args)).toEqual([['compose', 'exec', 'app', 'make', 'fixtures']]);
+    expect(composeCalls.map(({ args }) => args)).toEqual([['compose', 'exec', '-T', 'app', 'make', 'fixtures']]);
   });
 });
 

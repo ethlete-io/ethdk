@@ -434,7 +434,7 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
   } else {
     const execCommand = api.exec?.[command] ?? [];
 
-    runCompose('exec', api.execService, ...execCommand);
+    runCompose('exec', ...(process.stdin.isTTY === true ? [] : ['-T']), api.execService, ...execCommand);
 
     if (exitCode !== 0) {
       const install = dependencyInstallCommandName(api);

@@ -6,7 +6,7 @@ import { LOCAL_CONFIG_FILE_NAME } from '../config/local-config';
 import { apiStateDirectory, composeProjectName, readApiState, writeApiState } from './api-state';
 import { ApiDefinition } from './definition';
 import { API_LOCK_ENV, acquireApiLock, lockPath, readApiLock } from './lock';
-import { ReadySeedUnit, runReadyCommand } from './run-ready';
+import { ReadySeedUnit, runReadyCommand, waitForHealth } from './run-ready';
 
 let fakeBinary = '';
 
@@ -258,5 +258,34 @@ describe('et api ready', () => {
     expect(await ready('healthy', { fetch })).toBe(1);
     expect(sleeps).toHaveLength(30);
     expect(errors.join('\n')).toContain('did not answer 204 within 60 s. Last: connect ECONNREFUSED.');
+  });
+});
+
+describe('waitForHealth', () => {
+  it('caps each request at the time left of the total budget', async () => {
+    let clock = 0;
+    const timeouts: number[] = [];
+    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      timeouts.push(ms);
+
+      return new AbortController().signal;
+    });
+
+    try {
+      const result = await waitForHealth({
+        url: 'http://x',
+        expect: 200,
+        timeoutMs: 15_000,
+        retryMs: 2_000,
+        now: () => clock,
+        sleep: async (ms) => void (clock += ms + 3_000),
+        fetch: (async () => new Response(null, { status: 503 })) as typeof fetch,
+      });
+
+      expect(result.ok).toBe(false);
+      expect(timeouts).toEqual([10_000, 10_000, 5_000, 1]);
+    } finally {
+      timeoutSpy.mockRestore();
+    }
   });
 });

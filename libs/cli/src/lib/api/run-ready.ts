@@ -105,7 +105,8 @@ export const waitForHealth = async (options: {
     let last: string;
 
     try {
-      const response = await get(url, { signal: AbortSignal.timeout(retryMs * 5) });
+      const left = Math.max(1, timeoutMs - (now() - startedAt));
+      const response = await get(url, { signal: AbortSignal.timeout(Math.min(retryMs * 5, left)) });
 
       if (response.status === expect) return { ok: true };
 
