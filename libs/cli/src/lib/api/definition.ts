@@ -26,6 +26,36 @@ export type ApiDefinition = {
   env?: () => Record<string, string | undefined>;
   /** Named commands run in `execService`, for example `{ install: ['composer', 'install'] }`. */
   exec?: Record<string, string[]>;
+  /** Ordered preconditions checked by `doctor`. A later check may rely on an earlier one. */
+  checks?: ApiCheck[];
+  /** Named states `ready` and `snapshot` work with. */
+  profiles?: Record<string, ApiProfile>;
+  /** Migrations folder relative to the API checkout root. Its contents are part of the state fingerprint. */
+  migrationsDir?: string;
+};
+
+/** One precondition of the API's local setup, run in order by `doctor`. */
+export type ApiCheck = {
+  /** Unique label printed in the `doctor` report. */
+  name: string;
+  /** One shell line that exits 0 when the check passes. */
+  check: string;
+  /** One shell line that repairs a failed check, run by `doctor --fix`. */
+  fix?: string;
+  /** Service the lines run in. Defaults to `execService`. */
+  service?: string;
+  /** Run on the host in `composeDir` with the API's `env` instead of in a container. */
+  host?: boolean;
+};
+
+/** A named state the API can be brought into. */
+export type ApiProfile = {
+  /** Seed names from `seeds.json` run in order, where `fixtures` stands for the fixtures list. */
+  seeds: string[];
+  /** Url that must answer with `expect` (default 200) before the profile counts as ready. */
+  health?: { url: string; expect?: number };
+  /** How to dump and restore the databases: `save` writes to stdout, `restore` reads stdin, both see `$DATABASES`. */
+  snapshot?: { service: string; databases: string[]; save: string; restore: string };
 };
 
 export type ApiDefinitions = Record<string, ApiDefinition>;
@@ -41,6 +71,7 @@ export const BUILT_IN_API_COMMANDS = [
   'pull',
   'setup',
   'exec',
+  'doctor',
 ] as const;
 
 /** These act on the checkout itself, so they run before `setupCommand` and need no container engine. */

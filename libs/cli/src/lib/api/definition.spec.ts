@@ -21,6 +21,7 @@ describe('apiCommandNames', () => {
       'checkout',
       'pull',
       'exec',
+      'doctor',
       'seed',
       'fixtures',
     ]);
@@ -38,6 +39,7 @@ describe('apiCommandNames', () => {
       'pull',
       'setup',
       'exec',
+      'doctor',
       'seed',
       'fixtures',
     ]);
@@ -54,6 +56,7 @@ describe('apiCommandNames', () => {
       'checkout',
       'pull',
       'exec',
+      'doctor',
       'seed',
       'fixtures',
       'install',

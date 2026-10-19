@@ -12,6 +12,7 @@ const BUILT_IN_DESCRIPTIONS: Record<(typeof BUILT_IN_API_COMMANDS)[number], stri
   pull: 'Fetch and fast-forward the checked-out branch',
   setup: "Run the API's own setupCommand in its compose directory",
   exec: 'Run a command in a service without a TTY: exec <api> <service> -- <cmd...>',
+  doctor: 'Run the checks the API declares: doctor <api> [--fix]',
 };
 
 const SEED_DESCRIPTIONS: Record<(typeof SEED_API_COMMANDS)[number], string> = {

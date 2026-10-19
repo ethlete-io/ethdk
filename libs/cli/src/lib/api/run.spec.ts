@@ -128,7 +128,7 @@ describe('runApiCommand', () => {
     expect(await run(['bogus', 'hub'], makeRoot())).toBe(1);
     expect(errors[0]).toContain('Unknown command "bogus" for the hub API.');
     expect(errors[0]).toContain(
-      'up, down, logs, shell, clone, clear, checkout, pull, setup, exec, seed, fixtures, install',
+      'up, down, logs, shell, clone, clear, checkout, pull, setup, exec, doctor, seed, fixtures, install',
     );
   });
 

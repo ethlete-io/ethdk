@@ -20,6 +20,7 @@ import {
 import { checkoutApiBranch, pullApiBranch } from './git';
 import { apiHelp, singleApiHelp } from './help';
 import { checkoutProblem, resolveApiCheckout } from './resolve-checkout';
+import { runDoctor } from './doctor';
 import { runApiSetup } from './setup';
 import { parseApiArgv } from './parse-argv';
 import { didYouMean } from './suggest';
@@ -359,6 +360,8 @@ const runOneApiCommand = async (options: SingleApiOptions): Promise<number> => {
           `A host firewall can still block port ${api.port}.`,
       );
     }
+  } else if (command === 'doctor') {
+    exitCode = runDoctor({ name, api, tool, cwd, env, invocation, fix: argv.includes('--fix') }).ok ? 0 : 1;
   } else if (command === 'down') {
     runCompose('down');
   } else if (command === 'logs' || command === 'shell') {

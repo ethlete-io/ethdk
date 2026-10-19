@@ -2,6 +2,7 @@ import { existsSync } from 'fs';
 import { createRequire } from 'module';
 import { join } from 'path';
 import { ApiDefinitions, BUILT_IN_API_COMMANDS } from './definition';
+import { validateApiDefinition } from './validate-definition';
 
 export const API_DEFINITIONS_FILE_NAMES = ['ethlete.apis.js', 'ethlete.apis.cjs'];
 
@@ -31,6 +32,8 @@ export const loadApiDefinitions = (root: string): LoadApiDefinitionsResult => {
       );
     }
   }
+
+  for (const [name, api] of Object.entries(apis)) validateApiDefinition({ fileName, name, api });
 
   return { found: true, apis, fileName };
 };

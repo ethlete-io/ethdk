@@ -110,22 +110,25 @@ module.exports = {
 
 Adding an API is an entry in this map. Nothing else changes.
 
-| Field          | Required | Meaning                                                                                                               |
-| -------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `composeDir`   | yes      | Directory inside the checkout that holds the compose file.                                                            |
-| `services`     | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.      |
-| `execService`  | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                           |
-| `port`         | yes      | Published host port, not the port inside the container. Used for the printed url.                                     |
-| `envFile`      | no       | File that must exist in `composeDir` before the API can start.                                                        |
-| `setupCommand` | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                       |
-| `network`      | no       | External container network created before the first `up`.                                                             |
-| `repoUrl`      | no       | Where to clone this API from when the developer has no checkout of their own.                                         |
-| `envKey`       | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                  |
-| `examplePath`  | no       | Example path shown in the error that asks for this API's checkout.                                                    |
-| `env`          | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
-| `exec`         | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
+| Field           | Required | Meaning                                                                                                               |
+| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `composeDir`    | yes      | Directory inside the checkout that holds the compose file.                                                            |
+| `services`      | yes      | Services to start. Leave out anything the app does not need, such as a frontend container or a GPU-bound worker.      |
+| `execService`   | yes      | Service that `shell`, `logs` and every `exec` entry run in.                                                           |
+| `port`          | yes      | Published host port, not the port inside the container. Used for the printed url.                                     |
+| `envFile`       | no       | File that must exist in `composeDir` before the API can start.                                                        |
+| `setupCommand`  | no       | Command that creates `envFile`, run by `setup` in `composeDir`.                                                       |
+| `network`       | no       | External container network created before the first `up`.                                                             |
+| `repoUrl`       | no       | Where to clone this API from when the developer has no checkout of their own.                                         |
+| `envKey`        | no       | localStorage key the app reads to pick its API. Printed by `--host`.                                                  |
+| `examplePath`   | no       | Example path shown in the error that asks for this API's checkout.                                                    |
+| `env`           | no       | Extra environment for every compose call. An undefined value is dropped rather than passed as the string `undefined`. |
+| `exec`          | no       | Named commands run in `execService`, e.g. `{ install: ['composer', 'install'] }`.                                     |
+| `checks`        | no       | Ordered preconditions run by [`doctor`](#checking-the-setup).                                                         |
+| `profiles`      | no       | Named states (`seeds`, `health`, `snapshot`) for the `ready` and `snapshot` commands, which arrive in later releases. |
+| `migrationsDir` | no       | Migrations folder relative to the checkout root. Its contents will be part of the state fingerprint.                  |
 
-Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
+Each key of `exec` becomes a command of its own, so `yarn et api install hub` runs `composer install` inside the `app` service. A key may not reuse a built-in command (`up`, `down`, `logs`, `shell`, `clone`, `clear`, `checkout`, `pull`, `setup`, `exec`, `doctor`) or `help`; the file then fails to load with an error that names the entry. A key named `seed` or `fixtures` is allowed, and runs instead of the [seed commands](#seeds).
 
 ## Where the checkout comes from
 
@@ -243,13 +246,14 @@ An `exec` entry named `seed` or `fixtures` in `ethlete.apis.js` runs instead of 
 
 ## Container commands
 
-| Command | What it runs                                                                                     |
-| ------- | ------------------------------------------------------------------------------------------------ |
-| `up`    | Checks the ports, creates `network` if set, starts `services` detached, then prints their state. |
-| `down`  | Stops and removes the containers.                                                                |
-| `logs`  | Follows the log of `execService`, or of a service you name.                                      |
-| `shell` | Opens `bash` in `execService`, or in a service you name.                                         |
-| `exec`  | Runs one command in a service without a TTY. See [Running a command](#running-a-command).        |
+| Command  | What it runs                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------ |
+| `up`     | Checks the ports, creates `network` if set, starts `services` detached, then prints their state. |
+| `down`   | Stops and removes the containers.                                                                |
+| `logs`   | Follows the log of `execService`, or of a service you name.                                      |
+| `shell`  | Opens `bash` in `execService`, or in a service you name.                                         |
+| `exec`   | Runs one command in a service without a TTY. See [Running a command](#running-a-command).        |
+| `doctor` | Runs the API's `checks`. See [Checking the setup](#checking-the-setup).                          |
 
 `logs` and `shell` take a service as a third argument, so `yarn et api logs hub database` follows the database rather than the app. A name that is not in `services` is reported with the list of names that are.
 
@@ -263,6 +267,20 @@ echo "select 1" | yarn et api exec hub database -- psql -U app
 `exec <api> <service> -- <command> [<args>...]` is meant for scripts and test helpers. It never allocates a TTY, forwards its stdin to the command, passes the command's stdout and stderr through, and exits with the command's exit code. The CLI itself writes nothing to stdout, so the output is exactly the command's; its own errors go to stderr.
 
 Everything after the first `--` goes to the command unchanged, so `--help` or `-h` there is the command's, not the CLI's. Without a `--` and a command, or without a service from `services`, `exec` exits with 1 and a usage line on stderr. It runs in one API at a time.
+
+### Checking the setup
+
+```js
+checks: [
+  { name: 'dependencies installed', check: 'test -d vendor', fix: 'composer install' },
+  { name: 'database reachable', check: 'pg_isready -h database', service: 'app' },
+  { name: 'env file present', check: 'test -f .env', host: true, fix: 'cp .env.example .env' },
+],
+```
+
+`doctor <api> [--fix]` runs the checks in order and prints one line each: `ok`, `FAIL`, `fixed` or `fix failed`. A failure also prints the last lines of the check's stderr. `check` and `fix` are one shell line each. They run with `sh -c` in `service` (default `execService`) through `compose exec -T`, or on the host in `composeDir` with the API's `env` when `host` is `true`. The containers must already run; if not, `doctor` says so and points at `up`, it never starts them.
+
+Without `--fix` every check runs and the exit code is 1 if any failed. With `--fix`, a failed check that has a `fix` runs it (its output streams through) and is checked again. `doctor --fix` stops at the first failed check without a `fix`, the first fix that fails and the first check that still fails after its fix, because later checks may depend on it. Check names must be unique, and `service` must be one of `services`; a wrong shape in `checks`, `profiles` or `migrationsDir` fails the load with an error that names the field, such as `fifagg.checks[2].fix must be a shell line`.
 
 ### What `up` prints
 

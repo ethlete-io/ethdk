@@ -2,4 +2,4 @@
 '@ethlete/cli': minor
 ---
 
-Add `et api exec <api> <service> -- <command>`, which runs one command in a service without a TTY and passes its output and exit code through.
+Add `et api exec` to run one command in a service, and `et api doctor [--fix]` to run the `checks` an API declares.
