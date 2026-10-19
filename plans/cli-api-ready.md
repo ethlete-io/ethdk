@@ -97,3 +97,6 @@ the changeset, lint with no new warnings, `tsc -p libs/cli/tsconfig.spec.json`, 
 4. [x] Fingerprint (`fingerprint.ts`); `snapshot save|restore` (`snapshot.ts`, `run-snapshot.ts`); `status` (`run-status.ts`); atomic stale-lock claim.
 5. [x] `ready --profile` with the health check (`run-ready.ts`); `status` reports an unreadable `lock.json`.
 6. [ ] Check against the real fifagg API, with the fifagg session's agreement first.
+   - Done on a throwaway podman project (c14a330c1): every command passed; ready took 1.6 s,
+     0.9 s, and 1.2 s for a restore. Waiting for the fifagg session: its seed and its `checks`
+     and `e2e` profile in `ethlete.apis.js`. Docker is not tested.
