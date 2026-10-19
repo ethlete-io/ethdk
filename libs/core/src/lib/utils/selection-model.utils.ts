@@ -45,6 +45,11 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   private readonly _destroy$ = createDestroy();
   private _lastSelectionSetSubscription: Subscription | null = null;
 
+  get isSyncingSelectionFromValue() {
+    return this._isSyncingSelectionFromValue;
+  }
+  private _isSyncingSelectionFromValue = false;
+
   get selection$() {
     return this._selection$.asObservable();
   }
@@ -168,25 +173,28 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
     } else {
       const selection = this.getOptionByValue(value);
 
-      if (selection) {
-        this.setSelection(selection);
-      } else {
-        this.clearSelectedOptions();
-      }
+      this.setSelection(selection !== undefined ? selection : []);
     }
   }
 
+  /**
+   * Applies `value` once options are available. Until then, and while applying it, `isSyncingSelectionFromValue` is `true`.
+   * Any user selection change cancels a pending sync.
+   */
   setSelectionFromValue$(value: unknown) {
-    this._lastSelectionSetSubscription?.unsubscribe();
+    this._cancelPendingSelectionFromValue();
+    this._isSyncingSelectionFromValue = true;
 
     this._lastSelectionSetSubscription = this.options$
       .pipe(
         takeUntil(this._destroy$),
         filter((o) => !!o.length),
-        tap(() => this.setSelectionFromValue(value)),
         take(1),
       )
-      .subscribe();
+      .subscribe(() => {
+        this.setSelectionFromValue(value);
+        this._isSyncingSelectionFromValue = false;
+      });
   }
 
   setValueBinding(fnOrPropertyPath: SelectionModelBinding<T> | null) {
@@ -483,6 +491,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   addSelectedOption(option: T) {
+    this._cancelPendingSelectionFromValue();
+
     if (this.allowMultiple) {
       if (this.isSelected(option)) return;
 
@@ -493,6 +503,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   removeSelectedOption(option: T) {
+    this._cancelPendingSelectionFromValue();
+
     const optionKey = this.execFnOrGetOptionProperty(option, this.keyBinding);
 
     if (!this.isSelected(option)) return;
@@ -507,6 +519,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
   }
 
   clearSelectedOptions() {
+    this._cancelPendingSelectionFromValue();
+
     this._selection$.next([]);
   }
 
@@ -520,6 +534,8 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
   // FIXME: Toggle should respect disabled binding if it exists
   toggleAllSelectedOptions() {
+    this._cancelPendingSelectionFromValue();
+
     const filteredOptions = this.getFilteredOptions();
     const unselectedOptions = filteredOptions.filter((option) => !this.isSelected(option));
 
@@ -532,5 +548,11 @@ export class SelectionModel<T extends SelectionModelTypes = unknown> {
 
       this._selection$.next(selection);
     }
+  }
+
+  private _cancelPendingSelectionFromValue() {
+    this._lastSelectionSetSubscription?.unsubscribe();
+    this._lastSelectionSetSubscription = null;
+    this._isSyncingSelectionFromValue = false;
   }
 }

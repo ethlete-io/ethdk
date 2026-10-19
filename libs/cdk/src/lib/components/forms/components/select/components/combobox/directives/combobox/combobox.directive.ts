@@ -120,6 +120,7 @@ export class ComboboxDirective implements OnInit {
     this._initialValue$.next(value);
   }
   private _initialValue$ = new BehaviorSubject<unknown>(null);
+  private _hasReceivedSelectionValue = false;
 
   @Input()
   get filterInternal(): boolean {
@@ -396,11 +397,22 @@ export class ComboboxDirective implements OnInit {
 
     this._selectionModel.setSelectionFromValue$(this._input.value);
 
+    const hasInitialControlValue = this._input.value !== null && this._input.value !== undefined;
+
     this._selectionModel.value$
       .pipe(
         takeUntil(this._destroy$),
         tap((value) => {
-          this._input._updateValue(value);
+          const isInitialEmission = !this._hasReceivedSelectionValue;
+          this._hasReceivedSelectionValue = true;
+
+          const keepsControlValue =
+            this._selectionModel.isSyncingSelectionFromValue || (isInitialEmission && hasInitialControlValue);
+
+          if (!keepsControlValue) {
+            this._input._updateValue(value);
+          }
+
           this._setFilterFromInputValue();
         }),
       )
