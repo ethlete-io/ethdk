@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.39
+
+### Patch Changes
+
+- Keep a form control's value in `et-combobox` while async options load and when the loaded options do not contain it, instead of overwriting it with `null`.
+
 ## 5.0.0-next.38
 
 ### Minor Changes
