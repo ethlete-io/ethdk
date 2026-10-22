@@ -86,11 +86,11 @@ describe('surface color theme scenarios', () => {
     const fixture = TestBed.createComponent(SurfaceColorComponent);
     s.tick();
 
-    expect(classesOf(fixture, '.root')).toEqual(['et-color--brand']);
+    expect(classesOf(fixture, '.root')).toEqual([]);
     expect(classesOf(fixture, '.paper')).toEqual(['et-color--brand-on-light']);
     expect(classesOf(fixture, '.night-in-paper')).toEqual(['et-color--brand']);
     expect(classesOf(fixture, '.inherits-paper')).toEqual([]);
-    expect(classesOf(fixture, '.plain-in-paper')).toEqual([]);
+    expect(classesOf(fixture, '.plain-in-paper')).toEqual(['et-color--brand']);
   });
 
   it('leaves the theme of an [etProvideColor] on or above the surface in place', () => {

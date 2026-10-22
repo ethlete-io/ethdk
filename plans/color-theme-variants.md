@@ -1,7 +1,7 @@
 # Proposal: one rule for color per surface
 
-Status: accepted on 2026-10-22 with the recommendations of the open questions. In progress: slice 1
-(core runtime, Storybook surfaces, docs). The codemod and the root swap are later slices.
+Status: accepted on 2026-10-22 with the recommendations of the open questions. Slice 1 (core runtime,
+Storybook surfaces, docs) is done. The codemod and the root swap are later slices.
 
 ## The problem
 

@@ -14,7 +14,12 @@ import {
   Signal,
   untracked,
 } from '@angular/core';
-import { createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
+import {
+  createCssColorThemeName,
+  injectColorThemes,
+  injectColorThemesPrefix,
+  resolveColorThemeVariant,
+} from './color-theme.util';
 import { COLOR_PROVIDER } from './provide-color.directive';
 import { injectRootSurfaceTheme } from './color-scheme';
 import {
@@ -47,6 +52,7 @@ export class ProvideSurfaceDirective {
   private colorThemes = injectColorThemes({ optional: true });
   private colorPrefix = injectColorThemesPrefix({ optional: true });
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
+  private ownColorProvider = inject(COLOR_PROVIDER, { optional: true, self: true });
 
   private currentProviderSync: EffectRef | null = null;
   private forcedSurface = signal<ForcedSurfaceState>(FORCED_SURFACE_UNSET);
@@ -108,17 +114,28 @@ export class ProvideSurfaceDirective {
   });
 
   private colorThemeClass = computed(() => {
-    const colorTheme = this.resolvedTheme()?.colorTheme;
+    const own = this.ownColorProvider?.effectiveColor();
 
-    if (!colorTheme || this.colorProvider?.resolvedColor()) return null;
+    if (typeof own === 'object' && own !== null ? own.name : own) return null;
 
-    if (isDevMode() && !this.colorThemes?.some((theme) => theme.name === colorTheme)) {
+    const resolved = this.colorProvider?.resolvedColor();
+    const chosen =
+      (typeof resolved === 'object' && resolved !== null ? resolved.name : resolved) ||
+      this.colorThemes?.find((theme) => theme.isDefault)?.name;
+
+    if (!chosen) return null;
+
+    const variant = resolveColorThemeVariant(this.activeTheme(), chosen, this.colorThemes);
+
+    if (variant === resolveColorThemeVariant(this.parentProvider?.activeTheme(), chosen, this.colorThemes)) return null;
+
+    if (isDevMode() && !this.colorThemes?.some((theme) => theme.name === variant)) {
       console.error(
-        `Surface theme ${this.resolvedTheme()?.name} names the color theme ${colorTheme}, which does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`,
+        `Surface theme ${this.activeTheme()?.name} names the color theme ${variant}, which does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`,
       );
     }
 
-    return `${this.colorPrefix || 'et'}-color--${createCssColorThemeName(colorTheme)}`;
+    return `${this.colorPrefix || 'et'}-color--${createCssColorThemeName(variant)}`;
   });
 
   protected surfaceClass = computed(() => {

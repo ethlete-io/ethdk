@@ -391,66 +391,66 @@ export class ViolationHintComponent {
 
 `injectSemanticColorTheme('error' | 'warning' | 'success')` returns a signal of the registered `ColorTheme` with the matching `type`, and reading it throws if the app hasn't registered one, so components can rely on it. `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are deprecated: they return the theme once and ignore the surface.
 
-### Semantic themes per surface
+### Colors per surface
 
-One `inkColor` cannot read well on both a dark and a light surface. Register a second, ordinary color theme
-for the other surface - without a `type`, so the type lookup stays unambiguous - and let the surface name it:
+Theming follows two rules:
+
+1. **A surface is where an element sits.** It has a background, text, borders and its own grey. `color="surface"`
+   and the hover tints use that grey, from the surface's `interactionColor`.
+2. **A color is an accent that you choose.** A surface can swap an accent for a version that reads well on it.
+
+The default color is an accent that nobody chose explicitly, and `success`, `warning` and `error` are accents with a
+`type`. A surface swaps any of them with `colorThemeVariants`. The keys and the values are color theme names:
 
 ```ts
 // The app's own names
-export const SUCCESS_ON_LIGHT_THEME: ColorTheme = {
-  name: 'success-on-light',
-  primary: { color: { … }, onColor: { … }, inkColor: { default: '22 101 52' } },
-};
-
 export const LIGHT_SURFACE: SurfaceTheme = {
   name: 'light',
   type: 'light',
   elevation: 0,
-  semanticColorThemes: { success: 'success-on-light', error: 'danger-on-light' },
+  colorThemeVariants: {
+    brand: 'brand-on-light',
+    danger: 'danger-on-light',
+    success: 'success-on-light',
+    grey: 'grey-light',
+  },
   // …
 };
+
+export const DARK_SURFACE: SurfaceTheme = { name: 'dark', type: 'dark', elevation: 0 /* … */ };
 ```
 
-`injectSemanticColorTheme(type)` returns a signal of the theme the nearest surface names for `type`, else
-the registered theme of that `type`. It follows the surface through nesting, overlays that sync their
-surface, and runtime changes. Reading it throws where the app registered no theme of that `type`.
+A color resolves in two steps:
 
-```ts
-export class DeltaComponent {
-  successTheme = injectSemanticColorTheme('success'); // [etProvideColor]="successTheme()"
-}
+1. Find the chosen accent: the nearest `[etProvideColor]`, else the `isDefault` theme. For
+   `injectSemanticColorTheme(type)`, the theme with that `type`.
+2. If the nearest surface has an entry for the chosen accent, use that entry. Else use the chosen accent.
+
+The swap always starts from the chosen accent, never from a swapped one, so a dark surface inside a light one draws
+`brand` again without an entry of its own. An `[etProvideColor]` above a surface is swapped inside it too:
+
+```html
+<et-segmented-button-group color="grey">…</et-segmented-button-group>
+<!-- on the light surface: grey-light. On the dark surface: grey. -->
 ```
 
-Every SDK component resolves its semantic colors this way: the form field's error and warning states,
-select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup, banner,
-progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
-paints, not the one its trigger sits on. The surface only picks which `.et-color--<name>` class an
-element gets: CSS that reads `--et-theme-color-ink-solid` from an outer `.et-color--<name>` scope keeps
-that scope's theme until something re-provides the color.
+Register a variant as an ordinary color theme without a `type`, so the type lookup stays unambiguous.
 
-### A default color per surface
+| You want                                         | Use                                                 |
+| ------------------------------------------------ | --------------------------------------------------- |
+| A neutral color that follows the surface         | `color="surface"`, values from `interactionColor`   |
+| An accent with a better version on some surfaces | `color="<name>"`, plus `colorThemeVariants` entries |
+| An accent that stays the same on every surface   | `color="<name>"`, with no entry                     |
 
-The same problem hits the default color theme: a brand ink tuned for a dark surface can fail contrast on a light
-one. Register a darker variant and name it as the surface's `colorTheme`:
+Every SDK component resolves its semantic colors through `injectSemanticColorTheme()`: the form field's error and
+warning states, select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup,
+banner, progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
+paints, not the one its trigger sits on. `:root` has no surface element, so swapping the default accent of the root
+surface needs an `[etProvideSurface]` at the app root.
 
-```ts
-export const LIGHT_SURFACE: SurfaceTheme = {
-  name: 'light',
-  type: 'light',
-  elevation: 0,
-  colorTheme: 'brand-on-light', // the app's own name
-  // …
-};
-```
-
-Each `[etProvideSurface]` that resolves this surface adds `.et-color--brand-on-light` to its element, so its
-subtree, and an overlay panel that syncs the surface, draws in that theme. A provider left unset inherits the class
-from its parent. An `[etProvideColor]` with a color on the surface element or on an ancestor wins, so a surface
-never resets a themed region. A surface without `colorTheme` keeps the color of its parent; when you set it on one
-surface, set it on every surface the first can contain, or a dark surface inside a light one keeps the light
-variant. `:root` has no surface element, so the default surface's `colorTheme` needs an `[etProvideSurface]` at
-the app root.
+`colorTheme` and `semanticColorThemes` are deprecated and still work: `colorTheme: X` acts as an entry for the
+`isDefault` theme, `semanticColorThemes: { success: X }` as one for the theme with `type: 'success'`. An entry in
+`colorThemeVariants` wins over both.
 
 `injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
 

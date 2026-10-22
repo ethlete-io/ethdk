@@ -85,15 +85,19 @@ the interactive element itself, never a wrapper).
   (`provideColor.forceColor(theme)` / `clearForcedColor()`, see form-field's
   error state and the menu item destructive variant). Inside that scope,
   `--et-theme-color-primary-*` *is* the error color.
-- **Semantic colors that follow the surface.** One `inkColor` cannot read on both
-  dark and light surfaces, so a surface theme names the theme serving each type:
-  `semanticColorThemes: { success: 'success-on-light' }` (an extra theme registered
-  without a `type`). `injectSemanticColorTheme(type)` returns a signal of that theme,
-  else the theme of that `type`. Every component in `libs/components` and
-  `libs/query-devtools` uses it (helpers in `libs/components/src/lib/internals/semantic-theme.ts`;
-  `injectOptionalSemanticTheme` where a missing theme must not throw). Do not use the
-  deprecated `injectErrorTheme()` and its siblings: they ignore the surface.
-  Never put surface logic into a color theme or add CSS vars for it.
+- **A surface swaps a chosen accent; it never picks one.** The chosen accent is the
+  nearest `[etProvideColor]`, else the `isDefault` theme, or for
+  `injectSemanticColorTheme(type)` the theme of that `type`. The nearest surface's
+  `colorThemeVariants` (`{ brand: 'brand-on-light', success: 'success-on-light' }`, variants
+  registered without a `type`) swaps it; an accent without an entry stays the same on every
+  surface, and a dark surface inside a light one draws the chosen accent again. The resolver
+  is `resolveColorThemeVariant()` in `color-theme.util.ts`. `colorTheme` and
+  `semanticColorThemes` are deprecated. Every component in `libs/components` and
+  `libs/query-devtools` uses `injectSemanticColorTheme()` (helpers in
+  `libs/components/src/lib/internals/semantic-theme.ts`; `injectOptionalSemanticTheme` where
+  a missing theme must not throw). Do not use the deprecated `injectErrorTheme()` and its
+  siblings: they ignore the surface. Never put surface logic into a color theme or add CSS
+  vars for it.
 - **Semantic themes in overlay panels.** The lookup reads the surface of the injector
   that calls it. Content a component declares but stamps into a detached panel (select,
   cascader, menu content in query-devtools) must read it from inside the panel: put

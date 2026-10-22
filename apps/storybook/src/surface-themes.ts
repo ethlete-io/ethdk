@@ -1,12 +1,18 @@
 import { SurfaceTheme } from '@ethlete/core';
 
+const LIGHT_COLOR_THEME_VARIANTS: SurfaceTheme['colorThemeVariants'] = {
+  brand: 'brand-on-light',
+  danger: 'danger-on-light',
+  success: 'success-on-light',
+  warning: 'warning-on-light',
+};
+
 export const LIGHT_SURFACE: SurfaceTheme = {
   name: 'light',
   type: 'light',
-  colorTheme: 'brand-on-light',
   elevation: 0,
   isDefault: true,
-  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light', warning: 'warning-on-light' },
+  colorThemeVariants: LIGHT_COLOR_THEME_VARIANTS,
   interactionColor: {
     color: {
       default: '115 115 115',
@@ -26,9 +32,8 @@ export const LIGHT_SURFACE: SurfaceTheme = {
 export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
   name: 'light-elevated',
   type: 'light',
-  colorTheme: 'brand-on-light',
   elevation: 1,
-  semanticColorThemes: { error: 'danger-on-light', success: 'success-on-light', warning: 'warning-on-light' },
+  colorThemeVariants: LIGHT_COLOR_THEME_VARIANTS,
   interactionColor: {
     color: {
       default: '115 115 115',
@@ -48,7 +53,6 @@ export const LIGHT_ELEVATED_SURFACE: SurfaceTheme = {
 export const DARK_SURFACE: SurfaceTheme = {
   name: 'dark',
   type: 'dark',
-  colorTheme: 'brand',
   elevation: 0,
   interactionColor: {
     color: {
@@ -69,7 +73,6 @@ export const DARK_SURFACE: SurfaceTheme = {
 export const DARK_ELEVATED_SURFACE: SurfaceTheme = {
   name: 'dark-elevated',
   type: 'dark',
-  colorTheme: 'brand',
   elevation: 1,
   isDefault: true,
   interactionColor: {
@@ -91,7 +94,6 @@ export const DARK_ELEVATED_SURFACE: SurfaceTheme = {
 export const DARK_ELEVATED_2_SURFACE: SurfaceTheme = {
   name: 'dark-elevated-2',
   type: 'dark',
-  colorTheme: 'brand',
   elevation: 2,
   interactionColor: {
     color: {
@@ -112,7 +114,6 @@ export const DARK_ELEVATED_2_SURFACE: SurfaceTheme = {
 export const DARK_ELEVATED_3_SURFACE: SurfaceTheme = {
   name: 'dark-elevated-3',
   type: 'dark',
-  colorTheme: 'brand',
   elevation: 3,
   interactionColor: {
     color: {

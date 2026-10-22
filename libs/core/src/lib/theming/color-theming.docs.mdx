@@ -125,42 +125,25 @@ been run since upgrading.
 
 ---
 
-## Semantic themes per surface
+## Colors per surface
 
-A theme has one `inkColor`, so a semantic color tuned for dark surfaces can fail contrast on light ones. Register
-a second theme without a `type` (the app's own name, e.g. `success-on-light`) and name it on the surface:
-
-```ts
-const LIGHT_SURFACE: SurfaceTheme = {
-  name: 'light',
-  type: 'light',
-  elevation: 0,
-  semanticColorThemes: { success: 'success-on-light' },
-  // …
-};
-```
-
-`injectSemanticColorTheme('success')` returns a signal of the theme the nearest surface names, else the registered
-theme with `type: 'success'`. Every SDK component resolves its semantic colors this way - content in an overlay
-panel follows the panel's surface; the deprecated `injectErrorTheme()` and its siblings do not look at the surface.
-
-### A default color per surface
-
-`colorTheme` names the theme a surface applies to its own subtree, e.g. a darker `brand-on-light` on a light surface:
+A surface can swap a chosen accent for a version that reads well on it. Register the variant as a theme without a
+`type` (the app's own name, e.g. `brand-on-light`) and name it in `colorThemeVariants`:
 
 ```ts
 const LIGHT_SURFACE: SurfaceTheme = {
   name: 'light',
   type: 'light',
   elevation: 0,
-  colorTheme: 'brand-on-light',
+  colorThemeVariants: { brand: 'brand-on-light', success: 'success-on-light' },
   // …
 };
 ```
 
-Each `[etProvideSurface]` that resolves the surface adds `.et-color--brand-on-light` to its element. An
-`[etProvideColor]` with a color on that element or above it wins. A surface without `colorTheme` keeps its parent's
-color, so set it on every surface type once you set it on one.
+The chosen accent is the nearest `[etProvideColor]`, else the `isDefault` theme, or the theme of a `type` for
+`injectSemanticColorTheme(type)`. The swap always starts from the chosen accent, so a dark surface inside a light one
+draws the chosen accent again. An accent without an entry stays the same on every surface. `colorTheme` and
+`semanticColorThemes` are deprecated in favor of `colorThemeVariants`.
 
 ---
 

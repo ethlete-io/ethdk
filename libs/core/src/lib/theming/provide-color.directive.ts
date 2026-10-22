@@ -19,8 +19,10 @@ import {
   createCssColorThemeName,
   injectColorThemes,
   injectColorThemesPrefix,
+  resolveColorThemeVariant,
   SURFACE_COLOR,
 } from './color-theme.util';
+import { SURFACE_PROVIDER } from './provide-surface.directive';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
 
@@ -123,14 +125,31 @@ export class ProvideColorDirective {
     return createCssColorThemeName(value);
   });
 
-  protected themeClass = computed(() => {
-    const prefix = this.prefix || 'et';
+  private paintedColorName = computed(() => {
+    const raw = this.effectiveColor();
+    const value = typeof raw === 'object' && raw !== null ? raw.name : raw;
 
-    if (this.colorName()) {
-      return `${prefix}-color--${this.colorName()}`;
+    if (!this.colorName() || !value) return;
+
+    const surface = this.injector.get(SURFACE_PROVIDER, null)?.activeTheme();
+    const variant = resolveColorThemeVariant(surface, value, this.themes);
+
+    if (variant === value) return this.colorName();
+
+    if (isDevMode() && !this.themes?.some((theme) => theme.name === variant)) {
+      console.error(
+        `Surface theme ${surface?.name} names the color theme ${variant}, which does not exist. Please make sure to add it to provideColorThemesWithTailwind4()`,
+      );
     }
 
-    return `${prefix}-color--inherited`;
+    return createCssColorThemeName(variant);
+  });
+
+  protected themeClass = computed(() => {
+    const prefix = this.prefix || 'et';
+    const name = this.paintedColorName();
+
+    return name ? `${prefix}-color--${name}` : `${prefix}-color--inherited`;
   });
 
   syncWithProvider(provider: ProvideColorDirective) {

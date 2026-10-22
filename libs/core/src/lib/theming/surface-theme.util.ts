@@ -48,15 +48,15 @@ export type SurfaceTheme = {
   isDefault?: boolean;
   interactionColor?: SurfaceInteractionColor;
   /**
-   * The registered color theme that serves a semantic `type` on this surface, e.g.
-   * `{ success: 'success-on-light' }`. A `type` left out falls back to the first registered theme of
-   * that `type`. Read by `injectSemanticColorTheme()`.
+   * Swaps a chosen color theme for a version that reads well on this surface, e.g.
+   * `{ brand: 'brand-on-light', grey: 'grey-light' }`. The chosen theme is the nearest `[etProvideColor]`, the
+   * `isDefault` theme where there is none, or the theme of a `type` for `injectSemanticColorTheme()`. An
+   * accent without an entry stays the same on this surface.
    */
+  colorThemeVariants?: Partial<Record<RegisteredColorThemeName, RegisteredColorThemeName>>;
+  /** @deprecated Use `colorThemeVariants`, keyed by the name of the theme with that `type`. */
   semanticColorThemes?: Partial<Record<ColorThemeType, RegisteredColorThemeName>>;
-  /**
-   * The registered color theme a `[etProvideSurface]` element applies to its subtree, e.g. a darker
-   * `brand-on-light` on a light surface. An `[etProvideColor]` on or above the surface element wins.
-   */
+  /** @deprecated Use `colorThemeVariants`, keyed by the name of the `isDefault` color theme. */
   colorTheme?: RegisteredColorThemeName;
   background: SurfaceThemeColor;
   color: SurfaceThemeColor;

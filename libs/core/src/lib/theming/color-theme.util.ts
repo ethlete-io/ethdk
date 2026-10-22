@@ -2,6 +2,7 @@ import { computed, inject, isDevMode, Signal } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
 import { SURFACE_PROVIDER } from './provide-surface.directive';
 import { injectRootSurfaceTheme } from './color-scheme';
+import { SurfaceTheme } from './surface-theme.util';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -144,9 +145,35 @@ const injectColorThemeByType = (type: ColorThemeType) =>
   findColorThemeByType(injectColorThemes({ optional: true }), type, 'injectColorThemeByType');
 
 /**
- * A signal of the color theme for `type` on the surface this element renders on: the theme the nearest
- * surface names in `semanticColorThemes`, else the first registered theme of that `type`. Reading it throws
- * when the app registered no theme of that `type`, so read it only for a state that renders.
+ * The color theme name that draws `chosenName` on `surface`: the surface's `colorThemeVariants` entry for it,
+ * else `chosenName` itself. Always pass the chosen accent, never an already swapped one.
+ */
+export const resolveColorThemeVariant = (
+  surface: SurfaceTheme | null | undefined,
+  chosenName: string,
+  themes: ColorTheme[] | null | undefined,
+) => {
+  if (!surface || chosenName === SURFACE_COLOR) return chosenName;
+
+  const variants: Partial<Record<string, string>> | undefined = surface.colorThemeVariants;
+  const variant = variants?.[chosenName];
+
+  if (variant) return variant;
+
+  const chosen = themes?.find((t) => t.name === chosenName);
+  const semantic = chosen?.type ? surface.semanticColorThemes?.[chosen.type] : undefined;
+
+  if (semantic) return semantic;
+
+  if (surface.colorTheme && chosen?.isDefault) return surface.colorTheme;
+
+  return chosenName;
+};
+
+/**
+ * A signal of the color theme for `type` on the surface this element renders on: the first registered theme
+ * of that `type`, swapped for the nearest surface's `colorThemeVariants` entry. Reading it throws when the app
+ * registered no theme of that `type`, so read it only for a state that renders.
  *
  * @example
  * protected successTheme = injectSemanticColorTheme('success');
@@ -158,19 +185,23 @@ export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorThem
   const rootSurface = injectRootSurfaceTheme();
 
   return computed(() => {
+    const chosen = findColorThemeByType(themes, type, 'injectSemanticColorTheme');
     const surface = surfaceProvider?.activeTheme() ?? rootSurface();
-    const mappedName = surface?.semanticColorThemes?.[type];
-    const mapped = mappedName ? themes?.find((t) => t.name === mappedName) : undefined;
+    const variantName = resolveColorThemeVariant(surface, chosen.name, themes);
 
-    if (mapped) return mapped;
+    if (variantName === chosen.name) return chosen;
 
-    if (mappedName && isDevMode()) {
+    const variant = themes?.find((t) => t.name === variantName);
+
+    if (variant) return variant;
+
+    if (isDevMode()) {
       console.error(
-        `[injectSemanticColorTheme] Surface theme "${surface?.name}" maps "${type}" to the color theme "${mappedName}", which is not registered. Add it to provideColorThemesWithTailwind4().`,
+        `[injectSemanticColorTheme] Surface theme "${surface?.name}" maps "${type}" to the color theme "${variantName}", which is not registered. Add it to provideColorThemesWithTailwind4().`,
       );
     }
 
-    return findColorThemeByType(themes, type, 'injectSemanticColorTheme');
+    return chosen;
   });
 };
 

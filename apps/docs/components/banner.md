@@ -52,7 +52,7 @@ This is exactly how [query-error](/components/query-error) is built: it is an `e
 
 ## Semantic coloring
 
-`type` picks the panel's color: `success`, `warning` and `error` resolve through `injectSemanticColorTheme()` - the theme the banner's surface names for that type (`semanticColorThemes`, see [theming](/core/theming)), else whatever theme your app registered with that `type`. Only the type actually rendered is looked up, so an app that only ever shows `info`/`error` banners never needs to register `warning` or `success` themes.
+`type` picks the panel's color: `success`, `warning` and `error` resolve through `injectSemanticColorTheme()` - the theme your app registered with that `type`, swapped by the banner's surface (`colorThemeVariants`, see [theming](/core/theming)). Only the type actually rendered is looked up, so an app that only ever shows `info`/`error` banners never needs to register `warning` or `success` themes.
 
 `info` (the default) has no registered theme of its own - there is no `type: 'info'` slot in the theme registry - so it renders untinted by default. Pass `color` to tint an informational banner explicitly:
 
