@@ -2,7 +2,7 @@
 
 When one form edits several records at once and their current values differ, a control can't honestly display any single value. The `mixed` state solves this: the control presents an explicit "values differ" state without touching the underlying form value, and the first thing the user commits replaces the value for every edited record.
 
-<StoryEmbed id="components-forms-select--mixed" height="420px" />
+@example mixed-state/mixed-state-select 420px
 
 ## The contract
 

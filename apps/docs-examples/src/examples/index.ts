@@ -21,6 +21,7 @@ import { FORMS_EXAMPLES } from './forms';
 import { ICON_EXAMPLES } from './icon';
 import { KBD_EXAMPLES } from './kbd';
 import { MENU_EXAMPLES } from './menu';
+import { MIXED_STATE_EXAMPLES } from './mixed-state';
 import { NOTIFICATION_EXAMPLES } from './notification';
 import { OVERLAY_EXAMPLES } from './overlay';
 import { PAGED_QUERY_TRIGGER_EXAMPLES } from './paged-query-trigger';
@@ -58,6 +59,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...ICON_EXAMPLES,
   ...KBD_EXAMPLES,
   ...MENU_EXAMPLES,
+  ...MIXED_STATE_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,
   ...OVERLAY_EXAMPLES,
   ...PAGED_QUERY_TRIGGER_EXAMPLES,
