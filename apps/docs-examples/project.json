@@ -15,7 +15,7 @@
         "outputPath": "dist/apps/docs-examples",
         "index": "apps/docs-examples/src/index.html",
         "tsConfig": "apps/docs-examples/tsconfig.app.json",
-        "assets": [],
+        "assets": [{ "glob": "**/*", "input": "apps/docs-examples/src/assets", "output": "assets" }],
         "styles": ["apps/docs-examples/src/styles.css"]
       },
       "configurations": {

@@ -5,6 +5,7 @@ import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
 import { DROPZONE_EXAMPLES } from './dropzone';
 import { FORMS_EXAMPLES } from './forms';
+import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
 import { SLIDER_EXAMPLES } from './slider';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
@@ -19,6 +20,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...DATE_TIME_INPUTS_EXAMPLES,
   ...DROPZONE_EXAMPLES,
   ...FORMS_EXAMPLES,
+  ...RICH_TEXT_EDITOR_EXAMPLES,
   ...SELECT_EXAMPLES,
   ...SLIDER_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,

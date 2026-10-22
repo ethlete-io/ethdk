@@ -27,7 +27,7 @@ import { FORM_FIELD_IMPORTS, RICH_TEXT_EDITOR_IMPORTS } from '@ethlete/component
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-rich-text-editor--default" height="420px" />
+@example rich-text-editor/rich-text-editor-default 420px
 
 The editable region is a `role="textbox" aria-multiline="true"` with full invalid/described-by wiring. In a list, **Tab** / **Shift+Tab** nest and un-nest the current item (marker style cycles by depth), and **Enter** / **Backspace** on an empty item step out one level at a time. **Enter** at the start or end of a heading begins a plain paragraph instead of continuing the heading (mid-heading it splits, as everywhere else); **Shift+Enter** is always a soft line break. IME input (Japanese, Chinese, Korean, and Android keyboards that compose every word) commits to the value and the undo history once the composition ends; marks toggled before it, and Markdown-as-you-type, apply to the committed text, and keys pressed while composing belong to the IME. An empty heading or list item is caret scaffolding only: it never reaches the value, so a field holding just one counts as empty.
 
@@ -133,7 +133,7 @@ that never had them, so run the scan-and-report migration to list the editors th
 yarn nx g @ethlete/components:migrate-rich-text-editor-tools
 ```
 
-<StoryEmbed id="components-forms-rich-text-editor--minimal" height="380px" />
+@example rich-text-editor/rich-text-editor-minimal 380px
 
 Pass a `tools` input with an ordered list of tokens to pick and order the controls; omit it for
 `DEFAULT_RICH_TEXT_EDITOR_TOOLS` (which still only renders what you provided).
@@ -322,7 +322,7 @@ that needs the menu system - the single largest graph the editor could pull in (
   to the whole column and persists as GFM column alignment (`:---`, `:---:`, `---:`). It disables
   inside lists, where alignment has no serialized form.
 
-<StoryEmbed id="components-forms-rich-text-editor--with-table-and-alignment" height="440px" />
+@example rich-text-editor/rich-text-editor-with-table-and-alignment 440px
 
 To register your own tool, pass a `RichTextEditorToolDefinition` (a toggle button, or a custom
 control component) to `provideRichTextEditorTool`, then list its `token` in `tools`. Pass a factory
@@ -413,7 +413,7 @@ Clicking an image opens the image popover: the **alt text**, and the action that
 again. The toolbar button opens the same popover when the caret is already on an image. Like the link
 editor, it is an anchored card on wider screens and a top sheet on phones.
 
-<StoryEmbed id="components-forms-rich-text-editor--images" height="520px" />
+@example rich-text-editor/rich-text-editor-images 520px
 
 ### Upload progress
 
@@ -546,7 +546,7 @@ you'd create a query or a query stack. Returning `null` from `args` (e.g. for an
 the request, so the popup shows no results without hitting the backend. For a source other than a
 query, use the generic `createRichTextEditorTrigger` with an `Observable`/`Promise` `items` function.
 
-<StoryEmbed id="components-forms-rich-text-editor-triggers--default" height="460px" />
+@example rich-text-editor/rich-text-editor-triggers 460px
 
 ### Inserting tokens from your own UI
 
@@ -619,7 +619,7 @@ import { RichTextViewerComponent } from '@ethlete/components';
 <et-rich-text-viewer [value]="report.body" />
 ```
 
-<StoryEmbed id="components-forms-rich-text-viewer--beside-editor" height="560px" />
+@example rich-text-editor/rich-text-viewer-beside-editor 560px
 
 | Input   | Type                          | Default | Description                                           |
 | ------- | ----------------------------- | ------- | ----------------------------------------------------- |
@@ -689,7 +689,7 @@ don't affect the status counts.
 The multi-language editor takes the single editor's `labels`, `hidden`, `warnings`, `aria-label` and
 `aria-labelledby` inputs and hands them to the editor it embeds.
 
-<StoryEmbed id="components-forms-rich-text-editor-multi-language--with-existing-translations" height="420px" />
+@example rich-text-editor/rich-text-editor-multi-language-with-existing-translations 420px
 
 **Tokens in every language.** `etRichTextEditorTriggers` cannot sit on the multi-language editor,
 since the editor it needs is inside the template. Pass `triggers` (and optionally
@@ -707,7 +707,7 @@ language, so `insertToken()` and the token palette always write into the active 
 
 `editor()` is `undefined` until the embedded editor renders, and while `languages` is invalid.
 
-<StoryEmbed id="components-forms-rich-text-editor-multi-language--with-triggers" height="420px" />
+@example rich-text-editor/rich-text-editor-multi-language-with-triggers 420px
 
 **Requiring translations.** To make specific languages mandatory, add the exported `requiredLanguages`
 validator to your `form()` schema - a missing translation then surfaces as a normal form-field error,
