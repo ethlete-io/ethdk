@@ -34,6 +34,7 @@ import { SELECT_EXAMPLES } from './select';
 import { SKELETON_EXAMPLES } from './skeleton';
 import { SLIDER_EXAMPLES } from './slider';
 import { TABLE_EXAMPLES } from './table';
+import { TABS_EXAMPLES } from './tabs';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
 import { TOGGLETIP_EXAMPLES } from './toggletip';
@@ -76,6 +77,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...SKELETON_EXAMPLES,
   ...SLIDER_EXAMPLES,
   ...TABLE_EXAMPLES,
+  ...TABS_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
   ...TIME_PICKER_EXAMPLES,
   ...TOGGLETIP_EXAMPLES,

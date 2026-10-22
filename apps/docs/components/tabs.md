@@ -29,7 +29,7 @@ import { TAB_IMPORTS } from '@ethlete/components';
 - `sessionMemoryKey` remembers the selected tab in session storage under that key and restores it on the next mount. Nothing is stored without a key. The stored tab wins over the initial `selectedIndex`, so leave the key unset when the index comes from the URL.
 - The tab bar lives inside a [scrollable](/components/scrollable), so overflowing tabs scroll with the active one centered. Tabs opt into that scrollable's prev/next buttons for you; they carry none of its other optional chrome.
 
-<StoryEmbed id="components-navigation-tabs-tabs--default" height="380px" />
+@example tabs/tabs-default 380px
 
 ## Nav tabs
 
@@ -54,7 +54,7 @@ import { NAV_TAB_IMPORTS } from '@ethlete/components';
 
 A nav tab link is active on its route whatever the URL's query params - it defaults `routerLinkActiveOptions` to `{ paths: 'subset', queryParams: 'ignored', fragment: 'ignored', matrixParams: 'ignored' }`, so a link carrying `[queryParams]` (a default sort, say) stays selected after the user changes them. Bind `[routerLinkActiveOptions]` yourself (e.g. `{ exact: true }`) to match query params again.
 
-<StoryEmbed id="components-navigation-tabs-nav-tabs--default" height="380px" />
+@example tabs/nav-tabs-default 380px
 
 ### Nav tabs in an overlay
 
