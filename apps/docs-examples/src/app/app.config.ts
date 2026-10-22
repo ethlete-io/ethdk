@@ -6,13 +6,14 @@ import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } fr
 import { THEMES } from './color-themes';
 import { SURFACE_THEMES } from './surface-themes';
 import { mockImageUploadInterceptor } from './image-upload-mock';
+import { mockPagedQueryInterceptor } from './paged-query-mock';
 import { mockUploadInterceptor } from './upload-mock';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideRouter([]),
-    provideHttpClient(withInterceptors([mockUploadInterceptor, mockImageUploadInterceptor])),
+    provideHttpClient(withInterceptors([mockUploadInterceptor, mockImageUploadInterceptor, mockPagedQueryInterceptor])),
     ...provideColorThemesWithTailwind4(THEMES),
     ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
     ...provideOverlay(),

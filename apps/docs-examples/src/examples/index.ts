@@ -10,6 +10,8 @@ import { FORMS_EXAMPLES } from './forms';
 import { MENU_EXAMPLES } from './menu';
 import { NOTIFICATION_EXAMPLES } from './notification';
 import { OVERLAY_EXAMPLES } from './overlay';
+import { PAGED_QUERY_TRIGGER_EXAMPLES } from './paged-query-trigger';
+import { PAGINATION_EXAMPLES } from './pagination';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
 import { SLIDER_EXAMPLES } from './slider';
@@ -32,6 +34,8 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...MENU_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,
   ...OVERLAY_EXAMPLES,
+  ...PAGED_QUERY_TRIGGER_EXAMPLES,
+  ...PAGINATION_EXAMPLES,
   ...RICH_TEXT_EDITOR_EXAMPLES,
   ...SELECT_EXAMPLES,
   ...SLIDER_EXAMPLES,
