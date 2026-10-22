@@ -42,7 +42,7 @@ export class AppComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-overlays-command-palette--default" height="420px" />
+@example command-palette/command-palette-default 420px
 
 ## Registering commands
 
