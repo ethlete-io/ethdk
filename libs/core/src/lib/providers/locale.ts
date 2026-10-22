@@ -1,18 +1,15 @@
-import { signal } from '@angular/core';
-import { defineRootProvider, toInjectFn, toProvideFn } from '../utils';
+import { inject, InjectionToken, signal, StaticProvider, WritableSignal } from '@angular/core';
 
-const LOCALE_DEF = /* @__PURE__ */ defineRootProvider(
-  () => {
-    const currentLocale = signal('en');
+type Locale = { currentLocale: WritableSignal<string> };
 
-    return {
-      currentLocale,
-    };
-  },
-  {
-    name: 'Locale',
-  },
-);
+const LOCALE = /* @__PURE__ */ new InjectionToken<Locale>('Locale', {
+  providedIn: 'root',
+  factory: () => ({ currentLocale: signal('en') }),
+});
 
-export const provideLocale = /* @__PURE__ */ toProvideFn(LOCALE_DEF);
-export const injectLocale = /* @__PURE__ */ toInjectFn(LOCALE_DEF);
+/** Provides the app locale, starting at `locale` (default `'en'`). Change it later with `injectLocale().currentLocale.set(...)`. */
+export const provideLocale = (locale?: string): StaticProvider[] => [
+  { provide: LOCALE, useFactory: () => ({ currentLocale: signal(locale ?? 'en') }) },
+];
+
+export const injectLocale = (): Locale => inject(LOCALE);

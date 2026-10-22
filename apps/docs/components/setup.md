@@ -104,7 +104,7 @@ only ever looks up the `type`.
 
 ## Locale (`@ethlete/core`)
 
-- **`provideLocale('de')`** - the locale signal label tokens and date formatting react to.
+- **`provideLocale('de')`** - sets the start value of the locale signal that label tokens react to; date formatting follows `provideDateLocale` instead.
   Defaults to `'en'`; skip it for an English-only app.
 
 ## Tooling

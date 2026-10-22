@@ -273,7 +273,7 @@ import { provideLocale } from '@ethlete/core';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideLocale({ currentLocale: 'en' }),
+    provideLocale('en'),
     provideTitleConfig({
       transformer: (title, locale) => {
         if (locale === 'de') return title.toUpperCase();
