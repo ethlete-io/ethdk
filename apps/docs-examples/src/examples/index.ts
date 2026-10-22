@@ -1,6 +1,7 @@
 import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
 import { CDK_ACCORDION_EXAMPLES } from './cdk-accordion';
+import { CDK_BREADCRUMB_EXAMPLES } from './cdk-breadcrumb';
 import { ACCORDION_EXAMPLES } from './accordion';
 import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
@@ -73,6 +74,7 @@ export type ExampleLoader = () => Promise<Type<unknown> | RoutedExample>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CDK_ACCORDION_EXAMPLES,
+  ...CDK_BREADCRUMB_EXAMPLES,
   ...ACCORDION_EXAMPLES,
   ...AVATAR_EXAMPLES,
   ...BADGE_EXAMPLES,

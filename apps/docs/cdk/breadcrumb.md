@@ -12,7 +12,7 @@ separator slot, localizable labels and structured data. This page documents the 
 receives bug fixes.
 :::
 
-<StoryEmbed id="cdk-breadcrumb--default" height="220px" />
+@example cdk-breadcrumb/cdk-breadcrumb-default 220px
 
 ## Setup
 
