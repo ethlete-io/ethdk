@@ -20,7 +20,7 @@ page documents the CDK version, which still receives bug fixes.
 import { TooltipImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-overlay-tooltip--default" height="320px" />
+@example cdk-tooltip/cdk-tooltip-default 320px
 
 ## Options
 
