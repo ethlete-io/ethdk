@@ -8,6 +8,7 @@ import { DROPZONE_EXAMPLES } from './dropzone';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
 import { FORMS_EXAMPLES } from './forms';
 import { MENU_EXAMPLES } from './menu';
+import { NOTIFICATION_EXAMPLES } from './notification';
 import { OVERLAY_EXAMPLES } from './overlay';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
@@ -29,6 +30,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...FILTER_OVERLAY_EXAMPLES,
   ...FORMS_EXAMPLES,
   ...MENU_EXAMPLES,
+  ...NOTIFICATION_EXAMPLES,
   ...OVERLAY_EXAMPLES,
   ...RICH_TEXT_EDITOR_EXAMPLES,
   ...SELECT_EXAMPLES,
