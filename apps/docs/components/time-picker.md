@@ -12,7 +12,7 @@ import { TIME_PICKER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-date-time-time-picker--default" height="420px" />
+@example time-picker/time-picker-default 420px
 
 ## Options
 
@@ -43,13 +43,13 @@ The centre of the ring reads the time live. While no value is set there is no vi
 
 ## 12-hour cycle
 
-<StoryEmbed id="components-date-time-time-picker--twelve-hour" height="420px" />
+@example time-picker/time-picker-twelve-hour 420px
 
 ## Steps
 
 `minuteStep` sets where a drag lands. A finer step (`1`) makes every minute reachable by drag; a coarser one (`30`) leaves only the half-hours.
 
-<StoryEmbed id="components-date-time-time-picker--fine-steps" height="420px" />
+@example time-picker/time-picker-fine-steps 420px
 
 ## Bounds and filtering
 
@@ -63,7 +63,7 @@ The centre of the ring reads the time live. While no value is set there is no vi
 const notDuringLunch = (candidate: Date) => candidate.getHours() !== 12;
 ```
 
-<StoryEmbed id="components-date-time-time-picker--opening-hours" height="420px" />
+@example time-picker/time-picker-opening-hours 420px
 
 - `timeFilter` receives the whole timestamp (the candidate time of day on the day of the value being set; while empty, today, or the same weekday a week earlier when the runtime's clocks change today, so a tap on 02:30 keeps 02:30), so opening hours can differ per weekday.
 - Every step is evaluated, so a filter can carve out any set of times; runs of blocked steps merge into one span, also across midnight.
@@ -116,7 +116,7 @@ The ring directive exposes `spans()` (the open and blocked spans as minutes of t
 <et-time-picker [(rangeValue)]="slot" mode="range" />
 ```
 
-<StoryEmbed id="components-date-time-time-picker--range" height="440px" />
+@example time-picker/time-picker-range 440px
 
 `rangeValue` is a `{ start: Date | null; end: Date | null }` model, so `[(rangeValue)]` is enough on its own. A control whose value is a _pair_ of wire strings needs to know which half moved, so picks are also reported side-tagged:
 
@@ -152,13 +152,13 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
   side === 'start' || slot().start === null || candidate > slot().start;
 ```
 
-<StoryEmbed id="components-date-time-time-picker--range-end-after-start" height="440px" />
+@example time-picker/time-picker-range-end-after-start 440px
 
 ### Centre readout
 
 With no `rangeDays`, the centre shows the **duration** of the range (`8 h 30 min`) and, when the end is earlier in the day than the start or falls on the next calendar day, the note `ends next day`. With `rangeDays` set - the date-time range input passes the day of each end - the centre shows the time and the day of the active end instead, and the calendar band carries the length. A range that is not complete shows the active end's time under its name.
 
-<StoryEmbed id="components-date-time-time-picker--range-with-days-overnight" height="440px" />
+@example time-picker/time-picker-range-with-days-overnight 440px
 
 ## Accessibility
 
