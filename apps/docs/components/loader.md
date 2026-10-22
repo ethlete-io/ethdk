@@ -37,9 +37,9 @@ button or a tinted text block still matches the text next to it. Set `--et-spinn
 when the color isn't a registered theme. The progress bar's `color` works the same way and paints
 its indicator (`--et-progress-bar-indicator-color`).
 
-<StoryEmbed id="components-feedback-loader-spinner--determinate" height="240px" />
+@example loader/loader-spinner-determinate 240px
 
-<StoryEmbed id="components-feedback-loader-spinner--themed" height="240px" />
+@example loader/loader-spinner-themed 240px
 
 ::: info Coming from the CDK
 The cdk `et-progress-spinner` defaulted `--et-progress-spinner-color` to a themed blue (`#1e88e5`), so
@@ -61,7 +61,7 @@ chips and inputs are usually better off inheriting.
 | `value` | `null`  | 0–100, clamped; `null`/`undefined` shows the sweep and drops the aria values |
 | `color` | `null`  | A color theme name or `ColorTheme`; unset keeps the inherited `currentColor` |
 
-<StoryEmbed id="components-feedback-loader-progress-bar--indeterminate" height="200px" />
+@example loader/loader-progress-bar 200px
 
 ::: info Migrating from `determinate` / `indeterminate`
 The spinner's `determinate` and the progress bar's `indeterminate` inputs are gone. `et update` runs
@@ -81,7 +81,7 @@ via CSS; color comes from its own custom properties, not `currentColor` (see [Th
 <et-brand-loader class="size-16" />
 ```
 
-<StoryEmbed id="components-feedback-loader-brand-loader--default" height="240px" />
+@example loader/loader-brand-loader 240px
 
 ## Motion
 
