@@ -17,7 +17,7 @@ import { DESCRIPTION_LIST_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-description-list--default" height="280px" />
+@example description-list/description-list-inline 280px
 
 ## Variants
 
@@ -30,7 +30,7 @@ import { DESCRIPTION_LIST_IMPORTS } from '@ethlete/components';
 </dl>
 ```
 
-<StoryEmbed id="components-data-display-description-list--stacked" height="280px" />
+@example description-list/description-list-stacked 280px
 
 Switching between them is a plain binding, so a narrow layout can go stacked from a media query in the consumer's own code:
 
