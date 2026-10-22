@@ -24,7 +24,7 @@ infinite-scroll fetches on. This page documents the CDK version, which still rec
 import { MasonryImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-masonry--default" height="480px" />
+@example cdk-masonry/cdk-masonry-default 480px
 
 ## Options
 
