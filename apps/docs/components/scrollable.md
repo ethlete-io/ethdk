@@ -46,7 +46,7 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 
 ## Live demo
 
-<StoryEmbed id="components-layout-scrollable--default" height="360px" />
+@example scrollable/scrollable-default 360px
 
 ## Options
 
@@ -130,7 +130,7 @@ The first enabled marker in DOM order wins, and `scrollOrigin` decides where it 
 - `(intersectionChange)` emits per-child visibility ratios (debounced), which is what powers the dots and darkening.
 - On the headless `ScrollableDirective` (exported as `etScrollable`): `scrollToElement(...)`, `scrollToElementByIndex({ index })`, and `scrollToStartDirection()` / `scrollToEndDirection()` - one container or item step back/forward, which is what the prev/next buttons call. `getActiveChildren()` and `getScrollContainerRef()` expose the tracked children and the container element as readonly signals.
 
-<StoryEmbed id="components-layout-scrollable--with-snap" height="360px" />
+@example scrollable/scrollable-snap 360px
 
 ## Accessibility
 
