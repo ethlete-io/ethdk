@@ -1,0 +1,56 @@
+{
+  "name": "docs-examples",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/docs-examples/src",
+  "prefix": "app",
+  "tags": ["type:app", "scope:docs"],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "browser": "apps/docs-examples/src/main.ts",
+        "outputPath": "dist/apps/docs-examples",
+        "index": "apps/docs-examples/src/index.html",
+        "tsConfig": "apps/docs-examples/tsconfig.app.json",
+        "assets": [],
+        "styles": ["apps/docs-examples/src/styles.css"]
+      },
+      "configurations": {
+        "production": {
+          "outputHashing": "all",
+          "optimization": true
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "continuous": true,
+      "options": {
+        "port": 4403
+      },
+      "configurations": {
+        "production": {
+          "buildTarget": "docs-examples:build:production"
+        },
+        "development": {
+          "buildTarget": "docs-examples:build:development"
+        }
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p apps/docs-examples/tsconfig.app.json --noEmit"
+      }
+    }
+  }
+}

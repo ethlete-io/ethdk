@@ -1,0 +1,25 @@
+html {
+  font-size: 62.5%;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 1.6rem;
+}
+
+.app-examples-root {
+  box-sizing: border-box;
+  min-block-size: 100vh;
+  padding: 2.4rem;
+  background-color: var(--et-surface-background-solid);
+  color: var(--et-surface-color-solid);
+}
+
+.app-examples-root > * {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  max-inline-size: 44.8rem;
+}
