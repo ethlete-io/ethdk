@@ -42,10 +42,14 @@ export const docsExamples = (): Plugin => ({
       return [
         `<Example id="${exampleId}"${heightAttribute} />`,
         '',
+        ':::: details Show code',
+        '',
         '::: code-group',
         '',
         ...files.map(codeBlock).flatMap((block) => [block, '']),
         ':::',
+        '',
+        '::::',
       ]
         .join('\n')
         .replace(/^(?=.)/gm, indent);

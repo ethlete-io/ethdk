@@ -76,7 +76,7 @@ New and migrated guides show live demos with `@example`, not `<StoryEmbed>`. A l
 @example select/select-option-group 360px
 ```
 
-expands at build time into an `<Example>` iframe (default height `420px`) and a `::: code-group`
+expands at build time into an `<Example>` iframe (default height `420px`) and a collapsed "Show code" `::: code-group`
 with `apps/docs-examples/src/examples/select/select-country.example.ts` and its
 `select-country.data.ts` if one exists. The code lands in the page and in `llms.txt`. A missing
 file fails the build. Example iframes share no Storybook channel, so the story-embed limit
