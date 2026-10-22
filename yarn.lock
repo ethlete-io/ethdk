@@ -4456,8 +4456,6 @@ __metadata:
 "@ethlete/agent-rules@workspace:libs/agent-rules":
   version: 0.0.0-use.local
   resolution: "@ethlete/agent-rules@workspace:libs/agent-rules"
-  peerDependencies:
-    tslib: ^2.3.0
   bin:
     ethlete-agents: ./src/index.js
   languageName: unknown
@@ -4504,7 +4502,6 @@ __metadata:
     vite: "npm:8.1.5"
   peerDependencies:
     playwright: ^1.50.0
-    tslib: ^2.3.0
   peerDependenciesMeta:
     playwright:
       optional: true
