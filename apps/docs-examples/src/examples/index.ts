@@ -12,6 +12,7 @@ import { COMMAND_PALETTE_EXAMPLES } from './command-palette';
 import { COPY_BUTTON_EXAMPLES } from './copy-button';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
 import { DROPZONE_EXAMPLES } from './dropzone';
+import { EMPTY_STATE_EXAMPLES } from './empty-state';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
 import { FLOATING_ACTION_EXAMPLES } from './floating-action';
 import { FORMS_EXAMPLES } from './forms';
@@ -45,6 +46,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...COPY_BUTTON_EXAMPLES,
   ...DATE_TIME_INPUTS_EXAMPLES,
   ...DROPZONE_EXAMPLES,
+  ...EMPTY_STATE_EXAMPLES,
   ...FILTER_OVERLAY_EXAMPLES,
   ...FLOATING_ACTION_EXAMPLES,
   ...FORMS_EXAMPLES,

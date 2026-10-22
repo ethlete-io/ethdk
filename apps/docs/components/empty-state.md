@@ -15,7 +15,7 @@ import { EMPTY_STATE_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-feedback-empty-state--default" height="320px" />
+@example empty-state/empty-state-default 320px
 
 ## Anatomy
 
