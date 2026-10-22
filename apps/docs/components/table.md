@@ -91,7 +91,7 @@ export class UsersComponent {
 }
 ```
 
-<StoryEmbed id="components-data-display-table--default" height="360px" />
+@example table/table-default 360px
 
 A column's key is a stable identity used for state serialization (column order,
 visibility, sort, filters, width) and for matching [cell templates](#custom-cells) to
@@ -138,7 +138,7 @@ row rhythm. They compose with every feature.
 <et-table [data]="rows()" [columns]="COLUMNS" appearance="zebra" density="sm" />
 ```
 
-<StoryEmbed id="components-data-display-table--appearance" height="360px" />
+@example table/table-appearance 360px
 
 | `appearance` | Looks like                                                                                   |
 | ------------ | -------------------------------------------------------------------------------------------- |
@@ -160,7 +160,7 @@ field in an editing cell) resolves it from the card. Where the app registers no 
 the table already sits on the top elevation, the card falls back to a tint so it still reads as a
 card.
 
-<StoryEmbed id="components-data-display-table--card-rows" height="420px" />
+@example table/table-card-rows 420px
 
 Three custom properties tune it:
 
@@ -406,7 +406,7 @@ A `group` without the feature is a dev-mode error ([`ET3512`](/components/error-
 `etTableInlineEdit`. `enabled: false` turns the row off without removing the attribute, and keeps the
 columns legal.
 
-<StoryEmbed id="components-data-display-table--grouped-headers" height="360px" />
+@example table/table-grouped-headers 360px
 
 Grouping follows the **visible column order**: a label spans each contiguous run
 of columns that share it, so dragging a column out of a group (with `reorderable`)
@@ -467,7 +467,7 @@ sorted header shows its priority - `1` for the primary key - beside the arrow, a
 carries the `sortPriority` label as its accessible description. `sortPriority(key)` returns the
 same number, or `null`.
 
-<StoryEmbed id="components-data-display-table--shift-multi-sort" height="360px" />
+@example table/table-shift-multi-sort 360px
 
 `toggleSort(key, { additive: true })` is the same Shift gesture from code; the flag does
 nothing unless `multiSort` is `'shift'`. `setSort(key, direction)` layers like a plain
@@ -553,7 +553,7 @@ columns. The table ships no search field: bind the one your toolbar already has.
 <et-table [data]="users()" [columns]="COLUMNS" [quickFilter]="search().value()" />
 ```
 
-<StoryEmbed id="components-data-display-table--quick-filter" height="420px" />
+@example table/table-quick-filter 420px
 
 A column is searched through its `value` when that is a string or a number. Anything else -
 an object, a `Date`, a boolean - is searched only once the column says what its text is with
@@ -633,7 +633,7 @@ protected readonly COLUMNS = {
 } satisfies TableColumns<Order>;
 ```
 
-<StoryEmbed id="components-data-display-table--single-select-filter" height="420px" />
+@example table/table-single-select-filter 420px
 
 ### Templating an option
 
@@ -650,7 +650,7 @@ and its keyboard behaviour.
 </et-table>
 ```
 
-<StoryEmbed id="components-data-display-table--templated-filter-options" height="420px" />
+@example table/table-templated-filter-options 420px
 
 ## Column menu
 
@@ -662,7 +662,7 @@ which it shares with [filtering](#filtering) when both are used.
 <et-table [data]="rows()" [columns]="COLUMNS" etTableColumnMenu />
 ```
 
-<StoryEmbed id="components-data-display-table--column-menu" height="420px" />
+@example table/table-column-menu 420px
 
 The entries adapt to the column, so the menu never offers a no-op:
 
@@ -721,7 +721,7 @@ table and place it wherever you like:
 </div>
 ```
 
-<StoryEmbed id="components-data-display-table--column-menu" height="460px" />
+@example table/table-column-chooser 460px
 
 It lists **every declared column, hidden ones included** - it is the way back from the
 column menu's "Hide column" - and stays open as you toggle, so several columns can go in
@@ -944,7 +944,7 @@ columns, `rowKey`, sorting and empty state. Put `etAutoSurface` on it so it pain
 elevation above the table it sits in; keep the `data` array's identity stable (look it
 up, don't rebuild it per read) so the sub-table's derived state doesn't churn.
 
-<StoryEmbed id="components-data-display-table--expandable-sub-table" height="460px" />
+@example table/table-expandable-sub-table 460px
 
 The `expanded` signal holds the open row keys, so you can drive or persist which rows are
 open. `isExpanded(row)`, `canExpand(row)` and `toggle(row)` are on the feature - reach it
@@ -1011,7 +1011,7 @@ stretched over the whole row:
 protected orderLink = (order: Order) => ['/orders', order.id];
 ```
 
-<StoryEmbed id="components-data-display-table--row-links" height="420px" />
+@example table/table-row-links 420px
 
 Because it is a genuine link, the browser's own behaviour comes for free - and none of it can
 be had from a click handler:
@@ -1182,7 +1182,7 @@ end** and **Unpin** once `etTableStickyColumns` is on the table:
 <button (click)="table.pinColumn('email', 'start')" type="button">Pin email</button>
 ```
 
-<StoryEmbed id="components-data-display-table--pin-columns-at-runtime" height="420px" />
+@example table/table-pin-columns-at-runtime 420px
 
 Unpinned, a column goes back to its place in the column order, which pinning never changes.
 The pins travel in [`state()`](#table-state) as the `pinning` feature slice - only the ones
@@ -1378,7 +1378,7 @@ load leaves the body blank rather than showing a misleading empty state - the bu
 <et-table [data]="src.rows()" [columns]="COLUMNS" [loading]="src.loading()" etTableSkeleton />
 ```
 
-<StoryEmbed id="components-data-display-table--loading" height="360px" />
+@example table/table-loading 360px
 
 **Matching a row's real height.** Placeholder rows exist to keep the layout still, so they have
 to be as tall as the rows they stand in for. Two things get that right:
@@ -1427,7 +1427,7 @@ default text; for anything more use `errorTemplate` (it gets the error value) or
 </et-table>
 ```
 
-<StoryEmbed id="components-data-display-table--errored" height="300px" />
+@example table/table-errored 300px
 
 For the app's standard failure panel - status heading, message or violation list, and a retry
 that re-executes the query - put an [`<et-query-error>`](/components/query-error) in the template
@@ -1483,7 +1483,7 @@ render a list; its mark is stamped only into cells that are actually failing.
 binding - but keep it a lookup rather than a search. An errored cell also carries
 `data-state="error"`, which an app can style further.
 
-<StoryEmbed id="components-data-display-table--cell-states" height="360px" />
+@example table/table-cell-states 360px
 
 ## Column visibility & reordering
 
@@ -1610,7 +1610,7 @@ window has a viewport to track:
 <et-table [data]="rows()" [columns]="COLUMNS" [style.block-size.rem]="24" etTableVirtualScroll />
 ```
 
-<StoryEmbed id="components-data-display-table--virtualized" height="440px" />
+@example table/table-virtualized 440px
 
 The sticky header pins to the table's own scroll container, so it keeps working.
 Row heights are measured from a rendered row and assumed uniform; set the feature's
@@ -1651,7 +1651,7 @@ the file - and the table's **own rows**, client-filtered and sorted. What is off
 because of [virtualization](#virtualization) is still written; virtualization only decides
 what renders.
 
-<StoryEmbed id="components-data-display-table--csv-export" height="520px" />
+@example table/table-csv-export 520px
 
 ### What each cell says
 
@@ -1757,7 +1757,7 @@ than an error. So when the table's [`rowsSource`](#server-side-rows-query) repor
 `total`, the export checks it and throws **`ET3506`** in dev mode rather than write it.
 Production stays silent and writes the page.
 
-<StoryEmbed id="components-data-display-table--csv-export-beyond-the-page" height="480px" />
+@example table/table-csv-export-beyond-the-page 480px
 
 There are three honest answers, in the order they matter in practice.
 
@@ -1859,7 +1859,7 @@ again leaves the table entirely, rather than walking every cell - and inside it:
 | `Enter`                  | into the cell's own control, if it has one   |
 | `Escape`                 | back out of that control, onto the cell      |
 
-<StoryEmbed id="components-data-display-table--keyboard-navigation" height="520px" />
+@example table/table-keyboard-navigation 520px
 
 In a right-to-left document `←` and `→` swap, so each still moves to the visually
 neighbouring cell. Clicking a cell moves the tab stop there too, so the arrows always
@@ -1939,7 +1939,7 @@ const COLUMNS = {
 as you would in a form. There is no cell-editor interface to implement: every control in
 this library is already signal-forms native, so any of them can be an editor.
 
-<StoryEmbed id="components-data-display-table--inline-editing" height="560px" />
+@example table/table-inline-editing 560px
 
 A column marked `editable` with no `etTableCellEdit` template stays read-only, so the flag
 is safe to leave on while the template is behind an `@if`.

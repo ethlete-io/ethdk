@@ -19,6 +19,7 @@ import { TOGGLETIP_EXAMPLES } from './toggletip';
 import { TOOLTIP_EXAMPLES } from './tooltip';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
+import { TABLE_EXAMPLES } from './table';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
@@ -39,6 +40,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...RICH_TEXT_EDITOR_EXAMPLES,
   ...SELECT_EXAMPLES,
   ...SLIDER_EXAMPLES,
+  ...TABLE_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
   ...TIME_PICKER_EXAMPLES,
   ...TOGGLETIP_EXAMPLES,
