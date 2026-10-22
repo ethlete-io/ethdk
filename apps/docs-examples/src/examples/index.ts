@@ -9,6 +9,7 @@ import { CALENDAR_EXAMPLES } from './calendar';
 import { CAROUSEL_EXAMPLES } from './carousel';
 import { CARD_EXAMPLES } from './card';
 import { CASCADER_EXAMPLES } from './cascader';
+import { CHART_EXAMPLES } from './chart';
 import { CHIP_EXAMPLES } from './chip';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { COMMAND_PALETTE_EXAMPLES } from './command-palette';
@@ -64,6 +65,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CAROUSEL_EXAMPLES,
   ...CARD_EXAMPLES,
   ...CASCADER_EXAMPLES,
+  ...CHART_EXAMPLES,
   ...CHIP_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,
   ...COMMAND_PALETTE_EXAMPLES,

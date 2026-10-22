@@ -20,7 +20,7 @@ signUps: BarChartDatum[] = [
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-bar-chart--default" height="380px" />
+@example chart/chart-default 380px
 
 ## Options
 
@@ -58,7 +58,7 @@ Every category gets an equal band of the plot, and the bar is centered in it, ca
 
 When the bands get narrower than `categoryLabelSpacing`, only every nth category label is shown - the first, then every nth after it - so each shown label gets at least that many px and never collides with its neighbour. Every bar is still drawn. `'auto'` estimates the room from the longest label (about 7px per character plus padding, between 24px and 96px), or one line height when the chart is horizontal. Pass a number to set it for one chart, or `0` to show every label.
 
-<StoryEmbed id="components-data-display-bar-chart--dense-labels" height="440px" />
+@example chart/chart-dense-labels 440px
 
 When a bar is first drawn it grows from the baseline and fades in. Under `prefers-reduced-motion: reduce` it appears without the animation.
 
@@ -85,7 +85,7 @@ data: BarChartSeriesDatum[] = [
 
 With two or more series a legend names each series above the plot, in series order.
 
-<StoryEmbed id="components-data-display-bar-chart--grouped" height="420px" />
+@example chart/chart-grouped 420px
 
 ### Grouped and stacked
 
@@ -93,7 +93,7 @@ With two or more series a legend names each series above the plot, in series ord
 
 Positive values stack up from the baseline and negative values stack down from it, each side on its own - a category with income and costs reads as one bar crossing zero. The value axis spans the largest total on either side. A zero or missing value takes no segment.
 
-<StoryEmbed id="components-data-display-bar-chart--stacked-negative" height="420px" />
+@example chart/chart-stacked-negative 420px
 
 ### Series colors
 
@@ -158,7 +158,7 @@ Re-run the color theme generator after adding the themes so the names type-check
 
 `orientation="horizontal"` lists the categories top to bottom with their labels on the left, and puts the value axis under the plot. It suits long category names and many categories. The label column takes at most 40% of the chart's width and cuts a longer label off with an ellipsis. Grouped and stacked layouts work the same way.
 
-<StoryEmbed id="components-data-display-bar-chart--horizontal" height="360px" />
+@example chart/chart-horizontal 360px
 
 ## Title, note and empty state
 
@@ -178,7 +178,7 @@ Mark projected content with an attribute to place it:
 
 The title and note are plain projected elements; `label` still names the chart for assistive tech.
 
-<StoryEmbed id="components-data-display-bar-chart--empty" height="440px" />
+@example chart/chart-empty 440px
 
 ## Drill-down
 
