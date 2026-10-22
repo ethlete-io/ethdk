@@ -10,6 +10,7 @@ import { OVERLAY_EXAMPLES } from './overlay';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
 import { SLIDER_EXAMPLES } from './slider';
+import { TOOLTIP_EXAMPLES } from './tooltip';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
 
@@ -29,4 +30,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...SLIDER_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
   ...TIME_PICKER_EXAMPLES,
+  ...TOOLTIP_EXAMPLES,
 };

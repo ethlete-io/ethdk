@@ -29,7 +29,7 @@ import { TOOLTIP_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-feedback-tooltip--default" height="360px" />
+@example tooltip/tooltip-default 360px
 
 ## Behavior
 
@@ -39,7 +39,7 @@ import { TOOLTIP_IMPORTS } from '@ethlete/components';
 - `etTooltipDisabled` disables it; it also hides automatically when the content becomes `null` or a blank string. A blank string never opens it, so `[etTooltip]="truncated() ? label : ''"` is a valid conditional tooltip.
 - For programmatic control, grab the directive via `#tooltip="etTooltip"` - it exposes `show()` and `hide()`.
 
-<StoryEmbed id="components-feedback-tooltip-in-dialog--default" height="320px" />
+@example tooltip/tooltip-in-dialog 320px
 
 ## Positioning
 
