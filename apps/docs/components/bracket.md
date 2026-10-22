@@ -72,7 +72,7 @@ export class StandingsComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-sports-bracket--single-elimination" height="480px" />
+@example bracket/bracket-single-elimination 480px
 
 ## Layouts
 
@@ -548,7 +548,7 @@ rounds resolve later than their upper-bracket feeders) are supported and align c
 front-truncated winners bracket whose opening round is played elsewhere. It also
 [folds](#double-elimination-stacks-two-folds).
 
-<StoryEmbed id="components-sports-bracket--double-elimination" height="520px" />
+@example bracket/bracket-double-elimination 520px
 
 ## Swiss
 
@@ -631,7 +631,7 @@ broadcast graphic or a page that scrolls badly downwards wants - it is _not_ the
 that is too wide, which is what [density](#density) and the
 [rounds list](/components/bracket-rounds-list) are for.
 
-<StoryEmbed id="components-sports-bracket--mirrored-single-elimination" height="420px" />
+@example bracket/bracket-mirrored-single-elimination 420px
 
 ### Double elimination stacks two folds
 
@@ -753,7 +753,7 @@ default, and `animated="false"` to drop the shimmer.
 For a skeleton of your own, `createPlaceholderBracketSource(shape)` returns the empty source on its
 own.
 
-<StoryEmbed id="components-sports-bracket-skeleton--double-elimination" height="520px" />
+@example bracket/bracket-skeleton-double-elimination 520px
 
 ## Journey highlight
 
@@ -842,7 +842,7 @@ pin the current source has never heard of highlights nothing and dims nothing, a
 own once a source that does contain it arrives - restoring the pin from a query param before the
 bracket has loaded is therefore fine.
 
-<StoryEmbed id="components-sports-bracket--participant-focus" height="520px" />
+@example bracket/bracket-participant-focus 520px
 
 ## Accessibility
 
