@@ -4,24 +4,41 @@
   "projectType": "application",
   "sourceRoot": "apps/docs",
   "tags": ["type:app", "scope:docs"],
-  "implicitDependencies": ["bracket", "query", "core", "cdk", "contentful", "types"],
+  "implicitDependencies": ["bracket", "query", "core", "cdk", "contentful", "types", "docs-examples"],
   "targets": {
     "serve": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitepress dev apps/docs",
         "cwd": "{workspaceRoot}"
-      }
+      },
+      "dependsOn": [
+        {
+          "projects": ["docs-examples"],
+          "target": "serve"
+        }
+      ],
+      "continuous": true
     },
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{workspaceRoot}/dist/apps/docs"],
       "inputs": ["default", "^production"],
       "options": {
-        "command": "vitepress build apps/docs",
+        "commands": [
+          "vitepress build apps/docs",
+          "node -e \"require('node:fs').cpSync('dist/apps/docs-examples/browser','dist/apps/docs/examples',{recursive:true})\""
+        ],
+        "parallel": false,
         "cwd": "{workspaceRoot}"
       },
-      "cache": true
+      "cache": true,
+      "dependsOn": [
+        {
+          "projects": ["docs-examples"],
+          "target": "build"
+        }
+      ]
     },
     "preview": {
       "executor": "nx:run-commands",

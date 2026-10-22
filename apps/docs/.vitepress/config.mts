@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress';
 import llmstxt from 'vitepress-plugin-llms';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import { docsExamples } from './examples-plugin';
 
 export default defineConfig({
   title: 'Ethlete SDK',
@@ -9,7 +10,7 @@ export default defineConfig({
   cleanUrls: true,
 
   vite: {
-    plugins: [tsconfigPaths(), llmstxt()],
+    plugins: [docsExamples(), tsconfigPaths(), llmstxt()],
   },
 
   themeConfig: {

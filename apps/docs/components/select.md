@@ -19,7 +19,7 @@ import { SELECT_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-forms-select--default" height="420px" />
+@example select/select-default
 
 ## Options
 
@@ -93,7 +93,7 @@ The trigger resolves the selected value's label from the options - including a p
 
 ## Object values
 
-<StoryEmbed id="components-forms-select--object-values" height="420px" />
+@example select/select-object-values
 
 An option value can be any object, but by default the select matches it to the model with `===`, so a value that holds a _copy_ - a form model loaded from an API, a refetched option list - selects nothing. Pass `compareWith` to decide equality yourself:
 
@@ -121,13 +121,13 @@ A committed option writes _its own_ value into the model, so after the user pick
 
 ## Multi-select
 
-<StoryEmbed id="components-forms-select--multiple" height="420px" />
+@example select/select-multiple
 
 With `multiple`, each selected value renders as a removable chip in the trigger; a chip's remove button (or Backspace/Delete on a chip) deselects that value without opening the panel, and the chips row wraps, growing the field. Committing an option toggles it and keeps the panel open - Escape, Tab or clicking outside close it. While `readonly`, the chips keep their normal (non-disabled) look but drop the remove button; while `disabled`, they render dimmed without it.
 
 ### Select all
 
-<StoryEmbed id="components-forms-select--select-all" height="420px" />
+@example select/select-all
 
 Set `selectAll` on a multi select to render a "Select all" row as the first option in the panel:
 
@@ -186,6 +186,10 @@ Replace the default label/chips display entirely by projecting an `ng-template[e
 </et-select>
 ```
 
+A searchable country picker with flags in the options and in the trigger:
+
+@example select/select-country
+
 In a **searchable single** select the rich template is the _resting_ display only: while the field is focused (edit mode) it gives way to the selected option's plain-text label inside the search input, so keyboard editing behaves like any searchable single select - the label is selected on open (type to replace it), Backspace edits the visible text, and erasing it clears the selection. The rich template returns once the field is blurred. (This is what stops a lone Backspace on a rich, input-empty field from silently wiping the value.)
 
 ## Headless composition
@@ -219,7 +223,7 @@ The Tier 3 component wires `[etSelect]` + `[etSelectTrigger]` + `ng-template[etS
 
 ## Search
 
-<StoryEmbed id="components-forms-select--searchable" height="420px" />
+@example select/select-searchable
 
 In a headless composition, `etSelectSearch` can also live inside the surface template (in the panel) - there it acts as a pure query box that always shows its placeholder, like the [menu](/components/menu)'s search (the phone input's country picker works this way).
 
@@ -324,7 +328,7 @@ Apps still on the [legacy `V2QueryClient`](/query/legacy) use `selectOptionsFrom
 
 ### Custom values
 
-<StoryEmbed id="components-forms-select--custom-values" height="420px" />
+@example select/select-custom-values
 
 With `allowCustomValues`, the query becomes committable as a value of its own. Whenever the (normalized) query is neither an existing selection nor an exact label match of a visible option, the panel ends in a **"Create …" row** - a real listbox option, so it takes part in virtual focus: it holds <kbd>Enter</kbd> when nothing else matches, and stays one <kbd>ArrowDown</kbd> away while options still match (you can create `java` even while `javascript` is listed). In multi mode a committed custom value becomes a chip and the search clears; in single mode it becomes the value and the panel closes. The row's leading text is configurable via `createLabel` (else [`SELECT_LABELS.create`](/components/localization)); headless compositions render their own row bound to `customValueCandidate()` and mark it with `customValueOption` (or call the public `commitCustomValue(raw)` imperatively).
 
@@ -354,7 +358,7 @@ Unlike `allowCustomValues` (which commits the raw query string directly), the ad
 
 ### Command picker
 
-<StoryEmbed id="components-forms-select--pick-only" height="420px" />
+@example select/select-pick-only
 
 Set `pickOnly` to use a single select as a fire-and-forget "add" picker (search → pick → append to an external list): committing an option emits `(pickOption)` with the picked value **without ever writing `value`**, so the select stays empty and immediately ready for the next pick. Use it when the select feeds a list you own rather than holding a value of its own - it removes the set-then-clear dance (and its race with the `[(value)]` write-back) that a `valueChange`-based picker needs.
 
@@ -403,7 +407,7 @@ Wrap options in `et-select-option-group` to render labelled sections in the list
 
 Each group is a `role="group"` with `aria-labelledby` pointing at its header. With `filterMode="internal"` a group **hides itself once all of its options are filtered out**, so search never leaves an empty section header behind. The design token `--et-select-option-group-label-font-size` (default `12px`) sizes the header. For custom markup, the headless `[etSelectOptionGroup]` directive works the same way - set `label` (used for `aria-label` when no header element registers) around your projected `[etSelectOption]`s.
 
-<StoryEmbed id="components-forms-select-option-group--default" height="360px" />
+@example select/select-option-group 360px
 
 ## Large option lists (virtualization)
 
