@@ -11,6 +11,7 @@ import { DROPZONE_EXAMPLES } from './dropzone';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
 import { FLOATING_ACTION_EXAMPLES } from './floating-action';
 import { FORMS_EXAMPLES } from './forms';
+import { KBD_EXAMPLES } from './kbd';
 import { MENU_EXAMPLES } from './menu';
 import { NOTIFICATION_EXAMPLES } from './notification';
 import { OVERLAY_EXAMPLES } from './overlay';
@@ -39,6 +40,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...FILTER_OVERLAY_EXAMPLES,
   ...FLOATING_ACTION_EXAMPLES,
   ...FORMS_EXAMPLES,
+  ...KBD_EXAMPLES,
   ...MENU_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,
   ...OVERLAY_EXAMPLES,
