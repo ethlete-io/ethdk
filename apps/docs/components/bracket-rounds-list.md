@@ -31,7 +31,7 @@ export class MatchDayComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-sports-bracket-rounds-list--double-elimination" height="520px" />
+@example bracket-rounds-list/bracket-rounds-list-double-elimination 520px
 
 ## What it draws
 
@@ -104,7 +104,7 @@ export class RoundsComponent {
 }
 ```
 
-<StoryEmbed id="components-sports-bracket-rounds-list--round-switcher" height="480px" />
+@example bracket-rounds-list/bracket-rounds-list-round-switcher 480px
 
 ## Responsive switching
 
@@ -169,7 +169,7 @@ This is a recipe rather than a shipped `<et-bracket-adaptive>` on purpose: the w
 to forward every layout input of both representations to earn its keep, and the four lines above
 don't.
 
-<StoryEmbed id="components-sports-bracket-adaptive--wide" height="520px" />
+@example bracket-rounds-list/bracket-rounds-list-adaptive 520px
 
 Zoom and pan over a full-size bracket is the other answer to the same problem, and it stays
 backlogged - switching representation reads better on the devices that need it.
