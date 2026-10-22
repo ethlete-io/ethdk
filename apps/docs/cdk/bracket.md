@@ -25,7 +25,7 @@ import { BracketNew, NewBracketComponent } from '@ethlete/cdk';
 source = BracketNew.generateBracketDataForEthlete(roundsWithMatches);
 ```
 
-<StoryEmbed id="cdk-bracket-new--double-et-sync" height="520px" />
+@example cdk-bracket/cdk-bracket-double-elimination 520px
 
 ## The data source
 
@@ -69,7 +69,7 @@ In Swiss mode, rounds are grouped by score (`2-1`, `0-2`, …) with a border dra
 />
 ```
 
-<StoryEmbed id="cdk-bracket-new--swiss" height="520px" />
+@example cdk-bracket/cdk-bracket-swiss 520px
 
 ## Journey highlight
 

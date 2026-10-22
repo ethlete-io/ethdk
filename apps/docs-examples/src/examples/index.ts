@@ -1,6 +1,7 @@
 import { Type } from '@angular/core';
 import { Routes } from '@angular/router';
 import { CDK_ACCORDION_EXAMPLES } from './cdk-accordion';
+import { CDK_BRACKET_EXAMPLES } from './cdk-bracket';
 import { CDK_BREADCRUMB_EXAMPLES } from './cdk-breadcrumb';
 import { CDK_BUTTON_EXAMPLES } from './cdk-button';
 import { CDK_FORMS_EXAMPLES } from './cdk-forms';
@@ -86,6 +87,7 @@ export type ExampleLoader = () => Promise<Type<unknown> | RoutedExample>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CDK_ACCORDION_EXAMPLES,
+  ...CDK_BRACKET_EXAMPLES,
   ...CDK_BREADCRUMB_EXAMPLES,
   ...CDK_BUTTON_EXAMPLES,
   ...CDK_FORMS_EXAMPLES,
