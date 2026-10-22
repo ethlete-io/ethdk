@@ -82,12 +82,17 @@ with `apps/docs-examples/src/examples/select/select-country.example.ts` and its
 file fails the build. Example iframes share no Storybook channel, so the story-embed limit
 below does not apply.
 
+Indent the line to put the example inside a list item; the expansion keeps the indentation.
+
 Add an example:
 
 1. Write `apps/docs-examples/src/examples/<domain>/<name>.example.ts` - one standalone component,
    selector `app-<name>-example`. Long demo data goes in `<name>.data.ts`.
 2. Register it in `src/examples/<domain>/index.ts` (`'<domain>/<name>': () => import(...)`); a new
    domain map is spread into `src/examples/index.ts`.
+   A routed example also exports `routes: Routes` (child route components in the same file) and its
+   loader returns `{ component, routes: m.routes }` - see `tabs/nav-tabs-default`. The app registers
+   them with hash location, so links never change the iframe path and a reload keeps the route.
 3. The file is what a consumer copies, so: public `@ethlete/*` imports only, no Tailwind, no
    `et-sb-` selectors, no Storybook wrapper markup, no static `style` attributes (CSP lint). The app
    lays out the example's host as a column; themes come from the app config
