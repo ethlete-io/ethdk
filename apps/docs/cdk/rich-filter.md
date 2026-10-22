@@ -40,7 +40,7 @@ fixes.
 import { RichFilterImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-filters-rich-filter--default" height="480px" />
+@example cdk-rich-filter/cdk-rich-filter 480px
 
 ## Building blocks
 
