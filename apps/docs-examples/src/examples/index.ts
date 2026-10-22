@@ -29,6 +29,7 @@ import { PAGED_QUERY_TRIGGER_EXAMPLES } from './paged-query-trigger';
 import { PAGINATION_EXAMPLES } from './pagination';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
+import { SKELETON_EXAMPLES } from './skeleton';
 import { SLIDER_EXAMPLES } from './slider';
 import { TABLE_EXAMPLES } from './table';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
@@ -68,6 +69,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...PAGINATION_EXAMPLES,
   ...RICH_TEXT_EDITOR_EXAMPLES,
   ...SELECT_EXAMPLES,
+  ...SKELETON_EXAMPLES,
   ...SLIDER_EXAMPLES,
   ...TABLE_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
