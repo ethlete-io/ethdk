@@ -53,7 +53,7 @@ export class ProductListComponent {
 }
 ```
 
-<StoryEmbed id="cdk-overlay-overlay-handlers--handler" height="420px" />
+@example cdk-overlays/cdk-overlay-handler 420px
 
 `createOverlayHandler` also accepts a `template` (a `TemplateRef`) instead of `component`. The handler is two-staged on purpose: the outer call binds the component and its base config once (no injection context needed), the inner call runs in a component's injection context and wires the lifecycle callbacks (`afterOpened`, `beforeClosed`, `afterClosed`) with automatic unsubscription.
 
@@ -86,7 +86,7 @@ export const createProductOverlay = createOverlayHandlerWithQueryParamLifecycle<
 });
 ```
 
-<StoryEmbed id="cdk-overlay-overlay-handlers--query-param-lifecycle" height="420px" />
+@example cdk-overlays/cdk-overlay-query-param 420px
 
 If the overlay component declares an input or model named `overlayQueryParam`, the current value is written into it - and when it is a `model`, writing back to it updates the URL. To carry more than one value, pack them into a single param string and split it inside the component. The inner factory may only be called once per injection context.
 
@@ -151,7 +151,7 @@ strategies: transformingBottomSheetToDialogOverlayStrategy({ breakpoint: 'md' })
 
 All default to `'md'`, and each half takes its own config override. Crossing the breakpoint while the overlay is open **transforms it in place** - it is not closed and reopened, and the strategies get `onSwitchedTo` / `onSwitchedAwayFrom` callbacks to hand over their state.
 
-<StoryEmbed id="cdk-overlay-overlay-strategies-responsive--default" height="420px" />
+@example cdk-overlays/cdk-overlay-responsive 420px
 
 Writing your own strategy means providing an `OverlayStrategy`: an `id`, a `config`, and optional `onBeforeEnter` / `onAfterEnter` / `onBeforeLeave` / `onAfterLeave` / `onSwitchedTo` / `onSwitchedAwayFrom` hooks.
 
@@ -209,7 +209,7 @@ providers: [
 <button etOverlayBackOrClose type="button">Back</button>
 ```
 
-<StoryEmbed id="cdk-overlay-overlay-routing--default" height="420px" />
+@example cdk-overlays/cdk-overlay-routing 420px
 
 Import `OverlayWithRoutingImports` for these. Highlights:
 
