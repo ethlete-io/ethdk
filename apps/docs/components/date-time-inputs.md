@@ -171,7 +171,7 @@ A date control combining typed entry with an anchored
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-date-input--default" height="560px" />
+@example date-time-inputs/date-input-default 560px
 
 In a [query form](/query/query-forms#binding-a-date-control), bind it to
 `dateQueryField({ as: 'string' })` - the plain `dateQueryField()` holds a `Date`.
@@ -211,7 +211,7 @@ a day writes `format(date, valueFormat)` and closes the picker (a named
 [view drilling](/components/calendar#view-drilling); a month or year picked while
 drilling only navigates, so the field commits on the day pick as always.
 
-<StoryEmbed id="components-forms-date-input--masked" height="360px" />
+@example date-time-inputs/date-input-masked 360px
 
 ### Precision {#precision}
 
@@ -224,7 +224,7 @@ drilling only navigates, so the field commits on the day pick as always.
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-date-input--month-precision" height="360px" />
+@example date-time-inputs/date-input-month-precision 360px
 
 Naming a `displayFormat` yourself still wins over the derived one. The range input takes `precision` the same way, for month ranges like `07/2025 – 03/2026`; see [the calendar's precision](/components/calendar#month-and-year-pickers) for how the picker behaves there. The two date-time controls have none - their values carry a time.
 
@@ -257,7 +257,7 @@ window in the studio's - `et-date-time-input` and `et-date-time-range-input` tak
 <et-date-time-input [formField]="demoForm.doorsOpen" timeZone="Asia/Tokyo" />
 ```
 
-<StoryEmbed id="components-forms-date-time-input--time-zone" height="420px" />
+@example date-time-inputs/date-time-input-time-zone 420px
 
 `timeZone` takes an IANA name. It changes three things and nothing else:
 
@@ -296,7 +296,7 @@ dateTimeBounds(s.doorsOpen, { min: () => new Date(), valueFormat: "yyyy-MM-dd'T'
 
 The same input is on the range control, where one second reading covers both ends:
 
-<StoryEmbed id="components-forms-date-time-range-input--time-zone" height="420px" />
+@example date-time-inputs/date-time-range-input-time-zone 420px
 
 #### One zone for the whole app {#app-time-zone}
 
@@ -426,7 +426,7 @@ protected presets = [todayPreset(), lastDaysPreset(7), lastDaysPreset(30), thisM
 <et-date-range-input [formField]="demoForm.range" [presets]="presets" />
 ```
 
-<StoryEmbed id="components-forms-date-range-input--presets" height="480px" />
+@example date-time-inputs/date-range-input-presets 480px
 
 | Factory                                                        | Range                                          |
 | -------------------------------------------------------------- | ---------------------------------------------- |
@@ -511,7 +511,7 @@ form(model, (s) => {
 });
 ```
 
-<StoryEmbed id="components-forms-time-input--opening-hours" height="560px" />
+@example date-time-inputs/time-input-opening-hours 560px
 
 ## Time range input - `et-time-range-input` {#time-range-input}
 
@@ -530,7 +530,7 @@ daily window - instead of pairing two `et-time-input`s.
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-time-range-input--prefilled" height="560px" />
+@example date-time-inputs/time-range-input-prefilled 560px
 
 On `et-time-range-input` (forwarded from the headless `[etTimeRangeInput]` directive), on
 top of the [shared contract set](#shared-contract):
@@ -580,7 +580,7 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') => {
 };
 ```
 
-<StoryEmbed id="components-forms-time-range-input--end-after-start" height="560px" />
+@example date-time-inputs/time-range-input-end-after-start 560px
 
 ## Date-time input - `et-date-time-input` {#date-time-input}
 
@@ -601,7 +601,7 @@ correct the day is never interrupted.
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-date-time-input--default" height="560px" />
+@example date-time-inputs/date-time-input-default 560px
 
 The value is a `string | null`. On `et-date-time-input` (forwarded from the headless
 `[etDateTimeInput]` directive), on top of the [shared contract set](#shared-contract):
@@ -666,7 +666,7 @@ const openingHours = (candidate: Date) => {
 };
 ```
 
-<StoryEmbed id="components-forms-date-time-input--opening-hours" height="560px" />
+@example date-time-inputs/date-time-input-opening-hours 560px
 
 ## Date-time range input - `et-date-time-range-input` {#date-time-range-input}
 
@@ -687,7 +687,7 @@ appointment - instead of pairing two `et-date-time-input`s.
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-date-time-range-input--prefilled" height="620px" />
+@example date-time-inputs/date-time-range-input-prefilled 620px
 
 On `et-date-time-range-input` (forwarded from the headless `[etDateTimeRangeInput]`
 directive), on top of the [shared contract set](#shared-contract):
@@ -770,7 +770,7 @@ const endAfterStart = (candidate: Date, side: 'start' | 'end') =>
   side === 'start' || slot().start === null || candidate > parseISO(slot().start);
 ```
 
-<StoryEmbed id="components-forms-date-time-range-input--end-after-start" height="620px" />
+@example date-time-inputs/date-time-range-input-end-after-start 620px
 
 ## Duration input - `et-duration-input` {#duration-input}
 
