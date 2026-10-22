@@ -51,4 +51,4 @@ its source next to it. Storybook stays as it is; it is not the example source.
 - Slice 1: done. `apps/docs-examples` + `@example` plugin ship; `components/select.md` uses nine examples (incl. country flags).
 - Slice 2 (forms), one guide per run, in this order: forms, text-inputs, choice-inputs,
   date-time-inputs, time-picker, calendar, cascader, slider, dropzone, rich-text-editor.
-  Done: forms, text-inputs.
+  Done: forms, text-inputs, choice-inputs, date-time-inputs.
