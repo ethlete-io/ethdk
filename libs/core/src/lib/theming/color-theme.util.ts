@@ -1,7 +1,7 @@
 import { computed, inject, isDevMode, Signal } from '@angular/core';
 import { defineStaticProvider, toInjectFn, toProvideFn } from '../utils';
 import { SURFACE_PROVIDER } from './provide-surface.directive';
-import { injectDefaultSurfaceTheme } from './surface-theme.util';
+import { injectRootSurfaceTheme } from './color-scheme';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -155,10 +155,10 @@ const injectColorThemeByType = (type: ColorThemeType) =>
 export const injectSemanticColorTheme = (type: ColorThemeType): Signal<ColorTheme> => {
   const themes = injectColorThemes({ optional: true });
   const surfaceProvider = inject(SURFACE_PROVIDER, { optional: true });
-  const defaultSurface = injectDefaultSurfaceTheme();
+  const rootSurface = injectRootSurfaceTheme();
 
   return computed(() => {
-    const surface = surfaceProvider?.activeTheme() ?? defaultSurface;
+    const surface = surfaceProvider?.activeTheme() ?? rootSurface();
     const mappedName = surface?.semanticColorThemes?.[type];
     const mapped = mappedName ? themes?.find((t) => t.name === mappedName) : undefined;
 

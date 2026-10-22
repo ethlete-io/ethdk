@@ -610,6 +610,8 @@ function generateSurfaceThemeCss(
   if (defaultLight && defaultDark) {
     pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
     pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
+    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
+    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
   } else {
     // A single registered surface type has no other scheme to switch to, so its default must
     // land on :root unconditionally - behind prefers-color-scheme it would leave every surface
@@ -783,6 +785,15 @@ function pushSchemeSurfaceVars(vars: string[], runtimePrefix: string, theme: Sur
   pushSurfaceVars(vars, runtimePrefix, theme, '    ');
   vars.push(`    color-scheme: ${theme.type};`);
   vars.push(`  }`);
+  vars.push(`}\n`);
+}
+
+// `:root.<prefix>-scheme--<type>` must out-specify the `:root` inside the media query above, so the
+// class set by `provideColorScheme()` overrides the OS preference regardless of source order.
+function pushForcedSchemeSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme): void {
+  vars.push(`:root.${runtimePrefix}-scheme--${theme.type} {`);
+  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
+  vars.push(`  color-scheme: ${theme.type};`);
   vars.push(`}\n`);
 }
 

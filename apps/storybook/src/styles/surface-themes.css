@@ -233,6 +233,38 @@
       color-scheme: dark;
     }
   }
+
+  :root.et-scheme--light {
+    --et-surface-background: 255 255 255;
+    --et-surface-color: 23 23 23;
+    --et-surface-color-muted: 82 82 82;
+    --et-surface-color-subtle: 161 161 161;
+    --et-surface-border: 229 229 229;
+    --et-surface-type: light;
+    --et-surface-elevation: 0;
+    --et-surface-interaction: 115 115 115;
+    --et-surface-interaction-hover: 64 64 64;
+    --et-surface-interaction-focus: 64 64 64;
+    --et-surface-interaction-active: 23 23 23;
+    --et-surface-interaction-disabled: 180 180 180;
+    color-scheme: light;
+  }
+
+  :root.et-scheme--dark {
+    --et-surface-background: 38 38 38;
+    --et-surface-color: 250 250 250;
+    --et-surface-color-muted: 161 161 161;
+    --et-surface-color-subtle: 115 115 115;
+    --et-surface-border: 64 64 64;
+    --et-surface-type: dark;
+    --et-surface-elevation: 1;
+    --et-surface-interaction: 161 161 161;
+    --et-surface-interaction-hover: 220 220 220;
+    --et-surface-interaction-focus: 220 220 220;
+    --et-surface-interaction-active: 250 250 250;
+    --et-surface-interaction-disabled: 100 100 100;
+    color-scheme: dark;
+  }
 }
 
 /* Convenience aliases (rgb + solid variants) */

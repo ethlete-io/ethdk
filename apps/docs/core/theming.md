@@ -111,7 +111,8 @@ Either way the block also sets `color-scheme`, so scrollbars and native controls
 
 The runtime knows the same default: `injectDefaultSurfaceTheme(type?)` returns the registered
 `isDefault` theme - of the only type the app registers, or of the `type` you name (an app with both
-has to say which, since `:root` picks between them by `prefers-color-scheme`). `injectSurfaceType()`
+has to say which). `injectRootSurfaceTheme()` returns a signal with the default `:root` paints right
+now, and follows [`provideColorScheme()`](#switching-light-and-dark) where the app registers both. `injectSurfaceType()`
 returns a signal with the `'light' | 'dark'` a subtree renders on, or `null` when no surface can be resolved: the surrounding provider's type,
 or the default's where nothing provides one. A `ProvideSurfaceDirective` with nothing above it and
 no surface set resolves that default too, so a single-scheme app's `elevation()` and `surfaceType()`
@@ -139,9 +140,38 @@ private mySurface = computed(() => {
 });
 ```
 
-It returns `null` for an app that registers a default per surface type. `prefers-color-scheme`
-decides which of the two `:root` paints, so the root surface of such an app cannot be resolved at
-runtime. Scope a surface explicitly with `etProvideSurface` where a subtree must elevate anyway.
+In an app that registers a default per surface type, it returns `null` unless the app adds
+`provideColorScheme()`. Without it, only the CSS media query knows which of the two `:root` paints.
+
+### Switching light and dark
+
+Add `provideColorScheme()` to the application config to let the user pick light or dark instead of
+the OS preference:
+
+```ts
+export const appConfig: ApplicationConfig = {
+  providers: [provideSurfaceThemesWithTailwind4(SURFACE_THEMES), provideColorScheme({ mode: 'system' })],
+};
+```
+
+```ts
+private colorScheme = injectColorScheme();
+
+toggle() {
+  this.colorScheme.setMode(this.colorScheme.type() === 'dark' ? 'light' : 'dark');
+}
+```
+
+- `setMode('light' | 'dark')` puts `et-scheme--light` or `et-scheme--dark` on `<html>`. The generated
+  `:root.et-scheme--<type>` rule paints that default and sets `color-scheme`, regardless of the OS.
+- `setMode('system')` removes the class, and the media query decides again.
+- `mode()` is the mode the app asked for, and `type()` the `'light' | 'dark'` the root paints. In
+  `system` mode, `type()` follows the OS live.
+
+The mode does not persist. Store it yourself, and pass the stored value as `mode`. The rule exists
+only when the app registers a default for both types, so regenerate the surface CSS after an upgrade.
+Hand-written CSS behind `@media (prefers-color-scheme: …)` does not follow the class; select
+`:root.et-scheme--dark` there too.
 
 ### A dark-only app
 

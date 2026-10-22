@@ -16,9 +16,9 @@ import {
 } from '@angular/core';
 import { createCssColorThemeName, injectColorThemes, injectColorThemesPrefix } from './color-theme.util';
 import { COLOR_PROVIDER } from './provide-color.directive';
+import { injectRootSurfaceTheme } from './color-scheme';
 import {
   createCssSurfaceName,
-  injectDefaultSurfaceTheme,
   injectSurfaceThemes,
   injectSurfaceThemesPrefix,
   RegisteredSurfaceThemeName,
@@ -43,7 +43,7 @@ export class ProvideSurfaceDirective {
   private prefix = injectSurfaceThemesPrefix({ optional: true });
   private injector = inject(Injector);
   private parentProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  private defaultTheme = injectDefaultSurfaceTheme();
+  private rootTheme = injectRootSurfaceTheme();
   private colorThemes = injectColorThemes({ optional: true });
   private colorPrefix = injectColorThemesPrefix({ optional: true });
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
@@ -73,7 +73,7 @@ export class ProvideSurfaceDirective {
 
     // Only the outermost provider adopts the app default. A nested one left unset must keep
     // resolving to `null` so it reports the surface it inherits instead of resetting elevation.
-    if (!value) return this.parentProvider ? null : this.defaultTheme;
+    if (!value) return this.parentProvider ? null : this.rootTheme();
 
     const theme = this.themes.find((t) => t.name === value) ?? null;
 
@@ -181,9 +181,9 @@ export class ProvideSurfaceDirective {
  */
 export const injectSurfaceType = () => {
   const provider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  const defaultType = injectDefaultSurfaceTheme()?.type ?? null;
+  const rootTheme = injectRootSurfaceTheme();
 
-  return computed(() => provider?.surfaceType() ?? defaultType);
+  return computed(() => provider?.surfaceType() ?? rootTheme()?.type ?? null);
 };
 
 /**
@@ -191,13 +191,12 @@ export const injectSurfaceType = () => {
  * effect on the surrounding surface provider, or the app's default surface where nothing provides
  * one. Use it to derive an elevation relative to the surrounding surface.
  *
- * `null` where the app registers no surface themes, or registers a default per surface type -
- * which of those two `:root` paints is a `prefers-color-scheme` decision, so it cannot be
- * resolved at runtime.
+ * `null` where the app registers no surface themes, or registers a default per surface type
+ * without `provideColorScheme()`.
  */
 export const injectParentSurface = () => {
   const provider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  const defaultTheme = injectDefaultSurfaceTheme();
+  const rootTheme = injectRootSurfaceTheme();
 
-  return computed(() => provider?.activeTheme() ?? defaultTheme);
+  return computed(() => provider?.activeTheme() ?? rootTheme());
 };

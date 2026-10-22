@@ -566,6 +566,21 @@ describe('tailwind-4-surface-theme generator', () => {
       expect(content).toContain('    color-scheme: dark;');
     });
 
+    it('should let a scheme class on the root override prefers-color-scheme', async () => {
+      tree.write('src/surface-themes.ts', CARD_AND_SHEET);
+
+      await migrate(tree, {
+        themesPath: 'src/surface-themes.ts',
+        outputPath: 'src/styles/tw.css',
+        skipFormat: true,
+      });
+
+      const content = tree.read('src/styles/tw.css', 'utf-8');
+      expect(content).toContain(':root.et-scheme--light {\n  --et-surface-background: 255 255 255;');
+      expect(content).toContain(':root.et-scheme--dark {\n  --et-surface-background: 10 10 10;');
+      expect(content).toMatch(/:root\.et-scheme--dark \{[^}]*color-scheme: dark;/);
+    });
+
     it('should paint the root unconditionally when a single scheme is registered', async () => {
       tree.write('src/surface-themes.ts', DARK_ONLY);
 
