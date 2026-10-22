@@ -95,7 +95,8 @@ the interactive element itself, never on a wrapper.
   `injectSemanticColorTheme(type)` the theme of that `type`. The nearest surface's
   `SurfaceTheme.colorThemeVariants` (e.g. `{ brand: 'brand-on-light', success: 'success-on-light' }`,
   variants registered without a `type`) swaps it; an accent without an entry stays the
-  same on every surface. A neutral that follows the surface is `color="surface"`
+  same on every surface. With no surface above, the root surface swaps, and
+  `provideColorScheme()` paints its swap of the default accent on `<html>`. A neutral that follows the surface is `color="surface"`
   (`interactionColor`), not a variant. `colorTheme` and `semanticColorThemes` are
   deprecated. Never add per-surface logic to a color theme or new CSS vars for it.
   `injectErrorTheme()`, `injectWarningTheme()` and `injectSuccessTheme()` are

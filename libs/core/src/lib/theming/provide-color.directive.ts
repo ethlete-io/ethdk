@@ -22,6 +22,7 @@ import {
   resolveColorThemeVariant,
   SURFACE_COLOR,
 } from './color-theme.util';
+import { injectRootSurfaceTheme } from './color-scheme';
 import { SURFACE_PROVIDER } from './provide-surface.directive';
 
 export const COLOR_PROVIDER = new InjectionToken<ProvideColorDirective>('ColorProvider');
@@ -62,6 +63,7 @@ export class ProvideColorDirective {
   private themes = injectColorThemes({ optional: true });
   private prefix = injectColorThemesPrefix({ optional: true });
   private injector = inject(Injector);
+  private rootSurfaceTheme = injectRootSurfaceTheme();
   private parentProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
 
   private appRef = inject(ApplicationRef);
@@ -131,7 +133,7 @@ export class ProvideColorDirective {
 
     if (!this.colorName() || !value) return;
 
-    const surface = this.injector.get(SURFACE_PROVIDER, null)?.activeTheme();
+    const surface = this.injector.get(SURFACE_PROVIDER, null)?.activeTheme() ?? this.rootSurfaceTheme();
     const variant = resolveColorThemeVariant(surface, value, this.themes);
 
     if (variant === value) return this.colorName();

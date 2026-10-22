@@ -1,7 +1,7 @@
 # Proposal: one rule for color per surface
 
 Status: accepted on 2026-10-22 with the recommendations of the open questions. Slice 1 (core runtime,
-Storybook surfaces, docs) and slice 2 (the codemod) are done. The root swap is a later slice.
+Storybook surfaces, docs), slice 2 (the codemod) and slice 3 (the root swap in `provideColorScheme()`) are done.
 
 ## The problem
 

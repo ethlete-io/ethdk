@@ -91,7 +91,8 @@ the interactive element itself, never a wrapper).
   `colorThemeVariants` (`{ brand: 'brand-on-light', success: 'success-on-light' }`, variants
   registered without a `type`) swaps it; an accent without an entry stays the same on every
   surface, and a dark surface inside a light one draws the chosen accent again. The resolver
-  is `resolveColorThemeVariant()` in `color-theme.util.ts`. `colorTheme` and
+  is `resolveColorThemeVariant()` in `color-theme.util.ts`. With no surface above, the root
+  surface swaps, and `provideColorScheme()` paints its swap of the default accent on `<html>`. `colorTheme` and
   `semanticColorThemes` are deprecated. Every component in `libs/components` and
   `libs/query-devtools` uses `injectSemanticColorTheme()` (helpers in
   `libs/components/src/lib/internals/semantic-theme.ts`; `injectOptionalSemanticTheme` where

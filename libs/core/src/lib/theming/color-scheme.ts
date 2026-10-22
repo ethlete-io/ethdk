@@ -2,6 +2,7 @@ import {
   computed,
   DestroyRef,
   DOCUMENT,
+  effect,
   EnvironmentProviders,
   inject,
   makeEnvironmentProviders,
@@ -11,6 +12,12 @@ import {
 } from '@angular/core';
 import { injectBreakpointObserver } from '../providers/breakpoint-observer';
 import { defineProvider, toInjectFn, toProvideFn } from '../utils';
+import {
+  createCssColorThemeName,
+  injectColorThemes,
+  injectColorThemesPrefix,
+  resolveColorThemeVariant,
+} from './color-theme.util';
 import { injectSurfaceThemes, injectSurfaceThemesPrefix, SurfaceTheme, SurfaceType } from './surface-theme.util';
 
 export type ColorSchemeMode = SurfaceType | 'system';
@@ -20,12 +27,21 @@ export type ColorSchemeConfig = {
   mode?: ColorSchemeMode;
 };
 
+const findRootSurfaceTheme = (defaults: SurfaceTheme[], type: SurfaceType | undefined) => {
+  if (defaults.length <= 1) return defaults[0] ?? null;
+
+  return defaults.find((theme) => theme.type === type) ?? null;
+};
+
 const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
   () => {
     const root = inject(DOCUMENT).documentElement;
     const prefix = injectSurfaceThemesPrefix({ optional: true }) || 'et';
     const prefersDark = injectBreakpointObserver().observeMediaQuery('(prefers-color-scheme: dark)');
     const mode = signal<ColorSchemeMode>('system');
+    const surfaceDefaults = injectSurfaceThemes({ optional: true })?.filter((theme) => theme.isDefault) ?? [];
+    const colorThemes = injectColorThemes({ optional: true });
+    const colorPrefix = injectColorThemesPrefix({ optional: true }) || 'et';
 
     const type = computed<SurfaceType>(() => {
       const current = mode();
@@ -33,6 +49,36 @@ const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
       if (current !== 'system') return current;
 
       return prefersDark() ? 'dark' : 'light';
+    });
+
+    const rootSurface = computed(() => findRootSurfaceTheme(surfaceDefaults, type()));
+
+    const rootColorClass = computed(() => {
+      const chosen = colorThemes?.find((theme) => theme.isDefault)?.name;
+
+      if (!chosen) return null;
+
+      const variant = resolveColorThemeVariant(rootSurface(), chosen, colorThemes);
+
+      return variant === chosen ? null : `${colorPrefix}-color--${createCssColorThemeName(variant)}`;
+    });
+
+    let paintedColorClass: string | null = null;
+
+    const clearColorClass = () => {
+      if (paintedColorClass) root.classList.remove(paintedColorClass);
+
+      paintedColorClass = null;
+    };
+
+    effect(() => {
+      const next = rootColorClass();
+
+      clearColorClass();
+
+      if (next) root.classList.add(next);
+
+      paintedColorClass = next;
     });
 
     const clearClasses = () => root.classList.remove(`${prefix}-scheme--light`, `${prefix}-scheme--dark`);
@@ -45,9 +91,12 @@ const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
       mode.set(next);
     };
 
-    inject(DestroyRef).onDestroy(clearClasses);
+    inject(DestroyRef).onDestroy(() => {
+      clearClasses();
+      clearColorClass();
+    });
 
-    return { mode: mode.asReadonly(), type, setMode };
+    return { mode: mode.asReadonly(), type, rootSurface, setMode };
   },
   { name: 'Color Scheme' },
 );
@@ -56,13 +105,15 @@ const provideColorSchemeState = /* @__PURE__ */ toProvideFn(COLOR_SCHEME_DEF);
 
 /**
  * Inject the app's color scheme: `mode()` is what the app asked for, `type()` the surface type the
- * root paints, and `setMode()` switches it. Needs `provideColorScheme()`.
+ * root paints, `rootSurface()` the default surface theme of that type, and `setMode()` switches it.
+ * Needs `provideColorScheme()`.
  */
 export const injectColorScheme = /* @__PURE__ */ toInjectFn(COLOR_SCHEME_DEF);
 
 /**
  * Lets the app switch between its default light and dark surface with a class on `<html>`, instead of
- * only following `prefers-color-scheme`. Add it to the application config, next to
+ * only following `prefers-color-scheme`. It also paints the root surface's `colorThemeVariants` entry for the
+ * default accent on `<html>`. Add it to the application config, next to
  * `provideSurfaceThemesWithTailwind4()`.
  */
 export const provideColorScheme = (config?: ColorSchemeConfig): EnvironmentProviders =>
@@ -80,11 +131,5 @@ export const injectRootSurfaceTheme = (): Signal<SurfaceTheme | null> => {
   const defaults = injectSurfaceThemes({ optional: true })?.filter((theme) => theme.isDefault) ?? [];
   const colorScheme = injectColorScheme({ optional: true });
 
-  return computed(() => {
-    if (defaults.length <= 1) return defaults[0] ?? null;
-
-    const type = colorScheme?.type();
-
-    return defaults.find((theme) => theme.type === type) ?? null;
-  });
+  return computed(() => findRootSurfaceTheme(defaults, colorScheme?.type()));
 };

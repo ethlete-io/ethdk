@@ -1,12 +1,17 @@
 import { Component, DOCUMENT, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  ColorTheme,
   injectColorScheme,
   injectRootSurfaceTheme,
   injectSurfaceType,
   provideColorScheme,
+  ProvideColorDirective,
+  provideColorThemesWithTailwind4,
+  ProvideSurfaceDirective,
   provideSurfaceThemesWithTailwind4,
   SurfaceTheme,
+  ThemeSwatch,
 } from '../index';
 import { useScenario } from './harness';
 
@@ -86,6 +91,40 @@ class UnprovidedComponent {
   rootSurface = injectRootSurfaceTheme();
   surfaceType = injectSurfaceType();
 }
+
+const swatch: ThemeSwatch = {
+  color: { default: '0 0 0', hover: '0 0 0', active: '0 0 0', disabled: '0 0 0' },
+  onColor: { default: '0 0 0' },
+};
+
+const COLOR_THEMES: ColorTheme[] = [
+  { name: 'brand', isDefault: true, primary: swatch },
+  { name: 'brandOnLight', primary: swatch },
+  { name: 'grey', primary: swatch },
+  { name: 'greyLight', primary: swatch },
+];
+
+const SWAPPING_SCHEMES = [
+  { ...surface('day', 'light'), colorThemeVariants: { brand: 'brandOnLight', grey: 'greyLight' } },
+  surface('night', 'dark'),
+];
+
+@Component({
+  selector: 'et-scenario-scheme-root-swap',
+  imports: [ProvideSurfaceDirective, ProvideColorDirective],
+  template: `
+    <section class="day" etProvideSurface="day"></section>
+    <section class="night" etProvideSurface="night"></section>
+    <div class="grey" etProvideColor="grey"></div>
+  `,
+})
+class RootSwapComponent {
+  colorScheme = injectColorScheme();
+  root = inject(DOCUMENT).documentElement;
+}
+
+const colorClasses = (element: Element) =>
+  [...element.classList].filter((name) => name.startsWith('et-color--') && name !== 'et-color--inherited');
 
 let media = createFakeColorSchemeMedia({ prefersDark: false });
 let uninstall = () => false;
@@ -179,6 +218,53 @@ describe('color scheme scenarios', () => {
       expect(fixture.componentInstance.surfaceType()).toBeNull();
 
       fixture.destroy();
+    });
+  });
+
+  describe('with colorThemeVariants on the root surface', () => {
+    const scenario = useScenario({
+      providers: [
+        provideColorThemesWithTailwind4(COLOR_THEMES),
+        provideSurfaceThemesWithTailwind4(SWAPPING_SCHEMES),
+        provideColorScheme(),
+      ],
+    });
+
+    it('paints the root surface swap of the default accent on <html> and follows the scheme', () => {
+      const s = scenario();
+      const app = TestBed.createComponent(RootSwapComponent).componentInstance;
+      s.tick();
+
+      expect(colorClasses(app.root)).toEqual(['et-color--brand-on-light']);
+
+      app.colorScheme.setMode('dark');
+      s.tick();
+
+      expect(colorClasses(app.root)).toEqual([]);
+
+      app.colorScheme.setMode('light');
+      s.tick();
+
+      expect(colorClasses(app.root)).toEqual(['et-color--brand-on-light']);
+    });
+
+    it('swaps outermost surfaces and colors against the root surface', () => {
+      const s = scenario();
+      const fixture = TestBed.createComponent(RootSwapComponent);
+      s.tick();
+
+      const query = (selector: string) => colorClasses((fixture.nativeElement as HTMLElement).querySelector(selector)!);
+
+      expect(query('.day')).toEqual([]);
+      expect(query('.night')).toEqual(['et-color--brand']);
+      expect(query('.grey')).toEqual(['et-color--grey-light']);
+
+      fixture.componentInstance.colorScheme.setMode('dark');
+      s.tick();
+
+      expect(query('.day')).toEqual(['et-color--brand-on-light']);
+      expect(query('.night')).toEqual([]);
+      expect(query('.grey')).toEqual(['et-color--grey']);
     });
   });
 });

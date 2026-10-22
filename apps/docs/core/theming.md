@@ -166,6 +166,8 @@ toggle() {
 - `setMode('light' | 'dark')` puts `et-scheme--light` or `et-scheme--dark` on `<html>`. The generated
   `:root.et-scheme--<type>` rule paints that default and sets `color-scheme`, regardless of the OS.
 - `setMode('system')` removes the class, and the media query decides again.
+- If the root surface has a `colorThemeVariants` entry for the `isDefault` color theme, `<html>` also gets the
+  `et-color--<variant>` class, and it follows the scheme.
 - `mode()` is the mode the app asked for, and `type()` the `'light' | 'dark'` the root paints. In
   `system` mode, `type()` follows the OS live.
 
@@ -446,8 +448,9 @@ Register a variant as an ordinary color theme without a `type`, so the type look
 Every SDK component resolves its semantic colors through `injectSemanticColorTheme()`: the form field's error and
 warning states, select, cascader, menu, alert dialog, table, match card, bracket pick card, rich text editor popup,
 banner, progress step, stat tile and the query devtools. Content in an overlay panel follows the surface the panel
-paints, not the one its trigger sits on. `:root` has no surface element, so swapping the default accent of the root
-surface needs an `[etProvideSurface]` at the app root.
+paints, not the one its trigger sits on. Where no surface sits above, the default root surface swaps. `:root` has no
+surface element, so `provideColorScheme()` paints the swap of the default accent on `<html>`. Without it, put an
+`[etProvideSurface]` at the app root.
 
 `colorTheme` and `semanticColorThemes` are deprecated and still work: `colorTheme: X` acts as an entry for the
 `isDefault` theme, `semanticColorThemes: { success: X }` as one for the theme with `type: 'success'`. An entry in
