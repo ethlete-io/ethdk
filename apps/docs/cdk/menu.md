@@ -31,7 +31,7 @@ import { MenuImports } from '@ethlete/cdk';
 
 `MenuImports` does not include the checkbox-group control or the form modules the [checkbox and radio items](#checkbox-radio-items) use (`CheckboxGroupControlDirective`, `ReactiveFormsModule`); the search example below also needs the input-field imports.
 
-<StoryEmbed id="cdk-overlay-menu--default" height="420px" />
+@example cdk-menu/cdk-menu-default 420px
 
 ## Anatomy
 
