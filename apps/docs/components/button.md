@@ -32,7 +32,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-actions-button-surface--default" height="400px" />
+@example button/button-surface 400px
 
 ## Variants, sizes, color
 
@@ -109,7 +109,7 @@ It accepts a `Query`, a [paged query stack](/query/stacks#paged-queries), a [que
 
 `QueryButtonSource` is structural: either `{ loading: Signal<…> }`, where `loading()` is a boolean or an object with an optional `progress.percentage`, or `{ running: Signal<boolean>; progress: Signal<number> }`.
 
-<StoryEmbed id="components-actions-button-query--default" height="200px" />
+@example button/button-query 200px
 
 ### Legacy queries
 
@@ -160,7 +160,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 </div>
 ```
 
-<StoryEmbed id="components-actions-button-split--default" height="500px" />
+@example button/button-split 500px
 
 - Give both segments the **same `variant`, `size` and `color`** - the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
 - **Exactly one of each segment**: a missing _or_ a duplicated segment throws in dev mode (see [error codes](#error-codes)). When a duplicate slips through in production, the first segment of each kind is the one the group uses, and it stays registered when the extra one is removed.

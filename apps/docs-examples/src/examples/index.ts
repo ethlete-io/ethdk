@@ -1,4 +1,5 @@
 import { Type } from '@angular/core';
+import { BUTTON_EXAMPLES } from './button';
 import { CALENDAR_EXAMPLES } from './calendar';
 import { CASCADER_EXAMPLES } from './cascader';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
@@ -15,16 +16,16 @@ import { PAGINATION_EXAMPLES } from './pagination';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { SELECT_EXAMPLES } from './select';
 import { SLIDER_EXAMPLES } from './slider';
+import { TABLE_EXAMPLES } from './table';
+import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
+import { TIME_PICKER_EXAMPLES } from './time-picker';
 import { TOGGLETIP_EXAMPLES } from './toggletip';
 import { TOOLTIP_EXAMPLES } from './tooltip';
-import { TIME_PICKER_EXAMPLES } from './time-picker';
-import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
-import { TABLE_EXAMPLES } from './table';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
-  ...CALENDAR_EXAMPLES,
+  ...BUTTON_EXAMPLES,
   ...CASCADER_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,
   ...COMMAND_PALETTE_EXAMPLES,
@@ -45,4 +46,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...TIME_PICKER_EXAMPLES,
   ...TOGGLETIP_EXAMPLES,
   ...TOOLTIP_EXAMPLES,
+  ...CALENDAR_EXAMPLES,
 };
