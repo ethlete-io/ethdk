@@ -22,7 +22,7 @@ This page documents the CDK version, which still receives bug fixes.
 import { SkeletonImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-skeleton--default" height="240px" />
+@example cdk-skeleton/cdk-skeleton-default 240px
 
 Items carry no intrinsic size - give each one its width, height and border-radius in your own CSS.
 
