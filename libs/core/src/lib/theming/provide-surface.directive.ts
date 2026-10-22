@@ -22,6 +22,7 @@ import {
 } from './color-theme.util';
 import { COLOR_PROVIDER } from './provide-color.directive';
 import { injectRootSurfaceTheme } from './color-scheme';
+import { injectHostElement } from '../utils';
 import {
   createCssSurfaceName,
   injectSurfaceThemes,
@@ -48,6 +49,7 @@ export class ProvideSurfaceDirective {
   private prefix = injectSurfaceThemesPrefix({ optional: true });
   private injector = inject(Injector);
   private parentProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
+  private hostElement = injectHostElement();
   private rootTheme = injectRootSurfaceTheme();
   private colorThemes = injectColorThemes({ optional: true });
   private colorPrefix = injectColorThemesPrefix({ optional: true });
@@ -127,7 +129,15 @@ export class ProvideSurfaceDirective {
 
     const variant = resolveColorThemeVariant(this.activeTheme(), chosen, this.colorThemes);
 
-    if (variant === resolveColorThemeVariant(this.parentProvider?.activeTheme(), chosen, this.colorThemes)) return null;
+    // An overlay pane's DI parent surface is not its DOM ancestor, so the pane cannot inherit the parent's class.
+    const inheritsFromParent = !this.parentProvider || this.parentProvider.hostElement.contains(this.hostElement);
+
+    if (
+      inheritsFromParent &&
+      variant === resolveColorThemeVariant(this.parentProvider?.activeTheme(), chosen, this.colorThemes)
+    ) {
+      return null;
+    }
 
     if (isDevMode() && !this.colorThemes?.some((theme) => theme.name === variant)) {
       console.error(

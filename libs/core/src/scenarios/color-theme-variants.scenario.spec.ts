@@ -1,4 +1,4 @@
-import { Component, DebugElement, signal } from '@angular/core';
+import { Component, DebugElement, inject, signal, TemplateRef, viewChild, ViewContainerRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
   ColorTheme,
@@ -89,12 +89,31 @@ class ColorThemeVariantsComponent {
   switchable = signal('night');
 }
 
+@Component({
+  selector: 'et-scenario-detached-pane',
+  imports: [ProvideSurfaceDirective],
+  template: `
+    <section etProvideSurface>
+      <section etProvideSurface="paper">
+        <ng-template #pane><section class="pane" etProvideSurface="paper"></section></ng-template>
+      </section>
+    </section>
+  `,
+})
+class DetachedPaneComponent {
+  pane = viewChild.required<TemplateRef<unknown>>('pane');
+  viewContainerRef = inject(ViewContainerRef);
+}
+
+const colorClasses = (element: Element) =>
+  [...element.classList].filter((name) => name.startsWith('et-color--') && name !== 'et-color--inherited');
+
 const classesOf = (fixture: ComponentFixture<unknown>, selector: string) => {
   const element = (fixture.nativeElement as HTMLElement).querySelector(selector);
 
   if (!element) throw new Error(`${selector} is not rendered`);
 
-  return [...element.classList].filter((name) => name.startsWith('et-color--') && name !== 'et-color--inherited');
+  return colorClasses(element);
 };
 
 const reader = (fixture: { debugElement: DebugElement }, selector: string) => {
@@ -171,5 +190,21 @@ describe('color theme variant scenarios', () => {
 
     expect(classesOf(fixture, '.grey-on-switchable')).toEqual(['et-color--grey-light']);
     expect(classesOf(fixture, '.switchable')).toEqual(['et-color--brand-on-light']);
+  });
+
+  it('paints the swap on a pane that sits outside its parent surface in the DOM', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(DetachedPaneComponent);
+    s.tick();
+
+    const view = fixture.componentInstance.viewContainerRef.createEmbeddedView(fixture.componentInstance.pane());
+    const pane = view.rootNodes[0] as HTMLElement;
+    document.body.append(pane);
+    s.tick();
+
+    expect(colorClasses(pane)).toEqual(['et-color--brand-on-light']);
+
+    view.destroy();
+    pane.remove();
   });
 });
