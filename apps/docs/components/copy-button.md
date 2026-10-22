@@ -25,7 +25,7 @@ import { COPY_BUTTON_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-actions-button-copy--default" height="120px" />
+@example copy-button/copy-button-default 120px
 
 ## Why a directive, not a component
 

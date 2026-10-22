@@ -5,6 +5,7 @@ import { CASCADER_EXAMPLES } from './cascader';
 import { CHIP_EXAMPLES } from './chip';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { COMMAND_PALETTE_EXAMPLES } from './command-palette';
+import { COPY_BUTTON_EXAMPLES } from './copy-button';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
 import { DROPZONE_EXAMPLES } from './dropzone';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
@@ -31,6 +32,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CHIP_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,
   ...COMMAND_PALETTE_EXAMPLES,
+  ...COPY_BUTTON_EXAMPLES,
   ...DATE_TIME_INPUTS_EXAMPLES,
   ...DROPZONE_EXAMPLES,
   ...FILTER_OVERLAY_EXAMPLES,
