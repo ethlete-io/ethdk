@@ -11,6 +11,7 @@ import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { COMMAND_PALETTE_EXAMPLES } from './command-palette';
 import { COPY_BUTTON_EXAMPLES } from './copy-button';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
+import { DIVIDER_EXAMPLES } from './divider';
 import { DROPZONE_EXAMPLES } from './dropzone';
 import { EMPTY_STATE_EXAMPLES } from './empty-state';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
@@ -45,6 +46,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...COMMAND_PALETTE_EXAMPLES,
   ...COPY_BUTTON_EXAMPLES,
   ...DATE_TIME_INPUTS_EXAMPLES,
+  ...DIVIDER_EXAMPLES,
   ...DROPZONE_EXAMPLES,
   ...EMPTY_STATE_EXAMPLES,
   ...FILTER_OVERLAY_EXAMPLES,
