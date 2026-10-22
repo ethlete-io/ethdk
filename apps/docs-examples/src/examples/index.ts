@@ -54,6 +54,7 @@ import { TREE_EXAMPLES } from './tree';
 import { TOOLTIP_EXAMPLES } from './tooltip';
 import { PIE_CHART_EXAMPLES } from './pie-chart';
 import { LINE_CHART_EXAMPLES } from './line-chart';
+import { SANKEY_CHART_EXAMPLES } from './sankey-chart';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
@@ -113,4 +114,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CALENDAR_EXAMPLES,
   ...PIE_CHART_EXAMPLES,
   ...LINE_CHART_EXAMPLES,
+  ...SANKEY_CHART_EXAMPLES,
 };

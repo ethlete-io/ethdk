@@ -29,7 +29,7 @@ links: SankeyChartLinkInput[] = [
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-sankey-chart--default" height="420px" />
+@example sankey-chart/sankey-chart-default 420px
 
 ## Options
 
@@ -64,7 +64,7 @@ Without a `valueFormatter`, values are formatted with `Intl.NumberFormat` in the
 - **Ribbons.** A link is a filled cubic curve from the right edge of its source to the left edge of its target, as wide as its value at both ends. Ribbons stack at a node in the order of the nodes at their other end, so they leave and arrive without crossing each other.
 - **Zero links.** A link with value `0` draws no ribbon and does not affect columns, heights or order, but it keeps its row in the table view.
 
-<StoryEmbed id="components-data-display-sankey-chart--multi-level" height="520px" />
+@example sankey-chart/sankey-chart-multi-level 520px
 
 ### Labels
 
@@ -78,13 +78,13 @@ In a vertical flow the first row is labelled above its nodes and the last row be
 
 Set `direction="horizontal"` to keep columns at any width: the plot then never gets narrower than `--et-sankey-chart-min-width` (`480px`) and scrolls sideways. `direction="vertical"` turns the flow at any width.
 
-<StoryEmbed id="components-data-display-sankey-chart--narrow-screen" height="620px" />
+@example sankey-chart/sankey-chart-narrow-screen 620px
 
 ### Colours
 
 Node `i` is drawn in its own `colorToken`, else in entry `i` of the app's [color palette](/core/theming#offering-colors-to-a-user) (`provideColorPalette`, optional), else in the chart's `colorToken`, else in a step of the surrounding accent. A link takes its source node's colour at reduced opacity. A palette is never cycled: the nodes past it share the accent in steps from full strength down to 40% (a lone node keeps the full accent), so they stay apart. Give the chart a `colorToken` to step a different theme, or give nodes a `colorToken` each to group them.
 
-<StoryEmbed id="components-data-display-sankey-chart--many-nodes" height="560px" />
+@example sankey-chart/sankey-chart-many-nodes 560px
 
 ## Interaction
 
