@@ -7,8 +7,8 @@ description: Update or add pages on the VitePress documentation site (apps/docs)
 
 The written docs are a VitePress site in `apps/docs`, deployed per branch
 (`main` → https://ethlete-sdk-docs.web.app, `next` → https://ethlete-sdk-docs-next.web.app).
-Storybook stays the interactive ground truth; the docs site holds the prose
-guides and embeds stories where a live demo helps.
+Storybook stays the interactive ground truth for development; the docs site holds
+the prose guides and live examples a consumer can copy.
 
 ## When docs must change
 
@@ -35,7 +35,10 @@ this page is missing a paragraph.
 | `apps/docs/components/<domain>.md` | One guide per domain (`button.md`, `forms.md`, `overlays.md`, …) |
 | `apps/docs/components/index.md` | Components overview - grouped guide list; keep in sync with the sidebar |
 | `apps/docs/.vitepress/config.mts` | Nav + grouped sidebar (`Floating & overlays`, `Elements`, `Forms`, `Layout & structure`, `Feedback & media`, `Utilities`) |
-| `apps/docs/.vitepress/theme/StoryEmbed.vue` | The story-embed component (registered globally as `<StoryEmbed>`) |
+| `apps/docs/.vitepress/examples-plugin.ts` | Expands `@example <domain>/<name>` lines (see below) |
+| `apps/docs/.vitepress/theme/Example.vue` | The example iframe (registered globally as `<Example>`) |
+| `apps/docs/.vitepress/theme/StoryEmbed.vue` | The legacy story-embed component (`<StoryEmbed>`) |
+| `apps/docs-examples/src/examples/<domain>/` | The example files, one standalone component each |
 
 ## Guide schema
 
@@ -47,8 +50,8 @@ reviewing one.
 
 ## Writing style
 
-- Code-first: lead with a canonical usage snippet (lift from the domain's
-  `stories/components/*.ts` - those are the maintained examples).
+- Code-first: lead with a canonical usage snippet (lift it from the domain's
+  examples in `apps/docs-examples`, or its stories when it has none yet).
 - **Yarn, never npm/npx** in install and run snippets (docs pages *and* package
   READMEs): `yarn add [--dev] @ethlete/<name>`, `yarn nx …`, `yarn eslint …` -
   the team uses yarn everywhere (root `yarn.lock`).
@@ -64,7 +67,39 @@ reviewing one.
 - Vue interpolation is live in markdown body text - keep `{{ }}` inside code
   fences only.
 
-## Story embeds
+## Examples
+
+New and migrated guides show live demos with `@example`, not `<StoryEmbed>`. A line of its own:
+
+```md
+@example select/select-country
+@example select/select-option-group 360px
+```
+
+expands at build time into an `<Example>` iframe (default height `420px`) and a `::: code-group`
+with `apps/docs-examples/src/examples/select/select-country.example.ts` and its
+`select-country.data.ts` if one exists. The code lands in the page and in `llms.txt`. A missing
+file fails the build. Example iframes share no Storybook channel, so the story-embed limit
+below does not apply.
+
+Add an example:
+
+1. Write `apps/docs-examples/src/examples/<domain>/<name>.example.ts` - one standalone component,
+   selector `app-<name>-example`. Long demo data goes in `<name>.data.ts`.
+2. Register it in `src/examples/<domain>/index.ts` (`'<domain>/<name>': () => import(...)`); a new
+   domain map is spread into `src/examples/index.ts`.
+3. The file is what a consumer copies, so: public `@ethlete/*` imports only, no Tailwind, no
+   `et-sb-` selectors, no Storybook wrapper markup, no static `style` attributes (CSP lint). The app
+   lays out the example's host as a column; themes come from the app config
+   (`src/app/app.config.ts`), so `brand` is the default and needs no `etProvideColor`.
+4. Run `npx nx lint docs-examples` and `npx nx typecheck docs-examples`.
+
+`nx serve docs` starts the examples dev server on `:4403` with it; the iframe uses it in dev and
+the same-origin `/examples/` (the copied `docs-examples` build) in a built site.
+
+## Story embeds (legacy)
+
+Pages not yet migrated still embed Storybook stories. Don't add new ones.
 
 ```md
 <StoryEmbed id="components-overlays-menu--default" height="420px" />
@@ -98,9 +133,10 @@ ready-made checker over the pages you touched:
 node .claude/skills/docs/scripts/verify-pages.mjs /cdk/ /cdk/table /components/menu
 ```
 
-It checks per page that the `h1` renders and that every `.story-embed` iframe
-(after `scrollIntoView()` - they're lazy) reaches `body.sb-show-main`, and exits
-non-zero on failure. Requires Storybook on `:4400`. Notes: `vitepress preview`
+It checks per page that the `h1` renders, that every `.story-embed` iframe
+(after `scrollIntoView()` - they're lazy) reaches `body.sb-show-main` and that every
+`.docs-example` iframe renders its component, and exits non-zero on failure. Story
+embeds need Storybook on `:4400`. Notes: `vitepress preview`
 serves a stale snapshot after a rebuild - restart it before verifying; a first
 run may need a retry for stories the Storybook dev server compiles on demand.
 If you script it yourself instead, the `verify-in-storybook` gotchas apply

@@ -172,9 +172,12 @@ with one guide per component domain under `apps/docs/components/`. Any change to
 a public API, behavior, or default in `libs/components` must update the matching
 guide (or add a new page for a new domain) - treat it like the changeset: part
 of the change, not a follow-up. Use the **`docs`** skill
-(`.agents/skills/docs/`) for structure, story embeds (`<StoryEmbed>`), and
-verification. Docs embeds reference Storybook story ids - when renaming a story
-title, grep `apps/docs` for the old id.
+(`.agents/skills/docs/`) for structure, examples, and verification.
+
+Live demos in a guide are `@example <domain>/<name>` lines: each renders a copyable component
+from `apps/docs-examples` (an Angular app, served on `:4403`, built into the docs site under
+`/examples/`) next to its source. New guides use `@example`; the remaining `<StoryEmbed>` pages
+reference Storybook story ids - when renaming a story title, grep `apps/docs` for the old id.
 
 ## Linting & style
 

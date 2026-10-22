@@ -1,6 +1,7 @@
-// Verify built docs pages: h1 renders and every <StoryEmbed> reaches sb-show-main.
+// Verify built docs pages: h1 renders, every <StoryEmbed> reaches sb-show-main and every
+// @example iframe renders its component.
 //
-// Usage (repo root; requires a running `vitepress preview` + Storybook on :4400):
+// Usage (repo root; requires a running `vitepress preview`, plus Storybook on :4400 for story embeds):
 //   npx vitepress preview apps/docs --port 4873 &   # serves the LAST BUILD — rebuild first
 //   node .claude/skills/docs/scripts/verify-pages.mjs /cdk/ /cdk/table /components/menu
 //
@@ -47,7 +48,24 @@ for (const path of pages) {
       failures++;
     }
   }
-  console.log(`${path} — h1="${h1.trim().slice(0, 40)}" embeds=${count} ${results.join(' ')}`);
+  const examples = page.locator('.docs-example iframe');
+  const exampleCount = await examples.count();
+  for (let i = 0; i < exampleCount; i++) {
+    const iframe = examples.nth(i);
+    await iframe.scrollIntoViewIfNeeded();
+    const src = await iframe.getAttribute('src');
+    try {
+      const frame = await (await iframe.elementHandle()).contentFrame();
+      await frame.waitForSelector('.app-examples-root > :not(p)', { timeout: 15000 });
+      results.push(`ok:${decodeURIComponent(src?.match(/id=([^&]+)/)?.[1] ?? '')}`);
+    } catch {
+      results.push(`EXAMPLE-FAIL(${src})`);
+      failures++;
+    }
+  }
+  console.log(
+    `${path} — h1="${h1.trim().slice(0, 40)}" embeds=${count} examples=${exampleCount} ${results.join(' ')}`,
+  );
 }
 
 await browser.close();

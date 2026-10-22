@@ -11,18 +11,18 @@ section genuinely doesn't apply - never reorder.
    Name the import (`Import BUTTON_IMPORTS`) and any required provider
    (`provideX()`) here or in an immediately following `## Setup` section.
    Cross-link related guides inline (`[toggletip](/components/toggletip)`).
-2. **Canonical usage snippet** - lifted from the domain's maintained stories
-   (`stories/components/*.ts`), minimal but runnable.
-3. **`## Live demo`** - the primary `<StoryEmbed>`, directly after the first
+2. **Canonical usage snippet** - lifted from the domain's examples in
+   `apps/docs-examples`, minimal but runnable.
+3. **`## Live demo`** - the primary `@example`, directly after the first
    snippet (after `## Anatomy` where structure must be explained first).
-   Multi-control domains (forms, loader, tabs) may instead embed one story per
+   Multi-control domains (forms, loader, tabs) may instead embed one example per
    flavor section and skip the standalone heading.
 4. **Body sections** - anatomy, options, flavors, feature showcases. Domain
    order is free, but:
    - Options/config go in tables with **source-verified defaults** (read the
      `input()` declarations - never guess).
-   - A feature section gets its own `<StoryEmbed>` when a story showcases it
-     (search `curl -s http://localhost:4400/index.json` for the id).
+   - A feature section gets its own `@example` when a demo helps (see the
+     **Examples** section of `SKILL.md`).
    - Showcase the "special" variants a consumer wouldn't discover from the
      options table alone (e.g. context menus, transforming overlay strategies,
      PiP hand-off, drag-to-dismiss).
@@ -60,9 +60,9 @@ section genuinely doesn't apply - never reorder.
 
 - [ ] Intro states what + when, names imports/providers
 - [ ] Canonical snippet before any deep-dive prose
-- [ ] Primary story embedded early (or per-flavor embeds)
+- [ ] Primary example embedded early (or per-flavor examples)
 - [ ] All option tables have source-verified defaults
-- [ ] Special variants showcased with embeds where stories exist
+- [ ] Special variants showcased with examples
 - [ ] Accessibility section (roles, keyboard, focus, dev-mode enforcement)
 - [ ] Theming section listing all public `--et-*` tokens (or design-spec link)
 - [ ] Error codes section linking the domain's range (if it throws)
