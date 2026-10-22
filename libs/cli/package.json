@@ -14,8 +14,7 @@
     "vite": "8.1.5"
   },
   "peerDependencies": {
-    "playwright": "^1.50.0",
-    "tslib": "^2.3.0"
+    "playwright": "^1.50.0"
   },
   "peerDependenciesMeta": {
     "playwright": {
