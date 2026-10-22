@@ -161,7 +161,7 @@ private guard = createOverlayUnsavedChangesGuard({
 
 For route-level protection (a form on a page rather than in an overlay) use [`createUnsavedChangesGuard`](/core/utilities#unsaved-changes) from `@ethlete/core`, which adds a `canDeactivate` bridge.
 
-<StoryEmbed id="components-overlays-overlay-unsaved-changes--default" height="520px" />
+@example overlay/overlay-unsaved-changes 520px
 
 ## Busy state
 
@@ -183,11 +183,11 @@ While it is `true`:
 - the pane carries `aria-busy="true"`.
 - every `etOverlayClose` inside the overlay renders disabled: a native `<button>` gets `disabled`, any other element `aria-disabled="true"`. A `disabled` you set yourself stays when `busy` ends.
 
-<StoryEmbed id="components-overlays-overlay-busy-state--default" height="420px" />
+@example overlay/overlay-busy-state 420px
 
 ## Live demo
 
-<StoryEmbed id="components-overlays-overlay--default" height="480px" />
+@example overlay/overlay-strategies 480px
 
 ## Confirm and alert dialogs
 
@@ -244,7 +244,7 @@ The dialog is an `alertdialog`: initial focus lands on the least destructive act
 
 For anything more than a title, a message and two actions - a form, a list, a third choice - write an overlay component with an [opener](/components/overlay-openers).
 
-<StoryEmbed id="components-overlays-alert-dialog--default" height="420px" />
+@example overlay/overlay-alert-dialog 420px
 
 ## Building overlay content
 
@@ -514,7 +514,7 @@ With `syncUrl: true`, closing the overlay steps back over the history entries it
 
 **Which way a transition plays** follows the routes' order in the config: navigating to a route listed earlier plays backward, later plays forward - so a settings dialog or a stepper animates the way its bar reads, whichever direction the user came from. A route the config doesn't know falls back to the navigation's own semantics (`back()` is backward, everything else forward). Override per navigation with `navigate(route, { navigationDirection })`, or per route with the `navigationDirection: { to, from }` hint on the route itself; both win over route order. Only the animation is affected - `back()` and `canGoBack()` keep following the actual navigation history.
 
-<StoryEmbed id="components-overlays-overlay-with-routing--default" height="520px" />
+@example overlay/overlay-routing 520px
 
 ### Guarding navigation
 
