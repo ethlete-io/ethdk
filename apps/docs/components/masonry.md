@@ -25,7 +25,7 @@ hand-built masonry behaves identically to the snippet above.
 
 ## Live demo
 
-<StoryEmbed id="components-layout-masonry--default" height="560px" />
+@example masonry/masonry-default 560px
 
 ## How the layout works
 
@@ -71,7 +71,7 @@ it reports back against it - padding and a border have to be inside the width it
 is the one property the layout dictates rather than leaves to you; an app with its own global reset already
 agrees with it.
 
-<StoryEmbed id="components-layout-masonry--appending-items" height="560px" />
+@example masonry/masonry-appending-items 560px
 
 ### A card changing height doesn't rearrange the grid
 
