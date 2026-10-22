@@ -64,7 +64,7 @@ export class ElementsTableComponent {
 }
 ```
 
-<StoryEmbed id="cdk-table--default" height="420px" />
+@example cdk-table/cdk-table 420px
 
 ### Building blocks
 
@@ -102,7 +102,7 @@ For client-side filtering, sorting and paging there's `TableDataSource<T>` - the
 
 The `etSort` directive tracks the active sort; `[et-sort-header]` elements register with it and cycle **ascending → descending → cleared** on click (start direction via `etSortStart`, drop the cleared state with `etSortDisableClear`). Inside a table column, a header without an explicit id inherits the column's name.
 
-<StoryEmbed id="cdk-sort--default" height="220px" />
+@example cdk-table/cdk-sort 220px
 
 | Input / output (on `etSort`)       | Default      | Purpose                                                                                                                                                     |
 | ---------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
