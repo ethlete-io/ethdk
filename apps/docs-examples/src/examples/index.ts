@@ -30,6 +30,7 @@ import { OVERLAY_EXAMPLES } from './overlay';
 import { PAGED_QUERY_TRIGGER_EXAMPLES } from './paged-query-trigger';
 import { PAGINATION_EXAMPLES } from './pagination';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
+import { PROGRESS_STEPS_EXAMPLES } from './progress-steps';
 import { SELECT_EXAMPLES } from './select';
 import { SKELETON_EXAMPLES } from './skeleton';
 import { SLIDER_EXAMPLES } from './slider';
@@ -74,6 +75,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...PAGED_QUERY_TRIGGER_EXAMPLES,
   ...PAGINATION_EXAMPLES,
   ...RICH_TEXT_EDITOR_EXAMPLES,
+  ...PROGRESS_STEPS_EXAMPLES,
   ...SELECT_EXAMPLES,
   ...SKELETON_EXAMPLES,
   ...SLIDER_EXAMPLES,
