@@ -1,109 +1,124 @@
-import { Component, ViewEncapsulation, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, ViewEncapsulation, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink, RouterOutlet, Routes } from '@angular/router';
 import { BREADCRUMB_COLLAPSE_IMPORTS, BREADCRUMB_IMPORTS, provideBreadcrumbManager } from '@ethlete/components';
-import { tap, timer } from 'rxjs';
+import { injectPathParam } from '@ethlete/core';
+import { map, timer } from 'rxjs';
 
 @Component({
-  selector: 'app-breadcrumb-squad-page',
-  template: `
-    <h2>Squad</h2>
+  selector: 'app-home-view',
+  template: `<h2>Home</h2>`,
+  encapsulation: ViewEncapsulation.None,
+})
+export class HomeViewComponent {}
 
+@Component({
+  selector: 'app-teams-view',
+  template: `
+    <ng-template etBreadcrumbSegment>
+      <ng-template etBreadcrumbItemTemplate>
+        <a etBreadcrumbItem routerLink="/teams">Teams</a>
+      </ng-template>
+    </ng-template>
+
+    <router-outlet />
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BREADCRUMB_IMPORTS, RouterLink, RouterOutlet],
+})
+export class TeamsViewComponent {}
+
+@Component({
+  selector: 'app-teams-list-view',
+  template: `<h2>Teams</h2>`,
+  encapsulation: ViewEncapsulation.None,
+})
+export class TeamsListViewComponent {}
+
+@Component({
+  selector: 'app-team-view',
+  template: `
+    <ng-template etBreadcrumbSegment>
+      <ng-template [loading]="isLoadingName()" etBreadcrumbItemTemplate>
+        <a [routerLink]="['/teams', teamId()]" etBreadcrumbItem>{{ name() }}</a>
+      </ng-template>
+    </ng-template>
+
+    <router-outlet />
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BREADCRUMB_IMPORTS, RouterLink, RouterOutlet],
+})
+export class TeamViewComponent {
+  protected teamId = injectPathParam('teamId');
+  protected name = toSignal(timer(1200).pipe(map(() => 'BSG Chemie Leipzig')), { initialValue: '…' });
+  protected isLoadingName = computed(() => this.name() === '…');
+}
+
+@Component({
+  selector: 'app-team-overview-view',
+  template: `<h2>Team</h2>`,
+  encapsulation: ViewEncapsulation.None,
+})
+export class TeamOverviewViewComponent {}
+
+@Component({
+  selector: 'app-team-squad-view',
+  template: `
     <ng-template etBreadcrumbSegment>
       <ng-template etBreadcrumbItemTemplate>
         <span etBreadcrumbItem>Squad</span>
       </ng-template>
     </ng-template>
+
+    <h2>Squad</h2>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BREADCRUMB_IMPORTS],
 })
-export class BreadcrumbSquadPageComponent {}
+export class TeamSquadViewComponent {}
 
-@Component({
-  selector: 'app-breadcrumb-team-page',
-  template: `
-    <h2>Team</h2>
-
-    <ng-template etBreadcrumbSegment>
-      <ng-template [loading]="isLoadingName()" etBreadcrumbItemTemplate>
-        <a etBreadcrumbItem href="#team">{{ name() }}</a>
-      </ng-template>
-    </ng-template>
-
-    @if (depth() >= 3) {
-      <app-breadcrumb-squad-page />
-    }
-  `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, BreadcrumbSquadPageComponent],
-})
-export class BreadcrumbTeamPageComponent {
-  public depth = input(2);
-
-  protected isLoadingName = signal(true);
-  protected name = signal('…');
-
-  constructor() {
-    timer(1200)
-      .pipe(
-        tap(() => {
-          this.name.set('BSG Chemie Leipzig');
-          this.isLoadingName.set(false);
-        }),
-        takeUntilDestroyed(),
-      )
-      .subscribe();
-  }
-}
-
-@Component({
-  selector: 'app-breadcrumb-teams-layout',
-  template: `
-    <ng-template etBreadcrumbSegment>
-      <ng-template etBreadcrumbItemTemplate>
-        <a etBreadcrumbItem href="#teams">Teams</a>
-      </ng-template>
-    </ng-template>
-
-    @if (depth() >= 2) {
-      <app-breadcrumb-team-page [depth]="depth()" />
-    } @else {
-      <h2>Teams</h2>
-    }
-  `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, BreadcrumbTeamPageComponent],
-})
-export class BreadcrumbTeamsLayoutComponent {
-  public depth = input(1);
-}
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', component: HomeViewComponent },
+  {
+    path: 'teams',
+    component: TeamsViewComponent,
+    children: [
+      { path: '', component: TeamsListViewComponent },
+      {
+        path: ':teamId',
+        component: TeamViewComponent,
+        children: [
+          { path: '', component: TeamOverviewViewComponent },
+          { path: 'squad', component: TeamSquadViewComponent },
+        ],
+      },
+    ],
+  },
+];
 
 @Component({
   selector: 'app-breadcrumb-routed-outlet-example',
   template: `
     <nav class="example-nav">
-      <button (click)="depth.set(0)" type="button">Home</button>
-      <button (click)="depth.set(1)" type="button">Teams</button>
-      <button (click)="depth.set(2)" type="button">Team</button>
-      <button (click)="depth.set(3)" type="button">Squad</button>
+      <a routerLink="/">Home</a>
+      <a routerLink="/teams">Teams</a>
+      <a routerLink="/teams/chemie">Team</a>
+      <a routerLink="/teams/chemie/squad">Squad</a>
     </nav>
 
     <et-breadcrumb-outlet etBreadcrumbCollapse />
 
     <ng-template etBreadcrumbSegment>
       <ng-template etBreadcrumbItemTemplate>
-        <a etBreadcrumbItem href="#home">Home</a>
+        <a etBreadcrumbItem routerLink="/">Home</a>
       </ng-template>
     </ng-template>
 
-    @if (depth() >= 1) {
-      <app-breadcrumb-teams-layout [depth]="depth()" />
-    } @else {
-      <h2>Home</h2>
-    }
+    <router-outlet />
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS, BreadcrumbTeamsLayoutComponent],
+  imports: [BREADCRUMB_IMPORTS, BREADCRUMB_COLLAPSE_IMPORTS, RouterLink, RouterOutlet],
   providers: [provideBreadcrumbManager()],
   styles: `
     .example-nav {
@@ -112,6 +127,4 @@ export class BreadcrumbTeamsLayoutComponent {
     }
   `,
 })
-export class BreadcrumbRoutedOutletExampleComponent {
-  protected depth = signal(3);
-}
+export class BreadcrumbRoutedOutletExampleComponent {}
