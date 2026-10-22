@@ -56,7 +56,7 @@ import { DROPZONE_IMPORTS } from '@ethlete/components';
 
 In single mode (the default) a successful upload replaces the drop area with a preview of the exact same size - no layout shift - plus replace/remove actions:
 
-<StoryEmbed id="components-forms-dropzone--default" height="420px" />
+@example dropzone/dropzone-default 420px
 
 ## How uploads flow into the form value
 
@@ -98,7 +98,7 @@ protected upload = createV2DropzoneUpload({
 });
 ```
 
-<StoryEmbed id="components-forms-dropzone--legacy-v-2-query" height="560px" />
+@example dropzone/dropzone-legacy-v-2-query 560px
 
 The entry's `error()` then holds a `RequestError` (rather than the new query's `QueryErrorResponse`); the failure message and `uploadErrorMessage` handle both shapes. Prefer a genuine `V2QueryClient` creator over a `createLegacyQueryCreator` interop wrapper here - the interop query has a known teardown limitation that a native v2 creator avoids.
 
@@ -235,13 +235,13 @@ Dropping several files on a single-mode dropzone is the one count the control it
 
 With `multiple`, entries render as a list below the drop area - image thumbnail (a `data:` URL, so a strict `img-src` without `blob:` still shows it; an image above `maxPreviewFileSize` shows the file icon instead), name, size, a progress bar while uploading and a remove button per entry:
 
-<StoryEmbed id="components-forms-dropzone--multiple" height="560px" />
+@example dropzone/dropzone-multiple 560px
 
 ## Existing media
 
 When the form starts with existing values (edit forms), the dropzone renders them as regular entries using your `resolveExisting` display info, with full remove support. Writing a new value into the control from outside is reconciled the same way:
 
-<StoryEmbed id="components-forms-dropzone--existing-media" height="560px" />
+@example dropzone/dropzone-existing-media 560px
 
 Initializing the control with a value **without** providing `resolveExisting` throws `ET2401` in dev mode.
 
@@ -249,7 +249,7 @@ Initializing the control with a value **without** providing `resolveExisting` th
 
 A failed upload renders like a validation error: the message (`"name": <server message>`, falling back to `"name" failed to upload.` via the `uploadFailed` label; the sentence itself is the `uploadFailedMessage` label) appears below the field in the app's error color theme, and the entry gets a retry icon button. Retrying re-executes the query with the file's original request args and clears the message on success:
 
-<StoryEmbed id="components-forms-dropzone--failing-uploads" height="420px" />
+@example dropzone/dropzone-failing-uploads 420px
 
 ::: warning Upload progress needs XHR
 Per-file progress requires `reportProgress: true` on the query creator **and** the XHR `HttpClient` backend - browsers do not deliver upload progress events with `provideHttpClient(withFetch())`. Without progress information the dropzone falls back to an indeterminate progress bar.

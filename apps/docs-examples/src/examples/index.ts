@@ -3,6 +3,7 @@ import { CALENDAR_EXAMPLES } from './calendar';
 import { CASCADER_EXAMPLES } from './cascader';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
+import { DROPZONE_EXAMPLES } from './dropzone';
 import { FORMS_EXAMPLES } from './forms';
 import { SELECT_EXAMPLES } from './select';
 import { SLIDER_EXAMPLES } from './slider';
@@ -16,6 +17,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CASCADER_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,
   ...DATE_TIME_INPUTS_EXAMPLES,
+  ...DROPZONE_EXAMPLES,
   ...FORMS_EXAMPLES,
   ...SELECT_EXAMPLES,
   ...SLIDER_EXAMPLES,
