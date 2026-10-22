@@ -72,7 +72,7 @@ its source next to it. Storybook stays as it is; it is not the example source.
   `<router-outlet>`) on it. The docs plugin expands an indented `@example` line, so an example can sit
   inside a list; move the dense line-chart example back into its list. Done.
 - Slice 5: the remaining guides with `<StoryEmbed>`: `cdk/`, `query/`, `query-devtools/`,
-  `contentful/`. Slice 5: cdk done (20 guides, 33 examples under `cdk-*`); query, query-devtools, contentful not started.
+  `contentful/`. Slice 5: done (cdk: 20 guides, 33 examples under `cdk-*`; query: 5 guides, 3 examples; query-devtools: 1; contentful: 3).
 
 ## Batch brief
 
