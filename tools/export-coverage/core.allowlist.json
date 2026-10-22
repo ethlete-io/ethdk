@@ -204,7 +204,6 @@
   "provideFocusVisibleTracker": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "provideLinkStore": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "provideLinkStoreConfig": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
-  "provideLocale": "internal: building block of @ethlete/components, no app imports it",
   "provideMetaConfig": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "provideMetaStore": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "provideNotifications": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
