@@ -22,7 +22,7 @@ import { ACCORDION_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-layout-accordion--default" height="420px" />
+@example accordion/accordion-default 420px
 
 ## Anatomy
 
@@ -67,7 +67,7 @@ section open at a time, which is the right shape for a set of mutually exclusive
 <et-accordion-group autoCloseOthers preventCloseLast>…</et-accordion-group>
 ```
 
-<StoryEmbed id="components-layout-accordion--always-one-open" height="360px" />
+@example accordion/accordion-always-one-open 360px
 
 Two things it deliberately does not do:
 
@@ -119,7 +119,7 @@ still has something to animate.
 </et-accordion>
 ```
 
-<StoryEmbed id="components-layout-accordion--lazy-content" height="360px" />
+@example accordion/accordion-lazy-content 360px
 
 ## Headless
 
@@ -147,7 +147,7 @@ the right role for free. A panel may be rendered conditionally as above - the tr
 drops its `aria-controls` while the panel isn't in the DOM, rather than pointing at a
 missing id.
 
-<StoryEmbed id="components-layout-accordion--headless" height="320px" />
+@example accordion/accordion-headless 320px
 
 ## Accessibility
 

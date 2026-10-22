@@ -1,4 +1,5 @@
 import { Type } from '@angular/core';
+import { ACCORDION_EXAMPLES } from './accordion';
 import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
 import { BANNER_EXAMPLES } from './banner';
@@ -40,6 +41,7 @@ import { TOOLTIP_EXAMPLES } from './tooltip';
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
+  ...ACCORDION_EXAMPLES,
   ...AVATAR_EXAMPLES,
   ...BADGE_EXAMPLES,
   ...BANNER_EXAMPLES,
