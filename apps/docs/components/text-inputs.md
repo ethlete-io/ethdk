@@ -43,7 +43,7 @@ registers itself into it via DI - no manual wiring:
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-input--default" height="320px" />
+@example text-inputs/input-default 320px
 
 `et-input` supports `type: 'text' | 'email' | 'password' | 'tel' | 'url' | 'search'`,
 `placeholder`, `autocomplete`, `textAlign`, and the shared control state
@@ -113,7 +113,7 @@ small button on a touch screen is a mis-grab far more often than an edit), and i
 marks the control touched **once, at the end** - so dragging past `min` on the way
 somewhere valid never flashes a validation error under the pointer.
 
-<StoryEmbed id="components-forms-number-input--coarse-and-fine-stepping" height="260px" />
+@example text-inputs/number-input-stepping 260px
 
 For a headless stepper of your own, `NumberInputDirective.stepBy(direction, { multiplier })`
 is the single entry point all of the above uses, and `numberInputStepMultiplierFrom(event)`
@@ -157,7 +157,7 @@ not: Angular reports no change for an equal write, so reset the field instead.
 <et-number-input [formField]="demoForm.amount" [decimals]="2" parseErrorMessage="Enter an amount" />
 ```
 
-<StoryEmbed id="components-forms-number-input--decimals" height="260px" />
+@example text-inputs/number-input-decimals 260px
 
 ## Password input - `et-password-input` {#password-input}
 
@@ -242,7 +242,7 @@ string is also treated as empty, so it does not float the label or count as a se
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-color-input--with-swatches" height="520px" />
+@example text-inputs/color-input-swatches 520px
 
 The field itself is a single tab stop that opens the panel. `[readonly]` keeps the
 field focusable and refuses to open the picker; `[disabled]` disables the trigger.
@@ -303,7 +303,7 @@ broken swatch.
 <et-color-input [formField]="demoForm.brandColor" [notations]="['hex']" />
 ```
 
-<StoryEmbed id="components-forms-color-input--pinned-notation" height="520px" />
+@example text-inputs/color-input-pinned-notation 520px
 
 `notations` lists what the panel's entry field offers, in the order its switch
 cycles through them: `'hex'`, `'rgb'`, `'hsl'`. Duplicates collapse, an entry the
@@ -372,7 +372,7 @@ control - place `etInputMask` on the `et-input` (or a headless `input[etInput]`)
 The native element always shows the masked text; the **form value stays raw by
 default** (`maskValueMode: 'raw' | 'masked'`).
 
-<StoryEmbed id="components-forms-masked-input--default" height="320px" />
+@example text-inputs/masked-input-default 320px
 
 ```html
 <et-form-field>
@@ -437,7 +437,7 @@ raw string.
 </et-otp-input>
 ```
 
-<StoryEmbed id="components-forms-otp-input--default" height="220px" />
+@example text-inputs/otp-input-default 220px
 
 | Input     | Type                                    | Default     | Description                                                                                                                                                       |
 | --------- | --------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -495,7 +495,7 @@ tag-input ergonomics on top of an option list: a "Create …" row, separator com
 input remains the deliberately minimal variant for pure free-text entry with no
 panel at all.
 
-<StoryEmbed id="components-forms-tag-input--default" height="260px" />
+@example text-inputs/tag-input-default 260px
 
 ```html
 <et-form-field>
@@ -551,7 +551,7 @@ regional-indicator emoji.
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-phone-input--default" height="220px" />
+@example text-inputs/phone-input-default 220px
 
 | Input                | Type             | Default  | Description                                                                                                                                                                                                                                     |
 | -------------------- | ---------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
