@@ -23,7 +23,7 @@ import { STAT_TILE_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-stat-tile--default" height="240px" />
+@example stat-tile/stat-tile-default 240px
 
 ## Anatomy
 
@@ -31,7 +31,7 @@ The tile renders, top to bottom: the `label`, the value (with `unit` after it, s
 
 The tile has no chrome of its own. Put it in an [`et-card`](/components/card) for the box, and lay a KPI row out with your own grid - the card already carries the surface, padding and border every dashboard tile needs.
 
-<StoryEmbed id="components-data-display-stat-tile--kpi-row" height="420px" />
+@example stat-tile/stat-tile-kpi-row 420px
 
 ## Formatting
 
@@ -55,7 +55,7 @@ A theme is looked up only when a delta needs it, so an app that never shows a co
 
 `loading` replaces the value and the footer with a [skeleton](/components/skeleton) sized like them, keeps the label, sets `aria-busy` on the host and hides a projected sparkline without collapsing its space, so the tile does not jump when the data lands.
 
-<StoryEmbed id="components-data-display-stat-tile--loading" height="240px" />
+@example stat-tile/stat-tile-loading 240px
 
 ## Sparkline
 
