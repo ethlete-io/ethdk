@@ -94,7 +94,8 @@ Each batch runs in a fresh subagent with this brief and the batch's guide list.
      your own server, by PID.
    - `DOCS_BASE=http://localhost:4513 node .agents/skills/docs/scripts/verify-pages.mjs /components/<page>`.
    - `npx prettier --write` on edited files.
-6. Commit once per guide: `git commit -m "docs(docs): Show copyable examples in the <guide> guide" -- <paths>`,
+6. `git commit -- <paths>` skips untracked files, so first run `git add <new file paths>` (only your
+   own new files). Then commit once per guide, with its example files in the same commit: `git commit -m "docs(docs): Show copyable examples in the <guide> guide" -- <paths>`,
    with no trailer. Never `git add -A`, `git stash` or `--amend`; no worktrees, branches or push.
 7. Add the batch to the slice 3 "Done:" list here and commit the plan.
 8. Report in under 10 lines: commits, example count per guide, kept embeds, failed checks. If context
