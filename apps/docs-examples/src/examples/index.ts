@@ -56,6 +56,7 @@ import { PIE_CHART_EXAMPLES } from './pie-chart';
 import { LINE_CHART_EXAMPLES } from './line-chart';
 import { SANKEY_CHART_EXAMPLES } from './sankey-chart';
 import { STAT_TILE_EXAMPLES } from './stat-tile';
+import { MATCH_EXAMPLES } from './match';
 import { STANDINGS_EXAMPLES } from './standings';
 import { STANDINGS_PICK_EXAMPLES } from './standings-pick';
 
@@ -119,6 +120,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...LINE_CHART_EXAMPLES,
   ...SANKEY_CHART_EXAMPLES,
   ...STAT_TILE_EXAMPLES,
+  ...MATCH_EXAMPLES,
   ...STANDINGS_EXAMPLES,
   ...STANDINGS_PICK_EXAMPLES,
 };

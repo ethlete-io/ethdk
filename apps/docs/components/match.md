@@ -25,7 +25,7 @@ export class MatchListComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-sports-match--default" height="420px" />
+@example match/match-default 420px
 
 ## Any backend: the normalized match
 
@@ -108,7 +108,7 @@ next to `W` says the same thing twice:
 { ...match, resultKind: 'outcome', homeScore: null, awayScore: null, winnerSide: 'home' }
 ```
 
-<StoryEmbed id="components-sports-match--outcome" height="360px" />
+@example match/match-outcome 360px
 
 `'outcome'` deriving its letters is what keeps the model honest: `winnerSide` already says who won, so nothing
 has to denormalize that into two strings - and a screen reader hears "FC Berlin won" rather than the letter
@@ -138,7 +138,7 @@ kick-off by the list around it, so repeating either inside every cell is noise. 
 exception** - it is the reason someone is looking at the card. For the densest cell there is, `hideNames`
 drops the names too, leaving emblems and results.
 
-<StoryEmbed id="components-sports-match--states" height="640px" />
+@example match/match-states 640px
 
 `size` pins one when you want the same card everywhere regardless of width:
 
@@ -172,7 +172,7 @@ below, with a brief flash behind the side that scored. Both values are **real el
 the roll - this library never clones a node to animate it - and the outgoing one is dropped on its own
 `animationend`, so nothing is left running.
 
-<StoryEmbed id="components-sports-match--live" height="420px" />
+@example match/match-live 420px
 
 The card is **dumb about transport**: it compares the values it is given against the ones it had. Point
 [`@ethlete/query`](/query/) polling or a socket at the `match` input and the rest follows.
