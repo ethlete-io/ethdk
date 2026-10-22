@@ -1,7 +1,7 @@
 # Proposal: one rule for color per surface
 
 Status: accepted on 2026-10-22 with the recommendations of the open questions. Slice 1 (core runtime,
-Storybook surfaces, docs) is done. The codemod and the root swap are later slices.
+Storybook surfaces, docs) and slice 2 (the codemod) are done. The root swap is a later slice.
 
 ## The problem
 
@@ -110,7 +110,8 @@ To keep an accent fixed on every surface, do not give it an entry.
   `semanticColorThemes: { success: X }` becomes `{ <name of the success theme>: X }`.
 - A `colorTheme` that only repeats the default theme, for example `colorTheme: 'brand'` on the dark
   Storybook surfaces, is removed.
-- The conversion is mechanical, so it can run in `et update`.
+- The migration is optional, so the codemod is a hand-run generator,
+  `nx g @ethlete/core:migrate-color-theme-variants`. `et update` does not run it.
 
 ## What I checked
 

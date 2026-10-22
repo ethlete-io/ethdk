@@ -47,20 +47,21 @@ For code that needs to know the currently active surface (e.g. pickers rendering
 
 A `SurfaceTheme` - all colors are `"R G B"` channel strings:
 
-| Field                 | Type                             | Required | Description                                                                                                                     |
-| --------------------- | -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                | `string`                         | yes      | Becomes the scope class `et-surface--<name>`.                                                                                   |
-| `type`                | `'light' \| 'dark'`              | yes      | The elevation family.                                                                                                           |
-| `elevation`           | `number`                         | yes      | Integer; auto-surface resolves `elevation + 1`.                                                                                 |
-| `isDefault`           | `boolean`                        | no       | Exactly one per `type`; paints `:root`.                                                                                         |
-| `background`          | `"R G B"`                        | yes      | Surface background.                                                                                                             |
-| `color`               | `"R G B"`                        | yes      | Primary text.                                                                                                                   |
-| `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                                 |
-| `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                                  |
-| `border`              | `"R G B"`                        | yes      | Border color.                                                                                                                   |
-| `interactionColor`    | swatch                           | no       | The surface's neutral swatch - see below.                                                                                       |
-| `semanticColorThemes` | `{ success?, warning?, error? }` | no       | The color theme serving each semantic `type` on this surface - see [semantic themes per surface](#semantic-themes-per-surface). |
-| `colorTheme`          | color theme name                 | no       | The color theme the surface element applies to its subtree - see [a default color per surface](#a-default-color-per-surface).   |
+| Field                 | Type                             | Required | Description                                                                                                          |
+| --------------------- | -------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `name`                | `string`                         | yes      | Becomes the scope class `et-surface--<name>`.                                                                        |
+| `type`                | `'light' \| 'dark'`              | yes      | The elevation family.                                                                                                |
+| `elevation`           | `number`                         | yes      | Integer; auto-surface resolves `elevation + 1`.                                                                      |
+| `isDefault`           | `boolean`                        | no       | Exactly one per `type`; paints `:root`.                                                                              |
+| `background`          | `"R G B"`                        | yes      | Surface background.                                                                                                  |
+| `color`               | `"R G B"`                        | yes      | Primary text.                                                                                                        |
+| `colorMuted`          | `"R G B"`                        | yes      | Secondary text.                                                                                                      |
+| `colorSubtle`         | `"R G B"`                        | yes      | Tertiary text.                                                                                                       |
+| `border`              | `"R G B"`                        | yes      | Border color.                                                                                                        |
+| `interactionColor`    | swatch                           | no       | The surface's neutral swatch - see below.                                                                            |
+| `colorThemeVariants`  | `{ <chosen theme>: <theme> }`    | no       | Swaps a chosen accent for a version that reads well on this surface - see [colors per surface](#colors-per-surface). |
+| `semanticColorThemes` | `{ success?, warning?, error? }` | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
+| `colorTheme`          | color theme name                 | no       | **Deprecated.** Use `colorThemeVariants`.                                                                            |
 
 As an example, this repo's Storybook registers `light` (elevation 0), `light-elevated` (1), `dark` (0), `dark-elevated` (1) and `dark-elevated-2` (2).
 
@@ -451,6 +452,12 @@ surface needs an `[etProvideSurface]` at the app root.
 `colorTheme` and `semanticColorThemes` are deprecated and still work: `colorTheme: X` acts as an entry for the
 `isDefault` theme, `semanticColorThemes: { success: X }` as one for the theme with `type: 'success'`. An entry in
 `colorThemeVariants` wins over both.
+
+Run `nx g @ethlete/core:migrate-color-theme-variants` to convert your surface themes. It reads the color themes of
+the workspace to find the `isDefault` theme and the theme of each `type`, and it removes a `colorTheme` that names
+the default theme. It reports a value it cannot convert, for example a variable, and leaves it as it is. Pass
+`--projects` or `--include <path prefix>` to migrate one app at a time. The migration is optional, so `et update`
+does not run it.
 
 `injectDefaultColorTheme()` returns the registered `ColorTheme` with `isDefault: true` the same way - useful for a shared component with no themed ancestor to inherit from (a page-level `et-spinner`, say), where "the app's default accent" is the right fallback. It throws if no theme is marked `isDefault: true`.
 

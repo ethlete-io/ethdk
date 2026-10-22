@@ -21,6 +21,11 @@
       "schema": "./migrate-surface-interaction-swatch/schema.json",
       "description": "Rewrite surface theme interactionColor maps into the { color, onColor, inkColor } swatch shape"
     },
+    "migrate-color-theme-variants": {
+      "implementation": "./migrate-color-theme-variants/migration",
+      "schema": "./migrate-color-theme-variants/schema.json",
+      "description": "Rewrite surface theme colorTheme and semanticColorThemes into colorThemeVariants"
+    },
     "migrate-legacy-color-themes": {
       "implementation": "./migrate-legacy-color-themes/migration",
       "schema": "./migrate-legacy-color-themes/schema.json",
