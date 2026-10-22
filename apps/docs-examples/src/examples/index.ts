@@ -41,6 +41,7 @@ import { SCROLLBAR_EXAMPLES } from './scrollbar';
 import { SELECT_EXAMPLES } from './select';
 import { SKELETON_EXAMPLES } from './skeleton';
 import { SLIDER_EXAMPLES } from './slider';
+import { STREAM_EXAMPLES } from './stream';
 import { TABLE_EXAMPLES } from './table';
 import { TABS_EXAMPLES } from './tabs';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
@@ -95,6 +96,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...SELECT_EXAMPLES,
   ...SKELETON_EXAMPLES,
   ...SLIDER_EXAMPLES,
+  ...STREAM_EXAMPLES,
   ...TABLE_EXAMPLES,
   ...TABS_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,

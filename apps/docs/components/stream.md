@@ -70,7 +70,7 @@ Only a change of the source input creates a new embed. The extras, `width` and `
 
 ## Live demo
 
-<StoryEmbed id="components-media-stream-youtube--default" height="480px" />
+@example stream/stream-default 480px
 
 ## Player state & control
 
@@ -111,7 +111,7 @@ export class PlayToggleComponent {
 </et-youtube-player-slot>
 ```
 
-<StoryEmbed id="components-media-stream-youtube--slot-controls" height="640px" />
+@example stream/stream-slot-controls 640px
 
 ## Consent gating
 
@@ -145,7 +145,7 @@ Rebinding the slot to another video while the gate is still up is safe: acceptin
 
 Revoking consent through the `ConsentHandler` destroys every mounted player, ends its PiP, and puts the gate back up.
 
-<StoryEmbed id="components-media-stream-youtube--consent-provider" height="560px" />
+@example stream/stream-consent-provider 560px
 
 When several slots share a player, rebinding one of them to another id gives that slot its own player and leaves the others playing. The loading and error overlays show in whichever slot currently holds the player.
 
@@ -195,13 +195,13 @@ export class MyPipChromeComponent implements PipChromeRef {
 }
 ```
 
-The `CustomPipChrome` story builds this chrome from the headless directives and floats two players in it.
+The example below builds this chrome from the headless directives and floats two players in it.
 
-<StoryEmbed id="components-media-stream-youtube--custom-pip-chrome" height="640px" />
+@example stream/stream-custom-pip-chrome 640px
 
-The `Mixed` story demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
+The example below demonstrates a PiP grid mixing 16∶9 and 9∶16 players.
 
-<StoryEmbed id="components-media-stream-mixed--mixed-aspect-ratios" height="560px" />
+@example stream/stream-mixed-aspect-ratios 560px
 
 ## Localization
 
