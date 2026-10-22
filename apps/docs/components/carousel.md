@@ -19,7 +19,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-media-carousel--default" height="460px" />
+@example carousel/carousel-default 460px
 
 ## Slides are data and a template
 
@@ -164,7 +164,7 @@ What this means in practice:
 - Clones are `aria-hidden` and `inert`, and carry no `N of M` label, so a screen reader user never
   meets the same slide twice. They are marked `data-clone` if you need to see them in the DOM.
 
-<StoryEmbed id="components-media-carousel--loop" height="440px" />
+@example carousel/carousel-loop 440px
 
 Seamless looping needs rendered clones, so it applies where the carousel renders the slides. In two
 cases `loop` stays a wrapping _jump_ back to the other end instead:
@@ -224,7 +224,7 @@ It applies only where the track shows one slide per view. With the content pinne
 whose box is partly on screen at rest would have its content outside that box and show as blank - so a
 peeking layout wants `dim`.
 
-<StoryEmbed id="components-media-carousel--wipe-transition" height="440px" />
+@example carousel/carousel-wipe 440px
 
 ### Two drivers
 
@@ -371,7 +371,7 @@ A hand-built carousel renders its own children, so it gets no clones and `loop` 
 jump. It does still get the transition system: `transition` mounts the progress property and the
 effects, and `.et-carousel-item` is the element they apply to.
 
-<StoryEmbed id="components-media-carousel--headless" height="360px" />
+@example carousel/carousel-headless 360px
 
 ## Accessibility
 
