@@ -10,6 +10,7 @@ import { CDK_MASONRY_EXAMPLES } from './cdk-masonry';
 import { CDK_PROGRESS_SPINNER_EXAMPLES } from './cdk-progress-spinner';
 import { CDK_QUERY_ERROR_EXAMPLES } from './cdk-query-error';
 import { CDK_PICTURE_EXAMPLES } from './cdk-picture';
+import { CDK_PAGINATION_EXAMPLES } from './cdk-pagination';
 import { CDK_SKELETON_EXAMPLES } from './cdk-skeleton';
 import { CDK_TABLE_EXAMPLES } from './cdk-table';
 import { CDK_TABS_EXAMPLES } from './cdk-tabs';
@@ -98,6 +99,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CDK_PROGRESS_SPINNER_EXAMPLES,
   ...CDK_QUERY_ERROR_EXAMPLES,
   ...CDK_PICTURE_EXAMPLES,
+  ...CDK_PAGINATION_EXAMPLES,
   ...CDK_SKELETON_EXAMPLES,
   ...CDK_TABLE_EXAMPLES,
   ...CDK_TABS_EXAMPLES,

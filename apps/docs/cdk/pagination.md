@@ -27,7 +27,7 @@ export class ProductListComponent {
 }
 ```
 
-<StoryEmbed id="cdk-pagination--default" height="180px" />
+@example cdk-pagination/cdk-pagination 180px
 
 Navigation happens through the control: clicking a page calls `pageControl.setValue(page)`, so your data loading just reacts to `pageControl.valueChanges` (pages are 1-based).
 
