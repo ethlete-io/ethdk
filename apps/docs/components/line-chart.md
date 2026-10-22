@@ -20,7 +20,7 @@ visitors: LineChartDatum[] = [
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-line-chart--multi-series" height="420px" />
+@example line-chart/line-chart-multi-series 420px
 
 ## Options
 
@@ -56,7 +56,7 @@ The tooltip and the table name each instant at the resolution the data has: the 
 
 Mixing `Date` and string `x` values reports `ET5120` to the `ErrorHandler` in dev mode, and the chart draws nothing. Like the bar chart, it calls `console.warn` in dev mode when `data` and `series` do not fit: `values` without `series`, `series` over data that carries only `value`, or a series `key` no datum carries. It also warns when two series share one `colorToken`.
 
-<StoryEmbed id="components-data-display-line-chart--time-axis" height="380px" />
+@example line-chart/line-chart-time-axis 380px
 
 ## Scale and gaps
 
@@ -70,7 +70,7 @@ Set `includeZero` to `false` to fit the axis to the data instead, still rounded 
 
 A `null`, missing or non-finite value breaks the line: the series has a gap at that x, and the tooltip and the table leave it out. A point with no defined neighbour on either side gets a dot, so a lone value never disappears. `points` puts a dot on every point.
 
-<StoryEmbed id="components-data-display-line-chart--gaps" height="420px" />
+@example line-chart/line-chart-gaps 420px
 
 When a chart is first drawn, the lines are revealed from left to right while they fade in. Under `prefers-reduced-motion: reduce` they appear without the animation.
 
@@ -102,7 +102,7 @@ Series colors come from the app's color palette exactly as for the [bar chart](/
 
 `stacked` puts each series on top of the ones before it: its line runs at the running total and, with `area`, its fill covers only its own band. A stacked band is opaque: its series color mixed with the surface background, so the grid does not show through. Every band is drawn before every line, so no band covers a line. Positive values stack up from zero and negative ones down, each side on its own. A missing value leaves a gap in its own series and counts as zero for the series above it. The tooltip lists each series' own value, not the running total.
 
-<StoryEmbed id="components-data-display-line-chart--stacked-area" height="420px" />
+@example line-chart/line-chart-stacked-area 420px
 
 ## Drill-down
 
@@ -158,12 +158,14 @@ The story `Components/Data display/Line chart/Mark activate` shows it.
 
   Tabbing back returns to the x you left. The focused x draws a ring around its column. On dense data, where an x gets only a few pixels, the ring stays at least `--et-line-chart-focus-ring-min-width` (12px) wide, centred on the x, and overlaps its neighbours; the hover and tap targets stay one per x.
 
-  <StoryEmbed id="components-data-display-line-chart--dense-daily" height="380px" />
-
 - Hovering anywhere in an x's column, focusing it from the keyboard, or tapping it shows a crosshair, a dot on every series and a [tooltip](/components/tooltip) that lists every series at that x. It points at the topmost point. The tooltip waits for the show delay (`etLineChartSliceShowDelay`, 300ms) when the pointer first enters the plot, or after the tooltip was closed under it; while it is open, moving to another x moves it at once. Dragging a finger across the plot moves the tooltip to the x under it; a vertical drag still scrolls the page. A tap elsewhere closes it. The hover crosshair only applies on devices that can hover, so it never sticks after a tap.
 - The legend is a list of series names, each behind a swatch. Colour is never the only cue: the tooltip and every description name the series.
 - A visually hidden `<table>` repeats the data with `label` as its caption, one row per x and one column per series, so a screen reader can read the values as a table.
 - The axis labels are `aria-hidden`; the x elements and the table carry the same values.
+
+The focus ring on dense data, here 90 days of sessions:
+
+@example line-chart/line-chart-dense-daily 380px
 
 ## Theming
 
