@@ -68,7 +68,7 @@ Inputs accept projected affixes via `[etInputPrefix]` / `[etInputSuffix]` (an ic
 
 `InputImports` bundles eleven input variants, each a thin shell around the corresponding native input type: `et-text-input`, `et-textarea-input`, `et-number-input` (value as `number | null`), `et-email-input`, `et-password-input`, `et-search-input`, `et-tel-input`, `et-date-input`, `et-time-input`, `et-date-time-input` and `et-color-input`. All support `placeholder` and `autocomplete`; number and date variants add `min` / `max`.
 
-<StoryEmbed id="cdk-forms-input-text--default" height="220px" />
+@example cdk-forms/cdk-input-text 460px
 
 Extras worth knowing:
 
@@ -169,7 +169,7 @@ import { SliderImports } from '@ethlete/cdk';
 
 `SliderImports`. Defaults: `min` 0, `max` 100, `step` 1. Options: `vertical`, `inverted` and `renderValueTooltip`, plus a custom thumb via `<ng-template etSliderThumbContentTemplate>`. Full `role="slider"` semantics with keyboard support (arrows ±1 step, PageUp/PageDown ±10, Home/End) and mouse/touch dragging that snaps to `step`.
 
-<StoryEmbed id="cdk-forms-slider--default" height="200px" />
+@example cdk-forms/cdk-slider 520px
 
 ## Selection list
 
@@ -228,7 +228,7 @@ import { SelectImports } from '@ethlete/cdk';
 
 `SelectImports`. An overlay-based listbox with single/`multiple` selection and complete keyboard handling - Alt+Arrow and Space open, typeahead jumps to options, Escape/Tab close, Backspace removes the last value in multiple mode.
 
-<StoryEmbed id="cdk-forms-select-select--default" height="380px" />
+@example cdk-forms/cdk-select 380px
 
 ### Combobox
 
@@ -247,7 +247,7 @@ An autocomplete-style select: a text input filters an option list in an overlay.
 import { ComboboxImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-forms-select-combobox--default" height="420px" />
+@example cdk-forms/cdk-combobox 420px
 
 | Input                | Default          | Purpose                                                                                                                               |
 | -------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
