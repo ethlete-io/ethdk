@@ -31,7 +31,7 @@ Each `et-inline-tab` carries its own label and content; the group renders the ba
 </et-inline-tabs>
 ```
 
-<StoryEmbed id="cdk-tabs-inline--default" height="220px" />
+@example cdk-tabs/cdk-inline-tabs-default 220px
 
 ### Group options
 
@@ -75,7 +75,7 @@ Replace the plain-text label with a template for icons, badges or counts:
 </et-inline-tabs>
 ```
 
-<StoryEmbed id="cdk-tabs-inline--with-custom-label" height="220px" />
+@example cdk-tabs/cdk-inline-tabs-custom-label 220px
 
 ### Lazy content
 
@@ -105,7 +105,7 @@ The bar is a `<nav>` and every tab is a router link, so the browser URL is the s
 <router-outlet />
 ```
 
-<StoryEmbed id="cdk-tabs-navigation--default" height="220px" />
+@example cdk-tabs/cdk-nav-tabs-default 220px
 
 The active link is derived from the router, honoring `routerLinkActiveOptions` when a `routerLinkActive` is present (`{ exact: false }` otherwise), and re-evaluated on every `NavigationEnd`.
 
