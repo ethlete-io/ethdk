@@ -39,7 +39,7 @@ export class NewsArticleComponent {
 
 ## Live demo
 
-<StoryEmbed id="contentful-rich-text--embedded-entries" height="520px" />
+@example contentful-rich-text/embedded-entries 520px
 
 All config options (defaults from `createContentfulConfig()`):
 
@@ -112,9 +112,9 @@ Every element gets the classes `et-contentful-rich-text-default-element` and `et
 
 The list and table stories exercise nested structures and empty-cell-safe table output:
 
-<StoryEmbed id="contentful-rich-text--lists" height="420px" />
+@example contentful-rich-text/lists 420px
 
-<StoryEmbed id="contentful-rich-text--tables" height="420px" />
+@example contentful-rich-text/tables 420px
 
 When `content` changes, the renderer **diffs** the new document against the previous render. Unchanged plain elements and text spans keep their DOM nodes; only nodes whose output, position or ancestry actually changed are rebuilt. Embedded components are keyed by their entry (or asset) id: as long as the same entry stays in the document its component instance survives — even across reorders, where the instance moves with its entry. Surviving instances receive new inputs reactively (they are bound with `inputBinding`, so signal inputs update in place); a different entry taking a slot always gets a fresh instance. Setting an identical document performs no DOM writes at all.
 
