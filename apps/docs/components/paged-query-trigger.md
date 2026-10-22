@@ -25,7 +25,7 @@ protected matches = createPagedQueryStack({
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-paged-query-trigger--default" height="620px" />
+@example paged-query-trigger/paged-query-trigger-default 620px
 
 ## Inputs
 
