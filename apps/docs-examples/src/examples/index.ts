@@ -1,4 +1,5 @@
 import { Type } from '@angular/core';
+import { Routes } from '@angular/router';
 import { ACCORDION_EXAMPLES } from './accordion';
 import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
@@ -65,7 +66,9 @@ import { SCHEDULER_EXAMPLES } from './scheduler';
 import { STANDINGS_EXAMPLES } from './standings';
 import { STANDINGS_PICK_EXAMPLES } from './standings-pick';
 
-export type ExampleLoader = () => Promise<Type<unknown>>;
+export type RoutedExample = { component: Type<unknown>; routes: Routes };
+
+export type ExampleLoader = () => Promise<Type<unknown> | RoutedExample>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
   ...ACCORDION_EXAMPLES,
