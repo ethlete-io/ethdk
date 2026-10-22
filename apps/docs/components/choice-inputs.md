@@ -40,8 +40,8 @@ Boolean controls pair with a label inside `et-choice-field` (instead of
 </et-choice-field>
 ```
 
-<StoryEmbed id="components-forms-checkbox--indeterminate" height="220px" />
-<StoryEmbed id="components-forms-switch--default" height="220px" />
+@example choice-inputs/checkbox-indeterminate 220px
+@example choice-inputs/switch-default 220px
 
 - `et-checkbox` - `role="checkbox"`, `checked` + `indeterminate` models
   (`aria-checked="mixed"` when indeterminate; toggling an indeterminate checkbox
@@ -84,7 +84,7 @@ keyboard navigation is roving-tabindex with wrapping arrows:
 </et-radio-group>
 ```
 
-<StoryEmbed id="components-forms-selection-list-segmented-button-group--default" height="220px" />
+@example choice-inputs/segmented-button-group-default 220px
 
 - The group label is a projected `et-label` - it renders the `*` marker when the
   group is `required` and wires `aria-labelledby`. A plain
@@ -137,7 +137,7 @@ take the `pending` input signal forms binds, so a pending async validator shows 
 hides a group (a schema `hidden(...)` rule does the same), and `[warnings]` shows advisories on a
 group not bound to signal forms.
 
-<StoryEmbed id="components-forms-selection-list-radio-group--async-validation" height="300px" />
+@example choice-inputs/radio-group-async-validation 300px
 
 #### Keyboard {#selection-list-keyboard}
 
@@ -174,7 +174,7 @@ picked.
 </et-checkbox-group>
 ```
 
-<StoryEmbed id="components-forms-selection-list-checkbox-group--group-control" height="300px" />
+@example choice-inputs/checkbox-group-select-all 300px
 
 It is a real `role="checkbox"` with `aria-checked="mixed"`, **not** an option: a listbox option has
 no mixed state (it uses `aria-selected`), and "some of these are on" is exactly what this control has
@@ -206,7 +206,7 @@ wrapping row instead of a column:
 <et-radio-group [formField]="form.size" orientation="horizontal">…</et-radio-group>
 ```
 
-<StoryEmbed id="components-forms-selection-list-checkbox-group--horizontal" height="240px" />
+@example choice-inputs/checkbox-group-horizontal 240px
 
 The group's label and its error/hint block keep their own lines above and below - only the options
 move, and an option is still a direct child of the group, so nothing about the projected DOM changes.
@@ -254,7 +254,7 @@ thing to aim at; a card is a large one.
 </et-radio-group>
 ```
 
-<StoryEmbed id="components-forms-selection-list-radio-group--card" height="320px" />
+@example choice-inputs/radio-group-card 320px
 
 `et-checkbox-option` takes the same preset - swap `et-radio-group` for
 `et-checkbox-group` above and a multi-select list of cards renders identically
@@ -318,7 +318,7 @@ that hit area, so a click on one does not toggle the control - and a click on a
 link in any `et-label` follows the link without activating the control.
 :::
 
-<StoryEmbed id="components-forms-checkbox--card-with-interactive-content" height="260px" />
+@example choice-inputs/checkbox-card-interactive 260px
 
 All three components share **one** token set, so a card radius is set once and
 every card follows: `--et-selection-card-padding` (`16px`), `-border-radius`
@@ -350,7 +350,7 @@ underline thickness and the baseline rule. The accent sits in the underline rath
 than the label, hovering an unselected segment warms its label without filling it,
 and the press does not scale the segment - all as a tab bar behaves.
 
-<StoryEmbed id="components-forms-selection-list-segmented-button-group--tabs" height="220px" />
+@example choice-inputs/segmented-button-group-tabs 220px
 
 ::: warning It is still a selection control
 The tabs variant only changes how the selection is drawn. The group is still a
@@ -372,7 +372,7 @@ stop). Value is `number | null` - `null` means no rating.
 </et-rating>
 ```
 
-<StoryEmbed id="components-forms-rating--default" height="220px" />
+@example choice-inputs/rating-default 220px
 
 | Input        | Type                  | Default | Description                                                                                                               |
 | ------------ | --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
