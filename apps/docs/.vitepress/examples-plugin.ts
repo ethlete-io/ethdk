@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 
 const EXAMPLES_DIR = fileURLToPath(new URL('../../docs-examples/src/examples/', import.meta.url));
-const EXAMPLE_LINE = /^@example ([\w-]+\/[\w-]+)(?: (\S+))?[ \t]*$/gm;
+const EXAMPLE_LINE = /^([ \t]*)@example ([\w-]+\/[\w-]+)(?: (\S+))?[ \t]*$/gm;
 
 const fenceFor = (code: string) => {
   const longestRun = Math.max(0, ...(code.match(/`+/g) ?? []).map((run) => run.length));
@@ -25,7 +25,7 @@ export const docsExamples = (): Plugin => ({
   transform(source, id) {
     if (!id.endsWith('.md') || !source.includes('@example ')) return null;
 
-    const code = source.replace(EXAMPLE_LINE, (_line, exampleId: string, height?: string) => {
+    const code = source.replace(EXAMPLE_LINE, (_line, indent: string, exampleId: string, height?: string) => {
       const examplePath = `${EXAMPLES_DIR}${exampleId}.example.ts`;
       const dataPath = `${EXAMPLES_DIR}${exampleId}.data.ts`;
 
@@ -46,7 +46,9 @@ export const docsExamples = (): Plugin => ({
         '',
         ...files.map(codeBlock).flatMap((block) => [block, '']),
         ':::',
-      ].join('\n');
+      ]
+        .join('\n')
+        .replace(/^(?=.)/gm, indent);
     });
 
     return code === source ? null : { code, map: null };
