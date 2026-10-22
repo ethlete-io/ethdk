@@ -19,7 +19,7 @@ export class CalendarComponent {}
 
 ## Live demo
 
-<StoryEmbed id="components-date-time-scheduler--default" height="640px" />
+@example scheduler/scheduler-default 640px
 
 ## The appointment model
 
@@ -103,7 +103,7 @@ At the same ~480px the view switch reflows at, two more things change - both dri
 - **Today drops its text** and becomes a round icon button matching the prev/next buttons beside it. It carries the same `aria-label` in both shapes, so its accessible name never changes.
 - **Toolbar actions become FABs**, wrapped in a [floating action](/components/floating-action): they sit in the header where they were written, and pin themselves to the bottom-inline-end corner of the viewport once the header has scrolled away. An action with an `icon` renders icon-only (named by its `label`); one without renders as an extended FAB with its label.
 
-<StoryEmbed id="components-date-time-scheduler--narrow" height="640px" />
+@example scheduler/scheduler-narrow 640px
 
 ## Swipe navigation {#swipe-navigation}
 
@@ -135,7 +135,7 @@ An hour axis with one column per day - a single column for the day view, seven f
 
 The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid-body-max-height`, default `600px`) rather than growing the page - the day header and all-day strip above it always stay in view. On mount it scrolls itself to a relevant hour: the current time (with an hour of lead-in) when today is one of the visible days, else the earliest appointment's hour, else 9am - so opening day/week view never starts on an empty screen scrolled to midnight. It scrolls once, on mount, not on every `focusedDate` change - stepping to the next day/week never yanks your own scroll position back.
 
-<StoryEmbed id="components-date-time-scheduler--week" height="640px" />
+@example scheduler/scheduler-week 640px
 
 ```html
 <et-scheduler-time-grid-view />
@@ -143,7 +143,7 @@ The 24-hour body is bounded and internally scrollable (`--et-scheduler-time-grid
 
 It takes no inputs of its own - like the month view, it reads its host `[etScheduler]` via DI. Appointments that overlap in time are packed into side-by-side columns wide enough to fit the busiest overlap group in view, so nothing ever visually overlaps; appointments that don't overlap anything each get the column's full width. A block then widens into the columns to its right that nothing overlapping it occupies, so one short overlap in the morning no longer thins every block it is transitively grouped with for the rest of the day. A sub-appointment renders in its own column exactly like any other appointment (its own overlap group can differ from its parent's) but gets a depth-scaled inline inset and a shifted color dot, capped past four levels, as a "belongs to" cue - the day view below shows a two-level chain next to its sibling.
 
-<StoryEmbed id="components-date-time-scheduler--day" height="640px" />
+@example scheduler/scheduler-day 640px
 
 Clicking a block (or an all-day entry) sets `selectedAppointmentId`, same as the month view. Both can also be dragged - a block to another time or day, an all-day entry across whole days - and resized by their edges: the block's top and bottom, the entry's leading and trailing. See [move and resize](#move-and-resize).
 
@@ -169,13 +169,13 @@ protected businessHours: SchedulerBusinessHours[] = [
 
 `daysOfWeek` counts from `0` = Sunday. `start` and `end` are `HH:mm`, and `end` may be `24:00` to stay open until midnight. An entry that does not parse, or ends before it starts, reports `ET4506` to the `ErrorHandler` in development, and the grid shades nothing until it is fixed. The shading is only a cue: appointments still render and can still be dragged, and a drag-to-create still starts, on a shaded stretch. The fill comes from the surface's interaction color at 6%; set `--et-scheduler-time-grid-non-business-background` to change it.
 
-<StoryEmbed id="components-date-time-scheduler--business-hours" height="640px" />
+@example scheduler/scheduler-business-hours 640px
 
 ## Agenda view
 
 A flat list, grouped by day: each day of the visible range that has at least one appointment gets a section, with its appointments as full-width badges in chain order (depth-first, indented per level). A day with nothing on it is skipped entirely rather than rendering an empty section.
 
-<StoryEmbed id="components-date-time-scheduler--agenda" height="640px" />
+@example scheduler/scheduler-agenda 640px
 
 ```html
 <et-scheduler-agenda-view />
