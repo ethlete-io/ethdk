@@ -2,6 +2,7 @@ import { Type } from '@angular/core';
 import { BUTTON_EXAMPLES } from './button';
 import { CALENDAR_EXAMPLES } from './calendar';
 import { CASCADER_EXAMPLES } from './cascader';
+import { CHIP_EXAMPLES } from './chip';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
 import { COMMAND_PALETTE_EXAMPLES } from './command-palette';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
@@ -27,6 +28,7 @@ export type ExampleLoader = () => Promise<Type<unknown>>;
 export const EXAMPLES: Record<string, ExampleLoader> = {
   ...BUTTON_EXAMPLES,
   ...CASCADER_EXAMPLES,
+  ...CHIP_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,
   ...COMMAND_PALETTE_EXAMPLES,
   ...DATE_TIME_INPUTS_EXAMPLES,
