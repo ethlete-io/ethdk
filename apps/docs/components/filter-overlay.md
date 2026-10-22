@@ -50,7 +50,7 @@ export class TeamFiltersOverlayComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-overlays-filter-overlay--default" height="620px" />
+@example filter-overlay/filter-overlay-default 620px
 
 ## Edit a copy, then commit
 
@@ -100,7 +100,7 @@ enabled.
 
 **Without a preview** the button simply reads "Show results", enabled.
 
-<StoryEmbed id="components-overlays-filter-overlay--without-preview" height="420px" />
+@example filter-overlay/filter-overlay-without-preview 420px
 
 ::: warning cdk parity note
 cdk's default submit-button resolver returned its _loading_ state when there was no query state and no total -
