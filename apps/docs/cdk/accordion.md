@@ -21,7 +21,7 @@ documents the CDK version, which still receives bug fixes.
 import { AccordionImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-accordion--default" height="260px" />
+@example cdk-accordion/cdk-accordion-default 360px
 
 ## Options
 
@@ -63,7 +63,7 @@ Wrap accordions in `et-accordion-group` to make them exclusive - with `autoClose
 </et-accordion-group>
 ```
 
-<StoryEmbed id="cdk-accordion-group--default" height="320px" />
+@example cdk-accordion/cdk-accordion-group 320px
 
 ## Behavior & accessibility
 
