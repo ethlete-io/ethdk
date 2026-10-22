@@ -6,6 +6,7 @@ import { BANNER_EXAMPLES } from './banner';
 import { BUTTON_EXAMPLES } from './button';
 import { BREADCRUMB_EXAMPLES } from './breadcrumb';
 import { CALENDAR_EXAMPLES } from './calendar';
+import { CAROUSEL_EXAMPLES } from './carousel';
 import { CARD_EXAMPLES } from './card';
 import { CASCADER_EXAMPLES } from './cascader';
 import { CHIP_EXAMPLES } from './chip';
@@ -20,9 +21,11 @@ import { EMPTY_STATE_EXAMPLES } from './empty-state';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
 import { FLOATING_ACTION_EXAMPLES } from './floating-action';
 import { FORMS_EXAMPLES } from './forms';
+import { GRID_EXAMPLES } from './grid';
 import { ICON_EXAMPLES } from './icon';
 import { KBD_EXAMPLES } from './kbd';
 import { LOADER_EXAMPLES } from './loader';
+import { MASONRY_EXAMPLES } from './masonry';
 import { MENU_EXAMPLES } from './menu';
 import { MIXED_STATE_EXAMPLES } from './mixed-state';
 import { NOTIFICATION_EXAMPLES } from './notification';
@@ -52,6 +55,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...BANNER_EXAMPLES,
   ...BUTTON_EXAMPLES,
   ...BREADCRUMB_EXAMPLES,
+  ...CAROUSEL_EXAMPLES,
   ...CARD_EXAMPLES,
   ...CASCADER_EXAMPLES,
   ...CHIP_EXAMPLES,
@@ -66,9 +70,11 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...FILTER_OVERLAY_EXAMPLES,
   ...FLOATING_ACTION_EXAMPLES,
   ...FORMS_EXAMPLES,
+  ...GRID_EXAMPLES,
   ...ICON_EXAMPLES,
   ...KBD_EXAMPLES,
   ...LOADER_EXAMPLES,
+  ...MASONRY_EXAMPLES,
   ...MENU_EXAMPLES,
   ...MIXED_STATE_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,

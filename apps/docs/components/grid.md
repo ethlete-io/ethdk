@@ -93,7 +93,7 @@ Get a handle with a template reference that names the export (`<et-grid #grid="e
 
 ## Live demo
 
-<StoryEmbed id="components-layout-grid--default" height="560px" />
+@example grid/grid-default 560px
 
 ## Breakpoints
 
