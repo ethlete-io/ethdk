@@ -66,7 +66,13 @@ its source next to it. Storybook stays as it is; it is not the example source.
   7. Sport: bracket, bracket-prediction, bracket-rounds-list, match, standings, standings-pick,
      sport-recipes, scheduler.
      Done: 1 (Overlays), 2 (Table), 3 (Actions and display), 4 (Navigation), 5 (Layout and content), 6 (Charts), 7 (Sport).
-- Out of scope for now: `cdk/` (maintenance mode), `query/`, `query-devtools/`, `contentful/`.
+- Slice 4 (infrastructure): an example file may export `routes` next to its component; the examples
+  app registers them with hash location, so a reload works on static hosting. Rewrite
+  `tabs/nav-tabs-default` (drop `Router.resetConfig`) and `breadcrumb/breadcrumb-routed-outlet` (use
+  `<router-outlet>`) on it. The docs plugin expands an indented `@example` line, so an example can sit
+  inside a list; move the dense line-chart example back into its list. Not started.
+- Slice 5: the remaining guides with `<StoryEmbed>`: `cdk/`, `query/`, `query-devtools/`,
+  `contentful/`. Not started.
 
 ## Batch brief
 
