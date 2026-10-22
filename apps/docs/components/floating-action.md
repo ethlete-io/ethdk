@@ -22,7 +22,7 @@ Import `FLOATING_ACTION_IMPORTS`. No provider, no default component: the trigger
 
 ## Live demo
 
-<StoryEmbed id="components-actions-floating-action--default" height="520px" />
+@example floating-action/floating-action-default 520px
 
 ## Anatomy
 

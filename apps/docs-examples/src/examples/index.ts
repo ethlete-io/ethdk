@@ -9,6 +9,7 @@ import { COPY_BUTTON_EXAMPLES } from './copy-button';
 import { DATE_TIME_INPUTS_EXAMPLES } from './date-time-inputs';
 import { DROPZONE_EXAMPLES } from './dropzone';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
+import { FLOATING_ACTION_EXAMPLES } from './floating-action';
 import { FORMS_EXAMPLES } from './forms';
 import { MENU_EXAMPLES } from './menu';
 import { NOTIFICATION_EXAMPLES } from './notification';
@@ -36,6 +37,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...DATE_TIME_INPUTS_EXAMPLES,
   ...DROPZONE_EXAMPLES,
   ...FILTER_OVERLAY_EXAMPLES,
+  ...FLOATING_ACTION_EXAMPLES,
   ...FORMS_EXAMPLES,
   ...MENU_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,
