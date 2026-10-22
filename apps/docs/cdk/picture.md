@@ -30,7 +30,7 @@ This page documents the CDK version, which still receives bug fixes.
 import { PictureComponent } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-picture--default" height="380px" />
+@example cdk-picture/cdk-picture 380px
 
 ## Options
 
