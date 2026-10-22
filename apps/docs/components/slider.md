@@ -15,7 +15,7 @@ import { SLIDER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-forms-slider--default" height="220px" />
+@example slider/slider-default 220px
 
 ## Options
 
@@ -65,7 +65,7 @@ Values outside the bounds or off the step grid are displayed clamped and snapped
 
 A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Dragging or stepping a thumb never lets it cross its sibling; each thumb's `aria-valuemin`/`aria-valuemax` shrink to the sibling's position (± `minDistance`), so assistive tech announces the real limits.
 
-<StoryEmbed id="components-forms-range-slider--default" height="220px" />
+@example slider/range-slider-default 220px
 
 ## Orientation
 
@@ -77,7 +77,7 @@ A reversed tuple is normalized for display (`[80, 20]` renders as 20–80). Drag
 </et-slider>
 ```
 
-<StoryEmbed id="components-forms-slider--vertical" height="320px" />
+@example slider/slider-vertical 320px
 
 Everything else follows: `aria-orientation` reports the axis, ArrowUp/ArrowDown keep incrementing/decrementing, and the browser's native panning is freed on the other axis (`touch-action: pan-x` instead of `pan-y`). Value-label bubbles and tick labels move to the inline sides of the track instead of above and below it.
 
@@ -103,7 +103,7 @@ const qualityMarks = [
 ];
 ```
 
-<StoryEmbed id="components-forms-slider--marks" height="240px" />
+@example slider/slider-marks 240px
 
 - Ticks inside the filled part of the track (between the thumbs, for a range) render in the theme's on-primary color; the rest sit on the neutral rail.
 - Explicit marks are sorted, de-duplicated and clipped to the bounds. In development, `marks="true"` throws rather than generate more than 200 ticks - raise the `step` or pass an array ([`ET3104`](/components/error-codes#slider-et31xx)).
@@ -115,7 +115,7 @@ const qualityMarks = [
 
 With `snapToMarks`, the marks replace the `step` grid entirely - commits land on the nearest mark, the arrow keys move one mark at a time (Page keys ten), and Home/End go to the outermost marks. A range slider still honors `minDistance`: a thumb that would come too close to its sibling falls back to the closest mark that keeps the gap.
 
-<StoryEmbed id="components-forms-slider--labelled-marks" height="260px" />
+@example slider/slider-labelled-marks 260px
 
 ## Value labels
 
@@ -128,7 +128,7 @@ Project an `ng-template[etSliderThumbLabel]` to render a value bubble above each
 </et-slider>
 ```
 
-<StoryEmbed id="components-forms-slider--value-label" height="220px" />
+@example slider/slider-value-label 220px
 
 ## Mixed values in bulk editors
 
