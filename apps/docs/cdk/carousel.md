@@ -40,7 +40,7 @@ This page documents the CDK version, which still receives bug fixes.
 import { CarouselImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-carousel--default" height="420px" />
+@example cdk-carousel/cdk-carousel-default 420px
 
 Items (`et-carousel-item` or `[etCarouselItem]`) are projected into the slide area; everything else (buttons, nav) goes into the default slot.
 
