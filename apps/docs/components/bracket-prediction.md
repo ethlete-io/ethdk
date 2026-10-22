@@ -61,7 +61,7 @@ well - the highlight reads the real source, and a predicted run is not in it.
 
 ## Live demo
 
-<StoryEmbed id="components-sports-bracket-prediction--interactive" height="640px" />
+@example bracket-prediction/bracket-prediction-interactive 640px
 
 ## Resolving a slot
 
@@ -149,7 +149,7 @@ and a row that only words its slot come out the same height.
 
 They are independent inputs, not one enum: an app can lock a match it also renders read-only.
 
-<StoryEmbed id="components-sports-bracket-prediction--pick-card-states" height="360px" />
+@example bracket-prediction/bracket-prediction-pick-card-states 360px
 
 ### The note line
 
@@ -200,7 +200,7 @@ inventing one. Only in its absence does the kind decide.
 A slot nothing is known about is `source: null` - there is no `'undescribed'` kind, so an exhaustive
 switch over `BracketSlotSourceKind` keeps compiling.
 
-<StoryEmbed id="components-sports-bracket-prediction--slot-sources" height="360px" />
+@example bracket-prediction/bracket-prediction-slot-sources 360px
 
 A side that a prediction **could** still name is the one case the source does not word. It reads
 `slotPredictEarlierRound` ("Predict the earlier round first"), or `slotNotPredicted`

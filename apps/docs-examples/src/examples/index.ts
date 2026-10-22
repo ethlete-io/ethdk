@@ -60,6 +60,7 @@ import { MATCH_EXAMPLES } from './match';
 import { SPORT_RECIPES_EXAMPLES } from './sport-recipes';
 import { BRACKET_ROUNDS_LIST_EXAMPLES } from './bracket-rounds-list';
 import { BRACKET_EXAMPLES } from './bracket';
+import { BRACKET_PREDICTION_EXAMPLES } from './bracket-prediction';
 import { STANDINGS_EXAMPLES } from './standings';
 import { STANDINGS_PICK_EXAMPLES } from './standings-pick';
 
@@ -127,6 +128,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...SPORT_RECIPES_EXAMPLES,
   ...BRACKET_ROUNDS_LIST_EXAMPLES,
   ...BRACKET_EXAMPLES,
+  ...BRACKET_PREDICTION_EXAMPLES,
   ...STANDINGS_EXAMPLES,
   ...STANDINGS_PICK_EXAMPLES,
 };
