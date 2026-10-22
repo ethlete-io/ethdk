@@ -49,7 +49,7 @@ export class ProductOverlayComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-overlays-overlay-using-openers--default" height="420px" />
+@example overlay/overlay-openers 420px
 
 ## Passing data into the overlay
 
