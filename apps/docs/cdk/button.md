@@ -20,7 +20,7 @@ inputs wired into the [surface and color theming](/core/theming) systems instead
 import { ButtonImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-buttons-button--default" height="160px" />
+@example cdk-button/cdk-button-default 160px
 
 ## Options
 
