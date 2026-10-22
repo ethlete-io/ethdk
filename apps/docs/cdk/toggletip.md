@@ -27,7 +27,7 @@ page documents the CDK version, which still receives bug fixes.
 import { ToggletipImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-overlay-toggletip--default" height="320px" />
+@example cdk-toggletip/cdk-toggletip-default 320px
 
 ## You own the open state
 
