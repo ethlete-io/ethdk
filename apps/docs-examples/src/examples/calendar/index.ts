@@ -1,0 +1,33 @@
+export const CALENDAR_EXAMPLES = {
+  'calendar/calendar-comparison-range': () =>
+    import('./calendar-comparison-range.example').then((m) => m.CalendarComparisonRangeExampleComponent),
+  'calendar/calendar-custom-header': () =>
+    import('./calendar-custom-header.example').then((m) => m.CalendarCustomHeaderExampleComponent),
+  'calendar/calendar-date-class': () =>
+    import('./calendar-date-class.example').then((m) => m.CalendarDateClassExampleComponent),
+  'calendar/calendar-default': () =>
+    import('./calendar-default.example').then((m) => m.CalendarDefaultExampleComponent),
+  'calendar/calendar-disabled-dates': () =>
+    import('./calendar-disabled-dates.example').then((m) => m.CalendarDisabledDatesExampleComponent),
+  'calendar/calendar-fixed-length-range': () =>
+    import('./calendar-fixed-length-range.example').then((m) => m.CalendarFixedLengthRangeExampleComponent),
+  'calendar/calendar-month-precision': () =>
+    import('./calendar-month-precision.example').then((m) => m.CalendarMonthPrecisionExampleComponent),
+  'calendar/calendar-month-range': () =>
+    import('./calendar-month-range.example').then((m) => m.CalendarMonthRangeExampleComponent),
+  'calendar/calendar-month-view': () =>
+    import('./calendar-month-view.example').then((m) => m.CalendarMonthViewExampleComponent),
+  'calendar/calendar-multiple': () =>
+    import('./calendar-multiple.example').then((m) => m.CalendarMultipleExampleComponent),
+  'calendar/calendar-range': () => import('./calendar-range.example').then((m) => m.CalendarRangeExampleComponent),
+  'calendar/calendar-start-at': () =>
+    import('./calendar-start-at.example').then((m) => m.CalendarStartAtExampleComponent),
+  'calendar/calendar-two-months': () =>
+    import('./calendar-two-months.example').then((m) => m.CalendarTwoMonthsExampleComponent),
+  'calendar/calendar-week-numbers': () =>
+    import('./calendar-week-numbers.example').then((m) => m.CalendarWeekNumbersExampleComponent),
+  'calendar/calendar-week-range': () =>
+    import('./calendar-week-range.example').then((m) => m.CalendarWeekRangeExampleComponent),
+  'calendar/calendar-year-view': () =>
+    import('./calendar-year-view.example').then((m) => m.CalendarYearViewExampleComponent),
+};
