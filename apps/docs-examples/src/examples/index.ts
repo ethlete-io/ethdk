@@ -4,6 +4,7 @@ import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
 import { BANNER_EXAMPLES } from './banner';
 import { BUTTON_EXAMPLES } from './button';
+import { BREADCRUMB_EXAMPLES } from './breadcrumb';
 import { CALENDAR_EXAMPLES } from './calendar';
 import { CARD_EXAMPLES } from './card';
 import { CASCADER_EXAMPLES } from './cascader';
@@ -46,6 +47,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...BADGE_EXAMPLES,
   ...BANNER_EXAMPLES,
   ...BUTTON_EXAMPLES,
+  ...BREADCRUMB_EXAMPLES,
   ...CARD_EXAMPLES,
   ...CASCADER_EXAMPLES,
   ...CHIP_EXAMPLES,
