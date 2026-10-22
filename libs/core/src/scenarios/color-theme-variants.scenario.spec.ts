@@ -7,6 +7,7 @@ import {
   provideColorThemesWithTailwind4,
   ProvideSurfaceDirective,
   provideSurfaceThemesWithTailwind4,
+  resolveColorThemeVariant,
   SurfaceTheme,
   SurfaceType,
   ThemeSwatch,
@@ -206,5 +207,16 @@ describe('color theme variant scenarios', () => {
 
     view.destroy();
     pane.remove();
+  });
+
+  it('resolves a variant the same way the directives paint it', () => {
+    const [night, paper, legacy] = SURFACE_THEMES;
+
+    expect(resolveColorThemeVariant(paper, 'grey', COLOR_THEMES)).toBe('greyLight');
+    expect(resolveColorThemeVariant(paper, 'brandOnLight', COLOR_THEMES)).toBe('brandOnLight');
+    expect(resolveColorThemeVariant(night, 'brand', COLOR_THEMES)).toBe('brand');
+    expect(resolveColorThemeVariant(legacy, 'done', COLOR_THEMES)).toBe('doneOnLight');
+    expect(resolveColorThemeVariant(paper, 'surface', COLOR_THEMES)).toBe('surface');
+    expect(resolveColorThemeVariant(null, 'brand', COLOR_THEMES)).toBe('brand');
   });
 });

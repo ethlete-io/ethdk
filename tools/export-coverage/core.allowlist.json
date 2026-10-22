@@ -160,7 +160,6 @@
   "injectStyleManager": "internal: building block of @ethlete/components, @ethlete/query-devtools, no app imports it",
   "injectSurfaceThemes": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "injectSurfaceThemesPrefix": "internal: building block of @ethlete/components, no app imports it",
-  "injectSurfaceType": "internal: building block of @ethlete/components, no app imports it",
   "injectTemplateRef": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "injectTitleConfig": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "injectTitleStore": "internal: plumbing of unsaved-changes/unsaved-changes-tab.ts, no app or lib imports it",
