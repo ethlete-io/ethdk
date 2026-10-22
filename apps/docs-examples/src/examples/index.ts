@@ -32,6 +32,7 @@ import { NOTIFICATION_EXAMPLES } from './notification';
 import { OVERLAY_EXAMPLES } from './overlay';
 import { PAGED_QUERY_TRIGGER_EXAMPLES } from './paged-query-trigger';
 import { PAGINATION_EXAMPLES } from './pagination';
+import { QUERY_ERROR_EXAMPLES } from './query-error';
 import { RICH_TEXT_EDITOR_EXAMPLES } from './rich-text-editor';
 import { PICTURE_EXAMPLES } from './picture';
 import { PROGRESS_STEPS_EXAMPLES } from './progress-steps';
@@ -44,6 +45,7 @@ import { TABLE_EXAMPLES } from './table';
 import { TABS_EXAMPLES } from './tabs';
 import { TEXT_INPUTS_EXAMPLES } from './text-inputs';
 import { TIME_PICKER_EXAMPLES } from './time-picker';
+import { TIMELINE_EXAMPLES } from './timeline';
 import { TOGGLETIP_EXAMPLES } from './toggletip';
 import { TOOLBAR_EXAMPLES } from './toolbar';
 import { TREE_EXAMPLES } from './tree';
@@ -84,6 +86,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...OVERLAY_EXAMPLES,
   ...PAGED_QUERY_TRIGGER_EXAMPLES,
   ...PAGINATION_EXAMPLES,
+  ...QUERY_ERROR_EXAMPLES,
   ...RICH_TEXT_EDITOR_EXAMPLES,
   ...PICTURE_EXAMPLES,
   ...PROGRESS_STEPS_EXAMPLES,
@@ -96,6 +99,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...TABS_EXAMPLES,
   ...TEXT_INPUTS_EXAMPLES,
   ...TIME_PICKER_EXAMPLES,
+  ...TIMELINE_EXAMPLES,
   ...TOGGLETIP_EXAMPLES,
   ...TOOLBAR_EXAMPLES,
   ...TREE_EXAMPLES,

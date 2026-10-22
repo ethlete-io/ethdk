@@ -19,7 +19,7 @@ announces when it _appears_, so a reader who has moved on from the button they p
 
 ## Live demo
 
-<StoryEmbed id="components-feedback-query-error--default" height="320px" />
+@example query-error/query-error-default 320px
 
 ## It classifies nothing
 
@@ -31,7 +31,7 @@ as `retryState`. This component reads that.
 `@ethlete/cdk`'s version re-did all of it by hand against the legacy client's types, which is why it could only
 ever be used with a legacy query. This one names no client's types at all.
 
-<StoryEmbed id="components-feedback-query-error--violation-list" height="340px" />
+@example query-error/query-error-violation-list 340px
 
 ## What the reader actually sees
 
@@ -74,7 +74,7 @@ hatches:
 that ran last), and the retry **bypasses the cache**: a retry exists because
 the last answer was unusable, so serving it again from memory would make the button do nothing.
 
-<StoryEmbed id="components-feedback-query-error--retryable" height="320px" />
+@example query-error/query-error-retryable 320px
 
 ## Customizing the wording
 
