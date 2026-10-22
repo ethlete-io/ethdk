@@ -128,3 +128,25 @@ To keep an accent fixed on every surface, do not give it an entry.
    it. After the change, the surface swaps it to `grey-light` if an entry exists. Recommendation:
    accept this. It is the behavior the colleague expected.
 3. **The name.** `colorThemeVariants` or `colorThemeSwaps`. Recommendation: `colorThemeVariants`.
+
+## Slice 1 design (runtime)
+
+- `SurfaceTheme.colorThemeVariants?: Partial<Record<RegisteredColorThemeName, RegisteredColorThemeName>>`.
+  `colorTheme` and `semanticColorThemes` get `@deprecated` and keep working through the same resolver.
+- One pure resolver in `libs/core/src/lib/theming/color-theme.util.ts`:
+  `resolveColorThemeVariant(surface, chosenName, themes)`. Order: `colorThemeVariants[chosen]`, then the
+  deprecated `semanticColorThemes[type of chosen]`, then the deprecated `colorTheme` if `chosen` is the
+  `isDefault` theme, then `chosen`. `surface` (the reserved name) never swaps. A null surface never swaps.
+- `ProvideColorDirective`: `resolvedColor()` stays the chosen, unswapped accent, so overlay sync and nested
+  providers pass the chosen name on. The painted class becomes `et-color--<swap(own name, nearest surface)>`.
+  Read the nearest surface lazily inside the computed with `injector.get(SURFACE_PROVIDER, null)`. A
+  field-level `inject(SURFACE_PROVIDER)` makes a DI cycle, because `ProvideSurfaceDirective` injects
+  `COLOR_PROVIDER` on the same element.
+- `ProvideSurfaceDirective`: chosen = nearest color provider's `resolvedColor()` name (self included), else the
+  `isDefault` theme name. It paints `et-color--<swap(chosen, own activeTheme)>` only when that differs from
+  `swap(chosen, parent surface activeTheme)` (parent = `SURFACE_PROVIDER` with `skipSelf`; no parent = no swap).
+  Whatever sits between two surfaces already painted `swap(chosen, parent surface)`, so this comparison is
+  exact. Skip it when a color provider on the same element has its own color; that one paints.
+- `injectSemanticColorTheme(type)`: theme of `type`, then the resolver on the nearest surface.
+- Accepted behavior change: an explicit `[etProvideColor]="'brand'"` above a light surface is now swapped
+  inside it, where before an explicit color blocked `colorTheme`.
