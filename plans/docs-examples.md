@@ -48,4 +48,4 @@ its source next to it. Storybook stays as it is; it is not the example source.
 
 ## Status
 
-- Slice 1: in progress.
+- Slice 1: done. `apps/docs-examples` + `@example` plugin ship; `components/select.md` uses nine examples (incl. country flags).
