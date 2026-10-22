@@ -21,7 +21,7 @@ devices: PieChartDatum[] = [
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-pie-chart--default" height="320px" />
+@example pie-chart/pie-chart-default 320px
 
 ## Options
 
@@ -66,7 +66,7 @@ When a slice is first drawn it fades in, each slice a little after the one befor
 </et-pie-chart>
 ```
 
-<StoryEmbed id="components-data-display-pie-chart--donut-total" height="320px" />
+@example pie-chart/pie-chart-donut-total 320px
 
 ## Colors
 
@@ -74,7 +74,7 @@ The chart reads the app's [color palette](/core/theming#offering-colors-to-a-use
 
 Slices that neither the palette nor their own `colorToken` cover are drawn in steps of the accent (`colorToken` on the chart, else the surrounding color scope), from full strength down to a 40% mix with the surface. Without a palette, every slice is such a step. A single slice stays on the accent.
 
-<StoryEmbed id="components-data-display-pie-chart--many-slices" height="340px" />
+@example pie-chart/pie-chart-many-slices 340px
 
 A palette is one set of colors; for a dark surface, provide a second palette with steps chosen for it, as the `Dark` story does.
 

@@ -52,6 +52,7 @@ import { TOGGLETIP_EXAMPLES } from './toggletip';
 import { TOOLBAR_EXAMPLES } from './toolbar';
 import { TREE_EXAMPLES } from './tree';
 import { TOOLTIP_EXAMPLES } from './tooltip';
+import { PIE_CHART_EXAMPLES } from './pie-chart';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
@@ -109,4 +110,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...TREE_EXAMPLES,
   ...TOOLTIP_EXAMPLES,
   ...CALENDAR_EXAMPLES,
+  ...PIE_CHART_EXAMPLES,
 };
