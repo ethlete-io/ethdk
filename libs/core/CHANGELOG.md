@@ -1,5 +1,19 @@
 # @ethlete/core
 
+## 5.0.0-next.64
+
+### Minor Changes
+
+- Theming: add the `migrate-color-theme-variants` generator. Run `nx g @ethlete/core:migrate-color-theme-variants` to rewrite the deprecated `colorTheme` and `semanticColorThemes` of your surface themes into `colorThemeVariants`.
+- Theming: `provideColorScheme()` now swaps the default accent of the root surface through its `colorThemeVariants`, so the app root needs no `[etProvideSurface]` for it.
+- Theming: add `SurfaceTheme.colorThemeVariants`, which swaps any chosen accent for a version that reads well on the surface, and deprecate `colorTheme` and `semanticColorThemes`.
+- `provideColorScheme()` and `injectColorScheme().setMode()` switch between the default light and dark surface with an `et-scheme--*` class on `<html>`; regenerate the surface CSS to get the rule.
+
+### Patch Changes
+
+- Surface and color directives no longer bundle the `provideColorScheme()` state (media query observer and root class painting) into apps that never call it.
+- Theming: a surface now paints its swapped accent when it sits outside its parent surface in the DOM. A dialog or alert dialog opened with an opener from a light surface used the default accent instead of the variant.
+
 ## 5.0.0-next.63
 
 ### Patch Changes

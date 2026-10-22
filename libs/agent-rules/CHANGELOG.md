@@ -1,5 +1,13 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.23
+
+### Patch Changes
+
+- The `api-source` skill now finds the managed clone in `.ethlete/<name>` when `apiRepoPaths` has no entry, and reads the checkout and the local url from `yarn et api help <name>`.
+- Theming: `provideColorScheme()` now swaps the default accent of the root surface through its `colorThemeVariants`, so the app root needs no `[etProvideSurface]` for it.
+- Theming: add `SurfaceTheme.colorThemeVariants`, which swaps any chosen accent for a version that reads well on the surface, and deprecate `colorTheme` and `semanticColorThemes`.
+
 ## 0.1.0-next.22
 
 ### Patch Changes
