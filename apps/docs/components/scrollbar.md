@@ -22,7 +22,7 @@ import { SCROLLBAR_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-layout-scrollbar--default" height="360px" />
+@example scrollbar/scrollbar-default 360px
 
 ## How it works
 
@@ -62,7 +62,7 @@ container that scrolls both ways gets two elements:
 The two do not reserve a corner for each other - they meet and overlap in the end corner. Inset one of
 them if that matters for your layout.
 
-<StoryEmbed id="components-layout-scrollbar--both-axes-and-rtl" height="640px" />
+@example scrollbar/scrollbar-both-axes-and-rtl 640px
 
 ## Right to left
 
@@ -86,7 +86,7 @@ different subtrees.
 `autoHide` fades the thumb out 800 ms after the last scroll event. It stays out while the pointer is
 over the target or over the scrollbar, and for as long as a drag runs.
 
-<StoryEmbed id="components-layout-scrollbar--auto-hide" height="360px" />
+@example scrollbar/scrollbar-auto-hide 360px
 
 ## Building your own track
 
