@@ -41,7 +41,7 @@ import { TOGGLETIP_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-feedback-toggletip--default" height="380px" />
+@example toggletip/toggletip-default 380px
 
 ## Behavior
 
