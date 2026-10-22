@@ -70,7 +70,7 @@ its source next to it. Storybook stays as it is; it is not the example source.
   app registers them with hash location, so a reload works on static hosting. Rewrite
   `tabs/nav-tabs-default` (drop `Router.resetConfig`) and `breadcrumb/breadcrumb-routed-outlet` (use
   `<router-outlet>`) on it. The docs plugin expands an indented `@example` line, so an example can sit
-  inside a list; move the dense line-chart example back into its list. Not started.
+  inside a list; move the dense line-chart example back into its list. Done.
 - Slice 5: the remaining guides with `<StoryEmbed>`: `cdk/`, `query/`, `query-devtools/`,
   `contentful/`. Not started.
 
