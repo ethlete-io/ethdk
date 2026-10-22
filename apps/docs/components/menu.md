@@ -37,7 +37,7 @@ import { MENU_IMPORTS, MENU_SEARCH_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-overlays-menu--default" height="420px" />
+@example menu/menu-default 420px
 
 ## Items
 
@@ -71,7 +71,7 @@ Swap the click trigger for `[etMenuContextTrigger]` on the area that should reac
 </div>
 ```
 
-<StoryEmbed id="components-overlays-menu--context-menu" height="380px" />
+@example menu/menu-context 380px
 
 ## Selection
 
@@ -103,7 +103,7 @@ Both item kinds take an optional `icon` input (a `provideIcons`-registered icon 
 
 Groups and standalone items carry the usual signal-forms surface alongside `[(value)]` / `[formField]`: `disabled`, `invalid`, `errors`, `required`, `name` and a `touched` model (groups additionally take `multiple`). The underlying headless directives are `etMenuSelectionGroup` and `etMenuSelectionItem` if you're building custom selection rows.
 
-<StoryEmbed id="components-overlays-menu-with-selection--default" height="440px" />
+@example menu/menu-selection 440px
 
 ## Search
 
@@ -125,7 +125,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 
 For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. The spinner - and the room the input makes for it - waits ~200ms before appearing ([`signalDeferredLoading`](/core/signal-utils#deferred-loading)), so a query that answers within a keystroke or two neither flashes it nor shifts the text; `aria-busy` still reports the request immediately. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu - the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
 
-<StoryEmbed id="components-overlays-menu-with-search--async" height="440px" />
+@example menu/menu-search-async 440px
 
 ## Positioning & behavior
 
