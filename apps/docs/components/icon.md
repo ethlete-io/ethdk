@@ -17,7 +17,7 @@ import { CHEVRON_ICON, ICON_IMPORTS, TIMES_ICON, provideIcons } from '@ethlete/c
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-icon--default" height="320px" />
+@example icon/icon-default 320px
 
 ## How it works
 
@@ -73,7 +73,7 @@ either way:
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-input--icon-affixes" height="200px" />
+@example icon/icon-affixes 200px
 
 Only a **direct** child of the affix is sized this way - an icon nested inside an affix control
 (an `[et-icon-button]` suffix, say) keeps the size that control gives it.

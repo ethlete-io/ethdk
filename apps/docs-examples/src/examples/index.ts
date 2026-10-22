@@ -18,6 +18,7 @@ import { EMPTY_STATE_EXAMPLES } from './empty-state';
 import { FILTER_OVERLAY_EXAMPLES } from './filter-overlay';
 import { FLOATING_ACTION_EXAMPLES } from './floating-action';
 import { FORMS_EXAMPLES } from './forms';
+import { ICON_EXAMPLES } from './icon';
 import { KBD_EXAMPLES } from './kbd';
 import { MENU_EXAMPLES } from './menu';
 import { NOTIFICATION_EXAMPLES } from './notification';
@@ -54,6 +55,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...FILTER_OVERLAY_EXAMPLES,
   ...FLOATING_ACTION_EXAMPLES,
   ...FORMS_EXAMPLES,
+  ...ICON_EXAMPLES,
   ...KBD_EXAMPLES,
   ...MENU_EXAMPLES,
   ...NOTIFICATION_EXAMPLES,
