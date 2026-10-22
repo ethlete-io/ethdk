@@ -24,7 +24,7 @@ still receives bug fixes.
 import { ProgressSpinnerComponent } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-progress-spinner--default" height="240px" />
+@example cdk-progress-spinner/cdk-progress-spinner-default 240px
 
 ## The two selectors pick the mode
 

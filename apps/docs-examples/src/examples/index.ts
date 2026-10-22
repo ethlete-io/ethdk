@@ -5,6 +5,7 @@ import { CDK_BREADCRUMB_EXAMPLES } from './cdk-breadcrumb';
 import { CDK_BUTTON_EXAMPLES } from './cdk-button';
 import { CDK_CAROUSEL_EXAMPLES } from './cdk-carousel';
 import { CDK_MASONRY_EXAMPLES } from './cdk-masonry';
+import { CDK_PROGRESS_SPINNER_EXAMPLES } from './cdk-progress-spinner';
 import { CDK_SKELETON_EXAMPLES } from './cdk-skeleton';
 import { CDK_TABS_EXAMPLES } from './cdk-tabs';
 import { CDK_TOGGLETIP_EXAMPLES } from './cdk-toggletip';
@@ -87,6 +88,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...CDK_BUTTON_EXAMPLES,
   ...CDK_CAROUSEL_EXAMPLES,
   ...CDK_MASONRY_EXAMPLES,
+  ...CDK_PROGRESS_SPINNER_EXAMPLES,
   ...CDK_SKELETON_EXAMPLES,
   ...CDK_TABS_EXAMPLES,
   ...CDK_TOGGLETIP_EXAMPLES,
