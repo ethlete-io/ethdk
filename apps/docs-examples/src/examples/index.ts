@@ -1,6 +1,7 @@
 import { Type } from '@angular/core';
 import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
+import { BANNER_EXAMPLES } from './banner';
 import { BUTTON_EXAMPLES } from './button';
 import { CALENDAR_EXAMPLES } from './calendar';
 import { CASCADER_EXAMPLES } from './cascader';
@@ -33,6 +34,7 @@ export type ExampleLoader = () => Promise<Type<unknown>>;
 export const EXAMPLES: Record<string, ExampleLoader> = {
   ...AVATAR_EXAMPLES,
   ...BADGE_EXAMPLES,
+  ...BANNER_EXAMPLES,
   ...BUTTON_EXAMPLES,
   ...CASCADER_EXAMPLES,
   ...CHIP_EXAMPLES,
