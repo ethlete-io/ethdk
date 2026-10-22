@@ -26,7 +26,7 @@ export class GroupPicksComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-sports-standings-pick--default" height="420px" />
+@example standings-pick/standings-pick-default 420px
 
 ## Options
 
@@ -84,7 +84,7 @@ Once a group is over the order must stay legible but stop being editable. `locke
 controls (so there is nothing to focus and nothing to grab), dims the cards, and sets `data-locked` on
 the host for your own styling.
 
-<StoryEmbed id="components-sports-standings-pick--locked" height="420px" />
+@example standings-pick/standings-pick-locked 420px
 
 ## The score mark is yours
 

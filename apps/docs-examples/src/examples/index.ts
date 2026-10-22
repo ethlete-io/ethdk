@@ -57,6 +57,7 @@ import { LINE_CHART_EXAMPLES } from './line-chart';
 import { SANKEY_CHART_EXAMPLES } from './sankey-chart';
 import { STAT_TILE_EXAMPLES } from './stat-tile';
 import { STANDINGS_EXAMPLES } from './standings';
+import { STANDINGS_PICK_EXAMPLES } from './standings-pick';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
@@ -119,4 +120,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...SANKEY_CHART_EXAMPLES,
   ...STAT_TILE_EXAMPLES,
   ...STANDINGS_EXAMPLES,
+  ...STANDINGS_PICK_EXAMPLES,
 };
