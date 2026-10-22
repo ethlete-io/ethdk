@@ -183,7 +183,7 @@ matchQuery = getMatch(
 
 The demo below shows exactly this pattern (with the socket simulated, since Storybook has no socket server):
 
-<StoryEmbed id="query-demos-live-response-update--default" height="440px" />
+@example query-features/live-response-update 440px
 
 ## Testing it
 

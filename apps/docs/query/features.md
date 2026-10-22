@@ -191,7 +191,7 @@ const matchQuery = getMatch(
 
 See [WebSockets](/query/ws) for the room client this pairs with, and a live demo of this feature below:
 
-<StoryEmbed id="query-demos-live-response-update--default" height="440px" />
+@example query-features/live-response-update 440px
 
 ## withPageResetOnError
 

@@ -20,6 +20,11 @@ import { CDK_TOGGLETIP_EXAMPLES } from './cdk-toggletip';
 import { CDK_TOOLTIP_EXAMPLES } from './cdk-tooltip';
 import { CDK_MENU_EXAMPLES } from './cdk-menu';
 import { CDK_OVERLAYS_EXAMPLES } from './cdk-overlays';
+import { CONTENTFUL_RICH_TEXT_EXAMPLES } from './contentful-rich-text';
+import { QUERY_QUERIES_EXAMPLES } from './query-queries';
+import { QUERY_STACKS_EXAMPLES } from './query-stacks';
+import { QUERY_FEATURES_EXAMPLES } from './query-features';
+import { QUERY_DEVTOOLS_EXAMPLES } from './query-devtools';
 import { ACCORDION_EXAMPLES } from './accordion';
 import { AVATAR_EXAMPLES } from './avatar';
 import { BADGE_EXAMPLES } from './badge';
@@ -91,6 +96,11 @@ export type RoutedExample = { component: Type<unknown>; routes: Routes };
 export type ExampleLoader = () => Promise<Type<unknown> | RoutedExample>;
 
 export const EXAMPLES: Record<string, ExampleLoader> = {
+  ...CONTENTFUL_RICH_TEXT_EXAMPLES,
+  ...QUERY_QUERIES_EXAMPLES,
+  ...QUERY_STACKS_EXAMPLES,
+  ...QUERY_FEATURES_EXAMPLES,
+  ...QUERY_DEVTOOLS_EXAMPLES,
   ...CDK_ACCORDION_EXAMPLES,
   ...CDK_BRACKET_EXAMPLES,
   ...CDK_BREADCRUMB_EXAMPLES,

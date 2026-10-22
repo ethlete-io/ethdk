@@ -79,4 +79,4 @@ The paged stack's own argument types are `PagedQueryStackResetOptions` (`{ initi
 
 The demo starts at page 4 of 8, so both fetch directions are available:
 
-<StoryEmbed id="query-demos-paged-query--default" height="480px" />
+@example query-stacks/paged-query-stack 480px

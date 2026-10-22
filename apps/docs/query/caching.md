@@ -159,4 +159,4 @@ patchOpportunityPerson(
 
 In the demo, the mocked backend sends `cache-control: max-age=20` (a 10s freshness window after halving). `requestNumber` only increments when the server is actually hit - `execute (allowCache)` within the window serves the cache:
 
-<StoryEmbed id="query-demos-lifecycle--default" height="420px" />
+@example query-queries/query-lifecycle 420px

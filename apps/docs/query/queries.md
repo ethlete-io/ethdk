@@ -42,7 +42,7 @@ Whenever `postId` changes, the query re-executes automatically; identical reques
 
 A real query against a mocked backend - execute it, make it fail, and watch the signals. `execute (allowCache)` skips the request entirely while the cached response is still fresh:
 
-<StoryEmbed id="query-demos-lifecycle--default" height="420px" />
+@example query-queries/query-lifecycle 420px
 
 ## The query client
 
