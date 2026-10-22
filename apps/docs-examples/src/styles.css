@@ -3,6 +3,10 @@ html {
   color-scheme: dark;
 }
 
+html:has(.app-examples-root[data-theme='light']) {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
