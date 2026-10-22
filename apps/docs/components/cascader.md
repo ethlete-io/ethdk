@@ -15,7 +15,7 @@ import { CASCADER_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-forms-cascader--default" height="380px" />
+@example cascader/cascader-default 380px
 
 ## Data source
 
@@ -57,7 +57,7 @@ It returns the ancestor chain (root → committed node) so the trigger can rende
 
 Browsing is the cascader's default mode, but a user who already knows the leaf they want shouldn't have to drill for it. Implement the optional `search(query)` hook on the data source and the panel gains a search input - typing swaps the columns for a **flat result list across all levels**, each result showing its full breadcrumb:
 
-<StoryEmbed id="components-forms-cascader--search" height="420px" />
+@example cascader/cascader-search 420px
 
 ```ts
 protected competitions: CascaderDataSource<string> = {
@@ -97,11 +97,11 @@ Call it from a field initializer / constructor (injection context) - the same pl
 
 With `multiple`, activating a node **toggles** its value instead of committing-and-closing - the form value is a `T[]`. Leaves toggle on click; branches still just drill (in `selectableLevels="any"` they toggle **and** drill). Every row gains a check square: selected nodes show a checkmark, an ancestor of a **partial** selection shows the **indeterminate dash**, and an ancestor whose descendants are **all** selected promotes to the full checkmark - so selection progress is visible from the root column. The promotion is display-only (the form value stays the exact selected nodes) and covers subtrees the cascader has loaded; a lazy branch that was never drilled into can only show the dash, since its full child list is unknown. Disabled children don't block the promotion. The trigger joins the selected labels (`Group A, Group B`), and the clear (×) control empties the whole selection:
 
-<StoryEmbed id="components-forms-cascader--multiple" height="380px" />
+@example cascader/cascader-multiple 380px
 
 With a [flat search](#flat-search), activating a result toggles it and **keeps the result list and query alive**, so several hits of one search can be picked in a row:
 
-<StoryEmbed id="components-forms-cascader--multiple-with-search" height="420px" />
+@example cascader/cascader-multiple-with-search 420px
 
 Values set programmatically (a form patch/restore) display and mark their ancestors once the data source's [`resolvePath`](#resolving-a-programmatic-value-resolvepath) resolves their chains - one call per unknown value. The panel reports itself as an `aria-multiselectable` tree.
 
@@ -175,19 +175,19 @@ The full chosen chain is exposed as `path` (a `WritableSignal<CascaderNode<T>[]>
 
 By default only leaves commit - clicking a branch just drills into it. With `selectableLevels="any"`, clicking a branch **both** drills in and commits that node, so an intermediate level (a whole stage, say) can be the value:
 
-<StoryEmbed id="components-forms-cascader--any-level" height="380px" />
+@example cascader/cascader-any-level 380px
 
 ## Async levels
 
 Point `dataSource.loadChildren` at a `Promise` or `Observable` and each column loads on demand - nothing is fetched up front:
 
-<StoryEmbed id="components-forms-cascader--async-levels" height="380px" />
+@example cascader/cascader-async-levels 380px
 
 ## Deep hierarchies
 
 The desktop panel shows at most **`maxVisibleColumns`** (default `3`) columns side by side - without a cap, a six-level drill would grow the panel a column-width per level until it hits the viewport edge. Once the drill overflows the window, the **whole drilled trail** appears as a breadcrumb row below the columns (below, so appearing crumbs never shift the columns; the panel's animated height covers the row mounting). Crumbs whose levels are currently in view render at full strength; the muted ones are a click away:
 
-<StoryEmbed id="components-forms-cascader--deep-nesting" height="420px" />
+@example cascader/cascader-deep-nesting 420px
 
 All drilled levels stay mounted on a sliding track, so a level collapsing into a crumb visibly slides out to the left together with the columns following it - and the reverse plays when navigating back. The collapse is purely visual; navigating back never discards the drill:
 
