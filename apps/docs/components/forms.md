@@ -91,7 +91,7 @@ control registers itself into it via DI - no manual wiring:
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-input--default" height="320px" />
+@example forms/form-field-affixes 320px
 
 An affix takes a text glyph or an [`[etIcon]`](/components/icon#inside-sdk-components-the-size-is-already-set) -
 the shell sizes a directly-projected icon via `--et-form-field-affix-icon-size` (`16px`), so no
@@ -240,7 +240,7 @@ const bioForm = form(model, (s) => {
 </et-form-field>
 ```
 
-<StoryEmbed id="components-forms-counter--with-hint" height="360px" />
+@example forms/form-field-counter 360px
 
 | Input      | Type                         | Notes                                                                                                            |
 | ---------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -425,7 +425,7 @@ form(model, (s) => {
 });
 ```
 
-<StoryEmbed id="components-forms-warning--default" height="420px" />
+@example forms/form-field-warning 420px
 
 A `warn()` callback runs like a validator's - same `FieldContext`, so it can read
 the value, the field's state, or any signal outside the form - but its result never
@@ -530,7 +530,7 @@ form(model, (s) => {
 });
 ```
 
-<StoryEmbed id="components-forms-color-input-contrast--default" height="640px" />
+@example forms/color-input-contrast 640px
 
 | Option     | Default | What it does                                                                                                                       |
 | ---------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------- |
