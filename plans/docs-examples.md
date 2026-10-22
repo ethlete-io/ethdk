@@ -65,7 +65,7 @@ its source next to it. Storybook stays as it is; it is not the example source.
   6. Charts: chart, line-chart, pie-chart, sankey-chart, stat-tile.
   7. Sport: bracket, bracket-prediction, bracket-rounds-list, match, standings, standings-pick,
      sport-recipes, scheduler.
-     Done: 1 (Overlays), 2 (Table), 3 (Actions and display), 4 (Navigation), 5 (Layout and content).
+     Done: 1 (Overlays), 2 (Table), 3 (Actions and display), 4 (Navigation), 5 (Layout and content), 6 (Charts).
 - Out of scope for now: `cdk/` (maintenance mode), `query/`, `query-devtools/`, `contentful/`.
 
 ## Batch brief
