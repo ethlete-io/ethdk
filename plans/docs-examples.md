@@ -53,3 +53,17 @@ its source next to it. Storybook stays as it is; it is not the example source.
   date-time-inputs, time-picker, calendar, cascader, slider, dropzone, rich-text-editor.
   Done: forms, text-inputs, choice-inputs, date-time-inputs, time-picker, calendar, cascader, slider,
   dropzone, rich-text-editor.
+- Slice 3 (other `components/` guides), one batch per run, in this order:
+  1. Overlays: overlays, overlay-openers, menu, tooltip, toggletip, filter-overlay, command-palette,
+     notification.
+  2. Table: table, pagination, paged-query-trigger.
+  3. Actions and display: button, chip, copy-button, floating-action, kbd, badge, avatar, banner,
+     card, empty-state, divider, description-list, icon, mixed-state, loader, skeleton.
+  4. Navigation: accordion, breadcrumb, tabs, toolbar, progress-steps, tree.
+  5. Layout and content: carousel, masonry, grid, scrollable, scrollbar, picture, timeline, stream,
+     query-error.
+  6. Charts: chart, line-chart, pie-chart, sankey-chart, stat-tile.
+  7. Sport: bracket, bracket-prediction, bracket-rounds-list, match, standings, standings-pick,
+     sport-recipes, scheduler.
+     Done: none yet.
+- Out of scope for now: `cdk/` (maintenance mode), `query/`, `query-devtools/`, `contentful/`.
