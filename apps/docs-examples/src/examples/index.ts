@@ -4,6 +4,7 @@ import { BADGE_EXAMPLES } from './badge';
 import { BANNER_EXAMPLES } from './banner';
 import { BUTTON_EXAMPLES } from './button';
 import { CALENDAR_EXAMPLES } from './calendar';
+import { CARD_EXAMPLES } from './card';
 import { CASCADER_EXAMPLES } from './cascader';
 import { CHIP_EXAMPLES } from './chip';
 import { CHOICE_INPUTS_EXAMPLES } from './choice-inputs';
@@ -36,6 +37,7 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...BADGE_EXAMPLES,
   ...BANNER_EXAMPLES,
   ...BUTTON_EXAMPLES,
+  ...CARD_EXAMPLES,
   ...CASCADER_EXAMPLES,
   ...CHIP_EXAMPLES,
   ...CHOICE_INPUTS_EXAMPLES,

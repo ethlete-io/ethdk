@@ -15,7 +15,7 @@ import { CARD_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-layout-card--default" height="220px" />
+@example card/card-default 220px
 
 ## Options
 
