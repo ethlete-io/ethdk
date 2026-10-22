@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { injectBreakpointObserver } from '../providers/breakpoint-observer';
 import { defineProvider, toInjectFn, toProvideFn } from '../utils';
+import { COLOR_SCHEME_TYPE } from './color-scheme-type.token';
 import {
   createCssColorThemeName,
   injectColorThemes,
@@ -119,6 +120,7 @@ export const injectColorScheme = /* @__PURE__ */ toInjectFn(COLOR_SCHEME_DEF);
 export const provideColorScheme = (config?: ColorSchemeConfig): EnvironmentProviders =>
   makeEnvironmentProviders([
     provideColorSchemeState(),
+    { provide: COLOR_SCHEME_TYPE, useFactory: () => injectColorScheme().type },
     provideEnvironmentInitializer(() => injectColorScheme().setMode(config?.mode ?? 'system')),
   ]);
 
@@ -129,7 +131,7 @@ export const provideColorScheme = (config?: ColorSchemeConfig): EnvironmentProvi
  */
 export const injectRootSurfaceTheme = (): Signal<SurfaceTheme | null> => {
   const defaults = injectSurfaceThemes({ optional: true })?.filter((theme) => theme.isDefault) ?? [];
-  const colorScheme = injectColorScheme({ optional: true });
+  const colorSchemeType = inject(COLOR_SCHEME_TYPE, { optional: true });
 
-  return computed(() => findRootSurfaceTheme(defaults, colorScheme?.type()));
+  return computed(() => findRootSurfaceTheme(defaults, colorSchemeType?.()));
 };

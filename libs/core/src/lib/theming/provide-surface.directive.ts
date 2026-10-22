@@ -21,7 +21,8 @@ import {
   resolveColorThemeVariant,
 } from './color-theme.util';
 import { COLOR_PROVIDER } from './provide-color.directive';
-import { injectColorScheme, injectRootSurfaceTheme } from './color-scheme';
+import { injectRootSurfaceTheme } from './color-scheme';
+import { COLOR_SCHEME_TYPE } from './color-scheme-type.token';
 import { injectHostElement } from '../utils';
 import {
   createCssSurfaceName,
@@ -51,7 +52,7 @@ export class ProvideSurfaceDirective {
   private parentProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
   private hostElement = injectHostElement();
   private rootTheme = injectRootSurfaceTheme();
-  private colorScheme = injectColorScheme({ optional: true });
+  private hasColorScheme = !!inject(COLOR_SCHEME_TYPE, { optional: true });
   private colorThemes = injectColorThemes({ optional: true });
   private colorPrefix = injectColorThemesPrefix({ optional: true });
   private colorProvider = inject(COLOR_PROVIDER, { optional: true });
@@ -119,7 +120,7 @@ export class ProvideSurfaceDirective {
   private inheritedSurfaceTheme() {
     if (this.parentProvider) return this.parentProvider.activeTheme();
 
-    return this.colorScheme ? this.colorScheme.rootSurface() : null;
+    return this.hasColorScheme ? this.rootTheme() : null;
   }
 
   private colorThemeClass = computed(() => {
