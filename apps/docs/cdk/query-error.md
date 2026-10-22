@@ -29,7 +29,7 @@ This page documents the CDK versions, which still receive bug fixes.
 import { QueryErrorComponent } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-query-error--retryable-error" height="220px" />
+@example cdk-query-error/cdk-query-error 360px
 
 | Input              | Default | Purpose                                                                                                 |
 | ------------------ | ------- | ------------------------------------------------------------------------------------------------------- |
@@ -53,7 +53,7 @@ The parsing lives in the headless `QueryErrorDirective` (same inputs, exposes th
 import { QueryButtonComponent } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-buttons-query-button--default" height="160px" />
+@example cdk-query-error/cdk-query-button 160px
 
 While the query runs, the button gets `et-query-button--loading` and shows its loading template; on completion it flips to `--success` or `--failure` for about a second before resetting. During loading/success/failure the button is disabled and announces the state change via `aria-live`, preventing double submits without manual wiring. Each phase can be opted out with `skipLoading`, `skipSuccess` and `skipFailure` (all default `false`).
 
