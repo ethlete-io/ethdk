@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.13
+
+### Patch Changes
+
+- Update rustls-webpki and webpki-root-certs to fix RUSTSEC-2026-0382 and RUSTSEC-2026-0383.
+
 ## 0.2.0-next.12
 
 ### Patch Changes
