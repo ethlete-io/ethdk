@@ -15,7 +15,7 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
 
 ## Live demo
 
-<StoryEmbed id="components-data-display-avatar--default" height="220px" />
+@example avatar/avatar-default 220px
 
 ## Options
 
@@ -92,4 +92,4 @@ Both are read on the avatar itself, so they can reference its own color theme - 
 }
 ```
 
-<StoryEmbed id="components-data-display-avatar--custom-initials-and-colors" height="200px" />
+@example avatar/avatar-custom-initials-and-colors 200px
