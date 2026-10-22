@@ -67,3 +67,35 @@ its source next to it. Storybook stays as it is; it is not the example source.
      sport-recipes, scheduler.
      Done: none yet.
 - Out of scope for now: `cdk/` (maintenance mode), `query/`, `query-devtools/`, `contentful/`.
+
+## Batch brief
+
+Each batch runs in a fresh subagent with this brief and the batch's guide list.
+
+1. Read this plan, `AGENTS.md` (comment rules), and the `@example` section of
+   `.agents/skills/docs/SKILL.md`. Study `apps/docs-examples/src/examples/select/` and
+   `src/examples/index.ts` as the reference.
+2. For each `<StoryEmbed id>` in a guide, find the story and its host component in
+   `libs/components/src/**/stories/`. Write `src/examples/<domain>/<name>.example.ts` (and a
+   `.data.ts` only for long data) by the example rules above. Also: no static `style` attributes
+   (CSP lint rule); keep what the guide text around the embed explains; drop demo noise.
+3. Add a domain `index.ts` registry and register it in `src/examples/index.ts` in the same commit as
+   its files, so every commit compiles.
+4. Replace the embed with `@example <domain>/<name> [height]` and keep the height. Keep a
+   `<StoryEmbed>` only for a story with nothing to copy, and report it.
+5. Verify:
+   - `NX_NO_CLOUD=true npx nx run-many -t lint,typecheck -p docs-examples` gives zero errors and
+     zero warnings. `typecheck` runs ngc, so it checks templates.
+   - `NX_NO_CLOUD=true npx nx build docs` succeeds.
+   - Run `npx vitepress preview apps/docs --port 4513` in the background and reuse
+     `dist/examples-verify.mjs`. Every iframe renders its root with no console errors in the page or
+     any frame, and the code tabs hold the source. On one example, the `.app-examples-root`
+     background differs between light and dark and is never transparent. Headless only. Kill only
+     your own server, by PID.
+   - `DOCS_BASE=http://localhost:4513 node .agents/skills/docs/scripts/verify-pages.mjs /components/<page>`.
+   - `npx prettier --write` on edited files.
+6. Commit once per guide: `git commit -m "docs(docs): Show copyable examples in the <guide> guide" -- <paths>`,
+   with no trailer. Never `git add -A`, `git stash` or `--amend`; no worktrees, branches or push.
+7. Add the batch to the slice 3 "Done:" list here and commit the plan.
+8. Report in under 10 lines: commits, example count per guide, kept embeds, failed checks. If context
+   runs low, commit what is done and report the remaining steps.
