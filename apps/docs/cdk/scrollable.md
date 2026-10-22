@@ -26,7 +26,7 @@ version, which still receives bug fixes.
 import { ScrollableImports } from '@ethlete/cdk';
 ```
 
-<StoryEmbed id="cdk-scrollable--default" height="360px" />
+@example cdk-scrollable/cdk-scrollable 360px
 
 ## Anatomy
 
