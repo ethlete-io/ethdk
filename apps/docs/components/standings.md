@@ -30,7 +30,7 @@ export class GroupTableComponent {
 
 ## Live demo
 
-<StoryEmbed id="components-sports-standings--default" height="480px" />
+@example standings/standings-default 480px
 
 ## Any backend: the normalized row
 
@@ -100,7 +100,7 @@ Like the match card, the table measures itself and drops columns rather than scr
 | 560–719px | …plus played, won, drawn, lost and the difference |
 | ≥ 720px   | …plus recent form                                 |
 
-<StoryEmbed id="components-sports-standings--compact" height="420px" />
+@example standings/standings-compact 420px
 
 A column nobody reports is dropped entirely: no row with a `difference` means no difference column, and no
 row with `form` means no form column - an empty column is worse than a missing one.

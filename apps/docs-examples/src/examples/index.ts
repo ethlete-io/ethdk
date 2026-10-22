@@ -56,6 +56,7 @@ import { PIE_CHART_EXAMPLES } from './pie-chart';
 import { LINE_CHART_EXAMPLES } from './line-chart';
 import { SANKEY_CHART_EXAMPLES } from './sankey-chart';
 import { STAT_TILE_EXAMPLES } from './stat-tile';
+import { STANDINGS_EXAMPLES } from './standings';
 
 export type ExampleLoader = () => Promise<Type<unknown>>;
 
@@ -117,4 +118,5 @@ export const EXAMPLES: Record<string, ExampleLoader> = {
   ...LINE_CHART_EXAMPLES,
   ...SANKEY_CHART_EXAMPLES,
   ...STAT_TILE_EXAMPLES,
+  ...STANDINGS_EXAMPLES,
 };
