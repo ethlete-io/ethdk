@@ -1,6 +1,6 @@
 ---
 name: api-source
-description: How to read the source of the API an app in this repo talks to, from a local backend checkout named in ethlete.config.local.json. Read when a response shape, a status code, an error body, an enum or an auth rule has to be confirmed rather than guessed - and never edit that checkout as part of work in this repo.
+description: How to read the source of the API an app in this repo talks to, from a local backend checkout - the one apiRepoPaths names, or the managed clone et api keeps in .ethlete/<name>. Read when a response shape, a status code, an error body, an enum or an auth rule has to be confirmed rather than guessed - and never edit that checkout as part of work in this repo.
 kind: skill
 scope: consumer
 ---
@@ -24,9 +24,34 @@ the checkout is not deployed until the API team ships it.
 
 ## 1. Resolve the checkout for your app
 
-One repository can hold several apps, each with its own API, so the paths are a map from
-app to checkout. They are per machine, so the map lives in the gitignored
-`ethlete.config.local.json` at the repo root:
+A checkout can come from two places, and `et api` checks them in this order:
+
+1. `apiRepoPaths[<name>]` in the gitignored `ethlete.config.local.json` at the repo root.
+2. The managed clone `.ethlete/<name>` in the repo root, which `et api clone` creates.
+
+A missing `apiRepoPaths` entry is therefore not a missing checkout. Look for the managed clone
+before you report anything.
+
+### With `ethlete.apis.js`
+
+When the repo root has `ethlete.apis.js` (or `ethlete.apis.cjs`), it declares each API by name.
+Find the API your app calls in that file, then let the CLI resolve it:
+
+```bash
+yarn et api help <name>   # url, services, and the checkout path and state
+```
+
+The `Checkout` section names the directory to search, or the problem that stops it. The `url`
+line is where the local API runs. Use this output, not a memory note, an old handoff or a sibling
+folder that looks right: the configuration on disk can have changed since they were written.
+
+If the CLI reports no checkout and the API declares a `repoUrl`, the fix is
+`yarn et api clone <name>`. Ask the user before you run it. It uses the network and writes a
+clone into the repo.
+
+### Without `ethlete.apis.js`
+
+The paths are a map in `ethlete.config.local.json`:
 
 ```json
 {
@@ -44,16 +69,17 @@ app to checkout. They are per machine, so the map lives in the gitignored
 Older checkouts still keep these keys in `ethlete-agents.config.local.json`. Read that file as a
 fallback when `ethlete.config.local.json` is absent.
 
-Read that file before searching anywhere. The rules:
-
-- **The key is the app** as this repo names it - the workspace project name, which is
-  normally also the folder under `apps/`. Match the app you are working in.
+- **The key is the API name** from `ethlete.apis.js`. Without that file, it is the app as this
+  repo names it - the workspace project name, normally also the folder under `apps/`.
 - **A relative path resolves from the repo root**, not from the app folder.
-- **Require an exact app key.** If several apps intentionally share one API, configure
-  the explicit `"*"` fallback. Never treat an unrelated single entry as a fallback.
-- **No matching entry - stop and ask.** Do not guess a sibling folder and do not clone
-  the repository. Say which app you needed the API for and offer the snippet above; the
-  file is gitignored, so adding it changes nothing for anyone else.
+- **Require an exact key.** If several apps intentionally share one API, configure the explicit
+  `"*"` fallback. Never treat an unrelated single entry as a fallback.
+
+### No checkout anywhere - stop and ask
+
+Do not guess a sibling folder, and do not clone without approval. Say which app you needed
+the API for, and offer the `apiRepoPaths` snippet above. The file is gitignored, so adding it
+changes nothing for anyone else.
 
 Without a checkout, fall back to what the running API tells you: the generated API
 description if the project serves one (`/openapi.json`, `/swagger`, `/api/doc`), and the
