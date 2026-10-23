@@ -1,12 +1,12 @@
 @layer components {
-  et-stream-pip-chrome:not(.et-stream-pip-chrome--grid)
-    et-pip-window:not(:has(.et-stream-pip-chrome__cell--featured .et-pip-player--ready)) {
+  et-pip-window:has(.et-stream-pip-chrome__stage:not(.et-stream-pip-chrome__stage--grid)):not(
+      :has(.et-stream-pip-chrome__cell--featured .et-pip-player--ready)
+    ) {
     visibility: hidden;
     pointer-events: none;
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid
-    et-pip-window:not(:has(.et-stream-pip-chrome__cell .et-pip-player--ready)) {
+  et-pip-window:has(.et-stream-pip-chrome__stage--grid):not(:has(.et-stream-pip-chrome__cell .et-pip-player--ready)) {
     visibility: hidden;
     pointer-events: none;
   }
@@ -40,16 +40,16 @@
       scale(calc(1 / var(--et-pip-grid-cols, 1)), calc(1 / var(--et-pip-grid-cols, 1)));
   }
 
-  et-stream-pip-chrome:not(.et-stream-pip-chrome--grid) .et-stream-pip-chrome__cell--featured {
+  .et-stream-pip-chrome__stage:not(.et-stream-pip-chrome__stage--grid) > .et-stream-pip-chrome__cell--featured {
     transform: none;
   }
 
-  et-stream-pip-chrome:not(.et-stream-pip-chrome--grid)
-    .et-stream-pip-chrome__cell:not(.et-stream-pip-chrome__cell--featured) {
+  .et-stream-pip-chrome__stage:not(.et-stream-pip-chrome__stage--grid)
+    > .et-stream-pip-chrome__cell:not(.et-stream-pip-chrome__cell--featured) {
     transform: translate(calc(var(--et-cell-exit-h, 0) * 100%), calc(var(--et-cell-exit-v, 0) * 100%));
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell {
+  .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell {
     cursor: pointer;
   }
 
@@ -63,27 +63,27 @@
     pointer-events: none;
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell::after {
+  .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell::after {
     pointer-events: auto;
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focus-visible::after {
+  .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell:focus-visible::after {
     box-shadow: inset 0 0 0 5px
       color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 35%, transparent);
   }
 
   @media (hover: hover) {
-    et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:hover::after {
+    .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell:hover::after {
       box-shadow: inset 0 0 0 5px
         color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 35%, transparent);
     }
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell:focus-visible {
+  .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell:focus-visible {
     outline: none;
   }
 
-  et-stream-pip-chrome.et-stream-pip-chrome--grid .et-stream-pip-chrome__cell--featured::after {
+  .et-stream-pip-chrome__stage--grid > .et-stream-pip-chrome__cell--featured::after {
     box-shadow: inset 0 0 0 5px
       var(--et-stream-pip-chrome-featured-ring-color, var(--et-theme-color-primary-solid, #3b82f6));
   }

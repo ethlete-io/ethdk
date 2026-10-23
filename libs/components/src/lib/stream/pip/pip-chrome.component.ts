@@ -35,7 +35,6 @@ import { PipWindowComponent } from './pip-window.component';
 @Component({
   selector: 'et-stream-pip-chrome',
   templateUrl: './pip-chrome.component.html',
-  styleUrl: './pip-chrome.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     ...ICON_IMPORTS,

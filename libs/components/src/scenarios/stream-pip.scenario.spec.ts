@@ -440,6 +440,7 @@ describe('stream picture-in-picture with an app-built chrome', () => {
 
     expect(pip.pipChromeComponent()).toBe(BrandedPipChromeComponent);
     expect(query('.title', chrome).textContent).toBe('kick-arena');
+    expect(document.querySelector('.et-style-manager et-pip-stage-styles')).not.toBeNull();
     expect(Array.from(chrome.querySelectorAll('[data-caption]')).map((el) => el.getAttribute('data-caption'))).toEqual([
       'kick-arena',
       'kick-studio',
@@ -456,6 +457,7 @@ describe('stream picture-in-picture with an app-built chrome', () => {
     query('.grid', chrome).click();
     await s.settle();
     expect(pip.featuredPipId()).toBeNull();
+    expect(query('.et-stream-pip-chrome__stage', chrome).classList).toContain('et-stream-pip-chrome__stage--grid');
 
     query('.close-one', chrome).click();
     await s.settle();
