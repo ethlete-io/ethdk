@@ -19,6 +19,8 @@ const LOG_LINES: usize = 40;
 
 /// A cold start builds the design page, so the first answer takes far longer than a restart.
 const START_TIMEOUT: Duration = Duration::from_secs(90);
+// A cli older than `design stamp` reads `stamp` as a checkout path and serves it until killed.
+const STAMP_TIMEOUT: Duration = Duration::from_secs(5);
 
 const STAMP_PATH: &str = "/__design/stamp";
 
@@ -128,7 +130,7 @@ async fn own_stamp(checkout: &str) -> Option<serde_json::Value> {
     let entry = cli_entry(Path::new(checkout))?;
 
     let output = tokio::time::timeout(
-        START_TIMEOUT,
+        STAMP_TIMEOUT,
         Command::new("node")
             .arg(entry)
             .arg("design")
