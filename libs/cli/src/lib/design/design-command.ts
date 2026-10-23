@@ -21,7 +21,7 @@ const helpOf = (invocation: string) =>
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames.',
     '',
-    `${invocation} new <project>/<group>/<name> [--variants a,b]`,
+    `${invocation} new <project>/<group>/<name> [--variants a,b] [--stage <stage>]`,
     '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
     '',
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
