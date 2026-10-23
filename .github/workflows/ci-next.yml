@@ -48,6 +48,7 @@ jobs:
           channelId: live
           projectId: ethlete-sdk
           target: next
+          firebaseToolsVersion: 15.34.0
 
       - name: Create and publish prereleases
         id: changesets

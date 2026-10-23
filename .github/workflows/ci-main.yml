@@ -49,6 +49,7 @@ jobs:
           channelId: live
           projectId: ethlete-sdk
           target: prod
+          firebaseToolsVersion: 15.34.0
 
       # npm trusted publishing (OIDC) needs npm 11.5.1 or later, and Node 22.20.0 ships npm 10.
       - run: npm install -g npm@^11.5.1
