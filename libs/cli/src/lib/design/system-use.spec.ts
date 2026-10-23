@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { inventoryWarningOf, systemWarningOf } from './system-use';
+import { inventoryWarningOf, stageWarningOf, systemWarningOf } from './system-use';
 
 const checkout = (variant: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -50,5 +50,17 @@ describe('inventoryWarningOf', () => {
     );
     expect(inventoryWarningOf({ slug: 'app/wire/00-home', stage: 'wireframe', hasInventory: true })).toBeNull();
     expect(inventoryWarningOf({ slug: 'app/pages/00-home', stage: 'page', hasInventory: false })).toBeNull();
+  });
+});
+
+describe('stageWarningOf', () => {
+  it('warns about a call without a stage and names the seven stages', () => {
+    const warning = stageWarningOf({ slug: 'app/pages/00-home', stage: null });
+
+    expect(warning).toContain('has no stage');
+    for (const stage of ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype']) {
+      expect(warning).toContain(stage);
+    }
+    expect(stageWarningOf({ slug: 'app/pages/00-home', stage: 'page' })).toBeNull();
   });
 });

@@ -6,7 +6,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
-import { inventoryWarningOf, systemWarningOf } from './system-use';
+import { inventoryWarningOf, stageWarningOf, systemWarningOf } from './system-use';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -216,6 +216,7 @@ const checkPage = async (options: {
   if (consoleErrors.length > 0) return fail(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
 
   const warnings = [
+    stageWarningOf({ slug, stage: declared.stage }),
     systemWarningOf({ target, slug, stage: declared.stage }),
     inventoryWarningOf({ slug, stage: declared.stage, hasInventory: declared.hasInventory }),
   ];

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { dirname, isAbsolute, relative, resolve } from 'path';
+import { CALL_STAGES } from './new-call';
 import { callsRootOf, DESIGN_DIR } from './paths';
 
 const STAGES_ON_THE_SYSTEM = new Set(['element', 'page', 'prototype']);
@@ -49,4 +50,13 @@ export const inventoryWarningOf = (options: { slug: string; stage: string | null
   if (!hasInventory || stage === 'wireframe') return null;
 
   return `WARNING ${slug} has an inventory, but only a wireframe call takes one.`;
+};
+
+/** The warning for a call that declares no stage and so sits outside the design process. */
+export const stageWarningOf = (options: { slug: string; stage: string | null }) => {
+  const { slug, stage } = options;
+
+  if (stage) return null;
+
+  return `WARNING ${slug} has no stage. Set one of ${CALL_STAGES.join(', ')}, so the call joins the design process.`;
 };
