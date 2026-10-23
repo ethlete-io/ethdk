@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.0.0-next.72
+
+### Minor Changes
+
+- Add the `--et-carousel-slide-gap` token to space the slides of a carousel track.
+- The split button menu now opens end-aligned under the button, and the trigger stays hovered while it is open.
+
+### Patch Changes
+
+- Give the accordion header and panel a default inline padding and hover radius so the hover tint no longer clips the title and chevron to its edges.
+- Center the text of `et-badge` and `et-chip` on its cap height with `text-box: trim-both cap alphabetic`. The badge now wraps its projected text in an `.et-badge-label` span.
+- `NotificationDirective` now starts the enter animation of an `AnimatedLifecycleDirective` on the same element, so a custom toast animates in and out by adding that host directive. Dismissed toasts no longer flash back in before they are removed.
+- `etPipStage` and `etPipCell` now load their own layout styles, so a custom PiP chrome shows its players instead of an empty window. The grid view state is exposed as the `et-stream-pip-chrome__stage--grid` class on the stage.
+- The stream consent gate, error overlay and PiP slot placeholder now fill the player instead of showing an inset card that overflowed it.
+- Scroll only the nearest scroll container in `FloatingActionDirective.scrollToTop()` instead of calling `scrollIntoView`, so it no longer scrolls a page that embeds the content in an iframe.
+- The query button's spinner crossfades from indeterminate to the progress arc, and the progress no longer jumps back to `0` or to the indeterminate sweep when a request's download phase starts.
+- Give the `et-query-error` violation list its own bullets and margin, so a CSS reset such as Tailwind's preflight no longer strips them.
+- `BUTTON_IMPORTS` no longer pulls the whole menu into a bundle, and the migrate-from-cdk class list knows the new badge, spinner and PiP stage classes.
+
 ## 1.0.0-next.71
 
 ### Patch Changes
