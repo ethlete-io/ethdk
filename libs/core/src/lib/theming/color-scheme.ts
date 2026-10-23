@@ -64,6 +64,17 @@ const COLOR_SCHEME_DEF = /* @__PURE__ */ defineProvider(
       return variant === chosen ? null : `${colorPrefix}-color--${createCssColorThemeName(variant)}`;
     });
 
+    const defaultColor = colorThemes?.find((theme) => theme.isDefault)?.name;
+
+    if (defaultColor) {
+      for (const surface of surfaceDefaults) {
+        const variant = resolveColorThemeVariant(surface, defaultColor, colorThemes);
+
+        if (variant !== defaultColor)
+          root.classList.remove(`${colorPrefix}-color--${createCssColorThemeName(variant)}`);
+      }
+    }
+
     let paintedColorClass: string | null = null;
 
     const clearColorClass = () => {

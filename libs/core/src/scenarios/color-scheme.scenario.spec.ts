@@ -205,6 +205,36 @@ describe('color scheme scenarios', () => {
     });
   });
 
+  describe('hydrating over a server render', () => {
+    const scenario = useScenario();
+
+    it('removes the accent swap the server painted when the client resolves to dark', async () => {
+      const root = document.documentElement;
+
+      root.classList.add('et-color--brand-on-light', 'et-color--grey-light');
+      media.setPrefersDark(true);
+
+      const s = scenario();
+      const app = await s.app([
+        provideColorThemesWithTailwind4(COLOR_THEMES),
+        provideSurfaceThemesWithTailwind4(SWAPPING_SCHEMES),
+        provideColorScheme(),
+      ]);
+
+      s.tick();
+
+      expect(colorClasses(root)).toEqual(['et-color--grey-light']);
+
+      app.run(() => injectColorScheme()).setMode('light');
+      s.tick();
+
+      expect(colorClasses(root)).toEqual(['et-color--grey-light', 'et-color--brand-on-light']);
+
+      app.destroy();
+      root.classList.remove('et-color--grey-light');
+    });
+  });
+
   describe('without provideColorScheme()', () => {
     const scenario = useScenario({ providers: [provideSurfaceThemesWithTailwind4(BOTH_SCHEMES)] });
 
