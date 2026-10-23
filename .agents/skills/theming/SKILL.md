@@ -65,6 +65,10 @@ resolve automatically per CSS state when the element has `[etSurfaceInteractive]
 similarly `[etColorInteractive]` re-resolves the color tokens per state (put it on
 the interactive element itself, never a wrapper).
 
+**Never use `hover:bg-et-surface-interaction-hover` for a hover row.** The token is a
+full-strength neutral tint, so in dark mode it gives a light row with near-white text. Use
+`[etSurfaceInteractive]` on the row for hover feedback.
+
 ## Providing context
 
 - `[etProvideSurface]="'dark-elevated'"` / `[etAutoSurface]` (auto-picks the next
