@@ -221,7 +221,7 @@ describe('AnimatedLifecycleDirective transitions', () => {
 
       expect(lifecycle.state()).toBe('left');
       expect(hasClass('leave-active')).toBe(false);
-      expect(hasClass('leave-to')).toBe(false);
+      expect(hasClass('leave-to')).toBe(true);
       expect(hasClass('leave-done')).toBe(true);
     });
   });

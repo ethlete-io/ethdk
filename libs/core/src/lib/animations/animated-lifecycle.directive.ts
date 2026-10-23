@@ -109,7 +109,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
     const isInterrupting = currentState === 'leaving';
 
     this.updateState('entering');
-    this.removeClass(ANIMATION_CLASSES.leaveDone);
+    this.removeClasses(ANIMATION_CLASSES.leaveDone, ANIMATION_CLASSES.leaveTo);
 
     const previousCancel$ = this.cancelCurrentAnimation$;
     this.cancelCurrentAnimation$ = new Subject<void>();
@@ -230,7 +230,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         transitionId,
         onComplete: () => {
           this.updateState('left');
-          this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this.removeClass(ANIMATION_CLASSES.leaveActive);
           this.addClass(ANIMATION_CLASSES.leaveDone);
         },
         cancelSignal: this.cancelCurrentAnimation$,
@@ -244,7 +244,7 @@ export class AnimatedLifecycleDirective implements AfterViewInit {
         transitionId,
         onComplete: () => {
           this.updateState('left');
-          this.removeClasses(ANIMATION_CLASSES.leaveActive, ANIMATION_CLASSES.leaveTo);
+          this.removeClass(ANIMATION_CLASSES.leaveActive);
           this.addClass(ANIMATION_CLASSES.leaveDone);
         },
         cancelSignal: this.cancelCurrentAnimation$,

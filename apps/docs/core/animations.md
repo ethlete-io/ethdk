@@ -29,7 +29,7 @@ The class cycle mirrors Vue's transition contract:
 | Enter | `et-animation-enter-from` → `et-animation-enter-active` → `et-animation-enter-to` → `et-animation-enter-done` |
 | Leave | `et-animation-leave-from` → `et-animation-leave-active` → `et-animation-leave-to` → `et-animation-leave-done` |
 
-The host additionally carries `et-force-invisible` until the first transition starts. Interrupting a running transition (entering while leaving, or vice versa) is handled - classes swap and an `-interrupt` class is added for that cycle.
+The host additionally carries `et-force-invisible` until the first transition starts. A finished leave keeps `et-animation-leave-to` next to `et-animation-leave-done` until the next `enter()`, so an element its owner removes a frame later stays in its leave end state instead of flashing back. Interrupting a running transition (entering while leaving, or vice versa) is handled - classes swap and an `-interrupt` class is added for that cycle.
 
 API surface:
 

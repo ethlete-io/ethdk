@@ -1,4 +1,13 @@
-import { AfterViewInit, Component, DestroyRef, inject, signal, ViewChild, ViewChildren } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  DestroyRef,
+  inject,
+  signal,
+  ViewChild,
+  ViewChildren,
+  ViewEncapsulation,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, startWith, switchMap } from 'rxjs';
 import {
@@ -75,6 +84,18 @@ class HeaderComponent implements AfterViewInit {
   hostDirectives: [AnimatedLifecycleDirective],
 })
 class LifecycleHostComponent {
+  lifecycle = inject(AnimatedLifecycleDirective);
+}
+
+@Component({
+  selector: 'et-scenario-fading-toast',
+  template: '',
+  encapsulation: ViewEncapsulation.None,
+  styles: '.et-scenario-fading-toast.et-animation-leave-to { opacity: 0; }',
+  hostDirectives: [AnimatedLifecycleDirective],
+  host: { class: 'et-scenario-fading-toast' },
+})
+class FadingToastComponent {
   lifecycle = inject(AnimatedLifecycleDirective);
 }
 
@@ -277,5 +298,35 @@ describe('animation scenarios', () => {
     } finally {
       restore();
     }
+  });
+
+  it('keeps a finished leave faded out until its owner removes the element', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(FadingToastComponent);
+    const { lifecycle } = fixture.componentInstance;
+    const element: HTMLElement = fixture.nativeElement;
+    const opacity = () => getComputedStyle(element).opacity;
+
+    s.flush();
+    lifecycle.enter();
+    s.frame(4);
+    s.flush();
+    expect(opacity()).toBe('1');
+
+    lifecycle.leave();
+    s.frame(4);
+    s.flush();
+
+    expect(lifecycle.state()).toBe('left');
+    expect(opacity()).toBe('0');
+
+    lifecycle.enter();
+    s.frame(4);
+    s.flush();
+
+    expect(lifecycle.state()).toBe('entered');
+    expect(opacity()).toBe('1');
+
+    fixture.destroy();
   });
 });
