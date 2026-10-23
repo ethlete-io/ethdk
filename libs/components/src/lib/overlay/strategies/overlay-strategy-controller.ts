@@ -31,7 +31,7 @@ import { normalizeClassList } from '../normalize-class-list';
 import { OverlayConfig } from '../overlay-config';
 import { OVERLAY_ERROR_CODES } from '../overlay-errors';
 import { resolveOverlayHasBackdrop } from '../overlay-has-backdrop';
-import { OverlayRef } from '../overlay-ref';
+import { OverlayLayout, OverlayRef } from '../overlay-ref';
 import { OverlayArrowStylesComponent } from './overlay-arrow-styles.component';
 import { resolveOriginElement } from './resolve-origin-element';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
@@ -56,6 +56,9 @@ export type OverlayStrategyController = {
   /** Whether the active strategy renders a drag handle - follows breakpoint switches. */
   renderDragHandle: Signal<boolean>;
 
+  /** The `et-overlay--<name>` layout of the active strategy - follows breakpoint switches. */
+  layout: Signal<OverlayLayout | null>;
+
   /** Whether the overlay renders a backdrop under the active strategy - follows breakpoint switches. */
   hasBackdrop: Signal<boolean>;
 
@@ -79,6 +82,18 @@ const sharedClassCounts = /* @__PURE__ */ new WeakMap<HTMLElement, Map<string, n
 
 const coerceCssPixelValue = (value: number | string) => {
   return typeof value === 'number' ? `${value}px` : value;
+};
+
+const LAYOUT_CLASS_PATTERN = /^et-overlay--([a-z][a-z0-9-]*)$/;
+
+const resolveOverlayLayout = (containerClass: string | string[] | undefined): OverlayLayout | null => {
+  for (const name of normalizeClassList(containerClass).flatMap((value) => value.split(/\s+/))) {
+    const match = LAYOUT_CLASS_PATTERN.exec(name);
+
+    if (match) return match[1] as OverlayLayout;
+  }
+
+  return null;
 };
 
 export const createOverlayStrategyController = (
@@ -505,6 +520,7 @@ export const createOverlayStrategyController = (
     renderArrow: computed(() => activeStrategyConfig().arrow ?? false),
     renderDragHandle: computed(() => !!activeStrategyConfig().dragToDismiss),
     hasBackdrop: computed(() => resolveOverlayHasBackdrop(config, activeStrategyConfig())),
+    layout: computed(() => resolveOverlayLayout(activeStrategyConfig().containerClass)),
     attach,
     destroy,
   };

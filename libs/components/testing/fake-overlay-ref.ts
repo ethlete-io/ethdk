@@ -59,6 +59,7 @@ export const createTestOverlayRef = <TResult = unknown, TComponent extends objec
     elements: null,
     config,
     headerTemplate: signal(null).asReadonly(),
+    layout: signal(null).asReadonly(),
     componentInstance: () => null,
     close: (result) => requestClose(result, 'api', false),
     busy,

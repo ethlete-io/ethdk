@@ -217,6 +217,22 @@ describe('overlay strategy controller', () => {
     expect(pane?.querySelector('.et-overlay-arrow')).not.toBeNull();
   });
 
+  it('reports the layout of the active strategy across breakpoint switches', () => {
+    const overlayRef = openOverlay();
+
+    expect(overlayRef.layout()).toBe('bottom-sheet');
+
+    fakeBreakpoints.setMatches(MD_QUERY, true);
+    TestBed.tick();
+
+    expect(overlayRef.layout()).toBe('dialog');
+
+    fakeBreakpoints.setMatches(MD_QUERY, false);
+    TestBed.tick();
+
+    expect(overlayRef.layout()).toBe('bottom-sheet');
+  });
+
   it('switches strategies when the viewport width crosses the breakpoint', () => {
     const overlayRef = openOverlay();
     const elements = overlayRef.elements;

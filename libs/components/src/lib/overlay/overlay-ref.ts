@@ -12,6 +12,17 @@ import { OverlayConfig } from './overlay-config';
 /** A synchronous veto for a pending overlay close - see {@link OverlayRuntimeCloseGuard}. */
 export type OverlayCloseGuard<TResult = unknown> = OverlayRuntimeCloseGuard<TResult | undefined>;
 
+/** The layout an overlay currently shows as - the `et-overlay--<name>` class of its active strategy. */
+export type OverlayLayout =
+  | 'dialog'
+  | 'bottom-sheet'
+  | 'top-sheet'
+  | 'left-sheet'
+  | 'right-sheet'
+  | 'full-screen-dialog'
+  | 'anchored-dialog'
+  | (string & {});
+
 /** The handle to an open overlay, returned by an opener and injectable inside the overlay via `OVERLAY_REF`. */
 export type OverlayRef<TComponent extends object = object, TResult = unknown> = {
   readonly id: string;
@@ -19,6 +30,8 @@ export type OverlayRef<TComponent extends object = object, TResult = unknown> = 
   readonly config: OverlayConfig;
   /** The header template registered by `etOverlayHeaderTemplate`, if any. */
   readonly headerTemplate: Signal<TemplateRef<unknown> | null>;
+  /** The layout the active strategy shows the overlay as, e.g. `'bottom-sheet'`. Follows breakpoint switches; `null` without a strategy. */
+  readonly layout: Signal<OverlayLayout | null>;
   componentInstance: () => TComponent | null;
   close: (result?: TResult) => void;
   /**

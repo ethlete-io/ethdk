@@ -1,8 +1,17 @@
-import { Injector, TemplateRef, computed, effect, runInInjectionContext, signal, untracked } from '@angular/core';
+import {
+  Injector,
+  Signal,
+  TemplateRef,
+  computed,
+  effect,
+  runInInjectionContext,
+  signal,
+  untracked,
+} from '@angular/core';
 import { OverlayRuntimeCloseEvent, OverlayRuntimeCloseSource, OverlayRuntimeRef, injectRenderer } from '@ethlete/core';
 import { Subject, take, tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
-import { OverlayCloseGuard, OverlayRef } from './overlay-ref';
+import { OverlayCloseGuard, OverlayLayout, OverlayRef } from './overlay-ref';
 
 export type OverlayRefInternals<TComponent extends object = object, TResult = unknown> = {
   attachRuntime: (runtimeRef: OverlayRuntimeRef<TComponent, TResult>, injector: Injector) => void;
@@ -10,6 +19,7 @@ export type OverlayRefInternals<TComponent extends object = object, TResult = un
   closeVia: (source: OverlayRuntimeCloseSource, result?: TResult) => void;
   /** True from the moment a close was accepted until the overlay is destroyed. */
   isClosing: () => boolean;
+  attachLayout: (layout: Signal<OverlayLayout | null>) => void;
   registerHeaderTemplate: (template: TemplateRef<unknown>) => () => void;
   /** The result every close without one reports instead of `undefined`. */
   setDismissResult: (result: TResult) => void;
@@ -31,6 +41,9 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
   const busy = signal(false);
   const _headerTemplates = signal<TemplateRef<unknown>[]>([]);
   const headerTemplate = computed(() => _headerTemplates().at(-1) ?? null);
+
+  const layoutSource = signal<Signal<OverlayLayout | null> | null>(null);
+  const layout = computed(() => layoutSource()?.() ?? null);
 
   const afterOpened$ = new Subject<void>();
   const beforeClosed$ = new Subject<TResult | undefined>();
@@ -123,6 +136,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
     },
     config,
     headerTemplate,
+    layout,
     componentInstance: () => {
       if (_componentInstanceOverride) {
         return _componentInstanceOverride();
@@ -157,6 +171,7 @@ export const createOverlayRef = <TComponent extends object, TResult = unknown>(c
 
       return state === 'closing' || state === 'closed';
     },
+    attachLayout: (source) => layoutSource.set(source),
     registerHeaderTemplate: (template) => {
       _headerTemplates.update((templates) => [...templates.filter((t) => t !== template), template]);
 

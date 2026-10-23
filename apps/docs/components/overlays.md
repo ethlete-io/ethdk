@@ -88,6 +88,7 @@ The `OverlayRef` is returned by `open` and injectable inside the overlay via the
   on an explicit dismiss without stealing it from whatever an outside-pointer close was aimed at
 - `componentInstance()` - the content component instance
 - `busy` - a writable signal that blocks every non-`api` close while `true`, see [Busy state](#busy-state)
+- `layout` - a signal with the layout the active strategy shows the overlay as (`'dialog'`, `'bottom-sheet'`, `'top-sheet'`, `'left-sheet'`, `'right-sheet'`, `'full-screen-dialog'`, `'anchored-dialog'`, or a custom strategy's own `et-overlay--<name>`), `null` without a strategy. It follows breakpoint switches, so `overlayRef.layout() === 'bottom-sheet'` is the way to tell a bottom sheet apart - do not key on the `.et-overlay--bottom-sheet` class
 - `updatePositionStrategy(strategy)` - reposition without remounting
 - `registerCloseGuard(guard)` - veto pending closes synchronously (returns an unregister fn); `forceClose(result?, source?)` commits a close bypassing all guards (same argument order as the core runtime ref). These are the low-level seam behind `createOverlayUnsavedChangesGuard` (below) - reach for that instead of wiring guards by hand
 - `id`, `config`, `elements` (`paneElement` / `hostElement` / `backdropElement()`) - identity and DOM access. `backdropElement` is a signal because a strategy switch can add or remove the backdrop

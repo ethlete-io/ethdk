@@ -221,6 +221,7 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
 
       const { ref: overlayRef, internals } = createOverlayRef<TComponent, TResult>(resolvedConfig);
       const controller = createOverlayStrategyController(resolvedConfig, injector);
+      internals.attachLayout(controller.layout);
       const modal = resolvedConfig.mode !== 'non-modal';
       const role = resolvedConfig.role ?? (modal ? 'dialog' : undefined);
       const disableClose = resolvedConfig.disableClose ?? false;
