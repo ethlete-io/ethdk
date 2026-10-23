@@ -4,7 +4,7 @@
   "formatCommand": "npx prettier --write <files>",
   "storybookUrl": "http://localhost:6006",
   "storybookStartCommand": "npm run storybook",
-  "docsBaseUrl": "https://ethlete-sdk-docs.web.app",
+  "docsBaseUrl": "https://ethlete-sdk-docs-next.web.app",
   "sdkStorybookUrl": "https://ethlete-sdk.web.app",
   "handoffDir": ".agents/handoffs"
 }
