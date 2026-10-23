@@ -126,6 +126,11 @@ A `<script>` in a drawing's `body` never runs. For behavior - a play button that
 CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
 frame calls it once, after the markup is in `root`.
 
+For a prototype with states, render each state with `ngStates({ closed: …, open: … }, { imports })`
+and put its `body` in the drawing. `setup: flow.on([{ click: '.trigger', go: 'open' }])` swaps the
+states on a click, in a View Transition. An open overlay does not render on the server, so a
+state draws its panel in the template. See `components/ssr/01-states`.
+
 **A repository with a sketch Storybook** draws every variant in the **same** story, side by
 side, under the real geometry the thing ships in. The default Storybook is
 http://localhost:4400; an app with its own sketch Storybook names its port in the plan file.

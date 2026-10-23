@@ -33,27 +33,89 @@ export const unseenStyles = (styles: string[], seen: Set<string>) => {
   return fresh.map((style) => `<style>${style}</style>`).join('');
 };
 
+const render = async (template: string, imports: string[]) => {
+  const response = await fetch('/__design/render', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ call: new URLSearchParams(location.search).get('call') ?? '', template, imports }),
+  });
+
+  if (!response.ok) throw new Error(await response.text());
+
+  return (await response.json()) as { markup: string; styles: string[] };
+};
+
 /**
  * Renders an Angular template with the real components on the design server and resolves with its
  * markup, led by the component styles this frame has not received yet. `imports` names exports of
  * `@ethlete/components` (or of the config's `render.modules`). Rejects with the render error.
  */
 export const ng = async (template: string, options: { imports?: string[] } = {}) => {
-  const response = await fetch('/__design/render', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      call: new URLSearchParams(location.search).get('call') ?? '',
-      template,
-      imports: options.imports ?? [],
-    }),
-  });
-
-  if (!response.ok) throw new Error(await response.text());
-
-  const { markup, styles } = (await response.json()) as { markup: string; styles: string[] };
+  const { markup, styles } = await render(template, options.imports ?? []);
 
   return unseenStyles(styles, emitted) + markup;
+};
+
+/** A click on an element that matches `click` inside the drawing shows the state `go`. */
+export type StateRule<S extends string> = { click: string; go: S };
+
+/**
+ * Swaps the content of the drawing's state host for `states[rule.go]` when a click matches a rule.
+ * The first matching rule wins. The swap runs in a View Transition where the browser has one.
+ */
+export const switchStates =
+  <S extends string>(states: Record<S, string>, rules: StateRule<S>[]) =>
+  (root: HTMLElement) => {
+    const host = root.querySelector<HTMLElement>('[data-de-states]');
+
+    if (!host) throw new Error('design-explore: no [data-de-states] host - put the body of ngStates() in the drawing');
+
+    root.addEventListener('click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const rule = rules.find((entry) => {
+        const matched = target?.closest(entry.click);
+
+        return matched ? root.contains(matched) : false;
+      });
+
+      if (!rule) return;
+
+      const swap = () => {
+        host.innerHTML = states[rule.go];
+        host.dataset['deStates'] = rule.go;
+      };
+
+      if (document.startViewTransition) document.startViewTransition(swap);
+      else swap();
+    });
+  };
+
+/**
+ * Renders each named template with `ng()` and resolves with a `body` that shows the first state,
+ * and `on(rules)`, a `setup` that swaps states on a click. Every state's styles load up front.
+ */
+export const ngStates = async <S extends string>(
+  templates: Record<S, string>,
+  options: { imports?: string[] } = {},
+) => {
+  const names = Object.keys(templates) as S[];
+  const rendered = await Promise.all(names.map((name) => render(templates[name], options.imports ?? [])));
+  const states = Object.fromEntries(names.map((name, index) => [name, rendered[index]?.markup ?? ''])) as Record<
+    S,
+    string
+  >;
+  const first = names[0];
+
+  if (first === undefined) throw new Error('design-explore: ngStates() needs at least one state');
+
+  return {
+    body:
+      unseenStyles(
+        rendered.flatMap((entry) => entry.styles),
+        emitted,
+      ) + `<div data-de-states="${first}" style="display: contents">${states[first]}</div>`,
+    on: (rules: StateRule<S>[]) => switchStates(states, rules),
+  };
 };
 
 /**
