@@ -19,7 +19,7 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
   selector: 'app-filter-overlay-without-preview-panel',
   template: `
     <div etOverlayHeader>
-      <h2 etOverlayTitle>Filters</h2>
+      <h2 class="app-filter-overlay-plain-title" etOverlayTitle>Filters</h2>
     </div>
 
     <et-overlay-body>
@@ -29,7 +29,7 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
       </et-form-field>
     </et-overlay-body>
 
-    <div etOverlayFooter>
+    <div class="app-filter-overlay-plain-footer" etOverlayFooter>
       <button et-button etFilterOverlayReset variant="transparent" size="sm">{{ filters.labels().reset }}</button>
       <button #submit="etFilterOverlaySubmit" et-button etFilterOverlaySubmit size="sm">{{ submit.label() }}</button>
     </div>
@@ -44,6 +44,24 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
     FormField,
   ],
   hostDirectives: [OverlayMainDirective],
+  host: { class: 'app-filter-overlay-plain-panel' },
+  styles: `
+    .app-filter-overlay-plain-panel {
+      --et-overlay-body-padding-block: 1.6rem;
+    }
+
+    .app-filter-overlay-plain-title {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .app-filter-overlay-plain-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+  `,
 })
 export class FilterOverlayWithoutPreviewPanelComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
@@ -52,14 +70,16 @@ export class FilterOverlayWithoutPreviewPanelComponent {
 @Component({
   selector: 'app-filter-overlay-without-preview-example',
   template: `
-    <button (click)="openFilters()" et-button>
-      Filters
-      @if (filters.activeFilterCount() > 0) {
-        <et-chip size="sm">{{ filters.activeFilterCount() }}</et-chip>
-      }
-    </button>
+    <div class="app-example-row">
+      <button (click)="openFilters()" et-button>
+        Filters
+        @if (filters.activeFilterCount() > 0) {
+          <et-chip size="sm">{{ filters.activeFilterCount() }}</et-chip>
+        }
+      </button>
 
-    <p>{{ visibleTeams().length }} teams match.</p>
+      <span>{{ visibleTeams().length }} teams match</span>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, CHIP_IMPORTS],

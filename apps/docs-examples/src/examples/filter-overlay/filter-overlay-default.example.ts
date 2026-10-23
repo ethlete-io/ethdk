@@ -40,19 +40,23 @@ import {
   template: `
     <ng-template etOverlayHeaderTemplate>Filters</ng-template>
 
-    <et-form-field>
-      <et-label>Search</et-label>
-      <et-input [formField]="filters.draft.fields.search" placeholder="Team name" />
-      <et-hint>Matches the team name.</et-hint>
-    </et-form-field>
+    <div class="app-filter-overlay-page">
+      <et-form-field>
+        <et-label>Search</et-label>
+        <et-input [formField]="filters.draft.fields.search" placeholder="Team name" />
+        <et-hint>Matches the team name.</et-hint>
+      </et-form-field>
 
-    <button etOverlayRouterLink="/region" et-button variant="outline" size="sm">
-      Region - {{ REGION_LABELS[filters.draft.value().region] }}
-    </button>
+      <div class="app-filter-overlay-links">
+        <button etOverlayRouterLink="/region" et-button variant="outline" size="sm">
+          Region: {{ REGION_LABELS[filters.draft.value().region] }}
+        </button>
 
-    <button etOverlayRouterLink="/division" et-button variant="outline" size="sm">
-      Division - {{ DIVISION_LABELS[filters.draft.value().division] }}
-    </button>
+        <button etOverlayRouterLink="/division" et-button variant="outline" size="sm">
+          Division: {{ DIVISION_LABELS[filters.draft.value().division] }}
+        </button>
+      </div>
+    </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
@@ -118,7 +122,7 @@ export class FilterOverlayDivisionPageComponent {
 @Component({
   selector: 'app-filter-overlay-shell',
   template: `
-    <div etOverlayHeader>
+    <div class="app-filter-overlay-header" etOverlayHeader>
       <button aria-label="Back" et-button etOverlayBackOrClose variant="transparent" size="sm">&larr;</button>
       <h2 etOverlayTitle>
         <et-overlay-route-header-template-outlet />
@@ -129,7 +133,7 @@ export class FilterOverlayDivisionPageComponent {
       <et-overlay-router-outlet />
     </et-overlay-body>
 
-    <div etOverlayFooter>
+    <div class="app-filter-overlay-footer" etOverlayFooter>
       <button et-button etFilterOverlayReset variant="transparent" size="sm">
         {{ filters.labels().reset }}
       </button>
@@ -149,6 +153,42 @@ export class FilterOverlayDivisionPageComponent {
     OverlayRouterOutletComponent,
   ],
   hostDirectives: [OverlayMainDirective],
+  host: { class: 'app-filter-overlay-shell' },
+  styles: `
+    .app-filter-overlay-shell {
+      --et-overlay-body-padding-block: 1.6rem;
+    }
+
+    .app-filter-overlay-header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+
+      h2 {
+        margin: 0;
+        font-size: 1.8rem;
+      }
+    }
+
+    .app-filter-overlay-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .app-filter-overlay-page,
+    .app-filter-overlay-links {
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+    }
+
+    .app-filter-overlay-links {
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+  `,
 })
 export class FilterOverlayShellComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
@@ -157,32 +197,96 @@ export class FilterOverlayShellComponent {
 @Component({
   selector: 'app-filter-overlay-default-example',
   template: `
-    <div #floatingAction="etFloatingAction" etFloatingAction>
-      <h2>Teams</h2>
-      <p>
-        Applied: <code>{{ appliedLabel() }}</code> · {{ visibleTeams().length }} of {{ TEAMS.length }} teams
-      </p>
+    <div #floatingAction="etFloatingAction" class="app-filter-overlay-demo" etFloatingAction>
+      <div class="app-filter-overlay-toolbar">
+        <div>
+          <h2>Teams</h2>
+          <p>{{ visibleTeams().length }} of {{ TEAMS.length }} teams</p>
+        </div>
 
-      <div etFloatingActionAnchor>
-        <button (click)="openFilters()" et-button etFloatingActionTrigger>
-          Filters
-          @if (filters.activeFilterCount() > 0) {
-            <et-chip size="sm">{{ filters.activeFilterCount() }}</et-chip>
-          }
-        </button>
+        <div etFloatingActionAnchor>
+          <button (click)="openFilters()" et-button etFloatingActionTrigger>
+            Filters
+            @if (filters.activeFilterCount() > 0) {
+              <et-chip size="sm">{{ filters.activeFilterCount() }}</et-chip>
+            }
+          </button>
+        </div>
       </div>
 
-      <ul etFloatingActionScope>
+      @if (appliedFilters().length) {
+        <div class="app-example-row">
+          @for (applied of appliedFilters(); track applied) {
+            <et-chip size="sm">{{ applied }}</et-chip>
+          }
+        </div>
+      }
+
+      <ul class="app-filter-overlay-teams" etFloatingActionScope>
         @for (team of visibleTeams(); track team.name) {
-          <li>{{ team.name }} - {{ REGION_LABELS[team.region] }} · {{ DIVISION_LABELS[team.division] }}</li>
+          <li>
+            <span>{{ team.name }}</span>
+            <span class="app-filter-overlay-meta">
+              {{ REGION_LABELS[team.region] }} · {{ DIVISION_LABELS[team.division] }}
+            </span>
+          </li>
         } @empty {
-          <li>No teams match these filters.</li>
+          <li class="app-filter-overlay-meta">No teams match these filters.</li>
         }
       </ul>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, CHIP_IMPORTS, FLOATING_ACTION_IMPORTS],
+  styles: `
+    .app-filter-overlay-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+    }
+
+    .app-filter-overlay-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.6rem;
+
+      h2 {
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      p {
+        margin: 0.2rem 0 0;
+        font-size: 1.4rem;
+        color: var(--et-surface-color-muted-solid);
+      }
+    }
+
+    .app-filter-overlay-teams {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      border: 1px solid var(--et-surface-border-solid);
+      border-radius: 0.8rem;
+
+      li {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 1rem 1.4rem;
+      }
+
+      li + li {
+        border-block-start: 1px solid var(--et-surface-border-solid);
+      }
+    }
+
+    .app-filter-overlay-meta {
+      font-size: 1.3rem;
+      color: var(--et-surface-color-muted-solid);
+    }
+  `,
 })
 export class FilterOverlayDefaultExampleComponent {
   private overlayManager = injectOverlayManager();
@@ -195,10 +299,14 @@ export class FilterOverlayDefaultExampleComponent {
 
   protected visibleTeams = computed(() => matchTeams(this.filters.value()));
 
-  protected appliedLabel = computed(() => {
+  protected appliedFilters = computed(() => {
     const { search, region, division } = this.filters.value();
 
-    return `search=${search || '-'} region=${region} division=${division}`;
+    return [
+      search ? `"${search}"` : null,
+      region !== 'all' ? REGION_LABELS[region] : null,
+      division !== 'all' ? DIVISION_LABELS[division] : null,
+    ].filter((label) => label !== null);
   });
 
   protected openFilters() {
