@@ -157,7 +157,6 @@
   "injectScrollbarDimensions": "internal: plumbing of signals/recipes/css-vars.ts, no app or lib imports it",
   "injectStructuredDataConfig": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
   "injectStructuredDataStore": "internal: DI accessor of a root provider that its covered API resolves itself; no app or lib imports it",
-  "injectStyleManager": "internal: building block of @ethlete/components, @ethlete/query-devtools, no app imports it",
   "injectSurfaceThemes": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
   "injectSurfaceThemesPrefix": "internal: building block of @ethlete/components, no app imports it",
   "injectTemplateRef": "internal: building block of @ethlete/cdk, @ethlete/components, no app imports it",
