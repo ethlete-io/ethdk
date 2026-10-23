@@ -41,6 +41,8 @@
     --_et-badge-border-color: transparent;
 
     display: inline-flex;
+    align-self: start;
+    justify-self: start;
     align-items: center;
     justify-content: center;
     gap: var(--et-badge-gap);
