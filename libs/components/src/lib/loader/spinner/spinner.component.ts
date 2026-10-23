@@ -82,16 +82,18 @@ const BASE_STROKE_WIDTH = 10;
         />
       </svg>
     } @else {
-      <div class="et-spinner-indeterminate-container" aria-hidden="true">
-        <div class="et-spinner-layer">
-          <div class="et-spinner-circle-clipper et-spinner-circle-left">
-            <ng-container [ngTemplateOutlet]="circle" />
-          </div>
-          <div class="et-spinner-gap-patch">
-            <ng-container [ngTemplateOutlet]="circle" />
-          </div>
-          <div class="et-spinner-circle-clipper et-spinner-circle-right">
-            <ng-container [ngTemplateOutlet]="circle" />
+      <div class="et-spinner-indeterminate" animate.leave="et-spinner-indeterminate--leave">
+        <div class="et-spinner-indeterminate-container" aria-hidden="true">
+          <div class="et-spinner-layer">
+            <div class="et-spinner-circle-clipper et-spinner-circle-left">
+              <ng-container [ngTemplateOutlet]="circle" />
+            </div>
+            <div class="et-spinner-gap-patch">
+              <ng-container [ngTemplateOutlet]="circle" />
+            </div>
+            <div class="et-spinner-circle-clipper et-spinner-circle-right">
+              <ng-container [ngTemplateOutlet]="circle" />
+            </div>
           </div>
         </div>
       </div>

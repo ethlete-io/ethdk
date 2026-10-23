@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, Signal, booleanAttribute, computed, inject, input } from '@angular/core';
+import { DestroyRef, Directive, Signal, booleanAttribute, computed, inject, input, linkedSignal } from '@angular/core';
 import { ButtonDirective } from './button.directive';
 
 export type QueryButtonLoadingState = { progress?: { percentage?: number } | null } | boolean | null;
@@ -48,7 +48,20 @@ export class QueryButtonDirective {
   /** Whether the spinner shows the query's progress percentage when it reports one. */
   public showProgress = input(true, { transform: booleanAttribute });
 
-  private state = computed(() => readQueryButtonSource(this.query()));
+  // Never falls back within one run: after the upload, a download restarts at 0 or reports no length.
+  private state = linkedSignal<QueryButtonState, QueryButtonState>({
+    source: () => readQueryButtonSource(this.query()),
+    computation: (state, previous) => {
+      if (!state.loading) return IDLE_STATE;
+
+      const reported = state.progress !== null && Number.isFinite(state.progress) ? state.progress : null;
+      const held = previous?.value.loading ? previous.value.progress : null;
+
+      if (held === null || reported === null) return { loading: true, progress: reported ?? held };
+
+      return { loading: true, progress: Math.max(held, reported) };
+    },
+  });
 
   public loading = computed(() => this.state().loading);
 

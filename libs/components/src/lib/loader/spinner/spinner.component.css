@@ -104,6 +104,7 @@
 
     .et-spinner-track-container,
     .et-spinner-track-graphic,
+    .et-spinner-indeterminate,
     .et-spinner-indeterminate-container,
     .et-spinner-layer,
     .et-spinner-circle-graphic {
@@ -138,6 +139,20 @@
     .et-spinner-circle-graphic circle {
       stroke-linecap: round;
       stroke-linejoin: round;
+    }
+
+    .et-spinner-indeterminate--leave {
+      opacity: 0;
+      transition: opacity 150ms ease;
+    }
+
+    .et-spinner-track-container,
+    .et-spinner-determinate-graphic {
+      transition: opacity 150ms ease;
+
+      @starting-style {
+        opacity: 0;
+      }
     }
 
     .et-spinner-indeterminate-container {

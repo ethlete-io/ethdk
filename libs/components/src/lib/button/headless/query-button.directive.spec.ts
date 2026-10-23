@@ -129,6 +129,36 @@ describe('QueryButtonDirective', () => {
       expect(spinner()?.classList.contains('et-spinner--determinate')).toBe(false);
     });
 
+    it('keeps the progress when a later phase reports none', () => {
+      loading.set(loadingState(100));
+      fixture.detectChanges();
+      loading.set(loadingState());
+      fixture.detectChanges();
+
+      expect(spinner()?.classList.contains('et-spinner--determinate')).toBe(true);
+      expect(spinner()?.getAttribute('aria-valuenow')).toBe('100');
+    });
+
+    it('does not move the progress back when a download phase restarts at 0', () => {
+      loading.set(loadingState(100));
+      fixture.detectChanges();
+      loading.set(loadingState(5));
+      fixture.detectChanges();
+
+      expect(spinner()?.getAttribute('aria-valuenow')).toBe('100');
+    });
+
+    it('starts the next run indeterminate', () => {
+      loading.set(loadingState(80));
+      fixture.detectChanges();
+      loading.set(null);
+      fixture.detectChanges();
+      loading.set(loadingState());
+      fixture.detectChanges();
+
+      expect(spinner()?.classList.contains('et-spinner--determinate')).toBe(false);
+    });
+
     it('keeps the spinner indeterminate when showProgress is off', () => {
       host.showProgress.set(false);
       loading.set(loadingState(40));

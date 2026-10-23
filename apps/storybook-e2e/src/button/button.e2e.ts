@@ -268,3 +268,44 @@ test.describe('button / focus ring press state', () => {
     await expect.poll(() => transformOf(box)).toBe(rest);
   });
 });
+
+type SpinnerFrame = { sweep: boolean; ringOpacity: number };
+
+const spinnerFrames = (page: Page) =>
+  page.evaluate(() => (window as unknown as { spinnerFrames: SpinnerFrame[] }).spinnerFrames);
+
+test.describe('button / query progress', () => {
+  test('the spinner crossfades from indeterminate to the first progress instead of snapping', async ({ page }) => {
+    const root = await openStory(page, 'components-actions-button-query--default');
+
+    await page.evaluate(() => {
+      const frames: SpinnerFrame[] = [];
+
+      (window as unknown as { spinnerFrames: SpinnerFrame[] }).spinnerFrames = frames;
+
+      const sample = () => {
+        const ring = document.querySelector('.et-button-loader .et-spinner-determinate-graphic');
+
+        if (ring) {
+          frames.push({
+            sweep: !!document.querySelector('.et-button-loader .et-spinner-indeterminate'),
+            ringOpacity: Number(getComputedStyle(ring).opacity),
+          });
+        }
+
+        if (!frames.length) requestAnimationFrame(sample);
+      };
+
+      requestAnimationFrame(sample);
+    });
+
+    await root.locator('button[et-button]').first().click();
+
+    await expect.poll(async () => (await spinnerFrames(page)).length).toBeGreaterThan(0);
+
+    const [firstFrame] = await spinnerFrames(page);
+
+    expect(firstFrame?.sweep).toBe(true);
+    expect(firstFrame?.ringOpacity).toBeLessThan(1);
+  });
+});
