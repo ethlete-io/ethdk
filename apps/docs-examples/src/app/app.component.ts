@@ -1,6 +1,6 @@
 import { DOCUMENT, NgComponentOutlet } from '@angular/common';
-import { Component, ViewEncapsulation, inject, signal } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { Component, ViewEncapsulation, effect, inject, signal } from '@angular/core';
+import { ProvideSurfaceDirective, injectColorScheme } from '@ethlete/core';
 import { injectDocsExample } from './docs-example';
 
 @Component({
@@ -22,7 +22,13 @@ export class AppComponent {
   protected example = injectDocsExample();
   private document = inject(DOCUMENT);
 
-  protected theme = signal(this.example.theme === 'light' ? 'light' : 'dark');
+  protected theme = signal<'light' | 'dark'>(this.example.theme === 'light' ? 'light' : 'dark');
+
+  constructor() {
+    const colorScheme = injectColorScheme();
+
+    effect(() => colorScheme.setMode(this.theme()));
+  }
 
   protected applyParentTheme(event: MessageEvent) {
     if (event.source !== this.document.defaultView?.parent || event.data?.type !== 'et-docs-theme') return;

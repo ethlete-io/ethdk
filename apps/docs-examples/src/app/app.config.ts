@@ -3,7 +3,7 @@ import { ApplicationConfig, provideAppInitializer, provideZonelessChangeDetectio
 import { provideRouter, withHashLocation } from '@angular/router';
 import { provideOverlay as provideCdkOverlay, provideValidatorErrorsService } from '@ethlete/cdk';
 import { provideOverlay } from '@ethlete/components';
-import { provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
+import { provideColorScheme, provideColorThemesWithTailwind4, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
 import { provideQueryDevtools } from '@ethlete/query';
 import { THEMES } from './color-themes';
 import { injectDocsExample } from './docs-example';
@@ -28,6 +28,7 @@ export const appConfig: ApplicationConfig = {
     ),
     ...provideColorThemesWithTailwind4(THEMES),
     ...provideSurfaceThemesWithTailwind4(SURFACE_THEMES),
+    provideColorScheme(),
     ...provideOverlay(),
     ...provideCdkOverlay(),
     provideValidatorErrorsService(),
