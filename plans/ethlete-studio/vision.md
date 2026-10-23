@@ -59,7 +59,16 @@ names are **project → feature → call → variant**.
      - Tom decided, 2026-10-23: first a `setup(root)` hook on the drawing (done, 84ee476e9),
        then a state-snapshot helper on top: named `ng()` states, swapped by rules such as
        `click .trigger → open`, with a View Transition. Host controls are still open.
-   - Open, theme: a frame control that switches the fixture's surface and color themes.
+   - Theme (Tom decided, 2026-10-23): one switch per call, applied to every frame. The frame side is
+     done (3890782af): `frame.html?…&surface=<name>&color=<name>` puts the classes on `#root`;
+     a project names `themes` in `config.json`. The control belongs in Studio, not in a web page.
+   - Old web call page removed (00dd153e1). Studio is the only call UI; `frame.html` stays.
+   - `setup` will accept a function or an array (tomflix feedback), so `flow.on` combines with own code.
+   - Call creation (Tom decided, 2026-10-23): `et design` subcommands are the core (boilerplate,
+     status, screenshot). They write status files that Studio shows; Studio's MCP tools
+     (`apps/ethlete-studio/src-tauri/src/tools.rs`) wrap them. Discovery is part of it: the skill
+     lists every command, and `et design --help` works. Today no doc names the Studio MCP tools,
+     and terminal sessions do not get them. Command names and states: open, ask Tom.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder
