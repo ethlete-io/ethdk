@@ -2,7 +2,7 @@
 
 Keeps an action reachable after the reader has scrolled past it. The trigger sits in the flow where you wrote it,
 and pins itself to a corner of the viewport once its place in the page has scrolled away - a filter button above
-a long list, a save bar, a back-to-top.
+a long list, a save bar.
 
 Import `FLOATING_ACTION_IMPORTS`. No provider, no default component: the trigger is your own button.
 
@@ -66,21 +66,22 @@ the reader onto unrelated content. So the state comes from two intersection obse
 
 ## `scrollToTop()`
 
-What a filter button does after applying: send the reader back to the first result rather than leaving them
-wherever they were.
+A secondary use: after the reader applies filters from the overlay the trigger opened, send them back to the
+first result rather than leaving them wherever they were. It scrolls only the nearest scrollable ancestor, so a
+page embedding the content is left alone.
 
 ```html
 <div #fa="etFloatingAction" etFloatingAction>
   <h2 etFloatingActionTop>Results</h2>
 
   <div etFloatingActionAnchor>
-    <button (click)="apply(); fa.scrollToTop()" et-button etFloatingActionTrigger>Filter</button>
+    <button (click)="openFilters(fa)" et-button etFloatingActionTrigger>Filter</button>
   </div>
   …
 </div>
 ```
 
-Smooth-scrolls by default; pass `ScrollIntoViewOptions` to change that.
+Smooth-scrolls by default; pass `behavior` and `block` (`ScrollIntoViewOptions`) to change that.
 
 ## Options
 
