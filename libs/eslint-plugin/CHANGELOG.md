@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.29
+
+### Patch Changes
+
+- `no-angular-router-api` names `injectRouterState().id` / `.trigger` as the replacement for `router.currentNavigation` and `lastSuccessfulNavigation`.
+
 ## 1.0.0-next.28
 
 ### Minor Changes

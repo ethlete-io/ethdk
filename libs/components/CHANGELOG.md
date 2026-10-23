@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.71
+
+### Patch Changes
+
+- Two `et-nav-tab-link`s that are active at the same time no longer freeze the app. The last active link is selected.
+
 ## 1.0.0-next.70
 
 ### Minor Changes
