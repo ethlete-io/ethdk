@@ -3,6 +3,7 @@
     --_et-button-background: rgb(var(--et-theme-color-primary-rgb) / var(--et-theme-color-primary-opacity));
     --_et-button-color: var(--et-theme-color-on-primary);
     --_et-button-border-color: transparent;
+    --_et-button-gap: var(--et-button-gap);
 
     display: inline-flex;
     position: relative;
@@ -176,6 +177,7 @@
     .et-button-contents {
       display: inline-flex;
       align-items: center;
+      gap: var(--_et-button-gap);
       min-width: 0;
       transition: opacity 120ms ease;
     }
