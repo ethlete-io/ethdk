@@ -1,7 +1,7 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { form, FormField, required } from '@angular/forms/signals';
-import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
+import { ColorTheme, injectLocale, provideColorThemesWithTailwind4, provideLocale, ThemeSwatch } from '@ethlete/core';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
@@ -34,6 +34,7 @@ import {
   FORM_FIELD_IMPORTS,
   injectDateFormat,
   injectDateLocale,
+  injectDateLocaleSignal,
   injectDateTimeFormat,
   injectDateTimeLabels,
   injectDateTimeZone,
@@ -814,6 +815,42 @@ describe('forms date-time scenarios', () => {
     expect(s.run(injectDateLocale)).toBeNull();
     expect(s.run(injectDateTimeZone)).toBeNull();
     expect(s.run(injectDateTimeLabels)().openCalendar).toBe(DEFAULT_DATE_TIME_LABELS.openCalendar);
+  });
+});
+
+describe('forms date-time scenarios with a locale function', () => {
+  const scenario = useScenario({
+    providers: [
+      provideOverlay(),
+      provideColorThemesWithTailwind4(COLOR_THEMES),
+      provideLocale('de'),
+      provideDateLocale((locale) => (locale === 'de' ? de : null)),
+    ],
+  });
+
+  it('follows currentLocale at runtime', () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(LocalizedBookingComponent);
+    const host = fixture.nativeElement as HTMLElement;
+
+    s.flush();
+
+    const dateLocale = s.run(injectDateLocaleSignal);
+
+    expect(dateLocale()).toBe(de);
+
+    (host.querySelector('.et-input-picker-trigger') as HTMLButtonElement).click();
+    s.flush();
+    expect(query('.et-calendar').textContent).toContain('Juli');
+
+    s.run(injectLocale).currentLocale.set('en');
+    s.flush();
+
+    expect(dateLocale()).toBeNull();
+    expect(query('.et-calendar').textContent).toContain('July');
+
+    s.keydown('Escape');
+    s.flush();
   });
 });
 

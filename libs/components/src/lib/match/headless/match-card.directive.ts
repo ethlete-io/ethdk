@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { optionalBooleanAttribute } from '@ethlete/core';
 import { format, isValid } from 'date-fns';
-import { injectDateLocale } from '../../forms/date-time/date-time-formats';
+import { injectDateLocaleSignal } from '../../forms/date-time/date-time-formats';
 import { isNativelyInteractiveElement } from '../match-interactive';
 import { injectMatchLabels, MatchLabels } from '../match-labels';
 import { matchParticipantDisplayName } from '../match-participant-name';
@@ -104,7 +104,7 @@ const scoreChange = ({ side, from, to }: Omit<MatchScoreChange, 'delta'>): Match
 export class MatchCardDirective {
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private injectedLabels = injectMatchLabels();
-  private dateLocale = injectDateLocale();
+  private dateLocale = injectDateLocaleSignal();
 
   /** The match to draw, already normalized - see {@link NormalizedMatch} and the `integrations/` adapters. */
   public match = input.required<NormalizedMatch>();
@@ -311,7 +311,7 @@ export class MatchCardDirective {
     if (!startTime || !isValid(startTime)) return null;
 
     return format(startTime, this.startTimeFormat() ?? DEFAULT_MATCH_CARD_START_TIME_FORMAT, {
-      locale: this.dateLocale ?? undefined,
+      locale: this.dateLocale() ?? undefined,
     });
   });
 

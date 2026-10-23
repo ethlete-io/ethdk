@@ -13,7 +13,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import { injectDateLocale } from '../../forms/date-time/date-time-formats';
+import { injectDateLocaleSignal } from '../../forms/date-time/date-time-formats';
 import {
   Appointment,
   AppointmentId,
@@ -52,7 +52,7 @@ export type SchedulerWeekday = {
   exportAs: 'etScheduler',
 })
 export class SchedulerDirective<TExtra = unknown> {
-  private defaultLocale = injectDateLocale();
+  private defaultLocale = injectDateLocaleSignal();
 
   /** Today, re-read when focus enters the scheduler and when the page becomes visible again - what each view's `today` flag compares against. */
   public today = injectToday();
@@ -96,7 +96,7 @@ export class SchedulerDirective<TExtra = unknown> {
    */
   public appointmentReschedule = output<SchedulerAppointmentReschedule<TExtra>>();
 
-  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
+  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale());
 
   public effectiveFirstDayOfWeek = computed<SchedulerWeekStartsOn>(
     () =>

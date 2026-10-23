@@ -109,8 +109,8 @@ Each control family reads its own wire format token:
 The [range validators](/components/forms#range-validators) read the token of the control they
 check. Read the value in effect with `injectDateFormat()`, `injectDateTimeFormat()`,
 `injectTimeFormat()` and `injectDateLocale()`; `DATE_LOCALE` is the token behind the locale.
-`DATE_LOCALE` does not follow `provideLocale()`: an app that sets `provideLocale('de')` also needs
-`provideDateLocale(de)`, and dev mode warns once when it is missing for a non-English locale.
+`provideDateLocale(de)` does not follow `provideLocale()`: an app that sets `provideLocale('de')` also needs
+`provideDateLocale(de)` - or `provideDateLocale((locale) => ...)`, which follows `currentLocale` live - and dev mode warns once when it is missing for a non-English locale.
 `provideDateTimeZone('UTC')` sets the zone every date control reads and writes in - see
 [one zone for the whole app](#app-time-zone).
 

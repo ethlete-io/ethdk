@@ -2,10 +2,17 @@ import { inject } from '@angular/core';
 import { FieldContext, LogicFn, validate, ValidationError } from '@angular/forms/signals';
 import { startOfDay } from 'date-fns';
 import { CalendarPrecision, startOfCalendarUnit } from '../../calendar/headless';
-import { DATE_FORMAT, DATE_LOCALE, DATE_TIME_FORMAT, injectDateTimeZone, TIME_FORMAT } from './date-time-formats';
+import {
+  DATE_FORMAT,
+  DATE_TIME_FORMAT,
+  injectDateLocaleSignal,
+  injectDateTimeZone,
+  TIME_FORMAT,
+} from './date-time-formats';
 import { injectDateTimeLabels } from './date-time-labels';
 import { DateRangeValue } from './internals/date-range-picker-input.directive';
 import { parseDateValue } from './internals/date-value';
+import { Locale } from 'date-fns';
 import { displayFormatForPrecision } from './internals/precision-format';
 import { formatInZone, isValidTimeZone, zonedProxy } from './internals/time-zone';
 
@@ -219,7 +226,7 @@ type BoundsConfig<TValue> = {
   options: { min?: Bound<TValue>; max?: Bound<TValue>; message?: string; timeZone?: string | null };
   unit: (date: Date) => Date;
   onZoneCalendar?: boolean;
-  label: string;
+  label: (locale: Locale | null) => string;
 };
 
 const resolveBound = <TValue>(bound: Bound<TValue> | undefined, ctx: FieldContext<TValue>) =>
@@ -227,9 +234,10 @@ const resolveBound = <TValue>(bound: Bound<TValue> | undefined, ctx: FieldContex
 
 const bounds = <TValue>({ path, sidesOf, valueFormat, options, unit, onZoneCalendar, label }: BoundsConfig<TValue>) => {
   const labels = injectDateTimeLabels();
-  const locale = inject(DATE_LOCALE);
+  const locale = injectDateLocaleSignal();
   const timeZone = knownTimeZone(options.timeZone);
-  const formatBound = (bound: Date) => formatInZone(bound, { format: label, locale, timeZone }) ?? '';
+  const formatBound = (bound: Date) =>
+    formatInZone(bound, { format: label(locale()), locale: locale(), timeZone }) ?? '';
   const unitOf = (date: Date) =>
     unit(onZoneCalendar && timeZone !== null ? zonedProxy(date, timeZone) : date).getTime();
 
@@ -280,7 +288,7 @@ export const dateRangeBounds = (path: RangeFieldPath, options: DateOnlyRangeBoun
     options: withControlTimeZone(options),
     unit: (date) => startOfCalendarUnit(date, precision),
     onZoneCalendar: true,
-    label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
+    label: (locale) => displayFormatForPrecision(precision, locale),
   });
 };
 
@@ -300,7 +308,7 @@ export const dateTimeRangeBounds = (path: RangeFieldPath, options: DateRangeBoun
     valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
     options: withControlTimeZone(options),
     unit: (date) => date,
-    label: 'Pp',
+    label: () => 'Pp',
   });
 
 /**
@@ -327,7 +335,7 @@ export const dateBounds = (path: DateFieldPath, options: DateOnlyBoundsOptions =
     options: withControlTimeZone(options),
     unit: (date) => startOfCalendarUnit(date, precision),
     onZoneCalendar: true,
-    label: displayFormatForPrecision(precision, inject(DATE_LOCALE)),
+    label: (locale) => displayFormatForPrecision(precision, locale),
   });
 };
 
@@ -348,7 +356,7 @@ export const dateTimeBounds = (path: DateFieldPath, options: DateBoundsOptions =
     valueFormat: options.valueFormat ?? inject(DATE_TIME_FORMAT),
     options: withControlTimeZone(options),
     unit: (date) => date,
-    label: 'Pp',
+    label: () => 'Pp',
   });
 
 type TimeOfDayBoundsConfig<TValue> = {
@@ -361,9 +369,9 @@ const secondsOfDay = (date: Date) => date.getHours() * 3600 + date.getMinutes() 
 
 const timeOfDayBounds = <TValue>({ path, sidesOf, options }: TimeOfDayBoundsConfig<TValue>) => {
   const labels = injectDateTimeLabels();
-  const locale = inject(DATE_LOCALE);
+  const locale = injectDateLocaleSignal();
   const valueFormat = options.valueFormat ?? inject(TIME_FORMAT);
-  const formatBound = (bound: Date) => formatInZone(bound, { format: 'p', locale, timeZone: null }) ?? '';
+  const formatBound = (bound: Date) => formatInZone(bound, { format: 'p', locale: locale(), timeZone: null }) ?? '';
   const minError = (min: Date): RangeMinError => ({
     kind: 'rangeMin',
     min,

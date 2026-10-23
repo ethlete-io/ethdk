@@ -1,4 +1,4 @@
-import { effect, InjectionToken, Provider, inject } from '@angular/core';
+import { computed, effect, InjectionToken, Provider, Signal, inject, untracked } from '@angular/core';
 import { defineStaticRootProvider, injectLocale, toInjectFn, toProvideFn } from '@ethlete/core';
 import { Locale } from 'date-fns';
 
@@ -26,16 +26,34 @@ export const TIME_FORMAT = new InjectionToken<string>('TIME_FORMAT', {
   factory: () => 'HH:mm',
 });
 
+/** A date-fns locale, or a function that picks one from the app locale (`injectLocale().currentLocale`). */
+export type DateLocaleSource = Locale | null | ((locale: string) => Locale | null);
+
+const DATE_LOCALE_SOURCE = new InjectionToken<DateLocaleSource>('DATE_LOCALE_SOURCE', {
+  providedIn: 'root',
+  factory: () => null,
+});
+
+const resolveDateLocale = (source: DateLocaleSource, locale: string) =>
+  typeof source === 'function' ? source(locale) : source;
+
 /**
  * The date-fns `Locale` used for display formatting and calendar labels.
  * `null` falls back to date-fns' built-in default (en-US).
  *
- * It does not follow `provideLocale()`: an app that sets `provideLocale('de')` must also
- * `provideDateLocale(de)` - {@link injectDateLocale} warns in dev mode when it hasn't.
+ * With a static `provideDateLocale(de)` it does not follow `provideLocale()`: an app that sets
+ * `provideLocale('de')` must also `provideDateLocale(de)`, or pass a function to `provideDateLocale`.
+ * {@link injectDateLocale} warns in dev mode when neither is set. For a function source this token holds
+ * the locale resolved at first read; use {@link injectDateLocaleSignal} to follow later changes.
  */
 export const DATE_LOCALE = new InjectionToken<Locale | null>('DATE_LOCALE', {
   providedIn: 'root',
-  factory: () => null,
+  factory: () => {
+    const source = inject(DATE_LOCALE_SOURCE);
+    const { currentLocale } = injectLocale();
+
+    return untracked(() => resolveDateLocale(source, currentLocale()));
+  },
 });
 
 export const provideDateFormat = (format: string): Provider => ({ provide: DATE_FORMAT, useValue: format });
@@ -44,7 +62,17 @@ export const provideDateTimeFormat = (format: string): Provider => ({ provide: D
 
 export const provideTimeFormat = (format: string): Provider => ({ provide: TIME_FORMAT, useValue: format });
 
-export const provideDateLocale = (locale: Locale): Provider => ({ provide: DATE_LOCALE, useValue: locale });
+/**
+ * Sets the date-fns locale of every date control. Pass a `Locale`, or a function `(locale) => Locale` that
+ * is re-run whenever `injectLocale().currentLocale` changes so dates follow a live language switch.
+ * A control's own `locale` input wins.
+ *
+ * @example
+ * provideDateLocale((locale) => (locale.startsWith('de') ? de : enUS));
+ */
+export const provideDateLocale = (locale: DateLocaleSource): Provider[] => [
+  { provide: DATE_LOCALE_SOURCE, useValue: locale },
+];
 
 const DATE_TIME_ZONE_DEF = /* @__PURE__ */ defineStaticRootProvider<string | null>(null, { name: 'DateTimeZone' });
 
@@ -68,16 +96,19 @@ export const injectTimeFormat = () => inject(TIME_FORMAT);
 
 let warnedAboutMissingDateLocale = false;
 
-export const injectDateLocale = () => {
-  const dateLocale = inject(DATE_LOCALE);
+/** The date-fns locale as a signal that follows `injectLocale().currentLocale` for a function source. */
+export const injectDateLocaleSignal = (): Signal<Locale | null> => {
+  const source = inject(DATE_LOCALE_SOURCE);
+  const direct = inject(DATE_LOCALE);
+  const { currentLocale } = injectLocale();
 
-  if (ngDevMode && !dateLocale) {
-    const { currentLocale } = injectLocale();
+  const dateLocale = computed(() => (source === null ? direct : resolveDateLocale(source, currentLocale())));
 
+  if (ngDevMode) {
     effect(() => {
       const locale = currentLocale();
 
-      if (warnedAboutMissingDateLocale || locale.toLowerCase().startsWith('en')) return;
+      if (dateLocale() || warnedAboutMissingDateLocale || locale.toLowerCase().startsWith('en')) return;
 
       warnedAboutMissingDateLocale = true;
 
@@ -90,4 +121,10 @@ export const injectDateLocale = () => {
   }
 
   return dateLocale;
+};
+
+export const injectDateLocale = () => {
+  const dateLocale = injectDateLocaleSignal();
+
+  return untracked(dateLocale);
 };

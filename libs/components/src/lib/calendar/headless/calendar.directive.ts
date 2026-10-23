@@ -22,7 +22,7 @@ import {
   addDays,
 } from 'date-fns';
 import { Locale } from 'date-fns';
-import { injectDateLocale } from '../../forms/date-time/date-time-formats';
+import { injectDateLocaleSignal } from '../../forms/date-time/date-time-formats';
 import { isFormInputTarget } from '../../internals/form-input-target';
 import { positiveIntegerAttribute } from '../../internals/number-attributes';
 import { CalendarWeekStartsOn, generateMonthGrid } from './internals/calendar-month';
@@ -136,7 +136,7 @@ export type CalendarWeekday = {
   exportAs: 'etCalendar',
 })
 export class CalendarDirective {
-  private defaultLocale = injectDateLocale();
+  private defaultLocale = injectDateLocaleSignal();
 
   private today = injectToday();
 
@@ -224,7 +224,7 @@ export class CalendarDirective {
   /** The finest grid this calendar shows - the one whose cells hold {@link precision}'s unit. */
   public selectionView = computed(() => CALENDAR_PRECISION_VIEW[this.precision()]);
 
-  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
+  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale());
 
   public effectiveFirstDayOfWeek = computed<CalendarWeekStartsOn>(
     () => this.firstDayOfWeek() ?? this.effectiveLocale()?.options?.weekStartsOn ?? 1,

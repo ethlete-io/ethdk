@@ -1,7 +1,7 @@
 import { Directive, booleanAttribute, computed, input, model, output, signal } from '@angular/core';
 import { injectHostElement } from '@ethlete/core';
 import { Locale, isSameDay, setMilliseconds, startOfDay } from 'date-fns';
-import { injectDateLocale, injectTimeFormat } from '../../forms/date-time/date-time-formats';
+import { injectDateLocaleSignal, injectTimeFormat } from '../../forms/date-time/date-time-formats';
 import { formatDateValue } from '../../forms/date-time/internals/date-value';
 import { clockSafeDay, setTimeOfDay } from './internals/time-availability';
 import { deriveTimeFormatSpec } from './internals/time-format';
@@ -48,7 +48,7 @@ export class TimePickerDirective {
   private timePickerLabels = injectTimePickerLabels();
 
   private defaultFormat = injectTimeFormat();
-  private defaultLocale = injectDateLocale();
+  private defaultLocale = injectDateLocaleSignal();
 
   private hostElement = injectHostElement();
 
@@ -117,7 +117,7 @@ export class TimePickerDirective {
   private now = signal(new Date());
 
   public effectiveFormat = computed(() => this.format() ?? this.defaultFormat);
-  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale);
+  public effectiveLocale = computed(() => this.locale() ?? this.defaultLocale());
 
   public formatSpec = computed(() =>
     deriveTimeFormatSpec({ format: this.effectiveFormat(), locale: this.effectiveLocale() }),

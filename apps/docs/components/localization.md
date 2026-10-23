@@ -47,6 +47,18 @@ and display. Miss it and dates silently stay en-US while every other string move
 `injectDateLocale()` warns once in dev mode when the locale is non-English and this token
 was never provided.
 
+To make dates follow a live language switch, pass a function instead. It receives
+`injectLocale().currentLocale()` and is re-run on every change, so open controls reformat
+without a reload. A `[locale]` input on a control still wins.
+
+```ts
+import { de, enUS } from 'date-fns/locale';
+
+provideDateLocale((locale) => (locale.startsWith('de') ? de : enUS));
+```
+
+Read the resolved value as a signal with `injectDateLocaleSignal()`.
+
 ## 3. Label tokens
 
 Every domain with strings of its own exposes exactly one pair - `provide<Domain>Labels` to
@@ -66,9 +78,9 @@ provideTableLabels((locale) => ({
 
 Three things hold for every token:
 
-- **Partial.** What you leave out keeps its English default (or, for
-  `QUERY_ERROR_LABELS`, `FILTER_OVERLAY_LABELS` and `COMMAND_PALETTE_LABELS`, whatever the
-  current locale resolves to - all three ship German as well). Overriding a single key is fine.
+- **Partial.** What you leave out keeps its default: English, or German when the current
+  locale is a German one (`de`, `de-AT`, …) - every set below ships both. Overriding a single
+  key is fine.
 - **A signal out.** `inject<Domain>Labels()` returns `Signal<Labels>`, because both the
   locale and the provided set can change at runtime. Read it in a template or computed;
   never destructure it once.
