@@ -339,28 +339,28 @@ describe('floating-action scenarios', () => {
 
   it('scrolls back to the results heading after applying filters, or to the region without one', () => {
     const s = scenario();
-    const scrollIntoView = vi.fn();
-    const original = Element.prototype.scrollIntoView;
+    const scrollTo = vi.fn();
+    const original = Element.prototype.scrollTo;
 
-    Element.prototype.scrollIntoView = scrollIntoView;
+    Element.prototype.scrollTo = scrollTo;
 
     try {
       TestBed.createComponent(ResultsPageComponent);
       settle(s);
 
+      vi.spyOn(query('.results-heading'), 'getBoundingClientRect').mockReturnValue({ top: 200, height: 20 } as DOMRect);
       query('.filter').click();
-      expect(scrollIntoView).toHaveBeenCalledTimes(1);
-      expect(scrollIntoView.mock.contexts[0]).toBe(query('.results-heading'));
-      expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'instant', block: 'start' });
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenLastCalledWith({ top: 200, behavior: 'instant' });
 
       TestBed.createComponent(BackToTopComponent);
       settle(s);
 
+      vi.spyOn(query('.page'), 'getBoundingClientRect').mockReturnValue({ top: 50, height: 20 } as DOMRect);
       query('.back').click();
-      expect(scrollIntoView.mock.contexts[1]).toBe(query('.page'));
-      expect(scrollIntoView).toHaveBeenLastCalledWith({ behavior: 'smooth', block: 'start' });
+      expect(scrollTo).toHaveBeenLastCalledWith({ top: 50, behavior: 'smooth' });
     } finally {
-      Element.prototype.scrollIntoView = original;
+      Element.prototype.scrollTo = original;
     }
   });
 

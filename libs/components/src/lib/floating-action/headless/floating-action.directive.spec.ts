@@ -174,34 +174,42 @@ describe('FloatingActionDirective', () => {
   });
 
   describe('scrollToTop', () => {
-    let scrollIntoView: ReturnType<typeof vi.fn>;
+    let scrollTo: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      scrollIntoView = vi.fn();
+      scrollTo = vi.fn();
 
-      Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      Object.defineProperty(Element.prototype, 'scrollTo', {
         configurable: true,
-        value: scrollIntoView,
+        value: scrollTo,
         writable: true,
       });
     });
 
-    it('targets its own element without an etFloatingActionTop', async () => {
+    const placeAt = (el: HTMLElement | null, top: number) => {
+      if (!el) throw new Error('missing element');
+
+      return vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top, height: 20 } as DOMRect);
+    };
+
+    it('scrolls to its own element without an etFloatingActionTop', async () => {
       const driver = await mountFloatingAction(FloatingActionTestHost);
 
+      placeAt(driver.element(), 300);
       driver.floatingAction.scrollToTop();
 
-      expect(scrollIntoView).toHaveBeenCalledTimes(1);
-      expect(scrollIntoView.mock.contexts[0]).toBe(driver.element());
+      expect(scrollTo).toHaveBeenCalledTimes(1);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 300, behavior: 'smooth' });
     });
 
-    it('targets the etFloatingActionTop element when there is one', async () => {
+    it('scrolls to the etFloatingActionTop element when there is one', async () => {
       const driver = await mountFloatingAction(FloatingActionWithTopTestHost);
 
+      placeAt(driver.element(), 900);
+      placeAt(driver.topEl(), 120);
       driver.floatingAction.scrollToTop();
 
-      expect(scrollIntoView).toHaveBeenCalledTimes(1);
-      expect(scrollIntoView.mock.contexts[0]).toBe(driver.topEl());
+      expect(scrollTo).toHaveBeenCalledWith({ top: 120, behavior: 'smooth' });
     });
   });
 

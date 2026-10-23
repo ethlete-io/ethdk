@@ -1,5 +1,14 @@
 import { Locator, Page, expect, test } from '@playwright/test';
-import { boxOf, countClicks, expectFocusVisible, expectTouchMode, openStory, pressKey, tap } from '../support';
+import {
+  boxOf,
+  countClicks,
+  expectFocusVisible,
+  expectTouchMode,
+  openStory,
+  pressKey,
+  storyUrl,
+  tap,
+} from '../support';
 
 const STORY_ID = 'components-actions-floating-action--default';
 const DISABLED_STORY_ID = 'components-actions-floating-action--disabled';
@@ -9,7 +18,7 @@ const TRIGGER = '.et-floating-action-trigger';
 const ANCHOR = '.et-floating-action-anchor';
 const SCOPE = '.et-floating-action-scope';
 
-async function scrollPast(page: Page, selector: string): Promise<void> {
+async function scrollPast(page: Pick<Page, 'evaluate'>, selector: string): Promise<void> {
   await page.evaluate((target) => {
     const el = document.querySelector(target);
 
@@ -362,5 +371,44 @@ test.describe('floating-action / touch', () => {
     await expect(root.locator(HOST)).toHaveAttribute('data-state', 'floating');
 
     await expect.poll(() => cornerGaps(root.locator(TRIGGER))).toEqual({ inlineEnd: 24, blockEnd: 24 });
+  });
+});
+
+test.describe('floating-action / embedded', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: parent page scroll');
+
+  test('scrollToTop scrolls the story but not the page embedding it', async ({ page }) => {
+    const parentHtml = `<div style="height:2000px"></div>
+       <iframe id="story" style="display:block;width:800px;height:500px;border:0" src="${storyUrl(STORY_ID)}"></iframe>
+       <div style="height:2000px"></div>`;
+
+    await page.route('**/embedding-parent.html', (route) =>
+      route.fulfill({ contentType: 'text/html', body: parentHtml }),
+    );
+    await page.goto('/embedding-parent.html');
+
+    const frame = page.frameLocator('#story');
+    const trigger = frame.locator(TRIGGER);
+
+    await expect(trigger).toBeVisible();
+    await page.evaluate(() => {
+      const top = document.querySelector('#story')?.getBoundingClientRect().top ?? 0;
+
+      window.scrollTo({ top: window.scrollY + top - 20, behavior: 'instant' });
+    });
+    const parentScroll = await page.evaluate(() => window.scrollY);
+
+    const storyFrame = page.frames()[1];
+
+    await scrollPast(storyFrame, ANCHOR);
+    await trigger.evaluate((el) => (el as HTMLElement).click());
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 1000)));
+
+    expect(await page.evaluate(() => window.scrollY)).toBe(parentScroll);
+    const resultsTop = () =>
+      frame.getByRole('heading', { name: 'Results' }).evaluate((el) => el.getBoundingClientRect().top);
+
+    await expect.poll(resultsTop).toBeLessThan(5);
+    expect(await resultsTop()).toBeGreaterThan(-5);
   });
 });

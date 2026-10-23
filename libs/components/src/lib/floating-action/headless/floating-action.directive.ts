@@ -147,6 +147,42 @@ export class FloatingActionDirective {
   public scrollToTop(options?: ScrollIntoViewOptions) {
     const target = this.top()?.elementRef.nativeElement ?? this.elementRef.nativeElement;
 
-    target.scrollIntoView(options ?? { behavior: 'smooth', block: 'start' });
+    const { behavior = 'smooth', block = 'start' } = options ?? {};
+    const container = findScrollContainer(target);
+    const isDocument =
+      container === target.ownerDocument.scrollingElement || container === target.ownerDocument.documentElement;
+    const containerTop = isDocument ? 0 : container.getBoundingClientRect().top + container.clientTop;
+    const viewport = container.clientHeight;
+    const { top: targetTop, height } = target.getBoundingClientRect();
+    const start = targetTop - containerTop + container.scrollTop;
+
+    const offsets = {
+      start,
+      center: start - (viewport - height) / 2,
+      end: start - (viewport - height),
+      nearest:
+        targetTop < containerTop
+          ? start
+          : targetTop + height > containerTop + viewport
+            ? start - (viewport - height)
+            : container.scrollTop,
+    };
+
+    container.scrollTo({ top: Math.max(0, offsets[block]), behavior });
   }
 }
+
+const findScrollContainer = (target: HTMLElement): Element => {
+  for (let el = target.parentElement; el; el = el.parentElement) {
+    const { overflowY } = getComputedStyle(el);
+
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      el.scrollHeight > el.clientHeight
+    ) {
+      return el;
+    }
+  }
+
+  return target.ownerDocument.scrollingElement ?? target.ownerDocument.documentElement;
+};
