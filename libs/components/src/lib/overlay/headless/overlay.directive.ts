@@ -14,8 +14,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  createComponentId,
   enableAnchoredOverlayPositionExtras,
   injectHostElement,
+  injectRenderer,
   optionalBooleanAttribute,
   RuntimeError,
 } from '@ethlete/core';
@@ -43,6 +45,7 @@ export class OverlayDirective {
   private destroyRef = inject(DestroyRef);
   private overlayManager = injectOverlayManager();
   private hostElement = injectHostElement();
+  private renderer = injectRenderer();
 
   public mode = input<OverlayMode>('non-modal');
   // eslint-disable-next-line ethlete/no-native-html-input-name -- deliberately sets the overlay's ARIA role
@@ -89,6 +92,9 @@ export class OverlayDirective {
   public registeredTrigger = signal<OverlayTriggerDirective | null>(null);
   /** @internal */
   public overlayRef = signal<OverlayRef<OverlayTemplateHostComponent, unknown> | null>(null);
+
+  /** The `id` of the mounted overlay element, referenced by the trigger's `aria-controls`. */
+  public readonly panelId = createComponentId('et-overlay-panel');
 
   public isMounted = computed(() => this.overlayRef() !== null);
 
@@ -228,6 +234,7 @@ export class OverlayDirective {
       enableAnchoredOverlayPositionExtras();
     }
     const config: OverlayConfig = {
+      id: this.panelId,
       autoFocus: this.autoFocus(),
       backdropClass: this.backdropClass(),
       closeOnEscape: this.closeOnEscape(),
@@ -261,6 +268,11 @@ export class OverlayDirective {
       role: this.role(),
     };
     const overlayRef = this.overlayManager.open<OverlayTemplateHostComponent>(OverlayTemplateHostComponent, config);
+    const overlayHost = overlayRef.elements?.hostElement;
+
+    if (overlayHost) {
+      this.renderer.setAttribute(overlayHost, 'id', this.panelId);
+    }
 
     this.overlayRef.set(overlayRef);
 

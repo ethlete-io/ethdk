@@ -65,6 +65,17 @@ describe('OverlayTriggerDirective', () => {
     expect(button.getAttribute('data-overlay-open')).toBe('true');
   });
 
+  it('points aria-controls at the overlay element, before and after opening', () => {
+    const panelId = button.getAttribute('aria-controls');
+
+    expect(panelId).toBe(overlayDirective.panelId);
+
+    button.click();
+    fixture.detectChanges();
+
+    expect(document.getElementById(panelId ?? '')).toBe(overlayDirective.overlayRef()?.elements?.hostElement);
+  });
+
   it('unregisters the trigger when the trigger element is removed', () => {
     fixture.destroy();
 

@@ -10,6 +10,7 @@ import { OverlayDirective } from './overlay.directive';
     '(click)': 'toggle()',
     '[attr.aria-expanded]': 'expanded()',
     '[attr.aria-haspopup]': 'hasPopup()',
+    '[attr.aria-controls]': 'overlay?.panelId ?? null',
     '[attr.aria-disabled]': 'overlay?.disabled() || null',
     '[attr.data-overlay-open]': 'isOpen() || null',
   },
