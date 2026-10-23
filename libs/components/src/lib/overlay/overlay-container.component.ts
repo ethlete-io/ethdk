@@ -41,7 +41,6 @@ import {
   provideBoundaryElement,
   resolveAppRootColorProvider,
   resolveSurfaceByElevation,
-  signalElementMutations,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
@@ -80,15 +79,14 @@ export class OverlayContainerComponent {
   private renderer = injectRenderer();
 
   public rootBoundary = injectBoundaryElement();
-
   private rootSurfaceTheme = injectRootSurfaceTheme();
+
   public component = input.required<Type<object>>();
   public componentBindings = input<Binding[] | undefined>(undefined);
-
   public componentDirectives = input<OverlayConfig['directives'] | undefined>(undefined);
   public renderArrow = input(false, { transform: booleanAttribute });
-
   public renderDragHandle = input(false, { transform: booleanAttribute });
+
   private contentOutlet = viewChild.required('contentOutlet', { read: ViewContainerRef });
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));
 
@@ -146,17 +144,22 @@ export class OverlayContainerComponent {
         untracked(() => applyPlacement(next));
       });
 
-      // The origin surface is read from DOM classes, which only reflect a provider change after the render.
+      const originClassChanges = signal(0);
       const originSurfaceElement = this.resolveOriginSurface()?.element;
-      const originMutations = originSurfaceElement
-        ? signalElementMutations(originSurfaceElement, { attributes: true, attributeFilter: ['class'] })
-        : null;
+
+      if (originSurfaceElement) {
+        // eslint-disable-next-line ethlete/no-native-observers -- signalElementMutations adds ~0.9 kB gz to every overlay bundle
+        const observer = new MutationObserver(() => originClassChanges.update((count) => count + 1));
+
+        observer.observe(originSurfaceElement, { attributes: true, attributeFilter: ['class'] });
+        this.destroyRef.onDestroy(() => observer.disconnect());
+      }
 
       // The origin surface is read from DOM classes, which only reflect a provider change after the render.
       afterRenderEffect(() => {
         this.parentSurfaceProvider?.activeTheme();
         this.rootSurfaceTheme();
-        originMutations?.();
+        originClassChanges();
 
         untracked(() => parentSurface.set(readParentSurface()));
       });
