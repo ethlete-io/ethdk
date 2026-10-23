@@ -4,6 +4,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { aliasPattern, callSlugOf, fsUrl, isCallFile } from './vite-paths';
 import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
+import { buildStampOf, STAMP_PATH } from './stamp';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -110,6 +111,7 @@ const designExplore = (target: string, config: DesignConfig) => ({
   /** The registry is built once per load, so a new call folder is invisible until it is invalidated. */
   configureServer: (vite: ViteDevServer) => {
     const callsRoot = callsRootOf(target);
+    const stamp = buildStampOf();
 
     const refresh = (file: string) => {
       if (!isCallFile({ callsRoot, file })) return;
@@ -119,6 +121,10 @@ const designExplore = (target: string, config: DesignConfig) => ({
       vite.ws.send({ type: 'full-reload' });
     };
 
+    vite.middlewares.use(STAMP_PATH, (_request: unknown, response: import('http').ServerResponse) => {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify(stamp));
+    });
     vite.middlewares.use(RENDER_PATH, renderMiddleware(createRenderer({ target, config })));
     vite.watcher.add(callsRoot);
     vite.watcher.on('add', refresh);

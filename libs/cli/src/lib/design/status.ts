@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { callsRootOf } from './paths';
@@ -36,6 +36,20 @@ export const writeStatus = (options: { checkout: string; slug: string; state: Ca
 
   mkdirSync(join(path, '..'), { recursive: true });
   writeFileSync(path, JSON.stringify(status));
+};
+
+/** Remembers a call's status as it is now, and answers with the function that puts it back. */
+export const holdStatus = (options: { checkout: string; slug: string }) => {
+  const path = statusPath(options);
+  const held = existsSync(path) ? readFileSync(path, 'utf8') : null;
+
+  return () => {
+    if (held === null) {
+      rmSync(path, { force: true });
+    } else {
+      writeFileSync(path, held);
+    }
+  };
 };
 
 const isState = (value: string | undefined): value is CallState => CALL_STATES.includes(value as CallState);

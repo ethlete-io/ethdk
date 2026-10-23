@@ -1,9 +1,11 @@
 import { execFileSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
+import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
-import { writeStatus } from './status';
+import { buildStampOf, serverProblemOf } from './stamp';
+import { holdStatus, writeStatus } from './status';
 import { systemWarningOf } from './system-use';
 
 /**
@@ -39,6 +41,9 @@ type Flags = Record<string, string[]>;
 
 type Fail = (message: string) => number;
 
+/** A failure of the tool rather than of the call, such as no browser or no server. */
+type Fails = { fail: Fail; unavailable: Fail };
+
 const parse = (argv: string[], names: string[]): Flags => {
   const flags: Flags = {};
   let current: string | null = null;
@@ -55,23 +60,33 @@ const parse = (argv: string[], names: string[]): Flags => {
   return flags;
 };
 
+const NO_BROWSER =
+  'NO BROWSER - neither the checkout nor this package resolves playwright or playwright-core, so the ' +
+  'render stage cannot run. Install one in the checkout: `npm i -D playwright-core && npx playwright-core install chromium`.';
+
 const runBrowser = async (options: {
   target: string;
   base: string;
   slug: string;
   wanted?: string;
-  fail: Fail;
+  fails: Fails;
 }): Promise<number> => {
-  const { target, base, slug, wanted, fail } = options;
-  const playwright = await import('playwright').catch(() => null);
+  const { target, base, slug, wanted, fails } = options;
+  const serverProblem = await serverProblemOf({ base, own: buildStampOf() });
 
-  if (!playwright) {
-    return fail(
-      'NO BROWSER - neither the checkout nor this package resolves playwright, so the render stage cannot run.',
-    );
-  }
+  if (serverProblem) return fails.unavailable(serverProblem);
 
-  const browser = await playwright.chromium.launch();
+  const chromium = await chromiumOf(target);
+
+  if (!chromium) return fails.unavailable(NO_BROWSER);
+
+  const browser = await chromium.launch().catch((error: unknown) => {
+    fails.unavailable(`${NO_BROWSER}\n${trim(error instanceof Error ? error.message : String(error))}`);
+
+    return null;
+  });
+
+  if (!browser) return 1;
 
   try {
     return await checkPage({
@@ -80,7 +95,7 @@ const runBrowser = async (options: {
       base,
       slug,
       wanted,
-      fail,
+      fail: fails.fail,
     });
   } finally {
     await browser.close();
@@ -204,9 +219,10 @@ const runChecks = async (options: {
   target: string;
   flags: Flags;
   invocation: string;
-  fail: Fail;
+  fails: Fails;
 }): Promise<number> => {
-  const { target, flags, invocation, fail } = options;
+  const { target, flags, invocation, fails } = options;
+  const { fail, unavailable } = fails;
   const lintFiles = flags['--lint'] ?? [];
   const slug = flags['--call']?.[0];
   const wanted = flags['--variant']?.[0];
@@ -221,7 +237,7 @@ const runChecks = async (options: {
   if (lintFiles.length > 0) {
     const eslint = binaryOf({ target, pkg: 'eslint', bin: 'eslint' });
 
-    if (!eslint) return fail(`NO LINTER - ${target} installs no eslint, so --lint has nothing to run.`);
+    if (!eslint) return unavailable(`NO LINTER - ${target} installs no eslint, so --lint has nothing to run.`);
 
     try {
       execFileSync(process.execPath, [eslint, ...lintFiles], { cwd: target, encoding: 'utf8', stdio: 'pipe' });
@@ -238,7 +254,8 @@ const runChecks = async (options: {
     const native = process.env['TSC'];
     const tsc = native ? null : binaryOf({ target, pkg: 'typescript', bin: 'tsc' });
 
-    if (!native && !tsc) return fail('NO TYPE CHECKER - neither the checkout nor this package resolves typescript.');
+    if (!native && !tsc)
+      return unavailable('NO TYPE CHECKER - neither the checkout nor this package resolves typescript.');
 
     const command = native
       ? { file: 'npx', args: ['-y', native, '--noEmit', '-p', tsconfig] }
@@ -260,48 +277,68 @@ const runChecks = async (options: {
   const config = readConfig(target);
   const base = process.env['DE_URL'] ?? `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`;
 
-  return runBrowser({ target, base, slug, wanted, fail });
+  return runBrowser({ target, base, slug, wanted, fails });
 };
 
 /**
  * Finds out why a call does not render, in the cheapest order: eslint on the named files, then
  * `tsc --noEmit` over the checkout's calls, then the live page in a headless browser. A compile
  * error draws an overlay on top of the drawing, so a screenshot of one looks like a design -
- * never screenshot before this says `ok`. With `--call`, the call's status follows the check.
+ * never screenshot before this says `ok`. With `--call`, the call's status follows the check, but
+ * a check that cannot run (no browser, no server, a stale server) leaves the status it found.
  */
 export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, argv, invocation } = options;
   const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant']);
   const slug = flags['--call']?.[0];
   let failure = '';
-  const fail: Fail = (message) => {
-    console.error(message);
-    failure ||= message;
+  let blocked = false;
+  const fails: Fails = {
+    fail: (message) => {
+      console.error(message);
+      failure ||= message;
 
-    return 1;
+      return 1;
+    },
+    unavailable: (message) => {
+      console.error(message);
+      blocked = true;
+
+      return 1;
+    },
   };
 
-  if (!slug) return runChecks({ target, flags, invocation, fail });
+  if (!slug) return runChecks({ target, flags, invocation, fails });
+
+  const restore = holdStatus({ checkout: target, slug });
 
   writeStatus({ checkout: target, slug, state: 'checking' });
 
   try {
-    const code = await runChecks({ target, flags, invocation, fail });
+    const code = await runChecks({ target, flags, invocation, fails });
 
-    writeStatus({
-      checkout: target,
-      slug,
-      ...(code === 0 ? { state: 'ready' } : { state: 'failed', message: failure }),
-    });
+    if (blocked) {
+      restore();
+    } else {
+      writeStatus({
+        checkout: target,
+        slug,
+        ...(code === 0 ? { state: 'ready' } : { state: 'failed', message: failure }),
+      });
+    }
 
     return code;
   } catch (error) {
-    writeStatus({
-      checkout: target,
-      slug,
-      state: 'failed',
-      message: error instanceof Error ? error.message : String(error),
-    });
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (/net::ERR_/.test(message)) {
+      restore();
+      console.error(`NO SERVER - the page stopped answering: ${trim(message)}`);
+
+      return 1;
+    }
+
+    writeStatus({ checkout: target, slug, state: 'failed', message });
 
     throw error;
   }
