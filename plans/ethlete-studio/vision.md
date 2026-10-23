@@ -30,7 +30,31 @@ names are **project → feature → call → variant**.
    - Open, and Tom decides: does a live tile hold up for about two dozen variants?
      `timetrack/kerbe/06-break-label` (24 variants) is the test case.
 
+6. **Consistent calls: components, prototype, project design system.** Tom, 2026-10-23: "Each
+   design call just totally invents new components and looks that do not match the sdks vision
+   at all. It's also pretty hard to keep consistency between calls." The goal is a full
+   interactive prototype with motion and theme (dark, light, custom). Accepted component calls
+   move into a design system for the project, which the agent knows and reuses.
+   - Components: no more hand-written mocks. A compiler makes the HTML mock of a component, with
+     its options, from the real component. The three hand-written mocks
+     (`libs/components/design/`, see `component-design-mocks.md`) stay until it exists.
+   - Open, compiler: Angular's template alone can not give the DOM, because host bindings come
+     from directive state (`formFieldDir.usesTextFieldShell()`). Candidates: (a) render the real
+     component server-side (Angular SSR in the design server) for the options a drawing asks for;
+     (b) render a fixed state matrix at build time into static snapshots. (a) keeps free options.
+   - Open, interaction: a snapshot has CSS states (hover, focus, CSS motion) but no behavior. A
+     prototype needs a small runtime in the frame that swaps a component to another state on an
+     event (click → `open: true`). The frame now drops `<script>` (`libs/cli/design/web/frame.ts`
+     sets `innerHTML`); tomflix asked for a `setup(root)` hook or host controls for replay,
+     speed and reduced motion.
+   - Open, theme: a frame control that switches the fixture's surface and color themes.
+   - Open, design system: where accepted calls land (for example `.ethlete/design/system/`), and
+     how the `ethlete-design-exploration` skill makes the agent reuse it before it draws new.
+
 ## Settled - do not re-open
+
+- Calls stay HTML, also for real components (Tom, 2026-10-23). Angular frames were rejected:
+  the design server would need the Angular compiler for every repo's Angular version.
 
 - Studio stays an Angular app.
 - A drawing is a value (`html`, `css`, `drawing()`), not an Angular component. htmx, Vue,
