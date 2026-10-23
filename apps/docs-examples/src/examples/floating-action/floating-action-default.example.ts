@@ -34,6 +34,8 @@ import { BUTTON_IMPORTS, FLOATING_ACTION_IMPORTS, FloatingActionDirective } from
       <div class="app-fa-footer">Footer - the Filter button is gone once the results scroll out of view</div>
     </div>
   `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [FLOATING_ACTION_IMPORTS, BUTTON_IMPORTS],
   styles: `
     .app-fa {
       display: flex;
@@ -108,8 +110,6 @@ import { BUTTON_IMPORTS, FLOATING_ACTION_IMPORTS, FloatingActionDirective } from
       text-align: center;
     }
   `,
-  encapsulation: ViewEncapsulation.None,
-  imports: [FLOATING_ACTION_IMPORTS, BUTTON_IMPORTS],
 })
 export class FloatingActionDefaultExampleComponent {
   protected readonly rows = Array.from({ length: 14 }, (_, index) => index + 1);
