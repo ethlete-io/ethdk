@@ -2,6 +2,7 @@ import { statSync } from 'fs';
 import { registerHooks, ResolveFnOutput, ResolveHookContext } from 'module';
 import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
+import { missingPackageMessage } from './missing-package';
 import { parentPort, workerData } from 'worker_threads';
 import {
   entryOf,
@@ -74,6 +75,16 @@ registerHooks({
 });
 
 const loadAngular = async () => {
+  try {
+    return await importAngular();
+  } catch (error) {
+    const message = missingPackageMessage(error, target);
+
+    throw message ? new Error(message, { cause: error }) : error;
+  }
+};
+
+const importAngular = async () => {
   // The JIT compiler has to be loaded before any partially compiled package is evaluated.
   await import('@angular/compiler');
 

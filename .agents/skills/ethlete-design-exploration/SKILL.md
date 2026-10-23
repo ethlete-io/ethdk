@@ -130,12 +130,16 @@ Three constraints the tool puts on a variant file:
 
 A `<script>` in a drawing's `body` never runs. For behavior - a play button that restarts a
 CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
-frame calls it once, after the markup is in `root`.
+frame calls it once, after the markup is in `root`. `setup` has no cleanup hook, because each
+frame load is fresh. Wire behavior with one delegated listener on `root`. If `setup` throws, the
+markup stays and the error shows on top of it.
 
 For a prototype with states, render each state with `ngStates({ closed: …, open: … }, { imports })`
 and put its `body` in the drawing. `setup: flow.on([{ click: '.trigger', go: 'open' }])` swaps the
 states on a click, in a View Transition. An open overlay does not render on the server, so a
-state draws its panel in the template. See `components/ssr/01-states`.
+state draws its panel in the template. `ngStates` wraps the states in a
+`<div data-de-states style="display: contents">` host. So `flow.body` must be the drawing's body,
+or contain it. A selector rule must not depend on that wrapper. See `components/ssr/01-states`.
 
 **A repository with a sketch Storybook** draws every variant in the **same** story, side by
 side, under the real geometry the thing ships in. The default Storybook is

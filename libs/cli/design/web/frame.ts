@@ -26,6 +26,17 @@ const fail = (message: string) => {
   root.setAttribute('style', 'padding:16px;font:14px monospace;color:#f0a0a0;background:#1a1414');
 };
 
+const showSetupError = (message: string) => {
+  const banner = document.createElement('pre');
+
+  banner.textContent = message;
+  banner.setAttribute(
+    'style',
+    'position:fixed;top:0;left:0;right:0;z-index:2147483647;margin:0;padding:16px;white-space:pre-wrap;font:14px monospace;color:#f0a0a0;background:#1a1414',
+  );
+  document.body.append(banner);
+};
+
 const call = calls[slug];
 if (!call) fail(`design-explore: no call "${slug}"`);
 else {
@@ -49,7 +60,7 @@ else {
       const error = mountDrawing(root, loaded);
 
       if (error) {
-        fail(
+        showSetupError(
           `design-explore: setup of variant "${key}" failed\n${error instanceof Error ? error.message : String(error)}`,
         );
       }
