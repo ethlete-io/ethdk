@@ -7,6 +7,7 @@ import {
   NavigationEnd,
   NavigationError,
   NavigationSkipped,
+  NavigationStart,
   Params,
   Router,
 } from '@angular/router';
@@ -20,7 +21,13 @@ export type RouterState = {
   queryParams: Params;
   title: string | null;
   fragment: string | null;
+  /** The id of the current navigation, or of the last one that started. `null` before the first navigation. */
+  id: number | null;
+  /** What triggered that navigation. `null` before the first navigation. */
+  trigger: RouterNavigationTrigger | null;
 };
+
+export type RouterNavigationTrigger = 'imperative' | 'popstate' | 'hashchange';
 
 export const ET_PROPERTY_REMOVED = /* @__PURE__ */ Symbol('ET_PROPERTY_REMOVED');
 
@@ -164,6 +171,7 @@ export const createRouterState = (router: Router): RouterState => {
   }
 
   const { data, params, queryParams, title, fragment } = route;
+  const navigation = router.currentNavigation();
 
   return {
     data,
@@ -171,6 +179,8 @@ export const createRouterState = (router: Router): RouterState => {
     queryParams,
     title: title ?? null,
     fragment,
+    id: navigation?.id ?? null,
+    trigger: navigation?.trigger ?? null,
   };
 };
 
@@ -197,17 +207,31 @@ const readUncommittedUrl = (router: Router, location: Location | undefined) => {
 };
 
 /**
- * Inject the complete router state. This includes the current route data, path params, query params, title and fragment.
+ * Inject the complete router state. This includes the current route data, path params, query params, title and fragment,
+ * plus the `id` and `trigger` of the current navigation (the last one once it has ended).
  */
 export const injectRouterState = /* @__PURE__ */ memoizeSignal(() => {
   const event = injectRouterEvent();
   const router = inject(Router);
+  const lastStart = toSignal(
+    router.events.pipe(
+      filter((e): e is NavigationStart => e instanceof NavigationStart),
+      map((e) => ({ id: e.id, trigger: e.navigationTrigger ?? null })),
+    ),
+    { initialValue: null },
+  );
 
   return computed<RouterState>(
     () => {
       event();
 
-      return createRouterState(router);
+      const state = createRouterState(router);
+
+      if (state.id !== null) return state;
+
+      const start = lastStart();
+
+      return { ...state, id: start?.id ?? null, trigger: start?.trigger ?? null };
     },
     { equal },
   );

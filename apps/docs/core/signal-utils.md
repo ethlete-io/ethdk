@@ -55,20 +55,22 @@ A map with **one** unrecognized key stops being a breakpoint map entirely: it is
 
 Committed router state as signals - safe to read in child-component constructors, with SSR-aware initial values:
 
-| Helper                                           | Returns                                                                            |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `injectUrl()`                                    | `Signal<string>` - full URL incl. query & fragment.                                |
-| `injectRoute()`                                  | `Signal<string>` - URL without query/fragment.                                     |
-| `injectQueryParams()` / `injectQueryParam(key)`  | All query params / a single one (the first value of a repeated param).             |
-| `injectQueryParamAll(key)`                       | Every value of a query param as `string[]`.                                        |
-| `injectPathParams()` / `injectPathParam(key)`    | Path params (deepest route).                                                       |
-| `injectRouteData()` / `injectRouteDataItem(key)` | Route `data`.                                                                      |
-| `injectRouteTitle()`                             | `Signal<string \| null>`                                                           |
-| `injectFragment()`                               | `Signal<string \| null>`                                                           |
-| `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment in one object. |
-| `injectIsRouterInitialized()`                    | `Signal<boolean>` - true once the first navigation has ended.                      |
+| Helper                                           | Returns                                                                                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `injectUrl()`                                    | `Signal<string>` - full URL incl. query & fragment.                                                                    |
+| `injectRoute()`                                  | `Signal<string>` - URL without query/fragment.                                                                         |
+| `injectQueryParams()` / `injectQueryParam(key)`  | All query params / a single one (the first value of a repeated param).                                                 |
+| `injectQueryParamAll(key)`                       | Every value of a query param as `string[]`.                                                                            |
+| `injectPathParams()` / `injectPathParam(key)`    | Path params (deepest route).                                                                                           |
+| `injectRouteData()` / `injectRouteDataItem(key)` | Route `data`.                                                                                                          |
+| `injectRouteTitle()`                             | `Signal<string \| null>`                                                                                               |
+| `injectFragment()`                               | `Signal<string \| null>`                                                                                               |
+| `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment and the navigation `id` / `trigger` in one object. |
+| `injectIsRouterInitialized()`                    | `Signal<boolean>` - true once the first navigation has ended.                                                          |
 
 The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. The router helpers that take a config (`injectFragment`, `injectQueryParams`, `injectQueryParam`, `injectQueryParamAll`, `injectPathParams`, `injectPathParam`, `injectRouteData`, `injectRouteDataItem`, `injectRouteTitle`, `injectRouterNavigationState`) also accept `{ injector }` for use outside an injection context; the memoized ones (`injectUrl`, `injectRoute`, `injectRouterState`, `injectIsRouterInitialized`, `injectQueryParamChanges`, `injectPathParamChanges`) do not. `injectQueryParam` and `injectQueryParamAll` additionally accept `requireSync: true`, which falls back to the browser URL while the router has no value for the key yet (not usable for arrays or complex objects).
+
+`injectRouterState()` also carries the `id` and `trigger` (`'imperative' | 'popstate' | 'hashchange'`, from `NavigationStart`) of the current navigation, or of the last one once it has ended; both are `null` before the first navigation. They replace reads of `router.currentNavigation` and `router.lastSuccessfulNavigation`. Use `injectRouterNavigationState()` for the state a navigation carried.
 
 `injectQueryParamChanges()` / `injectPathParamChanges()` emit only the keys that changed in the latest navigation; removed keys carry the `ET_PROPERTY_REMOVED` sentinel.
 
