@@ -3,7 +3,9 @@
     display: block;
 
     .et-query-error-list {
-      padding-inline-start: 1.5em;
+      margin: 0;
+      padding-inline-start: 1.2em;
+      list-style: disc outside;
 
       .et-query-error-list-item {
         /* Violation lists are read item by item, so they need a little air between them. */
