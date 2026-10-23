@@ -774,22 +774,18 @@ export class CallViewComponent {
     if (!call) return { open: null, settled: [] };
 
     const titles = new Map(call.rounds.map((round) => [round.key, round.title]));
-    const keys = call.rounds.length
-      ? call.rounds.map((round) => round.key)
-      : [...new Set(tiles.map((tile) => tile.round ?? ''))];
+    const keys = [...new Set(tiles.map((tile) => tile.round ?? ''))];
 
-    const bands = keys
-      .map((key) => {
-        const own = tiles.filter((tile) => (tile.round ?? '') === key);
+    const bands = keys.map((key) => {
+      const own = tiles.filter((tile) => (tile.round ?? '') === key);
 
-        return {
-          key,
-          title: titles.get(key) ?? '',
-          tiles: own,
-          winner: own.find((tile) => tile.verdict === 'chosen') ?? null,
-        };
-      })
-      .filter((band) => band.tiles.length);
+      return {
+        key,
+        title: titles.get(key) ?? '',
+        tiles: own,
+        winner: own.find((tile) => tile.verdict === 'chosen') ?? null,
+      };
+    });
 
     const open = bands.find((band) => band.tiles.some((tile) => !tile.verdict)) ?? null;
 

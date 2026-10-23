@@ -42,7 +42,22 @@ const ASKING = call('app/01-asking', [
   variant('c', 'r1', null),
 ]);
 
-const PROJECT: Project = { callsRoot: `${CHECKOUT}/calls`, port: 4402, defaultCall: null, calls: [RESOLVED, ASKING] };
+const UNNOTED = {
+  ...call('app/02-unnoted', [
+    variant('a', 'r1', 'rejected'),
+    variant('b', 'r1', 'chosen'),
+    variant('c', 'r2', null),
+    variant('d', 'r2', null),
+  ]),
+  rounds: [{ key: 'r1', title: 'r1' }],
+};
+
+const PROJECT: Project = {
+  callsRoot: `${CHECKOUT}/calls`,
+  port: 4402,
+  defaultCall: null,
+  calls: [RESOLVED, ASKING, UNNOTED],
+};
 
 const CLAUDE = { id: 'claude', label: 'Claude', binary: 'claude', version: '1', suggestedModels: [] };
 
@@ -154,6 +169,13 @@ describe('CallViewComponent', () => {
     await openRow(fixture, ASKING.slug);
 
     expect(shown(fixture)).toEqual([`${ASKING.slug} b`]);
+  });
+
+  it('shows a round that a variant names before the round has a note', async () => {
+    const fixture = await mount(UNNOTED.slug);
+
+    expect(tile(fixture, 'C')).toBeTruthy();
+    expect(tile(fixture, 'D')).toBeTruthy();
   });
 
   it('draws a switched-to call in new frames, never in the frames of the call before', async () => {
