@@ -1,7 +1,16 @@
 import { isPlatformBrowser, Location } from '@angular/common';
 import { Injector, PLATFORM_ID, Signal, computed, inject, runInInjectionContext } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Data, NavigationEnd, NavigationSkipped, Params, Router } from '@angular/router';
+import {
+  Data,
+  NavigationCancel,
+  NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  Params,
+  Router,
+} from '@angular/router';
+import { filter, map } from 'rxjs';
 import { equal } from '../utils';
 import { memoizeSignal, previousSignalValue } from './signal-data-utils';
 
@@ -69,18 +78,27 @@ export const injectRouterEvent = /* @__PURE__ */ memoizeSignal(() => {
 
 /**
  * Signal that indicates whether the router has been initialized.
- * The router is considered initialized once its first navigation has completed, including one that completed
- * before this signal was first injected.
+ * It turns true once the first navigation has ended (completed, was cancelled, failed or was skipped), so a
+ * component created while the first navigation runs still sees `false`. Injected after that point, it is `true`
+ * right away.
  */
 export const injectIsRouterInitialized = /* @__PURE__ */ memoizeSignal(() => {
-  const event = injectRouterEvent();
-  const navigatedBefore = inject(Router).navigated;
+  const router = inject(Router);
+  const firstNavigationRunning = router.currentNavigation()?.id === 1;
 
-  return computed(() => {
-    const e = event();
-
-    return navigatedBefore || (e instanceof NavigationEnd && e.id !== -1) || e instanceof NavigationSkipped;
-  });
+  return toSignal(
+    router.events.pipe(
+      filter(
+        (e) =>
+          e instanceof NavigationEnd ||
+          e instanceof NavigationCancel ||
+          e instanceof NavigationError ||
+          e instanceof NavigationSkipped,
+      ),
+      map(() => true),
+    ),
+    { initialValue: router.navigated && !firstNavigationRunning },
+  ) as Signal<boolean>;
 });
 
 /**

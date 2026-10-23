@@ -66,7 +66,7 @@ Committed router state as signals - safe to read in child-component constructors
 | `injectRouteTitle()`                             | `Signal<string \| null>`                                                           |
 | `injectFragment()`                               | `Signal<string \| null>`                                                           |
 | `injectRouterState()`                            | `Signal<RouterState>` - data, params, query params, title, fragment in one object. |
-| `injectIsRouterInitialized()`                    | `Signal<boolean>` - true after the first real navigation.                          |
+| `injectIsRouterInitialized()`                    | `Signal<boolean>` - true once the first navigation has ended.                      |
 
 The single-value helpers accept `{ transform }` (Angular-input-style) - e.g. `injectQueryParam('page', { transform: numberAttribute })`. The router helpers that take a config (`injectFragment`, `injectQueryParams`, `injectQueryParam`, `injectQueryParamAll`, `injectPathParams`, `injectPathParam`, `injectRouteData`, `injectRouteDataItem`, `injectRouteTitle`, `injectRouterNavigationState`) also accept `{ injector }` for use outside an injection context; the memoized ones (`injectUrl`, `injectRoute`, `injectRouterState`, `injectIsRouterInitialized`, `injectQueryParamChanges`, `injectPathParamChanges`) do not. `injectQueryParam` and `injectQueryParamAll` additionally accept `requireSync: true`, which falls back to the browser URL while the router has no value for the key yet (not usable for arrays or complex objects).
 
