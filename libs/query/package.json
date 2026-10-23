@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/query",
   "version": "5.44.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk",
+    "directory": "libs/query"
+  },
   "license": "MIT",
   "sideEffects": false,
   "peerDependencies": {

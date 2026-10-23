@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/cli",
   "version": "2.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk",
+    "directory": "libs/cli"
+  },
   "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",
