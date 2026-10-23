@@ -286,6 +286,9 @@ describe('CallViewComponent', () => {
     expect(stages[5]?.textContent).toContain('1 open, 0 ready, 0 settled');
     expect(stages[5]?.classList).not.toContain('studio__overview-stage--empty');
     expect(stages[0]?.classList).toContain('studio__overview-stage--empty');
+    expect(stages[5]?.textContent).toContain('before 1 Foundations');
+    expect(stages[0]?.textContent).not.toContain('before');
+    expect(element(fixture).querySelector('.studio__overview-unstaged')?.textContent).toContain('2 calls outside');
   });
 
   it('lists the inventory under the wireframes and counts the component calls', async () => {

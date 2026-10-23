@@ -13,6 +13,7 @@ import {
   stageGroups,
   stageLabel,
   stageOverview,
+  unstagedCount,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -208,14 +209,66 @@ describe('stageOverview', () => {
     );
 
     expect(overview).toHaveLength(7);
-    expect(overview.find((entry) => entry.stage === 'page')).toEqual({ stage: 'page', open: 2, ready: 1, settled: 1 });
-    expect(overview.find((entry) => entry.stage === 'ci')).toEqual({ stage: 'ci', open: 1, ready: 0, settled: 0 });
+    expect(overview.find((entry) => entry.stage === 'page')).toEqual({
+      stage: 'page',
+      open: 2,
+      ready: 1,
+      settled: 1,
+      before: 'themes',
+    });
+    expect(overview.find((entry) => entry.stage === 'ci')).toEqual({
+      stage: 'ci',
+      open: 1,
+      ready: 0,
+      settled: 0,
+      before: 'themes',
+    });
     expect(overview.find((entry) => entry.stage === 'themes')).toEqual({
       stage: 'themes',
       open: 0,
       ready: 0,
       settled: 0,
+      before: null,
     });
+  });
+
+  it('marks a stage ahead of the first earlier stage without a settled or ready call, and skips ci', () => {
+    const overview = stageOverview(
+      {
+        calls: [
+          settled('p/a', { stage: 'themes' }),
+          call('p/b', { stage: 'wireframe' }),
+          call('p/c', { stage: 'page' }),
+          call('p/d', { stage: 'prototype' }),
+        ],
+        project: '',
+        term: '',
+      },
+      { 'p/b': 'ready' },
+    );
+    const before = Object.fromEntries(overview.map((entry) => [entry.stage, entry.before]));
+
+    expect(before).toEqual({
+      themes: null,
+      ci: null,
+      wireframe: null,
+      component: null,
+      element: null,
+      page: 'component',
+      prototype: 'component',
+    });
+  });
+});
+
+describe('unstagedCount', () => {
+  it('counts the calls without a known stage', () => {
+    expect(
+      unstagedCount({
+        calls: [call('p/a', { stage: 'page' }), call('p/b'), call('p/c', { stage: 'sketch' as never })],
+        project: '',
+        term: '',
+      }),
+    ).toBe(2);
   });
 });
 

@@ -53,6 +53,7 @@ import {
   stageGroups,
   stageLabel,
   stageOverview,
+  unstagedCount,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -127,7 +128,12 @@ const SETTLE_MS = 300;
                 type="button"
               >
                 <b>{{ STAGE_LABEL(summary.stage) }}</b>
-                <span>{{ summary.open }} open, {{ summary.ready }} ready, {{ summary.settled }} settled</span>
+                <span>
+                  @if (summary.before; as before) {
+                    <em class="studio__overview-ahead">before {{ STAGE_LABEL(before) }}</em>
+                  }
+                  {{ summary.open }} open, {{ summary.ready }} ready, {{ summary.settled }} settled
+                </span>
               </button>
 
               @if (summary.stage === 'wireframe') {
@@ -155,6 +161,13 @@ const SETTLE_MS = 300;
               @if (summary.stage === 'component' && inventoryCount(); as count) {
                 <div class="studio__inventory-part">{{ count }}</div>
               }
+            }
+
+            @if (unstaged(); as count) {
+              <div class="studio__overview-unstaged">
+                <b>No stage</b>
+                <span>{{ count }} {{ count === 1 ? 'call' : 'calls' }} outside the process</span>
+              </div>
             }
           </nav>
 
@@ -854,6 +867,8 @@ export class CallViewComponent {
       Object.fromEntries(Object.entries(this.statuses()).map(([slug, status]) => [slug, status.state])),
     ),
   );
+
+  protected unstaged = computed(() => unstagedCount(this.listed()));
 
   protected readonly STAGE_LABEL = stageLabel;
 

@@ -97,13 +97,15 @@ export type StageSummary = {
   open: number;
   ready: number;
   settled: number;
+  /** The earliest stage before this one that has no settled or ready call, when this stage already has calls. */
+  before: CallStage | null;
 };
 
 /** One summary per stage of the design order, the empty ones too. `ready` counts calls whose status is ready. */
 export const stageOverview = (request: CallListRequest, states: Record<string, string | undefined>): StageSummary[] => {
   const calls = callList(request);
 
-  return CALL_STAGES.map((stage) => {
+  const summaries = CALL_STAGES.map((stage) => {
     const inStage = calls.filter((call) => call.stage === stage);
     const open = inStage.filter((call) => openVariants(call) > 0).length;
 
@@ -114,7 +116,20 @@ export const stageOverview = (request: CallListRequest, states: Record<string, s
       settled: inStage.length - open,
     };
   });
+
+  return summaries.map((summary, index) => {
+    const hasCalls = summary.open + summary.ready + summary.settled > 0;
+    const missing = summaries
+      .slice(0, index)
+      .find((earlier) => earlier.stage !== 'ci' && !earlier.settled && !earlier.ready);
+
+    return { ...summary, before: hasCalls && missing ? missing.stage : null };
+  });
 };
+
+/** How many calls of the request declare no stage and so sit outside the design process. */
+export const unstagedCount = (request: CallListRequest) =>
+  callList(request).filter((call) => !CALL_STAGES.includes(call.stage as CallStage)).length;
 
 export const ruledLabel = (call: Call) =>
   `${call.variants.length - openVariants(call)} of ${call.variants.length} ruled`;

@@ -354,6 +354,28 @@
     cursor: default;
   }
 
+  .studio__overview-unstaged {
+    display: flex;
+    gap: 0.8rem;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0.4rem 1.6rem;
+    color: var(--et-theme-color-primary-solid);
+    font-size: 1.2rem;
+  }
+
+  .studio__overview-unstaged span,
+  .studio__overview-stage span .studio__overview-ahead {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+  }
+
+  .studio__overview-stage span .studio__overview-ahead {
+    margin-right: 0.6rem;
+    color: var(--et-theme-color-primary-solid);
+    font-style: normal;
+  }
+
   .studio__overview-stage--empty {
     color: var(--et-surface-color-muted-solid);
   }
