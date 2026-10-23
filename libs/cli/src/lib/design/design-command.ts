@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { checkDesign } from './check';
+import { newCall } from './new-call';
 import { serveDesign } from './serve';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
@@ -18,6 +19,9 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames.',
+    '',
+    `${invocation} new <project>/<group>/<name> [--variants a,b]`,
+    '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
     '',
     'Every command takes --checkout <path>. DE_PORT overrules the port in .ethlete/design/config.json.',
     '',
@@ -41,6 +45,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return checkDesign({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'new') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return newCall({ target, argv: rest, invocation });
   }
 
   const { target, rest } = splitCheckout(argv, root);
