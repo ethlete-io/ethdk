@@ -44,6 +44,9 @@ export const registerAnchoredPositionMiddlewareExtras = (extras: AnchoredPositio
   middlewareExtras = extras;
 };
 
+/** Whether `enableAnchoredOverlayPositionExtras()` has run, so `arrow`, `autoResize` and `autoHide` take effect. */
+export const hasAnchoredOverlayPositionExtras = () => middlewareExtras !== null;
+
 const requireMiddlewareExtras = (feature: string) => {
   if (!middlewareExtras && isDevMode()) {
     console.error(
