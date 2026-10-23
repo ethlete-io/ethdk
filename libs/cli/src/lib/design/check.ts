@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
+import { writeStatus } from './status';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -35,6 +36,8 @@ const outputOf = (error: unknown) => {
 
 type Flags = Record<string, string[]>;
 
+type Fail = (message: string) => number;
+
 const parse = (argv: string[], names: string[]): Flags => {
   const flags: Flags = {};
   let current: string | null = null;
@@ -51,16 +54,14 @@ const parse = (argv: string[], names: string[]): Flags => {
   return flags;
 };
 
-const runBrowser = async (options: { base: string; slug: string; wanted?: string }): Promise<number> => {
-  const { base, slug, wanted } = options;
+const runBrowser = async (options: { base: string; slug: string; wanted?: string; fail: Fail }): Promise<number> => {
+  const { base, slug, wanted, fail } = options;
   const playwright = await import('playwright').catch(() => null);
 
   if (!playwright) {
-    console.error(
+    return fail(
       'NO BROWSER - neither the checkout nor this package resolves playwright, so the render stage cannot run.',
     );
-
-    return 1;
   }
 
   const browser = await playwright.chromium.launch();
@@ -71,6 +72,7 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
       base,
       slug,
       wanted,
+      fail,
     });
   } finally {
     await browser.close();
@@ -115,19 +117,14 @@ const checkPage = async (options: {
   base: string;
   slug: string;
   wanted?: string;
+  fail: Fail;
 }): Promise<number> => {
-  const { page, base, slug, wanted } = options;
+  const { page, base, slug, wanted, fail } = options;
 
   /** Angular throws at render time, and the overlay never shows those, so read the console too. */
   const consoleErrors: string[] = [];
   page.on('console', (message) => message.type() === 'error' && consoleErrors.push(message.text()));
   page.on('pageerror', (error) => consoleErrors.push(error.message));
-
-  const fail = (message: string) => {
-    console.error(message);
-
-    return 1;
-  };
 
   await page.goto(`${base}/frame.html`, { waitUntil: 'domcontentloaded' });
 
@@ -182,27 +179,20 @@ const checkPage = async (options: {
     if (text.startsWith('design-explore:')) return fail(`FRAME REFUSED on ${slug} variant ${key}\n${text}`);
   }
 
-  if (consoleErrors.length > 0) {
-    console.error(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
-
-    return 1;
-  }
+  if (consoleErrors.length > 0) return fail(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
 
   console.log(`ok ${slug} (${checked.join(', ')})`);
 
   return 0;
 };
 
-/**
- * Finds out why a call does not render, in the cheapest order: eslint on the named files, then
- * `tsc --noEmit` over the checkout's calls, then the live page in a headless browser. A compile
- * error draws an overlay on top of the drawing, so a screenshot of one looks like a design -
- * never screenshot before this says `ok`.
- */
-export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
-  const { target, argv, invocation } = options;
-  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant']);
-
+const runChecks = async (options: {
+  target: string;
+  flags: Flags;
+  invocation: string;
+  fail: Fail;
+}): Promise<number> => {
+  const { target, flags, invocation, fail } = options;
   const lintFiles = flags['--lint'] ?? [];
   const slug = flags['--call']?.[0];
   const wanted = flags['--variant']?.[0];
@@ -217,18 +207,12 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
   if (lintFiles.length > 0) {
     const eslint = binaryOf({ target, pkg: 'eslint', bin: 'eslint' });
 
-    if (!eslint) {
-      console.error(`NO LINTER - ${target} installs no eslint, so --lint has nothing to run.`);
-
-      return 1;
-    }
+    if (!eslint) return fail(`NO LINTER - ${target} installs no eslint, so --lint has nothing to run.`);
 
     try {
       execFileSync(process.execPath, [eslint, ...lintFiles], { cwd: target, encoding: 'utf8', stdio: 'pipe' });
     } catch (error) {
-      console.error(`LINT\n${outputOf(error)}`);
-
-      return 1;
+      return fail(`LINT\n${outputOf(error)}`);
     }
   }
 
@@ -240,11 +224,7 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
     const native = process.env['TSC'];
     const tsc = native ? null : binaryOf({ target, pkg: 'typescript', bin: 'tsc' });
 
-    if (!native && !tsc) {
-      console.error('NO TYPE CHECKER - neither the checkout nor this package resolves typescript.');
-
-      return 1;
-    }
+    if (!native && !tsc) return fail('NO TYPE CHECKER - neither the checkout nor this package resolves typescript.');
 
     const command = native
       ? { file: 'npx', args: ['-y', native, '--noEmit', '-p', tsconfig] }
@@ -253,9 +233,7 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
     try {
       execFileSync(command.file, command.args, { cwd: target, encoding: 'utf8', stdio: 'pipe' });
     } catch (error) {
-      console.error(`TYPE ERROR\n${outputOf(error)}`);
-
-      return 1;
+      return fail(`TYPE ERROR\n${outputOf(error)}`);
     }
   }
 
@@ -268,5 +246,49 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
   const config = readConfig(target);
   const base = process.env['DE_URL'] ?? `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`;
 
-  return runBrowser({ base, slug, wanted });
+  return runBrowser({ base, slug, wanted, fail });
+};
+
+/**
+ * Finds out why a call does not render, in the cheapest order: eslint on the named files, then
+ * `tsc --noEmit` over the checkout's calls, then the live page in a headless browser. A compile
+ * error draws an overlay on top of the drawing, so a screenshot of one looks like a design -
+ * never screenshot before this says `ok`. With `--call`, the call's status follows the check.
+ */
+export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
+  const { target, argv, invocation } = options;
+  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant']);
+  const slug = flags['--call']?.[0];
+  let failure = '';
+  const fail: Fail = (message) => {
+    console.error(message);
+    failure ||= message;
+
+    return 1;
+  };
+
+  if (!slug) return runChecks({ target, flags, invocation, fail });
+
+  writeStatus({ checkout: target, slug, state: 'checking' });
+
+  try {
+    const code = await runChecks({ target, flags, invocation, fail });
+
+    writeStatus({
+      checkout: target,
+      slug,
+      ...(code === 0 ? { state: 'ready' } : { state: 'failed', message: failure }),
+    });
+
+    return code;
+  } catch (error) {
+    writeStatus({
+      checkout: target,
+      slug,
+      state: 'failed',
+      message: error instanceof Error ? error.message : String(error),
+    });
+
+    throw error;
+  }
 };

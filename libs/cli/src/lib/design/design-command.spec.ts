@@ -10,6 +10,7 @@ describe('designCommand', () => {
     const text = log.mock.calls.flat().join('\n');
     expect(text).toContain('et design [checkout]');
     expect(text).toContain('et design check');
+    expect(text).toContain('et design status <slug> <scaffolded|drawing|checking|ready|failed>');
     log.mockRestore();
   });
 });

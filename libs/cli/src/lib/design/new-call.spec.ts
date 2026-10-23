@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { newCall } from './new-call';
+import { statusPath } from './status';
 
 const calls = (target: string) => join(target, '.ethlete/design/calls');
 
@@ -23,6 +24,9 @@ describe('newCall', () => {
     expect(existsSync(join(folder, 'fixture.ts'))).toBe(true);
     expect(['a', 'b', 'c'].map((key) => existsSync(join(folder, `variant-${key}.ts`)))).toEqual([true, true, true]);
     expect(call).toContain("load: () => import('./variant-c')");
+    expect(
+      JSON.parse(readFileSync(statusPath({ checkout: target, slug: 'app/checkout/01-summary' }), 'utf8')).state,
+    ).toBe('scaffolded');
   });
 
   it('refuses a slug whose folder exists, so a drawing is never overwritten', () => {

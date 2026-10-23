@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, relative } from 'path';
 import { callsRootOf, readConfig } from './paths';
+import { writeStatus } from './status';
 
 const SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
 const KEY = /^[a-z][a-z0-9-]*$/;
@@ -96,6 +97,8 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
   for (const key of keys) {
     writeFileSync(join(folder, `variant-${key}.ts`), variantFile(key));
   }
+
+  writeStatus({ checkout: target, slug, state: 'scaffolded' });
 
   const project = segments[0] as string;
   const projects = readConfig(target)?.projects ?? {};
