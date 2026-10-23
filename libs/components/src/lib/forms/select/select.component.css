@@ -162,6 +162,10 @@
     }
   }
 
+  .et-form-field-control-frame:has(et-select) {
+    cursor: pointer;
+  }
+
   /* outside the `et-select` block on purpose: the chevron renders in the form field's suffix slot,
      which is not a descendant of the host. */
   .et-select-arrow .et-icon {
