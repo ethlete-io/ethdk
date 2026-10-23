@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { detectCommandVars, detectPackageRunner } from './package-runner';
+import { detectCommandVars, detectPackageRunner, followPackageManager } from './package-runner';
 
 const repo = (files: Record<string, string>) => {
   const root = mkdtempSync(join(tmpdir(), 'agent-rules-runner-'));
@@ -60,5 +60,33 @@ describe('detectCommandVars', () => {
 
   it('derives nothing without a script or nx', () => {
     expect(detectCommandVars(repo({ 'package.json': '{}' }))).toEqual({});
+  });
+});
+
+describe('followPackageManager', () => {
+  const yarnRepo = () => repo({ 'package.json': JSON.stringify({ packageManager: 'yarn@4.18.0' }) });
+
+  it('rewrites npm defaults to the detected manager', () => {
+    expect(
+      followPackageManager(yarnRepo(), {
+        lintFixCommand: 'npm run lint -- --fix',
+        storybookStartCommand: 'npm run storybook',
+        formatCommand: 'npx prettier --write <files>',
+        other: 'echo npm run x',
+        list: ['npx a'],
+      }),
+    ).toEqual({
+      lintFixCommand: 'yarn run lint --fix',
+      storybookStartCommand: 'yarn run storybook',
+      formatCommand: 'yarn prettier --write <files>',
+      other: 'echo npm run x',
+      list: ['npx a'],
+    });
+  });
+
+  it('leaves the defaults alone for npm', () => {
+    const vars = { lintCommand: 'npm run lint' };
+
+    expect(followPackageManager(repo({ 'package.json': '{}' }), vars)).toBe(vars);
   });
 });

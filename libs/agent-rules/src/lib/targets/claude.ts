@@ -1,4 +1,4 @@
-import { BANNER } from '../render';
+import { banner, packageRunnerVar } from '../render';
 import { body, document, EmitContext, EmittedFile, makeLinks, skillBundle } from './shared';
 
 const skillDir = (name: string) => `.claude/skills/ethlete-${name}`;
@@ -13,7 +13,7 @@ const quoteList = (values: string[]) => values.map((value) => `  - '${value}'`).
  * rules directory is skipped entirely rather than loading everything twice.
  */
 export const emitClaude = (context: EmitContext): EmittedFile[] => {
-  const banner = BANNER;
+  const fileBanner = banner(packageRunnerVar(context.vars));
   const links = makeLinks({
     skill: (name) => `the **\`ethlete-${name}\`** skill`,
     resource: (target) => `\`${target.fileName}\` (bundled next to this skill)`,
@@ -27,7 +27,7 @@ export const emitClaude = (context: EmitContext): EmittedFile[] => {
 
       files.push({
         path: `.claude/rules/ethlete/${name}.md`,
-        contents: document([frontmatter, banner, body({ item, context, links })]),
+        contents: document([frontmatter, fileBanner, body({ item, context, links })]),
       });
     }
   }

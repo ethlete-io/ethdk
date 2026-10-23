@@ -1,4 +1,4 @@
-import { BANNER } from '../render';
+import { banner, packageRunnerVar } from '../render';
 import { agentsSkillsLinks, body, description, document, EmitContext, EmittedFile, yamlString } from './shared';
 
 /**
@@ -7,7 +7,7 @@ import { agentsSkillsLinks, body, description, document, EmitContext, EmittedFil
  * agentskills.io-aware tool.
  */
 export const emitCursor = (context: EmitContext): EmittedFile[] => {
-  const banner = BANNER;
+  const fileBanner = banner(packageRunnerVar(context.vars));
   const links = agentsSkillsLinks();
 
   return context.rules.map((item) => {
@@ -22,7 +22,7 @@ export const emitCursor = (context: EmitContext): EmittedFile[] => {
 
     return {
       path: `.cursor/rules/ethlete-${name}.mdc`,
-      contents: document([frontmatter, banner, body({ item, context, links })]),
+      contents: document([frontmatter, fileBanner, body({ item, context, links })]),
     };
   });
 };

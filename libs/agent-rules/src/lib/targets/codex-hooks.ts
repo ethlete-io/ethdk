@@ -1,4 +1,5 @@
 import { EmitContext, EmittedFile } from './shared';
+import { packageRunnerVar } from '../render';
 import { emitHookScripts, emitHookSettings, hooksForAgent } from './hooks-shared';
 
 export const CODEX_HOOKS_FILE = '.codex/hooks.json';
@@ -25,7 +26,7 @@ export const emitCodexHooks = (options: {
   const hooks = codexTarget ? hooksForAgent({ hooks: context.hooks, agent: 'codex' }) : [];
 
   return [
-    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),
+    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR, runner: packageRunnerVar(context.vars) }),
     ...emitHookSettings({
       agent: 'codex',
       path: CODEX_HOOKS_FILE,

@@ -15,7 +15,10 @@ npx ethlete-agents init   # writes ethlete-agents.config.json
 npx ethlete-agents sync   # writes the generated rules and skills
 ```
 
-`init` pre-fills `vars` with the lint, format and Storybook commands for your repo; check them before
+With Yarn 4.18+ and `npmMinimalAgeGate`, a freshly published release is blocked until it ages. Add
+`npmPreapprovedPackages: ["@ethlete/*"]` to `.yarnrc.yml` to install new `@ethlete/*` versions right away.
+
+`init` pre-fills `vars` with the lint, format and Storybook commands for your repo, using its package manager; check them before
 the first sync. `sync`, `check`, `init` and `migrate` reject a flag they do not know and print the usage
 instead of running, and a config file that does not parse is reported by name.
 

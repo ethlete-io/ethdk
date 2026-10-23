@@ -80,3 +80,25 @@ export const detectCommandVars = (root: string): Record<string, string> => {
 
   return vars;
 };
+
+const NPM_COMMAND = /^npm run (\S+)(?: -- (.*))?$/;
+
+export const followPackageManager = (root: string, vars: Record<string, string | string[]>) => {
+  const manager = detectPackageManagerName(root);
+
+  if (manager === 'npm') return vars;
+
+  return Object.fromEntries(
+    Object.entries(vars).map(([name, value]) => {
+      if (typeof value !== 'string') return [name, value];
+
+      const script = NPM_COMMAND.exec(value);
+
+      if (script) return [name, [SCRIPT_RUNNERS[manager], script[1], script[2]].filter(Boolean).join(' ')];
+
+      if (value.startsWith('npx ')) return [name, `${RUNNERS[manager]} ${value.slice(4)}`];
+
+      return [name, value];
+    }),
+  );
+};

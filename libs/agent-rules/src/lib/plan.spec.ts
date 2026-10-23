@@ -2,7 +2,13 @@ import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { CONFIG_FILE_NAME, loadConfig, LOCAL_CONFIG_FILE_NAME, TOPOLOGY_CONFIG_FILE_NAME } from './config';
+import {
+  CONFIG_FILE_NAME,
+  detectTargets,
+  loadConfig,
+  LOCAL_CONFIG_FILE_NAME,
+  TOPOLOGY_CONFIG_FILE_NAME,
+} from './config';
 import { ContentItem } from './load-content';
 import { assertResolvedContentReferences, buildPlan, claudeMdImportsAgentsMd } from './plan';
 
@@ -158,6 +164,22 @@ describe('config file checks', () => {
       expect.stringContaining('vars.lintCommand is `npm run lint:all`, but package.json has no "lint:all" script'),
     ]);
   });
+
+  it('stays silent about a script var that no emitted item uses', () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'vitest' } }), 'utf8');
+    writeFileSync(
+      join(root, CONFIG_FILE_NAME),
+      JSON.stringify({
+        vars: { lintCommand: 'npm run lint:all' },
+        exclude: ['lint-and-format', 'styleguide', 'sdk-update'],
+      }),
+      'utf8',
+    );
+
+    expect(buildPlan({ config: loadConfig({ root }) }).warnings).toEqual([]);
+  });
 });
 
 describe('hook config checks', () => {
@@ -214,5 +236,36 @@ describe('claudeMdImportsAgentsMd', () => {
   it('ignores an import line inside a code fence', () => {
     expect(claudeMdImportsAgentsMd(rootWith('# Notes\n\n```md\n@AGENTS.md\n```\n'))).toBe(false);
     expect(claudeMdImportsAgentsMd(rootWith('```md\nx\n```\n\n@AGENTS.md\n'))).toBe(true);
+  });
+});
+
+describe('package manager defaults', () => {
+  const yarnRepo = () => {
+    const root = mkdtempSync(join(tmpdir(), 'agent-rules-plan-'));
+
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ packageManager: 'yarn@4.18.0' }), 'utf8');
+
+    return root;
+  };
+
+  it('rewrites the default commands to yarn and keeps explicit vars', () => {
+    const root = yarnRepo();
+
+    writeFileSync(join(root, CONFIG_FILE_NAME), JSON.stringify({ vars: { formatCommand: 'make fmt' } }), 'utf8');
+
+    const { vars } = loadConfig({ root });
+
+    expect(vars['formatCommand']).toBe('make fmt');
+    expect(Object.values(vars).filter((value) => typeof value === 'string' && /^npm run |^npx /.test(value))).toEqual(
+      [],
+    );
+  });
+
+  it('detects claude from a CLAUDE.md file', () => {
+    const root = yarnRepo();
+
+    writeFileSync(join(root, 'CLAUDE.md'), '', 'utf8');
+
+    expect(detectTargets(root)).toEqual(['codex', 'claude']);
   });
 });

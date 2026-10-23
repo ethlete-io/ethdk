@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { resolveContentRoot } from '../load-content';
-import { SHELL_BANNER } from '../render';
+import { shellBanner } from '../render';
 import { EmittedFile } from './shared';
 
 type HookRegistration = {
@@ -70,12 +70,12 @@ export const assertKnownHooks = (hooks: string[]) => {
 };
 
 /** Placed after the shebang so the file stays runnable. */
-const withBanner = (raw: string) => {
+const withBanner = (raw: string, runner?: string) => {
   const lines = raw.split('\n');
 
-  if (lines[0]?.startsWith('#!')) return [lines[0], SHELL_BANNER, ...lines.slice(1)].join('\n');
+  if (lines[0]?.startsWith('#!')) return [lines[0], shellBanner(runner), ...lines.slice(1)].join('\n');
 
-  return `${SHELL_BANNER}\n${raw}`;
+  return `${shellBanner(runner)}\n${raw}`;
 };
 
 type HookCommand = { type?: string; command?: string; timeout?: number };
@@ -132,8 +132,8 @@ export const mergeHookSettings = (options: {
   return `${JSON.stringify(settings, null, 2)}\n`;
 };
 
-export const emitHookScripts = (options: { hooks: string[]; hooksDir: string }): EmittedFile[] => {
-  const { hooks, hooksDir } = options;
+export const emitHookScripts = (options: { hooks: string[]; hooksDir: string; runner?: string }): EmittedFile[] => {
+  const { hooks, hooksDir, runner } = options;
 
   return hooks.flatMap((name) => {
     const definition = KNOWN_HOOKS[name];
@@ -142,7 +142,7 @@ export const emitHookScripts = (options: { hooks: string[]; hooksDir: string }):
 
     const raw = readFileSync(join(resolveContentRoot(), 'hooks', definition.file), 'utf8');
 
-    return [{ path: `${hooksDir}/${definition.file}`, contents: withBanner(raw) }];
+    return [{ path: `${hooksDir}/${definition.file}`, contents: withBanner(raw, runner) }];
   });
 };
 

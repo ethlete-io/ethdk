@@ -8,6 +8,7 @@ import {
   SyncConfig,
   TOPOLOGY_CONFIG_FILE_NAME,
 } from './config';
+import { packageRunnerVar } from './render';
 import { filterContent, SkippedItem } from './filter';
 import { ContentItem, loadContent } from './load-content';
 import { readScripts } from './package-runner';
@@ -219,12 +220,14 @@ const collectHookSettingsWarnings = (root: string) =>
 
 const SCRIPT_COMMAND_VARS = ['lintCommand', 'lintFixCommand'];
 
-const collectMissingScriptWarnings = (config: SyncConfig) => {
+const collectMissingScriptWarnings = (config: SyncConfig, kept: ContentItem[]) => {
   const scripts = readScripts(config.root);
 
   if (!scripts) return [];
 
-  return SCRIPT_COMMAND_VARS.flatMap((name) => {
+  const used = new Set(kept.flatMap((item) => item.frontmatter.vars));
+
+  return SCRIPT_COMMAND_VARS.filter((name) => used.has(name)).flatMap((name) => {
     const value = config.vars[name];
     const script = typeof value === 'string' ? /^(?:npm|yarn|pnpm|bun) run (\S+)/.exec(value)?.[1] : undefined;
 
@@ -236,10 +239,11 @@ const collectMissingScriptWarnings = (config: SyncConfig) => {
   });
 };
 
-const collectWarnings = (config: SyncConfig, items: ContentItem[]) => {
+const collectWarnings = (options: { config: SyncConfig; items: ContentItem[]; kept: ContentItem[] }) => {
+  const { config, items, kept } = options;
   const warnings: string[] = [
     ...(config.configWarnings ?? []),
-    ...collectMissingScriptWarnings(config),
+    ...collectMissingScriptWarnings(config, kept),
     ...collectLocalConfigWarnings(config.root),
     ...collectHookSettingsWarnings(config.root),
     ...collectPathVarWarnings(config),
@@ -321,6 +325,7 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
     ...emitGitHooks({
       gitHooks: config.gitHooks,
       huskyExists: existsSync(join(config.root, HUSKY_DIR)),
+      runner: packageRunnerVar(config.vars),
       existing: Object.fromEntries(
         Object.keys(KNOWN_GIT_HOOKS).map((name) => [name, readExisting(config.root, huskyHookPath(name))]),
       ),
@@ -330,6 +335,6 @@ export const buildPlan = (options: { config: SyncConfig }): SyncPlan => {
   return {
     files,
     skipped,
-    warnings: collectWarnings(config, items),
+    warnings: collectWarnings({ config, items, kept }),
   };
 };

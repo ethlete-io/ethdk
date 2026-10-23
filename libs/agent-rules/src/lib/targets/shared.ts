@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { ContentItem } from '../load-content';
-import { BANNER, LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
+import { banner, packageRunnerVar, LinkResolver, renderBody, renderDescription, substituteVars } from '../render';
 
 export type EmittedFile = {
   /** Path relative to the consumer repo root, always with forward slashes. */
@@ -84,7 +84,7 @@ export const skillBundle = (options: {
   return [
     {
       path: `${dir}/SKILL.md`,
-      contents: document([frontmatter, BANNER, body({ item, context, links })]),
+      contents: document([frontmatter, banner(packageRunnerVar(context.vars)), body({ item, context, links })]),
     },
     ...resourceFiles({ item, context, pathFor: (fileName) => `${dir}/${fileName}` }),
   ];

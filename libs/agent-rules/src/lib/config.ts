@@ -4,7 +4,7 @@ import { commitMessageVars, findCommitlintConfig } from './commitlint';
 import { ContentScope } from './frontmatter';
 import { GitFlowConfig, RawGitFlowConfig, resolveGitFlowConfig } from './git-flow';
 import { loadDefaultVars } from './load-content';
-import { detectCommandVars, detectPackageRunner } from './package-runner';
+import { detectCommandVars, detectPackageRunner, followPackageManager } from './package-runner';
 
 export const AGENT_TARGETS = ['claude', 'codex', 'cursor', 'copilot'] as const;
 
@@ -227,7 +227,7 @@ export const readLocalConfig = (root: string): LocalConfigState => {
 };
 
 /**
- * Emit for the agents a repo already uses. `codex` is always included: `AGENTS.md` is the
+ * Emit for the agents a repo already uses (a `.claude` directory or a `CLAUDE.md` file means Claude). `codex` is always included: `AGENTS.md` is the
  * cross-tool standard that Cursor, Copilot and most other agents read as well, and gating it on
  * an existing `AGENTS.md` would mean the file that triggers Codex output is the very file the
  * sync is supposed to create.
@@ -235,7 +235,7 @@ export const readLocalConfig = (root: string): LocalConfigState => {
 export const detectTargets = (root: string): AgentTarget[] => {
   const detected: AgentTarget[] = ['codex'];
 
-  if (existsSync(join(root, '.claude'))) detected.push('claude');
+  if (existsSync(join(root, '.claude')) || existsSync(join(root, 'CLAUDE.md'))) detected.push('claude');
   if (existsSync(join(root, '.cursor'))) detected.push('cursor');
   if (existsSync(join(root, '.github'))) detected.push('copilot');
 
@@ -277,7 +277,7 @@ export const loadConfig = (options: { root: string; targetOverride?: AgentTarget
     targets,
     scopes: raw.profile === 'sdk' ? ['sdk', 'both'] : ['consumer', 'both'],
     vars: {
-      ...loadDefaultVars(),
+      ...followPackageManager(root, loadDefaultVars()),
       ...detectCommandVars(root),
       packageRunner: detectPackageRunner(root),
       ...gitFlowVars(gitFlow),

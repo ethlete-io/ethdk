@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { ContentItem } from '../load-content';
-import { BANNER, END_MARKER, renderBody, START_MARKER } from '../render';
+import { banner, END_MARKER, renderBody, START_MARKER } from '../render';
 import { emitAgentsSkills } from './agents-skills';
 import { emitClaude } from './claude';
 import { emitCodex } from './codex';
@@ -45,6 +45,13 @@ const context = (overrides: Partial<EmitContext> = {}): EmitContext => ({
 });
 
 describe('emitClaude', () => {
+  it('names the repo package runner in the banner', () => {
+    const files = emitClaude(context({ vars: { tool: 'x', packageRunner: 'yarn' } }));
+
+    expect(files[0]?.contents.startsWith(banner('yarn'))).toBe(true);
+    expect(banner('yarn')).toContain('Run `yarn ethlete-agents sync`.');
+  });
+
   it('writes rules and namespaced skills with Claude link syntax', () => {
     const files = emitClaude(context());
 
@@ -52,7 +59,7 @@ describe('emitClaude', () => {
       '.claude/rules/ethlete/style.md',
       '.claude/skills/ethlete-theming/SKILL.md',
     ]);
-    expect(files[0]?.contents).toBe(`${BANNER}\n\nSee the **\`ethlete-theming\`** skill for npx.\n`);
+    expect(files[0]?.contents).toBe(`${banner()}\n\nSee the **\`ethlete-theming\`** skill for npx.\n`);
     expect(files[1]?.contents).toBe(
       [
         '---',
@@ -60,7 +67,7 @@ describe('emitClaude', () => {
         'description: "theming description"',
         '---',
         '',
-        BANNER,
+        banner(),
         '',
         'Read `tokens.md` (bundled next to this skill).',
         '',
@@ -102,7 +109,7 @@ describe('emitCursor', () => {
         'alwaysApply: true',
         '---',
         '',
-        BANNER,
+        banner(),
         '',
         'See `.agents/skills/ethlete-theming/SKILL.md` for npx.',
         '',
@@ -126,7 +133,7 @@ describe('emitCodex', () => {
     const [file] = emitCodex({ context: context(), existing: '# Repo\n' });
 
     expect(file?.path).toBe('AGENTS.md');
-    expect(file?.contents.startsWith(`# Repo\n\n${START_MARKER}\n${BANNER}\n\nSee \`.agents/skills/`)).toBe(true);
+    expect(file?.contents.startsWith(`# Repo\n\n${START_MARKER}\n${banner()}\n\nSee \`.agents/skills/`)).toBe(true);
     expect(file?.contents).toContain('## Ethlete skills');
     expect(file?.contents.endsWith(`${END_MARKER}\n`)).toBe(true);
   });
@@ -152,7 +159,7 @@ describe('emitCopilot', () => {
 
     expect(file?.path).toBe('.github/copilot-instructions.md');
     expect(file?.contents).toBe(
-      `${START_MARKER}\n${BANNER}\n\nSee \`.agents/skills/ethlete-theming/SKILL.md\` for npx.\n${END_MARKER}\n`,
+      `${START_MARKER}\n${banner()}\n\nSee \`.agents/skills/ethlete-theming/SKILL.md\` for npx.\n${END_MARKER}\n`,
     );
   });
 });

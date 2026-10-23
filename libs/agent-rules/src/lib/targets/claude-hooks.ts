@@ -1,4 +1,5 @@
 import { EmitContext, EmittedFile } from './shared';
+import { packageRunnerVar } from '../render';
 import { emitHookScripts, emitHookSettings, hooksForAgent } from './hooks-shared';
 
 export const CLAUDE_SETTINGS_FILE = '.claude/settings.json';
@@ -20,7 +21,7 @@ export const emitClaudeHooks = (options: {
   const hooks = claudeTarget ? hooksForAgent({ hooks: context.hooks, agent: 'claude' }) : [];
 
   return [
-    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR }),
+    ...emitHookScripts({ hooks, hooksDir: HOOKS_DIR, runner: packageRunnerVar(context.vars) }),
     ...emitHookSettings({
       agent: 'claude',
       path: CLAUDE_SETTINGS_FILE,

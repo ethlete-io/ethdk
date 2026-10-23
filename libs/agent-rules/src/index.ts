@@ -7,7 +7,7 @@ import { gitFlowCommand } from './lib/git-flow-command';
 import { loadDefaultVars } from './lib/load-content';
 import { migrate } from './lib/migrate';
 import { outputStyleCommand } from './lib/output-style-command';
-import { detectCommandVars } from './lib/package-runner';
+import { detectCommandVars, followPackageManager } from './lib/package-runner';
 import { plain } from './lib/plain-text';
 import { check, sync } from './lib/sync';
 import { timetrackCommand } from './lib/timetrack-command';
@@ -56,7 +56,7 @@ const init = (root: string) => {
     return 1;
   }
 
-  const defaults = loadDefaultVars();
+  const defaults = followPackageManager(root, loadDefaultVars());
   const detected = detectCommandVars(root);
   const vars = Object.fromEntries(
     INIT_VARS.map((name) => [name, detected[name] ?? defaults[name]]).filter(([, value]) => value),

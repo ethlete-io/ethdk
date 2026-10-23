@@ -1,4 +1,4 @@
-import { BANNER, replaceMarkedBlock } from '../render';
+import { banner, packageRunnerVar, replaceMarkedBlock } from '../render';
 import { agentsSkillsLinks, body, document, EmitContext, EmittedFile } from './shared';
 
 export const CODEX_FILE = 'AGENTS.md';
@@ -23,7 +23,7 @@ export const emitCodex = (options: { context: EmitContext; existing: string }): 
     );
   }
 
-  const block = document([BANNER, ...sections]).trimEnd();
+  const block = document([banner(packageRunnerVar(context.vars)), ...sections]).trimEnd();
 
   return [{ path: CODEX_FILE, contents: replaceMarkedBlock({ existing, block, file: CODEX_FILE }) }];
 };
