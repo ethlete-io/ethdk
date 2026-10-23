@@ -12,6 +12,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   ColorTheme,
   ProvideColorDirective,
+  ProvideSurfaceDirective,
   SurfaceTheme,
   provideColorThemesWithTailwind4,
   provideSurfaceThemesWithTailwind4,
@@ -67,6 +68,12 @@ class ScopedOpenerComponent {
   colorProvider = inject(ProvideColorDirective);
   viewContainerRef = inject(ViewContainerRef);
   injector = inject(Injector);
+}
+
+@Component({ template: 'surfaced opener', hostDirectives: [ProvideSurfaceDirective] })
+class SurfacedOpenerComponent {
+  surfaceProvider = inject(ProvideSurfaceDirective);
+  viewContainerRef = inject(ViewContainerRef);
 }
 
 @Component({ template: 'overlay content' })
@@ -313,6 +320,74 @@ describe('OverlayContainerComponent surface type without a provider', () => {
     await driver.open(OverlayContentComponent, { strategies: dialogOverlayStrategy() });
 
     expect(surfaceName()).toBe('et-surface--night-1');
+  });
+});
+
+describe('OverlayContainerComponent surface type of the opener', () => {
+  let driver: ReturnType<typeof createOverlayDriver>;
+
+  beforeEach(() => {
+    fakeMatchMedia();
+    TestBed.configureTestingModule({
+      providers: [
+        provideSurfaceThemesWithTailwind4([
+          surface('night', 0, true),
+          surface('night-1', 1),
+          lightSurface('day', 0, true),
+          lightSurface('day-1', 1),
+        ]),
+      ],
+    });
+
+    driver = createOverlayDriver();
+  });
+
+  afterEach(() => driver.closeAll());
+
+  const surfaceName = () =>
+    Array.from(driver.pane()?.classList ?? []).find((cls) => cls.startsWith('et-surface--')) ?? null;
+
+  it('follows the opener to another surface type while the overlay is open', async () => {
+    const openerFixture = TestBed.createComponent(SurfacedOpenerComponent);
+    const opener = openerFixture.componentInstance;
+
+    opener.surfaceProvider.forceSurface('night');
+    openerFixture.detectChanges();
+
+    await driver.open(OverlayContentComponent, {
+      origin: openerFixture.nativeElement,
+      viewContainerRef: opener.viewContainerRef,
+      strategies: anchoredDialogOverlayStrategy(),
+    });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+
+    opener.surfaceProvider.forceSurface('day');
+    openerFixture.detectChanges();
+    driver.tick();
+
+    expect(surfaceName()).toBe('et-surface--day-1');
+  });
+
+  it('follows a surface class change on an origin ancestor that no provider reaches', async () => {
+    const parent = document.createElement('div');
+    const trigger = document.createElement('button');
+
+    parent.classList.add('et-surface--night');
+    parent.appendChild(trigger);
+    document.body.appendChild(parent);
+
+    await driver.open(OverlayContentComponent, { origin: trigger, strategies: anchoredDialogOverlayStrategy() });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+
+    parent.classList.replace('et-surface--night', 'et-surface--day');
+    await Promise.resolve();
+    driver.tick();
+
+    expect(surfaceName()).toBe('et-surface--day-1');
+
+    parent.remove();
   });
 });
 

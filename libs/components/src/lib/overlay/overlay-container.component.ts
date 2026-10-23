@@ -10,6 +10,7 @@ import {
   ViewEncapsulation,
   DOCUMENT,
   afterNextRender,
+  afterRenderEffect,
   booleanAttribute,
   computed,
   effect,
@@ -33,12 +34,14 @@ import {
   injectBoundaryElement,
   injectDefaultSurfaceTheme,
   injectRenderer,
+  injectRootSurfaceTheme,
   injectSurfaceContextTracker,
   injectSurfaceThemes,
   injectSurfaceThemesPrefix,
   provideBoundaryElement,
   resolveAppRootColorProvider,
   resolveSurfaceByElevation,
+  signalElementMutations,
 } from '@ethlete/core';
 import { tap } from 'rxjs';
 import { OverlayConfig } from './overlay-config';
@@ -78,17 +81,18 @@ export class OverlayContainerComponent {
 
   public rootBoundary = injectBoundaryElement();
 
+  private rootSurfaceTheme = injectRootSurfaceTheme();
   public component = input.required<Type<object>>();
   public componentBindings = input<Binding[] | undefined>(undefined);
+
   public componentDirectives = input<OverlayConfig['directives'] | undefined>(undefined);
-
   public renderArrow = input(false, { transform: booleanAttribute });
-  public renderDragHandle = input(false, { transform: booleanAttribute });
 
+  public renderDragHandle = input(false, { transform: booleanAttribute });
   private contentOutlet = viewChild.required('contentOutlet', { read: ViewContainerRef });
   public animatedLifecycle = signal(inject(ANIMATED_LIFECYCLE_TOKEN));
-  public contentComponentRef = signal<ComponentRef<object> | null>(null);
 
+  public contentComponentRef = signal<ComponentRef<object> | null>(null);
   private defaultSurfaceType = injectDefaultSurfaceTheme()?.type ?? null;
 
   constructor() {
@@ -99,37 +103,62 @@ export class OverlayContainerComponent {
     }
 
     if (this.surfaceThemes) {
-      const parentSurface = this.resolveOriginSurface() ?? this.parentDiSurface();
-      const parentType = parentSurface?.type ?? this.rootSurfaceType();
+      const readParentSurface = () => {
+        const surface = this.resolveOriginSurface() ?? this.parentDiSurface();
+
+        return { type: surface?.type ?? this.rootSurfaceType(), elevation: surface?.elevation ?? null };
+      };
+      const parentSurface = signal(readParentSurface(), {
+        equal: (a, b) => a.type === b.type && a.elevation === b.elevation,
+      });
       const surfaceThemes = this.surfaceThemes;
       const hasBackdrop = computed(
         () => this.mountedHasBackdrop?.() ?? resolveOverlayHasBackdrop(this.overlayRef.config),
       );
-      const elevation = computed(() => (hasBackdrop() || !parentSurface ? 1 : parentSurface.elevation + 1));
+      const placement = computed(() => {
+        const { type, elevation } = parentSurface();
+
+        return { type, level: hasBackdrop() || elevation === null ? 1 : elevation + 1 };
+      });
       let unregister: (() => void) | null = null;
 
-      const applyElevation = (level: number) => {
-        const resolved = resolveSurfaceByElevation(surfaceThemes, parentType, level);
+      const applyPlacement = ({ type, level }: { type: SurfaceType; level: number }) => {
+        const resolved = resolveSurfaceByElevation(surfaceThemes, type, level);
 
         if (resolved) {
           this.ownSurfaceProvider.forceSurface(resolved.name);
         }
 
         unregister?.();
-        unregister = this.surfaceContextTracker.register(parentType, level, this.elementRef.nativeElement);
+        unregister = this.surfaceContextTracker.register(type, level, this.elementRef.nativeElement);
       };
 
-      let appliedElevation = untracked(elevation);
+      let applied = untracked(placement);
 
-      applyElevation(appliedElevation);
+      applyPlacement(applied);
 
       effect(() => {
-        const level = elevation();
+        const next = placement();
 
-        if (level === appliedElevation) return;
+        if (next.type === applied.type && next.level === applied.level) return;
 
-        appliedElevation = level;
-        untracked(() => applyElevation(level));
+        applied = next;
+        untracked(() => applyPlacement(next));
+      });
+
+      // The origin surface is read from DOM classes, which only reflect a provider change after the render.
+      const originSurfaceElement = this.resolveOriginSurface()?.element;
+      const originMutations = originSurfaceElement
+        ? signalElementMutations(originSurfaceElement, { attributes: true, attributeFilter: ['class'] })
+        : null;
+
+      // The origin surface is read from DOM classes, which only reflect a provider change after the render.
+      afterRenderEffect(() => {
+        this.parentSurfaceProvider?.activeTheme();
+        this.rootSurfaceTheme();
+        originMutations?.();
+
+        untracked(() => parentSurface.set(readParentSurface()));
       });
 
       this.destroyRef.onDestroy(() => unregister?.());
@@ -229,7 +258,7 @@ export class OverlayContainerComponent {
     return this.defaultSurfaceType ?? 'dark';
   }
 
-  private resolveOriginSurface(): { elevation: number; type: SurfaceType } | null {
+  private resolveOriginSurface(): { elevation: number; type: SurfaceType; element: HTMLElement } | null {
     const themes = this.surfaceThemes;
 
     if (!themes) return null;
@@ -245,11 +274,15 @@ export class OverlayContainerComponent {
       themeByClass.set(`${prefix}-surface--${createCssSurfaceName(theme.name)}`, theme);
     }
 
-    for (let el: Element | null = origin; el; el = el.parentElement) {
+    for (
+      let el: HTMLElement | null = origin instanceof HTMLElement ? origin : origin.parentElement;
+      el;
+      el = el.parentElement
+    ) {
       for (const cls of Array.from(el.classList)) {
         const theme = themeByClass.get(cls);
 
-        if (theme) return { elevation: theme.elevation, type: theme.type };
+        if (theme) return { elevation: theme.elevation, type: theme.type, element: el };
       }
     }
 
