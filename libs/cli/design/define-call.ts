@@ -156,11 +156,28 @@ export const mountDrawing = (root: HTMLElement, drawn: Drawing): unknown => {
 
 const OVERLAY_GAP = 4;
 
+const ancestorsOf = (pane: Element, root: HTMLElement) => {
+  const ancestors: Element[] = [];
+
+  for (let element = pane.parentElement; element && element !== root; element = element.parentElement) {
+    ancestors.push(element);
+
+    if (element.classList.contains('et-overlay-runtime-root')) break;
+  }
+
+  return ancestors;
+};
+
+const placementOf = (pane: Element, trigger: Element) =>
+  pane.getAttribute('data-overlay-placement') ?? trigger.closest('[etoverlay]')?.getAttribute('placement') ?? 'bottom';
+
 const triggerOf = (pane: Element, root: HTMLElement) => {
   const outside = [...root.querySelectorAll('[aria-controls], [aria-expanded="true"]')].filter(
     (element) => !element.closest('.et-overlay-runtime-root'),
   );
-  const ids = new Set([pane, ...pane.querySelectorAll('[id]')].map((element) => element.id));
+  const ids = new Set(
+    [pane, ...pane.querySelectorAll('[id]'), ...ancestorsOf(pane, root)].map((element) => element.id).filter(Boolean),
+  );
   const controlling = outside.find((element) => {
     const id = element.getAttribute('aria-controls');
 
@@ -180,10 +197,15 @@ const triggerOf = (pane: Element, root: HTMLElement) => {
   );
 };
 
+const pinToBottom = (pane: HTMLElement) => {
+  Object.assign(pane.style, { top: 'auto', bottom: '0px', left: '0px', right: '0px', width: 'auto', minWidth: '' });
+};
+
 /**
- * Places every open overlay a server render attached below the start of the element that opened
- * it (the control frame of its form field, if it has one), so a drawing of an open select or menu
- * needs no position code. Safe to run again.
+ * Places every open overlay a server render attached next to the element that opened it (the
+ * control frame of its form field, if it has one): below its start, or its end for an `*-end`
+ * placement, and above it for a `top*` placement. A bottom sheet is pinned to the bottom, full
+ * width. A drawing of an open select, menu or sheet needs no position code. Safe to run again.
  */
 export const placeOverlays = (root: HTMLElement) => {
   for (const layer of root.querySelectorAll<HTMLElement>('.et-overlay-runtime-root, .et-overlay-runtime-entry')) {
@@ -191,6 +213,11 @@ export const placeOverlays = (root: HTMLElement) => {
   }
 
   for (const pane of root.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')) {
+    if (pane.classList.contains('et-overlay--bottom-sheet')) {
+      pinToBottom(pane);
+      continue;
+    }
+
     const trigger = triggerOf(pane, root);
     const container = pane.parentElement;
 
@@ -198,10 +225,17 @@ export const placeOverlays = (root: HTMLElement) => {
 
     const anchor = (trigger.closest('.et-form-field-control-frame') ?? trigger).getBoundingClientRect();
     const origin = container.getBoundingClientRect();
+    const [side, alignment] = placementOf(pane, trigger).split('-');
+    const above = side === 'top';
+    const atEnd = alignment === 'end';
 
-    pane.style.top = `${anchor.bottom - origin.top + OVERLAY_GAP}px`;
-    pane.style.left = `${anchor.left - origin.left}px`;
-    pane.style.minWidth = `${anchor.width}px`;
+    Object.assign(pane.style, {
+      top: above ? 'auto' : `${anchor.bottom - origin.top + OVERLAY_GAP}px`,
+      bottom: above ? `${origin.bottom - anchor.top + OVERLAY_GAP}px` : '',
+      left: atEnd ? 'auto' : `${anchor.left - origin.left}px`,
+      right: atEnd ? `${origin.right - anchor.right}px` : '',
+      minWidth: `${anchor.width}px`,
+    });
   }
 };
 
