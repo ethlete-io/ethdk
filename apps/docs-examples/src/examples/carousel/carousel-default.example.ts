@@ -6,7 +6,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
   selector: 'app-carousel-default-example',
   template: `
     <div class="example-carousel-frame">
-      <et-carousel loop>
+      <et-carousel itemSize="half" slideAlign="center" loop>
         <ng-template [etCarouselSlide]="SLIDES" let-slide let-index="index" let-count="count">
           <div class="example-carousel-slide" etAutoSurface>
             <p class="example-carousel-title">{{ index + 1 }}. {{ slide.title }}</p>
@@ -22,16 +22,17 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
   styles: `
     .example-carousel-frame {
       max-inline-size: 720px;
+      --et-carousel-slide-gap: 16px;
     }
 
     .example-carousel-slide {
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
+      justify-content: center;
       gap: 8px;
       block-size: 100%;
-      min-block-size: 200px;
-      padding: 24px;
+      min-block-size: 180px;
+      padding: 20px;
       border: 1px solid var(--et-surface-border-solid);
       border-radius: 12px;
       background: var(--et-surface-background-solid);
@@ -42,7 +43,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
     }
 
     .example-carousel-title {
-      font-size: 2rem;
+      font-size: 1.8rem;
     }
 
     .example-carousel-count {
@@ -52,7 +53,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
 })
 export class CarouselDefaultExampleComponent {
   protected readonly SLIDES = [
-    { title: 'Kickoff', body: 'The first slide, wide enough to fill the track on its own.' },
+    { title: 'Kickoff', body: 'The first slide, with its neighbours peeking in on both sides.' },
     { title: 'Half time', body: 'Slides are whatever you put in them - this one is text.' },
     { title: 'Full time', body: 'Native scrolling means a swipe works here without any extra code.' },
     { title: 'Extra time', body: 'Four and five exist so the dots have something to say.' },

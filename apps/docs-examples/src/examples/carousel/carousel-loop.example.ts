@@ -6,7 +6,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
   selector: 'app-carousel-loop-example',
   template: `
     <div class="example-carousel-frame">
-      <et-carousel itemSize="half" loop>
+      <et-carousel itemSize="half" slideAlign="center" loop>
         <ng-template [etCarouselSlide]="SLIDES" let-slide let-index="index">
           <div class="example-carousel-slide" etAutoSurface>{{ index + 1 }}. {{ slide }}</div>
         </ng-template>
@@ -18,6 +18,7 @@ import { CAROUSEL_IMPORTS } from '@ethlete/components';
   styles: `
     .example-carousel-frame {
       max-inline-size: 720px;
+      --et-carousel-slide-gap: 16px;
     }
 
     .example-carousel-slide {
