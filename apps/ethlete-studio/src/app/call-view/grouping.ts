@@ -1,4 +1,4 @@
-import { Call, CALL_STAGES, CallStage } from '../../host/design';
+import { Call, CALL_STAGES, CallStage, InventoryPart } from '../../host/design';
 
 /** One project of a checkout: the top folder of a call slug, with how much of it is still open. */
 export type ProjectSummary = {
@@ -11,6 +11,9 @@ export const openVariants = (call: Call) => call.variants.filter((variant) => !v
 
 /** The project a call belongs to. */
 export const projectOf = (call: Call) => call.slug.split('/')[0] ?? '';
+
+/** Whether a call previews a design system entry, `<project>/system/<entry>`. */
+export const isSystemCall = (call: Call) => call.slug.split('/')[1] === 'system';
 
 const matches = (call: Call, term: string) =>
   !term || `${call.slug} ${call.eyebrow} ${call.headline}`.toLowerCase().includes(term);
@@ -30,7 +33,9 @@ export type CallListRequest = {
 export const callList = ({ calls, project, term }: CallListRequest): Call[] => {
   const wanted = term.trim().toLowerCase();
 
-  return calls.filter((call) => (!project || projectOf(call) === project) && matches(call, wanted)).sort(byName);
+  return calls
+    .filter((call) => !isSystemCall(call) && (!project || projectOf(call) === project) && matches(call, wanted))
+    .sort(byName);
 };
 
 /** Every call that still has an open variant, the most recently written first. */
@@ -196,4 +201,25 @@ export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
       open: entries.filter((call) => openVariants(call) > 0).length,
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
+};
+
+/** One inventory part, with whether the component call it names exists yet. */
+export type InventoryRow = InventoryPart & { exists: boolean };
+
+/** The parts of every wireframe call of a project, in the order the wireframes list them. */
+export const inventoryRows = (calls: Call[], project: string): InventoryRow[] => {
+  const slugs = new Set(calls.map((call) => call.slug));
+
+  return calls
+    .filter((call) => call.stage === 'wireframe' && (!project || projectOf(call) === project))
+    .sort(byName)
+    .flatMap((call) => call.inventory)
+    .map((part) => ({ ...part, exists: !!part.call && slugs.has(part.call) }));
+};
+
+/** How many of the new parts already have their component call. Null when no part is new. */
+export const inventoryProgress = (rows: InventoryRow[]) => {
+  const queued = rows.filter((row) => row.new);
+
+  return queued.length ? `${queued.filter((row) => row.exists).length} of ${queued.length} parts have a call` : null;
 };

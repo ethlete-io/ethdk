@@ -24,10 +24,12 @@ import {
   CallVariant,
   Project,
   ServerState,
+  SystemEntry,
   Verdict,
   designCheck$,
   designAddVariants$,
   designChanges$,
+  designSystem$,
   designProject$,
   designServerRestart$,
   designServerStart$,
@@ -42,6 +44,8 @@ import {
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
   defaultVariant,
+  inventoryProgress,
+  inventoryRows,
   projectOf,
   projectSummaries,
   ruledLabel,
@@ -125,8 +129,65 @@ const SETTLE_MS = 300;
                 <b>{{ STAGE_LABEL(summary.stage) }}</b>
                 <span>{{ summary.open }} open, {{ summary.ready }} ready, {{ summary.settled }} settled</span>
               </button>
+
+              @if (summary.stage === 'wireframe') {
+                @for (row of inventory(); track $index) {
+                  <div class="studio__inventory-part">
+                    <span>{{ row.part }}</span>
+                    @if (row.sdk) {
+                      <code>{{ row.sdk }}</code>
+                    } @else if (row.call && row.exists) {
+                      <code>new</code>
+                      <button (click)="openSlug(row.call)" class="studio__inventory-call" type="button">
+                        {{ row.call }}
+                        @if (statuses()[row.call]; as status) {
+                          <i [attr.data-state]="status.state" class="studio__state">{{ status.state }}</i>
+                        }
+                      </button>
+                    } @else if (row.new) {
+                      <code>new</code>
+                      <em>not started</em>
+                    }
+                  </div>
+                }
+              }
+
+              @if (summary.stage === 'component' && inventoryCount(); as count) {
+                <div class="studio__inventory-part">{{ count }}</div>
+              }
             }
           </nav>
+
+          @if (systemEntries().length) {
+            <section class="studio__section studio__system">
+              <header class="studio__section-head">
+                <b>Design system</b>
+                <span>{{ systemEntries().length }}</span>
+              </header>
+
+              @for (entry of systemEntries(); track entry.name) {
+                <div class="studio__system-entry">
+                  <div class="studio__system-head">
+                    <button
+                      [attr.aria-expanded]="systemOpen() === entry.name"
+                      [disabled]="!entry.entry"
+                      (click)="toggleSystem(entry.name)"
+                      class="studio__system-name"
+                      type="button"
+                    >
+                      {{ entry.name }}
+                    </button>
+                    @if (entry.call; as target) {
+                      <button (click)="openSlug(target)" class="studio__system-preview" type="button">Preview</button>
+                    }
+                  </div>
+                  @if (systemOpen() === entry.name && entry.entry) {
+                    <pre class="studio__system-text">{{ entry.entry }}</pre>
+                  }
+                </div>
+              }
+            </section>
+          }
 
           <section class="studio__section">
             <header class="studio__section-head">
@@ -796,6 +857,27 @@ export class CallViewComponent {
 
   protected readonly STAGE_LABEL = stageLabel;
 
+  protected inventory = computed(() => inventoryRows(this.calls(), this.project()));
+
+  protected inventoryCount = computed(() => inventoryProgress(this.inventory()));
+
+  protected systemOpen = signal('');
+
+  private systemAll = toSignal(
+    toObservable(computed(() => ({ checkout: this.checkout(), seen: this.statusChanges() }))).pipe(
+      switchMap(({ checkout }) =>
+        checkout ? designSystem$(checkout).pipe(catchError(() => of<SystemEntry[]>([]))) : of<SystemEntry[]>([]),
+      ),
+    ),
+    { initialValue: [] as SystemEntry[] },
+  );
+
+  protected systemEntries = computed(() => {
+    const project = this.project();
+
+    return this.systemAll().filter((entry) => !project || entry.project === project);
+  });
+
   /** What is left: the fully settled calls, folded into their feature. */
   protected settledBands = computed(() => settledGroups(this.listed()));
 
@@ -1153,6 +1235,16 @@ export class CallViewComponent {
     this.slug.set(call.slug);
     this.variantKey.set(variant);
     rememberView({ checkout: this.checkout(), slug: call.slug, variant });
+  }
+
+  protected openSlug(slug: string) {
+    const target = this.calls().find((call) => call.slug === slug);
+
+    if (target) this.openCall(target);
+  }
+
+  protected toggleSystem(name: string) {
+    this.systemOpen.set(this.systemOpen() === name ? '' : name);
   }
 
   protected openVariant(variant: CallVariant) {

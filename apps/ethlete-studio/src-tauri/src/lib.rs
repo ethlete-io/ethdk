@@ -133,6 +133,7 @@ pub fn run() {
             call_status::design_statuses,
             call_status::design_status_watch,
             design::design_project,
+            design::design_system,
             design::design_set_verdict,
             design::design_set_mode,
             design::design_add_variants,

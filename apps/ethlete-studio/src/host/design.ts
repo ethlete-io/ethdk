@@ -32,6 +32,24 @@ export type CallRound = {
   title: string;
 };
 
+/** One part of a wireframe's inventory: an SDK component, or a new one with its own component call. */
+export type InventoryPart = {
+  part: string;
+  sdk: string | null;
+  new: boolean;
+  /** The slug of the component call a new part is drawn in. */
+  call: string | null;
+};
+
+/** One entry of a project's design system, with the text of its `entry.md` and its preview call. */
+export type SystemEntry = {
+  project: string;
+  name: string;
+  entry: string | null;
+  /** The slug of the preview call, `<project>/system/<name>`. Null while it does not exist. */
+  call: string | null;
+};
+
 /** One open question of an exploration, and every variant drawn for it. */
 export type Call = {
   slug: string;
@@ -39,6 +57,8 @@ export type Call = {
   feature: string | null;
   /** Where the call sits in the design order. A call without one is loose. */
   stage: CallStage | null;
+  /** The parts a wireframe lists, the queue of component calls. Empty when it declares none. */
+  inventory: InventoryPart[];
   eyebrow: string;
   headline: string;
   intro: string;
@@ -73,6 +93,10 @@ export type Themes = {
 /** Reads every call of a checkout. The checkout must carry a `.ethlete/design/config.json`. */
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
+
+/** Lists the design system entries of every project of a checkout. */
+export const designSystem$ = (checkout: string): Observable<SystemEntry[]> =>
+  invokeHost$<SystemEntry[]>('design_system', { checkout });
 
 /**
  * Reports every change under the checkout's calls root. A call or a variant that an agent or an

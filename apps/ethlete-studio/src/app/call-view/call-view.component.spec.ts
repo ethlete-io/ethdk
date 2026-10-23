@@ -18,6 +18,7 @@ const call = (slug: string, variants: CallVariant[]): Call => ({
   slug,
   feature: 'The picker',
   stage: null,
+  inventory: [],
   eyebrow: slug,
   headline: slug,
   intro: '',
@@ -285,6 +286,67 @@ describe('CallViewComponent', () => {
     expect(stages[5]?.textContent).toContain('1 open, 0 ready, 0 settled');
     expect(stages[5]?.classList).not.toContain('studio__overview-stage--empty');
     expect(stages[0]?.classList).toContain('studio__overview-stage--empty');
+  });
+
+  it('lists the inventory under the wireframes and counts the component calls', async () => {
+    const wireframe = {
+      ...ASKING,
+      stage: 'wireframe' as const,
+      inventory: [
+        { part: 'Search', sdk: 'et-input', new: false, call: null },
+        { part: 'Card', sdk: null, new: true, call: 'app/components/card' },
+        { part: 'Badge', sdk: null, new: true, call: null },
+      ],
+    };
+
+    stubHost({
+      design_project: () => ({
+        ...PROJECT,
+        calls: [RESOLVED, wireframe, { ...UNNOTED, slug: 'app/components/card' }],
+      }),
+    });
+
+    const fixture = await mount(RESOLVED.slug);
+    const overview = element(fixture).querySelector('.studio__overview')?.textContent ?? '';
+
+    expect(overview).toContain('et-input');
+    expect(overview).toContain('app/components/card');
+    expect(overview).toContain('not started');
+    expect(overview).toContain('1 of 2 parts have a call');
+
+    element(fixture).querySelector<HTMLButtonElement>('.studio__inventory-call')?.click();
+    await settle(fixture);
+
+    expect(shown(fixture).join()).toContain('app/components/card');
+  });
+
+  it('lists the design system entries, folded until clicked, and opens the preview', async () => {
+    stubHost({
+      design_project: () => ({ ...PROJECT, calls: [RESOLVED, call('app/system/button', [variant('a', 'r1', null)])] }),
+      design_system: () => [
+        { project: 'app', name: 'button', entry: 'What: a button', call: 'app/system/button' },
+        { project: 'other', name: 'badge', entry: null, call: null },
+      ],
+    });
+
+    const fixture = await mount(RESOLVED.slug);
+    const section = element(fixture).querySelector('.studio__system');
+
+    expect(section?.textContent).toContain('button');
+    expect(section?.textContent).not.toContain('badge');
+    expect(section?.querySelector('.studio__system-text')).toBeNull();
+    expect(element(fixture).querySelector('.studio__stage-head')).toBeNull();
+    expect(element(fixture).querySelectorAll('.studio__row').length).toBe(0);
+
+    section?.querySelector<HTMLButtonElement>('.studio__system-name')?.click();
+    await settle(fixture);
+
+    expect(element(fixture).querySelector('.studio__system-text')?.textContent).toBe('What: a button');
+
+    element(fixture).querySelector<HTMLButtonElement>('.studio__system-preview')?.click();
+    await settle(fixture);
+
+    expect(shown(fixture).join()).toContain('app/system/button');
   });
 
   it('draws no stage heading when no open call names a stage', async () => {

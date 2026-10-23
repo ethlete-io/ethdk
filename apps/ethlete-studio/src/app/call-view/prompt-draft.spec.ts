@@ -7,6 +7,7 @@ const call: Call = {
   slug: 'shop/cart',
   feature: null,
   stage: null,
+  inventory: [],
   eyebrow: '',
   headline: 'Cart layout',
   intro: '',

@@ -3,6 +3,9 @@ import {
   callList,
   defaultVariant,
   featureGroups,
+  inventoryProgress,
+  inventoryRows,
+  isSystemCall,
   LOOSE_FEATURE,
   projectSummaries,
   ruledLabel,
@@ -28,6 +31,7 @@ const call = (slug: string, patch: Partial<Call> = {}): Call => ({
   slug,
   feature: null,
   stage: null,
+  inventory: [],
   eyebrow: '',
   headline: slug,
   intro: '',
@@ -260,5 +264,35 @@ describe('projectSummaries', () => {
       { name: 'a', calls: 2, open: 1 },
       { name: 'b', calls: 1, open: 1 },
     ]);
+  });
+});
+
+describe('the design system and the inventory', () => {
+  const wireframe = call('p/wire', {
+    stage: 'wireframe',
+    inventory: [
+      { part: 'Search', sdk: 'et-input', new: false, call: null },
+      { part: 'Card', sdk: null, new: true, call: 'p/components/card' },
+      { part: 'Badge', sdk: null, new: true, call: 'p/components/badge' },
+    ],
+  });
+  const calls = [wireframe, call('p/components/card', { stage: 'component' })];
+
+  it('keeps the calls of the design system out of the lists', () => {
+    const system = call('p/system/button');
+
+    expect(isSystemCall(system)).toBe(true);
+    expect(callList({ calls: [system, call('p/a')], project: 'p', term: '' }).map((entry) => entry.slug)).toEqual([
+      'p/a',
+    ]);
+  });
+
+  it('marks which component calls of the inventory exist', () => {
+    expect(inventoryRows(calls, 'p').map((row) => row.exists)).toEqual([false, true, false]);
+  });
+
+  it('counts the new parts that have a call', () => {
+    expect(inventoryProgress(inventoryRows(calls, 'p'))).toBe('1 of 2 parts have a call');
+    expect(inventoryProgress([])).toBeNull();
   });
 });

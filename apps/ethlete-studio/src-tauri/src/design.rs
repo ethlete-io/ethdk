@@ -17,6 +17,16 @@ pub struct CallVariant {
     pub cost: String,
 }
 
+/// One part of a wireframe's inventory: an SDK component, or a new one with its own component call.
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct InventoryPart {
+    pub part: String,
+    pub sdk: Option<String>,
+    pub new: bool,
+    pub call: Option<String>,
+}
+
 /// One pass over a call, as the call file declares it.
 #[derive(Debug, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +42,8 @@ pub struct Call {
     pub feature: Option<String>,
     /// Where the call sits in the design order, from `themes` to `prototype`. A call without one is loose.
     pub stage: Option<String>,
+    /// The parts a wireframe lists, the queue of component calls. Empty when it declares none.
+    pub inventory: Vec<InventoryPart>,
     pub eyebrow: String,
     pub headline: String,
     pub intro: String,
@@ -120,6 +132,26 @@ fn parse_rounds(call: &Node) -> Vec<CallRound> {
         .collect()
 }
 
+fn parse_inventory(source: &str, call: &Node) -> Vec<InventoryPart> {
+    call.list("inventory")
+        .iter()
+        .filter_map(|item| {
+            let is_new = item.property("new").is_some_and(|property| {
+                source
+                    .get(property.node.start..property.node.end)
+                    .is_some_and(|raw| raw.trim() == "true")
+            });
+
+            Some(InventoryPart {
+                part: text_of(item, "part")?,
+                sdk: text_of(item, "sdk"),
+                new: is_new,
+                call: text_of(item, "call"),
+            })
+        })
+        .collect()
+}
+
 fn parse_variants(call: &Node) -> Vec<CallVariant> {
     call.list("variants")
         .iter()
@@ -147,6 +179,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
         slug: slug.to_owned(),
         feature: text_of(&call, "feature"),
         stage: text_of(&call, "stage"),
+        inventory: parse_inventory(source, &call),
         eyebrow: text_of(&call, "eyebrow").unwrap_or_default(),
         headline: text_of(&call, "headline").unwrap_or_default(),
         intro: text_of(&call, "intro").unwrap_or_default(),
@@ -199,6 +232,48 @@ fn call_slugs(root: &Path) -> Vec<String> {
 
     slugs.sort();
     slugs
+}
+
+/// One entry of a project's design system: `system/<project>/<entry>/`, with its `entry.md` and
+/// the slug of its preview call, `<project>/system/<entry>`, when that call exists.
+#[derive(Debug, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemEntry {
+    pub project: String,
+    pub name: String,
+    pub entry: Option<String>,
+    pub call: Option<String>,
+}
+
+fn system_entries(design: &Path) -> Vec<SystemEntry> {
+    let mut found = Vec::new();
+    let projects = std::fs::read_dir(design.join("system")).into_iter().flatten().flatten();
+
+    for project in projects.filter(|entry| entry.path().is_dir()) {
+        let project_name = project.file_name().to_string_lossy().into_owned();
+        let entries = std::fs::read_dir(project.path()).into_iter().flatten().flatten();
+
+        for entry in entries.filter(|entry| entry.path().is_dir()) {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let slug = format!("{project_name}/system/{name}");
+            let has_call = design.join("calls").join(&slug).join("call.ts").is_file();
+
+            found.push(SystemEntry {
+                entry: std::fs::read_to_string(entry.path().join("entry.md")).ok(),
+                call: has_call.then_some(slug),
+                project: project_name.clone(),
+                name,
+            });
+        }
+    }
+
+    found.sort_by(|left, right| (&left.project, &left.name).cmp(&(&right.project, &right.name)));
+    found
+}
+
+#[tauri::command]
+pub fn design_system(checkout: String) -> Vec<SystemEntry> {
+    system_entries(&Path::new(&checkout).join(DESIGN_DIR))
 }
 
 pub fn read_config(checkout: &str) -> Result<serde_json::Value, String> {
@@ -772,6 +847,57 @@ export default defineCall({
     #[test]
     fn a_call_reads_the_feature_it_belongs_to() {
         assert_eq!(parse_call("x", CALL).feature.as_deref(), Some("The clock column"));
+    }
+
+    #[test]
+    fn a_wireframe_reads_its_inventory() {
+        let source = CALL.replace(
+            "  eyebrow:",
+            "  inventory: [\n    { part: 'Search field', sdk: 'et-input' },\n    { part: \"Match card\", new: true, call: 'tomflix/components/match-card' },\n    { part: 'Badge', new: true },\n  ],\n  eyebrow:",
+        );
+        let inventory = parse_call("x", &source).inventory;
+
+        assert_eq!(inventory.len(), 3);
+        assert_eq!(inventory[0].sdk.as_deref(), Some("et-input"));
+        assert!(!inventory[0].new);
+        assert!(inventory[1].new);
+        assert_eq!(inventory[1].part, "Match card");
+        assert_eq!(inventory[1].call.as_deref(), Some("tomflix/components/match-card"));
+        assert_eq!(inventory[2].call, None);
+        assert!(parse_call("x", CALL).inventory.is_empty());
+    }
+
+    #[test]
+    fn an_inventory_that_cannot_be_read_is_none() {
+        let source = CALL.replace("  eyebrow:", "  inventory: parts(),\n  eyebrow:");
+
+        assert!(parse_call("x", &source).inventory.is_empty());
+    }
+
+    #[test]
+    fn a_project_lists_its_design_system_entries() {
+        let design = std::env::temp_dir().join(format!("ethlete-studio-{}-system", std::process::id()));
+        let entry = design.join("system/tomflix/button");
+        let bare = design.join("system/tomflix/badge");
+        let preview = design.join("calls/tomflix/system/button");
+
+        std::fs::create_dir_all(&entry).unwrap();
+        std::fs::create_dir_all(&bare).unwrap();
+        std::fs::create_dir_all(&preview).unwrap();
+        std::fs::write(entry.join("entry.md"), "What: a button").unwrap();
+        std::fs::write(preview.join("call.ts"), CALL).unwrap();
+
+        let found = system_entries(&design);
+
+        assert_eq!(found.len(), 2);
+        assert_eq!(found[0].name, "badge");
+        assert_eq!(found[0].entry, None);
+        assert_eq!(found[0].call, None);
+        assert_eq!(found[1].entry.as_deref(), Some("What: a button"));
+        assert_eq!(found[1].call.as_deref(), Some("tomflix/system/button"));
+        assert!(system_entries(&design.join("missing")).is_empty());
+
+        std::fs::remove_dir_all(design).unwrap();
     }
 
     #[test]
