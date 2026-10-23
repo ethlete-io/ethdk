@@ -70,7 +70,7 @@ describe('serveDesign', () => {
 
     expect(options?.server).toMatchObject({ port: 4999, strictPort: true });
     expect(registry).toContain('"app/one": () => import("/@fs/');
-    expect(registry).toContain('defaultCall = "app/one"');
+    expect(registry).not.toContain('defaultCall');
     expect(options?.resolve.alias.map((alias) => alias.replacement)).toEqual(
       expect.arrayContaining([`${join(target, 'libs/x')}/`, join(target, 'libs/one.ts')]),
     );

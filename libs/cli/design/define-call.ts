@@ -164,7 +164,7 @@ export type CallVariant = {
 
 /**
  * One pass over a call: the variants drawn together, and what came out of them. A round
- * whose variants all carry a verdict is settled, and the page folds it down to its winner.
+ * whose variants all carry a verdict is settled.
  */
 export type CallRound = {
   key: string;

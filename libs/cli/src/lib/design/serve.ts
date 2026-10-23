@@ -12,7 +12,7 @@ const VIRTUAL = 'virtual:design-explore';
 /** What a slug says about which project drew it: its first segment. */
 const projectOf = (slug: string) => slug.split('/')[0] ?? '';
 
-const registry = (target: string, config: DesignConfig) => {
+const registry = (target: string) => {
   const root = callsRootOf(target);
   const entries = globSync('**/call.ts', { cwd: root })
     .sort()
@@ -20,7 +20,7 @@ const registry = (target: string, config: DesignConfig) => {
 
   return `export const calls = {\n${entries
     .map(([slug, url]) => `  ${JSON.stringify(slug)}: () => import(${JSON.stringify(url)}),`)
-    .join('\n')}\n};\nexport const defaultCall = ${JSON.stringify(config.defaultCall ?? null)};\n`;
+    .join('\n')}\n};\n`;
 };
 
 /**
@@ -76,14 +76,14 @@ const env = (target: string, config: DesignConfig) => {
 };
 
 /**
- * Serves the call registry and each project's global stylesheet to the web pages, and renders the
+ * Serves the call registry and each project's global stylesheet to the frame page, and renders the
  * Angular templates a drawing asks for with `ng()`.
  */
 const designExplore = (target: string, config: DesignConfig) => ({
   name: 'design-explore',
   resolveId: (id: string) => (id === VIRTUAL || id === `${VIRTUAL}/env` ? `\0${id}` : null),
   load: (id: string) => {
-    if (id === `\0${VIRTUAL}`) return registry(target, config);
+    if (id === `\0${VIRTUAL}`) return registry(target);
     if (id === `\0${VIRTUAL}/env`) return env(target, config);
 
     return null;
@@ -121,7 +121,7 @@ const designExplore = (target: string, config: DesignConfig) => ({
 });
 
 /**
- * Starts the design page for a checkout and keeps it running. The returned exit code is the
+ * Starts the design server for a checkout and keeps it running. The returned exit code is the
  * command's, not the server's: a listening server holds the process open on its own.
  */
 export const serveDesign = async (options: { target: string }): Promise<number> => {
@@ -161,7 +161,7 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
     server: {
       port: portOf(config),
       strictPort: true,
-      // The web pages live inside this package, which is outside the checkout it draws. Vite
+      // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
       fs: { allow: [target, here] },
     },

@@ -77,6 +77,39 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
   }
 };
 
+type Declared = null | { error: string } | { rounds: string[]; variants: { key: string; round: string }[] };
+
+/**
+ * Reads a call's declaration through the frame server's registry. A string, not a function: the
+ * build would turn a function's dynamic `import()` into a `require()`, which no browser has.
+ */
+const declaredOf = (slug: string) => `(async (slug) => {
+  const { calls } = await import('/@id/__x00__virtual:design-explore');
+  if (!calls[slug]) return null;
+  try {
+    const call = (await calls[slug]()).default;
+    return {
+      rounds: (call.rounds ?? []).map((round) => round.key),
+      variants: call.variants.map((variant) => ({ key: variant.key, round: variant.round ?? '' })),
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+})(${JSON.stringify(slug)})`;
+
+/** Prose that no variant claims is stale prose, and it is the one thing the variants cannot show. */
+const problemsOf = (declared: { rounds: string[]; variants: { round: string }[] }) => {
+  const { rounds } = declared;
+  const drawn = new Set(declared.variants.map((variant) => variant.round));
+
+  return [
+    ...[...new Set(rounds.filter((key, index) => rounds.indexOf(key) !== index))].map(
+      (key) => `design-explore: two rounds share the key "${key}"`,
+    ),
+    ...rounds.filter((key) => !drawn.has(key)).map((key) => `design-explore: round "${key}" has no variants`),
+  ];
+};
+
 const checkPage = async (options: {
   page: import('playwright').Page;
   base: string;
@@ -96,41 +129,17 @@ const checkPage = async (options: {
     return 1;
   };
 
-  /** The rounds view folds a settled round away, so only the contact sheet holds every variant. */
-  await page.goto(`${base}/?call=${encodeURIComponent(slug)}&view=sheet`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${base}/frame.html`, { waitUntil: 'domcontentloaded' });
 
-  const onPage = await page
-    .locator('nav a[aria-current]')
-    .first()
-    .waitFor({ timeout: 15000 })
-    .then(
-      () => true,
-      () => false,
-    );
+  const declared = (await page.evaluate(declaredOf(slug))) as Declared;
 
-  if (!onPage)
-    return fail(`NO CALL "${slug}" - the host drew no page for it. Check the folder under .ethlete/design/calls.`);
+  if (declared === null) return fail(`NO CALL "${slug}" - pass the folder's path under .ethlete/design/calls.`);
+  if ('error' in declared) return fail(`COMPILE ERROR on ${slug}\n${trim(declared.error)}`);
 
-  /** An unknown slug falls back to the first call, so read back which one the host actually drew. */
-  const drawn = await page
-    .locator('nav a[aria-current="page"]')
-    .first()
-    .getAttribute('href')
-    .then((href) => new URL(href ?? '', base).searchParams.get('call'));
-
-  if (drawn !== slug) {
-    return fail(
-      `NO CALL "${slug}" - the host fell back to "${drawn}". Pass the whole slug, which is the call ` +
-        `folder's path under .ethlete/design/calls.`,
-    );
-  }
-
-  const problems = await page.locator('.problem').allInnerTexts();
+  const problems = problemsOf(declared);
   if (problems.length > 0) return fail(`BAD CALL ${slug}\n${problems.join('\n')}`);
 
-  const keys = await page
-    .locator('iframe[data-variant]')
-    .evaluateAll((frames) => frames.map((frame) => (frame as HTMLElement).dataset['variant'] ?? ''));
+  const keys = declared.variants.map((variant) => variant.key);
   const checked = wanted ? keys.filter((key) => key === wanted) : keys;
 
   if (checked.length === 0) {
@@ -138,10 +147,11 @@ const checkPage = async (options: {
   }
 
   for (const key of checked) {
-    /** A frame reloads on every edit, which detaches a `page.frames()` handle, so locate it each time. */
-    const frame = page.frameLocator(`iframe[data-variant="${key}"]`);
+    await page.goto(`${base}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(key)}`, {
+      waitUntil: 'domcontentloaded',
+    });
 
-    const drew = await frame
+    const drew = await page
       .locator('#root > :not(style)')
       .first()
       .waitFor({ timeout: 15000 })
@@ -150,7 +160,7 @@ const checkPage = async (options: {
         () => false,
       );
 
-    const overlay = frame.locator('vite-error-overlay');
+    const overlay = page.locator('vite-error-overlay');
     if ((await overlay.count()) > 0) {
       const text = await overlay
         .locator('.message-body')
@@ -168,7 +178,7 @@ const checkPage = async (options: {
       );
     }
 
-    const text = await frame.locator('#root').innerText();
+    const text = await page.locator('#root').innerText();
     if (text.startsWith('design-explore:')) return fail(`FRAME REFUSED on ${slug} variant ${key}\n${text}`);
   }
 

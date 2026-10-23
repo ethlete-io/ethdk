@@ -36,7 +36,7 @@ finished while the user is still talking about it.
 - Your pick, one line on why.
 - Nothing else. No next step, no second finding.
 
-**Do not send a screenshot.** The user keeps the page open. Screenshot only for your own
+**Do not send a screenshot.** The user keeps the call open. Screenshot only for your own
 check that a variant renders.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.
@@ -45,8 +45,8 @@ If a second defect appears, add it to the open list and give it one line. Do not
 
 The exploration's plan file names the tool. Two shapes exist.
 
-**A repository with a `.ethlete/design` folder** draws a call per page, each variant in its own
-iframe. The tool is `et design`, from `@ethlete/cli`, so the repository itself needs no design
+**A repository with a `.ethlete/design` folder** draws each variant of a call in its own
+frame, and the user reads the call in Ethlete Studio. The tool is `et design`, from `@ethlete/cli`, so the repository itself needs no design
 tooling. A call argues in the repository it is about:
 
 ```
@@ -63,17 +63,16 @@ The first segment of a slug is the **project**. `config.json` gives each project
 `styles` and its own `head`, so one project's type scale and fonts never reach another's
 drawings. A project the config names not draws bare.
 
-A project can also name `themes`: `{ "surface": ["light", "dark"], "color": ["brand", …] }`. The
-call page then shows a switch for each list, the first name is the default, and every frame of
-the page gets the picked `et-surface--<name>` and `et-color--<name>` classes on its root. A
-drawing under a switch must not set its own surface or colour class, and must take its colours
-from the theme tokens.
+A project can also name `themes`: `{ "surface": ["light", "dark"], "color": ["brand", …] }`; the
+first name of each list is the default. A frame asked for a theme gets the
+`et-surface--<name>` and `et-color--<name>` classes on its root, so a drawing in such a project
+must not set its own surface or colour class, and must take its colours from the theme tokens.
 
-Start the page with `et design [checkout]`, which serves the port `config.json` names. The
+`et design [checkout]` serves the frames on the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
 checkouts can be drawn at once. A repository that builds the tool rather than installing it
 wraps this in a script - in the ethlete SDK, `yarn design:check`. There, the user reads the
-calls in Ethlete Studio, started with `yarn studio`, and Studio serves the page itself. Do not
+calls in Ethlete Studio, started with `yarn studio`, and Studio serves the frames itself. Do not
 start `yarn design` next to it.
 
 Ethlete Studio carries its own copy of the tool, so it draws a checkout that installs nothing.
@@ -82,41 +81,20 @@ use can reach it.
 
 `call.ts` calls `defineCall` from `@design-explore`. Each variant carries a `key`, a `name`,
 a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
-imports its own module. The host greys a rejected variant and shows it on hover.
+imports its own module.
 
 In a call that runs past about a dozen variants, every variant names the pass that drew it with
-`round: 'r3'`. **That tag is the only thing that makes a round exist.** The host reads the
-variants, draws one band per round in the order the variants introduce them, and lists those
-same bands in the sidebar, so a new variant can never leave the menu stale. A round whose
-variants all carry a verdict is **settled**: the page folds it down to its winner plus one row
-per rejected variant, and a link opens it again.
-
-A call whose rounds have all ruled is **resolved**. Its winners usually form a chain, each one
-the last plus a change, so the page stops drawing them: it leads with a **Result** band holding
-the final winner, and prints the chain as a row of keys above it. Every round below folds to
-rows. A key in the chain opens the round that drew it.
+`round: 'r3'`. **That tag is the only thing that makes a round exist**, in the order the variants introduce
+them. A round whose variants all carry a verdict is **settled**.
 
 `rounds` is prose only. Each entry gives a `key`, a `title` and a `note` saying what came out
 of that pass, which is how the intro stays short and each pass reads as a reply to the one
-before. An untagged round still draws and still gets a menu row - it says the bare key until
-somebody writes the entry. A `rounds` entry that no variant names is stale prose, and the host
-and the check both report it. Write the note in the same pass that sets the verdicts, never
+before. An untagged round still draws - it says the bare key until somebody writes the entry. A
+`rounds` entry that no variant names is stale prose, and the check reports it. Write the note in the same pass that sets the verdicts, never
 before the user rules.
 
 A call with one variant and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
-
-Two views, and a way to compare:
-
-- **rounds** is the default. Round headings, the result band, and the folding above.
-- **all N** is a contact sheet: every variant in the call at about a third size, in one grid, so
-  a call of two dozen fits on a screen or two. Use it to find the variants worth a close look.
-- Clicking a variant's name anywhere - a heading, a folded row, a thumbnail - puts it in the
-  **compare overlay** at the top of the page. Two drawings that differ by a few pixels can only
-  be told apart in one place, so the overlay stacks every pick in one box at full size and the
-  reader switches between them: click the box or press space to blink, and with two picks the
-  arrow keys wipe a seam across. Nothing is scaled and nothing moves. The picks live in the URL
-  under `pick`, so a comparison is a link you can send.
 
 Three constraints the tool puts on a variant file:
 
@@ -214,7 +192,7 @@ node check-story.mjs --lint <changed files> --tsconfig apps/<app>/.storybook/tsc
 ```
 
 Both take about four seconds and need no dev server. Then stop and hand the slug to the
-user. Do not also open the page in a browser: it costs a browser launch, and both tools
+user. Do not also render it in a browser: it costs a browser launch, and both tools
 transpile without type checking, so the render reports `ok` on a file that does not
 compile. Open it only when the check passes and the drawing still does not appear:
 
@@ -241,7 +219,7 @@ A call has one job per variant, so it fans out. Every brief names `model: opus`.
 
 ## Screenshots
 
-**Off by default.** The user has the page open and sends you a picture when something looks
+**Off by default.** The user has the call open and sends you a picture when something looks
 wrong. Take one only when the code cannot tell you whether two variants really differ, and
 never to put in front of the user. Copy `.agents/skills/ethlete-design-exploration/shoot-template.mjs` to the repository
 root.

@@ -4,7 +4,7 @@ import baseConfig from '../../eslint.config.mjs';
 export default [
   ...baseConfig,
 
-  // The design page is a browser app Vite serves from source, not library code this project
+  // The design frame page is browser code Vite serves from source, not library code this project
   // compiles. The Angular-flavoured rules of the styleguide do not apply to it.
   { ignores: ['design/**'] },
 

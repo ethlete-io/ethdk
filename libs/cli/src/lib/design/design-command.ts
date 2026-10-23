@@ -12,7 +12,7 @@ const splitCheckout = (argv: string[], root: string) => {
 };
 
 /**
- * `et design [checkout]` serves the design page of a checkout, and `et design check …` says why
+ * `et design [checkout]` serves the variant frames of a checkout, and `et design check …` says why
  * a call does not render. Both work on any checkout that keeps a `.ethlete/design` folder, so a
  * repository needs no design tooling of its own.
  */

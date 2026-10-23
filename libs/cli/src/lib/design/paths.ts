@@ -7,7 +7,7 @@ export const DESIGN_DIR = '.ethlete/design';
 /**
  * One project's drawing environment: the stylesheets a frame loads, the markup it puts in `<head>`,
  * the module whose default export is the Angular providers array `ng()` renders under, and the
- * surface and colour theme names the call page offers. The first name of each list is the default.
+ * surface and colour theme names a call can be drawn under. The first name of each list is the default.
  */
 export type DesignProject = {
   styles?: string[];
@@ -41,7 +41,7 @@ export type DesignConfig = {
 export const DEFAULT_PORT = 4402;
 
 /**
- * The package's own `design` folder, which carries the web pages and the authoring API. It sits
+ * The package's own `design` folder, which carries the frame page and the authoring API. It sits
  * three levels above this file both in the source tree and in the build output.
  */
 export const assetRoot = () => resolve(__dirname, '../../../design');

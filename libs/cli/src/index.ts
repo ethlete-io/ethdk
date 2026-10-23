@@ -37,7 +37,7 @@ const USAGE_ROWS = [
     subcommand: 'design',
     args: ' [checkout]',
     lines: [
-      "Serve the design page of a checkout's .ethlete/design folder,",
+      "Serve the variant frames of a checkout's .ethlete/design folder for Ethlete Studio,",
       'or run `design check` to find out why a call does not render',
     ],
   },
