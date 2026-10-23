@@ -235,6 +235,25 @@ describe('CallViewComponent', () => {
     expect(themesOf(again)).toEqual(['dark brand']);
   });
 
+  it('shows the state the tooling recorded for a call on its row', async () => {
+    stubHost({
+      design_statuses: () => ({
+        [ASKING.slug]: { state: 'failed', updatedAt: '2026-10-23T13:00:00.000Z', message: 'TYPE ERROR' },
+      }),
+    });
+
+    const fixture = await mount(RESOLVED.slug);
+    const badge = row(fixture, ASKING.slug)?.querySelector('.studio__state');
+
+    expect(badge?.textContent?.trim()).toBe('failed');
+    expect(badge?.getAttribute('title')).toBe('TYPE ERROR');
+    expect(row(fixture, UNNOTED.slug)?.querySelector('.studio__state')).toBeNull();
+    expect(sent.find((entry) => entry.command === 'design_statuses')?.args).toEqual({
+      checkout: CHECKOUT,
+      slugs: PROJECT.calls.map((entry) => entry.slug),
+    });
+  });
+
   it('says what the count of a call row counts', async () => {
     const fixture = await mount(RESOLVED.slug);
 

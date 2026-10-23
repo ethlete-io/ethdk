@@ -22,6 +22,8 @@ fn main() {
             "design_server_state",
             "design_server_stop",
             "design_check",
+            "design_statuses",
+            "design_status_watch",
             "update_install",
             "update_ready",
             "workspace_check",

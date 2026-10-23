@@ -113,12 +113,14 @@ impl ToolContext {
 /// Where the result of a check on one variant is kept. The path is built from the call and the
 /// variant alone, so Studio finds it again without tracking the run that wrote it.
 pub fn receipt_path(checkout: &str, call: &str, variant: &str) -> PathBuf {
-    std::env::temp_dir()
-        .join("ethlete-studio-checks")
-        .join(format!("{}.json", flattened(&format!("{checkout} {call} {variant}"))))
+    checks_dir().join(format!("{}.json", flattened(&format!("{checkout} {call} {variant}"))))
 }
 
-fn flattened(value: &str) -> String {
+pub fn checks_dir() -> PathBuf {
+    std::env::temp_dir().join("ethlete-studio-checks")
+}
+
+pub fn flattened(value: &str) -> String {
     value
         .chars()
         .map(|letter| if letter.is_ascii_alphanumeric() { letter } else { '-' })

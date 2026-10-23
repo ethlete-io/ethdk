@@ -19,6 +19,7 @@ import {
   AddedVariants,
   Call,
   CallMode,
+  CallStatus,
   CallVariant,
   Project,
   ServerState,
@@ -32,6 +33,8 @@ import {
   designServerStop$,
   designSetMode$,
   designSetVerdict$,
+  designStatusChanges$,
+  designStatuses$,
   frameUrl,
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
@@ -125,6 +128,14 @@ const SETTLE_MS = 300;
                 <b>{{ call.headline }}</b>
                 <span class="studio__row-foot">
                   <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
+                  @if (statuses()[call.slug]; as status) {
+                    <span
+                      [attr.data-state]="status.state"
+                      [title]="status.message ?? status.updatedAt"
+                      class="studio__state"
+                      >{{ status.state }}</span
+                    >
+                  }
                   <span class="studio__count">{{ RULED(call) }}</span>
                 </span>
               </button>
@@ -162,6 +173,14 @@ const SETTLE_MS = 300;
                         </span>
                         <b>{{ call.headline }}</b>
                         <span class="studio__row-foot">
+                          @if (statuses()[call.slug]; as status) {
+                            <span
+                              [attr.data-state]="status.state"
+                              [title]="status.message ?? status.updatedAt"
+                              class="studio__state"
+                              >{{ status.state }}</span
+                            >
+                          }
                           <span class="studio__count">{{ RULED(call) }}</span>
                         </span>
                       </button>
@@ -689,6 +708,32 @@ export class CallViewComponent {
   protected serverNote = computed(() => this.serverLog().join(' · '));
 
   public calls = computed(() => this.design()?.calls ?? []);
+
+  private statusChanges = toSignal(
+    designStatusChanges$().pipe(
+      debounceTime(SETTLE_MS),
+      map((_, seen) => seen + 1),
+      catchError(() => EMPTY),
+    ),
+    { initialValue: 0 },
+  );
+
+  protected statuses = toSignal(
+    toObservable(
+      computed(() => ({
+        checkout: this.checkout(),
+        slugs: this.calls().map((call) => call.slug),
+        seen: this.statusChanges(),
+      })),
+    ).pipe(
+      switchMap(({ checkout, slugs }) =>
+        checkout && slugs.length > 0
+          ? designStatuses$(checkout, slugs).pipe(catchError(() => of({})))
+          : of<Record<string, CallStatus>>({}),
+      ),
+    ),
+    { initialValue: {} as Record<string, CallStatus> },
+  );
 
   protected projects = computed(() => projectSummaries(this.calls()));
 

@@ -2,6 +2,7 @@ mod agent;
 mod agent_claude;
 mod agent_codex;
 mod call_source;
+mod call_status;
 mod design;
 mod design_roots;
 mod design_server;
@@ -123,11 +124,14 @@ pub fn run() {
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())
         .manage(design_watch::DesignWatch::default())
+        .manage(call_status::StatusWatch::default())
         .manage(update::PendingUpdate::default())
         .invoke_handler(tauri::generate_handler![
             agent::agent_cancel,
             agent::agent_list,
             agent::agent_run,
+            call_status::design_statuses,
+            call_status::design_status_watch,
             design::design_project,
             design::design_set_verdict,
             design::design_set_mode,

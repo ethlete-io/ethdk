@@ -105,6 +105,35 @@ export type VariantAddress = {
 export const designCheck$ = (address: VariantAddress): Observable<CheckReceipt | null> =>
   invokeHost$<CheckReceipt | null>('design_check', address);
 
+/** The state `et design new`, `et design check --call` or `et design status` last recorded for a call. */
+export type CallStatus = {
+  state: 'scaffolded' | 'drawing' | 'checking' | 'ready' | 'failed';
+  /** An ISO timestamp. */
+  updatedAt: string;
+  /** What a failed check said. */
+  message?: string;
+};
+
+/** Reads the recorded state of each named call. A call with none is left out. */
+export const designStatuses$ = (checkout: string, slugs: string[]): Observable<Record<string, CallStatus>> =>
+  invokeHost$<Record<string, CallStatus>>('design_statuses', { checkout, slugs });
+
+/** Emits whenever a recorded call state changes. */
+export const designStatusChanges$ = (): Observable<void> =>
+  new Observable<void>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const changes = new Channel<void>();
+
+    changes.onmessage = () => subscriber.next();
+
+    invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
+  });
+
 /** Which variant of which call the user ruled about, and how. */
 export type VerdictWrite = {
   checkout: string;
