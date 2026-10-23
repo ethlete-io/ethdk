@@ -4,6 +4,7 @@ import { dirname, resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { writeStatus } from './status';
+import { systemWarningOf } from './system-use';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -54,8 +55,14 @@ const parse = (argv: string[], names: string[]): Flags => {
   return flags;
 };
 
-const runBrowser = async (options: { base: string; slug: string; wanted?: string; fail: Fail }): Promise<number> => {
-  const { base, slug, wanted, fail } = options;
+const runBrowser = async (options: {
+  target: string;
+  base: string;
+  slug: string;
+  wanted?: string;
+  fail: Fail;
+}): Promise<number> => {
+  const { target, base, slug, wanted, fail } = options;
   const playwright = await import('playwright').catch(() => null);
 
   if (!playwright) {
@@ -69,6 +76,7 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
   try {
     return await checkPage({
       page: await browser.newPage({ viewport: { width: 1600, height: 1000 } }),
+      target,
       base,
       slug,
       wanted,
@@ -79,7 +87,8 @@ const runBrowser = async (options: { base: string; slug: string; wanted?: string
   }
 };
 
-type Declared = null | { error: string } | { rounds: string[]; variants: { key: string; round: string }[] };
+type Declared =
+  null | { error: string } | { stage: string | null; rounds: string[]; variants: { key: string; round: string }[] };
 
 /**
  * Reads a call's declaration through the frame server's registry. A string, not a function: the
@@ -91,6 +100,7 @@ const declaredOf = (slug: string) => `(async (slug) => {
   try {
     const call = (await calls[slug]()).default;
     return {
+      stage: call.stage ?? null,
       rounds: (call.rounds ?? []).map((round) => round.key),
       variants: call.variants.map((variant) => ({ key: variant.key, round: variant.round ?? '' })),
     };
@@ -114,12 +124,13 @@ const problemsOf = (declared: { rounds: string[]; variants: { round: string }[] 
 
 const checkPage = async (options: {
   page: import('playwright').Page;
+  target: string;
   base: string;
   slug: string;
   wanted?: string;
   fail: Fail;
 }): Promise<number> => {
-  const { page, base, slug, wanted, fail } = options;
+  const { page, target, base, slug, wanted, fail } = options;
 
   /** Angular throws at render time, and the overlay never shows those, so read the console too. */
   const consoleErrors: string[] = [];
@@ -180,6 +191,9 @@ const checkPage = async (options: {
   }
 
   if (consoleErrors.length > 0) return fail(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
+
+  const warning = systemWarningOf({ target, slug, stage: declared.stage });
+  if (warning) console.warn(warning);
 
   console.log(`ok ${slug} (${checked.join(', ')})`);
 
@@ -246,7 +260,7 @@ const runChecks = async (options: {
   const config = readConfig(target);
   const base = process.env['DE_URL'] ?? `http://localhost:${config ? portOf(config) : DEFAULT_PORT}`;
 
-  return runBrowser({ base, slug, wanted, fail });
+  return runBrowser({ target, base, slug, wanted, fail });
 };
 
 /**

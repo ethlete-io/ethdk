@@ -2,6 +2,7 @@ import { defineCall } from '@design-explore';
 
 export default defineCall({
   feature: 'State snapshots',
+  stage: 'component',
   eyebrow: 'Components · ngStates() · view',
   headline: 'Two server-rendered states, swapped by a click',
   intro:

@@ -234,12 +234,20 @@ export type CallRound = {
 export type CallMode = 'wireframe' | 'design';
 
 /**
+ * Where a call sits in the design order: foundations (`themes`), corporate identity, the
+ * wireframes, then the parts of the design system, the pages built from them, and a prototype.
+ */
+export type CallStage = 'themes' | 'ci' | 'wireframe' | 'component' | 'element' | 'page' | 'prototype';
+
+/**
  * One open question of an exploration, with every variant drawn at the same geometry.
  * A call with one variant and no claim is a view: one reference picture, drawn full width.
  */
 export type Call = {
   /** The feature this call belongs to, for example 'the hour strip'. Left out by a loose call. */
   feature?: string;
+  /** Left out by a loose call. */
+  stage?: CallStage;
   eyebrow: string;
   headline: string;
   intro: string;

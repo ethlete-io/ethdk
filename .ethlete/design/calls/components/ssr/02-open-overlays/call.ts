@@ -2,6 +2,7 @@ import { defineCall } from '@design-explore';
 
 export default defineCall({
   feature: 'Server-side render',
+  stage: 'component',
   eyebrow: 'Components · ng() · view',
   headline: 'An open select and an open menu, rendered on the design server',
   intro:
