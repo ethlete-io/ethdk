@@ -212,6 +212,9 @@ export const createOverlayStrategyController = (
   };
 
   const applySizingStyles = (paneElement: HTMLElement, strategyConfig: OverlayBreakpointConfig) => {
+    renderer.setCssProperties(paneElement, {
+      '--et-overlay-width': strategyConfig.width ? coerceCssPixelValue(strategyConfig.width) : null,
+    });
     renderer.setStyle(paneElement, {
       maxWidth: composeMaxSize(strategyConfig.maxWidth, '--et-overlay-max-width'),
       maxHeight: composeMaxSize(strategyConfig.maxHeight, '--et-overlay-max-height'),

@@ -170,7 +170,7 @@ describe('overlay runtime', () => {
 
     expect(ref.elements.paneElement.style.position).toBe('absolute');
     // mirrorWidth requires a measurable HTMLElement; virtual references fall back to max-content
-    expect(ref.elements.paneElement.style.width).toBe('max-content');
+    expect(ref.elements.paneElement.style.width).toBe('var(--et-overlay-width, max-content)');
 
     ref.close();
   });

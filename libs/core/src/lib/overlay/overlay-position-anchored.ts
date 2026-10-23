@@ -210,11 +210,15 @@ export const createAnchoredPositionCleanup = (
     );
   }
 
+  // A width the pane declares through `--et-overlay-width` must survive positioning, and the pane
+  // has to be measured at it - the variable may be set only after this runs.
+  const declaredWidth = () => paneElement.style.getPropertyValue('--et-overlay-width') || null;
+
   renderer.setStyle(paneElement, {
     position: 'absolute',
     top: '0',
     left: '0',
-    width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'max-content',
+    width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : 'var(--et-overlay-width, max-content)',
   });
 
   /**
@@ -358,7 +362,7 @@ export const createAnchoredPositionCleanup = (
 
       renderer.setStyle(paneElement, {
         transform: `translate3d(${x}px, ${y}px, 0)`,
-        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : null,
+        width: mirrorWidthElement ? `${mirrorWidthElement.offsetWidth}px` : declaredWidth(),
         visibility: null,
       });
       // exposed so animations can compose their transforms with the anchored position
