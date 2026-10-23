@@ -90,7 +90,8 @@ describe('badge scenarios', () => {
     expect(status.getAttribute('data-variant')).toBe('filled');
     expect(status.getAttribute('data-size')).toBe('sm');
     expect(status.classList).toContain('et-color--positive');
-    expect(children(status)).toEqual(['et-badge-icon', 'text:Active']);
+    expect(children(status)).toEqual(['et-badge-icon', 'et-badge-label']);
+    expect(status.querySelector('.et-badge-label')?.textContent?.trim()).toBe('Active');
     expect(status.querySelector('.et-badge-icon > .check')).not.toBeNull();
 
     page.alignment.set(BADGE_ICON_ALIGNMENTS.END);
@@ -99,7 +100,8 @@ describe('badge scenarios', () => {
     page.label.set('3 new');
     s.tick();
 
-    expect(children(status)).toEqual(['text:3 new', 'et-badge-icon']);
+    expect(children(status)).toEqual(['et-badge-label', 'et-badge-icon']);
+    expect(status.querySelector('.et-badge-label')?.textContent?.trim()).toBe('3 new');
     expect(status.querySelectorAll('.check').length).toBe(1);
     expect(status.getAttribute('data-variant')).toBe('outline');
     expect(status.getAttribute('data-size')).toBe('lg');
