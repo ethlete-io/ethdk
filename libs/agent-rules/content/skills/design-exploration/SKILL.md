@@ -134,6 +134,34 @@ Either way:
   settled.
 - Keep the rejected variants drawn, marked as rejected.
 
+## Draw from the design system
+
+A call that invents its own button, field or row does not match the calls beside it. **Before
+you draw a part, look for it in this order, and draw new only when none of them has it:**
+
+1. The project's design system, `.ethlete/design/system/<project>/`.
+2. The SDK component mocks, for example `@ethlete/components/design/button`. Import the one
+   file, never a barrel.
+3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
+   that the part is new.
+
+One entry is one folder:
+
+```
+.ethlete/design/system/<project>/<entry>/
+  <entry>.ts    exports the drawing function, with typed options; built from the SDK mocks
+  entry.md      what it is, when to use it, which SDK parts and options, do and do not
+```
+
+Its preview is a view call at `.ethlete/design/calls/<project>/system/<entry>/`, because the
+tool reads calls from `calls/` only. A variant imports the entry with a relative path. Read
+every `entry.md` of the project before the first drawing of a session.
+
+**An entry exists only because the user accepted it.** A `chosen` verdict is not enough: a
+chosen variant is often a layout or a one-off. When the user says to accept a part into the
+system, extract it in one commit: the entry folder, its preview call, and the source call's
+variant changed to import it. Never change an entry's look without a call the user settled.
+
 ## Check before you look
 
 A broken build draws an overlay, so a screenshot of it looks like a design. **One check

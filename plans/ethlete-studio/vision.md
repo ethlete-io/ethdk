@@ -50,8 +50,13 @@ names are **project → feature → call → variant**.
    - Open, theme: a frame control that switches the fixture's surface and color themes.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
-   - Open, design system: where accepted calls land (for example `.ethlete/design/system/`), and
-     how the `ethlete-design-exploration` skill makes the agent reuse it before it draws new.
+   - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder
+     `.ethlete/design/system/<project>/<entry>/` with `<entry>.ts` (a drawing function built
+     from the SDK mocks) and `entry.md` (what, when, SDK parts, do and do not). Its preview is
+     a view call at `calls/<project>/system/<entry>/`. A `chosen` verdict does not make an
+     entry; Tom says "accept into the system", and the agent extracts it in one commit. The
+     rule is in the `design-exploration` skill, "Draw from the design system". No entry exists
+     yet.
 
 ## Settled - do not re-open
 
