@@ -95,7 +95,16 @@ router.url;`,
     },
     {
       code: `const router = inject(Router); const nav = router.currentNavigation;`,
-      errors: [{ messageId: 'noRouterStateProp' }],
+      errors: [
+        {
+          messageId: 'noRouterStateProp',
+          data: {
+            prop: 'currentNavigation',
+            replacement:
+              "injectRouterState() from '@ethlete/core' (its 'id' and 'trigger'), or injectRouterNavigationState() for the navigation's state",
+          },
+        },
+      ],
     },
   ],
 });

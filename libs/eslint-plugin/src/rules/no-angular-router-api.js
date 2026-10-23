@@ -19,8 +19,8 @@
  *   this.router.events        → injectRouterEvent()
  *   this.router.routerState   → injectRouterState()
  *   this.router.snapshot      → injectRouterState()
- *   this.router.lastSuccessfulNavigation  → injectRouterState()
- *   this.router.currentNavigation        → injectRouterState()
+ *   this.router.lastSuccessfulNavigation  → injectRouterState().id / .trigger
+ *   this.router.currentNavigation        → injectRouterState().id / .trigger (navigation state: injectRouterNavigationState())
  *
  * ✅ inject(Router) is still fine for navigation:
  *   router.navigate(['/path'])
@@ -47,8 +47,11 @@ const ROUTER_STATE_PROPS = new Map([
   ['url', "injectUrl() from '@ethlete/core'"],
   ['events', "injectRouterEvent() from '@ethlete/core'"],
   ['routerState', "injectRouterState() from '@ethlete/core'"],
-  ['lastSuccessfulNavigation', "injectRouterState() from '@ethlete/core'"],
-  ['currentNavigation', "injectRouterState() from '@ethlete/core'"],
+  ['lastSuccessfulNavigation', "injectRouterState() from '@ethlete/core' (its 'id' and 'trigger')"],
+  [
+    'currentNavigation',
+    "injectRouterState() from '@ethlete/core' (its 'id' and 'trigger'), or injectRouterNavigationState() for the navigation's state",
+  ],
 ]);
 
 /** @type {import('eslint').Rule.RuleModule} */
