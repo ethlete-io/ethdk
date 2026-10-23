@@ -56,6 +56,9 @@ names are **project → feature → call → variant**.
      event (click → `open: true`). The frame now drops `<script>` (`libs/cli/design/web/frame.ts`
      sets `innerHTML`); tomflix asked for a `setup(root)` hook or host controls for replay,
      speed and reduced motion.
+     - Tom decided, 2026-10-23: first a `setup(root)` hook on the drawing (done, 84ee476e9),
+       then a state-snapshot helper on top: named `ng()` states, swapped by rules such as
+       `click .trigger → open`, with a View Transition. Host controls are still open.
    - Open, theme: a frame control that switches the fixture's surface and color themes.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
