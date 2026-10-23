@@ -1,6 +1,7 @@
-import { Component, DOCUMENT, inject } from '@angular/core';
+import { Component, DOCUMENT, inject, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  AutoSurfaceDirective,
   ColorTheme,
   injectColorScheme,
   injectRootSurfaceTheme,
@@ -91,6 +92,25 @@ class UnprovidedComponent {
   rootSurface = injectRootSurfaceTheme();
   surfaceType = injectSurfaceType();
 }
+
+const ELEVATED_SCHEMES = [
+  ...BOTH_SCHEMES,
+  { ...surface('day-raised', 'light'), elevation: 1, isDefault: false },
+  { ...surface('night-raised', 'dark'), elevation: 1, isDefault: false },
+];
+
+@Component({
+  selector: 'et-scenario-scheme-auto-surface',
+  imports: [AutoSurfaceDirective, ProvideSurfaceDirective],
+  template: `
+    <div class="auto" etAutoSurface><div class="nested" etAutoSurface></div></div>
+    <section etProvideSurface="night"><div class="in-night" etAutoSurface></div></section>
+  `,
+})
+class AutoSurfaceComponent {}
+
+const surfaceClasses = (host: HTMLElement, selector: string) =>
+  [...host.querySelector(selector)!.classList].filter((name) => /^et-(surface|color)--/.test(name));
 
 const swatch: ThemeSwatch = {
   color: { default: '0 0 0', hover: '0 0 0', active: '0 0 0', disabled: '0 0 0' },
@@ -295,6 +315,49 @@ describe('color scheme scenarios', () => {
       expect(query('.day')).toEqual(['et-color--brand-on-light']);
       expect(query('.night')).toEqual([]);
       expect(query('.grey')).toEqual(['et-color--grey']);
+    });
+  });
+
+  describe('rendering on the server in system mode', () => {
+    const scenario = useScenario({
+      providers: [
+        provideSurfaceThemesWithTailwind4(ELEVATED_SCHEMES),
+        provideColorScheme(),
+        { provide: PLATFORM_ID, useValue: 'server' },
+      ],
+    });
+
+    it('leaves an auto surface on the root to CSS, but resolves one inside an explicit surface', () => {
+      const s = scenario();
+      const fixture = TestBed.createComponent(AutoSurfaceComponent);
+      const host = fixture.nativeElement as HTMLElement;
+
+      s.tick();
+
+      expect(surfaceClasses(host, '.auto')).toEqual(['et-surface--inherited']);
+      expect(surfaceClasses(host, '.nested')).toEqual(['et-surface--inherited']);
+      expect(surfaceClasses(host, '.in-night')).toEqual(['et-surface--night-raised']);
+
+      fixture.destroy();
+    });
+  });
+
+  describe('rendering an auto surface in the browser', () => {
+    const scenario = useScenario({
+      providers: [provideSurfaceThemesWithTailwind4(ELEVATED_SCHEMES), provideColorScheme()],
+    });
+
+    it('elevates from the scheme the OS asks for', () => {
+      media.setPrefersDark(true);
+
+      const s = scenario();
+      const fixture = TestBed.createComponent(AutoSurfaceComponent);
+
+      s.tick();
+
+      expect(surfaceClasses(fixture.nativeElement, '.auto')).toEqual(['et-surface--night-raised']);
+
+      fixture.destroy();
     });
   });
 });

@@ -6,13 +6,15 @@ import {
   EnvironmentProviders,
   inject,
   makeEnvironmentProviders,
+  PLATFORM_ID,
   provideEnvironmentInitializer,
   Signal,
   signal,
 } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import { injectBreakpointObserver } from '../providers/breakpoint-observer';
 import { defineProvider, toInjectFn, toProvideFn } from '../utils';
-import { COLOR_SCHEME_TYPE } from './color-scheme-type.token';
+import { COLOR_SCHEME_TYPE, COLOR_SCHEME_UNRESOLVED } from './color-scheme-type.token';
 import {
   createCssColorThemeName,
   injectColorThemes,
@@ -122,6 +124,14 @@ const provideColorSchemeState = /* @__PURE__ */ toProvideFn(COLOR_SCHEME_DEF);
  */
 export const injectColorScheme = /* @__PURE__ */ toInjectFn(COLOR_SCHEME_DEF);
 
+const injectSchemeUnresolved = () => {
+  const { mode } = injectColorScheme();
+  const isServer = isPlatformServer(inject(PLATFORM_ID));
+  const defaultCount = injectSurfaceThemes({ optional: true })?.filter((theme) => theme.isDefault).length ?? 0;
+
+  return computed(() => isServer && defaultCount > 1 && mode() === 'system');
+};
+
 /**
  * Lets the app switch between its default light and dark surface with a class on `<html>`, instead of
  * only following `prefers-color-scheme`. It also paints the root surface's `colorThemeVariants` entry for the
@@ -132,6 +142,7 @@ export const provideColorScheme = (config?: ColorSchemeConfig): EnvironmentProvi
   makeEnvironmentProviders([
     provideColorSchemeState(),
     { provide: COLOR_SCHEME_TYPE, useFactory: () => injectColorScheme().type },
+    { provide: COLOR_SCHEME_UNRESOLVED, useFactory: injectSchemeUnresolved },
     provideEnvironmentInitializer(() => injectColorScheme().setMode(config?.mode ?? 'system')),
   ]);
 

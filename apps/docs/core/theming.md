@@ -170,6 +170,9 @@ toggle() {
   `et-color--<variant>` class, and it follows the scheme.
 - `mode()` is the mode the app asked for, and `type()` the `'light' | 'dark'` the root paints. In
   `system` mode, `type()` follows the OS live.
+- A server render in `system` mode cannot know the OS scheme, so an `[etAutoSurface]` that elevates above
+  the root surface renders `et-surface--inherited` there. The first paint follows the media query at root
+  elevation, and the elevated surface appears on hydration. Inside an explicit surface it still elevates.
 
 The mode does not persist. Store it yourself, and pass the stored value as `mode`. The rule exists
 only when the app registers a default for both types, so regenerate the surface CSS after an upgrade.

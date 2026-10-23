@@ -10,6 +10,8 @@ import {
   untracked,
 } from '@angular/core';
 import { setInputSignal } from '../utils';
+import { injectRootSurfaceTheme } from './color-scheme';
+import { COLOR_SCHEME_UNRESOLVED } from './color-scheme-type.token';
 import { injectParentSurface, ProvideSurfaceDirective } from './provide-surface.directive';
 import { injectSurfaceContextTracker } from './surface-context-tracker';
 import {
@@ -29,6 +31,8 @@ export class AutoSurfaceDirective {
   private surfaceContextTracker = injectSurfaceContextTracker();
   private parentSurface = injectParentSurface();
   private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+  private schemeUnresolved = inject(COLOR_SCHEME_UNRESOLVED, { optional: true });
+  private rootTheme = injectRootSurfaceTheme();
 
   /**
    * Explicit surface provider to resolve the surface relative to. Falls back to the
@@ -59,6 +63,11 @@ export class AutoSurfaceDirective {
     const overlaySurface = this.surfaceContextTracker.surfaceForElement(this.elementRef.nativeElement);
     const overlayElevation = overlaySurface?.elevation ?? null;
     const overlayType = overlaySurface?.type ?? null;
+
+    // A surface derived from the root would bake the server's guessed scheme into the markup; inherit, and let CSS pick it.
+    if (this.schemeUnresolved?.() && overlayElevation === null && contextTheme === this.rootTheme()) {
+      return null;
+    }
 
     // Must not re-derive from the declaration injector: it points at the trigger and would double-elevate the panel.
     if (this.isOverlaySurface()) {
