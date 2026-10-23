@@ -41,7 +41,8 @@ describe('StyleManager', () => {
     const container = containers()[0] as HTMLElement;
     expect(containers()).toHaveLength(1);
     expect(container.getAttribute('aria-hidden')).toBe('true');
-    expect(container.style.display).toBe('none');
+    expect(container.hidden).toBe(true);
+    expect(container.hasAttribute('style')).toBe(false);
     expect(container.children).toHaveLength(2);
   });
 

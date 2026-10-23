@@ -38,7 +38,8 @@ const STYLE_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
       const nextContainer = renderer.createElement('div');
       renderer.addClass(nextContainer, 'et-style-manager');
       renderer.setAttribute(nextContainer, 'aria-hidden', 'true');
-      renderer.setStyle(nextContainer, { display: 'none' });
+      // A style attribute needs 'unsafe-inline' in a CSP's style-src-attr; a nonce does not cover it.
+      renderer.setAttribute(nextContainer, 'hidden', '');
       renderer.appendChild(getContainerParent(), nextContainer);
       container = nextContainer;
 
