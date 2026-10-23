@@ -1,4 +1,4 @@
-import { DestroyRef, Directive, afterNextRender, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Directive, afterNextRender, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLinkActive } from '@angular/router';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
@@ -40,10 +40,15 @@ export class NavTabLinkDirective {
       )
       .subscribe();
 
+    // Reads no selection state: with two links active at once (RouterLinkActive settles in a microtask
+    // after NavigationEnd), each would select itself in turn and freeze change detection.
     effect(() => {
-      if (this.isActive() && this.tabBar?.activeTrigger() !== this.trigger) {
-        this.tabBar?.selectTrigger(this.trigger);
-      }
+      const tabBar = this.tabBar;
+
+      if (!tabBar || !this.isActive()) return;
+
+      tabBar.triggers();
+      untracked(() => tabBar.selectTrigger(this.trigger));
     });
 
     if (ngDevMode) {

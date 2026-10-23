@@ -81,6 +81,17 @@ class AmbiguousSiblingOutletTestHost {}
 })
 class PreservedQueryParamsTestHost {}
 
+@Component({
+  template: `
+    <et-nav-tabs>
+      <a et-nav-tab-link="/one">One</a>
+      <a et-nav-tab-link="/one">One again</a>
+    </et-nav-tabs>
+  `,
+  imports: [NavTabsComponent, NavTabLinkComponent],
+})
+class TwoActiveLinksTestHost {}
+
 describe('NavTabsComponent', () => {
   let fixture: ComponentFixture<NavTabsTestHost>;
   let router: Router;
@@ -120,6 +131,7 @@ describe('NavTabsComponent', () => {
         NavTabsTestHost,
         SiblingOutletTestHost,
         PreservedQueryParamsTestHost,
+        TwoActiveLinksTestHost,
       ],
       providers: [
         provideRouter([
@@ -288,6 +300,21 @@ describe('NavTabsComponent', () => {
 
     warn.mockRestore();
     siblingFixture.destroy();
+  });
+
+  it('settles on the last active link when two links are active at once', async () => {
+    const twoActiveFixture = TestBed.createComponent(TwoActiveLinksTestHost);
+
+    await router.navigateByUrl('/one');
+    twoActiveFixture.detectChanges();
+    await twoActiveFixture.whenStable();
+    twoActiveFixture.detectChanges();
+
+    const links = Array.from(
+      twoActiveFixture.nativeElement.querySelectorAll('.et-nav-tab-link') as NodeListOf<HTMLAnchorElement>,
+    );
+
+    expect(links.map((link) => link.getAttribute('aria-selected'))).toEqual(['false', 'true']);
   });
 
   it('reflects nav-tabs public inputs on the host', () => {
