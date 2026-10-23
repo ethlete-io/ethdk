@@ -1,5 +1,11 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.25
+
+### Patch Changes
+
+- Link the generated skills to the next docs site, which matches the prerelease line.
+
 ## 0.1.0-next.24
 
 ### Minor Changes

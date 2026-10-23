@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.57
+
+### Minor Changes
+
+- `defineQueryForm().observe()` takes `navigationExtras` (`scroll`, `state`) for each navigation that writes the form's params. With `scroll: 'manual'`, a debounced search no longer scrolls the page to the top under `withInMemoryScrolling`.
+
 ## 6.0.0-next.56
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # @ethlete/core
 
+## 5.0.0-next.66
+
+### Minor Changes
+
+- `injectRouterState()` now carries the navigation `id` and `trigger` (`'imperative' | 'popstate' | 'hashchange'`).
+- Scroll restoration can restore page state, such as a paged list's page count, before it applies the offset (`registerScrollRestorationState`), and can restore after a reload (`restore.restoreOnReload`).
+
+### Patch Changes
+
+- `injectIsRouterInitialized()` is now `true` only once the first navigation has ended, so a component created during it sees `false`.
+
 ## 5.0.0-next.65
 
 ### Minor Changes
