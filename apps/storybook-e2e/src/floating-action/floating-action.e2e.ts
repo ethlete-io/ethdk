@@ -398,7 +398,7 @@ test.describe('floating-action / embedded', () => {
     });
     const parentScroll = await page.evaluate(() => window.scrollY);
 
-    const storyFrame = page.frames()[1];
+    const storyFrame = page.frames()[1] ?? page.mainFrame();
 
     await scrollPast(storyFrame, ANCHOR);
     await trigger.evaluate((el) => (el as HTMLElement).click());
