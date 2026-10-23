@@ -12,7 +12,10 @@ const launch = vi.fn(async () => ({ close, newPage: async () => ({ on: () => und
 const browser = { chromium: { launch } as { launch: typeof launch } | null };
 const server = { problem: null as string | null };
 
-vi.mock('./browser', () => ({ chromiumOf: async () => browser.chromium }));
+vi.mock('./browser', () => ({
+  chromiumOf: async () =>
+    browser.chromium ? { chromium: browser.chromium, from: '/co/node_modules/playwright/index.js' } : null,
+}));
 vi.mock('./stamp', () => ({
   buildStampOf: () => ({ version: '1', build: 'a' }),
   serverProblemOf: async () => server.problem,
@@ -63,6 +66,20 @@ describe('checkDesign', () => {
     expect(await check(target)).toBe(1);
     expect(statusOf(target)).toBeNull();
     expect(errors).toHaveBeenCalledWith(expect.stringContaining('playwright-core install chromium'));
+  });
+
+  it('names the resolved package, not a missing one, when its Chromium does not start', async () => {
+    const target = checkout();
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    launch.mockRejectedValueOnce(new Error("Executable doesn't exist at /cache/chromium_headless_shell-1"));
+
+    expect(await check(target)).toBe(1);
+
+    const message = String(errors.mock.calls[errors.mock.calls.length - 1]?.[0]);
+
+    expect(message).toContain('/co/node_modules/playwright/index.js resolved');
+    expect(message).toContain("Executable doesn't exist");
+    expect(message).not.toContain('neither the checkout');
   });
 
   it('leaves the status alone when the server is unreachable or stale, without opening a browser', async () => {

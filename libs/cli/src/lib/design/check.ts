@@ -76,12 +76,16 @@ const runBrowser = async (options: {
 
   if (serverProblem) return fails.unavailable(serverProblem);
 
-  const chromium = await chromiumOf(target);
+  const resolved = await chromiumOf(target);
 
-  if (!chromium) return fails.unavailable(NO_BROWSER);
+  if (!resolved) return fails.unavailable(NO_BROWSER);
 
-  const browser = await chromium.launch().catch((error: unknown) => {
-    fails.unavailable(`${NO_BROWSER}\n${trim(error instanceof Error ? error.message : String(error))}`);
+  const browser = await resolved.chromium.launch().catch((error: unknown) => {
+    fails.unavailable(
+      `NO BROWSER - ${resolved.from} resolved, but its Chromium did not start. Install the browser that ` +
+        `version expects in the checkout: \`npx playwright install chromium\`.\n` +
+        trim(error instanceof Error ? error.message : String(error)),
+    );
 
     return null;
   });
