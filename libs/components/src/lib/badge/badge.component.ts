@@ -47,7 +47,7 @@ export type BadgeIconAlignment = (typeof BADGE_ICON_ALIGNMENTS)[keyof typeof BAD
       </div>
     }
 
-    <ng-content />
+    <span class="et-badge-label"><ng-content /></span>
 
     @if (iconAlignment() === 'end') {
       <div class="et-badge-icon">

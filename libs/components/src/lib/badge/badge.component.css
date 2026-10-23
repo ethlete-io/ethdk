@@ -92,6 +92,10 @@
       --et-badge-font-size: 12px;
     }
 
+    .et-badge-label {
+      text-box: trim-both cap alphabetic;
+    }
+
     .et-badge-icon {
       display: flex;
       align-items: center;

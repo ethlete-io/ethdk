@@ -99,7 +99,7 @@ function readIconGeometry(badge: Locator): Promise<IconGeometry> {
     });
     const icon = el.querySelector('.et-icon') as HTMLElement;
     const slot = el.querySelector('.et-badge-icon') as HTMLElement;
-    const label = Array.from(el.childNodes).find(
+    const label = Array.from(el.querySelector('.et-badge-label')?.childNodes ?? []).find(
       (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
     );
     const range = document.createRange();
