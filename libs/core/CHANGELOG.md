@@ -1,5 +1,11 @@
 # @ethlete/core
 
+## 5.0.0-next.67
+
+### Patch Changes
+
+- Keep `et-animation-leave-to` on an `AnimatedLifecycleDirective` host after its leave finishes, until the next `enter()`. An element removed a frame after its leave no longer flashes back to full opacity first.
+
 ## 5.0.0-next.66
 
 ### Minor Changes

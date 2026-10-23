@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.41
+
+### Patch Changes
+
+- `BUTTON_IMPORTS` no longer pulls the whole menu into a bundle, and the migrate-from-cdk class list knows the new badge, spinner and PiP stage classes.
+
 ## 5.0.0-next.40
 
 ### Patch Changes
