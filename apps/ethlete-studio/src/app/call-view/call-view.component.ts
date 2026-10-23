@@ -734,7 +734,7 @@ export class CallViewComponent {
     ).pipe(
       switchMap(({ checkout, slugs }) =>
         checkout && slugs.length > 0
-          ? designStatuses$(checkout, slugs).pipe(catchError(() => of({})))
+          ? designStatuses$(checkout, slugs).pipe(catchError(() => of<Record<string, CallStatus>>({})))
           : of<Record<string, CallStatus>>({}),
       ),
     ),
