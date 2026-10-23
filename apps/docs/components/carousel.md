@@ -407,6 +407,7 @@ progress ring take the primary accent, inactive dots a neutral tint. Geometry is
 | Property                        | Default | Applies to                                                                                           |
 | ------------------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
 | `--et-carousel-gap`             | `12px`  | gap between the track and the controls row                                                           |
+| `--et-carousel-slide-gap`       | `0px`   | space between slides in the track                                                                    |
 | `--et-carousel-dot-size`        | `8px`   | the dot itself                                                                                       |
 | `--et-carousel-dot-target-size` | `24px`  | the dot's tap target                                                                                 |
 | `--et-carousel-dot-ring-size`   | `18px`  | the autoplay countdown ring                                                                          |

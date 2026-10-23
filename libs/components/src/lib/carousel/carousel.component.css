@@ -5,6 +5,12 @@
     initial-value: 12px;
   }
 
+  @property --et-carousel-slide-gap {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+
   @property --et-carousel-dot-size {
     syntax: '<length>';
     inherits: true;
@@ -33,6 +39,10 @@
 
   .et-carousel-track {
     display: block;
+
+    & .et-scrollable-container {
+      gap: var(--et-carousel-slide-gap);
+    }
   }
 
   .et-carousel:where([data-slide-align='center']) .et-carousel-track:not([item-size='full']) {
