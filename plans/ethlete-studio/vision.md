@@ -85,6 +85,11 @@ names are **project → feature → call → variant**.
      each mapped to an SDK component or marked new; it is the queue of component calls.
      (3) Stage 1 is foundations: colours plus type scale, spacing and radius. (4) A page that
      shows a missing part opens a component call; it never draws the part inline.
+   - After tomflix's component-call test (Tom decided, 2026-10-23): a drawing may set
+     `et-surface--<name>` on an inner panel (side by side, elevated card), never on its root.
+     `ng()` gets a `fields` option that builds signal form fields with value, errors and touched.
+     A variant overrides a colour theme with `themeCss()` in its styles. `et-banner` keeps the
+     projected icon; the SDK cannot know the icon of an app-registered theme.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder

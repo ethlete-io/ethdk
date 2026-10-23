@@ -66,7 +66,24 @@ drawings. A project the config names not draws bare.
 A project can also name `themes`: `{ "surface": ["light", "dark"], "color": ["brand", …] }`; the
 first name of each list is the default. A frame asked for a theme gets the
 `et-surface--<name>` and `et-color--<name>` classes on its root, so a drawing in such a project
-must not set its own surface or colour class, and must take its colours from the theme tokens.
+must not set a surface or colour class on its own root, and must take its colours from the theme
+tokens. An inner panel may set `et-surface--<name>`, to put a dark and a light panel side by side
+or to draw an elevated card. To try another value of a colour theme, a variant calls `themeCss()`
+in its own `styles`; it never changes the project's providers.
+
+### Make and track a call
+
+`et design --help` lists every command. Start a call with the tool, never by hand:
+
+```bash
+et design new <project>/<group>/<name> --stage component --variants a,b
+et design status <slug> drawing   # while you draw; check sets checking, then ready or failed
+```
+
+`new` writes `call.ts`, `fixture.ts` and one variant file per key, and the call renders at
+once. `stage` in `call.ts` names the stage of the design (see "The order of a design"); Ethlete
+Studio groups the calls by it, and the check warns when an element, page or prototype call
+imports nothing from the design system. The status shows on the call's row in Studio.
 
 `et design [checkout]` serves the frames on the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
