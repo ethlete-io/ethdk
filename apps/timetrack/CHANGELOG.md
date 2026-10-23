@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.14
+
+### Patch Changes
+
+- Update tokio to 1.54.1 to fix RUSTSEC-2026-0386.
+
 ## 0.2.0-next.13
 
 ### Patch Changes
