@@ -20,9 +20,20 @@ export const DEFAULT_PHONE_INPUT_LABELS: PhoneInputLabels = {
   noCountries: 'No countries found',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_PHONE_INPUT_LABELS: PhoneInputLabels = {
+  selectCountry: 'Land auswählen',
+  searchCountries: 'Länder durchsuchen',
+  noCountries: 'Keine Länder gefunden',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link providePhoneInputLabels}. */
+export const phoneInputLabelsForLocale = (locale: string): PhoneInputLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_PHONE_INPUT_LABELS : DEFAULT_PHONE_INPUT_LABELS;
+
 const PHONE_INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<PhoneInputLabels>(
   'PHONE_INPUT_LABELS',
-  DEFAULT_PHONE_INPUT_LABELS,
+  phoneInputLabelsForLocale,
 );
 
 /**

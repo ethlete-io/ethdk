@@ -62,9 +62,36 @@ export const DEFAULT_COLOR_INPUT_LABELS: ColorInputLabels = {
   contrastTooLow: (measured, required) => `Contrast is ${measured}:1, needs at least ${required}:1`,
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_COLOR_INPUT_LABELS: ColorInputLabels = {
+  dialog: 'Farbe auswählen',
+  pickerTrigger: 'Farbe auswählen',
+  area: 'Sättigung und Helligkeit',
+  saturation: 'Sättigung',
+  brightness: 'Helligkeit',
+  hue: 'Farbton',
+  alpha: 'Deckkraft',
+  value: 'Farbwert',
+  hex: 'Hex',
+  rgb: 'RGB',
+  hsl: 'HSL',
+  notation: (currentNotation) => `Notation ändern, aktuell ${currentNotation}`,
+  notationConverted: (targetNotation) => `In ${targetNotation} umgewandelt.`,
+  swatches: 'Voreingestellte Farben',
+  swatch: (color, position) => `Farbfeld ${position}, ${color}`,
+  eyedropper: 'Farbe vom Bildschirm aufnehmen',
+  invalidColor: (notations) => `Farbe als ${notations.join(' oder ')} eingeben`,
+  contrastTooLow: (measured, required) =>
+    `Der Kontrast beträgt ${measured}:1, erforderlich sind mindestens ${required}:1`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideColorInputLabels}. */
+export const colorInputLabelsForLocale = (locale: string): ColorInputLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_COLOR_INPUT_LABELS : DEFAULT_COLOR_INPUT_LABELS;
+
 const COLOR_INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<ColorInputLabels>(
   'COLOR_INPUT_LABELS',
-  DEFAULT_COLOR_INPUT_LABELS,
+  colorInputLabelsForLocale,
 );
 
 /**

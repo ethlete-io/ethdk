@@ -63,7 +63,30 @@ export const DEFAULT_DROPZONE_LABELS: DropzoneLabels = {
   uploading: (count) => (count === 1 ? 'Uploading 1 file' : `Uploading ${count} files`),
 };
 
-const DROPZONE_LABELS_DEF = /* @__PURE__ */ defineLabels<DropzoneLabels>('DROPZONE_LABELS', DEFAULT_DROPZONE_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_DROPZONE_LABELS: DropzoneLabels = {
+  prompt: 'Per Drag & Drop ablegen oder zum Durchsuchen klicken',
+  empty: 'Keine Dateien',
+  retry: 'Erneut versuchen',
+  remove: 'Entfernen',
+  replaceFile: 'Datei ersetzen',
+  uploadFailed: 'konnte nicht hochgeladen werden',
+  uploadFailedMessage: ({ fileName, serverMessage, uploadFailed }) =>
+    serverMessage ? `"${fileName}": ${serverMessage}` : `"${fileName}" ${uploadFailed}.`,
+  unsupportedFileType: (fileName) => `"${fileName}" hat einen nicht unterstützten Dateityp.`,
+  fileTooLarge: (fileName, maxFileSize) =>
+    `"${fileName}" ist zu groß${maxFileSize !== undefined ? ` (max. ${formatFileSize(maxFileSize)})` : ''}.`,
+  fileTooSmall: (fileName, minFileSize) =>
+    `"${fileName}" ist zu klein${minFileSize !== undefined ? ` (min. ${formatFileSize(minFileSize)})` : ''}.`,
+  tooManyFiles: (fileName) => `"${fileName}" wurde nicht hinzugefügt (nur eine Datei erlaubt).`,
+  uploading: (count) => (count === 1 ? '1 Datei wird hochgeladen' : `${count} Dateien werden hochgeladen`),
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideDropzoneLabels}. */
+export const dropzoneLabelsForLocale = (locale: string): DropzoneLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_DROPZONE_LABELS : DEFAULT_DROPZONE_LABELS;
+
+const DROPZONE_LABELS_DEF = /* @__PURE__ */ defineLabels<DropzoneLabels>('DROPZONE_LABELS', dropzoneLabelsForLocale);
 
 /**
  * Localize the dropzone's strings for everything below this injector, and read the set in effect here as a

@@ -82,9 +82,45 @@ export const DEFAULT_STANDINGS_LABELS: StandingsLabels = {
   pickLocked: 'This order can no longer be changed',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_STANDINGS_LABELS: StandingsLabels = {
+  caption: 'Tabelle',
+  position: '#',
+  positionFull: 'Platz',
+  participant: 'Team',
+  played: 'Sp',
+  playedFull: 'Spiele',
+  wins: 'S',
+  winsFull: 'Siege',
+  ties: 'U',
+  tiesFull: 'Unentschieden',
+  losses: 'N',
+  lossesFull: 'Niederlagen',
+  difference: 'Diff',
+  differenceFull: 'Differenz',
+  points: 'Pkt',
+  pointsFull: 'Punkte',
+  form: 'Form',
+  formFull: 'Letzte Spiele, ältestes zuerst',
+  formResult: (result) => (result === 'win' ? 'Sieg' : result === 'loss' ? 'Niederlage' : 'Unentschieden'),
+  formResultShort: (result) => (result === 'win' ? 'S' : result === 'loss' ? 'N' : 'U'),
+  legend: 'Bedeutung der hervorgehobenen Plätze',
+  highlightedRow: 'Eigenes Team',
+  pickCaption: 'Vorhergesagte Reihenfolge',
+  pickCut: 'Kommt weiter',
+  pickAdvancingRow: 'Kommt weiter',
+  pickMoveRow: (participant) => `${participant} verschieben. Ziehen oder Pfeiltasten verwenden.`,
+  pickMoved: (participant, position) => `${participant} auf Platz ${position} verschoben`,
+  pickLocked: 'Diese Reihenfolge kann nicht mehr geändert werden',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideStandingsLabels}. */
+export const standingsLabelsForLocale = (locale: string): StandingsLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_STANDINGS_LABELS : DEFAULT_STANDINGS_LABELS;
+
 const STANDINGS_LABELS_DEF = /* @__PURE__ */ defineLabels<StandingsLabels>(
   'STANDINGS_LABELS',
-  DEFAULT_STANDINGS_LABELS,
+  standingsLabelsForLocale,
 );
 
 /**

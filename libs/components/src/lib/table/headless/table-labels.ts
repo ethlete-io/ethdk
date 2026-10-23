@@ -125,7 +125,45 @@ export const DEFAULT_TABLE_LABELS: TableLabels = {
  */
 export type TableLabelsSource = LabelsSource<TableLabels>;
 
-const TABLE_LABELS_DEF = /* @__PURE__ */ defineLabels<TableLabels>('TABLE_LABELS', DEFAULT_TABLE_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_TABLE_LABELS: TableLabels = {
+  empty: 'Keine Daten',
+  error: 'Daten konnten nicht geladen werden',
+  expandRow: 'Zeile aufklappen',
+  collapseRow: 'Zeile zuklappen',
+  sortAction: (header, next) => {
+    if (next === 'asc') return `${header} aufsteigend sortieren`;
+    if (next === 'desc') return `${header} absteigend sortieren`;
+    return `Sortierung von ${header} aufheben`;
+  },
+  sortPriority: (priority, count) => `Sortierpriorität ${priority} von ${count}`,
+  filterColumn: (header) => `${header} filtern`,
+  filterSearch: 'Suchen…',
+  filterEmpty: 'Keine Optionen',
+  filterLoadMore: 'Mehr laden',
+  columnMenu: (header) => `Spaltenoptionen für ${header}`,
+  sortAscending: 'Aufsteigend sortieren',
+  sortDescending: 'Absteigend sortieren',
+  clearSort: 'Sortierung aufheben',
+  autosizeColumn: 'Spaltenbreite automatisch anpassen',
+  autosizeAllColumns: 'Alle Spaltenbreiten automatisch anpassen',
+  resetWidth: 'Breite zurücksetzen',
+  resizeColumn: (header) => `Größe von ${header} ändern`,
+  hideColumn: 'Spalte ausblenden',
+  pinColumnStart: 'Am Anfang fixieren',
+  pinColumnEnd: 'Am Ende fixieren',
+  unpinColumn: 'Fixierung lösen',
+  columns: 'Spalten',
+  showAllColumns: 'Alle Spalten anzeigen',
+  selectAllRows: 'Alle Zeilen auswählen',
+  selectRow: 'Zeile auswählen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideTableLabels}. */
+export const tableLabelsForLocale = (locale: string): TableLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_TABLE_LABELS : DEFAULT_TABLE_LABELS;
+
+const TABLE_LABELS_DEF = /* @__PURE__ */ defineLabels<TableLabels>('TABLE_LABELS', tableLabelsForLocale);
 
 /**
  * Localize the table's strings for everything below this injector, and read the set in effect here as

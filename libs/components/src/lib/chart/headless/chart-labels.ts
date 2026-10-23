@@ -81,7 +81,38 @@ export const DEFAULT_CHART_LABELS: ChartLabels = {
   sankeyLinkKeyHint: defaultSankeyChartLinkKeyHint,
 };
 
-const CHART_LABELS_DEF = /* @__PURE__ */ defineLabels<ChartLabels>('CHART_LABELS', DEFAULT_CHART_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_CHART_LABELS: ChartLabels = {
+  barCategoryHeader: 'Kategorie',
+  barValueHeader: 'Wert',
+  lineCategoryHeader: 'Kategorie',
+  lineDateHeader: 'Datum',
+  lineValueHeader: 'Wert',
+  pieCategoryHeader: 'Kategorie',
+  pieValueHeader: 'Wert',
+  pieShareHeader: 'Anteil',
+  pieTotal: 'Gesamt',
+  sankeySourceHeader: 'Quelle',
+  sankeyTargetHeader: 'Ziel',
+  sankeyValueHeader: 'Wert',
+  sankeyIncoming: 'Eingang',
+  sankeyOutgoing: 'Ausgang',
+  sankeyLinkSeparator: 'nach',
+  sankeyLinkKeyHint: ({ position, count, sourceLabel, direction }) =>
+    [
+      `${position} von ${count}`,
+      count > 1 ? `${direction === 'vertical' ? '←→' : '↑↓'} nächste Verbindung` : null,
+      `Esc zurück zu ${sourceLabel}`,
+    ]
+      .filter((part) => part !== null)
+      .join(' · '),
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideChartLabels}. */
+export const chartLabelsForLocale = (locale: string): ChartLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_CHART_LABELS : DEFAULT_CHART_LABELS;
+
+const CHART_LABELS_DEF = /* @__PURE__ */ defineLabels<ChartLabels>('CHART_LABELS', chartLabelsForLocale);
 
 /**
  * Localize the charts' strings for everything below this injector, and read the set in effect here as

@@ -11,9 +11,18 @@ export const DEFAULT_NOTIFICATION_LABELS: NotificationLabels = {
   dismiss: 'Dismiss',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_NOTIFICATION_LABELS: NotificationLabels = {
+  dismiss: 'Schließen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideNotificationLabels}. */
+export const notificationLabelsForLocale = (locale: string): NotificationLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_NOTIFICATION_LABELS : DEFAULT_NOTIFICATION_LABELS;
+
 const NOTIFICATION_LABELS_DEF = /* @__PURE__ */ defineLabels<NotificationLabels>(
   'NOTIFICATION_LABELS',
-  DEFAULT_NOTIFICATION_LABELS,
+  notificationLabelsForLocale,
 );
 
 /**

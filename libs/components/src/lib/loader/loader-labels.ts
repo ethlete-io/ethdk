@@ -24,7 +24,17 @@ export const DEFAULT_LOADER_LABELS: LoaderLabels = {
   loadingContent: 'Loading…',
 };
 
-const LOADER_LABELS_DEF = /* @__PURE__ */ defineLabels<LoaderLabels>('LOADER_LABELS', DEFAULT_LOADER_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_LOADER_LABELS: LoaderLabels = {
+  loading: 'Lädt',
+  loadingContent: 'Lade…',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideLoaderLabels}. */
+export const loaderLabelsForLocale = (locale: string): LoaderLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_LOADER_LABELS : DEFAULT_LOADER_LABELS;
+
+const LOADER_LABELS_DEF = /* @__PURE__ */ defineLabels<LoaderLabels>('LOADER_LABELS', loaderLabelsForLocale);
 
 /**
  * Localize what loaders announce for everything below this injector, and read the set in effect here as

@@ -20,9 +20,21 @@ export const DEFAULT_UNSAVED_CHANGES_LABELS: UnsavedChangesLabels = {
   keepEditing: 'Keep editing',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_UNSAVED_CHANGES_LABELS: UnsavedChangesLabels = {
+  title: 'Ungespeicherte Änderungen verwerfen?',
+  message: 'Die Änderungen wurden nicht gespeichert. Seite verlassen und Änderungen verwerfen?',
+  discard: 'Verwerfen',
+  keepEditing: 'Weiter bearbeiten',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideUnsavedChangesLabels}. */
+export const unsavedChangesLabelsForLocale = (locale: string): UnsavedChangesLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_UNSAVED_CHANGES_LABELS : DEFAULT_UNSAVED_CHANGES_LABELS;
+
 const UNSAVED_CHANGES_LABELS_DEF = /* @__PURE__ */ defineLabels<UnsavedChangesLabels>(
   'UNSAVED_CHANGES_LABELS',
-  DEFAULT_UNSAVED_CHANGES_LABELS,
+  unsavedChangesLabelsForLocale,
 );
 
 /**

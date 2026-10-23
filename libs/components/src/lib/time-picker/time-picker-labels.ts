@@ -29,9 +29,24 @@ export const DEFAULT_TIME_PICKER_LABELS: TimePickerLabels = {
   endsNextDay: 'ends next day',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_TIME_PICKER_LABELS: TimePickerLabels = {
+  time: 'Uhrzeit',
+  startTime: 'Startzeit',
+  endTime: 'Endzeit',
+  emptyHint: 'Uhrzeit wählen',
+  durationHours: 'Std',
+  durationMinutes: 'Min',
+  endsNextDay: 'endet am nächsten Tag',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideTimePickerLabels}. */
+export const timePickerLabelsForLocale = (locale: string): TimePickerLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_TIME_PICKER_LABELS : DEFAULT_TIME_PICKER_LABELS;
+
 const TIME_PICKER_LABELS_DEF = /* @__PURE__ */ defineLabels<TimePickerLabels>(
   'TIME_PICKER_LABELS',
-  DEFAULT_TIME_PICKER_LABELS,
+  timePickerLabelsForLocale,
 );
 
 /**

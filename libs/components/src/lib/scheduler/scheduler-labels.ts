@@ -92,9 +92,44 @@ export const DEFAULT_SCHEDULER_LABELS: SchedulerLabels = {
   colorFieldNone: 'No color',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_SCHEDULER_LABELS: SchedulerLabels = {
+  previous: 'Zurück',
+  next: 'Weiter',
+  today: 'Heute',
+  allDay: 'Ganztägig',
+  moreAppointments: (count) => `+${count} weitere`,
+  switchView: 'Ansicht wechseln',
+  month: 'Monat',
+  week: 'Woche',
+  day: 'Tag',
+  agenda: 'Agenda',
+  addAppointment: 'Termin hinzufügen',
+  untitledAppointment: 'Unbenannter Termin',
+  ancestors: 'Übergeordnete Termine',
+  subAppointments: 'Untertermine',
+  moreActions: 'Weitere Aktionen',
+  save: 'Speichern',
+  cancel: 'Abbrechen',
+  addSubAppointment: 'Untertermin hinzufügen',
+  deleteWithDescendants: 'Löschen (einschließlich Untertermine)',
+  titleField: 'Titel',
+  timeRangeField: 'Wann',
+  startField: 'Beginn',
+  endField: 'Ende',
+  locationField: 'Ort',
+  descriptionField: 'Beschreibung',
+  colorField: 'Farbe',
+  colorFieldNone: 'Keine Farbe',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideSchedulerLabels}. */
+export const schedulerLabelsForLocale = (locale: string): SchedulerLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_SCHEDULER_LABELS : DEFAULT_SCHEDULER_LABELS;
+
 const SCHEDULER_LABELS_DEF = /* @__PURE__ */ defineLabels<SchedulerLabels>(
   'SCHEDULER_LABELS',
-  DEFAULT_SCHEDULER_LABELS,
+  schedulerLabelsForLocale,
 );
 
 export const provideSchedulerLabels = /* @__PURE__ */ toProvideFn(SCHEDULER_LABELS_DEF);

@@ -56,9 +56,32 @@ export const DEFAULT_FORM_FIELD_LABELS: FormFieldLabels = {
   errorEmail: 'Enter a valid email address',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_FORM_FIELD_LABELS: FormFieldLabels = {
+  mixed: 'Gemischt',
+  clear: 'Leeren',
+  selectAll: 'Alle auswählen',
+  ratingEmpty: 'Keine Bewertung',
+  ratingValue: (value, max) => `${value} von ${max}`,
+  counterRemaining: (remaining) => `Noch ${remaining} Zeichen`,
+  counterLimitReached: (max) => `Zeichenlimit von ${max} erreicht`,
+  counterOverLimit: (over, max) => `${over} Zeichen über dem Limit von ${max}`,
+  errorRequired: 'Dieses Feld ist erforderlich',
+  errorMin: (error) => `Muss mindestens ${error.min} sein`,
+  errorMax: (error) => `Darf höchstens ${error.max} sein`,
+  errorMinLength: (error) => `Muss mindestens ${error.minLength} Zeichen lang sein`,
+  errorMaxLength: (error) => `Darf höchstens ${error.maxLength} Zeichen lang sein`,
+  errorPattern: () => 'Ungültiges Format',
+  errorEmail: 'Gültige E-Mail-Adresse eingeben',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideFormFieldLabels}. */
+export const formFieldLabelsForLocale = (locale: string): FormFieldLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_FORM_FIELD_LABELS : DEFAULT_FORM_FIELD_LABELS;
+
 const FORM_FIELD_LABELS_DEF = /* @__PURE__ */ defineLabels<FormFieldLabels>(
   'FORM_FIELD_LABELS',
-  DEFAULT_FORM_FIELD_LABELS,
+  formFieldLabelsForLocale,
 );
 
 /**

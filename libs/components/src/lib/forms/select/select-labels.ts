@@ -29,7 +29,21 @@ export const DEFAULT_SELECT_LABELS: SelectLabels = {
   error: 'Something went wrong',
 };
 
-const SELECT_LABELS_DEF = /* @__PURE__ */ defineLabels<SelectLabels>('SELECT_LABELS', DEFAULT_SELECT_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_SELECT_LABELS: SelectLabels = {
+  loading: 'Lade…',
+  empty: 'Keine Ergebnisse',
+  loadMore: 'Mehr laden',
+  addNew: 'Neu hinzufügen',
+  create: 'Erstellen',
+  error: 'Etwas ist schiefgelaufen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideSelectLabels}. */
+export const selectLabelsForLocale = (locale: string): SelectLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_SELECT_LABELS : DEFAULT_SELECT_LABELS;
+
+const SELECT_LABELS_DEF = /* @__PURE__ */ defineLabels<SelectLabels>('SELECT_LABELS', selectLabelsForLocale);
 
 /**
  * Localize the select's strings for everything below this injector, and read the set in effect here as a

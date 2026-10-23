@@ -64,9 +64,30 @@ export const DEFAULT_PAGINATION_LABELS: PaginationLabels = {
   pageSizeOption: (size) => `${size}`,
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_PAGINATION_LABELS: PaginationLabels = {
+  navigation: 'Seitennavigation',
+  first: 'Erste Seite',
+  previous: 'Vorherige Seite',
+  next: 'Nächste Seite',
+  last: 'Letzte Seite',
+  ellipsis: 'Weitere Seiten',
+  page: (page) => `Seite ${page}`,
+  range: ({ start, end, totalItems }) => `Zeige ${start}–${end} von ${totalItems}`,
+  compactRange: ({ start, end, totalItems }) => `${start}–${end} von ${totalItems}`,
+  compactPage: (page, totalPages) => `${page} / ${totalPages}`,
+  jumpTo: 'Gehe zu Seite',
+  pageSize: 'Einträge pro Seite',
+  pageSizeOption: (size) => `${size}`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link providePaginationLabels}. */
+export const paginationLabelsForLocale = (locale: string): PaginationLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_PAGINATION_LABELS : DEFAULT_PAGINATION_LABELS;
+
 const PAGINATION_LABELS_DEF = /* @__PURE__ */ defineLabels<PaginationLabels>(
   'PAGINATION_LABELS',
-  DEFAULT_PAGINATION_LABELS,
+  paginationLabelsForLocale,
 );
 
 /**

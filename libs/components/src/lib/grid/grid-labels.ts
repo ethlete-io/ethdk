@@ -23,7 +23,19 @@ export const DEFAULT_GRID_LABELS: GridLabels = {
   removeItem: 'Remove item',
 };
 
-const GRID_LABELS_DEF = /* @__PURE__ */ defineLabels<GridLabels>('GRID_LABELS', DEFAULT_GRID_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_GRID_LABELS: GridLabels = {
+  interactiveGrid: 'Interaktives Rasterlayout',
+  readonlyGrid: 'Rasterlayout',
+  item: 'Rasterelement',
+  removeItem: 'Element entfernen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideGridLabels}. */
+export const gridLabelsForLocale = (locale: string): GridLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_GRID_LABELS : DEFAULT_GRID_LABELS;
+
+const GRID_LABELS_DEF = /* @__PURE__ */ defineLabels<GridLabels>('GRID_LABELS', gridLabelsForLocale);
 
 /**
  * Localize the grid's accessible labels for everything below this injector, and read the set in effect

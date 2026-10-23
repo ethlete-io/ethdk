@@ -17,9 +17,19 @@ export const DEFAULT_BREADCRUMB_LABELS: BreadcrumbLabels = {
   overflow: 'Show hidden levels',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_BREADCRUMB_LABELS: BreadcrumbLabels = {
+  navigation: 'Brotkrumennavigation',
+  overflow: 'Ausgeblendete Ebenen anzeigen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideBreadcrumbLabels}. */
+export const breadcrumbLabelsForLocale = (locale: string): BreadcrumbLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_BREADCRUMB_LABELS : DEFAULT_BREADCRUMB_LABELS;
+
 const BREADCRUMB_LABELS_DEF = /* @__PURE__ */ defineLabels<BreadcrumbLabels>(
   'BREADCRUMB_LABELS',
-  DEFAULT_BREADCRUMB_LABELS,
+  breadcrumbLabelsForLocale,
 );
 
 /**

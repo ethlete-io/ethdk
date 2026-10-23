@@ -70,7 +70,32 @@ export const DEFAULT_STREAM_LABELS: StreamLabels = {
   pipSingleView: 'Single view',
 };
 
-const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LABELS', DEFAULT_STREAM_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_STREAM_LABELS: StreamLabels = {
+  loading: 'Lädt',
+  playerFrame: (platform) => `${platform}-Player`,
+  consentHeading: 'Inhalt blockiert',
+  consentDescription:
+    'Die Wiedergabe erfordert eine Zustimmung. Cookies und Daten von Drittanbietern können verwendet werden.',
+  consentAccept: 'Erlauben und abspielen',
+  errorHeading: 'Wiedergabe fehlgeschlagen',
+  errorDescription: 'Der Player konnte nicht geladen werden. Bitte Verbindung prüfen oder erneut versuchen.',
+  errorRetry: 'Erneut versuchen',
+  pipPlaceholderMessage: 'Wird im Bild-in-Bild wiedergegeben',
+  pipPlaceholderBack: 'Zurück zum Player',
+  pipClose: 'Schließen',
+  pipFocus: 'Fokussieren',
+  pipMove:
+    'Bild-in-Bild-Fenster, mit den Pfeiltasten verschieben und mit Umschalt und den Pfeiltasten in der Größe ändern',
+  pipGridView: 'Rasteransicht',
+  pipSingleView: 'Einzelansicht',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideStreamLabels}. */
+export const streamLabelsForLocale = (locale: string): StreamLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_STREAM_LABELS : DEFAULT_STREAM_LABELS;
+
+const STREAM_LABELS_DEF = /* @__PURE__ */ defineLabels<StreamLabels>('STREAM_LABELS', streamLabelsForLocale);
 
 /**
  * Localize the stream chrome's strings for everything below this injector, and read the set in effect

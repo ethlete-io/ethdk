@@ -123,7 +123,41 @@ export const DEFAULT_MATCH_LABELS: MatchLabels = {
   gameScore: (game, score) => `Game ${game}: ${score}`,
 };
 
-const MATCH_LABELS_DEF = /* @__PURE__ */ defineLabels<MatchLabels>('MATCH_LABELS', DEFAULT_MATCH_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_MATCH_LABELS: MatchLabels = {
+  tbd: 'Offen',
+  live: 'Live',
+  finished: 'Beendet',
+  scheduled: 'Angesetzt',
+  scoreSeparator: ' : ',
+  resultName: ({ home, away, kind, winner, separator }) => {
+    if (home === null || away === null) return winner ? `${winner} hat gewonnen` : 'Unentschieden';
+    const pair = `${home}${separator}${away}`;
+    return kind === 'points' ? `${pair} Punkte` : pair;
+  },
+  versus: 'gegen',
+  outcomeWin: 'S',
+  outcomeLoss: 'N',
+  outcomeDraw: 'U',
+  emblemAlt: (participant) => `Wappen von ${participant}`,
+  seed: (seed) => `Setzplatz ${seed}`,
+  matchNumber: (number) => `Spiel ${number}`,
+  matchName: ({ home, away, result, startTime, status, label, labels }) => {
+    const kickOff = status === 'live' ? null : startTime;
+    const state = status === 'live' ? labels.live : status === 'finished' ? labels.finished : null;
+    const pairing = `${home} ${labels.versus} ${away}`;
+    const matchUp = label ? `${label}: ${pairing}` : pairing;
+    return [matchUp, result, kickOff, state].filter(Boolean).join(', ');
+  },
+  gameScores: 'Spiele',
+  gameScore: (game, score) => `Spiel ${game}: ${score}`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideMatchLabels}. */
+export const matchLabelsForLocale = (locale: string): MatchLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_MATCH_LABELS : DEFAULT_MATCH_LABELS;
+
+const MATCH_LABELS_DEF = /* @__PURE__ */ defineLabels<MatchLabels>('MATCH_LABELS', matchLabelsForLocale);
 
 /**
  * Localize the match components' strings for everything below this injector, and read the set in

@@ -65,7 +65,35 @@ export const DEFAULT_KBD_LABELS: KbdLabels = {
   plus: /* @__PURE__ */ everywhere('+', 'Plus'),
 };
 
-const KBD_LABELS_DEF = /* @__PURE__ */ defineLabels<KbdLabels>('KBD_LABELS', DEFAULT_KBD_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_KBD_LABELS: KbdLabels = {
+  mod: { apple: { label: '⌘', name: 'Befehlstaste' }, other: { label: 'Strg', name: 'Steuerung' } },
+  meta: { apple: { label: '⌘', name: 'Befehlstaste' }, other: { label: 'Meta', name: 'Meta' } },
+  ctrl: { apple: { label: '⌃', name: 'Control' }, other: { label: 'Strg', name: 'Steuerung' } },
+  alt: { apple: { label: '⌥', name: 'Wahltaste' }, other: { label: 'Alt', name: 'Alt' } },
+  shift: { apple: { label: '⇧', name: 'Umschalttaste' }, other: { label: 'Umschalt', name: 'Umschalttaste' } },
+  enter: { apple: { label: '↵', name: 'Eingabetaste' }, other: { label: 'Eingabe', name: 'Eingabetaste' } },
+  tab: { apple: { label: '⇥', name: 'Tabulator' }, other: { label: 'Tab', name: 'Tabulator' } },
+  backspace: { apple: { label: '⌫', name: 'Rücktaste' }, other: { label: 'Rück', name: 'Rücktaste' } },
+  delete: { apple: { label: '⌦', name: 'Entfernen' }, other: { label: 'Entf', name: 'Entfernen' } },
+  esc: /* @__PURE__ */ everywhere('Esc', 'Escape'),
+  space: /* @__PURE__ */ everywhere('Leer', 'Leertaste'),
+  up: /* @__PURE__ */ everywhere('↑', 'Pfeil nach oben'),
+  down: /* @__PURE__ */ everywhere('↓', 'Pfeil nach unten'),
+  left: /* @__PURE__ */ everywhere('←', 'Pfeil nach links'),
+  right: /* @__PURE__ */ everywhere('→', 'Pfeil nach rechts'),
+  pageup: /* @__PURE__ */ everywhere('Bild↑', 'Bild nach oben'),
+  pagedown: /* @__PURE__ */ everywhere('Bild↓', 'Bild nach unten'),
+  home: /* @__PURE__ */ everywhere('Pos1'),
+  end: /* @__PURE__ */ everywhere('Ende'),
+  plus: /* @__PURE__ */ everywhere('+', 'Plus'),
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideKbdLabels}. */
+export const kbdLabelsForLocale = (locale: string): KbdLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_KBD_LABELS : DEFAULT_KBD_LABELS;
+
+const KBD_LABELS_DEF = /* @__PURE__ */ defineLabels<KbdLabels>('KBD_LABELS', kbdLabelsForLocale);
 
 /**
  * Localize the printed labels and spoken names of `et-kbd` keys for everything below this injector. Partial

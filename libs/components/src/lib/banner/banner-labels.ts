@@ -11,7 +11,16 @@ export const DEFAULT_BANNER_LABELS: BannerLabels = {
   dismiss: 'Dismiss',
 };
 
-const BANNER_LABELS_DEF = /* @__PURE__ */ defineLabels<BannerLabels>('BANNER_LABELS', DEFAULT_BANNER_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_BANNER_LABELS: BannerLabels = {
+  dismiss: 'Schließen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideBannerLabels}. */
+export const bannerLabelsForLocale = (locale: string): BannerLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_BANNER_LABELS : DEFAULT_BANNER_LABELS;
+
+const BANNER_LABELS_DEF = /* @__PURE__ */ defineLabels<BannerLabels>('BANNER_LABELS', bannerLabelsForLocale);
 
 /**
  * Localize a banner's strings for everything below this injector, and read the set in effect here as a

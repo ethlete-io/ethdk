@@ -85,7 +85,39 @@ export const DEFAULT_BRACKET_LABELS: BracketLabels = {
   pickCardPredicted: 'Prediction',
 };
 
-const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', DEFAULT_BRACKET_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_BRACKET_LABELS: BracketLabels = {
+  roundMatchCount: (matches) => `${matches} ${matches === 1 ? 'Spiel' : 'Spiele'}`,
+  winnersAdvance: (winners) => `${winners} ${winners === 1 ? 'Gewinner kommt weiter' : 'Gewinner kommen weiter'}`,
+  continueLabel: (winners) => `${winners} ${winners === 1 ? 'Gewinner kommt' : 'Gewinner kommen'} in die nächste Runde`,
+  champion: (participant) => `Turniersieger: ${participant}`,
+  championPending: 'Turniersieger steht noch nicht fest',
+  upperBracketSection: 'Winner Bracket',
+  lowerBracketSection: 'Loser Bracket',
+  finalsSection: 'Finale',
+  slotMatchWinner: 'Sieger eines früheren Spiels',
+  slotMatchLoser: 'Verlierer eines früheren Spiels',
+  slotStandingRank: (standing, rank) => {
+    if (standing && rank !== null) return `${standing} Platz ${rank}`;
+    return standing ?? (rank === null ? 'Ein Tabellenplatz' : `Tabellenplatz ${rank}`);
+  },
+  slotSeed: (seed) => (seed === null ? 'Ein gesetzter Platz' : `Setzplatz ${seed}`),
+  slotSwissBucket: 'Wird gelost, sobald die Runde angesetzt ist',
+  slotBye: 'Freilos',
+  slotExternal: 'Kommt aus einem anderen Wettbewerb',
+  slotUnknown: 'Noch nicht bekannt',
+  slotPredictEarlierRound: 'Zuerst die frühere Runde tippen',
+  slotNotPredicted: 'Nicht getippt',
+  participantsLegend: 'Teilnehmer',
+  pickCardPicked: 'Auswahl',
+  pickCardPredicted: 'Tipp',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideBracketLabels}. */
+export const bracketLabelsForLocale = (locale: string): BracketLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_BRACKET_LABELS : DEFAULT_BRACKET_LABELS;
+
+const BRACKET_LABELS_DEF = /* @__PURE__ */ defineLabels<BracketLabels>('BRACKET_LABELS', bracketLabelsForLocale);
 
 /**
  * Localize the bracket's default cards for everything below this injector, and read the set in effect

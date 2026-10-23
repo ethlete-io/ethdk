@@ -14,9 +14,19 @@ export const DEFAULT_COPY_BUTTON_LABELS: CopyButtonLabels = {
   copyFailed: 'Copy failed',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_COPY_BUTTON_LABELS: CopyButtonLabels = {
+  copied: 'Kopiert',
+  copyFailed: 'Kopieren fehlgeschlagen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideCopyButtonLabels}. */
+export const copyButtonLabelsForLocale = (locale: string): CopyButtonLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_COPY_BUTTON_LABELS : DEFAULT_COPY_BUTTON_LABELS;
+
 const COPY_BUTTON_LABELS_DEF = /* @__PURE__ */ defineLabels<CopyButtonLabels>(
   'COPY_BUTTON_LABELS',
-  DEFAULT_COPY_BUTTON_LABELS,
+  copyButtonLabelsForLocale,
 );
 
 /**

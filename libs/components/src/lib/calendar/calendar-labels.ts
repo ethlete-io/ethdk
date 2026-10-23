@@ -41,7 +41,25 @@ export const DEFAULT_CALENDAR_LABELS: CalendarLabels = {
   week: 'Week',
 };
 
-const CALENDAR_LABELS_DEF = /* @__PURE__ */ defineLabels<CalendarLabels>('CALENDAR_LABELS', DEFAULT_CALENDAR_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_CALENDAR_LABELS: CalendarLabels = {
+  previousMonth: 'Vorheriger Monat',
+  nextMonth: 'Nächster Monat',
+  previousYear: 'Vorheriges Jahr',
+  nextYear: 'Nächstes Jahr',
+  previousYearRange: 'Vorherige Jahre',
+  nextYearRange: 'Nächste Jahre',
+  switchToYearView: 'Monat und Jahr auswählen',
+  switchToMultiYearView: 'Jahr auswählen',
+  switchToMonthView: 'Datum auswählen',
+  week: 'Woche',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideCalendarLabels}. */
+export const calendarLabelsForLocale = (locale: string): CalendarLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_CALENDAR_LABELS : DEFAULT_CALENDAR_LABELS;
+
+const CALENDAR_LABELS_DEF = /* @__PURE__ */ defineLabels<CalendarLabels>('CALENDAR_LABELS', calendarLabelsForLocale);
 
 /**
  * Localize the calendar's strings for everything below this injector, and read the set in effect here as a

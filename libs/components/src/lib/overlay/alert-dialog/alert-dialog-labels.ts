@@ -17,9 +17,20 @@ export const DEFAULT_ALERT_DIALOG_LABELS: AlertDialogLabels = {
   acknowledge: 'OK',
 };
 
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_ALERT_DIALOG_LABELS: AlertDialogLabels = {
+  confirm: 'Bestätigen',
+  cancel: 'Abbrechen',
+  acknowledge: 'OK',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideAlertDialogLabels}. */
+export const alertDialogLabelsForLocale = (locale: string): AlertDialogLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_ALERT_DIALOG_LABELS : DEFAULT_ALERT_DIALOG_LABELS;
+
 const ALERT_DIALOG_LABELS_DEF = /* @__PURE__ */ defineLabels<AlertDialogLabels>(
   'ALERT_DIALOG_LABELS',
-  DEFAULT_ALERT_DIALOG_LABELS,
+  alertDialogLabelsForLocale,
 );
 
 /**

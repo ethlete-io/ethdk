@@ -20,7 +20,19 @@ export const DEFAULT_STAT_TILE_LABELS: StatTileLabels = {
   noValue: 'No value',
 };
 
-const STAT_TILE_LABELS_DEF = /* @__PURE__ */ defineLabels<StatTileLabels>('STAT_TILE_LABELS', DEFAULT_STAT_TILE_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_STAT_TILE_LABELS: StatTileLabels = {
+  up: 'Gestiegen',
+  down: 'Gesunken',
+  unchanged: 'Unverändert',
+  noValue: 'Kein Wert',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideStatTileLabels}. */
+export const statTileLabelsForLocale = (locale: string): StatTileLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_STAT_TILE_LABELS : DEFAULT_STAT_TILE_LABELS;
+
+const STAT_TILE_LABELS_DEF = /* @__PURE__ */ defineLabels<StatTileLabels>('STAT_TILE_LABELS', statTileLabelsForLocale);
 
 /**
  * Localize a stat tile's strings for everything below this injector, and read the set in effect here as a

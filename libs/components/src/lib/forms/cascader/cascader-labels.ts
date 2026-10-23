@@ -32,7 +32,23 @@ export const DEFAULT_CASCADER_LABELS: CascaderLabels = {
   error: 'Something went wrong',
 };
 
-const CASCADER_LABELS_DEF = /* @__PURE__ */ defineLabels<CascaderLabels>('CASCADER_LABELS', DEFAULT_CASCADER_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_CASCADER_LABELS: CascaderLabels = {
+  loading: 'Lade…',
+  noMatches: 'Keine Treffer',
+  noOptions: 'Keine Optionen',
+  retry: 'Erneut versuchen',
+  options: 'Optionen',
+  back: 'Zurück',
+  search: 'Suchen',
+  error: 'Etwas ist schiefgelaufen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideCascaderLabels}. */
+export const cascaderLabelsForLocale = (locale: string): CascaderLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_CASCADER_LABELS : DEFAULT_CASCADER_LABELS;
+
+const CASCADER_LABELS_DEF = /* @__PURE__ */ defineLabels<CascaderLabels>('CASCADER_LABELS', cascaderLabelsForLocale);
 
 /**
  * Localize the cascader's strings for everything below this injector, and read the set in effect here as a

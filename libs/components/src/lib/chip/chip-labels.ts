@@ -11,7 +11,16 @@ export const DEFAULT_CHIP_LABELS: ChipLabels = {
   remove: 'Remove',
 };
 
-const CHIP_LABELS_DEF = /* @__PURE__ */ defineLabels<ChipLabels>('CHIP_LABELS', DEFAULT_CHIP_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_CHIP_LABELS: ChipLabels = {
+  remove: 'Entfernen',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideChipLabels}. */
+export const chipLabelsForLocale = (locale: string): ChipLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_CHIP_LABELS : DEFAULT_CHIP_LABELS;
+
+const CHIP_LABELS_DEF = /* @__PURE__ */ defineLabels<ChipLabels>('CHIP_LABELS', chipLabelsForLocale);
 
 /**
  * Localize a chip's strings for everything below this injector, and read the set in effect here as a

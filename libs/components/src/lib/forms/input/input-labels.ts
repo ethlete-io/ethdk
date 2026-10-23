@@ -30,7 +30,21 @@ export const DEFAULT_INPUT_LABELS: InputLabels = {
   capsLockOn: 'Caps Lock might be on',
 };
 
-const INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<InputLabels>('INPUT_LABELS', DEFAULT_INPUT_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_INPUT_LABELS: InputLabels = {
+  increment: 'Erhöhen',
+  decrement: 'Verringern',
+  invalidNumber: 'Bitte eine gültige Zahl eingeben',
+  showPassword: 'Passwort anzeigen',
+  hidePassword: 'Passwort verbergen',
+  capsLockOn: 'Die Feststelltaste ist möglicherweise aktiv',
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideInputLabels}. */
+export const inputLabelsForLocale = (locale: string): InputLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_INPUT_LABELS : DEFAULT_INPUT_LABELS;
+
+const INPUT_LABELS_DEF = /* @__PURE__ */ defineLabels<InputLabels>('INPUT_LABELS', inputLabelsForLocale);
 
 /**
  * Localize the text field family's strings for everything below this injector, and read the set in effect here as a

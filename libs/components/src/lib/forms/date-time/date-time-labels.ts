@@ -154,7 +154,58 @@ export const DEFAULT_DATE_TIME_LABELS: DateTimeLabels = {
   timeMax: (max) => `Choose a time at or before ${max}`,
 };
 
-const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_TIME_LABELS', DEFAULT_DATE_TIME_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_DATE_TIME_LABELS: DateTimeLabels = {
+  openCalendar: 'Kalender öffnen',
+  openTimePicker: 'Zeitauswahl öffnen',
+  openDateTimePicker: 'Datums- und Zeitauswahl öffnen',
+  chooseDate: 'Datum auswählen',
+  chooseTime: 'Uhrzeit auswählen',
+  chooseDateTime: 'Datum und Uhrzeit auswählen',
+  chooseDateRange: 'Zeitraum auswählen',
+  chooseTimeRange: 'Zeitspanne auswählen',
+  chooseDateTimeRange: 'Zeitraum mit Uhrzeit auswählen',
+  startDate: 'Startdatum',
+  endDate: 'Enddatum',
+  startTime: 'Startzeit',
+  endTime: 'Endzeit',
+  startDateTime: 'Startdatum und -zeit',
+  endDateTime: 'Enddatum und -zeit',
+  dateTab: 'Datum',
+  timeTab: 'Uhrzeit',
+  datesTab: 'Daten',
+  timesTab: 'Uhrzeiten',
+  paneSwitch: 'Auswahlansicht',
+  presets: 'Voreinstellungen',
+  presetToday: 'Heute',
+  presetYesterday: 'Gestern',
+  presetLastDays: (count) => `Letzte ${count} Tage`,
+  presetNextDays: (count) => `Nächste ${count} Tage`,
+  presetThisWeek: 'Diese Woche',
+  presetLastWeek: 'Letzte Woche',
+  presetThisMonth: 'Dieser Monat',
+  presetLastMonth: 'Letzter Monat',
+  presetThisYear: 'Dieses Jahr',
+  timeZoneReading: (timeZone, localTime) => `${timeZone} · ${localTime} Ortszeit`,
+  invalidDate: 'Bitte ein gültiges Datum eingeben',
+  invalidTime: 'Bitte eine gültige Uhrzeit eingeben',
+  invalidDateTime: 'Bitte ein gültiges Datum mit Uhrzeit eingeben',
+  invalidDateRange: 'Bitte einen gültigen Zeitraum eingeben',
+  invalidTimeRange: 'Bitte eine gültige Zeitspanne eingeben',
+  invalidDateTimeRange: 'Bitte einen gültigen Zeitraum mit Uhrzeit eingeben',
+  invalidDuration: 'Bitte eine gültige Dauer eingeben',
+  rangeOrder: 'Der Beginn muss vor dem Ende liegen',
+  rangeMin: (min) => `Ein Datum ab dem ${min} auswählen`,
+  rangeMax: (max) => `Ein Datum bis zum ${max} auswählen`,
+  timeMin: (min) => `Eine Uhrzeit ab ${min} auswählen`,
+  timeMax: (max) => `Eine Uhrzeit bis ${max} auswählen`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideDateTimeLabels}. */
+export const dateTimeLabelsForLocale = (locale: string): DateTimeLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_DATE_TIME_LABELS : DEFAULT_DATE_TIME_LABELS;
+
+const DATE_TIME_LABELS_DEF = /* @__PURE__ */ defineLabels<DateTimeLabels>('DATE_TIME_LABELS', dateTimeLabelsForLocale);
 
 /**
  * Localize the date/time inputs' strings for everything below this injector, and read the set in effect

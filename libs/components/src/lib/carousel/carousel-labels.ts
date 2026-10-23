@@ -33,7 +33,22 @@ export const DEFAULT_CAROUSEL_LABELS: CarouselLabels = {
   goToSlide: (index) => `Go to slide ${index}`,
 };
 
-const CAROUSEL_LABELS_DEF = /* @__PURE__ */ defineLabels<CarouselLabels>('CAROUSEL_LABELS', DEFAULT_CAROUSEL_LABELS);
+/** The built-in German labels, used when the current locale is a German one. */
+export const GERMAN_CAROUSEL_LABELS: CarouselLabels = {
+  carousel: 'Karussell',
+  slide: (index, count) => `${index} von ${count}`,
+  previous: 'Vorherige Folie',
+  next: 'Nächste Folie',
+  play: 'Automatische Wiedergabe starten',
+  pause: 'Automatische Wiedergabe pausieren',
+  goToSlide: (index) => `Zu Folie ${index}`,
+};
+
+/** The label set for a locale. Anything other than English and German needs {@link provideCarouselLabels}. */
+export const carouselLabelsForLocale = (locale: string): CarouselLabels =>
+  locale.toLowerCase().startsWith('de') ? GERMAN_CAROUSEL_LABELS : DEFAULT_CAROUSEL_LABELS;
+
+const CAROUSEL_LABELS_DEF = /* @__PURE__ */ defineLabels<CarouselLabels>('CAROUSEL_LABELS', carouselLabelsForLocale);
 
 /**
  * Localize the carousel's strings for everything below this injector, and read the set in effect here
