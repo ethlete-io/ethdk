@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/bracket",
   "version": "1.0.0-next.4",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk",
+    "directory": "libs/bracket"
+  },
   "license": "MIT",
   "sideEffects": false
 }

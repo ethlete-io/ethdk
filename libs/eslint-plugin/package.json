@@ -1,6 +1,11 @@
 {
   "name": "@ethlete/eslint-plugin",
   "version": "1.0.0-next.28",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ethlete-io/ethdk",
+    "directory": "libs/eslint-plugin"
+  },
   "license": "MIT",
   "type": "commonjs",
   "main": "./src/index.js",
