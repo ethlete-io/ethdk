@@ -6,6 +6,7 @@ const variant: CallVariant = { key: 'a', name: 'Tabs', round: null, verdict: nul
 const call: Call = {
   slug: 'shop/cart',
   feature: null,
+  stage: null,
   eyebrow: '',
   headline: 'Cart layout',
   intro: '',

@@ -30,6 +30,8 @@ pub struct CallRound {
 pub struct Call {
     pub slug: String,
     pub feature: Option<String>,
+    /// Where the call sits in the design order, from `themes` to `prototype`. A call without one is loose.
+    pub stage: Option<String>,
     pub eyebrow: String,
     pub headline: String,
     pub intro: String,
@@ -144,6 +146,7 @@ fn parse_call(slug: &str, source: &str) -> Call {
     Call {
         slug: slug.to_owned(),
         feature: text_of(&call, "feature"),
+        stage: text_of(&call, "stage"),
         eyebrow: text_of(&call, "eyebrow").unwrap_or_default(),
         headline: text_of(&call, "headline").unwrap_or_default(),
         intro: text_of(&call, "intro").unwrap_or_default(),
@@ -769,6 +772,14 @@ export default defineCall({
     #[test]
     fn a_call_reads_the_feature_it_belongs_to() {
         assert_eq!(parse_call("x", CALL).feature.as_deref(), Some("The clock column"));
+    }
+
+    #[test]
+    fn a_call_reads_its_stage() {
+        let staged = CALL.replace("  eyebrow:", "  stage: 'page',\n  eyebrow:");
+
+        assert_eq!(parse_call("x", &staged).stage.as_deref(), Some("page"));
+        assert_eq!(parse_call("x", CALL).stage, None);
     }
 
     #[test]

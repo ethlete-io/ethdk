@@ -44,6 +44,7 @@ import {
   projectSummaries,
   ruledLabel,
   settledGroups,
+  stageGroups,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -114,31 +115,36 @@ const SETTLE_MS = 300;
               <span>{{ openCalls().length }}</span>
             </header>
 
-            @for (call of openCalls(); track call.slug) {
-              <button
-                [class.studio__row--current]="call.slug === slug()"
-                (click)="openCall(call)"
-                class="studio__row"
-                type="button"
-              >
-                <span class="studio__row-head">
-                  <span class="studio__eyebrow">{{ call.eyebrow }}</span>
-                  <span class="studio__touched">{{ touched(call) }}</span>
-                </span>
-                <b>{{ call.headline }}</b>
-                <span class="studio__row-foot">
-                  <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
-                  @if (statuses()[call.slug]; as status) {
-                    <span
-                      [attr.data-state]="status.state"
-                      [title]="status.message ?? status.updatedAt"
-                      class="studio__state"
-                      >{{ status.state }}</span
-                    >
-                  }
-                  <span class="studio__count">{{ RULED(call) }}</span>
-                </span>
-              </button>
+            @for (group of openStages(); track group.stage) {
+              @if (group.stage || openStages().length > 1) {
+                <h3 class="studio__stage-head">{{ group.stage ?? 'No stage' }}</h3>
+              }
+              @for (call of group.calls; track call.slug) {
+                <button
+                  [class.studio__row--current]="call.slug === slug()"
+                  (click)="openCall(call)"
+                  class="studio__row"
+                  type="button"
+                >
+                  <span class="studio__row-head">
+                    <span class="studio__eyebrow">{{ call.eyebrow }}</span>
+                    <span class="studio__touched">{{ touched(call) }}</span>
+                  </span>
+                  <b>{{ call.headline }}</b>
+                  <span class="studio__row-foot">
+                    <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
+                    @if (statuses()[call.slug]; as status) {
+                      <span
+                        [attr.data-state]="status.state"
+                        [title]="status.message ?? status.updatedAt"
+                        class="studio__state"
+                        >{{ status.state }}</span
+                      >
+                    }
+                    <span class="studio__count">{{ RULED(call) }}</span>
+                  </span>
+                </button>
+              }
             } @empty {
               <p class="studio__none">Nothing open.</p>
             }
@@ -741,6 +747,8 @@ export class CallViewComponent {
 
   /** Every call of the project that still has an open variant, the most recently written first. */
   protected openCalls = computed(() => unsettledCalls(this.listed()));
+
+  protected openStages = computed(() => stageGroups(this.listed()));
 
   /** What is left: the fully settled calls, folded into their feature. */
   protected settledBands = computed(() => settledGroups(this.listed()));

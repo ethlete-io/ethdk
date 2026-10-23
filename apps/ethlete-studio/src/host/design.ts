@@ -21,6 +21,11 @@ export type CallVariant = {
  */
 export type CallMode = 'wireframe' | 'design';
 
+/** The design order, from the foundations to a clickable prototype. */
+export const CALL_STAGES = ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype'] as const;
+
+export type CallStage = (typeof CALL_STAGES)[number];
+
 /** One pass over a call, as the call file declares it. */
 export type CallRound = {
   key: string;
@@ -32,6 +37,8 @@ export type Call = {
   slug: string;
   /** The feature the call belongs to. A call without one is loose. */
   feature: string | null;
+  /** Where the call sits in the design order. A call without one is loose. */
+  stage: CallStage | null;
   eyebrow: string;
   headline: string;
   intro: string;

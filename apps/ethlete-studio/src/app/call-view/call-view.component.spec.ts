@@ -17,6 +17,7 @@ const variant = (key: string, round: string, verdict: Verdict | null): CallVaria
 const call = (slug: string, variants: CallVariant[]): Call => ({
   slug,
   feature: 'The picker',
+  stage: null,
   eyebrow: slug,
   headline: slug,
   intro: '',
@@ -252,6 +253,24 @@ describe('CallViewComponent', () => {
       checkout: CHECKOUT,
       slugs: PROJECT.calls.map((entry) => entry.slug),
     });
+  });
+
+  it('heads the open calls with their stage, loose calls last', async () => {
+    stubHost({ design_project: () => ({ ...PROJECT, calls: [RESOLVED, { ...ASKING, stage: 'page' }, UNNOTED] }) });
+
+    const fixture = await mount(RESOLVED.slug);
+    const open = element(fixture).querySelector('.studio__section');
+
+    expect([...(open?.querySelectorAll('.studio__stage-head') ?? [])].map((head) => head.textContent?.trim())).toEqual([
+      'page',
+      'No stage',
+    ]);
+  });
+
+  it('draws no stage heading when no open call names a stage', async () => {
+    const fixture = await mount(RESOLVED.slug);
+
+    expect(element(fixture).querySelector('.studio__stage-head')).toBeNull();
   });
 
   it('says what the count of a call row counts', async () => {

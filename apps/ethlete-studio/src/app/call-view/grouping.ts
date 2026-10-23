@@ -1,4 +1,4 @@
-import { Call } from '../../host/design';
+import { Call, CALL_STAGES, CallStage } from '../../host/design';
 
 /** One project of a checkout: the top folder of a call slug, with how much of it is still open. */
 export type ProjectSummary = {
@@ -38,6 +38,30 @@ export const unsettledCalls = (request: CallListRequest): Call[] =>
   callList(request)
     .filter((call) => openVariants(call) > 0)
     .sort((left, right) => right.touched - left.touched);
+
+/** The open calls of one stage, in the order `unsettledCalls` gives them. */
+export type StageGroup = {
+  /** Left out for the loose calls. */
+  stage: CallStage | null;
+  calls: Call[];
+};
+
+const stageRank = (stage: CallStage | null) => (stage ? CALL_STAGES.indexOf(stage) : CALL_STAGES.length);
+
+/** The open calls, one group per stage in the design order, the loose calls last. */
+export const stageGroups = (request: CallListRequest): StageGroup[] => {
+  const found = new Map<CallStage | null, Call[]>();
+
+  for (const call of unsettledCalls(request)) {
+    const stage = call.stage && CALL_STAGES.includes(call.stage) ? call.stage : null;
+
+    found.set(stage, [...(found.get(stage) ?? []), call]);
+  }
+
+  return [...found.entries()]
+    .map(([stage, calls]) => ({ stage, calls }))
+    .sort((left, right) => stageRank(left.stage) - stageRank(right.stage));
+};
 
 export const ruledLabel = (call: Call) =>
   `${call.variants.length - openVariants(call)} of ${call.variants.length} ruled`;

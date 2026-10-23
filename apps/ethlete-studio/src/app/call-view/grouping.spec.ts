@@ -7,6 +7,7 @@ import {
   projectSummaries,
   ruledLabel,
   settledGroups,
+  stageGroups,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -24,6 +25,7 @@ const variant = (key: string, patch: Partial<CallVariant> = {}): CallVariant => 
 const call = (slug: string, patch: Partial<Call> = {}): Call => ({
   slug,
   feature: null,
+  stage: null,
   eyebrow: '',
   headline: slug,
   intro: '',
@@ -138,6 +140,28 @@ describe('touchedLabel', () => {
     expect(touchedLabel(now - 3590, now)).toBe('59 minutes ago');
     expect(touchedLabel(now - (86400 - 60), now)).toBe('23 hours ago');
     expect(touchedLabel(now - (7 * 86400 - 60), now)).toBe('6 days ago');
+  });
+});
+
+describe('stageGroups', () => {
+  it('groups open calls by stage in the design order, loose calls last', () => {
+    const groups = stageGroups({
+      calls: [
+        call('p/a', { touched: 3 }),
+        call('p/b', { stage: 'page', touched: 2 }),
+        call('p/c', { stage: 'themes' }),
+        call('p/d', { stage: 'page', touched: 5 }),
+        settled('p/e', { stage: 'ci' }),
+      ],
+      project: '',
+      term: '',
+    });
+
+    expect(groups.map((group) => [group.stage, group.calls.map((entry) => entry.slug)])).toEqual([
+      ['themes', ['p/c']],
+      ['page', ['p/d', 'p/b']],
+      [null, ['p/a']],
+    ]);
   });
 });
 
