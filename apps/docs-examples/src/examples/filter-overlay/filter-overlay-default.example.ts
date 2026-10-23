@@ -11,7 +11,6 @@ import {
   FORM_FIELD_IMPORTS,
   injectFilterOverlay,
   injectOverlayManager,
-  INPUT_IMPORTS,
   OVERLAY_CONTENT_IMPORTS,
   OverlayBackOrCloseDirective,
   OverlayMainDirective,
@@ -41,12 +40,6 @@ import {
     <ng-template etOverlayHeaderTemplate>Filters</ng-template>
 
     <div class="app-filter-overlay-page">
-      <et-form-field>
-        <et-label>Search</et-label>
-        <et-input [formField]="filters.draft.fields.search" placeholder="Team name" />
-        <et-hint>Matches the team name.</et-hint>
-      </et-form-field>
-
       <div class="app-filter-overlay-links">
         <button etOverlayRouterLink="/region" et-button variant="outline" size="sm">
           Region: {{ REGION_LABELS[filters.draft.value().region] }}
@@ -59,14 +52,7 @@ import {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [
-    OverlayHeaderTemplateDirective,
-    OverlayRouterLinkDirective,
-    BUTTON_IMPORTS,
-    FORM_FIELD_IMPORTS,
-    INPUT_IMPORTS,
-    FormField,
-  ],
+  imports: [OverlayHeaderTemplateDirective, OverlayRouterLinkDirective, BUTTON_IMPORTS],
 })
 export class FilterOverlayMainPageComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
@@ -300,10 +286,9 @@ export class FilterOverlayDefaultExampleComponent {
   protected visibleTeams = computed(() => matchTeams(this.filters.value()));
 
   protected appliedFilters = computed(() => {
-    const { search, region, division } = this.filters.value();
+    const { region, division } = this.filters.value();
 
     return [
-      search ? `"${search}"` : null,
       region !== 'all' ? REGION_LABELS[region] : null,
       division !== 'all' ? DIVISION_LABELS[division] : null,
     ].filter((label) => label !== null);

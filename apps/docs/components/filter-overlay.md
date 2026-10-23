@@ -37,7 +37,11 @@ export class TeamsPageComponent {
 ```ts
 @Component({
   template: `
-    <et-input [formField]="filters.draft.fields.search" />
+    <et-radio-group [formField]="filters.draft.fields.region">
+      <et-label>Region</et-label>
+      <et-radio value="eu">Europe</et-radio>
+      <et-radio value="na">North America</et-radio>
+    </et-radio-group>
 
     <button et-button etFilterOverlayReset variant="transparent">{{ filters.labels().reset }}</button>
     <button #submit="etFilterOverlaySubmit" et-button etFilterOverlaySubmit>{{ submit.label() }}</button>

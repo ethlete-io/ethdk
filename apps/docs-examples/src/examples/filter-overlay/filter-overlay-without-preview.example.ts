@@ -8,12 +8,12 @@ import {
   FORM_FIELD_IMPORTS,
   injectFilterOverlay,
   injectOverlayManager,
-  INPUT_IMPORTS,
   OVERLAY_CONTENT_IMPORTS,
   OverlayMainDirective,
   provideFilterOverlay,
+  RADIO_GROUP_IMPORTS,
 } from '@ethlete/components';
-import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay.data';
+import { createTeamFilters, matchTeams, REGION_LABELS, REGIONS, TeamFilterValue } from './filter-overlay.data';
 
 @Component({
   selector: 'app-filter-overlay-without-preview-panel',
@@ -23,10 +23,12 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
     </div>
 
     <et-overlay-body>
-      <et-form-field>
-        <et-label>Search</et-label>
-        <et-input [formField]="filters.draft.fields.search" placeholder="Team name" />
-      </et-form-field>
+      <et-radio-group [formField]="filters.draft.fields.region">
+        <et-label>Region</et-label>
+        @for (region of REGIONS; track region) {
+          <et-radio [value]="region">{{ REGION_LABELS[region] }}</et-radio>
+        }
+      </et-radio-group>
     </et-overlay-body>
 
     <div class="app-filter-overlay-plain-footer" etOverlayFooter>
@@ -40,7 +42,7 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
     FILTER_OVERLAY_IMPORTS,
     OVERLAY_CONTENT_IMPORTS,
     FORM_FIELD_IMPORTS,
-    INPUT_IMPORTS,
+    RADIO_GROUP_IMPORTS,
     FormField,
   ],
   hostDirectives: [OverlayMainDirective],
@@ -65,6 +67,9 @@ import { createTeamFilters, matchTeams, TeamFilterValue } from './filter-overlay
 })
 export class FilterOverlayWithoutPreviewPanelComponent {
   protected filters = injectFilterOverlay<TeamFilterValue>();
+
+  protected readonly REGIONS = REGIONS;
+  protected readonly REGION_LABELS = REGION_LABELS;
 }
 
 @Component({

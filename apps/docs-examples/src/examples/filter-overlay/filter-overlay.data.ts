@@ -2,10 +2,9 @@ import { FilterOverlayValueOf } from '@ethlete/components';
 import { defineQueryForm, queryField } from '@ethlete/query';
 
 export const TEAM_FILTER_FIELDS = {
-  search: queryField<string>({ defaultValue: '' }),
   region: queryField<string>({ defaultValue: 'all' }),
   division: queryField<string>({ defaultValue: 'all' }),
-  page: queryField<number>({ defaultValue: 1, isResetBy: ['search', 'region', 'division'] }),
+  page: queryField<number>({ defaultValue: 1, isResetBy: ['region', 'division'] }),
 };
 
 export const createTeamFilters = () => defineQueryForm({ fields: TEAM_FILTER_FIELDS, queryParamPrefix: 'teams' });
@@ -51,7 +50,6 @@ export const TEAMS = [
 export const matchTeams = (value: TeamFilterValue) =>
   TEAMS.filter(
     (team) =>
-      (!value.search || team.name.toLowerCase().includes(value.search.toLowerCase())) &&
       (!value.region || value.region === 'all' || team.region === value.region) &&
       (!value.division || value.division === 'all' || team.division === value.division),
   );
