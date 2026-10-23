@@ -7,7 +7,7 @@
       --et-form-field-control-padding-inline: 10px;
       --et-form-field-control-affix-gap: 6px;
       --et-form-field-control-font-size: 12px;
-      --et-form-field-control-min-height: 42px;
+      --et-form-field-control-min-height: 32px;
       --et-form-field-label-font-size: 12px;
     }
 
@@ -47,7 +47,7 @@
        *before* the base sheet and lose every source-order tie against the base frame/label rules. */
     &[data-text-shell] {
       &[data-label-mode='static'] {
-        &[data-has-label] .et-form-field-shell {
+        &[data-has-label]:not(:has(et-label[hidden])) .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
 
@@ -138,7 +138,7 @@
           inset-inline-start: 0;
         }
 
-        &[data-has-label] .et-form-field-shell {
+        &[data-has-label]:not(:has(et-label[hidden])) .et-form-field-shell {
           padding-block-start: calc(var(--et-form-field-label-font-size) * 1.2 + var(--et-form-field-gap));
         }
 

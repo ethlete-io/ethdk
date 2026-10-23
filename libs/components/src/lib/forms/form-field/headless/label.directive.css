@@ -4,6 +4,10 @@
     min-inline-size: 0;
   }
 
+  et-label[hidden] {
+    display: none;
+  }
+
   .et-label-content {
     min-inline-size: 0;
   }

@@ -187,6 +187,9 @@ content-height and the rule sits right under the value (`sm` renders at 27px vs 
 `box`). That density also means a smaller tap target - prefer `box`/`filled`, or a larger
 `size`, where touch matters more than compactness.
 
+A box field's minimum height is 32px, 50px and 58px for `sm`, `md` and `lg`. Put the `hidden` attribute on an
+`et-label` to drop it from the layout: the static label then reserves no height above the field.
+
 Only `fill: 'filled'` paints a surface behind the control, so only a filled field
 raises the surface elevation for its contents (and for overlays anchored inside
 it, such as the rich text editor's autocomplete). A `transparent` field stays
