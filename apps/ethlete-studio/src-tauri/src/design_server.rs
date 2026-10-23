@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream};
 use std::path::Path;
 use std::process::Stdio;
@@ -19,6 +20,8 @@ const LOG_LINES: usize = 40;
 /// A cold start builds the design page, so the first answer takes far longer than a restart.
 const START_TIMEOUT: Duration = Duration::from_secs(90);
 
+const STAMP_PATH: &str = "/__design/stamp";
+
 const POLL: Duration = Duration::from_millis(250);
 
 const STOP_GRACE: Duration = Duration::from_secs(3);
@@ -30,6 +33,11 @@ pub struct ServerState {
     pub listening: bool,
     /// True when this Studio started the server. Only then can Studio stop it again.
     pub managed: bool,
+    /// True when something listens that this Studio did not start.
+    pub foreign: bool,
+    /// True when the listening server was started from a different cli than the one on disk now,
+    /// or reports no stamp at all.
+    pub stale: bool,
     pub log: Vec<String>,
 }
 
@@ -71,13 +79,167 @@ fn state(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<Ser
         }
     }
 
+    let listening = listening(port);
+
     Ok(ServerState {
         port,
-        listening: listening(port),
+        listening,
         managed,
+        foreign: listening && !managed,
+        stale: false,
         log,
     })
 }
+
+fn served_stamp(port: u16) -> Option<serde_json::Value> {
+    for host in LOOPBACK {
+        let Ok(mut stream) = TcpStream::connect_timeout(&SocketAddr::new(host, port), POLL) else {
+            continue;
+        };
+
+        let _ = stream.set_read_timeout(Some(STOP_GRACE));
+        let request = format!("GET {STAMP_PATH} HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n");
+
+        if stream.write_all(request.as_bytes()).is_err() {
+            continue;
+        }
+
+        let mut answer = String::new();
+
+        if stream.read_to_string(&mut answer).is_err() {
+            continue;
+        }
+
+        let (head, body) = answer.split_once("\r\n\r\n")?;
+
+        if !head.starts_with("HTTP/1.1 200") && !head.starts_with("HTTP/1.0 200") {
+            return None;
+        }
+
+        let stamp: serde_json::Value = serde_json::from_str(body.trim()).ok()?;
+
+        return (stamp.get("version")?.is_string() && stamp.get("build")?.is_string()).then_some(stamp);
+    }
+
+    None
+}
+
+async fn own_stamp(checkout: &str) -> Option<serde_json::Value> {
+    let entry = cli_entry(Path::new(checkout))?;
+
+    let output = tokio::time::timeout(
+        START_TIMEOUT,
+        Command::new("node")
+            .arg(entry)
+            .arg("design")
+            .arg("stamp")
+            .current_dir(checkout)
+            .stdin(Stdio::null())
+            .kill_on_drop(true)
+            .output(),
+    )
+    .await
+    .ok()?
+    .ok()?;
+
+    serde_json::from_slice(&output.stdout).ok()
+}
+
+/// A listening server is stale when it answers no stamp, or one that differs from the stamp of the
+/// cli Studio would start it with. A cli that cannot print its own stamp cannot be compared with.
+async fn is_stale(checkout: &str, port: u16) -> bool {
+    let Ok(Some(served)) = tokio::task::spawn_blocking(move || served_stamp(port)).await else {
+        return true;
+    };
+
+    match own_stamp(checkout).await {
+        Some(own) => own != served,
+        None => false,
+    }
+}
+
+async fn judged(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<ServerState> {
+    let mut current = state(servers, checkout, port)?;
+
+    if current.listening {
+        current.stale = is_stale(checkout, port).await;
+    }
+
+    Ok(current)
+}
+
+fn pids_on_port(port: u16) -> Vec<i32> {
+    let lsof = std::process::Command::new("lsof")
+        .args(["-nP", "-t", &format!("-iTCP:{port}"), "-sTCP:LISTEN"])
+        .output();
+
+    if let Ok(output) = lsof {
+        let pids: Vec<i32> = String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|line| line.trim().parse().ok())
+            .collect();
+
+        if !pids.is_empty() {
+            return pids;
+        }
+    }
+
+    let Ok(output) = std::process::Command::new("ss")
+        .args(["-H", "-ltnp", "sport", "=", &format!(":{port}")])
+        .output()
+    else {
+        return Vec::new();
+    };
+
+    parse_ss_pids(&String::from_utf8_lossy(&output.stdout))
+}
+
+fn parse_ss_pids(text: &str) -> Vec<i32> {
+    let mut pids: Vec<i32> = text
+        .split("pid=")
+        .skip(1)
+        .filter_map(|rest| {
+            let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
+
+            digits.parse().ok()
+        })
+        .collect();
+
+    pids.sort_unstable();
+    pids.dedup();
+    pids
+}
+
+/// Ends whatever listens on the port, started by Studio or not. Only the listening process is
+/// signalled, never one picked by its command line, since every design server shares that.
+#[cfg(unix)]
+async fn stop_port(port: u16) {
+    let pids = tokio::task::spawn_blocking(move || pids_on_port(port))
+        .await
+        .unwrap_or_default();
+
+    for signal in [libc::SIGTERM, libc::SIGKILL] {
+        for pid in &pids {
+            // SAFETY: kill only reads the id, and the id was read from the port's own listener.
+            unsafe {
+                libc::kill(*pid, signal);
+            }
+        }
+
+        let deadline = Instant::now() + STOP_GRACE;
+
+        while Instant::now() < deadline && listening(port) {
+            tokio::time::sleep(POLL).await;
+        }
+
+        if !listening(port) {
+            return;
+        }
+    }
+}
+
+#[cfg(not(unix))]
+async fn stop_port(_port: u16) {}
 
 fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Vec<String>>>) {
     tokio::spawn(async move {
@@ -214,7 +376,7 @@ pub async fn design_server_state(
 ) -> StudioResult<ServerState> {
     let port = port_of_checkout(&checkout)?;
 
-    state(servers.inner(), &checkout, port)
+    judged(servers.inner(), &checkout, port).await
 }
 
 /// Starts the checkout's design server and answers once it accepts connections. A server that
@@ -251,6 +413,35 @@ pub async fn design_server_stop(
     }
 
     state(servers.inner(), &checkout, port)
+}
+
+/// Stops whatever listens on the checkout's port, then starts the server Studio owns.
+#[tauri::command]
+pub async fn design_server_restart(
+    servers: tauri::State<'_, DesignServers>,
+    checkout: String,
+) -> StudioResult<ServerState> {
+    let port = port_of_checkout(&checkout)?;
+    let taken = servers.0.lock().map_err(|_| StudioError::Poisoned)?.remove(&checkout);
+
+    if let Some(mut server) = taken {
+        end(&mut server.child).await;
+    }
+
+    if listening(port) {
+        stop_port(port).await;
+    }
+
+    if listening(port) {
+        return Err(StudioError::Rejected(format!(
+            "Port {port} is still in use after stopping its listener."
+        )));
+    }
+
+    spawn(servers.inner(), &checkout)?;
+    await_listening(port).await;
+
+    judged(servers.inner(), &checkout, port).await
 }
 
 #[cfg(test)]
@@ -358,6 +549,71 @@ mod tests {
         assert!(matches!(refused, Err(StudioError::Rejected(_))));
 
         let _ = std::fs::remove_dir_all(&bare);
+    }
+
+    #[test]
+    fn the_pids_are_read_out_of_ss_output() {
+        let text = "LISTEN 0 511 [::1]:4402 [::]:* users:((\"node\",pid=4242,fd=19),(\"node\",pid=4243,fd=20))\n";
+
+        assert_eq!(parse_ss_pids(text), vec![4242, 4243]);
+        assert!(parse_ss_pids("").is_empty());
+    }
+
+    #[test]
+    fn a_stamp_is_read_from_a_server_and_a_server_without_one_reads_as_none() {
+        let serve = |body: &'static str, status: &'static str| {
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("a listener");
+            let port = listener.local_addr().expect("an address").port();
+
+            std::thread::spawn(move || {
+                if let Ok((mut stream, _)) = listener.accept() {
+                    let mut buffer = [0u8; 512];
+                    let _ = stream.read(&mut buffer);
+                    let _ = write!(stream, "HTTP/1.1 {status}\r\nConnection: close\r\n\r\n{body}");
+                }
+            });
+
+            port
+        };
+
+        let stamped = serve("{\"version\":\"1.0.0\",\"build\":\"abc\"}", "200 OK");
+        let bare = serve("<html></html>", "200 OK");
+        let missing = serve("{}", "404 Not Found");
+
+        assert_eq!(
+            served_stamp(stamped),
+            Some(serde_json::json!({ "version": "1.0.0", "build": "abc" }))
+        );
+        assert_eq!(served_stamp(bare), None);
+        assert_eq!(served_stamp(missing), None);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn a_server_somebody_else_started_is_ended_by_the_port_it_listens_on() {
+        const PORT: u16 = 45874;
+
+        let checkout = fake_checkout(PORT);
+        let entry = Path::new(&checkout).join("node_modules/@ethlete/cli/src/index.js");
+        let mut foreign = Command::new("node")
+            .arg(entry)
+            .kill_on_drop(true)
+            .spawn()
+            .expect("a server");
+
+        await_listening(PORT).await;
+
+        let read = state(&DesignServers::default(), &checkout, PORT).expect("a state");
+
+        assert!(read.listening && read.foreign && !read.managed);
+
+        stop_port(PORT).await;
+        await_stopped(PORT).await;
+
+        assert!(!listening(PORT), "the foreign server is still up");
+
+        let _ = foreign.wait().await;
+        let _ = std::fs::remove_dir_all(&checkout);
     }
 
     #[tokio::test]

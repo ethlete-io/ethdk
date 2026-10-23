@@ -145,6 +145,7 @@ pub fn run() {
             design_server::design_server_start,
             design_server::design_server_state,
             design_server::design_server_stop,
+            design_server::design_server_restart,
             tools::design_check,
             update::update_install,
             update::update_ready,

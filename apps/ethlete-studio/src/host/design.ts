@@ -194,6 +194,10 @@ export type ServerState = {
   listening: boolean;
   /** True when this Studio started the server. Only then can Studio stop it again. */
   managed: boolean;
+  /** True when something listens that this Studio did not start. */
+  foreign: boolean;
+  /** True when the server runs another cli build than the one on disk, or reports none. */
+  stale: boolean;
   log: string[];
 };
 
@@ -208,6 +212,10 @@ export const designServerStart$ = (checkout: string): Observable<ServerState> =>
 /** Stops the server this Studio started. A server somebody else started stays up. */
 export const designServerStop$ = (checkout: string): Observable<ServerState> =>
   invokeHost$<ServerState>('design_server_stop', { checkout });
+
+/** Stops whatever listens on the checkout's port, whoever started it, and starts Studio's own server. */
+export const designServerRestart$ = (checkout: string): Observable<ServerState> =>
+  invokeHost$<ServerState>('design_server_restart', { checkout });
 
 /** Where one variant is drawn: the checkout's design server port, the call and the variant. */
 export type FrameAddress = {

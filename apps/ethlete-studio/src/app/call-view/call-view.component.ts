@@ -28,6 +28,7 @@ import {
   designAddVariants$,
   designChanges$,
   designProject$,
+  designServerRestart$,
   designServerStart$,
   designServerState$,
   designServerStop$,
@@ -554,6 +555,12 @@ const SETTLE_MS = 300;
       }
 
       @if (server(); as state) {
+        @if (state.listening && (state.stale || state.foreign)) {
+          <button [disabled]="serverBusy()" (click)="restartServer()" class="studio__status-button" type="button">
+            Restart
+          </button>
+        }
+
         @if (state.listening && state.managed) {
           <button (click)="stopServer()" class="studio__status-button" type="button">Stop</button>
         } @else if (!state.listening) {
@@ -701,7 +708,15 @@ export class CallViewComponent {
     if (!state) return '';
     if (this.serverBusy()) return `Design server ${state.port} · starting`;
 
-    return `Design server ${state.port} · ${state.listening ? 'running' : 'stopped'}`;
+    if (!state.listening) return `Design server ${state.port} · stopped`;
+
+    return [
+      `Design server ${state.port}`,
+      state.foreign ? 'not started by Studio' : '',
+      state.stale ? 'stale' : 'running',
+    ]
+      .filter(Boolean)
+      .join(' · ');
   });
 
   public serverLog = computed(() => {
@@ -1013,6 +1028,30 @@ export class CallViewComponent {
     designServerStart$(checkout)
       .pipe(
         tap((state) => this.showServer(state)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        finalize(() => this.serverBusy.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected restartServer() {
+    const checkout = this.checkout();
+
+    if (!checkout || this.serverBusy()) return;
+
+    this.serverBusy.set(true);
+
+    designServerRestart$(checkout)
+      .pipe(
+        tap((state) => {
+          this.showServer(state);
+          this.epoch.update((value) => value + 1);
+        }),
         catchError((error: unknown) => {
           this.trouble.set(`${error}`);
 

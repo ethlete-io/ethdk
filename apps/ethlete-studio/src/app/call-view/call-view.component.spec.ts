@@ -69,7 +69,7 @@ const stubHost = (overrides: Record<string, () => unknown> = {}) => {
   const answers: Record<string, () => unknown> = {
     design_roots: () => ({ search: '', roots: [CHECKOUT] }),
     design_project: () => PROJECT,
-    design_server_state: () => ({ port: 4402, listening: true, managed: false, log: [] }),
+    design_server_state: () => ({ port: 4402, listening: true, managed: false, foreign: false, stale: false, log: [] }),
     design_check: () => null,
     agent_list: () => [],
     ...overrides,
@@ -365,4 +365,35 @@ describe('CallViewComponent', () => {
 
     expect(element(fixture).querySelector('.studio__float--top.studio__float--hidden')).toBeNull();
   }, 20_000);
+
+  it('offers Restart for a server Studio did not start and that runs an old cli', async () => {
+    stubHost({
+      design_server_state: () => ({ port: 4402, listening: true, managed: false, foreign: true, stale: true, log: [] }),
+      design_server_restart: () => ({
+        port: 4402,
+        listening: true,
+        managed: true,
+        foreign: false,
+        stale: false,
+        log: [],
+      }),
+    });
+
+    const fixture = await mount(RESOLVED.slug);
+    const status = () => element(fixture).querySelector('.studio__status')?.textContent ?? '';
+    const restart = () =>
+      [...element(fixture).querySelectorAll<HTMLButtonElement>('.studio__status-button')].find(
+        (button) => button.textContent?.trim() === 'Restart',
+      );
+
+    expect(status()).toContain('Design server 4402 · not started by Studio · stale');
+    expect(restart()).toBeDefined();
+
+    restart()?.click();
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
+    expect(status()).toContain('Design server 4402 · running');
+    expect(restart()).toBeUndefined();
+  });
 });
