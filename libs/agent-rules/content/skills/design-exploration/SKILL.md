@@ -82,9 +82,10 @@ et design status <slug> drawing   # while you draw; check sets checking, then re
 ```
 
 `new` writes `call.ts`, `fixture.ts` and one variant file per key, and the call renders at
-once. `stage` in `call.ts` names the stage of the design (see "The order of a design"); Ethlete
-Studio groups the calls by it, and the check warns when an element, page or prototype call
-imports nothing from the design system. The status shows on the call's row in Studio.
+once. `stage` in `call.ts` names the stage of the design (see "The order of a design"). Every
+call needs one: `new` refuses to start without `--stage`, and `et design check --call` fails on a
+call without it. Ethlete Studio groups the calls by it, and the check warns when an element, page
+or prototype call imports nothing from the design system. The status shows on the call's row in Studio.
 
 `et design [checkout]` serves the frames on the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
@@ -179,6 +180,13 @@ each stage draws with what the stages before it settled:
 Do not start a stage before the one above it is settled, and do not draw a page from parts that
 are not in the design system. If the user asks for a later stage first, say which earlier stage
 is missing, and draw that first.
+
+A quick exploration of an idea does not run this order: start it with `--stage sketch`. A
+sketch needs no settled stage before it, and Studio lists it apart from the seven stages. When
+the idea holds, draw it again at its real stage.
+
+A call made before the stage was required carries `legacy: true` instead, which
+`et design legacy <project>` writes once. Never add `legacy` to a new call.
 
 A later stage can show that an earlier one is incomplete. If a page needs a part that the system
 does not have, add it to the inventory and open a component call for it. Never draw the part
