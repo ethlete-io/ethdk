@@ -131,6 +131,25 @@ Either way:
   settled.
 - Keep the rejected variants drawn, marked as rejected.
 
+## The order of a design
+
+A product design runs in this order. Each stage settles in calls before the next starts, and
+each stage draws with what the stages before it settled:
+
+1. **Colours, colour themes and surface themes.** The project's `themes` in `config.json`.
+2. **Logo and CI**, if the project needs them.
+3. **Wireframes**: early, rough concepts of the main flows (`mode: 'wireframe'`). They show
+   which components the product needs, not how they look.
+4. **Components**, from the SDK ones rendered with `ng()`, themed and set up for the project.
+   Each accepted one becomes a design-system entry.
+5. **Larger elements**: the shell, the navigation, headers, lists, built from the entries.
+6. **Pages**, built from the elements and the entries.
+7. **The working prototype**: the pages joined with `ngStates` and `flow.on`.
+
+Do not start a stage before the one above it is settled, and do not draw a page from parts that
+are not in the design system. If the user asks for a later stage first, say which earlier stage
+is missing, and draw that first.
+
 ## Draw from the design system
 
 A call that invents its own button, field or row does not match the calls beside it. **Before

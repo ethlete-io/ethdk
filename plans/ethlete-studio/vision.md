@@ -74,6 +74,11 @@ names are **project → feature → call → variant**.
      `et design check --call <slug> --shot` also writes a PNG next to the receipt. States:
      scaffolded (new), drawing (agent), checking, then ready or failed (check). The status file
      lives next to the receipts in the temp dir `ethlete-studio-checks/`, one per checkout and call.
+   - Design workflow (Tom decided, 2026-10-23): colours, colour and surface themes → logo and CI
+     (if needed) → wireframes (early concepts, to see which components are needed) → components
+     from the SDK ones → larger elements (shell, nav) → pages → working prototype. An agent
+     that skips the component library is a sign the tool and skill are not clear enough. The
+     skill states the order in "The order of a design".
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder
