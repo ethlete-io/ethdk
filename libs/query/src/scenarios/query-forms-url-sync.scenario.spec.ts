@@ -364,6 +364,29 @@ describe('query forms URL sync scenario', () => {
     expect(qf.value().region).toBeNull();
   });
 
+  it('navigationExtras reach the router navigation of each URL write', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    const consumer = s.consumer();
+    const qf = consumer.run(() =>
+      defineQueryForm({ fields: { search: searchQueryField() } }).observe({
+        navigationExtras: { scroll: 'manual', state: { skipViewTransition: true } },
+      }),
+    );
+
+    qf.setValue({ search: 'shoes' });
+    await s.settle();
+
+    const extras = router.lastSuccessfulNavigation()?.extras;
+
+    expect(router.parseUrl(router.url).queryParams).toEqual({ search: 'shoes' });
+    expect(extras?.scroll).toBe('manual');
+    expect(extras?.state).toEqual({ skipViewTransition: true });
+
+    consumer.destroy();
+  });
+
   it('replaceUrl replaces the history entry instead of pushing a new one', async () => {
     const s = scenario();
     const location = TestBed.inject(Location);

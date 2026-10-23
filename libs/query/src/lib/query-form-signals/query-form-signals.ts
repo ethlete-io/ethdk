@@ -650,6 +650,7 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
       const info: QueryFormNavigationInfo | undefined = writes.size ? { queryFormWrites: writes } : undefined;
 
       router.navigate([], {
+        ...observeOptions?.navigationExtras,
         queryParams,
         queryParamsHandling: 'replace',
         fragment: base.fragment ?? undefined,

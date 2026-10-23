@@ -1,3 +1,5 @@
+import { NavigationBehaviorOptions } from '@angular/router';
+
 /**
  * The internal, fully-resolved definition of a single query-form field.
  *
@@ -124,6 +126,13 @@ export type QueryFormSignalsObserveOptions<TKey extends string = string> = {
    * @default false
    */
   readonly replaceUrl?: boolean;
+
+  /**
+   * Passed to every router navigation that writes the form's params. Use `scroll: 'manual'` to keep the scroll
+   * position under `withInMemoryScrolling`, and a `state` flag that `onViewTransitionCreated` reads to skip the
+   * view transition.
+   */
+  readonly navigationExtras?: Pick<NavigationBehaviorOptions, 'scroll' | 'state'>;
 
   /**
    * Keep the committed value in a storage and restore it when the URL carries none of the persisted fields.

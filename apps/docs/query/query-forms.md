@@ -264,10 +264,33 @@ it rather than repeat it.
 | `syncOnNavigation`   | `true`  | Apply URL → form at `observe()` and on every navigation.       |
 | `replaceUrl`         | `false` | Replace the history entry instead of pushing a new one.        |
 | `persistence`        | -       | Keep the value in a storage - see [Persistence](#persistence). |
+| `navigationExtras`   | -       | `scroll` and `state` for every navigation that writes the URL. |
 
 The two sync options are independent. A form that must not touch the URL at all, for example a
 search in a dialog that opens over a list page, passes both `writeToQueryParams: false` and
 `syncOnNavigation: false`. With only the first, it still reads the page's `page` or `search` param.
+
+With `withInMemoryScrolling` or `withViewTransitions`, each URL write scrolls the page and plays
+the transition, so a search field jumps to the top on every debounced keystroke. Pass
+`navigationExtras` to stop both:
+
+```ts
+const qf = defineQueryForm({ fields: { search: searchQueryField({ debounce: 300 }) } }).observe({
+  navigationExtras: { scroll: 'manual', state: { skipViewTransition: true } },
+});
+
+provideRouter(
+  routes,
+  withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
+  withViewTransitions({
+    onViewTransitionCreated: ({ transition }) => {
+      if (inject(Router).currentNavigation()?.extras.state?.['skipViewTransition']) {
+        transition.skipTransition();
+      }
+    },
+  }),
+);
+```
 
 While a navigation to **another route** is in flight, the form skips its URL write
 entirely - superseding it would resolve that navigation `false` and drop the landing
