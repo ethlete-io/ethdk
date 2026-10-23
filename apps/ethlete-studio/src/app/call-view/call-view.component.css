@@ -323,6 +323,41 @@
     letter-spacing: 0.04em;
   }
 
+  .studio__overview {
+    display: grid;
+    padding: 0.8rem 0 0;
+  }
+
+  .studio__overview-stage {
+    display: flex;
+    gap: 0.8rem;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 0.4rem 1.6rem;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 1.2rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .studio__overview-stage span {
+    color: var(--et-surface-color-subtle-solid);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    white-space: nowrap;
+  }
+
+  .studio__overview-stage:disabled {
+    cursor: default;
+  }
+
+  .studio__overview-stage--empty {
+    color: var(--et-surface-color-muted-solid);
+  }
+
   .studio__none {
     margin: 0;
     padding: 0.4rem 1.6rem 0.8rem;

@@ -8,6 +8,8 @@ import {
   ruledLabel,
   settledGroups,
   stageGroups,
+  stageLabel,
+  stageOverview,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -162,6 +164,54 @@ describe('stageGroups', () => {
       ['page', ['p/d', 'p/b']],
       [null, ['p/a']],
     ]);
+  });
+});
+
+describe('stageGroups with an unknown stage', () => {
+  it('keeps the raw id, after the known stages and before the loose calls', () => {
+    const groups = stageGroups({
+      calls: [call('p/a'), call('p/b', { stage: 'sketch' as never }), call('p/c', { stage: 'page' })],
+      project: '',
+      term: '',
+    });
+
+    expect(groups.map((group) => group.stage)).toEqual(['page', 'sketch', null]);
+  });
+});
+
+describe('stageLabel', () => {
+  it('numbers a stage by its place in the order and keeps an unknown id', () => {
+    expect(stageLabel('themes')).toBe('1 Foundations');
+    expect(stageLabel('prototype')).toBe('7 Prototype');
+    expect(stageLabel('sketch')).toBe('sketch');
+  });
+});
+
+describe('stageOverview', () => {
+  it('counts open, ready and settled calls for every stage, the empty ones too', () => {
+    const overview = stageOverview(
+      {
+        calls: [
+          call('p/a', { stage: 'page' }),
+          call('p/b', { stage: 'page' }),
+          settled('p/c', { stage: 'page' }),
+          call('p/d', { stage: 'ci' }),
+        ],
+        project: '',
+        term: '',
+      },
+      { 'p/a': 'ready', 'p/d': 'drawing' },
+    );
+
+    expect(overview).toHaveLength(7);
+    expect(overview.find((entry) => entry.stage === 'page')).toEqual({ stage: 'page', open: 2, ready: 1, settled: 1 });
+    expect(overview.find((entry) => entry.stage === 'ci')).toEqual({ stage: 'ci', open: 1, ready: 0, settled: 0 });
+    expect(overview.find((entry) => entry.stage === 'themes')).toEqual({
+      stage: 'themes',
+      open: 0,
+      ready: 0,
+      settled: 0,
+    });
   });
 });
 

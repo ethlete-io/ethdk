@@ -41,19 +41,42 @@ export const unsettledCalls = (request: CallListRequest): Call[] =>
 
 /** The open calls of one stage, in the order `unsettledCalls` gives them. */
 export type StageGroup = {
-  /** Left out for the loose calls. */
-  stage: CallStage | null;
+  /** Left out for the loose calls. A value outside the design order keeps its raw id. */
+  stage: string | null;
   calls: Call[];
 };
 
-const stageRank = (stage: CallStage | null) => (stage ? CALL_STAGES.indexOf(stage) : CALL_STAGES.length);
+const stageRank = (stage: string | null) => {
+  if (!stage) return CALL_STAGES.length + 1;
+
+  const index = (CALL_STAGES as readonly string[]).indexOf(stage);
+
+  return index === -1 ? CALL_STAGES.length : index;
+};
+
+const STAGE_LABELS: Record<CallStage, string> = {
+  themes: 'Foundations',
+  ci: 'Logo and CI',
+  wireframe: 'Wireframes',
+  component: 'Components',
+  element: 'Elements',
+  page: 'Pages',
+  prototype: 'Prototype',
+};
+
+/** The words a stage reads as, numbered by its place in the design order. An unknown stage keeps its id. */
+export const stageLabel = (stage: string) => {
+  const index = (CALL_STAGES as readonly string[]).indexOf(stage);
+
+  return index === -1 ? stage : `${index + 1} ${STAGE_LABELS[stage as CallStage]}`;
+};
 
 /** The open calls, one group per stage in the design order, the loose calls last. */
 export const stageGroups = (request: CallListRequest): StageGroup[] => {
-  const found = new Map<CallStage | null, Call[]>();
+  const found = new Map<string | null, Call[]>();
 
   for (const call of unsettledCalls(request)) {
-    const stage = call.stage && CALL_STAGES.includes(call.stage) ? call.stage : null;
+    const stage = call.stage || null;
 
     found.set(stage, [...(found.get(stage) ?? []), call]);
   }
@@ -61,6 +84,31 @@ export const stageGroups = (request: CallListRequest): StageGroup[] => {
   return [...found.entries()]
     .map(([stage, calls]) => ({ stage, calls }))
     .sort((left, right) => stageRank(left.stage) - stageRank(right.stage));
+};
+
+/** How far one stage of the design order has come. */
+export type StageSummary = {
+  stage: CallStage;
+  open: number;
+  ready: number;
+  settled: number;
+};
+
+/** One summary per stage of the design order, the empty ones too. `ready` counts calls whose status is ready. */
+export const stageOverview = (request: CallListRequest, states: Record<string, string | undefined>): StageSummary[] => {
+  const calls = callList(request);
+
+  return CALL_STAGES.map((stage) => {
+    const inStage = calls.filter((call) => call.stage === stage);
+    const open = inStage.filter((call) => openVariants(call) > 0).length;
+
+    return {
+      stage,
+      open,
+      ready: inStage.filter((call) => states[call.slug] === 'ready').length,
+      settled: inStage.length - open,
+    };
+  });
 };
 
 export const ruledLabel = (call: Call) =>

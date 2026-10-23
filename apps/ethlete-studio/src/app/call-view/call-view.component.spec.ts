@@ -262,9 +262,29 @@ describe('CallViewComponent', () => {
     const open = element(fixture).querySelector('.studio__section');
 
     expect([...(open?.querySelectorAll('.studio__stage-head') ?? [])].map((head) => head.textContent?.trim())).toEqual([
-      'page',
+      '6 Pages',
       'No stage',
     ]);
+  });
+
+  it('lists all seven stages in the overview, with the empty ones muted', async () => {
+    stubHost({ design_project: () => ({ ...PROJECT, calls: [RESOLVED, { ...ASKING, stage: 'page' }, UNNOTED] }) });
+
+    const fixture = await mount(RESOLVED.slug);
+    const stages = [...element(fixture).querySelectorAll('.studio__overview-stage')];
+
+    expect(stages.map((stage) => stage.querySelector('b')?.textContent)).toEqual([
+      '1 Foundations',
+      '2 Logo and CI',
+      '3 Wireframes',
+      '4 Components',
+      '5 Elements',
+      '6 Pages',
+      '7 Prototype',
+    ]);
+    expect(stages[5]?.textContent).toContain('1 open, 0 ready, 0 settled');
+    expect(stages[5]?.classList).not.toContain('studio__overview-stage--empty');
+    expect(stages[0]?.classList).toContain('studio__overview-stage--empty');
   });
 
   it('draws no stage heading when no open call names a stage', async () => {

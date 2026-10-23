@@ -8,6 +8,7 @@ import {
   inject,
   signal,
   viewChild,
+  viewChildren,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -46,6 +47,8 @@ import {
   ruledLabel,
   settledGroups,
   stageGroups,
+  stageLabel,
+  stageOverview,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -110,6 +113,21 @@ const SETTLE_MS = 300;
         </div>
 
         <div class="studio__list">
+          <nav class="studio__overview" aria-label="Stages">
+            @for (summary of overview(); track summary.stage) {
+              <button
+                [class.studio__overview-stage--empty]="!summary.open && !summary.ready && !summary.settled"
+                [disabled]="!summary.open"
+                (click)="scrollToStage(summary.stage)"
+                class="studio__overview-stage"
+                type="button"
+              >
+                <b>{{ STAGE_LABEL(summary.stage) }}</b>
+                <span>{{ summary.open }} open, {{ summary.ready }} ready, {{ summary.settled }} settled</span>
+              </button>
+            }
+          </nav>
+
           <section class="studio__section">
             <header class="studio__section-head">
               <b>Open</b>
@@ -118,7 +136,9 @@ const SETTLE_MS = 300;
 
             @for (group of openStages(); track group.stage) {
               @if (group.stage || openStages().length > 1) {
-                <h3 class="studio__stage-head">{{ group.stage ?? 'No stage' }}</h3>
+                <h3 #stageHead [attr.data-stage]="group.stage" class="studio__stage-head">
+                  {{ group.stage ? STAGE_LABEL(group.stage) : 'No stage' }}
+                </h3>
               }
               @for (call of group.calls; track call.slug) {
                 <button
@@ -617,6 +637,8 @@ export class CallViewComponent {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(DomSanitizer);
 
+  private stageHeads = viewChildren<ElementRef<HTMLElement>>('stageHead');
+
   private thread = viewChild<ElementRef<HTMLElement>>('thread');
 
   /** The checkout the window showed last. The picker prefers it while Studio still keeps it. */
@@ -764,6 +786,15 @@ export class CallViewComponent {
   protected openCalls = computed(() => unsettledCalls(this.listed()));
 
   protected openStages = computed(() => stageGroups(this.listed()));
+
+  protected overview = computed(() =>
+    stageOverview(
+      this.listed(),
+      Object.fromEntries(Object.entries(this.statuses()).map(([slug, status]) => [slug, status.state])),
+    ),
+  );
+
+  protected readonly STAGE_LABEL = stageLabel;
 
   /** What is left: the fully settled calls, folded into their feature. */
   protected settledBands = computed(() => settledGroups(this.listed()));
@@ -961,6 +992,12 @@ export class CallViewComponent {
 
       if (rail && count) rail.scrollTop = rail.scrollHeight;
     });
+  }
+
+  protected scrollToStage(stage: string) {
+    this.stageHeads()
+      .find((head) => head.nativeElement.dataset['stage'] === stage)
+      ?.nativeElement.scrollIntoView({ block: 'start' });
   }
 
   protected trackFrameScroll(event: MessageEvent) {
