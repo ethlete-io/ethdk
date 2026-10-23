@@ -499,11 +499,15 @@ describe('CarouselComponent', () => {
       const cloneCount = carousel.cloneCount();
       const trackLength = carousel.count() * SLIDE_SIZE;
 
+      await flushFrames();
+
       container.scrollLeft = 0;
       container.dispatchEvent(new Event('scrollend'));
       fixture.detectChanges();
 
       expect(scroll.lastCall()?.options).toEqual({ left: trackLength, behavior: 'instant' });
+
+      await flushFrames();
 
       const trailingOffset = (cloneCount + carousel.count()) * SLIDE_SIZE;
 
@@ -512,6 +516,43 @@ describe('CarouselComponent', () => {
       fixture.detectChanges();
 
       expect(scroll.lastCall()?.options).toEqual({ left: trailingOffset - trackLength, behavior: 'instant' });
+    });
+
+    it('waits for the glide after a mouse drag before crossing the seam', async () => {
+      const resizeObserver = fakeResizeObserver();
+      const scroll = fakeElementScroll();
+
+      const fixture = await createLoopingHost();
+      const carousel = fixture.componentInstance.carousel();
+      const scrollable = fixture.componentInstance.carouselComponent().track();
+
+      fakeLayout(CAROUSEL_LAYOUT);
+      resizeObserver.fire();
+      fixture.detectChanges();
+      await flushFrames();
+
+      const container = host(fixture).querySelector('.et-scrollable-container') as HTMLElement;
+      const trackLength = carousel.count() * SLIDE_SIZE;
+      const leadingCloneOffset = (carousel.cloneCount() - 1) * SLIDE_SIZE;
+
+      container.dispatchEvent(new Event('pointerdown'));
+      const releaseGlide = scrollable.suspendSnap();
+      container.scrollLeft = leadingCloneOffset;
+      container.dispatchEvent(new Event('scrollend'));
+      document.dispatchEvent(new Event('pointerup'));
+      fixture.detectChanges();
+
+      const callsDuringGlide = scroll.calls().length;
+
+      container.dispatchEvent(new Event('scrollend'));
+      fixture.detectChanges();
+
+      expect(scroll.calls().length).toBe(callsDuringGlide);
+
+      releaseGlide();
+      fixture.detectChanges();
+
+      expect(scroll.lastCall()?.options).toEqual({ left: leadingCloneOffset + trackLength, behavior: 'instant' });
     });
 
     it('does not cross the seam while a real slide is resting, even though it settled', async () => {

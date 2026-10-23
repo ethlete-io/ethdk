@@ -1,4 +1,4 @@
-import { DOCUMENT, Signal, computed, inject, signal } from '@angular/core';
+import { DOCUMENT, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, debounceTime, fromEvent, merge, switchMap, tap } from 'rxjs';
 import { ScrollableDirective } from '../../../scrollable';
@@ -34,7 +34,9 @@ export type CarouselScrollSettledConfig = {
  * `scrollend` is the right signal for it - it cannot fire mid-animation, which is exactly when a jump would
  * be visible - with a quiet stretch of `scroll` events standing in where it is missing. Either way the
  * callback is held back while a pointer is down: a mouse drag scrolls instantly on every move, so
- * `scrollend` fires throughout one, and acting on it would fight the finger.
+ * `scrollend` fires throughout one, and acting on it would fight the finger. It is also held while snapping
+ * is suspended: crossing the seam under the glide `etScrollableSnap` runs after a mouse drag sends that
+ * glide back across every slide.
  *
  * @internal
  */
@@ -44,8 +46,10 @@ export const useCarouselScrollSettled = (config: CarouselScrollSettledConfig) =>
 
   let isSettleDeferred = false;
 
+  const isHeld = computed(() => isPointerDown() || !!config.scrollable()?.isSnapSuspended());
+
   const settle = () => {
-    if (isPointerDown()) {
+    if (isHeld()) {
       isSettleDeferred = true;
 
       return;
@@ -56,6 +60,14 @@ export const useCarouselScrollSettled = (config: CarouselScrollSettledConfig) =>
   };
 
   const container = computed(() => config.scrollable()?.scrollContainerRef()?.nativeElement ?? null);
+
+  effect(() => {
+    if (isHeld()) return;
+
+    untracked(() => {
+      if (isSettleDeferred) settle();
+    });
+  });
 
   toObservable(container)
     .pipe(
@@ -68,11 +80,7 @@ export const useCarouselScrollSettled = (config: CarouselScrollSettledConfig) =>
             // eslint-disable-next-line ethlete/prefer-scroll-state
             fromEvent(scrollContainer, 'scroll', { passive: true }).pipe(debounceTime(SCROLL_IDLE_DURATION));
 
-        const release = () => {
-          isPointerDown.set(false);
-
-          if (isSettleDeferred) settle();
-        };
+        const release = () => isPointerDown.set(false);
 
         return merge(
           settled$.pipe(tap(() => settle())),

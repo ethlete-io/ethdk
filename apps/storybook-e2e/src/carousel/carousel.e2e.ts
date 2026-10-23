@@ -83,6 +83,41 @@ async function scrollTrackBy(root: Locator, fraction: number): Promise<void> {
   }, fraction);
 }
 
+async function isLastRealSlideAtRest(root: Locator): Promise<boolean> {
+  const states = await slideStates(root);
+  const lastReal = states[states.map((state) => state.isClone).lastIndexOf(false)];
+
+  return !!lastReal?.isActive && Math.abs(lastReal.offset) <= 1;
+}
+
+async function recordVisitedDots(dots: Locator): Promise<void> {
+  await dots.evaluateAll((all) => {
+    const visited: number[] = [];
+
+    new MutationObserver(() => {
+      const index = all.findIndex((dot) => dot.getAttribute('aria-current') === 'true');
+
+      if (visited.at(-1) !== index) visited.push(index);
+    }).observe(all[0]?.parentElement as HTMLElement, { attributes: true, subtree: true });
+
+    Object.assign(window, { visitedDots: visited });
+  });
+}
+
+function visitedDots(page: Page): Promise<number[]> {
+  return page.evaluate(() => (window as unknown as { visitedDots: number[] }).visitedDots);
+}
+
+async function mouseDragTrack(page: Page, root: Locator, from: number, to: number): Promise<void> {
+  const box = await boxOf(root.locator(TRACK));
+  const y = box.y + box.height / 2;
+
+  await page.mouse.move(box.x + box.width * from, y);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * to, y, { steps: 12 });
+  await page.mouse.up();
+}
+
 async function sweepAnimationName(dot: Locator): Promise<string> {
   return dot
     .locator('.et-carousel-dot-progress-half')
@@ -224,6 +259,47 @@ test.describe('carousel / loop', () => {
 
     await expect(dots.first()).toHaveAttribute('aria-current', 'true');
     await expectActiveSlideAtRest(root);
+  });
+
+  test('a mouse drag backward on the first slide crosses the seam without sweeping through every slide', async ({
+    page,
+  }) => {
+    const root = await openStory(page, LOOP_STORY_ID);
+    const dots = root.locator(DOT);
+
+    await recordVisitedDots(dots);
+    await mouseDragTrack(page, root, 0.2, 0.8);
+
+    await expect(dots.last()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRest(root);
+    await settle(page, 1000);
+
+    const visited = await visitedDots(page);
+
+    expect(visited).toContain((await dots.count()) - 1);
+    expect(new Set(visited).size).toBeLessThanOrEqual(2);
+  });
+
+  test('a mouse drag forward on the last slide crosses the seam without sweeping through every slide', async ({
+    page,
+  }) => {
+    const root = await openStory(page, LOOP_STORY_ID);
+    const dots = root.locator(DOT);
+
+    await dots.last().click();
+    await expect.poll(() => isLastRealSlideAtRest(root)).toBe(true);
+
+    await recordVisitedDots(dots);
+    await mouseDragTrack(page, root, 0.8, 0.2);
+
+    await expect(dots.first()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRest(root);
+    await settle(page, 1000);
+
+    const visited = await visitedDots(page);
+
+    expect(visited).toContain(0);
+    expect(new Set(visited).size).toBeLessThanOrEqual(2);
   });
 });
 
