@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Scheduler contrast',
   eyebrow: 'Components · scheduler · call 2',
   headline: 'How does default-theme UI get a readable ink on a light surface?',

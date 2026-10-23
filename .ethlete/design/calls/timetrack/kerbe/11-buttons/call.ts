@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Kerbe · call 11',
   headline: 'How much of the reference a working button keeps',
   intro:

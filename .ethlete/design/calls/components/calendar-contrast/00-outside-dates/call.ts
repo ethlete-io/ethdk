@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Calendar contrast',
   eyebrow: 'Components · calendar · call 0',
   headline: 'Do the calendar outside dates and week numbers follow the scheduler?',

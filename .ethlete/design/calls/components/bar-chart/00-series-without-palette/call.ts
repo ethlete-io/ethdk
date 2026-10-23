@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The bar chart',
   eyebrow: 'Components · bar chart · call 0',
   headline: 'What colours do several series get when the app provides no palette?',

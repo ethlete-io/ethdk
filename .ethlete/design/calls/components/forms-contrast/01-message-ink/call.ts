@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Forms contrast',
   eyebrow: 'Components · forms · call 1',
   headline: 'Which colour do form errors, warnings and the over-limit counter take?',

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'the shell',
   eyebrow: 'Design tool · call 6',
   headline: 'How does Studio hold three columns and what is left of the top bar?',

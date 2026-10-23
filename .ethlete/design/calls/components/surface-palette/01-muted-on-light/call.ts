@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Surface palette',
   eyebrow: 'Storybook · surface palette · call 1',
   headline: 'Is the light muted colour dark enough to sit on a tint?',

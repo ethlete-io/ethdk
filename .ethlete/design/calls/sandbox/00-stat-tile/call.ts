@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The day summary',
   eyebrow: 'Sandbox · call 0',
   headline: 'How a summary tile carries its number',

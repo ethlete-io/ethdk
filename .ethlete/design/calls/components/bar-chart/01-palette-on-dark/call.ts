@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The bar chart',
   eyebrow: 'Components · bar chart · call 1',
   headline: 'Should a chart palette follow the surface it sits on, and how?',

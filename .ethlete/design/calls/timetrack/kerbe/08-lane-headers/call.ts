@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Kerbe · call 8',
   headline: 'What a lane header carries',
   intro:

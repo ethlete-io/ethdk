@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Scheduler contrast',
   eyebrow: 'Components · scheduler · call 0',
   headline: 'How does an appointment set its time and location apart from its title?',

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Timeline · reference',
   headline: 'The block in every state it was drawn in',
   intro:

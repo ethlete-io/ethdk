@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'the call explorer',
   eyebrow: 'Design tool · call 7',
   headline: 'How does the explorer stay readable once a project holds two dozen calls?',

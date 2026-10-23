@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Timeline · call 1',
   headline: 'How a growing call row shows the part still being added',
   intro:

@@ -1,5 +1,6 @@
 import { defineCall } from '@design-explore';
 export default defineCall({
+  legacy: true,
   eyebrow: 'Design tool · call 6',
   headline: 'How does a new candidate re-open a decision?',
   intro:

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Kerbe · call 3',
   headline: 'A lane too narrow for both',
   intro:

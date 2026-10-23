@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Design tool · call 3',
   headline: 'What is the tool’s primary review surface?',
   intro:

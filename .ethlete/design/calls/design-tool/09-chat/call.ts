@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'the chat',
   eyebrow: 'Design tool · call 9',
   headline: 'Where does a verb pressed over the canvas turn into a message?',

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'the workspace',
   eyebrow: 'Design tool · call 8',
   headline: 'What stands around the drawing, and how much room is left for it?',

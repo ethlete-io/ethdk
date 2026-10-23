@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Design tool · call 4',
   headline: 'What may the integrated CLI do?',
   intro:

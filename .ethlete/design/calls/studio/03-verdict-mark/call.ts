@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The workbench',
   eyebrow: 'Studio · call 3',
   headline: 'How a thumbnail says it is ruled, without a word',

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Component mocks',
   eyebrow: 'Components · design mocks · view',
   headline: 'The form field and select mocks on a light and a dark surface',

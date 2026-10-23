@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The line chart',
   eyebrow: 'Components · line chart · call 8',
   headline: 'How should the keyboard-focused x read on dense data?',

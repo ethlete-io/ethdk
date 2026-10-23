@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Kerbe · call 5',
   headline: 'A break that is not empty',
   intro:

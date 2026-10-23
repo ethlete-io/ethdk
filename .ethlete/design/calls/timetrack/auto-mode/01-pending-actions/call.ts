@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Auto mode · call 1',
   headline: 'Where the day shows an action that waits for your approval',
   intro:

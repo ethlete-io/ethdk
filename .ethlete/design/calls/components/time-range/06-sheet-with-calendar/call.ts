@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The time range picker',
   eyebrow: 'Components · call 6',
   headline: 'The calendar and the ring in the bottom sheet',

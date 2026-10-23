@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Scheduler contrast',
   eyebrow: 'Components · scheduler · call 1',
   headline: 'How does the month view set the dates of the next and the previous month apart?',

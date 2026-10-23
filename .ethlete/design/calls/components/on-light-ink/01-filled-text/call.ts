@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Light-surface colour themes',
   eyebrow: 'Components · on-light ink · call 1',
   headline: 'How does the filled success and warning badge reach AA?',

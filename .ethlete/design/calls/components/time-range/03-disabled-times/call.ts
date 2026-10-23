@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The time range picker',
   eyebrow: 'Components · call 3',
   headline: 'How the ring shows time you cannot pick',

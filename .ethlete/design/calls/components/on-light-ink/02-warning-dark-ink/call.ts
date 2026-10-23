@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Light-surface colour themes',
   eyebrow: 'Components · on-light ink · call 2',
   headline: 'Which ink does the warning theme carry on dark?',

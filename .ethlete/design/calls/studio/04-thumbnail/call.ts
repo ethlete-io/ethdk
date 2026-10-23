@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The workbench',
   eyebrow: 'Studio · call 4',
   headline: 'What a thumbnail shows when the variant has changed under it',

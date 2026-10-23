@@ -1,5 +1,6 @@
 import { defineCall } from '@design-explore';
 export default defineCall({
+  legacy: true,
   eyebrow: 'Design tool · call 5',
   headline: 'What is one item in the decision queue?',
   intro:

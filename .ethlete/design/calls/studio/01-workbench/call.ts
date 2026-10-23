@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The workbench',
   eyebrow: 'Studio · call 1',
   headline: 'Where the large variant sits against the grid of the others',

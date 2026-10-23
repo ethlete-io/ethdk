@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The bar chart',
   eyebrow: 'Components · bar chart · call 2',
   headline: 'When the app filters a series out, how do the other series keep their colour?',

@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The pie chart',
   eyebrow: 'Components · pie chart · call 3',
   headline: 'Should the pie keep its own legend, or share one with the bar and line charts?',

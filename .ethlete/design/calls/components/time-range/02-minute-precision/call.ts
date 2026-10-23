@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The time range picker',
   eyebrow: 'Components · call 2',
   headline: 'How a drag lands on a 5-minute step',

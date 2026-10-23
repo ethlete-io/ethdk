@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The Sankey chart',
   eyebrow: 'Components · sankey chart · call 1',
   headline: 'What does a Sankey do on a narrow screen?',

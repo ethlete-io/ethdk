@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The sankey chart',
   eyebrow: 'Components · sankey chart · call 0',
   headline: 'Where do the labels of middle-column nodes go?',

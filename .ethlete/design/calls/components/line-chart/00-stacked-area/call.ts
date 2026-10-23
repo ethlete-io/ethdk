@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The line chart',
   eyebrow: 'Components · line chart · call 3',
   headline: 'How should a stacked area fill read on a dark surface, and still work on light?',

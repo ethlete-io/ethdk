@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   eyebrow: 'Design tool · call 1',
   headline: 'Where does a comparison live?',
   intro:

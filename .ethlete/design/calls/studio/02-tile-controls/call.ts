@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The workbench',
   eyebrow: 'Studio · call 2',
   headline: 'How much of a tile carries its own controls',

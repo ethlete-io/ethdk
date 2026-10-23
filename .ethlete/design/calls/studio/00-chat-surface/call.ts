@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'The agent surface',
   eyebrow: 'Studio · call 0',
   headline: 'Where the conversation with the agent lives',

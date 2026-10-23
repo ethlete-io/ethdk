@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Forms contrast',
   eyebrow: 'Components · forms · call 0',
   headline: 'Which colour does the select and cascader placeholder take?',

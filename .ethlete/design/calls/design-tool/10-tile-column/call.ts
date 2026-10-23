@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'the workspace',
   eyebrow: 'Design tool · call 10',
   headline: 'How does the tile column hold twelve variants across four rounds?',

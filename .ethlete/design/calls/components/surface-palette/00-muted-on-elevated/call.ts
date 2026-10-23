@@ -1,6 +1,7 @@
 import { defineCall } from '@design-explore';
 
 export default defineCall({
+  legacy: true,
   feature: 'Surface palette',
   eyebrow: 'Storybook · surface palette · call 0',
   headline: 'Which muted colour do the two top dark elevations take?',
