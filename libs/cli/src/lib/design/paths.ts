@@ -23,8 +23,9 @@ export type DesignThemes = {
 
 /**
  * Where `ng()` takes its code from. `packages` maps a package pattern to a checkout path, for
- * example `{ "@ethlete/*": "dist/libs/*" }`; `modules` names the packages an import name is looked
- * up in, `['@ethlete/components']` when left out.
+ * example `{ "@ethlete/*": "dist/libs/*" }`; a drawing's subpath imports such as
+ * `@ethlete/core/design/theme-css` load from the mapped folder too. `modules` names the packages an
+ * import name is looked up in, `['@ethlete/components', '@ethlete/core']` when left out.
  */
 export type DesignRenderConfig = {
   packages?: Record<string, string>;

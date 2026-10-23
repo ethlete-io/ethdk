@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { aliasPattern, callSlugOf, fsUrl, isCallFile } from './vite-paths';
 import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
+import { mappedSubpathOf } from './render-packages';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -81,7 +82,12 @@ const env = (target: string, config: DesignConfig) => {
  */
 const designExplore = (target: string, config: DesignConfig) => ({
   name: 'design-explore',
-  resolveId: (id: string) => (id === VIRTUAL || id === `${VIRTUAL}/env` ? `\0${id}` : null),
+  enforce: 'pre' as const,
+  resolveId: (id: string) => {
+    if (id === VIRTUAL || id === `${VIRTUAL}/env`) return `\0${id}`;
+
+    return mappedSubpathOf({ specifier: id, packages: config.render?.packages ?? {}, target });
+  },
   load: (id: string) => {
     if (id === `\0${VIRTUAL}`) return registry(target);
     if (id === `\0${VIRTUAL}/env`) return env(target, config);

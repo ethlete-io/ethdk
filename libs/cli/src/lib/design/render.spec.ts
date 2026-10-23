@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { mountDrawing, unseenStyles } from '../../../design/define-call';
 import { isStale } from './render';
-import { entryOf, extractRender, lookupImports, mapPackage, typePathsOf } from './render-packages';
+import { entryOf, extractRender, lookupImports, mappedSubpathOf, mapPackage, typePathsOf } from './render-packages';
 
 const packages = { '@ethlete/*': 'dist/libs/*', 'exact-pkg': 'vendor/exact' };
 
@@ -80,6 +80,50 @@ describe('typePathsOf', () => {
     expect(typePathsOf({ packages: { '@ethlete/*': 'dist/libs/*' }, target })).toEqual({
       '@ethlete/core': [join(target, 'dist/libs/core/types/core.d.ts')],
     });
+  });
+});
+
+describe('subpaths of a mapped package', () => {
+  const builtCore = () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-render-'));
+
+    mkdirSync(join(target, 'dist/libs/core'), { recursive: true });
+    writeFileSync(
+      join(target, 'dist/libs/core/package.json'),
+      JSON.stringify({
+        exports: {
+          './design/*': './design/*.ts',
+          './package.json': { default: './package.json' },
+          '.': { types: './types/core.d.ts', default: './fesm2022/core.mjs' },
+          './testing': { types: './types/testing.d.ts', default: './fesm2022/testing.mjs' },
+        },
+      }),
+      'utf8',
+    );
+
+    return target;
+  };
+
+  it('types every exported subpath from the mapped folder', () => {
+    const target = builtCore();
+
+    expect(typePathsOf({ packages: { '@ethlete/*': 'dist/libs/*' }, target })).toEqual({
+      '@ethlete/core': [join(target, 'dist/libs/core/types/core.d.ts')],
+      '@ethlete/core/design/*': [join(target, 'dist/libs/core/design/*.ts')],
+      '@ethlete/core/testing': [join(target, 'dist/libs/core/types/testing.d.ts')],
+    });
+  });
+
+  it('loads a subpath import from the mapped folder and leaves the root to the checkout', () => {
+    const target = builtCore();
+    const packages = { '@ethlete/*': 'dist/libs/*' };
+
+    expect(mappedSubpathOf({ specifier: '@ethlete/core/design/theme-css', packages, target })).toBe(
+      join(target, 'dist/libs/core/design/theme-css.ts'),
+    );
+    expect(mappedSubpathOf({ specifier: '@ethlete/core', packages, target })).toBeNull();
+    expect(mappedSubpathOf({ specifier: '@ethlete/core/nope', packages, target })).toBeNull();
+    expect(mappedSubpathOf({ specifier: '@angular/core/testing', packages, target })).toBeNull();
   });
 });
 

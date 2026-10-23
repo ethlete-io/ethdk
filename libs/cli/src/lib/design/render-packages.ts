@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 
-export const DEFAULT_RENDER_MODULES = ['@ethlete/components'];
+export const DEFAULT_RENDER_MODULES = ['@ethlete/components', '@ethlete/core'];
 
 export type RenderWorkerData = { target: string; packages: Record<string, string>; modules: string[] };
 
@@ -105,6 +105,22 @@ export const entryOf = (mapped: MappedPackage) => {
   return resolve(dir, file);
 };
 
+/**
+ * The file a drawing's subpath import of a mapped package loads in the browser, or null to leave it
+ * to the checkout. The root stays with the checkout: the browser has its own `@angular/core`.
+ */
+export const mappedSubpathOf = (options: { specifier: string; packages: Record<string, string>; target: string }) => {
+  const mapped = mapPackage(options);
+
+  if (!mapped || mapped.subpath === '.') return null;
+
+  try {
+    return entryOf(mapped);
+  } catch {
+    return null;
+  }
+};
+
 /** The values behind the names a call imports, each from the first module that exports it. */
 export const lookupImports = (options: { names: string[]; modules: Record<string, Record<string, unknown>> }) => {
   const { names, modules } = options;
@@ -135,26 +151,40 @@ export const extractRender = (document: string) => {
   return { markup: markup.replace(/<!--container-->/g, ''), styles };
 };
 
-const typesOf = (dir: string) => {
+type TypedExport = string | null | { types?: string; default?: string };
+
+const typesOf = (value: TypedExport | undefined) => {
+  if (typeof value === 'string') return value;
+
+  return value?.types ?? null;
+};
+
+/** Each export subpath of a built package that carries types, as a `[subpath, file]` pair. */
+const typedExportsOf = (dir: string): [string, string][] => {
   const manifestPath = resolve(dir, 'package.json');
 
-  if (!existsSync(manifestPath)) return null;
+  if (!existsSync(manifestPath)) return [];
 
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-    exports?: Record<string, { types?: string }>;
+    exports?: Record<string, TypedExport>;
     types?: string;
     typings?: string;
   };
-  const types = manifest.exports?.['.']?.types ?? manifest.types ?? manifest.typings;
+  const entries = Object.entries(manifest.exports ?? {}).flatMap(([subpath, value]): [string, string][] => {
+    const types = subpath === './package.json' ? null : typesOf(value);
 
-  return types ? resolve(dir, types) : null;
+    return types ? [[subpath, types]] : [];
+  });
+  const root = manifest.types ?? manifest.typings;
+
+  return entries.some(([subpath]) => subpath === '.') || !root ? entries : [...entries, ['.', root]];
 };
 
 const readdirSafe = (dir: string) => (existsSync(dir) ? readdirSync(dir) : []);
 
 /**
- * The tsconfig `paths` that type a mapped package's root import from the folder `ng()` loads it
- * from. Only the root: a subpath keeps resolving the way the checkout resolves it.
+ * The tsconfig `paths` that type a mapped package's imports from the folder `ng()` loads it from:
+ * the root and every subpath its `exports` types, so `@ethlete/core/design/theme-css` resolves too.
  */
 export const typePathsOf = (options: { packages: Record<string, string>; target: string }) => {
   const { packages, target } = options;
@@ -169,9 +199,9 @@ export const typePathsOf = (options: { packages: Record<string, string>; target:
       : [[pattern, resolve(target, path)]];
 
     for (const [name, dir] of names) {
-      const types = typesOf(dir);
-
-      if (types) paths[name] = [types];
+      for (const [subpath, types] of typedExportsOf(dir)) {
+        paths[`${name}${subpath.slice(1)}`] = [resolve(dir, types)];
+      }
     }
   }
 
