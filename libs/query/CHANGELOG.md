@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 5.44.1
+
+### Patch Changes
+
+- [`2c02096`](https://github.com/ethlete-io/ethdk/commit/2c020964d1b57ebaa483035be59ee84a15d1794e) Thanks [@TomTomB](https://github.com/TomTomB)! - Give each object in an array its own index when `writeArrayIndexes` is enabled. Before, every object item was serialized at index `0`.
+
 ## 5.44.0
 
 ### Minor Changes
