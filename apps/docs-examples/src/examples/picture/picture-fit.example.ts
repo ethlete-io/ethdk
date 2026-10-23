@@ -22,7 +22,7 @@ import { PICTURE_WIDE_SRC } from './picture.data';
               [fit]="mode"
               [defaultSrc]="WIDE_SRC"
               class="example-picture-box"
-              alt="A coloured block fitted to a fixed box"
+              alt="A mountain range at sunrise"
             />
           </div>
         }
@@ -42,7 +42,7 @@ import { PICTURE_WIDE_SRC } from './picture.data';
         [aspectRatio]="16 / 9"
         (imageLoad)="loadedRatio.set($event.naturalWidth / $event.naturalHeight)"
         class="example-picture-natural"
-        alt="A coloured block whose intrinsic size is reported below"
+        alt="A mountain range at sunrise"
       />
 
       <p>
@@ -88,11 +88,14 @@ import { PICTURE_WIDE_SRC } from './picture.data';
       overflow: hidden;
       inline-size: 180px;
       block-size: 120px;
-      border: 1px solid var(--et-surface-border-solid);
+      border-radius: 8px;
+      background: var(--et-surface-elevated-solid, transparent);
     }
 
     .example-picture-natural {
       max-inline-size: 320px;
+      overflow: hidden;
+      border-radius: 12px;
     }
   `,
 })

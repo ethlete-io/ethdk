@@ -17,9 +17,8 @@ import { PICTURE_BROKEN_SRC, PICTURE_FALLBACK_SRC, PICTURE_TALL_SRC, PICTURE_WID
         [defaultSrc]="FALLBACK_SRC"
         class="example-picture"
         aspectRatio="16 / 9"
-        figcaption="A crop that follows the viewport."
         priority
-        alt="A coloured block labelled with its aspect ratio"
+        alt="A mountain range at sunrise"
       />
     </section>
 
@@ -30,12 +29,7 @@ import { PICTURE_BROKEN_SRC, PICTURE_FALLBACK_SRC, PICTURE_TALL_SRC, PICTURE_WID
         from an API. The image keeps loading behind the slot, which is overlaid rather than swapped in.
       </p>
 
-      <et-picture
-        [defaultSrc]="lateSource()"
-        [aspectRatio]="16 / 9"
-        class="example-picture"
-        alt="An image whose URL arrives after the page"
-      >
+      <et-picture [defaultSrc]="lateSource()" [aspectRatio]="16 / 9" class="example-picture" alt="A mountain lake">
         <ng-template etPicturePlaceholder>
           <et-skeleton-item class="example-picture-skeleton" shape="rect" />
         </ng-template>
@@ -83,6 +77,9 @@ import { PICTURE_BROKEN_SRC, PICTURE_FALLBACK_SRC, PICTURE_TALL_SRC, PICTURE_WID
 
     .example-picture {
       max-inline-size: 520px;
+      overflow: hidden;
+      border-radius: 12px;
+      background: var(--et-surface-elevated-solid, transparent);
     }
 
     .example-picture-skeleton {
