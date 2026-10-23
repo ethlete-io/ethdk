@@ -85,6 +85,8 @@ names are **project → feature → call → variant**.
      each mapped to an SDK component or marked new; it is the queue of component calls. The
      inventory is a typed `inventory` field of the wireframe call's `defineCall()` (Tom, 2026-10-23),
      not a markdown file.
+   - Enforced (Tom, 2026-10-23): the design process is enforced from now on. A call without a
+     `stage` is invalid; legacy calls created before this rule are ignored, not migrated.
      (3) Stage 1 is foundations: colours plus type scale, spacing and radius. (4) A page that
      shows a missing part opens a component call; it never draws the part inline.
    - After tomflix's component-call test (Tom decided, 2026-10-23): a drawing may set
