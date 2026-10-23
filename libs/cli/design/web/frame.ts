@@ -9,6 +9,12 @@ const key = params.get('variant') ?? '';
 await loadEnv(slug.split('/')[0] ?? '');
 
 const root = document.querySelector('#root') as HTMLElement;
+const surface = params.get('surface');
+const color = params.get('color');
+
+// On <html> a theme class ties with the `:root` defaults of the theme CSS, which come later and win.
+if (surface) root.classList.add(`et-surface--${surface}`);
+if (color) root.classList.add(`et-color--${color}`);
 
 const fail = (message: string) => {
   const text = document.createElement('pre');

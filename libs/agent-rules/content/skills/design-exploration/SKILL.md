@@ -64,6 +64,12 @@ The first segment of a slug is the **project**. `config.json` gives each project
 `styles` and its own `head`, so one project's type scale and fonts never reach another's
 drawings. A project the config names not draws bare.
 
+A project can also name `themes`: `{ "surface": ["light", "dark"], "color": ["brand", …] }`. The
+call page then shows a switch for each list, the first name is the default, and every frame of
+the page gets the picked `et-surface--<name>` and `et-color--<name>` classes on its root. A
+drawing under a switch must not set its own surface or colour class, and must take its colours
+from the theme tokens.
+
 Start the page with `et design [checkout]`, which serves the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
 checkouts can be drawn at once. A repository that builds the tool rather than installing it

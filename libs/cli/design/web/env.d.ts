@@ -8,4 +8,6 @@ declare module 'virtual:design-explore' {
 declare module 'virtual:design-explore/env' {
   /** Loads the stylesheet the project draws under. A project the config names not draws bare. */
   export const loadEnv: (project: string) => Promise<unknown>;
+  /** The theme names the call page offers for the project. The first of each list is the default. */
+  export const themesOf: (project: string) => { surface: string[]; color: string[] };
 }

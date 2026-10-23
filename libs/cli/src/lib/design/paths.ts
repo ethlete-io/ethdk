@@ -6,12 +6,19 @@ export const DESIGN_DIR = '.ethlete/design';
 
 /**
  * One project's drawing environment: the stylesheets a frame loads, the markup it puts in `<head>`,
- * and the module whose default export is the Angular providers array `ng()` renders under.
+ * the module whose default export is the Angular providers array `ng()` renders under, and the
+ * surface and colour theme names the call page offers. The first name of each list is the default.
  */
 export type DesignProject = {
   styles?: string[];
   head?: string;
   providers?: string;
+  themes?: DesignThemes;
+};
+
+export type DesignThemes = {
+  surface?: string[];
+  color?: string[];
 };
 
 /**

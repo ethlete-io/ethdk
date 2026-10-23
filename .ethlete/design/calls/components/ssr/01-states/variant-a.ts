@@ -4,11 +4,11 @@ import { COLOR_THEMES, SURFACE_THEMES } from '../../themes';
 
 const flow = await ngStates(
   {
-    view: html`<div class="et-surface--light panel">
+    view: html`<div class="panel">
       <p class="name">Ada Lovelace</p>
       <div class="row"><button et-button variant="outline" data-edit>Edit</button></div>
     </div>`,
-    edit: html`<div class="et-surface--light panel">
+    edit: html`<div class="panel">
       <et-form-field>
         <et-label>Name</et-label>
         <et-input placeholder="Your name" />

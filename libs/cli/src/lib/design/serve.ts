@@ -60,9 +60,18 @@ const env = (target: string, config: DesignConfig) => {
         .join(', ')}]),`,
   );
 
+  const themes = Object.fromEntries(
+    Object.entries(config.projects ?? {}).map(([name, project]) => [
+      name,
+      { surface: project.themes?.surface ?? [], color: project.themes?.color ?? [] },
+    ]),
+  );
+
   return (
     `const envs = {\n${loaders.join('\n')}\n};\n` +
-    `export const loadEnv = (project) => (envs[project] ?? (() => Promise.resolve()))();\n`
+    `export const loadEnv = (project) => (envs[project] ?? (() => Promise.resolve()))();\n` +
+    `const themes = ${JSON.stringify(themes)};\n` +
+    `export const themesOf = (project) => themes[project] ?? { surface: [], color: [] };\n`
   );
 };
 

@@ -22,7 +22,11 @@
       "styles": ["apps/ethlete-studio/src/styles.css"]
     },
     "components": {
-      "providers": ".ethlete/design/calls/components/providers.ts"
+      "providers": ".ethlete/design/calls/components/providers.ts",
+      "themes": {
+        "surface": ["light", "dark"],
+        "color": ["brand", "danger", "warning"]
+      }
     }
   }
 }

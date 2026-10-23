@@ -1,5 +1,6 @@
 import type { Call, CallVariant, CallRound } from '@design-explore';
 import { calls, defaultCall } from 'virtual:design-explore';
+import { themesOf } from 'virtual:design-explore/env';
 import './host.css';
 
 /** The contact sheet draws about five 1100px frames per screen at this scale. */
@@ -11,6 +12,17 @@ const asked = params.get('call') ?? '';
 const landing = defaultCall && slugs.includes(defaultCall) ? defaultCall : (slugs.at(-1) ?? '');
 const slug = slugs.includes(asked) ? asked : landing;
 const view = params.get('view') === 'sheet' ? 'sheet' : 'rounds';
+const themes = themesOf(slug.split('/')[0] ?? '');
+const themeOf = (name: 'surface' | 'color') => {
+  const asked = params.get(name);
+
+  return asked && themes[name].includes(asked) ? asked : (themes[name][0] ?? null);
+};
+const surface = themeOf('surface');
+const color = themeOf('color');
+const themeQuery = `${surface ? `&surface=${encodeURIComponent(surface)}` : ''}${
+  color ? `&color=${encodeURIComponent(color)}` : ''
+}`;
 const opened = new Set((params.get('open') ?? '').split(',').filter(Boolean));
 const picked = (params.get('pick') ?? '').split(',').filter(Boolean);
 
@@ -138,7 +150,7 @@ if (!load) {
 
   const frame = (variant: CallVariant) => `
     <iframe
-      src="frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant.key)}"
+      src="frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant.key)}${themeQuery}"
       data-variant="${esc(variant.key)}"
       title="${esc(variant.name)}"
       style="width:${call.frameWidth}px"
@@ -290,6 +302,18 @@ if (!load) {
           }</a>
         </div>`;
 
+  const themeSwitch = (name: 'surface' | 'color', current: string | null) =>
+    themes[name].length < 2
+      ? ''
+      : `<div class="views" aria-label="${name} theme">
+          ${themes[name]
+            .map(
+              (theme) =>
+                `<a href="${link({ [name]: theme })}" ${theme === current ? 'aria-current="page"' : ''}>${esc(theme)}</a>`,
+            )
+            .join('')}
+        </div>`;
+
   document.body.innerHTML = `
     <nav>${tree(bands)}</nav>
     <main>
@@ -298,6 +322,8 @@ if (!load) {
         <h1>${esc(call.headline)}</h1>
         <p>${esc(call.intro)}</p>
         ${views()}
+        ${themeSwitch('surface', surface)}
+        ${themeSwitch('color', color)}
       </header>
       ${problemsOf(call, bands)
         .map((problem) => `<p class="problem">design-explore: ${esc(problem)}</p>`)

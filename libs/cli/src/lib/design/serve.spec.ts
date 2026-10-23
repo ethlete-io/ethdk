@@ -75,4 +75,22 @@ describe('serveDesign', () => {
       expect.arrayContaining([`${join(target, 'libs/x')}/`, join(target, 'libs/one.ts')]),
     );
   });
+
+  it('hands each project its theme names, and none to a project without them', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = makeTarget({ projects: { app: { themes: { surface: ['light', 'dark'] } }, bare: {} } });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const plugin = created[created.length - 1]?.plugins[0];
+    const env = plugin?.load(plugin.resolveId('virtual:design-explore/env') ?? '') ?? '';
+    const themesOf = new Function(`${env.replace(/export const/g, 'const')}; return themesOf;`)() as (
+      project: string,
+    ) => unknown;
+
+    expect(themesOf('app')).toEqual({ surface: ['light', 'dark'], color: [] });
+    expect(themesOf('bare')).toEqual({ surface: [], color: [] });
+    expect(themesOf('other')).toEqual({ surface: [], color: [] });
+  });
 });
