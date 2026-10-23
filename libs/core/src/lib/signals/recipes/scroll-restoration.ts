@@ -2,7 +2,7 @@ import { isPlatformBrowser, Location } from '@angular/common';
 import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
-import { filter, tap } from 'rxjs';
+import { filter, ignoreElements, isObservable, merge, Observable, Subscription, tap } from 'rxjs';
 import { defineRootProvider, toInjectFn } from '../../utils';
 import { createRoute, createRouterState } from '../router';
 
@@ -47,6 +47,14 @@ export type ScrollRestorationRestoreConfig = {
    * @default true
    */
   clampOnTimeout?: boolean;
+
+  /**
+   * Also restore the offset, and every {@link registerScrollRestorationState} value, when the page is
+   * reloaded. The current entry is written to `sessionStorage` on `pagehide`, so registered values
+   * must be JSON serializable.
+   * @default false
+   */
+  restoreOnReload?: boolean;
 };
 
 export type SetupScrollRestorationConfig = {
@@ -126,11 +134,55 @@ export const ET_RESTORE_SCROLL = /* @__PURE__ */ Symbol('ET_RESTORE_SCROLL');
  */
 export const routerRestoreScroll = () => ({ [ET_RESTORE_SCROLL]: true });
 
+export type ScrollRestorationStateConfig<T> = {
+  /** Identifies the value within a history entry. Unique among the registrations of one page. */
+  key: string;
+  /** Reads the value to remember. Called when the user leaves the page. */
+  save: () => T;
+  /**
+   * Re-applies a remembered value on back/forward (and reload, see `restoreOnReload`). The scroll
+   * offset is applied after the returned Observable completes, or after the next render for `void`.
+   */
+  restore: (value: T) => Observable<unknown> | void;
+};
+
+type AnyStateConfig = ScrollRestorationStateConfig<unknown>;
+
 const SCROLL_RESTORATION_HOLDS_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const holds = new Set<() => boolean>();
+    const states = new Set<AnyStateConfig>();
 
     return {
+      addState: (state: AnyStateConfig) => {
+        states.add(state);
+
+        return () => states.delete(state);
+      },
+      saveStates: () => {
+        if (!states.size) return undefined;
+
+        const values: Record<string, unknown> = {};
+
+        for (const state of states) {
+          values[state.key] = state.save();
+        }
+
+        return values;
+      },
+      restoreStates: (values: Record<string, unknown>) => {
+        const pending: Observable<unknown>[] = [];
+
+        for (const state of states) {
+          if (!(state.key in values)) continue;
+
+          const result = state.restore(values[state.key]);
+
+          if (isObservable(result)) pending.push(result);
+        }
+
+        return pending;
+      },
       add: (isPending: () => boolean) => {
         holds.add(isPending);
 
@@ -172,6 +224,27 @@ export const holdScrollRestoration = (isPending: () => boolean) => {
   inject(DestroyRef).onDestroy(remove);
 };
 
+/**
+ * Remember a piece of page state with the scroll entry, and restore it before the offset is applied -
+ * the number of loaded pages of a paged list, for instance, without which the saved offset points at
+ * the wrong items. Registers for the lifetime of the current injection context.
+ *
+ * Needs `restore.enabled` on {@link setupScrollRestoration}.
+ *
+ * @example
+ * // inside a route component
+ * registerScrollRestorationState({
+ *   key: 'pages',
+ *   save: () => pageCount(),
+ *   restore: (count) => loadPages$(count),
+ * });
+ */
+export const registerScrollRestorationState = <T>(config: ScrollRestorationStateConfig<T>) => {
+  const remove = injectScrollRestorationHolds().addState(config as AnyStateConfig);
+
+  inject(DestroyRef).onDestroy(remove);
+};
+
 /** Upper bound on remembered history entries. Each entry is a single number, so this is generous. */
 const MAX_STORED_POSITIONS = 200;
 
@@ -186,6 +259,37 @@ type StoredPosition = {
   top: number;
   route: string;
   search: string;
+  state?: Record<string, unknown>;
+};
+
+const RELOAD_STORAGE_KEY = 'et-scroll-restoration';
+
+const readReloadEntry = (): StoredPosition | null => {
+  try {
+    const raw = sessionStorage.getItem(RELOAD_STORAGE_KEY);
+
+    sessionStorage.removeItem(RELOAD_STORAGE_KEY);
+
+    const entry = raw ? (JSON.parse(raw) as StoredPosition) : null;
+
+    return typeof entry?.top === 'number' && typeof entry.route === 'string' ? entry : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeReloadEntry = (entry: StoredPosition) => {
+  try {
+    sessionStorage.setItem(RELOAD_STORAGE_KEY, JSON.stringify(entry));
+  } catch {
+    // Storage may be full or blocked (private mode); a reload then simply starts at the top.
+  }
+};
+
+const isFreshNavigation = () => {
+  const entry = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+
+  return entry?.type === 'navigate';
 };
 
 /** Key order is navigation order, not declaration order, so two spellings of one URL compare equal. */
@@ -228,6 +332,8 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
   const restoreTimeout = config.restore?.timeout ?? DEFAULT_RESTORE_TIMEOUT;
   const restoreMaxTimeout = config.restore?.maxTimeout ?? DEFAULT_RESTORE_MAX_TIMEOUT;
   const clampOnTimeout = config.restore?.clampOnTimeout ?? true;
+  const restoreOnReload = restoreEnabled && config.restore?.restoreOnReload === true;
+  let reloadEntry = restoreOnReload && !isFreshNavigation() ? readReloadEntry() : null;
 
   const resolveScrollElement = () => {
     const el = typeof config.scrollElement === 'function' ? config.scrollElement() : config.scrollElement;
@@ -265,12 +371,24 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     pendingRestore = null;
   };
 
-  const scheduleRestore = (target: number) => {
+  const captureEntry = (): StoredPosition => ({
+    top: resolveScrollElement().scrollTop,
+    route: prev.route,
+    search: serializeQueryParams(prev.state.queryParams),
+    state: holds.saveStates(),
+  });
+
+  const scheduleRestore = (entry: StoredPosition) => {
     cancelPendingRestore();
 
+    const target = entry.top;
     let frame = 0;
     let started = false;
     let cancelled = false;
+    let renderRef: { destroy: () => void } | null = null;
+    let fallback: ReturnType<typeof setTimeout> | undefined;
+    let stateSubscription: Subscription | null = null;
+    let stateDeadline: ReturnType<typeof setTimeout> | undefined;
 
     // The user scrolling always wins over a restoration we have not committed yet.
     const abortByUser = () => cancelPendingRestore();
@@ -324,9 +442,15 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       frame = requestAnimationFrame(step);
     };
 
-    const renderRef = afterNextRender({ read: start }, { injector });
+    const waitForRender = () => {
+      if (cancelled) return;
 
-    const fallback = setTimeout(start);
+      clearTimeout(stateDeadline);
+      renderRef = afterNextRender({ read: start }, { injector });
+      fallback = setTimeout(start);
+    };
+
+    const pendingStates = entry.state ? holds.restoreStates(entry.state) : [];
 
     for (const eventName of INTERACTION_EVENTS) {
       document.addEventListener(eventName, abortByUser, { capture: true, passive: true });
@@ -336,7 +460,9 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       // `cancelled` is not redundant with destroying the render hook: a superseded restoration must
       // not apply its (now stale) offset even if its hook had already been queued to run.
       cancelled = true;
-      renderRef.destroy();
+      renderRef?.destroy();
+      stateSubscription?.unsubscribe();
+      clearTimeout(stateDeadline);
 
       if (frame) cancelAnimationFrame(frame);
       clearTimeout(fallback);
@@ -345,6 +471,15 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
         document.removeEventListener(eventName, abortByUser, { capture: true });
       }
     };
+
+    if (pendingStates.length) {
+      stateDeadline = setTimeout(cancelPendingRestore, restoreMaxTimeout);
+      stateSubscription = merge(...pendingStates)
+        .pipe(ignoreElements())
+        .subscribe({ complete: waitForRender, error: waitForRender });
+    } else {
+      waitForRender();
+    }
   };
 
   /**
@@ -352,7 +487,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
    * "that page", whichever query state it was last in - the crumb linking to an overview does not
    * know, and should not have to reproduce, the filter the user left it under.
    */
-  const findLastVisitedOffset = (route: string, search: string) => {
+  const findLastVisitedEntry = (route: string, search: string) => {
     const entries = [...positions.values()];
 
     for (let i = entries.length - 1; i >= 0; i--) {
@@ -361,7 +496,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       if (!entry || entry.route !== route) continue;
       if (search && entry.search !== search) continue;
 
-      return entry.top;
+      return entry;
     }
 
     return undefined;
@@ -377,11 +512,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     // what `findLastVisitedOffset` walks backwards and what the cap below evicts from.
     if (lastNavigationId !== null) {
       positions.delete(lastNavigationId);
-      positions.set(lastNavigationId, {
-        top: resolveScrollElement().scrollTop,
-        route: prev.route,
-        search: serializeQueryParams(prev.state.queryParams),
-      });
+      positions.set(lastNavigationId, captureEntry());
     }
 
     if (positions.size > MAX_STORED_POSITIONS) {
@@ -417,8 +548,10 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     prev = curr;
 
     const wasMarkedAsReturn = wantsRestore;
+    const reloaded = reloadEntry;
 
     wantsRestore = false;
+    reloadEntry = null;
 
     if (event instanceof NavigationEnd) {
       lastNavigationId = event.id;
@@ -434,20 +567,31 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       // The saved offset wins over both scroll to top and fragment scrolling: the user may well have
       // scrolled away from the anchor before leaving the page.
       if (target !== undefined) {
-        scheduleRestore(target.top);
+        scheduleRestore(target);
 
         return;
       }
     }
 
     if (restoreEnabled && wasMarkedAsReturn) {
-      const target = findLastVisitedOffset(curr.route, serializeQueryParams(currState.queryParams));
+      const target = findLastVisitedEntry(curr.route, serializeQueryParams(currState.queryParams));
 
       if (target !== undefined) {
         scheduleRestore(target);
 
         return;
       }
+    }
+
+    if (
+      reloaded &&
+      event instanceof NavigationEnd &&
+      reloaded.route === curr.route &&
+      reloaded.search === serializeQueryParams(currState.queryParams)
+    ) {
+      scheduleRestore(reloaded);
+
+      return;
     }
 
     if (sameUrlNavigation) {
@@ -511,8 +655,15 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     )
     .subscribe();
 
+  const onPageHide = () => writeReloadEntry(captureEntry());
+
+  if (restoreOnReload) {
+    window.addEventListener('pagehide', onPageHide);
+  }
+
   destroyRef.onDestroy(() => {
     cancelPendingRestore();
+    window.removeEventListener('pagehide', onPageHide);
     if (restoreEnabled && previousScrollRestoration !== null) {
       history.scrollRestoration = previousScrollRestoration;
     }

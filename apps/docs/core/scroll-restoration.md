@@ -61,12 +61,13 @@ With `restore.enabled`, the offset is captured per history entry and re-applied 
 content is tall enough to actually reach it**. Nothing has to opt in: the scroll container's own
 height is the signal, so it works for lists, images, fonts and virtualized tables alike.
 
-| `restore` option | Default | Description                                                                                   |
-| ---------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `enabled`        | `false` | Turn restoration on. Also sets `history.scrollRestoration = 'manual'`.                        |
-| `timeout`        | `1000`  | How long (ms) to wait for the content to grow tall enough. Suspended while a hold is pending. |
-| `maxTimeout`     | `10000` | Absolute cap (ms) per attempt, regardless of holds.                                           |
-| `clampOnTimeout` | `true`  | On timeout, apply the offset clamped to the reachable maximum instead of staying put.         |
+| `restore` option  | Default | Description                                                                                   |
+| ----------------- | ------- | --------------------------------------------------------------------------------------------- |
+| `enabled`         | `false` | Turn restoration on. Also sets `history.scrollRestoration = 'manual'`.                        |
+| `timeout`         | `1000`  | How long (ms) to wait for the content to grow tall enough. Suspended while a hold is pending. |
+| `maxTimeout`      | `10000` | Absolute cap (ms) per attempt, regardless of holds.                                           |
+| `clampOnTimeout`  | `true`  | On timeout, apply the offset clamped to the reachable maximum instead of staying put.         |
+| `restoreOnReload` | `false` | Also restore after a reload of the same URL, through `sessionStorage` - see below.            |
 
 `maxTimeout` is only ever an upper bound: the wait ends at whichever of the two deadlines comes
 first, so setting it below `timeout` shortens the wait to `maxTimeout`.
@@ -81,6 +82,34 @@ holdScrollRestoration(() => query.isLoading());
 
 The registration lives for the lifetime of the injection context. Multiple holds are allowed -
 restoration waits while any of them reads `true`, up to `maxTimeout`.
+
+### Restoring page state first
+
+The saved offset only points at the right items if the page has the same content again. A paged list
+that had loaded three pages of cards renders only the first one on return, so the offset lands on the
+wrong cards. Register that state with the scroll entry from the route component:
+
+```ts
+registerScrollRestorationState({
+  key: 'pages',
+  save: () => this.pageCount(),
+  restore: (count) => this.loadPages(count),
+});
+```
+
+`save` runs when the user leaves the page, and the value is stored with that history entry. On
+back/forward (and on a link marked with `etRestoreScroll`), `restore` runs with the saved value first.
+If it returns an Observable, the offset is applied only after it completes (or errors); if it returns
+nothing, after the next render. A restore that has not completed within `maxTimeout` is unsubscribed
+and the offset is not applied. `key` tells several registrations on one page apart, and a
+registration whose key the entry has no value for is not called.
+
+### Restoring after a reload
+
+`restore.restoreOnReload: true` writes the current entry - offset and registered state - to
+`sessionStorage` on `pagehide`, and the first navigation after the reload restores it when it lands
+on the same URL (path and query params). A fresh navigation to the URL in the same tab does not. State
+values must be JSON serializable. Without the option, a reload scrolls to top.
 
 ### Returning through a link instead of the back button
 
@@ -99,7 +128,7 @@ router.navigate(['/teams'], { state: routerRestoreScroll() });
 
 The mark applies to that one navigation and is not written into the history entry it creates. The
 offset used is the one from the **most recent** visit to that page in this session; a page the session
-has no offset for - a first visit, or anything after a reload - scrolls to top as usual.
+has no offset for - a first visit, or any page left before a reload - scrolls to top as usual.
 
 A link that names no query params matches whatever query state the page was last in, because a crumb
 pointing at an overview does not know which filter or saved view the user left it under. State them
@@ -115,9 +144,9 @@ land while the user is dragging. Starting a new navigation also supersedes a pen
 
 ### Limits to know about
 
-- **Offsets are held in memory only.** They are keyed by the router's per-navigation id and capped at
-  200 entries; nothing is written to `sessionStorage`. Restoration therefore covers back/forward
-  within a session, but not a full page reload or a restored tab - those scroll to top.
+- **Offsets are held in memory.** They are keyed by the router's per-navigation id and capped at 200
+  entries. `restoreOnReload` persists only the entry being reloaded, so back/forward to a page left
+  before the reload scrolls to top.
 - Restoration applies to `popstate` navigations that have a stored offset, and to navigations marked
   with `etRestoreScroll` / `routerRestoreScroll()`. Any other link click scrolls to top.
 - A stored offset wins over both `queryParamTriggerList` and fragment scrolling - the user may have
