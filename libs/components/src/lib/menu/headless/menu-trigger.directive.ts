@@ -2,6 +2,7 @@ import { DestroyRef, Directive, ElementRef, afterNextRender, inject } from '@ang
 import { RuntimeError, createComponentId } from '@ethlete/core';
 import { MENU_ERROR_CODES } from '../menu-errors';
 import { MenuItemDirective } from './menu-item.directive';
+import { MENU_TRIGGER_ROOT_ALIGNMENT } from './menu-trigger.tokens';
 import { MenuDirective } from './menu.directive';
 
 @Directive({
@@ -21,6 +22,7 @@ export class MenuTriggerDirective {
   public menu = inject(MenuDirective, { optional: true });
   public elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
+  private rootAlignment = inject(MENU_TRIGGER_ROOT_ALIGNMENT, { optional: true, self: true });
 
   /** @internal The same-element menu item this trigger is combined with, if any. Set by the item. */
   public hostItem: MenuItemDirective | null = null;
@@ -30,6 +32,10 @@ export class MenuTriggerDirective {
 
     if (!element.id) {
       element.id = createComponentId('et-menu-trigger');
+    }
+
+    if (this.rootAlignment) {
+      this.menu?.rootAlignment.set(this.rootAlignment);
     }
 
     this.menu?.registeredTrigger.set(this);
