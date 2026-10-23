@@ -188,10 +188,10 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 | Property                        | Default | Applies to                                                 |
 | ------------------------------- | ------- | ---------------------------------------------------------- |
 | `--et-accordion-padding-block`  | `14px`  | header padding, and the panel's bottom padding             |
-| `--et-accordion-padding-inline` | `0px`   | header and panel side padding - raise it for a boxed group |
+| `--et-accordion-padding-inline` | `12px`  | header and panel side padding, so the hover tint has room  |
 | `--et-accordion-gap`            | `12px`  | gap between label, hint and chevron                        |
 | `--et-accordion-chevron-size`   | `14px`  | chevron box                                                |
-| `--et-accordion-radius`         | `0px`   | the hover tint's shape - raise it when the group is a card |
+| `--et-accordion-radius`         | `8px`   | the hover tint's shape - raise it when the group is a card |
 | `--et-accordion-duration`       | `240ms` | collapse and chevron rotation                              |
 | `--et-accordion-color-duration` | `120ms` | the header's hover response - tint, hairline and chevron   |
 
