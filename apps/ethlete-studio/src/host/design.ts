@@ -26,6 +26,12 @@ export const CALL_STAGES = ['themes', 'ci', 'wireframe', 'component', 'element',
 
 export type CallStage = (typeof CALL_STAGES)[number];
 
+/** A quick exploration of an idea, outside the ordered stages. */
+export const SKETCH_STAGE = 'sketch';
+
+/** Where calls made before a stage was required are listed. */
+export const LEGACY_STAGE = 'legacy';
+
 /** One pass over a call, as the call file declares it. */
 export type CallRound = {
   key: string;
@@ -55,8 +61,10 @@ export type Call = {
   slug: string;
   /** The feature the call belongs to. A call without one is loose. */
   feature: string | null;
-  /** Where the call sits in the design order. A call without one is loose. */
-  stage: CallStage | null;
+  /** Where the call sits in the design order, or `sketch`. A call without one is invalid unless it is legacy. */
+  stage: CallStage | typeof SKETCH_STAGE | null;
+  /** A call made before the stage was required. It needs no stage. */
+  legacy: boolean;
   /** The parts a wireframe lists, the queue of component calls. Empty when it declares none. */
   inventory: InventoryPart[];
   eyebrow: string;

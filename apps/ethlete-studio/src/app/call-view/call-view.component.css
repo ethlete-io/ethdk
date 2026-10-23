@@ -388,6 +388,23 @@
     font-size: 1.2rem;
   }
 
+  .studio__overview-invalid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.4rem 1.6rem;
+    color: var(--et-theme-color-primary-solid);
+    font-size: 1.2rem;
+  }
+
+  .studio__overview-invalid span {
+    font-size: 1.1rem;
+  }
+
+  .studio__overview-invalid code {
+    font-family: var(--font-mono);
+  }
+
   .studio__overview-unstaged span,
   .studio__overview-stage span .studio__overview-ahead {
     font-family: var(--font-mono);

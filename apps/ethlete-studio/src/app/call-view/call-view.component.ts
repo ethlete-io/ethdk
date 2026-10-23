@@ -53,7 +53,9 @@ import {
   stageGroups,
   stageLabel,
   stageOverview,
-  unstagedCount,
+  invalidCount,
+  legacyCount,
+  sketchCount,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -163,10 +165,27 @@ const SETTLE_MS = 300;
               }
             }
 
-            @if (unstaged(); as count) {
+            @if (sketches(); as count) {
               <div class="studio__overview-unstaged">
-                <b>No stage</b>
-                <span>{{ count }} {{ count === 1 ? 'call' : 'calls' }} outside the process</span>
+                <b>Sketch</b>
+                <span>{{ count }} {{ count === 1 ? 'call' : 'calls' }} outside the stages</span>
+              </div>
+            }
+
+            @if (legacy(); as count) {
+              <div class="studio__overview-unstaged">
+                <b>Legacy</b>
+                <span>{{ count }} {{ count === 1 ? 'call' : 'calls' }} made before stages</span>
+              </div>
+            }
+
+            @if (invalid(); as count) {
+              <div class="studio__overview-invalid" etProvideColor="danger">
+                <b>Invalid</b>
+                <span>
+                  {{ count }} {{ count === 1 ? 'call has' : 'calls have' }} no stage: set a stage, or
+                  <code>sketch</code> for a quick idea
+                </span>
               </div>
             }
           </nav>
@@ -210,8 +229,13 @@ const SETTLE_MS = 300;
 
             @for (group of openStages(); track group.stage) {
               @if (group.stage || openStages().length > 1) {
-                <h3 #stageHead [attr.data-stage]="group.stage" class="studio__stage-head">
-                  {{ group.stage ? STAGE_LABEL(group.stage) : 'No stage' }}
+                <h3
+                  #stageHead
+                  [attr.data-stage]="group.stage"
+                  [etProvideColor]="group.stage ? 'brand' : 'danger'"
+                  class="studio__stage-head"
+                >
+                  {{ group.stage ? STAGE_LABEL(group.stage) : 'Invalid: set a stage, or sketch for a quick idea' }}
                 </h3>
               }
               @for (call of group.calls; track call.slug) {
@@ -877,7 +901,11 @@ export class CallViewComponent {
     ),
   );
 
-  protected unstaged = computed(() => unstagedCount(this.listed()));
+  protected invalid = computed(() => invalidCount(this.listed()));
+
+  protected legacy = computed(() => legacyCount(this.listed()));
+
+  protected sketches = computed(() => sketchCount(this.listed()));
 
   protected readonly STAGE_LABEL = stageLabel;
 

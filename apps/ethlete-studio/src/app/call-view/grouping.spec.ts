@@ -13,7 +13,9 @@ import {
   stageGroups,
   stageLabel,
   stageOverview,
-  unstagedCount,
+  invalidCount,
+  legacyCount,
+  sketchCount,
   touchedLabel,
   unsettledCalls,
 } from './grouping';
@@ -32,6 +34,7 @@ const call = (slug: string, patch: Partial<Call> = {}): Call => ({
   slug,
   feature: null,
   stage: null,
+  legacy: false,
   inventory: [],
   eyebrow: '',
   headline: slug,
@@ -188,7 +191,7 @@ describe('stageLabel', () => {
   it('numbers a stage by its place in the order and keeps an unknown id', () => {
     expect(stageLabel('themes')).toBe('1 Foundations');
     expect(stageLabel('prototype')).toBe('7 Prototype');
-    expect(stageLabel('sketch')).toBe('sketch');
+    expect(stageLabel('mystery')).toBe('mystery');
   });
 });
 
@@ -260,15 +263,60 @@ describe('stageOverview', () => {
   });
 });
 
-describe('unstagedCount', () => {
-  it('counts the calls without a known stage', () => {
-    expect(
-      unstagedCount({
-        calls: [call('p/a', { stage: 'page' }), call('p/b'), call('p/c', { stage: 'sketch' as never })],
-        project: '',
-        term: '',
-      }),
-    ).toBe(2);
+describe('invalidCount, legacyCount and sketchCount', () => {
+  const request = {
+    calls: [
+      call('p/a', { stage: 'page' }),
+      call('p/b'),
+      call('p/c', { stage: 'sketch' }),
+      call('p/d', { legacy: true }),
+      call('p/e', { legacy: true, stage: 'page' }),
+    ],
+    project: '',
+    term: '',
+  };
+
+  it('counts a call without a stage and without legacy as invalid', () => {
+    expect(invalidCount(request)).toBe(1);
+  });
+
+  it('counts legacy calls apart', () => {
+    expect(legacyCount(request)).toBe(2);
+  });
+
+  it('counts sketches apart', () => {
+    expect(sketchCount(request)).toBe(1);
+  });
+});
+
+describe('stage groups and overview with sketches and legacy calls', () => {
+  const request = {
+    calls: [
+      call('p/a', { stage: 'page' }),
+      call('p/b', { stage: 'sketch' }),
+      call('p/c', { legacy: true }),
+      call('p/d', { legacy: true, stage: 'page' }),
+      call('p/e'),
+    ],
+    project: '',
+    term: '',
+  };
+
+  it('orders the groups: stages, sketch, legacy, invalid', () => {
+    expect(stageGroups(request).map((group) => group.stage)).toEqual(['page', 'sketch', 'legacy', null]);
+  });
+
+  it('keeps legacy calls and sketches out of the stage counts and never marks a sketch before', () => {
+    const overview = stageOverview(request, {});
+
+    expect(overview.find((entry) => entry.stage === 'page')?.open).toBe(1);
+    expect(overview.map((entry) => entry.stage)).not.toContain('sketch');
+    expect(overview.every((entry) => entry.before === null || entry.stage === 'page')).toBe(true);
+  });
+
+  it('reads a sketch and a legacy call as words', () => {
+    expect(stageLabel('sketch')).toBe('Sketch');
+    expect(stageLabel('legacy')).toBe('Legacy');
   });
 });
 

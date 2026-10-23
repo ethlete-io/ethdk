@@ -1,4 +1,4 @@
-import { Call, CALL_STAGES, CallStage, InventoryPart } from '../../host/design';
+import { Call, CALL_STAGES, CallStage, InventoryPart, LEGACY_STAGE, SKETCH_STAGE } from '../../host/design';
 
 /** One project of a checkout: the top folder of a call slug, with how much of it is still open. */
 export type ProjectSummary = {
@@ -52,11 +52,13 @@ export type StageGroup = {
 };
 
 const stageRank = (stage: string | null) => {
-  if (!stage) return CALL_STAGES.length + 1;
+  if (!stage) return CALL_STAGES.length + 3;
+  if (stage === SKETCH_STAGE) return CALL_STAGES.length;
+  if (stage === LEGACY_STAGE) return CALL_STAGES.length + 1;
 
   const index = (CALL_STAGES as readonly string[]).indexOf(stage);
 
-  return index === -1 ? CALL_STAGES.length : index;
+  return index === -1 ? CALL_STAGES.length + 2 : index;
 };
 
 const STAGE_LABELS: Record<CallStage, string> = {
@@ -73,6 +75,9 @@ const STAGE_LABELS: Record<CallStage, string> = {
 export const stageLabel = (stage: string) => {
   const index = (CALL_STAGES as readonly string[]).indexOf(stage);
 
+  if (stage === SKETCH_STAGE) return 'Sketch';
+  if (stage === LEGACY_STAGE) return 'Legacy';
+
   return index === -1 ? stage : `${index + 1} ${STAGE_LABELS[stage as CallStage]}`;
 };
 
@@ -81,7 +86,7 @@ export const stageGroups = (request: CallListRequest): StageGroup[] => {
   const found = new Map<string | null, Call[]>();
 
   for (const call of unsettledCalls(request)) {
-    const stage = call.stage || null;
+    const stage = call.legacy ? LEGACY_STAGE : call.stage || null;
 
     found.set(stage, [...(found.get(stage) ?? []), call]);
   }
@@ -106,7 +111,7 @@ export const stageOverview = (request: CallListRequest, states: Record<string, s
   const calls = callList(request);
 
   const summaries = CALL_STAGES.map((stage) => {
-    const inStage = calls.filter((call) => call.stage === stage);
+    const inStage = calls.filter((call) => !call.legacy && call.stage === stage);
     const open = inStage.filter((call) => openVariants(call) > 0).length;
 
     return {
@@ -127,9 +132,19 @@ export const stageOverview = (request: CallListRequest, states: Record<string, s
   });
 };
 
-/** How many calls of the request declare no stage and so sit outside the design process. */
-export const unstagedCount = (request: CallListRequest) =>
-  callList(request).filter((call) => !CALL_STAGES.includes(call.stage as CallStage)).length;
+const isKnownStage = (stage: string | null) =>
+  stage === SKETCH_STAGE || (CALL_STAGES as readonly string[]).includes(stage ?? '');
+
+/** How many calls of the request are invalid: no known stage, and not legacy. */
+export const invalidCount = (request: CallListRequest) =>
+  callList(request).filter((call) => !call.legacy && !isKnownStage(call.stage)).length;
+
+/** How many calls of the request were made before a stage was required. */
+export const legacyCount = (request: CallListRequest) => callList(request).filter((call) => call.legacy).length;
+
+/** How many non-legacy calls of the request are sketches. */
+export const sketchCount = (request: CallListRequest) =>
+  callList(request).filter((call) => !call.legacy && call.stage === SKETCH_STAGE).length;
 
 export const ruledLabel = (call: Call) =>
   `${call.variants.length - openVariants(call)} of ${call.variants.length} ruled`;

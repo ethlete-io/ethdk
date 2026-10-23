@@ -18,6 +18,7 @@ const call = (slug: string, variants: CallVariant[]): Call => ({
   slug,
   feature: 'The picker',
   stage: null,
+  legacy: false,
   inventory: [],
   eyebrow: slug,
   headline: slug,
@@ -288,8 +289,35 @@ describe('CallViewComponent', () => {
 
     expect([...(open?.querySelectorAll('.studio__stage-head') ?? [])].map((head) => head.textContent?.trim())).toEqual([
       '6 Pages',
-      'No stage',
+      'Invalid: set a stage, or sketch for a quick idea',
     ]);
+  });
+
+  it('lists legacy calls and sketches apart and keeps them out of the stage counts', async () => {
+    stubHost({
+      design_project: () => ({
+        ...PROJECT,
+        calls: [
+          { ...ASKING, stage: 'page' },
+          { ...UNNOTED, slug: 'app/old', legacy: true },
+          { ...UNNOTED, slug: 'app/idea', stage: 'sketch' },
+          { ...UNNOTED, slug: 'app/bad' },
+        ],
+      }),
+    });
+
+    const fixture = await mount(ASKING.slug);
+    const root = element(fixture);
+    const stages = [...root.querySelectorAll('.studio__overview-stage')];
+    const rows = [...root.querySelectorAll('.studio__overview-unstaged')].map((row) => row.textContent);
+
+    expect(stages[5]?.textContent).toContain('1 open, 0 ready, 0 settled');
+    expect(stages.map((stage) => stage.textContent).join()).not.toContain('Sketch');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('Sketch');
+    expect(rows[1]).toContain('Legacy');
+    expect(root.querySelector('.studio__overview-invalid')?.textContent).toContain('1 call has no stage');
+    expect(root.querySelector('.studio__overview-invalid')?.textContent).toContain('sketch');
   });
 
   it('lists all seven stages in the overview, with the empty ones muted', async () => {
@@ -312,7 +340,7 @@ describe('CallViewComponent', () => {
     expect(stages[0]?.classList).toContain('studio__overview-stage--empty');
     expect(stages[5]?.textContent).toContain('before 1 Foundations');
     expect(stages[0]?.textContent).not.toContain('before');
-    expect(element(fixture).querySelector('.studio__overview-unstaged')?.textContent).toContain('2 calls outside');
+    expect(element(fixture).querySelector('.studio__overview-invalid')?.textContent).toContain('2 calls have no stage');
   });
 
   it('lists the inventory under the wireframes and counts the component calls', async () => {

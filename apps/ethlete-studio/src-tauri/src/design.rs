@@ -42,6 +42,8 @@ pub struct Call {
     pub feature: Option<String>,
     /// Where the call sits in the design order, from `themes` to `prototype`. A call without one is loose.
     pub stage: Option<String>,
+    /// A call made before the stage was required. It needs no stage.
+    pub legacy: bool,
     /// The parts a wireframe lists, the queue of component calls. Empty when it declares none.
     pub inventory: Vec<InventoryPart>,
     pub eyebrow: String,
@@ -179,6 +181,9 @@ fn parse_call(slug: &str, source: &str) -> Call {
         slug: slug.to_owned(),
         feature: text_of(&call, "feature"),
         stage: text_of(&call, "stage"),
+        legacy: call
+            .property("legacy")
+            .is_some_and(|property| source[property.node.start..property.node.end].trim() == "true"),
         inventory: parse_inventory(source, &call),
         eyebrow: text_of(&call, "eyebrow").unwrap_or_default(),
         headline: text_of(&call, "headline").unwrap_or_default(),
@@ -906,6 +911,16 @@ export default defineCall({
 
         assert_eq!(parse_call("x", &staged).stage.as_deref(), Some("page"));
         assert_eq!(parse_call("x", CALL).stage, None);
+    }
+
+    #[test]
+    fn a_call_reads_whether_it_is_legacy() {
+        let legacy = CALL.replace("  eyebrow:", "  legacy: true,\n  eyebrow:");
+        let not = CALL.replace("  eyebrow:", "  legacy: false,\n  eyebrow:");
+
+        assert!(parse_call("x", &legacy).legacy);
+        assert!(!parse_call("x", &not).legacy);
+        assert!(!parse_call("x", CALL).legacy);
     }
 
     #[test]
