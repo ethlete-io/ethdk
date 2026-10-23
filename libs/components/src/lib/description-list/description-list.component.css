@@ -1,7 +1,7 @@
 @layer components {
   @property --et-description-list-row-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 8px;
   }
 
@@ -13,7 +13,7 @@
 
   @property --et-description-list-stacked-term-gap {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 2px;
   }
 
@@ -25,13 +25,13 @@
 
   @property --et-description-list-term-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
   @property --et-description-list-detail-font-size {
     syntax: '<length>';
-    inherits: false;
+    inherits: true;
     initial-value: 14px;
   }
 
