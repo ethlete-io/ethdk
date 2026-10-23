@@ -31,8 +31,7 @@ import { BUTTON_IMPORTS, FLOATING_ACTION_IMPORTS, FloatingActionDirective } from
         }
       </ul>
 
-      <div class="app-fa-footer">Footer - the Filter button is gone by here</div>
-      <div class="app-fa-footer-space"></div>
+      <div class="app-fa-footer">Footer - the Filter button is gone once the results scroll out of view</div>
     </div>
   `,
   styles: `
@@ -81,7 +80,6 @@ import { BUTTON_IMPORTS, FLOATING_ACTION_IMPORTS, FloatingActionDirective } from
       padding: 1.2rem 1.4rem;
       border: 1px solid var(--et-surface-border-solid);
       border-radius: 1rem;
-      background-color: var(--et-surface-interaction-solid);
       font-size: 1.4rem;
     }
 
@@ -100,16 +98,14 @@ import { BUTTON_IMPORTS, FLOATING_ACTION_IMPORTS, FloatingActionDirective } from
     }
 
     .app-fa-footer {
-      padding: 4rem 1.4rem;
+      box-sizing: border-box;
+      min-block-size: 100vh;
+      padding: 2.4rem 1.4rem;
       border: 1px dashed var(--et-surface-border-solid);
       border-radius: 1rem;
       color: var(--et-surface-color-muted-solid);
       font-size: 1.4rem;
       text-align: center;
-    }
-
-    .app-fa-footer-space {
-      block-size: 30rem;
     }
   `,
   encapsulation: ViewEncapsulation.None,
