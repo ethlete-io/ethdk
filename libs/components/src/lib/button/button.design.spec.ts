@@ -1,0 +1,102 @@
+import { Component, input } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { button, ButtonMockOptions } from '../../../design/button';
+import '../../test-helpers';
+import { ButtonComponent } from './button.component';
+import { ButtonIconAlignment, ButtonSize, ButtonVariant } from './button.types';
+
+type Shape = { tag: string; classes: string[]; attributes: string[]; children: Shape[] };
+
+const RELEVANT_ATTRIBUTE = /^(data-|aria-|disabled$|type$)/;
+
+const shapeOf = (element: Element): Shape => ({
+  tag: element.tagName.toLowerCase(),
+  classes: [...element.classList].sort(),
+  attributes: [...element.attributes]
+    .filter((attribute) => RELEVANT_ATTRIBUTE.test(attribute.name))
+    .map((attribute) => `${attribute.name}=${attribute.value}`)
+    .sort(),
+  children: [...element.children].map(shapeOf),
+});
+
+const mockShape = (options: ButtonMockOptions) => {
+  const template = document.createElement('template');
+  template.innerHTML = button(options);
+
+  const drawn = template.content.firstElementChild;
+  if (!drawn) throw new Error('the mock drew nothing');
+
+  return shapeOf(drawn);
+};
+
+@Component({
+  imports: [ButtonComponent],
+  template: `
+    <button
+      [variant]="variant()"
+      [size]="size()"
+      [iconAlignment]="iconAlignment()"
+      [pressed]="pressed()"
+      [disabled]="disabled()"
+      [color]="color()"
+      et-button
+    >
+      <i etIcon>i</i>Save
+    </button>
+    <a [variant]="variant()" [size]="size()" [color]="color()" et-button href="/x">Go</a>
+  `,
+})
+class ButtonHost {
+  public variant = input<ButtonVariant>('filled');
+  public size = input<ButtonSize>('md');
+  public iconAlignment = input<ButtonIconAlignment>('start');
+  public pressed = input<boolean | undefined>(undefined);
+  public disabled = input(false);
+  public color = input<string | undefined>(undefined);
+}
+
+const CASES: ButtonMockOptions[] = [
+  { label: 'Save' },
+  { label: 'Save', variant: 'outline', size: 'sm', color: 'brand' },
+  { label: 'Save', variant: 'tonal', size: 'xl', iconAlignment: 'end', pressed: false },
+  { label: 'Save', variant: 'transparent', pressed: true },
+  { label: 'Save', disabled: true, size: 'xs' },
+];
+
+describe('button design mock', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideColorThemesWithTailwind4([
+          {
+            name: 'brand',
+            isDefault: true,
+            primary: {
+              color: { default: '0 0 0', hover: '0 0 0', active: '0 0 0', disabled: '0 0 0' },
+              onColor: { default: '1 1 1' },
+            },
+          },
+        ]),
+      ],
+    });
+  });
+
+  it.each(CASES)('draws the classes the component renders for %o', (options) => {
+    const fixture = TestBed.createComponent(ButtonHost);
+
+    for (const name of ['variant', 'size', 'iconAlignment', 'pressed', 'disabled', 'color'] as const) {
+      if (options[name] !== undefined) fixture.componentRef.setInput(name, options[name]);
+    }
+
+    fixture.detectChanges();
+
+    const [real, anchor] = fixture.nativeElement.querySelectorAll('[et-button]');
+
+    expect(mockShape({ ...options, icon: '<i>i</i>' })).toEqual(shapeOf(real));
+
+    if (!options.pressed && !options.disabled && options.iconAlignment !== 'end') {
+      expect(mockShape({ ...options, tag: 'a' })).toEqual(shapeOf(anchor));
+    }
+  });
+});

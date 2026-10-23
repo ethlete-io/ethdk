@@ -14,6 +14,16 @@
       "glob": "**/schema.json",
       "input": "generators",
       "output": "./generators"
+    },
+    {
+      "glob": "**/*.ts",
+      "input": "design",
+      "output": "./design"
+    },
+    {
+      "glob": "**/*.css",
+      "input": "src/lib",
+      "output": "./src/lib"
     }
   ],
   "lib": {

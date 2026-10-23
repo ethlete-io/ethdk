@@ -1,5 +1,6 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
 import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
+import { cssThemeName, surfaceThemeCss } from '../../design/theme-css.js';
 
 //#region Types
 
@@ -434,8 +435,8 @@ function parseSurfaceThemeObject(obj: ObjectLiteralExpression, sourceFile: Sourc
 // flags on themes of that type. Matches the theme's name or its CSS-safe form. Themes of
 // the other type keep their flags. Returns the resolved name.
 function applyDefaultSurfaceThemeOverride(themes: SurfaceTheme[], defaultTheme: string, type: SurfaceType): string {
-  const wanted = createCssSurfaceName(defaultTheme);
-  const matches = themes.filter((t) => t.name === defaultTheme || createCssSurfaceName(t.name) === wanted);
+  const wanted = cssThemeName(defaultTheme);
+  const matches = themes.filter((t) => t.name === defaultTheme || cssThemeName(t.name) === wanted);
   const target = matches.find((t) => t.type === type);
 
   if (!target) {
@@ -492,13 +493,6 @@ function validateSurfaceThemeConfiguration(themes: SurfaceTheme[]): void {
 
 //#region CSS Generation
 
-function createCssSurfaceName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-}
-
 function generateSurfaceThemeNameTypes(themes: SurfaceTheme[], schema: GeneratorSchema): string {
   const themesPath = schema.themesPath || 'src/surface-themes.ts';
   const outputPath = schema.outputPath || 'src/styles/generated-tailwind-surface-themes.css';
@@ -530,9 +524,6 @@ function generateSurfaceThemeCss(
   runtimePrefix: string,
   schema: GeneratorSchema,
 ): string {
-  const tailwindVars: string[] = [];
-  const themeVars: string[] = [];
-
   const themesPath = schema.themesPath || 'src/surface-themes.ts';
   const outputPath = schema.outputPath || 'src/styles/generated-tailwind-surface-themes.css';
 
@@ -547,278 +538,7 @@ function generateSurfaceThemeCss(
 
 `;
 
-  // Static Tailwind @theme block - one color set per surface theme
-  for (const theme of themes) {
-    const name = createCssSurfaceName(theme.name);
-
-    tailwindVars.push(`  /* ${theme.name} surface */`);
-    tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-bg: rgb(${theme.background});`);
-    tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}: rgb(${theme.color});`);
-    tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-muted: rgb(${theme.colorMuted});`);
-    tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-subtle: rgb(${theme.colorSubtle});`);
-    tailwindVars.push(`  --color-${utilityPrefix}-surface-${name}-border: rgb(${theme.border});`);
-
-    if (theme.interactionColor) {
-      const { color, onColor, inkColor } = theme.interactionColor;
-
-      pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction`, color);
-
-      if (onColor) {
-        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-on-interaction`, onColor);
-      }
-
-      if (inkColor) {
-        pushStaticInteractionColors(tailwindVars, `--color-${utilityPrefix}-surface-${name}-interaction-ink`, inkColor);
-      }
-    }
-
-    tailwindVars.push('');
-  }
-
-  // Dynamic surface colors (reference runtime CSS variables).
-  // These are ALSO re-declared on every surface selector in the alias block below. A Tailwind
-  // `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-surface-*))` resolves once
-  // against the root surface and inherits that concrete color into descendants - which means
-  // `bg-<prefix>-surface-*` utilities would ignore nested surface scopes (e.g. an elevated
-  // surface). Re-declaring them per surface selector makes the utilities resolve against the
-  // nearest surface instead.
-  const dynamicSurfaceColors = buildDynamicSurfaceColors(utilityPrefix, runtimePrefix);
-  tailwindVars.push('  /* Dynamic surface colors (references runtime CSS variables) */');
-  tailwindVars.push(...dynamicSurfaceColors.map((decl) => `  ${decl}`));
-
-  // Runtime CSS - theme selector classes
-  for (const theme of themes) {
-    const name = createCssSurfaceName(theme.name);
-    const isDefault = theme.isDefault;
-
-    if (isDefault) {
-      const selectors = [`.${runtimePrefix}-surface--default-${theme.type}`, `.${runtimePrefix}-surface--${name}`];
-      themeVars.push(`${selectors.join(', ')} {`);
-    } else {
-      themeVars.push(`.${runtimePrefix}-surface--${name} {`);
-    }
-
-    pushSurfaceVars(themeVars, runtimePrefix, theme, '  ');
-
-    themeVars.push('}\n');
-  }
-
-  // Root defaults - apply the default surface vars to :root
-  const defaultLight = themes.find((t) => t.isDefault && t.type === 'light');
-  const defaultDark = themes.find((t) => t.isDefault && t.type === 'dark');
-
-  if (defaultLight && defaultDark) {
-    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
-    pushSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
-    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultLight);
-    pushForcedSchemeSurfaceVars(themeVars, runtimePrefix, defaultDark);
-  } else {
-    // A single registered surface type has no other scheme to switch to, so its default must
-    // land on :root unconditionally - behind prefers-color-scheme it would leave every surface
-    // variable undefined for users whose OS asks for the scheme the app lacks.
-    pushRootSurfaceVars(themeVars, runtimePrefix, defaultLight ?? defaultDark);
-  }
-
-  // Convenience var aliases - available on any element with a surface class or :root (via media queries)
-  const aliasBlock = `/* Convenience aliases (rgb + solid variants) */
-@layer base {
-  :root, :where([class*="${runtimePrefix}-surface--"]) {
-    --${runtimePrefix}-surface-background-rgb: var(--${runtimePrefix}-surface-background);
-    --${runtimePrefix}-surface-background-solid: rgb(var(--${runtimePrefix}-surface-background-rgb));
-
-    --${runtimePrefix}-surface-color-rgb: var(--${runtimePrefix}-surface-color);
-    --${runtimePrefix}-surface-color-solid: rgb(var(--${runtimePrefix}-surface-color-rgb));
-
-    --${runtimePrefix}-surface-color-muted-rgb: var(--${runtimePrefix}-surface-color-muted);
-    --${runtimePrefix}-surface-color-muted-solid: rgb(var(--${runtimePrefix}-surface-color-muted-rgb));
-
-    --${runtimePrefix}-surface-color-subtle-rgb: var(--${runtimePrefix}-surface-color-subtle);
-    --${runtimePrefix}-surface-color-subtle-solid: rgb(var(--${runtimePrefix}-surface-color-subtle-rgb));
-
-    --${runtimePrefix}-surface-border-rgb: var(--${runtimePrefix}-surface-border);
-    --${runtimePrefix}-surface-border-solid: rgb(var(--${runtimePrefix}-surface-border-rgb));
-
-    --${runtimePrefix}-surface-interaction-rgb: var(--${runtimePrefix}-surface-interaction);
-    --${runtimePrefix}-surface-interaction-solid: rgb(var(--${runtimePrefix}-surface-interaction-rgb));
-
-    --${runtimePrefix}-surface-interaction-hover-rgb: var(--${runtimePrefix}-surface-interaction-hover);
-    --${runtimePrefix}-surface-interaction-hover-solid: rgb(var(--${runtimePrefix}-surface-interaction-hover-rgb));
-
-    --${runtimePrefix}-surface-interaction-focus-rgb: var(--${runtimePrefix}-surface-interaction-focus);
-    --${runtimePrefix}-surface-interaction-focus-solid: rgb(var(--${runtimePrefix}-surface-interaction-focus-rgb));
-
-    --${runtimePrefix}-surface-interaction-active-rgb: var(--${runtimePrefix}-surface-interaction-active);
-    --${runtimePrefix}-surface-interaction-active-solid: rgb(var(--${runtimePrefix}-surface-interaction-active-rgb));
-
-    --${runtimePrefix}-surface-interaction-disabled-rgb: var(--${runtimePrefix}-surface-interaction-disabled);
-    --${runtimePrefix}-surface-interaction-disabled-solid: rgb(var(--${runtimePrefix}-surface-interaction-disabled-rgb));
-
-    /* Dynamic Tailwind surface colors - re-declared per surface scope so that
-       bg-${utilityPrefix}-surface-* utilities resolve against the nearest surface
-       (e.g. a nested elevated surface) instead of the value computed once at :root. */
-${dynamicSurfaceColors.map((decl) => `    ${decl}`).join('\n')}
-  }
-}
-`;
-
-  return `${header}@theme {
-${tailwindVars.join('\n')}
-}
-
-@layer base {
-${themeVars.join('\n')}
-}
-
-${aliasBlock}
-${buildSurfaceColorScope(runtimePrefix)}`;
-}
-
-// The reserved `surface` color scope. It bridges the two theming systems - color variables out of
-// surface variables - so `[etProvideColor]="'surface'"` renders a component in the neutral of
-// whatever surface it sits on. It lives here rather than in the SDK's own CSS because a stylesheet
-// shipped with `ProvideColorDirective` would land in every bundle that themes anything, and only
-// apps that use the scope should pay for it.
-function buildSurfaceColorScope(runtimePrefix: string): string {
-  const tint = `var(--${runtimePrefix}-surface-interaction, var(--${runtimePrefix}-surface-color))`;
-  const on = `var(--${runtimePrefix}-surface-on-interaction, var(--${runtimePrefix}-surface-background))`;
-  const ink = `var(--${runtimePrefix}-surface-interaction-ink, var(--${runtimePrefix}-surface-color))`;
-
-  const state = (name: string, source: string, fallback: string) =>
-    INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `    --${runtimePrefix}-color-${name}${suffix}: ${suffix ? `var(--${runtimePrefix}-surface-${source}${suffix}, ${fallback})` : fallback};`,
-    ).join('\n');
-
-  return `/* The reserved \`surface\` color: resolves the color tokens from the ambient surface's neutral swatch. */
-@layer base {
-  .${runtimePrefix}-color--surface {
-${state('primary', 'interaction', tint)}
-
-${state('on-primary', 'on-interaction', on)}
-
-${state('primary-ink', 'interaction-ink', ink)}
-  }
-}
-`;
-}
-
-// Dynamic surface color declarations (unindented). Emitted in `@theme` (so Tailwind generates
-// the utilities) and re-declared on every surface selector (so the utilities resolve per scope).
-function buildDynamicSurfaceColors(utilityPrefix: string, runtimePrefix: string): string[] {
-  // `on-interaction` and `interaction-ink` are optional per theme, so each falls back to the
-  // surface's own background/color - the same defaults the `.<runtimePrefix>-color--surface`
-  // bridge applies.
-  const onFallback = `var(--${runtimePrefix}-surface-background)`;
-  const inkFallback = `var(--${runtimePrefix}-surface-color)`;
-
-  return [
-    `--color-${utilityPrefix}-surface-bg: rgb(var(--${runtimePrefix}-surface-background));`,
-    `--color-${utilityPrefix}-surface: rgb(var(--${runtimePrefix}-surface-color));`,
-    `--color-${utilityPrefix}-surface-muted: rgb(var(--${runtimePrefix}-surface-color-muted));`,
-    `--color-${utilityPrefix}-surface-subtle: rgb(var(--${runtimePrefix}-surface-color-subtle));`,
-    `--color-${utilityPrefix}-surface-border: rgb(var(--${runtimePrefix}-surface-border));`,
-    `--color-${utilityPrefix}-surface-interaction: rgb(var(--${runtimePrefix}-surface-interaction));`,
-    `--color-${utilityPrefix}-surface-interaction-hover: rgb(var(--${runtimePrefix}-surface-interaction-hover));`,
-    `--color-${utilityPrefix}-surface-interaction-focus: rgb(var(--${runtimePrefix}-surface-interaction-focus));`,
-    `--color-${utilityPrefix}-surface-interaction-active: rgb(var(--${runtimePrefix}-surface-interaction-active));`,
-    `--color-${utilityPrefix}-surface-interaction-disabled: rgb(var(--${runtimePrefix}-surface-interaction-disabled));`,
-    ...INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `--color-${utilityPrefix}-surface-on-interaction${suffix}: rgb(var(--${runtimePrefix}-surface-on-interaction${suffix}, ${onFallback}));`,
-    ),
-    ...INTERACTION_STATE_SUFFIXES.map(
-      (suffix) =>
-        `--color-${utilityPrefix}-surface-interaction-ink${suffix}: rgb(var(--${runtimePrefix}-surface-interaction-ink${suffix}, ${inkFallback}));`,
-    ),
-  ];
-}
-
-const INTERACTION_STATE_SUFFIXES = ['', '-hover', '-focus', '-active', '-disabled'] as const;
-
-// Fills the optional states from the ones that are set, matching how the color theme generator
-// resolves a swatch: hover falls back to default, focus to hover, active and disabled to default.
-function resolveInteractionStates(map: SurfaceOnInteractionColorMap): Record<string, SurfaceThemeColor> {
-  const hover = map.hover || map.default;
-
-  return {
-    '': map.default,
-    '-hover': hover,
-    '-focus': map.focus || hover,
-    '-active': map.active || map.default,
-    '-disabled': map.disabled || map.default,
-  };
-}
-
-function pushStaticInteractionColors(vars: string[], name: string, map: SurfaceOnInteractionColorMap): void {
-  const states = resolveInteractionStates(map);
-
-  for (const suffix of INTERACTION_STATE_SUFFIXES) {
-    vars.push(`  ${name}${suffix}: rgb(${states[suffix]});`);
-  }
-}
-
-function pushRuntimeInteractionVars(
-  vars: string[],
-  name: string,
-  map: SurfaceOnInteractionColorMap,
-  indent: string,
-): void {
-  const states = resolveInteractionStates(map);
-
-  for (const suffix of INTERACTION_STATE_SUFFIXES) {
-    vars.push(`${indent}${name}${suffix}: ${states[suffix]};`);
-  }
-}
-
-function pushRootSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme | undefined): void {
-  if (!theme) return;
-
-  vars.push(`:root {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
-  vars.push(`  color-scheme: ${theme.type};`);
-  vars.push(`}\n`);
-}
-
-function pushSchemeSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme): void {
-  vars.push(`@media (prefers-color-scheme: ${theme.type}) {`);
-  vars.push(`  :root {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '    ');
-  vars.push(`    color-scheme: ${theme.type};`);
-  vars.push(`  }`);
-  vars.push(`}\n`);
-}
-
-// `:root.<prefix>-scheme--<type>` must out-specify the `:root` inside the media query above, so the
-// class set by `provideColorScheme()` overrides the OS preference regardless of source order.
-function pushForcedSchemeSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme): void {
-  vars.push(`:root.${runtimePrefix}-scheme--${theme.type} {`);
-  pushSurfaceVars(vars, runtimePrefix, theme, '  ');
-  vars.push(`  color-scheme: ${theme.type};`);
-  vars.push(`}\n`);
-}
-
-function pushSurfaceVars(vars: string[], runtimePrefix: string, theme: SurfaceTheme, indent: string): void {
-  vars.push(`${indent}--${runtimePrefix}-surface-background: ${theme.background};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-color: ${theme.color};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-color-muted: ${theme.colorMuted};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-color-subtle: ${theme.colorSubtle};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-border: ${theme.border};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-type: ${theme.type};`);
-  vars.push(`${indent}--${runtimePrefix}-surface-elevation: ${theme.elevation};`);
-
-  if (theme.interactionColor) {
-    const { color, onColor, inkColor } = theme.interactionColor;
-
-    pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction`, color, indent);
-
-    if (onColor) {
-      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-on-interaction`, onColor, indent);
-    }
-
-    if (inkColor) {
-      pushRuntimeInteractionVars(vars, `--${runtimePrefix}-surface-interaction-ink`, inkColor, indent);
-    }
-  }
+  return `${header}${surfaceThemeCss(themes, { prefix: utilityPrefix, runtimePrefix })}`;
 }
 
 function findMainStylesFile(tree: Tree): string[] {

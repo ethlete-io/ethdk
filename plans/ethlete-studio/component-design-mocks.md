@@ -25,20 +25,53 @@ uses them as they are, wraps them, or copies one into the call and changes it.
    structure. A markup change in the component fails it.
 6. Each mock takes slot HTML, `class` and `style`, so a call can wrap it and add CSS on top.
 
-## Open question for slice 1 (spike first)
+## Packaging (decided in the slice 1 spike, 2026-10-23)
 
-ng-packagr inlines component styles into the JS, so the published package has no `.css` files, and
-ng-packagr can not build a module that imports `?inline` CSS. Studio's Vite runs against consumer
-checkouts (`libs/cli/src/lib/design/serve.ts`), where `@ethlete/components` comes from npm.
-Candidate: ship the mocks as TS source plus the component CSS as package assets
-(`design/`, an `exports` entry `./design/*`), resolved by Studio's Vite (exclude it from
-`optimizeDeps`), with a `tsconfig.base.json` path in this repo. Prove it on a packed tarball in a
-scratch consumer before building more mocks. If it fails, the fallback is a generated
-`design.css` that a project lists under `styles` in `.ethlete/design/config.json`.
+The candidate works; the fallback (a generated `design.css`) is not needed.
+
+- A lib ships its mocks as TS source in `design/`, with `"exports": { "./design/*": "./design/*.ts" }`
+  in its source `package.json`. ng-packagr merges that entry into the generated exports.
+- `ng-package.json` copies `design/**/*.ts` to `./design` and `src/lib/**/*.css` to `./src/lib`, so a
+  mock imports `../src/lib/<x>/<x>.component.css?inline` by the same relative path in this repo and
+  in the package. That ships all component CSS: about 690 kB raw, 120 kB gz, for components.
+- A mock reaches another lib only through its design entry (`@ethlete/core/design/interactive-styles`),
+  never a barrel.
+- This repo needs no `tsconfig.base.json` path: `node_modules/@ethlete/*` links to `libs/*`, and both
+  tsc and Vite read the exports map through it.
+- Studio: `optimizeDeps.exclude` lists `@ethlete/components` and `@ethlete/core`, and the calls tsconfig
+  includes `libs/cli/design/css-inline.d.ts`, which types `*.css?inline`. The exclude went in up
+  front and was never tried without it.
+- Proven: `design check --tsconfig --call components/button-mock/00-on-two-surfaces` prints `ok` here
+  and in a scratch consumer (packed `core` and `components` tarballs, `npm install --legacy-peer-deps`,
+  served with `DE_PORT=4499 node dist/libs/cli/src/index.js design --checkout <dir>`). Computed styles
+  of the drawn buttons matched in both.
+- Theme CSS: the providers build no CSS. The `tailwind-4-surface-theme` and `tailwind-4-color-theme`
+  generators do. Their CSS bodies moved to `libs/core/design/theme-css.ts`; the generators keep only
+  the header and import it as `../../design/theme-css.js`. The generators' tsconfig `rootDir` is now
+  `..`, so their output lands in `generators/dist/{generators,design}`, and `ng-package.json` maps
+  both. Generator output is byte-identical to before, for prefix `et` and a custom prefix.
+- Dead end: listing `../design/**/*.ts` in the generators' tsconfig also compiled `interactive-styles.ts`,
+  whose `?inline` import tsc can not type. The generators pull in `theme-css.ts` by import only.
+
+## How a mock is built (copy this for the next one)
+
+- `libs/components/design/button.ts`: `button(options)` returns an HTML string, and `buttonStyles` is the
+  real CSS of every stylesheet the component and its host directives mount.
+- `libs/components/src/lib/button/button.design.spec.ts`: renders the component in TestBed and the mock,
+  and compares tag, sorted classes, `data-*`/`aria-*`/`disabled`/`type` attributes and children.
+  Proven to fail when the mock's markup changes.
+- Read the real DOM first: a throwaway spec that logs `fixture.nativeElement.innerHTML`.
 
 ## Slices
 
-1. Spike the packaging; theme CSS function; mocks for button, form field and select; drift specs;
-   one demo call under `.ethlete/design/calls/components/`.
+1. Done: packaging spike, `themeCss()`, the button mock and its drift spec, and the demo call
+   `components/button-mock/00-on-two-surfaces`.
+   Open:
+   - Form field mock: `libs/components/design/form-field.ts` and `form-field.design.spec.ts` next to
+     `src/lib/forms/form-field/`. Its CSS is split over several styles-only components (text shell,
+     suffix, textarea, support). `buttonStyles` shows how to join them.
+   - Select mock: `libs/components/design/select.ts` and a drift spec, with `{ value, open, options }`.
+     The open state draws the panel inline, because a frame has no overlay.
+   - A view per mock in the demo call, or one call per mock, then `yarn design:check` on each.
 2. More mocks, by what calls ask for.
 3. Docs page and the `ethlete-design-exploration` skill name the mocks.

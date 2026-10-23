@@ -8,6 +8,9 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "exports": {
+    "./design/*": "./design/*.ts"
+  },
   "dependencies": {
     "@ethlete/bracket": "^1.0.0-next.3"
   },

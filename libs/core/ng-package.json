@@ -7,8 +7,13 @@
     "generators/generators.json",
     {
       "glob": "**/*.js",
-      "input": "generators/dist",
+      "input": "generators/dist/generators",
       "output": "./generators"
+    },
+    {
+      "glob": "**/*.js",
+      "input": "generators/dist/design",
+      "output": "./design"
     },
     {
       "glob": "**/schema.json",
@@ -19,6 +24,16 @@
       "glob": "**/*.md",
       "input": "migrations",
       "output": "./migrations"
+    },
+    {
+      "glob": "**/*.ts",
+      "input": "design",
+      "output": "./design"
+    },
+    {
+      "glob": "**/*.css",
+      "input": "src/lib",
+      "output": "./src/lib"
     }
   ],
   "lib": {

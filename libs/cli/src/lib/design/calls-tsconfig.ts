@@ -11,6 +11,7 @@ export const writeCallsTsconfig = (target: string) => {
   const work = workRootOf(target);
   const path = resolve(work, 'tsconfig.json');
   const defineCall = resolve(assetRoot(), 'define-call.ts');
+  const inlineCss = resolve(assetRoot(), 'css-inline.d.ts');
 
   const config = {
     compilerOptions: {
@@ -26,7 +27,7 @@ export const writeCallsTsconfig = (target: string) => {
       noEmit: true,
       paths: { '@design-explore': [defineCall] },
     },
-    include: [`${callsRootOf(target)}/**/*.ts`, defineCall],
+    include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],
   };
 
   mkdirSync(work, { recursive: true });

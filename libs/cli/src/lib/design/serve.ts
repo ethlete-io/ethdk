@@ -140,6 +140,9 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
     resolve: {
       alias: [{ find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') }, ...workspaceAliases(target)],
     },
+    // A design mock ships as TS that imports CSS with `?inline`, which the dependency pre-bundler
+    // can not load.
+    optimizeDeps: { exclude: ['@ethlete/components', '@ethlete/core'] },
     plugins: [designExplore(target, config)],
     server: {
       port: portOf(config),

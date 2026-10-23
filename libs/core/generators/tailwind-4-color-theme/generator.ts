@@ -1,6 +1,7 @@
 import { Tree, formatFiles, logger, visitNotIgnoredFiles } from '@nx/devkit';
 import { posix } from 'path';
 import { Expression, ObjectLiteralExpression, Project, SourceFile, SyntaxKind } from 'ts-morph';
+import { colorThemeCss, cssThemeName } from '../../design/theme-css.js';
 
 export type ThemeRGBColor = `${number} ${number} ${number}`;
 export type ThemeHSLColor = `${number} ${number}% ${number}%`;
@@ -301,8 +302,8 @@ function parseThemeObject(obj: ObjectLiteralExpression, sourceFile: SourceFile, 
 }
 
 function applyDefaultThemeOverride(themes: Theme[], defaultTheme: string): string {
-  const wanted = createCssThemeName(defaultTheme);
-  const target = themes.find((t) => t.name === defaultTheme || createCssThemeName(t.name) === wanted);
+  const wanted = cssThemeName(defaultTheme);
+  const target = themes.find((t) => t.name === defaultTheme || cssThemeName(t.name) === wanted);
 
   if (!target) {
     throw new Error(
@@ -540,13 +541,6 @@ function parseColorMap(
   return null;
 }
 
-function createCssThemeName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '');
-}
-
 function generateColorThemeNameTypes(themes: Theme[], schema: GeneratorSchema): string {
   const themesPath = schema.themesPath || 'src/themes.ts';
   const outputPath = schema.outputPath || 'src/styles/generated-tailwind-themes.css';
@@ -578,9 +572,6 @@ function generateTailwindThemeCss(
   runtimePrefix: string,
   schema: GeneratorSchema,
 ): string {
-  const tailwindVars: string[] = [];
-  const themeVars: string[] = [];
-
   const themesPath = schema.themesPath || 'src/themes.ts';
   const outputPath = schema.outputPath || 'src/styles/generated-tailwind-themes.css';
 
@@ -595,261 +586,7 @@ function generateTailwindThemeCss(
 
 `;
 
-  for (const theme of themes) {
-    const name = createCssThemeName(theme.name);
-
-    tailwindVars.push(`  /* ${theme.name} theme */`);
-
-    addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}`, theme.primary.color);
-    tailwindVars.push('');
-
-    addTailwindColorVariants(tailwindVars, `${utilityPrefix}-on-${name}`, theme.primary.onColor);
-    tailwindVars.push('');
-
-    addTailwindColorVariants(
-      tailwindVars,
-      `${utilityPrefix}-${name}-ink`,
-      theme.primary.inkColor || theme.primary.color,
-    );
-    tailwindVars.push('');
-
-    if (theme.secondary) {
-      addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-secondary`, theme.secondary.color);
-      tailwindVars.push('');
-      addTailwindColorVariants(tailwindVars, `${utilityPrefix}-on-${name}-secondary`, theme.secondary.onColor);
-      tailwindVars.push('');
-    }
-
-    if (theme.tertiary) {
-      addTailwindColorVariants(tailwindVars, `${utilityPrefix}-${name}-tertiary`, theme.tertiary.color);
-      tailwindVars.push('');
-      addTailwindColorVariants(tailwindVars, `${utilityPrefix}-on-${name}-tertiary`, theme.tertiary.onColor);
-      tailwindVars.push('');
-    }
-  }
-
-  tailwindVars.push('');
-
-  const hasSecondary = themes.some((t) => t.secondary);
-  const hasTertiary = themes.some((t) => t.tertiary);
-
-  // Collect the dynamic theme colors once. They are emitted in `@theme` (so Tailwind generates
-  // the utilities) and ALSO re-declared on every color selector in the alias block below. A
-  // Tailwind `@theme` variable only lands on `:root`, so `rgb(var(--<runtime>-color-*))` resolves
-  // once against the root color scope and inherits that concrete color into descendants - which
-  // means `bg-<prefix>-theme-*` utilities would ignore nested `.<runtime>-color--*` scopes.
-  // Re-declaring them per color selector makes the utilities resolve against the nearest scope.
-  const dynamicColorVars: string[] = [];
-  addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme', 'primary', false);
-  addDynamicInkColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-ink', 'primary-ink');
-
-  if (hasSecondary) {
-    addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-secondary', 'secondary', false);
-  }
-
-  if (hasTertiary) {
-    addDynamicThemeColors(dynamicColorVars, utilityPrefix, runtimePrefix, 'theme-tertiary', 'tertiary', false);
-  }
-
-  tailwindVars.push('  /* Dynamic theme colors (references runtime CSS variables) */');
-  tailwindVars.push(...dynamicColorVars);
-
-  themes.forEach((theme) => {
-    const name = createCssThemeName(theme.name);
-
-    const isDefault = theme.isDefault;
-
-    if (isDefault) {
-      const selectors = [':root', `.${runtimePrefix}-color--default`, `.${runtimePrefix}-color--${name}`];
-      themeVars.push(`${selectors.join(', ')} {`);
-    } else {
-      themeVars.push(`.${runtimePrefix}-color--${name} {`);
-    }
-
-    addThemeColorVariants(themeVars, runtimePrefix, '', theme);
-    themeVars.push('}\n');
-  });
-
-  // Re-indent the dynamic theme colors (from 2-space `@theme` indent to the 4-space alias-block
-  // indent) and drop trailing blank lines so they slot cleanly into the alias selector below.
-  const dynamicColorAliasLines = dynamicColorVars.map((line) => (line === '' ? '' : `  ${line}`));
-  while (dynamicColorAliasLines.length && dynamicColorAliasLines[dynamicColorAliasLines.length - 1] === '') {
-    dynamicColorAliasLines.pop();
-  }
-
-  const aliasBlock = `/* Convenience aliases (rgb + solid + opacity variants) */
-@layer base {
-  :root, :where([class*="${runtimePrefix}-color--"]) {
-    --${runtimePrefix}-theme-color-primary-rgb: var(--${runtimePrefix}-color-primary);
-    --${runtimePrefix}-theme-color-primary-opacity: 1;
-    --${runtimePrefix}-theme-color-primary-solid: rgb(var(--${runtimePrefix}-theme-color-primary-rgb));
-    --${runtimePrefix}-theme-color-primary: rgb(var(--${runtimePrefix}-theme-color-primary-rgb) / var(--${runtimePrefix}-theme-color-primary-opacity));
-
-    --${runtimePrefix}-theme-color-on-primary-rgb: var(--${runtimePrefix}-color-on-primary);
-    --${runtimePrefix}-theme-color-on-primary-opacity: 1;
-    --${runtimePrefix}-theme-color-on-primary-solid: rgb(var(--${runtimePrefix}-theme-color-on-primary-rgb) / var(--${runtimePrefix}-theme-color-on-primary-opacity));
-    --${runtimePrefix}-theme-color-on-primary: rgb(var(--${runtimePrefix}-theme-color-on-primary-rgb) / var(--${runtimePrefix}-theme-color-on-primary-opacity));
-
-    --${runtimePrefix}-theme-color-ink-rgb: var(--${runtimePrefix}-color-primary-ink, var(--${runtimePrefix}-color-primary));
-    --${runtimePrefix}-theme-color-ink-opacity: 1;
-    --${runtimePrefix}-theme-color-ink-solid: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-    --${runtimePrefix}-theme-color-ink: rgb(var(--${runtimePrefix}-theme-color-ink-rgb) / var(--${runtimePrefix}-theme-color-ink-opacity));
-
-    /* Dynamic Tailwind theme colors - re-declared per color scope so that
-       bg-${utilityPrefix}-theme-* utilities resolve against the nearest .${runtimePrefix}-color--*
-       scope instead of the value computed once at :root. */
-${dynamicColorAliasLines.join('\n')}
-  }
-}
-`;
-
-  return `${header}@theme {
-${tailwindVars.join('\n')}
-}
-
-@layer base {
-${themeVars.join('\n')}
-}
-
-${aliasBlock}`;
-}
-
-function addDynamicThemeColors(
-  vars: string[],
-  utilityPrefix: string,
-  runtimePrefix: string,
-  tailwindName: string,
-  cssVarName: string,
-  addSpacingBefore: boolean,
-): void {
-  if (addSpacingBefore && vars.length > 0 && vars[vars.length - 1] !== '') {
-    vars.push('');
-  }
-
-  vars.push(`  --color-${utilityPrefix}-${tailwindName}: rgb(var(--${runtimePrefix}-color-${cssVarName}));`);
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-hover: rgb(var(--${runtimePrefix}-color-${cssVarName}-hover));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-focus: rgb(var(--${runtimePrefix}-color-${cssVarName}-focus));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-active: rgb(var(--${runtimePrefix}-color-${cssVarName}-active));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-disabled: rgb(var(--${runtimePrefix}-color-${cssVarName}-disabled));`,
-  );
-  vars.push('');
-
-  vars.push(`  --color-${utilityPrefix}-on-${tailwindName}: rgb(var(--${runtimePrefix}-color-on-${cssVarName}));`);
-  vars.push(
-    `  --color-${utilityPrefix}-on-${tailwindName}-hover: rgb(var(--${runtimePrefix}-color-on-${cssVarName}-hover));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-on-${tailwindName}-focus: rgb(var(--${runtimePrefix}-color-on-${cssVarName}-focus));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-on-${tailwindName}-active: rgb(var(--${runtimePrefix}-color-on-${cssVarName}-active));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-on-${tailwindName}-disabled: rgb(var(--${runtimePrefix}-color-on-${cssVarName}-disabled));`,
-  );
-  vars.push('');
-}
-
-function addDynamicInkColors(
-  vars: string[],
-  utilityPrefix: string,
-  runtimePrefix: string,
-  tailwindName: string,
-  cssVarName: string,
-): void {
-  vars.push(`  --color-${utilityPrefix}-${tailwindName}: rgb(var(--${runtimePrefix}-color-${cssVarName}));`);
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-hover: rgb(var(--${runtimePrefix}-color-${cssVarName}-hover));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-focus: rgb(var(--${runtimePrefix}-color-${cssVarName}-focus));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-active: rgb(var(--${runtimePrefix}-color-${cssVarName}-active));`,
-  );
-  vars.push(
-    `  --color-${utilityPrefix}-${tailwindName}-disabled: rgb(var(--${runtimePrefix}-color-${cssVarName}-disabled));`,
-  );
-  vars.push('');
-}
-
-function addTailwindColorVariants(vars: string[], colorName: string, colorSet: ThemeColorMap | OnThemeColorMap): void {
-  vars.push(`  --color-${colorName}: rgb(${colorSet.default});`);
-
-  const hoverValue = 'hover' in colorSet && colorSet.hover ? colorSet.hover : colorSet.default;
-  vars.push(`  --color-${colorName}-hover: rgb(${hoverValue});`);
-
-  const focusValue = 'focus' in colorSet && colorSet.focus ? colorSet.focus : hoverValue;
-  vars.push(`  --color-${colorName}-focus: rgb(${focusValue});`);
-
-  const activeValue = 'active' in colorSet && colorSet.active ? colorSet.active : hoverValue;
-  vars.push(`  --color-${colorName}-active: rgb(${activeValue});`);
-
-  const disabledValue = 'disabled' in colorSet && colorSet.disabled ? colorSet.disabled : colorSet.default;
-  vars.push(`  --color-${colorName}-disabled: rgb(${disabledValue});`);
-}
-
-function addThemeColorVariants(vars: string[], prefix: string, altPrefix: string, theme: Theme): void {
-  const addSwatch = (level: 'primary' | 'secondary' | 'tertiary', swatch: ThemeSwatch) => {
-    const defaultColor = swatch.color.default;
-    const hoverColor = swatch.color.hover || defaultColor;
-    const focusColor = swatch.color.focus || hoverColor;
-    const activeColor = swatch.color.active || hoverColor;
-    const disabledColor = swatch.color.disabled || defaultColor;
-
-    vars.push(`  --${prefix}-color-${altPrefix}${level}: ${defaultColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-hover: ${hoverColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-focus: ${focusColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-active: ${activeColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-disabled: ${disabledColor};`);
-    vars.push('');
-
-    const onDefaultColor = swatch.onColor.default;
-    const onHoverColor = swatch.onColor.hover || onDefaultColor;
-    const onFocusColor = swatch.onColor.focus || onHoverColor;
-    const onActiveColor = swatch.onColor.active || onDefaultColor;
-    const onDisabledColor = swatch.onColor.disabled || onDefaultColor;
-
-    vars.push(`  --${prefix}-color-${altPrefix}on-${level}: ${onDefaultColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}on-${level}-hover: ${onHoverColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}on-${level}-focus: ${onFocusColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}on-${level}-active: ${onActiveColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}on-${level}-disabled: ${onDisabledColor};`);
-
-    const inkDefaultColor = swatch.inkColor?.default || defaultColor;
-    const inkHoverColor = swatch.inkColor?.hover || inkDefaultColor;
-    const inkFocusColor = swatch.inkColor?.focus || inkHoverColor;
-    const inkActiveColor = swatch.inkColor?.active || inkDefaultColor;
-    const inkDisabledColor = swatch.inkColor?.disabled || inkDefaultColor;
-
-    vars.push('');
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink: ${inkDefaultColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-hover: ${inkHoverColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-focus: ${inkFocusColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-active: ${inkActiveColor};`);
-    vars.push(`  --${prefix}-color-${altPrefix}${level}-ink-disabled: ${inkDisabledColor};`);
-
-    if (theme.secondary || theme.tertiary) {
-      vars.push('');
-    }
-  };
-
-  addSwatch('primary', theme.primary);
-
-  if (theme.secondary) {
-    addSwatch('secondary', theme.secondary);
-  }
-
-  if (theme.tertiary) {
-    addSwatch('tertiary', theme.tertiary);
-  }
+  return `${header}${colorThemeCss(themes, { prefix: utilityPrefix, runtimePrefix })}`;
 }
 
 function findMainStylesFile(tree: Tree): string[] {
