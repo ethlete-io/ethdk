@@ -58,12 +58,26 @@ export const ng = async (template: string, options: { imports?: string[] } = {})
 
 /**
  * One drawn answer, as the frame renders it: the markup that goes in the frame root, and the CSS
- * that styles it. A drawing runs no logic, so it is a value the module builds when the frame
- * imports it, not a component the frame has to instantiate.
+ * that styles it. `setup` runs once after the markup is in the frame root, to wire behavior such
+ * as a click that restarts an animation. A `<script>` in `body` never runs.
  */
 export type Drawing = {
   body: string;
   styles: string;
+  setup?: (root: HTMLElement) => void;
+};
+
+/** Puts a drawing's markup in `root`, then runs its `setup`. Returns the setup error, or `null`. */
+export const mountDrawing = (root: HTMLElement, drawn: Drawing): unknown => {
+  root.innerHTML = drawn.body;
+
+  try {
+    drawn.setup?.(root);
+
+    return null;
+  } catch (error: unknown) {
+    return error;
+  }
 };
 
 /** Types a drawing where it is written, so a mistake reads in its own file and not in `call.ts`. */

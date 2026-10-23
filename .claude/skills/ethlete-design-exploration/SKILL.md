@@ -122,6 +122,10 @@ Three constraints the tool puts on a variant file:
 - **One file per variant**, so several agents can draw at once, and a broken variant breaks
   its own frame only.
 
+A `<script>` in a drawing's `body` never runs. For behavior - a play button that restarts a
+CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
+frame calls it once, after the markup is in `root`.
+
 **A repository with a sketch Storybook** draws every variant in the **same** story, side by
 side, under the real geometry the thing ships in. The default Storybook is
 http://localhost:4400; an app with its own sketch Storybook names its port in the plan file.

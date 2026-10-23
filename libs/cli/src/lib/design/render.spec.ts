@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { unseenStyles } from '../../../design/define-call';
+import { mountDrawing, unseenStyles } from '../../../design/define-call';
 import { isStale } from './render';
 import { entryOf, extractRender, lookupImports, mapPackage, typePathsOf } from './render-packages';
 
@@ -124,5 +124,27 @@ describe('isStale', () => {
     expect(isStale({ '/a.mjs': 1, '/b.mjs': 2 }, mtime)).toBe(false);
     expect(isStale({ '/a.mjs': 1, '/b.mjs': 3 }, mtime)).toBe(true);
     expect(isStale({ '/gone.mjs': 1 }, mtime)).toBe(true);
+  });
+});
+
+describe('mountDrawing', () => {
+  it('runs setup once the markup is in the root, and returns its error', () => {
+    const root = { innerHTML: '' } as HTMLElement;
+    const seen: string[] = [];
+
+    expect(mountDrawing(root, { body: '<b>x</b>', styles: '', setup: (r) => seen.push(r.innerHTML) })).toBeNull();
+    expect(seen).toEqual(['<b>x</b>']);
+
+    const thrown = new Error('boom');
+
+    expect(
+      mountDrawing(root, {
+        body: '',
+        styles: '',
+        setup: () => {
+          throw thrown;
+        },
+      }),
+    ).toBe(thrown);
   });
 });

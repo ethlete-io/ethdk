@@ -1,3 +1,4 @@
+import { mountDrawing } from '@design-explore';
 import { calls } from 'virtual:design-explore';
 import { loadEnv } from 'virtual:design-explore/env';
 
@@ -39,7 +40,13 @@ else {
 
       style.textContent = loaded.styles;
       document.head.append(style);
-      root.innerHTML = loaded.body;
+      const error = mountDrawing(root, loaded);
+
+      if (error) {
+        fail(
+          `design-explore: setup of variant "${key}" failed\n${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
     }
   }
 }
