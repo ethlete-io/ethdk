@@ -1,11 +1,18 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
+import { FieldSpec } from './render-fields';
 
 export const DEFAULT_RENDER_MODULES = ['@ethlete/components', '@ethlete/core'];
 
 export type RenderWorkerData = { target: string; packages: Record<string, string>; modules: string[] };
 
-export type RenderRequest = { id: number; template: string; imports: string[]; providers: string | null };
+export type RenderRequest = {
+  id: number;
+  template: string;
+  imports: string[];
+  fields: Record<string, FieldSpec> | null;
+  providers: string | null;
+};
 
 export type RenderResult = { markup: string; styles: string[] } | { error: string };
 

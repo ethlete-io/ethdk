@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
 import { Worker } from 'worker_threads';
 import { DesignConfig } from './paths';
+import { FieldSpec } from './render-fields';
 import {
   DEFAULT_RENDER_MODULES,
   RenderRequest,
@@ -25,7 +26,7 @@ const mtimeOf = (path: string) => {
 export const isStale = (watched: Record<string, number>, mtime: (path: string) => number = mtimeOf) =>
   Object.entries(watched).some(([path, loaded]) => mtime(path) !== loaded);
 
-export type RenderAsk = { call: string; template: string; imports: string[] };
+export type RenderAsk = { call: string; template: string; imports: string[]; fields?: Record<string, FieldSpec> };
 
 /**
  * Renders Angular templates in a worker that loads the target checkout's own packages. The worker
@@ -81,6 +82,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
       id: nextId++,
       template: ask.template,
       imports: ask.imports,
+      fields: ask.fields ?? null,
       providers: providers ? resolve(target, providers) : null,
     };
     const result = new Promise<RenderResult>((settle) => pending.set(request.id, settle));

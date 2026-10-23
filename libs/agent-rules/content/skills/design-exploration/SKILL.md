@@ -196,6 +196,21 @@ you draw a part, look for it in this order, and draw new only when none of them 
    calls repeat element ids. The server renders the built package, so in the SDK rebuild
    `dist` after a component change.
 
+   To draw a form state (a value, an error, a touched field), give `ng()` (or `ngStates()`)
+   `fields`. Each entry becomes a signal form field the template binds as
+   `[formField]="fields.<name>"`. An error is a kind (`'required'`) or a kind and a message. A
+   field shows its errors only when it is touched:
+
+   ```ts
+   const form = await ng(
+     `<et-form-field><et-label>Email</et-label><et-input [formField]="fields.email" /></et-form-field>`,
+     {
+       imports: ['FORM_FIELD_IMPORTS', 'INPUT_IMPORTS'],
+       fields: { email: { value: 'ada@', errors: [{ kind: 'email', message: 'Not an email' }], touched: true } },
+     },
+   );
+   ```
+
 3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
    that the part is new.
 

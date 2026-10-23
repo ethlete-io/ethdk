@@ -3,6 +3,7 @@ import { registerHooks, ResolveFnOutput, ResolveHookContext } from 'module';
 import { resolve } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { missingPackageMessage } from './missing-package';
+import { buildFields } from './render-fields';
 import { parentPort, workerData } from 'worker_threads';
 import {
   entryOf,
@@ -74,9 +75,9 @@ registerHooks({
   },
 });
 
-const loadAngular = async () => {
+const explainMissing = async <T>(load: () => Promise<T>) => {
   try {
-    return await importAngular();
+    return await load();
   } catch (error) {
     const message = missingPackageMessage(error, target);
 
@@ -117,7 +118,9 @@ const importAngular = async () => {
   return { core, browser, server, modules };
 };
 
-let angular: ReturnType<typeof loadAngular> | null = null;
+let angular: ReturnType<typeof importAngular> | null = null;
+
+const loadSignalForms = () => explainMissing(() => import('@angular/forms/signals'));
 
 const providersOf = async (path: string) => {
   const loaded = (await import(pathToFileURL(path).href)) as { default?: unknown };
@@ -130,12 +133,22 @@ const providersOf = async (path: string) => {
 };
 
 const render = async (request: RenderRequest): Promise<RenderResult> => {
-  angular ??= loadAngular();
+  angular ??= explainMissing(importAngular);
 
   const { core, browser, server, modules } = await angular;
   const providers = request.providers ? await providersOf(request.providers) : [];
   const imports = lookupImports({ names: request.imports, modules }) as never[];
-  const Host = core.Component({ selector: 'et-design-host', template: request.template, imports })(class {});
+  const specs = request.fields;
+  const forms = specs ? await loadSignalForms() : null;
+  const Host = core.Component({
+    selector: 'et-design-host',
+    template: request.template,
+    imports: forms ? [...imports, forms.FormField as never] : imports,
+  })(
+    class {
+      fields = specs && forms ? buildFields({ specs, forms: forms as never, signal: core.signal }) : {};
+    },
+  );
   const errors: unknown[] = [];
 
   const document = await server.renderApplication(

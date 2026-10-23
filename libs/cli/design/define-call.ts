@@ -33,11 +33,25 @@ export const unseenStyles = (styles: string[], seen: Set<string>) => {
   return fresh.map((style) => `<style>${style}</style>`).join('');
 };
 
-const render = async (template: string, imports: string[]) => {
+/** A form field `ng()` builds: its value, the errors it shows (a kind, or a kind and a message), and whether it is touched. */
+export type NgField = { value: unknown; errors?: (string | { kind: string; message?: string })[]; touched?: boolean };
+
+/**
+ * `imports` names exports of `@ethlete/components` (or of the config's `render.modules`). Each
+ * entry of `fields` becomes a signal form field the template binds as `[formField]="fields.<name>"`.
+ */
+export type NgOptions = { imports?: string[]; fields?: Record<string, NgField> };
+
+const render = async (template: string, options: NgOptions) => {
   const response = await fetch('/__design/render', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ call: new URLSearchParams(location.search).get('call') ?? '', template, imports }),
+    body: JSON.stringify({
+      call: new URLSearchParams(location.search).get('call') ?? '',
+      template,
+      imports: options.imports ?? [],
+      fields: options.fields,
+    }),
   });
 
   if (!response.ok) throw new Error(await response.text());
@@ -47,11 +61,10 @@ const render = async (template: string, imports: string[]) => {
 
 /**
  * Renders an Angular template with the real components on the design server and resolves with its
- * markup, led by the component styles this frame has not received yet. `imports` names exports of
- * `@ethlete/components` (or of the config's `render.modules`). Rejects with the render error.
+ * markup, led by the component styles this frame has not received yet. Rejects with the render error.
  */
-export const ng = async (template: string, options: { imports?: string[] } = {}) => {
-  const { markup, styles } = await render(template, options.imports ?? []);
+export const ng = async (template: string, options: NgOptions = {}) => {
+  const { markup, styles } = await render(template, options);
 
   return unseenStyles(styles, emitted) + markup;
 };
@@ -94,12 +107,9 @@ export const switchStates =
  * Renders each named template with `ng()` and resolves with a `body` that shows the first state,
  * and `on(rules)`, a `setup` that swaps states on a click. Every state's styles load up front.
  */
-export const ngStates = async <S extends string>(
-  templates: Record<S, string>,
-  options: { imports?: string[] } = {},
-) => {
+export const ngStates = async <S extends string>(templates: Record<S, string>, options: NgOptions = {}) => {
   const names = Object.keys(templates) as S[];
-  const rendered = await Promise.all(names.map((name) => render(templates[name], options.imports ?? [])));
+  const rendered = await Promise.all(names.map((name) => render(templates[name], options)));
   const states = Object.fromEntries(names.map((name, index) => [name, rendered[index]?.markup ?? ''])) as Record<
     S,
     string
