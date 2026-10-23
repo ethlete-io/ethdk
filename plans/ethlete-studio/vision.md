@@ -48,6 +48,8 @@ names are **project → feature → call → variant**.
      sets `innerHTML`); tomflix asked for a `setup(root)` hook or host controls for replay,
      speed and reduced motion.
    - Open, theme: a frame control that switches the fixture's surface and color themes.
+   - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
+     reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Open, design system: where accepted calls land (for example `.ethlete/design/system/`), and
      how the `ethlete-design-exploration` skill makes the agent reuse it before it draws new.
 
