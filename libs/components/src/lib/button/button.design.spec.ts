@@ -3,32 +3,9 @@ import { TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { button, ButtonMockOptions } from '../../../design/button';
 import '../../test-helpers';
+import { mockShapeOf, shapeOf } from '../testing/design-mock-shape';
 import { ButtonComponent } from './button.component';
 import { ButtonIconAlignment, ButtonSize, ButtonVariant } from './button.types';
-
-type Shape = { tag: string; classes: string[]; attributes: string[]; children: Shape[] };
-
-const RELEVANT_ATTRIBUTE = /^(data-|aria-|disabled$|type$)/;
-
-const shapeOf = (element: Element): Shape => ({
-  tag: element.tagName.toLowerCase(),
-  classes: [...element.classList].sort(),
-  attributes: [...element.attributes]
-    .filter((attribute) => RELEVANT_ATTRIBUTE.test(attribute.name))
-    .map((attribute) => `${attribute.name}=${attribute.value}`)
-    .sort(),
-  children: [...element.children].map(shapeOf),
-});
-
-const mockShape = (options: ButtonMockOptions) => {
-  const template = document.createElement('template');
-  template.innerHTML = button(options);
-
-  const drawn = template.content.firstElementChild;
-  if (!drawn) throw new Error('the mock drew nothing');
-
-  return shapeOf(drawn);
-};
 
 @Component({
   imports: [ButtonComponent],
@@ -93,10 +70,10 @@ describe('button design mock', () => {
 
     const [real, anchor] = fixture.nativeElement.querySelectorAll('[et-button]');
 
-    expect(mockShape({ ...options, icon: '<i>i</i>' })).toEqual(shapeOf(real));
+    expect(mockShapeOf(button({ ...options, icon: '<i>i</i>' }), '.et-button')).toEqual(shapeOf(real));
 
     if (!options.pressed && !options.disabled && options.iconAlignment !== 'end') {
-      expect(mockShape({ ...options, tag: 'a' })).toEqual(shapeOf(anchor));
+      expect(mockShapeOf(button({ ...options, tag: 'a' }), '.et-button')).toEqual(shapeOf(anchor));
     }
   });
 });

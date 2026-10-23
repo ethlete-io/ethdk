@@ -1,6 +1,6 @@
 # Component design mocks for Ethlete Studio
 
-Status: slice 1 in progress.
+Status: slice 1 done.
 
 ## Goal
 
@@ -64,14 +64,21 @@ The candidate works; the fallback (a generated `design.css`) is not needed.
 
 ## Slices
 
-1. Done: packaging spike, `themeCss()`, the button mock and its drift spec, and the demo call
-   `components/button-mock/00-on-two-surfaces`.
-   Open:
-   - Form field mock: `libs/components/design/form-field.ts` and `form-field.design.spec.ts` next to
-     `src/lib/forms/form-field/`. Its CSS is split over several styles-only components (text shell,
-     suffix, textarea, support). `buttonStyles` shows how to join them.
-   - Select mock: `libs/components/design/select.ts` and a drift spec, with `{ value, open, options }`.
-     The open state draws the panel inline, because a frame has no overlay.
-   - A view per mock in the demo call, or one call per mock, then `yarn design:check` on each.
+1. Done: packaging spike, `themeCss()`, the button mock, the form field and select mocks, their
+   drift specs, and the demo calls `components/button-mock/00-on-two-surfaces` and
+   `components/form-mock/00-field-and-select`.
+   - `formField({ control, label, hint, error, errorColor, … })` takes a control object, from
+     `input()` or `select()`. The field passes its state (disabled, required, error, focus, open,
+     ids) to the control, so a call sets each flag once.
+   - Theme names are options: `errorColor` (the counter always carries it, so pass it even without
+     an error) and the select's `panelColor` (the app's default color theme).
+   - `open: true` draws the select panel in a mock-only `.et-design-panel-anchor` wrapper below
+     the whole field, also below its messages.
+   - The mocks carry copies of the icon SVGs, because the package ships no `src/lib` TS. The
+     select spec checks them against `CHECK_ICON`, `CHEVRON_ICON` and `TIMES_ICON`.
+   - The `et-label` styles moved from inline `styles` to `label.directive.css`, so a mock can import them.
+   - Shared drift helper: `src/lib/testing/design-mock-shape.ts`. It compares id references
+     (`aria-labelledby`, …) by count only.
+   - Not drawn: textarea, counter, warnings, busy spinner, multiple select, chips.
 2. More mocks, by what calls ask for.
 3. Docs page and the `ethlete-design-exploration` skill name the mocks.
