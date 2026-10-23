@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import { checkDesign } from './check';
 import { newCall } from './new-call';
 import { serveDesign } from './serve';
+import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
@@ -27,6 +28,9 @@ const helpOf = (invocation: string) =>
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
     '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
     '',
+    `${invocation} stamp`,
+    '  Print the version and build of this cli as JSON, which a running server answers with too.',
+    '',
     'Every command takes --checkout <path>. DE_PORT overrules the port in .ethlete/design/config.json.',
     '',
   ].join('\n');
@@ -41,6 +45,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
 
   if (argv[0] === '--help' || argv[0] === '-h' || argv[0] === 'help') {
     console.log(helpOf(invocation));
+
+    return 0;
+  }
+
+  if (argv[0] === 'stamp') {
+    console.log(JSON.stringify(buildStampOf()));
 
     return 0;
   }

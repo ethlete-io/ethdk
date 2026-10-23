@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { designCommand } from './design-command';
+import * as stamp from './stamp';
 
 describe('designCommand', () => {
   it('prints every subcommand for --help instead of reading it as a checkout', async () => {
@@ -12,5 +13,15 @@ describe('designCommand', () => {
     expect(text).toContain('et design check');
     expect(text).toContain('et design status <slug> <scaffolded|drawing|checking|ready|failed>');
     log.mockRestore();
+  });
+
+  it('prints the stamp of this cli as one line of JSON', async () => {
+    vi.spyOn(stamp, 'buildStampOf').mockReturnValue({ version: '1.2.3', build: 'abc' });
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    await expect(designCommand({ root: '/repo', argv: ['stamp'], invocation: 'et design' })).resolves.toBe(0);
+
+    expect(log).toHaveBeenCalledWith('{"version":"1.2.3","build":"abc"}');
+    vi.restoreAllMocks();
   });
 });
