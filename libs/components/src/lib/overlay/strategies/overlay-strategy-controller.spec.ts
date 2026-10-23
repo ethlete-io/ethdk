@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ENVIRONMENT_INITIALIZER, PLATFORM_ID, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { enableAnchoredOverlayPositionExtras } from '@ethlete/core';
 import '../../../test-helpers';
 import { FakeMatchMedia, fakeMatchMedia } from '../../testing/fake-match-media';
 import { injectOverlayManager } from '../overlay-manager';
@@ -201,6 +202,7 @@ describe('overlay strategy controller', () => {
   it('renders the drag handle and arrow of the strategy switched to', () => {
     smallStrategy.config.dragToDismiss = { direction: 'to-bottom' };
     largeStrategy.config.arrow = true;
+    enableAnchoredOverlayPositionExtras();
 
     const overlayRef = openOverlay();
     const pane = overlayRef.elements?.paneElement;

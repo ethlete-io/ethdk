@@ -19,6 +19,7 @@ import {
   RuntimeError,
   animationDebugLog,
   equal,
+  hasAnchoredOverlayPositionExtras,
   injectBreakpointObserver,
   injectRenderer,
   injectStyleManager,
@@ -97,6 +98,13 @@ export const createOverlayStrategyController = (
     }
 
     if (strategyConfig.arrow) {
+      if (ngDevMode && !hasAnchoredOverlayPositionExtras()) {
+        throw new RuntimeError(
+          OVERLAY_ERROR_CODES.ARROW_WITHOUT_POSITION_EXTRAS,
+          '[Overlay] A strategy sets `arrow`, but the floating-ui arrow middleware is not installed. Add `enableAnchoredOverlayPositionExtras()` from @ethlete/core to `strategies`, or call it once during app setup.',
+        );
+      }
+
       styleManager.mount(OverlayArrowStylesComponent);
     }
   };
