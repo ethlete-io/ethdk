@@ -114,13 +114,13 @@ describe('placeOverlays', () => {
     expect([top?.style.top, top?.style.bottom, top?.style.left]).toEqual(['auto', '204px', '20px']);
   });
 
-  it('prefers the placement the runtime wrote on the pane', () => {
+  it('prefers the placement the overlay host wrote over its placement attribute', () => {
     const root = mount(
-      `<div etoverlay placement="bottom-start"><button id="a" aria-controls="p-0">A</button></div>` +
+      `<div etoverlay placement="bottom-start" data-overlay-placement="bottom-end">` +
+        `<button id="a" aria-controls="p-0">A</button></div>` +
         `<div class="et-overlay-runtime-root">${entry({ id: 'p-0', inner: '' })}</div>`,
     );
 
-    root.querySelector('.et-overlay-runtime-pane')?.setAttribute('data-overlay-placement', 'bottom-end');
     rect(root.querySelector('#a'), { top: 0, left: 600, width: 100, height: 30 });
     rect(root.querySelector('.et-overlay-runtime-entry'), { top: 0, left: 0, width: 800, height: 600 });
     placeOverlays(root);

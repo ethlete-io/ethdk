@@ -168,8 +168,10 @@ const ancestorsOf = (pane: Element, root: HTMLElement) => {
   return ancestors;
 };
 
-const placementOf = (pane: Element, trigger: Element) =>
-  pane.getAttribute('data-overlay-placement') ?? trigger.closest('[etoverlay]')?.getAttribute('placement') ?? 'bottom';
+const placementOf = (trigger: Element) =>
+  trigger.closest('[data-overlay-placement]')?.getAttribute('data-overlay-placement') ??
+  trigger.closest('[etoverlay]')?.getAttribute('placement') ??
+  'bottom';
 
 const triggerOf = (pane: Element, root: HTMLElement) => {
   const outside = [...root.querySelectorAll('[aria-controls], [aria-expanded="true"]')].filter(
@@ -225,7 +227,7 @@ export const placeOverlays = (root: HTMLElement) => {
 
     const anchor = (trigger.closest('.et-form-field-control-frame') ?? trigger).getBoundingClientRect();
     const origin = container.getBoundingClientRect();
-    const [side, alignment] = placementOf(pane, trigger).split('-');
+    const [side, alignment] = placementOf(trigger).split('-');
     const above = side === 'top';
     const atEnd = alignment === 'end';
 
