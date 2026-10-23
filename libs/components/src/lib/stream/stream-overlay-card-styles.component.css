@@ -2,15 +2,35 @@
   .et-stream-consent-card,
   .et-stream-player-error-card,
   .et-pip-slot-placeholder-card {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: safe center;
     gap: var(--et-stream-overlay-card-gap, 12px);
-    padding: var(--et-stream-overlay-card-padding, 32px);
-    border-radius: var(--et-stream-overlay-card-border-radius, 16px);
-    max-width: 36rem;
+    inline-size: 100%;
+    block-size: 100%;
+    padding: var(--et-stream-overlay-card-padding, 16px);
+    overflow: auto;
+    border-radius: var(--et-stream-overlay-card-border-radius, 0px);
     text-align: center;
     background: var(--et-surface-background-solid, inherit);
+    container-type: size;
+  }
+
+  .et-stream-consent-card > *,
+  .et-stream-player-error-card > *,
+  .et-pip-slot-placeholder-card > * {
+    flex: none;
+    max-inline-size: 36rem;
+  }
+
+  @container (max-height: 200px) {
+    .et-stream-consent-icon,
+    .et-stream-player-error-icon,
+    .et-pip-slot-placeholder-icon {
+      display: none;
+    }
   }
 
   .et-stream-consent-icon,

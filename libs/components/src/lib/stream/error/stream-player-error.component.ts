@@ -44,7 +44,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
       @property --et-stream-player-error-padding {
         syntax: '<length>';
         inherits: true;
-        initial-value: 32px;
+        initial-value: 16px;
       }
 
       @property --et-stream-player-error-icon-size {
@@ -56,7 +56,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
       @property --et-stream-player-error-border-radius {
         syntax: '<length>';
         inherits: true;
-        initial-value: 16px;
+        initial-value: 0px;
       }
 
       @property --et-stream-player-error-heading-size {

@@ -44,7 +44,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
       @property --et-pip-slot-placeholder-padding {
         syntax: '<length>';
         inherits: true;
-        initial-value: 32px;
+        initial-value: 16px;
       }
 
       @property --et-pip-slot-placeholder-icon-size {
@@ -56,7 +56,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
       @property --et-pip-slot-placeholder-border-radius {
         syntax: '<length>';
         inherits: true;
-        initial-value: 16px;
+        initial-value: 0px;
       }
 
       @property --et-pip-slot-placeholder-message-size {

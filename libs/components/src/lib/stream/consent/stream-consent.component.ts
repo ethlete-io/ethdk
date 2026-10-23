@@ -42,7 +42,7 @@ let nextHeadingId = 0;
       @property --et-stream-consent-padding {
         syntax: '<length>';
         inherits: true;
-        initial-value: 32px;
+        initial-value: 16px;
       }
 
       @property --et-stream-consent-gap {
@@ -60,7 +60,7 @@ let nextHeadingId = 0;
       @property --et-stream-consent-border-radius {
         syntax: '<length>';
         inherits: true;
-        initial-value: 16px;
+        initial-value: 0px;
       }
 
       @property --et-stream-consent-heading-size {
