@@ -109,7 +109,7 @@ Three constraints the tool puts on a variant file:
 A `<script>` in a drawing's `body` never runs. For behavior - a play button that restarts a
 CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
 frame calls it once, after the markup is in `root`. `setup` has no cleanup hook, because each
-frame load is fresh. Wire behavior with one delegated listener on `root`. If `setup` throws, the
+frame load is fresh. Wire behavior with one delegated listener on `root`. `setup` can also be an array of functions, run in order. If one throws, the
 markup stays and the error shows on top of it.
 
 For a prototype with states, render each state with `ngStates({ closed: …, open: … }, { imports })`

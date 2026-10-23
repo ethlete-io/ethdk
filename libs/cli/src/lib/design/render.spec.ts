@@ -147,4 +147,32 @@ describe('mountDrawing', () => {
       }),
     ).toBe(thrown);
   });
+
+  it('runs a list of setups in order and stops at the first that throws', () => {
+    const root = { innerHTML: '' } as HTMLElement;
+    const calls: string[] = [];
+    const thrown = new Error('boom');
+
+    expect(
+      mountDrawing(root, { body: '', styles: '', setup: [() => calls.push('a'), () => calls.push('b')] }),
+    ).toBeNull();
+    expect(calls).toEqual(['a', 'b']);
+
+    calls.length = 0;
+
+    expect(
+      mountDrawing(root, {
+        body: '',
+        styles: '',
+        setup: [
+          () => calls.push('a'),
+          () => {
+            throw thrown;
+          },
+          () => calls.push('c'),
+        ],
+      }),
+    ).toBe(thrown);
+    expect(calls).toEqual(['a']);
+  });
 });
