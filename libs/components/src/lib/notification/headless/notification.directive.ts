@@ -1,4 +1,4 @@
-import { Directive, computed, inject, input } from '@angular/core';
+import { Directive, afterNextRender, computed, inject, input } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ANIMATED_LIFECYCLE_TOKEN } from '@ethlete/core';
 import { filter, of, switchMap, take, tap } from 'rxjs';
@@ -35,6 +35,8 @@ export class NotificationDirective {
   public ariaRole = computed(() => (this.status() === 'error' ? 'alert' : 'status'));
 
   constructor() {
+    afterNextRender(() => this.animatedLifecycle?.enter());
+
     toObservable(computed(() => this.entry().isDismissing))
       .pipe(
         filter(Boolean),

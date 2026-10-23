@@ -246,7 +246,25 @@ export class AppToastComponent {
 provideNotificationManager({ component: AppToastComponent });
 ```
 
-The stack keeps its position, stacking, FLIP animation and `maxVisible` limit. A custom component gets no enter or leave animation, no status colour and no hover pause unless it adds them.
+The stack keeps its position, stacking, FLIP animation and `maxVisible` limit. A custom component gets no status colour and no hover pause unless it adds them.
+
+To animate a custom toast in and out, add `AnimatedLifecycleDirective` (from `@ethlete/core`) as a host directive too. `NotificationDirective` starts its enter animation after the first render and waits for its leave animation before it removes the toast. Style the `et-animation-*` classes it sets - an opacity fade like the default toast's:
+
+```css
+.app-toast {
+  &.et-animation-enter-from,
+  &.et-animation-leave-to {
+    opacity: 0;
+  }
+
+  &.et-animation-enter-active,
+  &.et-animation-leave-active {
+    transition: opacity 200ms ease;
+  }
+}
+```
+
+A finished leave keeps `et-animation-leave-to` on the element until the stack removes it, so the toast stays faded out instead of flashing back in.
 
 @example notification/notification-custom
 

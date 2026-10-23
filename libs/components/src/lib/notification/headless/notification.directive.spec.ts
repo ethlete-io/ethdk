@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AnimatedLifecycleDirective } from '@ethlete/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { createNotificationRef, NotificationRef } from '../notification-ref';
@@ -16,6 +17,14 @@ import { NotificationDirective } from './notification.directive';
   imports: [NotificationDirective, NotificationActionDirective, NotificationDismissDirective],
 })
 class NotificationDirectiveTestHost {
+  ref!: NotificationRef;
+}
+
+@Component({
+  template: `<div [ref]="ref" etNotification etAnimatedLifecycle></div>`,
+  imports: [NotificationDirective, AnimatedLifecycleDirective],
+})
+class AnimatedNotificationTestHost {
   ref!: NotificationRef;
 }
 
@@ -67,5 +76,16 @@ describe('NotificationDirective', () => {
     fixture.detectChanges();
 
     expect(ref.entry().isDismissed).toBe(true);
+  });
+
+  it('starts the enter animation of an animated lifecycle on the same element', async () => {
+    const animatedFixture = TestBed.createComponent(AnimatedNotificationTestHost);
+    animatedFixture.componentInstance.ref = ref;
+    animatedFixture.detectChanges();
+    await animatedFixture.whenStable();
+
+    const host = animatedFixture.nativeElement.querySelector('[etnotification]') as HTMLElement;
+
+    expect(host.classList.contains('et-force-invisible')).toBe(false);
   });
 });

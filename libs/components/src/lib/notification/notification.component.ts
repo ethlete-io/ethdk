@@ -1,6 +1,5 @@
-import { Component, ViewEncapsulation, afterNextRender, computed, effect, inject, untracked } from '@angular/core';
+import { Component, ViewEncapsulation, computed, effect, inject, untracked } from '@angular/core';
 import {
-  ANIMATED_LIFECYCLE_TOKEN,
   AnimatedLifecycleDirective,
   ProvideColorDirective,
   ProvideSurfaceDirective,
@@ -68,7 +67,6 @@ import { injectNotificationLabels } from './notification-labels';
 export class NotificationComponent {
   protected notification = inject(NotificationDirective);
 
-  private animatedLifecycle = inject(ANIMATED_LIFECYCLE_TOKEN);
   private provideTheme = inject(ProvideColorDirective);
   private provideSurface = inject(ProvideSurfaceDirective);
   private managerConfig = injectNotificationManagerConfig();
@@ -147,10 +145,6 @@ export class NotificationComponent {
 
         this.provideSurface.clearForcedSurface();
       });
-    });
-
-    afterNextRender(() => {
-      this.animatedLifecycle.enter();
     });
   }
 }
