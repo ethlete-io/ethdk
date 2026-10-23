@@ -1,4 +1,4 @@
-import { rememberedView, rememberView } from './remembered';
+import { rememberTheme, rememberedView, rememberView, themeName } from './remembered';
 
 const KEY = 'ethlete-studio.call-view';
 
@@ -35,5 +35,26 @@ describe('remembered view', () => {
     rememberView({ project: '' });
 
     expect(rememberedView()).toMatchObject({ checkout: '/a', project: '' });
+  });
+
+  it('keeps a theme pick per project and drops malformed picks', () => {
+    rememberTheme('/a components', { surface: 'dark' });
+    rememberTheme('/a components', { color: 'danger' });
+    rememberTheme('/b components', { color: 'brand' });
+
+    expect(rememberedView().themes).toEqual({
+      '/a components': { surface: 'dark', color: 'danger' },
+      '/b components': { color: 'brand' },
+    });
+
+    localStorage.setItem(KEY, JSON.stringify({ themes: { x: 3, y: { surface: 1, color: 'c' } } }));
+    expect(rememberedView().themes).toEqual({ y: { surface: undefined, color: 'c' } });
+  });
+
+  it('falls back to the first theme name when the remembered one is gone', () => {
+    expect(themeName(['light', 'dark'], 'dark')).toBe('dark');
+    expect(themeName(['light', 'dark'], 'dim')).toBe('light');
+    expect(themeName(['light', 'dark'], undefined)).toBe('light');
+    expect(themeName([], undefined)).toBeUndefined();
   });
 });

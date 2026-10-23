@@ -52,7 +52,15 @@ export type Project = {
   callsRoot: string;
   port: number;
   defaultCall: string | null;
+  /** The themes each design project names, keyed by the project. The first name of a list is the default. */
+  themes: Record<string, Themes>;
   calls: Call[];
+};
+
+/** The surface and colour themes a design project draws in. */
+export type Themes = {
+  surface: string[];
+  color: string[];
 };
 
 /** Reads every call of a checkout. The checkout must carry a `.ethlete/design/config.json`. */
@@ -172,11 +180,17 @@ export type FrameAddress = {
   variant: string;
   /** Changes when the server started again, so a frame that met a dead port loads once more. */
   epoch?: number;
+  /** The surface theme the frame root wears. */
+  surface?: string;
+  /** The colour theme the frame root wears. */
+  color?: string;
 };
 
 /** The address the checkout's design server draws one variant at. */
-export const frameUrl = ({ port, slug, variant, epoch }: FrameAddress) =>
+export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAddress) =>
   `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant)}` +
+  (surface ? `&surface=${encodeURIComponent(surface)}` : '') +
+  (color ? `&color=${encodeURIComponent(color)}` : '') +
   (epoch ? `&epoch=${epoch}` : '');
 
 /** The checkouts Studio keeps, and the folder a scan walks for more. */

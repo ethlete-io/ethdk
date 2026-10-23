@@ -869,9 +869,19 @@
     cursor: pointer;
   }
 
-  .studio__chip:hover {
+  .studio__chip:hover,
+  .studio__chip[aria-pressed='true'] {
     background: color-mix(in srgb, var(--et-surface-interaction-solid) 16%, transparent);
     color: var(--et-surface-color-solid);
+  }
+
+  .studio__switch {
+    display: flex;
+    gap: 0.2rem;
+  }
+
+  .studio__switch .studio__chip {
+    margin-left: 0;
   }
 
   .studio__variant {

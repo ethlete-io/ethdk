@@ -11,4 +11,13 @@ describe('frameUrl', () => {
     expect(frameUrl({ port: 1, slug: 's', variant: 'v', epoch: 0 })).not.toContain('epoch');
     expect(frameUrl({ port: 1, slug: 's', variant: 'v', epoch: 2 })).toMatch(/&epoch=2$/);
   });
+
+  it('appends the surface and the colour it is given', () => {
+    expect(frameUrl({ port: 1, slug: 's', variant: 'v', surface: 'dark', color: 'a b' })).toBe(
+      'http://localhost:1/frame.html?call=s&variant=v&surface=dark&color=a%20b',
+    );
+    expect(frameUrl({ port: 1, slug: 's', variant: 'v', color: 'brand' })).toBe(
+      'http://localhost:1/frame.html?call=s&variant=v&color=brand',
+    );
+  });
 });

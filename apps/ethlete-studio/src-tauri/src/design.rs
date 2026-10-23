@@ -1,4 +1,5 @@
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::call_source::{call_object, Node, Value};
@@ -53,7 +54,16 @@ pub struct Project {
     pub calls_root: String,
     pub port: u16,
     pub default_call: Option<String>,
+    /// The themes each design project names, keyed by the project, the first segment of a slug.
+    pub themes: BTreeMap<String, Themes>,
     pub calls: Vec<Call>,
+}
+
+/// The surface and colour themes a design project draws in. The first name of each is the default.
+#[derive(Debug, Default, Serialize, PartialEq)]
+pub struct Themes {
+    pub surface: Vec<String>,
+    pub color: Vec<String>,
 }
 
 /// Where a checkout keeps its design work. Every repository holds its own, so a call argues in
@@ -196,6 +206,37 @@ pub fn read_config(checkout: &str) -> Result<serde_json::Value, String> {
     serde_json::from_str(&text).map_err(|error| format!("{} is not valid JSON: {error}", path.to_string_lossy()))
 }
 
+fn names_of(list: Option<&serde_json::Value>) -> Vec<String> {
+    list.and_then(serde_json::Value::as_array)
+        .map(|names| {
+            names
+                .iter()
+                .filter_map(|name| name.as_str().map(str::to_owned))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The themes of every design project that names at least one.
+pub fn themes_of(config: &serde_json::Value) -> BTreeMap<String, Themes> {
+    let Some(projects) = config.get("projects").and_then(serde_json::Value::as_object) else {
+        return BTreeMap::new();
+    };
+
+    projects
+        .iter()
+        .filter_map(|(name, project)| {
+            let themes = project.get("themes")?;
+            let themes = Themes {
+                surface: names_of(themes.get("surface")),
+                color: names_of(themes.get("color")),
+            };
+
+            (themes != Themes::default()).then(|| (name.clone(), themes))
+        })
+        .collect()
+}
+
 /// The port the checkout's design server draws at.
 pub fn port_of(config: &serde_json::Value) -> u16 {
     config
@@ -282,6 +323,7 @@ pub fn design_project(checkout: String) -> Result<Project, String> {
             .get("defaultCall")
             .and_then(|value| value.as_str())
             .map(|value| value.to_owned()),
+        themes: themes_of(&config),
         calls,
     })
 }
@@ -838,6 +880,29 @@ export default defineCall({
     #[test]
     fn an_unknown_variant_is_refused() {
         assert!(write_verdict(CALL, "z", Some("chosen")).is_err());
+    }
+
+    #[test]
+    fn a_project_reads_the_themes_it_names() {
+        let config = serde_json::json!({
+            "projects": {
+                "components": { "themes": { "surface": ["light", "dark"], "color": ["brand", "danger", 3] } },
+                "shop": { "themes": { "color": ["brand"] } },
+                "plain": { "styles": [] },
+                "empty": { "themes": {} }
+            }
+        });
+        let themes = themes_of(&config);
+
+        assert_eq!(themes.keys().collect::<Vec<_>>(), ["components", "shop"]);
+        assert_eq!(themes["components"].surface, ["light", "dark"]);
+        assert_eq!(themes["components"].color, ["brand", "danger"]);
+        assert!(themes["shop"].surface.is_empty());
+    }
+
+    #[test]
+    fn a_config_without_projects_reads_no_themes() {
+        assert!(themes_of(&serde_json::json!({ "port": 4402 })).is_empty());
     }
 
     fn a_checkout(name: &str) -> PathBuf {

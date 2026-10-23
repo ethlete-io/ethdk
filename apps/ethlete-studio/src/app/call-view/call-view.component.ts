@@ -59,7 +59,7 @@ import {
   withTurn,
   writeSessions,
 } from './sessions';
-import { rememberView, rememberedView } from './remembered';
+import { ThemePick, rememberTheme, rememberView, rememberedView, themeKey, themeName } from './remembered';
 
 const THUMB_WIDTH = 180;
 
@@ -276,6 +276,20 @@ const SETTLE_MS = 300;
                   <div class="studio__bar-foot">
                     @if (roundLabel(); as round) {
                       <span class="studio__round">{{ round }}</span>
+                    }
+                    @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
+                      <div [attr.aria-label]="themeSwitch.label" class="studio__switch" role="group">
+                        @for (name of themeSwitch.names; track name) {
+                          <button
+                            [attr.aria-pressed]="name === themeSwitch.current"
+                            (click)="pickTheme(themeSwitch.kind, name)"
+                            class="studio__chip"
+                            type="button"
+                          >
+                            {{ name }}
+                          </button>
+                        }
+                      </div>
                     }
                     <button
                       (click)="switchMode(open)"
@@ -690,13 +704,53 @@ export class CallViewComponent {
 
   protected call = computed(() => this.calls().find((call) => call.slug === this.slug()) ?? null);
 
+  private themePicks = signal<Record<string, ThemePick>>(rememberedView().themes ?? {});
+
+  /** The themes the open call's design project names, with the name each frame wears now. */
+  private callThemes = computed(() => {
+    const call = this.call();
+    const design = this.design();
+
+    if (!call || !design) return null;
+
+    const project = projectOf(call);
+    const key = themeKey(this.checkout(), project);
+    const names = design.themes[project];
+    const pick = this.themePicks()[key] ?? {};
+    const surface = names?.surface ?? [];
+    const color = names?.color ?? [];
+
+    return {
+      key,
+      surface: { names: surface, current: themeName(surface, pick.surface) },
+      color: { names: color, current: themeName(color, pick.color) },
+    };
+  });
+
+  private theme = computed((): ThemePick => {
+    const themes = this.callThemes();
+
+    return { surface: themes?.surface.current, color: themes?.color.current };
+  });
+
+  protected themeSwitches = computed(() => {
+    const themes = this.callThemes();
+
+    if (!themes) return [];
+
+    return [
+      { kind: 'surface' as const, label: 'Surface theme', ...themes.surface },
+      { kind: 'color' as const, label: 'Colour theme', ...themes.color },
+    ].filter((theme) => theme.names.length > 1);
+  });
+
   protected variant = computed(() => this.call()?.variants.find((o) => o.key === this.variantKey()) ?? null);
 
   protected address = computed(() => {
     const port = this.design()?.port;
     const variant = this.variant();
 
-    return port && variant ? frameUrl({ port, slug: this.slug(), variant: variant.key }) : '';
+    return port && variant ? frameUrl({ port, slug: this.slug(), variant: variant.key, ...this.theme() }) : '';
   });
 
   protected checkLine = computed(() => {
@@ -736,12 +790,13 @@ export class CallViewComponent {
     if (!call || !port) return [];
 
     const epoch = this.epoch();
+    const theme = this.theme();
 
     return call.variants.map((variant) => ({
       id: `${call.slug} ${variant.key}`,
       key: variant.key,
       source: this.sanitizer.bypassSecurityTrustResourceUrl(
-        frameUrl({ port, slug: call.slug, variant: variant.key, epoch }),
+        frameUrl({ port, slug: call.slug, variant: variant.key, epoch, ...theme }),
       ),
     }));
   });
@@ -945,6 +1000,15 @@ export class CallViewComponent {
     this.slug.set('');
     this.variantKey.set('');
     rememberView({ project: '' });
+  }
+
+  protected pickTheme(kind: keyof ThemePick, name: string) {
+    const key = this.callThemes()?.key;
+
+    if (!key) return;
+
+    this.themePicks.update((picks) => ({ ...picks, [key]: { ...picks[key], [kind]: name } }));
+    rememberTheme(key, { [kind]: name });
   }
 
   protected openCall(call: Call, wanted?: string) {

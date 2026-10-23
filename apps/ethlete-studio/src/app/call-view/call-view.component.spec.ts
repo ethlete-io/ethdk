@@ -56,6 +56,7 @@ const PROJECT: Project = {
   callsRoot: `${CHECKOUT}/calls`,
   port: 4402,
   defaultCall: null,
+  themes: {},
   calls: [RESOLVED, ASKING, UNNOTED],
 };
 
@@ -200,6 +201,38 @@ describe('CallViewComponent', () => {
     await openRow(fixture, RESOLVED.slug);
 
     expect(shown(fixture)).toEqual([`${RESOLVED.slug} d`]);
+  });
+
+  it('draws every frame in the theme the switch picks, and remembers the pick', async () => {
+    stubHost({
+      design_project: () => ({ ...PROJECT, themes: { app: { surface: ['light', 'dark'], color: ['brand'] } } }),
+    });
+
+    const themesOf = (fixture: ComponentFixture<CallViewComponent>) => [
+      ...new Set(
+        drawings(fixture)
+          .map((frame) => new URL(frame.src).searchParams)
+          .map((params) => `${params.get('surface')} ${params.get('color')}`),
+      ),
+    ];
+    const fixture = await mount(RESOLVED.slug);
+
+    expect(themesOf(fixture)).toEqual(['light brand']);
+    expect(element(fixture).querySelectorAll('.studio__switch').length).toBe(1);
+
+    button(fixture, '.studio__switch .studio__chip', 'dark')?.click();
+    await settle(fixture);
+
+    expect(themesOf(fixture)).toEqual(['dark brand']);
+    expect(button(fixture, '.studio__switch .studio__chip', 'dark')?.getAttribute('aria-pressed')).toBe('true');
+
+    fixture.destroy();
+    const again = TestBed.createComponent(CallViewComponent);
+
+    again.autoDetectChanges();
+    await settle(again);
+
+    expect(themesOf(again)).toEqual(['dark brand']);
   });
 
   it('says what the count of a call row counts', async () => {

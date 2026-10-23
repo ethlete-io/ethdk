@@ -7,6 +7,38 @@ export type ViewState = {
   variant: string;
   /** The settled feature group the explorer left unfolded. An empty name folds them all. */
   settledFeature: string;
+  /** The theme picked per design project, keyed by `themeKey`. */
+  themes: Record<string, ThemePick>;
+};
+
+export type ThemePick = { surface?: string; color?: string };
+
+export const themeKey = (checkout: string, project: string) => `${checkout} ${project}`;
+
+/** The name a frame wears: the remembered one while the project still names it, else the first. */
+export const themeName = (names: readonly string[], remembered: string | undefined) =>
+  remembered !== undefined && names.includes(remembered) ? remembered : names[0];
+
+const themePicks = (value: unknown): Record<string, ThemePick> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).flatMap(([key, pick]) => {
+      if (!pick || typeof pick !== 'object') return [];
+
+      const { surface, color } = pick as ThemePick;
+
+      return [
+        [
+          key,
+          {
+            surface: typeof surface === 'string' ? surface : undefined,
+            color: typeof color === 'string' ? color : undefined,
+          },
+        ],
+      ];
+    }),
+  );
 };
 
 const KEY = 'ethlete-studio.call-view';
@@ -17,7 +49,7 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, variant, settledFeature } = stored as Partial<ViewState>;
+    const { checkout, project, slug, variant, settledFeature, themes } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -25,6 +57,7 @@ export const rememberedView = (): Partial<ViewState> => {
       slug: typeof slug === 'string' ? slug : undefined,
       variant: typeof variant === 'string' ? variant : undefined,
       settledFeature: typeof settledFeature === 'string' ? settledFeature : undefined,
+      themes: themePicks(themes),
     };
   } catch {
     return {};
@@ -38,4 +71,11 @@ export const rememberView = (patch: Partial<ViewState>) => {
   } catch {
     // A window without storage simply forgets.
   }
+};
+
+/** Remembers one theme pick of a design project and keeps the other. */
+export const rememberTheme = (key: string, pick: ThemePick) => {
+  const themes = rememberedView().themes ?? {};
+
+  rememberView({ themes: { ...themes, [key]: { ...themes[key], ...pick } } });
 };
