@@ -87,6 +87,12 @@ describe('setupComponentsTestEnvironment', () => {
     expect(animation.playState).toBe('idle');
   });
 
+  it('stubs Element.prototype.scroll so a carousel can scroll', () => {
+    setupComponentsTestEnvironment();
+
+    expect(() => document.createElement('div').scroll({ left: 10 })).not.toThrow();
+  });
+
   it('reports no media query as matching', () => {
     setupComponentsTestEnvironment();
 

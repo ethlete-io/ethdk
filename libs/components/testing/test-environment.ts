@@ -112,7 +112,7 @@ const defineMissing = (target: object, key: string, value: unknown) => {
 
 /**
  * Installs the browser APIs jsdom lacks and `@ethlete/components` needs to render: `ResizeObserver`,
- * `IntersectionObserver`, `matchMedia` and `Element.prototype.animate`. Call it once in a test setup file;
+ * `IntersectionObserver`, `matchMedia`, `Element.prototype.animate` and `Element.prototype.scroll`. Call it once in a test setup file;
  * an API that already exists is left alone. The fakes never report: observers never fire, no media query
  * matches, and an animation finishes on the next microtask.
  */
@@ -121,4 +121,5 @@ export const setupComponentsTestEnvironment = () => {
   defineMissing(globalThis, 'IntersectionObserver', IntersectionObserverFake);
   defineMissing(globalThis, 'matchMedia', fakeMediaQueryList);
   defineMissing(Element.prototype, 'animate', () => new AnimationFake() as unknown as Animation);
+  defineMissing(Element.prototype, 'scroll', () => undefined);
 };
