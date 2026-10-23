@@ -78,7 +78,13 @@ names are **project → feature → call → variant**.
      (if needed) → wireframes (early concepts, to see which components are needed) → components
      from the SDK ones → larger elements (shell, nav) → pages → working prototype. An agent
      that skips the component library is a sign the tool and skill are not clear enough. The
-     skill states the order in "The order of a design".
+     skill states the order in "The order of a design". Tom accepted four additions, 2026-10-23:
+     (1) `defineCall` gets a `stage` (themes, ci, wireframe, component, element, page,
+     prototype); Studio groups calls by stage; `check` warns when a page or element call imports
+     nothing from `system/`. (2) The wireframe stage ends with an inventory of the needed parts,
+     each mapped to an SDK component or marked new; it is the queue of component calls.
+     (3) Stage 1 is foundations: colours plus type scale, spacing and radius. (4) A page that
+     shows a missing part opens a component call; it never draws the part inline.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder
