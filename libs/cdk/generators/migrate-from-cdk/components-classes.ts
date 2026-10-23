@@ -406,6 +406,8 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-input-picker-trigger',
   'et-kbd',
   'et-kbd-key',
+  'et-label-content',
+  'et-label-required-marker',
   'et-line-chart',
   'et-line-chart-area',
   'et-line-chart-crosshair',
