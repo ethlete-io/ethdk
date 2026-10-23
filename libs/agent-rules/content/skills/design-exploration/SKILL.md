@@ -140,8 +140,20 @@ A call that invents its own button, field or row does not match the calls beside
 you draw a part, look for it in this order, and draw new only when none of them has it:**
 
 1. The project's design system, `.ethlete/design/system/<project>/`.
-2. The SDK component mocks, for example `@ethlete/components/design/button`. Import the one
-   file, never a barrel.
+2. The real SDK components, rendered on the design server with `ng()` from `@design-explore`:
+
+   ```ts
+   const field = await ng(`<et-form-field><et-label>Name</et-label><et-input /></et-form-field>`, {
+     imports: ['FORM_FIELD_IMPORTS', 'INPUT_IMPORTS'],
+   });
+   ```
+
+   The template is a real Angular template, and `imports` names exports of
+   `@ethlete/components`. The project's `providers` module in `config.json` supplies the themes.
+   Render every component of a drawing in **one** `ng()` call: each call is a new app, so two
+   calls repeat element ids. The server renders the built package, so in the SDK rebuild
+   `dist` after a component change.
+
 3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
    that the part is new.
 

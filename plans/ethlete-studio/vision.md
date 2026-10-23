@@ -38,7 +38,7 @@ names are **project → feature → call → variant**.
    - Components: no more hand-written mocks. A compiler makes the HTML mock of a component, with
      its options, from the real component. The three hand-written mocks
      (`libs/components/design/`, see `component-design-mocks.md`) stay until it exists.
-   - Compiler (Tom decided, 2026-10-23; step 2 in progress): (a), server-side render. A test
+   - Compiler (Tom decided, 2026-10-23; step 2 done, demo call `components/ssr/00-button-and-field`): (a), server-side render. A test
      proved it: `@angular/compiler` (JIT) plus `renderApplication` from
      `@angular/platform-server` render `dist/libs/components` in Node in about 25 ms, with host
      bindings from directive state (`data-text-shell="true"`) and the component `<style>` tags.
@@ -48,6 +48,9 @@ names are **project → feature → call → variant**.
        because `node_modules/@ethlete/*` links to `libs/*/src`; a resolve hook maps it.
      - Providers: `config.json` names a `providers.ts` per project (colour and surface themes).
        The form field throws without colour themes.
+     - Gaps: the server render has no input `placeholder` and keeps the hint at `opacity: 0`
+       (no `data-active`), because the components set both in browser-only render hooks. A
+       render error goes to a collecting `ErrorHandler`, so `ng()` rejects with it.
    - Open, interaction: a snapshot has CSS states (hover, focus, CSS motion) but no behavior. A
      prototype needs a small runtime in the frame that swaps a component to another state on an
      event (click → `open: true`). The frame now drops `<script>` (`libs/cli/design/web/frame.ts`

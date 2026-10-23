@@ -2,6 +2,7 @@ import { existsSync, globSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { aliasPattern, callSlugOf, fsUrl, isCallFile } from './vite-paths';
+import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -65,7 +66,10 @@ const env = (target: string, config: DesignConfig) => {
   );
 };
 
-/** Serves the call registry and each project's global stylesheet to the web pages. */
+/**
+ * Serves the call registry and each project's global stylesheet to the web pages, and renders the
+ * Angular templates a drawing asks for with `ng()`.
+ */
 const designExplore = (target: string, config: DesignConfig) => ({
   name: 'design-explore',
   resolveId: (id: string) => (id === VIRTUAL || id === `${VIRTUAL}/env` ? `\0${id}` : null),
@@ -100,6 +104,7 @@ const designExplore = (target: string, config: DesignConfig) => ({
       vite.ws.send({ type: 'full-reload' });
     };
 
+    vite.middlewares.use(RENDER_PATH, renderMiddleware(createRenderer({ target, config })));
     vite.watcher.add(callsRoot);
     vite.watcher.on('add', refresh);
     vite.watcher.on('unlink', refresh);

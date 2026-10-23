@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { assetRoot, callsRootOf, workRootOf } from './paths';
+import { assetRoot, callsRootOf, readConfig, workRootOf } from './paths';
+import { typePathsOf } from './render-packages';
 
 /**
  * Writes the tsconfig that types a checkout's calls, and answers with its path. A call file
@@ -12,6 +13,7 @@ export const writeCallsTsconfig = (target: string) => {
   const path = resolve(work, 'tsconfig.json');
   const defineCall = resolve(assetRoot(), 'define-call.ts');
   const inlineCss = resolve(assetRoot(), 'css-inline.d.ts');
+  const typePaths = typePathsOf({ packages: readConfig(target)?.render?.packages ?? {}, target });
 
   const config = {
     compilerOptions: {
@@ -25,7 +27,7 @@ export const writeCallsTsconfig = (target: string) => {
       esModuleInterop: true,
       skipLibCheck: true,
       noEmit: true,
-      paths: { '@design-explore': [defineCall] },
+      paths: { ...typePaths, '@design-explore': [defineCall] },
     },
     include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],
   };

@@ -142,7 +142,7 @@ const checkPage = async (options: {
     const frame = page.frameLocator(`iframe[data-variant="${key}"]`);
 
     const drew = await frame
-      .locator('#root > *')
+      .locator('#root > :not(style)')
       .first()
       .waitFor({ timeout: 15000 })
       .then(

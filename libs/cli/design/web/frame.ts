@@ -10,7 +10,12 @@ await loadEnv(slug.split('/')[0] ?? '');
 const root = document.querySelector('#root') as HTMLElement;
 
 const fail = (message: string) => {
-  root.textContent = message;
+  const text = document.createElement('pre');
+
+  text.textContent = message;
+  text.style.margin = '0';
+  text.style.whiteSpace = 'pre-wrap';
+  root.replaceChildren(text);
   root.setAttribute('style', 'padding:16px;font:14px monospace;color:#f0a0a0;background:#1a1414');
 };
 
@@ -20,12 +25,22 @@ else {
   const variant = (await call()).default.variants.find((o) => o.key === key);
   if (!variant) fail(`design-explore: call "${slug}" has no variant "${key}"`);
   else {
-    const loaded = (await variant.load()).default;
-    const style = document.createElement('style');
+    const loaded = await variant.load().then(
+      (module) => module.default,
+      (error: unknown) => {
+        fail(`design-explore: variant "${key}" failed\n${error instanceof Error ? error.message : String(error)}`);
 
-    style.textContent = loaded.styles;
-    document.head.append(style);
-    root.innerHTML = loaded.body;
+        return null;
+      },
+    );
+
+    if (loaded) {
+      const style = document.createElement('style');
+
+      style.textContent = loaded.styles;
+      document.head.append(style);
+      root.innerHTML = loaded.body;
+    }
   }
 }
 

@@ -1,6 +1,11 @@
 {
   "port": 4402,
   "defaultCall": "timetrack/kerbe/03-narrow-lane",
+  "render": {
+    "packages": {
+      "@ethlete/*": "dist/libs/*"
+    }
+  },
   "projects": {
     "timetrack": {
       "styles": ["apps/timetrack/src/styles.css"],
@@ -15,6 +20,9 @@
     },
     "design-tool": {
       "styles": ["apps/ethlete-studio/src/styles.css"]
+    },
+    "components": {
+      "providers": ".ethlete/design/calls/components/providers.ts"
     }
   }
 }

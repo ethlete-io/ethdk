@@ -4,15 +4,30 @@ import { resolve } from 'path';
 /** Where every repository keeps its design work. The layout is convention, not configuration. */
 export const DESIGN_DIR = '.ethlete/design';
 
-/** One project's drawing environment: the stylesheets a frame loads, and the markup it puts in `<head>`. */
+/**
+ * One project's drawing environment: the stylesheets a frame loads, the markup it puts in `<head>`,
+ * and the module whose default export is the Angular providers array `ng()` renders under.
+ */
 export type DesignProject = {
   styles?: string[];
   head?: string;
+  providers?: string;
+};
+
+/**
+ * Where `ng()` takes its code from. `packages` maps a package pattern to a checkout path, for
+ * example `{ "@ethlete/*": "dist/libs/*" }`; `modules` names the packages an import name is looked
+ * up in, `['@ethlete/components']` when left out.
+ */
+export type DesignRenderConfig = {
+  packages?: Record<string, string>;
+  modules?: string[];
 };
 
 export type DesignConfig = {
   port?: number;
   defaultCall?: string;
+  render?: DesignRenderConfig;
   projects?: Record<string, DesignProject>;
 };
 

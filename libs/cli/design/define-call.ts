@@ -22,6 +22,40 @@ export const html = (strings: TemplateStringsArray, ...values: unknown[]) => joi
 /** Marks a template literal as CSS, for the same reason `html` does it for markup. */
 export const css = (strings: TemplateStringsArray, ...values: unknown[]) => join(strings, values);
 
+const emitted = new Set<string>();
+
+/** The `<style>` tags for the sheets not yet in `seen`, which it then records. */
+export const unseenStyles = (styles: string[], seen: Set<string>) => {
+  const fresh = [...new Set(styles)].filter((style) => !seen.has(style));
+
+  for (const style of fresh) seen.add(style);
+
+  return fresh.map((style) => `<style>${style}</style>`).join('');
+};
+
+/**
+ * Renders an Angular template with the real components on the design server and resolves with its
+ * markup, led by the component styles this frame has not received yet. `imports` names exports of
+ * `@ethlete/components` (or of the config's `render.modules`). Rejects with the render error.
+ */
+export const ng = async (template: string, options: { imports?: string[] } = {}) => {
+  const response = await fetch('/__design/render', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      call: new URLSearchParams(location.search).get('call') ?? '',
+      template,
+      imports: options.imports ?? [],
+    }),
+  });
+
+  if (!response.ok) throw new Error(await response.text());
+
+  const { markup, styles } = (await response.json()) as { markup: string; styles: string[] };
+
+  return unseenStyles(styles, emitted) + markup;
+};
+
 /**
  * One drawn answer, as the frame renders it: the markup that goes in the frame root, and the CSS
  * that styles it. A drawing runs no logic, so it is a value the module builds when the frame
