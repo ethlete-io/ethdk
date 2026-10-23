@@ -5,7 +5,7 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::ipc::Channel;
 use tauri::State;
 
-use crate::design::{calls_root, read_config};
+use crate::design::{read_config, DESIGN_DIR};
 
 /// The watch one window armed. A window reads one checkout at a time, so the host keeps one
 /// watcher, and arming it again replaces the one before it.
@@ -29,8 +29,8 @@ fn watch_root(root: &Path, report: impl Fn() + Send + 'static) -> Result<Recomme
     Ok(watcher)
 }
 
-/// Reports every change under the checkout's calls root, so a call an agent or an editor wrote
-/// outside the window reaches its list without a reload.
+/// Reports every change under the checkout's design folder, so a call or a design-system entry an
+/// agent or an editor wrote outside the window reaches its list without a reload.
 ///
 /// The watch before it is dropped first: `notify` releases its kernel watches when it goes, and two
 /// live watches over one root would report every change twice.
@@ -48,7 +48,7 @@ fn arm(watch: &DesignWatch, checkout: &str, report: impl Fn() + Send + 'static) 
 
     *slot = None;
     read_config(checkout)?;
-    *slot = Some(watch_root(&calls_root(checkout), report)?);
+    *slot = Some(watch_root(&Path::new(checkout).join(DESIGN_DIR), report)?);
 
     Ok(())
 }
@@ -80,7 +80,7 @@ mod tests {
         let base = std::env::temp_dir().join(format!("ethlete-studio-{}-rearm", std::process::id()));
         let first = base.join("first");
         let second = base.join("second");
-        let calls = calls_root(&first.to_string_lossy());
+        let calls = crate::design::calls_root(&first.to_string_lossy());
 
         std::fs::create_dir_all(&calls).unwrap();
         std::fs::create_dir_all(&second).unwrap();
@@ -123,5 +123,31 @@ mod tests {
         assert!(reported(&count), "a new call folder is reported");
 
         std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn a_change_to_a_design_system_entry_is_reported() {
+        let checkout = std::env::temp_dir().join(format!("ethlete-studio-{}-system", std::process::id()));
+        let design = checkout.join(DESIGN_DIR);
+        let entry = design.join("system").join("app").join("card");
+
+        std::fs::create_dir_all(&entry).unwrap();
+        std::fs::create_dir_all(crate::design::calls_root(&checkout.to_string_lossy())).unwrap();
+        std::fs::write(design.join("config.json"), "{}").unwrap();
+
+        let watch = DesignWatch::default();
+        let count = Arc::new(AtomicUsize::new(0));
+        let seen = count.clone();
+
+        arm(&watch, &checkout.to_string_lossy(), move || {
+            seen.fetch_add(1, Ordering::SeqCst);
+        })
+        .unwrap();
+        std::fs::write(entry.join("entry.md"), "A card.").unwrap();
+
+        assert!(reported(&count));
+
+        drop(watch);
+        let _ = std::fs::remove_dir_all(&checkout);
     }
 }
