@@ -15,9 +15,13 @@ describe('newCall', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
 
-    expect(newCall({ target, argv: ['app/checkout/01-summary', '--variants', 'a,b,c'], invocation: 'et design' })).toBe(
-      0,
-    );
+    expect(
+      newCall({
+        target,
+        argv: ['app/checkout/01-summary', '--variants', 'a,b,c', '--stage', 'component'],
+        invocation: 'et design',
+      }),
+    ).toBe(0);
 
     const folder = join(calls(target), 'app/checkout/01-summary');
     const call = readFileSync(join(folder, 'call.ts'), 'utf8');
@@ -35,9 +39,9 @@ describe('newCall', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
 
-    newCall({ target, argv: ['app/one'], invocation: 'et design' });
+    newCall({ target, argv: ['app/one', '--stage', 'component'], invocation: 'et design' });
 
-    expect(newCall({ target, argv: ['app/one'], invocation: 'et design' })).toBe(1);
+    expect(newCall({ target, argv: ['app/one', '--stage', 'component'], invocation: 'et design' })).toBe(1);
     expect(error.mock.calls.flat().join('')).toContain('CALL EXISTS');
   });
 
@@ -45,7 +49,7 @@ describe('newCall', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
 
-    expect(newCall({ target, argv: ['Summary'], invocation: 'et design' })).toBe(2);
+    expect(newCall({ target, argv: ['Summary', '--stage', 'component'], invocation: 'et design' })).toBe(2);
     expect(existsSync(calls(target))).toBe(false);
   });
 
@@ -65,7 +69,25 @@ describe('newCall', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
 
-    expect(newCall({ target, argv: ['app/one', '--stage', 'sketch'], invocation: 'et design' })).toBe(2);
+    expect(newCall({ target, argv: ['app/one', '--stage', 'draft'], invocation: 'et design' })).toBe(2);
+  });
+
+  it('refuses a call without a stage', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
+
+    expect(newCall({ target, argv: ['app/one'], invocation: 'et design' })).toBe(2);
+    expect(error.mock.calls.flat().join('')).toContain('--stage <stage>');
+    expect(existsSync(calls(target))).toBe(false);
+  });
+
+  it('takes a sketch, the quick exploration outside the design order', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
+
+    expect(newCall({ target, argv: ['app/idea', '--stage', 'sketch'], invocation: 'et design' })).toBe(0);
+    expect(readFileSync(join(calls(target), 'app/idea/call.ts'), 'utf8')).toContain("stage: 'sketch',");
   });
 
   it('lists the stages of the call API', () => {
@@ -86,8 +108,8 @@ describe('newCall', () => {
       JSON.stringify({ projects: { app: { providers: 'providers.ts' }, bare: {} } }),
     );
 
-    newCall({ target, argv: ['app/one'], invocation: 'et design' });
-    newCall({ target, argv: ['bare/one'], invocation: 'et design' });
+    newCall({ target, argv: ['app/one', '--stage', 'component'], invocation: 'et design' });
+    newCall({ target, argv: ['bare/one', '--stage', 'component'], invocation: 'et design' });
 
     expect(readFileSync(join(calls(target), 'app/one/variant-a.ts'), 'utf8')).toContain("imports: ['BUTTON_IMPORTS']");
     expect(readFileSync(join(calls(target), 'bare/one/variant-a.ts'), 'utf8')).not.toContain('await ng(');

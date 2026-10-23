@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { inventoryWarningOf, stageWarningOf, systemWarningOf } from './system-use';
+import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 
 const checkout = (variant: string) => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -53,14 +53,23 @@ describe('inventoryWarningOf', () => {
   });
 });
 
-describe('stageWarningOf', () => {
-  it('warns about a call without a stage and names the seven stages', () => {
-    const warning = stageWarningOf({ slug: 'app/pages/00-home', stage: null });
+describe('stageProblemOf', () => {
+  it('refuses a call without a stage and names every stage', () => {
+    const problem = stageProblemOf({ slug: 'app/pages/00-home', stage: null, legacy: false });
 
-    expect(warning).toContain('has no stage');
-    for (const stage of ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype']) {
-      expect(warning).toContain(stage);
+    expect(problem).toContain('NO STAGE');
+    for (const stage of ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype', 'sketch']) {
+      expect(problem).toContain(stage);
     }
-    expect(stageWarningOf({ slug: 'app/pages/00-home', stage: 'page' })).toBeNull();
+  });
+
+  it('accepts a legacy call without a stage, a sketch and a stage of the order', () => {
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: null, legacy: true })).toBeNull();
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'sketch', legacy: false })).toBeNull();
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'page', legacy: false })).toBeNull();
+  });
+
+  it('refuses a stage the call API does not know', () => {
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'draft', legacy: false })).toContain('BAD STAGE');
   });
 });

@@ -6,7 +6,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
-import { inventoryWarningOf, stageWarningOf, systemWarningOf } from './system-use';
+import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -107,6 +107,7 @@ type Declared =
   | { error: string }
   | {
       stage: string | null;
+      legacy: boolean;
       rounds: string[];
       variants: { key: string; round: string }[];
       hasInventory: boolean;
@@ -123,6 +124,7 @@ const declaredOf = (slug: string) => `(async (slug) => {
     const call = (await calls[slug]()).default;
     return {
       stage: call.stage ?? null,
+      legacy: call.legacy === true,
       rounds: (call.rounds ?? []).map((round) => round.key),
       variants: call.variants.map((variant) => ({ key: variant.key, round: variant.round ?? '' })),
       hasInventory: Boolean(call.inventory),
@@ -166,6 +168,9 @@ const checkPage = async (options: {
 
   if (declared === null) return fail(`NO CALL "${slug}" - pass the folder's path under .ethlete/design/calls.`);
   if ('error' in declared) return fail(`COMPILE ERROR on ${slug}\n${trim(declared.error)}`);
+
+  const stageProblem = stageProblemOf({ slug, stage: declared.stage, legacy: declared.legacy });
+  if (stageProblem) return fail(stageProblem);
 
   const problems = problemsOf(declared);
   if (problems.length > 0) return fail(`BAD CALL ${slug}\n${problems.join('\n')}`);
@@ -216,7 +221,6 @@ const checkPage = async (options: {
   if (consoleErrors.length > 0) return fail(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
 
   const warnings = [
-    stageWarningOf({ slug, stage: declared.stage }),
     systemWarningOf({ target, slug, stage: declared.stage }),
     inventoryWarningOf({ slug, stage: declared.stage, hasInventory: declared.hasInventory }),
   ];

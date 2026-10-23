@@ -52,11 +52,19 @@ export const inventoryWarningOf = (options: { slug: string; stage: string | null
   return `WARNING ${slug} has an inventory, but only a wireframe call takes one.`;
 };
 
-/** The warning for a call that declares no stage and so sits outside the design process. */
-export const stageWarningOf = (options: { slug: string; stage: string | null }) => {
-  const { slug, stage } = options;
+/** The problem with a call that declares no known stage and is no legacy call, or null. */
+export const stageProblemOf = (options: { slug: string; stage: string | null; legacy: boolean }) => {
+  const { slug, stage, legacy } = options;
 
-  if (stage) return null;
+  if (stage === null) {
+    if (legacy) return null;
 
-  return `WARNING ${slug} has no stage. Set one of ${CALL_STAGES.join(', ')}, so the call joins the design process.`;
+    return (
+      `NO STAGE on ${slug} - set one of ${CALL_STAGES.join(', ')}. ` + `A quick exploration of an idea takes 'sketch'.`
+    );
+  }
+
+  if (!CALL_STAGES.includes(stage)) return `BAD STAGE "${stage}" on ${slug} - use one of ${CALL_STAGES.join(', ')}.`;
+
+  return null;
 };

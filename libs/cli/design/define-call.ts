@@ -246,8 +246,9 @@ export type CallMode = 'wireframe' | 'design';
 /**
  * Where a call sits in the design order: foundations (`themes`), corporate identity, the
  * wireframes, then the parts of the design system, the pages built from them, and a prototype.
+ * A `sketch` is a quick exploration of an idea outside that order.
  */
-export type CallStage = 'themes' | 'ci' | 'wireframe' | 'component' | 'element' | 'page' | 'prototype';
+export type CallStage = 'themes' | 'ci' | 'wireframe' | 'component' | 'element' | 'page' | 'prototype' | 'sketch';
 
 /** A part the wireframes need: the SDK component that covers it, or a new part and the component call that draws it. */
 export type InventoryPart = { part: string } & ({ sdk: string } | { new: true; call?: string });
@@ -259,8 +260,10 @@ export type InventoryPart = { part: string } & ({ sdk: string } | { new: true; c
 export type Call = {
   /** The feature this call belongs to, for example 'the hour strip'. Left out by a loose call. */
   feature?: string;
-  /** Left out by a loose call. */
+  /** Required, except on a legacy call. */
   stage?: CallStage;
+  /** Set by `et design legacy` on a call made before the stage was required. Such a call needs no stage. */
+  legacy?: true;
   eyebrow: string;
   headline: string;
   intro: string;

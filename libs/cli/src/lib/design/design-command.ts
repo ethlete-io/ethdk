@@ -1,5 +1,6 @@
 import { resolve } from 'path';
 import { checkDesign } from './check';
+import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { serveDesign } from './serve';
 import { buildStampOf } from './stamp';
@@ -22,8 +23,12 @@ const helpOf = (invocation: string) =>
     `${invocation} check [--lint <file>…] [--tsconfig [path]] [--call <slug> [--variant <key>]]`,
     '  Find out why a call does not render: eslint, then tsc, then the live frames.',
     '',
-    `${invocation} new <project>/<group>/<name> [--variants a,b] [--stage <stage>]`,
+    `${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b]`,
     '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
+    '  A quick exploration of an idea takes --stage sketch.',
+    '',
+    `${invocation} legacy <project>`,
+    '  Mark every call of a project without a stage as legacy, so check accepts it.',
     '',
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
     '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
@@ -65,6 +70,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return newCall({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'legacy') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return markLegacy({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'status') {

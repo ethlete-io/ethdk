@@ -87,6 +87,12 @@ names are **project → feature → call → variant**.
      not a markdown file.
    - Enforced (Tom, 2026-10-23): the design process is enforced from now on. A call without a
      `stage` is invalid; legacy calls created before this rule are ignored, not migrated.
+     How (Tom, 2026-10-23): `et design check` fails on a missing stage; a stage ahead of an
+     unfinished earlier one stays a warning. `et design new` requires `--stage`. A legacy call
+     carries an explicit `legacy: true`, written once by `et design legacy <project>`; Studio
+     shows legacy calls apart and out of the counts. A quick exploration of an idea uses
+     `stage: 'sketch'`: outside the ordered seven, no order or system-use warning, its own row.
+     In progress: cli (check, new, legacy), then Studio, then the skill.
      (3) Stage 1 is foundations: colours plus type scale, spacing and radius. (4) A page that
      shows a missing part opens a component call; it never draws the part inline.
    - After tomflix's component-call test (Tom decided, 2026-10-23): a drawing may set

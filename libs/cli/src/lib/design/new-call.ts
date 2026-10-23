@@ -6,12 +6,12 @@ import { writeStatus } from './status';
 const SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
 
 /** The values of `CallStage` in `design/define-call.ts`; a spec keeps the two lists equal. */
-export const CALL_STAGES = ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype'];
+export const CALL_STAGES = ['themes', 'ci', 'wireframe', 'component', 'element', 'page', 'prototype', 'sketch'];
 const KEY = /^[a-z][a-z0-9-]*$/;
 
 const titled = (word: string) => `${word.charAt(0).toUpperCase()}${word.slice(1).replace(/-/g, ' ')}`;
 
-const callFile = (options: { slug: string; keys: string[]; stage: string | null }) => {
+const callFile = (options: { slug: string; keys: string[]; stage: string }) => {
   const { slug, keys, stage } = options;
   const variants = keys
     .map(
@@ -20,12 +20,13 @@ const callFile = (options: { slug: string; keys: string[]; stage: string | null 
         `      cost: 'What it costs.',\n      load: () => import('./variant-${key}'),\n    },`,
     )
     .join('\n');
-  const eyebrow = `${titled(slug.split('/')[0] ?? '')} · ${stage ? titled(stage) : 'Call'}`;
+  const eyebrow = `${titled(slug.split('/')[0] ?? '')} · ${titled(stage)}`;
 
   return `import { defineCall } from '@design-explore';
 
 export default defineCall({
-${stage ? `  stage: '${stage}',\n` : ''}  eyebrow: '${eyebrow}',
+  stage: '${stage}',
+  eyebrow: '${eyebrow}',
   headline: 'The open question, in one sentence',
   intro: 'What the call is about, and what the variants share.',
   frameWidth: 720,
@@ -84,8 +85,8 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
   const stage = argv.includes('--stage') ? (argv[argv.indexOf('--stage') + 1] ?? '') : null;
   const keys = argv.includes('--variants') ? (listed ?? '').split(',').filter(Boolean) : ['a', 'b'];
 
-  if (!slug) {
-    console.error(`usage: ${invocation} new <project>/<group>/<name> [--variants a,b] [--stage <stage>]`);
+  if (!slug || stage === null) {
+    console.error(`usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b]`);
 
     return 2;
   }
@@ -106,7 +107,7 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
     return 2;
   }
 
-  if (stage !== null && !CALL_STAGES.includes(stage)) {
+  if (!CALL_STAGES.includes(stage)) {
     console.error(`BAD STAGE "${stage}" - use one of ${CALL_STAGES.join(', ')}.`);
 
     return 2;
