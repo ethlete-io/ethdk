@@ -39,6 +39,7 @@ import { OverlayTriggerDirective } from './overlay-trigger.directive';
   host: {
     '[attr.data-overlay-open]': 'open() || null',
     '[attr.data-overlay-mode]': 'mode()',
+    '[attr.data-overlay-placement]': 'placement()',
   },
 })
 export class OverlayDirective {

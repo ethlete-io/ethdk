@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, PLATFORM_ID } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { setInputSignal } from '@ethlete/core';
@@ -30,6 +30,25 @@ class OverlayDirectiveTestHost {}
   imports: [OverlayDirective],
 })
 class OverlayHasBackdropHost {}
+
+@Component({
+  template: `<div placement="bottom-end" etOverlay></div>`,
+  imports: [OverlayDirective],
+})
+class OverlayPlacementHost {}
+
+describe('OverlayDirective placement', () => {
+  it('writes the bound placement on the host in a server render', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
+
+    const fixture = TestBed.createComponent(OverlayPlacementHost);
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.debugElement.query(By.directive(OverlayDirective)).nativeElement;
+
+    expect(host.getAttribute('data-overlay-placement')).toBe('bottom-end');
+  });
+});
 
 describe('OverlayDirective hasBackdrop', () => {
   it('reads a bare attribute as true, "false" as false and keeps an unset input undefined', () => {
