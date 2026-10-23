@@ -13,8 +13,9 @@ Apps are thin shells. All feature code lives in libs, grouped by kind, not by Nx
 ```text
 apps/<app>/src/app/        app.component.ts, app.config.ts, app.routes.ts only
 libs/
-  domain/<app>/<feature>/  views, components, services, <feature>.routes.ts
-  domain/<app>/shared/     code shared by one app's features (optional)
+  domain/<app>/            one lib per app
+    src/lib/<feature>/     views, components, services, <feature>.routes.ts
+    src/lib/shared/        code shared by the app's features (optional)
   queries/                 query clients and creators, one folder per backend
   types/                   API models and shared types
   uikit/                   app-agnostic presentational components
@@ -23,16 +24,17 @@ libs/
   assets/                  fonts, icons, images
 ```
 
-- `app.routes.ts` only lazy-loads domain libs:
-  `loadChildren: () => import('@acme/domain/admin/users').then((m) => m.USERS_ROUTES)`.
-  Each feature lib exports its own `<FEATURE>_ROUTES`.
-- A small app may use one lib per app (`libs/domain/<app>`) with a folder per feature.
+- Each feature folder exports its own `<FEATURE>_ROUTES`, re-exported from the lib's
+  `src/index.ts`. `app.routes.ts` only lazy-loads them:
+  `loadChildren: () => import('@acme/domain/admin').then((m) => m.USERS_ROUTES)`.
+- Split a feature into its own lib (`libs/domain/<app>/<feature>`) only for a concrete
+  reason, such as size or build time, and name that reason to the user.
   Never put features, queries, shared UI or theme in the app project.
 - Do not add Nx `feature/ui/data-access/util` folders or `type:*` tags.
 - Every lib has `src/index.ts` and explicit `build` (`@nx/angular:ng-packagr-lite`), `lint`
   and `test` targets in `project.json`. Keep `plugins: []` in `nx.json`.
-- Alias = path with slashes: `@acme/domain/admin/users`, `@acme/queries`, `@acme/types`,
-  `@acme/uikit`, `@acme/env`. Project name = path with dashes (`domain-admin-users`).
+- Alias = path with slashes: `@acme/domain/admin`, `@acme/queries`, `@acme/types`,
+  `@acme/uikit`, `@acme/env`. Project name = path with dashes (`domain-admin`).
   Component `prefix` = the repo abbreviation.
 - Tag every project with one `scope:*`: `scope:<app>` for an app and its domain libs,
   `scope:core` for env and types, plus `scope:queries`, `scope:uikit`, `scope:theme`.

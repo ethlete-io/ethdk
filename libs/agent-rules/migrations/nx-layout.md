@@ -1,7 +1,7 @@
 # Compare the workspace with the Nx layout rule
 
 `@ethlete/agent-rules` now ships an `nx-layout` rule for Nx workspaces: thin apps, feature code in
-`libs/domain/<app>/<feature>`, shared `queries`, `types`, `uikit`, `theme` and `env` libs, aliases that
+one `libs/domain/<app>` lib per app with a folder per feature, shared `queries`, `types`, `uikit`, `theme` and `env` libs, aliases that
 mirror the path, and one `scope:*` tag per project. New code follows it.
 
 This is a recommendation, not a rewrite. Moving projects changes import paths, project names, tags
