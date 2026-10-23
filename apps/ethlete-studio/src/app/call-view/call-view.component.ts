@@ -90,7 +90,7 @@ const SETTLE_MS = 300;
 @Component({
   selector: 'ethlete-call-view',
   template: `
-    <div class="studio__body">
+    <div [class.studio__body--no-chat]="chatHidden()" class="studio__body">
       <aside class="studio__explorer" etProvideSurface="dark-elevated">
         <div class="studio__explorer-head">
           <div class="studio__project">
@@ -465,161 +465,168 @@ const SETTLE_MS = 300;
         }
       </main>
 
-      <aside class="studio__chat" etProvideSurface="dark-elevated">
-        <header class="studio__chat-head">
-          <div class="studio__chat-head-row">
-            <b>Chat</b>
-            <span>{{ call()?.eyebrow }}</span>
-          </div>
+      @if (chatHidden()) {
+        <button (click)="setChatHidden(false)" class="studio__chat-show" type="button">Show chat</button>
+      } @else {
+        <aside class="studio__chat" etProvideSurface="dark-elevated">
+          <header class="studio__chat-head">
+            <div class="studio__chat-head-row">
+              <b>Chat</b>
+              <span>{{ call()?.eyebrow }}</span>
+              <button (click)="setChatHidden(true)" class="studio__chat-hide" type="button">Hide</button>
+            </div>
 
-          <div class="studio__agent">
-            <i [class.studio__dot--off]="!cli()" class="studio__dot"></i>
-            @if (cli(); as agent) {
-              {{ agent.label }} {{ agent.version }}
+            <div class="studio__agent">
+              <i [class.studio__dot--off]="!cli()" class="studio__dot"></i>
+              @if (cli(); as agent) {
+                {{ agent.label }} {{ agent.version }}
+              } @else {
+                No agent picked
+              }
+            </div>
+          </header>
+
+          <ul #thread class="studio__thread">
+            @for (turn of turns(); track $index) {
+              <li>
+                @switch (turn.kind) {
+                  @case ('ask') {
+                    <article class="studio__turn studio__turn--you">
+                      <div class="studio__turn-meta"><b>You</b></div>
+                      <p>{{ turn.text }}</p>
+                    </article>
+                  }
+                  @case ('say') {
+                    <article class="studio__turn studio__turn--agent">
+                      <div class="studio__turn-meta"><b>Agent</b></div>
+                      <p>{{ turn.text }}</p>
+                    </article>
+                  }
+                  @case ('act') {
+                    <p class="studio__act">
+                      <span [class.studio__act--live]="$index === liveTurn()">{{ turn.action }}</span>
+                      <span class="studio__act-detail">{{ turn.detail }}</span>
+                    </p>
+                  }
+                  @case ('note') {
+                    <p class="studio__note">{{ turn.text }}</p>
+                  }
+                }
+              </li>
+            } @empty {
+              <li class="studio__note">Nothing said in this call yet.</li>
+            }
+          </ul>
+
+          <div class="studio__foot">
+            <div class="studio__lift"></div>
+
+            @if (compose(); as open) {
+              <section class="studio__compose" etProvideSurface="dark-elevated-2">
+                <header class="studio__compose-head">
+                  <b>Compose</b>
+                  <button (click)="dismiss()" class="studio__dismiss" title="Drop this draft" type="button">
+                    <svg viewBox="0 0 24 24">
+                      <path d="m7 7 10 10" />
+                      <path d="M17 7 7 17" />
+                    </svg>
+                  </button>
+                </header>
+
+                <div class="studio__field">
+                  <span class="studio__field-label">Verb</span>
+                  <span class="studio__compose-verb">{{ label(open.verb) }}</span>
+                </div>
+
+                <div class="studio__field">
+                  <span class="studio__field-label">Option</span>
+                  <div class="studio__stated">
+                    <span>{{ open.variant.name }}</span>
+                    <span class="studio__stated-round">{{ open.round }}</span>
+                  </div>
+                  <span class="studio__fixed">stated by the verb press, not typed</span>
+                </div>
+
+                @if (composeOpensRound()) {
+                  <div class="studio__field">
+                    <span class="studio__field-label">The round it opens</span>
+                    <div class="studio__round-fields">
+                      <input
+                        [value]="question()"
+                        (input)="question.set(typed($event))"
+                        placeholder="What this round asks"
+                      />
+                      <label>
+                        How many
+                        <input [value]="count()" (input)="setCount($event)" max="8" min="1" type="number" />
+                      </label>
+                    </div>
+                  </div>
+                }
+
+                <div class="studio__field">
+                  <span class="studio__field-label">Message</span>
+                  <textarea
+                    [value]="message()"
+                    (input)="message.set(typed($event))"
+                    class="studio__box"
+                    placeholder="Say what you want changed"
+                  ></textarea>
+                </div>
+
+                <footer class="studio__compose-foot">
+                  <button [disabled]="!composeReady()" (click)="composeSend()" class="studio__send" type="button">
+                    {{ making() ? 'Opening the round' : 'Send' }}
+                  </button>
+                </footer>
+              </section>
+            }
+
+            @if (resume(); as id) {
+              <div class="studio__session">
+                <span [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'" class="studio__meter">
+                  {{ id.slice(0, 8) }}
+                  <i class="studio__meter-rail"><i [style.width.%]="fill()" class="studio__meter-fill"></i></i>
+                  {{ sessionSize() }}
+                </span>
+                @if (full()) {
+                  <button [disabled]="running()" (click)="handOff()" class="studio__verb" type="button">
+                    Hand off
+                  </button>
+                }
+                <button (click)="forgetSession()" class="studio__verb" type="button">New session</button>
+                @if (running()) {
+                  <button (click)="stop()" class="studio__verb" type="button">Stop</button>
+                }
+              </div>
+            }
+
+            @if (compose()) {
+              <div class="studio__input-off">
+                <span>Say something on its own</span>
+                <span>closed</span>
+              </div>
             } @else {
-              No agent picked
+              <div class="studio__input">
+                <textarea
+                  [value]="prompt()"
+                  (input)="prompt.set(typed($event))"
+                  class="studio__box"
+                  placeholder="Say something on its own"
+                ></textarea>
+                <button
+                  [disabled]="running() || !prompt().trim() || !cli()"
+                  (click)="send()"
+                  class="studio__send"
+                  type="button"
+                >
+                  Send
+                </button>
+              </div>
             }
           </div>
-        </header>
-
-        <ul #thread class="studio__thread">
-          @for (turn of turns(); track $index) {
-            <li>
-              @switch (turn.kind) {
-                @case ('ask') {
-                  <article class="studio__turn studio__turn--you">
-                    <div class="studio__turn-meta"><b>You</b></div>
-                    <p>{{ turn.text }}</p>
-                  </article>
-                }
-                @case ('say') {
-                  <article class="studio__turn studio__turn--agent">
-                    <div class="studio__turn-meta"><b>Agent</b></div>
-                    <p>{{ turn.text }}</p>
-                  </article>
-                }
-                @case ('act') {
-                  <p class="studio__act">
-                    <span [class.studio__act--live]="$index === liveTurn()">{{ turn.action }}</span>
-                    <span class="studio__act-detail">{{ turn.detail }}</span>
-                  </p>
-                }
-                @case ('note') {
-                  <p class="studio__note">{{ turn.text }}</p>
-                }
-              }
-            </li>
-          } @empty {
-            <li class="studio__note">Nothing said in this call yet.</li>
-          }
-        </ul>
-
-        <div class="studio__foot">
-          <div class="studio__lift"></div>
-
-          @if (compose(); as open) {
-            <section class="studio__compose" etProvideSurface="dark-elevated-2">
-              <header class="studio__compose-head">
-                <b>Compose</b>
-                <button (click)="dismiss()" class="studio__dismiss" title="Drop this draft" type="button">
-                  <svg viewBox="0 0 24 24">
-                    <path d="m7 7 10 10" />
-                    <path d="M17 7 7 17" />
-                  </svg>
-                </button>
-              </header>
-
-              <div class="studio__field">
-                <span class="studio__field-label">Verb</span>
-                <span class="studio__compose-verb">{{ label(open.verb) }}</span>
-              </div>
-
-              <div class="studio__field">
-                <span class="studio__field-label">Option</span>
-                <div class="studio__stated">
-                  <span>{{ open.variant.name }}</span>
-                  <span class="studio__stated-round">{{ open.round }}</span>
-                </div>
-                <span class="studio__fixed">stated by the verb press, not typed</span>
-              </div>
-
-              @if (composeOpensRound()) {
-                <div class="studio__field">
-                  <span class="studio__field-label">The round it opens</span>
-                  <div class="studio__round-fields">
-                    <input
-                      [value]="question()"
-                      (input)="question.set(typed($event))"
-                      placeholder="What this round asks"
-                    />
-                    <label>
-                      How many
-                      <input [value]="count()" (input)="setCount($event)" max="8" min="1" type="number" />
-                    </label>
-                  </div>
-                </div>
-              }
-
-              <div class="studio__field">
-                <span class="studio__field-label">Message</span>
-                <textarea
-                  [value]="message()"
-                  (input)="message.set(typed($event))"
-                  class="studio__box"
-                  placeholder="Say what you want changed"
-                ></textarea>
-              </div>
-
-              <footer class="studio__compose-foot">
-                <button [disabled]="!composeReady()" (click)="composeSend()" class="studio__send" type="button">
-                  {{ making() ? 'Opening the round' : 'Send' }}
-                </button>
-              </footer>
-            </section>
-          }
-
-          @if (resume(); as id) {
-            <div class="studio__session">
-              <span [title]="(session()?.tokens ?? 0) + ' of ' + LIMIT + ' tokens'" class="studio__meter">
-                {{ id.slice(0, 8) }}
-                <i class="studio__meter-rail"><i [style.width.%]="fill()" class="studio__meter-fill"></i></i>
-                {{ sessionSize() }}
-              </span>
-              @if (full()) {
-                <button [disabled]="running()" (click)="handOff()" class="studio__verb" type="button">Hand off</button>
-              }
-              <button (click)="forgetSession()" class="studio__verb" type="button">New session</button>
-              @if (running()) {
-                <button (click)="stop()" class="studio__verb" type="button">Stop</button>
-              }
-            </div>
-          }
-
-          @if (compose()) {
-            <div class="studio__input-off">
-              <span>Say something on its own</span>
-              <span>closed</span>
-            </div>
-          } @else {
-            <div class="studio__input">
-              <textarea
-                [value]="prompt()"
-                (input)="prompt.set(typed($event))"
-                class="studio__box"
-                placeholder="Say something on its own"
-              ></textarea>
-              <button
-                [disabled]="running() || !prompt().trim() || !cli()"
-                (click)="send()"
-                class="studio__send"
-                type="button"
-              >
-                Send
-              </button>
-            </div>
-          }
-        </div>
-      </aside>
+        </aside>
+      }
     </div>
 
     <footer class="studio__status">
@@ -742,14 +749,16 @@ export class CallViewComponent {
   /** The settled feature group the explorer leaves unfolded. An empty name folds them all. */
   protected settledFeature = signal(rememberedView().settledFeature ?? '');
 
+  protected chatHidden = signal(rememberedView().chatHidden ?? false);
+
   private fold = signal<string | null>(null);
 
   protected compose = signal<Compose | null>(null);
+
   protected message = signal('');
   protected count = signal(3);
   protected question = signal('');
   protected making = signal(false);
-
   protected composeOpensRound = computed(() => {
     const open = this.compose();
 
@@ -765,10 +774,10 @@ export class CallViewComponent {
   protected readonly VERBS: Verb[] = ['accept', 'iterate', 'reject', 'more'];
 
   private run: Subscription | null = null;
+
   private watch: Subscription | null = null;
   private design = signal<Project | null>(null);
   private epoch = signal(0);
-
   private checkEpoch = signal(0);
 
   /** What the last check said about the variant under study. A run that never checked leaves `null`. */
@@ -1089,6 +1098,11 @@ export class CallViewComponent {
 
       if (rail && count) rail.scrollTop = rail.scrollHeight;
     });
+  }
+
+  protected setChatHidden(chatHidden: boolean) {
+    this.chatHidden.set(chatHidden);
+    rememberView({ chatHidden });
   }
 
   protected scrollToStage(stage: string) {

@@ -7,6 +7,7 @@ export type ViewState = {
   variant: string;
   /** The settled feature group the explorer left unfolded. An empty name folds them all. */
   settledFeature: string;
+  chatHidden: boolean;
   /** The theme picked per design project, keyed by `themeKey`. */
   themes: Record<string, ThemePick>;
 };
@@ -49,7 +50,7 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, variant, settledFeature, themes } = stored as Partial<ViewState>;
+    const { checkout, project, slug, variant, settledFeature, chatHidden, themes } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -57,6 +58,7 @@ export const rememberedView = (): Partial<ViewState> => {
       slug: typeof slug === 'string' ? slug : undefined,
       variant: typeof variant === 'string' ? variant : undefined,
       settledFeature: typeof settledFeature === 'string' ? settledFeature : undefined,
+      chatHidden: typeof chatHidden === 'boolean' ? chatHidden : undefined,
       themes: themePicks(themes),
     };
   } catch {

@@ -13,6 +13,30 @@
     min-height: 0;
   }
 
+  .studio__body--no-chat {
+    position: relative;
+    grid-template-columns: 40rem minmax(0, 1fr);
+  }
+
+  .studio__chat-show {
+    position: absolute;
+    top: 1.2rem;
+    right: 1.2rem;
+    z-index: 1;
+  }
+
+  .studio__chat-show,
+  .studio__chat-hide {
+    padding: 0.2rem 0.8rem;
+    border: 0.1rem solid var(--et-surface-border-solid);
+    border-radius: 0.3rem;
+    background: var(--et-surface-background-solid);
+    color: var(--et-surface-color-solid);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
   .studio__explorer,
   .studio__chat {
     display: grid;

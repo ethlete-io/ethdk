@@ -18,7 +18,7 @@ describe('remembered view', () => {
   it('drops fields of the wrong type', () => {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ checkout: 1, project: 'p', slug: null, variant: 'v', settledFeature: '' }),
+      JSON.stringify({ checkout: 1, project: 'p', slug: null, variant: 'v', settledFeature: '', chatHidden: 'yes' }),
     );
 
     expect(rememberedView()).toEqual({

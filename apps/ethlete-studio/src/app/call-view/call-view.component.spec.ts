@@ -237,6 +237,30 @@ describe('CallViewComponent', () => {
     expect(themesOf(again)).toEqual(['dark brand']);
   });
 
+  it('hides the chat on request and comes back with it hidden', async () => {
+    const fixture = await mount(RESOLVED.slug);
+
+    expect(element(fixture).querySelector('.studio__chat')).not.toBeNull();
+
+    button(fixture, '.studio__chat-hide', 'Hide')?.click();
+    await settle(fixture);
+
+    expect(element(fixture).querySelector('.studio__chat')).toBeNull();
+
+    fixture.destroy();
+    const again = TestBed.createComponent(CallViewComponent);
+
+    again.autoDetectChanges();
+    await settle(again);
+
+    expect(element(again).querySelector('.studio__chat')).toBeNull();
+
+    button(again, '.studio__chat-show', 'Show chat')?.click();
+    await settle(again);
+
+    expect(element(again).querySelector('.studio__chat')).not.toBeNull();
+  });
+
   it('shows the state the tooling recorded for a call on its row', async () => {
     stubHost({
       design_statuses: () => ({
