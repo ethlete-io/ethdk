@@ -110,6 +110,8 @@ export class MenuDirective {
   public isRoot = this.parent === null;
 
   /** @internal */
+  public rootAlignment = signal<'start' | 'end'>('start');
+  /** @internal */
   public registeredTrigger = signal<MenuTriggerDirective | null>(null);
   /** @internal */
   public registeredContextTrigger = signal<MenuContextTriggerDirective | null>(null);
@@ -913,7 +915,7 @@ export class MenuDirective {
     }
 
     if (this.isRoot && !this.anchorPoint()) {
-      return 'bottom-start';
+      return `bottom-${this.rootAlignment()}`;
     }
 
     return `${this.inlineEndSide()}-start`;
@@ -927,7 +929,9 @@ export class MenuDirective {
     }
 
     if (this.isRoot && !this.anchorPoint()) {
-      return ['bottom-end', 'top-start', 'top-end'];
+      return this.rootAlignment() === 'end'
+        ? ['bottom-start', 'top-end', 'top-start']
+        : ['bottom-end', 'top-start', 'top-end'];
     }
 
     const end = this.inlineEndSide();

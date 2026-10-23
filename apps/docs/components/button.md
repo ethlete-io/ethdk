@@ -164,6 +164,7 @@ Every flavor works on `<a>` for navigation with identical styling:
 
 - Give both segments the **same `variant`, `size` and `color`** - the container aligns their heights and outer corner radius, but the segment inputs stay yours to set.
 - **Exactly one of each segment**: a missing _or_ a duplicated segment throws in dev mode (see [error codes](#error-codes)). When a duplicate slips through in production, the first segment of each kind is the one the group uses, and it stays registered when the extra one is removed.
+- The menu opens below the trigger segment and aligns its **end** edge with the end of the split button, so it sits under the group and extends towards the inline-start (mirrored in RTL). Pass `placement` on `etMenu` to override it. While the menu is open the trigger segment keeps its hover appearance.
 - The divider color is themeable via `--et-split-button-divider-color` (defaults to `currentColor` at 32%, so it adapts to the variant).
 - For custom-styled split buttons, the headless `SplitButtonDirective` (`[etSplitButton]`) plus the two segment directives carry the grouping semantics without the default styling.
 

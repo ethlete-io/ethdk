@@ -73,5 +73,30 @@
     .et-icon-button.et-split-button-trigger:where([data-variant='filled']):where([disabled], [aria-disabled='true']) {
       opacity: 1;
     }
+
+    .et-split-button-trigger[aria-expanded='true'] {
+      --et-theme-color-primary-rgb: var(--et-color-primary-hover, var(--et-color-primary));
+      --et-theme-color-primary-solid: rgb(var(--et-theme-color-primary-rgb));
+      --et-theme-color-on-primary-rgb: var(--et-color-on-primary-hover, var(--et-color-on-primary));
+      --et-theme-color-on-primary-solid: rgb(var(--et-theme-color-on-primary-rgb));
+      --et-theme-color-ink-rgb: var(
+        --et-color-primary-ink-hover,
+        var(--et-color-primary-ink, var(--et-color-primary-hover, var(--et-color-primary)))
+      );
+      --et-theme-color-ink-solid: rgb(var(--et-theme-color-ink-rgb));
+      z-index: 1;
+
+      &:where([data-variant='filled']) {
+        --et-theme-color-primary-opacity: calc(1 - var(--et-button-variant-opacity-hover-delta));
+      }
+
+      &:where([data-variant='outline'], [data-variant='transparent']) {
+        --et-theme-color-primary-opacity: var(--et-button-variant-opacity-hover-delta);
+      }
+
+      &:where([data-variant='tonal']) {
+        --et-theme-color-primary-opacity: calc(0.16 + var(--et-button-variant-opacity-hover-delta));
+      }
+    }
   }
 }

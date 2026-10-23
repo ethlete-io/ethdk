@@ -1,5 +1,6 @@
 import { DestroyRef, Directive, inject } from '@angular/core';
 import { injectHostElement, RuntimeError } from '@ethlete/core';
+import { MenuTriggerDirective } from '../../menu/headless/menu-trigger.directive';
 import { SPLIT_BUTTON_ERROR_CODES } from './split-button-errors';
 import { SplitButtonDirective } from './split-button.directive';
 
@@ -14,6 +15,7 @@ export class SplitButtonTriggerDirective {
   private splitButton = inject(SplitButtonDirective, { optional: true });
   private destroyRef = inject(DestroyRef);
   private hostElement = injectHostElement();
+  private menuTrigger = inject(MenuTriggerDirective, { optional: true, self: true });
 
   constructor() {
     if (ngDevMode && !this.splitButton) {
@@ -23,6 +25,8 @@ export class SplitButtonTriggerDirective {
         { element: this.hostElement },
       );
     }
+
+    this.menuTrigger?.menu?.rootAlignment.set('end');
 
     this.splitButton?.registerTrigger(this);
 

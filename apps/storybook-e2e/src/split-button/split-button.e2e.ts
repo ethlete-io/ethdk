@@ -1,5 +1,5 @@
 import { Locator, expect, test } from '@playwright/test';
-import { at, expectFocusVisible, openStory, pressKey, settle, tabSequence, tap } from '../support';
+import { Box, at, boxOf, expectFocusVisible, openStory, pressKey, settle, tabSequence, tap } from '../support';
 
 const STORY_ID = 'components-actions-button-split--default';
 
@@ -178,5 +178,56 @@ test.describe('split-button / touch', () => {
     await expect(page.getByRole('menu')).toBeVisible();
     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
     await expect(root.getByText('Last action: -')).toBeVisible();
+  });
+});
+
+test.describe('split-button / menu', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: placement and hover');
+
+  for (const dir of ['ltr', 'rtl'] as const) {
+    test(`the menu aligns its end edge with the group in ${dir}`, async ({ page }) => {
+      const root = await openStory(page, STORY_ID);
+      await page.evaluate((value) => document.documentElement.setAttribute('dir', value), dir);
+      const { group, trigger } = firstSplitButton(root);
+
+      await trigger.focus();
+      await pressKey(page, 'Enter');
+
+      const menu = page.locator('[role="menu"]').first();
+      await expect(menu).toBeVisible();
+      await settle(page, 300);
+
+      const groupBox = await boxOf(group);
+      const menuBox = await boxOf(menu);
+
+      const endEdge = { ltr: (box: Box) => box.x + box.width, rtl: (box: Box) => box.x }[dir];
+      const groupEnd = endEdge(groupBox);
+      const menuEnd = endEdge(menuBox);
+
+      expect(Math.abs(menuEnd - groupEnd)).toBeLessThan(2);
+    });
+  }
+
+  test('the trigger keeps its hover background while the menu is open', async ({ page }) => {
+    const root = await openStory(page, STORY_ID);
+    const { trigger } = firstSplitButton(root);
+    const background = () => trigger.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+    await trigger.hover();
+    await settle(page, 400);
+    const hovered = await background();
+
+    await page.mouse.move(0, 0);
+    await settle(page, 400);
+    const idle = await background();
+
+    await trigger.focus();
+    await pressKey(page, 'Enter');
+    await page.mouse.move(0, 0);
+    await settle(page, 400);
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    expect(idle).not.toBe(hovered);
+    expect(await background()).toBe(hovered);
   });
 });
