@@ -30,8 +30,8 @@ export const COLOR_THEMES: ThemeCssColorTheme[] = [
     name: 'brand',
     isDefault: true,
     primary: {
-      color: { default: '37 99 235', hover: '29 78 216', active: '30 64 175', disabled: '147 197 253' },
-      onColor: { default: '255 255 255' },
+      color: { default: '37 99 235', hover: '29 78 216', active: '30 64 175', disabled: '100 116 139' },
+      onColor: { default: '255 255 255', disabled: '226 232 240' },
     },
   },
 ];
