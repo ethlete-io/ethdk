@@ -6,7 +6,7 @@ const DEFAULT_LABELS = ['Design', 'Engineering', 'Marketing', 'Very long departm
 @Component({
   selector: 'app-chip-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       @for (label of labels(); track label) {
         <et-chip (remove)="removeLabel(label)" removable>{{ label }}</et-chip>
       }

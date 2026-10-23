@@ -12,7 +12,7 @@ import { normalizeMatch, SOURCE } from './bracket-rounds-list-round-switcher.dat
   selector: 'app-bracket-rounds-list-round-switcher-example',
   template: `
     <div [style.max-inline-size.px]="420">
-      <div>
+      <div class="app-example-row">
         <button
           [variant]="roundId() ? 'outline' : 'filled'"
           (click)="roundId.set(null)"

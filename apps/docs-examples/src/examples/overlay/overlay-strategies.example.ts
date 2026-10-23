@@ -54,7 +54,7 @@ export class OverlayStrategiesContentComponent {
   selector: 'app-overlay-strategies-example',
   template: `
     <h3>Dialogs</h3>
-    <div>
+    <div class="app-example-row">
       <button (click)="open({ strategies: dialog() })" et-button size="sm">Dialog</button>
       <button (click)="open({ strategies: anchoredDialog(), origin: $event })" et-button size="sm" variant="tonal">
         Anchored dialog
@@ -65,7 +65,7 @@ export class OverlayStrategiesContentComponent {
     </div>
 
     <h3>Sheets (drag to dismiss)</h3>
-    <div>
+    <div class="app-example-row">
       <button (click)="open({ strategies: bottomSheet() })" et-button size="sm">Bottom sheet</button>
       <button (click)="open({ strategies: topSheet() })" et-button size="sm">Top sheet</button>
       <button (click)="open({ strategies: leftSheet() })" et-button size="sm">Left sheet</button>
@@ -76,7 +76,7 @@ export class OverlayStrategiesContentComponent {
     </div>
 
     <h3>Transforming (resize while open)</h3>
-    <div>
+    <div class="app-example-row">
       <button (click)="open({ strategies: bottomSheetToDialog() })" et-button size="sm">Bottom sheet to dialog</button>
       <button (click)="open({ strategies: fullScreenToDialog(), origin: $event })" et-button size="sm">
         Full-screen to dialog

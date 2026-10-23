@@ -5,7 +5,7 @@ import { BUTTON_IMPORTS, injectNotificationManager, provideNotificationManager }
 @Component({
   selector: 'app-notification-rtl-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="open()" et-button size="sm">Open a notification</button>
       <button (click)="rtl.set(!rtl())" et-button size="sm" variant="outline">
         Direction: {{ rtl() ? 'rtl' : 'ltr' }}

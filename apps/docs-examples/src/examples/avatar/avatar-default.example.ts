@@ -4,7 +4,7 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
 @Component({
   selector: 'app-avatar-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <et-avatar name="Jane Doe" />
       <et-avatar name="Jane Doe" color="brand" />
       <et-avatar src="https://i.pravatar.cc/128?img=12" name="John Smith" />

@@ -4,20 +4,20 @@ import { CHEVRON_ICON, ICON_IMPORTS, provideIcons, TIMES_ICON } from '@ethlete/c
 @Component({
   selector: 'app-icon-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <i class="icon-sm" etIcon="et-chevron"></i>
       <i class="icon-md" etIcon="et-chevron"></i>
       <i class="icon-lg" etIcon="et-chevron"></i>
       <i class="icon-xl" etIcon="et-chevron"></i>
     </div>
 
-    <div>
+    <div class="app-example-row">
       <i class="icon-md icon-rotate-90" etIcon="et-chevron"></i>
       <i class="icon-md icon-rotate-180" etIcon="et-chevron"></i>
       <i class="icon-md icon-rotate-270" etIcon="et-chevron"></i>
     </div>
 
-    <div>
+    <div class="app-example-row">
       <i class="icon-md" etIcon="et-times"></i>
       <i class="icon-md icon-rose" etIcon="et-chevron"></i>
       <i class="icon-md icon-green" etIcon="et-chevron"></i>

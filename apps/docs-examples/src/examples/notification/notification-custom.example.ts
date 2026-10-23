@@ -54,7 +54,7 @@ export class CustomToastComponent {
 @Component({
   selector: 'app-notification-custom-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="openInfo()" et-button size="sm" variant="outline">Info</button>
       <button (click)="openWithAction()" et-button size="sm" variant="tonal">With action</button>
     </div>

@@ -5,7 +5,7 @@ import { Observable, tap } from 'rxjs';
 @Component({
   selector: 'app-overlay-alert-dialog-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="deleteProject()" et-button>Delete project</button>
       <button (click)="publish()" et-button variant="outline">Publish</button>
       <button (click)="showAlert()" et-button variant="outline">Show alert</button>

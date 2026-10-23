@@ -31,3 +31,10 @@ body {
   gap: 1.6rem;
   max-inline-size: 44.8rem;
 }
+
+.app-example-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem;
+}

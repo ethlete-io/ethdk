@@ -5,7 +5,7 @@ import { firstValueFrom, map, mergeMap, of, timer } from 'rxjs';
 @Component({
   selector: 'app-notification-promise-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="fromPromise(true)" et-button size="sm" variant="outline">Promise resolves</button>
       <button (click)="fromPromise(false)" et-button size="sm" variant="outline">Promise rejects</button>
       <button (click)="fromObservable()" et-button size="sm" variant="outline">Observable</button>

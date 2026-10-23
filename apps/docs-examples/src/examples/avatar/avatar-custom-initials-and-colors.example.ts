@@ -4,14 +4,14 @@ import { AVATAR_IMPORTS } from '@ethlete/components';
 @Component({
   selector: 'app-avatar-custom-initials-and-colors-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <et-avatar name="Dr. Anna Maria Schmidt" />
       <et-avatar name="Dr. Anna Maria Schmidt" initials="AS" />
       <et-avatar initials="FCB" color="brand" />
       <et-avatar initials="BVB" color="warning" />
     </div>
 
-    <div>
+    <div class="app-example-row">
       <et-avatar class="tonal-avatar" name="Grace Hopper" color="success" />
       <et-avatar class="tonal-avatar" name="Ada Byron" color="danger" />
       <et-avatar class="inverted-avatar" name="Jane Doe" />

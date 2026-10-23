@@ -82,7 +82,7 @@ const mergeOverlay = defineOverlay({
 @Component({
   selector: 'app-overlay-openers-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="demo.open('hello')" et-button size="sm">Open (hello)</button>
       <button (click)="demo.open('world')" et-button size="sm" variant="tonal">Open (world)</button>
       <a
@@ -99,7 +99,7 @@ const mergeOverlay = defineOverlay({
 
     <p>Current <code>?demo</code> = {{ currentParam() ?? '-' }}</p>
 
-    <div>
+    <div class="app-example-row">
       <button (click)="openMerge($event)" et-button size="sm">Open with per-open input</button>
     </div>
 

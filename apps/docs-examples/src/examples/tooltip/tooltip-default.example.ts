@@ -4,7 +4,7 @@ import { BUTTON_IMPORTS, TOOLTIP_IMPORTS } from '@ethlete/components';
 @Component({
   selector: 'app-tooltip-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button etTooltip="A lightweight tooltip anchored to its trigger." et-button size="sm" variant="outline">
         Text tooltip
       </button>

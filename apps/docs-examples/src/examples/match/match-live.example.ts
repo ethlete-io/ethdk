@@ -9,7 +9,7 @@ import { AWAY, HOME, KICK_OFF } from './match-live.data';
       <et-match-card [match]="match()" (scoreChange)="lastChange.set($event)" />
     </div>
 
-    <div>
+    <div class="app-example-row">
       <button (click)="addGoal('home')" et-button size="xs" variant="transparent">Goal for {{ home.name }}</button>
       <button (click)="addGoal('away')" et-button size="xs" variant="transparent">Goal for {{ away.name }}</button>
     </div>

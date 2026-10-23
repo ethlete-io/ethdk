@@ -4,7 +4,7 @@ import { BUTTON_IMPORTS, TOGGLETIP_IMPORTS } from '@ethlete/components';
 @Component({
   selector: 'app-toggletip-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button
         etToggletip="A click-triggered toggletip for richer, interactive guidance."
         et-button

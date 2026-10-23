@@ -29,7 +29,7 @@ const compareTeamsById = (a: Team, b: Team) => a.id === b.id;
       <et-hint>The saved value holds copies of the team objects - compareWith matches them by id</et-hint>
     </et-form-field>
 
-    <div>
+    <div class="app-example-row">
       <button (click)="reloadOptions()" type="button">Reload options</button>
       <button (click)="resetToSaved()" type="button">Reset to saved</button>
     </div>

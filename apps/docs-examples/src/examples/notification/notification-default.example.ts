@@ -10,20 +10,20 @@ const TOTAL_TICKS = 4000 / TICK_MS;
 @Component({
   selector: 'app-notification-default-example',
   template: `
-    <div>
+    <div class="app-example-row">
       <button (click)="openSuccess()" et-button size="sm" variant="outline">Success</button>
       <button (click)="openInfo()" et-button size="sm" variant="outline">Info</button>
       <button (click)="openError()" et-button size="sm" variant="outline">Error</button>
       <button (click)="openLoading()" et-button size="sm" variant="outline">Loading</button>
     </div>
 
-    <div>
+    <div class="app-example-row">
       <button (click)="openWithAction()" et-button size="sm" variant="tonal">With action</button>
       <button (click)="openWithTwoActions()" et-button size="sm" variant="tonal">Two actions</button>
       <button (click)="openWithUpdate()" et-button size="sm" variant="tonal">Loading to success</button>
     </div>
 
-    <div>
+    <div class="app-example-row">
       <button (click)="openDeduped()" et-button size="sm" variant="outline">
         Same id (clicked {{ dedupeClicks() }}x)
       </button>
