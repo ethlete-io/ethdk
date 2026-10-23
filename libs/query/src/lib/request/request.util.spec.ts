@@ -102,6 +102,19 @@ describe('buildQueryString', () => {
       `filters${uriBracketsZero}${brOpen}name${brClose}=category&filters${uriBracketsZero}${brOpen}values${brClose}${uriBracketsZero}=Stuff&filters${uriBracketsZero}${brOpen}values${brClose}${uriBracketsOne}=Other`,
     );
   });
+
+  it('should give each object in an array its own index', () => {
+    expect(
+      buildQueryString(
+        {
+          filters: [{ name: 'a' }, { name: null }, { name: 'b' }],
+        },
+        {
+          writeArrayIndexes: true,
+        },
+      ),
+    ).toEqual(`filters${uriBracketsZero}${brOpen}name${brClose}=a&filters${uriBracketsOne}${brOpen}name${brClose}=b`);
+  });
 });
 
 describe('buildRoute', () => {
