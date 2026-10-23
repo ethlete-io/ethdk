@@ -190,6 +190,22 @@ test.describe('dialog / touch', () => {
   });
 });
 
+test.describe('dialog / bottom sheet', () => {
+  test('the drag handle keeps its row when the content reaches the max height', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 240 });
+    const root = await openStory(page, STORY_ID);
+    await root.getByRole('button', { name: 'Bottom sheet', exact: true }).click();
+
+    await waitForEntered(page);
+
+    const handle = await boxOf(page.locator('.et-overlay-container-drag-handle'));
+    const content = await boxOf(page.locator(`${PANE} > :not(.et-overlay-container-drag-handle)`).first());
+
+    expect(handle.height).toBeGreaterThan(0);
+    expect(content.y).toBeGreaterThanOrEqual(handle.y + handle.height);
+  });
+});
+
 test.describe('dialog / full-screen', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: viewport sizes are set per test');
 

@@ -116,8 +116,11 @@
       border-end-start-radius: var(--_et-overlay-radius);
     }
 
-    &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
+    &.et-overlay--bottom-sheet:has(> .et-overlay-container-drag-handle) {
       grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    &.et-overlay--bottom-sheet .et-overlay-container-drag-handle {
       display: flex;
     }
 
