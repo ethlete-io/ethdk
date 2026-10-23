@@ -82,7 +82,9 @@ names are **project → feature → call → variant**.
      (1) `defineCall` gets a `stage` (themes, ci, wireframe, component, element, page,
      prototype); Studio groups calls by stage; `check` warns when a page or element call imports
      nothing from `system/`. (2) The wireframe stage ends with an inventory of the needed parts,
-     each mapped to an SDK component or marked new; it is the queue of component calls.
+     each mapped to an SDK component or marked new; it is the queue of component calls. The
+     inventory is a typed `inventory` field of the wireframe call's `defineCall()` (Tom, 2026-10-23),
+     not a markdown file.
      (3) Stage 1 is foundations: colours plus type scale, spacing and radius. (4) A page that
      shows a missing part opens a component call; it never draws the part inline.
    - After tomflix's component-call test (Tom decided, 2026-10-23): a drawing may set

@@ -6,7 +6,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
-import { systemWarningOf } from './system-use';
+import { inventoryWarningOf, systemWarningOf } from './system-use';
 
 /**
  * A tool the checker shells out to, taken from the checkout first and from this package second, so
@@ -103,7 +103,14 @@ const runBrowser = async (options: {
 };
 
 type Declared =
-  null | { error: string } | { stage: string | null; rounds: string[]; variants: { key: string; round: string }[] };
+  | null
+  | { error: string }
+  | {
+      stage: string | null;
+      rounds: string[];
+      variants: { key: string; round: string }[];
+      hasInventory: boolean;
+    };
 
 /**
  * Reads a call's declaration through the frame server's registry. A string, not a function: the
@@ -118,6 +125,7 @@ const declaredOf = (slug: string) => `(async (slug) => {
       stage: call.stage ?? null,
       rounds: (call.rounds ?? []).map((round) => round.key),
       variants: call.variants.map((variant) => ({ key: variant.key, round: variant.round ?? '' })),
+      hasInventory: Boolean(call.inventory),
     };
   } catch (error) {
     return { error: error instanceof Error ? error.message : String(error) };
@@ -207,8 +215,11 @@ const checkPage = async (options: {
 
   if (consoleErrors.length > 0) return fail(`RENDERED WITH ERRORS on ${slug}\n${trim(consoleErrors.join('\n'))}`);
 
-  const warning = systemWarningOf({ target, slug, stage: declared.stage });
-  if (warning) console.warn(warning);
+  const warnings = [
+    systemWarningOf({ target, slug, stage: declared.stage }),
+    inventoryWarningOf({ slug, stage: declared.stage, hasInventory: declared.hasInventory }),
+  ];
+  for (const warning of warnings) if (warning) console.warn(warning);
 
   console.log(`ok ${slug} (${checked.join(', ')})`);
 

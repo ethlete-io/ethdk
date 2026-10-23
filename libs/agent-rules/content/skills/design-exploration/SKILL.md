@@ -158,10 +158,18 @@ each stage draws with what the stages before it settled:
    `config.json`), plus the type scale, spacing and radius.
 2. **Logo and CI**, if the project needs them.
 3. **Wireframes**: early, rough concepts of the main flows (`mode: 'wireframe'`). They show
-   which components the product needs, not how they look. The stage ends with an inventory,
-   `.ethlete/design/system/<project>/inventory.md`: every part the wireframes need, each mapped
-   to the SDK component it starts from, or marked new. The inventory is the queue of component
-   calls.
+   which components the product needs, not how they look. The stage ends with an inventory in
+   the wireframe call: every part the wireframes need, each mapped to the SDK component it
+   starts from, or marked new with the component call that draws it. The inventory is the
+   queue of component calls:
+
+   ```ts
+   inventory: [
+     { part: 'Search field', sdk: 'et-input' },
+     { part: 'Match card', new: true, call: 'tomflix/components/match-card' },
+   ],
+   ```
+
 4. **Components**, from the SDK ones rendered with `ng()`, themed and set up for the project.
    Each accepted one becomes a design-system entry.
 5. **Larger elements**: the shell, the navigation, headers, lists, built from the entries.

@@ -249,6 +249,9 @@ export type CallMode = 'wireframe' | 'design';
  */
 export type CallStage = 'themes' | 'ci' | 'wireframe' | 'component' | 'element' | 'page' | 'prototype';
 
+/** A part the wireframes need: the SDK component that covers it, or a new part and the component call that draws it. */
+export type InventoryPart = { part: string } & ({ sdk: string } | { new: true; call?: string });
+
 /**
  * One open question of an exploration, with every variant drawn at the same geometry.
  * A call with one variant and no claim is a view: one reference picture, drawn full width.
@@ -267,6 +270,8 @@ export type Call = {
   mode?: CallMode;
   /** Left out by a short call. With rounds, the intro says only what the call is about. */
   rounds?: CallRound[];
+  /** Set by a wireframe call only. The parts its wireframes need, in the order the component calls take them. */
+  inventory?: InventoryPart[];
   variants: CallVariant[];
 };
 

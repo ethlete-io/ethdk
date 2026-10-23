@@ -41,3 +41,12 @@ export const systemWarningOf = (options: { target: string; slug: string; stage: 
     `may not match the system.`
   );
 };
+
+/** The warning for an inventory on a call that is no wireframe call. */
+export const inventoryWarningOf = (options: { slug: string; stage: string | null; hasInventory: boolean }) => {
+  const { slug, stage, hasInventory } = options;
+
+  if (!hasInventory || stage === 'wireframe') return null;
+
+  return `WARNING ${slug} has an inventory, but only a wireframe call takes one.`;
+};
