@@ -1,6 +1,7 @@
 import {
   DOCUMENT,
   EnvironmentInjector,
+  PLATFORM_ID,
   Signal,
   computed,
   createEnvironmentInjector,
@@ -23,6 +24,7 @@ import {
   injectStyleManager,
   nextFrame,
 } from '@ethlete/core';
+import { isPlatformServer } from '@angular/common';
 import { tap } from 'rxjs';
 import { normalizeClassList } from '../normalize-class-list';
 import { OverlayConfig } from '../overlay-config';
@@ -84,6 +86,7 @@ export const createOverlayStrategyController = (
 ): OverlayStrategyController => {
   const childInjector = createEnvironmentInjector([], parentInjector);
   const renderer = runInInjectionContext(childInjector, () => injectRenderer());
+  const isServer = isPlatformServer(childInjector.get(PLATFORM_ID));
   const breakpointObserver = runInInjectionContext(childInjector, () => injectBreakpointObserver());
   const styleManager = runInInjectionContext(childInjector, () => injectStyleManager());
 
@@ -406,6 +409,10 @@ export const createOverlayStrategyController = (
     const backdropElement = runtimeRef.elements.backdropElement();
     if (backdropElement) {
       applyClassChange(backdropElement, { curr: activeStrategy.config.backdropClass });
+
+      if (isServer) {
+        renderer.addClass(backdropElement, BACKDROP_VISIBLE_CLASS);
+      }
     }
 
     retainSharedClasses(document.documentElement, normalizeClassList(activeStrategy.config.documentClass));

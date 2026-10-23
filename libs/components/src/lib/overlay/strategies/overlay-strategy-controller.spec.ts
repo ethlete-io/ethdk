@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ENVIRONMENT_INITIALIZER, inject } from '@angular/core';
+import { Component, DestroyRef, ENVIRONMENT_INITIALIZER, PLATFORM_ID, inject } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
 import { FakeMatchMedia, fakeMatchMedia } from '../../testing/fake-match-media';
@@ -155,6 +155,15 @@ describe('overlay strategy controller', () => {
     expect(backdrop?.classList.contains('small-backdrop')).toBe(true);
     expect(backdrop?.classList.contains('et-overlay-backdrop--visible')).toBe(true);
     expect(elements?.hostElement.style.pointerEvents).toBe('auto');
+  });
+
+  it('marks the backdrop visible at once on the server, where no frame ever runs', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
+    smallStrategy.config.hasBackdrop = true;
+
+    const overlayRef = openOverlay();
+
+    expect(overlayRef.elements?.backdropElement()?.classList.contains('et-overlay-backdrop--visible')).toBe(true);
   });
 
   it('switches strategies when the breakpoint changes', () => {
