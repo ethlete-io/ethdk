@@ -68,7 +68,12 @@ names are **project → feature → call → variant**.
      status, screenshot). They write status files that Studio shows; Studio's MCP tools
      (`apps/ethlete-studio/src-tauri/src/tools.rs`) wrap them. Discovery is part of it: the skill
      lists every command, and `et design --help` works. Today no doc names the Studio MCP tools,
-     and terminal sessions do not get them. Command names and states: open, ask Tom.
+     and terminal sessions do not get them. Tom decided the details, 2026-10-23:
+     `et design new <slug> [--variants a,b]` scaffolds call.ts, fixture.ts and one file per
+     variant, so the call renders at once. `et design status <slug> <state>` sets the state.
+     `et design check --call <slug> --shot` also writes a PNG next to the receipt. States:
+     scaffolded (new), drawing (agent), checking, then ready or failed (check). The status file
+     lives next to the receipts in the temp dir `ethlete-studio-checks/`, one per checkout and call.
    - Order (Tom agreed, 2026-10-23): first the project design system and the skill rule to
      reuse it, then the SSR compiler, then the interaction runtime and the theme switch.
    - Design system (Tom decided, 2026-10-23; step 1 done): an entry is a folder
