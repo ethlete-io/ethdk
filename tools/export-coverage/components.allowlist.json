@@ -1,6 +1,5 @@
 {
   "DEFAULT_FORM_FIELD_DEFAULTS": "constant: default value of provideFormFieldDefaults",
-  "DEFAULT_KBD_LABELS": "spec: libs/components/src/lib/kbd/kbd.component.spec.ts",
   "KBD_LABELS": "token: read through injectKbdLabels, set through provideKbdLabels",
   "OverlayOriginCloneComponent": "S8b overlay e2e: full-screen morph from origin needs real layout rects and transition timing",
   "PAGINATION_SIZES": "constant: value set of the pagination size input",
