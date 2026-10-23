@@ -1,6 +1,7 @@
 import { Component, InjectionToken, ViewEncapsulation, WritableSignal, inject, signal } from '@angular/core';
 import { createUserConsentProvider } from '@ethlete/core';
 import {
+  BADGE_IMPORTS,
   BUTTON_IMPORTS,
   STREAM_DEFAULT_COMPONENTS,
   STREAM_IMPORTS,
@@ -15,16 +16,27 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
 @Component({
   selector: 'app-stream-consent-provider-example',
   template: `
-    <div class="example-stream-banner">
-      <span>Cookie banner: media consent {{ mediaConsent() ? 'granted' : 'not granted' }}</span>
-      <button (click)="mediaConsent.set(true)" et-button type="button">Accept</button>
-      <button (click)="mediaConsent.set(false)" et-button type="button">Revoke</button>
+    <div class="example-stream-consent">
+      <span class="example-stream-consent-label">
+        Media consent
+        <et-badge [color]="mediaConsent() ? 'success' : 'warning'" size="sm">
+          {{ mediaConsent() ? 'Granted' : 'Not granted' }}
+        </et-badge>
+      </span>
+      <div class="app-example-row">
+        <button [disabled]="mediaConsent()" (click)="mediaConsent.set(true)" et-button size="sm" type="button">
+          Accept
+        </button>
+        <button [disabled]="!mediaConsent()" (click)="mediaConsent.set(false)" et-button size="sm" type="button">
+          Revoke
+        </button>
+      </div>
     </div>
 
     <et-youtube-player-slot class="example-stream-player" videoId="dQw4w9WgXcQ" />
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, BUTTON_IMPORTS],
+  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, BUTTON_IMPORTS, BADGE_IMPORTS],
   providers: [
     { provide: MEDIA_CONSENT, useFactory: () => signal(false) },
     ...provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS, consentComponent: StreamConsentComponent }),
@@ -47,16 +59,25 @@ const MEDIA_CONSENT = new InjectionToken<WritableSignal<boolean>>('MEDIA_CONSENT
     .example-stream-player {
       display: block;
       inline-size: 100%;
-      max-inline-size: 56rem;
       aspect-ratio: 16 / 9;
     }
 
-    .example-stream-banner {
+    .example-stream-consent {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 8px;
-      margin-block-end: 16px;
+      justify-content: space-between;
+      gap: 0.8rem 1.6rem;
+    }
+
+    .example-stream-consent-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .example-stream-consent-label > .et-badge {
+      align-self: center;
     }
   `,
 })

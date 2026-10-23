@@ -1,6 +1,7 @@
-import { JsonPipe } from '@angular/common';
-import { Component, ViewEncapsulation, viewChild } from '@angular/core';
+import { Component, ViewEncapsulation, computed, viewChild } from '@angular/core';
 import {
+  BADGE_IMPORTS,
+  DESCRIPTION_LIST_IMPORTS,
   STREAM_DEFAULT_COMPONENTS,
   STREAM_IMPORTS,
   STREAM_YOUTUBE_IMPORTS,
@@ -13,34 +14,54 @@ import {
   template: `
     <et-youtube-player-slot class="example-stream-player" videoId="dQw4w9WgXcQ" />
 
-    <p class="example-stream-label">State</p>
-    <pre class="example-stream-state">{{ player().controls.currentState() | json }}</pre>
+    <dl et-description-list>
+      <dt>Status</dt>
+      <dd>
+        <et-badge [color]="status().color" size="sm">{{ status().label }}</et-badge>
+      </dd>
+      <dt>Sound</dt>
+      <dd>{{ state().isMuted ? 'Muted' : 'On' }}</dd>
+      <dt>Position</dt>
+      <dd>{{ position() }}</dd>
+    </dl>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, JsonPipe],
+  imports: [STREAM_IMPORTS, STREAM_YOUTUBE_IMPORTS, BADGE_IMPORTS, DESCRIPTION_LIST_IMPORTS],
   providers: [provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS })],
   styles: `
     .example-stream-player {
       display: block;
       inline-size: 100%;
-      max-inline-size: 56rem;
       aspect-ratio: 16 / 9;
-    }
-
-    .example-stream-label {
-      margin: 16px 0 4px;
-      opacity: 0.6;
-    }
-
-    .example-stream-state {
-      margin: 0;
-      padding: 12px;
-      overflow: auto;
-      border-radius: 6px;
-      background: var(--et-surface-background-solid);
     }
   `,
 })
 export class StreamDefaultExampleComponent {
-  protected player = viewChild.required(YoutubePlayerSlotComponent);
+  private player = viewChild.required(YoutubePlayerSlotComponent);
+
+  protected state = computed(() => this.player().controls.currentState());
+  protected status = computed((): { label: string; color: string | null } => {
+    const state = this.state();
+
+    if (state.error) return { label: 'Error', color: 'danger' };
+    if (state.isLoading || !state.isReady) return { label: 'Loading', color: null };
+    if (state.isEnded) return { label: 'Ended', color: null };
+
+    return state.isPlaying ? { label: 'Playing', color: 'success' } : { label: 'Paused', color: 'warning' };
+  });
+  protected position = computed(() => {
+    const { currentTime, duration } = this.state();
+
+    if (duration === null) return '-';
+
+    return `${formatTime(currentTime)} / ${formatTime(duration)}`;
+  });
 }
+
+const formatTime = (seconds: number | null) => {
+  if (seconds === null) return '-';
+
+  const whole = Math.floor(seconds);
+
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};

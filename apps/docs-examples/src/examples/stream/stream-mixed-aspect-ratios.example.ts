@@ -1,97 +1,153 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal, viewChildren } from '@angular/core';
 import {
+  BADGE_IMPORTS,
   BUTTON_IMPORTS,
   STREAM_ALL_IMPORTS,
   STREAM_DEFAULT_COMPONENTS,
+  StreamPlayerSlotDirective,
+  injectPipManager,
   provideStreamConfig,
   provideStreamPip,
 } from '@ethlete/components';
 
+type Video = { id: string; title: string; platform: 'youtube' | 'tiktok'; videoId: string; ratio: string };
+
+const VIDEO_LIST: Video[] = [
+  { id: 'a', title: 'Never Gonna Give You Up', platform: 'youtube', videoId: 'dQw4w9WgXcQ', ratio: '16:9' },
+  { id: 'b', title: 'Lofi radio', platform: 'youtube', videoId: 'jfKfPfyJRdk', ratio: '16:9' },
+  { id: 'c', title: 'Short clip', platform: 'tiktok', videoId: '6718335390845095173', ratio: '9:16' },
+  { id: 'd', title: 'Another short', platform: 'tiktok', videoId: '7106594312292453675', ratio: '9:16' },
+];
+
 @Component({
   selector: 'app-stream-mixed-aspect-ratios-example',
   template: `
-    <p>
-      Enter PIP on all four players to see the grid view with mixed aspect ratios (16:9 YouTube and Twitch, 9:16
-      TikTok). Each cell adapts to the player's natural ratio.
-    </p>
+    <ul class="example-stream-videos">
+      @for (video of VIDEOS; track video.id; let index = $index) {
+        <li>
+          <label class="example-stream-video">
+            <input [checked]="selected().has(video.id)" (change)="toggle(video.id)" type="checkbox" />
+            <span class="example-stream-video-title">{{ video.title }}</span>
+            @if (isFloating(index)) {
+              <et-badge color="success" size="sm">In PiP</et-badge>
+            }
+            <et-badge size="sm">{{ video.ratio }}</et-badge>
+          </label>
+        </li>
+      }
+    </ul>
 
-    <div class="example-stream-players">
-      <section>
-        <et-youtube-player-slot #youtube class="example-stream-wide" videoId="dQw4w9WgXcQ" />
-        <button (click)="youtube.controls.pipActivate()" et-button size="xs" type="button">Enter PIP</button>
-      </section>
+    <div class="app-example-row">
+      <button [disabled]="!selected().size" (click)="float()" et-button type="button">
+        Float {{ selected().size }} in picture-in-picture
+      </button>
+      <button [disabled]="!pipManager.pips().length" (click)="bringBack()" et-button variant="outline" type="button">
+        Bring all back
+      </button>
+    </div>
 
-      <section>
-        <et-twitch-player-slot #twitch class="example-stream-wide" src="lofigirl" />
-        <button (click)="twitch.controls.pipActivate()" et-button size="xs" type="button">Enter PIP</button>
-      </section>
-
-      <section>
-        <et-tiktok-player-slot #tiktokA class="example-stream-tall" videoId="6718335390845095173" />
-        <button (click)="tiktokA.controls.pipActivate()" et-button size="xs" type="button">Enter PIP</button>
-      </section>
-
-      <section>
-        <et-tiktok-player-slot #tiktokB class="example-stream-tall" videoId="7106594312292453675" />
-        <button (click)="tiktokB.controls.pipActivate()" et-button size="xs" type="button">Enter PIP</button>
-      </section>
+    <div class="example-stream-sources" aria-hidden="true">
+      @for (video of VIDEOS; track video.id) {
+        @if (video.platform === 'youtube') {
+          <et-youtube-player-slot [videoId]="video.videoId" class="example-stream-source" />
+        } @else {
+          <et-tiktok-player-slot [videoId]="video.videoId" class="example-stream-source example-stream-source--tall" />
+        }
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [STREAM_ALL_IMPORTS, BUTTON_IMPORTS],
+  imports: [STREAM_ALL_IMPORTS, BUTTON_IMPORTS, BADGE_IMPORTS],
   providers: [
     ...provideStreamConfig({ ...STREAM_DEFAULT_COMPONENTS }),
     ...provideStreamPip({ pipChrome: { controlsColor: 'neutral' } }),
   ],
   styles: `
-    .example-stream-players {
+    .example-stream-videos {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 16px;
-      max-inline-size: 700px;
+      gap: 0.8rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    .example-stream-players section {
+    .example-stream-video {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 1.2rem 1.6rem;
+      border: 1px solid var(--et-surface-border-solid, currentColor);
+      border-radius: 0.8rem;
+      cursor: pointer;
     }
 
-    .example-stream-wide,
-    .example-stream-tall {
+    .example-stream-video:has(:checked) {
+      border-color: var(--et-theme-color-primary-solid, currentColor);
+    }
+
+    .example-stream-video input {
+      margin: 0;
+      accent-color: var(--et-theme-color-primary-solid, auto);
+    }
+
+    .example-stream-video-title {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .example-stream-video > .et-badge {
+      align-self: center;
+    }
+
+    .example-stream-sources {
+      position: fixed;
+      inset-block-start: 0;
+      inset-inline-start: -200vw;
+      inline-size: 32rem;
+    }
+
+    .example-stream-source {
       display: block;
-      position: relative;
-      inline-size: 100%;
-      background: black;
-    }
-
-    .example-stream-wide {
       aspect-ratio: 16 / 9;
     }
 
-    .example-stream-tall {
+    .example-stream-source--tall {
+      inline-size: 18rem;
       aspect-ratio: 9 / 16;
-    }
-
-    et-pip-window {
-      inline-size: 320px;
-      overflow: hidden;
-      border-radius: 6px;
-    }
-
-    et-pip-player {
-      display: block;
-      position: relative;
-      overflow: hidden;
-    }
-
-    et-pip-player > *,
-    et-pip-player iframe {
-      display: block;
-      inline-size: 100% !important;
-      block-size: 100% !important;
     }
   `,
 })
-export class StreamMixedAspectRatiosExampleComponent {}
+export class StreamMixedAspectRatiosExampleComponent {
+  protected pipManager = injectPipManager();
+  private slots = viewChildren(StreamPlayerSlotDirective);
+  protected readonly VIDEOS = VIDEO_LIST;
+  protected selected = signal(new Set(VIDEO_LIST.map((video) => video.id)));
+
+  private floatingIds = computed(() => new Set(this.pipManager.pips().map((pip) => pip.playerId)));
+
+  protected isFloating(index: number) {
+    const playerId = this.slots()[index]?.slot.currentPlayerId();
+
+    return !!playerId && this.floatingIds().has(playerId);
+  }
+
+  protected toggle(id: string) {
+    this.selected.update((selected) => {
+      const next = new Set(selected);
+
+      if (!next.delete(id)) next.add(id);
+
+      return next;
+    });
+  }
+
+  protected float() {
+    this.VIDEOS.forEach((video, index) => {
+      if (this.selected().has(video.id)) this.slots()[index]?.slot.pipActivate();
+    });
+  }
+
+  protected bringBack() {
+    for (const slot of this.slots()) slot.slot.pipDeactivate();
+  }
+}
