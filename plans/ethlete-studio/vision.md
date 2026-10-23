@@ -48,9 +48,9 @@ names are **project → feature → call → variant**.
        because `node_modules/@ethlete/*` links to `libs/*/src`; a resolve hook maps it.
      - Providers: `config.json` names a `providers.ts` per project (colour and surface themes).
        The form field throws without colour themes.
-     - Gaps: the server render has no input `placeholder` and keeps the hint at `opacity: 0`
-       (no `data-active`), because the components set both in browser-only render hooks. A
-       render error goes to a collecting `ErrorHandler`, so `ng()` rejects with it.
+     - The server render carries the input `placeholder` and the active hint (`data-active`),
+       checked on 2026-10-23. A render error goes to a collecting `ErrorHandler`, so `ng()`
+       rejects with it.
    - Open, interaction: a snapshot has CSS states (hover, focus, CSS motion) but no behavior. A
      prototype needs a small runtime in the frame that swaps a component to another state on an
      event (click → `open: true`). The frame now drops `<script>` (`libs/cli/design/web/frame.ts`
