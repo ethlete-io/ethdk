@@ -80,7 +80,7 @@ const loadAngular = async () => {
   } catch (error) {
     const message = missingPackageMessage(error, target);
 
-    throw message ? new Error(message, { cause: error }) : error;
+    throw message ? Object.assign(new Error(message), { cause: error }) : error;
   }
 };
 
