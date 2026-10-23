@@ -163,7 +163,7 @@ describe('stat tile scenarios without semantic themes', () => {
     s.tick();
     s.flush();
 
-    expect(text(tile(host, 'Page views'))).toBe('Page views 12.940 Down -310');
+    expect(text(tile(host, 'Page views'))).toBe('Page views 12.940 Gesunken -310');
     expect(text(tile(host, 'Open tickets'))).toBe('Open tickets 1.284 Unverändert 0');
     expect(text(host.querySelector('.probe'))).toBe('Unverändert|Unverändert');
     expect(

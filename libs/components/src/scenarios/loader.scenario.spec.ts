@@ -4,6 +4,7 @@ import { ColorTheme, injectLocale, provideColorThemesWithTailwind4, ThemeSwatch 
 import {
   BrandLoaderComponent,
   DEFAULT_LOADER_LABELS,
+  GERMAN_LOADER_LABELS,
   injectLoaderLabels,
   LOADER_IMPORTS,
   LOADER_LABELS,
@@ -206,7 +207,7 @@ describe('loader scenarios with localized labels', () => {
     s.tick();
 
     expect(query('et-brand-loader').getAttribute('aria-label')).toBe('Lädt');
-    expect(query('et-scenario-label-probe').textContent).toBe(`Lädt|${DEFAULT_LOADER_LABELS.loadingContent}`);
+    expect(query('et-scenario-label-probe').textContent).toBe(`Lädt|${GERMAN_LOADER_LABELS.loadingContent}`);
   });
 
   it('names a spinner without an aria-label from the localized loader labels, and keeps its own aria-label', () => {
