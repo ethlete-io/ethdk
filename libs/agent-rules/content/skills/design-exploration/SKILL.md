@@ -115,8 +115,9 @@ markup stays and the error shows on top of it.
 
 For a prototype with states, render each state with `ngStates({ closed: …, open: … }, { imports })`
 and put its `body` in the drawing. `setup: flow.on([{ click: '.trigger', go: 'open' }])` swaps the
-states on a click, in a View Transition. An open overlay does not render on the server, so a
-state draws its panel in the template. `ngStates` wraps the states in a
+states on a click, in a View Transition. To draw an open overlay, open it in
+the template (`<et-select [open]="true">`, `<div etMenu [open]="true">`): `ng()` returns the real
+panel, and the frame places it below its trigger. See `components/ssr/02-open-overlays`. `ngStates` wraps the states in a
 `<div data-de-states style="display: contents">` host. So `flow.body` must be the drawing's body,
 or contain it. A selector rule must not depend on that wrapper. See `components/ssr/01-states`.
 

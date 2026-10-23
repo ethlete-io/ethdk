@@ -1,4 +1,4 @@
-import { mountDrawing } from '@design-explore';
+import { mountDrawing, placeOverlays } from '@design-explore';
 import { calls } from 'virtual:design-explore';
 import { loadEnv } from 'virtual:design-explore/env';
 
@@ -67,6 +67,12 @@ else {
     }
   }
 }
+
+const place = () => placeOverlays(root);
+
+new MutationObserver(place).observe(root, { childList: true, subtree: true });
+new ResizeObserver(place).observe(root);
+place();
 
 const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);

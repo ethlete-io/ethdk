@@ -105,6 +105,18 @@ describe('extractRender', () => {
 
     expect(extractRender(document)).toEqual({ markup: '<p>x</p>', styles: ['.a{}', '.b{}'] });
   });
+
+  it('appends what the app attached to the body after the host, shown and without scripts', () => {
+    const document =
+      '<html><head></head><body><et-design-host><b aria-controls="l-1">x</b></et-design-host>' +
+      '<div class="et-overlay-runtime-root"><div class="et-overlay et-force-invisible et-overlay--anchored">' +
+      '<div id="l-1">panel</div><!--container--></div></div><script id="ng-state">{}</script></body></html>';
+
+    expect(extractRender(document).markup).toBe(
+      '<b aria-controls="l-1">x</b><div class="et-overlay-runtime-root">' +
+        '<div class="et-overlay et-overlay--anchored"><div id="l-1">panel</div></div></div>',
+    );
+  });
 });
 
 describe('unseenStyles', () => {

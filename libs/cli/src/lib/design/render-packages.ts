@@ -120,9 +120,16 @@ export const lookupImports = (options: { names: string[]; modules: Record<string
   });
 };
 
-/** The inner markup of the render host, and the text of every `<style>` tag of the page. */
+/**
+ * The inner markup of the render host followed by what the app attached to `<body>` after it (an
+ * open overlay, shown: positioning never runs on the server), and the text of every `<style>` tag.
+ */
 export const extractRender = (document: string) => {
-  const markup = /<et-design-host[^>]*>([\s\S]*)<\/et-design-host>/.exec(document)?.[1] ?? '';
+  const host = /<et-design-host[^>]*>([\s\S]*)<\/et-design-host>([\s\S]*?)<\/body>/.exec(document);
+  const attached = (host?.[2] ?? '')
+    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/(class="[^"]*?)\s*\bet-force-invisible\b/g, '$1');
+  const markup = (host?.[1] ?? '') + attached.trim();
   const styles = [...document.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((match) => match[1] ?? '');
 
   return { markup: markup.replace(/<!--container-->/g, ''), styles };

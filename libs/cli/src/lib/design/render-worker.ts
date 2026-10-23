@@ -84,6 +84,21 @@ const loadAngular = async () => {
   }
 };
 
+// Domino has no layout and no `window`; an open overlay measures its trigger, and @floating-ui/dom
+// falls back to the global `window` when one is missing.
+const shimLayout = (server: { ɵDominoAdapter: { makeCurrent: () => void } }) => {
+  server.ɵDominoAdapter.makeCurrent();
+  (globalThis as { window?: unknown }).window ??= globalThis;
+
+  const element = globalThis.Element as typeof Element | undefined;
+
+  if (element && typeof element.prototype.getBoundingClientRect !== 'function') {
+    const rect = { x: 0, y: 0, top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0 };
+
+    element.prototype.getBoundingClientRect = () => ({ ...rect, toJSON: () => rect });
+  }
+};
+
 const importAngular = async () => {
   // The JIT compiler has to be loaded before any partially compiled package is evaluated.
   await import('@angular/compiler');
@@ -96,6 +111,8 @@ const importAngular = async () => {
       (entries) => Object.fromEntries(entries),
     ),
   ]);
+
+  shimLayout(server);
 
   return { core, browser, server, modules };
 };

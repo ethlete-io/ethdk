@@ -144,6 +144,57 @@ export const mountDrawing = (root: HTMLElement, drawn: Drawing): unknown => {
   }
 };
 
+const OVERLAY_GAP = 4;
+
+const triggerOf = (pane: Element, root: HTMLElement) => {
+  const outside = [...root.querySelectorAll('[aria-controls], [aria-expanded="true"]')].filter(
+    (element) => !element.closest('.et-overlay-runtime-root'),
+  );
+  const ids = new Set([pane, ...pane.querySelectorAll('[id]')].map((element) => element.id));
+  const controlling = outside.find((element) => {
+    const id = element.getAttribute('aria-controls');
+
+    return id ? ids.has(id) : false;
+  });
+
+  return (
+    controlling ??
+    outside
+      .filter(
+        (element) =>
+          element.getAttribute('aria-expanded') === 'true' &&
+          element.compareDocumentPosition(pane) & Node.DOCUMENT_POSITION_FOLLOWING,
+      )
+      .pop() ??
+    null
+  );
+};
+
+/**
+ * Places every open overlay a server render attached below the start of the element that opened
+ * it (the control frame of its form field, if it has one), so a drawing of an open select or menu
+ * needs no position code. Safe to run again.
+ */
+export const placeOverlays = (root: HTMLElement) => {
+  for (const layer of root.querySelectorAll<HTMLElement>('.et-overlay-runtime-root, .et-overlay-runtime-entry')) {
+    layer.style.position = 'absolute';
+  }
+
+  for (const pane of root.querySelectorAll<HTMLElement>('.et-overlay-runtime-pane')) {
+    const trigger = triggerOf(pane, root);
+    const container = pane.parentElement;
+
+    if (!trigger || !container) continue;
+
+    const anchor = (trigger.closest('.et-form-field-control-frame') ?? trigger).getBoundingClientRect();
+    const origin = container.getBoundingClientRect();
+
+    pane.style.top = `${anchor.bottom - origin.top + OVERLAY_GAP}px`;
+    pane.style.left = `${anchor.left - origin.left}px`;
+    pane.style.minWidth = `${anchor.width}px`;
+  }
+};
+
 /** Types a drawing where it is written, so a mistake reads in its own file and not in `call.ts`. */
 export const drawing = (drawn: Drawing): Drawing => drawn;
 
