@@ -22,6 +22,10 @@ With Yarn 4.18+ and `npmMinimalAgeGate`, a freshly published release is blocked 
 the first sync. `sync`, `check`, `init` and `migrate` reject a flag they do not know and print the usage
 instead of running, and a config file that does not parse is reported by name.
 
+Adopting the rules in an existing app includes a styling audit: count the global CSS files,
+classes and hardcoded colours that break the `app-styling` rule, tell the user the numbers, and
+record the conversion as owed work.
+
 Commit the generated files, and add a drift check to CI:
 
 ```bash

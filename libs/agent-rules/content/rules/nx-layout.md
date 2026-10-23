@@ -45,5 +45,6 @@ libs/
   scopes with `bannedExternalImports`.
 - Environment config lives only in `libs/env`, never hardcoded in a query client.
 
-This is the layout for new workspaces and new code. Do not restructure an existing
-workspace that deviates from it unless the user asks.
+This is the layout for new workspaces and new code. Do not restructure the folders, projects
+and tags of an existing workspace that deviates from it unless the user asks. This covers the
+workspace layout only: every other rule still applies to the code you touch.

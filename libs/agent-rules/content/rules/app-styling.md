@@ -20,9 +20,16 @@ component a host class (`host: { class: 'app-player-card' }`) and scope every se
 the way SDK components scope theirs under their `et-` classes. Never write a bare element or
 unprefixed class selector in a component stylesheet.
 
-In an existing repo, apply this to the component you are editing, not to the rest of the app. A
-legacy component that relies on emulated encapsulation keeps it until its CSS is scoped under a
-host class: without that scope, `ViewEncapsulation.None` leaks its CSS into every view.
+In an existing repo, convert a component's styles whenever you change any of its files (class,
+template, template-bound logic or CSS), not only its styles; if the conversion is large, ask the
+user first. A legacy component that relies on emulated encapsulation keeps it until its CSS is
+scoped under a host class: without that scope, `ViewEncapsulation.None` leaks its CSS into every
+view.
+
+If the repo as a whole breaks this section (global classes in `styles.css`, hardcoded colours),
+tell the user once at first contact, with the size of the conversion (files, classes, hardcoded
+colours), and record it as owed work in the plan or handoff. Never skip it silently. This holds
+for a deviation from any rule here: report it once and record it.
 
 Write CSS only for what utilities cannot express. With Tailwind 4, keep that CSS **unlayered**
 or in `@layer utilities` — never in `@layer components`, and that includes the global
