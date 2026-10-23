@@ -137,10 +137,14 @@ Either way:
 A product design runs in this order. Each stage settles in calls before the next starts, and
 each stage draws with what the stages before it settled:
 
-1. **Colours, colour themes and surface themes.** The project's `themes` in `config.json`.
+1. **Foundations**: colours, colour themes and surface themes (the project's `themes` in
+   `config.json`), plus the type scale, spacing and radius.
 2. **Logo and CI**, if the project needs them.
 3. **Wireframes**: early, rough concepts of the main flows (`mode: 'wireframe'`). They show
-   which components the product needs, not how they look.
+   which components the product needs, not how they look. The stage ends with an inventory,
+   `.ethlete/design/system/<project>/inventory.md`: every part the wireframes need, each mapped
+   to the SDK component it starts from, or marked new. The inventory is the queue of component
+   calls.
 4. **Components**, from the SDK ones rendered with `ng()`, themed and set up for the project.
    Each accepted one becomes a design-system entry.
 5. **Larger elements**: the shell, the navigation, headers, lists, built from the entries.
@@ -150,6 +154,10 @@ each stage draws with what the stages before it settled:
 Do not start a stage before the one above it is settled, and do not draw a page from parts that
 are not in the design system. If the user asks for a later stage first, say which earlier stage
 is missing, and draw that first.
+
+A later stage can show that an earlier one is incomplete. If a page needs a part that the system
+does not have, add it to the inventory and open a component call for it. Never draw the part
+inline in the page.
 
 ## Draw from the design system
 
