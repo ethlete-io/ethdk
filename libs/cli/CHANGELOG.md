@@ -1,5 +1,40 @@
 # @ethlete/cli
 
+## 3.0.0-next.19
+
+### Minor Changes
+
+- A design call can name its `stage`, from `themes` to `prototype`. `et design check --call` warns when an `element`, `page` or `prototype` call imports nothing from the project's design system.
+- `et design status <slug> <state>` records the state of a design call for Ethlete Studio. `et design new` records `scaffolded`, and `et design check --call` records `checking`, then `ready` or `failed` with the error.
+- `et design check --call` warns when the call declares no `stage`, and names the seven stages.
+- Design calls render real Angular components: `ng(template, { imports })` from `@design-explore` renders on the `et design` server with the checkout's built packages. Needs `@angular/compiler` and `@angular/platform-server`; a project names its `providers` module in `config.json`.
+- A design drawing can show states: `ngStates({ closed, open }, { imports })` renders each one with `ng()`, and `on([{ click: '.trigger', go: 'open' }])` swaps them on a click in a View Transition.
+- A design drawing's `setup` can now be an array of functions, run in order, so `flow.on(rules)` combines with the drawing's own setup. The first function that throws stops the rest.
+- A design drawing can export `setup(root)` to wire behavior. The frame calls it once, after the markup is in `root`, and shows its error in the frame.
+- A design call now needs a `stage`, or `et design check` fails: use `sketch` for a quick idea, and `et design legacy <project>` to mark older calls.
+- A design project can name `themes` in `config.json`. The call page then shows a surface and a colour switch, and every frame gets the picked theme classes on its root.
+- `et design` no longer serves a call page at `/`. Read calls in Ethlete Studio. The server still serves the variant frames and the render endpoint, and `et design check` now loads each frame directly.
+- A wireframe call lists the parts it needs in `inventory`, each an SDK component or a new part with its component call. `et design check` warns about an inventory on any other call.
+- `et design new` takes `--stage <stage>`, writes a readable eyebrow, and scaffolds variants with an `ng()` button when the project names `providers`.
+- `et design new <project>/<group>/<name> [--variants a,b]` writes a call that renders at once: `call.ts`, `fixture.ts` and one drawing per variant.
+- `ng()` and `ngStates()` take `fields`: each entry becomes a signal form field with a value, errors and a touched state, bound as `[formField]="fields.<name>"`.
+- `ng()` in the design tool renders an open select panel or menu, and the frame places it below its trigger.
+
+### Patch Changes
+
+- `ng()` now names the missing Angular package and the checkout when it cannot render. A design drawing whose `setup` throws keeps its markup and shows the error on top.
+- Design calls can import the `@ethlete/*/design` mocks: `?inline` CSS imports type-check, and the mocks skip dependency pre-bundling.
+- Add `et design stamp`, which prints the version and build of the installed cli as JSON.
+- `@angular/forms` is an optional peer dependency, for design calls that bind `fields`.
+- Run `et` without `tslib` installed. The CLI now inlines its TypeScript helpers, so a fresh Yarn 4 repo no longer fails with "Cannot find module 'tslib'".
+- `et design check` names the resolved playwright package when its Chromium fails to start, instead of claiming no browser package resolves.
+- `et design check` also finds `playwright-core`, reports a stale server after a cli reinstall, and no longer marks a call failed when the check itself cannot run.
+- `et design --help` prints the design commands, instead of reading `--help` as a checkout path.
+- `placeOverlays` reads the `data-overlay-placement` an `etOverlay` host writes, so a bound `[placement]` places the panel too.
+- `placeOverlays` pairs each open overlay with its own trigger, honours an `*-end` or `top*` placement, and pins a bottom sheet to the bottom at full width.
+- An `ng()` render keeps the case of a custom property set through a style binding and no longer fails where a component uses `MutationObserver`.
+- `render.packages` now maps subpath imports such as `@ethlete/core/design/theme-css` too, both in the browser and in the calls tsconfig. `ng()` looks import names up in `@ethlete/core` as well by default.
+
 ## 3.0.0-next.18
 
 ### Minor Changes

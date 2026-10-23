@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.0.0-next.70
+
+### Minor Changes
+
+- New `@ethlete/components/design/button`: a framework-free `button()` mock that draws the real `et-button` DOM and CSS for design calls in Ethlete Studio.
+- New `@ethlete/components/design/form-field` and `/design/select`: framework-free `formField()`, `input()` and `select()` mocks that draw the real DOM and CSS, with an open select panel drawn below the field.
+- `provideDateLocale` also accepts a function `(locale) => dateFnsLocale`, which follows `injectLocale().currentLocale` so date controls, calendars, pickers and range validators reformat on a live language switch. `injectDateLocaleSignal()` exposes the resolved locale as a signal; a control's `locale` input still wins.
+- Every label set that shipped English only (calendar, chip, avatar, stat-tile, alert-dialog, table, pagination, forms, date-time, rich-text-editor and the rest) now also ships German defaults that follow `injectLocale().currentLocale`.
+- `OverlayRef.layout` is a signal with the layout the active strategy shows the overlay as (`'bottom-sheet'`, `'dialog'`, …). It follows breakpoint switches, so a consumer no longer keys on the `.et-overlay--bottom-sheet` class.
+
+### Patch Changes
+
+- An anchored overlay strategy's `width`, such as `anchoredDialogOverlayStrategy({ width: '42rem' })`, now sizes the pane instead of being cleared by anchored positioning.
+- `et-badge` no longer stretches to the full width of a flex or grid parent and sizes to its content.
+- A bottom sheet whose content reaches its max height keeps the drag handle's row, so the content scrolls instead of sliding under the handle.
+- `--et-button-gap` now spaces every child of the button content, so a plain `<svg>` next to text gets the gap too.
+- A looping `et-carousel` dragged with the mouse past its first or last slide lands on the wrapped slide instead of sweeping back through every slide.
+- An overlay strategy that sets `arrow` without `enableAnchoredOverlayPositionExtras()` now throws `ET1212` in dev mode instead of silently rendering no arrow.
+- An open overlay, for example a select panel, now follows its opener to another surface type, as when an app switches between dark and light mode. Before, it kept the surface it had when it opened.
+- Overlays are about 0.9 kB gz smaller again: the dark or light switch in an open overlay no longer pulls in the generic element mutation helper.
+- `setupComponentsTestEnvironment()` now stubs `Element.prototype.scroll`, which `et-carousel` calls.
+- Setting `--et-description-list-term-font-size`, `--et-description-list-detail-font-size` and the row and stacked gap tokens on the `<dl>` now reaches its terms and details.
+- `et-form-field size="sm"` is now a 32px control instead of 42px, and a static label with the `hidden` attribute no longer reserves its line of height.
+- An overlay backdrop gets its visible class at once on a server render, so it no longer ships at opacity 0 in SSR markup.
+- `etOverlay` writes its `placement` to a `data-overlay-placement` attribute on its host, so a server render shows where an open panel belongs.
+- `etOverlayTrigger` sets `aria-controls` to the stable `panelId` of its `etOverlay`, which the mounted overlay element carries as its `id`.
+- Show the pointer cursor over the whole select trigger, not only over the value text.
+- The theming docs and skill warn that `hover:bg-et-surface-interaction-hover` is a full-strength tint and name `etSurfaceInteractive` for hover rows.
+
 ## 1.0.0-next.69
 
 ### Major Changes

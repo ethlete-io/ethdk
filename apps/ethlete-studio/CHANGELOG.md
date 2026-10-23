@@ -1,5 +1,28 @@
 # ethlete-studio
 
+## 0.2.0-next.7
+
+### Minor Changes
+
+- Studio groups the open calls by their stage, in the design order, with loose calls last.
+- Each call row shows the state the design tooling last recorded for it (scaffolded, drawing, checking, ready or failed) and updates when the state changes. A failed state shows its error on hover.
+- A design call whose project names `themes` in its config shows a surface and a colour switch in its header. The pick draws every frame of the call and is remembered per project.
+- The stage overview counts the calls without a stage and marks a stage as ahead when an earlier stage has no settled or ready call.
+- Show a project's design system entries and a wireframe's inventory of component calls in the call list.
+
+### Patch Changes
+
+- A call now shows every round its variants name, also a round that has no entry in `rounds` yet. Before, a new round stayed hidden until somebody wrote its note.
+- Hide the chat sidebar; Studio remembers the choice.
+- Mark a call without a stage and without legacy as invalid in the overview, and list sketches and legacy calls apart from the stage counts.
+- The design system section and the Restart button work in a release build.
+- Studio now says when a design server was not started by it or runs an older cli, and offers Restart, which ends whatever listens on the port and starts its own server.
+- Studio names design stages (Foundations, Wireframes, ...), shows a stage overview with open, ready and settled counts above the call list, and groups unknown stages under their id.
+- Studio waits at most five seconds for the stamp of the installed cli, so an older cli without `design stamp` does not hold up the server state.
+- Fix a type error in the call list: a failed status read now falls back to an empty, typed status map.
+- Studio watches the whole design folder, so an edit to a design-system entry or to `config.json` refreshes the window.
+- Update tokio to 1.54.1 to fix RUSTSEC-2026-0386.
+
 ## 0.2.0-next.6
 
 ### Patch Changes

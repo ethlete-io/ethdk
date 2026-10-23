@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.40
+
+### Patch Changes
+
+- `migrate-from-cdk` knows the `et-label-content` and `et-label-required-marker` classes of `@ethlete/components`.
+
 ## 5.0.0-next.39
 
 ### Patch Changes

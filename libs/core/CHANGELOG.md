@@ -1,5 +1,20 @@
 # @ethlete/core
 
+## 5.0.0-next.65
+
+### Minor Changes
+
+- New `@ethlete/core/design/theme-css`: `themeCss()`, `surfaceThemeCss()` and `colorThemeCss()` turn surface and color themes into static CSS, sharing one implementation with the Tailwind theme generators.
+- Add `hasAnchoredOverlayPositionExtras()`, which reports whether `enableAnchoredOverlayPositionExtras()` has run.
+- `provideLocale(locale?)` now accepts the initial locale: `provideLocale('de')` starts `injectLocale().currentLocale` at `'de'`. Without an argument it still starts at `'en'`.
+
+### Patch Changes
+
+- An anchored overlay strategy's `width`, such as `anchoredDialogOverlayStrategy({ width: '42rem' })`, now sizes the pane instead of being cleared by anchored positioning.
+- Render an `etAutoSurface` above the root as inherited on the server in system color scheme mode, so a dark OS no longer sees a light surface before hydration.
+- Remove the light accent variant class a server painted on `<html>` when `provideColorScheme()` hydrates in dark mode, so root-scoped accents no longer stay on the light variant.
+- The style manager hides its container with the `hidden` attribute instead of an inline style, so server-rendered pages pass a CSP without `'unsafe-inline'` for style attributes.
+
 ## 5.0.0-next.64
 
 ### Minor Changes

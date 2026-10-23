@@ -1,5 +1,33 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.24
+
+### Minor Changes
+
+- The design-exploration skill names the order of a product design: themes, logo and CI, wireframes, components, larger elements, pages, then the working prototype.
+
+### Patch Changes
+
+- The design-exploration skill explains that `setup` has no cleanup hook and what the `ngStates` host wrapper means for `flow.body`.
+- The design-exploration skill shows how to draw a prototype with states through `ngStates()`.
+- The `ethlete-design-exploration` skill tells agents to draw SDK parts with `ng()`, which renders the real components, before drawing a new part.
+- Note in the design-exploration skill that a drawing's `setup` can be an array of functions.
+- The design-exploration skill names `setup(root)` as the way to give a drawing behavior, because a `<script>` in its body never runs.
+- The design exploration skill says every call needs a `stage`, and that a quick idea takes `sketch`.
+- The `ethlete-design-exploration` skill makes agents draw from the project design system and the SDK mocks before drawing a new part, and defines what an accepted entry holds.
+- The design-exploration skill explains the theme switch of a design project.
+- `init` and the default commands now follow the repo's package manager (yarn, pnpm, bun) and detect Claude from a `CLAUDE.md`. The generated banners name that runner, and `sync` only warns about a missing lint script when emitted content uses it.
+- Run `ethlete-agents` without `tslib` installed. The CLI now inlines its TypeScript helpers, so a fresh Yarn 4 repo no longer fails with "Cannot find module 'tslib'".
+- The `nx-layout` rule now makes one domain lib per app (`libs/domain/<app>`, a folder per feature) the default. A feature gets its own lib only for a concrete reason, such as size or build time.
+- The design-exploration skill no longer describes the removed `et design` call page (round bands, contact sheet, compare overlay, theme switch). Calls are read in Ethlete Studio.
+- In an existing app, an agent now converts the styles of every component it changes, and reports a repo-wide styling deviation once.
+- A wireframe call lists the parts it needs in `inventory`, each an SDK component or a new part with its component call. `et design check` warns about an inventory on any other call.
+- `ng()` and `ngStates()` take `fields`: each entry becomes a signal form field with a value, errors and a touched state, bound as `[formField]="fields.<name>"`.
+- `ng()` in the design tool renders an open select panel or menu, and the frame places it below its trigger.
+- The design-exploration skill lists the call commands (`new`, `status`, `--help`), the `stage` field, nested surface panels, and colour overrides with `themeCss()`.
+- The design-exploration skill starts a design with foundations (type scale, spacing, radius), ends the wireframe stage with a component inventory, and sends a missing part back to a component call.
+- The theming docs and skill warn that `hover:bg-et-surface-interaction-hover` is a full-strength tint and name `etSurfaceInteractive` for hover rows.
+
 ## 0.1.0-next.23
 
 ### Patch Changes
