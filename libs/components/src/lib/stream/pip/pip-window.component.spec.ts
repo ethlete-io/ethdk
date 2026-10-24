@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { SurfaceTheme, provideSurfaceThemesWithTailwind4 } from '@ethlete/core';
 import '../../../test-helpers';
 import { expectNothingRunsAfterDestroy } from '../../testing/destroyed-mid-gesture';
 import { provideStreamPip } from '../stream-pip.provider';
@@ -177,5 +178,38 @@ describe('PipWindowComponent destroyed mid-gesture', () => {
     expect(pipWindow.style.cssText).toBe(styleAtDestroy);
 
     expect(document.body.classList).not.toContain('et-pip-interacting');
+  });
+});
+
+const surface = (name: string, type: 'light' | 'dark', elevation: number, isDefault?: boolean): SurfaceTheme => ({
+  name,
+  type,
+  elevation,
+  isDefault,
+  background: '0 0 0',
+  color: '255 255 255',
+  colorMuted: '180 180 180',
+  colorSubtle: '80 80 80',
+  border: '40 40 40',
+});
+
+describe('PipWindowComponent surface', () => {
+  it('draws on a dark surface outside any surface scope', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideSurfaceThemesWithTailwind4([
+          surface('paper', 'light', 0, true),
+          surface('paper-1', 'light', 1),
+          surface('night', 'dark', 0),
+          surface('night-1', 'dark', 1),
+        ]),
+      ],
+    });
+
+    const { fixture, pipWindow } = create();
+
+    fixture.detectChanges();
+
+    expect(pipWindow.classList).toContain('et-surface--night-1');
   });
 });

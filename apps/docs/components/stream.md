@@ -232,7 +232,7 @@ tokens keep only their button colors. See the [localization guide](/components/l
 
 ## Theming
 
-All stream chrome resolves its colors from the [surface/color theme systems](/core/theming). Slots provide a surface scope one elevation above their context, resolved against the ambient surface `type` - a slot on a light surface stays light. The PiP chrome is the exception: it mounts into `document.body`, outside any surface scope, so it resolves a `type: 'dark'` surface of its own (video UI floating over the page reads as dark).
+All stream chrome resolves its colors from the [surface/color theme systems](/core/theming). Slots provide a surface scope one elevation above their context, resolved against the ambient surface `type` - a slot on a light surface stays light. The PiP chrome is the exception: it mounts into `document.body`, outside any surface scope, so `et-pip-window` resolves a `type: 'dark'` surface of its own (video UI floating over the page reads as dark). A custom chrome built on `et-pip-window` gets the same surface.
 
 - Slot: `--et-stream-player-slot-radius` (`12px`).
 - PiP window: `--et-pip-border-radius` (`8px`), `--et-pip-backdrop-blur` (`4px`), `--et-pip-title-bar-height` (`32px`), plus `--et-pip-slot-placeholder-*` (gap, padding, icon-size, border-radius, message typography) for the placeholder left behind, which fills the slot with its content centred on it. These inherit, so a value set on `et-pip-window`, `et-pip-slot-placeholder` or any ancestor reaches the title bar, content and placeholder that read it. The glass background derives from the surface theme; override it via `--et-pip-bg`.

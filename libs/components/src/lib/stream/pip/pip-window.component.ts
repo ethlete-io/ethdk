@@ -1,12 +1,13 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, contentChild, inject, signal, viewChild } from '@angular/core';
-import { ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
+import { ProvideSurfaceDirective, ResizeEdge, ResizeHandlesComponent } from '@ethlete/core';
 import { PipCollapseOverlayDirective } from './headless/pip-collapse-overlay.directive';
 import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
 import { PipTitleBarDirective } from './headless/pip-title-bar.directive';
 import { PipWindowParamsDirective } from './headless/pip-window-params.directive';
 import { createPipWindowPosition } from './headless/internals/pip-window-position';
 import { createPipWindowSize } from './headless/internals/pip-window-size';
+import { syncPipDarkSurface } from './pip-dark-surface';
 import { injectStreamLabels } from '../stream-labels';
 
 const KEYBOARD_STEP_PX = 10;
@@ -24,7 +25,7 @@ const KEYBOARD_ARROW_DIRECTIONS: Record<string, { x: number; y: number } | undef
   styleUrl: './pip-window.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, ResizeHandlesComponent, PipTitleBarDirective, PipCollapseOverlayDirective],
-  hostDirectives: [PipWindowParamsDirective],
+  hostDirectives: [PipWindowParamsDirective, ProvideSurfaceDirective],
   host: {
     class: 'et-pip-window',
     '[class.et-pip-window--title-bar-forced]': 'forcedTitleBar()',
@@ -69,6 +70,10 @@ export class PipWindowComponent {
   });
 
   public readonly RESIZE_EDGES: ResizeEdge[] = ['s', 'e', 'w', 'se', 'sw'];
+
+  constructor() {
+    syncPipDarkSurface();
+  }
 
   /** Keeps the title bar visible until every returned release function has run. */
   public holdTitleBar() {

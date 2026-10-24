@@ -1,14 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  ViewEncapsulation,
-  computed,
-  effect,
-  inject,
-  untracked,
-  viewChild,
-} from '@angular/core';
-import { ProvideSurfaceDirective, injectSurfaceThemes, resolveSurfaceByElevation, setInputSignal } from '@ethlete/core';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, viewChild } from '@angular/core';
+import { ProvideSurfaceDirective } from '@ethlete/core';
 import { WINDOW_CONTROL_BUTTON_KINDS, WINDOW_CONTROL_BUTTON_SIZES, WindowControlButtonComponent } from '../../button';
 import {
   ARROW_OUT_UP_RIGHT_ICON,
@@ -29,6 +20,7 @@ import { PipGridToggleDirective } from './headless/pip-grid-toggle.directive';
 import { PipStageDirective } from './headless/pip-stage.directive';
 import { PipTitleBarTemplateDirective } from './headless/pip-title-bar-template.directive';
 import { PIP_WINDOW_ASPECT_RATIO_TOKEN } from './headless/pip-window-aspect-ratio.token';
+import { syncPipDarkSurface } from './pip-dark-surface';
 import { PipPlayerComponent } from './pip-player.component';
 import { PipWindowComponent } from './pip-window.component';
 
@@ -67,8 +59,6 @@ import { PipWindowComponent } from './pip-window.component';
 })
 export class StreamPipChromeComponent implements PipChromeRef {
   public pipManager = injectPipManager();
-  private provideSurface = inject(ProvideSurfaceDirective);
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
   public stageRef = viewChild<PipStageDirective, ElementRef<HTMLElement>>(PipStageDirective, { read: ElementRef });
   public pipWindowRef = viewChild(PipWindowComponent);
   public gridBtnRef = viewChild<PipGridToggleDirective, ElementRef<HTMLElement>>(PipGridToggleDirective, {
@@ -87,16 +77,6 @@ export class StreamPipChromeComponent implements PipChromeRef {
   public readonly WINDOW_CONTROL_BUTTON_SIZE = WINDOW_CONTROL_BUTTON_SIZES.SM;
 
   constructor() {
-    // The chrome is mounted into document.body, so no surface context is inherited.
-    // Stream UI sits on video content and always reads as a dark surface.
-    if (this.surfaceThemes) {
-      effect(() => {
-        const surface = resolveSurfaceByElevation(this.surfaceThemes ?? [], 'dark', 1);
-
-        untracked(() => {
-          setInputSignal(this.provideSurface.surface, surface?.name ?? null);
-        });
-      });
-    }
+    syncPipDarkSurface();
   }
 }
