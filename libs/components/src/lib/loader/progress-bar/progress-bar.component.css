@@ -136,6 +136,7 @@
   .et-progress-bar__bar-inner {
     display: inline-block;
     position: absolute;
+    inset-inline-start: 0;
     width: 100%;
     animation: none;
     border-top-style: solid;
