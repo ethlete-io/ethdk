@@ -8,7 +8,10 @@ import { SpinnerComponent } from './spinner.component';
 
 // jsdom drops the component stylesheet whole (`@layer`, nesting) and vitest stubs CSS imports to an empty
 // string, so the source text is the only place an animation duration is observable from a spec.
-const spinnerCss = readFileSync(fileURLToPath(import.meta.url).replace(/[^/]+$/, 'spinner.component.css'), 'utf8');
+const spinnerCss = readFileSync(
+  fileURLToPath(import.meta.url).replace(/[^/]+$/, 'spinner-styles.component.css'),
+  'utf8',
+);
 
 describe('SpinnerComponent', () => {
   let fixture: ComponentFixture<SpinnerComponent>;
@@ -19,6 +22,14 @@ describe('SpinnerComponent', () => {
     fixture = TestBed.createComponent(SpinnerComponent);
     host = fixture.nativeElement;
     fixture.detectChanges();
+  });
+
+  describe('stylesheet', () => {
+    it('stays in the document after the last spinner is destroyed', () => {
+      fixture.destroy();
+
+      expect(document.querySelector('et-spinner-styles')).not.toBeNull();
+    });
   });
 
   describe('host element', () => {

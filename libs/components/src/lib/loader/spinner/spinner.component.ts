@@ -8,9 +8,10 @@ import {
   input,
   numberAttribute,
 } from '@angular/core';
-import { ProvideColorDirective } from '@ethlete/core';
+import { injectStyleManager, ProvideColorDirective } from '@ethlete/core';
 import { clampProgress, progressOrNull } from '../clamp-progress';
 import { injectLoaderName } from '../inject-loader-name';
+import { SpinnerStylesComponent } from './spinner-styles.component';
 
 const BASE_STROKE_WIDTH = 10;
 
@@ -99,7 +100,6 @@ const BASE_STROKE_WIDTH = 10;
       </div>
     }
   `,
-  styleUrl: './spinner.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet],
   hostDirectives: [
@@ -170,4 +170,8 @@ export class SpinnerComponent {
 
     return circumference - (this.clampedValue() / 100) * circumference;
   });
+
+  constructor() {
+    injectStyleManager().mount(SpinnerStylesComponent);
+  }
 }
