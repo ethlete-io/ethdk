@@ -13,9 +13,10 @@
     }
 
     /* separate groups with a hairline above all but the first *visible* one — search
-       filtering hides groups via [data-hidden], and a hidden group must neither draw a
-       divider nor count as the preceding sibling (hence ~ instead of +) */
-    &:where(:not([data-hidden])) ~ &:where(:not([data-hidden])) .et-select-option-group-label {
+       filtering hides groups via [data-hidden], and a hidden group must not count as the
+       preceding sibling (hence ~ instead of +). A hidden group itself still matches, so the
+       fade-out copy of its label keeps the divider. */
+    &:where(:not([data-hidden])) ~ & .et-select-option-group-label {
       margin-block-start: 4px;
       padding-block-start: 8px;
       border-block-start: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));

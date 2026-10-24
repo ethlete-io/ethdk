@@ -225,6 +225,32 @@ describe('injectAnimatedListItems', () => {
     }
   });
 
+  it('gives a copy the styles its item had from selectors that no longer match the copy', async () => {
+    const originalCheckVisibility = HTMLElement.prototype.checkVisibility;
+    const sheet = document.createElement('style');
+
+    sheet.textContent = '.row[data-filtered] { text-transform: uppercase; padding-top: 7px; }';
+    document.head.append(sheet);
+    HTMLElement.prototype.checkVisibility = function (this: HTMLElement) {
+      return !this.hasAttribute('data-filtered');
+    };
+
+    try {
+      setup();
+      fixture.componentInstance.filtered.set(['b']);
+      fixture.detectChanges();
+      await Promise.resolve();
+
+      const [copy] = copies();
+
+      expect(copy?.style.textTransform).toBe('uppercase');
+      expect(copy?.style.paddingTop).toBe('7px');
+    } finally {
+      HTMLElement.prototype.checkVisibility = originalCheckVisibility;
+      sheet.remove();
+    }
+  });
+
   it('only fades with reduced motion', async () => {
     setup({ reducedMotion: true });
     await update(['b', 'a', 'd']);

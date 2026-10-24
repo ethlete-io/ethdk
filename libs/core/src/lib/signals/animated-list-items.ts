@@ -48,6 +48,36 @@ const layoutBoxOf = (element: HTMLElement, origin: { top: number; left: number }
   };
 };
 
+const CONTEXT_STYLES = [
+  'padding-top',
+  'border-top-width',
+  'border-top-style',
+  'border-top-color',
+  'padding-right',
+  'border-right-width',
+  'border-right-style',
+  'border-right-color',
+  'padding-bottom',
+  'border-bottom-width',
+  'border-bottom-style',
+  'border-bottom-color',
+  'padding-left',
+  'border-left-width',
+  'border-left-style',
+  'border-left-color',
+  'border-top-left-radius',
+  'border-top-right-radius',
+  'border-bottom-right-radius',
+  'border-bottom-left-radius',
+  'background-color',
+  'color',
+  'font-size',
+  'font-weight',
+  'line-height',
+  'letter-spacing',
+  'text-transform',
+];
+
 const scaleOf = (host: HTMLElement, hostRect: DOMRect) =>
   host.offsetWidth && hostRect.width ? hostRect.width / host.offsetWidth : 1;
 
@@ -115,6 +145,17 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
   const fadeOutCopy = (host: HTMLElement, item: HTMLElement, box: ItemBox) => {
     const copy = item.cloneNode(true) as HTMLElement;
 
+    // read before the copy leaves the item's ancestors, whose selectors may style the item
+    if (item.isConnected) {
+      const style = getComputedStyle(item);
+
+      for (const property of CONTEXT_STYLES) {
+        const value = style.getPropertyValue(property);
+
+        if (value) copy.style.setProperty(property, value);
+      }
+    }
+
     copy.removeAttribute('id');
 
     for (const attribute of config.attributes ?? []) copy.removeAttribute(attribute);
@@ -127,6 +168,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
       left: '0',
       width: `${box.width}px`,
       height: `${box.height}px`,
+      boxSizing: 'border-box',
       margin: '0',
       pointerEvents: 'none',
     });
