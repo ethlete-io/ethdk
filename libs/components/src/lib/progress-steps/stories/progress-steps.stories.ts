@@ -1,10 +1,31 @@
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Component, ViewEncapsulation } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import { ProgressStepsStorybookComponent, ProgressStepsStorybookStep } from './progress-steps-storybook.component';
+
+@Component({
+  selector: 'et-sb-progress-steps-page',
+  template: '<p class="text-lg">Step page</p>',
+  encapsulation: ViewEncapsulation.None,
+})
+class ProgressStepsPageComponent {}
 
 export default {
   title: 'Components/Navigation/Progress steps',
   component: ProgressStepsStorybookComponent,
-  decorators: [moduleMetadata({ imports: [ProgressStepsStorybookComponent] })],
+  decorators: [
+    moduleMetadata({ imports: [ProgressStepsStorybookComponent] }),
+    applicationConfig({
+      providers: [
+        provideRouter([
+          { path: 'account', component: ProgressStepsPageComponent },
+          { path: 'shipping', component: ProgressStepsPageComponent },
+          { path: 'payment', component: ProgressStepsPageComponent },
+          { path: 'review', component: ProgressStepsPageComponent },
+        ]),
+      ],
+    }),
+  ],
   argTypes: {
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     asLinks: { control: 'boolean' },

@@ -1,4 +1,6 @@
-import { booleanAttribute, Component, input, ViewEncapsulation } from '@angular/core';
+import { booleanAttribute, Component, computed, input, ViewEncapsulation } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { injectUrl } from '@ethlete/core';
 import { ProgressStepsOrientation } from '../progress-steps.component';
 import { PROGRESS_STEPS_IMPORTS } from '../progress-steps.imports';
 import { ProgressStepState } from '../progress-step.component';
@@ -14,7 +16,7 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
           @if (asLinks()) {
             <!-- The step lives on the consumer's own element, so a real link (or a routerLink) keeps
                  working and the whole step is the target. -->
-            <a [state]="step.state" href="#{{ step.label.toLowerCase() }}" et-progress-step>
+            <a [state]="linkState($index)" [routerLink]="['/', step.label.toLowerCase()]" et-progress-step>
               {{ step.label }}
 
               @if (step.description; as description) {
@@ -32,12 +34,20 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
           }
         }
       </et-progress-steps>
+
+      @if (asLinks()) {
+        <div class="mt-8">
+          <router-outlet />
+        </div>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [...PROGRESS_STEPS_IMPORTS],
+  imports: [...PROGRESS_STEPS_IMPORTS, RouterLink, RouterOutlet],
 })
 export class ProgressStepsStorybookComponent {
+  private url = injectUrl();
+
   public orientation = input<ProgressStepsOrientation>('horizontal');
   public asLinks = input(false, { transform: booleanAttribute });
 
@@ -47,4 +57,17 @@ export class ProgressStepsStorybookComponent {
     { label: 'Payment', state: 'current' },
     { label: 'Review', state: 'upcoming' },
   ]);
+
+  private activeIndex = computed(() => {
+    const segment = this.url().split(/[?#]/)[0]?.split('/')[1] ?? '';
+    const index = this.steps().findIndex((step) => step.label.toLowerCase() === segment);
+
+    return index === -1 ? 0 : index;
+  });
+
+  protected linkState(index: number): ProgressStepState {
+    const active = this.activeIndex();
+
+    return index < active ? 'complete' : index === active ? 'current' : 'upcoming';
+  }
 }
