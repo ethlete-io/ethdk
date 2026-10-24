@@ -89,19 +89,19 @@ export class CheckboxGroupStorybookComponent {
 
   public mixedState = linkedSignal(() => this.mixed());
 
-  protected selectedLabels = computed(() => {
-    const selected = this.demoForm.toppings().value();
-    return this.options()
-      .filter((option) => selected.includes(option.value))
-      .map((option) => option.label)
-      .join(', ');
-  });
-
   private formModel = linkedSignal(() => ({ toppings: this.value() }));
 
   public demoForm = form(this.formModel, (s) => {
     disabled(s, () => this.disabled());
     readonly(s, () => this.readonly());
     required(s.toppings, { when: () => this.required(), message: 'Please select at least one' });
+  });
+
+  protected selectedLabels = computed(() => {
+    const selected = this.demoForm.toppings().value();
+    return this.options()
+      .filter((option) => selected.includes(option.value))
+      .map((option) => option.label)
+      .join(', ');
   });
 }
