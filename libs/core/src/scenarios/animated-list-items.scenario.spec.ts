@@ -46,6 +46,26 @@ class AnimatedListItemsEmptyHostComponent {
   }
 }
 
+@Component({
+  selector: 'et-scenario-animated-list-items-silent',
+  template: `
+    <div #list class="list">
+      @for (item of items(); track item) {
+        <div class="row">{{ item }}</div>
+      }
+    </div>
+  `,
+})
+class AnimatedListItemsSilentHostComponent {
+  list = viewChild.required<ElementRef<HTMLElement>>('list');
+  items = signal(['fruit', 'veg']);
+  animates = signal(true);
+
+  constructor() {
+    injectAnimatedListItems({ host: this.list, items: '.row', animateChange: () => this.animates() });
+  }
+}
+
 describe('animated list items scenarios', () => {
   const scenario = useScenario();
   const originalAnimate = HTMLElement.prototype.animate;
@@ -142,5 +162,31 @@ describe('animated list items scenarios', () => {
     for (const finish of finishLeaves) finish();
 
     await s.settle();
+  });
+
+  it('takes a change without motion when animateChange returns false, and measures it', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AnimatedListItemsSilentHostComponent);
+    const host = fixture.componentInstance;
+    const list = host.list().nativeElement;
+
+    fixture.detectChanges();
+    await s.settle();
+
+    host.animates.set(false);
+    host.items.set(['fruit', 'fig']);
+    fixture.detectChanges();
+    await s.settle();
+
+    expect(animations).toEqual([]);
+    expect(list.querySelector('[inert]')).toBeNull();
+
+    host.animates.set(true);
+    host.items.set(['fruit', 'fig', 'kiwi']);
+    fixture.detectChanges();
+    await s.settle();
+
+    expect(animations.map((animation) => animation.target.textContent?.trim())).toEqual(['kiwi']);
+    expect(list.querySelector('[inert]')).toBeNull();
   });
 });

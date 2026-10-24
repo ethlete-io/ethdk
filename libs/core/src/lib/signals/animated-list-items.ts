@@ -25,6 +25,11 @@ export type AnimatedListItemsConfig = {
   movingClass?: string;
   /** Above this number of moved items, items do not move and only fade. @default 30 */
   maxMoves?: number;
+  /**
+   * Called on every list change. Return `false` to take a change without motion: items are measured again
+   * but neither move nor fade, e.g. when a virtual list renders other rows on scroll.
+   */
+  animateChange?: () => boolean;
 };
 
 type ItemBox = { top: number; left: number; width: number; height: number };
@@ -192,6 +197,12 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
   };
 
   const run = (host: HTMLElement) => {
+    if (config.animateChange?.() === false) {
+      boxes = measure(host);
+
+      return;
+    }
+
     const previous = boxes;
     const next = measure(host);
     const shifts: { item: HTMLElement; x: number; y: number }[] = [];

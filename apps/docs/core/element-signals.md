@@ -72,17 +72,18 @@ injectAnimatedListItems({
 });
 ```
 
-| Option          | Default           | Description                                                                  |
-| --------------- | ----------------- | ---------------------------------------------------------------------------- |
-| `items`         | - (required)      | Selector for the items that move.                                            |
-| `host`          | host `ElementRef` | The element that holds the items.                                            |
-| `attributes`    | -                 | Attributes that hide an item without removing it (e.g. a filter flag).       |
-| `moveDuration`  | `300`             | Duration of a move in ms.                                                    |
-| `moveEasing`    | `'ease'`          | Easing of a move - e.g. a spring as a `linear()` curve.                      |
-| `enterDuration` | `150`             | Fade-in of a new item in ms.                                                 |
-| `leaveDuration` | `100`             | Fade-out of a removed item in ms.                                            |
-| `movingClass`   | -                 | Class on the host while items move or fade out, e.g. to clip their overflow. |
-| `maxMoves`      | `30`              | Above this number of moved items, items only fade.                           |
+| Option          | Default           | Description                                                                      |
+| --------------- | ----------------- | -------------------------------------------------------------------------------- |
+| `items`         | - (required)      | Selector for the items that move.                                                |
+| `host`          | host `ElementRef` | The element that holds the items.                                                |
+| `attributes`    | -                 | Attributes that hide an item without removing it (e.g. a filter flag).           |
+| `moveDuration`  | `300`             | Duration of a move in ms.                                                        |
+| `moveEasing`    | `'ease'`          | Easing of a move - e.g. a spring as a `linear()` curve.                          |
+| `enterDuration` | `150`             | Fade-in of a new item in ms.                                                     |
+| `leaveDuration` | `100`             | Fade-out of a removed item in ms.                                                |
+| `movingClass`   | -                 | Class on the host while items move or fade out, e.g. to clip their overflow.     |
+| `maxMoves`      | `30`              | Above this number of moved items, items only fade.                               |
+| `animateChange` | -                 | Return `false` to take a change without motion, e.g. a virtual list scroll step. |
 
 A removed item fades out as an inert, `aria-hidden` copy appended to the host and placed absolutely where the item was. A change during a running move starts from where the item is now. With `prefers-reduced-motion`, items only fade.
 
