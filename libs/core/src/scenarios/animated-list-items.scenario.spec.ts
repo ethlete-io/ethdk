@@ -25,17 +25,46 @@ class AnimatedListItemsHostComponent {
   }
 }
 
+@Component({
+  selector: 'et-scenario-animated-list-items-empty',
+  template: `
+    <div #list class="list">
+      @for (item of items(); track item) {
+        <div class="row">{{ item }}</div>
+      } @empty {
+        <div class="row row--empty">No results</div>
+      }
+    </div>
+  `,
+})
+class AnimatedListItemsEmptyHostComponent {
+  list = viewChild.required<ElementRef<HTMLElement>>('list');
+  items = signal(['fruit', 'veg']);
+
+  constructor() {
+    injectAnimatedListItems({ host: this.list, items: '.row', leaveDuration: 60 });
+  }
+}
+
 describe('animated list items scenarios', () => {
   const scenario = useScenario();
   const originalAnimate = HTMLElement.prototype.animate;
   const originalCheckVisibility = HTMLElement.prototype.checkVisibility;
   let finishLeaves: (() => void)[];
+  let animations: { target: HTMLElement; options: KeyframeAnimationOptions | undefined }[];
   let style: HTMLStyleElement;
 
   beforeEach(() => {
     finishLeaves = [];
+    animations = [];
 
-    HTMLElement.prototype.animate = function (this: HTMLElement) {
+    HTMLElement.prototype.animate = function (
+      this: HTMLElement,
+      _keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+      options?: number | KeyframeAnimationOptions,
+    ) {
+      animations.push({ target: this, options: typeof options === 'number' ? { duration: options } : options });
+
       let finish: () => void = () => undefined;
       const finished = new Promise<void>((resolve) => (finish = resolve));
 
@@ -89,5 +118,29 @@ describe('animated list items scenarios', () => {
     await s.settle();
 
     expect(list.querySelector(':scope > .label')).toBeNull();
+  });
+
+  it('fades a new item in only after the removed items have faded out', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(AnimatedListItemsEmptyHostComponent);
+    const list = fixture.componentInstance.list().nativeElement;
+
+    fixture.detectChanges();
+    await s.settle();
+
+    fixture.componentInstance.items.set([]);
+    fixture.detectChanges();
+    await s.settle();
+
+    const empty = list.querySelector<HTMLElement>('.row--empty:not([inert])');
+    const enter = animations.find((animation) => animation.target === empty);
+    const leave = animations.find((animation) => animation.target.inert);
+
+    expect(leave?.options?.duration).toBe(60);
+    expect(enter?.options?.delay).toBe(60);
+
+    for (const finish of finishLeaves) finish();
+
+    await s.settle();
   });
 });

@@ -214,13 +214,18 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
       if (Math.abs(x) >= 1 || Math.abs(y) >= 1) shifts.push({ item, x, y });
     }
 
+    let removesItems = false;
+
     for (const [item, box] of previous) {
-      if (!next.has(item)) fadeOutCopy(host, item, box);
+      if (next.has(item)) continue;
+
+      removesItems = true;
+      fadeOutCopy(host, item, box);
     }
 
     const movesItems = shifts.length > 0 && !prefersReducedMotion() && shifts.length <= maxMoves;
-    // A new item waits until the moving items have mostly passed its spot, or their text overlaps.
-    const enterDelay = movesItems ? moveDuration * 0.4 : 0;
+    // A new item waits until moving items have passed its spot and removed ones have faded, or their text overlaps.
+    const enterDelay = Math.max(movesItems ? moveDuration * 0.4 : 0, removesItems ? leaveDuration : 0);
 
     for (const item of entering) {
       item.animate([{ opacity: 0, offset: 0 }], {
