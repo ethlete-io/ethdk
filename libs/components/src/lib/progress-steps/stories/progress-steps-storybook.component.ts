@@ -14,6 +14,14 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
       <et-progress-steps [orientation]="orientation()">
         @for (step of steps(); track step.label) {
           @if (asLinks()) {
+            <a [state]="step.state" href="#{{ step.label.toLowerCase() }}" et-progress-step>
+              {{ step.label }}
+
+              @if (step.description; as description) {
+                <span etProgressStepDescription>{{ description }}</span>
+              }
+            </a>
+          } @else if (routerLinks()) {
             <a
               [state]="linkState($index)"
               [routerLink]="['/', step.label.toLowerCase()]"
@@ -38,7 +46,7 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
         }
       </et-progress-steps>
 
-      @if (asLinks()) {
+      @if (routerLinks()) {
         <div class="mt-8">
           <router-outlet />
         </div>
@@ -53,6 +61,7 @@ export class ProgressStepsStorybookComponent {
 
   public orientation = input<ProgressStepsOrientation>('horizontal');
   public asLinks = input(false, { transform: booleanAttribute });
+  public routerLinks = input(false, { transform: booleanAttribute });
 
   public steps = input<ProgressStepsStorybookStep[]>([
     { label: 'Account', state: 'complete' },

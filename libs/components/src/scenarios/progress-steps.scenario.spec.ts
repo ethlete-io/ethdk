@@ -1,5 +1,6 @@
 import { Component, getDebugNode, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter, Router, RouterLink } from '@angular/router';
 import { ColorTheme, provideColorThemesWithTailwind4, ThemeSwatch } from '@ethlete/core';
 import {
   DEFAULT_PROGRESS_STEP_LABELS,
@@ -9,6 +10,7 @@ import {
   PROGRESS_STEPS_IMPORTS,
   PROGRESS_STEPS_ORIENTATIONS,
   ProgressStepComponent,
+  ProgressStepRouterActiveDirective,
   ProgressStepsComponent,
   ProgressStepsOrientation,
   ProgressStepState,
@@ -101,13 +103,38 @@ class GermanOutcomeStepsComponent {
 })
 class LocaleOutcomeStepsComponent {}
 
+@Component({ selector: 'et-scenario-step-page', template: '' })
+class StepPageComponent {}
+
+@Component({
+  selector: 'et-scenario-routed-steps',
+  imports: [PROGRESS_STEPS_IMPORTS, RouterLink],
+  template: `
+    <et-progress-steps>
+      <a [routerLink]="['/account']" etProgressStepRouterActive state="complete" et-progress-step>Account</a>
+      <a [routerLink]="['/shipping']" etProgressStepRouterActive et-progress-step>Shipping</a>
+      <a [routerLink]="['/payment']" etProgressStepRouterActive et-progress-step>Payment</a>
+    </et-progress-steps>
+  `,
+})
+class RoutedStepsComponent {}
+
 const stateTexts = (host: HTMLElement) =>
   Array.from(host.querySelectorAll<HTMLElement>('.et-progress-step')).map(
     (step) => text(step.querySelector('.et-progress-step-state')) || null,
   );
 
 describe('progress steps scenarios', () => {
-  const scenario = useScenario({ providers: [provideColorThemesWithTailwind4(COLOR_THEMES)] });
+  const scenario = useScenario({
+    providers: [
+      provideColorThemesWithTailwind4(COLOR_THEMES),
+      provideRouter([
+        { path: 'account', component: StepPageComponent },
+        { path: 'shipping', component: StepPageComponent },
+        { path: 'payment', component: StepPageComponent },
+      ]),
+    ],
+  });
 
   it('renders each state on the consumer element with a number or an outcome icon', () => {
     const s = scenario();
@@ -264,6 +291,42 @@ describe('progress steps scenarios', () => {
       null,
       null,
     ]);
+    expect(s.errors).toEqual([]);
+  });
+
+  it('follows the router: the step whose link is active becomes the current one', async () => {
+    const s = scenario();
+    const fixture = TestBed.createComponent(RoutedStepsComponent);
+    const host = fixture.nativeElement as HTMLElement;
+    const router = TestBed.inject(Router);
+    const states = () =>
+      Array.from(host.querySelectorAll<HTMLElement>('[et-progress-step]')).map((step) => step.dataset['state']);
+
+    s.tick();
+
+    const links = Array.from(host.querySelectorAll<HTMLElement>('[et-progress-step]'));
+
+    expect(links.map((link) => !!getDebugNode(link)?.injector.get(ProgressStepRouterActiveDirective, null))).toEqual([
+      true,
+      true,
+      true,
+    ]);
+    expect(states()).toEqual(['complete', 'upcoming', 'upcoming']);
+
+    await router.navigateByUrl('/shipping');
+    s.tick();
+    s.flush();
+    fixture.detectChanges();
+
+    expect(states()).toEqual(['complete', 'current', 'upcoming']);
+
+    await router.navigateByUrl('/payment');
+    s.tick();
+    s.flush();
+    fixture.detectChanges();
+
+    expect(router.url).toBe('/payment');
+    expect(states()).toEqual(['complete', 'upcoming', 'current']);
     expect(s.errors).toEqual([]);
   });
 });
