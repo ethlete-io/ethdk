@@ -9,6 +9,7 @@ import { Subject, Subscription, filter, fromEvent, take, takeUntil, tap, timer }
 import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { OverlayRef } from '../overlay-ref';
 import { getOverlayRefInternals } from '../overlay-ref-internal';
+import { slopeMatchedEasing } from './momentum-easing';
 import {
   OverlayDragToDismissConfig,
   OverlayDragToDismissDirection,
@@ -22,6 +23,9 @@ export type DragDismissMomentum = {
 
   /** How far the overlay still has to travel to clear its docked edge, in px. */
   remainingDistance: number;
+
+  /** The CSS transform that places the overlay fully past its docked edge. */
+  exitTransform: string;
 };
 
 export type DragToDismissContext = {
@@ -119,7 +123,7 @@ const momentumDuration = (distance: number, speed: number) => {
 
 /** Where the overlay goes once the pointer lifts. */
 type SwipeEndResolution =
-  | { readonly kind: 'settle'; readonly offset: number; readonly speed: number }
+  | { readonly kind: 'settle'; readonly offset: number }
   | { readonly kind: 'dismiss'; readonly speed: number; readonly remainingDistance: number };
 
 /**
@@ -164,10 +168,10 @@ const resolveSnapEnd = (input: SwipeEndInput & { offsets: number[] }): SwipeEndR
 
     if (next === undefined) {
       // Nothing left to advance to: away means out, back means the overlay is already docked.
-      return isFlickingAway ? dismiss : { kind: 'settle', offset: 0, speed };
+      return isFlickingAway ? dismiss : { kind: 'settle', offset: 0 };
     }
 
-    return { kind: 'settle', offset: next, speed };
+    return { kind: 'settle', offset: next };
   }
 
   // A slow release settles wherever it is closest to - including the fully-dismissed position, which
@@ -176,7 +180,7 @@ const resolveSnapEnd = (input: SwipeEndInput & { offsets: number[] }): SwipeEndR
     Math.abs(offset - currentOffset) < Math.abs(best - currentOffset) ? offset : best,
   );
 
-  return nearest === axisExtent ? dismiss : { kind: 'settle', offset: nearest, speed };
+  return nearest === axisExtent ? dismiss : { kind: 'settle', offset: nearest };
 };
 
 const resolveSwipeEnd = (input: SwipeEndInput): SwipeEndResolution => {
@@ -191,7 +195,7 @@ const resolveSwipeEnd = (input: SwipeEndInput): SwipeEndResolution => {
     return { kind: 'dismiss', speed: Math.abs(velocity), remainingDistance: axisExtent - currentOffset };
   }
 
-  return { kind: 'settle', offset: 0, speed: Math.abs(velocity) };
+  return { kind: 'settle', offset: 0 };
 };
 
 const recursiveFindScrollableParent = (
@@ -290,16 +294,22 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     renderer.setStyle(el, currentOffset ? { transition: null } : { transition: null, transform: null });
   };
 
-  const settleAt = (offset: number, speed: number) => {
+  const settleAt = (offset: number, velocity: number) => {
+    const distance = offset - currentOffset;
+    const speed = Math.abs(velocity);
     const duration = Math.round(
-      matchesReducedMotion(el) ? MIN_MOMENTUM_DURATION_MS : momentumDuration(offset - currentOffset, speed),
+      matchesReducedMotion(el) ? MIN_MOMENTUM_DURATION_MS : momentumDuration(distance, speed),
     );
+    const continuesSwipe = speed >= MIN_MOMENTUM_SPEED && distance * velocity > 0;
+    const easing = continuesSwipe
+      ? slopeMatchedEasing((speed * duration) / 1000 / Math.abs(distance), 0)
+      : 'var(--ease-out-3)';
 
     currentOffset = offset;
     settleSub?.unsubscribe();
 
     renderer.setStyle(el, {
-      transition: `transform ${duration}ms var(--ease-out-3)`,
+      transition: `transform ${duration}ms ${easing}`,
       transform: axis.transform(offset),
     });
 
@@ -326,7 +336,11 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     const resolution = resolveSwipeEnd({ currentOffset, velocity, config, axisExtent });
 
     if (resolution.kind === 'dismiss') {
-      onDismiss?.({ speed: resolution.speed, remainingDistance: resolution.remainingDistance });
+      onDismiss?.({
+        speed: resolution.speed,
+        remainingDistance: resolution.remainingDistance,
+        exitTransform: axis.transform(axisExtent),
+      });
 
       let isLeaving = false;
       const leaveSub = overlayRef
@@ -354,7 +368,7 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
       return;
     }
 
-    settleAt(resolution.offset, resolution.speed);
+    settleAt(resolution.offset, velocity);
   };
 
   fromEvent<PointerEvent>(el, 'pointerdown')

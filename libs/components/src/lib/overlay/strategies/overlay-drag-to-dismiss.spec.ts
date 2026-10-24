@@ -151,6 +151,66 @@ describe('overlay drag to dismiss', () => {
     vi.useRealTimers();
   });
 
+  const flickDown = (to: number) => {
+    pane.dispatchEvent(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+
+    for (let travelled = 20; travelled <= to; travelled += 20) {
+      vi.advanceTimersByTime(10);
+      document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 100 + travelled, movementY: 20 }));
+    }
+
+    release(to);
+  };
+
+  it('starts the exit of a dismissing swipe from the release, at the release speed', () => {
+    vi.useFakeTimers();
+    const strategy = createSheetStrategy({ dragToDismiss: { direction: 'to-bottom' } }, { renderer });
+    let transformAtLeave = '';
+    const context = {
+      containerEl: pane,
+      overlayRef,
+      lifecycle: { enter: vi.fn(), leave: () => (transformAtLeave = pane.style.transform) },
+    } as unknown as OverlayStrategyContext;
+
+    close.mockImplementation(() => {
+      beforeClosed$.next(undefined);
+      strategy.onBeforeLeave?.(context);
+    });
+    strategy.onAfterEnter?.(context);
+
+    flickDown(200);
+
+    expect(transformAtLeave).toBe('translateY(200px)');
+    expect(pane.style.transform).toBe('translateY(400px)');
+    expect(pane.style.transitionTimingFunction).toMatch(/^cubic-bezier/);
+    expect(pane.style.transitionDelay).toBe('-16ms');
+
+    strategy.onBeforeEnter?.(context);
+
+    expect(pane.style.transform).toBe('');
+    expect(pane.style.transitionTimingFunction).toBe('');
+
+    vi.useRealTimers();
+  });
+
+  it('settles a flick toward the next snap point at the release speed', () => {
+    vi.useFakeTimers();
+    const ref = enableDragToDismiss({
+      element: pane,
+      overlayRef,
+      renderer,
+      config: { direction: 'to-bottom', snapPoints: [0.25] },
+    });
+
+    flickDown(60);
+
+    expect(pane.style.transform).toBe('translateY(100px)');
+    expect(pane.style.transition).toMatch(/cubic-bezier/);
+
+    ref.unsubscribe();
+    vi.useRealTimers();
+  });
+
   it('leaves the sheet at the drag offset when the dismiss starts the close', () => {
     const onDismissVetoed = vi.fn();
 

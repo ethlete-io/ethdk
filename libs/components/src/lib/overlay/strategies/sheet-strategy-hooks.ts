@@ -1,6 +1,7 @@
 import { AngularRenderer, matchesReducedMotion, randomId } from '@ethlete/core';
 import { interval, Subscription, tap } from 'rxjs';
 import { observeKeyboardInset } from '../../internals/keyboard-inset';
+import { slopeMatchedEasing } from './momentum-easing';
 import { DragDismissMomentum, DragToDismissRef, enableDragToDismiss } from './overlay-drag-to-dismiss';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
 
@@ -11,24 +12,45 @@ const MAX_LEAVE_DURATION_MS = 350;
 /** Below this release speed the swipe carries no momentum worth handing off. */
 const MIN_LEAVE_SPEED = 50;
 
+const RELEASE_FRAME_MS = 16;
+
 /** How often a sheet lifted above the soft keyboard re-checks the keyboard, to recover a missed viewport event. */
 const KEYBOARD_POLL_MS = 500;
 
 /**
+ * A curve that starts at the release speed and, unless the swipe was already faster than the exit
+ * needs, keeps accelerating until the overlay is gone - so the exit continues the swipe.
+ */
+export const dismissMomentumEasing = (
+  momentum: Pick<DragDismissMomentum, 'speed' | 'remainingDistance'>,
+  durationMs: number,
+) => {
+  const startSlope = (momentum.speed * durationMs) / 1000 / momentum.remainingDistance;
+
+  return slopeMatchedEasing(startSlope, Math.max(0, 2 - startSlope));
+};
+
+/**
  * Gives the leave transition the speed the swipe had when it let go, instead of the fixed duration
- * the stylesheet uses for every other close. Only the duration is overridden - position is already
- * continuous, because the drag's inline transform is what the leave transition starts from.
+ * and easing the stylesheet uses for every other close. Position is already continuous, because the
+ * drag's inline transform is what the leave transition starts from.
  */
 const applyDismissMomentum = (
   { el, momentum }: { el: HTMLElement; momentum: DragDismissMomentum },
   renderer: AngularRenderer,
 ) => {
-  if (momentum.speed < MIN_LEAVE_SPEED || matchesReducedMotion(el)) return;
+  if (momentum.speed < MIN_LEAVE_SPEED || momentum.remainingDistance <= 0 || matchesReducedMotion(el)) return;
 
   const ideal = (momentum.remainingDistance / momentum.speed) * 1000;
   const duration = Math.round(Math.min(MAX_LEAVE_DURATION_MS, Math.max(MIN_LEAVE_DURATION_MS, ideal)));
 
-  renderer.setStyle(el, { transitionDuration: `${duration}ms` });
+  renderer.setStyle(el, {
+    transitionDuration: `${duration}ms`,
+    transitionTimingFunction: dismissMomentumEasing(momentum, duration),
+    // A transition renders its start value on its first frame, which would hold the sheet still for
+    // a frame after the release. Starting a frame in keeps it moving.
+    transitionDelay: `-${RELEASE_FRAME_MS}ms`,
+  });
 };
 
 export type SheetStrategyDeps = {
@@ -106,8 +128,13 @@ export const createSheetStrategy = (
     id: randomId(),
     config,
     onBeforeEnter: (context) => {
-      // A close interrupted by a re-open must not inherit the previous swipe's duration.
-      renderer.setStyle(context.containerEl, { transitionDuration: null });
+      // A close interrupted by a re-open must not inherit the previous swipe's timing or position.
+      renderer.setStyle(context.containerEl, {
+        transitionDuration: null,
+        transitionTimingFunction: null,
+        transitionDelay: null,
+        transform: null,
+      });
       dismissMomentum = null;
       startKeyboardLift(context);
       context.lifecycle.enter();
@@ -124,12 +151,16 @@ export const createSheetStrategy = (
     onBeforeLeave: (context) => {
       detachDragToDismiss();
 
-      if (dismissMomentum) {
-        applyDismissMomentum({ el: context.containerEl, momentum: dismissMomentum }, renderer);
-        dismissMomentum = null;
-      }
+      const momentum = dismissMomentum;
+      dismissMomentum = null;
+
+      if (momentum) applyDismissMomentum({ el: context.containerEl, momentum }, renderer);
 
       context.lifecycle.leave();
+
+      // Only after leave() has added the leave-active transition, or the sheet jumps to the exit. Setting
+      // it here starts the exit this frame instead of a frame later with the leave-to class.
+      if (momentum) renderer.setStyle(context.containerEl, { transform: momentum.exitTransform });
     },
     onAfterLeave: stopKeyboardLift,
   };
