@@ -1,23 +1,39 @@
-<div class="et-command-palette-search-field">
+<div #searchField class="et-command-palette-search-field">
   <input [attr.aria-label]="labels().searchLabel" [placeholder]="labels().placeholder" etCommandPaletteSearch />
 </div>
 
 @let resultGroups = palette.groups();
 
 @if (resultGroups.length) {
-  <div [attr.aria-label]="labels().searchLabel" [id]="palette.listboxId" class="et-command-palette-list" role="listbox">
-    @for (group of resultGroups; track group.label) {
-      @if (group.label; as groupLabel) {
-        <p [id]="groupId($index)" class="et-command-palette-group-label" role="presentation">{{ groupLabel }}</p>
-      }
-
-      <div [attr.aria-labelledby]="group.label ? groupId($index) : null" role="group">
-        @for (result of group.results; track result.command.id) {
-          <et-command-palette-item [result]="result" />
+  <div
+    [attr.aria-label]="labels().searchLabel"
+    [id]="palette.listboxId"
+    class="et-command-palette-list"
+    animate.enter="et-command-palette-swap--enter"
+    animate.leave="et-command-palette-swap--leave"
+    role="listbox"
+  >
+    <div #listContent class="et-command-palette-list-content" role="none">
+      @for (group of resultGroups; track group.label) {
+        @if (group.label; as groupLabel) {
+          <p [id]="groupId($index)" class="et-command-palette-group-label" role="presentation">{{ groupLabel }}</p>
         }
-      </div>
-    }
+
+        <div [attr.aria-labelledby]="group.label ? groupId($index) : null" role="group">
+          @for (result of group.results; track result.command.id) {
+            <et-command-palette-item [result]="result" />
+          }
+        </div>
+      }
+    </div>
   </div>
 } @else {
-  <p class="et-command-palette-empty">{{ palette.hasCommands() ? labels().empty : labels().noCommands }}</p>
+  <p
+    #empty
+    class="et-command-palette-empty"
+    animate.enter="et-command-palette-swap--enter"
+    animate.leave="et-command-palette-swap--leave"
+  >
+    {{ palette.hasCommands() ? labels().empty : labels().noCommands }}
+  </p>
 }

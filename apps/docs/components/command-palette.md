@@ -184,6 +184,10 @@ provideCommandPaletteLabels({ placeholder: 'Rechercher une commande…' });
 
 See [localization](/components/localization) for how the label systems fit together.
 
+## Motion
+
+The palette opens and closes on the dialog springs. While the reader types, the panel height follows the results on a spring, a result that stays slides to its new place, a new one fades in and a removed one fades out. The results list and the empty message cross-fade. With `prefers-reduced-motion`, results only fade.
+
 ## Accessibility
 
 The search field is the only focusable element. It is a `combobox` with `aria-autocomplete="list"`,

@@ -1,8 +1,19 @@
-import { Component, ViewEncapsulation, afterNextRender, inject, viewChild } from '@angular/core';
-import { AutoSurfaceDirective, COLOR_PROVIDER, ProvideColorDirective, createComponentId } from '@ethlete/core';
+import { Component, ElementRef, ViewEncapsulation, afterNextRender, inject, viewChild } from '@angular/core';
+import {
+  AutoSurfaceDirective,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+  createComponentId,
+  injectAnimatedBlockSize,
+  injectAnimatedListItems,
+} from '@ethlete/core';
+import { springEasing } from '../overlay/strategies/spring-easing';
 import { CommandPaletteItemComponent } from './command-palette-item.component';
 import { injectCommandPaletteLabels } from './command-palette-labels';
 import { CommandPaletteDirective, CommandPaletteSearchDirective } from './headless';
+
+const RESIZE_SPRING = /* @__PURE__ */ springEasing({ response: 0.3, dampingFraction: 1 });
+const MOVE_SPRING = /* @__PURE__ */ springEasing({ response: 0.3, dampingFraction: 0.86 });
 
 /**
  * The command palette: a search field over every registered command, ranked as the reader types.
@@ -37,6 +48,9 @@ export class CommandPaletteComponent {
   protected labels = injectCommandPaletteLabels();
 
   private search = viewChild(CommandPaletteSearchDirective);
+  private searchField = viewChild.required<ElementRef<HTMLElement>>('searchField');
+  private listContent = viewChild<ElementRef<HTMLElement>>('listContent');
+  private empty = viewChild<ElementRef<HTMLElement>>('empty');
   private groupIdPrefix = createComponentId('et-command-palette-group');
 
   constructor() {
@@ -46,6 +60,20 @@ export class CommandPaletteComponent {
     if (this.contextColorProvider) {
       this.ownColorProvider.syncWithProvider(this.contextColorProvider);
     }
+
+    injectAnimatedBlockSize({
+      observe: [this.searchField, this.listContent, this.empty],
+      duration: RESIZE_SPRING.durationMs,
+      easing: RESIZE_SPRING.easing,
+      resizingClass: 'et-command-palette--resizing',
+    });
+
+    injectAnimatedListItems({
+      host: this.listContent,
+      items: '.et-command-palette-item, .et-command-palette-group-label',
+      moveDuration: MOVE_SPRING.durationMs,
+      moveEasing: MOVE_SPRING.easing,
+    });
 
     afterNextRender(() => this.search()?.focus());
   }

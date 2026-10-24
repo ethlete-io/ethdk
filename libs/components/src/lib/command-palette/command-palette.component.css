@@ -33,6 +33,7 @@
     --_et-command-palette-color: var(--et-surface-color-solid, rgb(244 244 245));
     --_et-command-palette-muted-color: var(--et-surface-color-muted-solid, rgb(255 255 255 / 0.55));
     --_et-command-palette-border: var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
+    position: relative;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     max-block-size: var(--et-command-palette-max-height);
@@ -73,6 +74,19 @@
     padding: var(--et-command-palette-padding);
   }
 
+  .et-command-palette-list-content {
+    position: relative;
+  }
+
+  /* Outweighs the overlay's own `.et-overlay > :not(…):not(…)` scroll rule on its content root. */
+  .et-overlay.et-command-palette-panel > .et-command-palette.et-command-palette--resizing {
+    overflow: clip;
+
+    .et-command-palette-list {
+      overflow: clip;
+    }
+  }
+
   .et-command-palette-group-label {
     margin: 0;
     padding-block: 8px 4px;
@@ -84,10 +98,37 @@
   }
 
   .et-command-palette-empty {
+    align-self: start;
     margin: 0;
     padding-block: 24px;
     color: var(--_et-command-palette-muted-color);
     text-align: center;
+  }
+
+  .et-command-palette-swap--enter {
+    animation: et-command-palette-fade-in 150ms ease-out;
+  }
+
+  /* Out of flow in the same grid area, so the outgoing content never adds to the height that animates. */
+  .et-command-palette-swap--leave {
+    position: absolute;
+    grid-row: 2;
+    grid-column: 1;
+    inset: 0;
+    pointer-events: none;
+    animation: et-command-palette-fade-out 100ms ease-out forwards;
+  }
+
+  @keyframes et-command-palette-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-command-palette-fade-out {
+    to {
+      opacity: 0;
+    }
   }
 
   /* Held near the top of the viewport rather than centered: the list grows downwards as the reader
