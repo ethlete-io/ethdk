@@ -248,6 +248,8 @@ export type ServerState = {
   foreign: boolean;
   /** True when the server runs another cli build than the one on disk, or reports none. */
   stale: boolean;
+  /** True when a server Studio started has since ended. `log` holds its last output. */
+  exited: boolean;
   log: string[];
 };
 

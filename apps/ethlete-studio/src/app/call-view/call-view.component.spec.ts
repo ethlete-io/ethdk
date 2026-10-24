@@ -73,7 +73,15 @@ const stubHost = (overrides: Record<string, () => unknown> = {}) => {
   const answers: Record<string, () => unknown> = {
     design_roots: () => ({ search: '', roots: [CHECKOUT] }),
     design_project: () => PROJECT,
-    design_server_state: () => ({ port: 4402, listening: true, managed: false, foreign: false, stale: false, log: [] }),
+    design_server_state: () => ({
+      port: 4402,
+      listening: true,
+      managed: false,
+      foreign: false,
+      stale: false,
+      exited: false,
+      log: [],
+    }),
     design_check: () => null,
     agent_list: () => [],
     ...overrides,
@@ -624,13 +632,22 @@ describe('CallViewComponent', () => {
 
   it('offers Restart for a server Studio did not start and that runs an old cli', async () => {
     stubHost({
-      design_server_state: () => ({ port: 4402, listening: true, managed: false, foreign: true, stale: true, log: [] }),
+      design_server_state: () => ({
+        port: 4402,
+        listening: true,
+        managed: false,
+        foreign: true,
+        stale: true,
+        exited: false,
+        log: [],
+      }),
       design_server_restart: () => ({
         port: 4402,
         listening: true,
         managed: true,
         foreign: false,
         stale: false,
+        exited: false,
         log: [],
       }),
     });
@@ -651,5 +668,32 @@ describe('CallViewComponent', () => {
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
     expect(status()).toContain('Design server 4402 · running');
     expect(restart()).toBeUndefined();
+  });
+
+  it('says the design server stopped and shows its last output with a Restart', async () => {
+    const stopped = () => ({
+      port: 4402,
+      listening: false,
+      managed: false,
+      foreign: false,
+      stale: false,
+      exited: true,
+      log: ["Error: EMFILE: too many open files, watch '/x/calls'"],
+    });
+
+    stubHost({ design_server_state: stopped, design_server_start: stopped });
+
+    const fixture = await mount(RESOLVED.slug);
+    const panel = element(fixture).querySelector('.studio__server-down');
+
+    expect(panel?.textContent).toContain('The design server stopped');
+    expect(panel?.textContent).toContain('EMFILE: too many open files');
+    expect(panel?.textContent).toContain('Raise fs.inotify.max_user_instances');
+    expect(element(fixture).querySelector('.studio__frame')).toBeNull();
+
+    [...(panel?.querySelectorAll('button') ?? [])].find((button) => button.textContent?.trim() === 'Restart')?.click();
+    await settle(fixture);
+
+    expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
   });
 });

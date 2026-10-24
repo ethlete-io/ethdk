@@ -40,6 +40,8 @@ pub struct ServerState {
     /// True when the listening server was started from a different cli than the one on disk now,
     /// or reports no stamp at all.
     pub stale: bool,
+    /// True when a server this Studio started has since ended. Its last output stays in `log`.
+    pub exited: bool,
     pub log: Vec<String>,
 }
 
@@ -71,14 +73,12 @@ fn state(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<Ser
     let mut table = servers.0.lock().map_err(|_| StudioError::Poisoned)?;
     let mut log = Vec::new();
     let mut managed = false;
+    let mut exited = false;
 
     if let Some(server) = table.get_mut(checkout) {
         log = server.log.lock().map_err(|_| StudioError::Poisoned)?.clone();
         managed = matches!(server.child.try_wait(), Ok(None));
-
-        if !managed {
-            table.remove(checkout);
-        }
+        exited = !managed;
     }
 
     let listening = listening(port);
@@ -89,6 +89,7 @@ fn state(servers: &DesignServers, checkout: &str, port: u16) -> StudioResult<Ser
         managed,
         foreign: listening && !managed,
         stale: false,
+        exited,
         log,
     })
 }
@@ -312,11 +313,15 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
     Ok(())
 }
 
-async fn await_listening(port: u16) {
+async fn await_listening(servers: &DesignServers, checkout: &str, port: u16) {
     let deadline = Instant::now() + START_TIMEOUT;
 
     while Instant::now() < deadline {
         if listening(port) {
+            return;
+        }
+
+        if state(servers, checkout, port).is_ok_and(|read| read.exited) {
             return;
         }
 
@@ -396,7 +401,7 @@ pub async fn design_server_start(
     }
 
     spawn(servers.inner(), &checkout)?;
-    await_listening(port).await;
+    await_listening(servers.inner(), &checkout, port).await;
 
     state(servers.inner(), &checkout, port)
 }
@@ -441,7 +446,7 @@ pub async fn design_server_restart(
     }
 
     spawn(servers.inner(), &checkout)?;
-    await_listening(port).await;
+    await_listening(servers.inner(), &checkout, port).await;
 
     judged(servers.inner(), &checkout, port).await
 }
@@ -496,6 +501,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_server_that_dies_at_start_reads_as_exited_with_its_last_output() {
+        const PORT: u16 = 45873;
+
+        let dir = std::env::temp_dir().join(format!("studio-design-server-{PORT}"));
+        let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
+
+        std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a temporary checkout");
+        std::fs::write(
+            &entry,
+            "console.error(\"Error: EMFILE: too many open files, watch '/x'\");\nprocess.exit(1);\n",
+        )
+        .expect("a design tool");
+
+        let checkout = dir.to_string_lossy().into_owned();
+        let servers = DesignServers::default();
+
+        spawn(&servers, &checkout).expect("the design tool runs");
+        await_listening(&servers, &checkout, PORT).await;
+
+        let mut read = state(&servers, &checkout, PORT).expect("a state");
+
+        for _ in 0..20 {
+            if !read.log.is_empty() {
+                break;
+            }
+
+            tokio::time::sleep(POLL).await;
+            read = state(&servers, &checkout, PORT).expect("a state");
+        }
+
+        assert!(read.exited);
+        assert!(!read.managed);
+        assert!(read.log.iter().any(|line| line.contains("EMFILE")));
+
+        let _ = std::fs::remove_dir_all(&checkout);
+    }
+
+    #[tokio::test]
     async fn a_checkout_is_served_by_its_design_tool_and_the_stop_reaches_the_whole_group() {
         const PORT: u16 = 45872;
 
@@ -503,7 +546,7 @@ mod tests {
         let servers = DesignServers::default();
 
         spawn(&servers, &checkout).expect("the design tool runs");
-        await_listening(PORT).await;
+        await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
         assert!(state(&servers, &checkout, PORT).expect("a state").managed);
@@ -527,7 +570,7 @@ mod tests {
         let servers = DesignServers::default();
 
         spawn(&servers, &checkout).expect("the design tool runs");
-        await_listening(PORT).await;
+        await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
 
@@ -603,7 +646,7 @@ mod tests {
             .spawn()
             .expect("a server");
 
-        await_listening(PORT).await;
+        await_listening(&DesignServers::default(), &checkout, PORT).await;
 
         let read = state(&DesignServers::default(), &checkout, PORT).expect("a state");
 

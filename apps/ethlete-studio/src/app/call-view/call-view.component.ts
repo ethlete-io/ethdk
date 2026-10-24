@@ -423,7 +423,23 @@ const SETTLE_MS = 300;
           </aside>
 
           <div class="studio__canvas">
-            @if (variant(); as drawn) {
+            @if (serverDown(); as down) {
+              <div class="studio__server-down" role="alert">
+                <h3>The design server stopped</h3>
+                @if (watcherHint()) {
+                  <p>The system ran out of file watchers (inotify). Raise fs.inotify.max_user_instances.</p>
+                }
+                @if (down.log.length) {
+                  <pre>{{
+                    down.log.slice(-10).join(
+                      '
+'
+                    )
+                  }}</pre>
+                }
+                <button (click)="restartServer()" class="studio__status-button" type="button">Restart</button>
+              </div>
+            } @else if (variant(); as drawn) {
               <div class="studio__stage">
                 <div [style.width]="frameWidth()" class="studio__frame">
                   @for (frame of frames(); track frame.id) {
@@ -917,6 +933,16 @@ export class CallViewComponent {
       .filter(Boolean)
       .join(' · ');
   });
+
+  protected serverDown = computed(() => {
+    const state = this.server();
+
+    return state && !state.listening && !this.serverBusy() ? state : null;
+  });
+
+  protected watcherHint = computed(() =>
+    (this.serverDown()?.log ?? []).some((line) => /\b(EMFILE|ENOSPC)\b.*\bwatch\b/.test(line)),
+  );
 
   public serverLog = computed(() => {
     const state = this.server();
