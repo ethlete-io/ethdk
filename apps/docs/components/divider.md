@@ -61,3 +61,5 @@ A separator is never focusable and carries no value; `et-divider` is not the `ar
 Public design tokens: `--et-divider-thickness` (default `1px`), `--et-divider-spacing` (default `8px`), `--et-divider-inset` (default `0`).
 
 The rule's color is not a registered token, because it defaults to the surface theme's border color: set `--et-divider-color` to override it, and it falls back to `--et-surface-border-solid`. Keep the override tied to the theme rather than a literal - a `color-mix()` over `currentColor` (what the rich text editor's toolbars use) or another surface token. See [theming](/core/theming) for the token set.
+
+The rule is drawn as a border, not a background, so at fractional browser zoom (110%, 125%, 150%) every divider snaps to the same device-pixel width instead of some rounding up to two pixels.

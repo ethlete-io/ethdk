@@ -20,15 +20,19 @@
   .et-divider {
     display: block;
     flex: none;
-    background: var(--et-divider-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
-    block-size: var(--et-divider-thickness);
+    block-size: 0;
+    border-block-start: var(--et-divider-thickness) solid
+      var(--et-divider-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
     margin-block: var(--et-divider-spacing);
     margin-inline: var(--et-divider-inset);
 
     &:where([data-orientation='vertical']) {
       align-self: stretch;
       block-size: auto;
-      inline-size: var(--et-divider-thickness);
+      inline-size: 0;
+      border-block-start: 0;
+      border-inline-start: var(--et-divider-thickness) solid
+        var(--et-divider-color, var(--et-surface-border-solid, rgb(255 255 255 / 0.1)));
       margin-block: var(--et-divider-inset);
       margin-inline: var(--et-divider-spacing);
     }

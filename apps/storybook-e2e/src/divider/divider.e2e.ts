@@ -15,7 +15,7 @@ interface DividerBox {
   marginBlock: string;
   marginInline: string;
   alignSelf: string;
-  background: string;
+  ruleColor: string;
   width: number;
   height: number;
 }
@@ -32,7 +32,8 @@ function readBox(divider: Locator): Promise<DividerBox> {
       marginBlock: `${style.marginBlockStart} ${style.marginBlockEnd}`,
       marginInline: `${style.marginInlineStart} ${style.marginInlineEnd}`,
       alignSelf: style.alignSelf,
-      background: style.backgroundColor,
+      ruleColor:
+        el.getAttribute('data-orientation') === 'vertical' ? style.borderInlineStartColor : style.borderBlockStartColor,
       width: rect.width,
       height: rect.height,
     };
@@ -110,7 +111,7 @@ test.describe('divider / structure', () => {
     const box = await readBox(root.locator(DIVIDER).first());
 
     expect(box.blockSize).toBe('1px');
-    expect(box.background).not.toBe(TRANSPARENT);
+    expect(box.ruleColor).not.toBe(TRANSPARENT);
     expect(box.width).toBeGreaterThan(0);
   });
 
@@ -184,14 +185,14 @@ test.describe('divider / structure', () => {
     const surfaceBorder = await resolveTokenColor(divider, '--et-surface-border-solid');
 
     expect(surfaceBorder).not.toBe(TRANSPARENT);
-    expect((await readBox(divider)).background).toBe(surfaceBorder);
+    expect((await readBox(divider)).ruleColor).toBe(surfaceBorder);
 
     const overridden = await divider.evaluate((el) => {
       el.style.setProperty('--et-divider-color', 'rgb(255, 0, 0)');
-      const background = getComputedStyle(el).backgroundColor;
+      const color = getComputedStyle(el).borderBlockStartColor;
       el.style.removeProperty('--et-divider-color');
 
-      return background;
+      return color;
     });
 
     expect(overridden).toBe('rgb(255, 0, 0)');
@@ -235,7 +236,7 @@ test.describe('divider / touch', () => {
     expect(box.blockSize).toBe('1px');
     expect(box.marginBlock).toBe('8px 8px');
     expect(box.width).toBeGreaterThan(0);
-    expect(box.background).not.toBe(TRANSPARENT);
+    expect(box.ruleColor).not.toBe(TRANSPARENT);
   });
 
   test('a vertical divider still stretches to its neighbours on a touch viewport', async ({ page }) => {
