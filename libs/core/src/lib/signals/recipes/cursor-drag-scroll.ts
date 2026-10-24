@@ -8,6 +8,9 @@ import { MaybeSignal, maybeSignalValue } from '../signal-data-utils';
 
 export type CursorDragScrollDirection = 'horizontal' | 'vertical' | 'both';
 
+/** The scroll velocity in px/ms, positive where the scroll offset grows. */
+export type CursorDragScrollVelocity = { x: number; y: number };
+
 export type CursorDragScrollOptions = {
   /** If true, cursor drag scrolling will be enabled. */
   enabled?: Signal<boolean>;
@@ -32,6 +35,9 @@ const CURSOR_DRAG_SCROLL_DEADZONE = 5;
 /** `MouseEvent.button` for the primary button. A secondary click opens a menu; it does not drag. */
 const PRIMARY_MOUSE_BUTTON = 0;
 
+/** How far back from the release the pointer's velocity is measured. */
+const RELEASE_VELOCITY_WINDOW_MS = 100;
+
 /** The class that is added to the element when the cursor is being dragged. */
 const CURSOR_DRAG_SCROLLING_CLASS = 'et-cursor-drag-scroll--scrolling';
 const CURSOR_DRAG_INIT_CLASS = 'et-cursor-drag-scroll--init';
@@ -48,6 +54,8 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   const initialDragPosition = signal({ x: 0, y: 0 });
   const initialScrollPosition = signal({ x: 0, y: 0 });
   const dragAmount = signal({ x: 0, y: 0 });
+  const releaseVelocity = signal<CursorDragScrollVelocity>({ x: 0, y: 0 });
+  let samples: { t: number; x: number; y: number }[] = [];
   const document = inject(DOCUMENT);
 
   // Only measured when the caller hasn't already: this costs a MutationObserver and a ResizeObserver.
@@ -177,13 +185,36 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
     const dy = (e.clientY - initialDragPosition().y) * -1;
 
     dragAmount.set({ x: dx, y: dy });
+    recordSample(dx, dy);
 
     if (Math.abs(dx) > CURSOR_DRAG_SCROLL_DEADZONE || Math.abs(dy) > CURSOR_DRAG_SCROLL_DEADZONE) {
       isDragging.set(true);
     }
   };
 
+  const recordSample = (x: number, y: number) => {
+    const t = performance.now();
+
+    samples.push({ t, x, y });
+    samples = samples.filter((sample) => t - sample.t <= RELEASE_VELOCITY_WINDOW_MS);
+  };
+
+  const measureReleaseVelocity = (): CursorDragScrollVelocity => {
+    const now = performance.now();
+    const recent = samples.filter((sample) => now - sample.t <= RELEASE_VELOCITY_WINDOW_MS);
+    const first = recent[0];
+    const last = recent.at(-1);
+    const elapsed = first ? now - first.t : 0;
+
+    if (!first || !last || elapsed <= 0) return { x: 0, y: 0 };
+
+    return { x: (last.x - first.x) / elapsed, y: (last.y - first.y) / elapsed };
+  };
+
   const updateDraggingEnd = () => {
+    // Set before `isDragging` flips, so whatever reacts to the release reads this drag's velocity.
+    releaseVelocity.set(isDragging() ? measureReleaseVelocity() : { x: 0, y: 0 });
+    samples = [];
     isDragging.set(false);
     isInitDragging.set(false);
     initialDragPosition.set({ x: 0, y: 0 });
@@ -219,6 +250,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
 
     initialDragPosition.set({ x: e.clientX, y: e.clientY });
     initialScrollPosition.set({ x: el.scrollLeft, y: el.scrollTop });
+    samples = [{ t: performance.now(), x: 0, y: 0 }];
     isInitDragging.set(true);
   };
 
@@ -237,5 +269,7 @@ export const useCursorDragScroll = (el: SignalElementBindingType, options?: Curs
   return {
     isDragging: isDragging.asReadonly(),
     currentDragAmount: dragAmount.asReadonly(),
+    /** The scroll velocity over the last 100ms of the most recent drag, set just before `isDragging` turns false. */
+    releaseVelocity: releaseVelocity.asReadonly(),
   };
 };

@@ -1,4 +1,4 @@
-import { Directive, booleanAttribute, effect, inject, input } from '@angular/core';
+import { Directive, booleanAttribute, effect, inject, input, untracked } from '@angular/core';
 import { useCursorDragScroll } from '@ethlete/core';
 import { ScrollableDirective } from './scrollable.directive';
 
@@ -23,7 +23,13 @@ export class ScrollableDragDirective {
   });
 
   constructor() {
-    // eslint-disable-next-line ethlete/prefer-linked-signal
-    effect(() => this.scrollable.isCursorDragging.set(this.cursorDragScrollState.isDragging()));
+    effect(() => {
+      const dragging = this.cursorDragScrollState.isDragging();
+
+      untracked(() => {
+        this.scrollable.cursorDragReleaseVelocity.set(this.cursorDragScrollState.releaseVelocity());
+        this.scrollable.isCursorDragging.set(dragging);
+      });
+    });
   }
 }

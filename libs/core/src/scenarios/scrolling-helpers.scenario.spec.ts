@@ -365,6 +365,28 @@ describe('scrolling helper scenarios', () => {
       unmount();
     });
 
+    it('looks only ahead of or behind the offset when given a flick direction', () => {
+      scenario();
+      const { element: track, items, position, unmount } = trackOf(5, 100, 100);
+
+      position.left = 125;
+      expect(getScrollSnapTarget(items, track, 'horizontal', 'start')).toEqual({ element: items[1], origin: 'start' });
+      expect(getScrollSnapTarget(items, track, 'horizontal', 'start', 0, 'forward')).toEqual({
+        element: items[2],
+        origin: 'start',
+      });
+
+      position.left = 175;
+      expect(getScrollSnapTarget(items, track, 'horizontal', 'start', 0, 'backward')).toEqual({
+        element: items[1],
+        origin: 'start',
+      });
+
+      position.left = 400;
+      expect(getScrollSnapTarget(items, track, 'horizontal', 'start', 0, 'forward')).toBeNull();
+      unmount();
+    });
+
     it('snaps to the visible edge of an oversized item and skips one that covers the track', () => {
       scenario();
       const { element: track, items, position, unmount } = trackOf(3, 500, 200);
@@ -586,6 +608,36 @@ describe('scrolling helper scenarios', () => {
       s.flush();
 
       expect(document.documentElement.style.cursor).toBe('');
+    });
+
+    it('reports a quick flick with its release velocity and a slow drag with none', () => {
+      const { s, fixture, track } = setup();
+      const { drag } = fixture.componentInstance;
+
+      mouse('mousedown', track, 200);
+      for (let x = 180; x >= 100; x -= 20) {
+        s.tick(10);
+        mouse('mousemove', document, x);
+      }
+      mouse('mouseup', document, 100);
+      s.tick();
+      expect(drag.releaseVelocity().x).toBeCloseTo(2);
+
+      mouse('mousedown', track, 200);
+      for (let x = 190; x >= 100; x -= 10) {
+        s.tick(100);
+        mouse('mousemove', document, x);
+      }
+      mouse('mouseup', document, 100);
+      s.tick();
+      expect(drag.releaseVelocity().x).toBeLessThan(0.5);
+
+      mouse('mousedown', track, 200);
+      mouse('mousemove', document, 100);
+      s.tick(150);
+      mouse('mouseup', document, 100);
+      s.tick();
+      expect(drag.releaseVelocity()).toEqual({ x: 0, y: 0 });
     });
 
     it('stops reacting while disabled', () => {

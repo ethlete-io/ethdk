@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import {
+  CursorDragScrollVelocity,
   RuntimeError,
   ScrollObserverDirective,
   injectHostElement,
@@ -151,6 +152,12 @@ export class ScrollableDirective {
 
   /** @internal Whether a cursor drag is moving the track right now. Set by `etScrollableDrag`. */
   public isCursorDragging = signal(false);
+
+  /**
+   * @internal The scroll velocity (px/ms) the last cursor drag was released with, current by the time
+   * `isCursorDragging` turns false. Set by `etScrollableDrag`.
+   */
+  public cursorDragReleaseVelocity = signal<CursorDragScrollVelocity>({ x: 0, y: 0 });
 
   private snapSuspensions = signal(0);
 

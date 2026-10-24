@@ -118,6 +118,34 @@ async function mouseDragTrack(page: Page, root: Locator, from: number, to: numbe
   await page.mouse.up();
 }
 
+async function pacedMouseDrag(
+  page: Page,
+  root: Locator,
+  options: { from: number; distance: number; steps: number; stepMs: number; whileDown?: () => Promise<void> },
+): Promise<void> {
+  const box = await boxOf(root.locator(TRACK));
+  const y = box.y + box.height / 2;
+  const start = box.x + box.width * options.from;
+
+  await page.mouse.move(start, y);
+  await page.mouse.down();
+  for (let step = 1; step <= options.steps; step++) {
+    await settle(page, options.stepMs);
+    await page.mouse.move(start - (options.distance * step) / options.steps, y);
+  }
+  await options.whileDown?.();
+  await page.mouse.up();
+}
+
+function activeContentOffset(root: Locator): Promise<number> {
+  return root.locator('.et-carousel').evaluate((carousel) => {
+    const viewportLeft = carousel.querySelector('.et-scrollable-container')?.getBoundingClientRect().left ?? 0;
+    const content = carousel.querySelector('.et-carousel-item[data-active] .et-carousel-slide-content');
+
+    return Math.round((content?.getBoundingClientRect().left ?? NaN) - viewportLeft);
+  });
+}
+
 async function sweepAnimationName(dot: Locator): Promise<string> {
   return dot
     .locator('.et-carousel-dot-progress-half')
@@ -366,6 +394,46 @@ test.describe('carousel / transitions', () => {
 
     await expect.poll(async () => (await activeSlide(root)).veilOpacity).toBeGreaterThan(0.1);
     expect(['0%', '0px', 'none']).not.toContain((await activeSlide(root)).contentTranslate);
+  });
+});
+
+test.describe('carousel / mouse drag release', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: mouse drag');
+
+  test('a quick short flick carries on to the next slide', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await pacedMouseDrag(page, root, { from: 0.6, distance: 100, steps: 5, stepMs: 10 });
+
+    await expectActiveSlideAtRest(root);
+    await expect(root.locator(DOT).nth(1)).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('a slow short drag glides back to the slide it started on', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+
+    await pacedMouseDrag(page, root, { from: 0.6, distance: 100, steps: 10, stepMs: 80 });
+
+    await expectActiveSlideAtRest(root);
+    await expect(root.locator(DOT).nth(0)).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('wipe keeps the picture still while a slow drag moves the edge', async ({ page }) => {
+    const root = await openStory(page, WIPE_STORY_ID);
+    const offsets: number[] = [];
+
+    await expectActiveSlideAtRest(root);
+    await pacedMouseDrag(page, root, {
+      from: 0.8,
+      distance: 300,
+      steps: 15,
+      stepMs: 40,
+      whileDown: async () => {
+        offsets.push(await activeContentOffset(root));
+      },
+    });
+
+    expect(offsets).toEqual([0]);
   });
 });
 

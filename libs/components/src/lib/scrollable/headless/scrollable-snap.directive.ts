@@ -11,6 +11,9 @@ import { ScrollableScrollOrigin } from './scrollable.types';
  */
 const SETTLE_TIMEOUT = 700;
 
+/** The release speed (px/ms) above which a mouse drag counts as a flick and carries on to the next child. */
+const FLICK_VELOCITY = 0.5;
+
 /**
  * Makes the track come to rest on a child rather than wherever the gesture ran out.
  *
@@ -75,27 +78,34 @@ export class ScrollableSnapDirective {
         const release = releaseSnap;
         releaseSnap = null;
 
-        this.glideToNearestChild(release);
+        this.glideToRestingChild(release);
       });
     });
 
     this.destroyRef.onDestroy(() => releaseSnap?.());
   }
 
-  private glideToNearestChild(release: () => void) {
+  private glideToRestingChild(release: () => void) {
     const scrollElement = this.scrollable.getScrollContainerRef()()?.nativeElement;
-    const target = scrollElement
-      ? getScrollSnapTarget(
-          this.scrollable
-            .childIntersections()
-            .filter((intersection) => intersection.intersectionRatio > 0)
-            .map((intersection) => intersection.target as HTMLElement),
-          scrollElement,
-          this.scrollable.direction(),
-          this.snapOrigin(),
-          this.scrollable.scrollMargin(),
-        )
-      : null;
+    const direction = this.scrollable.direction();
+    const velocity = this.scrollable.cursorDragReleaseVelocity()[direction === 'horizontal' ? 'x' : 'y'];
+    const towards = velocity > FLICK_VELOCITY ? 'forward' : velocity < -FLICK_VELOCITY ? 'backward' : undefined;
+    const candidates = this.scrollable
+      .childIntersections()
+      .filter((intersection) => intersection.intersectionRatio > 0)
+      .map((intersection) => intersection.target as HTMLElement);
+    const snapTarget = (bias?: 'forward' | 'backward') =>
+      scrollElement
+        ? getScrollSnapTarget(
+            candidates,
+            scrollElement,
+            direction,
+            this.snapOrigin(),
+            this.scrollable.scrollMargin(),
+            bias,
+          )
+        : null;
+    const target = (towards && snapTarget(towards)) || snapTarget();
 
     if (!scrollElement || !target) {
       release();

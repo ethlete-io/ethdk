@@ -35,7 +35,7 @@ scrollToElement({
 
 The geometry engine behind the scrollable's snapping and paging - low-level functions taking raw elements/IntersectionObserver entries and returning the element to scroll to:
 
-- `getScrollSnapTarget(items, container, direction, origin, margin?)` - the item + alignment with the smallest scroll delta (`null` when already snapped).
+- `getScrollSnapTarget(items, container, direction, origin, margin?, towards?)` - the item + alignment with the smallest scroll delta (`null` when already snapped). `towards: 'forward' | 'backward'` only considers targets ahead of or behind the current offset, for a flick.
 - `getScrollContainerTarget(entries, direction)` - the next page-wise target when paging by container width (`direction` is `'start' | 'end'`).
 - `getScrollItemTarget(entries, container, direction, scrollOrigin, axisDirection)` - the next/previous item target, with oversized-item handling.
 

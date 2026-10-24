@@ -100,7 +100,8 @@ writes one, which the directive does internally: it puts
 ref-counted, so two overlapping suspensions can't release each other's.
 
 Two things use it already. A **cursor drag** holds it for the whole drag, because it writes the offset on
-every mouse move; on release it glides to the nearest child in JavaScript and hands snapping back on arrival
+every mouse move; on release it glides to the nearest child in JavaScript - or, when the release was a flick
+faster than 0.5px/ms, to the next child in the flick's direction - and hands snapping back on arrival
 
 - a mouse button produces no fling, so native snap has nothing to decelerate into and letting go would
   otherwise hard-cut the track by up to a slide in a single frame. A looping [carousel](/components/carousel)

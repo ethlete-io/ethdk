@@ -16,6 +16,7 @@ export const getScrollSnapTarget = (
   direction: 'horizontal' | 'vertical',
   origin: ScrollSnapOrigin,
   margin = 0,
+  towards?: 'forward' | 'backward',
 ): ScrollSnapTarget => {
   if (!items.length) return null;
 
@@ -27,6 +28,9 @@ export const getScrollSnapTarget = (
   let bestAbsDelta = Infinity;
 
   const updateBest = (element: HTMLElement, o: 'start' | 'center' | 'end', delta: number) => {
+    if (towards === 'forward' && delta < MIN_SNAP_DELTA_PX) return;
+    if (towards === 'backward' && delta > -MIN_SNAP_DELTA_PX) return;
+
     const abs = Math.abs(delta);
     if (abs < bestAbsDelta) {
       bestAbsDelta = abs;

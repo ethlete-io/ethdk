@@ -73,6 +73,50 @@ describe('ScrollableSnapDirective', () => {
     expect(scrollableEl.hasAttribute('snap-origin')).toBe(false);
   });
 
+  const releaseDragAt = async (velocityX: number) => {
+    const observer = fakeIntersectionObserver();
+    const scroll = fakeElementScroll();
+
+    fakeLayout([
+      { match: '.et-scrollable-container', clientWidth: 300, rect: { left: 0, top: 0, width: 300, height: 100 } },
+      {
+        match: '.et-scrollable-item',
+        rect: (element) => ({
+          left: [...element.parentElement!.querySelectorAll('.et-scrollable-item')].indexOf(element) * 300 - 100,
+          top: 0,
+          width: 300,
+          height: 100,
+        }),
+      },
+    ]);
+
+    const { fixture, scrollable } = await create();
+    const container = fixture.nativeElement.querySelector('.et-scrollable-container') as HTMLElement;
+
+    Object.defineProperty(container, 'scrollLeft', { configurable: true, value: 100 });
+    Object.defineProperty(container, 'scrollWidth', { configurable: true, value: 600 });
+    for (const item of fixture.nativeElement.querySelectorAll('.et-scrollable-item')) {
+      observer.fire(item, { intersectionRatio: 0.5 });
+    }
+
+    scrollable.isCursorDragging.set(true);
+    await settle(fixture);
+
+    scrollable.cursorDragReleaseVelocity.set({ x: velocityX, y: 0 });
+    scrollable.isCursorDragging.set(false);
+    await settle(fixture);
+
+    return scroll.lastCall()?.options.left;
+  };
+
+  it('glides a slow mouse drag back to the nearest child', async () => {
+    expect(await releaseDragAt(0.1)).toBe(0);
+  });
+
+  it('carries a quick mouse flick on to the next child in its direction', async () => {
+    expect(await releaseDragAt(2)).toBe(300);
+  });
+
   it('keeps snapping suspended until every suspension is released', async () => {
     const { fixture, scrollableEl, scrollable } = await create();
 
