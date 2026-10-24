@@ -364,7 +364,13 @@ export class CarouselDirective {
 
         if (settled?.crossSeam()) slideProgress.flush();
       },
-      onPointerDown: () => this.requestedDomIndex.set(null),
+      onPointerDown: (event) => {
+        this.requestedDomIndex.set(null);
+
+        // Swipes in quick succession each catch the previous one's momentum, so no `scrollend` fires between
+        // them and the seam is never crossed - until the track runs out of clones and cannot move on.
+        if (event.pointerType === 'touch' && loop.readSettled()?.crossSeam()) slideProgress.flush();
+      },
       onScrollInput: () => this.requestedDomIndex.set(null),
     });
 

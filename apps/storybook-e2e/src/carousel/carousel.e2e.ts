@@ -496,6 +496,43 @@ test.describe('carousel / touch', () => {
     await expect(root.locator(DOT).last()).toHaveAttribute('aria-current', 'true');
   });
 
+  test('swipes in quick succession keep moving a looping carousel past a full lap', async ({ page }) => {
+    const root = await openStory(page, LOOP_STORY_ID);
+    const viewport = root.locator('.et-scrollable-container');
+    const box = await boxOf(root.locator(TRACK));
+    const y = box.y + box.height / 2;
+    const from = box.x + box.width * 0.9;
+    const to = box.x + box.width * 0.4;
+    const client = await page.context().newCDPSession(page);
+    const nextFrame = () => page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    const scrollLeft = () => viewport.evaluate((element) => element.scrollLeft);
+    const moved: number[] = [];
+
+    for (let swipe = 0; swipe < 10; swipe++) {
+      await client.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from, y }] });
+      await nextFrame();
+
+      const start = await scrollLeft();
+
+      for (let step = 1; step <= 3; step++) {
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x: from + ((to - from) * step) / 3, y }],
+        });
+        await nextFrame();
+      }
+
+      moved.push(Math.round((await scrollLeft()) - start));
+
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await nextFrame();
+    }
+
+    const swipeLength = from - to;
+
+    expect(moved.filter((distance) => distance < swipeLength / 2)).toEqual([]);
+  });
+
   test('a tap on an indicator jumps to that slide', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const dots = root.locator(DOT);

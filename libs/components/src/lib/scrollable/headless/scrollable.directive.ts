@@ -19,6 +19,7 @@ import {
   getElementScrollCoordinates,
   getScrollContainerTarget,
   getScrollItemTarget,
+  injectRenderer,
   provideBreakpointInstance,
   signalElementChildren,
   signalElementDimensions,
@@ -70,6 +71,7 @@ const ELEMENT_INTERSECTION_THRESHOLD = /* @__PURE__ */ (() => [
 })
 export class ScrollableDirective {
   private hostElement = injectHostElement();
+  private renderer = injectRenderer();
 
   public itemSize = input('auto', { transform: typedBreakpointTransform<ScrollableItemSize>('auto') });
   public direction = input('horizontal', {
@@ -297,10 +299,17 @@ export class ScrollableDirective {
     if (!scrollElement) return;
 
     const release = this.suspendSnap();
+    const inlineSnapType = scrollElement.style.scrollSnapType;
 
+    // The `snap-suspended` attribute only reaches the DOM with the next change detection - after this scroll,
+    // which mandatory snapping would otherwise pull onto the nearest child.
+    this.renderer.setStyle(scrollElement, { scrollSnapType: 'none' });
     scrollElement.scroll({ ...options, behavior: 'instant' });
 
-    requestAnimationFrame(release);
+    requestAnimationFrame(() => {
+      this.renderer.setStyle(scrollElement, { scrollSnapType: inlineSnapType || null });
+      release();
+    });
   }
 
   public scrollOneContainerSize(scrollDirection: 'start' | 'end') {

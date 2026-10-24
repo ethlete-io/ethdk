@@ -139,7 +139,8 @@ export const useCarouselLoop = (config: CarouselLoopConfig) => {
 
       /**
        * Shift the scroll offset a whole track's length if it has come to rest in the clones - the one way to
-       * cross the seam on a native scroller without showing it. Never call it mid-scroll.
+       * cross the seam on a native scroller without showing it. Never call it while the track is still moving
+       * on its own; a finger that has just caught it counts as at rest.
        */
       crossSeam: () => {
         const { container: scrollContainer, horizontal, trackLength } = geometry;

@@ -23,7 +23,7 @@ const supportsScrollEnd = (element: HTMLElement) => 'onscrollend' in element;
 export type CarouselScrollSettledConfig = {
   scrollable: Signal<ScrollableDirective | null | undefined>;
   onSettled: () => void;
-  onPointerDown?: () => void;
+  onPointerDown?: (event: PointerEvent) => void;
   /** A wheel, trackpad or scroll key on the track - input that takes over any scroll still running. */
   onScrollInput?: () => void;
 };
@@ -84,10 +84,10 @@ export const useCarouselScrollSettled = (config: CarouselScrollSettledConfig) =>
 
         return merge(
           settled$.pipe(tap(() => settle())),
-          fromEvent(scrollContainer, 'pointerdown', { passive: true }).pipe(
-            tap(() => {
+          fromEvent<PointerEvent>(scrollContainer, 'pointerdown', { passive: true }).pipe(
+            tap((event) => {
               isPointerDown.set(true);
-              config.onPointerDown?.();
+              config.onPointerDown?.(event);
             }),
           ),
           fromEvent(scrollContainer, 'wheel', { passive: true }).pipe(tap(() => config.onScrollInput?.())),
