@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, input } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { CAROUSEL_IMPORTS } from '../carousel.imports';
 import { CarouselSlideAlign, CarouselTransition, CarouselTransitionDriver } from '../headless';
 import { SCROLLABLE_DRAG_IMPORTS, SCROLLABLE_IMPORTS } from '../../scrollable';
@@ -156,9 +156,22 @@ export class CarouselVariableWidthsStorybookComponent {
   selector: 'et-sb-carousel-headless',
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-4 p-8 font-sans">
-      <div #carousel="etCarousel" class="flex flex-col gap-4" etCarousel>
+      <div
+        #carousel="etCarousel"
+        class="flex flex-col gap-6"
+        etProvideColor="brand"
+        style="max-inline-size: 640px"
+        etCarousel
+      >
+        <div class="flex items-end justify-between">
+          <h3 class="text-h5 font-title">Match day</h3>
+          <span class="text-h5 font-display tabular-nums">
+            {{ pad(carousel.activeIndex() + 1) }}
+            <span class="text-small opacity-50">/ {{ pad(carousel.count()) }}</span>
+          </span>
+        </div>
+
         <et-scrollable
-          [style.max-inline-size.px]="640"
           renderMasks="false"
           etScrollableSnap
           itemSize="half"
@@ -166,25 +179,72 @@ export class CarouselVariableWidthsStorybookComponent {
           scrollMode="element"
         >
           @for (slide of SLIDES; track slide.title; let index = $index) {
-            <div class="text-small rounded-lg border border-white/15 p-4" etCarouselItem>
-              {{ index + 1 }}. {{ slide.title }}
+            <div
+              [style.background]="
+                'linear-gradient(' +
+                (140 + index * 25) +
+                'deg, color-mix(in oklab, var(--et-theme-color-primary-solid) ' +
+                (70 - index * 10) +
+                '%, transparent), color-mix(in oklab, var(--et-theme-color-primary-solid) 8%, transparent))'
+              "
+              class="flex min-h-[16rem] flex-col justify-end gap-2 overflow-hidden rounded-2xl p-6"
+              etCarouselItem
+            >
+              <span class="text-small font-display opacity-60">{{ pad(index + 1) }}</span>
+              <span class="text-h5 font-title">{{ slide.title }}</span>
+              <span class="text-small opacity-80">{{ slide.body }}</span>
             </div>
           }
         </et-scrollable>
 
-        <div class="flex items-center gap-3">
-          <button class="text-small underline" etCarouselPrevious>Back</button>
-          <span class="text-small">Slide {{ carousel.activeIndex() + 1 }} of {{ carousel.count() }}</span>
-          <button class="text-small underline" etCarouselNext>Forward</button>
+        <div class="flex items-center gap-4">
+          <div class="flex flex-1 gap-2">
+            @for (slide of SLIDES; track slide.title; let index = $index) {
+              <button
+                [style.background]="'var(--et-theme-color-primary-solid)'"
+                [style.opacity]="index === carousel.activeIndex() ? 1 : 0.25"
+                [attr.aria-label]="'Go to ' + slide.title"
+                [attr.aria-current]="index === carousel.activeIndex() ? 'true' : null"
+                (click)="carousel.goTo(index)"
+                class="h-[0.4rem] flex-1 cursor-pointer rounded-full border-0 p-0 transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4"
+                type="button"
+              ></button>
+            }
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              class="flex size-[3.6rem] cursor-pointer items-center justify-center rounded-full border border-white/20 bg-transparent transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+              etCarouselPrevious
+            >
+              &larr;
+            </button>
+            <button
+              class="flex size-[3.6rem] cursor-pointer items-center justify-center rounded-full border border-white/20 bg-transparent transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+              etCarouselNext
+            >
+              &rarr;
+            </button>
+          </div>
         </div>
       </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [CAROUSEL_IMPORTS, SCROLLABLE_IMPORTS, SCROLLABLE_DRAG_IMPORTS, ProvideSurfaceDirective],
+  imports: [
+    CAROUSEL_IMPORTS,
+    SCROLLABLE_IMPORTS,
+    SCROLLABLE_DRAG_IMPORTS,
+    ProvideColorDirective,
+    ProvideSurfaceDirective,
+  ],
 })
 export class CarouselHeadlessStorybookComponent {
   public surface = input('dark');
 
   protected readonly SLIDES = SLIDES;
+
+  protected pad(value: number) {
+    return value.toString().padStart(2, '0');
+  }
 }
