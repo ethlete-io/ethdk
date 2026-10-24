@@ -25,7 +25,7 @@ export type SpringEasing = {
 };
 
 export const SHEET_SETTLE_SPRING: SpringConfig = { response: 0.42, dampingFraction: 0.86 };
-export const SHEET_LEAVE_SPRING: SpringConfig = { response: 0.4, dampingFraction: 1 };
+export const SHEET_LEAVE_SPRING: SpringConfig = { response: 0.4, dampingFraction: 0.8 };
 
 const SAMPLE_STEP_S = 1 / 120;
 const SIMPLIFY_TOLERANCE = 0.002;
