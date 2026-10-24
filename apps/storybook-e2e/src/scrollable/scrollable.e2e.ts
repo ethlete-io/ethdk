@@ -296,10 +296,11 @@ test.describe('scrollable / edges and chrome', () => {
   test('a track that fits shows no masks, and gains them once it starts to overflow', async ({ page }) => {
     await page.setViewportSize({ width: 2400, height: 720 });
     const root = await openStory(page, DEFAULT_STORY_ID);
+    await page.getByRole('button', { name: 'Reduce items' }).click();
 
     await expect.poll(() => maskOpacities(root)).toEqual([0, 0]);
 
-    await page.setViewportSize({ width: 600, height: 720 });
+    await page.getByRole('button', { name: 'Show all items' }).click();
 
     await expect.poll(() => maskOpacities(root)).toEqual([0, 1]);
   });
