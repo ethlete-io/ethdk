@@ -436,6 +436,22 @@ describe('SelectDirective', () => {
     expect(driver.select.open()).toBe(false);
   });
 
+  it('keeps the active option until the panel has left', async () => {
+    await driver.open();
+
+    const active = driver.select.activeItem();
+    driver.clickOption(1);
+    driver.detectChanges();
+
+    expect(driver.select.open()).toBe(false);
+    expect(active).not.toBeNull();
+    expect(driver.select.activeItem()).toBe(active);
+
+    await driver.settle();
+
+    expect(driver.select.activeItem()).toBeNull();
+  });
+
   it('does not commit disabled options', async () => {
     await driver.open();
 

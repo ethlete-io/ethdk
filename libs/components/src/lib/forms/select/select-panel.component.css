@@ -17,6 +17,10 @@
     --et-floating-panel-distance: 0.3rem;
   }
 
+  .et-overlay--select.et-floating-panel[data-overlay-placement].et-animation-leave-to {
+    transform: translate3d(var(--et-overlay-anchored-x, 0px), var(--et-overlay-anchored-y, 0px), 0) !important;
+  }
+
   .et-select-panel {
     /* the containing block for the busy bar, which is rendered inside the scroller but must stay
        pinned to the panel's top edge while the options scroll under it */

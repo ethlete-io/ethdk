@@ -406,6 +406,8 @@ export class SelectDirective<TValue = unknown>
     },
     onBeforeClosed: () => this.handlePanelBeforeClosed(),
     onAfterClosed: ({ byOutsidePointer, byFocusLeave }) => {
+      // cleared after the leave animation, so the committed row keeps its highlight while it fades
+      this.activeItem.set(null);
       this.afterClose.emit();
 
       if (byOutsidePointer || byFocusLeave) {
@@ -1653,7 +1655,6 @@ export class SelectDirective<TValue = unknown>
   }
 
   private handlePanelBeforeClosed() {
-    this.activeItem.set(null);
     this.pendingActiveScrollItem = null;
 
     if (this.allowCustomValues() && this.commitCustomValueOnClose()) {
