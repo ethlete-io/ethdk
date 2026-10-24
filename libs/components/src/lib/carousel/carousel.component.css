@@ -37,11 +37,27 @@
     gap: var(--et-carousel-gap);
   }
 
+  /* `overflow-x: auto` forces a clip on the cross axis too; without the bleed it sits on the slide's own
+     border, which fractional device pixel ratios then eat. */
   .et-carousel-track {
+    --_et-carousel-track-bleed: 4px;
+
     display: block;
+    margin-block: calc(var(--_et-carousel-track-bleed) * -1);
 
     & .et-scrollable-container {
       gap: var(--et-carousel-slide-gap);
+      padding-block: var(--_et-carousel-track-bleed);
+    }
+
+    &:where([direction='vertical']) {
+      margin-block: 0;
+      margin-inline: calc(var(--_et-carousel-track-bleed) * -1);
+
+      & .et-scrollable-container {
+        padding-block: 0;
+        padding-inline: var(--_et-carousel-track-bleed);
+      }
     }
   }
 
