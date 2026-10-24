@@ -46,7 +46,11 @@ export class SelectPanelComponent {
     // Virtual rows are recycled while scrolling; animating them would fade rows in on every scroll step.
     injectAnimatedListItems({
       host: this.panelBody,
-      items: '.et-select-option:not(.et-select-virtual-options > *), .et-select-option-group-label',
+      items: [
+        '.et-select-option:not(.et-select-virtual-options > *)',
+        '.et-select-option-group-label',
+        '.et-select-panel-extras > :not(.et-select-busy-bar)',
+      ].join(),
       attributes: ['data-filtered', 'data-hidden'],
       movingClass: 'et-select-panel-body--moving',
       moveDuration: LIST_SPRING.durationMs,
