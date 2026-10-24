@@ -6,6 +6,7 @@ import {
   expectFocusVisible,
   openStory,
   pressKey,
+  pressKeys,
   settle,
   tap,
   viewportOf,
@@ -13,6 +14,7 @@ import {
 
 const EDITOR_DEFAULT_ID = 'components-forms-rich-text-editor--default';
 const TRIGGERS_DEFAULT_ID = 'components-forms-rich-text-editor-triggers--default';
+const TRIGGERS_LONG_LIST_ID = 'components-forms-rich-text-editor-triggers--long-list';
 const ML_WITH_TRANSLATIONS_ID = 'components-forms-rich-text-editor-multi-language--with-existing-translations';
 const VIEWER_BESIDE_EDITOR_ID = 'components-forms-rich-text-viewer--beside-editor';
 
@@ -112,6 +114,37 @@ test.describe('rich-text-editor / triggers keyboard', () => {
     await expect(page.getByRole('listbox')).toBeVisible();
     await expect(page.getByRole('option')).toHaveCount(4);
     await expect(page.getByRole('option').first()).toHaveText('First name');
+  });
+
+  test('ArrowDown past the visible rows scrolls the active token into view', async ({ page }) => {
+    const root = await openStory(page, TRIGGERS_LONG_LIST_ID);
+    const content = root.locator('.et-rte-content');
+
+    await content.focus();
+    await page.keyboard.type('#');
+    await expect(page.getByRole('option').first()).toHaveAttribute('data-active', '');
+
+    await pressKeys(
+      page,
+      Array.from({ length: 20 }, () => 'ArrowDown'),
+    );
+
+    const inside = await page.evaluate(() => {
+      const option = document.querySelector('[role="option"][data-active]');
+      const scroller = option?.closest('.et-rte-token-popup-body');
+      const optionRect = option?.getBoundingClientRect();
+      const scrollerRect = scroller?.getBoundingClientRect();
+
+      return (
+        !!optionRect &&
+        !!scrollerRect &&
+        (scroller?.scrollTop ?? 0) > 0 &&
+        optionRect.top >= scrollerRect.top - 1 &&
+        optionRect.bottom <= scrollerRect.bottom + 1
+      );
+    });
+
+    expect(inside).toBe(true);
   });
 
   test('ArrowDown moves the active item in the token menu', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
 import {
+  LONG_LIST_TRIGGERS,
   RichTextEditorTokenDisplayStorybookComponent,
   RichTextEditorTokenPaletteStorybookComponent,
   RichTextEditorTriggersStorybookComponent,
@@ -23,6 +24,9 @@ type Story = StoryObj<RichTextEditorTriggersStorybookComponent>;
 
 /** `#` inserts a merge field (sync list); `@` mentions a teammate (async, debounced search). */
 export const Default: Story = {};
+
+/** A `#` list longer than the popup: ArrowDown / ArrowUp keep the active row scrolled into view. */
+export const LongList: Story = { args: { triggers: LONG_LIST_TRIGGERS } };
 
 /** A read-only editor rendering a stored value that contains `{{type:id}}` tokens as chips, using
  *  `provideRichTextEditorTokenRendering` - no interactive picker pulled in. */

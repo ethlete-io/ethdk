@@ -1,4 +1,4 @@
-import { Component, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { form, FormField, readonly } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { delay, Observable, of, throwError } from 'rxjs';
@@ -43,6 +43,14 @@ const searchUsers = (query: string): Observable<RichTextEditorTriggerItem[]> => 
   return of(USERS.filter((user) => user.label.toLowerCase().includes(needle))).pipe(delay(350));
 };
 
+export const LONG_LIST_TRIGGERS: RichTextEditorTrigger[] = [
+  createRichTextEditorTrigger({
+    char: '#',
+    type: 'block',
+    items: Array.from({ length: 24 }, (_, i) => ({ id: 'field-' + (i + 1), label: 'Merge field ' + (i + 1) })),
+  }),
+];
+
 export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
   createRichTextEditorTrigger({
     char: '#',
@@ -76,7 +84,7 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
       <et-form-field>
         <et-label>Message</et-label>
         <et-rich-text-editor
-          [triggers]="TRIGGERS"
+          [triggers]="triggers()"
           [tools]="TOOLS"
           [formField]="demoForm.value"
           etRichTextEditorTriggers
@@ -107,7 +115,8 @@ export const DEMO_TRIGGERS: RichTextEditorTrigger[] = [
   ],
 })
 export class RichTextEditorTriggersStorybookComponent {
-  protected readonly TRIGGERS = DEMO_TRIGGERS;
+  public triggers = input(DEMO_TRIGGERS);
+
   protected readonly TOOLS = TOOLS_WITH_EXTRAS;
 
   private formModel = linkedSignal(() => ({ value: '' }));

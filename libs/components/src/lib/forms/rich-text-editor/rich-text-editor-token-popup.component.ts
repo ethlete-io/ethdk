@@ -1,4 +1,5 @@
 import {
+  afterRenderEffect,
   booleanAttribute,
   Component,
   effect,
@@ -7,6 +8,7 @@ import {
   output,
   untracked,
   viewChild,
+  viewChildren,
   ElementRef,
   ViewEncapsulation,
 } from '@angular/core';
@@ -55,6 +57,7 @@ export class RichTextEditorTokenPopupComponent {
   public selectItem = output<RichTextEditorTriggerItem>();
   public activateItem = output<number>();
 
+  private optionElements = viewChildren<ElementRef<HTMLElement>>('option');
   private bodyElement = viewChild<ElementRef<HTMLElement>>('body');
 
   constructor() {
@@ -75,6 +78,12 @@ export class RichTextEditorTokenPopupComponent {
     });
 
     // Smoothly animate the panel's height as the list changes (loading → results, filtering).
+    afterRenderEffect(() => {
+      const options = this.optionElements();
+
+      options[this.activeIndex()]?.nativeElement.scrollIntoView?.({ block: 'nearest' });
+    });
+
     injectAnimatedBlockSize({ observe: this.bodyElement, resizingClass: 'et-rte-token-popup--resizing' });
   }
 }

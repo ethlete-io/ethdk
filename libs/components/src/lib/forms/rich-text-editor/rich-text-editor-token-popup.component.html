@@ -50,6 +50,7 @@
       @for (item of items(); track item.id; let i = $index) {
         <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- combobox/listbox: focus stays in the editor and keyboard is driven via aria-activedescendant; rows are pointer affordances only -->
         <div
+          #option
           [id]="listboxId() + '-option-' + i"
           [attr.aria-selected]="i === activeIndex()"
           [attr.aria-disabled]="item.disabled || null"
