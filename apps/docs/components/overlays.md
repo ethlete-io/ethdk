@@ -339,6 +339,8 @@ The dialog, sheet, full-screen and anchored-dialog factories accept a partial `O
 
 Size a non-anchored overlay in percentages rather than viewport units (`80%`, not `80vh`). The pane fills a cell that spans the space an overlay may use, which is the viewport minus whatever [reserved it](/core/overlay-runtime#reserved-viewport-space) - a docked devtools panel, for example. `vh` and `vw` measure the whole window instead, so a pane sized that way can reach under such a surface. This is why the dialog and sheet defaults are percentages.
 
+On a touch device a bottom sheet sits on the soft keyboard while it is open: the sheet is lifted by the keyboard's height and its `maxHeight` is capped to the space above it, so a focused input inside the sheet stays visible. Desktop and a closed keyboard are unaffected.
+
 ### Strategy stylesheets
 
 A strategy's default enter/leave animation ships with the strategy rather than with the overlay container: each built-in factory sets `stylesComponent` on its config, and the container mounts that stylesheet while the strategy is active. An app therefore only carries the animation CSS for the overlay shapes it actually opens.

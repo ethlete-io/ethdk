@@ -126,7 +126,7 @@ describe('overlay drag to dismiss', () => {
 
   it('drops the swipe momentum of a vetoed dismiss so a later close keeps its own duration', () => {
     vi.useFakeTimers();
-    const strategy = createSheetStrategy({ dragToDismiss: { direction: 'to-bottom' } }, renderer);
+    const strategy = createSheetStrategy({ dragToDismiss: { direction: 'to-bottom' } }, { renderer });
     const context = {
       containerEl: pane,
       overlayRef,

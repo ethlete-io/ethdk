@@ -30,7 +30,7 @@ const RIGHT_SHEET_STRATEGY_DEF = /* @__PURE__ */ defineRootProvider(
     const renderer = injectRenderer();
 
     const build = (config: Partial<OverlayBreakpointConfig> = {}) =>
-      createSheetStrategy(mergeOverlayBreakpointConfigs(defaults, config), renderer);
+      createSheetStrategy(mergeOverlayBreakpointConfigs(defaults, config), { renderer });
 
     return {
       build,
