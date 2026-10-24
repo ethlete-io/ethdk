@@ -133,6 +133,10 @@ you painted behind the field - not necessarily the surface scope's background. T
 its width whether the affordances are there or not - a long value never re-ellipsises, and nothing
 shifts under the pointer when a value makes the clear button appear.
 
+The clear button's icon stays at the affix icon size, but its hit area is 24px square (44px on a
+`pointer: coarse` device), reaching halfway into the gap to a neighbouring picker trigger. Hover and
+press tint a round backdrop behind the icon.
+
 Persistent affordances - a picker trigger, a reveal toggle, your `[etInputSuffix]` - stay in the flow
 and keep their space, because they never appear or disappear mid-edit.
 

@@ -1,16 +1,48 @@
 @layer components {
   .et-input-clear {
+    --_et-input-clear-target: 24px;
+    --_et-input-clear-gap: var(--et-form-field-control-affix-gap, 8px);
+
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     flex: none;
     border: none;
+    outline: none;
     background: transparent;
     color: var(--et-surface-color-muted-solid, currentColor);
     padding: 0;
     margin: 0;
     cursor: pointer;
     appearance: none;
+    touch-action: manipulation;
+    transition: color 150ms ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      inset: -4px;
+      border-radius: 50%;
+      background: transparent;
+      transition: background-color 150ms ease;
+      pointer-events: none;
+    }
+
+    /* Ends halfway into the gap, so a neighbouring picker trigger's own hit area keeps the other half. */
+    &::after {
+      content: '';
+      position: absolute;
+      inset-block: calc((var(--_et-input-clear-target) - 100%) / -2);
+      inset-inline-end: calc(var(--_et-input-clear-gap) / -2);
+      inset-inline-start: calc(100% + var(--_et-input-clear-gap) / 2 - var(--_et-input-clear-target));
+    }
+
+    @media (pointer: coarse) {
+      --_et-input-clear-target: 44px;
+    }
 
     .et-icon {
       inline-size: var(--et-form-field-affix-icon-size, 16px);
@@ -20,7 +52,20 @@
     @media (hover: hover) {
       &:hover {
         color: var(--et-surface-color-solid, currentColor);
+
+        &::before {
+          background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 20%, transparent);
+        }
       }
+    }
+
+    &:active::before {
+      background: color-mix(in srgb, var(--et-surface-interaction-solid, currentColor) 28%, transparent);
+    }
+
+    &:focus-visible::before {
+      outline: 2px solid var(--et-theme-color-primary-solid, currentColor);
+      outline-offset: 1px;
     }
 
     &.et-input-clear--enter {
@@ -99,6 +144,10 @@
       &:hover {
         color: var(--et-surface-color-muted-solid, currentColor);
       }
+    }
+
+    &::before {
+      background: transparent;
     }
   }
 
