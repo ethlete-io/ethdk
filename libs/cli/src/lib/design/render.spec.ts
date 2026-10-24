@@ -1,10 +1,19 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { mountDrawing, unseenStyles } from '../../../design/define-call';
 import { isStale } from './render';
-import { entryOf, extractRender, lookupImports, mappedSubpathOf, mapPackage, typePathsOf } from './render-packages';
+import {
+  entryOf,
+  entryOfBuilt,
+  entryOfBuiltAsync,
+  extractRender,
+  lookupImports,
+  mappedSubpathOf,
+  mapPackage,
+  typePathsOf,
+} from './render-packages';
 
 const packages = { '@ethlete/*': 'dist/libs/*', 'exact-pkg': 'vendor/exact' };
 
@@ -65,6 +74,87 @@ describe('entryOf', () => {
   });
 });
 
+describe('entryOfBuilt', () => {
+  const manifest = JSON.stringify({ exports: { '.': './fesm2022/pkg.mjs' } });
+
+  const clock = () => {
+    let time = 0;
+
+    return { now: () => time, sleep: (ms: number) => void (time += ms) };
+  };
+
+  it('waits for a package.json that a build writes later', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'pkg');
+    const { now, sleep } = clock();
+    const waits: string[] = [];
+    const entry = entryOfBuilt(
+      { dir, subpath: '.' },
+      {
+        now,
+        onWait: (waiting) => waits.push(waiting),
+        sleep: (ms) => {
+          sleep(ms);
+
+          if (now() >= 2000) {
+            mkdirSync(join(dir, 'fesm2022'), { recursive: true });
+            writeFileSync(join(dir, 'package.json'), manifest, 'utf8');
+            writeFileSync(join(dir, 'fesm2022/pkg.mjs'), '', 'utf8');
+          }
+        },
+      },
+    );
+
+    expect(entry).toBe(join(dir, 'fesm2022/pkg.mjs'));
+    expect(waits).toEqual([dir]);
+  });
+
+  it('waits for an entry file the manifest points to before it exists', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'cli-render-'));
+    const { now, sleep } = clock();
+
+    writeFileSync(join(dir, 'package.json'), manifest, 'utf8');
+    mkdirSync(join(dir, 'fesm2022'));
+
+    entryOfBuilt(
+      { dir, subpath: '.' },
+      {
+        now,
+        onWait: () => undefined,
+        sleep: (ms) => {
+          sleep(ms);
+          writeFileSync(join(dir, 'fesm2022/pkg.mjs'), '', 'utf8');
+        },
+      },
+    );
+
+    expect(existsSync(join(dir, 'fesm2022/pkg.mjs'))).toBe(true);
+  });
+
+  it('throws the missing-package error once the timeout passes', () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'missing');
+    const { now, sleep } = clock();
+
+    expect(() => entryOfBuilt({ dir, subpath: '.' }, { now, sleep, onWait: () => undefined })).toThrow(
+      'build the package first',
+    );
+    expect(now()).toBe(60_000);
+  });
+
+  it('polls without blocking when async', async () => {
+    const dir = join(mkdtempSync(join(tmpdir(), 'cli-render-')), 'pkg');
+
+    setTimeout(() => {
+      mkdirSync(join(dir, 'fesm2022'), { recursive: true });
+      writeFileSync(join(dir, 'package.json'), manifest, 'utf8');
+      writeFileSync(join(dir, 'fesm2022/pkg.mjs'), '', 'utf8');
+    }, 30);
+
+    await expect(entryOfBuiltAsync({ dir, subpath: '.' }, { intervalMs: 10, onWait: () => undefined })).resolves.toBe(
+      join(dir, 'fesm2022/pkg.mjs'),
+    );
+  });
+});
+
 describe('typePathsOf', () => {
   it('types the root import of every built package a wildcard maps', () => {
     const target = mkdtempSync(join(tmpdir(), 'cli-render-'));
@@ -114,16 +204,19 @@ describe('subpaths of a mapped package', () => {
     });
   });
 
-  it('loads a subpath import from the mapped folder and leaves the root to the checkout', () => {
+  it('loads a subpath import from the mapped folder and leaves the root to the checkout', async () => {
     const target = builtCore();
     const packages = { '@ethlete/*': 'dist/libs/*' };
 
-    expect(mappedSubpathOf({ specifier: '@ethlete/core/design/theme-css', packages, target })).toBe(
+    mkdirSync(join(target, 'dist/libs/core/design'));
+    writeFileSync(join(target, 'dist/libs/core/design/theme-css.ts'), '', 'utf8');
+
+    expect(await mappedSubpathOf({ specifier: '@ethlete/core/design/theme-css', packages, target })).toBe(
       join(target, 'dist/libs/core/design/theme-css.ts'),
     );
-    expect(mappedSubpathOf({ specifier: '@ethlete/core', packages, target })).toBeNull();
-    expect(mappedSubpathOf({ specifier: '@ethlete/core/nope', packages, target })).toBeNull();
-    expect(mappedSubpathOf({ specifier: '@angular/core/testing', packages, target })).toBeNull();
+    expect(await mappedSubpathOf({ specifier: '@ethlete/core', packages, target })).toBeNull();
+    expect(await mappedSubpathOf({ specifier: '@ethlete/core/nope', packages, target })).toBeNull();
+    expect(await mappedSubpathOf({ specifier: '@angular/core/testing', packages, target })).toBeNull();
   });
 });
 

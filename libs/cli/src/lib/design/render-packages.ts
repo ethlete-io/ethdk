@@ -1,3 +1,4 @@
+import { setTimeout as delay } from 'timers/promises';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { FieldSpec } from './render-fields';
@@ -112,17 +113,90 @@ export const entryOf = (mapped: MappedPackage) => {
   return resolve(dir, file);
 };
 
+export const BUILD_WAIT_TIMEOUT_MS = 60_000;
+export const BUILD_WAIT_INTERVAL_MS = 500;
+
+export type BuildWaitOptions = {
+  timeoutMs?: number;
+  intervalMs?: number;
+  now?: () => number;
+  onWait?: (dir: string) => void;
+};
+
+const builtEntryOf = (mapped: MappedPackage) => {
+  if (!existsSync(resolve(mapped.dir, 'package.json'))) return null;
+
+  try {
+    const file = entryOf(mapped);
+
+    return existsSync(file) ? file : null;
+  } catch (error) {
+    if (error instanceof SyntaxError) return null;
+
+    throw error;
+  }
+};
+
+const announceWait = (mapped: MappedPackage, onWait: ((dir: string) => void) | undefined) =>
+  (onWait ?? ((dir) => console.warn(`design-explore: waiting for the build of ${dir}`)))(mapped.dir);
+
+/**
+ * Like `entryOf`, but while the package is mid-build (no `package.json`, or an entry file that is
+ * not written yet) it blocks the calling thread and polls, then gives up and returns `entryOf`'s
+ * outcome. Only for a worker thread: it must not run on the dev server's event loop.
+ */
+export const entryOfBuilt = (
+  mapped: MappedPackage,
+  options: BuildWaitOptions & { sleep?: (ms: number) => void } = {},
+) => {
+  const { timeoutMs = BUILD_WAIT_TIMEOUT_MS, intervalMs = BUILD_WAIT_INTERVAL_MS, now = Date.now, onWait } = options;
+  const sleep = options.sleep ?? ((ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms));
+  const deadline = now() + timeoutMs;
+  let announced = false;
+
+  for (let found = builtEntryOf(mapped); !found; found = builtEntryOf(mapped)) {
+    if (now() >= deadline) return entryOf(mapped);
+
+    if (!announced) announceWait(mapped, onWait);
+    announced = true;
+    sleep(intervalMs);
+  }
+
+  return builtEntryOf(mapped) as string;
+};
+
+/** `entryOfBuilt` for the dev server's event loop: it polls with timers instead of blocking. */
+export const entryOfBuiltAsync = async (mapped: MappedPackage, options: BuildWaitOptions = {}) => {
+  const { timeoutMs = BUILD_WAIT_TIMEOUT_MS, intervalMs = BUILD_WAIT_INTERVAL_MS, now = Date.now, onWait } = options;
+  const deadline = now() + timeoutMs;
+  let announced = false;
+
+  for (let found = builtEntryOf(mapped); !found; found = builtEntryOf(mapped)) {
+    if (now() >= deadline) return entryOf(mapped);
+
+    if (!announced) announceWait(mapped, onWait);
+    announced = true;
+    await delay(intervalMs);
+  }
+
+  return builtEntryOf(mapped) as string;
+};
+
 /**
  * The file a drawing's subpath import of a mapped package loads in the browser, or null to leave it
  * to the checkout. The root stays with the checkout: the browser has its own `@angular/core`.
  */
-export const mappedSubpathOf = (options: { specifier: string; packages: Record<string, string>; target: string }) => {
+export const mappedSubpathOf = async (options: {
+  specifier: string;
+  packages: Record<string, string>;
+  target: string;
+}) => {
   const mapped = mapPackage(options);
 
   if (!mapped || mapped.subpath === '.') return null;
 
   try {
-    return entryOf(mapped);
+    return await entryOfBuiltAsync(mapped);
   } catch {
     return null;
   }
