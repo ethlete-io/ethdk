@@ -232,6 +232,7 @@ impl Reader<'_> {
                     if let Some((_, escaped)) = chars.next() {
                         text.push(match escaped {
                             'n' => '\n',
+                            'r' => '\r',
                             't' => '\t',
                             other => other,
                         });

@@ -483,6 +483,77 @@ describe('CallViewComponent', () => {
     expect(run?.request.tools?.variant).toBe('b');
   });
 
+  it('writes the round note typed into a ruling along with the verdict', async () => {
+    stubHost({ agent_list: () => [CLAUDE] });
+
+    const fixture = await mount(ASKING.slug);
+
+    button(fixture, '.studio__verb', 'Accept')?.click();
+    await settle(fixture);
+
+    const box = element(fixture).querySelector<HTMLTextAreaElement>('.studio__box--note');
+
+    if (box) box.value = 'B won: "the hour alone".';
+    box?.dispatchEvent(new Event('input'));
+    await settle(fixture);
+    element(fixture).querySelector<HTMLButtonElement>('.studio__compose .studio__send')?.click();
+    await settle(fixture);
+
+    expect(sent.find((entry) => entry.command === 'design_set_verdict')?.args).toEqual({
+      checkout: CHECKOUT,
+      slug: ASKING.slug,
+      variant: 'b',
+      verdict: 'chosen',
+      note: 'B won: "the hour alone".',
+    });
+  });
+
+  it('leaves the round note alone when a ruling carries none', async () => {
+    stubHost({ agent_list: () => [CLAUDE] });
+
+    const fixture = await mount(ASKING.slug);
+
+    button(fixture, '.studio__verb', 'Accept')?.click();
+    await settle(fixture);
+    element(fixture).querySelector<HTMLButtonElement>('.studio__compose .studio__send')?.click();
+    await settle(fixture);
+
+    expect(sent.find((entry) => entry.command === 'design_set_verdict')?.args).not.toHaveProperty('note');
+  });
+
+  it('closes a call as shipped and reopens it', async () => {
+    let closed: string | null = null;
+
+    stubHost({
+      design_project: () => ({ ...PROJECT, calls: PROJECT.calls.map((entry) => ({ ...entry, closed })) }),
+      design_set_closed: () => null,
+    });
+
+    const fixture = await mount(ASKING.slug);
+
+    expect(button(fixture, '.studio__chip', 'Reopen')).toBeUndefined();
+
+    closed = 'shipped';
+    button(fixture, '.studio__chip', 'Shipped')?.click();
+    await settle(fixture);
+
+    expect(sent.find((entry) => entry.command === 'design_set_closed')?.args).toEqual({
+      checkout: CHECKOUT,
+      slug: ASKING.slug,
+      closed: 'shipped',
+    });
+
+    closed = null;
+    button(fixture, '.studio__chip', 'Reopen')?.click();
+    await settle(fixture);
+
+    expect(sent.filter((entry) => entry.command === 'design_set_closed').at(-1)?.args).toEqual({
+      checkout: CHECKOUT,
+      slug: ASKING.slug,
+      closed: null,
+    });
+  });
+
   it('keeps a draft composed during a run once the run ends', async () => {
     let fail: (error: unknown) => void = () => undefined;
 

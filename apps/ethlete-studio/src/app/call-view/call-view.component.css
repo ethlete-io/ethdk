@@ -1079,12 +1079,14 @@
     color: var(--et-surface-color-solid);
   }
 
-  .studio__switch {
+  .studio__switch,
+  .studio__closing {
     display: flex;
     gap: 0.2rem;
   }
 
-  .studio__switch .studio__chip {
+  .studio__switch .studio__chip,
+  .studio__closing .studio__chip {
     margin-left: 0;
   }
 
@@ -1414,6 +1416,10 @@
     line-height: 1.5;
     resize: none;
     outline: none;
+  }
+
+  .studio__box--note {
+    min-height: 4.8rem;
   }
 
   .studio__box:focus-visible {

@@ -419,24 +419,73 @@ pub fn design_project(checkout: String) -> Result<Project, String> {
     })
 }
 
+/// Write `note` as the note of the round `round_key`, replacing the one it had.
+fn write_round_note(source: &str, round_key: &str, note: &str) -> Result<String, String> {
+    let call = call_object(source).ok_or_else(|| "The file declares no call.".to_owned())?;
+    let round = call
+        .list("rounds")
+        .iter()
+        .find(|round| round.text("key") == Some(round_key))
+        .ok_or_else(|| format!("The call declares no round {round_key}."))?;
+
+    if let Some(field) = round.property("note") {
+        return Ok(format!(
+            "{}{}{}",
+            &source[..field.node.start],
+            quoted(note),
+            &source[field.node.end..]
+        ));
+    }
+
+    let key = round
+        .property("key")
+        .ok_or_else(|| "The round has no key.".to_owned())?;
+    let line_start = source[..key.start].rfind('\n').map_or(0, |offset| offset + 1);
+    let indent = &source[line_start..key.start];
+    let after = round.property("title").map_or(key.node.end, |title| title.node.end);
+    let at = source[after..]
+        .find('\n')
+        .map_or(source.len(), |offset| after + offset + 1);
+
+    Ok(format!(
+        "{}{indent}note: {},\n{}",
+        &source[..at],
+        quoted(note),
+        &source[at..]
+    ))
+}
+
+/// Writes a variant's verdict, and `note` as the note of the variant's round when it is given.
 #[tauri::command]
 pub fn design_set_verdict(
     checkout: String,
     slug: String,
     variant: String,
     verdict: Option<String>,
+    note: Option<String>,
 ) -> Result<(), String> {
     let path = call_file(&checkout, &slug)?;
     let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
-    let written = write_verdict(&source, &variant, verdict.as_deref())?;
+    let mut written = write_verdict(&source, &variant, verdict.as_deref())?;
+
+    if let Some(note) = note.as_deref().map(str::trim).filter(|note| !note.is_empty()) {
+        let round = parse_call(&slug, &written)
+            .variants
+            .into_iter()
+            .find(|drawn| drawn.key == variant)
+            .and_then(|drawn| drawn.round)
+            .ok_or_else(|| format!("The variant {variant} belongs to no round, so the note has nowhere to go."))?;
+
+        written = write_round_note(&written, &round, note)?;
+    }
 
     std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))
 }
 
-/// The line of the call's own `mode` field, as a range over `source`. The range starts at the
-/// line break before it, so removing it takes the whole line.
-fn mode_line(source: &str) -> Option<(usize, usize)> {
-    let start = source.find("\n  mode: '")?;
+/// The line of the call's own `field`, as a range over `source`. The range starts at the line
+/// break before it, so removing it takes the whole line.
+fn call_line(source: &str, field: &str) -> Option<(usize, usize)> {
+    let start = source.find(&format!("\n  {field}: '"))?;
     let end = source[start + 1..]
         .find('\n')
         .map(|offset| start + 1 + offset)
@@ -452,25 +501,60 @@ fn write_mode(source: &str, mode: &str) -> Result<String, String> {
         return Err(format!("{mode} is no mode."));
     }
 
-    match (mode_line(source), mode) {
+    match (call_line(source, "mode"), mode) {
         (Some((start, end)), DESIGN_MODE) => Ok(format!("{}{}", &source[..start], &source[end..])),
         (Some((start, end)), _) => Ok(format!("{}\n  mode: '{mode}',{}", &source[..start], &source[end..])),
         (None, DESIGN_MODE) => Ok(source.to_owned()),
         (None, _) => {
-            let at = source
-                .find("\n  frameWidth:")
-                .map(|start| {
-                    source[start + 1..]
-                        .find('\n')
-                        .map(|offset| start + 1 + offset)
-                        .unwrap_or(source.len())
-                })
-                .or_else(|| source.find("defineCall({").map(|start| start + "defineCall({".len()))
-                .ok_or_else(|| "The file declares no call.".to_owned())?;
+            let at = call_field_slot(source)?;
 
             Ok(format!("{}\n  mode: '{mode}',{}", &source[..at], &source[at..]))
         }
     }
+}
+
+/// Where a new call-level line goes: under `frameWidth`, or first in the call when it has none.
+fn call_field_slot(source: &str) -> Result<usize, String> {
+    source
+        .find("\n  frameWidth:")
+        .map(|start| {
+            source[start + 1..]
+                .find('\n')
+                .map(|offset| start + 1 + offset)
+                .unwrap_or(source.len())
+        })
+        .or_else(|| source.find("defineCall({").map(|start| start + "defineCall({".len()))
+        .ok_or_else(|| "The file declares no call.".to_owned())
+}
+
+/// Rewrite the call's `closed` in place. `None` removes the field, which reopens the call.
+fn write_closed(source: &str, closed: Option<&str>) -> Result<String, String> {
+    if let Some(state) = closed.filter(|state| !CLOSED_STATES.contains(state)) {
+        return Err(format!("{state} is no way to close a call."));
+    }
+
+    match (call_line(source, "closed"), closed) {
+        (Some((start, end)), None) => Ok(format!("{}{}", &source[..start], &source[end..])),
+        (Some((start, end)), Some(state)) => {
+            Ok(format!("{}\n  closed: '{state}',{}", &source[..start], &source[end..]))
+        }
+        (None, None) => Ok(source.to_owned()),
+        (None, Some(state)) => {
+            let at = call_field_slot(source)?;
+
+            Ok(format!("{}\n  closed: '{state}',{}", &source[..at], &source[at..]))
+        }
+    }
+}
+
+/// Closes a call as `shipped` or `superseded`, or reopens it with `None`.
+#[tauri::command]
+pub fn design_set_closed(checkout: String, slug: String, closed: Option<String>) -> Result<(), String> {
+    let path = call_file(&checkout, &slug)?;
+    let source = std::fs::read_to_string(&path).map_err(|error| format!("Unable to read the call: {error}"))?;
+    let written = write_closed(&source, closed.as_deref())?;
+
+    std::fs::write(&path, written).map_err(|error| format!("Unable to write the call: {error}"))
 }
 
 /// Writes which mode a call is drawn in. The mode belongs to the call, so every variant of it is
@@ -582,7 +666,14 @@ fn variant_file(key: &str) -> String {
 
 /// A single-quoted TypeScript string literal holding `value`.
 fn quoted(value: &str) -> String {
-    format!("'{}'", value.replace('\\', "\\\\").replace('\'', "\\'"))
+    format!(
+        "'{}'",
+        value
+            .replace('\\', "\\\\")
+            .replace('\'', "\\'")
+            .replace('\r', "\\r")
+            .replace('\n', "\\n")
+    )
 }
 
 /// The part of a slug the drawn components name themselves after, for example
@@ -855,6 +946,72 @@ export default defineCall({
     #[test]
     fn a_mode_nobody_declared_is_refused() {
         assert!(write_mode(CALL, "sketch").is_err());
+    }
+
+    #[test]
+    fn a_closed_state_is_written_under_the_frame_width() {
+        let written = write_closed(CALL, Some("shipped")).unwrap();
+
+        assert!(written.contains("  frameWidth: 1100,\n  closed: 'shipped',\n  rounds: ["));
+        assert_eq!(parse_call("x", &written).closed.as_deref(), Some("shipped"));
+    }
+
+    #[test]
+    fn a_closed_state_replaces_the_one_the_call_had() {
+        let shipped = write_closed(CALL, Some("shipped")).unwrap();
+        let superseded = write_closed(&shipped, Some("superseded")).unwrap();
+
+        assert_eq!(superseded.matches("closed:").count(), 1);
+        assert_eq!(parse_call("x", &superseded).closed.as_deref(), Some("superseded"));
+    }
+
+    #[test]
+    fn reopening_removes_the_closed_state() {
+        let shipped = write_closed(CALL, Some("shipped")).unwrap();
+
+        assert_eq!(write_closed(&shipped, None).unwrap(), CALL);
+        assert_eq!(write_closed(CALL, None).unwrap(), CALL);
+    }
+
+    #[test]
+    fn a_closed_state_nobody_declared_is_refused() {
+        assert!(write_closed(CALL, Some("abandoned")).is_err());
+    }
+
+    #[test]
+    fn a_round_note_replaces_the_one_the_round_had() {
+        let written = write_round_note(CALL, "r1", "A won after all.").unwrap();
+
+        assert!(
+            written.contains("      title: 'How wide the clock column is',\n      note: 'A won after all.',\n    },")
+        );
+        assert!(!written.contains("B won."));
+    }
+
+    #[test]
+    fn a_round_without_a_note_gets_one_under_its_title() {
+        let source = CALL.replace("      note: 'B won.',\n", "");
+        let written = write_round_note(&source, "r1", "B won.").unwrap();
+
+        assert_eq!(written, CALL);
+    }
+
+    #[test]
+    fn a_round_note_keeps_its_quotes_and_line_breaks_in_one_string() {
+        let note = "User: \"it's B\"\nback\\slash";
+        let written = write_round_note(CALL, "r1", note).unwrap();
+
+        assert!(written.contains(r#"note: 'User: "it\'s B"\nback\\slash',"#));
+
+        let call = call_object(&written).unwrap();
+
+        assert_eq!(call.list("rounds")[0].text("note"), Some(note));
+        assert_eq!(parse_call("x", &written).variants.len(), 2);
+    }
+
+    #[test]
+    fn a_note_for_an_unknown_round_is_refused() {
+        assert!(write_round_note(CALL, "r9", "x").is_err());
     }
 
     #[test]
@@ -1146,12 +1303,56 @@ export default defineCall({
             "timetrack/kerbe/09-gutter".to_owned(),
             "b".to_owned(),
             Some("chosen".to_owned()),
+            None,
         )
         .unwrap();
 
         let project = design_project(path).unwrap();
 
         assert_eq!(project.calls[0].variants[1].verdict.as_deref(), Some("chosen"));
+
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_verdict_with_a_note_writes_the_note_of_its_round() {
+        let checkout = a_checkout("note");
+        let path = checkout.to_string_lossy().into_owned();
+        let slug = "timetrack/kerbe/09-gutter";
+
+        design_set_verdict(
+            path.clone(),
+            slug.to_owned(),
+            "b".to_owned(),
+            Some("chosen".to_owned()),
+            Some("  B won.  ".to_owned()),
+        )
+        .unwrap();
+
+        let source = std::fs::read_to_string(call_file(&path, slug).unwrap()).unwrap();
+
+        assert!(source.contains("      note: 'B won.',\n"));
+        assert!(source.contains("      verdict: 'chosen',"));
+
+        std::fs::remove_dir_all(checkout).unwrap();
+    }
+
+    #[test]
+    fn a_closed_state_reaches_the_call_file_on_disk() {
+        let checkout = a_checkout("closed");
+        let path = checkout.to_string_lossy().into_owned();
+
+        design_set_closed(
+            path.clone(),
+            "timetrack/kerbe/09-gutter".to_owned(),
+            Some("shipped".to_owned()),
+        )
+        .unwrap();
+
+        assert_eq!(
+            design_project(path).unwrap().calls[0].closed.as_deref(),
+            Some("shipped")
+        );
 
         std::fs::remove_dir_all(checkout).unwrap();
     }

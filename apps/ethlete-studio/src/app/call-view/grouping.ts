@@ -21,7 +21,7 @@ export const blockerOf = (call: Call, calls: Call[]) => {
 
 const isOpen = (call: Call, calls: Call[]) => !isSettled(call) && !blockerOf(call, calls);
 
-const CLOSED_LABELS = { shipped: 'Shipped', superseded: 'Superseded' } as const;
+export const CLOSED_LABELS = { shipped: 'Shipped', superseded: 'Superseded' } as const;
 
 export const closedLabel = (call: Call) => (call.closed ? CLOSED_LABELS[call.closed] : null);
 

@@ -185,11 +185,23 @@ export type VerdictWrite = {
   slug: string;
   variant: string;
   verdict: Verdict | null;
+  /** Written as the note of the variant's round, replacing the one it had. Left out keeps the note. */
+  note?: string;
 };
 
 /** Writes one variant's verdict into its call file. A `null` verdict opens the variant again. */
 export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
   invokeHost$<void>('design_set_verdict', write);
+
+/** Which call closes, and how. A `null` state reopens it. */
+export type ClosedWrite = {
+  checkout: string;
+  slug: string;
+  closed: CallClosed | null;
+};
+
+/** Writes whether a call is closed into its call file. */
+export const designSetClosed$ = (write: ClosedWrite): Observable<void> => invokeHost$<void>('design_set_closed', write);
 
 /** Which call changes mode, and to which one. */
 export type ModeWrite = {

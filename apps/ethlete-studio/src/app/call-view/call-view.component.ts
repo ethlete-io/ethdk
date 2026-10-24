@@ -19,6 +19,7 @@ import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '
 import {
   AddedVariants,
   Call,
+  CallClosed,
   CallMode,
   CallStatus,
   CallVariant,
@@ -35,6 +36,7 @@ import {
   designServerStart$,
   designServerState$,
   designServerStop$,
+  designSetClosed$,
   designSetMode$,
   designSetVerdict$,
   designStatusChanges$,
@@ -43,6 +45,7 @@ import {
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
+  CLOSED_LABELS,
   closedLabel,
   defaultVariant,
   inventoryProgress,
@@ -470,6 +473,21 @@ const SETTLE_MS = 300;
                     >
                       Mode: {{ open.mode }}
                     </button>
+                    <div class="studio__closing" aria-label="Close the call" role="group">
+                      @for (state of CLOSED_STATES; track state) {
+                        <button
+                          [attr.aria-pressed]="open.closed === state"
+                          (click)="setClosed(open, state)"
+                          class="studio__chip"
+                          type="button"
+                        >
+                          {{ CLOSED_LABELS[state] }}
+                        </button>
+                      }
+                      @if (open.closed) {
+                        <button (click)="setClosed(open, null)" class="studio__chip" type="button">Reopen</button>
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
@@ -507,7 +525,9 @@ const SETTLE_MS = 300;
                     @for (verb of VERBS; track verb) {
                       <button (click)="draft(verb)" class="studio__verb" type="button">{{ label(verb) }}</button>
                     }
-                    <button (click)="write(drawn, null)" class="studio__verb" type="button">Open again</button>
+                    <button (click)="write(drawn, { verdict: null })" class="studio__verb" type="button">
+                      Open again
+                    </button>
                   </div>
                 </div>
               </div>
@@ -612,6 +632,18 @@ const SETTLE_MS = 300;
                         <input [value]="count()" (input)="setCount($event)" max="8" min="1" type="number" />
                       </label>
                     </div>
+                  </div>
+                }
+
+                @if (composeRules()) {
+                  <div class="studio__field">
+                    <span class="studio__field-label">Round note</span>
+                    <textarea
+                      [value]="note()"
+                      (input)="note.set(typed($event))"
+                      class="studio__box studio__box--note"
+                      placeholder="What the round answered, written into the call (optional)"
+                    ></textarea>
                   </div>
                 }
 
@@ -778,6 +810,8 @@ export class CallViewComponent {
   protected readonly RULED = ruledLabel;
 
   protected readonly CLOSED = closedLabel;
+  protected readonly CLOSED_LABELS = CLOSED_LABELS;
+  protected readonly CLOSED_STATES: CallClosed[] = ['shipped', 'superseded'];
 
   public checkout = signal('');
   protected project = signal('');
@@ -809,6 +843,7 @@ export class CallViewComponent {
   protected compose = signal<Compose | null>(null);
 
   protected message = signal('');
+  protected note = signal('');
   protected count = signal(3);
   protected question = signal('');
   protected making = signal(false);
@@ -816,6 +851,12 @@ export class CallViewComponent {
     const open = this.compose();
 
     return !!open && opensARound(open.verb);
+  });
+
+  protected composeRules = computed(() => {
+    const open = this.compose();
+
+    return !!open && !!verdictOf(open.verb) && !!open.variant.round;
   });
 
   protected composeReady = computed(() => {
@@ -1365,12 +1406,14 @@ export class CallViewComponent {
 
     this.compose.set({ verb, call, variant, dir: this.callDir(), round: this.roundLabel() });
     this.message.set('');
+    this.note.set('');
     this.question.set('');
   }
 
   protected dismiss() {
     this.compose.set(null);
     this.message.set('');
+    this.note.set('');
   }
 
   protected composeSend() {
@@ -1409,8 +1452,29 @@ export class CallViewComponent {
       .subscribe();
   }
 
-  protected write(variant: CallVariant, verdict: Verdict | null) {
-    designSetVerdict$({ checkout: this.checkout(), slug: this.slug(), variant: variant.key, verdict })
+  protected write(variant: CallVariant, { verdict, note = '' }: { verdict: Verdict | null; note?: string }) {
+    designSetVerdict$({
+      checkout: this.checkout(),
+      slug: this.slug(),
+      variant: variant.key,
+      verdict,
+      ...(note.trim() ? { note: note.trim() } : {}),
+    })
+      .pipe(
+        switchMap(() => designProject$(this.checkout())),
+        tap((design) => this.design.set(design)),
+        catchError((error: unknown) => {
+          this.trouble.set(`${error}`);
+
+          return of(null);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected setClosed(call: Call, closed: CallClosed | null) {
+    designSetClosed$({ checkout: this.checkout(), slug: call.slug, closed })
       .pipe(
         switchMap(() => designProject$(this.checkout())),
         tap((design) => this.design.set(design)),
@@ -1563,7 +1627,7 @@ export class CallViewComponent {
   private fire({ verb, call, variant, dir }: Compose, made: AddedVariants | null) {
     const verdict = verdictOf(verb);
 
-    if (verdict) this.write(variant, verdict);
+    if (verdict) this.write(variant, { verdict, note: this.note() });
 
     this.prompt.set(promptDraft({ call, variant, dir, made, message: this.message().trim() }, verb));
     this.dismiss();

@@ -136,6 +136,7 @@ pub fn run() {
             design::design_system,
             design::design_set_verdict,
             design::design_set_mode,
+            design::design_set_closed,
             design::design_add_variants,
             design_roots::design_roots,
             design_roots::design_roots_add,
