@@ -67,3 +67,70 @@ describe('select chip motion', () => {
     expect(calls.some((call) => call.element === copy && call.keyframes[0]?.['opacity'] === 0)).toBe(true);
   });
 });
+
+describe('select field height motion', () => {
+  const originalAnimate = Element.prototype.animate;
+  const originalResizeObserver = globalThis.ResizeObserver;
+  const originalRect = HTMLElement.prototype.getBoundingClientRect;
+  let calls: AnimateCall[];
+  let resizeCallbacks: ResizeObserverCallback[];
+  let triggerHeight: number;
+
+  beforeEach(() => {
+    calls = [];
+    resizeCallbacks = [];
+    triggerHeight = 24;
+
+    Element.prototype.animate = function (this: Element, keyframes: Keyframe[] | PropertyIndexedKeyframes | null) {
+      calls.push({ element: this, keyframes: keyframes as Keyframe[] });
+
+      return { finished: new Promise(() => undefined), cancel: () => undefined } as unknown as Animation;
+    };
+
+    globalThis.ResizeObserver = class {
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallbacks.push(callback);
+      }
+
+      observe() {
+        return undefined;
+      }
+
+      unobserve() {
+        return undefined;
+      }
+
+      disconnect() {
+        return undefined;
+      }
+    } as unknown as typeof ResizeObserver;
+
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const height = this.classList.contains('et-select-trigger') ? triggerHeight : 0;
+
+      return new DOMRect(0, 0, 300, height);
+    };
+  });
+
+  afterEach(() => {
+    Element.prototype.animate = originalAnimate;
+    globalThis.ResizeObserver = originalResizeObserver;
+    HTMLElement.prototype.getBoundingClientRect = originalRect;
+  });
+
+  it('grows the field with a transition when a chip wraps to a new line', async () => {
+    const fixture = TestBed.createComponent(MultiSelectHost);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    triggerHeight = 51;
+
+    for (const callback of resizeCallbacks) callback([], {} as ResizeObserver);
+
+    const trigger = fixture.nativeElement.querySelector('.et-select-trigger');
+    const grow = calls.find((call) => call.element === trigger);
+
+    expect(grow?.keyframes).toEqual([{ blockSize: '24px' }, { blockSize: '51px' }]);
+  });
+});

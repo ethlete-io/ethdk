@@ -1,6 +1,6 @@
 <!-- a div, not a <button>: chips carry remove buttons and buttons cannot nest.
      The trigger directive manages tabindex/aria-disabled for non-button hosts. -->
-<div class="et-select-trigger" etSelectTrigger>
+<div #trigger class="et-select-trigger" etSelectTrigger>
   <div #triggerContent [class.et-select-trigger-content--stacked]="stackedValue()" class="et-select-trigger-content">
     @if (select.mixed()) {
       @if (showValueLabel()) {

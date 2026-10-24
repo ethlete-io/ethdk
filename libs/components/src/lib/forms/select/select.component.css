@@ -33,6 +33,11 @@
         cursor: default;
       }
 
+      &.et-select-trigger--resizing {
+        align-items: flex-start;
+        overflow-y: clip;
+      }
+
       &:has(input[etselectsearch]:not(:read-only)) {
         cursor: text;
       }

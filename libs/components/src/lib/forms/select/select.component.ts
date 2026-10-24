@@ -14,6 +14,7 @@ import {
   ColorInteractiveDirective,
   ProvideColorDirective,
   createComponentId,
+  injectAnimatedBlockSize,
   injectAnimatedListItems,
 } from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
@@ -141,6 +142,7 @@ export class SelectComponent {
   /** Text of the `selectAll` row. Defaults to the shared `selectAll` label - see {@link provideFormFieldLabels}. */
   public selectAllLabel = input<string | null>(null);
 
+  private trigger = viewChild<ElementRef<HTMLElement>>('trigger');
   private triggerContent = viewChild<ElementRef<HTMLElement>>('triggerContent');
 
   protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
@@ -221,6 +223,14 @@ export class SelectComponent {
   constructor() {
     mountControlSuffixStyles();
     this.select.mixedLabelId.set(this.mixedLabelId);
+
+    injectAnimatedBlockSize({
+      host: this.trigger,
+      observe: this.triggerContent,
+      resizingClass: 'et-select-trigger--resizing',
+      duration: SELECT_SPRING.durationMs,
+      easing: SELECT_SPRING.easing,
+    });
 
     injectAnimatedListItems({
       host: this.triggerContent,
