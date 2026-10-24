@@ -12,7 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { RuntimeError, createComponentId } from '@ethlete/core';
+import { RuntimeError, createCanAnimateSignal, createComponentId } from '@ethlete/core';
 import { ACCORDION_ERROR_CODES } from '../accordion-errors';
 import { ACCORDION_GROUP_TOKEN, ACCORDION_TOKEN } from './accordion.tokens';
 import { AccordionPanelDirective } from './accordion-panel.directive';
@@ -45,6 +45,7 @@ import { registerPart } from './internals/register-part';
   host: {
     '[attr.data-open]': 'isOpen() ? "" : null',
     '[attr.data-disabled]': 'disabled() ? "" : null',
+    '[attr.data-can-animate]': 'canAnimate.state() || null',
   },
 })
 export class AccordionDirective {
@@ -67,6 +68,12 @@ export class AccordionDirective {
    * disabled, so screen-reader users can still reach the header and hear that it can't be expanded.
    */
   public disabled = input(false, { transform: booleanAttribute });
+
+  /**
+   * Set one frame after the first render. Gate open/close transitions on `[data-can-animate]` so a
+   * panel that starts open renders open instead of animating in.
+   */
+  public canAnimate = createCanAnimateSignal();
 
   public readonly ID = createComponentId('et-accordion');
   public readonly TRIGGER_ID = `${this.ID}-trigger`;

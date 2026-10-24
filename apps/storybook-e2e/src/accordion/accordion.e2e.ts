@@ -303,3 +303,35 @@ test.describe('accordion / collapse keyboard', () => {
     await expect(button).toBeFocused();
   });
 });
+
+test.describe('accordion / first render', () => {
+  const slowDownAnimations = async (page: Page) => {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Animation.enable');
+    await cdp.send('Animation.setPlaybackRate', { playbackRate: 0.1 });
+  };
+
+  const runningTransitions = (locator: Locator) =>
+    locator.evaluate((el) => el.getAnimations().filter((a) => a.playState === 'running').length);
+
+  test('a panel that starts open renders open without animating in', async ({ page }) => {
+    await slowDownAnimations(page);
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const firstPanel = root.locator('.et-accordion-panel').first();
+    const firstChevron = root.locator('.et-accordion-chevron').first();
+
+    await expect(firstPanel).toHaveAttribute('data-open', '');
+    expect(await runningTransitions(firstPanel)).toBe(0);
+    expect(await runningTransitions(firstChevron)).toBe(0);
+  });
+
+  test('a toggle after the first render still animates', async ({ page }) => {
+    await slowDownAnimations(page);
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const secondPanel = root.locator('.et-accordion-panel').nth(1);
+
+    await root.locator('.et-accordion-trigger').nth(1).click();
+
+    await expect.poll(() => runningTransitions(secondPanel)).toBeGreaterThan(0);
+  });
+});

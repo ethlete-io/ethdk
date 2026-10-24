@@ -47,7 +47,6 @@
     display: block;
     color: var(--et-surface-color-solid, CanvasText);
     border-block-end: 1px solid var(--_et-accordion-border-color);
-    transition: border-color var(--et-accordion-color-duration) ease;
 
     /* The hover lives on the trigger and the border on the host, so this has to reach back up with
        `:has()` - moving the rule onto `.et-accordion-trigger` would silently stop it applying. */
@@ -82,7 +81,6 @@
     font-weight: 500;
     text-align: start;
     cursor: pointer;
-    transition: background-color var(--et-accordion-color-duration) ease;
 
     @media (hover: hover) {
       &:hover {
@@ -122,7 +120,6 @@
       flex: none;
       color: var(--_et-accordion-secondary-color);
       font-weight: 400;
-      transition: color var(--et-accordion-color-duration) ease;
     }
 
     .et-accordion-chevron {
@@ -131,9 +128,6 @@
       block-size: var(--et-accordion-chevron-size);
       color: var(--_et-accordion-secondary-color);
       rotate: 180deg;
-      transition:
-        rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
-        color var(--et-accordion-color-duration) ease;
     }
 
     &[aria-expanded='true'] .et-accordion-chevron {
@@ -145,16 +139,45 @@
     display: grid;
     grid-template-rows: 0fr;
     visibility: hidden;
-    transition:
-      grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
-      visibility 0s linear var(--et-accordion-duration);
 
     &:where([data-open]) {
       grid-template-rows: 1fr;
       visibility: visible;
-      transition:
-        grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
-        visibility 0s linear 0s;
+    }
+  }
+
+  .et-accordion:where([data-can-animate]) {
+    transition: border-color var(--et-accordion-color-duration) ease;
+
+    > .et-accordion-heading > .et-accordion-trigger {
+      transition: background-color var(--et-accordion-color-duration) ease;
+
+      .et-accordion-hint,
+      .et-accordion-chevron {
+        transition: color var(--et-accordion-color-duration) ease;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .et-accordion:where([data-can-animate]) {
+      > .et-accordion-panel {
+        transition:
+          grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+          visibility 0s linear var(--et-accordion-duration);
+
+        &:where([data-open]) {
+          transition:
+            grid-template-rows var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+            visibility 0s linear 0s;
+        }
+      }
+
+      > .et-accordion-heading > .et-accordion-trigger > .et-accordion-chevron {
+        transition:
+          rotate var(--et-accordion-duration) cubic-bezier(0.25, 0, 0.1, 1),
+          color var(--et-accordion-color-duration) ease;
+      }
     }
   }
 
@@ -170,16 +193,5 @@
   .et-accordion-panel-body {
     padding-block-end: var(--et-accordion-padding-block);
     padding-inline: var(--et-accordion-padding-inline);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .et-accordion-panel,
-    .et-accordion-panel:where([data-open]) {
-      transition: none;
-    }
-
-    .et-accordion-trigger .et-accordion-chevron {
-      transition: color var(--et-accordion-color-duration) ease;
-    }
   }
 }

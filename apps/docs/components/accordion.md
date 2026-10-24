@@ -147,6 +147,16 @@ the right role for free. A panel may be rendered conditionally as above - the tr
 drops its `aria-controls` while the panel isn't in the DOM, rather than pointing at a
 missing id.
 
+`etAccordion` sets `data-can-animate` on its host one frame after the first render, and
+the default component only transitions under it, so a panel that starts open renders open
+instead of animating in. Gate your own transitions on it the same way:
+
+```css
+.faq-item:where([data-can-animate]) .faq-panel {
+  transition: grid-template-rows 240ms ease;
+}
+```
+
 @example accordion/accordion-headless 320px
 
 ## Accessibility
