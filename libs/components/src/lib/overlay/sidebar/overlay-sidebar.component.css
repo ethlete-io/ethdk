@@ -7,9 +7,16 @@
     display: flex;
     flex-direction: column;
     inline-size: var(--et-overlay-sidebar-inline-size, 240px);
+    position: relative;
+    min-block-size: 0;
+    border-inline-end: 1px solid var(--et-overlay-body-divider-color);
+  }
+
+  .et-overlay-sidebar-scroller {
+    flex: 1;
+    min-block-size: 0;
     padding-block: var(--et-overlay-padding-block);
     padding-inline: var(--et-overlay-padding-inline);
-    border-inline-end: 1px solid var(--et-overlay-body-divider-color);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
