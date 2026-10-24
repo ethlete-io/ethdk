@@ -1,6 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import '../../../test-helpers';
+import { mountSelect, SelectDriver } from '../testing/select-driver';
+import { SelectOptionData } from './headless';
 import { SELECT_IMPORTS } from './select.imports';
 
 @Component({
@@ -14,6 +16,22 @@ import { SELECT_IMPORTS } from './select.imports';
 })
 class MultiSelectHost {
   value = signal<string[]>([]);
+}
+
+@Component({
+  template: `
+    <et-select [value]="value()" [options]="options" (valueChange)="value.set($event)" placeholder="Pick an item">
+      <input etSelectSearch placeholder="Search" />
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class VirtualSelectHost {
+  value = signal<unknown>(null);
+  options: SelectOptionData[] = Array.from({ length: 200 }, (_, index) => ({
+    value: 'item-' + (index + 1),
+    label: 'Item ' + (index + 1),
+  }));
 }
 
 type AnimateCall = { element: Element; keyframes: Keyframe[] };
@@ -132,5 +150,47 @@ describe('select field height motion', () => {
     const grow = calls.find((call) => call.element === trigger);
 
     expect(grow?.keyframes).toEqual([{ blockSize: '24px' }, { blockSize: '51px' }]);
+  });
+});
+
+describe('select virtual row motion', () => {
+  const originalAnimate = Element.prototype.animate;
+  let calls: AnimateCall[];
+  let driver: SelectDriver<VirtualSelectHost>;
+
+  const rowCalls = () => calls.filter((call) => call.element.classList.contains('et-select-option'));
+
+  beforeEach(async () => {
+    calls = [];
+    Element.prototype.animate = function (this: Element, keyframes: Keyframe[] | PropertyIndexedKeyframes | null) {
+      calls.push({ element: this, keyframes: keyframes as Keyframe[] });
+
+      return { finished: new Promise(() => undefined), cancel: () => undefined } as unknown as Animation;
+    };
+
+    driver = mountSelect(VirtualSelectHost);
+    await driver.open();
+    await driver.fixture.whenStable();
+  });
+
+  afterEach(async () => {
+    await driver.close();
+    Element.prototype.animate = originalAnimate;
+  });
+
+  it('fades rows when the filter changes', async () => {
+    driver.type('item 19');
+    await driver.fixture.whenStable();
+
+    expect(rowCalls().length).toBeGreaterThan(0);
+  });
+
+  it('does not fade rows the window renders on a scroll step', async () => {
+    driver.select.handleTriggerKeydown(new KeyboardEvent('keydown', { key: 'End' }));
+    driver.tick();
+    await driver.fixture.whenStable();
+
+    expect(driver.options().at(-1)?.textContent).toContain('Item 200');
+    expect(rowCalls()).toEqual([]);
   });
 });
