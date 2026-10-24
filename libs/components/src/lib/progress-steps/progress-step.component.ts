@@ -1,4 +1,14 @@
-import { Component, ElementRef, ViewEncapsulation, computed, effect, inject, input } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Signal,
+  ViewEncapsulation,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ProvideColorDirective, mountVisuallyHidden } from '@ethlete/core';
 import { FocusRingDirective } from '../focus-ring';
 import {
@@ -67,7 +77,7 @@ const STATE_ICONS: Partial<Record<ProgressStepState, RegisteredIconName>> = {
   hostDirectives: [ProvideColorDirective, FocusRingDirective],
   host: {
     class: 'et-progress-step',
-    '[attr.data-state]': 'state()',
+    '[attr.data-state]': 'resolvedState()',
     '[attr.aria-current]': 'ariaCurrent()',
     '[attr.role]': 'role',
   },
@@ -83,21 +93,25 @@ export class ProgressStepComponent {
 
   protected role = INTERACTIVE_HOSTS.has(this.elementRef.nativeElement.nodeName) ? null : 'listitem';
 
-  protected markerIcon = computed(() => STATE_ICONS[this.state()] ?? null);
+  private currentSource = signal<Signal<boolean> | null>(null);
+
+  protected resolvedState = computed(() => (this.currentSource()?.() ? PROGRESS_STEP_STATES.CURRENT : this.state()));
+
+  protected markerIcon = computed(() => STATE_ICONS[this.resolvedState()] ?? null);
   protected stateLabel = computed(() => {
-    const state = this.state();
+    const state = this.resolvedState();
 
     return state === PROGRESS_STEP_STATES.CURRENT || state === PROGRESS_STEP_STATES.UPCOMING
       ? null
       : this.labels()[state];
   });
-  protected ariaCurrent = computed(() => (this.state() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
+  protected ariaCurrent = computed(() => (this.resolvedState() === PROGRESS_STEP_STATES.CURRENT ? 'step' : null));
 
   constructor() {
     mountVisuallyHidden();
 
     effect(() => {
-      const state = this.state();
+      const state = this.resolvedState();
       const theme =
         state === PROGRESS_STEP_STATES.SUCCESS ||
         state === PROGRESS_STEP_STATES.WARNING ||
@@ -113,5 +127,10 @@ export class ProgressStepComponent {
 
       this.provideColor.forceColor(theme);
     });
+  }
+
+  /** @internal */
+  public registerCurrentSource(source: Signal<boolean>) {
+    this.currentSource.set(source);
   }
 }

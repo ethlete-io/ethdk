@@ -14,9 +14,12 @@ export type ProgressStepsStorybookStep = { label: string; state: ProgressStepSta
       <et-progress-steps [orientation]="orientation()">
         @for (step of steps(); track step.label) {
           @if (asLinks()) {
-            <!-- The step lives on the consumer's own element, so a real link (or a routerLink) keeps
-                 working and the whole step is the target. -->
-            <a [state]="linkState($index)" [routerLink]="['/', step.label.toLowerCase()]" et-progress-step>
+            <a
+              [state]="linkState($index)"
+              [routerLink]="['/', step.label.toLowerCase()]"
+              etProgressStepRouterActive
+              et-progress-step
+            >
               {{ step.label }}
 
               @if (step.description; as description) {
@@ -68,6 +71,6 @@ export class ProgressStepsStorybookComponent {
   protected linkState(index: number): ProgressStepState {
     const active = this.activeIndex();
 
-    return index < active ? 'complete' : index === active ? 'current' : 'upcoming';
+    return index < active ? 'complete' : 'upcoming';
   }
 }

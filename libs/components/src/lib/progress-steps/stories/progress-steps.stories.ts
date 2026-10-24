@@ -18,10 +18,12 @@ export default {
     applicationConfig({
       providers: [
         provideRouter([
+          { path: '', pathMatch: 'full', redirectTo: 'account' },
           { path: 'account', component: ProgressStepsPageComponent },
           { path: 'shipping', component: ProgressStepsPageComponent },
           { path: 'payment', component: ProgressStepsPageComponent },
           { path: 'review', component: ProgressStepsPageComponent },
+          { path: '**', redirectTo: 'account' },
         ]),
       ],
     }),
@@ -56,7 +58,8 @@ export const Vertical: Story = {
 /**
  * Steps a user can go back to. Writing the step as an `<a>` (or a `<button>`) puts it on the
  * consumer's own element, so `routerLink` and click handlers stay theirs - the step only adds the
- * hover and focus treatment.
+ * hover and focus treatment. `etProgressStepRouterActive` makes the step for the active route the
+ * current one; earlier steps are set to `complete`.
  */
 export const AsLinks: Story = {
   args: { asLinks: true },

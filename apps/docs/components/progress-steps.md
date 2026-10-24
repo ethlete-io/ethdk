@@ -119,6 +119,17 @@ click handler, `disabled` - stays where you wrote it:
 </et-progress-steps>
 ```
 
+Add `etProgressStepRouterActive` to a `routerLink` step and the router decides when it is `current`: the
+step is current while its link is active, and keeps the `state` you set otherwise. It is opt-in per
+step, so nothing is detected behind your back. The match is by prefix (`/checkout/shipping` also matches
+`/checkout/shipping/address`); add `etProgressStepExact` to match the link's URL exactly. Query
+parameters and fragments are ignored. Steps behind the active one are still yours to mark `complete`.
+
+```html
+<a [routerLink]="['/checkout/account']" state="complete" et-progress-step>Account</a>
+<a [routerLink]="['/checkout/shipping']" etProgressStepRouterActive et-progress-step>Shipping</a>
+```
+
 The whole step becomes the target, and it picks up a hover treatment (marker border and label in the
 foreground color) plus the library's focus ring. Mixing linked and plain steps in one row is the
 normal case: only the steps behind the user are reachable.
@@ -136,6 +147,14 @@ normal case: only the steps behind the user are reachable.
 | Input   | Type                                                                         | Default      | Description                                                                                            |
 | ------- | ---------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------ |
 | `state` | `'complete' \| 'current' \| 'upcoming' \| 'success' \| 'warning' \| 'error'` | `'upcoming'` | Drives the marker (number vs. icon), the connector tint, the label weight, and the step's color theme. |
+
+### `etProgressStepRouterActive`
+
+Applies to an `et-progress-step` that also has a `routerLink`.
+
+| Input                 | Type      | Default | Description                                                 |
+| --------------------- | --------- | ------- | ----------------------------------------------------------- |
+| `etProgressStepExact` | `boolean` | `false` | Match the link's URL exactly instead of any URL beneath it. |
 
 | Slot                          | Description                                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
