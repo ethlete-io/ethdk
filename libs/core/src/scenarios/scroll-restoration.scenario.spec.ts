@@ -1,7 +1,8 @@
 import { Location } from '@angular/common';
 import { provideLocationMocks } from '@angular/common/testing';
-import { inject } from '@angular/core';
-import { NavigationEnd, provideRouter, Router } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { NavigationEnd, provideRouter, Router, RouterOutlet } from '@angular/router';
 import { filter, firstValueFrom, Subject, take } from 'rxjs';
 import { registerScrollRestorationState, routerRestoreScroll, setupScrollRestoration } from '../index';
 import { Scenario, useScenario } from './harness';
@@ -218,5 +219,141 @@ describe('scroll restoration state scenarios', () => {
     expect(sessionStorage.getItem('et-scroll-restoration')).toBeNull();
 
     after.destroy();
+  });
+});
+
+const nestedOutlet = {
+  scroller: createScroller(),
+  pagesLoaded: new Subject<void>(),
+  restoredWith: [] as number[],
+  pages: 1,
+};
+
+@Component({ selector: 'et-scenario-catalog', template: '' })
+class CatalogPageComponent {
+  constructor() {
+    registerScrollRestorationState({
+      key: 'pages',
+      save: () => nestedOutlet.pages,
+      restore: (count: number) => {
+        nestedOutlet.restoredWith.push(count);
+
+        return nestedOutlet.pagesLoaded.pipe(take(1));
+      },
+    });
+  }
+}
+
+@Component({ selector: 'et-scenario-detail', template: '' })
+class DetailPageComponent {}
+
+@Component({ selector: 'et-scenario-section', imports: [RouterOutlet], template: '<router-outlet />' })
+class SectionComponent {}
+
+@Component({ selector: 'et-scenario-root', imports: [RouterOutlet], template: '<router-outlet />' })
+class RootComponent {}
+
+describe('scroll restoration state behind a nested router outlet', () => {
+  const scenario = useScenario({
+    providers: [
+      provideRouter([
+        { path: 'shop', component: SectionComponent, children: [{ path: 'catalog', component: CatalogPageComponent }] },
+        { path: 'detail', component: DetailPageComponent },
+      ]),
+      provideLocationMocks(),
+    ],
+  });
+
+  beforeEach(() => {
+    sessionStorage.clear();
+    nestedOutlet.scroller = createScroller();
+    nestedOutlet.pagesLoaded = new Subject<void>();
+    nestedOutlet.restoredWith = [];
+    nestedOutlet.pages = 1;
+  });
+
+  const setup = (s: Scenario, restoreOnReload: boolean) => {
+    const c = s.consumer();
+
+    c.run(() =>
+      setupScrollRestoration({
+        scrollElement: nestedOutlet.scroller.el,
+        restore: { enabled: true, restoreOnReload },
+      }),
+    );
+    TestBed.createComponent(RootComponent);
+    s.tick();
+
+    return c;
+  };
+
+  it('restores the state of a page that registers after the reload navigation ended', async () => {
+    const s = scenario();
+    const { scroller } = nestedOutlet;
+
+    sessionStorage.setItem(
+      'et-scroll-restoration',
+      JSON.stringify({ top: 2500, route: '/shop/catalog', search: '', state: { pages: 7 } }),
+    );
+    scroller.geometry.height = 400;
+
+    const c = setup(s, true);
+    const navigation = s.run(() => inject(Router)).navigateByUrl('/shop/catalog');
+
+    s.tick();
+    await navigation;
+    s.frame(3);
+    s.tick(500);
+
+    expect(nestedOutlet.restoredWith).toEqual([7]);
+    expect(scroller.el.scrollTop).toBe(0);
+
+    scroller.geometry.height = 4000;
+    nestedOutlet.pagesLoaded.next();
+    s.flush();
+
+    expect(scroller.el.scrollTop).toBe(2500);
+    expect(nestedOutlet.restoredWith).toEqual([7]);
+
+    c.destroy();
+  });
+
+  it('restores the state of a page that registers after a back navigation ended', async () => {
+    const s = scenario();
+    const { scroller } = nestedOutlet;
+
+    s.run(() => inject(Router)).setUpLocationChangeListener();
+    scroller.geometry.height = 4000;
+
+    const c = setup(s, false);
+
+    await navigate(s, '/shop/catalog');
+    nestedOutlet.pages = 3;
+    scroller.el.scrollTop = 2500;
+    await navigate(s, '/detail');
+    s.tick();
+    nestedOutlet.pages = 1;
+    scroller.el.scrollTop = 0;
+    scroller.geometry.height = 400;
+
+    const router = s.run(() => inject(Router));
+    const navigated = firstValueFrom(router.events.pipe(filter((event) => event instanceof NavigationEnd)));
+
+    s.run(() => inject(Location)).back();
+    s.tick();
+    await navigated;
+    s.frame(3);
+    s.tick(500);
+
+    expect(nestedOutlet.restoredWith).toEqual([3]);
+    expect(scroller.el.scrollTop).toBe(0);
+
+    scroller.geometry.height = 4000;
+    nestedOutlet.pagesLoaded.next();
+    s.flush();
+
+    expect(scroller.el.scrollTop).toBe(2500);
+
+    c.destroy();
   });
 });

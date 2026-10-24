@@ -2,7 +2,7 @@ import { isPlatformBrowser, Location } from '@angular/common';
 import { afterNextRender, DestroyRef, DOCUMENT, inject, Injector, PLATFORM_ID } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, NavigationStart, Params, Router } from '@angular/router';
-import { filter, ignoreElements, isObservable, merge, Observable, Subscription, tap } from 'rxjs';
+import { filter, ignoreElements, isObservable, Observable, Subscription, tap } from 'rxjs';
 import { defineRootProvider, toInjectFn } from '../../utils';
 import { createRoute, createRouterState } from '../router';
 
@@ -152,10 +152,13 @@ const SCROLL_RESTORATION_HOLDS_DEF = /* @__PURE__ */ defineRootProvider(
   () => {
     const holds = new Set<() => boolean>();
     const states = new Set<AnyStateConfig>();
+    const stateWatchers = new Set<(state: AnyStateConfig) => void>();
 
     return {
       addState: (state: AnyStateConfig) => {
         states.add(state);
+
+        for (const watcher of stateWatchers) watcher(state);
 
         return () => states.delete(state);
       },
@@ -170,18 +173,12 @@ const SCROLL_RESTORATION_HOLDS_DEF = /* @__PURE__ */ defineRootProvider(
 
         return values;
       },
-      restoreStates: (values: Record<string, unknown>) => {
-        const pending: Observable<unknown>[] = [];
+      watchStates: (watcher: (state: AnyStateConfig) => void) => {
+        stateWatchers.add(watcher);
 
-        for (const state of states) {
-          if (!(state.key in values)) continue;
+        for (const state of [...states]) watcher(state);
 
-          const result = state.restore(values[state.key]);
-
-          if (isObservable(result)) pending.push(result);
-        }
-
-        return pending;
+        return () => stateWatchers.delete(watcher);
       },
       add: (isPending: () => boolean) => {
         holds.add(isPending);
@@ -383,12 +380,14 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
 
     const target = entry.top;
     let frame = 0;
-    let started = false;
     let cancelled = false;
     let renderRef: { destroy: () => void } | null = null;
     let fallback: ReturnType<typeof setTimeout> | undefined;
-    let stateSubscription: Subscription | null = null;
+    const stateSubscriptions = new Subscription();
     let stateDeadline: ReturnType<typeof setTimeout> | undefined;
+    let pendingStateCount = 0;
+    let stopWatchingStates: (() => void) | null = null;
+    const unrestoredStates = { ...entry.state };
 
     // The user scrolling always wins over a restoration we have not committed yet.
     const abortByUser = () => cancelPendingRestore();
@@ -399,7 +398,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     const step = () => {
       frame = 0;
 
-      if (cancelled) return;
+      if (cancelled || pendingStateCount) return;
 
       const el = resolveScrollElement();
       const maxOffset = Math.max(0, el.scrollHeight - el.clientHeight);
@@ -436,8 +435,7 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
     // components exist but the DOM still shows the previous page, whose height would be measured
     // instead. The timeout is a safety net in case no render pass follows.
     const start = () => {
-      if (started || cancelled) return;
-      started = true;
+      if (frame || cancelled || pendingStateCount) return;
 
       frame = requestAnimationFrame(step);
     };
@@ -446,11 +444,41 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       if (cancelled) return;
 
       clearTimeout(stateDeadline);
+      clearTimeout(fallback);
+      renderRef?.destroy();
       renderRef = afterNextRender({ read: start }, { injector });
       fallback = setTimeout(start);
     };
 
-    const pendingStates = entry.state ? holds.restoreStates(entry.state) : [];
+    const onStateSettled = () => {
+      pendingStateCount--;
+
+      if (!pendingStateCount) waitForRender();
+    };
+
+    // A route component behind a nested outlet is created on the first render after `NavigationEnd`,
+    // so a state can register after this restoration was scheduled. It must still restore before the offset.
+    const restoreState = (state: AnyStateConfig) => {
+      if (cancelled || !(state.key in unrestoredStates)) return;
+
+      const value = unrestoredStates[state.key];
+
+      delete unrestoredStates[state.key];
+
+      const result = state.restore(value);
+
+      if (!isObservable(result)) return;
+
+      if (!pendingStateCount) {
+        clearTimeout(stateDeadline);
+        stateDeadline = setTimeout(cancelPendingRestore, restoreMaxTimeout);
+      }
+
+      pendingStateCount++;
+      stateSubscriptions.add(
+        result.pipe(ignoreElements()).subscribe({ complete: onStateSettled, error: onStateSettled }),
+      );
+    };
 
     for (const eventName of INTERACTION_EVENTS) {
       document.addEventListener(eventName, abortByUser, { capture: true, passive: true });
@@ -461,7 +489,8 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       // not apply its (now stale) offset even if its hook had already been queued to run.
       cancelled = true;
       renderRef?.destroy();
-      stateSubscription?.unsubscribe();
+      stopWatchingStates?.();
+      stateSubscriptions.unsubscribe();
       clearTimeout(stateDeadline);
 
       if (frame) cancelAnimationFrame(frame);
@@ -472,14 +501,9 @@ export const setupScrollRestoration = (config: SetupScrollRestorationConfig = {}
       }
     };
 
-    if (pendingStates.length) {
-      stateDeadline = setTimeout(cancelPendingRestore, restoreMaxTimeout);
-      stateSubscription = merge(...pendingStates)
-        .pipe(ignoreElements())
-        .subscribe({ complete: waitForRender, error: waitForRender });
-    } else {
-      waitForRender();
-    }
+    if (entry.state) stopWatchingStates = holds.watchStates(restoreState);
+
+    if (!pendingStateCount) waitForRender();
   };
 
   /**
