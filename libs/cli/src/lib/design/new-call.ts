@@ -11,8 +11,8 @@ const KEY = /^[a-z][a-z0-9-]*$/;
 
 const titled = (word: string) => `${word.charAt(0).toUpperCase()}${word.slice(1).replace(/-/g, ' ')}`;
 
-const callFile = (options: { slug: string; keys: string[]; stage: string }) => {
-  const { slug, keys, stage } = options;
+const callFile = (options: { slug: string; keys: string[]; stage: string; feature: string | null }) => {
+  const { slug, keys, stage, feature } = options;
   const variants = keys
     .map(
       (key) =>
@@ -26,7 +26,7 @@ const callFile = (options: { slug: string; keys: string[]; stage: string }) => {
 
 export default defineCall({
   stage: '${stage}',
-  eyebrow: '${eyebrow}',
+${feature ? `  feature: '${feature}',\n` : ''}  eyebrow: '${eyebrow}',
   headline: 'The open question, in one sentence',
   intro: 'What the call is about, and what the variants share.',
   frameWidth: 720,
@@ -79,14 +79,18 @@ ${PLACEHOLDER_STYLES}
 export const newCall = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const slug = argv.find(
-    (argument, index) => !argument.startsWith('--') && !['--variants', '--stage'].includes(argv[index - 1] ?? ''),
+    (argument, index) =>
+      !argument.startsWith('--') && !['--variants', '--stage', '--feature'].includes(argv[index - 1] ?? ''),
   );
   const listed = argv[argv.indexOf('--variants') + 1];
   const stage = argv.includes('--stage') ? (argv[argv.indexOf('--stage') + 1] ?? '') : null;
+  const feature = argv.includes('--feature') ? (argv[argv.indexOf('--feature') + 1] ?? '') : null;
   const keys = argv.includes('--variants') ? (listed ?? '').split(',').filter(Boolean) : ['a', 'b'];
 
   if (!slug || stage === null) {
-    console.error(`usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b]`);
+    console.error(
+      `usage: ${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
+    );
 
     return 2;
   }
@@ -103,6 +107,12 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
 
   if (keys.length === 0 || !keys.every((key) => KEY.test(key)) || new Set(keys).size !== keys.length) {
     console.error(`BAD VARIANTS "${listed ?? ''}" - give distinct lowercase keys, e.g. --variants a,b,c.`);
+
+    return 2;
+  }
+
+  if (feature !== null && (!feature.trim() || feature.startsWith('--') || /['\\\n]/.test(feature))) {
+    console.error(`BAD FEATURE "${feature}" - give a name, e.g. --feature checkout.`);
 
     return 2;
   }
@@ -125,7 +135,7 @@ export const newCall = (options: { target: string; argv: string[]; invocation: s
   }
 
   mkdirSync(folder, { recursive: true });
-  writeFileSync(join(folder, 'call.ts'), callFile({ slug, keys, stage }));
+  writeFileSync(join(folder, 'call.ts'), callFile({ slug, keys, stage, feature }));
   writeFileSync(join(folder, 'fixture.ts'), FIXTURE_FILE);
 
   for (const key of keys) {

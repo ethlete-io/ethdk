@@ -63,6 +63,11 @@ describe('stageProblemOf', () => {
     }
   });
 
+  it('accepts a legacy call with a known stage and still rejects an unknown one', () => {
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'page', legacy: true })).toBeNull();
+    expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'draft', legacy: true })).toContain('BAD STAGE');
+  });
+
   it('accepts a legacy call without a stage, a sketch and a stage of the order', () => {
     expect(stageProblemOf({ slug: 'app/pages/00-home', stage: null, legacy: true })).toBeNull();
     expect(stageProblemOf({ slug: 'app/pages/00-home', stage: 'sketch', legacy: false })).toBeNull();

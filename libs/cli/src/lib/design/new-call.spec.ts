@@ -65,6 +65,18 @@ describe('newCall', () => {
     expect(call).toContain("eyebrow: 'App · Component',");
   });
 
+  it('writes the feature into call.ts, and none without --feature', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));
+
+    newCall({ target, argv: ['app/one', '--stage', 'component', '--feature', 'checkout'], invocation: 'et design' });
+    newCall({ target, argv: ['app/two', '--stage', 'component'], invocation: 'et design' });
+
+    expect(readFileSync(join(calls(target), 'app/one/call.ts'), 'utf8')).toContain("  feature: 'checkout',\n");
+    expect(readFileSync(join(calls(target), 'app/two/call.ts'), 'utf8')).not.toContain('feature');
+  });
+
   it('refuses a stage the call API does not know', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const target = mkdtempSync(join(tmpdir(), 'cli-design-new-'));

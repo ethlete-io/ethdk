@@ -1,9 +1,13 @@
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, sep } from 'path';
 import { callsRootOf } from './paths';
 
 const OPENING = /defineCall\(\{\n/;
-const DECLARES = /^\s*(stage|legacy)\s*:/m;
+const HAS_STAGE = /^\s*stage\s*:/m;
+const HAS_LEGACY = /^\s*legacy\s*:/m;
+const LEGACY_LINE = /^([ \t]*)legacy\s*:\s*true,?[ \t]*\n/m;
+
+const STAGE_OF_GROUP: Record<string, string> = { foundations: 'themes', components: 'component', pages: 'page' };
 
 const callFilesOf = (folder: string): string[] =>
   readdirSync(folder).flatMap((name) => {
@@ -15,8 +19,10 @@ const callFilesOf = (folder: string): string[] =>
   });
 
 /**
- * Writes `legacy: true` into every call of a project that declares no stage, so `et design check`
- * accepts the calls made before the stage was required. A call that declares one stays untouched.
+ * Writes `legacy: true` into every call of a project that declares no stage, plus the stage its
+ * group folder implies (foundations, components, pages), so `et design check` accepts the calls
+ * made before the stage was required. A legacy call without a stage gets one on a rerun; a stage
+ * already declared is never changed.
  */
 export const markLegacy = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -42,18 +48,28 @@ export const markLegacy = (options: { target: string; argv: string[]; invocation
   for (const path of callFilesOf(folder)) {
     const text = readFileSync(path, 'utf8');
 
-    if (DECLARES.test(text)) continue;
+    if (HAS_STAGE.test(text)) continue;
 
-    if (!OPENING.test(text)) {
+    const group = relative(folder, path).split(sep)[0] ?? '';
+    const stage = relative(folder, path).split(sep).length > 2 ? (STAGE_OF_GROUP[group] ?? null) : null;
+    const isLegacy = HAS_LEGACY.test(text);
+
+    if (isLegacy && !stage) continue;
+
+    if (isLegacy ? !LEGACY_LINE.test(text) : !OPENING.test(text)) {
       unreadable.push(relative(target, path));
       continue;
     }
 
+    const stageLine = (indent: string) => (stage ? `${indent}stage: '${stage}',\n` : '');
+
     writeFileSync(
       path,
-      text.replace(OPENING, (opening) => `${opening}  legacy: true,\n`),
+      isLegacy
+        ? text.replace(LEGACY_LINE, (line, indent: string) => `${line}${stageLine(indent)}`)
+        : text.replace(OPENING, (opening) => `${opening}  legacy: true,\n${stageLine('  ')}`),
     );
-    console.log(`legacy ${relative(target, path)}`);
+    console.log(`legacy ${relative(target, path)}${stage ? ` (stage ${stage})` : ''}`);
     marked++;
   }
 

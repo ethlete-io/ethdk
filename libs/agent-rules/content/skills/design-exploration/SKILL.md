@@ -77,7 +77,7 @@ in its own `styles`; it never changes the project's providers.
 `et design --help` lists every command. Start a call with the tool, never by hand:
 
 ```bash
-et design new <project>/<group>/<name> --stage component --variants a,b
+et design new <project>/<group>/<name> --stage component --variants a,b --feature <name>
 et design status <slug> drawing   # while you draw; check sets checking, then ready or failed
 ```
 
@@ -86,6 +86,9 @@ once. `stage` in `call.ts` names the stage of the design (see "The order of a de
 call needs one: `new` refuses to start without `--stage`, and `et design check --call` fails on a
 call without it. Ethlete Studio groups the calls by it, and the check warns when an element, page
 or prototype call imports nothing from the design system. The status shows on the call's row in Studio.
+
+`feature: '<name>'` in `call.ts` groups a call under a feature in Studio. Set it at creation with
+`new --feature <name>`. A call without one shows under "No feature".
 
 `et design [checkout]` serves the frames on the port `config.json` names. The
 checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
@@ -122,8 +125,7 @@ Three constraints the tool puts on a variant file:
   `ERR_INSUFFICIENT_RESOURCES`. Import the one file you need.
 - **The fixture is shared, and a variant may not change it.** Variants drawn at three
   geometries cannot be compared.
-- **One file per variant**, so several agents can draw at once, and a broken variant breaks
-  its own frame only.
+- **One file per variant**, so a broken variant breaks its own frame only.
 
 A `<script>` in a drawing's `body` never runs. For behavior - a play button that restarts a
 CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
@@ -185,8 +187,12 @@ A quick exploration of an idea does not run this order: start it with `--stage s
 sketch needs no settled stage before it, and Studio lists it apart from the seven stages. When
 the idea holds, draw it again at its real stage.
 
-A call made before the stage was required carries `legacy: true` instead, which
-`et design legacy <project>` writes once. Never add `legacy` to a new call.
+A call made before the stage was required carries `legacy: true`, which
+`et design legacy <project>` writes once. It also writes the stage its group folder implies:
+`foundations` is `themes`, `components` is `component`, `pages` is `page`; another folder gets
+none. Run it again to add the stage to an old legacy call; a stage already there stays. A
+settled legacy call with a stage counts for that stage in this order. Never add `legacy` to a
+new call.
 
 A later stage can show that an earlier one is incomplete. If a page needs a part that the system
 does not have, add it to the inventory and open a component call for it. Never draw the part
@@ -281,11 +287,13 @@ node check-story.mjs --tsconfig <path> --story <story-id>
 
 ## Delegating a call
 
-A call has one job per variant, so it fans out. Every brief names `model: opus`.
+Every brief names `model: opus`.
 
-1. **One agent per variant.** Give it the call folder, the variant key, the fixture it must
-   not change, and the one claim its drawing has to support. Tell it to write its own
-   variant file and nothing else, so two agents never touch one file.
+1. **One agent per call.** It draws all the variants of the call. Give it the call folder, the
+   fixture it must not change, and the claim of each variant. Do not spawn one agent per
+   variant: each would re-read the skill, the call, the fixture and the example, about 45-57k
+   tokens each, so the cost is several times higher. Calls are independent, so several calls
+   can run at once, one agent each.
 2. **One check-and-fix agent, after the drawing agents return.** Give it the changed files
    and the call slug. It runs the check above, fixes what it reports, and repeats until the
    check says `ok`. It may not change what a variant draws, only what stops it rendering.
