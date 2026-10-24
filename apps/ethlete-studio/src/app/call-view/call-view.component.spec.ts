@@ -696,4 +696,29 @@ describe('CallViewComponent', () => {
 
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
   });
+
+  it('loads no frame while the server starts and loads them once it answers', async () => {
+    const down = { port: 4402, listening: false, managed: false, foreign: false, stale: false, exited: false, log: [] };
+    const up = { ...down, listening: true, managed: true };
+    let release: (state: typeof up) => void = () => undefined;
+
+    stubHost({ design_server_state: () => down });
+
+    const original = (window as unknown as { __TAURI_INTERNALS__: { invoke: (c: string, a: unknown) => unknown } })
+      .__TAURI_INTERNALS__;
+    const invoke = original.invoke;
+
+    original.invoke = (command, args) =>
+      command === 'design_server_start' ? new Promise((resolve) => (release = resolve)) : invoke(command, args);
+
+    const fixture = await mount(RESOLVED.slug);
+
+    expect(element(fixture).textContent).toContain('The design server is starting');
+    expect(element(fixture).querySelector('iframe')).toBeNull();
+
+    release(up);
+    await settle(fixture);
+
+    expect(element(fixture).querySelector('.studio__frame iframe')).not.toBeNull();
+  });
 });

@@ -439,6 +439,10 @@ const SETTLE_MS = 300;
                 }
                 <button (click)="restartServer()" class="studio__status-button" type="button">Restart</button>
               </div>
+            } @else if (serverStarting()) {
+              <div class="studio__server-down">
+                <h3>The design server is starting</h3>
+              </div>
             } @else if (variant(); as drawn) {
               <div class="studio__stage">
                 <div [style.width]="frameWidth()" class="studio__frame">
@@ -940,6 +944,8 @@ export class CallViewComponent {
     return state && !state.listening && !this.serverBusy() ? state : null;
   });
 
+  protected serverStarting = computed(() => !!this.server() && !this.server()?.listening && this.serverBusy());
+
   protected watcherHint = computed(() =>
     (this.serverDown()?.log ?? []).some((line) => /\b(EMFILE|ENOSPC)\b.*\bwatch\b/.test(line)),
   );
@@ -1118,7 +1124,7 @@ export class CallViewComponent {
     const call = this.call();
     const port = this.design()?.port;
 
-    if (!call || !port) return [];
+    if (!call || !port || !this.server()?.listening) return [];
 
     const epoch = this.epoch();
     const theme = this.theme();
