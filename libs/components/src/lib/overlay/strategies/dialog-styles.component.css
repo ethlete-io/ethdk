@@ -27,6 +27,33 @@
         transition:
           transform 150ms var(--ease-out-5),
           opacity 150ms var(--ease-out-5);
+
+        @supports (transition-timing-function: linear(0, 1)) {
+          /* a response 0.22s critically damped spring, cut where the opacity reaches 0 */
+          --_et-dialog-leave-spring: linear(
+            0,
+            0.0242 5.56%,
+            0.083 11.11%,
+            0.1607 16.67%,
+            0.4178 33.33%,
+            0.4961 38.89%,
+            0.5674 44.44%,
+            0.6311 50%,
+            0.6872 55.56%,
+            0.7361 61.11%,
+            0.7783 66.67%,
+            0.8145 72.22%,
+            0.8453 77.78%,
+            0.8713 83.33%,
+            0.9117 94.44%,
+            0.9271 100%,
+            1 100%
+          );
+
+          transition:
+            transform 150ms var(--_et-dialog-leave-spring),
+            opacity 150ms linear;
+        }
       }
     }
   }

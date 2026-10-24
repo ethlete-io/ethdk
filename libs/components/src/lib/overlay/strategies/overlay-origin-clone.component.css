@@ -41,6 +41,35 @@
       transition:
         transform 300ms var(--ease-in-out-5),
         opacity 125ms 175ms linear;
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        /* must match the full-screen dialog leave, which this clone tracks */
+        --_et-origin-clone-leave-spring: linear(
+          0,
+          0.0155 2.78%,
+          0.0547 5.56%,
+          0.1092 8.33%,
+          0.1726 11.11%,
+          0.3764 19.44%,
+          0.5015 25%,
+          0.5577 27.78%,
+          0.6092 30.56%,
+          0.656 33.33%,
+          0.6982 36.11%,
+          0.7361 38.89%,
+          0.7997 44.44%,
+          0.8493 50%,
+          0.8874 55.56%,
+          0.9281 63.89%,
+          0.9612 75%,
+          0.9908 100%,
+          1
+        );
+
+        transition:
+          transform 300ms var(--_et-origin-clone-leave-spring),
+          opacity 125ms 70ms linear;
+      }
     }
 
     &.et-animation-leave-to,
