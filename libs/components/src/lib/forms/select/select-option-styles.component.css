@@ -95,6 +95,7 @@
          through the pane's positioning phase (`visibility: hidden`) and paint the check
          before the panel itself becomes visible */
       opacity: 0;
+      transition: opacity 120ms ease;
 
       .et-icon {
         inline-size: 100%;
@@ -104,6 +105,10 @@
 
     &:where([data-selected]) .et-select-option-check {
       opacity: 1;
+    }
+
+    :where(.et-animation-leave-from, .et-animation-leave-active) & .et-select-option-check {
+      transition-delay: var(--et-floating-panel-leave-duration, 100ms);
     }
 
     .et-select-option-label {
