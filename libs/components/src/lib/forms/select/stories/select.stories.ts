@@ -156,7 +156,7 @@ export const MaxSelection: Story = {
     maxSelection: 3,
     label: 'Tags',
     placeholder: 'Pick or create up to 3 tags',
-    hint: 'At 3 selected values the search input locks - remove a chip to free a slot',
+    hint: 'At 3 selected values new picks are blocked - search still filters, Backspace or a chip frees a slot',
   },
 };
 

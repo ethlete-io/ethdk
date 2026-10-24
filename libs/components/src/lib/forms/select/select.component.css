@@ -185,6 +185,35 @@
     }
   }
 
+  /* The search input always ends the last chip row and stretches to its end, so the clear button sits
+     over the input there instead of padding the content - a pad would rewrap the chips on focus. */
+  et-form-field
+    .et-form-field-control-frame:has(> .et-form-field-suffix > .et-input-clear):not(
+      :has(> .et-form-field-suffix > .et-form-field-busy-spinner)
+    ):has(et-select .et-select-chips + input[etselectsearch]) {
+    > .et-form-field-suffix > .et-input-clear {
+      align-self: end;
+      margin-block-end: calc((1lh - var(--et-form-field-affix-icon-size)) / 2);
+    }
+
+    .et-select-trigger-content {
+      padding-inline-end: 0;
+
+      > input[etselectsearch] {
+        padding-inline-end: 0;
+        mask-image: linear-gradient(
+          var(--_et-form-field-suffix-mask-direction),
+          black calc(100% - var(--_et-form-field-suffix-overlap) - 4px),
+          transparent calc(100% - var(--_et-form-field-suffix-cover))
+        );
+
+        &:not(:placeholder-shown) {
+          padding-inline-end: var(--_et-form-field-suffix-overlap);
+        }
+      }
+    }
+  }
+
   .et-form-field-control-frame:has(et-select) {
     cursor: pointer;
   }

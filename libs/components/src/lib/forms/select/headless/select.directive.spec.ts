@@ -1240,7 +1240,7 @@ describe('SelectDirective (search)', () => {
     expect(driver.select.open()).toBe(false);
   });
 
-  it('enforces maxSelection and locks the search input while full', async () => {
+  it('enforces maxSelection while the search input stays usable for filtering and removing', async () => {
     driver.host.allowCustom.set(true);
     driver.host.multiple.set(true);
     driver.host.maxSelection.set(2);
@@ -1257,17 +1257,25 @@ describe('SelectDirective (search)', () => {
 
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
     expect(driver.select.isFull()).toBe(true);
-    expect(driver.searchInput().readOnly).toBe(true);
+    expect(driver.searchInput().readOnly).toBe(false);
 
-    expect(driver.select.commitCustomValue('papaya')).toBe(false);
+    driver.type('an');
+
+    expect(driver.visibleLabels()).toEqual(['Banana']);
+
+    driver.type('papaya');
+    driver.pressInSearch('Enter');
+    tick();
+    expect(driver.host.value()).toEqual(['kiwi', 'mango']);
+
+    driver.type('');
     driver.visibleOptions()[0]!.click();
     tick();
     expect(driver.host.value()).toEqual(['kiwi', 'mango']);
 
-    driver.select.deselectValue('kiwi');
-    tick();
+    driver.pressInSearch('Backspace');
+    expect(driver.host.value()).toEqual(['kiwi']);
     expect(driver.select.isFull()).toBe(false);
-    expect(driver.searchInput().readOnly).toBe(false);
   });
 
   it('renders unselected options as disabled while full and keeps the selected ones deselectable', async () => {

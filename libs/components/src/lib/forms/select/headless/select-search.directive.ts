@@ -37,7 +37,7 @@ import { SelectDirective } from './select.directive';
     '[attr.aria-label]': 'select?.ariaLabel() || null',
     '[attr.aria-labelledby]': 'select?.labelId() || null',
     '[disabled]': 'select?.disabled() || false',
-    '[readOnly]': 'select?.readonly() || isFull()',
+    '[readOnly]': 'select?.readonly() || false',
     '(input)': 'handleInput()',
     '(keydown)': 'handleKeydown($event)',
     '(paste)': 'handlePaste($event)',
@@ -57,7 +57,6 @@ export class SelectSearchDirective {
   protected expanded = computed(() => this.select?.open() ?? false);
   protected controls = computed(() => (this.select?.open() ? this.select.listboxId() : null));
   protected activeDescendant = computed(() => (this.select?.open() ? this.select.activeId() : null));
-  protected isFull = computed(() => this.select?.isFull() ?? false);
   protected describedBy = computed(() => {
     const select = this.select;
 

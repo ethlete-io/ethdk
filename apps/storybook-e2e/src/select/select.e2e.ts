@@ -9,6 +9,7 @@ const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
 const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
 const MULTIPLE_STORY_ID = 'components-forms-select--multiple';
+const MAX_SELECTION_STORY_ID = 'components-forms-select--max-selection';
 const MANY_OPTIONS_STORY_ID = 'components-forms-select--many-options';
 const OPTION_GROUP_SEARCH_STORY_ID = 'components-forms-select-option-group--with-search';
 
@@ -309,6 +310,37 @@ test.describe('select / layout', () => {
 
     expect(samples.length).toBeGreaterThan(0);
     expect(Math.max(...samples.map(({ panel, pane }) => panel - pane))).toBeLessThanOrEqual(1);
+  });
+
+  test('a full multi select keeps its chip layout and a usable search input while open', async ({ page }) => {
+    const root = await openStory(page, MAX_SELECTION_STORY_ID);
+    const search = root.locator('input[etSelectSearch]');
+    const layoutOf = () =>
+      root.locator('et-chip, input[etSelectSearch]').evaluateAll((elements) =>
+        elements.map((element) => {
+          const box = element.getBoundingClientRect();
+
+          return [Math.round(box.x), Math.round(box.y)];
+        }),
+      );
+
+    await search.click();
+
+    for (const name of ['Apple', 'Banana', 'Cherry']) await page.getByRole('option', { name }).click();
+
+    await page.mouse.click(1, 1);
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+
+    const closed = await layoutOf();
+
+    await search.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await expect(root.locator('.et-input-clear')).toBeVisible();
+
+    expect(await layoutOf()).toEqual(closed);
+
+    await search.pressSequentially('an');
+    await expect(page.getByRole('option')).toHaveText(['Banana']);
   });
 
   test('an empty select without a placeholder keeps the height of one that shows its placeholder', async ({ page }) => {
