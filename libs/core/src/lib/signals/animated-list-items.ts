@@ -4,11 +4,7 @@ import { injectPrefersReducedMotion } from './media-queries';
 import { signalIsRendered } from './render-utils';
 
 export type AnimatedListItemsConfig = {
-  /**
-   * The element that holds the items. It must be positioned (e.g. `position: relative`) and be the
-   * `offsetParent` of every item, because removed items fade out as absolutely positioned copies in it.
-   * Defaults to the host `ElementRef`.
-   */
+  /** The element that holds the items. Removed items fade out as copies appended to it. Defaults to the host `ElementRef`. */
   host?: SignalElementBindingType;
   /** Selector for the items that move. Match the leaf rows only, never an item and its container. */
   items: string;
@@ -33,19 +29,20 @@ const translateOf = (element: Element) => {
   return { x: values?.[4] ?? 0, y: values?.[5] ?? 0 };
 };
 
-const layoutBoxOf = (element: HTMLElement, host: HTMLElement): ItemBox => {
-  let top = 0;
-  let left = 0;
-  let current: HTMLElement | null = element;
+const layoutBoxOf = (element: HTMLElement, origin: { top: number; left: number }, scale: number): ItemBox => {
+  const rect = element.getBoundingClientRect();
+  const translate = translateOf(element);
 
-  while (current && current !== host) {
-    top += current.offsetTop;
-    left += current.offsetLeft;
-    current = current.offsetParent as HTMLElement | null;
-  }
-
-  return { top, left, width: element.offsetWidth, height: element.offsetHeight };
+  return {
+    top: (rect.top - origin.top) / scale - translate.y,
+    left: (rect.left - origin.left) / scale - translate.x,
+    width: element.offsetWidth,
+    height: element.offsetHeight,
+  };
 };
+
+const scaleOf = (host: HTMLElement, hostRect: DOMRect) =>
+  host.offsetWidth && hostRect.width ? hostRect.width / host.offsetWidth : 1;
 
 /**
  * Animates the items of a list when its content changes: an item that stays slides from its old spot to
@@ -77,8 +74,11 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
   const measure = (host: HTMLElement) => {
     const next = new Map<HTMLElement, ItemBox>();
 
+    const hostRect = host.getBoundingClientRect();
+    const scale = scaleOf(host, hostRect);
+
     for (const item of Array.from(host.querySelectorAll<HTMLElement>(config.items))) {
-      if (!copies.has(item)) next.set(item, layoutBoxOf(item, host));
+      if (!copies.has(item)) next.set(item, layoutBoxOf(item, hostRect, scale));
     }
 
     return next;
@@ -92,8 +92,8 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     copy.inert = true;
     Object.assign(copy.style, {
       position: 'absolute',
-      top: `${box.top}px`,
-      left: `${box.left}px`,
+      top: '0',
+      left: '0',
       width: `${box.width}px`,
       height: `${box.height}px`,
       margin: '0',
@@ -102,6 +102,13 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
 
     copies.add(copy);
     host.append(copy);
+
+    const hostRect = host.getBoundingClientRect();
+    const scale = scaleOf(host, hostRect);
+    const containingBlock = layoutBoxOf(copy, hostRect, scale);
+
+    copy.style.top = `${box.top - containingBlock.top}px`;
+    copy.style.left = `${box.left - containingBlock.left}px`;
 
     const fade = copy.animate([{ opacity: 1 }, { opacity: 0 }], { duration: leaveDuration, easing: 'ease-out' });
     const remove = () => copy.remove();

@@ -60,17 +60,18 @@ describe('injectAnimatedListItems', () => {
     fixture.detectChanges();
   };
 
+  const originalRect = HTMLElement.prototype.getBoundingClientRect;
+
   beforeAll(() => {
-    Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
-      configurable: true,
-      get(this: HTMLElement) {
-        return Number(this.dataset['top'] ?? 0);
-      },
-    });
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const top = this.style.position === 'absolute' ? parseFloat(this.style.top) : Number(this.dataset['top'] ?? 0);
+
+      return { top, left: 0, width: 0, height: 0 } as DOMRect;
+    };
   });
 
   afterAll(() => {
-    Reflect.deleteProperty(HTMLElement.prototype, 'offsetTop');
+    HTMLElement.prototype.getBoundingClientRect = originalRect;
   });
 
   beforeEach(() => {

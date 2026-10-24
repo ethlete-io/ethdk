@@ -67,22 +67,22 @@ Observe the content (children), not the host - observing the animated host would
 
 ```ts
 injectAnimatedListItems({
-  host: this.listElement, // positioned, and the offsetParent of every item
+  host: this.listElement, // holds the items
   items: '.my-row', // leaf rows only, never a row and its container
 });
 ```
 
-| Option          | Default           | Description                                                     |
-| --------------- | ----------------- | --------------------------------------------------------------- |
-| `items`         | - (required)      | Selector for the items that move.                               |
-| `host`          | host `ElementRef` | The element that holds the items. Give it `position: relative`. |
-| `moveDuration`  | `300`             | Duration of a move in ms.                                       |
-| `moveEasing`    | `'ease'`          | Easing of a move - e.g. a spring as a `linear()` curve.         |
-| `enterDuration` | `150`             | Fade-in of a new item in ms.                                    |
-| `leaveDuration` | `100`             | Fade-out of a removed item in ms.                               |
-| `maxMoves`      | `30`              | Above this number of moved items, items only fade.              |
+| Option          | Default           | Description                                             |
+| --------------- | ----------------- | ------------------------------------------------------- |
+| `items`         | - (required)      | Selector for the items that move.                       |
+| `host`          | host `ElementRef` | The element that holds the items.                       |
+| `moveDuration`  | `300`             | Duration of a move in ms.                               |
+| `moveEasing`    | `'ease'`          | Easing of a move - e.g. a spring as a `linear()` curve. |
+| `enterDuration` | `150`             | Fade-in of a new item in ms.                            |
+| `leaveDuration` | `100`             | Fade-out of a removed item in ms.                       |
+| `maxMoves`      | `30`              | Above this number of moved items, items only fade.      |
 
-A removed item fades out as an inert, `aria-hidden` copy placed absolutely in the host, so the host must be the items' `offsetParent`. A change during a running move starts from where the item is now. With `prefers-reduced-motion`, items only fade.
+A removed item fades out as an inert, `aria-hidden` copy appended to the host and placed absolutely where the item was. A change during a running move starts from where the item is now. With `prefers-reduced-motion`, items only fade.
 
 ## Intersection
 
