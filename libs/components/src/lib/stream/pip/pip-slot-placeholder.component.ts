@@ -1,11 +1,4 @@
 import { Component, ViewEncapsulation, computed, effect, inject, untracked, viewChild } from '@angular/core';
-import {
-  ProvideSurfaceDirective,
-  injectSurfaceType,
-  SURFACE_PROVIDER,
-  injectSurfaceThemes,
-  resolveSurfaceByElevation,
-} from '@ethlete/core';
 import { injectStreamLabels } from '../stream-labels';
 import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
@@ -20,7 +13,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
   template: `
     @if (isInPip()) {
       <div class="et-pip-slot-placeholder-overlay">
-        <div [etProvideSurface]="cardSurface()" class="et-pip-slot-placeholder-card" etSurfaced>
+        <div class="et-pip-slot-placeholder-card">
           <span class="et-pip-slot-placeholder-icon" etIcon="et-arrow-out-up-right"></span>
           <p class="et-pip-slot-placeholder-message">{{ message() }}</p>
           <button [color]="backButtonColor()" et-button etPipBringBack type="button">
@@ -31,7 +24,7 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [PipBringBackDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
+  imports: [PipBringBackDirective, ButtonComponent, IconDirective],
   providers: [provideIcons(ARROW_OUT_UP_RIGHT_ICON)],
   styles: `
     @layer components {
@@ -106,23 +99,10 @@ import { injectPipSlotPlaceholderConfig } from './pip-slot-placeholder-config';
 })
 export class PipSlotPlaceholderComponent {
   private slotPlayerId = inject(STREAM_SLOT_PLAYER_ID_TOKEN);
-  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  private surfaceType = injectSurfaceType();
   private pipManager = injectPipManager();
   private config = injectPipSlotPlaceholderConfig();
   private labels = injectStreamLabels();
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
   private bringBackDir = viewChild(PipBringBackDirective);
-
-  public cardSurface = computed(() => {
-    const themes = this.surfaceThemes;
-    const type = this.surfaceType();
-    if (!themes || !type) return null;
-
-    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
-
-    return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
-  });
 
   public isInPip = computed(() => {
     const playerId = this.slotPlayerId();

@@ -1,11 +1,4 @@
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
-import {
-  ProvideSurfaceDirective,
-  injectSurfaceType,
-  SURFACE_PROVIDER,
-  injectSurfaceThemes,
-  resolveSurfaceByElevation,
-} from '@ethlete/core';
 import { injectStreamLabels } from '../stream-labels';
 import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
@@ -16,7 +9,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
 @Component({
   selector: 'et-stream-player-error',
   template: `
-    <div [etProvideSurface]="cardSurface()" class="et-stream-player-error-card" etSurfaced>
+    <div class="et-stream-player-error-card">
       <span class="et-stream-player-error-icon" etIcon="et-triangle-exclamation"></span>
       <p class="et-stream-player-error-heading">{{ heading() }}</p>
       <p class="et-stream-player-error-description">{{ description() }}</p>
@@ -26,7 +19,7 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ButtonComponent, IconDirective, ProvideSurfaceDirective],
+  imports: [ButtonComponent, IconDirective],
   providers: [provideIcons(TRIANGLE_EXCLAMATION_ICON)],
   hostDirectives: [StreamPlayerErrorDirective],
   host: {
@@ -138,21 +131,8 @@ import { injectStreamPlayerErrorConfig } from './stream-player-error-config';
 })
 export class StreamPlayerErrorComponent {
   private errorDirective = inject(STREAM_PLAYER_ERROR_TOKEN);
-  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  private surfaceType = injectSurfaceType();
   private config = injectStreamPlayerErrorConfig();
   private labels = injectStreamLabels();
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
-
-  public cardSurface = computed(() => {
-    const themes = this.surfaceThemes;
-    const type = this.surfaceType();
-    if (!themes || !type) return null;
-
-    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
-
-    return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
-  });
 
   public heading = computed(() => this.labels().errorHeading);
   public description = computed(() => this.labels().errorDescription);

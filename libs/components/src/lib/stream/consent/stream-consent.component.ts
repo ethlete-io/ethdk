@@ -1,11 +1,4 @@
-import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
-import {
-  ProvideSurfaceDirective,
-  injectSurfaceType,
-  SURFACE_PROVIDER,
-  injectSurfaceThemes,
-  resolveSurfaceByElevation,
-} from '@ethlete/core';
+import { Component, ViewEncapsulation, computed } from '@angular/core';
 import { injectStreamLabels } from '../stream-labels';
 import { mountStreamOverlayCardStyles } from '../stream-overlay-card-styles.component';
 import { ButtonComponent } from '../../button';
@@ -19,7 +12,7 @@ let nextHeadingId = 0;
 @Component({
   selector: 'et-stream-consent',
   template: `
-    <div [etProvideSurface]="cardSurface()" class="et-stream-consent-card" etSurfaced>
+    <div class="et-stream-consent-card">
       <span class="et-stream-consent-icon" etIcon="et-lock"></span>
       <p [id]="HEADING_ID" class="et-stream-consent-heading">{{ heading() }}</p>
       <p class="et-stream-consent-description">{{ description() }}</p>
@@ -29,7 +22,7 @@ let nextHeadingId = 0;
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [StreamConsentAcceptDirective, ButtonComponent, IconDirective, ProvideSurfaceDirective],
+  imports: [StreamConsentAcceptDirective, ButtonComponent, IconDirective],
   providers: [provideIcons(LOCK_ICON)],
   hostDirectives: [StreamConsentDirective],
   host: {
@@ -140,22 +133,9 @@ let nextHeadingId = 0;
   `,
 })
 export class StreamConsentComponent {
-  private parentSurfaceProvider = inject(SURFACE_PROVIDER, { optional: true, skipSelf: true });
-  private surfaceType = injectSurfaceType();
   private config = injectStreamConsentConfig();
   private labels = injectStreamLabels();
-  private surfaceThemes = injectSurfaceThemes({ optional: true });
   protected readonly HEADING_ID = `et-stream-consent-heading-${nextHeadingId++}`;
-
-  public cardSurface = computed(() => {
-    const themes = this.surfaceThemes;
-    const type = this.surfaceType();
-    if (!themes || !type) return null;
-
-    const elevation = (this.parentSurfaceProvider?.elevation() ?? 0) + 1;
-
-    return resolveSurfaceByElevation(themes, type, elevation)?.name ?? null;
-  });
 
   public heading = computed(() => this.labels().consentHeading);
   public description = computed(() => this.labels().consentDescription);
