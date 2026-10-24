@@ -1,5 +1,4 @@
 import { Component, Provider, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
 import '../../test-helpers';
 import { mountSelect } from '../forms/testing/select-driver';
 import { PageSizeSelectComponent } from './page-size-select.component';

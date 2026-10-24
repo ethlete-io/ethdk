@@ -30,7 +30,7 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
   template: `
     <et-form-field [size]="size()" labelMode="inline">
       <et-label>{{ resolvedLabels().pageSize }}</et-label>
-      <et-select [(value)]="pageSize" [clearable]="false">
+      <et-select [(value)]="pageSize" clearable="false">
         @for (option of options(); track option.value) {
           <et-select-option [value]="option.value">{{ option.label }}</et-select-option>
         }
@@ -38,8 +38,8 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
     </et-form-field>
   `,
   styleUrl: './page-size-select.component.css',
-  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS],
   encapsulation: ViewEncapsulation.None,
+  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS],
   host: {
     class: 'et-page-size-select-host',
     '[attr.data-size]': 'size()',
