@@ -649,6 +649,18 @@ export const defineQueryForm = <TFields extends QueryFormFields>(
 
       const info: QueryFormNavigationInfo | undefined = writes.size ? { queryFormWrites: writes } : undefined;
 
+      // Even a skipped same-URL navigation makes the router's scroller jump to the top, which undoes the
+      // scroll position a back navigation just restored.
+      if (!pending) {
+        const target = router.createUrlTree([], {
+          queryParams,
+          queryParamsHandling: 'replace',
+          fragment: base.fragment ?? undefined,
+        });
+
+        if (router.serializeUrl(target) === router.url) return;
+      }
+
       router.navigate([], {
         ...observeOptions?.navigationExtras,
         queryParams,

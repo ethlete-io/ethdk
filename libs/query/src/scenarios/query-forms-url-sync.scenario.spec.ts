@@ -692,6 +692,36 @@ describe('query forms URL sync scenario', () => {
     expect(qf.value().search).toBe('shoes');
     expect(router.parseUrl(router.url).queryParams).toEqual({});
   });
+
+  it('does not navigate on observe when the URL already holds the form values', async () => {
+    const s = scenario();
+    const router = TestBed.inject(Router);
+
+    await s.reloadAt('/?type=series');
+
+    const events: unknown[] = [];
+    const subscription = router.events.subscribe((event) => events.push(event));
+
+    const consumer = s.consumer();
+    const qf = consumer.run(() =>
+      defineQueryForm({ fields: { type: queryField<string>({ defaultValue: 'all' }) } }).observe({
+        replaceUrl: true,
+      }),
+    );
+    await s.settle();
+
+    expect(qf.value().type).toBe('series');
+    expect(router.url).toBe('/?type=series');
+    expect(events).toEqual([]);
+
+    qf.setValue({ type: 'movies' });
+    await s.settle();
+
+    expect(router.url).toBe('/?type=movies');
+
+    subscription.unsubscribe();
+    consumer.destroy();
+  });
 });
 
 describe.each(['merge', 'preserve'] as const)(
