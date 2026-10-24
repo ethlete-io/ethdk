@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import {
   RuntimeError,
+  applyHostListener,
   applyHostListeners,
   clamp,
   dragGestureFrom,
@@ -34,6 +35,7 @@ import {
   readScrollDistance,
   readScrollMetrics,
   scrollToDistance,
+  wheelScrollOffsets,
 } from './internals/scrollbar-geometry';
 import { markScrollbarHost } from './internals/scrollbar-host-class';
 import { ScrollbarGeometry, ScrollbarOrientation, ScrollbarTarget } from './scrollbar.types';
@@ -222,6 +224,8 @@ export class ScrollbarDirective {
       pointerdown: (event) => this.pageTowardsPointer(event),
     });
 
+    applyHostListener('wheel', (event) => this.scrollByWheel(event), { passive: false });
+
     if (ngDevMode) {
       effect(() => {
         const value = this.target();
@@ -319,6 +323,26 @@ export class ScrollbarDirective {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  /**
+   * Scroll the target by a wheel turned over the scrollbar. The scrollbar sits outside the target, so
+   * the browser would scroll whatever contains it instead. Lets the event through when the target
+   * cannot move that way, so it chains to an ancestor like a native wheel at the end of a container.
+   */
+  public scrollByWheel(event: WheelEvent) {
+    if (event.ctrlKey || event.defaultPrevented) return;
+
+    const target = this.targetElement();
+
+    if (!target) return;
+
+    const offsets = wheelScrollOffsets(target, event);
+
+    if (!offsets) return;
+
+    event.preventDefault();
+    target.scroll({ ...offsets, behavior: 'instant' });
   }
 
   /**

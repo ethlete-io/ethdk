@@ -168,6 +168,34 @@ test.describe('scrollbar / pointer', () => {
     await expect.poll(() => container.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
   });
 
+  test('the wheel over the thumb scrolls the container', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const container = root.locator(VERTICAL_CONTAINER);
+    const thumb = root.locator(THUMB);
+
+    await expect.poll(() => container.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+
+    await thumb.hover();
+    await page.mouse.wheel(0, 120);
+
+    await expect.poll(() => container.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  });
+
+  test('the wheel over the track, away from the thumb, scrolls the container', async ({ page }) => {
+    const root = await openStory(page, DEFAULT_STORY_ID);
+    const container = root.locator(VERTICAL_CONTAINER);
+    const scrollbar = root.locator(SCROLLBAR).first();
+
+    await expect.poll(() => container.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(0);
+
+    const box = await boxOf(scrollbar);
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height - 5);
+    await page.mouse.wheel(0, 120);
+
+    await expect.poll(() => container.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  });
+
   test('a click on the track, away from the thumb, pages the container one viewport', async ({ page }) => {
     const root = await openStory(page, DEFAULT_STORY_ID);
     const container = root.locator(VERTICAL_CONTAINER);

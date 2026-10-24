@@ -27,14 +27,16 @@ import { SCROLLBAR_IMPORTS } from '@ethlete/components';
 ## How it works
 
 The scrollbar reads the target's `clientHeight`/`scrollHeight` (or the inline pair) and its scroll
-offset, then sizes and offsets the thumb. It writes an offset back in two cases only:
+offset, then sizes and offsets the thumb. It writes an offset back in three cases only:
 
 - a drag of the thumb, which writes the offset on every pointer move;
 - a press on the track, which scrolls one viewport towards the press, the way a press beside a native
-  thumb pages.
+  thumb pages;
+- a wheel turned over the scrollbar, which scrolls the target as if the pointer were over it. At the
+  end of the target the wheel chains to the page, like a native wheel does.
 
-Everything else stays native. Wheel, touch, keyboard, `scrollIntoView()` and CSS scroll snap behave
-exactly as they did, because the container is still the scroll container.
+Everything else stays native. Wheel over the content, touch, keyboard, `scrollIntoView()` and CSS
+scroll snap behave exactly as they did, because the container is still the scroll container.
 
 Pointing a scrollbar at a container adds the `et-scrollbar-host` class to it, which hides that
 container's native scrollbar. The class is reference-counted, so a container with a scrollbar on each

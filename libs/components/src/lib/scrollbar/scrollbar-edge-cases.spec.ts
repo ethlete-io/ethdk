@@ -111,6 +111,37 @@ describe('ScrollbarDirective edge cases', () => {
 
     expect(scroll.lastCall()?.options).toEqual({ top: 10, behavior: 'smooth' });
   });
+
+  it('scrolls the target by a wheel turned over the track, in pixels, lines and pages', () => {
+    const { scroll, list, track } = setup({ viewportSize: 100, contentSize: 1000 });
+
+    const wheel = (deltaY: number, deltaMode: number) => {
+      const event = new WheelEvent('wheel', { deltaY, deltaMode, bubbles: true, cancelable: true });
+      track.dispatchEvent(event);
+      return event;
+    };
+
+    expect(wheel(40, WheelEvent.DOM_DELTA_PIXEL).defaultPrevented).toBe(true);
+    expect(scroll.lastCall()?.options).toEqual({ top: 40, left: 0, behavior: 'instant' });
+
+    list.scrollTop = 40;
+    wheel(3, WheelEvent.DOM_DELTA_LINE);
+    expect(scroll.lastCall()?.options).toEqual({ top: 88, left: 0, behavior: 'instant' });
+
+    wheel(1, WheelEvent.DOM_DELTA_PAGE);
+    expect(scroll.lastCall()?.options).toEqual({ top: 140, left: 0, behavior: 'instant' });
+  });
+
+  it('lets a wheel past the end of the target through, so it chains to an ancestor', () => {
+    const { scroll, list, track } = setup({ viewportSize: 100, contentSize: 1000 });
+
+    list.scrollTop = 900;
+    const event = new WheelEvent('wheel', { deltaY: 40, bubbles: true, cancelable: true });
+    track.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(scroll.calls()).toEqual([]);
+  });
 });
 
 @Component({
