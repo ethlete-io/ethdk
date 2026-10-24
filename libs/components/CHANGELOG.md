@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-next.73
+
+### Patch Changes
+
+- Lift a bottom sheet above the soft keyboard on touch devices, so a focused input inside it stays visible.
+- Pause carousel autoplay while a finger is on the carousel, so it no longer advances in the middle of a swipe. `pauseReason()` reports it as `'touch'`.
+- Remove a thin line that the carousel autoplay ring showed at its bottom seam on screens with a fractional pixel ratio.
+- Floor the font-size of a native input or textarea inside `et-form-field` at `16px` on touch devices (`pointer: coarse`), so iOS Safari no longer zooms the page when the field takes focus.
+
 ## 1.0.0-next.72
 
 ### Minor Changes
