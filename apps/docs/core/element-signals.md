@@ -61,6 +61,29 @@ injectAnimatedBlockSize({
 
 Observe the content (children), not the host - observing the animated host would feed the animation back into itself. For the `inline` axis this also means the observed content must be content-sized (e.g. `inline-size: max-content`); a plain block-level child just mirrors the host's animated width back. The baseline size is captured on the first render, so the initial layout never plays as a grow-from-0; an interrupting change continues from the current animated size; and it respects `prefers-reduced-motion` (used with both axes by `et-cascader`'s panel, which grows/shrinks as columns drill in and out).
 
+## Animated list items
+
+`injectAnimatedListItems(config)` animates the items of a list when its content changes. An item that stays slides from its old spot to its new one, a new item fades in, and a removed item fades out where it was (used by `et-command-palette`'s result list).
+
+```ts
+injectAnimatedListItems({
+  host: this.listElement, // positioned, and the offsetParent of every item
+  items: '.my-row', // leaf rows only, never a row and its container
+});
+```
+
+| Option          | Default           | Description                                                     |
+| --------------- | ----------------- | --------------------------------------------------------------- |
+| `items`         | - (required)      | Selector for the items that move.                               |
+| `host`          | host `ElementRef` | The element that holds the items. Give it `position: relative`. |
+| `moveDuration`  | `300`             | Duration of a move in ms.                                       |
+| `moveEasing`    | `'ease'`          | Easing of a move - e.g. a spring as a `linear()` curve.         |
+| `enterDuration` | `150`             | Fade-in of a new item in ms.                                    |
+| `leaveDuration` | `100`             | Fade-out of a removed item in ms.                               |
+| `maxMoves`      | `30`              | Above this number of moved items, items only fade.              |
+
+A removed item fades out as an inert, `aria-hidden` copy placed absolutely in the host, so the host must be the items' `offsetParent`. A change during a running move starts from where the item is now. With `prefers-reduced-motion`, items only fade.
+
 ## Intersection
 
 `signalElementIntersection(el, options?)` / `signalHostElementIntersection(options?)` → `Signal<IntersectionObserverEntryWithDetails[]>`. Options are `IntersectionObserverInit` plus `root` (any element binding) and `enabled` (a `Signal<boolean>`, default enabled); `rootMargin` and `threshold` also take a signal, and a change re-creates the observer. Each entry is the native `IntersectionObserverEntry` enriched with `isAbove` / `isBelow` / `isLeft` / `isRight` / `isVisible`. An initial entry is measured right after render, so you don't wait for the first observer callback - unless a non-zero `rootMargin` is set, where the observer's own first entry is the only correct one.
