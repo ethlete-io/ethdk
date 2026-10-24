@@ -358,12 +358,16 @@ test.describe('scrollable / edges and chrome', () => {
     const container = root.locator(CONTAINER);
 
     await expect(root.locator(HOST)).toHaveClass(/et-scrollable--sticky-buttons/);
-    const before = { button: (await boxOf(next)).y, track: (await boxOf(container)).y };
+    const trackTop = (await boxOf(container)).y;
 
-    await page.evaluate(() => window.scrollBy(0, 150));
-    await expect.poll(async () => (await boxOf(container)).y).toBeLessThan(before.track - 100);
+    await page.evaluate((y) => window.scrollTo(0, y), trackTop + 10);
+    await expect.poll(async () => (await boxOf(container)).y).toBeLessThanOrEqual(-10);
+    const held = (await boxOf(next)).y;
 
-    expect(Math.abs((await boxOf(next)).y - before.button)).toBeLessThanOrEqual(1);
+    await page.evaluate((y) => window.scrollTo(0, y), trackTop + 60);
+    await expect.poll(async () => (await boxOf(container)).y).toBeLessThanOrEqual(-60);
+
+    expect(Math.abs((await boxOf(next)).y - held)).toBeLessThanOrEqual(1);
   });
 
   test('past five dots the dot track slides so the active dot stays inside the visible window', async ({ page }) => {

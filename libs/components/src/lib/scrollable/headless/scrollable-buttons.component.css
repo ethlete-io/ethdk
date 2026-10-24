@@ -92,7 +92,14 @@
       }
 
       &[direction='horizontal'] .et-scrollable-buttons {
-        margin-block: var(--_sticky-margin);
+        position: sticky;
+        inset-block-start: 0;
+        align-self: start;
+        block-size: min(100%, 100dvh);
+
+        & .et-scrollable-button {
+          position: absolute;
+        }
       }
 
       &[direction='vertical'] .et-scrollable-buttons {
