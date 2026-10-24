@@ -24,6 +24,12 @@ import {
   overlayViewportInsetsFor,
 } from './overlay-viewport-inset';
 
+const roundToDevicePixel = (value: number) => {
+  const ratio = window.devicePixelRatio || 1;
+
+  return Math.round(value * ratio) / ratio;
+};
+
 /**
  * The floating-ui middleware only a subset of anchored overlays needs. Installed by
  * `enableAnchoredOverlayPositionExtras()`.
@@ -354,8 +360,12 @@ export const createAnchoredPositionCleanup = (
         strategy.autoResize && strategy.minAvailableSpace === undefined
           ? platformMeasuringUncappedPaneFirst(paneElement, renderer)
           : platform,
-    }).then(({ x, y, placement, middlewareData }) => {
+    }).then(({ x: rawX, y: rawY, placement, middlewareData }) => {
       if (destroyed || currentUpdateId !== updateId) return;
+
+      // A fractional offset snaps the panel's content by a pixel whenever a child gets its own layer.
+      const x = roundToDevicePixel(rawX);
+      const y = roundToDevicePixel(rawY);
 
       if (middlewareData.hide?.referenceHidden) {
         handleUnusableReference();
