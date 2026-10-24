@@ -1,5 +1,4 @@
-import { JsonPipe } from '@angular/common';
-import { Component, input, linkedSignal, ViewEncapsulation } from '@angular/core';
+import { Component, computed, input, linkedSignal, ViewEncapsulation } from '@angular/core';
 import { disabled, form, FormField, readonly, required } from '@angular/forms/signals';
 import { ProvideColorDirective } from '@ethlete/core';
 import { DescriptionComponent } from '../../../description';
@@ -46,10 +45,12 @@ import { SelectionListOrientation } from '../../selection-list.types';
       </et-checkbox-group>
 
       @if (showMixedState()) {
-        <div class="text-sm opacity-60">
-          <p>Raw form value: {{ demoForm.toppings().value() | json }}</p>
-          <p>Mixed: {{ mixedState() }}</p>
-        </div>
+        <dl class="m-0 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-small">
+          <dt class="opacity-60">Hidden value</dt>
+          <dd class="m-0">{{ selectedLabels() || 'None' }}</dd>
+          <dt class="opacity-60">State</dt>
+          <dd class="m-0">{{ mixedState() ? 'Mixed - the group is not a single answer yet' : 'Resolved' }}</dd>
+        </dl>
       }
     </div>
   `,
@@ -59,7 +60,6 @@ import { SelectionListOrientation } from '../../selection-list.types';
     CheckboxGroupSelectAllComponent,
     CheckboxOptionComponent,
     FormField,
-    JsonPipe,
     ProvideColorDirective,
     HintComponent,
     LabelDirective,
@@ -88,6 +88,14 @@ export class CheckboxGroupStorybookComponent {
   ]);
 
   public mixedState = linkedSignal(() => this.mixed());
+
+  protected selectedLabels = computed(() => {
+    const selected = this.demoForm.toppings().value();
+    return this.options()
+      .filter((option) => selected.includes(option.value))
+      .map((option) => option.label)
+      .join(', ');
+  });
 
   private formModel = linkedSignal(() => ({ toppings: this.value() }));
 

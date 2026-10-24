@@ -46,7 +46,7 @@ export const Mixed: Story = {
     value: ['cheese', 'mushrooms'],
     mixed: true,
     showMixedState: true,
-    hint: 'Bulk edit over records that disagree - no box reads as checked; the first pick replaces the hidden raw array with a fresh one.',
+    hint: 'Bulk edit over records that disagree: no box reads as checked until the first pick.',
   },
 };
 
