@@ -173,6 +173,14 @@
     grid-template-rows: minmax(0, 1fr);
     block-size: 100%;
     overflow: hidden;
+
+    .et-overlay-body-container > .et-overlay-router-outlet-host > & {
+      margin-inline: calc(var(--et-overlay-padding-inline) * -1);
+
+      > .et-overlay-router-outlet-page {
+        padding-inline: var(--et-overlay-padding-inline);
+      }
+    }
   }
 
   .et-overlay-router-outlet-page {
