@@ -82,7 +82,9 @@ export const Headless: Story = {
         story:
           '`etAccordion` / `etAccordionTrigger` / `etAccordionPanel` with a hand-written template: the ' +
           'directives keep the open state, the ARIA wiring and the `inert` collapsed panel, and impose ' +
-          'nothing else. This one renders the panel conditionally instead of animating a height.',
+          'nothing else. This one is a stack of step cards with its own animation: the panel stays mounted and ' +
+          'grows its grid track and fades in off `data-open`, gated on `data-can-animate` so a step that starts ' +
+          'open does not animate in.',
       },
     },
   },

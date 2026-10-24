@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation, input, signal } from '@angular/core';
-import { ProvideSurfaceDirective } from '@ethlete/core';
+import { AutoSurfaceDirective, ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { IconDirective, PLUS_ICON, provideIcons } from '../../icon';
 import { ACCORDION_IMPORTS } from '../accordion.imports';
 
 @Component({
@@ -89,39 +90,188 @@ export class AccordionLazyStorybookComponent {
 @Component({
   selector: 'et-sb-accordion-headless',
   template: `
-    <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-8 p-8 font-sans">
-      <!-- The same behavior with none of the default chrome: the directives own the state, the ARIA
-           wiring and the inert panel, the template owns everything you can see. -->
-      <div [style.max-inline-size.px]="560" class="flex flex-col gap-2" etAccordionGroup autoCloseOthers>
-        @for (section of SECTIONS; track section.title) {
-          <div #accordion="etAccordion" class="rounded-lg border border-white/15" etAccordion>
-            <h3 class="m-0">
-              <button
-                class="text-medium flex w-full items-center justify-between gap-4 bg-transparent p-4 text-start font-sans text-inherit"
-                etAccordionTrigger
-                type="button"
-              >
-                {{ section.title }}
-                <span class="text-small">{{ accordion.isOpen() ? 'Hide' : 'Show' }}</span>
+    <div [etProvideSurface]="surface()" class="text-medium p-8 font-sans">
+      <div [style.max-inline-size.px]="560" class="et-sb-steps" etAccordionGroup etProvideColor="brand" autoCloseOthers>
+        @for (step of STEPS; track step.title; let index = $index) {
+          <div #accordion="etAccordion" class="et-sb-step" etAccordion etAutoSurface>
+            <h3 class="et-sb-step-heading">
+              <button class="et-sb-step-trigger" etAccordionTrigger type="button">
+                <span class="et-sb-step-number">{{ index + 1 }}</span>
+                <span class="et-sb-step-text">
+                  <span class="et-sb-step-title">{{ step.title }}</span>
+                  <span class="et-sb-step-summary">{{ step.summary }}</span>
+                </span>
+                <i class="et-sb-step-icon" etIcon="et-plus"></i>
               </button>
             </h3>
 
-            @if (accordion.isOpen()) {
-              <div class="text-small px-4 pb-4" etAccordionPanel>{{ section.body }}</div>
-            }
+            <div class="et-sb-step-panel" etAccordionPanel>
+              <div class="et-sb-step-clip">
+                <p class="et-sb-step-body">{{ step.body }}</p>
+              </div>
+            </div>
           </div>
         }
       </div>
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ACCORDION_IMPORTS, ProvideSurfaceDirective],
+  imports: [ACCORDION_IMPORTS, ProvideSurfaceDirective, ProvideColorDirective, AutoSurfaceDirective, IconDirective],
+  providers: [provideIcons(PLUS_ICON)],
+  styles: `
+    .et-sb-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .et-sb-step {
+      border-radius: 16px;
+      background: var(--et-surface-background-solid);
+      box-shadow: inset 0 0 0 1px transparent;
+      transition:
+        background-color 120ms ease,
+        box-shadow 160ms ease;
+
+      &:has(> .et-sb-step-heading > .et-sb-step-trigger:hover) {
+        background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, var(--et-surface-background-solid));
+      }
+
+      &[data-open] {
+        box-shadow: inset 0 0 0 1px var(--et-theme-color-primary-solid);
+      }
+    }
+
+    .et-sb-step-heading {
+      margin: 0;
+    }
+
+    .et-sb-step-trigger {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      inline-size: 100%;
+      padding: 14px 16px;
+      border: 0;
+      border-radius: 16px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: start;
+      cursor: pointer;
+
+      &:focus-visible {
+        outline: 2px solid var(--et-theme-color-primary-solid);
+        outline-offset: 2px;
+      }
+    }
+
+    .et-sb-step-number {
+      display: grid;
+      flex: none;
+      place-items: center;
+      inline-size: 32px;
+      block-size: 32px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--et-theme-color-primary-solid) 18%, transparent);
+      color: var(--et-theme-color-primary-solid);
+      font-weight: 600;
+      transition:
+        background-color 160ms ease,
+        color 160ms ease;
+
+      [aria-expanded='true'] & {
+        background: var(--et-theme-color-primary);
+        color: var(--et-theme-color-on-primary);
+      }
+    }
+
+    .et-sb-step-text {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 2px;
+      min-inline-size: 0;
+    }
+
+    .et-sb-step-title {
+      font-weight: 600;
+    }
+
+    .et-sb-step-summary {
+      color: var(--et-surface-color-muted-solid);
+      font-size: 1.3rem;
+    }
+
+    .et-sb-step-icon {
+      flex: none;
+      inline-size: 16px;
+      block-size: 16px;
+      color: var(--et-surface-color-muted-solid);
+
+      [aria-expanded='true'] & {
+        rotate: 45deg;
+        color: var(--et-theme-color-primary-solid);
+      }
+    }
+
+    .et-sb-step-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+
+      &[data-open] {
+        grid-template-rows: 1fr;
+        opacity: 1;
+      }
+    }
+
+    .et-sb-step-clip {
+      min-block-size: 0;
+      overflow: hidden;
+    }
+
+    .et-sb-step-body {
+      margin: 0;
+      padding: 0 16px 16px 62px;
+      color: var(--et-surface-color-muted-solid);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .et-sb-step[data-can-animate] {
+        .et-sb-step-panel {
+          transition:
+            grid-template-rows 360ms cubic-bezier(0.2, 0, 0, 1),
+            opacity 240ms ease;
+        }
+
+        .et-sb-step-icon {
+          transition:
+            rotate 360ms cubic-bezier(0.2, 0, 0, 1),
+            color 160ms ease;
+        }
+      }
+    }
+  `,
 })
 export class AccordionHeadlessStorybookComponent {
   public surface = input('dark');
 
-  protected readonly SECTIONS = [
-    { title: 'Own markup', body: 'No heading wrapper, no chevron, no separators - just the two directives.' },
-    { title: 'Own animation', body: 'This one swaps the panel in and out instead of animating a height.' },
+  protected readonly STEPS = [
+    {
+      title: 'Create your account',
+      summary: 'Email and a password',
+      body: 'The directives only own the open state, the ids and the inert panel. Every pixel here - the cards, the numbers, the plus that turns into a cross - is this template.',
+    },
+    {
+      title: 'Pick a plan',
+      summary: 'Switch any time',
+      body: 'The panel stays mounted and animates its own grid track and opacity off data-open, gated on data-can-animate so an initially open step does not animate in.',
+    },
+    {
+      title: 'Invite your team',
+      summary: 'Optional',
+      body: 'autoCloseOthers on the group keeps one step open at a time, and the arrow keys move between the headers.',
+    },
   ];
 }
