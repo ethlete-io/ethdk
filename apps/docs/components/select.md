@@ -484,6 +484,8 @@ The trigger inherits the form field's chrome (border, focus ring, sizes, label m
 
 The clear button and the chevron render in the form field's [suffix slot](/components/forms#one-suffix-stack), on the shared `.et-input-clear` / `.et-input-picker-trigger` presentation every control's in-field affordances use - ahead of a consumer's own `[etInputSuffix]` and the busy spinner. Their size follows `--et-form-field-affix-icon-size`, so it tracks the field's `size` like every other control.
 
+The panel scrolls under the library [scrollbar](/components/scrollbar) instead of the platform one: it fades in while the options scroll or the pointer is over the panel, and takes the `--et-scrollbar-*` tokens.
+
 Public design tokens:
 
 | Token                                      | Default | Purpose                                                                   |

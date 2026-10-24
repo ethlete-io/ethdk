@@ -1,5 +1,6 @@
 import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, ProvideColorDirective, injectAnimatedListItems } from '@ethlete/core';
+import { ScrollbarComponent } from '../../scrollbar';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { SelectDirective, SelectListboxDirective, SelectViewportDirective } from './headless';
 import { SELECT_SPRING } from './select-spring';
@@ -9,7 +10,7 @@ import { SELECT_SPRING } from './select-spring';
   // a listbox may only own options and groups, so the state and action rows render beside it.
   // The host must not scroll: macOS rubber-band overscroll drags a scroller's own background along.
   template: `
-    <div class="et-select-panel-scroller" etSelectViewport>
+    <div #scroller class="et-select-panel-scroller" etSelectViewport>
       <div #panelBody class="et-select-panel-body">
         <div class="et-select-listbox" etSelectListbox>
           <ng-content />
@@ -17,10 +18,12 @@ import { SELECT_SPRING } from './select-spring';
         <ng-content select="[etSelectPanelExtras]" />
       </div>
     </div>
+
+    <et-scrollbar [for]="scroller" autoHide />
   `,
   styleUrl: './select-panel.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [SelectListboxDirective, SelectViewportDirective],
+  imports: [ScrollbarComponent, SelectListboxDirective, SelectViewportDirective],
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-select-panel',

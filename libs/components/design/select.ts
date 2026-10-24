@@ -105,6 +105,6 @@ export const select = (options: SelectMockOptions): FormFieldControlMock => {
       return `${clear}<button aria-hidden="true" tabindex="-1" type="button" class="et-input-picker-trigger et-select-arrow"${state.disabled ? ' disabled' : ''}>${icon('et-chevron', CHEVRON_ICON_SVG)}</button>`;
     },
     panel: (state) =>
-      `<et-select-panel class="et-select-panel et-color--inherited${options.panelColor ? ` et-color--${options.panelColor}` : ''} et-surface--${options.panelSurface ?? 'inherited'}"><div class="et-select-panel-scroller"><div class="et-select-panel-body"><div role="listbox" class="et-select-listbox" id="et-select-listbox-${state.id}"${state.labelId ? ` aria-labelledby="${state.labelId}"` : ''}>${optionsHtml(state)}</div><div class="et-select-panel-extras"></div></div></div></et-select-panel>`,
+      `<et-select-panel class="et-select-panel et-color--inherited${options.panelColor ? ` et-color--${options.panelColor}` : ''} et-surface--${options.panelSurface ?? 'inherited'}"><div class="et-select-panel-scroller et-scrollbar-host"><div class="et-select-panel-body"><div role="listbox" class="et-select-listbox" id="et-select-listbox-${state.id}"${state.labelId ? ` aria-labelledby="${state.labelId}"` : ''}>${optionsHtml(state)}</div><div class="et-select-panel-extras"></div></div></div><et-scrollbar class="et-scrollbar" data-orientation="vertical"><div class="et-scrollbar-thumb"></div></et-scrollbar></et-select-panel>`,
   };
 };
