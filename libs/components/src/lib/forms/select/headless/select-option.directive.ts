@@ -181,6 +181,10 @@ export class SelectOptionDirective {
   }
 
   protected handleClick(event: MouseEvent) {
+    if (this.select?.isStalePointerClick(event)) {
+      return;
+    }
+
     if (this.isDisabled()) {
       event.preventDefault();
       event.stopPropagation();

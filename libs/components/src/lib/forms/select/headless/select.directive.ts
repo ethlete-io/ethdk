@@ -557,6 +557,7 @@ export class SelectDirective<TValue = unknown>
   });
 
   private pendingActiveScrollItem: SelectItem | null = null;
+  private anchorBoxAtPointerMove: { left: number; top: number; bottom: number } | null = null;
 
   /** @internal */
   public characterSeparators = computed(() => this.separators().filter((separator) => separator.length === 1));
@@ -852,6 +853,19 @@ export class SelectDirective<TValue = unknown>
       )
       .subscribe();
 
+    toObservable(this.overlayRef)
+      .pipe(
+        tap(() => (this.anchorBoxAtPointerMove = null)),
+        switchMap((overlayRef) => (overlayRef ? fromEvent<PointerEvent>(this.document, 'pointermove') : EMPTY)),
+        tap((event) => {
+          if (event.pointerType === 'mouse') {
+            this.anchorBoxAtPointerMove = this.readAnchorBox();
+          }
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     this.destroyRef.onDestroy(() => {
       this.typeahead.destroy();
     });
@@ -1094,6 +1108,27 @@ export class SelectDirective<TValue = unknown>
     } else {
       this.writeValue(null);
     }
+  }
+
+  /**
+   * @internal Whether a mouse click on a row must be ignored: the pointer has not moved since the
+   * panel last moved, so the row may have slid under a resting pointer.
+   */
+  public isStalePointerClick(event: MouseEvent) {
+    if (!this.isMounted() || !(event instanceof PointerEvent) || event.pointerType !== 'mouse') {
+      return false;
+    }
+
+    const recorded = this.anchorBoxAtPointerMove;
+    const current = this.readAnchorBox();
+
+    return (
+      !recorded ||
+      !current ||
+      recorded.left !== current.left ||
+      recorded.top !== current.top ||
+      recorded.bottom !== current.bottom
+    );
   }
 
   /** @internal */
@@ -1687,6 +1722,12 @@ export class SelectDirective<TValue = unknown>
     const target = event.target;
 
     return !!pane && target instanceof Node && pane.contains(target);
+  }
+
+  private readAnchorBox() {
+    const box = this.resolveAnchorElement()?.getBoundingClientRect();
+
+    return box ? { left: box.left, top: box.top, bottom: box.bottom } : null;
   }
 
   private resolveAnchorElement() {

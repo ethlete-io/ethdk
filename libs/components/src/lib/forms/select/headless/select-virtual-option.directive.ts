@@ -84,6 +84,10 @@ export class SelectVirtualOptionDirective {
   }
 
   protected handleClick(event: MouseEvent) {
+    if (this.select?.isStalePointerClick(event)) {
+      return;
+    }
+
     if (this.item().disabled()) {
       event.preventDefault();
       event.stopPropagation();

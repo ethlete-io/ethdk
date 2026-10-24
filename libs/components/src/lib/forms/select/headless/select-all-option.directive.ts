@@ -66,6 +66,10 @@ export class SelectAllOptionDirective {
   protected handleClick(event: MouseEvent) {
     const select = this.select;
 
+    if (select?.isStalePointerClick(event)) {
+      return;
+    }
+
     if (!select || select.selectAllItem.disabled()) {
       event.preventDefault();
       event.stopPropagation();

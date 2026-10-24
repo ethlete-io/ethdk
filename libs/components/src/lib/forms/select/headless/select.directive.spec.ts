@@ -574,6 +574,58 @@ describe('SelectDirective (multiple)', () => {
     expect(driver.select.open()).toBe(true);
   });
 
+  describe('clicks after the panel moved', () => {
+    const trigger = () => driver.fixture.nativeElement.querySelector('[etselecttrigger]') as HTMLElement;
+    const option = (index: number) => driver.paneEls('[role="option"]')[index]!;
+    const click = (target: HTMLElement, pointerType: string) => {
+      target.dispatchEvent(new PointerEvent('click', { pointerType, bubbles: true, cancelable: true }));
+      tick();
+    };
+    const movePointer = () => {
+      document.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', bubbles: true }));
+      tick();
+    };
+
+    it('ignores a mouse click until the pointer has moved over the open panel', async () => {
+      await driver.open();
+
+      click(option(0), 'mouse');
+
+      expect(driver.host.value()).toEqual([]);
+
+      movePointer();
+      click(option(0), 'mouse');
+
+      expect(driver.host.value()).toEqual(['apple']);
+    });
+
+    it('ignores a mouse click once the field moved the panel under a resting pointer', async () => {
+      await driver.open();
+      movePointer();
+      click(option(0), 'mouse');
+
+      trigger().getBoundingClientRect = () => new DOMRect(0, 0, 200, 64);
+
+      click(option(1), 'mouse');
+
+      expect(driver.host.value()).toEqual(['apple']);
+
+      movePointer();
+      click(option(1), 'mouse');
+
+      expect(driver.host.value()).toEqual(['apple', 'banana']);
+    });
+
+    it('commits a touch tap and a keyboard-made click without a pointer move', async () => {
+      await driver.open();
+
+      click(option(0), 'touch');
+      click(option(1), '');
+
+      expect(driver.host.value()).toEqual(['apple', 'banana']);
+    });
+  });
+
   describe('keyboard shortcuts', () => {
     const trigger = () => driver.fixture.nativeElement.querySelector('[etselecttrigger]') as HTMLElement;
 
