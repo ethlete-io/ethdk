@@ -725,6 +725,13 @@ test.describe('table / layout', () => {
 
     await root.locator('.et-table-row').first().locator('.et-table-expander').click();
     await expect(root.locator('.et-table-detail-row')).toHaveCount(1);
+    await expect
+      .poll(() =>
+        root
+          .locator('.et-table-detail-row')
+          .evaluate((row) => !row.classList.contains('et-table-detail--enter') && row.getAnimations().length === 0),
+      )
+      .toBe(true);
 
     const detailHeight = await root
       .locator('.et-table-detail-row')
