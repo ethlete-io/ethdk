@@ -73,21 +73,10 @@
 </ng-template>
 
 @if (showJumpTo()) {
-  <div class="et-pagination-jump">
-    <label [attr.for]="jumpInputId" class="et-pagination-jump-label">
-      {{ pagination.resolvedLabels().jumpTo }}
-    </label>
-    <input
-      #jumpInput
-      [min]="1"
-      [max]="pagination.totalPages()"
-      [id]="jumpInputId"
-      (keydown.enter)="jump(jumpInput.value); jumpInput.value = ''"
-      class="et-pagination-jump-input"
-      inputmode="numeric"
-      type="number"
-    />
-  </div>
+  <et-form-field class="et-pagination-jump" labelMode="inline" size="sm">
+    <et-label>{{ pagination.resolvedLabels().jumpTo }}</et-label>
+    <et-number-input [(value)]="jumpValue" [min]="1" [max]="pagination.totalPages()" (keydown.enter)="jump()" />
+  </et-form-field>
 }
 
 <ng-template #inner let-item>

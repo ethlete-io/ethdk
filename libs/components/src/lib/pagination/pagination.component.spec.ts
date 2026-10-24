@@ -221,7 +221,7 @@ describe('PaginationComponent', () => {
     expect(nav.querySelector('.et-pagination-range .et-pagination-readout-text')?.textContent?.trim()).toBe(
       'Zeige 41–60 von 500',
     );
-    expect(nav.querySelector('.et-pagination-jump-label')?.textContent?.trim()).toBe('Gehe zu Seite');
+    expect(nav.querySelector('.et-pagination-jump et-label')?.textContent?.trim()).toBe('Gehe zu Seite');
     // untranslated keys keep their English default
     expect(nav.querySelector('.et-pagination-button[data-type="next"]')?.getAttribute('aria-label')).toBe('Next page');
   });
@@ -283,21 +283,43 @@ describe('PaginationComponent', () => {
     expect(nav.querySelector('.et-pagination-status .et-pagination-readout-text')?.textContent?.trim()).toBe('2 / 5');
   });
 
-  it('gives each paginator its own jump input id, so two on a page stay independently labelled', () => {
+  it('gives each paginator its own jump label, so two on a page stay independently labelled', () => {
     const fixture = TestBed.createComponent(TwoPaginatorsComponent);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
     const hosts = [...root.querySelectorAll('et-pagination')];
-    const ids = hosts.map((host) => host.querySelector('.et-pagination-jump-input')?.id);
+    const labelledBy = hosts.map((host) =>
+      host.querySelector('.et-pagination-jump input')?.getAttribute('aria-labelledby'),
+    );
 
-    expect(ids.filter(Boolean).length).toBe(2);
-    expect(new Set(ids).size).toBe(2);
+    expect(labelledBy.filter(Boolean).length).toBe(2);
+    expect(new Set(labelledBy).size).toBe(2);
 
     hosts.forEach((host, index) => {
-      expect(host.querySelector('.et-pagination-jump-label')?.getAttribute('for')).toBe(ids[index]);
-      expect(root.querySelectorAll(`[id="${ids[index]}"]`).length).toBe(1);
+      expect(host.querySelector('.et-pagination-jump et-label')?.id).toBe(labelledBy[index]);
+      expect(root.querySelectorAll(`[id="${labelledBy[index]}"]`).length).toBe(1);
     });
+  });
+
+  it('jumps to the typed page on Enter and clears the field', async () => {
+    const fixture = create();
+    fixture.componentRef.setInput('showJumpTo', true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('.et-pagination-jump input');
+
+    if (!input) throw new Error('The jump field did not render');
+
+    input.value = '4';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(directiveOf(fixture).page()).toBe(4);
+    expect(input.value).toBe('');
   });
 
   it('keeps an explicit ariaLabel ahead of the label set (multiple paginators on a page)', () => {

@@ -38,22 +38,24 @@ import { GERMAN_LABELS } from './pagination-storybook.data';
           />
         </div>
       } @else {
-        <et-pagination
-          [(page)]="page"
-          [totalPages]="totalPages()"
-          [siblingCount]="siblingCount()"
-          [boundaryCount]="boundaryCount()"
-          [hideFirstLast]="hideFirstLast()"
-          [hidePreviousNext]="hidePreviousNext()"
-          [renderAs]="renderAs()"
-          [urlForPage]="urlForPage"
-          [totalItems]="totalItems() || null"
-          [pageSize]="pageSize()"
-          [showJumpTo]="showJumpTo()"
-          [labels]="labels()"
-          [size]="size()"
-        />
-        <p class="text-small mt-4 opacity-70">Page {{ page() }} of {{ totalPages() }}</p>
+        <div class="flex items-center gap-4">
+          <et-pagination
+            [(page)]="page"
+            [totalPages]="totalPages()"
+            [siblingCount]="siblingCount()"
+            [boundaryCount]="boundaryCount()"
+            [hideFirstLast]="hideFirstLast()"
+            [hidePreviousNext]="hidePreviousNext()"
+            [renderAs]="renderAs()"
+            [urlForPage]="urlForPage"
+            [totalItems]="totalItems() || null"
+            [pageSize]="pageSize()"
+            [showJumpTo]="showJumpTo()"
+            [labels]="labels()"
+            [size]="size()"
+          />
+          <p class="text-small shrink-0 whitespace-nowrap opacity-70">Page {{ page() }} of {{ totalPages() }}</p>
+        </div>
       }
     </div>
   `,

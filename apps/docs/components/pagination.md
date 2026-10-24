@@ -35,8 +35,8 @@ each edge (`1 … 45 46 47 … 200`):
 ## Range readout & jump-to-page
 
 Pass `totalItems` **and** `pageSize` to show a "Showing X–Y of Z" readout, and set
-`showJumpTo` for a number field that jumps straight to a page - both handy for
-large result sets. A `page` past the end (a filter just shrank the set) reads as the last
+`showJumpTo` for a number field (an `et-number-input` in a form field, without spin arrows)
+that jumps straight to a page on Enter - both handy for large result sets. A `page` past the end (a filter just shrank the set) reads as the last
 page, the same way the page numbers clamp it.
 
 ```html

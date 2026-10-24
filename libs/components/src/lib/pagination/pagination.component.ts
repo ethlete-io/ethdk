@@ -8,13 +8,16 @@ import {
   inject,
   Injector,
   input,
+  signal,
   untracked,
   viewChild,
   viewChildren,
   ViewEncapsulation,
 } from '@angular/core';
-import { clamp, createComponentId, optionalBooleanAttribute, signalHostElementDimensions } from '@ethlete/core';
+import { clamp, optionalBooleanAttribute, signalHostElementDimensions } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../button';
+import { FORM_FIELD_IMPORTS } from '../forms/form-field';
+import { NUMBER_INPUT_IMPORTS } from '../forms/input';
 import { PaginationDirective } from './headless/pagination.directive';
 import { toCount } from './page-count';
 import { PaginationRangeContext } from './pagination-labels';
@@ -52,7 +55,7 @@ const COMPACT_MAX_WIDTH = 480;
   templateUrl: './pagination.component.html',
   styleUrl: './pagination.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet],
+  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, NUMBER_INPUT_IMPORTS, NgTemplateOutlet],
   hostDirectives: [
     {
       directive: PaginationDirective,
@@ -122,7 +125,7 @@ export class PaginationComponent {
   private itemEls = viewChildren<ElementRef<HTMLElement>>('paginationItem');
   private controlEls = viewChildren('controlButton', { read: ElementRef<HTMLElement> });
 
-  protected jumpInputId = createComponentId('et-pagination-jump-input');
+  protected jumpValue = signal<number | null>(null);
 
   private hostDimensions = signalHostElementDimensions();
 
@@ -275,10 +278,13 @@ export class PaginationComponent {
     this.select(item);
   }
 
-  protected jump(value: string) {
-    const page = Number.parseInt(value, 10);
+  protected jump() {
+    const page = this.jumpValue();
 
-    if (!Number.isNaN(page)) this.pagination.goTo(page);
+    if (page === null) return;
+
+    this.pagination.goTo(page);
+    this.jumpValue.set(null);
   }
 
   private restoreLostFocus() {
