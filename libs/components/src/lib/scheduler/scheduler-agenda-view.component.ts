@@ -2,6 +2,7 @@ import { NgComponentOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, inject } from '@angular/core';
 import { ProvideColorDirective, injectStyleManager } from '@ethlete/core';
 import { format, isSameMonth } from 'date-fns';
+import { ScrollbarComponent } from '../scrollbar';
 import { SCHEDULER_FEATURE_HOST, SchedulerAgendaDirective, SchedulerDirective } from './headless';
 import { buildSchedulerAgendaGuides } from './headless/internals/scheduler-agenda';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
@@ -14,7 +15,7 @@ import { Appointment } from './scheduler.types';
   templateUrl: './scheduler-agenda-view.component.html',
   styleUrl: './scheduler-agenda-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, NgComponentOutlet],
+  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent],
   hostDirectives: [SchedulerAgendaDirective],
   host: {
     class: 'et-scheduler-agenda-view',

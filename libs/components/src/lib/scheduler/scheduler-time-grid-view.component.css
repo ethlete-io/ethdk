@@ -36,6 +36,11 @@
     display: contents;
   }
 
+  .et-scheduler-time-grid-body-wrap {
+    position: relative;
+    min-block-size: 0;
+  }
+
   .et-scheduler-time-grid-body {
     overflow-y: auto;
     max-block-size: var(--et-scheduler-time-grid-body-max-height);

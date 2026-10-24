@@ -32,6 +32,7 @@ import {
   resolveSchedulerTimeGridKeyboardCell,
   schedulerCellItemOffset,
 } from './headless/internals/scheduler-keyboard';
+import { ScrollbarComponent } from '../scrollbar';
 import { SchedulerAppointmentDragDirective } from './scheduler-appointment-drag.directive';
 import { SchedulerAppointmentStylesComponent } from './scheduler-appointment-styles.component';
 import { SCHEDULER_FALLBACK_BADGE_ADORNMENTS } from './scheduler-fallback-badge-adornments';
@@ -91,7 +92,7 @@ const blockStartHour = (block: SchedulerTimeGridBlock) =>
   templateUrl: './scheduler-time-grid-view.component.html',
   styleUrl: './scheduler-time-grid-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective, NgComponentOutlet],
+  imports: [ProvideColorDirective, NgComponentOutlet, ScrollbarComponent],
   hostDirectives: [SchedulerTimeGridDirective],
   host: {
     class: 'et-scheduler-time-grid-view',
