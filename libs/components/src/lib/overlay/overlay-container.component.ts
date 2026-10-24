@@ -277,6 +277,8 @@ export class OverlayContainerComponent {
       themeByClass.set(`${prefix}-surface--${createCssSurfaceName(theme.name)}`, theme);
     }
 
+    let fillFallback: { elevation: number; type: SurfaceType; element: HTMLElement } | null = null;
+
     for (
       let el: HTMLElement | null = origin instanceof HTMLElement ? origin : origin.parentElement;
       el;
@@ -285,11 +287,20 @@ export class OverlayContainerComponent {
       for (const cls of Array.from(el.classList)) {
         const theme = themeByClass.get(cls);
 
-        if (theme) return { elevation: theme.elevation, type: theme.type, element: el };
+        if (!theme) continue;
+
+        // A `data-et-surface-fill` element paints one level above its own context (a filled form
+        // field), so an overlay opened from inside it stacks on that context, not on the fill.
+        if (el.hasAttribute('data-et-surface-fill')) {
+          fillFallback ??= { elevation: Math.max(theme.elevation - 1, 0), type: theme.type, element: el };
+          break;
+        }
+
+        return { elevation: theme.elevation, type: theme.type, element: el };
       }
     }
 
-    return null;
+    return fillFallback;
   }
 
   private resolveOriginElement(): Element | null {

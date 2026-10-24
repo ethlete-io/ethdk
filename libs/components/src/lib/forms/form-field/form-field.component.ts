@@ -88,6 +88,7 @@ import {
     '[attr.data-disabled]': 'formFieldDir.usesTextFieldShell() && formFieldDir.isDisabled() ? "" : null',
     '[attr.data-appearance]': 'formFieldDir.usesTextFieldShell() ? appearance() : null',
     '[attr.data-fill]': 'formFieldDir.usesTextFieldShell() ? fill() : null',
+    '[attr.data-et-surface-fill]': 'paintsElevatedFill() ? "" : null',
     '[attr.data-label-floated]': 'hasFloatingTextLabel() && formFieldDir.shouldFloatLabel() ? "" : null',
     '[attr.data-has-label]': 'formFieldDir.registeredLabel() ? "" : null',
     '[attr.data-label-mode]': 'formFieldDir.usesTextFieldShell() ? labelMode() : null',
@@ -137,6 +138,10 @@ export class FormFieldComponent {
 
   private prefixDimensions = signalElementDimensions(this.prefixEl);
 
+  protected paintsElevatedFill = computed(
+    () => this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.FILLED,
+  );
+
   private resolvedSurface = computed(() => {
     const themes = this.surfaceThemes;
     const parentSurface = this.parentSurface();
@@ -145,12 +150,10 @@ export class FormFieldComponent {
       return null;
     }
 
-    const paintsElevatedFill = this.formFieldDir.usesTextFieldShell() && this.fill() === FORM_FIELD_FILLS.FILLED;
-
     return resolveSurfaceByElevation(
       themes,
       parentSurface.type,
-      parentSurface.elevation + (paintsElevatedFill ? 1 : 0),
+      parentSurface.elevation + (this.paintsElevatedFill() ? 1 : 0),
     );
   });
 

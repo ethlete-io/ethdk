@@ -191,9 +191,10 @@ A box field's minimum height is 32px, 50px and 58px for `sm`, `md` and `lg`. Put
 `et-label` to drop it from the layout: the static label then reserves no height above the field.
 
 Only `fill: 'filled'` paints a surface behind the control, so only a filled field
-raises the surface elevation for its contents (and for overlays anchored inside
-it, such as the rich text editor's autocomplete). A `transparent` field stays
-flush with its parent surface.
+raises the surface elevation for its contents. A `transparent` field stays
+flush with its parent surface. An overlay anchored inside a field (the select panel, the
+date picker, the rich text editor's autocomplete) stacks on the surface around the field,
+so it paints the same elevation whatever the field's `fill`.
 
 The hover treatment belongs to the **frame and the label** - the two boxes that
 activate the control - not to the whole field. The field's box also spans the

@@ -169,6 +169,7 @@ export const formField = (options: FormFieldMockOptions) => {
     state.disabled && 'data-disabled=""',
     `data-appearance="${appearance}"`,
     `data-fill="${fill}"`,
+    fill === 'filled' && 'data-et-surface-fill=""',
     floating && (focused || control.hasValue) && 'data-label-floated=""',
     options.label && 'data-has-label=""',
     `data-label-mode="${labelMode}"`,

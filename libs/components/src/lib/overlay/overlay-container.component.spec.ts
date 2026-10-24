@@ -229,6 +229,42 @@ describe('OverlayContainerComponent surface elevation', () => {
     expect(surfaceName()).toBe('et-surface--night-2');
   });
 
+  it('stacks on the surface under a filled form field, not on its fill', async () => {
+    const context = document.createElement('div');
+    context.classList.add('et-surface--night');
+
+    const fill = document.createElement('div');
+    fill.classList.add('et-surface--night-1');
+    fill.setAttribute('data-et-surface-fill', '');
+
+    const trigger = document.createElement('button');
+    fill.appendChild(trigger);
+    context.appendChild(fill);
+    document.body.appendChild(context);
+
+    await driver.open(OverlayContentComponent, { origin: trigger, strategies: anchoredDialogOverlayStrategy() });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+
+    context.remove();
+  });
+
+  it('stacks one level below a fill that has no surface above it', async () => {
+    const fill = document.createElement('div');
+    fill.classList.add('et-surface--night-1');
+    fill.setAttribute('data-et-surface-fill', '');
+
+    const trigger = document.createElement('button');
+    fill.appendChild(trigger);
+    document.body.appendChild(fill);
+
+    await driver.open(OverlayContentComponent, { origin: trigger, strategies: anchoredDialogOverlayStrategy() });
+
+    expect(surfaceName()).toBe('et-surface--night-1');
+
+    fill.remove();
+  });
+
   it('resets to elevation 1 when the strategy renders a backdrop', async () => {
     await driver.open(OverlayContentComponent, {
       origin: createElevatedOrigin(),
