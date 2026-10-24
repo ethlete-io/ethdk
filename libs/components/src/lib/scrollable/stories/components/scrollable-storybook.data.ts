@@ -5,9 +5,9 @@
 
 const ITEM_COLORS = ['#7c3aed', '#c026d3', '#db2777', '#e11d48', '#ea580c', '#d97706', '#059669'] as const;
 
-export const SCROLLABLE_ITEMS = Array.from({ length: 7 }, (_, i) => ({
+export const SCROLLABLE_ITEMS = Array.from({ length: 20 }, (_, i) => ({
   index: i,
   label: `Item ${i}`,
   active: i === 3 || i === 4,
-  color: ITEM_COLORS[i],
+  color: ITEM_COLORS[i % ITEM_COLORS.length],
 }));
