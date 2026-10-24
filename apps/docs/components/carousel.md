@@ -207,8 +207,9 @@ a drag and reverse when you drag back instead of stepping when a flag flips.
 ```
 
 `wipe` is the `@ethlete/cdk` carousel's `mask-slide` rebuilt against position instead of a class flip, and
-it is all three parts of it: the wipe itself, the 125px push of the two slides against each other, and the
-dip in brightness on whichever is leaving. What makes it a _wipe_ rather than a sliding crop is that each
+it is all three parts of it: the wipe itself, an optional push of the two slides against each other (off by
+default; set `--et-carousel-wipe-shift` to `125px` for the cdk's), and the dip in brightness on whichever is
+leaving. What makes it a _wipe_ rather than a sliding crop is that each
 slide's content is pinned to the track while the slide's own box keeps scrolling and clips it - so the
 reader sees two still pictures and one moving boundary. Drag slowly and it tracks the finger; drag back and
 it reverses.
@@ -419,7 +420,7 @@ progress ring take the primary accent, inactive dots a neutral tint. Geometry is
 
 | Property                       | Default | Applies to                                                                |
 | ------------------------------ | ------- | ------------------------------------------------------------------------- |
-| `--et-carousel-wipe-shift`     | `125px` | how far the two slides are pushed against each other; `0` for a pure wipe |
+| `--et-carousel-wipe-shift`     | `0px`   | how far the two slides are pushed against each other; `0` for a pure wipe |
 | `--et-carousel-wipe-dim`       | `0.5`   | the brightness a leaving slide drops to; `1` for no dip                   |
 | `--et-carousel-wipe-dim-color` | `#000`  | what it darkens _with_ - the veil's colour                                |
 

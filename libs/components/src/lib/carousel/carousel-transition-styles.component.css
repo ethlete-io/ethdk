@@ -9,7 +9,7 @@
   @property --et-carousel-wipe-shift {
     syntax: '<length>';
     inherits: true;
-    initial-value: 125px;
+    initial-value: 0px;
   }
 
   @property --et-carousel-wipe-dim {
