@@ -103,18 +103,20 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
         width: min(80vw, 400px);
 
         .et-scrollable-container {
-          height: 250px;
+          height: 258px;
         }
       }
     }
 
     .et-scrollable-container {
-      height: 120px;
+      height: 128px;
       gap: 12px;
+      padding-block: 4px;
+      margin-block: -4px;
     }
 
     .et-scrollable.et-scrollable--sticky-buttons .et-scrollable-container {
-      height: 800px;
+      height: 808px;
     }
   `,
 })
