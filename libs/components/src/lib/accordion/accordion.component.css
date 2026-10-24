@@ -62,7 +62,10 @@
   }
 
   .et-accordion-heading {
+    --_et-accordion-tint-inset: min(4px, var(--et-accordion-padding-block));
+
     display: block;
+    padding-block: var(--_et-accordion-tint-inset);
   }
 
   .et-accordion-trigger {
@@ -72,7 +75,8 @@
     align-items: center;
     gap: var(--et-accordion-gap);
     inline-size: 100%;
-    padding: var(--et-accordion-padding-block) var(--et-accordion-padding-inline);
+    padding: calc(var(--et-accordion-padding-block) - var(--_et-accordion-tint-inset))
+      var(--et-accordion-padding-inline);
     border: 0;
     border-radius: var(--et-accordion-radius);
     background: transparent;

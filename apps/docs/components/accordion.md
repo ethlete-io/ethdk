@@ -208,7 +208,7 @@ and hairlines from the surface tokens, the hover/press tint mixed from
 ### The hover response
 
 Hovering a header does three things at once, all on `--et-accordion-color-duration`: the row takes
-its tint, the accordion's own bottom hairline brightens toward
+a rounded tint that sits 4px inside the hairlines, the accordion's own bottom hairline brightens toward
 `--et-surface-interaction-solid`, and the hint and chevron come up from the muted colour to full
 strength. Across a full-width header the tint alone is easy to miss - the hairline is the edge that
 actually shows which row the pointer is on.
