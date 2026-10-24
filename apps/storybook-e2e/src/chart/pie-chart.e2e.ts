@@ -70,7 +70,10 @@ async function expectTooltipBeside(page: Page, sliceLocator: Locator, side: Side
   await expect
     .poll(async () => {
       const anchor = await anchorOf(sliceLocator);
-      const panel = await boxOf(page.locator('.et-overlay--tooltip'));
+      const panel = await page.locator('.et-overlay--tooltip').boundingBox();
+
+      if (!panel) return 'no tooltip box';
+
       const gap = Math.round(GAP_TO_ANCHOR[side](anchor, panel));
 
       return gap >= 0 && gap <= TOOLTIP_GAP_MAX ? side : `gap ${gap} on ${side}`;

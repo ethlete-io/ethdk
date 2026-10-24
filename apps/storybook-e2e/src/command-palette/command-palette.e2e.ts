@@ -133,7 +133,7 @@ test.describe('command-palette / keyboard', () => {
     await pressKey(page, 'Tab');
     await expect(openButton).toBeFocused();
     await pressKey(page, 'Enter');
-    await expect(page.getByRole('dialog')).toBeVisible();
+    await expect(page.locator('.et-overlay')).toHaveClass(/et-animation-enter-done/);
 
     await pressKey(page, 'Escape');
 
