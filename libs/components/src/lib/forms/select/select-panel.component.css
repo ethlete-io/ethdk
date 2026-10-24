@@ -38,6 +38,10 @@
     /* re-published as an inheriting alias: the registered token is `inherits: false`, so the
        scroller below could not read a value a consumer sets on the panel element */
     --_et-select-panel-padding: var(--et-select-panel-padding);
+    --et-select-option-border-radius: max(
+      2px,
+      var(--_et-overlay-surface-radius, 10px) - var(--_et-select-panel-padding)
+    );
 
     .et-select-panel-scroller {
       box-sizing: border-box;
@@ -46,10 +50,13 @@
       padding: var(--_et-select-panel-padding);
     }
 
-    &.et-select-panel--resizing .et-select-panel-scroller {
+    /* A moving option's transform counts as scrollable overflow and would flash a scrollbar. Clip the
+       scroller, never the body: the body already has its final height and would cut off the moving options. */
+    &.et-select-panel--resizing .et-select-panel-scroller,
+    .et-select-panel-scroller:has(> .et-select-panel-body--moving) {
       overflow: clip;
     }
-    border-radius: 10px;
+    border-radius: var(--_et-overlay-surface-radius, 10px);
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));
@@ -89,7 +96,7 @@
       block-size: 36px;
       box-sizing: border-box;
       padding-inline: 10px;
-      border-radius: 6px;
+      border-radius: var(--et-select-option-border-radius);
       border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
       background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
       color: inherit;

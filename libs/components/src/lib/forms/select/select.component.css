@@ -33,6 +33,10 @@
         cursor: default;
       }
 
+      &:has(input[etselectsearch]:not(:read-only)) {
+        cursor: text;
+      }
+
       .et-select-trigger-content {
         display: flex;
         flex-wrap: wrap;
@@ -65,21 +69,14 @@
         color: inherit;
         padding: 0;
         caret-color: var(--et-theme-color-primary-solid, currentColor);
-        cursor: text;
+        cursor: inherit;
 
         &::placeholder {
           color: var(--et-surface-color-muted-solid, color-mix(in srgb, currentColor 46%, transparent));
         }
 
-        /* Before the disabled rule: a disabled input is :read-only too, and there
-           not-allowed must win. */
         &:read-only {
-          cursor: default;
           caret-color: transparent;
-        }
-
-        &:disabled {
-          cursor: not-allowed;
         }
       }
 
@@ -164,6 +161,10 @@
 
   .et-form-field-control-frame:has(et-select) {
     cursor: pointer;
+  }
+
+  .et-form-field-control-frame:has(et-select input[etselectsearch]:not(:read-only)) {
+    cursor: text;
   }
 
   /* outside the `et-select` block on purpose: the chevron renders in the form field's suffix slot,

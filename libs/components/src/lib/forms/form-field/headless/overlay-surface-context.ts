@@ -1,5 +1,13 @@
 import { ElementRef, Signal, inject } from '@angular/core';
-import { AnimatedSizeAxis, COLOR_PROVIDER, ProvideColorDirective, injectAnimatedBlockSize } from '@ethlete/core';
+import {
+  AnimatedSizeAxis,
+  COLOR_PROVIDER,
+  ProvideColorDirective,
+  injectAnimatedBlockSize,
+  injectHostElement,
+  injectRenderer,
+} from '@ethlete/core';
+import { FORM_FIELD_TOKEN } from './form-field.tokens';
 
 /**
  * The surface plumbing every overlay panel (`et-select-panel`, `et-cascader-panel`,
@@ -16,6 +24,8 @@ export const injectOverlaySurfaceContext = (options: {
   resizingClass: string;
   /** Size axes the panel animates on content changes - see `injectAnimatedBlockSize`. */
   axes?: AnimatedSizeAxis[] | Signal<AnimatedSizeAxis[]>;
+  resizeDuration?: number;
+  resizeEasing?: string;
 }) => {
   const ownColorProvider = inject(ProvideColorDirective);
   const contextColorProvider = inject(COLOR_PROVIDER, { optional: true, skipSelf: true });
@@ -24,5 +34,19 @@ export const injectOverlaySurfaceContext = (options: {
     ownColorProvider.syncWithProvider(contextColorProvider);
   }
 
-  injectAnimatedBlockSize({ observe: [options.panelBody], resizingClass: options.resizingClass, axes: options.axes });
+  const field = inject(FORM_FIELD_TOKEN, { optional: true });
+  const fieldStyle = field ? getComputedStyle(field.element) : null;
+  const radius =
+    fieldStyle?.getPropertyValue('--et-form-field-control-border-radius') ||
+    fieldStyle?.getPropertyValue('--_et-form-field-control-border-radius');
+
+  if (radius) injectRenderer().setCssProperties(injectHostElement(), { '--_et-overlay-surface-radius': radius });
+
+  injectAnimatedBlockSize({
+    observe: [options.panelBody],
+    resizingClass: options.resizingClass,
+    axes: options.axes,
+    duration: options.resizeDuration,
+    easing: options.resizeEasing,
+  });
 };

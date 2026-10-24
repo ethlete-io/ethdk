@@ -44,7 +44,7 @@
     max-inline-size: calc(100vw - 24px);
     overflow: hidden;
     padding: 12px;
-    border-radius: 10px;
+    border-radius: var(--_et-overlay-surface-radius, 10px);
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));

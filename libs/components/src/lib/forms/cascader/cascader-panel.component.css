@@ -35,7 +35,8 @@
       var(--et-cascader-panel-max-block-size),
       var(--et-overlay-max-height, 100vh)
     );
-    border-radius: 10px;
+    --_et-cascader-row-radius: max(2px, var(--_et-overlay-surface-radius, 10px) - 6px);
+    border-radius: var(--_et-overlay-surface-radius, 10px);
     border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
     background: var(--et-surface-background-solid, rgb(32 32 32));
     color: var(--et-surface-color-solid, rgb(244 244 245));
@@ -126,7 +127,7 @@
         block-size: 36px;
         box-sizing: border-box;
         padding-inline: 10px;
-        border-radius: 6px;
+        border-radius: var(--_et-cascader-row-radius);
         border: 1px solid var(--et-surface-border-solid, rgb(255 255 255 / 0.1));
         background: color-mix(in srgb, var(--et-surface-interaction-solid, rgb(255 255 255)) 6%, transparent);
         color: inherit;
@@ -212,7 +213,7 @@
       min-block-size: var(--et-cascader-node-height);
       padding-inline: 10px;
       border: none;
-      border-radius: 6px;
+      border-radius: var(--_et-cascader-row-radius);
       background: transparent;
       font: inherit;
       text-align: start;
