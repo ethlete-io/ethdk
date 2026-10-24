@@ -87,7 +87,9 @@ import { SCROLLABLE_ITEMS } from './scrollable-storybook.data';
       font-weight: 600;
       color: #fff;
       cursor: pointer;
-      transition: transform 150ms ease;
+      transition:
+        transform 150ms ease,
+        opacity 200ms ease;
     }
 
     .et-sb-scrollable-item:hover {
