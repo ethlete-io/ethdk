@@ -37,6 +37,10 @@
     padding-inline: var(--et-command-palette-item-padding-inline);
     border-radius: var(--et-command-palette-item-border-radius);
     cursor: pointer;
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      opacity 120ms ease;
 
     /* Marks the row the arrow keys reached. Not `:hover`: the pointer and the keyboard drive one
        highlight, and the component decides which row that is. */
