@@ -3,7 +3,6 @@ import { expectTouchMode, focusedDescriptor, openStory, tabSequence, tap } from 
 
 const DEFAULT_STORY_ID = 'components-layout-divider--default';
 const VERTICAL_STORY_ID = 'components-layout-divider--vertical';
-const DECORATIVE_STORY_ID = 'components-layout-divider--decorative';
 
 const DIVIDER = 'et-divider';
 
@@ -93,7 +92,7 @@ test.describe('divider / structure', () => {
   });
 
   test('decorative drops the role and hides the rule from assistive tech', async ({ page }) => {
-    const root = await openStory(page, DECORATIVE_STORY_ID);
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { decorative: true } });
     const dividers = root.locator(DIVIDER);
 
     await expect(dividers).toHaveCount(2);
@@ -107,7 +106,7 @@ test.describe('divider / structure', () => {
   });
 
   test('a decorative rule is still drawn, it only loses its semantics', async ({ page }) => {
-    const root = await openStory(page, DECORATIVE_STORY_ID);
+    const root = await openStory(page, DEFAULT_STORY_ID, { args: { decorative: true } });
     const box = await readBox(root.locator(DIVIDER).first());
 
     expect(box.blockSize).toBe('1px');
