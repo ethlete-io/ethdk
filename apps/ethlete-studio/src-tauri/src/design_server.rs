@@ -502,7 +502,7 @@ mod tests {
 
     #[tokio::test]
     async fn a_server_that_dies_at_start_reads_as_exited_with_its_last_output() {
-        const PORT: u16 = 45873;
+        const PORT: u16 = 45875;
 
         let dir = std::env::temp_dir().join(format!("studio-design-server-{PORT}"));
         let entry = dir.join("node_modules/@ethlete/cli/src/index.js");
