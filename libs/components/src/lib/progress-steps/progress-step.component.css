@@ -39,6 +39,7 @@
       inline-size: calc(100% + var(--et-progress-steps-gap, 8px));
       block-size: 2px;
       background: var(--et-surface-border-solid, currentColor);
+      transition: background-color 200ms ease;
     }
 
     /* Every resolved state fills its connector. The color comes from the step's own forced theme, so
@@ -66,6 +67,10 @@
          centers that whole box rather than the glyph inside it - the digit then sits visibly
          above center, since a line box's extra leading isn't split evenly around the glyph. */
       line-height: 1;
+      transition:
+        border-color 200ms ease,
+        background-color 200ms ease,
+        color 200ms ease;
 
       /* The icon's own SVG is `width/height: 100%` (fills its box) with no intrinsic size of its
          own, so left unset it stretches to whatever the flex layout gives it - explicitly sizing
@@ -107,6 +112,7 @@
 
     .et-progress-step-label {
       color: var(--et-surface-color-muted-solid, currentColor);
+      transition: color 200ms ease;
     }
 
     [etProgressStepDescription] {
