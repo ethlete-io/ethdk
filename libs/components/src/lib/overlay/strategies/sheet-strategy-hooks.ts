@@ -1,56 +1,56 @@
 import { AngularRenderer, matchesReducedMotion, randomId } from '@ethlete/core';
 import { interval, Subscription, tap } from 'rxjs';
 import { observeKeyboardInset } from '../../internals/keyboard-inset';
-import { slopeMatchedEasing } from './momentum-easing';
 import { DragDismissMomentum, DragToDismissRef, enableDragToDismiss } from './overlay-drag-to-dismiss';
 import { OverlayBreakpointConfig, OverlayStrategy, OverlayStrategyContext } from './overlay-strategy.types';
+import { SHEET_LEAVE_SPRING, springEasing } from './spring-easing';
 
-/** Bounds for the momentum-driven exit, matching the drag gesture's own settle animation. */
-const MIN_LEAVE_DURATION_MS = 100;
-const MAX_LEAVE_DURATION_MS = 350;
+const MAX_LEAVE_DURATION_MS = 450;
 
 /** Below this release speed the swipe carries no momentum worth handing off. */
 const MIN_LEAVE_SPEED = 50;
 
 const RELEASE_FRAME_MS = 16;
 
+/** Progress at which the leave ends. The rest of the spring would run with the sheet already off screen. */
+const LEAVE_EPSILON = 0.002;
+
 /** How often a sheet lifted above the soft keyboard re-checks the keyboard, to recover a missed viewport event. */
 const KEYBOARD_POLL_MS = 500;
 
 /**
- * A curve that starts at the release speed and, unless the swipe was already faster than the exit
- * needs, keeps accelerating until the overlay is gone - so the exit continues the swipe.
+ * Runs every close on a spring. A dismissing swipe hands the spring its release speed, so the exit
+ * continues the swipe. Position is already continuous, because the drag's inline transform is what
+ * the leave transition starts from.
  */
-export const dismissMomentumEasing = (
-  momentum: Pick<DragDismissMomentum, 'speed' | 'remainingDistance'>,
-  durationMs: number,
-) => {
-  const startSlope = (momentum.speed * durationMs) / 1000 / momentum.remainingDistance;
-
-  return slopeMatchedEasing(startSlope, Math.max(0, 2 - startSlope));
-};
-
-/**
- * Gives the leave transition the speed the swipe had when it let go, instead of the fixed duration
- * and easing the stylesheet uses for every other close. Position is already continuous, because the
- * drag's inline transform is what the leave transition starts from.
- */
-const applyDismissMomentum = (
-  { el, momentum }: { el: HTMLElement; momentum: DragDismissMomentum },
+const applyLeaveSpring = (
+  {
+    el,
+    backdropEl,
+    momentum,
+  }: { el: HTMLElement; backdropEl: HTMLElement | null; momentum: DragDismissMomentum | null },
   renderer: AngularRenderer,
 ) => {
-  if (momentum.speed < MIN_LEAVE_SPEED || momentum.remainingDistance <= 0 || matchesReducedMotion(el)) return;
+  if (matchesReducedMotion(el)) return;
 
-  const ideal = (momentum.remainingDistance / momentum.speed) * 1000;
-  const duration = Math.round(Math.min(MAX_LEAVE_DURATION_MS, Math.max(MIN_LEAVE_DURATION_MS, ideal)));
+  const carriesMomentum = !!momentum && momentum.speed >= MIN_LEAVE_SPEED && momentum.remainingDistance > 0;
+  const { durationMs, easing } = springEasing({
+    ...SHEET_LEAVE_SPRING,
+    initialVelocity: carriesMomentum ? momentum.speed / momentum.remainingDistance : 0,
+    epsilon: LEAVE_EPSILON,
+    stopAtTarget: true,
+    maxDurationMs: MAX_LEAVE_DURATION_MS,
+  });
 
   renderer.setStyle(el, {
-    transitionDuration: `${duration}ms`,
-    transitionTimingFunction: dismissMomentumEasing(momentum, duration),
+    transitionDuration: `${durationMs}ms`,
+    transitionTimingFunction: easing,
     // A transition renders its start value on its first frame, which would hold the sheet still for
     // a frame after the release. Starting a frame in keeps it moving.
-    transitionDelay: `-${RELEASE_FRAME_MS}ms`,
+    transitionDelay: carriesMomentum ? `-${RELEASE_FRAME_MS}ms` : null,
   });
+
+  if (backdropEl) renderer.setStyle(backdropEl, { transition: `opacity ${durationMs}ms ${easing}`, opacity: null });
 };
 
 export type SheetStrategyDeps = {
@@ -116,6 +116,7 @@ export const createSheetStrategy = (
       renderer,
       onDismiss: (momentum) => (dismissMomentum = momentum),
       onDismissVetoed: () => (dismissMomentum = null),
+      backdrop: () => context.backdropEl,
     });
   };
 
@@ -135,6 +136,9 @@ export const createSheetStrategy = (
         transitionDelay: null,
         transform: null,
       });
+
+      if (context.backdropEl) renderer.setStyle(context.backdropEl, { transition: null, opacity: null });
+
       dismissMomentum = null;
       startKeyboardLift(context);
       context.lifecycle.enter();
@@ -154,7 +158,7 @@ export const createSheetStrategy = (
       const momentum = dismissMomentum;
       dismissMomentum = null;
 
-      if (momentum) applyDismissMomentum({ el: context.containerEl, momentum }, renderer);
+      applyLeaveSpring({ el: context.containerEl, backdropEl: context.backdropEl, momentum }, renderer);
 
       context.lifecycle.leave();
 

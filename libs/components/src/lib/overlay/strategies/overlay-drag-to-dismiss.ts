@@ -9,12 +9,12 @@ import { Subject, Subscription, filter, fromEvent, take, takeUntil, tap, timer }
 import { claimsPointerAxis, isInteractivePointerTarget } from '../../internals/pointer-gesture-target';
 import { OverlayRef } from '../overlay-ref';
 import { getOverlayRefInternals } from '../overlay-ref-internal';
-import { slopeMatchedEasing } from './momentum-easing';
 import {
   OverlayDragToDismissConfig,
   OverlayDragToDismissDirection,
   OverlayDragToDismissPhysicalDirection,
 } from './overlay-strategy.types';
+import { SHEET_SETTLE_SPRING, springEasing } from './spring-easing';
 
 /** The momentum a dismissing gesture had when the pointer let go, so the exit can carry it. */
 export type DragDismissMomentum = {
@@ -43,6 +43,9 @@ export type DragToDismissContext = {
 
   /** Called when a close guard vetoes the close a dismissing gesture requested. The overlay settles back. */
   onDismissVetoed?: () => void;
+
+  /** The backdrop to fade with the drag offset. */
+  backdrop?: () => HTMLElement | null;
 };
 
 export type DragToDismissRef = {
@@ -57,12 +60,15 @@ type ResolvedDragToDismissConfig = Omit<OverlayDragToDismissConfig, 'direction'>
 /** Distance the pointer must travel along the dismiss axis before the overlay starts following it. */
 const COMMIT_THRESHOLD_PX = 8;
 
-/** Bounds for momentum-derived durations, so a crawl never stalls and a hard flick still animates. */
-const MIN_MOMENTUM_DURATION_MS = 100;
-const MAX_MOMENTUM_DURATION_MS = 350;
+const REDUCED_MOTION_SETTLE_MS = 100;
+const MAX_SETTLE_DURATION_MS = 800;
 
-/** Below this release speed the gesture reads as parking the overlay, not throwing it. */
-const MIN_MOMENTUM_SPEED = 50;
+/** The furthest a drag against the docked edge can stretch the overlay. Stays below the 50px overshoot fill. */
+const RUBBER_BAND_LIMIT_PX = 48;
+const RUBBER_BAND_COEFFICIENT = 0.55;
+
+const rubberBand = (overshoot: number) =>
+  RUBBER_BAND_LIMIT_PX * (1 - 1 / ((overshoot * RUBBER_BAND_COEFFICIENT) / RUBBER_BAND_LIMIT_PX + 1));
 
 /**
  * Maps a logical direction onto the physical axis it points at for the element's writing direction.
@@ -106,19 +112,6 @@ const createDismissAxis = (direction: OverlayDragToDismissPhysicalDirection): Di
     transform: (offset) => (isVertical ? `translateY(${offset * sign}px)` : `translateX(${offset * sign}px)`),
     extentOf: (el) => (isVertical ? el.offsetHeight : el.offsetWidth),
   };
-};
-
-/**
- * The time the pointer itself would have needed to cover `distance` at its release speed, clamped to
- * stay readable as an animation. This is what makes a settle feel like a continuation of the swipe
- * rather than a fixed transition tacked onto its end.
- */
-const momentumDuration = (distance: number, speed: number) => {
-  if (speed < MIN_MOMENTUM_SPEED) return MIN_MOMENTUM_DURATION_MS;
-
-  const ideal = (Math.abs(distance) / speed) * 1000;
-
-  return Math.min(MAX_MOMENTUM_DURATION_MS, Math.max(MIN_MOMENTUM_DURATION_MS, ideal));
 };
 
 /** Where the overlay goes once the pointer lifts. */
@@ -239,7 +232,7 @@ const shouldCancelDragForScrollableElement = (
  * Returns a cleanup function to disable the feature.
  */
 export const enableDragToDismiss = (context: DragToDismissContext): DragToDismissRef => {
-  const { element: el, overlayRef, renderer, onDismiss, onDismissVetoed } = context;
+  const { element: el, overlayRef, renderer, onDismiss, onDismissVetoed, backdrop } = context;
   const config: ResolvedDragToDismissConfig = {
     ...context.config,
     direction: resolvePhysicalDirection(context.config.direction, el),
@@ -260,6 +253,8 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
   let gestureStartOffset = 0;
   /** The in-flight settle transition, if any. */
   let settleSub: Subscription | null = null;
+  /** Where a settle that a pointerdown caught was headed, so a tap that never drags lets it finish. */
+  let interruptedTarget: number | null = null;
 
   let isSelectionActive = false;
   let savedUserSelect: string | null = null;
@@ -276,11 +271,22 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     renderer.setStyle(document.body, { userSelect: 'none' });
   };
 
-  /** Drops the gesture state. The overlay keeps whatever transform it currently has. */
-  const forgetGesture = () => {
-    tracker = null;
-    activePointerId = null;
-    isCommitted = false;
+  const backdropOpacityAt = (offset: number) => (axisExtent ? Math.min(1, Math.max(0, 1 - offset / axisExtent)) : 1);
+
+  const styleBackdrop = (style: { transition: string | null; opacity: string | null }) => {
+    const backdropEl = backdrop?.();
+
+    if (backdropEl) renderer.setStyle(backdropEl, style);
+  };
+
+  const readRenderedOffset = () => {
+    const { transform } = getComputedStyle(el);
+
+    if (!transform || transform === 'none' || typeof DOMMatrixReadOnly === 'undefined') return currentOffset;
+
+    const matrix = new DOMMatrixReadOnly(transform);
+
+    return axis.project(matrix.m41, matrix.m42);
   };
 
   /**
@@ -292,28 +298,73 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     settleSub?.unsubscribe();
     settleSub = null;
     renderer.setStyle(el, currentOffset ? { transition: null } : { transition: null, transform: null });
+    styleBackdrop(
+      currentOffset > 0
+        ? { transition: null, opacity: `${backdropOpacityAt(currentOffset)}` }
+        : { transition: null, opacity: null },
+    );
+  };
+
+  /** Freezes a running settle where it is on screen, so the pointer takes over from there. */
+  const interruptSettle = () => {
+    if (!settleSub) return;
+
+    const target = currentOffset;
+
+    settleSub.unsubscribe();
+    settleSub = null;
+    currentOffset = readRenderedOffset();
+    interruptedTarget = target;
+
+    const backdropEl = backdrop?.();
+    const opacity = backdropEl ? getComputedStyle(backdropEl).opacity : null;
+
+    renderer.setStyle(el, { transition: null, transform: axis.transform(currentOffset) });
+    styleBackdrop({ transition: 'none', opacity });
   };
 
   const settleAt = (offset: number, velocity: number) => {
     const distance = offset - currentOffset;
-    const speed = Math.abs(velocity);
-    const duration = Math.round(
-      matchesReducedMotion(el) ? MIN_MOMENTUM_DURATION_MS : momentumDuration(distance, speed),
-    );
-    const continuesSwipe = speed >= MIN_MOMENTUM_SPEED && distance * velocity > 0;
-    const easing = continuesSwipe
-      ? slopeMatchedEasing((speed * duration) / 1000 / Math.abs(distance), 0)
-      : 'var(--ease-out-3)';
 
     currentOffset = offset;
     settleSub?.unsubscribe();
+    settleSub = null;
+
+    if (Math.abs(distance) < 0.5) {
+      finishSettle();
+
+      return;
+    }
+
+    const { durationMs, easing } = matchesReducedMotion(el)
+      ? { durationMs: REDUCED_MOTION_SETTLE_MS, easing: 'var(--ease-out-3)' }
+      : springEasing({
+          ...SHEET_SETTLE_SPRING,
+          initialVelocity: velocity / distance,
+          epsilon: Math.max(0.001, 0.5 / Math.abs(distance)),
+          maxDurationMs: MAX_SETTLE_DURATION_MS,
+        });
 
     renderer.setStyle(el, {
-      transition: `transform ${duration}ms ${easing}`,
+      transition: `transform ${durationMs}ms ${easing}`,
       transform: axis.transform(offset),
     });
+    styleBackdrop({ transition: `opacity ${durationMs}ms ${easing}`, opacity: `${backdropOpacityAt(offset)}` });
 
-    settleSub = timer(duration).pipe(takeUntil(stop$), tap(finishSettle)).subscribe();
+    settleSub = timer(durationMs).pipe(takeUntil(stop$), tap(finishSettle)).subscribe();
+  };
+
+  /** Drops the gesture state. A settle the pointerdown caught finishes, unless the gesture took over. */
+  const forgetGesture = () => {
+    const target = isCommitted ? null : interruptedTarget;
+
+    interruptedTarget = null;
+
+    if (target !== null) settleAt(target, 0);
+
+    tracker = null;
+    activePointerId = null;
+    isCommitted = false;
   };
 
   const cancelDrag = () => {
@@ -336,6 +387,7 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
     const resolution = resolveSwipeEnd({ currentOffset, velocity, config, axisExtent });
 
     if (resolution.kind === 'dismiss') {
+      styleBackdrop({ transition: null, opacity: null });
       onDismiss?.({
         speed: resolution.speed,
         remainingDistance: resolution.remainingDistance,
@@ -382,8 +434,8 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
         if (claimsPointerAxis(event.target as HTMLElement, { boundary: el, axis: dismissAxisName })) return;
 
         // A settle still animating would otherwise smooth the drag and leave the overlay's real
-        // position behind its tracked one. Land it first so the finger takes over from a known spot.
-        finishSettle();
+        // position behind its tracked one.
+        interruptSettle();
 
         tracker = createSwipeTracker(event);
         activePointerId = event.pointerId;
@@ -466,12 +518,16 @@ export const enableDragToDismiss = (context: DragToDismissContext): DragToDismis
           }
 
           isCommitted = true;
+          interruptedTarget = null;
           el.setPointerCapture(event.pointerId);
           lockSelection();
         }
 
-        currentOffset = Math.min(Math.max(0, gestureStartOffset + travelled), axisExtent);
+        const offset = gestureStartOffset + travelled;
+
+        currentOffset = offset < 0 ? -rubberBand(-offset) : Math.min(offset, axisExtent);
         renderer.setStyle(el, { transform: axis.transform(currentOffset) });
+        styleBackdrop({ transition: 'none', opacity: `${backdropOpacityAt(currentOffset)}` });
       }),
     )
     .subscribe();

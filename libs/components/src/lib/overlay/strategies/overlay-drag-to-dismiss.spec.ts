@@ -124,7 +124,7 @@ describe('overlay drag to dismiss', () => {
     vi.useRealTimers();
   });
 
-  it('drops the swipe momentum of a vetoed dismiss so a later close keeps its own duration', () => {
+  it('drops the swipe momentum of a vetoed dismiss so a later close starts from rest', () => {
     vi.useFakeTimers();
     const strategy = createSheetStrategy({ dragToDismiss: { direction: 'to-bottom' } }, { renderer });
     const context = {
@@ -146,7 +146,8 @@ describe('overlay drag to dismiss', () => {
     vi.runAllTimers();
     strategy.onBeforeLeave?.(context);
 
-    expect(pane.style.transitionDuration).toBe('');
+    expect(pane.style.transitionTimingFunction).toMatch(/^linear\(/);
+    expect(pane.style.transitionDelay).toBe('');
 
     vi.useRealTimers();
   });
@@ -182,7 +183,7 @@ describe('overlay drag to dismiss', () => {
 
     expect(transformAtLeave).toBe('translateY(200px)');
     expect(pane.style.transform).toBe('translateY(400px)');
-    expect(pane.style.transitionTimingFunction).toMatch(/^cubic-bezier/);
+    expect(pane.style.transitionTimingFunction).toMatch(/^linear\(/);
     expect(pane.style.transitionDelay).toBe('-16ms');
 
     strategy.onBeforeEnter?.(context);
@@ -205,7 +206,82 @@ describe('overlay drag to dismiss', () => {
     flickDown(60);
 
     expect(pane.style.transform).toBe('translateY(100px)');
-    expect(pane.style.transition).toMatch(/cubic-bezier/);
+    expect(pane.style.transition).toMatch(/linear\(/);
+
+    ref.unsubscribe();
+    vi.useRealTimers();
+  });
+
+  it('stretches against the docked edge with growing resistance instead of stopping at it', () => {
+    const ref = attach();
+
+    pane.dispatchEvent(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+    document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 120 }));
+    document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 0 }));
+
+    const near = parseFloat(pane.style.transform.replace('translateY(', ''));
+
+    document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: -500 }));
+
+    const far = parseFloat(pane.style.transform.replace('translateY(', ''));
+
+    expect(near).toBeLessThan(0);
+    expect(far).toBeLessThan(near);
+    expect(far).toBeGreaterThan(-48);
+    expect(far - near).toBeGreaterThan(-25);
+
+    ref.unsubscribe();
+  });
+
+  it('fades the backdrop with the drag and hands it back to the stylesheet on dismiss', () => {
+    const backdrop = document.createElement('div');
+
+    close.mockImplementation(() => beforeClosed$.next(undefined));
+
+    const ref = enableDragToDismiss({
+      element: pane,
+      overlayRef,
+      renderer,
+      config: { direction: 'to-bottom' },
+      backdrop: () => backdrop,
+    });
+
+    dragDown(pane, 200);
+
+    expect(backdrop.style.opacity).toBe('0.5');
+    expect(backdrop.style.transition).toBe('none');
+
+    release(200);
+
+    expect(backdrop.style.opacity).toBe('');
+    expect(backdrop.style.transition).toBe('');
+
+    ref.unsubscribe();
+  });
+
+  it('lets a settle that a tap caught finish at its target', () => {
+    vi.useFakeTimers();
+    const ref = attach();
+
+    pane.dispatchEvent(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+
+    for (let travelled = 20; travelled <= 100; travelled += 20) {
+      vi.advanceTimersByTime(400);
+      document.dispatchEvent(pointerEvent('pointermove', { clientX: 100, clientY: 100 + travelled, movementY: 20 }));
+    }
+
+    release(100);
+
+    expect(close).not.toHaveBeenCalled();
+    expect(pane.style.transition).toMatch(/linear\(/);
+
+    pane.dispatchEvent(pointerEvent('pointerdown', { clientX: 100, clientY: 100 }));
+
+    expect(pane.style.transition).toBe('');
+
+    release(0);
+
+    expect(pane.style.transform).toBe('');
 
     ref.unsubscribe();
     vi.useRealTimers();

@@ -369,7 +369,9 @@ A drag surface inside the sheet keeps its own gesture: the sheet skips any point
 
 On release the sheet either settles back or leaves, decided by `minDistanceToDismiss` (150px) and `minVelocityToDismiss` (150px/s) - either one is enough. Release velocity is measured over the last 100ms of the gesture rather than averaged across it, so a slow drag that ends in a flick dismisses, and a fast drag parked before release does not.
 
-Both the settle and the exit animate at the speed the pointer had when it let go, clamped to 100–350ms - the sheet is thrown, not handed to a fixed transition. Under `prefers-reduced-motion` the exit skips the momentum handoff (the stylesheet's duration applies) and a settle uses the 100ms minimum.
+Both the settle and the exit run on a spring that starts at the speed the pointer had when it let go - the sheet is thrown, not handed to a fixed transition. A close without a swipe, such as <kbd>Escape</kbd> or a backdrop press, runs the same exit spring from rest. Under `prefers-reduced-motion` the exit uses the stylesheet's duration and a settle takes 100ms.
+
+While the sheet is dragged, the backdrop fades with the distance the sheet has left, and a drag against the docked edge stretches the sheet with growing resistance, by 48px at most. Pressing a sheet that is still settling catches it where it is on screen.
 
 ### Snap points
 
