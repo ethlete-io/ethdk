@@ -136,14 +136,15 @@ set it explicitly on a container of plain text or images.
 
 ## Theming
 
-| Token                               | Default                                                               | Applies to                                    |
-| ----------------------------------- | --------------------------------------------------------------------- | --------------------------------------------- |
-| `--et-scrollbar-thickness`          | `12px`                                                                | The track's cross-axis size                   |
-| `--et-scrollbar-thumb-thickness`    | `6px`                                                                 | The thumb's cross-axis size                   |
-| `--et-scrollbar-thumb-radius`       | `999px`                                                               | The thumb's corner radius                     |
-| `--et-scrollbar-fade-duration`      | `150ms`                                                               | The auto-hide fade and the thumb's hover tint |
-| `--et-scrollbar-thumb-color`        | `color-mix(in srgb, --et-surface-interaction-solid 35%, transparent)` | The thumb's fill at rest                      |
-| `--et-scrollbar-thumb-active-color` | `color-mix(in srgb, --et-surface-interaction-solid 60%, transparent)` | The thumb's fill hovered or dragged           |
+| Token                               | Default                                                               | Applies to                                                   |
+| ----------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `--et-scrollbar-thickness`          | `12px`                                                                | The track's cross-axis size                                  |
+| `--et-scrollbar-thumb-thickness`    | `6px`                                                                 | The thumb's cross-axis size                                  |
+| `--et-scrollbar-thumb-radius`       | `999px`                                                               | The thumb's corner radius                                    |
+| `--et-scrollbar-inset`              | `4px`                                                                 | The gap between each end of the track and the container edge |
+| `--et-scrollbar-fade-duration`      | `150ms`                                                               | The auto-hide fade and the thumb's hover tint                |
+| `--et-scrollbar-thumb-color`        | `color-mix(in srgb, --et-surface-interaction-solid 35%, transparent)` | The thumb's fill at rest                                     |
+| `--et-scrollbar-thumb-active-color` | `color-mix(in srgb, --et-surface-interaction-solid 60%, transparent)` | The thumb's fill hovered or dragged                          |
 
 The thumb's colour is mixed from the surface theme's `--et-surface-interaction-solid` by default, so it
 follows whatever surface it sits on - override the two tokens above to paint it yourself. See

@@ -17,6 +17,12 @@
     initial-value: 999px;
   }
 
+  @property --et-scrollbar-inset {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 4px;
+  }
+
   @property --et-scrollbar-fade-duration {
     syntax: '<time>';
     inherits: true;
@@ -50,13 +56,13 @@
     }
 
     &:where([data-orientation='vertical']) {
-      inset-block: 0;
+      inset-block: var(--et-scrollbar-inset);
       inset-inline-end: 0;
       inline-size: var(--et-scrollbar-thickness);
     }
 
     &:where([data-orientation='horizontal']) {
-      inset-inline: 0;
+      inset-inline: var(--et-scrollbar-inset);
       inset-block-end: 0;
       block-size: var(--et-scrollbar-thickness);
     }
