@@ -401,6 +401,7 @@ const SETTLE_MS = 300;
                     <iframe
                       [src]="frame.source"
                       [class.studio__drawing--off]="frame.key !== variantKey()"
+                      [style.visibility]="frame.key === variantKey() ? null : 'hidden'"
                       class="studio__drawing"
                       title="The drawn variant"
                     ></iframe>

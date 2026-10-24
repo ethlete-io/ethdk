@@ -939,9 +939,13 @@
     transition: opacity 0.15s ease;
   }
 
+  /* The template also sets visibility: hidden. WebKitGTK sends a wheel to the topmost iframe despite pointer-events: none. */
   .studio__drawing--off {
     opacity: 0;
     pointer-events: none;
+    transition:
+      opacity 0.15s ease,
+      visibility 0s linear 0.15s;
   }
 
   .studio__float {

@@ -175,6 +175,21 @@ describe('CallViewComponent', () => {
     expect(shown(fixture)).toEqual([`${ASKING.slug} b`]);
   });
 
+  it('hides the frames of the other variants, so they cannot take the wheel from the shown one', async () => {
+    const fixture = await mount(RESOLVED.slug);
+
+    await openRow(fixture, ASKING.slug);
+
+    const visibility = drawings(fixture).map((frame) => [
+      new URL(frame.src).searchParams.get('variant'),
+      getComputedStyle(frame).visibility,
+    ]);
+
+    expect(visibility).toEqual(
+      ASKING.variants.map((variant) => [variant.key, variant.key === 'b' ? 'visible' : 'hidden']),
+    );
+  });
+
   it('shows a round that a variant names before the round has a note', async () => {
     const fixture = await mount(UNNOTED.slug);
 
