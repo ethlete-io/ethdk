@@ -574,6 +574,80 @@ describe('SelectDirective (multiple)', () => {
     expect(driver.select.open()).toBe(true);
   });
 
+  describe('keyboard shortcuts', () => {
+    const trigger = () => driver.fixture.nativeElement.querySelector('[etselecttrigger]') as HTMLElement;
+
+    it('selects every option with Ctrl+A and clears them with the next Ctrl+A', async () => {
+      await driver.open();
+
+      const event = pressKey(trigger(), 'a', { ctrlKey: true });
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(driver.host.value()).toEqual(['apple', 'banana', 'cherry']);
+
+      pressKey(trigger(), 'a', { ctrlKey: true });
+
+      expect(driver.host.value()).toEqual([]);
+    });
+
+    it('treats Cmd+A like Ctrl+A and keeps values already selected in their order', async () => {
+      driver.host.value.set(['banana']);
+      await driver.open();
+
+      pressKey(trigger(), 'a', { metaKey: true });
+
+      expect(driver.host.value()).toEqual(['banana', 'apple', 'cherry']);
+    });
+
+    it('selects with Ctrl+A only up to maxSelection, and a full selection ignores it', async () => {
+      driver.host.maxSelection.set(2);
+      await driver.open();
+
+      pressKey(trigger(), 'a', { ctrlKey: true });
+
+      expect(driver.host.value()).toEqual(['apple', 'banana']);
+
+      pressKey(trigger(), 'a', { ctrlKey: true });
+
+      expect(driver.host.value()).toEqual(['apple', 'banana']);
+    });
+
+    it('ignores Ctrl+A while the panel is closed', () => {
+      pressKey(trigger(), 'a', { ctrlKey: true });
+
+      expect(driver.host.value()).toEqual([]);
+    });
+
+    it('moves the active option with Shift+ArrowDown/ArrowUp and toggles the option it lands on', async () => {
+      await driver.open();
+
+      expect(driver.activeLabel()).toBe('Apple');
+
+      pressKey(trigger(), 'ArrowDown', { shiftKey: true });
+
+      expect(driver.activeLabel()).toBe('Banana');
+      expect(driver.host.value()).toEqual(['banana']);
+
+      pressKey(trigger(), 'ArrowDown', { shiftKey: true });
+
+      expect(driver.host.value()).toEqual(['banana', 'cherry']);
+
+      pressKey(trigger(), 'ArrowUp', { shiftKey: true });
+
+      expect(driver.activeLabel()).toBe('Banana');
+      expect(driver.host.value()).toEqual(['cherry']);
+    });
+
+    it('toggles nothing with Shift+ArrowDown on the last option', async () => {
+      await driver.open();
+      driver.press('End');
+
+      pressKey(trigger(), 'ArrowDown', { shiftKey: true });
+
+      expect(driver.host.value()).toEqual([]);
+    });
+  });
+
   it('renders selected values as removable chips in the trigger', () => {
     driver.host.value.set(['apple', 'banana']);
     driver.detectChanges();
@@ -692,6 +766,25 @@ describe('SelectDirective (search)', () => {
 
   afterEach(async () => {
     await driver.close();
+  });
+
+  it('leaves Ctrl+A to the text while the multi search holds a query, and selects the options once it is empty', async () => {
+    driver.host.multiple.set(true);
+    driver.host.value.set([]);
+    await driver.open();
+    driver.type('an');
+
+    const withQuery = pressKey(driver.searchInput(), 'a', { ctrlKey: true });
+
+    expect(withQuery.defaultPrevented).toBe(false);
+    expect(driver.host.value()).toEqual([]);
+
+    driver.type('');
+
+    const withoutQuery = pressKey(driver.searchInput(), 'a', { ctrlKey: true });
+
+    expect(withoutQuery.defaultPrevented).toBe(true);
+    expect(driver.host.value()).toEqual(['apple', 'banana', 'cherry']);
   });
 
   it('renders the search input inline in the trigger and focuses it on open', async () => {

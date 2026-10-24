@@ -954,25 +954,7 @@ export class SelectDirective<TValue = unknown>
         return;
       }
 
-      // toggle by value arithmetic instead of the registry (`selection.select` recomputes the
-      // array from registered options only, silently dropping values without a live option -
-      // custom values, or options an external filter removed)
-      const itemValue = item.value();
-      const current = this.value();
-      const values = Array.isArray(current) ? current : [];
-      const adding = !this.includesValue(values, itemValue);
-
-      if (adding && this.isFull()) {
-        return;
-      }
-
-      const valuesMatch = this.valuesMatch();
-
-      this.writeValue(
-        adding ? [...values, itemValue] : values.filter((candidate) => !valuesMatch(itemValue, candidate)),
-      );
-
-      if (adding) {
+      if (this.toggleMultiValue(item) === 'added') {
         this.registeredSearch()?.clear();
       }
     } else {
@@ -1155,6 +1137,10 @@ export class SelectDirective<TValue = unknown>
 
   /** @internal Keyboard input arrives on the trigger - DOM focus never enters the listbox. */
   public handleTriggerKeydown(event: KeyboardEvent) {
+    if (this.handleMultiSelectShortcut(event)) {
+      return;
+    }
+
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -1262,6 +1248,99 @@ export class SelectDirective<TValue = unknown>
     }
 
     return committed;
+  }
+
+  // toggles by value arithmetic instead of the registry: `selection.select` recomputes the array
+  // from registered options only, silently dropping values without a live option - custom values,
+  // or options an external filter removed
+  private toggleMultiValue(item: SelectItem): 'added' | 'removed' | null {
+    const itemValue = item.value();
+    const current = this.value();
+    const values = Array.isArray(current) ? current : [];
+    const adding = !this.includesValue(values, itemValue);
+
+    if (adding && this.isFull()) {
+      return null;
+    }
+
+    const valuesMatch = this.valuesMatch();
+
+    this.writeValue(adding ? [...values, itemValue] : values.filter((candidate) => !valuesMatch(itemValue, candidate)));
+
+    return adding ? 'added' : 'removed';
+  }
+
+  private handleMultiSelectShortcut(event: KeyboardEvent) {
+    if (!this.open() || !this.multiple() || this.pickOnly() || this.disabled() || this.readonly() || event.altKey) {
+      return false;
+    }
+
+    const primaryModifier = event.ctrlKey || event.metaKey;
+
+    if (primaryModifier && !event.shiftKey && event.key.toLowerCase() === 'a') {
+      if (this.query()) {
+        return false;
+      }
+
+      event.preventDefault();
+      this.toggleVisibleSelection();
+
+      return true;
+    }
+
+    if (!primaryModifier && event.shiftKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      event.preventDefault();
+
+      const previous = this.activeItem();
+
+      this.moveActive(event.key === 'ArrowDown' ? 1 : -1);
+
+      const next = this.activeItem();
+
+      if (next && next !== previous && next !== this.selectAllItem && !next.disabled()) {
+        if (this.mixed()) {
+          this.commitMixedOption(next);
+        } else {
+          this.toggleMultiValue(next);
+        }
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  private toggleVisibleSelection() {
+    const current = this.value();
+    const values = this.mixed() || !Array.isArray(current) ? [] : current;
+    const valuesMatch = this.valuesMatch();
+    const isFull = this.isFull();
+    const isSelected = (item: SelectItem) => values.some((value) => valuesMatch(item.value(), value));
+    // an option disabled only because `maxSelection` is reached still counts as one to select
+    const targets = this.visibleItems().filter(
+      (item) => !item.custom?.() && (!item.disabled() || (isFull && !isSelected(item))),
+    );
+    const unselected = targets.filter((item) => !isSelected(item));
+
+    if (!unselected.length) {
+      const removable = targets.filter((item) => !item.disabled());
+
+      this.writeValue(values.filter((value) => !removable.some((item) => valuesMatch(item.value(), value))));
+      this.mixed.set(false);
+
+      return;
+    }
+
+    const room = (this.maxSelection() ?? Infinity) - values.length;
+    const added = unselected.filter((item) => !item.disabled()).slice(0, Math.max(room, 0));
+
+    if (!added.length) {
+      return;
+    }
+
+    this.writeValue([...values, ...added.map((item) => item.value())]);
+    this.mixed.set(false);
   }
 
   private writeValue(value: unknown) {

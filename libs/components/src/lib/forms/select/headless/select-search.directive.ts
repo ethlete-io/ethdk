@@ -285,7 +285,13 @@ export class SelectSearchDirective {
       return;
     }
 
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === 'Tab') {
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowUp' ||
+      event.key === 'Enter' ||
+      event.key === 'Tab' ||
+      ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a')
+    ) {
       select?.handleTriggerKeydown(event);
     }
   }

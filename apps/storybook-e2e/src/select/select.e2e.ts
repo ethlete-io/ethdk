@@ -8,6 +8,7 @@ const SEARCHABLE_LONG_LABEL_STORY_ID = 'components-forms-select--searchable-long
 const ASYNC_OPTIONS_STORY_ID = 'components-forms-select--async-options';
 const OBJECT_VALUES_STORY_ID = 'components-forms-select--object-values';
 const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
+const MULTIPLE_STORY_ID = 'components-forms-select--multiple';
 const MANY_OPTIONS_STORY_ID = 'components-forms-select--many-options';
 const OPTION_GROUP_SEARCH_STORY_ID = 'components-forms-select-option-group--with-search';
 
@@ -251,6 +252,34 @@ test.describe('select / keyboard', () => {
 
     await pressKey(page, 'ArrowDown');
     await expect(options.nth(4)).toHaveAttribute('data-active', 'true');
+  });
+});
+
+test.describe('select / multi keyboard', () => {
+  test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard shortcuts');
+
+  test('Shift+ArrowDown toggles the option it moves onto, Ctrl+A selects every enabled option and the next one clears them', async ({
+    page,
+  }) => {
+    const root = await openStory(page, MULTIPLE_STORY_ID);
+    const chips = root.locator('et-chip');
+
+    await root.getByRole('combobox').click();
+    await expect(page.getByRole('option', { name: 'Apple' })).toHaveAttribute('data-active', 'true');
+
+    await pressKey(page, 'Shift+ArrowDown');
+    await expect(page.getByRole('option', { name: 'Banana' })).toHaveAttribute('data-active', 'true');
+    await expect(chips).toHaveText(['Apple', 'Cherry', 'Banana']);
+
+    await pressKey(page, 'Shift+ArrowDown');
+    await expect(chips).toHaveText(['Apple', 'Banana']);
+
+    await pressKey(page, 'Control+a');
+    await expect(chips).toHaveText(['Apple', 'Banana', 'Cherry', 'Dragonfruit', 'Fig', 'Grape']);
+
+    await pressKey(page, 'Control+a');
+    await expect(chips).toHaveCount(0);
+    await expect(page.getByRole('listbox')).toBeVisible();
   });
 });
 
