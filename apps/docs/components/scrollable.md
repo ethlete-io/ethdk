@@ -64,6 +64,8 @@ A directive cannot be applied conditionally, so each takes a value to switch it 
 | `scrollableClass`         | -              | Extra class(es) on the scroll container                                                                       |
 | `color`                   | -              | App-registered color theme for buttons/dots                                                                   |
 
+The edge fade is `--mask-size` wide on the `<et-scrollable>` (`25px` for the gradient variant, `32px` for the border variant, which draws the fade next to its edge line).
+
 ### Snapping
 
 Snapping is `[etScrollableSnap]` from `SCROLLABLE_DRAG_IMPORTS`, applied on the `<et-scrollable>` itself.

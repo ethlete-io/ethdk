@@ -71,8 +71,15 @@
     }
 
     &[mask-variant='border'] {
+      --mask-size: 32px;
+
       & .et-scrollable-mask {
         background: none;
+
+        &::after {
+          content: '';
+          position: absolute;
+        }
       }
 
       &[direction='horizontal'],
@@ -83,12 +90,27 @@
           border-inline-start: 1px solid var(--et-surface-border-solid, #404040);
         }
 
+        & .et-scrollable-mask::after {
+          inset-block: 0;
+          inline-size: var(--mask-size);
+        }
+
         & .et-scrollable-mask--start {
           inset-inline: 0;
+
+          &::after {
+            inset-inline-start: 0;
+            background: linear-gradient(to right, var(--_mask-color) 0, transparent 100%);
+          }
         }
 
         & .et-scrollable-mask--end {
           inset-inline: auto 0;
+
+          &::after {
+            inset-inline-end: 1px;
+            background: linear-gradient(to left, var(--_mask-color) 0, transparent 100%);
+          }
         }
       }
 
@@ -99,12 +121,27 @@
           border-block-start: 1px solid var(--et-surface-border-solid, #404040);
         }
 
+        & .et-scrollable-mask::after {
+          inset-inline: 0;
+          block-size: var(--mask-size);
+        }
+
         & .et-scrollable-mask--start {
           inset-block-start: 0;
+
+          &::after {
+            inset-block-start: 0;
+            background: linear-gradient(to bottom, var(--_mask-color) 0, transparent 100%);
+          }
         }
 
         & .et-scrollable-mask--end {
           inset-block: auto 0;
+
+          &::after {
+            inset-block-end: 1px;
+            background: linear-gradient(to top, var(--_mask-color) 0, transparent 100%);
+          }
         }
       }
     }
