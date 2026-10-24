@@ -1021,6 +1021,50 @@ describe('SelectDirective (search)', () => {
     expect(driver.select.displayValue()).toBe('kiwi');
   });
 
+  describe('Enter before the panel catches up with the typed query', () => {
+    const typeThenEnter = (text: string) => {
+      const input = driver.searchInput();
+
+      input.value = text;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    };
+
+    beforeEach(() => {
+      driver.host.allowCustom.set(true);
+      driver.detectChanges();
+    });
+
+    it('commits the query instead of the option that was active before typing', async () => {
+      await driver.open();
+      expect(driver.activeOption()?.textContent?.trim()).toBe('Apple');
+
+      typeThenEnter('kiwi');
+      await driver.settle();
+
+      expect(driver.host.value()).toBe('kiwi');
+    });
+
+    it('commits the query instead of the stale "Create …" row', async () => {
+      await driver.open();
+
+      for (const [before, after] of [
+        ['k', 'kiwi'],
+        ['kiwis', 'kiwi'],
+      ]) {
+        driver.type(before!);
+        expect(driver.activeOption()?.classList.contains('et-select-create-option')).toBe(true);
+
+        typeThenEnter(after!);
+        await driver.settle();
+
+        expect(driver.host.value()).toBe(after);
+
+        await driver.open();
+      }
+    });
+  });
+
   it('resolves mixed on custom commit but preserves it when add-new hands off the query', async () => {
     driver.host.value.set('banana');
     driver.host.mixed.set(true);

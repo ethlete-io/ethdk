@@ -11,6 +11,7 @@ const SELECT_ALL_STORY_ID = 'components-forms-select--select-all';
 const MULTIPLE_STORY_ID = 'components-forms-select--multiple';
 const MAX_SELECTION_STORY_ID = 'components-forms-select--max-selection';
 const MANY_OPTIONS_STORY_ID = 'components-forms-select--many-options';
+const CUSTOM_VALUES_STORY_ID = 'components-forms-select--custom-values';
 const OPTION_GROUP_SEARCH_STORY_ID = 'components-forms-select-option-group--with-search';
 
 /** The option's `id`, which `aria-activedescendant` must carry. No id is a failure, not a pass. */
@@ -281,6 +282,21 @@ test.describe('select / multi keyboard', () => {
     await pressKey(page, 'Control+a');
     await expect(chips).toHaveCount(0);
     await expect(page.getByRole('listbox')).toBeVisible();
+  });
+
+  test('Enter right after fast typing commits exactly the typed text as a custom value', async ({ page }) => {
+    const root = await openStory(page, CUSTOM_VALUES_STORY_ID);
+    const chips = root.locator('et-chip');
+    const search = root.locator('input[etSelectSearch]');
+
+    await root.getByRole('combobox').click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await expect(chips).toHaveCount(0);
+
+    await search.pressSequentially('kiwi', { delay: 0 });
+    await page.keyboard.press('Enter');
+
+    await expect(chips).toHaveText(['kiwi']);
   });
 });
 

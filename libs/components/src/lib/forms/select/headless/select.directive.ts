@@ -834,8 +834,7 @@ export class SelectDirective<TValue = unknown>
           return;
         }
 
-        const next =
-          (!active ? this.selectedItems().find((item) => enabled.includes(item)) : null) ?? enabled[0] ?? null;
+        const next = this.reconciledActiveItem(enabled, navigable);
 
         if (next) {
           this.setActiveItem(next, { scroll: !active });
@@ -1541,10 +1540,23 @@ export class SelectDirective<TValue = unknown>
     }
   }
 
-  private commitActiveOrClose() {
-    const item = this.activeItem();
+  private reconciledActiveItem(enabled = this.enabledItems(), navigable = this.navigableItems()) {
+    const active = this.activeItem();
 
-    if (item) {
+    if (active && navigable.includes(active)) {
+      return active;
+    }
+
+    return (!active ? this.selectedItems().find((item) => enabled.includes(item)) : null) ?? enabled[0] ?? null;
+  }
+
+  // Enter can arrive before the active-item effect and the "Create …" row's bindings catch up
+  // with the typed query, so both are resolved from the query here instead of the rendered rows
+  private commitActiveOrClose() {
+    const item = this.reconciledActiveItem();
+    const isCreateRow = !!item?.custom?.() && !this.isValueSelected(item.value());
+
+    if (item && !isCreateRow) {
       this.commitOption(item);
 
       return;
