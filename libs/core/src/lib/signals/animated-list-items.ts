@@ -8,6 +8,11 @@ export type AnimatedListItemsConfig = {
   host?: SignalElementBindingType;
   /** Selector for the items that move. Match the leaf rows only, never an item and its container. */
   items: string;
+  /**
+   * Attributes that hide an item without removing it, e.g. a filter flag. Changes to them count as list
+   * changes, and the fade-out copy of a hidden item drops them.
+   */
+  attributes?: string[];
   /** Duration in ms of a move. @default 300 */
   moveDuration?: number;
   /** Easing of a move. @default 'ease' */
@@ -16,6 +21,8 @@ export type AnimatedListItemsConfig = {
   enterDuration?: number;
   /** Duration in ms of the fade-out of a removed item. @default 100 */
   leaveDuration?: number;
+  /** Class on the host while items move or fade out - use it to clip the overflow of moved items. */
+  movingClass?: string;
   /** Above this number of moved items, items do not move and only fade. @default 30 */
   maxMoves?: number;
 };
@@ -70,6 +77,27 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
   const moves = new Map<Element, Animation>();
   let boxes = new Map<HTMLElement, ItemBox>();
   let observer: MutationObserver | null = null;
+  let resizeObserver: ResizeObserver | null = null;
+  let hostWidth = 0;
+  let running = 0;
+
+  const track = (animation: Animation) => {
+    const host = hostSignal().currentElement;
+    const movingClass = config.movingClass;
+
+    if (!movingClass || !host) return;
+
+    running++;
+    host.classList.add(movingClass);
+
+    const settle = () => {
+      running--;
+
+      if (running === 0) host.classList.remove(movingClass);
+    };
+
+    animation.finished.then(settle).catch(settle);
+  };
 
   const measure = (host: HTMLElement) => {
     const next = new Map<HTMLElement, ItemBox>();
@@ -78,7 +106,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     const scale = scaleOf(host, hostRect);
 
     for (const item of Array.from(host.querySelectorAll<HTMLElement>(config.items))) {
-      if (!copies.has(item)) next.set(item, layoutBoxOf(item, hostRect, scale));
+      if (!copies.has(item) && (item.checkVisibility?.() ?? true)) next.set(item, layoutBoxOf(item, hostRect, scale));
     }
 
     return next;
@@ -88,6 +116,9 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     const copy = item.cloneNode(true) as HTMLElement;
 
     copy.removeAttribute('id');
+
+    for (const attribute of config.attributes ?? []) copy.removeAttribute(attribute);
+
     copy.setAttribute('aria-hidden', 'true');
     copy.inert = true;
     Object.assign(copy.style, {
@@ -110,8 +141,10 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     copy.style.top = `${box.top - containingBlock.top}px`;
     copy.style.left = `${box.left - containingBlock.left}px`;
 
-    const fade = copy.animate([{ opacity: 1 }, { opacity: 0 }], { duration: leaveDuration, easing: 'ease-out' });
+    const fade = copy.animate([{ opacity: 0 }], { duration: leaveDuration, easing: 'ease-out' });
     const remove = () => copy.remove();
+
+    track(fade);
 
     fade.finished.then(remove).catch(remove);
   };
@@ -120,6 +153,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     const previous = boxes;
     const next = measure(host);
     const shifts: { item: HTMLElement; x: number; y: number }[] = [];
+    const entering: HTMLElement[] = [];
 
     boxes = next;
 
@@ -127,7 +161,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
       const before = previous.get(item);
 
       if (!before) {
-        item.animate([{ opacity: 0 }, { opacity: 1 }], { duration: enterDuration, easing: 'ease-out' });
+        entering.push(item);
         continue;
       }
 
@@ -139,10 +173,23 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
     }
 
     for (const [item, box] of previous) {
-      if (!next.has(item) && !item.isConnected) fadeOutCopy(host, item, box);
+      if (!next.has(item)) fadeOutCopy(host, item, box);
     }
 
-    if (prefersReducedMotion() || shifts.length > maxMoves) {
+    const movesItems = shifts.length > 0 && !prefersReducedMotion() && shifts.length <= maxMoves;
+    // A new item waits until the moving items have mostly passed its spot, or their text overlaps.
+    const enterDelay = movesItems ? moveDuration * 0.4 : 0;
+
+    for (const item of entering) {
+      item.animate([{ opacity: 0, offset: 0 }], {
+        duration: enterDuration,
+        delay: enterDelay,
+        easing: 'ease-out',
+        fill: 'backwards',
+      });
+    }
+
+    if (!movesItems) {
       for (const move of moves.values()) move.cancel();
       moves.clear();
 
@@ -158,6 +205,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
       });
 
       moves.set(item, move);
+      track(move);
 
       const forget = () => {
         if (moves.get(item) === move) moves.delete(item);
@@ -168,6 +216,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
   };
 
   const touchesOnlyCopies = (record: MutationRecord) =>
+    record.type === 'childList' &&
     [...Array.from(record.addedNodes), ...Array.from(record.removedNodes)].every((node) => copies.has(node));
 
   effect(() => {
@@ -176,6 +225,7 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
 
     untracked(() => {
       observer?.disconnect();
+      resizeObserver?.disconnect();
       boxes = new Map();
 
       if (!host || !rendered || typeof MutationObserver === 'undefined') return;
@@ -186,12 +236,31 @@ export const injectAnimatedListItems = (config: AnimatedListItemsConfig) => {
 
         if (current && !records.every(touchesOnlyCopies)) run(current);
       });
-      observer.observe(host, { childList: true, subtree: true });
+      observer.observe(host, {
+        childList: true,
+        subtree: true,
+        ...(config.attributes?.length ? { attributes: true, attributeFilter: config.attributes } : {}),
+      });
+
+      if (typeof ResizeObserver === 'undefined') return;
+
+      hostWidth = host.offsetWidth;
+      // Boxes taken while the host was still narrow give fading copies the wrong width.
+      resizeObserver ??= new ResizeObserver(() => {
+        const current = hostSignal().currentElement;
+
+        if (!current || current.offsetWidth === hostWidth) return;
+
+        hostWidth = current.offsetWidth;
+        boxes = measure(current);
+      });
+      resizeObserver.observe(host);
     });
   });
 
   destroyRef.onDestroy(() => {
     observer?.disconnect();
+    resizeObserver?.disconnect();
 
     for (const move of moves.values()) move.cancel();
   });

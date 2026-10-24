@@ -14,7 +14,14 @@ type RecordedAnimation = {
   template: `
     <div #list>
       @for (item of items(); track item) {
-        <div [attr.data-top]="$index * 10" [id]="'row-' + item" class="row">{{ item }}</div>
+        <div
+          [attr.data-top]="$index * 10"
+          [id]="'row-' + item"
+          [attr.data-filtered]="filtered().includes(item) || null"
+          class="row"
+        >
+          {{ item }}
+        </div>
       }
     </div>
   `,
@@ -22,9 +29,17 @@ type RecordedAnimation = {
 class AnimatedListItemsHostComponent {
   list = viewChild.required<ElementRef<HTMLElement>>('list');
   items = signal(['a', 'b', 'c']);
+  filtered = signal<string[]>([]);
 
   constructor() {
-    injectAnimatedListItems({ host: this.list, items: '.row', moveDuration: 300, moveEasing: 'linear', maxMoves: 2 });
+    injectAnimatedListItems({
+      host: this.list,
+      items: '.row',
+      moveDuration: 300,
+      moveEasing: 'linear',
+      maxMoves: 2,
+      attributes: ['data-filtered'],
+    });
   }
 }
 
@@ -128,7 +143,39 @@ describe('injectAnimatedListItems', () => {
     setup();
     await update(['a', 'b', 'c', 'd']);
 
-    expect(animationsOf(row('d'))[0]?.keyframes).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+    expect(animationsOf(row('d'))[0]?.keyframes).toEqual([{ opacity: 0, offset: 0 }]);
+  });
+
+  it('gives a removed item the width it had after the host last resized', async () => {
+    const originalResizeObserver = globalThis.ResizeObserver;
+    const offsetWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth');
+    let notify: () => void = () => undefined;
+
+    globalThis.ResizeObserver = class {
+      constructor(callback: () => void) {
+        notify = callback;
+      }
+      observe = () => undefined;
+      disconnect = () => undefined;
+    } as unknown as typeof ResizeObserver;
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get(this: HTMLElement) {
+        return Number(this.closest<HTMLElement>('[data-width]')?.dataset['width'] ?? 0);
+      },
+    });
+
+    try {
+      setup();
+      fixture.componentInstance.list().nativeElement.dataset['width'] = '200';
+      notify();
+      await update(['a', 'c']);
+
+      expect(copies()[0]?.style.width).toBe('200px');
+    } finally {
+      globalThis.ResizeObserver = originalResizeObserver;
+      if (offsetWidth) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', offsetWidth);
+    }
   });
 
   it('fades out a removed item as an inert copy at its old spot', async () => {
@@ -140,7 +187,7 @@ describe('injectAnimatedListItems', () => {
     expect(copy?.id).toBe('');
     expect(copy?.inert).toBe(true);
     expect(copy?.style.top).toBe('10px');
-    expect(animationsOf(copy)[0]?.keyframes).toEqual([{ opacity: 1 }, { opacity: 0 }]);
+    expect(animationsOf(copy)[0]?.keyframes).toEqual([{ opacity: 0 }]);
 
     animationsOf(copy)[0]?.finish();
 
@@ -152,7 +199,30 @@ describe('injectAnimatedListItems', () => {
     await update(['x', 'a', 'b', 'c']);
 
     expect(animationsOf(row('a'))).toEqual([]);
-    expect(animationsOf(row('x'))[0]?.keyframes).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+    expect(animationsOf(row('x'))[0]?.keyframes).toEqual([{ opacity: 0, offset: 0 }]);
+  });
+
+  it('treats an item hidden by a watched attribute as removed', async () => {
+    const originalCheckVisibility = HTMLElement.prototype.checkVisibility;
+
+    HTMLElement.prototype.checkVisibility = function (this: HTMLElement) {
+      return !this.hasAttribute('data-filtered');
+    };
+
+    try {
+      setup();
+      fixture.componentInstance.filtered.set(['b']);
+      fixture.detectChanges();
+      await Promise.resolve();
+
+      const [copy] = copies();
+
+      expect(copy?.hasAttribute('data-filtered')).toBe(false);
+      expect(copy?.style.top).toBe('10px');
+      expect(animationsOf(copy)[0]?.keyframes).toEqual([{ opacity: 0 }]);
+    } finally {
+      HTMLElement.prototype.checkVisibility = originalCheckVisibility;
+    }
   });
 
   it('only fades with reduced motion', async () => {
@@ -160,7 +230,7 @@ describe('injectAnimatedListItems', () => {
     await update(['b', 'a', 'd']);
 
     expect(animationsOf(row('a'))).toEqual([]);
-    expect(animationsOf(row('d'))[0]?.keyframes).toEqual([{ opacity: 0 }, { opacity: 1 }]);
+    expect(animationsOf(row('d'))[0]?.keyframes).toEqual([{ opacity: 0, offset: 0 }]);
     expect(copies()).toHaveLength(1);
   });
 });
