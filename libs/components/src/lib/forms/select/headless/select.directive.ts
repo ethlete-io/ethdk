@@ -640,6 +640,21 @@ export class SelectDirective<TValue = unknown>
   });
 
   /**
+   * The selected custom values of a multi select (with `allowCustomValues`), so a panel can list
+   * them as checked `customValueOption` rows the user can deselect there.
+   */
+  public selectedCustomEntries = computed(() => {
+    if (!this.allowCustomValues() || !this.multiple()) {
+      return [];
+    }
+
+    return this.selectedEntries().filter(
+      (entry): entry is SelectSelectedEntry & { value: string } =>
+        typeof entry.value === 'string' && (!entry.item || !!entry.item.custom?.()),
+    );
+  });
+
+  /**
    * The label(s) of the current value for trigger display. `null` when no label is
    * known (show the placeholder).
    */

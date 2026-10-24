@@ -109,6 +109,10 @@
 
     <ng-template [ngTemplateOutlet]="optionContent" />
 
+    @for (entry of select.selectedCustomEntries(); track entry.value) {
+      <et-select-option [value]="entry.value" [label]="entry.value" customValueOption />
+    }
+
     @if (select.customValueCandidate(); as candidate) {
       <et-select-option [value]="candidate" [label]="candidate" class="et-select-create-option" customValueOption>
         <i class="et-select-create-option-icon" etIcon="et-plus" aria-hidden="true"></i>

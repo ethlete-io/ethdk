@@ -787,6 +787,30 @@ describe('SelectDirective (search)', () => {
     expect(driver.host.value()).toEqual(['apple', 'banana', 'cherry']);
   });
 
+  it('lists selected custom values as checked options that filter and deselect like any option', async () => {
+    driver.host.allowCustom.set(true);
+    driver.host.multiple.set(true);
+    driver.host.value.set(['banana', 'kiwi']);
+    await driver.open();
+
+    expect(driver.visibleLabels()).toEqual(['Apple', 'Banana', 'Cherry', 'kiwi']);
+    expect(driver.optionByLabel('kiwi')?.getAttribute('aria-selected')).toBe('true');
+
+    driver.type('ki');
+
+    expect(driver.visibleLabels()).toEqual(['kiwi', 'Create “ki”']);
+
+    driver.type('an');
+
+    expect(driver.visibleLabels()).toEqual(['Banana', 'Create “an”']);
+
+    driver.type('');
+    driver.clickOptionByLabel('kiwi');
+
+    expect(driver.host.value()).toEqual(['banana']);
+    expect(driver.visibleLabels()).toEqual(['Apple', 'Banana', 'Cherry']);
+  });
+
   it('renders the search input inline in the trigger and focuses it on open', async () => {
     const input = driver.searchInput();
 
@@ -1020,7 +1044,8 @@ describe('SelectDirective (search)', () => {
     expect(driver.host.value()).toEqual(['kiwi']);
 
     driver.type('kiwi');
-    expect(driver.visibleOptions().length).toBe(0);
+    expect(driver.visibleLabels()).toEqual(['kiwi']);
+    expect(driver.visibleOptions()[0]!.classList.contains('et-select-create-option')).toBe(false);
   });
 
   it('commits custom values on separator characters while typing', async () => {
@@ -1261,7 +1286,7 @@ describe('SelectDirective (search)', () => {
 
     driver.type('an');
 
-    expect(driver.visibleLabels()).toEqual(['Banana']);
+    expect(driver.visibleLabels()).toEqual(['Banana', 'mango']);
 
     driver.type('papaya');
     driver.pressInSearch('Enter');
