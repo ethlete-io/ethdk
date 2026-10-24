@@ -1,7 +1,10 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, DestroyRef, ViewEncapsulation, effect, inject, input } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, effect, inject, input, signal } from '@angular/core';
+import { form, FormField } from '@angular/forms/signals';
 import { Breakpoint } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
+import { FORM_FIELD_IMPORTS } from '../../../forms/form-field';
+import { INPUT_IMPORTS } from '../../../forms/input';
 import { OverlayConfig } from '../../overlay-config';
 import { injectOverlayManager } from '../../overlay-manager';
 import { OVERLAY_CONTENT_IMPORTS } from '../../overlay.imports';
@@ -28,6 +31,11 @@ import {
 
       <div dividers="dynamic" et-overlay-body>
         <div class="flex max-w-md flex-col gap-4 text-base text-white/80">
+          <et-form-field>
+            <et-label>Search</et-label>
+            <et-input [formField]="searchForm.query" type="search" />
+          </et-form-field>
+
           @for (paragraph of PARAGRAPHS; track $index) {
             <p>{{ paragraph }}</p>
           }
@@ -41,9 +49,11 @@ import {
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS],
+  imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField],
 })
 export class OverlayExampleOverlayComponent {
+  protected readonly searchForm = form(signal({ query: '' }));
+
   protected readonly PARAGRAPHS = [
     'The overlay body scrolls independently while the header and footer stay pinned in place.',
     'Dialogs are capped at 80% of the viewport height by default, so long content like this scrolls instead of growing past the screen.',
