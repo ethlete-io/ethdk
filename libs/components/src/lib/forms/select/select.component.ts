@@ -1,6 +1,21 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { booleanAttribute, Component, Injector, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, ProvideColorDirective, createComponentId } from '@ethlete/core';
+import {
+  booleanAttribute,
+  Component,
+  ElementRef,
+  Injector,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  viewChild,
+} from '@angular/core';
+import {
+  ColorInteractiveDirective,
+  ProvideColorDirective,
+  createComponentId,
+  injectAnimatedListItems,
+} from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -10,6 +25,7 @@ import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, Select
 import { SelectAllOptionComponent } from './select-all-option.component';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
+import { SELECT_SPRING } from './select-spring';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectSelectLabels } from '../../forms/select/select-labels';
@@ -125,15 +141,17 @@ export class SelectComponent {
   /** Text of the `selectAll` row. Defaults to the shared `selectAll` label - see {@link provideFormFieldLabels}. */
   public selectAllLabel = input<string | null>(null);
 
+  private triggerContent = viewChild<ElementRef<HTMLElement>>('triggerContent');
+
   protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
 
   protected resolvedAddNewLabel = computed(() => this.addNewLabel() ?? this.selectLabels().addNew);
 
   protected resolvedCreateLabel = computed(() => this.createLabel() ?? this.selectLabels().create);
-
   protected resolvedSelectAllLabel = computed(() => this.selectAllLabel() ?? this.formFieldLabels().selectAll);
 
   protected resolvedClearLabel = computed(() => this.clearLabel() ?? this.formFieldLabels().clear);
+
   protected mixedLabelId = createComponentId('et-select-mixed-label');
 
   protected showClear = computed(
@@ -196,7 +214,6 @@ export class SelectComponent {
 
     return !this.select.query() && !this.select.focused();
   });
-
   protected stackedValue = computed(
     () => this.hasSearch() && !this.select.multiple() && !!this.select.registeredValueTemplate(),
   );
@@ -204,6 +221,14 @@ export class SelectComponent {
   constructor() {
     mountControlSuffixStyles();
     this.select.mixedLabelId.set(this.mixedLabelId);
+
+    injectAnimatedListItems({
+      host: this.triggerContent,
+      items: '.et-select-chips > et-chip, input[etSelectSearch]',
+      moveDuration: SELECT_SPRING.durationMs,
+      moveEasing: SELECT_SPRING.easing,
+      leaveDuration: 100,
+    });
   }
 
   protected handleClearClick(event: Event) {

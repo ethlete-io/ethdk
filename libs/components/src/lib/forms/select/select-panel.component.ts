@@ -1,10 +1,8 @@
 import { Component, ElementRef, ViewEncapsulation, inject, viewChild } from '@angular/core';
 import { AutoSurfaceDirective, ProvideColorDirective, injectAnimatedListItems } from '@ethlete/core';
-import { springEasing } from '../../overlay/strategies/spring-easing';
 import { injectOverlaySurfaceContext } from '../form-field/headless';
 import { SelectListboxDirective, SelectViewportDirective } from './headless';
-
-const LIST_SPRING = /* @__PURE__ */ springEasing({ response: 0.3, dampingFraction: 1 });
+import { SELECT_SPRING } from './select-spring';
 
 @Component({
   selector: 'et-select-panel',
@@ -39,8 +37,8 @@ export class SelectPanelComponent {
     injectOverlaySurfaceContext({
       panelBody: this.panelBody,
       resizingClass: 'et-select-panel--resizing',
-      resizeDuration: LIST_SPRING.durationMs,
-      resizeEasing: LIST_SPRING.easing,
+      resizeDuration: SELECT_SPRING.durationMs,
+      resizeEasing: SELECT_SPRING.easing,
     });
 
     // Virtual rows are recycled while scrolling; animating them would fade rows in on every scroll step.
@@ -53,8 +51,8 @@ export class SelectPanelComponent {
       ].join(),
       attributes: ['data-filtered', 'data-hidden'],
       movingClass: 'et-select-panel-body--moving',
-      moveDuration: LIST_SPRING.durationMs,
-      moveEasing: LIST_SPRING.easing,
+      moveDuration: SELECT_SPRING.durationMs,
+      moveEasing: SELECT_SPRING.easing,
       leaveDuration: 60,
     });
   }
