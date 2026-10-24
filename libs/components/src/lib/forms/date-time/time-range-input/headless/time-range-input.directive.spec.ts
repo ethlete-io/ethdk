@@ -5,6 +5,7 @@ import { describeMixedStateContract } from '../../../testing/mixed-state-contrac
 import { describePickerCommitContract } from '../../../testing/picker-commit-contract';
 import { DatePickerSurfaceDirective } from '../../picker/date-picker-surface.directive';
 import { DatePickerTriggerDirective } from '../../picker/date-picker-trigger.directive';
+import { timeReferenceDay } from '../../internals/time-parse';
 import { TIME_RANGE_INPUT_ERROR_CODES } from '../time-range-input-errors';
 import { TimeRangeInputFieldDirective } from './time-range-input-field.directive';
 import { TimeRangeInputDirective, TimeRangeValue } from './time-range-input.directive';
@@ -60,11 +61,10 @@ class TimeRangeInputTestHost {
 })
 class DuplicateTimeRangeInputFieldTestHost {}
 
-/** The wire values parse against today, so expectations about `Date`s have to be built on it too. */
-const today = (hours: number, minutes: number) => {
-  const now = new Date();
+const onReferenceDay = (hours: number, minutes: number) => {
+  const day = timeReferenceDay();
 
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+  return new Date(day.getFullYear(), day.getMonth(), day.getDate(), hours, minutes);
 };
 
 describe('TimeRangeInputDirective', () => {
@@ -127,7 +127,7 @@ describe('TimeRangeInputDirective', () => {
 
     expect(driver.field('.start').value).toBe('09:15');
     expect(driver.field('.end').value).toBe('18:00');
-    expect(driver.control.calendarRange()).toEqual({ start: today(9, 15), end: today(18, 0) });
+    expect(driver.control.calendarRange()).toEqual({ start: onReferenceDay(9, 15), end: onReferenceDay(18, 0) });
   });
 
   it('commits a picked time into that side only, and keeps the picker open', async () => {
