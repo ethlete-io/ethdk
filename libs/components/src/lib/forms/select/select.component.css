@@ -33,11 +33,6 @@
         cursor: default;
       }
 
-      &.et-select-trigger--resizing {
-        align-items: flex-start;
-        overflow-y: clip;
-      }
-
       &:has(input[etselectsearch]:not(:read-only)) {
         cursor: text;
       }
@@ -66,7 +61,8 @@
 
       input[etselectsearch] {
         flex: 1 1 60px;
-        min-inline-size: 60px;
+        min-inline-size: min(100%, max(60px, var(--_et-select-search-placeholder-width, 0px)));
+        max-inline-size: 100%;
         border: none;
         outline: none;
         background: transparent;
@@ -82,6 +78,13 @@
 
         &:read-only {
           caret-color: transparent;
+        }
+      }
+
+      @supports (field-sizing: content) {
+        .et-select-trigger-content:not(.et-select-trigger-content--stacked) > input[etselectsearch] {
+          flex: 1 0 auto;
+          field-sizing: content;
         }
       }
 
@@ -154,13 +157,31 @@
     }
 
     .et-select-trigger-busy--enter {
-      animation: et-select-busy-in 120ms ease;
+      animation: et-select-fade-in 120ms ease;
+    }
+
+    .et-select-chip--enter {
+      animation: et-select-fade-in 150ms ease-out;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .et-select-trigger-busy--enter {
+      .et-select-trigger-busy--enter,
+      .et-select-chip--enter {
         animation: none;
       }
+    }
+  }
+
+  et-form-field
+    .et-form-field-control-frame:has(> .et-form-field-suffix > :is(.et-input-clear, .et-form-field-busy-spinner)):has(
+      et-select .et-select-chips
+    ) {
+    .et-form-field-control-slot {
+      mask-image: none;
+    }
+
+    .et-select-trigger-content {
+      padding-inline-end: var(--_et-form-field-suffix-overlap);
     }
   }
 
@@ -178,7 +199,7 @@
     rotate: 180deg;
   }
 
-  @keyframes et-select-busy-in {
+  @keyframes et-select-fade-in {
     from {
       opacity: 0;
     }

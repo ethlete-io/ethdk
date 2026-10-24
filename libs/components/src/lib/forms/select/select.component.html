@@ -1,7 +1,7 @@
 <!-- a div, not a <button>: chips carry remove buttons and buttons cannot nest.
      The trigger directive manages tabindex/aria-disabled for non-button hosts. -->
-<div #trigger class="et-select-trigger" etSelectTrigger>
-  <div #triggerContent [class.et-select-trigger-content--stacked]="stackedValue()" class="et-select-trigger-content">
+<div class="et-select-trigger" etSelectTrigger>
+  <div [class.et-select-trigger-content--stacked]="stackedValue()" class="et-select-trigger-content">
     @if (select.mixed()) {
       @if (showValueLabel()) {
         <span [id]="mixedLabelId" class="et-select-value">{{ select.displayValue() }}</span>
@@ -19,6 +19,7 @@
             [disabled]="select.disabled()"
             [removable]="!select.readonly() && !select.disabled()"
             (remove)="select.deselectValue(entry.value)"
+            animate.enter="et-select-chip--enter"
           >
             {{ entry.label }}
           </et-chip>

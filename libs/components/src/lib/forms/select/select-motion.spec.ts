@@ -36,7 +36,7 @@ class VirtualSelectHost {
 
 type AnimateCall = { element: Element; keyframes: Keyframe[] };
 
-describe('select chip motion', () => {
+describe('select chip removal', () => {
   const originalAnimate = Element.prototype.animate;
   let calls: AnimateCall[];
   let fixture: ComponentFixture<MultiSelectHost>;
@@ -63,30 +63,20 @@ describe('select chip motion', () => {
     Element.prototype.animate = originalAnimate;
   });
 
-  it('fades a new chip in', async () => {
-    fixture.componentInstance.value.set(['apple']);
-    await render();
-
-    const chip = fixture.nativeElement.querySelector('et-chip');
-
-    expect(calls.some((call) => call.element === chip && call.keyframes[0]?.['opacity'] === 0)).toBe(true);
-  });
-
-  it('fades a removed chip out where it was', async () => {
+  it('removes a chip at once, without a fading copy over the chips that take its place', async () => {
     fixture.componentInstance.value.set(['apple', 'banana']);
     await render();
 
     fixture.componentInstance.value.set(['banana']);
     await render();
 
-    const copy = fixture.nativeElement.querySelector('.et-select-trigger-content > et-chip[aria-hidden="true"]');
+    const chips = [...fixture.nativeElement.querySelectorAll('et-chip')] as HTMLElement[];
 
-    expect(copy?.textContent).toContain('Apple');
-    expect(calls.some((call) => call.element === copy && call.keyframes[0]?.['opacity'] === 0)).toBe(true);
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Banana']);
   });
 });
 
-describe('select field height motion', () => {
+describe('select field height', () => {
   const originalAnimate = Element.prototype.animate;
   const originalResizeObserver = globalThis.ResizeObserver;
   const originalRect = HTMLElement.prototype.getBoundingClientRect;
@@ -136,7 +126,7 @@ describe('select field height motion', () => {
     HTMLElement.prototype.getBoundingClientRect = originalRect;
   });
 
-  it('grows the field with a transition when a chip wraps to a new line', async () => {
+  it('changes the field height at once when a chip wraps to a new line', async () => {
     const fixture = TestBed.createComponent(MultiSelectHost);
 
     fixture.detectChanges();
@@ -147,9 +137,8 @@ describe('select field height motion', () => {
     for (const callback of resizeCallbacks) callback([], {} as ResizeObserver);
 
     const trigger = fixture.nativeElement.querySelector('.et-select-trigger');
-    const grow = calls.find((call) => call.element === trigger);
 
-    expect(grow?.keyframes).toEqual([{ blockSize: '24px' }, { blockSize: '51px' }]);
+    expect(calls.some((call) => call.element === trigger)).toBe(false);
   });
 });
 
@@ -192,5 +181,43 @@ describe('select virtual row motion', () => {
 
     expect(driver.options().at(-1)?.textContent).toContain('Item 200');
     expect(rowCalls()).toEqual([]);
+  });
+});
+
+@Component({
+  template: `
+    <et-select multiple placeholder="Pick fruits">
+      <input [style.font-size.px]="10" etSelectSearch placeholder="Search fruits" />
+      <et-select-option value="apple">Apple</et-select-option>
+    </et-select>
+  `,
+  imports: [SELECT_IMPORTS],
+})
+class SearchableMultiSelectHost {}
+
+describe('select search placeholder width', () => {
+  const originalRect = HTMLElement.prototype.getBoundingClientRect;
+
+  beforeEach(() => {
+    HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+      const width = this.tagName === 'SPAN' && this.textContent === 'Search fruits' ? 79 : 0;
+
+      return new DOMRect(0, 0, width, 0);
+    };
+  });
+
+  afterEach(() => {
+    HTMLElement.prototype.getBoundingClientRect = originalRect;
+  });
+
+  it('keeps the search input at least as wide as its placeholder, so it wraps instead of clipping it', async () => {
+    const fixture = TestBed.createComponent(SearchableMultiSelectHost);
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector('input[etSelectSearch]') as HTMLInputElement;
+
+    expect(input.style.getPropertyValue('--_et-select-search-placeholder-width')).toBe('8.1em');
   });
 });

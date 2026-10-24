@@ -1,22 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
-import {
-  booleanAttribute,
-  Component,
-  ElementRef,
-  Injector,
-  ViewEncapsulation,
-  computed,
-  inject,
-  input,
-  viewChild,
-} from '@angular/core';
-import {
-  ColorInteractiveDirective,
-  ProvideColorDirective,
-  createComponentId,
-  injectAnimatedBlockSize,
-  injectAnimatedListItems,
-} from '@ethlete/core';
+import { booleanAttribute, Component, Injector, ViewEncapsulation, computed, inject, input } from '@angular/core';
+import { ColorInteractiveDirective, ProvideColorDirective, createComponentId } from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -26,7 +10,7 @@ import { SelectDirective, SelectSurfaceDirective, SelectTriggerDirective, Select
 import { SelectAllOptionComponent } from './select-all-option.component';
 import { SelectOptionComponent } from './select-option.component';
 import { SelectPanelComponent } from './select-panel.component';
-import { SELECT_SPRING } from './select-spring';
+import { injectSearchPlaceholderWidth } from './select-search-width';
 import { SelectVirtualOptionComponent } from './select-virtual-option.component';
 import { injectFormFieldLabels } from '../../forms/form-field/form-field-labels';
 import { injectSelectLabels } from '../../forms/select/select-labels';
@@ -142,9 +126,6 @@ export class SelectComponent {
   /** Text of the `selectAll` row. Defaults to the shared `selectAll` label - see {@link provideFormFieldLabels}. */
   public selectAllLabel = input<string | null>(null);
 
-  private trigger = viewChild<ElementRef<HTMLElement>>('trigger');
-  private triggerContent = viewChild<ElementRef<HTMLElement>>('triggerContent');
-
   protected resolvedLoadMoreLabel = computed(() => this.loadMoreLabel() ?? this.selectLabels().loadMore);
 
   protected resolvedAddNewLabel = computed(() => this.addNewLabel() ?? this.selectLabels().addNew);
@@ -224,21 +205,7 @@ export class SelectComponent {
     mountControlSuffixStyles();
     this.select.mixedLabelId.set(this.mixedLabelId);
 
-    injectAnimatedBlockSize({
-      host: this.trigger,
-      observe: this.triggerContent,
-      resizingClass: 'et-select-trigger--resizing',
-      duration: SELECT_SPRING.durationMs,
-      easing: SELECT_SPRING.easing,
-    });
-
-    injectAnimatedListItems({
-      host: this.triggerContent,
-      items: '.et-select-chips > et-chip, input[etSelectSearch]',
-      moveDuration: SELECT_SPRING.durationMs,
-      moveEasing: SELECT_SPRING.easing,
-      leaveDuration: 100,
-    });
+    injectSearchPlaceholderWidth(this.select);
   }
 
   protected handleClearClick(event: Event) {
