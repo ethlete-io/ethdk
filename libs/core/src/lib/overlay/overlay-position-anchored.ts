@@ -24,10 +24,11 @@ import {
   overlayViewportInsetsFor,
 } from './overlay-viewport-inset';
 
-const roundToDevicePixel = (value: number) => {
+const roundToDevicePixel = (value: number, shifted = 0) => {
   const ratio = window.devicePixelRatio || 1;
+  const round = shifted > 0 ? Math.ceil : shifted < 0 ? Math.floor : Math.round;
 
-  return Math.round(value * ratio) / ratio;
+  return round(Number((value * ratio).toFixed(4))) / ratio;
 };
 
 /**
@@ -364,8 +365,9 @@ export const createAnchoredPositionCleanup = (
       if (destroyed || currentUpdateId !== updateId) return;
 
       // A fractional offset snaps the panel's content by a pixel whenever a child gets its own layer.
-      const x = roundToDevicePixel(rawX);
-      const y = roundToDevicePixel(rawY);
+      // A shifted pane sits on the viewport padding, so it rounds inward instead of past it.
+      const x = roundToDevicePixel(rawX, middlewareData.shift?.x);
+      const y = roundToDevicePixel(rawY, middlewareData.shift?.y);
 
       if (middlewareData.hide?.referenceHidden) {
         handleUnusableReference();

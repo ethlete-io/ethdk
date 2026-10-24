@@ -9,10 +9,10 @@ import { Scenario, useScenario } from './harness';
 })
 class ScenarioAnchoredPixelsComponent {}
 
-const openAtFractionalReference = async (s: Scenario) => {
+const openAtFractionalReference = async (s: Scenario, referenceX = 100.3, viewportPadding?: number) => {
   const reference = document.createElement('button');
 
-  reference.getBoundingClientRect = () => new DOMRect(100.3, 116.6, 20, 10);
+  reference.getBoundingClientRect = () => new DOMRect(referenceX, 116.6, 20, 10);
   document.body.appendChild(reference);
 
   const ref = s.run(() =>
@@ -22,7 +22,11 @@ const openAtFractionalReference = async (s: Scenario) => {
       autoFocus: false,
       modal: false,
       hasBackdrop: false,
-      positionStrategy: anchoredOverlayPosition({ referenceElement: reference, placement: 'bottom-start' }),
+      positionStrategy: anchoredOverlayPosition({
+        referenceElement: reference,
+        placement: 'bottom-start',
+        viewportPadding,
+      }),
     }),
   );
 
@@ -56,6 +60,21 @@ describe('anchored overlay at a fractional reference position', () => {
     expect(pane.style.transform).toBe(`translate3d(${x}, ${y}, 0)`);
     expect(pane.style.getPropertyValue('--et-overlay-anchored-x')).toBe(x);
     expect(pane.style.getPropertyValue('--et-overlay-anchored-y')).toBe(y);
+
+    ref.close();
+    s.flush();
+    reference.remove();
+  });
+
+  it('keeps a shifted pane inside the viewport padding when rounding', async () => {
+    vi.spyOn(window, 'devicePixelRatio', 'get').mockReturnValue(2.625);
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(351);
+
+    const s = scenario();
+    const { ref, reference } = await openAtFractionalReference(s, 0, 8.4);
+    const x = parseFloat(ref.elements.paneElement.style.getPropertyValue('--et-overlay-anchored-x'));
+
+    expect(x).toBeGreaterThanOrEqual(8.4);
 
     ref.close();
     s.flush();
