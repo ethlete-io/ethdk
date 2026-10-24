@@ -290,7 +290,7 @@ Take it from a field that states the end (`res.nextPage !== null`, `res.currentP
 
 #### How a wait is reported
 
-`loading` is one input, but the panel reports three different waits - the point being that a request
+`loading` is one input, but the select reports four different waits - the point being that a request
 that answers quickly should leave no trace at all:
 
 | Situation                                                          | What the reader sees                                                                                                             |
@@ -298,11 +298,12 @@ that answers quickly should leave no trace at all:
 | Nothing on screen yet (first page, new query with no matches left) | A row the height of an option, empty at first, with the spinner and `SELECT_LABELS.loading` fading in after ~200ms               |
 | Options already on screen                                          | They stay exactly where they are; a 2px indeterminate bar runs along the panel's top edge, like the [table](/components/table)'s |
 | The reader clicked load-more                                       | That control becomes a loading row in its own place, at its own height - no bar, because the wait is already reported there      |
+| The panel is closed (the initial load, a reload after closing)     | A spinner in the trigger, fading in after ~200ms; if the panel opens while it shows, it still finishes its ~300ms first          |
 
 The reserved row is what keeps a fast response from flickering: the panel opens at the height its
 options will need, so a first page that lands inside those ~200ms replaces an empty row rather than a
 spinner nobody had time to read. Every indicator holds for a moment once shown (~300ms), so it cannot
-blink out either. `ng-template[etSelectLoading]` still replaces the row's content wholesale - its own
+blink out either, and the spinners fade in and out on opacity alone. `ng-template[etSelectLoading]` still replaces the row's content wholesale - its own
 height is yours to keep stable.
 
 The control stays out of the tab order, since focus never leaves the trigger: from the keyboard, <kbd>ArrowDown</kbd> on the last loaded option loads the next page, and the next <kbd>ArrowDown</kbd> moves into it once it arrives.

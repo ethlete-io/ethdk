@@ -160,12 +160,17 @@
       animation: et-select-fade-in 120ms ease;
     }
 
+    .et-select-trigger-busy--leave {
+      animation: et-select-fade-out 120ms ease forwards;
+    }
+
     .et-select-chip--enter {
       animation: et-select-fade-in 150ms ease-out;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .et-select-trigger-busy--enter,
+      .et-select-trigger-busy--leave,
       .et-select-chip--enter {
         animation: none;
       }
@@ -230,6 +235,12 @@
 
   @keyframes et-select-fade-in {
     from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-select-fade-out {
+    to {
       opacity: 0;
     }
   }

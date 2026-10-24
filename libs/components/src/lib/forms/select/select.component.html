@@ -36,8 +36,12 @@
     <ng-content select="input[etSelectSearch]" />
   </div>
 
-  @if (select.showLoadingIndicator() && !select.open()) {
-    <div class="et-select-trigger-busy" animate.enter="et-select-trigger-busy--enter">
+  @if (showTriggerBusy()) {
+    <div
+      class="et-select-trigger-busy"
+      animate.enter="et-select-trigger-busy--enter"
+      animate.leave="et-select-trigger-busy--leave"
+    >
       <et-spinner diameter="16" strokeWidth="2" />
     </div>
   }

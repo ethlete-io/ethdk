@@ -5,6 +5,21 @@
     .et-form-field-busy-spinner {
       flex: none;
       color: var(--et-surface-color-muted-solid, currentColor);
+
+      &.et-form-field-busy-spinner--enter {
+        animation: et-form-field-busy-spinner-in 120ms ease;
+      }
+
+      &.et-form-field-busy-spinner--leave {
+        animation: et-form-field-busy-spinner-out 120ms ease forwards;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        &.et-form-field-busy-spinner--enter,
+        &.et-form-field-busy-spinner--leave {
+          animation: none;
+        }
+      }
     }
 
     /* The overlap amount lives on the frame, not on the suffix that consumes it: a focused text
@@ -61,6 +76,18 @@
       align-self: stretch;
       padding-inline-start: var(--_et-form-field-suffix-fade);
       margin-inline-start: calc(-1 * (var(--_et-form-field-suffix-fade) + var(--_et-form-field-suffix-overlap)));
+    }
+  }
+
+  @keyframes et-form-field-busy-spinner-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes et-form-field-busy-spinner-out {
+    to {
+      opacity: 0;
     }
   }
 }

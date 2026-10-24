@@ -109,8 +109,8 @@ input's clear button, the password reveal toggle - render in the same suffix box
 | 2        | your `[etInputSuffix]`                                        |
 | 3        | the field's busy spinner                                      |
 
-So a pending async validator never displaces a clear button, and your suffix never lands between a
-field and the button that clears it. Spacing is `--et-form-field-control-affix-gap` - the same token
+So a busy field never displaces a clear button, and your suffix never lands between a field and the
+button that clears it. Spacing is `--et-form-field-control-affix-gap` - the same token
 the shell uses between the affixes and the control, so it tracks `size` (6/8/10px for `sm`/`md`/`lg`).
 
 Projected affix content and the spinner render at `0.78` opacity so they recede; a control's own
@@ -269,18 +269,23 @@ Counting is opt-in per control family: a control declaring a `maxLength` input r
 
 ### Busy state
 
-A field shows a small spinner after your own suffix, plus `aria-busy`, while an async validator is in flight for the bound field - no wiring needed, for the same reason the counter needs none:
+While an async validator is in flight for the bound field, the field sets `aria-busy` - no wiring
+needed, for the same reason the counter needs none. It shows no spinner for it: a check that runs on
+every keystroke would keep one blinking next to the text being typed.
 
 ```html
-<!-- spinner appears while the handle is being checked -->
+<!-- aria-busy while the handle is being checked, no spinner -->
 <et-input [formField]="handleForm.handle" />
 ```
 
-Set `[busy]="true"` on `et-form-field` for work the form doesn't know about (a save, a lookup of your own). It's deliberately subtle - a spinner, no text, and nothing blocks.
+Set `[busy]="true"` on `et-form-field` for work the form doesn't know about (a save, a lookup of your
+own). That shows a small spinner after your own suffix, plus `aria-busy` - deliberately subtle: no
+text, and nothing blocks.
 
-The spinner appears ~200ms into the wait and then stays for ~300ms, so a validator that settles in a
-few dozen milliseconds never flashes one; `aria-busy` reports the real state from the first moment, and
-[the spinner takes no space](#the-transient-ones-take-no-space) when it does arrive. The same treatment
+The spinner appears ~200ms into the wait, stays for at least ~300ms once shown, and fades in and out
+on opacity alone, so work that settles inside those 200ms never flashes one; `aria-busy` reports the
+real state from the first moment, and [the spinner takes no space](#the-transient-ones-take-no-space)
+when it does arrive. The same treatment
 runs across the library - the [select](/components/select#how-a-wait-is-reported) and
 [cascader](/components/cascader) panels, the [menu](/components/menu)'s search spinner, the
 [table](/components/table)'s busy bar - and `signalDeferredLoading` from

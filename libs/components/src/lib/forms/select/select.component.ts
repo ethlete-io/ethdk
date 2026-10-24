@@ -1,6 +1,11 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { booleanAttribute, Component, Injector, ViewEncapsulation, computed, inject, input } from '@angular/core';
-import { ColorInteractiveDirective, ProvideColorDirective, createComponentId } from '@ethlete/core';
+import {
+  ColorInteractiveDirective,
+  ProvideColorDirective,
+  createComponentId,
+  signalDeferredLoading,
+} from '@ethlete/core';
 import { CHIP_REMOVE_FOCUS_FALLBACK, CHIP_REMOVE_TAB_STOP, ChipComponent } from '../../chip';
 import { CHEVRON_ICON, IconDirective, PLUS_ICON, TIMES_ICON, provideIcons } from '../../icon';
 import { SpinnerComponent } from '../../loader';
@@ -147,6 +152,8 @@ export class SelectComponent {
   );
 
   public hasSearch = computed(() => !!this.select.registeredSearch());
+
+  protected showTriggerBusy = signalDeferredLoading(() => this.select.loading() && !this.select.open());
 
   protected showLoadingRow = computed(() => this.select.loading() && !this.select.visibleItems().length);
 

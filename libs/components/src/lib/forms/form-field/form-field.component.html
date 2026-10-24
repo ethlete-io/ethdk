@@ -29,7 +29,13 @@
 
       <!-- After the consumer's own suffix, never instead of it. -->
       @if (showBusySpinner()) {
-        <et-spinner class="et-form-field-busy-spinner" diameter="16" strokeWidth="2" />
+        <et-spinner
+          class="et-form-field-busy-spinner"
+          animate.enter="et-form-field-busy-spinner--enter"
+          animate.leave="et-form-field-busy-spinner--leave"
+          diameter="16"
+          strokeWidth="2"
+        />
       }
     </div>
   </div>

@@ -115,8 +115,8 @@ export class FormFieldComponent {
   public size = input<FormFieldSize>(this.defaults.size);
 
   /**
-   * Forces the busy state on. The field already shows it while an async validator is in flight for
-   * the bound field; use this for work the form doesn't know about (saving, a lookup of your own).
+   * Shows the busy spinner for work the form doesn't know about (saving, a lookup of your own). A
+   * pending async validator only sets `aria-busy`; it never shows the spinner.
    */
   public busy = input(false, { transform: booleanAttribute });
 
@@ -134,7 +134,7 @@ export class FormFieldComponent {
   /** Whether the field is busy - a pending async validator, or `[busy]`. */
   public isBusy = computed(() => this.busy() || this.formFieldDir.isPending());
 
-  protected showBusySpinner = signalDeferredLoading(this.isBusy);
+  protected showBusySpinner = signalDeferredLoading(this.busy);
 
   private prefixDimensions = signalElementDimensions(this.prefixEl);
 
