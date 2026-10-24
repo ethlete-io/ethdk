@@ -23,6 +23,7 @@
     "allow-design-watch",
     "allow-design-set-verdict",
     "allow-design-set-mode",
+    "allow-design-set-closed",
     "allow-design-server-start",
     "allow-design-server-restart",
     "allow-design-server-state",
