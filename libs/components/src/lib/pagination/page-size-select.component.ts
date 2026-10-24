@@ -1,4 +1,6 @@
 import { Component, computed, input, model, ViewEncapsulation } from '@angular/core';
+import { FORM_FIELD_IMPORTS } from '../forms/form-field';
+import { SELECT_IMPORTS } from '../forms/select';
 import { injectPaginationLabels, PaginationLabels } from './pagination-labels';
 import { PAGINATION_SIZES, PaginationSize } from './pagination.types';
 
@@ -26,21 +28,17 @@ const DEFAULT_PAGE_SIZES = [10, 25, 50, 100] as const;
 @Component({
   selector: 'et-page-size-select',
   template: `
-    <label class="et-page-size-select-label">
-      <span class="et-page-size-select-text">{{ resolvedLabels().pageSize }}</span>
-      <span class="et-page-size-select-field">
-        <select [value]="pageSize()" (change)="pick($event)" class="et-page-size-select-control">
-          @for (option of options(); track option.value) {
-            <option [value]="option.value" [selected]="option.value === pageSize()">{{ option.label }}</option>
-          }
-        </select>
-        <svg class="et-page-size-select-chevron" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-          <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-        </svg>
-      </span>
-    </label>
+    <et-form-field [size]="size()" labelMode="inline">
+      <et-label>{{ resolvedLabels().pageSize }}</et-label>
+      <et-select [(value)]="pageSize" [clearable]="false">
+        @for (option of options(); track option.value) {
+          <et-select-option [value]="option.value">{{ option.label }}</et-select-option>
+        }
+      </et-select>
+    </et-form-field>
   `,
   styleUrl: './page-size-select.component.css',
+  imports: [FORM_FIELD_IMPORTS, SELECT_IMPORTS],
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'et-page-size-select-host',
@@ -70,10 +68,4 @@ export class PageSizeSelectComponent {
 
     return this.sizes().map((value) => ({ value, label: label(value) }));
   });
-
-  protected pick(event: Event) {
-    const value = Number.parseInt((event.target as HTMLSelectElement).value, 10);
-
-    if (!Number.isNaN(value)) this.pageSize.set(value);
-  }
 }

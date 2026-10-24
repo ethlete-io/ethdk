@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import '../../test-helpers';
+import { createSelectDriver } from '../forms/testing/select-driver';
 import { PaginationDirective } from './headless/pagination.directive';
 import { PageSizeSelectComponent } from './page-size-select.component';
 import { PaginationComponent } from './pagination.component';
@@ -88,7 +89,7 @@ describe('et-pagination and et-page-size-select bound to a query form', () => {
     expect(await templateDiagnostics()).toEqual([]);
   }, 60_000);
 
-  it('commits a page change and resets the page when the page size changes', () => {
+  it('commits a page change and resets the page when the page size changes', async () => {
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
 
     const fixture = TestBed.createComponent(PaginationQueryFormHostComponent);
@@ -103,12 +104,10 @@ describe('et-pagination and et-page-size-select bound to a query form', () => {
     TestBed.tick();
     expect(qf.value()).toEqual({ limit: 25, page: 3 });
 
-    const select = (fixture.nativeElement as HTMLElement).querySelector('select');
+    const select = createSelectDriver(fixture, { directiveSelector: 'et-select' });
 
-    if (!select) throw new Error('The page size select did not render');
-
-    select.value = '50';
-    select.dispatchEvent(new Event('change'));
+    await select.open();
+    select.clickOptionByLabel('50');
     TestBed.tick();
     expect(qf.value()).toEqual({ limit: 50, page: 1 });
   });

@@ -83,9 +83,8 @@ export const PageSizeSelect: Story = {
     docs: {
       description: {
         story:
-          'The Material-style controls row: `<et-page-size-select>` beside a `compact` paginator. It is a ' +
-          'native `<select>` - a handful of numbers does not justify dragging the overlay runtime into every ' +
-          'footer, and the platform picker is the better control on mobile. It is a separate component ' +
+          'The Material-style controls row: `<et-page-size-select>` beside a `compact` paginator. It is an ' +
+          '`et-select` in a form field. It is a separate component ' +
           'because page size is the app’s state, not the paginator’s: **changing the size does not reset ' +
           'the page**, since which page an item lands on depends on what you are paging. Here a ' +
           '`linkedSignal` sends it back to page 1, which is the usual answer.',

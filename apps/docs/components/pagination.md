@@ -63,10 +63,8 @@ controls row. Import `PAGE_SIZE_SELECT_IMPORTS`:
 
 @example pagination/pagination-page-size-select 220px
 
-It is a **native `<select>`**. A handful of numbers doesn't justify dragging the overlay
-runtime and [`et-select`](/components/select)'s panel into every footer that shows one, and
-on mobile the platform picker is the better control at this size anyway. It costs nothing
-beyond itself.
+It is an [`et-select`](/components/select) in a form field, so it looks and behaves like the
+rest of your forms, and cannot be cleared - a page size is always set.
 
 It is a **separate component**, not part of the paginator, because the paginator owns `page`
 and page size is yours - a table footer, an infinite list and a gallery all pair them
@@ -79,10 +77,6 @@ your app wants; both take `size="sm"` so they shrink together.
 | `sizes`    | `readonly number[]` | `[10, 25, 50, 100]` | The choices offered                                      |
 | `size`     | `'sm' \| 'md'`      | `'md'`              | Density, to match the paginator beside it                |
 | `labels`   | `Partial<…>`        | `null`              | Per-instance strings - see [Localization](#localization) |
-
-Its height is its own token, `--et-page-size-select-height` (default `36px`, `44px` on a
-coarse pointer) - not the paginator's `--et-pagination-item-size`, so it can follow its own
-density without also resizing the paginator wherever the two aren't paired.
 
 ### Changing the size does not reset the page
 
