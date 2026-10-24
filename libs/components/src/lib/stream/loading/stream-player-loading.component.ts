@@ -26,8 +26,7 @@ import { injectStreamPlayerLoadingConfig } from './stream-player-loading-config'
         z-index: 1;
 
         .et-spinner {
-          --et-spinner-color: var(--et-surface-color-muted-solid, currentColor);
-          --et-spinner-track-color: var(--et-surface-color-subtle-solid, currentColor);
+          --et-spinner-color: var(--et-theme-color-primary-solid, currentColor);
         }
       }
     }
