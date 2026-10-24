@@ -39,5 +39,5 @@ export const forceReflow = (element?: HTMLElement) => {
 export const matchesReducedMotion = (element?: Element) => {
   const view = element?.ownerDocument.defaultView ?? (typeof window === 'undefined' ? null : window);
 
-  return view?.matchMedia('(prefers-reduced-motion: reduce)').matches ?? false;
+  return view?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 };

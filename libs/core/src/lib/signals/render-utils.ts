@@ -1,4 +1,4 @@
-import { afterNextRender, effect, signal } from '@angular/core';
+import { DestroyRef, afterNextRender, effect, inject, signal } from '@angular/core';
 import { nextFrame } from '../animations';
 
 export const signalIsRendered = () => {
@@ -29,9 +29,11 @@ export const createIsRenderedSignal = () => {
 export const createCanAnimateSignal = () => {
   const value = signal(false);
 
-  nextFrame(() => {
+  const cancel = nextFrame(() => {
     value.set(true);
   });
+
+  inject(DestroyRef).onDestroy(cancel);
 
   return {
     state: value.asReadonly(),
