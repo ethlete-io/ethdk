@@ -7,6 +7,7 @@ import {
   injectAnimatedBlockSize,
   injectAnimatedListItems,
 } from '@ethlete/core';
+import { ScrollbarComponent } from '../scrollbar';
 import { springEasing } from '../overlay/strategies/spring-easing';
 import { CommandPaletteItemComponent } from './command-palette-item.component';
 import { injectCommandPaletteLabels } from './command-palette-labels';
@@ -30,7 +31,7 @@ const MOVE_SPRING = /* @__PURE__ */ springEasing({ response: 0.3, dampingFractio
   templateUrl: './command-palette.component.html',
   styleUrl: './command-palette.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [CommandPaletteItemComponent, CommandPaletteSearchDirective],
+  imports: [CommandPaletteItemComponent, CommandPaletteSearchDirective, ScrollbarComponent],
   hostDirectives: [
     { directive: CommandPaletteDirective, inputs: ['closeOnRun', 'query'], outputs: ['queryChange'] },
     ProvideColorDirective,

@@ -68,7 +68,14 @@
     }
   }
 
+  .et-command-palette-list-wrapper {
+    position: relative;
+    display: grid;
+    min-block-size: 0;
+  }
+
   .et-command-palette-list {
+    min-block-size: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: var(--et-command-palette-padding);
