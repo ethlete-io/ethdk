@@ -20,6 +20,18 @@
       align-items: center;
       gap: 10px;
       margin-block-start: 10px;
+
+      & .et-scrollable-button--start {
+        order: 0;
+      }
+
+      & .et-scrollable-navigation {
+        order: 1;
+      }
+
+      & .et-scrollable-button--end {
+        order: 2;
+      }
     }
   }
 }
