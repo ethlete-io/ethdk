@@ -325,4 +325,11 @@
       --et-form-field-support-duration: 1ms;
     }
   }
+
+  /* iOS Safari zooms the page when a focused field's font-size is below 16px. */
+  @media (pointer: coarse) {
+    et-form-field :is(input:not([type='checkbox'], [type='radio'], [type='range']), textarea) {
+      font-size: max(1em, 16px);
+    }
+  }
 }

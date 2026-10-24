@@ -891,6 +891,10 @@ The field shell declares public design tokens; override them in your CSS scope:
 `--et-form-field-control-border-radius` is read from any ancestor, `:root` included; unset, the
 radius follows `size` (`4px` / `5px` / `6px` for `sm` / `md` / `lg`).
 
+On a touch device (`pointer: coarse`), the text of a native input or textarea inside a field
+never renders below `16px`, whatever `--et-form-field-control-font-size` says. Below that size,
+iOS Safari zooms the page when the field takes focus.
+
 Per-control tokens live in each control guide:
 [text inputs](/components/text-inputs#theming),
 [choice & rating](/components/choice-inputs#theming). All colors resolve through
