@@ -87,7 +87,7 @@ export const Autoplay: Story = {
       description: {
         story:
           'Autoplay advances the carousel and draws its countdown as a ring around the active dot. It pauses ' +
-          'while the pointer is over the carousel, while focus is inside it, and while it is scrolled off ' +
+          'while a finger or the pointer is on the carousel, while focus is inside it, and while it is scrolled off ' +
           'screen - and it never starts at all under `prefers-reduced-motion`. The pause button is required ' +
           'rather than optional (WCAG 2.2.2): dev mode throws if autoplay runs without one. With `loop` on it ' +
           'no longer has an end to stop at.',
