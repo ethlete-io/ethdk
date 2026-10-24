@@ -31,17 +31,19 @@ import { USERS } from './select-nested-elevation-storybook.data';
             <span class="flex min-w-0 items-center gap-2">
               <span
                 #avatar
-                class="flex size-6 flex-none items-center justify-center rounded-full text-[10px]"
+                class="et-sb-nested-avatar flex size-6 flex-none items-center justify-center rounded-full text-[10px]"
                 etAutoSurface
               >
                 {{ user.initials }}
               </span>
               <span class="truncate">{{ user.label }}</span>
-              <span class="ml-auto shrink-0 font-mono text-[10px] opacity-60">{{ avatar.className }}</span>
+              <span class="ml-auto shrink-0 font-mono text-[10px] opacity-60">{{
+                avatar.className.split('et-surface--')[1]
+              }}</span>
             </span>
           </ng-template>
         </et-select>
-        <et-hint>Avatar circle uses etAutoSurface - its class is shown on the right of each row</et-hint>
+        <et-hint>Avatar circle uses etAutoSurface - its surface is shown on the right of each row</et-hint>
       </et-form-field>
     </et-overlay-body>
 
@@ -68,6 +70,11 @@ import { USERS } from './select-nested-elevation-storybook.data';
       display: block;
       width: 100%;
       max-width: 560px;
+    }
+
+    .et-sb-nested-avatar {
+      background: var(--et-surface-background-solid);
+      color: var(--et-surface-color-solid);
     }
   `,
 })
