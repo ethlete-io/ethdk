@@ -67,8 +67,8 @@ await cdp.send('Emulation.setDeviceMetricsOverride', { width: 412, height: 915, 
 **Soft keyboard tests: skip `setDeviceMetricsOverride`.** It freezes the viewport: the keyboard opens,
 but `visualViewport.height` never shrinks, so anything that follows the keyboard inset looks broken. Send
 only `setTouchEmulationEnabled`, then reload the page - `(pointer: coarse)` matches and the viewport
-resizes normally. If Gboard shows only a floating pill, the emulator is stuck in stylus input mode:
-restart it (`adb emu kill`, then launch again).
+resizes normally. If Gboard shows only a floating pill, the emulator is in stylus input mode: turn off
+Settings → Gboard → Write in text fields. The setting stays off on that AVD.
 
 Then screenshot the device (`adb exec-out screencap -p > …`) - the docked toolbar
 renders on the actual emulator screen with the native keyboard.
