@@ -30,6 +30,7 @@ const SLIDES: Slide[] = [
           [slideAlign]="slideAlign()"
           [transition]="transition()"
           [transitionDriver]="transitionDriver()"
+          style="--et-carousel-slide-gap: 1.6rem"
         >
           <ng-template [etCarouselSlide]="SLIDES" let-slide let-index="index" let-count="count">
             <div
@@ -120,7 +121,13 @@ export class CarouselWipeStorybookComponent {
   template: `
     <div [etProvideSurface]="surface()" class="text-medium flex flex-col gap-4 p-8 font-sans">
       <div [style.max-inline-size.px]="720">
-        <et-carousel [transition]="transition()" itemSize="auto" slideAlign="center" loop>
+        <et-carousel
+          [transition]="transition()"
+          style="--et-carousel-slide-gap: 1.6rem"
+          itemSize="auto"
+          slideAlign="center"
+          loop
+        >
           <ng-template [etCarouselSlide]="WIDTHS" let-width let-index="index">
             <div
               [style.inline-size.px]="width"
@@ -155,6 +162,7 @@ export class CarouselVariableWidthsStorybookComponent {
           renderMasks="false"
           etScrollableSnap
           itemSize="half"
+          scrollableClass="gap-4"
           scrollMode="element"
         >
           @for (slide of SLIDES; track slide.title; let index = $index) {
