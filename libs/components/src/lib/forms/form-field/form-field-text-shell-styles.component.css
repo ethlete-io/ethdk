@@ -9,6 +9,7 @@
       --et-form-field-control-font-size: 12px;
       --et-form-field-control-min-height: 32px;
       --et-form-field-label-font-size: 12px;
+      --_et-form-field-float-inside-label-inset: 1px;
     }
 
     /* `data-size` is a host binding, so a field the router just created paints one frame without it.
@@ -110,20 +111,16 @@
 
       &[data-label-mode='floating-inside'],
       &[data-label-mode='floating-outside'] {
-        :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
+        .et-form-field-control-slot :is(input, textarea)::placeholder,
+        :is(.et-select-value, .et-cascader-value)[data-placeholder] {
           transition: color 150ms ease;
         }
 
-        .et-select-value[data-placeholder] {
-          transition: color 150ms ease;
-        }
-
-        &:not([data-label-floated]) :is(.et-input-native, .et-number-input-native, .et-textarea-native)::placeholder {
-          color: transparent;
-        }
-
-        &:not([data-label-floated]) .et-select-value[data-placeholder] {
-          color: transparent;
+        &:not([data-label-floated]) {
+          .et-form-field-control-slot :is(input, textarea)::placeholder,
+          :is(.et-select-value, .et-cascader-value)[data-placeholder] {
+            color: transparent;
+          }
         }
       }
 
@@ -171,7 +168,7 @@
         }
 
         &[data-label-floated] .et-form-field-label-area--floating {
-          inset-block-start: 4px;
+          inset-block-start: var(--_et-form-field-float-inside-label-inset, 4px);
           transform: scale(var(--_et-form-field-floating-label-scale));
         }
 
