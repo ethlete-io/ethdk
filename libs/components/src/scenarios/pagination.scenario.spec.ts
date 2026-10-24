@@ -15,7 +15,7 @@ import {
   providePaginationLabels,
 } from '../index';
 import '../test-helpers';
-import { useScenario } from './harness';
+import { Scenario, useScenario } from './harness';
 
 const UNSTYLED_BLOCKS = 'et-pagination { display: block; }';
 
@@ -154,6 +154,22 @@ const queryAll = <E extends HTMLElement = HTMLElement>(selector: string, root: P
 
 const text = (element: Element | null | undefined) => element?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
+const paneOptions = () => queryAll('.et-overlay-runtime-pane [role="option"]');
+
+const paneOption = (label: string) => {
+  const found = paneOptions().find((candidate) => text(candidate) === label);
+
+  if (!found) throw new Error(`no option ${label} in ${paneOptions().map(text).join(', ')}`);
+
+  return found;
+};
+
+const openSizeSelect = (s: Scenario, host: HTMLElement) => {
+  query('et-page-size-select [role="combobox"]', host).click();
+  s.tick();
+  s.flush();
+};
+
 describe('pagination scenarios', () => {
   const scenario = useScenario({ providers: [provideRouter([])] });
 
@@ -207,28 +223,29 @@ describe('pagination scenarios', () => {
     expect(control('Next page').disabled).toBe(true);
     expect(labels()).toContain('Page 6');
 
-    const jump = query<HTMLInputElement>('.et-pagination-jump-input', host);
+    const jump = query<HTMLInputElement>('.et-pagination-jump input', host);
+    const typeJump = (value: string) => {
+      jump.value = value;
+      jump.dispatchEvent(new Event('input', { bubbles: true }));
+      s.tick();
+      s.keydown('Enter', jump);
+      s.tick();
+    };
 
-    expect(query('.et-pagination-jump-label', host).getAttribute('for')).toBe(jump.id);
-    expect(text(query('.et-pagination-jump-label', host))).toBe('Go to page');
-    expect(jump.max).toBe('10');
-    jump.value = '42';
-    s.keydown('Enter', jump);
-    s.tick();
+    expect(query('.et-pagination-jump et-label', host).id).toBe(jump.getAttribute('aria-labelledby'));
+    expect(text(query('.et-pagination-jump et-label', host))).toBe('Go to page');
+    typeJump('42');
     expect(app.page()).toBe(10);
     expect(jump.value).toBe('');
-    jump.value = '4';
-    s.keydown('Enter', jump);
-    s.tick();
+    typeJump('4');
     expect(app.page()).toBe(4);
 
-    const sizeSelect = query<HTMLSelectElement>('.et-page-size-select-control', host);
-
-    expect(text(query('.et-page-size-select-text', host))).toBe('Items per page');
-    expect(Array.from(sizeSelect.options).map((option) => option.text)).toEqual(['10', '25']);
-    sizeSelect.value = '25';
-    sizeSelect.dispatchEvent(new Event('change'));
+    expect(text(query('et-page-size-select et-label', host))).toBe('Items per page');
+    openSizeSelect(s, host);
+    expect(paneOptions().map(text)).toEqual(['10', '25']);
+    paneOption('25').click();
     s.tick();
+    s.flush();
     expect(app.pageSize()).toBe(25);
     expect(app.page()).toBe(1);
     expect(labels().filter((label) => label?.startsWith('Page '))).toEqual(['Page 1', 'Page 2', 'Page 3', 'Page 4']);
@@ -323,20 +340,14 @@ describe('pagination scenarios', () => {
     expect(app.page()).toBe(2);
     expect(text(query('.et-pagination-status .et-pagination-readout-text', host))).toBe('Seite 2 von 3');
 
-    const select = query<HTMLSelectElement>('.et-page-size-select-control', host);
-
     expect(query('et-page-size-select', host).getAttribute('data-size')).toBe('sm');
-    expect(text(query('.et-page-size-select-text', host))).toBe('Zeilen');
-    expect(Array.from(select.options).map((option) => option.text)).toEqual([
-      '10 Einträge',
-      '25 Einträge',
-      '50 Einträge',
-      '100 Einträge',
-    ]);
-    expect(select.value).toBe('25');
-    select.value = '100';
-    select.dispatchEvent(new Event('change'));
+    expect(text(query('et-page-size-select et-label', host))).toBe('Zeilen');
+    expect(text(query('et-page-size-select .et-select-value', host))).toBe('25 Einträge');
+    openSizeSelect(s, host);
+    expect(paneOptions().map(text)).toEqual(['10 Einträge', '25 Einträge', '50 Einträge', '100 Einträge']);
+    paneOption('100 Einträge').click();
     s.tick();
+    s.flush();
     expect(app.pageSize()).toBe(100);
     s.flush();
   });
