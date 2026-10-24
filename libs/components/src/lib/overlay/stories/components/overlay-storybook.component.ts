@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { Component, DestroyRef, ViewEncapsulation, effect, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, effect, inject, input, inputBinding, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { Breakpoint } from '@ethlete/core';
 import { BUTTON_IMPORTS } from '../../../button';
@@ -31,10 +31,12 @@ import {
 
       <div dividers="dynamic" et-overlay-body>
         <div class="flex max-w-md flex-col gap-4 text-base text-white/80">
-          <et-form-field>
-            <et-label>Search</et-label>
-            <et-input [formField]="searchForm.query" type="search" />
-          </et-form-field>
+          @if (withSearch()) {
+            <et-form-field>
+              <et-label>Search</et-label>
+              <et-input [formField]="searchForm.query" type="search" />
+            </et-form-field>
+          }
 
           @for (paragraph of PARAGRAPHS; track $index) {
             <p>{{ paragraph }}</p>
@@ -52,6 +54,8 @@ import {
   imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField],
 })
 export class OverlayExampleOverlayComponent {
+  public withSearch = input(false);
+
   protected readonly searchForm = form(signal({ query: '' }));
 
   protected readonly PARAGRAPHS = [
@@ -114,6 +118,9 @@ export class OverlayPopoverExampleComponent {}
           <button (click)="openRightSheet()" et-button size="sm">Right sheet</button>
           <button (click)="openSnappingBottomSheet()" et-button size="sm" variant="tonal">
             Bottom sheet (snap points)
+          </button>
+          <button (click)="openBottomSheetWithSearch()" et-button size="sm" variant="tonal">
+            Bottom sheet (search)
           </button>
         </div>
       </section>
@@ -203,6 +210,13 @@ export class OverlayStorybookComponent {
       strategies: bottomSheetOverlayStrategy({
         dragToDismiss: { direction: 'to-bottom', snapPoints: [0, 0.4, 0.7] },
       }),
+    });
+  }
+
+  protected openBottomSheetWithSearch() {
+    this.open({
+      strategies: bottomSheetOverlayStrategy(),
+      bindings: [inputBinding('withSearch', () => true)],
     });
   }
 
