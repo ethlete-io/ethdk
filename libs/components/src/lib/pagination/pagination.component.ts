@@ -254,7 +254,7 @@ export class PaginationComponent {
 
   public trackItem(index: number, item: PaginationItem) {
     if (item.type === 'page') return `page-${item.page}`;
-    if (item.type === 'ellipsis') return `ellipsis-${index}`;
+    if (item.type === 'ellipsis') return index < this.items().findIndex((entry) => entry.current) ? 'start' : 'end';
 
     return item.type;
   }

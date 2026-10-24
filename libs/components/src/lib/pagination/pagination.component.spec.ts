@@ -322,6 +322,26 @@ describe('PaginationComponent', () => {
     expect(input.value).toBe('');
   });
 
+  it('keeps the same ellipsis elements when the window trims', () => {
+    const fixture = create();
+    fixture.componentRef.setInput('totalPages', 200);
+    fixture.componentRef.setInput('page', 100);
+    fixture.componentRef.setInput('siblingCount', 2);
+    fixture.componentRef.setInput('responsive', false);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const ellipses = () => [...root.querySelectorAll('.et-pagination-item[data-type="ellipsis"]')];
+    const before = ellipses();
+
+    fixture.componentRef.setInput('siblingCount', 1);
+    fixture.detectChanges();
+
+    expect(ellipses()).toHaveLength(2);
+    expect(ellipses()[0]).toBe(before[0]);
+    expect(ellipses()[1]).toBe(before[1]);
+  });
+
   it('keeps an explicit ariaLabel ahead of the label set (multiple paginators on a page)', () => {
     const fixture = create();
     fixture.componentRef.setInput('ariaLabel', 'Search results pages');
