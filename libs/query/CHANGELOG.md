@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.58
+
+### Patch Changes
+
+- Skip the router navigation of a query form URL write when the URL already holds the form values. The skipped same-URL navigation made the router scroll to the top after a back navigation restored the scroll position.
+
 ## 6.0.0-next.57
 
 ### Minor Changes
