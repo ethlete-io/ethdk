@@ -130,22 +130,22 @@ owns the state and the ids, `etAccordionTrigger` wires up `aria-expanded` /
 
 ```html
 <div etAccordionGroup autoCloseOthers>
-  <div #accordion="etAccordion" etAccordion>
+  <div etAccordion>
     <h3>
-      <button etAccordionTrigger type="button">Own markup {{ accordion.isOpen() ? '−' : '+' }}</button>
+      <button etAccordionTrigger type="button">Own markup</button>
     </h3>
 
-    @if (accordion.isOpen()) {
-    <div etAccordionPanel>Rendered only while open - no height animation needed.</div>
-    }
+    <div etAccordionPanel>
+      <div class="clip">Stays mounted; your CSS animates it off data-open.</div>
+    </div>
   </div>
 </div>
 ```
 
 Put the trigger on a native `<button>`: that is what gives you Enter/Space, focus and
-the right role for free. A panel may be rendered conditionally as above - the trigger
+the right role for free. A panel may also be rendered conditionally with `@if (accordion.isOpen())` - the trigger
 drops its `aria-controls` while the panel isn't in the DOM, rather than pointing at a
-missing id.
+missing id. The example below keeps the panel mounted instead and animates it with CSS.
 
 `etAccordion` sets `data-can-animate` on its host one frame after the first render, and
 the default component only transitions under it, so a panel that starts open renders open
@@ -157,7 +157,7 @@ instead of animating in. Gate your own transitions on it the same way:
 }
 ```
 
-@example accordion/accordion-headless 320px
+@example accordion/accordion-headless 300px
 
 ## Accessibility
 
