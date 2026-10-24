@@ -13,56 +13,60 @@
   }
 }
 
-<div #body class="et-rte-token-popup-body">
-  @if (items().length === 0) {
-    @if (error(); as err) {
-      <!-- nothing to show and the source failed: a centered, self-contained error state so the panel
+<div class="et-rte-token-popup-body-wrapper">
+  <div #body class="et-rte-token-popup-body">
+    @if (items().length === 0) {
+      @if (error(); as err) {
+        <!-- nothing to show and the source failed: a centered, self-contained error state so the panel
            doesn't read as an empty box with a stray line of text -->
-      <div
-        [etProvideColor]="errorColorTheme()"
-        class="et-rte-token-popup-state et-rte-token-popup-state--error"
-        role="alert"
-      >
-        <svg class="et-rte-token-popup-state-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 8.5v4.5M12 16.5h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.53 21.5h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-        <span class="et-rte-token-popup-state-label">{{ err }}</span>
-      </div>
+        <div
+          [etProvideColor]="errorColorTheme()"
+          class="et-rte-token-popup-state et-rte-token-popup-state--error"
+          role="alert"
+        >
+          <svg class="et-rte-token-popup-state-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 8.5v4.5M12 16.5h.01M10.3 3.86 1.82 18.5A2 2 0 0 0 3.53 21.5h16.94a2 2 0 0 0 1.71-3L13.7 3.86a2 2 0 0 0-3.4 0Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span class="et-rte-token-popup-state-label">{{ err }}</span>
+        </div>
+      } @else {
+        <!-- loading and empty share one fixed-height box so the transition between them doesn't resize -->
+        <div class="et-rte-token-popup-placeholder">
+          @if (loading()) {
+            <et-spinner diameter="18" />
+          } @else {
+            {{ emptyLabel() }}
+          }
+        </div>
+      }
     } @else {
-      <!-- loading and empty share one fixed-height box so the transition between them doesn't resize -->
-      <div class="et-rte-token-popup-placeholder">
-        @if (loading()) {
-          <et-spinner diameter="18" />
-        } @else {
-          {{ emptyLabel() }}
-        }
-      </div>
+      @for (item of items(); track item.id; let i = $index) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- combobox/listbox: focus stays in the editor and keyboard is driven via aria-activedescendant; rows are pointer affordances only -->
+        <div
+          [id]="listboxId() + '-option-' + i"
+          [attr.aria-selected]="i === activeIndex()"
+          [attr.aria-disabled]="item.disabled || null"
+          [attr.data-active]="i === activeIndex() ? '' : null"
+          (click)="!item.disabled && selectItem.emit(item)"
+          (pointerenter)="activateItem.emit(i)"
+          class="et-rte-token-popup-option"
+          role="option"
+        >
+          <span class="et-rte-token-popup-option-label">{{ item.label }}</span>
+          @if (item.description) {
+            <span class="et-rte-token-popup-option-description">{{ item.description }}</span>
+          }
+        </div>
+      }
     }
-  } @else {
-    @for (item of items(); track item.id; let i = $index) {
-      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- combobox/listbox: focus stays in the editor and keyboard is driven via aria-activedescendant; rows are pointer affordances only -->
-      <div
-        [id]="listboxId() + '-option-' + i"
-        [attr.aria-selected]="i === activeIndex()"
-        [attr.aria-disabled]="item.disabled || null"
-        [attr.data-active]="i === activeIndex() ? '' : null"
-        (click)="!item.disabled && selectItem.emit(item)"
-        (pointerenter)="activateItem.emit(i)"
-        class="et-rte-token-popup-option"
-        role="option"
-      >
-        <span class="et-rte-token-popup-option-label">{{ item.label }}</span>
-        @if (item.description) {
-          <span class="et-rte-token-popup-option-description">{{ item.description }}</span>
-        }
-      </div>
-    }
-  }
+  </div>
+
+  <et-scrollbar [for]="body" autoHide />
 </div>

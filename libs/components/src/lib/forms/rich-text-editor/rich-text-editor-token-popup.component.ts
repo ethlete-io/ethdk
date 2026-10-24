@@ -13,6 +13,7 @@ import {
 import { AutoSurfaceDirective, COLOR_PROVIDER, injectAnimatedBlockSize, ProvideColorDirective } from '@ethlete/core';
 import { injectOptionalSemanticTheme } from '../../internals/semantic-theme';
 import { ProgressBarComponent, SpinnerComponent } from '../../loader';
+import { ScrollbarComponent } from '../../scrollbar';
 import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
 
 /**
@@ -29,7 +30,7 @@ import { RichTextEditorTriggerItem } from './rich-text-editor-trigger';
   templateUrl: './rich-text-editor-token-popup.component.html',
   styleUrl: './rich-text-editor-token-popup.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [SpinnerComponent, ProgressBarComponent, ProvideColorDirective],
+  imports: [SpinnerComponent, ProgressBarComponent, ProvideColorDirective, ScrollbarComponent],
   hostDirectives: [ProvideColorDirective, AutoSurfaceDirective],
   host: {
     class: 'et-rte-token-popup',

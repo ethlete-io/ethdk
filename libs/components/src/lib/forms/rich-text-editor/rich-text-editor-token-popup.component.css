@@ -147,6 +147,10 @@
       color: inherit;
     }
 
+    .et-rte-token-popup-body-wrapper {
+      position: relative;
+    }
+
     .et-rte-token-popup-body {
       max-block-size: var(--_et-rte-popup-max-block-size);
       padding: 6px;
