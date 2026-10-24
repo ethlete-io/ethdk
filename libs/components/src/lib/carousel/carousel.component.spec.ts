@@ -367,6 +367,26 @@ describe('CarouselComponent', () => {
     expect(autoplay.pauseReason()).toBeNull();
   });
 
+  it('pauses while a finger is on the carousel, through the swipe it starts', () => {
+    const fixture = createHost();
+    fixture.componentInstance.autoplay.set(true);
+    fixture.detectChanges();
+
+    const autoplay = fixture.componentInstance.autoplayDirective();
+    const carousel = host(fixture).querySelector('et-carousel') as HTMLElement;
+
+    carousel.dispatchEvent(new TouchEvent('touchstart', { bubbles: true }));
+    carousel.dispatchEvent(new PointerEvent('pointercancel', { pointerType: 'touch', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBe('touch');
+
+    carousel.dispatchEvent(new TouchEvent('touchend', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(autoplay.pauseReason()).toBeNull();
+  });
+
   it('reports why autoplay is not running', () => {
     const fixture = createHost();
     const autoplay = fixture.componentInstance.autoplayDirective();

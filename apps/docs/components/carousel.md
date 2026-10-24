@@ -287,6 +287,7 @@ happening via `pauseReason()`:
 
 | Reason           | When                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------ |
+| `touch`          | a finger is on the carousel, for example during a swipe                                    |
 | `hover`          | a mouse or pen is over the carousel (a touch tap does not count)                           |
 | `focus`          | focus is inside it                                                                         |
 | `off-screen`     | the carousel is scrolled out of view                                                       |
@@ -389,7 +390,7 @@ effects, and `.et-carousel-item` is the element they apply to.
   natively disabled, so they keep their place in the tab order; while looping they stay operable,
   because there is always somewhere to go.
 - The dots are buttons labelled "Go to slide N", with `aria-current` on the current one.
-- Autoplay: pauses on hover and focus, never starts under `prefers-reduced-motion`, and requires a pause
+- Autoplay: pauses on touch, hover and focus, never starts under `prefers-reduced-motion`, and requires a pause
   control.
 - Slide transitions stop entirely under `prefers-reduced-motion` - the driver never runs.
 

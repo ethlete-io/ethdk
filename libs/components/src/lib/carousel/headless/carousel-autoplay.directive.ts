@@ -33,6 +33,7 @@ export type CarouselAutoplayPauseReason =
   | 'reduced-motion'
   | 'page-hidden'
   | 'off-screen'
+  | 'touch'
   | 'hover'
   | 'focus'
   | 'no-slides'
@@ -42,8 +43,8 @@ export type CarouselAutoplayPauseReason =
  * Advances the carousel on its own. Opt-in - put it on the same element as `[etCarousel]` - so a carousel
  * that doesn't move by itself carries none of this.
  *
- * It pauses whenever moving the page under the user would be rude: pointer over the carousel, focus
- * inside it, the carousel scrolled off screen, or the user having asked for reduced motion (in which case
+ * It pauses whenever moving the page under the user would be rude: a finger or the pointer on the
+ * carousel, focus inside it, the carousel scrolled off screen, or the user having asked for reduced motion (in which case
  * it never starts at all). It also stops at the last slide when the carousel doesn't `loop`, rather than
  * jumping back to the start forever.
  *
@@ -64,6 +65,9 @@ export type CarouselAutoplayPauseReason =
     '[attr.data-autoplaying]': 'isPlaying() ? "" : null',
     '(pointerenter)': 'setHovered($event, true)',
     '(pointerleave)': 'setHovered($event, false)',
+    '(touchstart)': 'isTouched.set(true)',
+    '(touchend)': 'setTouched($event)',
+    '(touchcancel)': 'setTouched($event)',
     '(focusin)': 'isFocusWithin.set(true)',
     '(focusout)': 'isFocusWithin.set(false)',
   },
@@ -125,6 +129,9 @@ export class CarouselAutoplayDirective {
   public isHovered = signal(false);
 
   /** @internal */
+  public isTouched = signal(false);
+
+  /** @internal */
   public isFocusWithin = signal(false);
 
   /**
@@ -166,6 +173,7 @@ export class CarouselAutoplayDirective {
       if (!isOnScreen) return 'off-screen';
     }
 
+    if (this.isTouched()) return 'touch';
     if (this.pauseOnHover() && this.isHovered() && !this.isPointerOnPauseControl()) return 'hover';
     if (this.pauseOnFocus() && this.isFocusWithin() && !this.isFocusOnPauseControl()) return 'focus';
     // setTimeout fires at once for NaN, Infinity and anything past 2^31-1 ms
@@ -254,6 +262,10 @@ export class CarouselAutoplayDirective {
     if (event.pointerType === 'touch') return;
 
     this.isHovered.set(isHovered);
+  }
+
+  protected setTouched(event: TouchEvent) {
+    this.isTouched.set(event.touches.length > 0);
   }
 
   private advance() {
