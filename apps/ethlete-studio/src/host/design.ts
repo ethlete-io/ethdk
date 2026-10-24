@@ -56,6 +56,8 @@ export type SystemEntry = {
   call: string | null;
 };
 
+export type CallClosed = 'shipped' | 'superseded';
+
 /** One open question of an exploration, and every variant drawn for it. */
 export type Call = {
   slug: string;
@@ -65,6 +67,10 @@ export type Call = {
   stage: CallStage | typeof SKETCH_STAGE | null;
   /** A call made before the stage was required. It needs no stage. */
   legacy: boolean;
+  /** A closed call is settled, whatever its variants say. */
+  closed: CallClosed | null;
+  /** The slug of the call this one is parked on. It is on hold until that call settles. */
+  waitsFor: string | null;
   /** The parts a wireframe lists, the queue of component calls. Empty when it declares none. */
   inventory: InventoryPart[];
   eyebrow: string;

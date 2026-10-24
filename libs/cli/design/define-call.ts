@@ -300,6 +300,10 @@ export type Call = {
   stage?: CallStage;
   /** Set by `et design legacy` on a call made before the stage was required. Such a call needs no stage. */
   legacy?: true;
+  /** Set once the call is done for good: `shipped` when the app implements it, `superseded` when another call replaced it. */
+  closed?: 'shipped' | 'superseded';
+  /** The slug of the call this one is parked on. The call is on hold until that call settles. */
+  waitsFor?: string;
   eyebrow: string;
   headline: string;
   intro: string;

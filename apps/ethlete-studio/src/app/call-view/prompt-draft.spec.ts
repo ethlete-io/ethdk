@@ -8,6 +8,8 @@ const call: Call = {
   feature: null,
   stage: null,
   legacy: false,
+  closed: null,
+  waitsFor: null,
   inventory: [],
   eyebrow: '',
   headline: 'Cart layout',

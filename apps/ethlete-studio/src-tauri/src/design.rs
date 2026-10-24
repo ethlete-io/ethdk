@@ -44,6 +44,10 @@ pub struct Call {
     pub stage: Option<String>,
     /// A call made before the stage was required. It needs no stage.
     pub legacy: bool,
+    /// `shipped` or `superseded`. A closed call is settled, whatever its variants say.
+    pub closed: Option<String>,
+    /// The slug of the call this one is parked on. It is on hold until that call settles.
+    pub waits_for: Option<String>,
     /// The parts a wireframe lists, the queue of component calls. Empty when it declares none.
     pub inventory: Vec<InventoryPart>,
     pub eyebrow: String,
@@ -118,6 +122,8 @@ fn one_line(value: &str) -> String {
 pub const WIREFRAME_MODE: &str = "wireframe";
 pub const DESIGN_MODE: &str = "design";
 
+const CLOSED_STATES: [&str; 2] = ["shipped", "superseded"];
+
 fn text_of(node: &Node, field: &str) -> Option<String> {
     node.text(field).map(one_line)
 }
@@ -184,6 +190,8 @@ fn parse_call(slug: &str, source: &str) -> Call {
         legacy: call
             .property("legacy")
             .is_some_and(|property| source[property.node.start..property.node.end].trim() == "true"),
+        closed: text_of(&call, "closed").filter(|state| CLOSED_STATES.contains(&state.as_str())),
+        waits_for: text_of(&call, "waitsFor"),
         inventory: parse_inventory(source, &call),
         eyebrow: text_of(&call, "eyebrow").unwrap_or_default(),
         headline: text_of(&call, "headline").unwrap_or_default(),
@@ -921,6 +929,29 @@ export default defineCall({
         assert!(parse_call("x", &legacy).legacy);
         assert!(!parse_call("x", &not).legacy);
         assert!(!parse_call("x", CALL).legacy);
+    }
+
+    #[test]
+    fn a_call_reads_whether_it_is_closed() {
+        let shipped = CALL.replace("  eyebrow:", "  closed: 'shipped',\n  eyebrow:");
+        let superseded = CALL.replace("  eyebrow:", "  closed: 'superseded',\n  eyebrow:");
+        let unknown = CALL.replace("  eyebrow:", "  closed: 'done',\n  eyebrow:");
+
+        assert_eq!(parse_call("x", &shipped).closed.as_deref(), Some("shipped"));
+        assert_eq!(parse_call("x", &superseded).closed.as_deref(), Some("superseded"));
+        assert_eq!(parse_call("x", &unknown).closed, None);
+        assert_eq!(parse_call("x", CALL).closed, None);
+    }
+
+    #[test]
+    fn a_call_reads_the_call_it_waits_for() {
+        let parked = CALL.replace("  eyebrow:", "  waitsFor: 'timetrack/kerbe/08-strip',\n  eyebrow:");
+
+        assert_eq!(
+            parse_call("x", &parked).waits_for.as_deref(),
+            Some("timetrack/kerbe/08-strip")
+        );
+        assert_eq!(parse_call("x", CALL).waits_for, None);
     }
 
     #[test]

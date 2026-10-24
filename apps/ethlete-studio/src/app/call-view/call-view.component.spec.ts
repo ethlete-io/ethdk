@@ -19,6 +19,8 @@ const call = (slug: string, variants: CallVariant[]): Call => ({
   feature: 'The picker',
   stage: null,
   legacy: false,
+  closed: null,
+  waitsFor: null,
   inventory: [],
   eyebrow: slug,
   headline: slug,
@@ -333,6 +335,37 @@ describe('CallViewComponent', () => {
     expect(rows[1]).toContain('Legacy');
     expect(root.querySelector('.studio__overview-invalid')?.textContent).toContain('1 call has no stage');
     expect(root.querySelector('.studio__overview-invalid')?.textContent).toContain('sketch');
+  });
+
+  it('lists the open calls above the stage overview, and parks a waiting call on hold', async () => {
+    stubHost({
+      design_project: () => ({
+        ...PROJECT,
+        calls: [
+          RESOLVED,
+          { ...ASKING, stage: 'page' },
+          { ...UNNOTED, stage: 'page', waitsFor: ASKING.slug },
+          { ...ASKING, slug: 'app/03-shipped', eyebrow: 'app/03-shipped', stage: 'page', closed: 'shipped' },
+        ],
+      }),
+    });
+
+    const fixture = await mount(ASKING.slug);
+    const root = element(fixture);
+    const open = root.querySelector('.studio__section');
+    const heads = [...(open?.querySelectorAll('.studio__stage-head') ?? [])].map((head) => head.textContent?.trim());
+
+    expect(open?.nextElementSibling?.matches('.studio__overview')).toBe(true);
+    expect(open?.querySelector('.studio__section-head span')?.textContent).toBe('1');
+    expect(heads).toEqual(['6 Pages', 'On hold']);
+    expect(open?.textContent).toContain(`waits for ${ASKING.headline}`);
+
+    if (!row(fixture, 'app/03-shipped')) {
+      root.querySelector<HTMLButtonElement>('.studio__group-head')?.click();
+      await settle(fixture);
+    }
+
+    expect(row(fixture, 'app/03-shipped')?.querySelector('[data-closed]')?.textContent).toBe('Shipped');
   });
 
   it('lists all seven stages in the overview, with the empty ones muted', async () => {

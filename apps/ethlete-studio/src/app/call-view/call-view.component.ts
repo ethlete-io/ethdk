@@ -43,10 +43,12 @@ import {
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
+  closedLabel,
   defaultVariant,
   inventoryProgress,
   inventoryRows,
   projectOf,
+  onHoldCalls,
   projectSummaries,
   ruledLabel,
   settledGroups,
@@ -120,6 +122,75 @@ const SETTLE_MS = 300;
         </div>
 
         <div class="studio__list">
+          <section class="studio__section">
+            <header class="studio__section-head">
+              <b>Open</b>
+              <span>{{ openCalls().length }}</span>
+            </header>
+
+            @for (group of openStages(); track group.stage) {
+              @if (group.stage || openStages().length > 1) {
+                <h3
+                  #stageHead
+                  [attr.data-stage]="group.stage"
+                  [etProvideColor]="group.stage ? 'brand' : 'danger'"
+                  class="studio__stage-head"
+                >
+                  {{ group.stage ? STAGE_LABEL(group.stage) : 'Invalid: set a stage, or sketch for a quick idea' }}
+                </h3>
+              }
+              @for (call of group.calls; track call.slug) {
+                <button
+                  [class.studio__row--current]="call.slug === slug()"
+                  (click)="openCall(call)"
+                  class="studio__row"
+                  type="button"
+                >
+                  <span class="studio__row-head">
+                    <span class="studio__eyebrow">{{ call.eyebrow }}</span>
+                    <span class="studio__touched">{{ touched(call) }}</span>
+                  </span>
+                  <b>{{ call.headline }}</b>
+                  <span class="studio__row-foot">
+                    <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
+                    @if (statuses()[call.slug]; as status) {
+                      <span
+                        [attr.data-state]="status.state"
+                        [title]="status.message ?? status.updatedAt"
+                        class="studio__state"
+                        >{{ status.state }}</span
+                      >
+                    }
+                    <span class="studio__count">{{ RULED(call) }}</span>
+                  </span>
+                </button>
+              }
+            } @empty {
+              <p class="studio__none">Nothing open.</p>
+            }
+
+            @if (heldCalls().length) {
+              <h3 class="studio__stage-head">On hold</h3>
+              @for (held of heldCalls(); track held.call.slug) {
+                <button
+                  [class.studio__row--current]="held.call.slug === slug()"
+                  (click)="openCall(held.call)"
+                  class="studio__row"
+                  type="button"
+                >
+                  <span class="studio__row-head">
+                    <span class="studio__eyebrow">{{ held.call.eyebrow }}</span>
+                    <span class="studio__touched">{{ touched(held.call) }}</span>
+                  </span>
+                  <b>{{ held.call.headline }}</b>
+                  <span class="studio__row-foot">
+                    <span class="studio__tag">waits for {{ held.blocker.headline || held.blocker.slug }}</span>
+                  </span>
+                </button>
+              }
+            }
+          </section>
+
           <nav class="studio__overview" aria-label="Stages">
             @for (summary of overview(); track summary.stage) {
               <button
@@ -221,54 +292,6 @@ const SETTLE_MS = 300;
             </section>
           }
 
-          <section class="studio__section">
-            <header class="studio__section-head">
-              <b>Open</b>
-              <span>{{ openCalls().length }}</span>
-            </header>
-
-            @for (group of openStages(); track group.stage) {
-              @if (group.stage || openStages().length > 1) {
-                <h3
-                  #stageHead
-                  [attr.data-stage]="group.stage"
-                  [etProvideColor]="group.stage ? 'brand' : 'danger'"
-                  class="studio__stage-head"
-                >
-                  {{ group.stage ? STAGE_LABEL(group.stage) : 'Invalid: set a stage, or sketch for a quick idea' }}
-                </h3>
-              }
-              @for (call of group.calls; track call.slug) {
-                <button
-                  [class.studio__row--current]="call.slug === slug()"
-                  (click)="openCall(call)"
-                  class="studio__row"
-                  type="button"
-                >
-                  <span class="studio__row-head">
-                    <span class="studio__eyebrow">{{ call.eyebrow }}</span>
-                    <span class="studio__touched">{{ touched(call) }}</span>
-                  </span>
-                  <b>{{ call.headline }}</b>
-                  <span class="studio__row-foot">
-                    <span class="studio__tag">{{ call.feature || 'No feature' }}</span>
-                    @if (statuses()[call.slug]; as status) {
-                      <span
-                        [attr.data-state]="status.state"
-                        [title]="status.message ?? status.updatedAt"
-                        class="studio__state"
-                        >{{ status.state }}</span
-                      >
-                    }
-                    <span class="studio__count">{{ RULED(call) }}</span>
-                  </span>
-                </button>
-              }
-            } @empty {
-              <p class="studio__none">Nothing open.</p>
-            }
-          </section>
-
           @if (settledCalls()) {
             <section class="studio__section studio__section--settled">
               <header class="studio__section-head">
@@ -298,6 +321,9 @@ const SETTLE_MS = 300;
                         </span>
                         <b>{{ call.headline }}</b>
                         <span class="studio__row-foot">
+                          @if (CLOSED(call); as closed) {
+                            <span [attr.data-closed]="call.closed" class="studio__tag">{{ closed }}</span>
+                          }
                           @if (statuses()[call.slug]; as status) {
                             <span
                               [attr.data-state]="status.state"
@@ -751,6 +777,8 @@ export class CallViewComponent {
   protected remembered = rememberedView().checkout ?? '';
   protected readonly RULED = ruledLabel;
 
+  protected readonly CLOSED = closedLabel;
+
   public checkout = signal('');
   protected project = signal('');
   protected slug = signal('');
@@ -894,6 +922,8 @@ export class CallViewComponent {
   protected openCalls = computed(() => unsettledCalls(this.listed()));
 
   protected openStages = computed(() => stageGroups(this.listed()));
+
+  protected heldCalls = computed(() => onHoldCalls(this.listed()));
 
   protected overview = computed(() =>
     stageOverview(

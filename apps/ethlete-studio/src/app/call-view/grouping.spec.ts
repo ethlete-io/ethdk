@@ -1,6 +1,8 @@
 import { Call, CallVariant } from '../../host/design';
 import {
+  blockerOf,
   callList,
+  closedLabel,
   defaultVariant,
   featureGroups,
   inventoryProgress,
@@ -15,6 +17,7 @@ import {
   stageOverview,
   invalidCount,
   legacyCount,
+  onHoldCalls,
   sketchCount,
   touchedLabel,
   unsettledCalls,
@@ -35,6 +38,8 @@ const call = (slug: string, patch: Partial<Call> = {}): Call => ({
   feature: null,
   stage: null,
   legacy: false,
+  closed: null,
+  waitsFor: null,
   inventory: [],
   eyebrow: '',
   headline: slug,
@@ -280,8 +285,8 @@ describe('invalidCount, legacyCount and sketchCount', () => {
     expect(invalidCount(request)).toBe(1);
   });
 
-  it('counts legacy calls apart', () => {
-    expect(legacyCount(request)).toBe(2);
+  it('counts legacy calls without a stage apart', () => {
+    expect(legacyCount(request)).toBe(1);
   });
 
   it('counts sketches apart', () => {
@@ -306,10 +311,18 @@ describe('stage groups and overview with sketches and legacy calls', () => {
     expect(stageGroups(request).map((group) => group.stage)).toEqual(['page', 'sketch', 'legacy', null]);
   });
 
-  it('keeps legacy calls and sketches out of the stage counts and never marks a sketch before', () => {
+  it('groups a legacy call with a stage under its stage', () => {
+    expect(
+      stageGroups(request)
+        .find((group) => group.stage === 'page')
+        ?.calls.map((entry) => entry.slug),
+    ).toEqual(['p/a', 'p/d']);
+  });
+
+  it('counts a legacy call with a stage in that stage and keeps sketches out of the counts', () => {
     const overview = stageOverview(request, {});
 
-    expect(overview.find((entry) => entry.stage === 'page')?.open).toBe(1);
+    expect(overview.find((entry) => entry.stage === 'page')?.open).toBe(2);
     expect(overview.map((entry) => entry.stage)).not.toContain('sketch');
     expect(overview.every((entry) => entry.before === null || entry.stage === 'page')).toBe(true);
   });
@@ -395,5 +408,74 @@ describe('the design system and the inventory', () => {
   it('counts the new parts that have a call', () => {
     expect(inventoryProgress(inventoryRows(calls, 'p'))).toBe('1 of 2 parts have a call');
     expect(inventoryProgress([])).toBeNull();
+  });
+});
+
+describe('legacy foundations', () => {
+  it('clear the gate of a later stage once they are settled', () => {
+    const request = {
+      calls: [settled('p/themes', { legacy: true, stage: 'themes' }), call('p/page', { stage: 'page' })],
+      project: '',
+      term: '',
+    };
+
+    const overview = stageOverview(request, {});
+
+    expect(overview.find((entry) => entry.stage === 'themes')?.settled).toBe(1);
+    expect(overview.find((entry) => entry.stage === 'page')?.before).toBe('wireframe');
+  });
+});
+
+describe('a closed call', () => {
+  const shipped = call('p/shipped', { stage: 'page', closed: 'shipped', variants: [variant('a'), variant('b')] });
+  const request = { calls: [shipped, call('p/open', { stage: 'page' })], project: '', term: '' };
+
+  it('is settled everywhere, though its variants are unruled', () => {
+    expect(unsettledCalls(request).map((entry) => entry.slug)).toEqual(['p/open']);
+    expect(settledGroups(request)[0]?.calls.map((entry) => entry.slug)).toEqual(['p/shipped']);
+    expect(stageOverview(request, {}).find((entry) => entry.stage === 'page')).toMatchObject({ open: 1, settled: 1 });
+    expect(projectSummaries(request.calls)).toEqual([{ name: 'p', calls: 2, open: 1 }]);
+  });
+
+  it('opens on its winner, not on an unruled variant', () => {
+    const chosen = { ...shipped, variants: [variant('a'), variant('b', { verdict: 'chosen' })] };
+
+    expect(defaultVariant(chosen)).toBe('b');
+    expect(defaultVariant(shipped)).toBe('a');
+  });
+
+  it('reads its state as a word', () => {
+    expect(closedLabel(shipped)).toBe('Shipped');
+    expect(closedLabel({ ...shipped, closed: 'superseded' })).toBe('Superseded');
+    expect(closedLabel(call('p/x'))).toBeNull();
+  });
+});
+
+describe('a call that waits for another', () => {
+  const blocker = call('p/blocker', { stage: 'page', touched: 1 });
+  const waiting = call('p/waiting', { stage: 'page', waitsFor: 'p/blocker', touched: 2 });
+  const request = (calls: Call[]) => ({ calls, project: '', term: '' });
+
+  it('is on hold while the call it waits for is open', () => {
+    const held = request([blocker, waiting]);
+
+    expect(onHoldCalls(held)).toEqual([{ call: waiting, blocker }]);
+    expect(unsettledCalls(held).map((entry) => entry.slug)).toEqual(['p/blocker']);
+    expect(stageOverview(held, {}).find((entry) => entry.stage === 'page')).toMatchObject({ open: 1, settled: 0 });
+    expect(projectSummaries(held.calls)[0]?.open).toBe(1);
+  });
+
+  it('is open again once the call it waits for settles or is closed', () => {
+    for (const done of [settled('p/blocker'), { ...blocker, closed: 'superseded' as const }]) {
+      const free = request([done, waiting]);
+
+      expect(onHoldCalls(free)).toEqual([]);
+      expect(unsettledCalls(free).map((entry) => entry.slug)).toEqual(['p/waiting']);
+    }
+  });
+
+  it('is open when the call it waits for does not exist', () => {
+    expect(blockerOf(waiting, [waiting])).toBeNull();
+    expect(unsettledCalls(request([waiting])).map((entry) => entry.slug)).toEqual(['p/waiting']);
   });
 });

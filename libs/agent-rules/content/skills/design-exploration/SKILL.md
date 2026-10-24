@@ -118,6 +118,14 @@ before the user rules.
 A call with one variant and no `claim` is a **view**: one reference picture, drawn full
 width with no verdict tag. Use it for a picture that answers no question.
 
+Two call-level fields take a call out of the open list:
+
+- `closed: 'shipped'` once the app implements the call, `closed: 'superseded'` once another
+  call replaced it. A closed call counts as settled, even with unruled variants.
+- `waitsFor: '<slug>'`, the full slug of another call, when this call is parked on it. Studio lists
+  it under "On hold" and leaves it out of the open counts until that call settles. Then it is
+  open again by itself, so remove the field only when the reason changes.
+
 Three constraints the tool puts on a variant file:
 
 - **Never import a package barrel.** The libraries resolve to source, so one barrel makes

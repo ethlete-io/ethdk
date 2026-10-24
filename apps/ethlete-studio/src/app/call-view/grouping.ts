@@ -9,6 +9,22 @@ export type ProjectSummary = {
 
 export const openVariants = (call: Call) => call.variants.filter((variant) => !variant.verdict).length;
 
+/** Whether a call is done: closed, or with every variant ruled. */
+export const isSettled = (call: Call) => !!call.closed || openVariants(call) === 0;
+
+/** The unsettled call a call waits for, or null when it waits for nothing that is still open. */
+export const blockerOf = (call: Call, calls: Call[]) => {
+  const blocker = call.waitsFor ? calls.find((other) => other.slug === call.waitsFor) : undefined;
+
+  return blocker && !isSettled(blocker) ? blocker : null;
+};
+
+const isOpen = (call: Call, calls: Call[]) => !isSettled(call) && !blockerOf(call, calls);
+
+const CLOSED_LABELS = { shipped: 'Shipped', superseded: 'Superseded' } as const;
+
+export const closedLabel = (call: Call) => (call.closed ? CLOSED_LABELS[call.closed] : null);
+
 /** The project a call belongs to. */
 export const projectOf = (call: Call) => call.slug.split('/')[0] ?? '';
 
@@ -38,11 +54,27 @@ export const callList = ({ calls, project, term }: CallListRequest): Call[] => {
     .sort(byName);
 };
 
-/** Every call that still has an open variant, the most recently written first. */
+const byTouched = (left: Call, right: Call) => right.touched - left.touched;
+
+/** Every call that is neither settled nor on hold, the most recently written first. */
 export const unsettledCalls = (request: CallListRequest): Call[] =>
   callList(request)
-    .filter((call) => openVariants(call) > 0)
-    .sort((left, right) => right.touched - left.touched);
+    .filter((call) => isOpen(call, request.calls))
+    .sort(byTouched);
+
+/** A call parked on another call that has not settled yet. */
+export type HeldCall = { call: Call; blocker: Call };
+
+/** Every unsettled call that waits for a call still open, the most recently written first. */
+export const onHoldCalls = (request: CallListRequest): HeldCall[] =>
+  callList(request)
+    .filter((call) => !isSettled(call))
+    .sort(byTouched)
+    .flatMap((call) => {
+      const blocker = blockerOf(call, request.calls);
+
+      return blocker ? [{ call, blocker }] : [];
+    });
 
 /** The open calls of one stage, in the order `unsettledCalls` gives them. */
 export type StageGroup = {
@@ -50,6 +82,9 @@ export type StageGroup = {
   stage: string | null;
   calls: Call[];
 };
+
+const isKnownStage = (stage: string | null) =>
+  stage === SKETCH_STAGE || (CALL_STAGES as readonly string[]).includes(stage ?? '');
 
 const stageRank = (stage: string | null) => {
   if (!stage) return CALL_STAGES.length + 3;
@@ -86,7 +121,7 @@ export const stageGroups = (request: CallListRequest): StageGroup[] => {
   const found = new Map<string | null, Call[]>();
 
   for (const call of unsettledCalls(request)) {
-    const stage = call.legacy ? LEGACY_STAGE : call.stage || null;
+    const stage = call.legacy && !isKnownStage(call.stage) ? LEGACY_STAGE : call.stage || null;
 
     found.set(stage, [...(found.get(stage) ?? []), call]);
   }
@@ -111,14 +146,13 @@ export const stageOverview = (request: CallListRequest, states: Record<string, s
   const calls = callList(request);
 
   const summaries = CALL_STAGES.map((stage) => {
-    const inStage = calls.filter((call) => !call.legacy && call.stage === stage);
-    const open = inStage.filter((call) => openVariants(call) > 0).length;
+    const inStage = calls.filter((call) => call.stage === stage);
 
     return {
       stage,
-      open,
+      open: inStage.filter((call) => isOpen(call, request.calls)).length,
       ready: inStage.filter((call) => states[call.slug] === 'ready').length,
-      settled: inStage.length - open,
+      settled: inStage.filter(isSettled).length,
     };
   });
 
@@ -132,25 +166,23 @@ export const stageOverview = (request: CallListRequest, states: Record<string, s
   });
 };
 
-const isKnownStage = (stage: string | null) =>
-  stage === SKETCH_STAGE || (CALL_STAGES as readonly string[]).includes(stage ?? '');
-
 /** How many calls of the request are invalid: no known stage, and not legacy. */
 export const invalidCount = (request: CallListRequest) =>
   callList(request).filter((call) => !call.legacy && !isKnownStage(call.stage)).length;
 
-/** How many calls of the request were made before a stage was required. */
-export const legacyCount = (request: CallListRequest) => callList(request).filter((call) => call.legacy).length;
+/** How many calls of the request were made before a stage was required and still carry none. */
+export const legacyCount = (request: CallListRequest) =>
+  callList(request).filter((call) => call.legacy && !isKnownStage(call.stage)).length;
 
-/** How many non-legacy calls of the request are sketches. */
+/** How many calls of the request are sketches. */
 export const sketchCount = (request: CallListRequest) =>
-  callList(request).filter((call) => !call.legacy && call.stage === SKETCH_STAGE).length;
+  callList(request).filter((call) => call.stage === SKETCH_STAGE).length;
 
 export const ruledLabel = (call: Call) =>
   `${call.variants.length - openVariants(call)} of ${call.variants.length} ruled`;
 
 export const defaultVariant = (call: Call) => {
-  const open = call.variants.find((variant) => !variant.verdict);
+  const open = call.closed ? undefined : call.variants.find((variant) => !variant.verdict);
 
   if (open) return open.key;
 
@@ -204,15 +236,15 @@ export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
   }
 
   return [...found.entries()]
-    .map(([name, calls]) => ({ name, open: calls.filter((call) => openVariants(call) > 0).length, calls }))
+    .map(([name, calls]) => ({ name, open: calls.filter((call) => isOpen(call, request.calls)).length, calls }))
     .sort((left, right) => rank(left.name) - rank(right.name) || left.name.localeCompare(right.name));
 };
 
 const rank = (name: string) => (name === LOOSE_FEATURE ? 1 : 0);
 
-/** The settled half of the explorer: every call with no open variant left, grouped by feature. */
+/** The settled half of the explorer: every closed call and every call with no open variant left, grouped by feature. */
 export const settledGroups = (request: CallListRequest): FeatureGroup[] =>
-  featureGroups({ ...request, calls: request.calls.filter((call) => openVariants(call) === 0) });
+  featureGroups({ ...request, calls: request.calls.filter(isSettled) });
 
 /** Every project of a checkout, by name, as the welcome screen lists them. */
 export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
@@ -228,7 +260,7 @@ export const projectSummaries = (calls: Call[]): ProjectSummary[] => {
     .map(([name, entries]) => ({
       name,
       calls: entries.length,
-      open: entries.filter((call) => openVariants(call) > 0).length,
+      open: entries.filter((call) => isOpen(call, calls)).length,
     }))
     .sort((left, right) => left.name.localeCompare(right.name));
 };
