@@ -289,10 +289,4 @@
       }
     }
   }
-
-  .et-overlay--menu {
-    --et-floating-panel-enter-duration: 140ms;
-    --et-floating-panel-leave-duration: 100ms;
-    --et-floating-panel-distance: 0.3rem;
-  }
 }
