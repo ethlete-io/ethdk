@@ -7,9 +7,8 @@ import { injectStyleManager } from '@ethlete/core';
  * styles-only component mounted by whichever directive opens the panel.
  *
  * A consumer opts in by adding the `et-floating-panel` class to its overlay's `containerClass`
- * and setting `--et-floating-panel-enter-duration`, `--et-floating-panel-leave-duration` and
- * `--et-floating-panel-distance` on that same class, then calling `mountFloatingPanelStyles()`
- * once (e.g. from its directive's constructor).
+ * then calling `mountFloatingPanelStyles()` once (e.g. from its directive's constructor). The
+ * panel fades opacity only: 140ms in, 100ms out.
  *
  * @internal
  */

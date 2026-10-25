@@ -108,7 +108,7 @@
     }
 
     :where(.et-animation-leave-from, .et-animation-leave-active) & .et-select-option-check {
-      transition-delay: var(--et-floating-panel-leave-duration, 100ms);
+      transition-delay: 100ms;
     }
 
     .et-select-option-label {

@@ -12,9 +12,6 @@
   }
 
   .et-overlay--select {
-    --et-floating-panel-enter-duration: 140ms;
-    --et-floating-panel-leave-duration: 100ms;
-    --et-floating-panel-distance: 0.3rem;
   }
 
   .et-overlay--select.et-floating-panel[data-overlay-placement].et-animation-leave-to {

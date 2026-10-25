@@ -8,9 +8,6 @@
 
   .et-overlay--tooltip,
   .et-overlay--toggletip {
-    --et-floating-panel-enter-duration: 200ms;
-    --et-floating-panel-leave-duration: 140ms;
-    --et-floating-panel-distance: 0.45rem;
   }
 
   .et-tooltip,
