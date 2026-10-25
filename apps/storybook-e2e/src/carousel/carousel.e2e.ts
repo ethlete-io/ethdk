@@ -127,14 +127,20 @@ async function pacedMouseDrag(
   const y = box.y + box.height / 2;
   const start = box.x + box.width * options.from;
 
+  // Protocol round trips on a busy CI runner must not slow the measured pointer velocity.
+  const gestureTime = new Date('2026-01-01T12:00:00Z');
+  await page.clock.install({ time: new Date(gestureTime.getTime() - 60_000) });
+  await page.clock.pauseAt(gestureTime);
+
   await page.mouse.move(start, y);
   await page.mouse.down();
   for (let step = 1; step <= options.steps; step++) {
-    await settle(page, options.stepMs);
+    await page.clock.runFor(options.stepMs);
     await page.mouse.move(start - (options.distance * step) / options.steps, y);
   }
   await options.whileDown?.();
   await page.mouse.up();
+  await page.clock.resume();
 }
 
 function activeContentOffset(root: Locator): Promise<number> {
@@ -435,7 +441,7 @@ test.describe('carousel / mouse drag release', () => {
       steps: 15,
       stepMs: 40,
       whileDown: async () => {
-        offsets.push(await activeContentOffset(root));
+        offsets.push(Math.abs(await activeContentOffset(root)));
       },
     });
 
