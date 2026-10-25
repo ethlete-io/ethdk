@@ -1,5 +1,11 @@
 # @ethlete/cdk
 
+## 5.0.0-next.42
+
+### Patch Changes
+
+- CDK migration: recognize the current component stylesheet classes, including custom notification content and spinner transitions.
+
 ## 5.0.0-next.41
 
 ### Patch Changes
