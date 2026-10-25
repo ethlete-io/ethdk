@@ -295,6 +295,9 @@ test.describe('carousel / loop', () => {
     const root = await openStory(page, LOOP_STORY_ID);
     const dots = root.locator(DOT);
 
+    await expect(dots.first()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRest(root);
+
     await recordVisitedDots(dots);
     await mouseDragTrack(page, root, 0.2, 0.8);
 
@@ -305,7 +308,10 @@ test.describe('carousel / loop', () => {
     const visited = await visitedDots(page);
 
     expect(visited).toContain((await dots.count()) - 1);
+    expect(visited.at(-1)).toBe((await dots.count()) - 1);
     expect(new Set(visited).size).toBeLessThanOrEqual(2);
+    await expect(dots.last()).toHaveAttribute('aria-current', 'true');
+    await expectActiveSlideAtRest(root);
   });
 
   test('a mouse drag forward on the last slide crosses the seam without sweeping through every slide', async ({
