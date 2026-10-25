@@ -18,7 +18,7 @@ import { MenuDirective } from './menu.directive';
           <input [(query)]="query" [loading]="loading()" [error]="error()" class="search" etMenuSearch />
 
           @for (label of filteredLabels(); track label) {
-            <button class="item" etMenuItem type="button">{{ label }}</button>
+            <button (activate)="activated.push(label)" class="item" etMenuItem type="button">{{ label }}</button>
           }
         </et-menu>
       </ng-template>
@@ -31,6 +31,7 @@ class MenuSearchTestHost {
   loading = signal(false);
   error = signal<string | null>(null);
   labels = ['Alpha', 'Bravo', 'Charlie'];
+  activated: string[] = [];
   filteredLabels = computed(() =>
     this.labels.filter((label) => label.toLowerCase().includes(this.query().toLowerCase())),
   );
@@ -269,5 +270,56 @@ describe('MenuSearchDirective', () => {
     expect(document.activeElement).toBe(search);
     expect(search.value).toBe('b');
     expect(fixture.componentInstance.query()).toBe('b');
+  });
+
+  describe('Enter before the panel catches up with the typed query', () => {
+    const typeIntoSearch = (text: string) => {
+      const search = query<HTMLInputElement>('.search');
+
+      search.value = text;
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+
+    const pressOnFocused = (key: string) => keydown(document.activeElement ?? document.body, key);
+
+    it('does not activate the previously active item when typing on it is followed by Enter', async () => {
+      await openMenu();
+      keydown(query('.search'), 'ArrowDown');
+      tick();
+
+      expect(menu.activeItem()?.elementRef.nativeElement.textContent?.trim()).toBe('Alpha');
+
+      pressOnFocused('c');
+      pressOnFocused('Enter');
+      tick();
+      await flushFrames();
+
+      expect(fixture.componentInstance.activated).toEqual([]);
+      expect(menu.open()).toBe(true);
+    });
+
+    it('does not activate an item when Enter follows typing in the search field', async () => {
+      await openMenu();
+
+      typeIntoSearch('br');
+      pressOnFocused('Enter');
+      tick();
+      await flushFrames();
+
+      expect(fixture.componentInstance.activated).toEqual([]);
+      expect(menu.open()).toBe(true);
+    });
+
+    it('activates the first filtered item when ArrowDown and Enter follow typing', async () => {
+      await openMenu();
+
+      typeIntoSearch('ch');
+      pressOnFocused('ArrowDown');
+      pressOnFocused('Enter');
+      tick();
+      await flushFrames();
+
+      expect(fixture.componentInstance.activated).toEqual(['Charlie']);
+    });
   });
 });

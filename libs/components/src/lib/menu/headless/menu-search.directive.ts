@@ -1,8 +1,10 @@
 import {
+  ApplicationRef,
   DestroyRef,
   Directive,
   ElementRef,
   afterNextRender,
+  afterRenderEffect,
   booleanAttribute,
   effect,
   inject,
@@ -34,6 +36,7 @@ export class MenuSearchDirective {
   public elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
   private destroyRef = inject(DestroyRef);
   private styleManager = injectStyleManager();
+  private appRef = inject(ApplicationRef);
 
   public query = model('');
 
@@ -43,6 +46,7 @@ export class MenuSearchDirective {
 
   /** @internal Id of the element rendering the error message, set by the component displaying it. */
   public errorElementId = signal<string | null>(null);
+  private renderedQuery: string | null = null;
 
   constructor() {
     this.styleManager.mount(MenuSearchStylesComponent);
@@ -51,6 +55,10 @@ export class MenuSearchDirective {
 
     this.destroyRef.onDestroy(() => {
       this.menu?.unregisterSearch(this);
+    });
+
+    afterRenderEffect(() => {
+      this.renderedQuery = this.query();
     });
 
     effect(() => {
@@ -132,6 +140,12 @@ export class MenuSearchDirective {
 
     // everything else (printable keys, Home/End, ArrowLeft/Right) is native input editing
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Escape' || event.key === 'Tab') {
+      // the consumer filters the items from the query in its template, so an arrow key typed
+      // before that render would land on an item of the previous list
+      if (this.renderedQuery !== this.query()) {
+        this.appRef.tick();
+      }
+
       this.menu?.handleKeydown(event);
     }
   }
