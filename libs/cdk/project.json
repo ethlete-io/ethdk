@@ -26,7 +26,8 @@
       "outputs": ["{projectRoot}/{options.coverage.reportsDirectory}", "{workspaceRoot}/coverage/libs/cdk"],
       "options": {
         "coverage.reportsDirectory": "../../../coverage/libs/cdk"
-      }
+      },
+      "inputs": ["default", "^production", "{workspaceRoot}/libs/components/src/**/*.css"]
     },
     "lint": {
       "inputs": [
