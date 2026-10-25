@@ -15,6 +15,14 @@
      Falls back to transparent (no filler) for overlays opened without surface themes. */
     --_et-overlay-overshoot-fill: var(--et-surface-background-solid, transparent);
 
+    @media (pointer: coarse) {
+      &:where(.et-overlay--bottom-sheet, .et-overlay--top-sheet, .et-overlay--left-sheet, .et-overlay--right-sheet) {
+        /* Android Chrome can show an unpainted frame when the first drag transforms a large
+           scrollable sheet. Keep its compositor layer ready while it is open. */
+        will-change: transform;
+      }
+    }
+
     &.et-overlay--bottom-sheet {
       &.et-animation-enter-from,
       &.et-animation-leave-to {
