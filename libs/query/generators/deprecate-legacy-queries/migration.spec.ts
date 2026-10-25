@@ -1,5 +1,8 @@
 import { Tree } from '@nx/devkit';
 import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import migration from './migration';
 
 describe('deprecate-legacy-queries', () => {
@@ -14,6 +17,7 @@ describe('deprecate-legacy-queries', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   const run = async (content: string) => {
@@ -22,6 +26,32 @@ describe('deprecate-legacy-queries', () => {
 
     return tree.read('queries.ts', 'utf-8') ?? '';
   };
+
+  it.each([
+    ['untagged wrappers', 'export const legacy = createLegacyQueryCreator({ creator: getUser });', ['queries.ts']],
+    ['no wrappers', 'export const getUser = createGetQuery({});', []],
+    [
+      'already tagged wrappers',
+      '/** @deprecated use getUser */\nexport const legacy = createLegacyQueryCreator({ creator: getUser });',
+      [],
+    ],
+  ])('scans %s without changing the tree', async (_, content, expected) => {
+    const directory = mkdtempSync(join(tmpdir(), 'deprecate-legacy-scan-'));
+    const scanFile = join(directory, 'files.json');
+
+    vi.stubEnv('ETHLETE_SCAN_FILE', scanFile);
+    tree.write('queries.ts', content);
+    const changesBefore = tree.listChanges();
+
+    try {
+      await migration(tree, {});
+
+      expect(JSON.parse(readFileSync(scanFile, 'utf8'))).toEqual(expected);
+      expect(tree.listChanges()).toEqual(changesBefore);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
 
   it('tags a wrapper and names the creator it forwards to', async () => {
     const queries = await run(

@@ -43,6 +43,7 @@
       "level": "recommended",
       "description": "Mark the remaining createLegacyQueryCreator wrappers as deprecated, so their call sites surface as still on v2.",
       "generator": "@ethlete/query:deprecate-legacy-queries",
+      "scan": "@ethlete/query:deprecate-legacy-queries",
       "docs": "/query/legacy"
     },
     {

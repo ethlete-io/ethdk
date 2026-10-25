@@ -1,4 +1,5 @@
 import { Tree, formatFiles } from '@nx/devkit';
+import { writeFileSync } from 'fs';
 import * as ts from 'typescript';
 import { MigrationScopeOptions, createMigrationScope } from '../migrate-to-query-v3/migration-scope.js';
 import { addJsDocTag, createSourceFile, legacyQueryDeprecationTag } from '../migrate-to-query-v3/shared.js';
@@ -64,9 +65,14 @@ const collectWrappers = (sourceFile: ts.SourceFile) => {
   return wrappers;
 };
 
-export const deprecateLegacyQueries = (tree: Tree, scope: ReturnType<typeof createMigrationScope>) => {
+export const deprecateLegacyQueries = (options: {
+  tree: Tree;
+  scope: ReturnType<typeof createMigrationScope>;
+  scanOnly?: boolean;
+}) => {
+  const { tree, scope, scanOnly = false } = options;
   let deprecatedWrappers = 0;
-  let touchedFiles = 0;
+  const files: string[] = [];
 
   scope.visit(tree, (filePath) => {
     if (!isMigratableFile(filePath)) return;
@@ -100,12 +106,12 @@ export const deprecateLegacyQueries = (tree: Tree, scope: ReturnType<typeof crea
 
     if (tagged === 0) return;
 
-    tree.write(filePath, nextContent);
+    if (!scanOnly) tree.write(filePath, nextContent);
     deprecatedWrappers += tagged;
-    touchedFiles += 1;
+    files.push(filePath);
   });
 
-  return { deprecatedWrappers, touchedFiles };
+  return { deprecatedWrappers, touchedFiles: files.length, files };
 };
 
 export default async function migrate(tree: Tree, schema: MigrationSchema) {
@@ -115,7 +121,14 @@ export default async function migrate(tree: Tree, schema: MigrationSchema) {
 
   console.log(`   Scope: ${scope.describe()}`);
 
-  const { deprecatedWrappers, touchedFiles } = deprecateLegacyQueries(tree, scope);
+  const scanFile = process.env['ETHLETE_SCAN_FILE'];
+  const { deprecatedWrappers, touchedFiles, files } = deprecateLegacyQueries({ tree, scope, scanOnly: !!scanFile });
+
+  if (scanFile) {
+    writeFileSync(scanFile, JSON.stringify(files.sort()), 'utf8');
+
+    return;
+  }
 
   console.log(
     `   Tagged ${deprecatedWrappers} wrapper${deprecatedWrappers === 1 ? '' : 's'} in ${touchedFiles} file${

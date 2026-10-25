@@ -84,19 +84,31 @@ const printAvailable = (options: {
 }) => {
   const { available, invocation, scan } = options;
 
-  console.log(`${available.length} migration${available.length === 1 ? ' is' : 's are'} available:\n`);
+  const scanned = available.map((entry) => {
+    const result = scan(entry);
 
-  for (const entry of available) {
+    return { entry, result, done: result !== undefined && 'files' in result && result.files.length === 0 };
+  });
+  const remaining = scanned.filter(({ done }) => !done).length;
+
+  console.log(
+    remaining === 0
+      ? 'No recommended or optional migration is available.\n'
+      : `${remaining} migration${remaining === 1 ? ' is' : 's are'} available:\n`,
+  );
+
+  for (const { entry, result, done } of scanned) {
     const { migration, packageName, installed } = entry;
 
     console.log(
-      `  ${migration.level}  ${migrationKey({ packageName, name: migration.name })} (${migration.kind})${scanLabel(scan(entry))}`,
+      `  ${done ? 'done' : migration.level}  ${migrationKey({ packageName, name: migration.name })} (${migration.kind})${scanLabel(result)}`,
     );
     console.log(`    ${migration.description}`);
 
     if (migration.docs) console.log(`    Docs: ${docsBaseUrl(installed)}${migration.docs}`);
 
-    console.log(`    Run: ${invocation} run ${migrationKey({ packageName, name: migration.name })}\n`);
+    if (done) console.log('');
+    else console.log(`    Run: ${invocation} run ${migrationKey({ packageName, name: migration.name })}\n`);
   }
 };
 

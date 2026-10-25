@@ -44,6 +44,13 @@ describe('the @ethlete/query migrations', () => {
     }
   });
 
+  it('scans the recommended wrapper deprecation migration', () => {
+    expect(migrations.find((migration) => migration.name === 'deprecate-legacy-queries')).toMatchObject({
+      level: 'recommended',
+      scan: '@ethlete/query:deprecate-legacy-queries',
+    });
+  });
+
   it('offer report-legacy-query-apis as an optional migration with a scan, which et update never runs', () => {
     const report = migrations.find((migration) => migration.name === 'report-legacy-query-apis');
 

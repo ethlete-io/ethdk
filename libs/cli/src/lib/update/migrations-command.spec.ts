@@ -10,7 +10,13 @@ import { SCAN_FILE_ENV } from './scan';
 import { TASKS_DATA_FILE, UPDATE_DIR } from './tasks';
 
 const spawnSync = vi.hoisted(() =>
-  vi.fn<(binary: string, args: string[], options?: { env?: NodeJS.ProcessEnv }) => { status: number }>(),
+  vi.fn<
+    (
+      binary: string,
+      args: string[],
+      options?: { env?: NodeJS.ProcessEnv },
+    ) => { status: number; stdout?: string; stderr?: string }
+  >(),
 );
 
 const REAL_GIT = ['ls-files', 'rev-parse', 'status', 'add', 'commit', 'reset', 'check-ignore'];
@@ -83,7 +89,7 @@ const installQuery = (root: string, version: string) => {
   writeFileSync(join(query, 'migrations', 'deprecate-legacy-queries.md'), '## Replace them\n', 'utf8');
 };
 
-const addScannedMigration = (root: string) => {
+const addScannedMigration = (root: string, level = 'optional') => {
   const path = join(root, 'node_modules', '@ethlete', 'query', 'migrations.json');
   const manifest = JSON.parse(readFileSync(path, 'utf8')) as { migrations: object[] };
 
@@ -91,7 +97,7 @@ const addScannedMigration = (root: string) => {
     name: 'report-legacy-query-apis',
     version: '5.42.0',
     kind: 'auto',
-    level: 'optional',
+    level,
     description: 'List the legacy query APIs',
     generator: '@ethlete/query:report-legacy-query-apis',
     scan: '@ethlete/query:report-legacy-query-apis',
@@ -217,6 +223,51 @@ describe('et migrations', () => {
     expect(spawnSync.mock.calls.map(([, args]) => args)).toEqual([
       ['nx', 'generate', '@ethlete/query:report-legacy-query-apis', '--interactive=false', '--dry-run'],
     ]);
+  });
+
+  it('marks a zero-file migration done without recommending a run or recording it', () => {
+    const root = makeRepo();
+
+    addScannedMigration(root, 'recommended');
+    scanReturns([]);
+
+    expect(migrationsCommand({ argv: [], root })).toBe(0);
+    expect(logged()).toContain('2 migrations are available');
+    expect(logged()).toContain('  done  @ethlete/query:report-legacy-query-apis (auto) - 0 affected files');
+    expect(logged()).not.toContain('Run: et migrations run @ethlete/query:report-legacy-query-apis');
+    expect(existsSync(join(root, MIGRATION_RECORD_FILE))).toBe(false);
+    expect(spawnSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports no available migrations when every scan finds zero files', () => {
+    const root = makeRepo();
+
+    addScannedMigration(root);
+    const path = join(root, 'node_modules', '@ethlete', 'query', 'migrations.json');
+    const manifest = JSON.parse(readFileSync(path, 'utf8')) as { migrations: { scan?: string }[] };
+
+    writeJson(path, { migrations: manifest.migrations.filter((migration) => migration.scan) });
+    scanReturns([]);
+
+    expect(migrationsCommand({ argv: [], root })).toBe(0);
+    expect(logged()).toContain('No recommended or optional migration is available.');
+    expect(logged()).toContain('  done  @ethlete/query:report-legacy-query-apis (auto) - 0 affected files');
+    expect(logged()).not.toContain('Run:');
+  });
+
+  it('includes stdout and stderr from a failed detection command', () => {
+    const root = makeRepo();
+
+    addScannedMigration(root);
+    spawnSync.mockReturnValue({
+      status: 1,
+      stdout: " NX Cannot find package 'ts-morph' ",
+      stderr: 'Failed to load the generator',
+    });
+
+    expect(migrationsCommand({ argv: [], root })).toBe(0);
+    expect(logged()).toContain("yarn exited with 1\nNX Cannot find package 'ts-morph'\nFailed to load the generator");
+    expect(logged()).toContain('3 migrations are available');
   });
 
   it.each([

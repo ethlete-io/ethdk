@@ -49,12 +49,19 @@ export const runScan = (options: { root: string; manager: PackageManager; migrat
     const result = spawnPackageManager({
       binary,
       args,
-      spawn: { cwd: root, stdio: 'ignore', env: { ...process.env, [SCAN_FILE_ENV]: resultPath } },
+      spawn: { cwd: root, stdio: 'pipe', encoding: 'utf8', env: { ...process.env, [SCAN_FILE_ENV]: resultPath } },
     });
 
     if (result.error) return { problem: result.error.message };
 
-    if (result.status !== 0) return { problem: `${binary} exited with ${result.status}` };
+    if (result.status !== 0) {
+      const output = [result.stdout, result.stderr]
+        .map((stream) => stream?.toString().trim())
+        .filter(Boolean)
+        .join('\n');
+
+      return { problem: `${binary} exited with ${result.status}${output ? `\n${output}` : ''}` };
+    }
 
     return readScanFile(resultPath);
   } finally {

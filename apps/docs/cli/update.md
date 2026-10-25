@@ -44,7 +44,7 @@ yarn et migrations                                # recommended first: level, ki
 yarn et migrations run query:to-query-v3          # run one; the package may be named short or in full
 ```
 
-A migration that ships a [scan](#scan) shows how many files it would touch, for example `optional  @ethlete/query:report-legacy-query-apis (auto) - 12 affected files`. A migration without a scan shows no count. A scan that fails, or a repo without Nx, shows `affected files unknown` with the reason; the list itself does not fail.
+A migration that ships a [scan](#scan) shows how many files it would touch, for example `optional  @ethlete/query:report-legacy-query-apis (auto) - 12 affected files`. A scan that finds zero files shows `done` and `0 affected files`, with no run command, and does not count towards the available migrations. This does not write a migration record: a later scan can find new work. A migration without a scan shows no count. A scan that fails, or a repo without Nx, shows `affected files unknown` with the reason and the failed command’s output; the list itself does not fail. For example, the legacy color theme scan needs the optional `ts-morph` peer dependency installed in the consuming repo.
 
 A run follows the flow of `et update`: a clean working tree unless `--force`, a commit of its own unless `--no-commit`, and a task in `.ethlete/update` for a `manual` or `assisted` migration. Hand an assisted task to an agent with `et update --continue --ai`. It does not run while an update is unfinished.
 
