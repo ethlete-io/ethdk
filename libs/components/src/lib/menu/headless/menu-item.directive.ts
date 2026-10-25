@@ -30,6 +30,7 @@ export type MenuItemActivationEvent = {
     '[attr.tabindex]': 'tabIndex()',
     '[attr.aria-disabled]': 'isDisabled() || null',
     '[attr.data-active]': 'isActive() || null',
+    '[attr.data-highlight-held]': 'isHighlightHeld() || null',
     '(click)': 'handleClick($event)',
     '(keydown)': 'handleKeydown($event)',
     '(mousedown)': 'handleMousedown($event)',
@@ -64,6 +65,8 @@ export class MenuItemDirective {
   protected role = computed(() => this.roleOverride()?.() ?? 'menuitem');
 
   protected isActive = computed(() => this.owner?.activeItem() === this);
+
+  protected isHighlightHeld = computed(() => this.isActive() && !!this.owner?.holdsActiveHighlight());
 
   /** @internal Combines the item's own `disabled` input with a state pushed in by a composing directive. */
   public isDisabled = computed(() => this.disabled() || (this.disabledOverride()?.() ?? false));

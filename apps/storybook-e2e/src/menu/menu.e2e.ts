@@ -274,6 +274,45 @@ test.describe('menu / focus ring', () => {
     expect(await activeBackgroundOf(save)).toBe(active);
     expect(await activeBackgroundOf(newFile)).not.toBe(active);
   });
+
+  test('the item activated with Enter keeps its highlight until the menu has faded out', async ({ page }) => {
+    await openStory(page, STORY_ID);
+    const save = page.getByRole('menuitem', { name: 'Save' });
+
+    await pressKey(page, 'Tab');
+    await pressKey(page, 'Enter');
+    await waitForMenuOpen(page);
+    await pressKey(page, 'ArrowDown');
+    await expectItemFocusVisible(save);
+    await settle(page, 200);
+
+    const active = await activeBackgroundOf(save);
+    const sampling = save.evaluate(
+      (element) =>
+        new Promise<string[]>((resolve) => {
+          const samples: string[] = [];
+          const sample = () => {
+            if (!element.isConnected) {
+              resolve(samples);
+
+              return;
+            }
+
+            samples.push(getComputedStyle(element).backgroundColor);
+            requestAnimationFrame(sample);
+          };
+
+          sample();
+        }),
+    );
+
+    await pressKey(page, 'Enter');
+
+    const samples = await sampling;
+
+    expect(samples.length).toBeGreaterThan(1);
+    expect(samples.filter((sample) => sample !== active)).toEqual([]);
+  });
 });
 
 test.describe('menu / placement', () => {

@@ -127,6 +127,8 @@ export class MenuDirective {
   public openSubmenu = signal<MenuDirective | null>(null);
   /** @internal */
   public activeItem = signal<MenuItemDirective | null>(null);
+  /** @internal Set when a close moves focus off a keyboard-highlighted item, until the pane has left. */
+  public holdsActiveHighlight = signal(false);
   /** @internal */
   public anchorPoint = signal<MenuAnchorPoint | null>(null);
 
@@ -219,6 +221,7 @@ export class MenuDirective {
 
     this.openSource = source;
     this.requestedFocus = focus ?? null;
+    this.holdsActiveHighlight.set(false);
     this.parent?.openSubmenuExclusive(this);
     this.open.set(true);
   }
@@ -253,6 +256,7 @@ export class MenuDirective {
     const root = this.root;
 
     if (reason === 'item' || reason === 'escape' || reason === 'tab') {
+      root.holdFocusVisibleHighlights();
       root.focusTrigger();
     }
 
@@ -567,6 +571,14 @@ export class MenuDirective {
     }
   }
 
+  private holdFocusVisibleHighlights() {
+    if (this.activeItem()?.elementRef.nativeElement.matches(':focus-visible')) {
+      this.holdsActiveHighlight.set(true);
+    }
+
+    this.openSubmenu()?.holdFocusVisibleHighlights();
+  }
+
   private isFocusInsideTree() {
     const active = this.hostElement.ownerDocument.activeElement;
 
@@ -755,6 +767,7 @@ export class MenuDirective {
           this.overlayRef.set(null);
           this.openSubmenu()?.hide();
           this.activeItem.set(null);
+          this.holdsActiveHighlight.set(false);
           this.detachRootInteractionListeners();
 
           if (this.parent?.openSubmenu() === this) {
