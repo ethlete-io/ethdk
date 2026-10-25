@@ -1,5 +1,17 @@
 # ethlete-studio
 
+## 0.2.0-next.8
+
+### Minor Changes
+
+- Studio closes a call as shipped or superseded and reopens it, and a ruling can write an optional note into its round.
+- Studio reads a call's `closed` and `waitsFor`: closed calls count as settled, waiting calls sit under "On hold", legacy calls with a stage clear the stage gate, and open calls now lead the sidebar.
+
+### Patch Changes
+
+- Show "The design server stopped" with its last output and a Restart button in the call view instead of blank frames when the design server dies, with a hint when it ran out of inotify watchers.
+- Scroll the shown variant of a call again on Linux, where the wheel went to a hidden variant's frame.
+
 ## 0.2.0-next.7
 
 ### Minor Changes

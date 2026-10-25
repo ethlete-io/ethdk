@@ -1,5 +1,75 @@
 # Changelog
 
+## 1.0.0-next.74
+
+### Minor Changes
+
+- Animate the command palette while filtering: the height follows the results on a spring, results slide to their new place, and the list and the empty message cross-fade.
+- A pending async validator now only sets `aria-busy` on the form field, without a spinner. The field and select spinners fade in and out, and the select trigger spinner keeps its 300ms minimum when the panel opens.
+- Notification: render a custom component with inputs below the message, in the normal stack with its status accent.
+- Add `etProgressStepRouterActive` so a progress step written as a `routerLink` becomes the current step while its link is active in the router.
+- An open multi select toggles every visible option with Ctrl+A / Cmd+A and toggles the option Shift+ArrowUp / Shift+ArrowDown moves onto.
+- Animate select options while filtering: options that stay slide to their new place, and others fade in and out.
+
+### Patch Changes
+
+- The accordion header's hover tint now sits 4px inside the hairlines instead of touching them, with the text in place.
+- An accordion that starts open now renders open instead of animating in on page load.
+- A looping carousel no longer stops moving after about one lap of quick successive swipes.
+- The carousel track no longer clips the top and bottom border of its slides at fractional device pixel ratios.
+- The carousel `wipe` transition no longer pushes the slides against each other by default (`--et-carousel-wipe-shift` is now `0px`), so the pictures stay still while the edge follows a drag.
+- Fade the command palette's row highlight instead of switching it at once.
+- Use the lib scrollbar in the command palette list instead of the native one.
+- Dialogs, anchored dialogs and full-screen dialogs now leave on a spring curve instead of a fixed ease.
+- Draw the divider rule as a border so every divider renders the same width at fractional browser zoom.
+- Anchored overlay panels (select, tooltip, toggletip, cascader, date picker) now fade opacity only, 140ms in and 100ms out, with no translate.
+- Give select, cascader, date and color picker panels the radius of their form field. A searchable select shows one text cursor over the whole field.
+- An overlay anchored inside a filled form field, such as the select panel, now paints the same surface as with a transparent field instead of one level higher.
+- The form field clear button gets a 24px hit area (44px on touch) that the picker chevron no longer covers, plus hover, press and focus states.
+- A resting floating label no longer overlaps a placeholder (such as the select search input's), and a floated `sm` label no longer touches the value.
+- `injectAnimatedListItems` fades a new item in only after the removed items have faded out, so a select's "No results" or loading row cross-fades with the options instead of overlapping them.
+- Remove floating panel motion variables from the menu that no longer have an effect.
+- A menu item activated from the keyboard keeps its highlight while the menu fades out, instead of losing it as focus returns to the trigger.
+- An arrow key pressed in the menu search right after typing now moves to the filtered items instead of an item from the previous list.
+- The menu search spinner fades in and out instead of popping, matching the select.
+- Let routed overlay pages slide all the way to the overlay's edge instead of being clipped at the body padding.
+- Use the lib scrollbar in the overlay sidebar instead of the native one.
+- The paginator keeps its ellipsis elements when the page window trims, instead of re-creating them.
+- The paginator's jump-to-page field is now an `et-number-input` in a form field instead of a native number input with spin arrows.
+- `et-page-size-select` now uses `et-select` in a form field instead of a native `<select>`, so it matches the other form controls.
+- A custom PiP chrome built on `et-pip-window` now draws on the dark stream surface instead of the light page surface.
+- `et-progress-bar` now starts its fill at the inline start inside an ancestor with `text-align: center`.
+- Fade the progress step marker, label and connector colours when a step changes state.
+- Use the lib scrollbar in the rich text editor token popup instead of the native one.
+- Scroll the active row of the rich-text-editor `#` token popup into view when ArrowDown / ArrowUp moves past the visible rows.
+- Use the lib scrollbar in the scheduler time grid and agenda view instead of the native one.
+- Draw a 32px fade next to the scrollable border mask's edge line so the edge reads clearly.
+- A quick mouse flick on a snapping scrollable or carousel now carries on to the next child in its direction instead of gliding back to the nearest one.
+- A quick mouse drag that already reaches the next child of a snapping scrollable or carousel now rests on that child instead of skipping on to the one after it.
+- Place the scrollable navigation dots between the previous and next buttons in the footer.
+- Sticky scrollable buttons now stay centred in the visible part of the track instead of sitting too low on a track shorter than the window.
+- Inset the scrollbar track 4px from both ends of its container, so the thumb no longer touches a rounded panel edge. Set `--et-scrollbar-inset` to change the gap.
+- A wheel turned over an `et-scrollbar` track or thumb now scrolls the container it mirrors, instead of
+  being swallowed. At the end of the container the wheel chains to the page, like a native wheel.
+- A select option's check mark now fades in and out instead of popping, and stays unchanged while the panel closes after a pick.
+- Chips in a multi select now fade in and out, and the remaining chips and the search input slide to their new place, so a committed custom value no longer pops into the field.
+- A multi select lists its selected custom values as checked options in the panel, so they filter with the search and can be unchecked there.
+- Fix `et-select` committing a stale option or partial query when Enter follows fast typing.
+- The select state, load-more and add-new rows now move and fade with the options while the list filters.
+- Multi select chips no longer slide or grow the field on a spring: a new chip fades in, a removed one goes at once, and the panel moves once. The search input wraps instead of cutting off its placeholder.
+- When a chip wraps to a new line or leaves one, a multi select's field now grows and shrinks with the panel's spring, and the open panel follows it instead of jumping.
+- Select group labels keep their style and divider while they fade out during a search.
+- Use the lib scrollbar in the `et-select` panel.
+- A multi select at `maxSelection` keeps its search input usable for filtering and Backspace, and the chips no longer rewrap when the clear button appears on focus.
+- The select panel now leaves with an opacity fade only, and the chosen option keeps its highlight until the panel is gone.
+- A select ignores a mouse click on an option until the pointer moves after the panel moved, so a growing multi field no longer picks the row that slid under a resting pointer.
+- Virtual select rows now slide and fade when the filter changes, and stay still while scrolling.
+- A sheet dismissed by a swipe now leaves at the release speed in one continuous motion, without a pause after the finger lifts.
+- Sheets now move on a spring that carries the swipe speed, stretch against the docked edge, and fade the backdrop while dragged.
+- Keep the spinner styles in the document after the last spinner is gone, so the fading copy of a select loading row keeps its spinner instead of collapsing.
+- The stream player loading spinner now uses the theme accent instead of grey on the grey slot surface.
+- Stop the stream error, consent and PiP placeholder cards from raising the surface a second time, so they match the slot they fill.
+
 ## 1.0.0-next.73
 
 ### Patch Changes

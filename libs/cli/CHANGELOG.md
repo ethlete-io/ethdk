@@ -1,5 +1,16 @@
 # @ethlete/cli
 
+## 3.0.0-next.20
+
+### Minor Changes
+
+- `et design new --feature <name>` groups a call under a feature, and `et design legacy` now also writes the stage its group folder implies.
+
+### Patch Changes
+
+- A design render now waits up to 60 seconds for a package that is being rebuilt into dist instead of failing at once.
+- Studio reads a call's `closed` and `waitsFor`: closed calls count as settled, waiting calls sit under "On hold", legacy calls with a stage clear the stage gate, and open calls now lead the sidebar.
+
 ## 3.0.0-next.19
 
 ### Minor Changes
