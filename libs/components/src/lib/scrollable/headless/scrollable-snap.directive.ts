@@ -1,6 +1,6 @@
 import { DestroyRef, Directive, booleanAttribute, computed, effect, inject, input, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { getScrollSnapTarget } from '@ethlete/core';
+import { ScrollSnapTarget, getScrollSnapTarget } from '@ethlete/core';
 import { fromEvent, merge, take, tap, timer } from 'rxjs';
 import { ScrollableDirective } from './scrollable.directive';
 import { ScrollableScrollOrigin } from './scrollable.types';
@@ -13,6 +13,8 @@ const SETTLE_TIMEOUT = 700;
 
 /** The release speed (px/ms) above which a mouse drag counts as a flick and carries on to the next child. */
 const FLICK_VELOCITY = 0.5;
+
+type SnapNeighbours = Record<'forward' | 'backward', ScrollSnapTarget>;
 
 /**
  * Makes the track come to rest on a child rather than wherever the gesture ran out.
@@ -62,13 +64,20 @@ export class ScrollableSnapDirective {
     const isDragging = computed(() => this.enabled() && this.scrollable.isCursorDragging());
 
     let releaseSnap: (() => void) | null = null;
+    let startNeighbours: SnapNeighbours = { forward: null, backward: null };
 
     effect(() => {
       const dragging = isDragging();
 
       untracked(() => {
         if (dragging) {
-          releaseSnap ??= this.scrollable.suspendSnap();
+          if (!releaseSnap) {
+            startNeighbours = {
+              forward: this.snapTarget(this.scrollable.scrollableChildren(), 'forward'),
+              backward: this.snapTarget(this.scrollable.scrollableChildren(), 'backward'),
+            };
+            releaseSnap = this.scrollable.suspendSnap();
+          }
 
           return;
         }
@@ -78,14 +87,14 @@ export class ScrollableSnapDirective {
         const release = releaseSnap;
         releaseSnap = null;
 
-        this.glideToRestingChild(release);
+        this.glideToRestingChild(release, startNeighbours);
       });
     });
 
     this.destroyRef.onDestroy(() => releaseSnap?.());
   }
 
-  private glideToRestingChild(release: () => void) {
+  private glideToRestingChild(release: () => void, startNeighbours: SnapNeighbours) {
     const scrollElement = this.scrollable.getScrollContainerRef()()?.nativeElement;
     const direction = this.scrollable.direction();
     const velocity = this.scrollable.cursorDragReleaseVelocity()[direction === 'horizontal' ? 'x' : 'y'];
@@ -94,18 +103,11 @@ export class ScrollableSnapDirective {
       .childIntersections()
       .filter((intersection) => intersection.intersectionRatio > 0)
       .map((intersection) => intersection.target as HTMLElement);
-    const snapTarget = (bias?: 'forward' | 'backward') =>
-      scrollElement
-        ? getScrollSnapTarget(
-            candidates,
-            scrollElement,
-            direction,
-            this.snapOrigin(),
-            this.scrollable.scrollMargin(),
-            bias,
-          )
-        : null;
-    const target = (towards && snapTarget(towards)) || snapTarget();
+    const flickTarget = towards ? this.snapTarget(candidates, towards) : null;
+    const target =
+      flickTarget && towards && flickTarget.element === startNeighbours[towards]?.element
+        ? flickTarget
+        : this.snapTarget(candidates);
 
     if (!scrollElement || !target) {
       release();
@@ -126,5 +128,20 @@ export class ScrollableSnapDirective {
     )
       .pipe(take(1), tap(release), takeUntilDestroyed(this.destroyRef))
       .subscribe();
+  }
+
+  private snapTarget(candidates: HTMLElement[], towards?: 'forward' | 'backward'): ScrollSnapTarget {
+    const scrollElement = this.scrollable.getScrollContainerRef()()?.nativeElement;
+
+    if (!scrollElement) return null;
+
+    return getScrollSnapTarget(
+      candidates,
+      scrollElement,
+      this.scrollable.direction(),
+      this.snapOrigin(),
+      this.scrollable.scrollMargin(),
+      towards,
+    );
   }
 }
