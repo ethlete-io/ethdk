@@ -1,5 +1,12 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.26
+
+### Patch Changes
+
+- `et design new --feature <name>` groups a call under a feature, and `et design legacy` now also writes the stage its group folder implies.
+- Studio reads a call's `closed` and `waitsFor`: closed calls count as settled, waiting calls sit under "On hold", legacy calls with a stage clear the stage gate, and open calls now lead the sidebar.
+
 ## 0.1.0-next.25
 
 ### Patch Changes

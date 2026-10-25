@@ -1,5 +1,23 @@
 # @ethlete/core
 
+## 5.0.0-next.68
+
+### Minor Changes
+
+- Add `attributes` and `movingClass` options to `injectAnimatedListItems`: watch items a filter hides, and clip overflow while items move.
+- Add `injectAnimatedListItems`: items of a list that stay slide to their new place, new items fade in, and removed items fade out where they were.
+- `injectAnimatedListItems` takes an `animateChange` callback; returning `false` measures a change without moving or fading items.
+
+### Patch Changes
+
+- Place anchored overlays on whole device pixels, so their content no longer shifts by a pixel when an animation ends.
+- Round a shifted anchored overlay inward, so snapping to device pixels no longer pushes it past the viewport padding.
+- The fade-out copy in `injectAnimatedListItems` keeps the padding, border, colour and text styles its item had from ancestor selectors.
+- `createCanAnimateSignal` cancels its pending frame when its host is destroyed, and `matchesReducedMotion` returns `false` in an environment without `matchMedia` instead of throwing.
+- `injectAnimatedListItems` fades a new item in only after the removed items have faded out, so a select's "No results" or loading row cross-fades with the options instead of overlapping them.
+- `registerScrollRestorationState` now restores a page that registers after the navigation ended, such as a route component behind a nested `<router-outlet>`, on reload and back/forward navigation. The offset waits for that state before it is applied.
+- A quick mouse flick on a snapping scrollable or carousel now carries on to the next child in its direction instead of gliding back to the nearest one.
+
 ## 5.0.0-next.67
 
 ### Patch Changes
