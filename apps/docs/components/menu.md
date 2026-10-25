@@ -123,7 +123,7 @@ Groups and standalone items carry the usual signal-forms surface alongside `[(va
 </et-menu>
 ```
 
-For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. The spinner - and the room the input makes for it - waits ~200ms before appearing ([`signalDeferredLoading`](/core/signal-utils#deferred-loading)), so a query that answers within a keystroke or two neither flashes it nor shifts the text; `aria-busy` still reports the request immediately. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu - the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
+For async sources, bind `[loading]` (header spinner + `aria-busy`) and `[error]` (inline `role="alert"` line) on the search input while your request runs. The spinner - and the room the input makes for it - waits ~200ms before appearing ([`signalDeferredLoading`](/core/signal-utils#deferred-loading)) and fades in and out, so a query that answers within a keystroke or two neither flashes it nor shifts the text; `aria-busy` still reports the request immediately. Typing while the menu is focused forwards characters into the search field; <kbd>Escape</kbd> clears a non-empty query before closing the menu - the same reset is available programmatically via `clear()` (`#search="etMenuSearch"`).
 
 @example menu/menu-search-async 440px
 

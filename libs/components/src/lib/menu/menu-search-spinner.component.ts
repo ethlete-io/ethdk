@@ -7,7 +7,12 @@ import { MenuSearchDirective } from './headless/menu-search.directive';
   selector: 'et-menu-search-spinner',
   template: `
     @if (showSpinner()) {
-      <et-spinner class="et-menu-search-spinner" diameter="16" />
+      <et-spinner
+        class="et-menu-search-spinner"
+        animate.enter="et-menu-search-spinner--enter"
+        animate.leave="et-menu-search-spinner--leave"
+        diameter="16"
+      />
     }
   `,
   encapsulation: ViewEncapsulation.None,
