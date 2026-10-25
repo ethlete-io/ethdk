@@ -25,6 +25,12 @@
     <p class="et-notification-message">{{ notification.message() }}</p>
   }
 
+  @if (notification.content(); as content) {
+    <div class="et-notification-custom-content">
+      <ng-container *ngComponentOutlet="content.component; inputs: content.inputs" />
+    </div>
+  }
+
   @if (notification.progress() !== undefined) {
     <et-progress-bar [value]="notification.progress()" class="et-notification-progress-bar" />
   }

@@ -1,4 +1,6 @@
 export const NOTIFICATION_EXAMPLES = {
+  'notification/notification-content': () =>
+    import('./notification-content.example').then((m) => m.NotificationContentExampleComponent),
   'notification/notification-default': () =>
     import('./notification-default.example').then((m) => m.NotificationDefaultExampleComponent),
   'notification/notification-promise': () =>

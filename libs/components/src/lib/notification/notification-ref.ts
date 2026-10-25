@@ -99,6 +99,7 @@ export const createNotificationRef = (
     next.status !== current.status ||
     next.title !== current.title ||
     next.message !== current.message ||
+    next.content !== current.content ||
     next.action !== current.action ||
     next.secondaryAction !== current.secondaryAction ||
     (next.progress === undefined) !== (current.progress === undefined);

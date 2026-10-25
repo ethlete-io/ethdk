@@ -1,3 +1,4 @@
+import { NotificationContentStorybookComponent } from './components/notification-content-storybook.component';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { Meta, StoryFn, applicationConfig, moduleMetadata } from '@storybook/angular';
 import { CLOCK_ICON, provideIconOverrides } from '../../icon';
@@ -82,4 +83,9 @@ export const BottomEndRightToLeft: { render: StoryFn } = {
 export const BottomStartRightToLeft: { render: StoryFn; decorators: unknown[] } = {
   render: () => ({ template: `<et-sb-notification-bottom-start direction="rtl" />` }),
   decorators: [moduleMetadata({ imports: [NotificationBottomStartStorybookComponent] })],
+};
+
+export const CustomContent: { render: StoryFn; decorators: unknown[] } = {
+  render: () => ({ template: `<et-sb-notification-content />` }),
+  decorators: [moduleMetadata({ imports: [NotificationContentStorybookComponent] })],
 };

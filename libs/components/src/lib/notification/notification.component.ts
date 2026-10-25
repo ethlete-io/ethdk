@@ -1,3 +1,4 @@
+import { NgComponentOutlet } from '@angular/common';
 import { Component, ViewEncapsulation, computed, effect, inject, untracked } from '@angular/core';
 import {
   AnimatedLifecycleDirective,
@@ -33,6 +34,7 @@ import { injectNotificationLabels } from './notification-labels';
   styleUrl: './notification.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
+    NgComponentOutlet,
     NotificationActionDirective,
     NotificationDismissDirective,
     SpinnerComponent,

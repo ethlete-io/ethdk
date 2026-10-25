@@ -25,6 +25,7 @@ export class NotificationDirective {
   public isInfo = computed(() => this.status() === 'info');
   public title = computed(() => this.entry().config.title);
   public message = computed(() => this.entry().config.message);
+  public content = computed(() => this.entry().config.content);
   public action = computed(() => this.entry().config.action);
   public secondaryAction = computed(() => this.entry().config.secondaryAction);
   public progress = computed(() => this.entry().config.progress);

@@ -44,6 +44,24 @@ describe('createNotificationRef', () => {
     expect(ref.entry().isDismissed).toBe(false);
   });
 
+  it('captures layout before custom content is added, updated or removed', () => {
+    class ContentComponent {}
+    const beforeChange = vi.fn();
+    const ref = createNotificationRef(
+      { status: 'success', title: 'Unlocked', duration: 0 },
+      { managerConfig: { position: 'bottom-end', maxVisible: 3, defaultDuration: {} }, beforeChange },
+    );
+
+    ref.update({ content: { component: ContentComponent, inputs: { medal: 'Bronze' } } });
+    expect(beforeChange).toHaveBeenCalledTimes(1);
+
+    ref.update({ content: { component: ContentComponent, inputs: { medal: 'Gold' } } });
+    expect(beforeChange).toHaveBeenCalledTimes(2);
+
+    ref.update({ content: undefined });
+    expect(beforeChange).toHaveBeenCalledTimes(3);
+  });
+
   it('dismisses notification', () => {
     const ref = createNotificationRef(
       { status: 'success', title: 'Test' },

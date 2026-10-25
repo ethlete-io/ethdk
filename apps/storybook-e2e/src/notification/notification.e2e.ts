@@ -25,6 +25,23 @@ const NOTIFICATION = '.et-notification';
 const DISMISS_BUTTON = '.et-notification-dismiss-btn';
 const TITLE = '.et-notification-title';
 
+test('notification / custom content keeps the normal toast chrome and dismisses with it', async ({ page }) => {
+  const root = await openStory(page, 'components-feedback-notification--custom-content');
+  await root.getByRole('button', { name: 'Unlock achievement' }).click();
+
+  const notification = page.locator(NOTIFICATION);
+  await expect(notification).toHaveCount(1);
+  await expect(notification).toHaveAttribute('data-status', 'success');
+  await expect(notification.locator(TITLE)).toHaveText('Achievement unlocked');
+  await expect(notification.locator('.et-notification-message')).toHaveText('You watched your first ten films.');
+  await expect(notification.locator('.et-notification-custom-content')).toContainText('Film explorer');
+  await expect(page.locator('.et-notification-stack')).toHaveCount(1);
+
+  await notification.locator(DISMISS_BUTTON).click();
+  await expect(notification).toHaveCount(0);
+  await expect(page.locator('et-sb-notification-medal')).toHaveCount(0);
+});
+
 test.describe('notification / focus', () => {
   test.skip(({ isMobile }) => isMobile, 'pointer-only: keyboard focus order');
 

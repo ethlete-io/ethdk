@@ -1,3 +1,4 @@
+import { Component, DestroyRef, ViewEncapsulation, inject, input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProvideColorDirective, provideColorThemes } from '@ethlete/core';
 import '../../test-helpers';
@@ -6,6 +7,20 @@ import { NotificationConfig, provideNotificationManagerConfig } from './notifica
 import { provideNotificationLabels } from './notification-labels';
 import { NotificationPauseReason, NotificationRef, createNotificationRef } from './notification-ref';
 import { NotificationComponent } from './notification.component';
+
+@Component({
+  selector: 'et-test-notification-content',
+  template: `<span>{{ medal() }}</span>`,
+  encapsulation: ViewEncapsulation.None,
+})
+class TestNotificationContentComponent {
+  public medal = input.required<string>();
+  constructor() {
+    inject(DestroyRef).onDestroy(() => contentDestroyed());
+  }
+}
+
+const contentDestroyed = vi.fn();
 
 describe('NotificationComponent', () => {
   let fixture: ComponentFixture<NotificationComponent>;
@@ -77,6 +92,45 @@ describe('NotificationComponent', () => {
     expect(host.querySelector('.et-notification-message')?.textContent).toContain('Please try again.');
     expect(host.querySelector('et-progress-bar')).not.toBeNull();
     expect(host.querySelector('.et-notification-footer button')?.textContent).toContain('Retry');
+  });
+
+  it('renders custom content below the message and updates its inputs in place', () => {
+    contentDestroyed.mockClear();
+    ref.update({ content: { component: TestNotificationContentComponent, inputs: { medal: 'Bronze' } } });
+    fixture.detectChanges();
+
+    const content = host.querySelector('et-test-notification-content');
+    expect(content?.textContent).toBe('Bronze');
+    expect(host.querySelector('.et-notification-message')?.nextElementSibling?.contains(content)).toBe(true);
+    expect(host.querySelector('.et-notification-title')?.textContent).toContain('Upload failed');
+
+    ref.update({ content: { component: TestNotificationContentComponent, inputs: { medal: 'Gold' } } });
+    fixture.detectChanges();
+
+    expect(host.querySelector('et-test-notification-content')).toBe(content);
+    expect(content?.textContent).toBe('Gold');
+    expect(contentDestroyed).not.toHaveBeenCalled();
+
+    ref.update({ content: undefined });
+    fixture.detectChanges();
+
+    expect(host.querySelector('.et-notification-custom-content')).toBeNull();
+    expect(contentDestroyed).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders custom content without a message or inputs', () => {
+    @Component({
+      selector: 'et-test-static-notification-content',
+      template: 'Achievement unlocked',
+      encapsulation: ViewEncapsulation.None,
+    })
+    class StaticContentComponent {}
+
+    ref.update({ message: undefined, content: { component: StaticContentComponent } });
+    fixture.detectChanges();
+
+    expect(host.querySelector('.et-notification-message')).toBeNull();
+    expect(host.querySelector('.et-notification-custom-content')?.textContent).toContain('Achievement unlocked');
   });
 
   it('reflects error notifications as alert semantics', () => {

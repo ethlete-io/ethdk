@@ -49,15 +49,50 @@ delete() {
 
 `open` takes `status` (`'loading' | 'success' | 'error' | 'info'`), `title`, and optionally:
 
-| Option            | Type                 | Notes                                                                                       |
-| ----------------- | -------------------- | ------------------------------------------------------------------------------------------- |
-| `message`         | `string`             | Secondary line under the title                                                              |
-| `action`          | `NotificationAction` | `{ label, handler, dismiss? }` - dismisses on click unless `dismiss: false`                 |
-| `secondaryAction` | `NotificationAction` | A second, quieter action next to the first (see [Two actions](#two-actions))                |
-| `duration`        | `number`             | Overrides the status's `defaultDuration`; `0` never auto-dismisses                          |
-| `progress`        | `number`             | 0–100 renders a progress bar under the body                                                 |
-| `id`              | `string`             | Identity - a repeat `open` replaces it in place (see [One toast per id](#one-toast-per-id)) |
-| `icon`            | `string \| null`     | Overrides the status icon; `null` renders none                                              |
+| Option            | Type                                                             | Notes                                                                                       |
+| ----------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `content`         | `{ component: Type<unknown>; inputs?: Record<string, unknown> }` | Optional component below the message, before progress and actions                           |
+| `message`         | `string`                                                         | Secondary line under the title                                                              |
+| `action`          | `NotificationAction`                                             | `{ label, handler, dismiss? }` - dismisses on click unless `dismiss: false`                 |
+| `secondaryAction` | `NotificationAction`                                             | A second, quieter action next to the first (see [Two actions](#two-actions))                |
+| `duration`        | `number`                                                         | Overrides the status's `defaultDuration`; `0` never auto-dismisses                          |
+| `progress`        | `number`                                                         | 0–100 renders a progress bar under the body                                                 |
+| `id`              | `string`                                                         | Identity - a repeat `open` replaces it in place (see [One toast per id](#one-toast-per-id)) |
+| `icon`            | `string \| null`                                                 | Overrides the status icon; `null` renders none                                              |
+
+### Custom content
+
+Pass `content` to one notification to render a component below its message. The title, status accent,
+progress, actions and dismiss control stay part of the normal toast, in the same stack.
+
+```ts
+@Component({
+  selector: 'app-achievement-medal',
+  template: `<strong>{{ medal() }}</strong>`,
+})
+class AchievementMedalComponent {
+  medal = input.required<string>();
+}
+
+this.manager.open({
+  status: 'success',
+  title: 'Achievement unlocked',
+  message: 'You watched your first ten films.',
+  content: { component: AchievementMedalComponent, inputs: { medal: 'Film explorer' } },
+});
+```
+
+@example notification/notification-content 320px
+
+`content` defaults to unset. `inputs` is optional and uses Angular input names, including aliases.
+The component inherits the notification's surface and color context. Providers local to the caller
+are unavailable because the stack renders from the manager's injector. Templates are not accepted.
+
+Use `ref.update({ content: { component: AchievementMedalComponent, inputs: { medal: 'Film expert' } } })`
+to change inputs, or `ref.update({ content: undefined })` to remove the component. Pass a new content
+object when updating; keeping the same component type preserves its instance. Replacing a toast by
+`id` without `content` removes its previous custom content. A fully custom manager component renders
+this field itself; the headless directive exposes it as `notification.content()`.
 
 ### Two actions
 

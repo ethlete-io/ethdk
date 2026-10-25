@@ -32,6 +32,8 @@ export type NotificationConfig = {
   status: NotificationStatus;
   title: string;
   message?: string;
+  /** Renders a component below the message inside the default notification, with optional Angular inputs. */
+  content?: { component: Type<unknown>; inputs?: Record<string, unknown> };
   action?: NotificationAction;
   /** A second, quieter action rendered next to {@link NotificationConfig.action} (e.g. a cancel next to a confirm). */
   secondaryAction?: NotificationAction;

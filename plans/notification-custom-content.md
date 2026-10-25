@@ -1,6 +1,6 @@
 # Proposal: custom content for one notification
 
-Status: noted on 2026-10-25. Not started. Waits for the user's go.
+Status: approved and implemented on 2026-10-25; release pending.
 
 ## The problem
 
@@ -24,14 +24,12 @@ Add an optional `content` field to `NotificationConfig`: a component plus its in
 renders it inside the normal toast, in the normal stack, with the status accent. The setting stays
 on each call, so no DI default or second manager is needed.
 
-## Open questions
+## Decisions
 
-1. Component only, or also a `TemplateRef`? Recommendation: component plus inputs first. A template
-   cannot cross a service call cleanly.
-2. Where does the content go: below the message, or in place of it? Recommendation: below the message,
-   so the title and the status accent stay.
+1. Component plus inputs; no `TemplateRef`.
+2. Below the message, preserving the title and status accent.
 
 ## Follow-ups
 
-Changeset, the notification docs guide in `apps/docs/components/`, and a story. When it ships, tell
-tomflix to drop its second notification manager.
+Changeset, notification guide with a live example, story and regression tests are included. When it ships,
+tell tomflix to drop its second notification manager.

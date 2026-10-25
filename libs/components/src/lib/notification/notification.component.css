@@ -223,6 +223,10 @@
     line-height: var(--et-notification-message-line-height);
   }
 
+  .et-notification-custom-content {
+    margin-top: var(--et-notification-gap);
+  }
+
   .et-notification-progress-bar {
     margin-top: 0.8rem;
     color: var(--et-theme-color-primary-solid, currentColor);
