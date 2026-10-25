@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-next.75
+
+### Patch Changes
+
+- Overlay: prevent large scrollable sheets from flashing transparent when a touch drag begins in Android Chrome.
+
 ## 1.0.0-next.74
 
 ### Minor Changes
