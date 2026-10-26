@@ -159,7 +159,7 @@ describe('touchedLabel', () => {
 });
 
 describe('stageGroups', () => {
-  it('groups open calls by stage in the design order, loose calls last', () => {
+  it('groups open calls by stage, the group with the newest call first', () => {
     const groups = stageGroups({
       calls: [
         call('p/a', { touched: 3 }),
@@ -173,10 +173,20 @@ describe('stageGroups', () => {
     });
 
     expect(groups.map((group) => [group.stage, group.calls.map((entry) => entry.slug)])).toEqual([
-      ['themes', ['p/c']],
       ['page', ['p/d', 'p/b']],
       [null, ['p/a']],
+      ['themes', ['p/c']],
     ]);
+  });
+
+  it('keeps the design order between groups written at the same time', () => {
+    const groups = stageGroups({
+      calls: [call('p/a'), call('p/b', { stage: 'page' }), call('p/c', { stage: 'themes' })],
+      project: '',
+      term: '',
+    });
+
+    expect(groups.map((group) => group.stage)).toEqual(['themes', 'page', null]);
   });
 });
 
@@ -352,6 +362,26 @@ describe('featureGroups', () => {
       ['Alpha', 1, 2],
       ['Zeta', 1, 1],
       [LOOSE_FEATURE, 1, 1],
+    ]);
+  });
+
+  it('puts the band with the newest call first and its calls newest first', () => {
+    const calls = [
+      call('p/a', { feature: 'Alpha', touched: 1 }),
+      call('p/b', { feature: 'Zeta', touched: 4 }),
+      call('p/c', { feature: 'Alpha', touched: 3 }),
+      call('p/d', { touched: 2 }),
+    ];
+
+    expect(
+      featureGroups({ calls, project: '', term: '' }).map(({ name, calls: entries }) => [
+        name,
+        entries.map((entry) => entry.slug),
+      ]),
+    ).toEqual([
+      ['Zeta', ['p/b']],
+      ['Alpha', ['p/c', 'p/a']],
+      [LOOSE_FEATURE, ['p/d']],
     ]);
   });
 

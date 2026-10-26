@@ -56,6 +56,8 @@ export const callList = ({ calls, project, term }: CallListRequest): Call[] => {
 
 const byTouched = (left: Call, right: Call) => right.touched - left.touched;
 
+const newest = (calls: Call[]) => Math.max(0, ...calls.map((call) => call.touched));
+
 /** Every call that is neither settled nor on hold, the most recently written first. */
 export const unsettledCalls = (request: CallListRequest): Call[] =>
   callList(request)
@@ -116,7 +118,7 @@ export const stageLabel = (stage: string) => {
   return index === -1 ? stage : `${index + 1} ${STAGE_LABELS[stage as CallStage]}`;
 };
 
-/** The open calls, one group per stage in the design order, the loose calls last. */
+/** The open calls, one group per stage, the group with the most recently written call first. */
 export const stageGroups = (request: CallListRequest): StageGroup[] => {
   const found = new Map<string | null, Call[]>();
 
@@ -128,7 +130,7 @@ export const stageGroups = (request: CallListRequest): StageGroup[] => {
 
   return [...found.entries()]
     .map(([stage, calls]) => ({ stage, calls }))
-    .sort((left, right) => stageRank(left.stage) - stageRank(right.stage));
+    .sort((left, right) => newest(right.calls) - newest(left.calls) || stageRank(left.stage) - stageRank(right.stage));
 };
 
 /** How far one stage of the design order has come. */
@@ -225,11 +227,11 @@ export type FeatureGroup = {
   calls: Call[];
 };
 
-/** One band per feature of the project, the loose calls last. */
+/** One band per feature of the project, the band with the most recently written call first. */
 export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
   const found = new Map<string, Call[]>();
 
-  for (const call of callList(request)) {
+  for (const call of callList(request).sort(byTouched)) {
     const name = call.feature || LOOSE_FEATURE;
 
     found.set(name, [...(found.get(name) ?? []), call]);
@@ -237,7 +239,12 @@ export const featureGroups = (request: CallListRequest): FeatureGroup[] => {
 
   return [...found.entries()]
     .map(([name, calls]) => ({ name, open: calls.filter((call) => isOpen(call, request.calls)).length, calls }))
-    .sort((left, right) => rank(left.name) - rank(right.name) || left.name.localeCompare(right.name));
+    .sort(
+      (left, right) =>
+        newest(right.calls) - newest(left.calls) ||
+        rank(left.name) - rank(right.name) ||
+        left.name.localeCompare(right.name),
+    );
 };
 
 const rank = (name: string) => (name === LOOSE_FEATURE ? 1 : 0);
