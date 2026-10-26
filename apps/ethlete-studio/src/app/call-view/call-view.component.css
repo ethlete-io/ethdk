@@ -13,6 +13,10 @@
     min-height: 0;
   }
 
+  .studio__body--hidden {
+    display: none;
+  }
+
   .studio__body--no-chat {
     position: relative;
     grid-template-columns: 40rem minmax(0, 1fr);
@@ -245,6 +249,11 @@
 
   .studio__status-button:hover:not(:disabled) {
     background: color-mix(in srgb, var(--et-surface-interaction-solid) 14%, transparent);
+    color: var(--et-surface-color-solid);
+  }
+
+  .studio__status-button--on {
+    background: rgb(var(--et-theme-color-primary-rgb) / 0.16);
     color: var(--et-surface-color-solid);
   }
 

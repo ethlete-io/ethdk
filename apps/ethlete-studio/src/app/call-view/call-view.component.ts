@@ -14,6 +14,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { SystemViewComponent } from '../system-view/system-view.component';
 import { EMPTY, Subscription, catchError, debounceTime, finalize, map, of, switchMap, tap } from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
@@ -99,7 +100,21 @@ const SETTLE_MS = 300;
 @Component({
   selector: 'ethlete-call-view',
   template: `
-    <div [class.studio__body--no-chat]="chatHidden()" class="studio__body">
+    @if (view() === 'system') {
+      <ethlete-system-view
+        [port]="server()?.listening ? (design()?.port ?? null) : null"
+        [epoch]="epoch()"
+        [surface]="theme().surface"
+        [color]="theme().color"
+        [tick]="revision()"
+      />
+    }
+
+    <div
+      [class.studio__body--no-chat]="chatHidden()"
+      [class.studio__body--hidden]="view() === 'system'"
+      class="studio__body"
+    >
       <aside class="studio__explorer" etProvideSurface="dark-elevated">
         <div class="studio__explorer-head">
           <div class="studio__project">
@@ -736,6 +751,25 @@ const SETTLE_MS = 300;
     <footer class="studio__status">
       <ethlete-checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
 
+      <span class="studio__status-item">
+        <button
+          [class.studio__status-button--on]="view() === 'calls'"
+          (click)="view.set('calls')"
+          class="studio__status-button"
+          type="button"
+        >
+          Calls
+        </button>
+        <button
+          [class.studio__status-button--on]="view() === 'system'"
+          (click)="view.set('system')"
+          class="studio__status-button"
+          type="button"
+        >
+          System
+        </button>
+      </span>
+
       <button (click)="reload()" class="studio__status-button" type="button">
         <svg viewBox="0 0 24 24">
           <path d="M20 12a8 8 0 1 1-2.4-5.7" />
@@ -814,6 +848,7 @@ const SETTLE_MS = 300;
     ProvideColorDirective,
     ProvideSurfaceDirective,
     UpdateButtonComponent,
+    SystemViewComponent,
     UpdateCheckButtonComponent,
   ],
   host: { class: 'studio', '(window:message)': 'trackFrameScroll($event)' },
@@ -891,9 +926,11 @@ export class CallViewComponent {
   private run: Subscription | null = null;
 
   private watch: Subscription | null = null;
-  private design = signal<Project | null>(null);
-  private epoch = signal(0);
-  private revision = signal(0);
+  protected view = signal<'calls' | 'system'>('calls');
+
+  protected design = signal<Project | null>(null);
+  protected epoch = signal(0);
+  protected revision = signal(0);
   private checkEpoch = signal(0);
 
   /** What the last check said about the variant under study. A run that never checked leaves `null`. */
@@ -1066,7 +1103,7 @@ export class CallViewComponent {
     };
   });
 
-  private theme = computed((): ThemePick => {
+  protected theme = computed((): ThemePick => {
     const themes = this.callThemes();
 
     return { surface: themes?.surface.current, color: themes?.color.current };

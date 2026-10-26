@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, map, of, switchMap } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
@@ -329,3 +329,69 @@ export const designRootsSearch$ = (folder: string): Observable<DesignRoots> =>
 
 /** Reports every checkout under the folder that carries design work, kept or not. */
 export const designScan$ = (folder: string): Observable<string[]> => invokeHost$<string[]>('design_scan', { folder });
+
+export type PartOrigin = 'product' | 'base' | 'overridden';
+
+/** What a rule, or the loading of a part's module, finds wrong. `LOAD` means the part does not render. */
+export type SystemProblem = {
+  rule: string;
+  file: string;
+  message: string;
+};
+
+/** A viewport a product's parts are drawn at. Without a height, the frame grows with its content. */
+export type SystemPreset = { width: number; height?: number };
+
+export type ListedPart = {
+  layer: string;
+  name: string;
+  origin: PartOrigin;
+  note: string | null;
+  states: string[];
+  problems: SystemProblem[];
+};
+
+export type ListedProduct = {
+  name: string;
+  base: string | null;
+  presets: Record<string, SystemPreset>;
+  parts: ListedPart[];
+  problems: SystemProblem[];
+};
+
+export const listedSystem$ = (port: number): Observable<ListedProduct[]> =>
+  fromFetch(`http://localhost:${port}/__design/system`).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(`The design server answered ${response.status}.`);
+
+      return response.json() as Promise<ListedProduct[]>;
+    }),
+  );
+
+export type PartAddress = {
+  port: number;
+  product: string;
+  /** `<layer>/<name>`. */
+  part: string;
+  state: string;
+  epoch?: number;
+  surface?: string;
+  color?: string;
+};
+
+const themeQuery = ({ surface, color }: { surface?: string; color?: string }) =>
+  (surface ? `&surface=${encodeURIComponent(surface)}` : '') + (color ? `&color=${encodeURIComponent(color)}` : '');
+
+const partQuery = ({ product, part, state }: PartAddress) =>
+  `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}`;
+
+export const partFrameUrl = (address: PartAddress) =>
+  `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
+  (address.epoch ? `&epoch=${address.epoch}` : '');
+
+/** The address of a PNG of one state of a part at one preset, renewed with each `revision`. */
+export const partShotUrl = (address: PartAddress & { preset: string; revision?: number }) =>
+  `http://localhost:${address.port}/__design/shot?${partQuery(address)}&preset=${encodeURIComponent(address.preset)}` +
+  themeQuery(address) +
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '');
