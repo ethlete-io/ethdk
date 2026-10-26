@@ -1,5 +1,11 @@
 # timetrack-app
 
+## 0.2.0-next.15
+
+### Minor Changes
+
+- Render Timetrack through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames. The Linux release ships as deb and rpm only, no AppImage.
+
 ## 0.2.0-next.14
 
 ### Patch Changes

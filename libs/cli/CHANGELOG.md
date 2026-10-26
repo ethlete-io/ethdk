@@ -1,5 +1,15 @@
 # @ethlete/cli
 
+## 3.0.0-next.21
+
+### Minor Changes
+
+- The design server draws a variant into a PNG at `/__design/thumb`, with the same query as `frame.html`, in one shared headless Chromium.
+
+### Patch Changes
+
+- Migrations: show zero-file scans as done, include failed detection output, and detect remaining legacy query wrappers before recommending deprecation.
+
 ## 3.0.0-next.20
 
 ### Minor Changes

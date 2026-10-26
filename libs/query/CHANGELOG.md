@@ -1,5 +1,11 @@
 # @ethlete/query
 
+## 6.0.0-next.59
+
+### Patch Changes
+
+- Migrations: show zero-file scans as done, include failed detection output, and detect remaining legacy query wrappers before recommending deprecation.
+
 ## 6.0.0-next.58
 
 ### Patch Changes

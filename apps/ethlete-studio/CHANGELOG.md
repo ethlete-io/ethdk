@@ -1,5 +1,18 @@
 # ethlete-studio
 
+## 0.2.0-next.9
+
+### Minor Changes
+
+- Render Studio through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames; macOS and Windows keep their system webview. The Linux release ships as deb and rpm only; the AppImage is gone until Tauri fixes CEF AppImages.
+
+### Patch Changes
+
+- Ship the design runtime in Studio's bundles again; the frontend build emptied it before the bundler copied it.
+- Variant tiles show a picture the design server draws instead of a live frame, which froze the app on drawings with `backdrop-filter`.
+- The sidebar puts the stage group and the feature band with the most recently written call first, and lists settled calls newest first.
+- Start Studio on macOS and Windows again: the CEF-ready Tauri build has no default runtime, so Studio now names the system webview there.
+
 ## 0.2.0-next.8
 
 ### Minor Changes
