@@ -289,6 +289,10 @@ export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAd
   (color ? `&color=${encodeURIComponent(color)}` : '') +
   (epoch ? `&epoch=${epoch}` : '');
 
+/** The address of a variant's thumbnail: a PNG the design server draws, renewed with each `revision`. */
+export const thumbUrl = ({ revision, ...address }: FrameAddress & { revision?: number }) =>
+  frameUrl(address).replace('/frame.html?', '/__design/thumb?') + (revision ? `&revision=${revision}` : '');
+
 /** The checkouts Studio keeps, and the folder a scan walks for more. */
 export type DesignRoots = {
   /** The folder a scan walks. Empty until the user names one. */

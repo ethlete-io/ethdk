@@ -252,6 +252,7 @@ describe('CallViewComponent', () => {
     await settle(fixture);
 
     expect(themesOf(fixture)).toEqual(['dark brand']);
+    expect(new URL(tile(fixture, 'D')?.querySelector('img')?.src ?? '').searchParams.get('surface')).toBe('dark');
     expect(button(fixture, '.studio__switch .studio__chip', 'dark')?.getAttribute('aria-pressed')).toBe('true');
 
     fixture.destroy();
@@ -697,6 +698,43 @@ describe('CallViewComponent', () => {
     expect(sent.some((call) => call.command === 'design_server_restart')).toBe(true);
   });
 
+  it('draws each tile as a picture the design server renders, never as a live frame', async () => {
+    const fixture = await mount(RESOLVED.slug);
+
+    expect(element(fixture).querySelectorAll('.studio__tile .studio__thumb-image').length).toBeGreaterThan(0);
+    expect(element(fixture).querySelector('.studio__tile iframe')).toBeNull();
+
+    const picture = new URL(tile(fixture, 'D')?.querySelector<HTMLImageElement>('.studio__thumb-image')?.src ?? '');
+
+    expect(`${picture.host}${picture.pathname}`).toBe('localhost:4402/__design/thumb');
+    expect(picture.searchParams.get('call')).toBe(RESOLVED.slug);
+    expect(picture.searchParams.get('variant')).toBe('d');
+  });
+
+  it('asks for new pictures after a reload', async () => {
+    const fixture = await mount(RESOLVED.slug);
+    const source = () => tile(fixture, 'D')?.querySelector<HTMLImageElement>('.studio__thumb-image')?.src;
+    const before = source();
+
+    button(fixture, '.studio__status-button', 'Reload')?.click();
+    await settle(fixture);
+
+    expect(source()).toBeTruthy();
+    expect(source()).not.toBe(before);
+  });
+
+  it('leaves a plain tile when the server draws no picture', async () => {
+    const fixture = await mount(RESOLVED.slug);
+    const thumb = () => tile(fixture, 'D')?.querySelector('.studio__thumb');
+
+    thumb()?.querySelector('img')?.dispatchEvent(new Event('error'));
+    await settle(fixture);
+
+    expect(thumb()).toBeTruthy();
+    expect(thumb()?.querySelector('img, iframe')).toBeNull();
+    expect(tile(fixture, 'A')?.querySelector('.studio__thumb-image')).not.toBeNull();
+  });
+
   it('loads no frame while the server starts and loads them once it answers', async () => {
     const down = { port: 4402, listening: false, managed: false, foreign: false, stale: false, exited: false, log: [] };
     const up = { ...down, listening: true, managed: true };
@@ -715,6 +753,7 @@ describe('CallViewComponent', () => {
 
     expect(element(fixture).textContent).toContain('The design server is starting');
     expect(element(fixture).querySelector('iframe')).toBeNull();
+    expect(element(fixture).querySelector('.studio__thumb-image')).toBeNull();
 
     release(up);
     await settle(fixture);

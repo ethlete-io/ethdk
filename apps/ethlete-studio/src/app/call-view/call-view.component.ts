@@ -42,6 +42,7 @@ import {
   designStatusChanges$,
   designStatuses$,
   frameUrl,
+  thumbUrl,
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
@@ -361,16 +362,13 @@ const SETTLE_MS = 300;
               type="button"
             >
               <span [style.height.px]="THUMB_HEIGHT" class="studio__thumb">
-                @if (tile.source; as source) {
-                  <iframe
-                    [src]="source"
-                    [style.width.px]="open.frameWidth"
-                    [style.height.px]="thumbFrameHeight()"
-                    [style.transform]="thumbTransform()"
-                    class="studio__thumb-frame"
-                    tabindex="-1"
-                    title="The variant, drawn small"
-                  ></iframe>
+                @if (tile.source && !failedThumbs().has(tile.source)) {
+                  <img
+                    [src]="tile.source"
+                    (error)="thumbFailed(tile.source)"
+                    class="studio__thumb-image"
+                    alt="The variant, drawn small"
+                  />
                 }
                 @if (tile.key === variantKey()) {
                   <span class="studio__tile-tag">on screen</span>
@@ -892,6 +890,7 @@ export class CallViewComponent {
   private watch: Subscription | null = null;
   private design = signal<Project | null>(null);
   private epoch = signal(0);
+  private revision = signal(0);
   private checkEpoch = signal(0);
 
   /** What the last check said about the variant under study. A run that never checked leaves `null`. */
@@ -1140,20 +1139,26 @@ export class CallViewComponent {
 
   protected readonly THUMB_HEIGHT = Math.round(THUMB_WIDTH * THUMB_ASPECT);
 
-  /** Every variant of the open call, each with the frame its tile draws small. */
+  /** Every variant of the open call, each with the picture the design server draws of it. */
   private tiles = computed(() => {
     const call = this.call();
 
     if (!call) return [];
 
-    const sources = new Map(this.frames().map((frame) => [frame.key, frame.source]));
+    const port = this.design()?.port;
+    const live = !!port && !!this.server()?.listening;
+    const epoch = this.epoch();
+    const revision = this.revision();
+    const theme = this.theme();
 
     return call.variants.map((variant) => ({
       ...variant,
       id: `${call.slug} ${variant.key}`,
-      source: sources.get(variant.key) ?? null,
+      source: live ? thumbUrl({ port, slug: call.slug, variant: variant.key, epoch, revision, ...theme }) : null,
     }));
   });
+
+  protected failedThumbs = signal<ReadonlySet<string>>(new Set());
 
   /**
    * The open call by round: the first round that still holds an unruled variant, and every round
@@ -1186,14 +1191,6 @@ export class CallViewComponent {
 
   /** Which settled round is unfolded. The newest one is, until the reader says otherwise. */
   protected shownFold = computed(() => this.fold() ?? this.bands().settled[0]?.key ?? '');
-
-  protected thumbFrameHeight = computed(() => Math.round((this.call()?.frameWidth ?? 0) * THUMB_ASPECT));
-
-  protected thumbTransform = computed(() => {
-    const width = this.call()?.frameWidth ?? 0;
-
-    return `scale(${width ? THUMB_WIDTH / width : 1})`;
-  });
 
   public conversation = computed(() => sessionKey({ slug: this.slug(), cli: this.cli()?.id ?? '' }));
 
@@ -1264,6 +1261,10 @@ export class CallViewComponent {
   }
 
   /** Unfolds one settled feature group and folds the one that was open. */
+  protected thumbFailed(source: string) {
+    this.failedThumbs.update((failed) => new Set(failed).add(source));
+  }
+
   protected toggleFold(key: string) {
     this.fold.set(this.shownFold() === key ? '' : key);
   }
@@ -1608,6 +1609,7 @@ export class CallViewComponent {
   /** Reads the checkout again, which is how a call an agent just wrote reaches the list. */
   protected reload() {
     this.checkEpoch.update((seen) => seen + 1);
+    this.revision.update((value) => value + 1);
     this.read();
   }
 
@@ -1741,6 +1743,7 @@ export class CallViewComponent {
     this.watch = designChanges$(checkout)
       .pipe(
         debounceTime(SETTLE_MS),
+        tap(() => this.revision.update((value) => value + 1)),
         switchMap(() => designProject$(checkout).pipe(catchError(() => EMPTY))),
         tap((project) => this.absorb(project)),
         catchError(() => EMPTY),
