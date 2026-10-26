@@ -32,3 +32,20 @@ The session is done when the frontier is empty: every branch of the design tree 
 ---
 
 Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) at `3cca18b`, MIT (Copyright (c) 2026 Matt Pocock).
+
+## Local addition: write each question so it reads alone
+
+This section is ours, not upstream.
+
+- **One question, one situation.** Say what the thing is and why the decision matters, in plain
+  words, before the choices. The user must understand it without the earlier rounds.
+- **No reference chains.** Never lean on other question numbers, ADR numbers, slice numbers or
+  plan shorthand ("as Q6 settled", "per ADR 07"). Name the actual thing instead.
+- **Remind the user of a concept** when a round starts a new topic: one or two sentences, with a
+  concrete example ("a sketch is a draft with several variants of one part, for example three
+  headers").
+- **Check the facts before you recommend.** A recommendation built on an assumed file format or
+  an assumed existing tool is worse than none. Look it up first, and say in the round when a
+  look-up proved an earlier recommendation wrong.
+- **Close with the shared state.** When the frontier is empty, list every decision in one short
+  summary and ask the user to confirm it before you write it anywhere.

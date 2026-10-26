@@ -9,7 +9,7 @@ Commit `3cca18b` (2026-09-04). Vendored skills, kept as written upstream apart f
 generator's own link syntax:
 
 - `content/skills/grill-with-docs` - the entry point; calls the other two.
-- `content/skills/grilling`
+- `content/skills/grilling` - plus our own section "Local addition" after the upstream footer.
 - `content/skills/domain-modeling`
 
 MIT License
