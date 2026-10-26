@@ -1,6 +1,6 @@
 # Ethlete Studio on the CEF runtime (Linux)
 
-Status: slice 1 in progress (2026-10-26). Slice 2 researched, not started.
+Status: slice 1 done (2026-10-26). Slice 2 in progress: CI installs GTK4 and caches CEF; release bundles open.
 
 ## Why
 

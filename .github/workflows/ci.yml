@@ -279,13 +279,15 @@ jobs:
       - name: Install the Tauri Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libgtk-4-dev ninja-build libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: |
             apps/timetrack/src-tauri -> target
             apps/ethlete-studio/src-tauri -> target
+
+      - uses: ./.github/actions/cef
 
       # After the build dependencies: clippy compiles the crate, where `cargo fmt --check` reads it.
       - run: yarn nx run timetrack-app:lint-rust

@@ -1,0 +1,23 @@
+name: CEF
+description: >-
+  Restore the CEF binary distribution Ethlete Studio links on Linux, and point CEF_PATH at it.
+  cef-dll-sys downloads it on a cache miss, and this action saves it after the job.
+
+runs:
+  using: composite
+  steps:
+    - id: version
+      shell: bash
+      run: |
+        version=$(awk '$0 == "name = \"cef\"" { getline; gsub(/version = |"/, ""); print; exit }' apps/ethlete-studio/src-tauri/Cargo.lock)
+        if [ -z "$version" ]; then
+          echo "No cef crate in apps/ethlete-studio/src-tauri/Cargo.lock" >&2
+          exit 1
+        fi
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "CEF_PATH=$HOME/.cache/tauri-cef" >> "$GITHUB_ENV"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/tauri-cef/*/cef_linux_*
+        key: cef-${{ runner.os }}-${{ runner.arch }}-${{ steps.version.outputs.version }}
