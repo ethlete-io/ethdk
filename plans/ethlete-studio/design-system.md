@@ -168,6 +168,28 @@ Three tracks run at the same time. They touch different files.
 - The existing project picker becomes the workspace picker. A product picker for the chosen
   repo goes next to it. The UI of both pickers is still open.
 
+### Canvas, as built (2026-10-27)
+
+The canvas is `apps/ethlete-studio/src/app/components/design-canvas/`. A dev build shows it with
+mock frames at `#/canvas-demo`. It does not connect to the design server yet.
+
+- Core parts in use: `ResizeHandlesComponent` (free width), `dragGestureFrom` (pan),
+  `signalElementDimensions` and `ProvideColorDirective`.
+- The zoom control is plain buttons for now. `@ethlete/components` did not compile under
+  Studio's narrowed theme names. A fix in `libs/components` is in progress; then the control
+  moves to SDK buttons.
+- A frame without a height measures its iframe when it is same-origin. Otherwise it uses 600 px
+  until it is live once. No guard yet for a page that grows with the iframe height.
+- "In view" adds a 400 px margin. The active frame always stays live.
+- Esc from inside a cross-origin iframe does not reach the canvas. The real frame page must send
+  it with `postMessage`. A click on the empty canvas also leaves the active frame.
+- Esc with no active frame clears the selection. `Shift+2` with no selection does nothing.
+- Shortcut and zoom-control jumps animate with a 0.25 s CSS transition. Wheel and drag are
+  instant. Each wheel delta is clamped to ±25 before it becomes a zoom factor.
+- Labels and outlines keep their screen size down to 25 % zoom.
+- Studio has no e2e suite, so the canvas has no permanent behaviour test yet. The pan and zoom
+  math has unit specs.
+
 ### Open for slices 4 and 5 (to grill)
 
 Each point has a recommendation. The core work of slices 4 and 5 waits for these answers.
