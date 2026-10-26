@@ -307,6 +307,40 @@ Notes:
 - A free note, for example a heading over a group of frames, belongs to one flow and lives in
   that flow's file.
 
+### Slice 7 decisions (2026-10-27)
+
+Rules:
+
+- A switch inside a part (a menu that opens) is a rule in the part, in a `rules` field next to
+  `states`. It works wherever the part shows.
+- A switch between pages is a trigger on a flow line.
+- Both have one shape: a trigger of event and CSS selector, a target state, and an optional
+  store change, for example `{ on: 'click .checkout', to: 'checkout' }`.
+- `et design check` renders each state that has rules. It fails on a selector that matches
+  nothing and on a target state that does not exist.
+
+Play:
+
+- In an active frame on a canvas, the rules of the part run. A flow has a play mode: one large
+  frame at the picked preset, starting at the first state, where the flow-line triggers also run.
+- A switch is a View Transition that fades opacity only. A part can give an element a
+  `view-transition-name` so that it stays in place between two states, for example a poster.
+  Everything else waits for slice 9.
+- Controls: "back to start" and a reduced-motion switch that emulates `prefers-reduced-motion`.
+  A speed control comes with the slice 9 timeline.
+
+State:
+
+- A state runs as live DOM with `setup(root)`. On a switch, the new state takes the values of
+  input fields with the same `name`.
+- A prototype has a store. Its start values are in the flow file, for example `{ cart: 2 }`. An
+  active frame outside a flow starts with an empty store.
+- A rule may set a value, increase or decrease a number, or toggle a boolean. Nothing more; for
+  anything else the part has `setup(root)`.
+- A store value replaces the prop of the same name. `et design check` fails on a store value
+  that matches no prop in the states of its flow.
+- "Back to start" resets the store to its start values.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
@@ -398,9 +432,8 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 4. **Sketches**: status, live `in progress` view, merge preview, merge and discard.
 5. **Feedback**: canvas comments and `et design inbox`.
 6. **Pages and wireframes**: page states, the wireframe kit, the remaining kit-part count.
-7. **Interaction**: a clickable prototype. A page switches between its named states on rules
-   such as `click .trigger → open`, with a View Transition, on top of `setup(root)`. Open: host
-   controls for replay, speed and reduced motion.
+7. **Interaction**: a clickable prototype. Part rules, flow-line triggers, play mode and the
+   prototype store, as in "Slice 7 decisions".
 8. **MCP server** over the core. It replaces the chat-only tools in
    `apps/ethlete-studio/src-tauri/src/tools.rs` and also works in terminal sessions. The agent
    instructions say motion comes later as an update.
