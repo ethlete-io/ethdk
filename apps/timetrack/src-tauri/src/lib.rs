@@ -6,6 +6,7 @@ mod calls;
 mod calls_linux;
 #[cfg(target_os = "macos")]
 mod calls_macos;
+mod child_env;
 mod db;
 mod decorations;
 #[cfg(target_os = "linux")]
@@ -60,7 +61,15 @@ pub fn run() {
         eprintln!("could not adopt the login shell's PATH: {error}");
     }
 
-    tauri::Builder::default()
+    child_env::remember();
+
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "linux")]
+    let builder = builder.runtime(tauri_runtime_cef::Cef::default());
+    #[cfg(not(target_os = "linux"))]
+    let builder = builder.runtime(tauri_runtime_wry::Wry::default());
+
+    builder
         // Single-instance has to be the first plugin registered, and it is what makes running the
         // binary a second time - `timetrack open` - focus the window instead of starting a rival
         // daemon. That is the only way in on a desktop whose bar hosts no tray.

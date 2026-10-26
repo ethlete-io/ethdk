@@ -227,7 +227,7 @@ fn check(command: &str, args: &[String]) -> TimetrackResult<()> {
 pub async fn run_process(spec: HostProcessSpec) -> TimetrackResult<HostProcessResult> {
     check(&spec.command, &spec.args)?;
 
-    let mut command = tokio::process::Command::new(&spec.command);
+    let mut command = crate::child_env::command(&spec.command);
     command
         .args(&spec.args)
         .stdin(Stdio::piped())

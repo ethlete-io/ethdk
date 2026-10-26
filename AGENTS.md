@@ -152,9 +152,9 @@ never publishes it, and `yarn versions:sync` copies the new version into `tauri.
 `package.json`, or write a changeset, and run `yarn versions:sync`. `yarn versions:check`
 fails CI on drift.
 
-When `publish.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm, AppImage),
-macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. Ethlete Studio's Linux bundles carry CEF
-and are built by `@tauri-apps/cli-cef`, so they are deb and rpm only - its AppImage is broken
+When `publish.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm),
+macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. The Linux bundles carry CEF
+and are built by `@tauri-apps/cli-cef`, so they are deb and rpm only - a CEF AppImage is broken
 upstream (tauri-apps/tauri#16204). The macOS bundle is
 signed with a self-signed identity, so a keychain grant survives an update. It is not notarized, and
 the Windows installer is not signed. `tools/scripts/macos-release-identity.sh` makes the identity;
@@ -167,7 +167,10 @@ key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PA
 Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
 release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 
-On Linux, Ethlete Studio runs on Tauri's CEF (Chromium) runtime, so building it needs the GTK 4
+On Linux, both apps run on Tauri's CEF (Chromium) runtime from its `feat/cef` branch, and macOS and
+Windows on wry. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
+a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
+`feat/cef` branch. Building needs the GTK 4
 headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
 (~1.8 GB unpacked) into `src-tauri/target/cef`.
 

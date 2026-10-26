@@ -247,7 +247,7 @@ fn open_browser(url: &str) -> TimetrackResult<()> {
     #[cfg(target_os = "windows")]
     let (program, args): (&str, Vec<&str>) = ("cmd", vec!["/C", "start", "", url]);
 
-    std::process::Command::new(program).args(args).spawn()?;
+    crate::child_env::command(program).as_std_mut().args(args).spawn()?;
 
     Ok(())
 }

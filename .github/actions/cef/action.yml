@@ -1,6 +1,6 @@
 name: CEF
 description: >-
-  Restore the CEF binary distribution Ethlete Studio links on Linux, and point CEF_PATH at it.
+  Restore the CEF binary distribution Timetrack and Ethlete Studio link on Linux, and point CEF_PATH at it.
   cef-dll-sys downloads it on a cache miss, and this action saves it after the job.
 
 runs:

@@ -31,7 +31,8 @@ serde_json = "1.0.151"
 sha2 = "0.10.9"
 spake2 = "0.4.0"
 tauri = { version = "2.11.5", features = ["tray-icon"] }
-tauri-plugin-dialog = "2"
+# GTK 3 cannot start in the GTK 4 process of the CEF runtime, so Linux dialogs go through the portal.
+tauri-plugin-dialog = { version = "2", default-features = false, features = ["xdg-portal"] }
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-single-instance = "2.4.1"
 thiserror = "2.0.20"
@@ -53,6 +54,12 @@ wayland-client = "0.31.15"
 wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
 wayland-protocols-wlr = { version = "0.3.12", features = ["client"] }
 zbus = "5.19.0"
+# WebKitGTK 2.54 drops animation frames, so Linux renders through Chromium instead. The CEF runtime
+# lives on Tauri's feat/cef branch only.
+tauri-runtime-cef = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1", features = ["devtools"] }
+
+[target.'cfg(not(target_os = "linux"))'.dependencies]
+tauri-runtime-wry = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "4.1.6", default-features = false, features = ["apple-native-keyring-store"] }
@@ -86,3 +93,17 @@ windows = { version = "0.61.3", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 windows-future = "0.2.1"
+
+[patch.crates-io]
+tauri = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-build = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-codegen = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-macros = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-plugin = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-runtime = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+tauri-utils = { git = "https://github.com/tauri-apps/tauri", rev = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1" }
+# The crates.io releases ask for tauri's `wry` feature, which the feat/cef branch removed.
+tauri-plugin-dialog = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "835adce473e8f059f6ba84660dd07bcb19fb9030" }
+tauri-plugin-notification = { git = "https://github.com/tauri-apps/plugins-workspace", rev = "835adce473e8f059f6ba84660dd07bcb19fb9030" }
+# Must name the same git source winit-gtk4 uses for dpi, or two dpi crates meet; Cargo.lock pins the commit.
+dpi = { git = "https://github.com/tauri-apps/winit-gtk4", branch = "master" }
