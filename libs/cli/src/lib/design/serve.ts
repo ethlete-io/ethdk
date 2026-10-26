@@ -119,8 +119,10 @@ const systemRegistry = (system: SystemModules) =>
     )
     .join('\n')}\n};\n`;
 
-const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) =>
+const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) => {
+  response.setHeader('access-control-allow-origin', '*');
   send(response, { status: answer.status, type: 'application/json', body: JSON.stringify(answer.body) });
+};
 
 const isInside = (folder: string, file: string) => file.startsWith(`${folder}${sep}`);
 

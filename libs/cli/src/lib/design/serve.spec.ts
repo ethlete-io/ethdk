@@ -175,11 +175,12 @@ const serveAcme = async (target: string) => {
   plugin?.configureServer(vite);
 
   const ask = (path: string, query = '', method = 'GET') =>
-    new Promise<{ status: number; body: unknown }>((done) => {
+    new Promise<{ status: number; body: unknown; headers: Record<string, string> }>((done) => {
+      const headers: Record<string, string> = {};
       const response = {
         statusCode: 200,
-        setHeader: () => undefined,
-        end: (body: string) => done({ status: response.statusCode, body: JSON.parse(body) as unknown }),
+        setHeader: (name: string, value: string) => (headers[name] = value),
+        end: (body: string) => done({ status: response.statusCode, body: JSON.parse(body) as unknown, headers }),
       };
 
       handlers.get(path)?.({ url: query, method } as IncomingMessage, response as unknown as ServerResponse);
@@ -195,6 +196,7 @@ describe('the design server for a design system', () => {
     const one = (await ask('/__design/system', '?product=acme')).body as { name: string; parts: unknown[] }[];
 
     expect(all.status).toBe(200);
+    expect(all.headers['access-control-allow-origin']).toBe('*');
     expect((all.body as { name: string }[]).map((product) => product.name)).toEqual(['acme-base', 'acme']);
     expect(one.map((product) => product.name)).toEqual(['acme']);
     expect(one[0]?.parts[0]).toEqual({
@@ -216,7 +218,7 @@ describe('the design server for a design system', () => {
 
     expect((await ask('/__design/calls')).body).toEqual([expect.objectContaining({ slug: 'acme/hero', legacy: true })]);
     expect((await ask('/__design/transfer', '?call=acme/hero')).status).toBe(405);
-    expect(await ask('/__design/transfer', '?call=acme/hero', 'POST')).toEqual({
+    expect(await ask('/__design/transfer', '?call=acme/hero', 'POST')).toMatchObject({
       status: 200,
       body: { result: 'marked' },
     });
