@@ -136,6 +136,38 @@ Three tracks run at the same time. They touch different files.
   recommendation each. The rebuild of the system waits for slice 1. Nothing in the tomflix repo
   changes in this step.
 
+### Slice 2 decisions (2026-10-27)
+
+- Parts list: the design server (`serve.ts`) serves it from an endpoint, with "from base" and
+  "overridden" resolved by the core. Studio reloads it when the watcher reports a change. The
+  CLI gets the same core function as `--json` for the agent.
+- A base part renders with the render settings (`styles`, `head`, `providers`, `themes`) of the
+  product that uses it. The base's own settings apply only when the base is opened as a product.
+- Screenshot cache: in the memory of the design server only, as in `thumb.ts` today. The key is
+  part, state, preset and theme. An entry becomes invalid when a file of the part or of a part
+  below it changes; Vite knows the dependency graph. A disk cache comes only if the start is
+  measurably slow.
+- The server draws a screenshot only when the canvas asks for it, with a placeholder until then.
+  On open, a canvas asks at once for every frame it does not show live. No background job draws
+  the whole workspace.
+- Below a zoom level, frames in view also show their screenshot instead of running live. Start
+  at 50 % and measure the real value in the canvas.
+- A render error shows its message in the frame, in place of the content. The part gets an
+  "error" badge in the tree.
+- Badges in slice 2: "from base", "overridden" and "error". "sketch open" comes with slice 4,
+  "comment open" with slice 5.
+- Legacy tab: it belongs to the workspace, not to a product, and lists the calls of all
+  projects. It shows a call in the new canvas, one frame per variant. The old call UI goes
+  completely; the chat code stays unused in the repo.
+- "Transferred" is a `transferred: true` field in the call's `call.ts`, next to `legacy: true`.
+  Studio writes it through a design server endpoint.
+- The Legacy tab disappears when `calls/` is empty or missing. Studio never deletes calls; that
+  happens in git.
+- A workspace without `products` shows an empty state with the command that creates a product.
+  The Legacy tab still shows if calls exist.
+- The existing project picker becomes the workspace picker. A product picker for the chosen
+  repo goes next to it. The UI of both pickers is still open.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
