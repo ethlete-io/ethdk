@@ -99,6 +99,10 @@ const report = () => {
 new ResizeObserver(report).observe(document.documentElement);
 report();
 
+addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') parent.postMessage({ type: 'design-explore:escape', variant: key }, '*');
+});
+
 addEventListener(
   'scroll',
   () => parent.postMessage({ type: 'design-explore:scroll', variant: key, y: Math.round(scrollY) }, '*'),

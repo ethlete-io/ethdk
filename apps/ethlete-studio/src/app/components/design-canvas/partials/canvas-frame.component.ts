@@ -3,7 +3,7 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ProvideColorDirective } from '@ethlete/core';
 import { EMPTY, Observable, Subject, filter, fromEvent, merge, switchMap, tap } from 'rxjs';
-import { CanvasFrame } from '../canvas-frame';
+import { CanvasFrame, frameMessageOf } from '../canvas-frame';
 
 @Component({
   selector: 'ethlete-canvas-frame',
@@ -74,7 +74,7 @@ export class CanvasFrameComponent {
     const content = iframe.contentDocument;
     const view = content?.defaultView;
 
-    if (!content || !view) return EMPTY;
+    if (!content || !view) return this.watchMessages$(iframe);
 
     const root = content.documentElement;
     const height$ = new Observable<number>((subscriber) => {
@@ -91,6 +91,22 @@ export class CanvasFrameComponent {
         filter((event) => event.key === 'Escape'),
         tap(() => this.escapeKeydown.emit()),
       ),
+    );
+  }
+
+  private watchMessages$(iframe: HTMLIFrameElement) {
+    const host = iframe.ownerDocument.defaultView;
+
+    if (!host) return EMPTY;
+
+    return fromEvent<MessageEvent>(host, 'message').pipe(
+      filter((event) => !!iframe.contentWindow && event.source === iframe.contentWindow),
+      tap(({ data }) => {
+        const message = frameMessageOf(data);
+
+        if (message?.type === 'height') this.heightChange.emit(message.height);
+        if (message?.type === 'escape') this.escapeKeydown.emit();
+      }),
     );
   }
 }
