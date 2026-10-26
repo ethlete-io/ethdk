@@ -5,7 +5,9 @@
 # RUSTSEC-2026-0367, -0368, -0369: zip extraction follows symlinks and keeps SUID bits. zip 4.6.1
 # comes from tauri-plugin-updater 2.x, which pins zip ^4; the fix is in zip 9. The updater extracts
 # only a bundle whose signature `download` already verified. Drop these when updater 3 is stable.
-ignore = ["RUSTSEC-2024-0429", "RUSTSEC-2026-0367", "RUSTSEC-2026-0368", "RUSTSEC-2026-0369"]
+# RUSTSEC-2026-0097: rand 0.7.3 runs only in the build script of selectors 0.24 (phf_codegen), which
+# kuchikiki pins under Tauri's feat/cef branch. Drop this when that branch moves past kuchikiki 0.8.
+ignore = ["RUSTSEC-2024-0429", "RUSTSEC-2026-0097", "RUSTSEC-2026-0367", "RUSTSEC-2026-0368", "RUSTSEC-2026-0369"]
 
 [output]
 # Do not add "unmaintained": six crates under the Tauri stack carry it today, so the job would be red
