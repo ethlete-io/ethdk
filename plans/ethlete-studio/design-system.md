@@ -99,6 +99,16 @@ must store a state.
   - A relative import out of the part's own folder fails. Import another part as
     `@system/<layer>/<name>`.
 
+### Use SDK components first (2026-10-27)
+
+Where an `@ethlete/components` or `@ethlete/core` part fits, use it and do not build a new one.
+
+- Studio UI, for example the canvas: use SDK controls and core primitives. Build only what no SDK
+  part covers, for example the transform of the canvas world.
+- A product system: take the SDK part from the base and change its look through tokens. A new
+  component needs a reason in its `note`, for example "no SDK part covers a poster card".
+- The built-in base renders each SDK component with `ng()`. It never redraws one in HTML and CSS.
+
 ### Parallel work (2026-10-27)
 
 Three tracks run at the same time. They touch different files.
