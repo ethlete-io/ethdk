@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: slice 1 in progress (2026-10-27).
+Status: slices 1, 2 (canvas only) and 3 (inventory only) in progress (2026-10-27).
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -80,6 +80,39 @@ must store a state.
 - A part imports another part as `@system/<layer>/<name>`, and fixtures as `@system/fixtures`.
   The product resolves the name: its own part, else the base part. So an override also
   replaces the part inside base parts.
+- There is no `product.ts`. The `products` entry in `config.json` holds `base` and `presets`.
+  The Rust side of Studio can read it as JSON.
+- The built-in base `@ethlete/components` lives in `libs/cli/design/systems/ethlete-components/`,
+  with a `config.json` next to it. It has the same shape as a workspace, so one loader reads both.
+- A part imports the part API as `@design-system` (`libs/cli/design/define-part.ts`). The core
+  writes a tsconfig per product, with one explicit `paths` entry for each resolved part.
+- `et design check --product <name>` checks one product: the rules, then `tsc`. `et design check`
+  with no flag checks every product. The old flags of `check` work as before.
+- Base parts are checked as part of the product that uses them.
+- Rule details:
+  - Hard-coded colour: hex values and colour functions (`rgb()`, `hsl()`, `oklch()`, `color()`
+    and the others) in the CSS and TS of a part outside foundations. A fallback in
+    `var(--x, #fff)` counts too.
+  - Copy of a component: an element or page CSS rule names a class from a component's CSS, or
+    element or page markup uses such a class without an import of that component.
+  - Motion: a part calls `requestAnimationFrame` or `setInterval`.
+  - A relative import out of the part's own folder fails. Import another part as
+    `@system/<layer>/<name>`.
+
+### Parallel work (2026-10-27)
+
+Three tracks run at the same time. They touch different files.
+
+- Slice 1, the core: `libs/cli/` only.
+- Slice 2, the canvas only: a standalone canvas component in `apps/ethlete-studio/src/`, fed
+  with mock frames. It does not connect to the core yet, and the old Studio UI stays. It takes
+  a cached screenshot URL per frame. The core supplies the screenshots later. The connection
+  to the core, the tree, the pickers, the Legacy tab and the removal of the old UI wait for
+  slice 1.
+- Slice 3, the inventory only: `plans/ethlete-studio/tomflix-inventory.md` sorts the tomflix
+  `PLAN.md` and calls into foundations, components and elements. Its open points get a
+  recommendation each. The rebuild of the system waits for slice 1. Nothing in the tomflix repo
+  changes in this step.
 
 ### Sketches
 
@@ -183,3 +216,7 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 Each slice gets an "in progress" note here when it starts.
 
 Slice 1: in progress since 2026-10-27.
+
+Slice 2: the canvas component is in progress since 2026-10-27. The rest waits for slice 1.
+
+Slice 3: the inventory is in progress since 2026-10-27. The rebuild waits for slice 1.
