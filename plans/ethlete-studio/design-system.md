@@ -168,6 +168,33 @@ Three tracks run at the same time. They touch different files.
 - The existing project picker becomes the workspace picker. A product picker for the chosen
   repo goes next to it. The UI of both pickers is still open.
 
+### Open for slices 4 and 5 (to grill)
+
+Each point has a recommendation. The core work of slices 4 and 5 waits for these answers.
+
+1. Sketch folder. Recommendation: `<product>/sketches/<layer>-<name>/` with `sketch.json`
+   (target, status) and one folder per variant. A variant mirrors the product layout and holds
+   only the parts it changes. The resolver lays a variant over the product.
+2. A sketch for a new part: the same folder. The target does not exist in the product yet.
+3. Sketch status: `in progress` or `ready` in `sketch.json`, in git. The live agent report
+   ("variant B, phone") goes into the temp folder `ethlete-studio-checks/`, as the call status
+   does now.
+4. Who sets `ready`: the agent, with `et design sketch ready <target>`.
+5. Merge: `et design sketch merge <target> <variant> --note "…"` copies the variant parts over
+   the product and sets the note on the target. Then it deletes the sketch and runs the check.
+   If the check fails, it restores the old files.
+6. Merge preview data: the core lists each element and page that uses a changed part, with the
+   import graph of slice 1. Studio draws old and new side by side.
+7. Do the check rules run on open sketches? Recommendation: yes, each variant laid over the
+   product. A failed variant shows its problems in the canvas and cannot be merged.
+8. Comment files: one JSON file per comment in `<product>/comments/<id>.json`, with the target
+   part, state, preset, an optional point, an optional sketch variant, and the text.
+9. A comment on a sketch variant: it is deleted with the sketch at merge or discard. The
+   agent must handle it first.
+10. `et design inbox`: lists open comments of all products, oldest first, as text and as
+    `--json`. `et design inbox done <id>` deletes the comment.
+11. Who wrote a comment: no author field. Studio is single-user, and git knows the author.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
