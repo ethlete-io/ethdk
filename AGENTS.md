@@ -165,6 +165,10 @@ key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PA
 Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
 release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
 
+On Linux, Ethlete Studio runs on Tauri's CEF (Chromium) runtime, so building it needs the GTK 4
+headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
+(~1.8 GB unpacked) into `src-tauri/target/cef`.
+
 ## Documentation
 
 Written docs live in the VitePress site at `apps/docs` (deployed per branch),

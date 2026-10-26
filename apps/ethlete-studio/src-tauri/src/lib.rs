@@ -3,6 +3,7 @@ mod agent_claude;
 mod agent_codex;
 mod call_source;
 mod call_status;
+mod child_env;
 mod design;
 mod design_roots;
 mod design_server;
@@ -118,8 +119,13 @@ pub fn run() {
     }
 
     widen_path();
+    child_env::remember();
 
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(target_os = "linux")]
+    let builder = builder.runtime(tauri_runtime_cef::Cef::default());
+
+    builder
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(agent::AgentRuns::default())
         .manage(design_server::DesignServers::default())

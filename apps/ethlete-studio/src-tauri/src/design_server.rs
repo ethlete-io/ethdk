@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
-use tokio::process::{Child, Command};
+use tokio::process::Child;
 
 use crate::design::{port_of, read_config};
 use crate::error::{StudioError, StudioResult};
@@ -132,7 +132,7 @@ async fn own_stamp(checkout: &str) -> Option<serde_json::Value> {
 
     let output = tokio::time::timeout(
         STAMP_TIMEOUT,
-        Command::new("node")
+        crate::child_env::command("node")
             .arg(entry)
             .arg("design")
             .arg("stamp")
@@ -272,7 +272,7 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
         ))
     })?;
 
-    let mut command = Command::new("node");
+    let mut command = crate::child_env::command("node");
 
     command
         .arg(&entry)
@@ -454,6 +454,7 @@ pub async fn design_server_restart(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tokio::process::Command;
 
     #[test]
     fn a_checkout_nobody_started_reads_as_not_managed() {

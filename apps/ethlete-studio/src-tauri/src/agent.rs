@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::ipc::Channel;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::{Child, Command};
+use tokio::process::Child;
 
 use crate::agent_claude::ClaudeCli;
 use crate::agent_codex::CodexCli;
@@ -195,7 +195,7 @@ pub async fn agent_list() -> Vec<AgentDescriptor> {
     let mut installed = Vec::new();
 
     for cli in every_cli() {
-        let Ok(output) = Command::new(cli.binary()).arg("--version").output().await else {
+        let Ok(output) = crate::child_env::command(cli.binary()).arg("--version").output().await else {
             continue;
         };
 
@@ -247,7 +247,7 @@ async fn start(
 
     let tools = tool_server(request);
 
-    let mut child = Command::new(cli.binary())
+    let mut child = crate::child_env::command(cli.binary())
         .current_dir(&cwd)
         .args(cli.arguments(request, tools.as_ref()))
         // Codex reads a prompt from stdin when it is a pipe, and then waits for input that never
