@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: planned (2026-10-27). No slice started.
+Status: slice 1 in progress (2026-10-27).
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -63,6 +63,23 @@ must store a state.
   disabled, loading; "empty", "3 filters active", "error").
 - Each product declares its viewport presets (for example phone, fold outer, fold inner,
   tablet, desktop).
+
+### Slice 1 decisions (2026-10-27)
+
+- Folder layout: `.ethlete/design/<product>/<layer>/<part>/<part>.ts` plus `<part>.css`, with
+  `<product>/fixtures.ts` at the product root. Layer folders: `foundations`, `components`,
+  `elements`, `pages`. `calls/` stays as it is.
+- Config: `config.json` gets a `products` key. An entry holds the render settings of a project
+  (`styles`, `head`, `providers`, `themes`) plus `base` and `presets`. The old `projects` key
+  stays readable and unchanged until slice 2 moves Studio.
+- The note with the reason for a part's shape is a required `note` field in the part's TS
+  definition.
+- `base` is a path to another product folder. Its settings come from the `config.json` of the
+  workspace that holds it. The name `@ethlete/components` is a built-in base: the SDK system
+  that ships in `@ethlete/cli`.
+- A part imports another part as `@system/<layer>/<name>`, and fixtures as `@system/fixtures`.
+  The product resolves the name: its own part, else the base part. So an override also
+  replaces the part inside base parts.
 
 ### Sketches
 
@@ -164,3 +181,5 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
    tool that extends components and elements.
 
 Each slice gets an "in progress" note here when it starts.
+
+Slice 1: in progress since 2026-10-27.
