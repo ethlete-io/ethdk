@@ -2,8 +2,8 @@
 
 Status: planned (2026-10-27). No slice started.
 
-This plan replaces the call model (project → feature → call → variant, the 1-7 workflow) of
-`vision.md`. The bridge from the design system to the app code is out of scope. Decide it when
+This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
+stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
 a real system exists.
 
 ## Why
@@ -32,6 +32,9 @@ must store a state.
 - A product can extend at most one base system. A base has no base of its own.
 - A product overrides a base part by name: a product `button` replaces the base `button`.
   Studio marks each part "from base" or "overridden".
+- For a product on `@ethlete/components`, the SDK is the base: its components come from the
+  mocks (`component-design-mocks.md`) or from the SSR compiler `ng()`, never redrawn.
+- A product's design files live in that product's own repo.
 
 ### Layers
 
@@ -51,6 +54,9 @@ must store a state.
 ### Files
 
 - TS without Angular, as the drawings are today: a render function with typed props, plus CSS.
+  A drawing is a value (`html`, `css`, `drawing()`), not an Angular component. Angular frames
+  were rejected: the design server would need the Angular compiler for each repo's Angular
+  version.
 - Tokens are CSS variables.
 - Each product has one fixture set (for example 30 films with posters). All pages use it.
 - A component or page declares its own list of named states (variants, sizes, hover,
@@ -113,6 +119,26 @@ must store a state.
 - A sketch shows on its target's canvas: the current version left, the variants right in the
   same states and widths. "Sketches" in the tree lists open sketches as jump targets.
 
+### Kept from the call model
+
+- Studio stays an Angular app. A model name is never a fixed union in the code.
+- `frame.html` stays the frame host. It takes `?surface=<name>&color=<name>` and puts the
+  classes on `#root`; the theme switch is a Studio control and applies to every frame.
+- `ng(template, { imports, fields })` renders real Angular components in Node with
+  `@angular/compiler` (JIT) and `renderApplication`, from the built package: `dist/libs/*` in
+  the SDK through a resolve hook, `node_modules/@ethlete/*` in a consumer. A product's
+  `providers.ts` gives it colour and surface themes; the form field throws without them. A render
+  error rejects `ng()`.
+- A frame cannot import an `@ethlete` barrel: libs resolve to source, and the import dies with
+  `ERR_INSUFFICIENT_RESOURCES`. Pre-bundle the library for a real component from another
+  checkout.
+- A drawing has a `setup(root)` hook (84ee476e9). It will take a function or an array.
+- A drawing may set `et-surface--<name>` on an inner panel, never on its root. A variant
+  overrides a colour theme with `themeCss()` in its styles.
+- The status files of `et design` live in the temp dir `ethlete-studio-checks/`, one per
+  checkout. `libs/cli/src/lib/design/check.ts` already launches a headless Chromium, and
+  `serve.ts` already watches the files - the base for screenshots and the live view.
+
 ### Legacy calls
 
 The old calls stay in a read-only Legacy tab, as reference for the transfer into the new system.
@@ -128,8 +154,13 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 4. **Sketches**: status, live `in progress` view, merge preview, merge and discard.
 5. **Feedback**: canvas comments and `et design inbox`.
 6. **Pages and wireframes**: page states, the wireframe kit, the remaining kit-part count.
-7. **MCP server** over the core. The agent instructions say motion comes later as an update.
-8. **Motion**: its own plan. A timeline, controlled time, a screenshot per keyframe. Motion is a
+7. **Interaction**: a clickable prototype. A page switches between its named states on rules
+   such as `click .trigger → open`, with a View Transition, on top of `setup(root)`. Open: host
+   controls for replay, speed and reduced motion.
+8. **MCP server** over the core. It replaces the chat-only tools in
+   `apps/ethlete-studio/src-tauri/src/tools.rs` and also works in terminal sessions. The agent
+   instructions say motion comes later as an update.
+9. **Motion**: its own plan. A timeline, controlled time, a screenshot per keyframe. Motion is a
    tool that extends components and elements.
 
 Each slice gets an "in progress" note here when it starts.
