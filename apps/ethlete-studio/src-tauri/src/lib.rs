@@ -124,6 +124,8 @@ pub fn run() {
     let builder = tauri::Builder::default();
     #[cfg(target_os = "linux")]
     let builder = builder.runtime(tauri_runtime_cef::Cef::default());
+    #[cfg(not(target_os = "linux"))]
+    let builder = builder.runtime(tauri_runtime_wry::Wry::default());
 
     builder
         .plugin(tauri_plugin_updater::Builder::new().build())
