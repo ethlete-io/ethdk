@@ -3,6 +3,19 @@ import { resolve } from 'path';
 import { assetRoot, callsRootOf, readConfig, workRootOf } from './paths';
 import { typePathsOf } from './render-packages';
 
+export const DRAWING_COMPILER_OPTIONS = {
+  types: [],
+  target: 'es2022',
+  module: 'preserve',
+  moduleResolution: 'bundler',
+  lib: ['dom', 'es2022'],
+  strict: true,
+  noUncheckedIndexedAccess: true,
+  esModuleInterop: true,
+  skipLibCheck: true,
+  noEmit: true,
+};
+
 /**
  * Writes the tsconfig that types a checkout's calls, and answers with its path. A call file
  * imports `@design-explore`, which only this package can resolve, so no repository can write
@@ -17,16 +30,7 @@ export const writeCallsTsconfig = (target: string) => {
 
   const config = {
     compilerOptions: {
-      types: [],
-      target: 'es2022',
-      module: 'preserve',
-      moduleResolution: 'bundler',
-      lib: ['dom', 'es2022'],
-      strict: true,
-      noUncheckedIndexedAccess: true,
-      esModuleInterop: true,
-      skipLibCheck: true,
-      noEmit: true,
+      ...DRAWING_COMPILER_OPTIONS,
       paths: { ...typePaths, '@design-explore': [defineCall] },
     },
     include: [`${callsRootOf(target)}/**/*.ts`, defineCall, inlineCss],

@@ -32,11 +32,24 @@ export type DesignRenderConfig = {
   modules?: string[];
 };
 
+/** A viewport a product's parts are drawn at. Without a height, the frame grows with its content. */
+export type DesignPreset = { width: number; height?: number };
+
+/**
+ * One product's design system: the render settings of a project, the product folder it extends
+ * (`base`, a path from the checkout root, or `@ethlete/components`), and its viewport presets.
+ */
+export type DesignProduct = DesignProject & {
+  base?: string;
+  presets?: Record<string, DesignPreset>;
+};
+
 export type DesignConfig = {
   port?: number;
   defaultCall?: string;
   render?: DesignRenderConfig;
   projects?: Record<string, DesignProject>;
+  products?: Record<string, DesignProduct>;
 };
 
 export const DEFAULT_PORT = 4402;

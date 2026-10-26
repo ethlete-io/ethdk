@@ -1,0 +1,4 @@
+.acme-hero {
+  background: var(--acme-surface);
+  transition: opacity 200ms;
+}

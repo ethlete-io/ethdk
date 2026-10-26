@@ -1,0 +1,7 @@
+:root {
+  --acme-accent: #e4572e;
+}
+
+.acme-swatch {
+  background: var(--acme-accent);
+}

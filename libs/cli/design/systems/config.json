@@ -1,0 +1,10 @@
+{
+  "products": {
+    "ethlete-components": {
+      "presets": {
+        "phone": { "width": 390, "height": 844 },
+        "desktop": { "width": 1440, "height": 900 }
+      }
+    }
+  }
+}

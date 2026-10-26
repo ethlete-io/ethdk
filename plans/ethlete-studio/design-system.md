@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: slices 1, 2 (canvas only) and 3 (inventory only) in progress (2026-10-27).
+Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -98,6 +98,18 @@ must store a state.
   - Motion: a part calls `requestAnimationFrame` or `setInterval`.
   - A relative import out of the part's own folder fails. Import another part as
     `@system/<layer>/<name>`.
+
+- Built in slice 1, in `libs/cli/src/lib/design/system/`:
+  - The check prints one line per problem: `<RULE> <file>: <message>`. The rules are `IMPORT`,
+    `UPWARD-DEPENDENCY`, `HARD-CODED-COLOUR`, `COMPONENT-COPY`, `MOTION`, `BASE`, `PART`,
+    `PRESETS` and `TYPE-ERROR`.
+  - The loader finds the `config.json` of a base by a walk up from the base folder.
+  - A product with no folder of its own uses its base unchanged. This is not a problem.
+  - An element or page rule that restyles a component class is a copy, also if the part imports
+    the component.
+  - The product tsconfig goes to `node_modules/.design-explore/system-<product>.tsconfig.json`.
+  - A spec fixture workspace with the products `acme` and `acme-base` is in `__fixtures__/`.
+  - The built-in base holds one part so far: `components/button`, rendered with `ng()`.
 
 ### Use SDK components first (2026-10-27)
 
@@ -225,8 +237,8 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 
 Each slice gets an "in progress" note here when it starts.
 
-Slice 1: in progress since 2026-10-27.
+Slice 1: done on 2026-10-27.
 
 Slice 2: the canvas component is in progress since 2026-10-27. The rest waits for slice 1.
 
-Slice 3: the inventory is in progress since 2026-10-27. The rebuild waits for slice 1.
+Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild can start.

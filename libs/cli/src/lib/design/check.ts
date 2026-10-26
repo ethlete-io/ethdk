@@ -1,41 +1,12 @@
 import { execFileSync } from 'child_process';
-import { readFileSync } from 'fs';
-import { dirname, resolve } from 'path';
 import { chromiumOf } from './browser';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
+import { checkSystem } from './system/check-system';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
-
-/**
- * A tool the checker shells out to, taken from the checkout first and from this package second, so
- * a checkout that keeps design calls need not install anything of its own. The path comes out of
- * the package's own `bin` field, because an `exports` map hides the file from a direct resolve.
- */
-const binaryOf = (options: { target: string; pkg: string; bin: string }) => {
-  const { target, pkg, bin } = options;
-
-  try {
-    const manifest = require.resolve(`${pkg}/package.json`, { paths: [target, __dirname] });
-    const declared = (JSON.parse(readFileSync(manifest, 'utf8')) as { bin?: string | Record<string, string> }).bin;
-    const path = typeof declared === 'string' ? declared : declared?.[bin];
-
-    return path ? resolve(dirname(manifest), path) : null;
-  } catch {
-    return null;
-  }
-};
-
-/** A bundler stack runs to hundreds of frames and says nothing. Keep the message. */
-const trim = (text: string) =>
-  [...new Set(text.split('\n').filter((line) => !/^\s+at /.test(line) && line.trim() !== ''))].slice(0, 12).join('\n');
-
-const outputOf = (error: unknown) => {
-  const shape = error as { stdout?: string; stderr?: string };
-
-  return trim(`${shape.stdout ?? ''}${shape.stderr ?? ''}`);
-};
+import { binaryOf, outputOf, trim, typecheck } from './typecheck';
 
 type Flags = Record<string, string[]>;
 
@@ -267,25 +238,10 @@ const runChecks = async (options: {
   }
 
   if (tsconfig) {
-    /**
-     * `TSC=@typescript/native-preview` runs the Go port, which is about a third faster - but it
-     * rejects a `baseUrl` in the config, so a repository that still uses one cannot run it.
-     */
-    const native = process.env['TSC'];
-    const tsc = native ? null : binaryOf({ target, pkg: 'typescript', bin: 'tsc' });
+    const result = typecheck({ target, tsconfig });
 
-    if (!native && !tsc)
-      return unavailable('NO TYPE CHECKER - neither the checkout nor this package resolves typescript.');
-
-    const command = native
-      ? { file: 'npx', args: ['-y', native, '--noEmit', '-p', tsconfig] }
-      : { file: process.execPath, args: [tsc as string, '--noEmit', '-p', tsconfig] };
-
-    try {
-      execFileSync(command.file, command.args, { cwd: target, encoding: 'utf8', stdio: 'pipe' });
-    } catch (error) {
-      return fail(`TYPE ERROR\n${outputOf(error)}`);
-    }
+    if (result.kind === 'unavailable') return unavailable(result.message);
+    if (result.kind === 'failed') return fail(`TYPE ERROR\n${result.output}`);
   }
 
   if (!slug) {
@@ -309,7 +265,24 @@ const runChecks = async (options: {
  */
 export const checkDesign = async (options: { target: string; argv: string[]; invocation: string }): Promise<number> => {
   const { target, argv, invocation } = options;
-  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant']);
+  const flags = parse(argv, ['--lint', '--tsconfig', '--call', '--variant', '--product']);
+  const products = flags['--product'];
+
+  if (products) {
+    if (products.length === 0) {
+      console.error(`usage: ${invocation} check --product <name>…`);
+
+      return 2;
+    }
+
+    return checkSystem({ target, config: readConfig(target) ?? {}, products });
+  }
+
+  const config = argv.length === 0 ? readConfig(target) : null;
+
+  if (config?.products && Object.keys(config.products).length > 0)
+    return checkSystem({ target, config, products: Object.keys(config.products) });
+
   const slug = flags['--call']?.[0];
   let failure = '';
   let blocked = false;
