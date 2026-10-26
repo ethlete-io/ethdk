@@ -1,0 +1,96 @@
+import { Component, ViewEncapsulation, computed, inject, input, output } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ProvideColorDirective } from '@ethlete/core';
+import { EMPTY, Observable, Subject, filter, fromEvent, merge, switchMap, tap } from 'rxjs';
+import { CanvasFrame } from '../canvas-frame';
+
+@Component({
+  selector: 'ethlete-canvas-frame',
+  template: `
+    <span class="et-canvas-frame__label">
+      {{ frame().label }}
+      <span class="et-canvas-frame__width">{{ width() }}</span>
+    </span>
+    @if (frame().error) {
+      <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
+    } @else if (live()) {
+      <iframe
+        #iframe
+        [src]="source()"
+        [title]="frame().label"
+        (load)="loadContent(iframe)"
+        class="et-canvas-frame__iframe"
+      ></iframe>
+    } @else if (frame().screenshot) {
+      <img [src]="frame().screenshot" class="et-canvas-frame__screenshot" alt="" />
+    } @else {
+      <div class="et-canvas-frame__placeholder"></div>
+    }
+    @if (!active()) {
+      <div class="et-canvas-frame__shield"></div>
+    }
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [ProvideColorDirective],
+  host: {
+    class: 'et-canvas-frame',
+    '[class.et-canvas-frame--selected]': 'selected()',
+    '[class.et-canvas-frame--active]': 'active()',
+    '[attr.data-frame-id]': 'frame().id',
+    '[attr.data-live]': 'live()',
+  },
+})
+export class CanvasFrameComponent {
+  private sanitizer = inject(DomSanitizer);
+
+  public frame = input.required<CanvasFrame>();
+  public width = input.required<number>();
+  public live = input(false);
+  public active = input(false);
+  public selected = input(false);
+
+  public heightChange = output<number>();
+  public escapeKeydown = output();
+
+  protected source = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.frame().src));
+
+  private contentLoad$ = new Subject<HTMLIFrameElement>();
+
+  constructor() {
+    merge(this.contentLoad$, toObservable(this.live).pipe(filter((live) => !live)))
+      .pipe(
+        switchMap((iframe) => (typeof iframe === 'boolean' ? EMPTY : this.watchContent$(iframe))),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
+
+  protected loadContent(iframe: HTMLIFrameElement) {
+    this.contentLoad$.next(iframe);
+  }
+
+  private watchContent$(iframe: HTMLIFrameElement) {
+    const content = iframe.contentDocument;
+    const view = content?.defaultView;
+
+    if (!content || !view) return EMPTY;
+
+    const root = content.documentElement;
+    const height$ = new Observable<number>((subscriber) => {
+      const observer = new view.ResizeObserver(() => subscriber.next(Math.ceil(root.getBoundingClientRect().height)));
+
+      observer.observe(root);
+
+      return () => observer.disconnect();
+    });
+
+    return merge(
+      height$.pipe(tap((height) => this.heightChange.emit(height))),
+      fromEvent<KeyboardEvent>(view, 'keydown').pipe(
+        filter((event) => event.key === 'Escape'),
+        tap(() => this.escapeKeydown.emit()),
+      ),
+    );
+  }
+}
