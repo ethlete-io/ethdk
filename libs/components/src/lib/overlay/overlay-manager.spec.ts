@@ -6,6 +6,9 @@ import { OverlayRuntimeCloseSource } from '@ethlete/core';
 import '../../test-helpers';
 import { injectOverlayManager } from './overlay-manager';
 import { OverlayRef } from './overlay-ref';
+import { bottomSheetOverlayStrategy } from './strategies/bottom-sheet.strategy';
+import { dialogOverlayStrategy } from './strategies/dialog.strategy';
+import { STACKED_SHEET_CLASS } from './overlay-sheet-stack';
 import { markOverlayScrollBlockerActive, warnIfOverlayScrollBlockerMissing } from './overlay-scroll-blocker-registry';
 
 @Component({ template: 'overlay content' })
@@ -179,5 +182,57 @@ describe('overlay manager closeOnNavigation', () => {
     await TestBed.inject(Router).navigateByUrl('/elsewhere');
 
     expect(sources).toEqual(['navigation']);
+  });
+});
+
+describe('overlay manager stacked bottom sheets', () => {
+  const refs: OverlayRef<PlainOverlayComponent>[] = [];
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+  });
+
+  afterEach(() => {
+    refs.forEach((ref) => ref.forceClose());
+    refs.length = 0;
+  });
+
+  const open = (strategies: typeof bottomSheetOverlayStrategy) => {
+    const ref = TestBed.runInInjectionContext(() =>
+      injectOverlayManager().open(PlainOverlayComponent, { strategies: strategies() }),
+    );
+    refs.push(ref);
+    TestBed.tick();
+
+    return ref;
+  };
+
+  const isStacked = (ref: OverlayRef<PlainOverlayComponent>) =>
+    ref.elements?.paneElement.classList.contains(STACKED_SHEET_CLASS);
+
+  it('marks every bottom sheet except the top one as stacked', () => {
+    const first = open(bottomSheetOverlayStrategy);
+    const second = open(bottomSheetOverlayStrategy);
+
+    expect(isStacked(first)).toBe(true);
+    expect(isStacked(second)).toBe(false);
+  });
+
+  it('unmarks the sheet below once the top sheet closes', () => {
+    const first = open(bottomSheetOverlayStrategy);
+    const second = open(bottomSheetOverlayStrategy);
+
+    second.close();
+    TestBed.tick();
+
+    expect(isStacked(first)).toBe(false);
+  });
+
+  it('ignores non-sheet overlays on top of a sheet', () => {
+    const sheet = open(bottomSheetOverlayStrategy);
+    const dialog = open(dialogOverlayStrategy);
+
+    expect(isStacked(sheet)).toBe(false);
+    expect(isStacked(dialog)).toBe(false);
   });
 });

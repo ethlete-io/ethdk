@@ -25,6 +25,7 @@ import {
 } from '@ethlete/core';
 import { filter, tap } from 'rxjs';
 import { normalizeClassList } from './normalize-class-list';
+import { markStackedBottomSheets } from './overlay-sheet-stack';
 import { OVERLAY_ERROR_CODES } from './overlay-errors';
 import { warnIfOverlayScrollBlockerMissing } from './overlay-scroll-blocker-registry';
 import { OverlayConfig } from './overlay-config';
@@ -123,6 +124,8 @@ const OVERLAY_MANAGER_DEF = /* @__PURE__ */ defineRootProvider(
         .map((runtimeRef) => runtimeToOverlayRef.get(runtimeRef))
         .filter((overlayRef): overlayRef is OverlayRef<object, unknown> => overlayRef !== undefined);
     });
+
+    markStackedBottomSheets(overlayRuntime.openEntries, (runtimeRef) => runtimeToOverlayRef.get(runtimeRef));
 
     const router = inject(ROUTES, { optional: true }) ? inject(Router) : null;
 

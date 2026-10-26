@@ -47,6 +47,24 @@
        is used deliberately: sheets keep `overflow: hidden` to clip their rounded corners, and an
        element's own box-shadow is not clipped by its own overflow — a child/`::after` would be. */
       box-shadow: 0 50px 0 0 var(--_et-overlay-overshoot-fill);
+
+      /* `translate` and `scale` compose with the `transform` that the enter, leave and drag
+       animations write, so the stack never fights them. */
+      transform-origin: top center;
+      transition:
+        translate 400ms var(--ease-out-5),
+        scale 400ms var(--ease-out-5);
+
+      @supports (transition-timing-function: linear(0, 1)) {
+        transition:
+          translate 400ms var(--ease-spring-1),
+          scale 400ms var(--ease-spring-1);
+      }
+
+      &.et-overlay--stacked {
+        translate: 0 -10px;
+        scale: 0.92;
+      }
     }
 
     &.et-overlay--top-sheet {
@@ -136,6 +154,7 @@
       &.et-overlay--top-sheet,
       &.et-overlay--left-sheet,
       &.et-overlay--right-sheet {
+        &,
         &.et-animation-enter-active,
         &.et-animation-leave-active {
           transition-duration: 0ms;

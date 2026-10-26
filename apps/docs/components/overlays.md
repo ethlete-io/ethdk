@@ -341,6 +341,8 @@ Size a non-anchored overlay in percentages rather than viewport units (`80%`, no
 
 On a touch device a bottom sheet sits on the soft keyboard while it is open: the sheet is lifted by the keyboard's height and its `maxHeight` is capped to the space above it, so a focused input inside the sheet stays visible. Desktop and a closed keyboard are unaffected.
 
+When a bottom sheet opens over another open bottom sheet, the lower sheet steps back: it scales to `0.92` and moves `10px` up, so its top edge shows above the new sheet, and the new sheet's backdrop darkens it. It returns to its place as soon as the top sheet starts to close. Each lower sheet gets the `et-overlay--stacked` class while it is covered. Other layouts do not stack, and an overlay of another layout on top of a bottom sheet leaves it in place.
+
 ### Strategy stylesheets
 
 A strategy's default enter/leave animation ships with the strategy rather than with the overlay container: each built-in factory sets `stylesComponent` on its config, and the container mounts that stylesheet while the strategy is active. An app therefore only carries the animation CSS for the overlay shapes it actually opens.

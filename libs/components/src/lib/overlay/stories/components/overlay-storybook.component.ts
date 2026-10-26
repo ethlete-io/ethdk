@@ -7,6 +7,7 @@ import { FORM_FIELD_IMPORTS } from '../../../forms/form-field';
 import { INPUT_IMPORTS } from '../../../forms/input';
 import { OverlayConfig } from '../../overlay-config';
 import { injectOverlayManager } from '../../overlay-manager';
+import { OVERLAY_REF } from '../../overlay-ref';
 import { OVERLAY_CONTENT_IMPORTS } from '../../overlay.imports';
 import {
   anchoredDialogOverlayStrategy,
@@ -45,6 +46,9 @@ import {
       </div>
 
       <div class="flex justify-end gap-3" etOverlayFooter>
+        @if (overlayRef.layout() === 'bottom-sheet') {
+          <button (click)="stackSheet()" et-button size="sm" variant="tonal">Stack a sheet</button>
+        }
         <button et-button etOverlayClose size="sm" variant="outline">Cancel</button>
         <button et-button etOverlayClose="confirmed" size="sm">Confirm</button>
       </div>
@@ -54,8 +58,10 @@ import {
   imports: [BUTTON_IMPORTS, OVERLAY_CONTENT_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS, FormField],
 })
 export class OverlayExampleOverlayComponent {
-  public withSearch = input(false);
+  protected overlayRef = inject(OVERLAY_REF);
 
+  private overlayManager = injectOverlayManager();
+  public withSearch = input(false);
   protected readonly searchForm = form(signal({ query: '' }));
 
   protected readonly PARAGRAPHS = [
@@ -70,6 +76,10 @@ export class OverlayExampleOverlayComponent {
     'The confirm button below closes this overlay with the result value "confirmed".',
     'Everything you see here - header, body, footer, dividers - is composed from the overlay content primitives.',
   ];
+
+  protected stackSheet() {
+    this.overlayManager.open(OverlayExampleOverlayComponent, { strategies: bottomSheetOverlayStrategy() });
+  }
 }
 
 @Component({
