@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done.
+Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -221,8 +221,9 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 1. **Core and data model**: workspace, product, base, layers, fixtures, states, presets, and
    `et design check` with all rules above.
 2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI leaves.
-3. **First real test**: rebuild the tomflix system from its `PLAN.md` - foundations,
-   components and elements only. Then the old tomflix calls move to Legacy.
+3. **First real test**: rebuild the tomflix system with the new workflow, from its old calls in
+   Legacy - foundations, components and elements only. It runs after slices 4 and 5, as the
+   battle test of the workflow.
 4. **Sketches**: status, live `in progress` view, merge preview, merge and discard.
 5. **Feedback**: canvas comments and `et design inbox`.
 6. **Pages and wireframes**: page states, the wireframe kit, the remaining kit-part count.
@@ -241,4 +242,7 @@ Slice 1: done on 2026-10-27.
 
 Slice 2: the canvas component is in progress since 2026-10-27. The rest waits for slice 1.
 
-Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild can start.
+Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
+(decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
+feedback. Then the old tomflix calls move to Legacy, and the rebuild from them is the battle
+test of the workflow. The inventory is the reference for it.
