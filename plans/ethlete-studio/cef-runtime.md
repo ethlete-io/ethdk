@@ -1,6 +1,7 @@
 # Ethlete Studio on the CEF runtime (Linux)
 
-Status: slice 1 done (2026-10-26). Slice 2 in progress: CI installs GTK4 and caches CEF; release bundles open.
+Status: slice 1 done (2026-10-26). Slice 2 done (2026-10-26) except a release run on CI; a local
+cli-cef build gives a 157 MiB deb and a 120 MiB rpm with CEF, `cli-runtime` and updater signatures.
 
 ## Why
 
@@ -34,7 +35,7 @@ Verified on `feat/cef`:
   cef version.
 - `tauri-plugin-updater` 2.12 reads the whole bundle into memory; no size cap.
 
-Steps:
+Steps (all done; `.github/actions/cef` caches the extracted distribution in `~/.cache/tauri-cef`):
 
 1. Install `@tauri-apps/cli-cef` for the Studio Linux leg only. The other legs and Timetrack keep
    `@tauri-apps/cli`, because cli-cef is a 3.0 alpha.
@@ -43,7 +44,9 @@ Steps:
 3. Cache the CEF dir on the cef crate version from `Cargo.lock`; export `CEF_PATH`.
 4. Build only deb and rpm for Studio on Linux until #16204 is fixed. The upload globs and
    `latest.json` need no change.
-5. Check that `bundle.resources` (`cli-runtime`) and the CSP still work under CEF.
+5. Check that `bundle.resources` (`cli-runtime`) and the CSP still work under CEF. `cli-runtime` was
+   empty in every bundle: `nx build` emptied `dist/apps/ethlete-studio` after it was written, so
+   `beforeBuildCommand` now builds first. CSP not checked in a release build.
 6. Changeset for `ethlete-studio`; release paragraph in `AGENTS.md`.
 
 Risks: unreleased branch pinned by commit (a fix needs a new rev and a new npm alpha); X11 only;

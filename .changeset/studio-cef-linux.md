@@ -2,4 +2,4 @@
 'ethlete-studio': minor
 ---
 
-Render Studio through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames; macOS and Windows keep their system webview.
+Render Studio through Chromium (Tauri's CEF runtime) on Linux, where WebKitGTK 2.54 drops animation frames; macOS and Windows keep their system webview. The Linux release ships as deb and rpm only; the AppImage is gone until Tauri fixes CEF AppImages.

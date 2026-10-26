@@ -153,7 +153,9 @@ never publishes it, and `yarn versions:sync` copies the new version into `tauri.
 fails CI on drift.
 
 When `publish.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm, AppImage),
-macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. The macOS bundle is
+macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. Ethlete Studio's Linux bundles carry CEF
+and are built by `@tauri-apps/cli-cef`, so they are deb and rpm only - its AppImage is broken
+upstream (tauri-apps/tauri#16204). The macOS bundle is
 signed with a self-signed identity, so a keychain grant survives an update. It is not notarized, and
 the Windows installer is not signed. `tools/scripts/macos-release-identity.sh` makes the identity;
 running it again replaces it, and each keychain item then asks once more.

@@ -122,9 +122,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 
+      - if: runner.os == 'Linux' && matrix.app.project == 'ethlete-studio'
+        name: Install the CEF build dependencies
+        run: sudo apt-get install -y --no-install-recommends libgtk-4-dev ninja-build
+
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: ${{ matrix.app.dir }}/src-tauri -> target
+
+      - if: runner.os == 'Linux' && matrix.app.project == 'ethlete-studio'
+        uses: ./.github/actions/cef
 
       # A keychain item's "Always Allow" names the signing certificate. An ad-hoc build has a new
       # identity each release, and Timetrack then asks for the login password once per item.
@@ -172,8 +179,17 @@ jobs:
             (cd ${{ matrix.app.dir }}/src-tauri && cargo clean --release -p whisper-rs-sys)
           fi
           echo '{ "bundle": { "createUpdaterArtifacts": true } }' > "$RUNNER_TEMP/updater.json"
+          # Studio links CEF on Linux, which only the CEF CLI bundles. Its AppImage is broken upstream:
+          # https://github.com/tauri-apps/tauri/issues/16204
+          build() {
+            if [ "$RUNNER_OS" = Linux ] && [ "${{ matrix.app.project }}" = ethlete-studio ]; then
+              (cd ${{ matrix.app.dir }} && npx --yes --package=@tauri-apps/cli-cef@3.0.0-alpha.27 tauri build --bundles deb,rpm "$@")
+            else
+              yarn nx run ${{ matrix.app.project }}:tauri:build -- "$@"
+            fi
+          }
           # Cargo hides a registry crate's build-script warnings, which is where bindgen reports a failure.
-          yarn nx run ${{ matrix.app.project }}:tauri:build -- --config "$RUNNER_TEMP/updater.json" || {
+          build --config "$RUNNER_TEMP/updater.json" || {
             grep -ah "cargo:warning" ${{ matrix.app.dir }}/src-tauri/target/release/build/*/output 2>/dev/null || true
             exit 1
           }
