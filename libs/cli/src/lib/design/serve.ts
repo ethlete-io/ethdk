@@ -1,10 +1,11 @@
 import { existsSync, globSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import { relative, resolve } from 'path';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { aliasPattern, callSlugOf, fsUrl, isCallFile } from './vite-paths';
 import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { buildStampOf, STAMP_PATH } from './stamp';
+import { createThumbnailer, THUMB_PATH } from './thumb';
 import { assetRoot, callsRootOf, configPathOf, DesignConfig, portOf, readConfig, workRootOf } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -112,8 +113,11 @@ const designExplore = (target: string, config: DesignConfig) => ({
   configureServer: (vite: ViteDevServer) => {
     const callsRoot = callsRootOf(target);
     const stamp = buildStampOf();
+    const thumbs = createThumbnailer({ target, base: `http://localhost:${portOf(config)}` });
 
     const refresh = (file: string) => {
+      thumbs.forget(relative(callsRoot, file));
+
       if (!isCallFile({ callsRoot, file })) return;
 
       const module = vite.moduleGraph.getModuleById(`\0${VIRTUAL}`);
@@ -126,9 +130,12 @@ const designExplore = (target: string, config: DesignConfig) => ({
       response.end(JSON.stringify(stamp));
     });
     vite.middlewares.use(RENDER_PATH, renderMiddleware(createRenderer({ target, config })));
+    vite.middlewares.use(THUMB_PATH, thumbs.middleware);
+    vite.httpServer?.on('close', () => void thumbs.close());
     vite.watcher.add(callsRoot);
     vite.watcher.on('add', refresh);
     vite.watcher.on('unlink', refresh);
+    vite.watcher.on('change', (file: string) => thumbs.forget(relative(callsRoot, file)));
   },
 });
 

@@ -11,8 +11,8 @@ const runtime = resolve(root, 'dist/apps/ethlete-studio/cli-runtime');
 const manifest = JSON.parse(readFileSync(resolve(built, 'package.json'), 'utf8'));
 
 /**
- * `playwright` is left out: only the browser stage of `et design check` needs it, and it wants a
- * browser download of its own. Every other version is the one the package declares, so the shipped
+ * `playwright` is left out: it wants a browser download of its own, so the browser stage of
+ * `et design check` and the server's variant thumbnails take it from the checkout. Every other version is the one the package declares, so the shipped
  * copy can never drift from the published one.
  */
 const dependencies = { ...manifest.dependencies, tslib: manifest.peerDependencies.tslib };

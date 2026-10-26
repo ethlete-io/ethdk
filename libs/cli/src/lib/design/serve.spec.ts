@@ -7,7 +7,11 @@ import { serveDesign } from './serve';
 type ServerOptions = {
   server: { port: number; strictPort: boolean };
   resolve: { alias: { find: RegExp; replacement: string }[] };
-  plugins: { load: (id: string) => string | null; resolveId: (id: string) => string | null }[];
+  plugins: {
+    load: (id: string) => string | null;
+    resolveId: (id: string) => string | null;
+    configureServer: (vite: unknown) => void;
+  }[];
 };
 
 const created: ServerOptions[] = [];
@@ -92,5 +96,28 @@ describe('serveDesign', () => {
     expect(themesOf('app')).toEqual({ surface: ['light', 'dark'], color: [] });
     expect(themesOf('bare')).toEqual({ surface: [], color: [] });
     expect(themesOf('other')).toEqual({ surface: [], color: [] });
+  });
+
+  it('serves variant thumbnails and closes their browser with the server', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = makeTarget({ port: 4999 });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const mounted: string[] = [];
+    const closing: (() => void)[] = [];
+    const vite = {
+      moduleGraph: { getModuleById: () => null, invalidateModule: () => undefined },
+      ws: { send: () => undefined },
+      middlewares: { use: (path: string) => mounted.push(path) },
+      httpServer: { on: (event: string, listener: () => void) => event === 'close' && closing.push(listener) },
+      watcher: { add: () => undefined, on: () => undefined },
+    };
+
+    created[created.length - 1]?.plugins[0]?.configureServer(vite);
+
+    expect(mounted).toContain('/__design/thumb');
+    expect(closing).toHaveLength(1);
   });
 });
