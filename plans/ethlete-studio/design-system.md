@@ -266,6 +266,47 @@ Comments:
   products, oldest first, as text or `--json`. `et design inbox done <id>` deletes a comment.
 - `et design check` fails on a comment whose part or state no longer exists.
 
+### Slice 6 decisions (2026-10-27)
+
+Pages:
+
+- A page has the same shape as every part: each state has props, and the data comes from the
+  product fixtures.
+- A shell is a normal element named by its purpose, for example `shell-main` or `shell-auth`.
+  Each page imports the shell it needs. A page without a shell needs no exception.
+- A dialog without its own URL is an element. The page under it has a state that shows it, for
+  example "login open".
+
+Wireframes:
+
+- Studio ships the kit: box, text lines, image, button, input and icon. The kit has a fixed,
+  neutral grey look, independent of the product. The hard-coded colour rule does not apply to it.
+- Only pages may use kit parts. `et design check` fails when a component or an element imports
+  one.
+- A wireframe lives in `pages/` like every page. Studio lists the page under "Wireframes" while
+  it uses at least one kit part. The core counts the kit-part uses in the page source, without a
+  render, and the tree shows the count next to the page.
+
+Flows:
+
+- A product has many named flows, one file each: `<product>/flows/<name>.json`, for example
+  `checkout.json`. Each flow is its own canvas in the tree. It shows its states at one preset,
+  picked at the top. A state may appear in many flows. Part canvases show no lines.
+- A line connects two states, also two states of the same page ("cart" → "checkout" → "done").
+  It has an optional label ("user clicks 'Zur Kasse'"). It holds for every preset.
+- Studio lays the frames out left to right along the lines. The flow file already has an
+  optional position per frame, so dragging can come later without a format change.
+- For now the agent writes flows and lines.
+
+Notes:
+
+- A note stays on the canvas and is not a task, unlike a comment. The user writes, changes and
+  deletes notes directly in Studio.
+- A note on a state is its own file, `<product>/notes/<id>.json`, with an optional point. It
+  shows everywhere the state shows: on the part canvas and in every flow.
+- A free note, for example a heading over a group of frames, belongs to one flow and lives in
+  that flow's file.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
