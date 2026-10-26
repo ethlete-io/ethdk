@@ -43,11 +43,13 @@ export type NgField = { value: unknown; errors?: (string | { kind: string; messa
 export type NgOptions = { imports?: string[]; fields?: Record<string, NgField> };
 
 const render = async (template: string, options: NgOptions) => {
+  const params = new URLSearchParams(location.search);
   const response = await fetch('/__design/render', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      call: new URLSearchParams(location.search).get('call') ?? '',
+      call: params.get('call') ?? '',
+      product: params.get('product') ?? undefined,
       template,
       imports: options.imports ?? [],
       fields: options.fields,
@@ -300,6 +302,8 @@ export type Call = {
   stage?: CallStage;
   /** Set by `et design legacy` on a call made before the stage was required. Such a call needs no stage. */
   legacy?: true;
+  /** Set by Ethlete Studio once the call was carried over into a product's design system. */
+  transferred?: true;
   /** Set once the call is done for good: `shipped` when the app implements it, `superseded` when another call replaced it. */
   closed?: 'shipped' | 'superseded';
   /** The slug of the call this one is parked on. The call is on hold until that call settles. */

@@ -1,22 +1,15 @@
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join, relative, sep } from 'path';
+import { callFilesOf } from './calls';
 import { callsRootOf } from './paths';
 
 const OPENING = /defineCall\(\{\n/;
 const HAS_STAGE = /^\s*stage\s*:/m;
 const HAS_LEGACY = /^\s*legacy\s*:/m;
+const HAS_TRANSFERRED = /^\s*transferred\s*:/m;
 const LEGACY_LINE = /^([ \t]*)legacy\s*:\s*true,?[ \t]*\n/m;
 
 const STAGE_OF_GROUP: Record<string, string> = { foundations: 'themes', components: 'component', pages: 'page' };
-
-const callFilesOf = (folder: string): string[] =>
-  readdirSync(folder).flatMap((name) => {
-    const path = join(folder, name);
-
-    if (statSync(path).isDirectory()) return callFilesOf(path);
-
-    return name === 'call.ts' ? [path] : [];
-  });
 
 /**
  * Writes `legacy: true` into every call of a project that declares no stage, plus the stage its
@@ -80,4 +73,37 @@ export const markLegacy = (options: { target: string; argv: string[]; invocation
   console.log(`ok ${marked} call${marked === 1 ? '' : 's'} marked legacy in ${project}`);
 
   return unreadable.length > 0 ? 1 : 0;
+};
+
+export const TRANSFER_PATH = '/__design/transfer';
+
+export type TransferResult = 'marked' | 'already' | 'missing' | 'unreadable';
+
+/** Writes `transferred: true` into a call's `call.ts`, below its `legacy: true` line when it has one. */
+export const markTransferred = (options: { target: string; slug: string }): TransferResult => {
+  const path = join(callsRootOf(options.target), options.slug, 'call.ts');
+
+  if (!options.slug || options.slug.split(/[\\/]/).includes('..') || !existsSync(path)) return 'missing';
+
+  const text = readFileSync(path, 'utf8');
+
+  if (HAS_TRANSFERRED.test(text)) return 'already';
+
+  if (LEGACY_LINE.test(text)) {
+    writeFileSync(
+      path,
+      text.replace(LEGACY_LINE, (line, indent: string) => `${line}${indent}transferred: true,\n`),
+    );
+
+    return 'marked';
+  }
+
+  if (!OPENING.test(text)) return 'unreadable';
+
+  writeFileSync(
+    path,
+    text.replace(OPENING, (opening) => `${opening}  transferred: true,\n`),
+  );
+
+  return 'marked';
 };

@@ -26,7 +26,13 @@ const mtimeOf = (path: string) => {
 export const isStale = (watched: Record<string, number>, mtime: (path: string) => number = mtimeOf) =>
   Object.entries(watched).some(([path, loaded]) => mtime(path) !== loaded);
 
-export type RenderAsk = { call: string; template: string; imports: string[]; fields?: Record<string, FieldSpec> };
+export type RenderAsk = {
+  call: string;
+  product?: string;
+  template: string;
+  imports: string[];
+  fields?: Record<string, FieldSpec>;
+};
 
 /**
  * Renders Angular templates in a worker that loads the target checkout's own packages. The worker
@@ -77,7 +83,9 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
 
     worker ??= start();
 
-    const providers = config.projects?.[ask.call.split('/')[0] ?? '']?.providers;
+    const providers = ask.product
+      ? config.products?.[ask.product]?.providers
+      : config.projects?.[ask.call.split('/')[0] ?? '']?.providers;
     const request: RenderRequest = {
       id: nextId++,
       template: ask.template,

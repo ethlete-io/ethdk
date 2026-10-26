@@ -11,7 +11,7 @@ const THUMB_ASPECT = 9 / 16;
 
 const DRAW_TIMEOUT_MS = 15000;
 
-type Browser = Awaited<ReturnType<Chromium['launch']>>;
+export type Browser = Awaited<ReturnType<Chromium['launch']>>;
 
 type Shot = { status: number; type: string; body: Buffer | string };
 
@@ -25,17 +25,28 @@ const frameWidthOf = (slug: string) => `(async (slug) => {
   return (await calls[slug]()).default.frameWidth ?? null;
 })(${JSON.stringify(slug)})`;
 
-const settled = `new Promise((done) => document.fonts.ready.then(() =>
+type Page = Awaited<ReturnType<Awaited<ReturnType<Browser['newContext']>>['newPage']>>;
+
+/** Opens a frame and waits until it drew its content or its error, then for fonts and two frames. */
+export const openFrame = async (page: Page, url: string) => {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await page
+    .locator('#root > :not(style)')
+    .first()
+    .waitFor({ state: 'attached', timeout: DRAW_TIMEOUT_MS })
+    .catch(() => undefined);
+};
+
+export const settled = `new Promise((done) => document.fonts.ready.then(() =>
   requestAnimationFrame(() => requestAnimationFrame(() => done(true)))))`;
 
 /**
- * Draws variants into PNGs in one shared headless Chromium, launched on the first ask. Renders run
- * one at a time, and each finished picture is kept per query until its call is drawn again.
+ * One shared headless Chromium, launched on the first ask, that runs one drawing at a time. A failed
+ * launch is not kept, so the next ask tries again.
  */
-export const createThumbnailer = (options: { target: string; base: string; chromiumOf?: typeof chromiumOf }) => {
-  const { target, base } = options;
+export const createDrawQueue = (options: { target: string; chromiumOf?: typeof chromiumOf }) => {
+  const { target } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
-  const cache = new Map<string, { slug: string; shot: Promise<Buffer> }>();
   let browser: Promise<Browser> | null = null;
   let queue: Promise<unknown> = Promise.resolve();
 
@@ -59,18 +70,56 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
     return browser;
   };
 
-  const draw = async (slug: string, search: string) => {
-    const context = await (await launch()).newContext({ viewport: { width: 1600, height: 900 } });
+  return {
+    run: <T>(draw: (browser: Browser) => Promise<T>) => {
+      const drawn = queue.then(async () => draw(await launch()));
+
+      queue = drawn.catch(() => undefined);
+
+      return drawn;
+    },
+    close: async () => {
+      const running = browser;
+
+      browser = null;
+      await running?.then((open) => open.close()).catch(() => undefined);
+    },
+  };
+};
+
+export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
+  void shot.then(
+    (body) => send(response, { status: 200, type: 'image/png', body }),
+    (error: unknown) =>
+      send(response, {
+        status: error instanceof ThumbUnavailableError ? 503 : error instanceof ThumbMissingError ? 404 : 500,
+        type: 'text/plain; charset=utf-8',
+        body: error instanceof Error ? error.message : String(error),
+      }),
+  );
+
+export const send = (response: ServerResponse, { status, type, body }: Shot) => {
+  response.statusCode = status;
+  response.setHeader('content-type', type);
+  response.end(body);
+};
+
+/**
+ * Draws variants into PNGs in the shared Chromium of a draw queue. Each finished picture is kept per
+ * query until its call is drawn again.
+ */
+export const createThumbnailer = (options: { target: string; base: string; chromiumOf?: typeof chromiumOf }) => {
+  const { base } = options;
+  const drawQueue = createDrawQueue(options);
+  const cache = new Map<string, { slug: string; shot: Promise<Buffer> }>();
+
+  const draw = async (browser: Browser, { slug, search }: { slug: string; search: string }) => {
+    const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
 
     try {
       const page = await context.newPage();
 
-      await page.goto(`${base}/frame.html${search}`, { waitUntil: 'domcontentloaded' });
-      await page
-        .locator('#root > :not(style)')
-        .first()
-        .waitFor({ timeout: DRAW_TIMEOUT_MS })
-        .catch(() => undefined);
+      await openFrame(page, `${base}/frame.html${search}`);
 
       const width = (await page.evaluate(frameWidthOf(slug))) as number | null;
 
@@ -99,9 +148,8 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
 
     if (cached) return cached.shot;
 
-    const shot = queue.then(() => draw(slug, search));
+    const shot = drawQueue.run((browser) => draw(browser, { slug, search }));
 
-    queue = shot.catch(() => undefined);
     cache.set(search, { slug, shot });
     shot.catch(() => cache.get(search)?.shot === shot && cache.delete(search));
 
@@ -112,27 +160,18 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const url = new URL(request.url ?? '', 'http://localhost');
       const slug = url.searchParams.get('call') ?? '';
-      const send = ({ status, type, body }: Shot) => {
-        response.statusCode = status;
-        response.setHeader('content-type', type);
-        response.end(body);
-      };
 
       if (!slug || !url.searchParams.get('variant')) {
-        send({ status: 400, type: 'text/plain; charset=utf-8', body: 'design-explore: pass call and variant' });
+        send(response, {
+          status: 400,
+          type: 'text/plain; charset=utf-8',
+          body: 'design-explore: pass call and variant',
+        });
 
         return;
       }
 
-      void shotOf(slug, url.search).then(
-        (body) => send({ status: 200, type: 'image/png', body }),
-        (error: unknown) =>
-          send({
-            status: error instanceof ThumbUnavailableError ? 503 : error instanceof ThumbMissingError ? 404 : 500,
-            type: 'text/plain; charset=utf-8',
-            body: error instanceof Error ? error.message : String(error),
-          }),
-      );
+      sendShot(response, shotOf(slug, url.search));
     },
     /** Drops the pictures a changed file may draw into: its own call's, or every call below its folder. */
     forget: (file: string) => {
@@ -145,11 +184,8 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
       }
     },
     close: async () => {
-      const running = browser;
-
-      browser = null;
       cache.clear();
-      await running?.then((open) => open.close()).catch(() => undefined);
+      await drawQueue.close();
     },
   };
 };

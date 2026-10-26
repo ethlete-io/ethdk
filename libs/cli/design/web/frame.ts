@@ -1,12 +1,15 @@
-import { mountDrawing, placeOverlays } from '@design-explore';
+import { Drawing, mountDrawing, placeOverlays } from '@design-explore';
 import { calls } from 'virtual:design-explore';
-import { loadEnv } from 'virtual:design-explore/env';
+import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
+import { parts } from 'virtual:design-explore/system';
 
 const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
-const key = params.get('variant') ?? '';
+const product = params.get('product');
+const partKey = params.get('part') ?? '';
+const key = (product ? params.get('state') : params.get('variant')) ?? '';
 
-await loadEnv(slug.split('/')[0] ?? '');
+await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
 
 const root = document.querySelector('#root') as HTMLElement;
 const surface = params.get('surface');
@@ -16,7 +19,7 @@ const color = params.get('color');
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
 
-const fail = (message: string) => {
+const fail = (message: string): null => {
   const text = document.createElement('pre');
 
   text.textContent = message;
@@ -24,6 +27,8 @@ const fail = (message: string) => {
   text.style.whiteSpace = 'pre-wrap';
   root.replaceChildren(text);
   root.setAttribute('style', 'padding:16px;font:14px monospace;color:#f0a0a0;background:#1a1414');
+
+  return null;
 };
 
 const showSetupError = (message: string) => {
@@ -37,35 +42,47 @@ const showSetupError = (message: string) => {
   document.body.append(banner);
 };
 
-const call = calls[slug];
-if (!call) fail(`design-explore: no call "${slug}"`);
-else {
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+const drawCall = async (): Promise<Drawing | null> => {
+  const call = calls[slug];
+  if (!call) return fail(`design-explore: no call "${slug}"`);
+
   const variant = (await call()).default.variants.find((o) => o.key === key);
-  if (!variant) fail(`design-explore: call "${slug}" has no variant "${key}"`);
-  else {
-    const loaded = await variant.load().then(
-      (module) => module.default,
-      (error: unknown) => {
-        fail(`design-explore: variant "${key}" failed\n${error instanceof Error ? error.message : String(error)}`);
+  if (!variant) return fail(`design-explore: call "${slug}" has no variant "${key}"`);
 
-        return null;
-      },
-    );
+  return variant.load().then(
+    (module) => module.default,
+    (error: unknown) => fail(`design-explore: variant "${key}" failed\n${messageOf(error)}`),
+  );
+};
 
-    if (loaded) {
-      const style = document.createElement('style');
+const drawPart = async (name: string): Promise<Drawing | null> => {
+  const load = parts[name]?.[partKey];
+  if (!load) return fail(`design-explore: product "${name}" has no part "${partKey}"`);
 
-      style.textContent = loaded.styles;
-      document.head.append(style);
-      const error = mountDrawing(root, loaded);
+  try {
+    const part = (await load()).default;
 
-      if (error) {
-        showSetupError(
-          `design-explore: setup of variant "${key}" failed\n${error instanceof Error ? error.message : String(error)}`,
-        );
-      }
-    }
+    if (!(key in part.states)) return fail(`design-explore: part "${partKey}" has no state "${key}"`);
+
+    return await part.render(part.states[key]);
+  } catch (error) {
+    return fail(`design-explore: state "${key}" of "${partKey}" failed\n${messageOf(error)}`);
   }
+};
+
+const loaded = await (product ? drawPart(product) : drawCall());
+
+if (loaded) {
+  const style = document.createElement('style');
+
+  style.textContent = loaded.styles;
+  document.head.append(style);
+  const error = mountDrawing(root, loaded);
+
+  if (error)
+    showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
 }
 
 const place = () => placeOverlays(root);

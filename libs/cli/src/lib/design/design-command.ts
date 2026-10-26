@@ -5,6 +5,7 @@ import { newCall } from './new-call';
 import { serveDesign } from './serve';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
+import { designSystem } from './system/system-command';
 
 /** Reads `--checkout <path>` out of an argument list, and answers with the path and the rest. */
 const splitCheckout = (argv: string[], root: string) => {
@@ -26,6 +27,9 @@ const helpOf = (invocation: string) =>
     `${invocation} check --product <name>`,
     "  Check a product's design system: layer dependencies, hard-coded colours, copied components,",
     '  scripted motion, then tsc. Without any flag, check checks every product in config.json.',
+    '',
+    `${invocation} system --json [--product <name>]`,
+    "  Print each product's parts as JSON: origin, note, states, presets and the problems of each part.",
     '',
     `${invocation} new <project>/<group>/<name> --stage <stage> [--variants a,b] [--feature <name>]`,
     '  Write a call that renders at once: call.ts, fixture.ts and one variant file per key.',
@@ -70,6 +74,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return checkDesign({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'system') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designSystem({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'new') {
