@@ -1,0 +1,135 @@
+# Ethlete Studio - the design system model
+
+Status: planned (2026-10-27). No slice started.
+
+This plan replaces the call model (project → feature → call → variant, the 1-7 workflow) of
+`vision.md`. The bridge from the design system to the app code is out of scope. Decide it when
+a real system exists.
+
+## Why
+
+The tomflix exploration (`~/dev/tomflix/.ethlete/design/calls/tomflix`) has 40 numbered calls
+and a 421-line `PLAN.md`. Decisions live there as prose with RGB values, almost each one "not
+yet in the app". Winners are copied from call to call (`variant-g.ts` into `frame.ts`). Calls
+build on each other, so each new call makes the older ones stale. Studio stores a history; it
+must store a state.
+
+## The model
+
+### Roles
+
+- Studio shows and lets the user decide: view the system, compare variants, pick, comment.
+  It is not an editor.
+- The agent writes files through one core. The CLI and an MCP server are thin layers over that
+  core. Everything deterministic is a core operation: create a sketch, screenshot, check, inbox.
+- Chat stays in the CLI. The chat integration and the 1-7 workflow leave the Studio UI. The
+  chat code stays in the repo, unused by the UI.
+
+### Structure
+
+- Repo = workspace. A workspace holds products (for example tomflix, timetrack, studio).
+- Each product has exactly one design system.
+- A product can extend at most one base system. A base has no base of its own.
+- A product overrides a base part by name: a product `button` replaces the base `button`.
+  Studio marks each part "from base" or "overridden".
+
+### Layers
+
+| Layer       | Holds                                               | May use                      |
+| ----------- | --------------------------------------------------- | ---------------------------- |
+| Foundations | tokens (colour, type, spacing), logo, CI            | -                            |
+| Components  | generic parts: button, badge, card                  | foundations, components      |
+| Elements    | product-specific parts: the tomflix hero and header | foundations, components      |
+| Pages       | page states composed of components and elements     | foundations, comps, elements |
+
+- Wireframes are pages built from a fixed wireframe kit that Studio ships (box, text lines,
+  image placeholder, button placeholder). A wireframe becomes a page as kit parts are swapped
+  for system parts. Studio shows how many kit parts remain.
+- Each part records the reason for its current shape as a short note on the part
+  ("button: variant C, because …"). History lives in git only. No decision log.
+
+### Files
+
+- TS without Angular, as the drawings are today: a render function with typed props, plus CSS.
+- Tokens are CSS variables.
+- Each product has one fixture set (for example 30 films with posters). All pages use it.
+- A component or page declares its own list of named states (variants, sizes, hover,
+  disabled, loading; "empty", "3 filters active", "error").
+- Each product declares its viewport presets (for example phone, fold outer, fold inner,
+  tablet, desktop).
+
+### Sketches
+
+- A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
+  logo) is allowed only for foundations, and its result goes into foundations.
+- One open sketch per target. A new sketch on the same target needs the old one merged or
+  discarded first.
+- A sketch may change parts below its target (a new header with a new button variant).
+- Status: `in progress` → `ready` → merged or discarded.
+  - `in progress`: Studio re-renders live on each file change, with a clear frame and the
+    label "in progress". The agent reports what it builds now ("variant B, phone"). The user can
+    comment, but not pick.
+  - `ready`: the user picks.
+- Before the merge, a preview view shows every page and element that uses the changed parts,
+  old and new side by side.
+- After the merge the sketch is deleted. The picked variant is now the part; the reason is the
+  note on the part. The other variants live only in git.
+
+### Feedback
+
+- The user comments on a state or on a point in the canvas. Studio writes the comment as a
+  file in the repo.
+- The agent reads open comments with `et design inbox` (and the MCP equivalent). A done comment
+  is deleted; only the reason stays, as the part's note.
+
+### Checks
+
+`et design check` fails on:
+
+- a dependency that points up a layer, or an element used by a component;
+- a hard-coded colour outside foundations;
+- a copy of a component inside a page or element;
+- motion that is not CSS animations, CSS transitions or the Web Animations API (no
+  `requestAnimationFrame` loops). A later timeline tool must stop any animation at time t.
+
+### Canvas and navigation
+
+- Each system entry (for example "button") is its own infinite canvas. Frames on it each show
+  one state at one width, always at full height. No scrollbars, only pan and zoom.
+- The sheet shows each state across the product presets in a row. A state opened alone gets a
+  free-width canvas.
+- Controls, as in Figma:
+  - space + drag, middle mouse + drag: pan
+  - wheel: pan vertically; shift + wheel: pan horizontally
+  - ctrl + wheel, pinch: zoom to the pointer
+  - `Shift+1` fit all, `Shift+2` fit selection, `Shift+0` 100 %
+  - double-click a frame: the frame becomes active (click, hover, scroll inside); `Esc` leaves
+  - drag the edge of an active frame: free width
+- Only frames in view run live. Frames out of view show a cached screenshot from the same core
+  that makes the agent's screenshots, so agent and user see the same presets.
+- Top: workspace and product picker. Left: a tree with Foundations, Components, Elements,
+  Pages, Wireframes, Sketches and Legacy. Each entry shows badges: from base, overridden, sketch
+  open, comment open.
+- A sketch shows on its target's canvas: the current version left, the variants right in the
+  same states and widths. "Sketches" in the tree lists open sketches as jump targets.
+
+### Legacy calls
+
+The old calls stay in a read-only Legacy tab, as reference for the transfer into the new system.
+No new calls, no picks. The user can mark a call "transferred" and deletes the tab when done.
+
+## Slices
+
+1. **Core and data model**: workspace, product, base, layers, fixtures, states, presets, and
+   `et design check` with all rules above.
+2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI leaves.
+3. **First real test**: rebuild the tomflix system from its `PLAN.md` - foundations,
+   components and elements only. Then the old tomflix calls move to Legacy.
+4. **Sketches**: status, live `in progress` view, merge preview, merge and discard.
+5. **Feedback**: canvas comments and `et design inbox`.
+6. **Pages and wireframes**: page states, the wireframe kit, the remaining kit-part count.
+7. **MCP server** over the core. The agent instructions say motion comes later as an update.
+8. **Motion**: its own plan. A timeline, controlled time, a screenshot per keyframe. Motion is a
+   tool that extends components and elements.
+
+Each slice gets an "in progress" note here when it starts.

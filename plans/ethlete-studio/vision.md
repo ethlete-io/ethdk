@@ -1,5 +1,8 @@
 # Ethlete Studio - open work
 
+Superseded: `design-system.md` replaces the call model below. Keep this file only for the
+work that is not about calls.
+
 Studio lives in `apps/ethlete-studio`, the design server in `libs/cli/src/lib/design`. The
 names are **project → feature → call → variant**.
 
