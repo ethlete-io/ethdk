@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/test-setup.mjs",
+    "src/**/*.test.ts",
+    "src/**/testing/**",
+    "src/scenarios",
+    "src/**/*.stories.ts",
+    "src/**/stories/**"
+  ],
+  "include": ["src/**/*.ts", "narrowed-themes/themes.d.ts"]
+}

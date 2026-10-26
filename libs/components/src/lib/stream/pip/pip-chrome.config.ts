@@ -1,9 +1,10 @@
+import { RegisteredColorThemeName } from '@ethlete/core';
 export type StreamPipChromeConfig = {
   /**
    * Optional color key applied to built-in PiP titlebar controls.
    * Uses the button's neutral fallback styling when omitted.
    */
-  controlsColor?: string;
+  controlsColor?: RegisteredColorThemeName;
 };
 
 export const DEFAULT_PIP_CHROME_CONFIG: StreamPipChromeConfig = {

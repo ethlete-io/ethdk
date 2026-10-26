@@ -44,7 +44,7 @@
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p libs/components/tsconfig.spec.json --noEmit"
+        "command": "tsc -p libs/components/tsconfig.spec.json --noEmit && ngc -p libs/components/tsconfig.narrowed-themes.json"
       }
     },
     "build-generators": {

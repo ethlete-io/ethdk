@@ -1,5 +1,5 @@
 import { Type } from '@angular/core';
-import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { defineStaticRootProvider, RegisteredColorThemeName, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export const NOTIFICATION_STATUS = {
   LOADING: 'loading',
@@ -94,12 +94,12 @@ export type NotificationManagerConfig = {
    * A status it does not list falls back to the semantic theme of its type: `error` to the
    * `type: 'error'` theme, `success` to the `type: 'success'` theme, `info` and `loading` to none.
    */
-  statusColorMapping?: Partial<Record<NotificationStatus, string>>;
+  statusColorMapping?: Partial<Record<NotificationStatus, RegisteredColorThemeName>>;
   /**
    * Color key applied to control elements (e.g. the dismiss button).
    * Uses the notification's status color when not set.
    */
-  controlsColor?: string;
+  controlsColor?: RegisteredColorThemeName;
   /**
    * Icon rendered per status, overridable per notification via {@link NotificationConfig.icon}.
    * `null` opts a status out of icons entirely. `loading` has none by default - it renders a spinner.

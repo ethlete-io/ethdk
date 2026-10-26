@@ -1,11 +1,11 @@
-import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { defineStaticRootProvider, RegisteredColorThemeName, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type PipSlotPlaceholderConfig = {
   /**
    * The color theme name to apply on the back button.
    * When set, applies `[color]` on the button element.
    */
-  backButtonColor: string | null;
+  backButtonColor: RegisteredColorThemeName | null;
 };
 
 const DEFAULT_PIP_SLOT_PLACEHOLDER_CONFIG: PipSlotPlaceholderConfig = {

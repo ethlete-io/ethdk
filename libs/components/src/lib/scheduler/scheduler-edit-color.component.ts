@@ -1,5 +1,5 @@
 import { Component, computed, input, ViewEncapsulation, WritableSignal } from '@angular/core';
-import { injectColorPalette, ProvideColorDirective } from '@ethlete/core';
+import { injectColorPalette, ProvideColorDirective, RegisteredColorThemeName } from '@ethlete/core';
 import { FORM_FIELD_IMPORTS } from '../forms/form-field';
 import { INPUT_IMPORTS } from '../forms/input';
 import { RADIO_GROUP_IMPORTS } from '../forms/selection-list';
@@ -61,6 +61,9 @@ export class SchedulerEditColorComponent<TExtra = unknown> {
   }
 
   protected updateColorToken(value: string) {
-    this.draft().update((appointment) => ({ ...appointment, colorToken: value || undefined }));
+    this.draft().update((appointment) => ({
+      ...appointment,
+      colorToken: (value || undefined) as RegisteredColorThemeName | undefined,
+    }));
   }
 }

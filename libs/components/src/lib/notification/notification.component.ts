@@ -87,7 +87,7 @@ export class NotificationComponent {
 
     if (mapped) return mapped;
 
-    return status === 'success' || status === 'error' ? (this.semanticThemes[status]()?.name ?? null) : null;
+    return status === 'success' || status === 'error' ? (this.semanticThemes[status]() ?? null) : null;
   });
 
   private resolvedSurface = computed(() => {

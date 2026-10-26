@@ -1,11 +1,11 @@
-import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { defineStaticRootProvider, RegisteredColorThemeName, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type StreamConsentConfig = {
   /**
    * The color theme name to apply on the accept button.
    * When set, applies `[etProvideColor]` on the button element.
    */
-  acceptButtonColor: string | null;
+  acceptButtonColor: RegisteredColorThemeName | null;
 };
 
 const DEFAULT_STREAM_CONSENT_CONFIG: StreamConsentConfig = {

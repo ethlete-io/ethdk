@@ -1,3 +1,4 @@
+import { RegisteredColorThemeName } from '@ethlete/core';
 /** Stable identity of an {@link Appointment}. */
 export type AppointmentId = string;
 
@@ -15,7 +16,7 @@ export type Appointment<TExtra = unknown> = {
   end: Date;
   allDay?: boolean;
   /** Resolves via the color-theming system - see `theming`. Never a literal color. */
-  colorToken?: string;
+  colorToken?: RegisteredColorThemeName;
   /** Shown by the built-in location badge adornment (`etSchedulerBadgeLocation`) when set. */
   location?: string;
   /** Edited by the built-in `<et-scheduler-edit-description>` edit-surface field. */

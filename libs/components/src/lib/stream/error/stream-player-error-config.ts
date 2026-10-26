@@ -1,11 +1,11 @@
-import { defineStaticRootProvider, toInjectFn, toProvideFn } from '@ethlete/core';
+import { defineStaticRootProvider, RegisteredColorThemeName, toInjectFn, toProvideFn } from '@ethlete/core';
 
 export type StreamPlayerErrorConfig = {
   /**
    * The color theme name to apply on the retry button.
    * When set, applies `[color]` on the button element.
    */
-  retryButtonColor: string | null;
+  retryButtonColor: RegisteredColorThemeName | null;
 };
 
 const DEFAULT_STREAM_PLAYER_ERROR_CONFIG: StreamPlayerErrorConfig = {

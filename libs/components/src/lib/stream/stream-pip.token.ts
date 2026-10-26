@@ -1,3 +1,4 @@
+import { RegisteredColorThemeName } from '@ethlete/core';
 import { InjectionToken, Type } from '@angular/core';
 import { PipManager } from './stream-manager.types';
 
@@ -5,7 +6,7 @@ export type StreamPipOptions = {
   pipChromeComponent: Type<unknown> | null;
   pipSlotPlaceholderComponent: Type<unknown> | null;
   pipChrome: {
-    controlsColor?: string;
+    controlsColor?: RegisteredColorThemeName;
   };
   pipWindow: {
     minWidth: number;
