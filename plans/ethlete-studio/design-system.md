@@ -411,7 +411,8 @@ Each slice gets an "in progress" note here when it starts.
 
 Slice 1: done on 2026-10-27.
 
-Slice 2: the canvas component is in progress since 2026-10-27. The rest waits for slice 1.
+Slice 2: the canvas, the server and its CLI are done. The Studio UI is in progress since
+2026-10-27: the canvas on `/__design/system` and `/__design/shot`, then the tree, then Legacy.
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
