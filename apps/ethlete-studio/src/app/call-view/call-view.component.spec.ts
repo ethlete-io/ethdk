@@ -185,6 +185,22 @@ describe('CallViewComponent', () => {
     expect(shown(fixture)).toEqual([`${ASKING.slug} b`]);
   });
 
+  it('opens a call clicked in the list while the project picker shows', async () => {
+    localStorage.setItem('ethlete-studio.call-view', JSON.stringify({ checkout: CHECKOUT, project: '' }));
+
+    const fixture = TestBed.createComponent(CallViewComponent);
+
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    expect(element(fixture).querySelector('ethlete-project-picker')).toBeTruthy();
+
+    await openRow(fixture, ASKING.slug);
+
+    expect(element(fixture).querySelector('ethlete-project-picker')).toBeNull();
+    expect(shown(fixture)).toEqual([`${ASKING.slug} b`]);
+  });
+
   it('hides the frames of the other variants, so they cannot take the wheel from the shown one', async () => {
     const fixture = await mount(RESOLVED.slug);
 
@@ -733,6 +749,44 @@ describe('CallViewComponent', () => {
     expect(thumb()).toBeTruthy();
     expect(thumb()?.querySelector('img, iframe')).toBeNull();
     expect(tile(fixture, 'A')?.querySelector('.studio__thumb-image')).not.toBeNull();
+  });
+
+  it('says on a failed tile when the design server has no thumbnail route', async () => {
+    const asked: string[] = [];
+
+    vi.stubGlobal('fetch', (url: string) => {
+      asked.push(url);
+
+      return Promise.resolve(new Response(null, { status: url.includes('?') ? 200 : 404 }));
+    });
+
+    const fixture = await mount(RESOLVED.slug);
+    const fail = async (name: string) => {
+      tile(fixture, name)?.querySelector('img')?.dispatchEvent(new Event('error'));
+      await settle(fixture);
+    };
+
+    await fail('D');
+    await fail('A');
+
+    expect(asked).toEqual(['http://localhost:4402/__design/thumb']);
+    expect(tile(fixture, 'D')?.querySelector('.studio__thumb-note')?.textContent).toContain('@ethlete/cli');
+    expect(tile(fixture, 'A')?.querySelector('.studio__thumb-note')).not.toBeNull();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('leaves a failed tile plain when the design server has the thumbnail route', async () => {
+    vi.stubGlobal('fetch', () => Promise.resolve(new Response(null, { status: 400 })));
+
+    const fixture = await mount(RESOLVED.slug);
+
+    tile(fixture, 'D')?.querySelector('img')?.dispatchEvent(new Event('error'));
+    await settle(fixture);
+
+    expect(tile(fixture, 'D')?.querySelector('.studio__thumb-note')).toBeNull();
+
+    vi.unstubAllGlobals();
   });
 
   it('loads no frame while the server starts and loads them once it answers', async () => {

@@ -43,6 +43,7 @@ import {
   designStatuses$,
   frameUrl,
   thumbUrl,
+  drawsThumbs$,
 } from '../../host/design';
 import { Compose, Verb, handoffDraft, opensARound, promptDraft, verbLabel, verdictOf } from './prompt-draft';
 import {
@@ -369,6 +370,8 @@ const SETTLE_MS = 300;
                     class="studio__thumb-image"
                     alt="The variant, drawn small"
                   />
+                } @else if (tile.source && oldCli()) {
+                  <span class="studio__thumb-note">This checkout's &#64;ethlete/cli draws no pictures. Update it.</span>
                 }
                 @if (tile.key === variantKey()) {
                   <span class="studio__tile-tag">on screen</span>
@@ -1160,6 +1163,12 @@ export class CallViewComponent {
 
   protected failedThumbs = signal<ReadonlySet<string>>(new Set());
 
+  private probedServers = new Set<string>();
+
+  private thumblessServers = signal<ReadonlySet<string>>(new Set());
+
+  protected oldCli = computed(() => this.thumblessServers().has(`${this.design()?.port} ${this.epoch()}`));
+
   /**
    * The open call by round: the first round that still holds an unruled variant, and every round
    * that has ruled, newest first.
@@ -1260,9 +1269,21 @@ export class CallViewComponent {
     return touchedLabel(call.touched);
   }
 
-  /** Unfolds one settled feature group and folds the one that was open. */
   protected thumbFailed(source: string) {
     this.failedThumbs.update((failed) => new Set(failed).add(source));
+
+    const port = this.design()?.port;
+    const server = `${port} ${this.epoch()}`;
+
+    if (!port || this.probedServers.has(server)) return;
+
+    this.probedServers.add(server);
+    drawsThumbs$(port)
+      .pipe(
+        tap((draws) => !draws && this.thumblessServers.update((servers) => new Set(servers).add(server))),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected toggleFold(key: string) {
@@ -1394,9 +1415,12 @@ export class CallViewComponent {
 
     if (call.slug !== this.slug()) this.forgetScroll();
 
+    const project = projectOf(call);
+
+    this.project.set(project);
     this.slug.set(call.slug);
     this.variantKey.set(variant);
-    rememberView({ checkout: this.checkout(), slug: call.slug, variant });
+    rememberView({ checkout: this.checkout(), project, slug: call.slug, variant });
   }
 
   protected openSlug(slug: string) {

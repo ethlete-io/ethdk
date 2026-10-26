@@ -799,6 +799,18 @@
     pointer-events: none;
   }
 
+  .studio__thumb-note {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 0.8rem;
+    color: var(--et-surface-color-muted-solid);
+    font-size: 1.1rem;
+    line-height: 1.3;
+    text-align: center;
+  }
+
   .studio__tile-tag {
     position: absolute;
     top: 0.4rem;

@@ -1,5 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map, of } from 'rxjs';
+import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
 /** What the user ruled about a variant. A variant without one is still open. */
@@ -292,6 +293,16 @@ export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAd
 /** The address of a variant's thumbnail: a PNG the design server draws, renewed with each `revision`. */
 export const thumbUrl = ({ revision, ...address }: FrameAddress & { revision?: number }) =>
   frameUrl(address).replace('/frame.html?', '/__design/thumb?') + (revision ? `&revision=${revision}` : '');
+
+/**
+ * Whether the design server on `port` has the thumbnail route. Without a call it answers 400, while
+ * an `@ethlete/cli` older than the route answers 404. Draws nothing.
+ */
+export const drawsThumbs$ = (port: number): Observable<boolean> =>
+  fromFetch(`http://localhost:${port}/__design/thumb`).pipe(
+    map((response) => response.status !== 404),
+    catchError(() => of(true)),
+  );
 
 /** The checkouts Studio keeps, and the folder a scan walks for more. */
 export type DesignRoots = {
