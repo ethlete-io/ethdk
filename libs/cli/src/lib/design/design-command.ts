@@ -1,8 +1,10 @@
 import { resolve } from 'path';
 import { checkDesign } from './check';
+import { designComment, designInbox } from './inbox-command';
 import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { serveDesign } from './serve';
+import { designSketch } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designSystem } from './system/system-command';
@@ -42,6 +44,28 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
     '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
+    '',
+    `${invocation} sketch new <layer>/<name> --variants a,b [--product <name>]`,
+    '  Open a sketch on a part, new or existing, in progress. Each variant starts as a copy of the part.',
+    '',
+    `${invocation} sketch report <layer>/<name> <text> | sketch ready <layer>/<name>`,
+    '  Tell Studio what you build now ("variant b, phone"), then mark the sketch ready for the user to pick.',
+    '',
+    `${invocation} sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
+    '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
+    '',
+    `${invocation} sketch merge <layer>/<name> <variant> --note <reason> | sketch discard <layer>/<name>`,
+    '  Merge the picked variant and set the note on the target, then check and restore the old files on failure.',
+    '  Or drop the sketch. Both refuse while the sketch has open comments.',
+    '',
+    `${invocation} inbox [--json] | inbox done <id>`,
+    "  List open comments and the user's pick and discard decisions, oldest first. done deletes a handled comment.",
+    '',
+    `${invocation} comment <layer>/<name> <state> --preset <preset> <text> [--at x,y] [--sketch <layer>/<name> --variant <key>]`,
+    '  Write a comment on a state of a part, as Studio does from the canvas.',
+    '',
+    '  sketch and comment take --product <name>; it may be left out when config.json declares one product.',
+    '  inbox without --product covers every product.',
     '',
     `${invocation} stamp`,
     '  Print the version and build of this cli as JSON, which a running server answers with too.',
@@ -92,6 +116,24 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return markLegacy({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'sketch') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designSketch({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'inbox') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designInbox({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'comment') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designComment({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'status') {

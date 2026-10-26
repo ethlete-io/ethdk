@@ -102,7 +102,7 @@ must store a state.
 - Built in slice 1, in `libs/cli/src/lib/design/system/`:
   - The check prints one line per problem: `<RULE> <file>: <message>`. The rules are `IMPORT`,
     `UPWARD-DEPENDENCY`, `HARD-CODED-COLOUR`, `COMPONENT-COPY`, `MOTION`, `BASE`, `PART`,
-    `PRESETS` and `TYPE-ERROR`.
+    `PRESETS`, `TYPE-ERROR` and `COMMENT` (a stale comment).
   - The loader finds the `config.json` of a base by a walk up from the base folder.
   - A product with no folder of its own uses its base unchanged. This is not a problem.
   - An element or page rule that restyles a component class is a copy, also if the part imports
@@ -183,6 +183,33 @@ Three tracks run at the same time. They touch different files.
   The cache drops a shot when its file or a file it imports changes (Vite module graph).
 - Studio's Rust watcher already watches `.ethlete/design`. No new reload event.
 - Not yet tested on its own: the switch of `ng()` providers to the frame's product.
+
+### Slices 4 and 5 core, as built (2026-10-27)
+
+Commands: `et design sketch new|report|ready|list|check|preview|merge|discard`,
+`et design inbox [done <id>]`, `et design comment`. Code in `libs/cli/src/lib/design/system/sketch/`
+and `system/comments/`. Studio UI for both slices is not built.
+
+- `sketch.json`: `{ target, status: "in progress" | "ready", createdAt, decision? }`. The
+  decision is `{ kind: "pick", variant }` or `{ kind: "discard" }`, with an optional comment.
+  Merged and discarded are not stored: the folder is deleted.
+- A variant folder is `sketches/<layer>-<name>/<variant>/<layer>/<part>/` and may hold a
+  `fixtures.ts`. A new variant starts as a copy of the resolved target, a new part as a stub.
+- A variant may change the target, its own layer and the layers its layer may use. Anything else
+  is a `SKETCH` problem.
+- `ready` only from in progress; nothing moves back. A pick needs `ready`. A discard is allowed
+  at any time.
+- Merge needs `ready` and a `--note`. It does not compare the variant with the user's pick. Each
+  variant part folder replaces the product folder whole. The note goes into the product's own
+  target file, so a target that exists only in the base cannot be merged yet.
+- Open-sketch problems do not fail `et design check`, so one broken sketch does not block every
+  merge. `sketch check` reports them.
+- Comment id: UTC timestamp plus 4 hex characters. The stale rule also fails on a missing
+  preset, sketch or variant, and on an unreadable comment file.
+- The live agent report is a call status at slug `sketches/<product>/<layer>-<name>`, state
+  `drawing`, in the temp status folder.
+- Not served yet: `mergePreviewOf` and `openSketchProblemsOf` need endpoints in `serve.ts` for
+  Studio.
 
 ### Canvas, as built (2026-10-27)
 

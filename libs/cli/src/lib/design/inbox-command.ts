@@ -1,0 +1,123 @@
+import { relative } from 'path';
+import { createComment, deleteComment } from './system/comments/comment';
+import { inboxOf, inboxText } from './system/comments/inbox';
+import { productDirOf } from './system/product';
+import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+
+export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id>'];
+
+export const COMMENT_USAGE = [
+  'comment <layer>/<name> <state> --preset <preset> <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
+];
+
+const fail = (message: string, code = 1) => {
+  console.error(message);
+
+  return code;
+};
+
+const usage = (invocation: string, lines: string[]) =>
+  fail(lines.map((line) => `usage: ${invocation} ${line}`).join('\n'), 2);
+
+/**
+ * `et design inbox` lists what waits for the agent - open comments and the user's pick and discard
+ * decisions, oldest first - and `et design inbox done <id>` deletes a comment the agent has handled.
+ */
+export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
+  const { target, argv, invocation } = options;
+  const args = argsOf(argv, ['--product']);
+
+  if (typeof args === 'string') return usage(invocation, INBOX_USAGE);
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const names = productNamesOf({ config, asked: args.values['--product'] });
+
+  if (typeof names === 'string') return fail(names);
+
+  if (args.positional[0] === 'done') {
+    const id = args.positional[1];
+
+    if (!id || args.positional.length > 2) return usage(invocation, INBOX_USAGE);
+
+    const deleted = deleteComment({
+      products: names.map((name) => ({ name, dir: productDirOf({ target, product: name }) })),
+      id,
+    });
+
+    if (typeof deleted === 'string') return fail(deleted);
+
+    console.log(`done: ${relative(target, deleted.file)}`);
+
+    return 0;
+  }
+
+  if (args.positional.length > 0) return usage(invocation, INBOX_USAGE);
+
+  const { items, unreadable } = inboxOf({ target, config, products: names });
+
+  unreadable.forEach((problem) => console.error(problem));
+  console.log(args.flags.has('--json') ? JSON.stringify(items, null, 2) : inboxText(items, invocation));
+
+  return unreadable.length > 0 ? 1 : 0;
+};
+
+const pointOf = (value: string | undefined) => {
+  if (value === undefined) return undefined;
+
+  const [x, y, ...rest] = value.split(',').map(Number);
+
+  return x === undefined || y === undefined || rest.length > 0 || Number.isNaN(x) || Number.isNaN(y) ? null : { x, y };
+};
+
+/** `et design comment …` writes a comment on a state of a part, as Studio does from the canvas. */
+export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
+  const { target, argv, invocation } = options;
+  const args = argsOf(argv, ['--product', '--preset', '--at', '--sketch', '--variant']);
+
+  if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
+
+  const [part, state, ...words] = args.positional;
+  const preset = args.values['--preset'];
+  const point = pointOf(args.values['--at']);
+  const sketch = args.values['--sketch'];
+  const variant = args.values['--variant'];
+
+  if (
+    !part ||
+    !state ||
+    !preset ||
+    words.length === 0 ||
+    point === null ||
+    (sketch === undefined) !== (variant === undefined)
+  )
+    return usage(invocation, COMMENT_USAGE);
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const product = oneProductOf({ target, config, asked: args.values['--product'] });
+
+  if (typeof product === 'string') return fail(product);
+
+  const comment = createComment({
+    product,
+    comment: {
+      part,
+      state,
+      preset,
+      text: words.join(' '),
+      ...(point ? { point } : {}),
+      ...(sketch && variant ? { sketch: { target: sketch, variant } } : {}),
+    },
+  });
+
+  if (typeof comment === 'string') return fail(comment);
+
+  console.log(`comment ${comment.id}: ${relative(target, comment.file)}`);
+
+  return 0;
+};
