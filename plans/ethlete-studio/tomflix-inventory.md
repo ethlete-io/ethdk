@@ -217,6 +217,16 @@ Fixtures sit in several call folders and chain by import (46 imports 45 imports 
 
 ## 7. Conflicts and open points
 
+### Decided (2026-10-27)
+
+- C1 danger colour: rose from call 13 C (`244 63 94` / `190 18 60`). The app's `themes.ts` gets
+  the fix later.
+- C2 card: call 40 H. One title line, one subline, no brighten on hover.
+- C3 phone tabs: outdated, and out of scope for slice 3. The tab bar belongs to the shell and the
+  pages (slice 6). Decide it there from the current Studio state, not from the old calls.
+- C4 logo: 32 B in the header. 02 G for the favicon and the app icon.
+- C5 superseded chains: the latest call for each part wins. The older calls are history.
+
 ### Conflicts
 
 | #   | Conflict                                                                                                                                                                                                                                                | Source                       | Recommendation                                                                                                                 |
