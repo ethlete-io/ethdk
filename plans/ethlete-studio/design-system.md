@@ -168,6 +168,22 @@ Three tracks run at the same time. They touch different files.
 - The existing project picker becomes the workspace picker. A product picker for the chosen
   repo goes next to it. The UI of both pickers is still open.
 
+### Slice 2 server, as built (2026-10-27)
+
+- Endpoints: `GET /__design/system[?product=]` (parts list with origin, note, states,
+  problems), `GET /__design/shot?product&part&state&preset[&surface&color]` (PNG),
+  `GET /__design/calls` (Legacy list), `POST /__design/transfer?call=<slug>`.
+  `et design system --json [--product]` prints the parts list through the same Vite setup.
+- A frame shows a part state with `?product=&part=<layer>/<name>&state=`. `?call=` still works.
+- A base part is a separate module in each product (`<file>?design-product=<name>`). This is how
+  an override reaches inside base parts.
+- Part problems in the list are the rule problems plus `LOAD`. `tsc` errors are left out: they
+  take seconds per product.
+- Shots: viewport = preset width × preset height (800 px without one), full page, device scale 1.
+  The cache drops a shot when its file or a file it imports changes (Vite module graph).
+- Studio's Rust watcher already watches `.ethlete/design`. No new reload event.
+- Not yet tested on its own: the switch of `ng()` providers to the frame's product.
+
 ### Canvas, as built (2026-10-27)
 
 The canvas is `apps/ethlete-studio/src/app/components/design-canvas/`. A dev build shows it with
@@ -176,8 +192,8 @@ mock frames at `#/canvas-demo`. It does not connect to the design server yet.
 - Core parts in use: `ResizeHandlesComponent` (free width), `dragGestureFrom` (pan),
   `signalElementDimensions` and `ProvideColorDirective`.
 - The zoom control is plain buttons for now. `@ethlete/components` did not compile under
-  Studio's narrowed theme names. A fix in `libs/components` is in progress; then the control
-  moves to SDK buttons.
+  Studio's narrowed theme names. The fix is in (`160bd4386`); the control can move to SDK
+  buttons now.
 - A frame without a height measures its iframe when it is same-origin. Otherwise it uses 600 px
   until it is live once. No guard yet for a page that grows with the iframe height.
 - "In view" adds a 400 px margin. The active frame always stays live.
