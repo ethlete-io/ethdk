@@ -967,7 +967,10 @@ export class SystemViewComponent {
 
   protected toggleNotes() {
     this.noteStore.toggle();
-    if (this.noteStore.active()) this.commentStore.end();
+    if (!this.noteStore.active()) return;
+
+    this.commentStore.end();
+    this.showNotes(true);
   }
 
   protected startNote(pick: FramePoint) {

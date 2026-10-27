@@ -525,4 +525,18 @@ describe('SystemViewComponent on a flow', () => {
     expect(host(second).querySelector('[data-note="n1"]')).toBeNull();
     expect(host(second).querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('false');
   });
+
+  it('shows the notes again when note mode turns on, so a new note stays in view', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const host = fixture.nativeElement as HTMLElement;
+
+    host.querySelector<HTMLButtonElement>('[data-notes-shown]')?.click();
+    await settle(fixture);
+    host.querySelector<HTMLButtonElement>('[data-note-mode]')?.click();
+    await settle(fixture);
+
+    expect(host.querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('true');
+    expect(host.querySelector('[data-note="n1"]')).not.toBeNull();
+    expect(rememberedView().notesShown).toEqual({ ' web': true });
+  });
 });
