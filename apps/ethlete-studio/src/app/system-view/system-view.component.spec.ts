@@ -1,6 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ListedPart, ListedProduct } from '../../host/design';
+import { ListedComment, ListedPart, ListedProduct } from '../../host/design';
+import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { rememberedView } from '../studio-view/remembered';
 import { SystemViewComponent } from './system-view.component';
@@ -20,8 +21,20 @@ const PRODUCT: ListedProduct = {
   name: 'web',
   base: null,
   presets: { phone: { width: 390 } },
-  parts: [part('foundations', 'tokens'), part('elements', 'rating')],
+  parts: [part('foundations', 'tokens'), { ...part('elements', 'rating'), interactions: ['hover'] }],
   problems: [],
+};
+
+const HOVER_COMMENT: ListedComment = {
+  id: '1',
+  part: 'elements/rating',
+  state: 'default',
+  size: 'fitted',
+  interaction: 'hover',
+  text: 'Too light',
+  createdAt: '2026-10-27T10:00:00Z',
+  replies: [],
+  stale: null,
 };
 
 const SKETCH_CAMERA: Camera = { x: 10, y: 20, zoom: 0.5 };
@@ -46,7 +59,7 @@ const stubServer = () =>
   vi.stubGlobal('fetch', (url: string) => {
     if (url.includes('/__design/system')) return json([PRODUCT]);
     if (url.includes('/__design/calls')) return json([]);
-    if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+    if (url.includes('/__design/comments')) return json({ comments: [HOVER_COMMENT], unreadable: [] });
 
     return new Promise(() => undefined);
   });
@@ -103,5 +116,15 @@ describe('SystemViewComponent on a reload', () => {
       'web sketch:elements/rating': SKETCH_CAMERA,
       'web foundations/tokens': { x: 0, y: 0, zoom: 1 },
     });
+  });
+
+  it('counts no comment of another interaction in the part table, where each interaction has its own frame', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const frames: CanvasFrame[] = fixture.componentInstance['notedFrames']();
+
+    expect(frames.map((frame) => [frame.place?.interaction ?? 'rest', frame.note])).toEqual([
+      ['rest', undefined],
+      ['hover', undefined],
+    ]);
   });
 });
