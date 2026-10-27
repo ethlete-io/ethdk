@@ -508,7 +508,8 @@ export const writeComment$ = (
   comment: CommentPlace & { text: string },
 ): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
 
-const designEvents$ = (port: number, name: 'comments' | 'changes'): Observable<void> =>
+/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
+export const commentChanges$ = (port: number): Observable<void> =>
   new Observable<EventSource>((subscriber) => {
     const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
 
@@ -516,15 +517,9 @@ const designEvents$ = (port: number, name: 'comments' | 'changes'): Observable<v
 
     return () => events.close();
   }).pipe(
-    switchMap((events) => fromEvent(events, name)),
+    switchMap((events) => fromEvent(events, 'comments')),
     map(() => undefined),
   );
-
-/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
-export const commentChanges$ = (port: number): Observable<void> => designEvents$(port, 'comments');
-
-/** Emits whenever a file outside the design folder that a frame draws changes, which the design watch does not see. */
-export const drawnChanges$ = (port: number): Observable<void> => designEvents$(port, 'changes');
 
 /** Deletes a comment without a note, through `comment-withdraw`. */
 export const withdrawComment$ = (address: ProductAddress, id: string): Observable<void> =>
