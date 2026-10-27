@@ -364,6 +364,30 @@ Open points, each with a recommendation:
 - The canvas row gap is 48 px for fitted frames (the tile grid, the matrix at `fitted`) and stays
   120 px for pages and parts with `widths`. 48 px is a start value until Tom has seen it in Studio.
 
+### Comment done note (2026-10-27)
+
+- `et design inbox done <id>` needs `--note "<reason>"`. The note replaces the part's note, not
+  appends to it, and still explains the whole shape of the part; the agent may keep the old note
+  when it still holds. Withdraw is a separate Studio path that deletes without a note.
+- Breaking: `et design inbox --json` gives `{ items, waitingForUser }` instead of an array. No
+  migration, since only agents read it.
+
+### Slice 10 decisions (2026-10-27)
+
+- A full redesign of Studio from a clean slate, through every layer from foundations to pages, so
+  every part of the workflow runs once: base, inheritance, matrix, threads, merge preview, pages.
+- It comes after slice 6 (pages need it) and before slices 7 to 9, so workflow gaps show before
+  more slices build on them. The tomflix rebuild follows it.
+- A new product `studio` in this repo's `.ethlete/design`. `studio-lab` stays the test bed.
+- First step: a base `sdk` in this repo, built from the component mocks; `studio` inherits from it.
+  Not checked yet: whether another repo can load a base from a package.
+- The app imports the product's `foundations/tokens/tokens.css` as the single source; Studio's
+  Tailwind theme and SDK themes read their values from it.
+- The redesign follows the `ethlete-design-exploration` skill strictly: every layer starts as a
+  sketch, and all work goes through sketches, comments, the inbox and the CLI, not the chat. Each
+  snag in the workflow goes into this plan as a finding.
+- Rebuilding the real app on the new system is its own step after the design.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
@@ -823,6 +847,8 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
    `apps/ethlete-studio/src-tauri/src/tools.rs`.
 9. **Motion**: its own plan, `plans/ethlete-studio/motion.md`. A timeline, controlled time, a
    screenshot per keyframe. Motion is a tool that extends components and elements.
+10. **Studio designs Studio**: a full redesign of Studio through the whole workflow, as in "Slice
+    10 decisions". It runs after slice 6 and before slices 7 to 9; the tomflix rebuild follows it.
 
 Each slice gets an "in progress" note here when it starts.
 
