@@ -557,8 +557,16 @@ These change the "all" case of 027805054.
 - Deviations: `tick` still bumps on design changes, but drives only the tree, the lists, the
   comments and the legacy call frames. The sketch view reloads as a whole on any change to its
   target or to a part in its variants; a revision per variant is a later step.
-- Follow-ups: the server drops the `changes` event; the frame page posts an error flag, so
-  `errored` also covers runtime errors in the iframe; `drawnChanges$` goes.
+- Follow-ups, all built: 2e4fc1797 drops the server's `changes` event (the `parts` event already
+  covers drawn files outside the design folder). 76fd5cfa4: the frame page's height message carries
+  `href` and `errored: true` after a failed draw, a setup error, or an uncaught error or rejection.
+  Studio (`frame-revisions.ts`) remembers each failing frame and reloads its part on the next change,
+  not at once; a good draw keeps its revision. All frames of a part share one revision, so the whole
+  part reloads. Headless proof: a runtime throw in the button outline frame reloaded at revision 1,
+  then 2; a control run without a throw had no reloads. 0d198f89f removes `drawnChanges$`.
+- Pins with a fresh server, headless: 239f shows the question dot. The "answered, no dot" case
+  (7001) is not proven: in that run the sketch `components/button` variant b column stayed
+  "drawing…" with no frames. The builder checks if that is a bug.
 
 ### Frame drag removal, as built (2026-10-27)
 
