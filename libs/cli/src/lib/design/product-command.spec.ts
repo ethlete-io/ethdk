@@ -99,6 +99,16 @@ describe('designProduct', () => {
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['shop'] })).toBe(0);
   }, 60_000);
 
+  it('creates a product over POST on the built-in base', async () => {
+    const target = make();
+
+    expect(await post(target, { name: 'shop', base: '@ethlete/components' })).toEqual({
+      status: 201,
+      body: { name: 'shop' },
+    });
+    expect(readConfig(target)?.products?.['shop']).toEqual({ base: '@ethlete/components' });
+  });
+
   it('refuses over POST a name that exists, an unknown base and a GET', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = make();

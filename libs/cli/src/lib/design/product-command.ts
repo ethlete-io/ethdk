@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { IncomingMessage } from 'http';
 import { dirname, relative } from 'path';
 import { configPathOf, DesignConfig, DesignProduct, readConfig } from './paths';
+import { isBuiltInBase } from './system/base';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
 
@@ -120,7 +121,7 @@ const jsonBodyOf = async (request: IncomingMessage): Promise<Record<string, unkn
 
 /**
  * POST `/__design/product` with `{ name, base? }` creates a product as `et design product new` does. `base` names
- * another product of the checkout. Answers 201 with `{ name }`, or 400/409 with `{ error }`.
+ * another product of the checkout, or `@ethlete/components`. Answers 201 with `{ name }`, or 400/409 with `{ error }`.
  */
 export const newProductAnswer = async (options: { target: string; request: IncomingMessage }) => {
   const { target, request } = options;
@@ -134,9 +135,10 @@ export const newProductAnswer = async (options: { target: string; request: Incom
   if (!name) return { status: 400, body: { error: 'A name is required.' } };
 
   const config = readConfig(target) ?? {};
-  const baseConfig = base ? config.products?.[base] : undefined;
+  const builtIn = base !== null && isBuiltInBase(base);
+  const baseConfig = base && !builtIn ? config.products?.[base] : undefined;
 
-  if (base && !baseConfig) return { status: 400, body: { error: `NO PRODUCT "${base}" to inherit from.` } };
+  if (base && !builtIn && !baseConfig) return { status: 400, body: { error: `NO PRODUCT "${base}" to inherit from.` } };
   if (baseConfig?.base) {
     return { status: 400, body: { error: `"${base}" inherits from another product, so it can not be a base.` } };
   }
@@ -144,7 +146,7 @@ export const newProductAnswer = async (options: { target: string; request: Incom
   const refused = createProduct({
     target,
     name,
-    base: base ? relative(target, productDirOf({ target, product: base })) : null,
+    base: base ? (builtIn ? base : relative(target, productDirOf({ target, product: base }))) : null,
   });
 
   if (refused) return { status: refused.startsWith('PRODUCT EXISTS') ? 409 : 400, body: { error: refused } };

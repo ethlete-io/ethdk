@@ -10,6 +10,8 @@ const BUILT_IN_BASES: Record<string, string> = {
   '@ethlete/components': 'systems/ethlete-components',
 };
 
+export const isBuiltInBase = (base: string) => base in BUILT_IN_BASES;
+
 export const baseDirOf = (options: { target: string; base: string }) => {
   const builtIn = BUILT_IN_BASES[options.base];
 
