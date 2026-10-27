@@ -1392,6 +1392,15 @@ Flow comments and preset, as built (bc8801096, headless proof pending):
 - The preset is remembered per flow as `ViewState.flowPresets["<product> flow:<name>"]`, else the
   previous pick, else the first preset.
 
+Open points, each with a recommendation (asked 2026-10-27, not yet answered):
+
+- Note cards of a pointed note overlap the next frame at low zoom. Recommendation: put the card
+  under the frame and keep only a small numbered marker at the point.
+- A flow shows no hint of comments at another preset. Recommendation: the "N comments at another
+  size" frame note of the part canvas on flow frames too.
+- The sidebar lists a flow comment as a part comment and opens the part view. Recommendation: keep
+  it; a state appears in many flows.
+
 ### Wireframe kit fix decisions (2026-10-27)
 
 Seen on `studio-lab` `pages/film-detail` at phone 390: image and text stay side by side, the button
