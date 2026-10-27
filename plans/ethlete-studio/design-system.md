@@ -1409,6 +1409,16 @@ flow switch):
   "The design server is older than Studio - restart it". Studio does not restart the server
   itself.
 
+As built (2026-10-27):
+
+- 918490a48: below zoom 0.25 (where labels stop holding their size) a pointed note shows its marker
+  only. Free-note headings stay at every zoom.
+- 80b987c1f: flow frames show "N comments at another size", following the shown preset.
+- a38f0bf58: every `/__design` JSON read goes through one helper. An HTML answer
+  (`content-type: text/html`) raises the "older than Studio" error, shown where design errors
+  already show (system read error, comment and note stores, sketch and new-product forms). Before,
+  `designAnswer$` silently turned the HTML into `null`.
+
 ### Wireframe kit fix decisions (2026-10-27)
 
 Seen on `studio-lab` `pages/film-detail` at phone 390: image and text stay side by side, the button
