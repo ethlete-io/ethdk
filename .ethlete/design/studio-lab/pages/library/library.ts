@@ -50,7 +50,7 @@ export default definePart<Props>({
         .lab-page h1 { margin: 0 0 12px; font-size: 24px; }
         .lab-page-action { margin-top: 12px; }
         .lab-page-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
-        .lab-page-scrim { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--lab-ink) 40%, transparent); }
+        .lab-page-scrim { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--lab-ink) 40%, transparent); }
       `,
     });
   },
