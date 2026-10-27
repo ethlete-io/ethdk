@@ -670,10 +670,11 @@ describe('the design server for sketches and comments', () => {
     const target = acme();
     const { ask } = await serveAcme(target);
     const on = { part: 'pages/home', state: 'empty', text: 'The first visit.' };
-    const added = await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 } });
+    const added = await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 }, size: 'phone' });
     const { id } = added.body as { id: string };
 
-    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 4, y: 8 }, stale: null } });
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 4, y: 8 }, size: 'phone', stale: null } });
+    expect((await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 } })).status).toBe(422);
     expect((await ask('/__design/note', '?product=acme', 'POST', { ...on, state: 'loading' })).status).toBe(422);
     expect((await ask('/__design/note', '?product=acme')).status).toBe(405);
     expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({

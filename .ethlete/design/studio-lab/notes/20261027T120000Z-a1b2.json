@@ -1,6 +1,10 @@
 {
   "part": "pages/library",
   "state": "empty",
-  "point": { "x": 40, "y": 120 },
+  "point": {
+    "x": 40,
+    "y": 120
+  },
+  "size": "phone",
   "text": "The empty library invites the first film here."
 }

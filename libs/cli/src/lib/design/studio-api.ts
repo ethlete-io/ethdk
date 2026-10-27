@@ -7,7 +7,6 @@ import {
   createComment,
   deleteComment,
   DesignComment,
-  goneStateOf,
   listComments,
   replyToComment,
   threadStateOf,
@@ -15,7 +14,15 @@ import {
 } from './system/comments/comment';
 import { completeComment } from './system/comments/complete';
 import { addFlowNote, changeFlowNote, deleteFlowNote, FlowNote, FlowNoteChange, listFlows } from './system/flows/flow';
-import { changeNote, createNote, deleteNote, DesignNote, listNotes, NoteChange } from './system/notes/note';
+import {
+  changeNote,
+  createNote,
+  deleteNote,
+  DesignNote,
+  listNotes,
+  NoteChange,
+  noteProblemOf,
+} from './system/notes/note';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -420,7 +427,7 @@ export const flowsAnswer = withProduct('GET', ({ asked, product }) => {
 const noteOf = ({ note, target, product }: { note: DesignNote; target: string; product: ResolvedProduct }) => {
   const { file, ...rest } = note;
 
-  return { ...rest, file: relative(target, file), stale: goneStateOf({ product, part: note.part, state: note.state }) };
+  return { ...rest, file: relative(target, file), stale: noteProblemOf({ product, note }) };
 };
 
 const changeOf = (body: Record<string, unknown>, place: 'point' | 'at') => ({
@@ -443,13 +450,13 @@ export const notesAnswer = withProduct('GET', ({ asked, product }) => {
   };
 });
 
-/** POST `?product=`, body `{ part, state, text, point?: { x, y } }`: writes a note on a state into `<product>/notes/`. */
+/** POST `?product=`, body `{ part, state, text, point?: { x, y }, size? }`: writes a note on a state into `<product>/notes/`; a point needs its size. */
 export const noteAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
 
   if (!body) return failure(400, 'the body must be a JSON object');
 
-  const { part, state, text, point } = body;
+  const { part, state, text, point, size } = body;
   const created = createNote({
     product,
     note: {
@@ -457,6 +464,7 @@ export const noteAnswer = withProduct('POST', async ({ asked, product }) => {
       state: state as string,
       text: text as string,
       ...(point === undefined ? {} : { point: point as { x: number; y: number } }),
+      ...(size === undefined ? {} : { size: size as string | number }),
     },
   });
 
@@ -465,14 +473,18 @@ export const noteAnswer = withProduct('POST', async ({ asked, product }) => {
     : { status: 200, body: noteOf({ note: created, target: asked.target, product }) };
 });
 
-/** POST `?product=`, body `{ id, text?, point?: { x, y } | null }`: changes a note on a state; `point: null` drops its point. */
+/** POST `?product=`, body `{ id, text?, point?: { x, y } | null, size? }`: changes a note on a state; `point: null` drops its point and size. */
 export const noteChangeAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
   const id = textOf(body?.['id']);
 
   if (!body || !id) return failure(400, 'the body must be { id, text?, point? }');
 
-  const changed = changeNote({ productDir: product.dir, id, change: changeOf(body, 'point') as NoteChange });
+  const change = {
+    ...changeOf(body, 'point'),
+    ...(body['size'] === undefined ? {} : { size: body['size'] as string | number }),
+  } as NoteChange;
+  const changed = changeNote({ productDir: product.dir, id, change });
 
   return typeof changed === 'string'
     ? failure(missingNoteStatusOf(changed), changed)

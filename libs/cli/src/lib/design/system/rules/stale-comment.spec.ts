@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
+import { MISSING_NOTE_SIZE } from '../notes/note';
 import { resolveProduct } from '../resolve-product';
 import { staleCommentsOf, staleNotesOf } from './stale-comment';
 
@@ -92,7 +93,7 @@ describe('staleNotesOf', () => {
   it('passes a note that still points at its part and state', () => {
     const target = acme();
 
-    note(target, 'ok', { point: { x: 4, y: 8 } });
+    note(target, 'ok', { point: { x: 4, y: 8 }, size: 'phone' });
 
     expect(staleNotesOf(resolveAcme(target))).toEqual([]);
   });
@@ -102,11 +103,15 @@ describe('staleNotesOf', () => {
     const part = note(target, 'a-part', { part: 'elements/footer' });
     const state = note(target, 'b-state', { state: 'loading' });
     const bad = note(target, 'c-bad', { point: { x: -1, y: 0 } });
+    const sizeless = note(target, 'd-sizeless', { point: { x: 4, y: 8 } });
+    const goneSize = note(target, 'e-gone-size', { point: { x: 4, y: 8 }, size: 'tablet' });
 
     expect(staleNotesOf(resolveAcme(target))).toEqual([
       { rule: 'NOTE', file: bad, message: 'point must be { x, y } in CSS pixels, both >= 0' },
       { rule: 'NOTE', file: part, message: 'part elements/footer no longer exists - move or drop the note' },
       { rule: 'NOTE', file: state, message: 'pages/home has no state "loading" - move or drop the note' },
+      { rule: 'NOTE', file: sizeless, message: MISSING_NOTE_SIZE },
+      { rule: 'NOTE', file: goneSize, message: 'preset "tablet" no longer exists - move or drop the note' },
     ]);
   });
 });

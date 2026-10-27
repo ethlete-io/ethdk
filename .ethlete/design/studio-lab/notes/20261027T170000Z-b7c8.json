@@ -1,6 +1,10 @@
 {
   "part": "components/button",
   "state": "solid",
-  "point": { "x": 12, "y": 12 },
+  "point": {
+    "x": 12,
+    "y": 12
+  },
+  "size": "fitted",
   "text": "The solid button is the one main action of a view. A form keeps at most one of them, and a dialog puts it last, on the right. Its label says what happens, never just 'OK'."
 }

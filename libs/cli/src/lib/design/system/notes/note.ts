@@ -1,15 +1,16 @@
 import { randomBytes } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { CommentPoint, goneStateOf, isPoint } from '../comments/comment';
+import { CommentPoint, CommentSize, FITTED, goneSizeOf, goneStateOf, isPoint, isSize } from '../comments/comment';
 import { ResolvedProduct } from '../resolve-product';
 
-export type NoteFile = { part: string; state: string; point?: CommentPoint; text: string };
+/** A note on a state of a part; a pointed note names the `size` it was written at and shows only there. */
+export type NoteFile = { part: string; state: string; point?: CommentPoint; size?: CommentSize; text: string };
 
 export type DesignNote = NoteFile & { id: string; file: string };
 
-/** What a change sets: a new text, a new point, or `point: null` to pin the note to the whole state. */
-export type NoteChange = { text?: string; point?: CommentPoint | null };
+/** What a change sets: a new text, a new point at a size, or `point: null` to pin the note to the whole state. */
+export type NoteChange = { text?: string; point?: CommentPoint | null; size?: CommentSize };
 
 const NOTE_ID = /^[A-Za-z0-9-]+$/u;
 
@@ -22,11 +23,28 @@ export const newNoteId = () =>
     .replace(/[-:]/gu, '')
     .replace(/\.\d+Z$/u, 'Z')}-${randomBytes(2).toString('hex')}`;
 
+const SIZE_PROBLEM = `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
+
+export const MISSING_NOTE_SIZE = `a pointed note needs the size it was written at - add size: a preset name, a width in CSS pixels or "${FITTED}"`;
+
 const shapeProblemOf = (value: Partial<NoteFile>) => {
   for (const key of ['part', 'state', 'text'] as const)
     if (typeof value[key] !== 'string' || value[key].trim() === '') return `${key} must be a non-empty string`;
 
-  return value.point !== undefined && !isPoint(value.point) ? 'point must be { x, y } in CSS pixels, both >= 0' : null;
+  if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
+
+  return value.size !== undefined && !isSize(value.size) ? SIZE_PROBLEM : null;
+};
+
+/** Why a note points at nothing: its part, state or size is gone, or a pointed note names no size. `null` when it does. */
+export const noteProblemOf = (options: { product: ResolvedProduct; note: NoteFile }) => {
+  const { product, note } = options;
+
+  return (
+    goneStateOf({ product, part: note.part, state: note.state }) ??
+    (note.point && note.size === undefined ? MISSING_NOTE_SIZE : null) ??
+    (note.point && note.size !== undefined ? goneSizeOf({ product, part: note.part, size: note.size }) : null)
+  );
 };
 
 const writeNote = (file: string, note: NoteFile) => writeFileSync(file, `${JSON.stringify(note, null, 2)}\n`);
@@ -57,9 +75,14 @@ export const listNotes = (productDir: string) => {
 /** Writes a note on a state of a part, or answers with why it cannot: a bad shape or a part or state that is gone. */
 export const createNote = (options: { product: ResolvedProduct; note: NoteFile }): DesignNote | string => {
   const { product } = options;
-  const { part, state, point, text } = options.note;
-  const note: NoteFile = { part, state, ...(point === undefined ? {} : { point }), text };
-  const problem = shapeProblemOf(note) ?? goneStateOf({ product, part, state });
+  const { part, state, point, size, text } = options.note;
+  const note: NoteFile = {
+    part,
+    state,
+    ...(point === undefined ? {} : { point, ...(size === undefined ? {} : { size }) }),
+    text,
+  };
+  const problem = shapeProblemOf(note) ?? noteProblemOf({ product, note });
 
   if (problem) return problem;
 
@@ -85,10 +108,15 @@ export const changeNote = (options: { productDir: string; id: string; change: No
 
   if (typeof found === 'string') return found;
 
-  const { text = found.text, point } = options.change;
-  const { id, file, point: before, ...rest } = found;
+  const { text = found.text, point, size } = options.change;
+  const { id, file, point: before, size: sizeBefore, ...rest } = found;
   const kept = point === undefined ? before : (point ?? undefined);
-  const note: NoteFile = { ...rest, ...(kept ? { point: kept } : {}), text };
+  const keptSize = size ?? sizeBefore;
+  const note: NoteFile = {
+    ...rest,
+    ...(kept ? { point: kept, ...(keptSize === undefined ? {} : { size: keptSize }) } : {}),
+    text,
+  };
   const problem = shapeProblemOf(note);
 
   if (problem) return problem;

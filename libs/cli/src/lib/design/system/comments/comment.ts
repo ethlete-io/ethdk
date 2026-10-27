@@ -74,14 +74,16 @@ const isReply = (value: unknown) => {
   );
 };
 
+export const isSize = (value: unknown): value is CommentSize =>
+  (typeof value === 'string' && value !== '') || (typeof value === 'number' && value > 0);
+
 const isKnownInteraction = (value: unknown) => value === REST || INTERACTIONS.some((known) => known === value);
 
 const shapeProblemOf = (value: Partial<CommentFile>) => {
   for (const key of ['part', 'state', 'text', 'createdAt'] as const)
     if (typeof value[key] !== 'string' || value[key] === '') return `${key} must be a non-empty string`;
 
-  if (!(typeof value.size === 'string' && value.size !== '') && !(typeof value.size === 'number' && value.size > 0))
-    return `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
+  if (!isSize(value.size)) return `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
 
   if (value.interaction !== undefined && !isKnownInteraction(value.interaction))
     return `interaction must be ${REST} or one of ${INTERACTIONS.join(', ')}`;
@@ -144,7 +146,7 @@ export const goneStateOf = (options: { product: ResolvedProduct; part: string; s
 };
 
 /** Why a size points at nothing: a preset the product lacks, or a width a part with readable `widths` lacks. */
-const goneSizeOf = (options: { product: ResolvedProduct; part: string; size: CommentSize }) => {
+export const goneSizeOf = (options: { product: ResolvedProduct; part: string; size: CommentSize }) => {
   const { product, part: key, size } = options;
 
   if (typeof size === 'string')

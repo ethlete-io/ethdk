@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../paths';
 import { addFlowNote, changeFlowNote, deleteFlowNote, listFlows } from '../flows/flow';
 import { resolveProduct } from '../resolve-product';
-import { changeNote, createNote, deleteNote, listNotes } from './note';
+import { changeNote, createNote, deleteNote, listNotes, MISSING_NOTE_SIZE } from './note';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-note-'));
@@ -20,7 +20,10 @@ const on = { part: 'pages/home', state: 'empty' };
 describe('state notes', () => {
   it('writes a note on a state, with or without a point, and lists it', () => {
     const product = acme();
-    const pointed = createNote({ product, note: { ...on, point: { x: 12, y: 30 }, text: 'Say why it is empty.' } });
+    const pointed = createNote({
+      product,
+      note: { ...on, point: { x: 12, y: 30 }, size: 'phone', text: 'Say why it is empty.' },
+    });
     const whole = createNote({ product, note: { ...on, text: 'The first visit.' } });
 
     if (typeof pointed === 'string' || typeof whole === 'string') throw new Error('not written');
@@ -28,6 +31,7 @@ describe('state notes', () => {
     expect(JSON.parse(readFileSync(pointed.file, 'utf8'))).toEqual({
       ...on,
       point: { x: 12, y: 30 },
+      size: 'phone',
       text: 'Say why it is empty.',
     });
     expect(listNotes(product.dir).notes.map(({ id, point, text }) => ({ id, point, text }))).toEqual(
@@ -48,12 +52,16 @@ describe('state notes', () => {
       'part pages/gone no longer exists',
     );
     expect(createNote({ product, note: { ...on, text: '  ' } })).toBe('text must be a non-empty string');
+    expect(createNote({ product, note: { ...on, point: { x: 1, y: 2 }, text: 'x' } })).toBe(MISSING_NOTE_SIZE);
+    expect(createNote({ product, note: { ...on, point: { x: 1, y: 2 }, size: 'tablet', text: 'x' } })).toBe(
+      'preset "tablet" no longer exists',
+    );
     expect(existsSync(join(product.dir, 'notes'))).toBe(false);
   });
 
-  it('changes the text and the point, drops the point on null, and deletes a note', () => {
+  it('changes the text and the point, drops the point and its size on null, and deletes a note', () => {
     const product = acme();
-    const created = createNote({ product, note: { ...on, point: { x: 1, y: 2 }, text: 'a' } });
+    const created = createNote({ product, note: { ...on, point: { x: 1, y: 2 }, size: 'phone', text: 'a' } });
 
     if (typeof created === 'string') throw new Error('not written');
 
@@ -62,8 +70,12 @@ describe('state notes', () => {
     expect(changeNote({ productDir: product.dir, id, change: { text: 'b' } })).toMatchObject({
       text: 'b',
       point: { x: 1, y: 2 },
+      size: 'phone',
     });
-    expect(changeNote({ productDir: product.dir, id, change: { point: null } })).not.toHaveProperty('point');
+    expect(
+      changeNote({ productDir: product.dir, id, change: { point: { x: 3, y: 4 }, size: 'desktop' } }),
+    ).toMatchObject({ point: { x: 3, y: 4 }, size: 'desktop' });
+    expect(changeNote({ productDir: product.dir, id, change: { point: null } })).not.toHaveProperty('size');
     expect(JSON.parse(readFileSync(created.file, 'utf8'))).toEqual({ ...on, text: 'b' });
     expect(changeNote({ productDir: product.dir, id, change: { text: '' } })).toBe('text must be a non-empty string');
     expect(changeNote({ productDir: product.dir, id: '../x', change: { text: 'c' } })).toBe('"../x" is no note id');

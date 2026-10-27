@@ -1,5 +1,5 @@
-import { goneStateOf, listComments, staleReasonOf } from '../comments/comment';
-import { listNotes } from '../notes/note';
+import { listComments, staleReasonOf } from '../comments/comment';
+import { listNotes, MISSING_NOTE_SIZE, noteProblemOf } from '../notes/note';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 
@@ -17,16 +17,24 @@ export const staleCommentsOf = (product: ResolvedProduct): Problem[] => {
   ];
 };
 
-/** A note whose part or state is gone, and a note file that cannot be read. */
+/** A note whose part, state or size is gone, a pointed note without a size, and a note file that cannot be read. */
 export const staleNotesOf = (product: ResolvedProduct): Problem[] => {
   const { notes, unreadable } = listNotes(product.dir);
 
   return [
     ...unreadable.map(({ file, problem }) => ({ rule: 'NOTE', file, message: problem })),
     ...notes.flatMap((note) => {
-      const gone = goneStateOf({ product, part: note.part, state: note.state });
+      const gone = noteProblemOf({ product, note });
 
-      return gone ? [{ rule: 'NOTE', file: note.file, message: `${gone} - move or drop the note` }] : [];
+      if (!gone) return [];
+
+      return [
+        {
+          rule: 'NOTE',
+          file: note.file,
+          message: gone === MISSING_NOTE_SIZE ? gone : `${gone} - move or drop the note`,
+        },
+      ];
     }),
   ];
 };

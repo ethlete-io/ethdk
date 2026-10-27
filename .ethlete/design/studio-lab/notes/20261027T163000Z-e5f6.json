@@ -1,6 +1,10 @@
 {
   "part": "pages/library",
   "state": "three",
-  "point": { "x": 200, "y": 160 },
+  "point": {
+    "x": 200,
+    "y": 160
+  },
+  "size": "phone",
   "text": "Each film card opens its detail page."
 }
