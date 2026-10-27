@@ -11,12 +11,13 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
+const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
     goto,
     screenshot,
     evaluate: async () => true,
-    locator: () => ({ first: () => ({ waitFor: async () => undefined }) }),
+    locator: () => ({ first: () => ({ waitFor: async () => undefined }), screenshot: rootScreenshot }),
   }),
   close: async () => undefined,
 }));
@@ -138,10 +139,49 @@ describe('createPartShooter', () => {
     expect((await ask(shots, `${part}&sketch=components/button&variant=z`)).status).toBe(404);
   });
 
-  it('answers 400 without a product, part, state or preset, and 404 for one the product lacks', async () => {
+  it('draws a state at a container width, cropped to the height of its content', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png' });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 } });
+    expect(new URL(goto.mock.calls[0]?.[0] ?? '').searchParams.has('fit')).toBe(false);
+    expect(rootScreenshot).toHaveBeenCalledWith({ type: 'png' });
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('fits a state without a preset or a width to its content', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(shot).toMatchObject({ status: 200, body: Buffer.from('fitted') });
+    expect(new URL(goto.mock.calls[0]?.[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
+    expect(rootScreenshot).toHaveBeenCalledWith({ type: 'png' });
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 
-    expect((await ask(shots, 'product=acme&part=components/card&state=long')).status).toBe(400);
+    await ask(shots, 'product=acme&part=components/card&state=long');
+    await ask(shots, 'product=acme&part=components/card&state=long');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=480');
+    await ask(shots, 'product=acme&part=components/card&state=long&width=280');
+
+    expect(newContext).toHaveBeenCalledTimes(3);
+  });
+
+  it('answers 400 without a product, part or state, for a preset with a width or a bad width, and 404 for one the product lacks', async () => {
+    const { shots } = acme();
+
+    expect((await ask(shots, 'product=acme&part=components/card')).status).toBe(400);
+    expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&width=480')).status).toBe(400);
+
+    for (const width of ['0', '-5', '12.5', 'wide']) {
+      expect((await ask(shots, `product=acme&part=components/card&state=long&width=${width}`)).status).toBe(400);
+    }
+
     expect((await ask(shots, 'product=acme&part=components/nope&state=long&preset=phone')).status).toBe(404);
     expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=tv')).status).toBe(404);
     expect(screenshot).not.toHaveBeenCalled();

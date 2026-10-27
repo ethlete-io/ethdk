@@ -15,11 +15,17 @@ import {
 
 export const SHOT_PATH = '/__design/shot';
 
+const isPositiveWhole = (pixels: number) => Number.isInteger(pixels) && pixels > 0;
+
 const VIEWPORT_HEIGHT = 800;
+
+const FIT_VIEWPORT_WIDTH = 1280;
 
 type Drawn = { product: string; file: string } | { slug: string };
 
-type Frame = { search: string; preset: Pick<DesignPreset, 'width' | 'height'> };
+type Size = Pick<DesignPreset, 'width' | 'height'>;
+
+type Frame = { search: string; size: Size | null; clip: boolean };
 
 type GraphModule = { id: string | null; importers: Set<GraphModule> };
 
@@ -39,9 +45,9 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
 };
 
 /**
- * Draws one state of a part at one preset width, or one variant of a call at a given width, at full
- * height, into a PNG. Each picture is kept per frame, size and theme until a file it was drawn from
- * changes.
+ * Draws one state of a part at one preset, at one container width, or fitted to its content, or one
+ * variant of a call at a given width, at full height, into a PNG. Each picture is kept per frame, size
+ * and theme until a file it was drawn from changes.
  */
 export const createPartShooter = (options: {
   target: string;
@@ -55,7 +61,7 @@ export const createPartShooter = (options: {
 
   const draw = async (browser: Browser, frame: Frame) => {
     const context = await browser.newContext({
-      viewport: { width: frame.preset.width, height: frame.preset.height ?? VIEWPORT_HEIGHT },
+      viewport: { width: frame.size?.width ?? FIT_VIEWPORT_WIDTH, height: frame.size?.height ?? VIEWPORT_HEIGHT },
     });
 
     try {
@@ -63,6 +69,8 @@ export const createPartShooter = (options: {
 
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.evaluate(settled);
+
+      if (frame.clip) return await page.locator('#root').screenshot({ type: 'png' });
 
       return await page.screenshot({ fullPage: true, type: 'png' });
     } finally {
@@ -80,7 +88,8 @@ export const createPartShooter = (options: {
     drawn: Drawn;
     search: URLSearchParams;
     params: URLSearchParams;
-    size: Pick<DesignPreset, 'width' | 'height'>;
+    size: Size | null;
+    clip?: boolean;
   }) => {
     const theme = themeOf(options.params);
     const key = JSON.stringify([...options.key, theme.surface, theme.color]);
@@ -91,7 +100,7 @@ export const createPartShooter = (options: {
     if (theme.color) options.search.set('color', theme.color);
 
     const search = options.search.toString();
-    const shot = drawQueue.run((browser) => draw(browser, { search, preset: options.size }));
+    const shot = drawQueue.run((browser) => draw(browser, { search, size: options.size, clip: options.clip ?? false }));
 
     cache.set(key, { drawn: options.drawn, shot });
     shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
@@ -103,13 +112,14 @@ export const createPartShooter = (options: {
     product: string;
     part: string;
     state: string;
-    preset: string;
+    preset: string | null;
+    width: number | null;
     sketch: SketchVariant | null;
     params: URLSearchParams;
   }) => {
-    const { product, part, state, preset, sketch, params } = options;
+    const { product, part, state, preset, width, sketch, params } = options;
     const file = system.partOf({ product, part, sketch })?.file;
-    const size = system.productOf(product)?.presets[preset];
+    const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
     if (!file)
       return Promise.reject(
@@ -119,20 +129,22 @@ export const createPartShooter = (options: {
             : `design-explore: product "${product}" has no part "${part}"`,
         ),
       );
-    if (!size)
+    if (preset && !size)
       return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`));
 
     return cached({
-      key: ['part', product, part, state, preset, sketch?.target, sketch?.variant],
+      key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant],
       drawn: { product, file },
       search: new URLSearchParams({
         product,
         part,
         state,
+        ...(size ? {} : { fit: '' }),
         ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
       }),
       params,
-      size,
+      size: size ?? null,
+      clip: !preset,
     });
   };
 
@@ -151,12 +163,14 @@ export const createPartShooter = (options: {
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
-      const [slug, variant, width, sketch] = ['call', 'variant', 'width', 'sketch'].map((name) => params.get(name));
+      const [slug, variant, width, sketch, product] = ['call', 'variant', 'width', 'sketch', 'product'].map((name) =>
+        params.get(name),
+      );
 
-      if (slug || width || (variant && !sketch)) {
+      if (slug || (!product && (width || variant))) {
         const pixels = Number(width);
 
-        if (!slug || !variant || !Number.isInteger(pixels) || pixels <= 0) {
+        if (!slug || !variant || !isPositiveWhole(pixels)) {
           send(response, {
             status: 400,
             type: 'text/plain; charset=utf-8',
@@ -171,13 +185,14 @@ export const createPartShooter = (options: {
         return;
       }
 
-      const [product, part, state, preset] = ['product', 'part', 'state', 'preset'].map((name) => params.get(name));
+      const [part, state, preset] = ['part', 'state', 'preset'].map((name) => params.get(name));
+      const pixels = width === null ? null : Number(width);
 
-      if (!product || !part || !state || !preset) {
+      if (!product || !part || !state || (preset && width) || (pixels !== null && !isPositiveWhole(pixels))) {
         send(response, {
           status: 400,
           type: 'text/plain; charset=utf-8',
-          body: 'design-explore: pass product, part, state and preset, or call, variant and width',
+          body: 'design-explore: pass product, part, state and at most one of preset and a width in pixels, or call, variant and width',
         });
 
         return;
@@ -189,7 +204,8 @@ export const createPartShooter = (options: {
           product,
           part,
           state,
-          preset,
+          preset: preset ?? null,
+          width: pixels,
           sketch: sketch && variant ? { target: sketch, variant } : null,
           params,
         }),

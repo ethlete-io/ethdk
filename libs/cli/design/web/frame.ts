@@ -10,6 +10,7 @@ const partKey = params.get('part') ?? '';
 const key = (product ? params.get('state') : params.get('variant')) ?? '';
 const sketch = product ? params.get('sketch') : null;
 const sketchVariant = params.get('variant') ?? '';
+const fit = product !== null && params.has('fit');
 
 await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
 
@@ -20,6 +21,10 @@ const color = params.get('color');
 // On <html> a theme class ties with the `:root` defaults of the theme CSS, which come later and win.
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
+if (fit) {
+  root.style.width = 'max-content';
+  root.style.padding = '16px';
+}
 
 const fail = (message: string): null => {
   const text = document.createElement('pre');
@@ -100,10 +105,15 @@ place();
 
 const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
-  parent.postMessage({ type: 'design-explore:height', variant: key, height }, '*');
+  const width = fit ? { width: Math.ceil(root.getBoundingClientRect().width) } : {};
+
+  parent.postMessage({ type: 'design-explore:height', variant: key, height, ...width }, '*');
 };
 
-new ResizeObserver(report).observe(document.documentElement);
+const reported = new ResizeObserver(report);
+
+reported.observe(document.documentElement);
+if (fit) reported.observe(root);
 report();
 
 addEventListener('keydown', (event) => {

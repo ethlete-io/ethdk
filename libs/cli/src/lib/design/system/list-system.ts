@@ -13,6 +13,8 @@ export type ListedPart = {
   origin: PartOrigin;
   note: string | null;
   states: string[];
+  /** The container widths the part is drawn at, when it declares valid ones. */
+  widths?: number[];
   problems: Problem[];
 };
 
@@ -28,7 +30,14 @@ export type ListedProduct = {
 /** Answers with the module of a part file as one product draws it. */
 export type PartLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
-type PartModule = { default?: { note?: unknown; states?: unknown } };
+type PartModule = { default?: { note?: unknown; states?: unknown; widths?: unknown } };
+
+const widthsOf = (widths: unknown) =>
+  Array.isArray(widths) &&
+  widths.length > 0 &&
+  widths.every((width) => typeof width === 'number' && Number.isFinite(width) && width > 0)
+    ? { widths: widths as number[] }
+    : {};
 
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
@@ -44,7 +53,12 @@ const read = async (options: { part: ResolvedPart; product: string; load: PartLo
       return { note: null, states: [], problem: 'default-exports no definePart({ note, states, render })' };
     }
 
-    return { note: typeof loaded.note === 'string' ? loaded.note : null, states: Object.keys(states), problem: null };
+    return {
+      note: typeof loaded.note === 'string' ? loaded.note : null,
+      states: Object.keys(states),
+      ...widthsOf(loaded.widths),
+      problem: null,
+    };
   } catch (error) {
     return { note: null, states: [], problem: error instanceof Error ? error.message : String(error) };
   }
@@ -81,7 +95,7 @@ export const listSystem = async (options: {
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
-              const { note, states, problem } = await read({ part, product: name, load });
+              const { note, states, problem, ...widths } = await read({ part, product: name, load });
               const own = problems.filter((found) => belongsTo(part, found));
 
               return {
@@ -90,6 +104,7 @@ export const listSystem = async (options: {
                 origin: part.origin,
                 note,
                 states,
+                ...widths,
                 problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                   relativeTo,
                 ),

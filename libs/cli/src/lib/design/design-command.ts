@@ -32,7 +32,7 @@ const helpOf = (invocation: string) =>
     '  scripted motion, then tsc. Without any flag, check checks every product in config.json.',
     '',
     `${invocation} system --json [--product <name>]`,
-    "  Print each product's parts as JSON: origin, note, states, presets and the problems of each part.",
+    "  Print each product's parts as JSON: origin, note, states, widths, presets and the problems of each part.",
     '',
     `${invocation} product new <name> [--base <path|@ethlete/components>] [--from-project <name>]`,
     '  Create a product: its config.json entry and the empty layer folders. Without a base it gets the presets',

@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -106,6 +106,27 @@ describe('listSystem', () => {
       expect.objectContaining({ rule: 'LOAD', message: expect.stringContaining('broken on load') }),
     ]);
     expect(problemsOf('home')).toEqual([]);
+  });
+
+  it("lists a part's widths when they are a list of positive numbers, and a WIDTHS problem when they are not", async () => {
+    const target = acme();
+    const withWidths = (path: string, widths: string) => {
+      const file = join(target, DESIGN_DIR, path);
+
+      writeFileSync(file, readFileSync(file, 'utf8').replace('  states:', `  widths: ${widths},\n  states:`));
+    };
+
+    withWidths('acme/elements/hero/hero.ts', '[320, 640]');
+    withWidths('acme/foundations/palette/palette.ts', '[]');
+
+    const [product] = await list(target, ['acme']);
+    const partOf = (name: string) => product?.parts.find((part) => part.name === name);
+
+    expect(partOf('hero')?.widths).toEqual([320, 640]);
+    expect(partOf('hero')?.problems).toEqual([]);
+    expect(partOf('palette')).not.toHaveProperty('widths');
+    expect(partOf('palette')?.problems).toEqual([expect.objectContaining({ rule: 'WIDTHS' })]);
+    expect(partOf('button')).not.toHaveProperty('widths');
   });
 
   it('loads a base part with the parts of the product that uses it', async () => {

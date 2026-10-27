@@ -9,6 +9,7 @@ import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { scriptedMotionOf } from './rules/motion';
 import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { upwardDependenciesOf } from './rules/upward-dependency';
+import { badWidthsOf } from './rules/widths';
 import { writeSystemTsconfig } from './system-tsconfig';
 
 const RULES = [
@@ -19,6 +20,7 @@ const RULES = [
   scriptedMotionOf,
   staleCommentsOf,
   staleNotesOf,
+  badWidthsOf,
 ];
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */

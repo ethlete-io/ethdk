@@ -65,3 +65,31 @@ export const withNote = (source: string, note: string): string | null => {
 
   return `${source.slice(0, current.getStart(file))}${quoted(note)}${source.slice(current.getEnd())}`;
 };
+
+const LITERALS = [
+  ts.SyntaxKind.StringLiteral,
+  ts.SyntaxKind.NoSubstitutionTemplateLiteral,
+  ts.SyntaxKind.NumericLiteral,
+  ts.SyntaxKind.TrueKeyword,
+  ts.SyntaxKind.FalseKeyword,
+  ts.SyntaxKind.NullKeyword,
+  ts.SyntaxKind.ObjectLiteralExpression,
+  ts.SyntaxKind.TemplateExpression,
+];
+
+const isPositiveNumber = (node: ts.Expression) => ts.isNumericLiteral(node) && Number(node.text) > 0;
+
+/**
+ * Whether the `widths` a part file writes in `definePart({ widths })` break the rule: a literal that
+ * is not a non-empty list of positive numbers. A `widths` held in a variable cannot be read and passes.
+ */
+export const hasBadWidths = (source: string) => {
+  const { definition } = definitionOf(source);
+  const widths = definition ? propertyOf(definition, 'widths')?.initializer : undefined;
+
+  if (!widths) return false;
+  if (ts.isArrayLiteralExpression(widths))
+    return widths.elements.length === 0 || !widths.elements.every(isPositiveNumber);
+
+  return LITERALS.includes(widths.kind);
+};
