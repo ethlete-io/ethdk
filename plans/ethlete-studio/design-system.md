@@ -700,8 +700,8 @@ Findings:
   shell, and a shell pick has to be copied to every page.
 - The agent cannot see whether a state fits its preset frame. Nothing in the CLI reports the
   drawn height of a state, and `et design check` does not fail on overflow. The matrix state of
-  `pages-sketch` was 992 px in the 900 px desktop frame; after the fix to 128 px cells, its new
-  height is unknown. Rec: `et design check` (or a `design shot --report`) names every state
+  `pages-sketch` was 992 px in the 900 px desktop frame; after the fix to 128 px cells, only
+  Tom's look in Studio showed that it fits. Rec: `et design check` (or a `design shot --report`) names every state
   taller or wider than its frame, so no agent has to start a server and measure by hand.
 - The `sdk` base gives `studio` a phone preset that a desktop-only app does not need.
 - A kit page cannot fill the frame height without custom CSS.
