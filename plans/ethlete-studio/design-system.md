@@ -544,13 +544,18 @@ Open points, each with a recommendation:
   the accent colour, the note is an `et-form-field` labelled "Note", and "Needs a note" shows while
   the note is empty.
 - 9daaca75a: an interaction switch fits again from the top; the merge preview always fits fresh.
+- 6d3ba4420: the "Sketch interaction matrix decisions" are built. "all" is the first button of the
+  interaction switch, the default, and remembered. Rows run state, then interaction; the state name
+  shows in the first row of its group only; the group gap is 2.5 times the row gap. Under "all"
+  there is no "in another interaction" label.
+- 91cf0ed1d: only a camera the user moves is saved (wheel, pinch, drag, zoom buttons, shortcuts, a
+  jump to a comment). Any fit deletes the saved camera.
 
 Open points, each with a recommendation:
 
 - The matrix 550 px below the header (seen in the real app on `components/button`) did not happen
-  headlessly. Assumed cause: an old saved fit camera comes back as a zoom. Recommendation: the
-  running slice saves only a camera the user moved, and a fit deletes it; check it again in the
-  real app after that slice.
+  headlessly. Assumed cause: an old saved fit camera comes back as a zoom. 91cf0ed1d saves only a
+  camera the user moved. Recommendation: check it again in the real app.
 
 ### Agent author decisions (2026-10-27)
 
