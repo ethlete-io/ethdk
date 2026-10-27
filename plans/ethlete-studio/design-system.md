@@ -863,6 +863,19 @@ step. Each finding names what happened and the fix it needs.
     states it works on. A state whose render is the same as `current` in every variant folds to
     one thin row ("system · unchanged in a b c"), which opens on a click; the sketch view starts
     on the changed states. The CLI can find "unchanged" by a hash of the rendered HTML per state.
+  - Tom on the first draft (chip, pill, strip): "ich dachte der button hier zeigt den explorer bei
+    klick einfach wieder", the active section bubble in the rail is the toggle, like the VS Code
+    activity bar. The round was redrawn: the panel is gone, and the variants differ only in the
+    cue on the active bubble (a none, b no fill, c short bar). Prevent: the agent's brief named
+    three new controls and never asked whether an existing control already does the job; the skill
+    could say "look for a control that already does it before you draw a new one".
+  - `sketch variant <part> a --round ...` on a part with no open sketch printed
+    `NO SKETCH on elements/shell-main in studio`; the start is `sketch new --variants a,b,c --round`,
+    which has no `--note`, so the round note stayed empty. Prevent: `sketch variant` names
+    `sketch new` in its error, and `sketch new` takes `--note`.
+  - `design check --tsconfig` does not typecheck sketch variants; the subagent had to rewrite the
+    generated `node_modules/.design-explore/system-studio.tsconfig.json` per variant to run tsc.
+    Prevent: the check covers the variants of the open sketch and prints the tsc output.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
