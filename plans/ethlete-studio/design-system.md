@@ -261,6 +261,38 @@ Open points, each with a recommendation:
 - The selected part is not remembered over a reload. Recommendation: store it with the other
   view state once the layout is settled.
 
+### Studio Legacy and sketch API, as built (2026-10-27)
+
+- Legacy (ed013d95b): the tree lists `/__design/calls`, one group per project when there are
+  several. A call shows one frame per variant at its `frameWidth`. "Mark transferred" posts
+  `/__design/transfer`. Studio remembers the Calls or System view.
+- A 404 on the system or calls route shows "This checkout's @ethlete/cli has no system view.
+  Update it." (3b6833a8c).
+- Sketch and comment endpoints (31f864de2, `libs/cli/src/lib/design/studio-api.ts`), all with
+  `?product=`: GET `sketches`, `sketch-preview`, `comments`; POST `sketch-decision`,
+  `sketch-merge`, `sketch-discard`, `comment`, `comment-done`. A done comment is deleted. The
+  watcher no longer reloads frames on a change to `sketch.json` or a comment file.
+- Checkup decisions, as built:
+  - Merge takes no variant. It merges the pick, and refuses without one (496a5e8c6).
+  - A merge on a base-only target copies the base folder into the product first.
+  - `sketch.json` holds a `baseline`: a content hash per resolved part folder and of the
+    fixtures. A merge refuses when a part the pick holds changed since. The new
+    `et design sketch rebase <layer>/<name>` records the product again. A sketch without a
+    baseline needs a rebase before a merge.
+  - A note whose part or state is gone fails the check with rule `COMMENT` (c618028b5). The note
+    reader in `system/notes/note.ts` is provisional until slice 6.
+  - `ListedProduct.themes` is `{ surface: string[]; color: string[] }` from the product's own
+    config, without inheritance from the base (5a16985e5).
+
+Open points, each with a recommendation:
+
+- Merge runs the check inside the dev server. Recommendation: Studio merges only on an explicit
+  click. Later the merge moves to a worker or the CLI.
+- Rebase has no endpoint. Recommendation: add it when Studio needs it. Until then the agent runs
+  the CLI.
+- Merge, conflicts and rebase are not in `apps/docs`. Recommendation: add them with the
+  `et design` docs page.
+
 ### Slice 4 and 5 decisions (2026-10-27)
 
 Sketches:
