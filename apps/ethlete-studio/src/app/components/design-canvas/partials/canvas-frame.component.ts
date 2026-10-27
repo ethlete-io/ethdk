@@ -165,12 +165,18 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     @if (!active()) {
       <div class="absolute inset-0 size-full border-0"></div>
     }
+    @if (bordered()) {
+      <div
+        class="pointer-events-none absolute inset-0 outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-[color:var(--et-surface-border-solid)] outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-[color:var(--et-theme-color-primary-solid)]"
+        data-frame-border
+      ></div>
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, ProvideColorDirective],
   host: {
     class:
-      'absolute block bg-[var(--et-surface-background-solid)] outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-[color:var(--et-surface-border-solid)] outline-solid data-[active]:outline-dashed data-[empty]:bg-transparent data-[empty]:not-data-[selected]:outline-none data-[fitted]:not-data-[selected]:outline-none data-[selected]:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] data-[selected]:outline-[color:var(--et-theme-color-primary-solid)] data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
+      'group/frame absolute block bg-[var(--et-surface-background-solid)] data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',
@@ -199,6 +205,9 @@ export class CanvasFrameComponent {
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
+  protected bordered = computed(
+    () => this.selected() || (this.frame().empty === undefined && this.frame().width !== undefined),
+  );
   private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
 
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */

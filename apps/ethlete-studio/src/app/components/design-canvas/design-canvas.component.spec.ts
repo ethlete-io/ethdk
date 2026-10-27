@@ -405,6 +405,31 @@ describe('DesignCanvasComponent', () => {
     expect(wide?.hasAttribute('data-fitted')).toBe(false);
   });
 
+  it('draws the border of a frame above its content, and only where the frame has one', async () => {
+    const fixture = await render([
+      FITTED,
+      { ...FITTED, id: 'wide', width: 320, height: 200 },
+      { ...FITTED, id: 'empty', width: 320, height: 200, empty: 'Nothing here' },
+    ]);
+    const frames = () =>
+      fixture.debugElement
+        .queryAll(By.directive(CanvasFrameComponent))
+        .map((frame) => frame.nativeElement as HTMLElement);
+    const border = (frame: HTMLElement | undefined) => frame?.querySelector(':scope > [data-frame-border]');
+
+    const [fitted, wide, empty] = frames();
+
+    expect(border(fitted)).toBeNull();
+    expect(border(empty)).toBeNull();
+    expect(wide?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
+    expect(border(wide)?.classList).toContain('pointer-events-none');
+
+    fixture.componentInstance.selectedId.set('default');
+    await fixture.whenStable();
+
+    expect(frames()[0]?.lastElementChild?.hasAttribute('data-frame-border')).toBe(true);
+  });
+
   it('draws an outline over a frame at its offset in the frame', async () => {
     const fixture = await render([{ ...FITTED, id: 'wide', width: 320, height: 200 }]);
 
