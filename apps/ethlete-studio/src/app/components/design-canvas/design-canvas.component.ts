@@ -41,7 +41,7 @@ import {
   wheelZoomFactor,
   zoomAtPoint,
 } from './canvas-math';
-import { CanvasLine, flowCurveOf, flowLabelMaxWidthOf, layoutFlow } from './flow-layout';
+import { CanvasLine, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
@@ -295,7 +295,14 @@ export class DesignCanvasComponent {
       const to = byId.get(line.to);
 
       return from && to
-        ? [{ key: `${index} ${line.from} ${line.to}`, label: line.label, ...flowCurveOf(from, to) }]
+        ? [
+            {
+              key: `${index} ${line.from} ${line.to}`,
+              label: line.label,
+              room: flowLabelRoomOf([from, to], FLOW_SPACING),
+              ...flowCurveOf(from, to),
+            },
+          ]
         : [];
     });
   });
@@ -372,8 +379,6 @@ export class DesignCanvasComponent {
   protected noteMarkers = computed(() => placeNoteMarkers(this.notes(), this.framesById()));
 
   protected readonly NOTE_KEY_OF = noteKeyOf;
-
-  protected readonly FLOW_LABEL_MAX_WIDTH = flowLabelMaxWidthOf(FLOW_SPACING);
 
   protected placedDraft = computed(() => {
     const draft = this.draft();

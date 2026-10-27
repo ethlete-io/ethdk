@@ -122,7 +122,7 @@
           [style.left.px]="line.middle.x"
           [style.top.px]="line.middle.y"
           [style.transform]="'translate(-50%, -50%) scale(' + labelScale() + ')'"
-          [style.max-width.px]="FLOW_LABEL_MAX_WIDTH"
+          [style.max-width.px]="line.room / labelScale()"
           class="pointer-events-none absolute z-1 w-max rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-center text-[1.2rem] text-[var(--et-surface-color-solid)]"
           data-flow-label
           >{{ line.label }}</span

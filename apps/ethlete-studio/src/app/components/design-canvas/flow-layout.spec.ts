@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flowColumnsOf, flowCurveOf, flowLabelMaxWidthOf, layoutFlow } from './flow-layout';
+import { flowColumnsOf, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
 
 const spacing = { columnGap: 100, rowGap: 50, maxColumnGap: 400 };
 
@@ -89,7 +89,16 @@ describe('layoutFlow', () => {
     expect(leftsOf('next')).toEqual([0, 300, 600]);
     expect(leftsOf('x'.repeat(30))).toEqual([0, 100 + 30 * 7 + 18 + 80, 100 + 30 * 7 + 18 + 80 + 300]);
     expect(leftsOf('x'.repeat(200))).toEqual([0, 500, 800]);
-    expect(flowLabelMaxWidthOf(wide)).toBe(320);
+  });
+
+  it('gives a label the room of the gap between its frames, up to the limit', () => {
+    const wide = { columnGap: 200, rowGap: 50, maxColumnGap: 400 };
+    const frame = (x: number) => ({ x, y: 0, width: 100, height: 100 });
+
+    expect(flowLabelRoomOf([frame(0), frame(400)], wide)).toBe(220);
+    expect(flowLabelRoomOf([frame(0), frame(2000)], wide)).toBe(320);
+    expect(flowLabelRoomOf([frame(400), frame(0)], wide)).toBe(320);
+    expect(flowLabelRoomOf([frame(0), frame(120)], wide)).toBe(80);
   });
 });
 

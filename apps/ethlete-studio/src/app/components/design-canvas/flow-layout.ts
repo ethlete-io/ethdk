@@ -14,8 +14,17 @@ const LABEL_CHAR_WIDTH = 7;
 const LABEL_CHROME = 18;
 const LABEL_MARGIN = 40;
 
-/** The widest a line label gets in a gap of `maxColumnGap`; a longer label wraps. */
-export const flowLabelMaxWidthOf = ({ maxColumnGap }: FlowSpacing) => maxColumnGap - 2 * LABEL_MARGIN;
+const LABEL_MIN_ROOM = 80;
+
+/**
+ * The widest the label of a line from `from` to `to` gets, in world pixels: the gap between the two frames, up to
+ * `maxColumnGap`, without its margins. A longer label wraps.
+ */
+export const flowLabelRoomOf = ([from, to]: [Rect, Rect], { maxColumnGap }: FlowSpacing) => {
+  const gap = to.x - (from.x + from.width);
+
+  return Math.max(LABEL_MIN_ROOM, (gap > 0 ? Math.min(gap, maxColumnGap) : maxColumnGap) - 2 * LABEL_MARGIN);
+};
 
 /** The gap a label needs between two columns: the normal gap, or wider to fit it, up to `maxColumnGap`. */
 export const flowGapOf = (label: string | undefined, spacing: FlowSpacing) => {
