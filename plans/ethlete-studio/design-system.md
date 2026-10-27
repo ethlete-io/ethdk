@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); Studio reads the merged tokens (9ed3560f4); next the slice 10 component layer. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); Studio reads the merged tokens (9ed3560f4); component layer: SDK tokens mapped (see "Component layer: SDK tokens mapped, as built"), next the component inventory. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -632,6 +632,44 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
   `tauri.conf.json` lists. The 32 px PNG still reads as an S.
 - Sidebar (e4c73e961): `StudioMarkComponent` draws the mark with `fill-accent` and
   `stroke-on-accent` beside a "Studio" label at the top of the system view's sidebar.
+
+### Component layer: SDK tokens mapped, as built (2026-10-27)
+
+- Tom's decision (2026-10-27): the component layer does not build on the 3 `sdk` mocks (button,
+  form-field, select). Map the SDK theme tokens (`--et-surface-*`, `--et-theme-color-*`, sizes) onto
+  the Studio tokens in one place in the app, then check the real components in Studio. A sketch only
+  for a component that must look different from the SDK default. The mocks stay as the workflow test
+  bed.
+- The mapping lives in `apps/ethlete-studio/src/styles/sdk-token-map.css`, imported into a layer
+  `studio-sdk` after `components` (below `utilities`). `ColorTheme`/`SurfaceTheme` accept only
+  literal `R G B` channels, so `themes.ts`/`surface-themes.ts` and the generated CSS stay; the map
+  overrides the channel vars with relative colour syntax (`from var(--surface) r g b`), which the SDK
+  wraps in `rgb(…)`. Theme names unchanged.
+- Mapped: surfaces `dark`, `dark-elevated`, `dark-elevated-2` → `--surface`, `--surface-raised`,
+  `--surface-overlay`; text, muted and subtle → `--text`, `--text-muted`; border → `--surface-border`;
+  interaction → `--text-muted`/`--text`. Colour `brand` → `--accent`, `--accent-hover`,
+  `--focus-ring`, `--on-accent`, `--accent-text`; disabled is a 40 % oklab mix with `--surface`.
+  `danger` keeps its literal red. Sizes: button `sm`/`xs` → `--control-md`/`--control-sm` height,
+  `--text-md`/`--text-sm`, `--radius-control-md`/`-sm`; form-field → `--control-md`/`-sm` min height,
+  `--text-md`, label `--text-sm`, `--radius-control-*`, padding `--space-1`/`--space-2`; select
+  option → `--text-md`, `--radius-control-sm`; tree node radius → `--radius-control-md`.
+- Found and fixed: the `@theme inline` entries whose name equals the token (`--font-ui`,
+  `--font-code`, `--radius-control-*`, `--radius-pill`) were emitted as `--x: var(--x)` once used, so
+  the token was invalid at runtime. They now sit in `@theme inline reference`.
+- Proven: `styles.spec.ts` finds the mapping in layer `studio-sdk` (fails without the import) and no
+  self-referencing token. Headless (own build and design server): the accent resolves to #25aea7, a
+  `sm` button is 28 px with a 6 px radius, the new-product fields 13 px. Screenshots
+  `/tmp/st-shots/map-{before,after}-*.png`: teal replaces mint, controls are smaller and denser.
+- Still on the old token names: about 14 app files use `var(--et-surface-*)`/`--et-theme-color-*`
+  and `bg-et-surface-bg`, `border-et-surface-border`, `text-et-surface-muted`; they now resolve to
+  the Studio tokens through the map.
+- Open: Studio has no token for subtle text, accent active/disabled, danger, or `--surface-sunken`
+  as an SDK surface; select option height stays the SDK's 36 px (`--row` 24 px clips two-line
+  options); the tree row height and the body font (still Jost, not `--font-ui`) are not mapped; an
+  SDK theme type that accepts a CSS colour would let `themes.ts` name the tokens and drop the map.
+- Next: the component inventory (button, form-field, input, textarea, select, label, tree) in the
+  running app: looks right or needs a sketch; then swap the old token classes where a direct
+  equivalent exists.
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
