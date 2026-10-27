@@ -62,6 +62,8 @@ export type CanvasColumn = {
   label: string;
   muted?: boolean;
   title?: string;
+  /** A muted line below the label. */
+  note?: string;
   group?: CanvasColumnGroup;
   /** A column without frames, `width` wide, with `note` below its head; its head is a button that emits `columnToggle`. */
   folded?: { width: number; note?: string };

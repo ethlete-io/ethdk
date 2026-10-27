@@ -83,4 +83,35 @@ describe('SketchViewComponent merge preview', () => {
     expect(preview?.textContent).toContain('Comparing now and after the merge');
     expect(preview?.querySelector('[data-merge-compare-rendering]')).not.toBeNull();
   });
+
+  it('flips a drawing column to drawn with a note once its report turns 30 minutes old', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const updatedAt = new Date(Date.now() - 30 * 60_000 + 300).toISOString();
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      status: 'in progress',
+      decision: undefined,
+      report: { message: 'variant b', updatedAt, variant: 'b', author: null },
+    });
+    fixture.componentRef.setInput('part', null as ListedPart | null);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const columnB = () => fixture.componentInstance.canvas().columns.find((column) => column.key === 'b');
+
+    expect(columnB()).toMatchObject({ label: 'b · drawing …', drawing: true });
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    await settle(fixture);
+
+    expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'No report for 30 min' });
+  });
 });

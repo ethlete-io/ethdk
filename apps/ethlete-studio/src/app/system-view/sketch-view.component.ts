@@ -15,7 +15,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { Observable, catchError, concatMap, finalize, map, of, startWith, switchMap } from 'rxjs';
+import { Observable, catchError, concatMap, finalize, map, of, startWith, switchMap, timer } from 'rxjs';
 import {
   ListedPart,
   ListedProduct,
@@ -50,6 +50,7 @@ import {
   canPick,
   mergePreviewOf,
   pickedVariantOf,
+  reportExpiryOf,
   roundColumnKeyOf,
   sketchMatrixOf,
   sketchRoundsOf,
@@ -408,8 +409,25 @@ export class SketchViewComponent {
 
   private shownMode = linkedSignal<Shown>(() => (this.remembered().merge ? 'merge' : 'matrix'));
 
+  private reportExpiry = computed(() => reportExpiryOf(this.sketch().report));
+
+  private reportNow = toSignal(
+    toObservable(this.reportExpiry).pipe(
+      switchMap((expiry) =>
+        expiry === null || expiry <= Date.now()
+          ? of(Date.now())
+          : timer(expiry - Date.now()).pipe(
+              map(() => Date.now()),
+              startWith(Date.now()),
+            ),
+      ),
+    ),
+    { initialValue: Date.now() },
+  );
+
   private source = computed(() => ({
     port: this.port(),
+    now: this.reportNow(),
     product: this.product(),
     sketch: this.sketch(),
     size: this.size(),

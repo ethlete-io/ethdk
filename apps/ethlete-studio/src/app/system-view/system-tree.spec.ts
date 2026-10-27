@@ -486,6 +486,28 @@ describe('sketchMatrixOf', () => {
     expect(ready.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
 
+  it('keeps a fresh report drawing and draws the frames of a report 30 minutes old with a note in its head', () => {
+    const report = { message: 'variant b, phone', updatedAt: '2026-10-27T12:00:00Z', variant: 'b' };
+    const at = (time: string) =>
+      sketchMatrixOf({ ...source, part: part(), sketch: sketch({ report }), now: Date.parse(time) });
+    const fresh = at('2026-10-27T12:29:59Z');
+    const silent = at('2026-10-27T12:30:00Z');
+
+    expect(fresh.columns.find((column) => column.key === 'b')).toEqual({
+      key: 'b',
+      label: 'b · drawing …',
+      drawing: true,
+    });
+    expect(fresh.frames.some((frame) => frame.column === 'b')).toBe(false);
+    expect(silent.columns.find((column) => column.key === 'b')).toEqual({
+      key: 'b',
+      label: 'b',
+      drawing: false,
+      note: 'No report for 30 min',
+    });
+    expect(silent.frames.some((frame) => frame.column === 'b')).toBe(true);
+  });
+
   it('names the first author of a variant in its head, counts the rest, and lists all in the title', () => {
     const matrix = sketchMatrixOf({
       ...source,

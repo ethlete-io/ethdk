@@ -326,6 +326,17 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   interaction?: string | null;
   /** Whether the user opened (`true`) or folded (`false`) a round, by round key. */
   openRounds?: Record<string, boolean>;
+  /** The time in ms the agent's report is judged against; without it, a report never expires. */
+  now?: number;
+};
+
+const REPORT_EXPIRY_MS = 30 * 60_000;
+
+/** When a drawing report stops blocking its variant's column, in ms; `null` for none or an unreadable `updatedAt`. */
+export const reportExpiryOf = (report: ListedSketch['report']) => {
+  const updatedAt = report ? Date.parse(report.updatedAt) : NaN;
+
+  return Number.isNaN(updatedAt) ? null : updatedAt + REPORT_EXPIRY_MS;
 };
 
 /** The interaction switch value that shows every interaction in its own row. */
@@ -336,6 +347,7 @@ export type MatrixColumn = {
   label: string;
   drawing: boolean;
   title?: string;
+  note?: string;
   group?: { key: string; label: string; note?: string; title?: string };
   folded?: { width: number; note?: string };
 };
@@ -446,7 +458,7 @@ type MatrixRow = {
  * row per state in the picked interaction; the current states come first, then any state only a variant
  * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
  * cell there. A variant the agent reports drawing while the sketch is in progress gets a column without
- * frames.
+ * frames, until the report is 30 minutes old: then it draws, and its head notes that no report came.
  */
 export const sketchMatrixOf = ({
   port,
@@ -456,6 +468,7 @@ export const sketchMatrixOf = ({
   size: picked = null,
   interaction: pickedInteraction = null,
   openRounds = {},
+  now,
   epoch,
   revision,
   surface,
@@ -473,7 +486,10 @@ export const sketchMatrixOf = ({
   const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : ALL;
   const shownInteractions = interaction === ALL ? interactions : [interaction];
   const grouped = shownInteractions.length > 1;
-  const drawing = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
+  const reported = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
+  const expiry = reportExpiryOf(sketch.report);
+  const silent = reported !== null && now !== undefined && expiry !== null && now >= expiry;
+  const drawing = silent ? null : reported;
   const idOf = (column: string, { state, interaction: shown }: MatrixRow) =>
     [column, state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
   const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
@@ -489,6 +505,7 @@ export const sketchMatrixOf = ({
     return {
       key: variant,
       label: variant === drawing ? `${named} · drawing …` : named,
+      ...(silent && variant === reported ? { note: 'No report for 30 min' } : {}),
       ...(authors.length > 0 ? { title: `${variant} by ${authors.join(', ')}` } : {}),
       drawing: variant === drawing,
       states: target?.states ?? part?.states ?? [],
@@ -639,11 +656,12 @@ export const sketchMatrixOf = ({
     });
   });
 
-  const headOf = ({ key, label, title, drawing: isDrawing, group, folded }: MatrixColumn): MatrixColumn => ({
+  const headOf = ({ key, label, title, note, drawing: isDrawing, group, folded }: MatrixColumn): MatrixColumn => ({
     key,
     label,
     drawing: isDrawing,
     ...(title === undefined ? {} : { title }),
+    ...(note === undefined ? {} : { note }),
     ...(group === undefined ? {} : { group }),
     ...(folded === undefined ? {} : { folded }),
   });

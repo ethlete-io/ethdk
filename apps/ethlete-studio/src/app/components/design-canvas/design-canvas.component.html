@@ -74,6 +74,13 @@
         class="et-design-canvas__column"
       >
         {{ column.label }}
+        @if (column.note) {
+          <span
+            class="block text-[0.8em] font-normal whitespace-normal text-[var(--et-surface-color-muted-solid)]"
+            data-column-note
+            >{{ column.note }}</span
+          >
+        }
       </span>
     }
   }
