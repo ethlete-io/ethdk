@@ -8,7 +8,6 @@ pub struct Node {
 #[derive(Debug)]
 pub struct Property {
     pub key: String,
-    pub start: usize,
     pub node: Node,
 }
 
@@ -156,7 +155,6 @@ impl Reader<'_> {
                 _ => {}
             }
 
-            let start = self.at;
             let key = self.property_name();
             self.skip_trivia();
 
@@ -170,7 +168,7 @@ impl Reader<'_> {
             let node = self.value();
 
             if let Some(key) = key {
-                properties.push(Property { key, start, node });
+                properties.push(Property { key, node });
             }
         }
 
