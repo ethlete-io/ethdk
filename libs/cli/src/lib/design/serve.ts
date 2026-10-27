@@ -187,8 +187,8 @@ const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirna
 const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file);
 
 /**
- * A server-sent event stream for Studio: `comments` when a comment file changed, `changes` when a file outside the
- * design folder that a frame draws changed, and `parts` with the parts any change redraws and the revision it gave them.
+ * A server-sent event stream for Studio: `comments` when a comment file changed, and `parts` with the parts any change
+ * redraws and the revision it gave them.
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
@@ -205,7 +205,7 @@ const createDesignEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: (event: 'comments' | 'changes' | 'parts', data: object = {}) => {
+    signal: (event: 'comments' | 'parts', data: object = {}) => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
@@ -337,7 +337,6 @@ const designExplore = ({
       system.forget();
       reload(`${VIRTUAL}/system`);
       redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
-      if (!isInside(designRoot, file)) events.signal('changes');
     };
 
     const change = (file: string) => {
@@ -348,7 +347,6 @@ const designExplore = ({
       const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
 
       redraw(changedPartsOf({ target, config, system, file, dependents }));
-      if (dependents.length > 0 && !isInside(designRoot, file)) events.signal('changes');
     };
 
     const answer =

@@ -368,7 +368,7 @@ describe('the design server for a design system', () => {
     expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n']);
   });
 
-  it('signals a change to a drawn file outside the design folder, which Studio does not watch', async () => {
+  it('sends no event of its own for a drawn file outside the design folder', async () => {
     const target = acme();
     const { handlers, watchers, modulesByFile } = await serveAcme(target);
     const written: string[] = [];
@@ -386,7 +386,7 @@ describe('the design server for a design system', () => {
     watchers.get('change')?.(inside);
     watchers.get('change')?.(drawn);
 
-    expect(written).toEqual([': open\n\n', 'event: changes\ndata: {}\n\n']);
+    expect(written).toEqual([': open\n\n']);
   });
 });
 
