@@ -194,7 +194,8 @@ lays the frames out along the lines.
 
 ### Draw a wireframe
 
-A page that has no parts yet draws grey stand-ins from the wireframe kit; only pages may import it:
+A page that has no parts yet draws grey stand-ins from the wireframe kit; pages and elements may
+import it, components and foundations may not:
 
 ```ts
 import { box, heading, textLines, image, button, input, icon } from '@design-system/kit';
@@ -206,7 +207,8 @@ Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction
 every preset, not one width: give a picture a `ratio` (`'2/3'`) instead of a fixed height, and give
 a row `stackBelow: <px>`, the width below which it stacks its children, instead of fixed widths
 that only fit the desktop. Never use `vh`, `dvh` or `svh` in a part: a part has no viewport of its own, so the unit measures Studio's frame, not the page. A full page is a frame of a fixed size. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
-"Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`).
+"Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`); draw a rough one with the kit, so each
+page imports the shell instead of repeating it, and a shell pick lands in one file.
 A dialog without its own URL is an element that a page state shows ("login open"). Examples in
 `.ethlete/design/studio-lab`: `pages/film-detail`, `elements/shell-main`, `elements/login-dialog`,
 `flows/sign-in.json`.
@@ -221,7 +223,7 @@ et design system --json            # each part's origin, note, states, presets a
 Without `--product`, `check` covers every product. A part may only use its own layer and the
 layers below it (see "The order of a design"). Rule `FLOW` reports a misshaped flow file, a frame
 naming a part or state that exists neither in the product nor in an open sketch of that part, a duplicate state, and a line to a state that is not a frame of
-the flow. Rule `WIREFRAME-KIT` reports a non-page importing the kit. Pass the changed files to the check below as before.
+the flow. Rule `WIREFRAME-KIT` reports a component or foundation importing the kit. Pass the changed files to the check below as before.
 
 A project's `config.json` entry can name `themes`, `{ "surface": [...], "color": [...] }`; a
 frame asked for a theme gets the `et-surface--<name>` and `et-color--<name>` classes on its root,
