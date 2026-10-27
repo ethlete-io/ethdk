@@ -560,6 +560,10 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   width, also for the selected and active states. Cause: at a fractional device-pixel ratio (1.25)
   the live iframe snaps right and down and covers the outline there, so only the left and top
   edges showed.
+- Result: Tom merged surfaces variant A (neutral grey, chroma 0) in Studio. The white strip was
+  fixed in the merged part (`body` background `var(--surface-sunken)`). Next sketch: accent, on
+  `foundations/tokens`, four hues at the same lightness and chroma (A blue, B violet, C teal, D
+  amber).
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
