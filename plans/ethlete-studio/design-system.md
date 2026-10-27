@@ -299,12 +299,44 @@ Open points, each with a recommendation:
 
 Open points, each with a recommendation:
 
-- Merge runs the check inside the dev server. Recommendation: Studio merges only on an explicit
-  click. Later the merge moves to a worker or the CLI.
-- Rebase has no endpoint. Recommendation: add it when Studio needs it. Until then the agent runs
-  the CLI.
-- Merge, conflicts and rebase are not in `apps/docs`. Recommendation: add them with the
-  `et design` docs page.
+- Merge runs the check inside the dev server: decided, see "Merge and rebase decisions".
+- Rebase has no endpoint: decided, see "Merge and rebase decisions".
+- Merge, conflicts and rebase are not in `apps/docs`: decided, the full `et design` page comes
+  after the tomflix rebuild.
+
+### Merge and rebase decisions (2026-10-27)
+
+- No rebase button in Studio. A rebase only records the baseline again; it does not adapt the
+  variant, so a click would let the next merge overwrite the product change silently. On a
+  refused merge Studio shows the reason, the changed parts and the rebase command with a copy
+  button. The agent adapts the variant and rebases.
+- `et design inbox` lists a sketch whose baseline is stale as "needs rebase", with the changed
+  parts.
+- The merge stays in the design server. It moves to a worker only once a merge visibly hangs.
+- While a merge runs, the Merge button shows `loading` and Discard is disabled; the sketch in the
+  sidebar shows "merging". On success the sketch goes away and Studio selects the target part.
+
+### Comment UI decisions (2026-10-27)
+
+- Comment mode: a toolbar button or the key `C`. A click on a frame sets a point; a click on a
+  tile label comments on the state without a point. `Esc` ends the mode.
+- A popover at the click point holds an `et` textarea. `Enter` sends, `Shift+Enter` breaks the
+  line, `Esc` cancels. The mode stays on after a send.
+- The comment field `preset` becomes `size`: a preset name, a width such as `520`, or `fitted`.
+  A pin shows only on a frame of the same size; other sizes show only a count on the label. A
+  point in percent would land on another element once the layout wraps differently.
+- Numbered pins open a popover with the text and "Withdraw". A collapsible panel on the right
+  lists all comments of the selected part; a click in the list moves the camera to the pin.
+- "Withdraw" deletes a comment through `comment-done`, without a restriction and without a note.
+- With open comments, the sketch view disables Merge and Discard with "N open comments"; a click
+  on it opens the panel.
+- The design server sends its own signal on a change under `comments/`. Studio then reloads the
+  comments only, not the frames.
+
+### Docs decision (2026-10-27)
+
+- The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
+  proven itself. Until then `apps/docs/cli/index.md` describes `et design` in one correct sentence.
 
 ### Slice 4 and 5 decisions (2026-10-27)
 
@@ -730,7 +762,8 @@ built" for its open points).
 
 Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
 started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
-In progress since 2026-10-27: the Studio comments.
+In progress since 2026-10-27: the Studio comments, as in "Comment UI decisions". Open after them:
+the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
