@@ -1,4 +1,4 @@
-import { frameUrl } from './design';
+import { designReadError, frameUrl } from './design';
 
 describe('frameUrl', () => {
   it('encodes the slug and the variant', () => {
@@ -19,5 +19,12 @@ describe('frameUrl', () => {
     expect(frameUrl({ port: 1, slug: 's', variant: 'v', color: 'brand' })).toBe(
       'http://localhost:1/frame.html?call=s&variant=v&color=brand',
     );
+  });
+});
+
+describe('designReadError', () => {
+  it('names an outdated cli for a 404 and the status otherwise', () => {
+    expect(designReadError(404)).toBe("This checkout's @ethlete/cli has no system view. Update it.");
+    expect(designReadError(500)).toBe('The design server answered 500.');
   });
 });

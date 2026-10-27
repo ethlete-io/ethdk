@@ -359,10 +359,16 @@ export type ListedProduct = {
   problems: SystemProblem[];
 };
 
+/** What a failed read of the system or the calls tells the user. A 404 means a cli older than the route. */
+export const designReadError = (status: number) =>
+  status === 404
+    ? "This checkout's @ethlete/cli has no system view. Update it."
+    : `The design server answered ${status}.`;
+
 export const listedSystem$ = (port: number): Observable<ListedProduct[]> =>
   fromFetch(`http://localhost:${port}/__design/system`).pipe(
     switchMap((response) => {
-      if (!response.ok) throw new Error(`The design server answered ${response.status}.`);
+      if (!response.ok) throw new Error(designReadError(response.status));
 
       return response.json() as Promise<ListedProduct[]>;
     }),
@@ -415,7 +421,7 @@ export type ListedCall =
 export const listedCalls$ = (port: number): Observable<ListedCall[]> =>
   fromFetch(`http://localhost:${port}/__design/calls`).pipe(
     switchMap((response) => {
-      if (!response.ok) throw new Error(`The design server answered ${response.status}.`);
+      if (!response.ok) throw new Error(designReadError(response.status));
 
       return response.json() as Promise<ListedCall[]>;
     }),
