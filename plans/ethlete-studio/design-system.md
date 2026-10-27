@@ -506,6 +506,13 @@ Findings:
   it.
 - At the phone preset the gaps between flow frames are narrow, so long line labels are tight.
 
+Design canvas on Tailwind, as built (fc02e4a8c): Studio has no component `.css` file left. Modifier
+classes became data attributes (frame: `data-selected`, `data-active`, `data-empty`, `data-fitted`,
+`data-unsized`; canvas: `data-dragging` with `group/canvas`). Headless before and after on
+`studio-lab`: 14 canvas screenshots byte-identical, bounding rects equal, computed styles equal or
+equivalent. Empty, error and unsized frames were not seen visually (no such data); specs cover
+them.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
