@@ -1469,9 +1469,12 @@ it: `host/design.ts` `designStatusChanges$` arms it, and the system view reloads
 report change, as in 0f966f967. 02672803d removed it too, so live report lines and "drawing…" stopped
 reaching Studio. Restored in a442b6acf (`StatusWatch` and `watch_statuses` in a trimmed
 `call_status.rs`). The Studio spec "lists the sketches again when the host reports a changed status
-file" fails without it. Open: the Rust watch test has no fail-without proof yet, and one `cargo test`
-run failed `stop_reaches_the_whole_group` ("the design tool never answered"); flaky or real is not
-checked yet.
+file" fails without it. The Rust test `a_sketch_report_change_is_reported_and_a_receipt_is_not`
+fails with `report()` made a no-op; it calls `watch_statuses` directly, so the command's
+`changes.send(())` is covered only by the Studio spec. One `cargo test` run failed
+`stop_reaches_the_whole_group`; it passed 6 of 6 on HEAD and 5 of 5 before 02672803d, so it is
+flaky, not a regression. Likely cause, not confirmed: its fake tool listens on the fixed ports
+45872-45877, which a parallel `cargo test` from another agent can take.
 
 ## Slices
 
