@@ -156,6 +156,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   <span [class]="BADGE">{{ badge }}</span>
                 }
               }
+              @if (entry.count) {
+                <span [title]="entry.count + ' wireframe kit parts'" class="ml-auto opacity-70" data-tree-kit-count>
+                  {{ entry.count }}
+                </span>
+              }
             </span>
           } @else {
             {{ node.label }}

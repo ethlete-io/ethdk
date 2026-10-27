@@ -241,6 +241,8 @@ export type ListedPart = {
   interactions?: string[];
   /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
   madeBy?: string[];
+  /** The wireframe kit calls in a page's source. Missing from an `@ethlete/cli` older than the kit. */
+  kitUses?: number;
   problems: SystemProblem[];
 };
 

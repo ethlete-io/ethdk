@@ -50,6 +50,25 @@ describe('treeOf', () => {
     ]);
   });
 
+  it('lists a page that uses a wireframe kit part under Wireframes, with its kit-part count', () => {
+    const tree = treeOf([
+      part({ layer: 'pages', name: 'home', kitUses: 0 }),
+      part({ layer: 'pages', name: 'login', kitUses: 7 }),
+      part({ layer: 'pages', name: 'cart' }),
+    ]);
+
+    expect(tree.map((group) => [group.label, group.entries.map(({ key, count }) => [key, count])])).toEqual([
+      [
+        'Pages',
+        [
+          ['pages/home', undefined],
+          ['pages/cart', undefined],
+        ],
+      ],
+      ['Wireframes', [['pages/login', 7]]],
+    ]);
+  });
+
   it('badges a part from the base, an overridden one, and one with any problem', () => {
     const [group] = treeOf([
       part({ name: 'a', origin: 'base' }),

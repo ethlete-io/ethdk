@@ -16,15 +16,21 @@ import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
 
-export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'sketches' | 'legacy';
+export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'wireframes' | 'sketches' | 'legacy';
 
-export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; layers: readonly string[] }[] = [
-  { key: 'foundations', label: 'Foundations', layers: ['foundations'] },
-  { key: 'components', label: 'Components', layers: ['components'] },
-  { key: 'elements', label: 'Elements', layers: ['elements'] },
-  { key: 'pages', label: 'Pages', layers: ['pages'] },
-  { key: 'sketches', label: 'Sketches', layers: [] },
-  { key: 'legacy', label: 'Legacy', layers: [] },
+export const isWireframe = (part: Pick<ListedPart, 'layer' | 'kitUses'>) =>
+  part.layer === 'pages' && (part.kitUses ?? 0) > 0;
+
+const onLayer = (layer: string) => (part: ListedPart) => part.layer === layer;
+
+export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds: (part: ListedPart) => boolean }[] = [
+  { key: 'foundations', label: 'Foundations', holds: onLayer('foundations') },
+  { key: 'components', label: 'Components', holds: onLayer('components') },
+  { key: 'elements', label: 'Elements', holds: onLayer('elements') },
+  { key: 'pages', label: 'Pages', holds: (part) => part.layer === 'pages' && !isWireframe(part) },
+  { key: 'wireframes', label: 'Wireframes', holds: isWireframe },
+  { key: 'sketches', label: 'Sketches', holds: () => false },
+  { key: 'legacy', label: 'Legacy', holds: () => false },
 ];
 
 export type PartBadge =
@@ -49,7 +55,8 @@ const commentBadgesOf = (key: string, { commented, questioned, answered }: Comme
   return commented.has(key) ? ['comment open'] : [];
 };
 
-export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[] };
+/** `count` is the number of wireframe kit parts a wireframe page uses. */
+export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[]; count?: number };
 
 export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
 
@@ -188,7 +195,7 @@ export const treeOf = (
   const partMarks = marksOf(false);
   const sketchMarks = marksOf(true);
 
-  return SYSTEM_GROUPS.flatMap(({ key, label, layers }) => {
+  return SYSTEM_GROUPS.flatMap(({ key, label, holds }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);
     if (key === 'sketches')
       return [
@@ -205,13 +212,12 @@ export const treeOf = (
       {
         key,
         label,
-        entries: parts
-          .filter((part) => layers.includes(part.layer))
-          .map((part) => ({
-            key: partKeyOf(part),
-            name: part.name,
-            badges: badgesOf(part, { sketched, marks: partMarks }),
-          })),
+        entries: parts.filter(holds).map((part) => ({
+          key: partKeyOf(part),
+          name: part.name,
+          badges: badgesOf(part, { sketched, marks: partMarks }),
+          ...(isWireframe(part) ? { count: part.kitUses } : {}),
+        })),
       },
     ];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);

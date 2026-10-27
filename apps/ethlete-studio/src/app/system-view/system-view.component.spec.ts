@@ -297,4 +297,20 @@ describe('SystemViewComponent on a merge', () => {
     expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
     expect(rememberedView().systemEntry).toBe('elements/rating');
   });
+
+  it('shows the kit-part count next to a wireframe page', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system'))
+        return json([{ ...PRODUCT, parts: [...PRODUCT.parts, { ...part('pages', 'login'), kitUses: 6 }] }]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: 'pages/login' });
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('[data-tree-kit-count]')?.textContent?.trim()).toBe('6');
+  });
 });
