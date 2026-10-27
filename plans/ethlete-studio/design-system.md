@@ -450,8 +450,13 @@ Findings:
 - Tokens reach other parts only through config `styles`, so a `foundations/tokens` sketch changes
   only the tokens frames, not the button and field next to it. After the merge, `studio`'s `styles`
   must point at `.ethlete/design/studio/foundations/tokens/tokens.css`.
-- The button "active" and "disabled" frames are drawn far wider than their content. Not the
-  `elements/shell-main` loop (that was height, not width); not checked yet.
+- The button "active" and "disabled" frames were drawn far wider than their content. It does not
+  reproduce on the current tree: headless, all 35 `sdk` button frames are 110 px wide and stable,
+  content 98 px (filled) or 90 px (small) in every interaction, and the `/__design/shot` PNGs match.
+  Likely fixed by 60bd969e9 (the pre-fix tree was not run, so unverified). If it shows again: a
+  stale `measuredSizes` entry in localStorage `ethlete-studio.call-view` from the old loop; a reload
+  or clearing those entries fixes it. The 110 px frame for 90 to 98 px content is untraced slack
+  (column width or chrome).
 
 Remaining: the redesign layer by layer (Tom decides each sketch); Studio reads its tokens from the
 merged `tokens.css` instead of the generated `themes.css` and `surface-themes.css`; the app rebuild
