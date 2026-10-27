@@ -6,6 +6,8 @@ export type CanvasFrame = {
   height?: number;
   label: string;
   row?: string;
+  /** The `matrix` column the frame sits in. */
+  column?: string;
   screenshot?: string;
   error?: string;
 };

@@ -1,4 +1,14 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
@@ -16,9 +26,11 @@ import {
 } from '../../host/design';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
-import { canPick, pickedVariantOf, sketchFramesOf } from './system-tree';
+import { canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard';
+
+type Shown = 'matrix' | 'merge';
 
 type PreviewReading = { preview: MergePreview | null; error: string | null };
 
@@ -135,17 +147,63 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       }
     </section>
 
+    @if (hasToolbar()) {
+      <div
+        class="flex flex-wrap items-center gap-2 border-b border-[var(--et-surface-border-solid)] px-4 py-2 text-small"
+      >
+        @if (shown.status === 'in progress' && shown.report; as report) {
+          <span [title]="report.message" class="min-w-0 flex-1 truncate text-[var(--et-surface-color-subtle-solid)]">
+            Agent: {{ report.message }}
+          </span>
+        } @else {
+          <span class="flex-1"></span>
+        }
+        @if (showing() === 'matrix' && matrix().sizes.length > 1) {
+          <div class="flex gap-1" role="group" aria-label="Size of every cell">
+            @for (size of matrix().sizes; track size) {
+              <button
+                [pressed]="size === matrix().size"
+                (click)="pickSize(size)"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ sizeLabel(size) }}
+              </button>
+            }
+          </div>
+        }
+        @if (picked() && (previewReading()?.preview?.affected?.length ?? 0) > 0) {
+          <button
+            [pressed]="showing() === 'merge'"
+            (click)="toggleMergePreview()"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="sm"
+          >
+            {{ showing() === 'merge' ? 'Back to the variants' : 'Show merge preview' }}
+          </button>
+        }
+      </div>
+    }
+
     <ethlete-design-canvas
-      [frames]="frames()"
-      [cameraKey]="cameraKey()"
-      [restoredCamera]="restoredCamera()"
-      (cameraChange)="cameraChange.emit($event)"
-      class="min-h-0"
+      [frames]="canvas().frames"
+      [columns]="canvasColumns()"
+      [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
+      [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
+      (cameraChange)="rememberCamera($event)"
+      class="min-h-0 flex-1"
+      arrangement="matrix"
     />
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, DesignCanvasComponent, ProvideColorDirective],
-  host: { class: 'grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)]' },
+  host: { class: 'flex min-h-0 flex-col' },
 })
 export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
@@ -164,6 +222,8 @@ export class SketchViewComponent {
 
   public decide = output<void>();
 
+  private canvasRef = viewChild.required(DesignCanvasComponent);
+
   protected note = signal('');
 
   protected busy = signal<Busy | null>(null);
@@ -180,18 +240,22 @@ export class SketchViewComponent {
     sketch: this.sketch().target,
   }));
 
-  protected frames = computed(() =>
-    sketchFramesOf({
-      port: this.port(),
-      product: this.product(),
-      part: this.part(),
-      sketch: this.sketch(),
-      epoch: this.epoch(),
-      revision: this.revision(),
-      surface: this.surface(),
-      color: this.color(),
-    }),
-  );
+  public size = signal<string | null>(null);
+
+  private shownMode = signal<Shown>('matrix');
+
+  private source = computed(() => ({
+    port: this.port(),
+    product: this.product(),
+    sketch: this.sketch(),
+    size: this.size(),
+    epoch: this.epoch(),
+    revision: this.revision(),
+    surface: this.surface(),
+    color: this.color(),
+  }));
+
+  protected matrix = computed(() => sketchMatrixOf({ ...this.source(), part: this.part() }));
 
   protected previewReading = toSignal(
     toObservable(computed(() => ({ address: this.address(), variant: this.picked(), revision: this.revision() }))).pipe(
@@ -206,6 +270,49 @@ export class SketchViewComponent {
     ),
     { initialValue: null },
   );
+
+  private mergePreview = computed(() => {
+    const variant = this.picked();
+    const affected = this.previewReading()?.preview?.affected ?? [];
+
+    return variant && affected.length > 0 ? mergePreviewOf({ ...this.source(), variant, affected }) : null;
+  });
+
+  protected showing = computed<Shown>(() =>
+    this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
+  );
+
+  protected canvas = computed(() =>
+    this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix(),
+  );
+
+  protected hasToolbar = computed(
+    () =>
+      (this.sketch().status === 'in progress' && !!this.sketch().report) ||
+      this.matrix().sizes.length > 1 ||
+      (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
+  );
+
+  protected canvasColumns = computed(() =>
+    this.canvas().columns.map(({ key, label, drawing }) => ({ key, label, muted: drawing })),
+  );
+
+  protected sizeLabel(size: string) {
+    return size in this.product().presets ? size : `${size} px`;
+  }
+
+  protected pickSize(size: string) {
+    this.size.set(size);
+    this.canvasRef().fitAll();
+  }
+
+  protected rememberCamera(camera: Camera) {
+    if (this.showing() === 'matrix') this.cameraChange.emit(camera);
+  }
+
+  protected toggleMergePreview() {
+    this.shownMode.update((mode) => (mode === 'merge' ? 'matrix' : 'merge'));
+  }
 
   protected takeNote(event: Event) {
     this.note.set((event.target as HTMLInputElement).value);

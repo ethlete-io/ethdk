@@ -3,13 +3,14 @@ import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, link
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
-import { catchError, finalize, from, map, of, switchMap, tap } from 'rxjs';
+import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
   ListedCall,
   ListedProduct,
   ListedSketch,
   Themes,
   listedCalls$,
+  designStatusChanges$,
   listedSketches$,
   listedSystem$,
   transferCall$,
@@ -295,6 +296,15 @@ export class SystemViewComponent {
 
   private sketchReloads = signal(0);
 
+  private statusChanges = toSignal(
+    designStatusChanges$().pipe(
+      debounceTime(200),
+      scan((count) => count + 1, 0),
+      catchError(() => EMPTY),
+    ),
+    { initialValue: 0 },
+  );
+
   private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
   private picked = signal(rememberedView().systemEntry ?? null);
@@ -319,6 +329,7 @@ export class SystemViewComponent {
         epoch: this.epoch(),
         tick: this.tick(),
         reloads: this.sketchReloads(),
+        statusChanges: this.statusChanges(),
       })),
     ).pipe(
       switchMap(({ port, product }) =>

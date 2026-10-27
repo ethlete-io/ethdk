@@ -9,6 +9,18 @@
     <span [style.top.px]="row.y" class="et-design-canvas__row">{{ row.name }}</span>
   }
 
+  @for (column of columnHeads(); track column.key) {
+    <span
+      [style.left.px]="column.x"
+      [style.max-width.px]="column.width"
+      [class.et-design-canvas__column--muted]="column.muted"
+      [title]="column.label"
+      class="et-design-canvas__column"
+    >
+      {{ column.label }}
+    </span>
+  }
+
   @for (placed of placedFrames(); track placed.frame.id) {
     <ethlete-canvas-frame
       [frame]="placed.frame"

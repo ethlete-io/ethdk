@@ -8,7 +8,8 @@ import {
   isSectionOpen,
   framesOf,
   pickedVariantOf,
-  sketchFramesOf,
+  mergePreviewOf,
+  sketchMatrixOf,
   treeOf,
 } from './system-tree';
 
@@ -291,40 +292,122 @@ describe('sketches in the tree', () => {
   });
 });
 
-describe('sketchFramesOf', () => {
+describe('sketchMatrixOf', () => {
   const source = { port: 4400, product: product(), revision: 2 };
 
-  it('puts the current part first in each state row, then each variant at every preset', () => {
-    const frames = sketchFramesOf({
+  it('has a column for the current part and each variant, and a row per state any of them has', () => {
+    const matrix = sketchMatrixOf({
       ...source,
       part: part({ states: ['default'] }),
-      sketch: sketch({ variants: ['a'] }),
+      sketch: sketch({
+        targets: [
+          { variant: 'a', states: ['default', 'loading'] },
+          { variant: 'b', states: ['default'] },
+        ],
+      }),
     });
 
-    expect(frames.map((frame) => [frame.row, frame.label])).toEqual([
-      ['default', 'current · phone'],
-      ['default', 'current · desktop'],
-      ['default', 'a · phone'],
-      ['default', 'a · desktop'],
+    expect(matrix.columns.map((column) => column.label)).toEqual(['current', 'a', 'b']);
+    expect(matrix.sizes).toEqual([]);
+    expect(matrix.frames.map((frame) => [frame.column, frame.row, frame.width])).toEqual([
+      ['current', 'default', undefined],
+      ['a', 'default', undefined],
+      ['a', 'loading', undefined],
+      ['b', 'default', undefined],
     ]);
-    expect(frames[2]?.src).toContain('&sketch=components%2Fbutton&variant=a');
-    expect(frames[2]?.screenshot).toBeUndefined();
-    expect(new Set(frames.map((frame) => frame.id)).size).toBe(frames.length);
+    expect(matrix.frames[0]?.src).toContain('&fit');
+    expect(matrix.frames[0]?.src).not.toContain('variant=');
+    expect(matrix.frames[2]?.src).toContain('&sketch=components%2Fbutton&variant=a');
+    expect(matrix.frames[2]?.screenshot).toContain('&sketch=components%2Fbutton&variant=a');
+    expect(new Set(matrix.frames.map((frame) => frame.id)).size).toBe(matrix.frames.length);
+  });
+
+  it('gives every cell of a page the picked preset, or the first one', () => {
+    const page = part({ layer: 'pages', name: 'home', states: ['default'] });
+    const pageSketch = sketch({ target: 'pages/home', layer: 'pages', name: 'home', variants: ['a'] });
+
+    const first = sketchMatrixOf({ ...source, part: page, sketch: pageSketch });
+    const desktop = sketchMatrixOf({ ...source, part: page, sketch: pageSketch, size: 'desktop' });
+
+    expect(first.sizes).toEqual(['phone', 'desktop']);
+    expect(first.frames.map((frame) => [frame.width, frame.height, frame.label])).toEqual([
+      [390, 844, 'phone'],
+      [390, 844, 'phone'],
+    ]);
+    expect(desktop.frames[1]?.screenshot).toContain('&preset=desktop');
+  });
+
+  it('offers the widths of the part and every variant, sorted', () => {
+    const matrix = sketchMatrixOf({
+      ...source,
+      part: part({ widths: [480, 240] }),
+      sketch: sketch({ targets: [{ variant: 'a', states: ['default'], widths: [360, 240] }] }),
+      size: '360',
+    });
+
+    expect(matrix.sizes).toEqual(['240', '360', '480']);
+    expect(matrix.frames.every((frame) => frame.width === 360 && frame.label === '360 px')).toBe(true);
+    expect(matrix.frames[0]?.screenshot).toContain('&width=360');
+  });
+
+  it('draws no frames for the variant the agent reports drawing while the sketch is in progress', () => {
+    const report = { message: 'variant b, phone', updatedAt: '', variant: 'b' };
+    const drawing = sketchMatrixOf({ ...source, part: part(), sketch: sketch({ report }) });
+    const ready = sketchMatrixOf({ ...source, part: part(), sketch: sketch({ report, status: 'ready' }) });
+
+    expect(drawing.columns.find((column) => column.key === 'b')).toEqual({
+      key: 'b',
+      label: 'b · drawing …',
+      drawing: true,
+    });
+    expect(drawing.frames.some((frame) => frame.column === 'b')).toBe(false);
+    expect(ready.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
 
   it('shows only variants for a new part, and fails a variant that does not load', () => {
-    const frames = sketchFramesOf({
+    const matrix = sketchMatrixOf({
       ...source,
       part: null,
-      sketch: sketch({ problems: [{ variant: 'b', problems: [{ rule: 'LOAD', file: 'x', message: 'boom' }] }] }),
+      sketch: sketch({
+        targets: [
+          { variant: 'a', states: ['empty'] },
+          { variant: 'b', states: [], error: 'boom' },
+        ],
+      }),
     });
 
-    expect(frames.map((frame) => [frame.label, frame.error])).toEqual([
-      ['a · phone', undefined],
-      ['a · desktop', undefined],
-      ['b · phone', 'boom'],
-      ['b · desktop', 'boom'],
+    expect(matrix.columns.map((column) => column.key)).toEqual(['a', 'b']);
+    expect(matrix.frames.map((frame) => [frame.column, frame.row, frame.error])).toEqual([
+      ['a', 'empty', undefined],
+      ['b', 'empty', 'boom'],
     ]);
+  });
+});
+
+describe('mergePreviewOf', () => {
+  it('draws each affected part now and after the merge, at a size it offers', () => {
+    const header = part({ layer: 'elements', name: 'header', states: ['default'] });
+    const home = part({ layer: 'pages', name: 'home', states: [] });
+    const preview = mergePreviewOf({
+      port: 4400,
+      product: product([part(), header, home]),
+      sketch: sketch(),
+      variant: 'b',
+      affected: ['elements/header', 'pages/home', 'pages/gone'],
+      size: 'desktop',
+    });
+
+    expect(preview.columns.map((column) => column.key)).toEqual(['now', 'merged']);
+    expect(preview.frames.map((frame) => [frame.column, frame.row, frame.width])).toEqual([
+      ['now', 'elements/header · default', undefined],
+      ['merged', 'elements/header · default', undefined],
+      ['now', 'pages/home', 1280],
+      ['merged', 'pages/home', 1280],
+    ]);
+    expect(preview.frames[0]?.src).not.toContain('variant=');
+    expect(preview.frames[1]?.src).toContain(
+      '&part=elements%2Fheader&state=default&sketch=components%2Fbutton&variant=b',
+    );
   });
 });
 

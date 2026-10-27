@@ -119,6 +119,22 @@ export const designChanges$ = (checkout: string): Observable<void> =>
     invoke('design_watch', { checkout, changes }).catch((error: unknown) => subscriber.error(error));
   });
 
+/** Reports every change to a recorded call state or sketch report, such as a new line from the agent drawing a sketch. */
+export const designStatusChanges$ = (): Observable<void> =>
+  new Observable<void>((subscriber) => {
+    if (!hasHostShell()) {
+      subscriber.error(new HostShellMissingError());
+
+      return;
+    }
+
+    const changes = new Channel<void>();
+
+    changes.onmessage = () => subscriber.next();
+
+    invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
+  });
+
 /** What a checkout's design server is doing, and what Studio may do about it. */
 export type ServerState = {
   port: number;
@@ -259,13 +275,17 @@ export type PartAddress = {
   color?: string;
   /** Draws the part at the size of its content instead of the size of the frame. */
   fit?: boolean;
+  /** With `variant`, draws the part as that variant of the sketch of `sketch` (a `<layer>/<name>`) has it. */
+  sketch?: string;
+  variant?: string;
 };
 
 const themeQuery = ({ surface, color }: { surface?: string; color?: string }) =>
   (surface ? `&surface=${encodeURIComponent(surface)}` : '') + (color ? `&color=${encodeURIComponent(color)}` : '');
 
-const partQuery = ({ product, part, state }: PartAddress) =>
-  `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}`;
+const partQuery = ({ product, part, state, sketch, variant }: PartAddress) =>
+  `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}` +
+  (sketch && variant ? `&sketch=${encodeURIComponent(sketch)}&variant=${encodeURIComponent(variant)}` : '');
 
 export const partFrameUrl = (address: PartAddress) =>
   `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
@@ -341,7 +361,16 @@ export type ListedSketch = {
   dir: string;
   variants: string[];
   problems: { variant: string; problems: SystemProblem[] }[];
+  /** The target as each variant draws it. Missing from an `@ethlete/cli` older than the sketch matrix. */
+  targets?: SketchTarget[];
+  /** What the agent draws right now, `null` when it reports nothing. */
+  report?: SketchReport | null;
 };
+
+export type SketchTarget = { variant: string; states: string[]; widths?: number[]; error?: string };
+
+/** `variant` is the variant the message names as `variant <name>`. */
+export type SketchReport = { message: string; updatedAt: string; variant: string | null };
 
 export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
 

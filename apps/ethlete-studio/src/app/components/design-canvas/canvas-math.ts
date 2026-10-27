@@ -146,3 +146,59 @@ export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLay
 
   return { frames: placed, rows: [] };
 };
+
+export type MatrixFrame = SheetFrame & { column: string };
+
+export type MatrixColumnPlace = { name: string; x: number; width: number };
+
+export type MatrixLayout = SheetLayout & { columns: MatrixColumnPlace[] };
+
+export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number };
+
+/**
+ * Places each frame at its row and its column: a column is as wide as its widest frame (an empty one
+ * `emptyColumnWidth`), a row as tall as its tallest. Columns keep the order of `columns`, rows the order
+ * they first appear in.
+ */
+export const layoutMatrix = ({
+  frames,
+  columns,
+  spacing,
+}: {
+  frames: MatrixFrame[];
+  columns: string[];
+  spacing: MatrixSpacing;
+}): MatrixLayout => {
+  const rowNames = [...new Set(frames.map((frame) => frame.row))];
+  const placedColumns: MatrixColumnPlace[] = [];
+  let x = 0;
+
+  for (const name of columns) {
+    const members = frames.filter((frame) => frame.column === name);
+    const width = members.length > 0 ? Math.max(...members.map((m) => m.width)) : spacing.emptyColumnWidth;
+
+    placedColumns.push({ name, x, width });
+    x += width + spacing.columnGap;
+  }
+
+  const rows: SheetRow[] = [];
+  const placed: SheetLayout['frames'] = [];
+  let y = 0;
+
+  for (const name of rowNames) {
+    const members = frames.filter((frame) => frame.row === name);
+
+    rows.push({ name, y });
+
+    for (const frame of members) {
+      const column = placedColumns.find((candidate) => candidate.name === frame.column);
+
+      if (column)
+        placed.push({ id: frame.id, row: frame.row, width: frame.width, height: frame.height, x: column.x, y });
+    }
+
+    y += Math.max(...members.map((m) => m.height)) + spacing.rowGap;
+  }
+
+  return { frames: placed, rows, columns: placedColumns };
+};

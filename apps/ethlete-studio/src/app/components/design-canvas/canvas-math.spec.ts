@@ -5,6 +5,7 @@ import {
   clampZoom,
   fitRect,
   layoutGrid,
+  layoutMatrix,
   layoutSheet,
   rectsIntersect,
   screenToWorld,
@@ -154,6 +155,33 @@ describe('canvas math', () => {
       ['b', 240, 0],
       ['c', 0, 180],
       ['d', 0, 320],
+    ]);
+  });
+
+  it('places a matrix by row and column, sizing a column by its widest frame and an empty one by default', () => {
+    const layout = layoutMatrix({
+      frames: [
+        { id: 'now-a', width: 200, height: 50, row: 'a', column: 'now' },
+        { id: 'x-a', width: 300, height: 90, row: 'a', column: 'x' },
+        { id: 'x-b', width: 100, height: 40, row: 'b', column: 'x' },
+      ],
+      columns: ['now', 'drawing', 'x'],
+      spacing: { columnGap: 40, rowGap: 60, emptyColumnWidth: 320 },
+    });
+
+    expect(layout.columns).toEqual([
+      { name: 'now', x: 0, width: 200 },
+      { name: 'drawing', x: 240, width: 320 },
+      { name: 'x', x: 600, width: 300 },
+    ]);
+    expect(layout.rows).toEqual([
+      { name: 'a', y: 0 },
+      { name: 'b', y: 150 },
+    ]);
+    expect(layout.frames.map(({ id, x, y }) => [id, x, y])).toEqual([
+      ['now-a', 0, 0],
+      ['x-a', 600, 0],
+      ['x-b', 600, 150],
     ]);
   });
 });

@@ -24,6 +24,7 @@ import {
   boundingRect,
   fitRect,
   layoutGrid,
+  layoutMatrix,
   layoutSheet,
   panCamera,
   rectsIntersect,
@@ -41,9 +42,12 @@ const MIN_FRAME_WIDTH = 160;
 const MIN_FRAME_HEIGHT = 80;
 const FIT_PADDING = 64;
 const ROW_LABEL_GUTTER = 160;
+const COLUMN_HEAD_ROOM = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const ZOOM_STEP = 1.5;
+
+export type CanvasColumn = { key: string; label: string; muted?: boolean };
 
 type PlacedFrame = Rect & { frame: CanvasFrame; live: boolean; active: boolean; selected: boolean };
 
@@ -73,8 +77,14 @@ export class DesignCanvasComponent {
 
   public frames = input.required<CanvasFrame[]>();
 
-  /** `sheet` puts each row of frames on its own line; `grid` flows the frames as tiles with their label below. */
-  public arrangement = input<'sheet' | 'grid'>('sheet');
+  /**
+   * `sheet` puts each row of frames on its own line; `grid` flows the frames as tiles with their label below;
+   * `matrix` puts each frame at its row and its `column`, with a head over each of `columns`.
+   */
+  public arrangement = input<'sheet' | 'grid' | 'matrix'>('sheet');
+
+  /** The columns of a `matrix`, in order. A column without frames still gets its head. */
+  public columns = input<CanvasColumn[]>([]);
 
   /** Names what the canvas shows. A new key fits the camera again, or restores `restoredCamera`. */
   public cameraKey = input<string | null>(null);
@@ -110,12 +120,29 @@ export class DesignCanvasComponent {
     const sized = frames.map((frame) => ({
       id: frame.id,
       row: frame.row ?? '',
+      column: frame.column ?? '',
       width: sizes[frame.id]?.width ?? frame.width ?? widths[frame.id] ?? FALLBACK_WIDTH,
       height: sizes[frame.id]?.height ?? frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
     }));
-    const sheet = this.arrangement() === 'grid' ? layoutGrid(sized, GRID_SPACING) : layoutSheet(sized, SPACING);
+    const arrangement = this.arrangement();
+    const columns = this.columns();
+    const matrix =
+      arrangement === 'matrix'
+        ? layoutMatrix({
+            frames: sized,
+            columns: columns.map((column) => column.key),
+            spacing: { ...SPACING, emptyColumnWidth: FALLBACK_WIDTH },
+          })
+        : null;
+    const sheet = matrix ?? (arrangement === 'grid' ? layoutGrid(sized, GRID_SPACING) : layoutSheet(sized, SPACING));
+    const heads = (matrix?.columns ?? []).flatMap((placed) => {
+      const column = columns.find((candidate) => candidate.key === placed.name);
+
+      return column ? [{ ...column, x: placed.x, width: placed.width }] : [];
+    });
 
     return {
+      heads,
       rows: sheet.rows.filter((row) => row.name !== ''),
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
@@ -126,6 +153,16 @@ export class DesignCanvasComponent {
   });
 
   protected rows = computed(() => this.layout().rows);
+
+  protected columnHeads = computed(() => this.layout().heads);
+
+  private bounds = computed(() => {
+    const { frames, heads } = this.layout();
+
+    return (
+      boundingRect(frames) ?? boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
+    );
+  });
 
   protected placedFrames = computed<PlacedFrame[]>(() => {
     const camera = this.camera();
@@ -172,7 +209,7 @@ export class DesignCanvasComponent {
 
   constructor() {
     effect(() => {
-      const bounds = boundingRect(this.layout().frames);
+      const bounds = this.bounds();
       const viewport = this.viewport();
       const key = this.cameraKey();
 
@@ -340,7 +377,7 @@ export class DesignCanvasComponent {
 
   /** Fits every frame into view, and keeps fitting as frames report their size until the user moves the camera. */
   public fitAll() {
-    const bounds = boundingRect(this.layout().frames);
+    const bounds = this.bounds();
 
     if (bounds) this.moveCamera(this.fitted(bounds, this.viewport()), true);
     this.following = true;
@@ -364,14 +401,15 @@ export class DesignCanvasComponent {
 
   private fitted(bounds: Rect, viewport: Size): Camera {
     const gutter = this.layout().rows.length > 0 ? ROW_LABEL_GUTTER : 0;
+    const headRoom = this.layout().heads.length > 0 ? COLUMN_HEAD_ROOM : 0;
     const camera = fitRect({
       rect: bounds,
-      viewport: { width: viewport.width - gutter, height: viewport.height },
+      viewport: { width: viewport.width - gutter, height: viewport.height - headRoom },
       padding: FIT_PADDING,
       maxZoom: 1,
     });
 
-    return { ...camera, x: camera.x + gutter };
+    return { ...camera, x: camera.x + gutter, y: camera.y + headRoom };
   }
 
   private moveCamera(camera: Camera, smooth = false) {

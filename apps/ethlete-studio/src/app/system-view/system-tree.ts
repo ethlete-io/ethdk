@@ -239,58 +239,213 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   sketch: ListedSketch;
   /** The target as the product has it now; `null` for a sketch of a new part. */
   part: ListedPart | null;
+  /** The preset name or the width the user picked for every cell; the first one when it is not offered. */
+  size?: string | null;
 };
 
-/** The URL of a variant frame: the part address plus the sketch and the variant to draw it from. */
-export const sketchVariantUrl = (address: PartAddress & { sketch: string; variant: string }) =>
-  `${partFrameUrl(address)}&sketch=${encodeURIComponent(address.sketch)}&variant=${encodeURIComponent(address.variant)}`;
+export type MatrixColumn = { key: string; label: string; drawing: boolean };
+
+export type SketchMatrix = {
+  columns: MatrixColumn[];
+  frames: CanvasFrame[];
+  /** The preset names of a page or the container widths of a part, for the switch; empty when every cell fits its content. */
+  sizes: string[];
+  size: string | null;
+};
+
+const CURRENT = 'current';
+
+type CellSize = { preset?: string; width?: number; height?: number; label: string };
+
+const cellSizeOf = (product: ListedProduct, size: string | null): CellSize => {
+  if (size === null) return { label: '' };
+
+  const preset = product.presets[size];
+
+  return preset
+    ? { preset: size, width: preset.width, height: preset.height, label: size }
+    : { width: Number(size), label: `${size} px` };
+};
+
+/** The sizes a sketch offers: the presets of a page, else every width the part or a variant declares, else none. */
+const sketchSizesOf = ({
+  product,
+  sketch,
+  part,
+}: {
+  product: ListedProduct;
+  sketch: ListedSketch;
+  part: ListedPart | null;
+}) => {
+  if (sketch.layer === 'pages') return Object.keys(product.presets);
+
+  const widths = new Set([...(part?.widths ?? []), ...(sketch.targets ?? []).flatMap((target) => target.widths ?? [])]);
+
+  return [...widths].sort((a, b) => a - b).map(String);
+};
 
 /**
- * One row per state of the target, the current part at every preset first, then each variant at every
- * preset. A new part has no current frames and shows its variants in one row without a state.
+ * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant, one
+ * row per state - the current states first, then any state only a variant has. Every cell has the one
+ * picked size. A variant the agent reports drawing while the sketch is in progress gets a column without
+ * frames.
  */
-export const sketchFramesOf = ({
+export const sketchMatrixOf = ({
   port,
   product,
   part,
   sketch,
+  size: picked = null,
   epoch,
   revision,
   surface,
   color,
-}: SketchFramesSource): CanvasFrame[] => {
-  const current = part ? presetFramesOf({ port, product, part, epoch, revision, surface, color }) : [];
-  const rows: (string | undefined)[] = part && part.states.length > 0 ? part.states : [undefined];
-  const presets = Object.entries(product.presets);
+}: SketchFramesSource): SketchMatrix => {
+  const sizes = sketchSizesOf({ product, sketch, part });
+  const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
+  const cell = cellSizeOf(product, size);
+  const drawing = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
+  const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
+  const columns: (MatrixColumn & { states: string[]; error?: string })[] = [
+    ...(part
+      ? [{ key: CURRENT, label: CURRENT, drawing: false, states: part.states, error: loadErrorOf(part.problems) }]
+      : []),
+    ...sketch.variants.map((variant) => {
+      const target = targetOf(variant);
+      const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
 
-  return rows.flatMap((state) => [
-    ...current
-      .filter((frame) => frame.row === state)
-      .map((frame) => ({ ...frame, id: `current ${frame.id}`, label: `current · ${frame.label}` })),
-    ...sketch.variants.flatMap((variant) => {
-      const error = loadErrorOf(sketch.problems.find((entry) => entry.variant === variant)?.problems ?? []);
+      return {
+        key: variant,
+        label: variant === drawing ? `${variant} · drawing …` : variant,
+        drawing: variant === drawing,
+        states: target?.states ?? part?.states ?? [],
+        error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
+      };
+    }),
+  ];
+  const states = [...new Set(columns.flatMap((column) => column.states))];
+  const rows: (string | undefined)[] = states.length > 0 ? states : [undefined];
 
-      return presets.map(([preset, { width, height }]) => ({
-        id: `${variant} ${state ?? ''} ${preset}`,
-        src: sketchVariantUrl({
+  const frames = columns.flatMap((column) => {
+    if (column.drawing) return [];
+
+    const shown =
+      column.states.length > 0 ? rows.filter((row) => row !== undefined && column.states.includes(row)) : [rows[0]];
+
+    return shown.map((state): CanvasFrame => {
+      const address: PartAddress = {
+        port,
+        product: product.name,
+        part: sketch.target,
+        state: state ?? '',
+        epoch,
+        surface,
+        color,
+        ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
+        ...(size === null ? { fit: true } : {}),
+      };
+
+      return {
+        id: `${column.key} ${state ?? ''}`,
+        src: partFrameUrl(address),
+        ...(cell.width ? { width: cell.width } : {}),
+        ...(cell.height ? { height: cell.height } : {}),
+        label: cell.label,
+        row: state,
+        column: column.key,
+        screenshot: partShotUrl({
+          ...address,
+          preset: cell.preset,
+          width: cell.preset ? undefined : cell.width,
+          revision,
+        }),
+        error: column.states.length > 0 ? undefined : column.error,
+      };
+    });
+  });
+
+  return {
+    columns: columns.map(({ key, label, drawing: isDrawing }) => ({ key, label, drawing: isDrawing })),
+    frames,
+    sizes,
+    size,
+  };
+};
+
+export type MergePreviewSource = Omit<FramesSource, 'part'> & {
+  sketch: ListedSketch;
+  variant: string;
+  /** The parts that show the target, each as `<layer>/<name>`. */
+  affected: string[];
+  /** The preset or width the matrix shows; a part that offers it takes it, any other its first size. */
+  size?: string | null;
+};
+
+/**
+ * Each affected part in every state twice: as the product has it now, and as it looks once the
+ * variant is merged. A page takes a preset, a part with `widths` a width, any other part fits its content.
+ */
+export const mergePreviewOf = ({
+  port,
+  product,
+  sketch,
+  variant,
+  affected,
+  size = null,
+  epoch,
+  revision,
+  surface,
+  color,
+}: MergePreviewSource): SketchMatrix => {
+  const columns: MatrixColumn[] = [
+    { key: 'now', label: 'now', drawing: false },
+    { key: 'merged', label: `after merging ${variant}`, drawing: false },
+  ];
+  const frames = affected.flatMap((key) => {
+    const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+    if (!part) return [];
+
+    const offered = part.layer === 'pages' ? Object.keys(product.presets) : (part.widths ?? []).map(String);
+    const cell = cellSizeOf(product, size !== null && offered.includes(size) ? size : (offered[0] ?? null));
+    const error = loadErrorOf(part.problems);
+    const states = part.states.length > 0 ? part.states : [''];
+
+    return states.flatMap((state) =>
+      columns.map((column): CanvasFrame => {
+        const address: PartAddress = {
           port,
           product: product.name,
-          part: sketch.target,
-          state: state ?? '',
+          part: key,
+          state,
           epoch,
           surface,
           color,
-          sketch: sketch.target,
-          variant,
-        }),
-        width,
-        height,
-        label: `${variant} · ${preset}`,
-        row: state,
-        error,
-      }));
-    }),
-  ]);
+          ...(column.key === 'merged' ? { sketch: sketch.target, variant } : {}),
+          ...(cell.width === undefined ? { fit: true } : {}),
+        };
+
+        return {
+          id: `${column.key} ${key} ${state}`,
+          src: partFrameUrl(address),
+          ...(cell.width ? { width: cell.width } : {}),
+          ...(cell.height ? { height: cell.height } : {}),
+          label: cell.label,
+          row: state ? `${key} · ${state}` : key,
+          column: column.key,
+          screenshot: partShotUrl({
+            ...address,
+            preset: cell.preset,
+            width: cell.preset ? undefined : cell.width,
+            revision,
+          }),
+          error: column.key === 'now' ? error : undefined,
+        };
+      }),
+    );
+  });
+
+  return { columns, frames, sizes: [], size: null };
 };
 
 /** Whether the user may pick a variant: the sketch is ready and the variant breaks no rule. */

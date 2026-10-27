@@ -47,6 +47,24 @@
     white-space: nowrap;
   }
 
+  .et-design-canvas__column {
+    position: absolute;
+    top: calc(-3.2rem * var(--et-design-canvas-label-scale));
+    overflow: hidden;
+    transform: translateY(-100%);
+    color: var(--et-surface-color-solid);
+    font-size: calc(1.6rem * var(--et-design-canvas-label-scale));
+    font-weight: 600;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .et-design-canvas__column--muted {
+    color: var(--et-surface-color-muted-solid);
+    font-style: italic;
+  }
+
   .et-design-canvas__resize {
     position: absolute;
     pointer-events: none;
