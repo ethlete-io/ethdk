@@ -20,7 +20,8 @@ or loses only against the other variants of its question.
 1. **One open call at a time.** Take one question. Draw its variants. Stop.
 2. **Put the variants in the call, then name your pick.** Two to four variants, drawn for
    real, side by side, labelled, with what each one costs. Your pick is a proposal.
-3. **Commit only when the user says commit.**
+3. **Commit only when the user says commit.** A merge the user makes in Ethlete Studio counts as
+   that word for the merged part: commit the part, not the open sketches.
 4. **A clear rejection starts the next call.** Settle and record the rejected call, then draw
    the next focused question automatically, within the user's original scope. Stop only when the
    user asks to pause or end the exploration, or when their feedback leaves no grounded next
