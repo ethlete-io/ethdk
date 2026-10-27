@@ -222,6 +222,29 @@
     </div>
   }
 
+  @if (noteConnectors().length > 0) {
+    <svg class="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+      @for (connector of noteConnectors(); track connector.key) {
+        <path
+          [attr.d]="connector.path"
+          [attr.stroke-width]="labelScale()"
+          [attr.data-note-connector]="connector.key"
+          class="fill-none stroke-[var(--et-surface-color-muted-solid)]"
+        />
+      }
+    </svg>
+  }
+
+  @for (marker of noteMarkers(); track marker.key) {
+    <span
+      [style.left.px]="marker.x"
+      [style.top.px]="marker.y"
+      [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
+      [attr.data-note-marker]="marker.key"
+      class="pointer-events-none absolute size-3 origin-top-left border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
+    ></span>
+  }
+
   @for (group of placedNotes(); track group.key) {
     <div
       [style.left.px]="group.x"
@@ -231,22 +254,16 @@
       class="absolute flex w-max origin-top-left flex-col items-start gap-2"
     >
       @for (note of group.notes; track NOTE_KEY_OF(note)) {
-        @if (group.anchor === 'point') {
-          <span
-            class="pointer-events-none absolute -top-1.5 -left-1.5 size-3 border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
-            data-note-marker
-          ></span>
-        }
         @if (note.heading || !notesCompact()) {
           <div
+            #noteCard
             [class]="
               note.heading
                 ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-[var(--et-surface-color-solid)]'
                 : 'max-w-[28rem] rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-3 py-2 text-[1.3rem] text-[var(--et-surface-color-solid)]'
             "
-            [class.ml-4]="group.anchor === 'point'"
-            [class.mt-2]="group.anchor === 'point'"
             [attr.data-note]="note.id"
+            [attr.data-note-key]="NOTE_KEY_OF(note)"
           >
             @if (noteTemplate(); as template) {
               <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />

@@ -60,6 +60,7 @@ describe('DesignCanvasComponent', () => {
     const host = fixture.nativeElement as HTMLElement;
 
     expect(host.querySelector('[data-note="n"]')).toBeNull();
+    expect(host.querySelector('[data-note-connector]')).toBeNull();
     expect(host.querySelector('[data-note-marker]')).not.toBeNull();
     expect(host.querySelector('[data-note="h"]')).not.toBeNull();
 
@@ -67,6 +68,7 @@ describe('DesignCanvasComponent', () => {
     await fixture.whenStable();
 
     expect(host.querySelector('[data-note="n"]')).not.toBeNull();
+    expect(host.querySelector('[data-note-connector]')).not.toBeNull();
   });
 
   it('shows each note at its place, and reports the world point of a click on empty space while pointing', async () => {
@@ -81,11 +83,13 @@ describe('DesignCanvasComponent', () => {
     await fixture.whenStable();
 
     const host = fixture.nativeElement as HTMLElement;
-    const pointed = host.querySelector<HTMLElement>('[data-note-anchor="point"]');
+    const column = host.querySelector<HTMLElement>('[data-note-anchor="below"]');
+    const marker = host.querySelector<HTMLElement>('[data-note-marker="n a"]');
     const heading = host.querySelector<HTMLElement>('[data-note-anchor="at"]');
 
-    expect([pointed?.style.left, pointed?.style.top, pointed?.textContent?.trim()]).toEqual(['40px', '120px', 'Hero']);
-    expect(pointed?.querySelector('[data-note-marker]')).not.toBeNull();
+    expect([column?.style.left, column?.style.top, column?.textContent?.trim()]).toEqual(['0px', '860px', 'Hero']);
+    expect([marker?.style.left, marker?.style.top]).toEqual(['40px', '120px']);
+    expect(host.querySelector('[data-note-connector="n a"]')?.getAttribute('d')).toMatch(/^M 40 120 V 852 /);
     expect([heading?.style.left, heading?.style.top, heading?.textContent?.trim()]).toEqual([
       '0px',
       '-160px',

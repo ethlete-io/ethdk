@@ -3,6 +3,7 @@ import {
   ElementRef,
   TemplateRef,
   ViewEncapsulation,
+  afterEveryRender,
   computed,
   effect,
   inject,
@@ -11,6 +12,7 @@ import {
   output,
   signal,
   untracked,
+  viewChildren,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -19,7 +21,7 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
-import { CanvasNote, noteKeyOf, placeNotes } from './canvas-note';
+import { CanvasNote, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
@@ -44,6 +46,10 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
 const FLOW_SPACING = { columnGap: 280, rowGap: 120 };
+
+const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
+  Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, top]) => b[key] === top);
+
 let canvasCount = 0;
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
@@ -157,6 +163,7 @@ export class DesignCanvasComponent {
   /** The key of a folded column or of a column group whose head the user clicked. */
   public columnToggle = output<string>();
 
+  private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
@@ -347,12 +354,15 @@ export class DesignCanvasComponent {
     });
   });
 
+  private framesById = computed(() => new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])));
+
   protected placedNotes = computed(() =>
-    placeNotes(this.notes(), {
-      frames: new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])),
-      bounds: boundingRect(this.layout().frames),
-    }),
+    placeNotes(this.notes(), { frames: this.framesById(), bounds: boundingRect(this.layout().frames) }),
   );
+
+  protected noteMarkers = computed(() => placeNoteMarkers(this.notes(), this.framesById()));
+
+  private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
 
   protected readonly NOTE_KEY_OF = noteKeyOf;
 
@@ -380,6 +390,19 @@ export class DesignCanvasComponent {
 
   protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
 
+  protected noteConnectors = computed(() => {
+    if (this.notesCompact()) return [];
+
+    const tops = this.noteCardTops();
+    const scale = this.labelScale();
+
+    return this.noteMarkers().flatMap((marker) => {
+      const top = tops[marker.key];
+
+      return top === undefined ? [] : [{ key: marker.key, path: noteConnectorPath(marker, { top, scale }) }];
+    });
+  });
+
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
   private panStart$ = new Subject<PointerEvent>();
@@ -394,6 +417,20 @@ export class DesignCanvasComponent {
   protected readonly ARROW_ID = `et-design-canvas-arrow-${canvasCount++}`;
 
   constructor() {
+    afterEveryRender({
+      read: () => {
+        const cards = this.noteCards();
+
+        if (cards.length === 0 && Object.keys(this.noteCardTops()).length === 0) return;
+
+        this.noteCardTops.set(
+          Object.fromEntries(
+            cards.map(({ nativeElement }) => [nativeElement.dataset['noteKey'] ?? '', nativeElement.offsetTop]),
+          ),
+        );
+      },
+    });
+
     effect(() => {
       const bounds = this.bounds();
       const viewport = this.viewport();

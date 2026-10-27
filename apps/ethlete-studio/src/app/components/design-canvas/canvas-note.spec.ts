@@ -1,4 +1,4 @@
-import { placeNotes } from './canvas-note';
+import { noteConnectorPath, placeNoteMarkers, placeNotes } from './canvas-note';
 
 const frames = new Map([
   ['a', { x: 100, y: 200, width: 390, height: 844 }],
@@ -8,16 +8,34 @@ const frames = new Map([
 const bounds = { x: 100, y: 200, width: 1090, height: 844 };
 
 describe('placeNotes', () => {
-  it('puts a pointed note at its point on the frame', () => {
-    expect(placeNotes([{ id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } }], { frames, bounds })).toEqual([
-      {
-        key: 'n a',
-        anchor: 'point',
-        x: 140,
-        y: 320,
-        notes: [{ id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } }],
-      },
+  it('hangs a pointed note in the column below its frame, with the notes without a point', () => {
+    const notes = [
+      { id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } },
+      { id: 'm', text: 'u', frameId: 'a' },
+    ];
+
+    expect(placeNotes(notes, { frames, bounds })).toEqual([
+      { key: 'below a', anchor: 'below', x: 100, y: 1060, notes },
     ]);
+  });
+
+  it('puts the marker of a pointed note at its point and names the column of its card', () => {
+    expect(
+      placeNoteMarkers(
+        [
+          { id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } },
+          { id: 'm', text: 'u', frameId: 'a' },
+          { id: 'g', text: 'v', frameId: 'gone', point: { x: 1, y: 1 } },
+        ],
+        frames,
+      ),
+    ).toEqual([{ key: 'n a', x: 140, y: 320, column: { x: 100, y: 1060 } }]);
+  });
+
+  it('runs the connector through the gap below the frame and left of the column to the card', () => {
+    const marker = { key: 'n a', x: 140, y: 320, column: { x: 100, y: 1060 } };
+
+    expect(noteConnectorPath(marker, { top: 50, scale: 2 })).toBe('M 140 320 V 1052 H 76 V 1192 H 100');
   });
 
   it('stacks the notes on a whole state in one column below their frame', () => {
