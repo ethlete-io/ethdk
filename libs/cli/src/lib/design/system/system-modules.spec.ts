@@ -77,6 +77,42 @@ describe('createSystemModules', () => {
     expect(sketchOfModuleId(productModuleIdOf({ file: 'x.ts', product: 'acme' }))).toBeNull();
   });
 
+  it("resolves a part's stylesheet import inside a base part to the product's override, and to a sketch's", () => {
+    const { target, system } = acme();
+    const design = join(target, DESIGN_DIR);
+    const button = join(design, 'acme-base/components/button/button.ts');
+    const own = join(design, 'acme/foundations/tokens');
+
+    mkdirSync(own, { recursive: true });
+    writeFileSync(join(own, 'tokens.ts'), '');
+    writeFileSync(join(own, 'tokens.css'), '');
+
+    const inProduct = (product: string, sketch?: { target: string; variant: string }) =>
+      productModuleIdOf({ file: button, product, sketch });
+
+    expect(system.resolveId('@system/foundations/tokens.css?inline', inProduct('acme'))).toBe(
+      `${join(own, 'tokens.css')}?inline`,
+    );
+    expect(system.resolveId('@system/foundations/tokens.css', inProduct('acme-base'))).toBe(
+      join(design, 'acme-base/foundations/tokens/tokens.css'),
+    );
+    expect(system.resolveId('@system/pages/home.css?inline', inProduct('acme'))).toBeNull();
+
+    const product = system.productOf('acme');
+    const parsed = parseTarget('foundations/tokens');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    expect(
+      system.resolveId(
+        '@system/foundations/tokens.css?inline',
+        inProduct('acme', { target: 'foundations/tokens', variant: 'a' }),
+      ),
+    ).toBe(`${join(design, 'acme/sketches/foundations-tokens/a/foundations/tokens/tokens.css')}?inline`);
+  });
+
   it('keeps a resolved product until forget', () => {
     const { target, system } = acme();
 

@@ -40,7 +40,8 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
 
 /**
  * The products of a workspace, resolved on first use and kept until `forget`, and the resolution
- * of `@system/<layer>/<name>` and `@system/fixtures` inside a module of one product.
+ * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet) and
+ * `@system/fixtures` inside a module of one product.
  */
 export const createSystemModules = (options: { target: string; config: DesignConfig }) => {
   const { target, config } = options;
@@ -102,6 +103,14 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     if (!name || (imported.kind !== 'part' && imported.kind !== 'fixtures')) return null;
 
     const sketch = sketchOfModuleId(importer);
+
+    if (imported.kind === 'part' && imported.stylesheet) {
+      const css = partOf({ product: name, part: partKeyOf(imported), sketch })?.css;
+      const query = specifier.split('?')[1];
+
+      return css ? (query === undefined ? css : `${css}?${query}`) : null;
+    }
+
     const file =
       imported.kind === 'fixtures'
         ? drawnOf(name, sketch)?.fixtures

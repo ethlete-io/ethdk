@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -166,16 +166,43 @@ describe('the parts event of the design server', () => {
     expect(changes()).toEqual([{ revision: 1, all: true }]);
   });
 
-  it('redraws only the part whose folder a file comes to or goes from', async () => {
-    const { emit, changes } = await serveAcme();
+  it('redraws every part of the product, its sketch variants too, when a part file comes or goes', async () => {
+    const { emit, changes, keysOf, system } = await serveAcme();
 
     emit('add', 'acme/components/badge/badge.ts');
     emit('unlink', 'acme/components/badge/badge.ts');
 
-    expect(changes()).toEqual([
-      { revision: 1, all: false, parts: [{ product: 'acme', part: 'components/badge', sketch: null }] },
-      { revision: 2, all: false, parts: [{ product: 'acme', part: 'components/badge', sketch: null }] },
-    ]);
+    const plain = (system.productOf('acme')?.parts ?? []).length;
+
+    for (const change of changes()) {
+      const keys = keysOf(change) as string[];
+
+      expect(keys.filter((key) => key.startsWith('acme-base'))).toEqual([]);
+      expect(keys.filter((key) => key.endsWith(' '))).toHaveLength(plain);
+      expect(keys.filter((key) => key.endsWith(' a'))).toHaveLength(plain);
+    }
+    expect(changes()).toHaveLength(2);
+  });
+
+  it("draws a base part with the product's own tokens once they come, through the tokens stylesheet import", async () => {
+    const { target, vite, emit, changes, keysOf } = await serveAcme();
+    const design = join(target, DESIGN_DIR);
+    const probe = join(design, 'acme-base/components/card/probe.ts');
+    const tokens = join(design, 'acme/foundations/tokens');
+    const load = async () =>
+      ((await vite.ssrLoadModule(productModuleIdOf({ file: probe, product: 'acme' }))) as { default: string }).default;
+
+    writeFileSync(probe, "import tokens from '@system/foundations/tokens.css?inline';\nexport default tokens;\n");
+
+    expect(await load()).not.toContain('acme own');
+
+    mkdirSync(tokens, { recursive: true });
+    writeFileSync(join(tokens, 'tokens.ts'), "export default { note: '', states: {}, render: () => null };\n");
+    writeFileSync(join(tokens, 'tokens.css'), ':root { --acme-own: 1; } /* acme own */\n');
+    emit('add', 'acme/foundations/tokens/tokens.css');
+
+    expect(await load()).toContain('acme own');
+    expect(keysOf(changes()[changes().length - 1])).toContain('acme components/card ');
   });
 
   it('redraws the frames of the sketch variant whose folder a file comes to', async () => {

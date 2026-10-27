@@ -1,5 +1,6 @@
 import { formField, formFieldStyles, input } from '@ethlete/components/design/form-field';
 import { definePart, drawing } from '@design-system';
+import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { value?: string; hint?: string; error?: string; focused?: boolean; disabled?: boolean };
 
@@ -16,6 +17,6 @@ export default definePart<Props>({
   render: ({ value, ...field }) =>
     drawing({
       body: formField({ id: 'name', label: 'Name', errorColor: 'danger', control: input({ value }), ...field }),
-      styles: formFieldStyles,
+      styles: tokens + formFieldStyles,
     }),
 });

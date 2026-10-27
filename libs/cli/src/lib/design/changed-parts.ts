@@ -89,8 +89,10 @@ const partFolderOf = (segments: string[]) => {
 };
 
 /**
- * The frames a file that came or went redraws: the part whose folder holds it, or the variant whose
- * folder holds it. A file in no part folder redraws no part, only the frames that show an error.
+ * The frames a file that came or went redraws: every part of the product whose part folder holds it,
+ * since an `@system/...` import anywhere in the product may now resolve to another file, or the parts
+ * of the variant whose folder holds it. A file in no part folder redraws no part, only the frames
+ * that show an error.
  */
 export const addedPartsOf = (options: {
   designRoot: string;
@@ -118,18 +120,15 @@ export const addedPartsOf = (options: {
       return parts.length > 0 ? ({ all: false, parts } satisfies PartsChange) : none;
     }
 
-    const part = partFolderOf(rest);
-
-    return part ? ({ all: false, parts: [{ product, part, sketch: null }] } satisfies PartsChange) : none;
+    return partFolderOf(rest) ? ({ all: false, parts: everyPartOf(system, product) } satisfies PartsChange) : none;
   }
 
   const baseDir = baseDirs.find((dir) => file.startsWith(`${dir}${sep}`));
-  const part = baseDir ? partFolderOf(relative(baseDir, file).split(sep)) : null;
 
-  if (!part) return none;
+  if (!baseDir || !partFolderOf(relative(baseDir, file).split(sep))) return none;
 
   return {
     all: false,
-    parts: system.products().map((name) => ({ product: name, part, sketch: null })),
+    parts: system.products().flatMap((name) => everyPartOf(system, name)),
   } satisfies PartsChange;
 };

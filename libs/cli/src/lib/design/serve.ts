@@ -57,7 +57,13 @@ import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
-import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system/system-modules';
+import {
+  createSystemModules,
+  productModuleIdOf,
+  productOfModuleId,
+  SketchVariant,
+  SystemModules,
+} from './system/system-modules';
 import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
@@ -302,6 +308,12 @@ const designExplore = ({
       if (module) vite.moduleGraph.invalidateModule(module);
     };
 
+    const unresolveParts = () => {
+      for (const module of vite.moduleGraph.idToModuleMap.values()) {
+        if (productOfModuleId(module.id)) vite.moduleGraph.invalidateModule(module);
+      }
+    };
+
     const forgetCalls = (file: string) => {
       thumbs.forget(relative(callsRoot, file));
       shots.forgetCalls(relative(callsRoot, file));
@@ -356,6 +368,7 @@ const designExplore = ({
       if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
 
       system.forget();
+      unresolveParts();
       reload(`${VIRTUAL}/system`);
       redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
     };

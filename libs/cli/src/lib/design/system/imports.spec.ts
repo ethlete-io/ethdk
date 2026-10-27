@@ -33,6 +33,13 @@ describe('classifyImport', () => {
       name: 'button',
       specifier: '@system/components/button',
     });
+    expect(classifyImport('@system/foundations/tokens.css?inline')).toEqual({
+      kind: 'part',
+      layer: 'foundations',
+      name: 'tokens',
+      specifier: '@system/foundations/tokens.css?inline',
+      stylesheet: true,
+    });
     expect(classifyImport('@system/fixtures').kind).toBe('fixtures');
     expect(classifyImport('./hero.css?inline').kind).toBe('relative');
     expect(classifyImport('@design-system').kind).toBe('other');
@@ -64,6 +71,22 @@ describe('importProblemsOf', () => {
 
     expect(importProblemsOf(resolveAcme(target))).toEqual([
       expect.objectContaining({ message: '@system/components/badge resolves to no part' }),
+    ]);
+  });
+
+  it('flags a stylesheet import of a part without its own stylesheet, and passes one that has it', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      part(
+        "import tokens from '@system/foundations/tokens.css?inline';\nimport home from '@system/pages/home.css?inline';",
+      ),
+    );
+
+    expect(importProblemsOf(resolveAcme(target))).toEqual([
+      expect.objectContaining({ message: '@system/pages/home.css?inline resolves to a part without home.css' }),
     ]);
   });
 

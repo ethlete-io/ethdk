@@ -1,6 +1,7 @@
 import { formField } from '@ethlete/components/design/form-field';
 import { select, selectStyles } from '@ethlete/components/design/select';
 import { definePart, drawing } from '@design-system';
+import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { value?: string; open?: boolean; active?: string };
 
@@ -27,6 +28,6 @@ export default definePart<Props>({
         open,
         control: select({ options: OPTIONS, value, active, placeholder: 'Pick a status', panelColor: 'accent' }),
       }),
-      styles: selectStyles,
+      styles: tokens + selectStyles,
     }),
 });

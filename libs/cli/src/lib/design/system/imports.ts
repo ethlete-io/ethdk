@@ -7,10 +7,12 @@ const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
 
 export type PartImport =
-  | { kind: 'part'; layer: string; name: string; specifier: string }
+  | { kind: 'part'; layer: string; name: string; specifier: string; stylesheet?: true }
   | { kind: 'fixtures'; specifier: string }
   | { kind: 'relative'; specifier: string }
   | { kind: 'other'; specifier: string };
+
+const STYLESHEET = /\.css(?:\?.*)?$/u;
 
 export const partSpecifierOf = (part: { layer: string; name: string }) => `${SYSTEM}${partKeyOf(part)}`;
 
@@ -18,9 +20,13 @@ export const classifyImport = (specifier: string): PartImport => {
   if (specifier === FIXTURES_SPECIFIER) return { kind: 'fixtures', specifier };
 
   if (specifier.startsWith(SYSTEM)) {
-    const [layer = '', ...name] = specifier.slice(SYSTEM.length).split('/');
+    const [layer = '', ...path] = specifier.slice(SYSTEM.length).split('/');
+    const name = path.join('/');
+    const stylesheet = STYLESHEET.exec(name);
 
-    return { kind: 'part', layer, name: name.join('/'), specifier };
+    return stylesheet
+      ? { kind: 'part', layer, name: name.slice(0, stylesheet.index), specifier, stylesheet: true }
+      : { kind: 'part', layer, name, specifier };
   }
 
   if (specifier.startsWith('.')) return { kind: 'relative', specifier };
@@ -42,14 +48,16 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
 
 /** Imports that name no part or fixture set, and relative imports that reach into another part. */
 export const importProblemsOf = (product: ResolvedProduct): Problem[] => {
-  const keys = new Set(product.parts.map(partKeyOf));
+  const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
 
   return product.parts.flatMap((part) =>
     importsOfPart(part).flatMap((imported): Problem[] => {
       const problem = (message: string) => [{ rule: 'IMPORT', file: part.file, message }];
 
-      if (imported.kind === 'part' && !keys.has(partKeyOf(imported)))
+      if (imported.kind === 'part' && !parts.has(partKeyOf(imported)))
         return problem(`${imported.specifier} resolves to no part`);
+      if (imported.kind === 'part' && imported.stylesheet && !parts.get(partKeyOf(imported))?.css)
+        return problem(`${imported.specifier} resolves to a part without ${imported.name}.css`);
       if (imported.kind === 'fixtures' && !product.fixtures)
         return problem(`${FIXTURES_SPECIFIER} resolves to no fixtures.ts`);
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))

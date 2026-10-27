@@ -177,6 +177,11 @@ const serveAcme = async (target: string) => {
   const vite = {
     moduleGraph: {
       getModuleById: (id: string) => ({ id }),
+      idToModuleMap: new Map(
+        ['/w/acme-base/components/card/card.ts?design-product=acme', '/w/acme-base/foundations/tokens/tokens.css'].map(
+          (id) => [id, { id }],
+        ),
+      ),
       invalidateModule: (module: { id: string }) => invalidated.push(module.id),
       getModulesByFile: (file: string) => modulesByFile.get(file),
     },
@@ -296,7 +301,7 @@ describe('the design server for a design system', () => {
     );
   });
 
-  it('rebuilds the parts registry when a part file comes or goes, and leaves the frames to Studio', async () => {
+  it('rebuilds the parts registry and every import a product resolved when a part file comes or goes, and leaves the frames to Studio', async () => {
     const target = acme();
     const { watchers, sent, invalidated } = await serveAcme(target);
 
@@ -304,7 +309,10 @@ describe('the design server for a design system', () => {
 
     watchers.get('add')?.(join(target, 'elsewhere.ts'));
 
-    expect(invalidated).toEqual(['\0virtual:design-explore/system']);
+    expect(invalidated).toEqual([
+      '/w/acme-base/components/card/card.ts?design-product=acme',
+      '\0virtual:design-explore/system',
+    ]);
     expect(sent).toEqual([]);
   });
 

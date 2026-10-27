@@ -44,7 +44,6 @@
       }
     },
     "sdk": {
-      "styles": [".ethlete/design/sdk/foundations/tokens/tokens.css"],
       "presets": {
         "phone": {
           "width": 390,
@@ -57,7 +56,6 @@
       }
     },
     "studio": {
-      "styles": [".ethlete/design/sdk/foundations/tokens/tokens.css"],
       "base": ".ethlete/design/sdk"
     }
   }
