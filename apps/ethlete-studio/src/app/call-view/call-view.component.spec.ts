@@ -814,4 +814,39 @@ describe('CallViewComponent', () => {
 
     expect(element(fixture).querySelector('.studio__frame iframe')).not.toBeNull();
   });
+
+  it('starts its own server and draws the frames again when a server Studio did not start ends', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+
+    const foreign = {
+      port: 4402,
+      listening: true,
+      managed: false,
+      foreign: true,
+      stale: false,
+      exited: false,
+      log: [],
+    };
+    let current = foreign;
+
+    stubHost({
+      design_server_state: () => current,
+      design_server_start: () => ({ ...foreign, managed: true, foreign: false }),
+    });
+
+    try {
+      const fixture = await mount(RESOLVED.slug);
+      const epochs = () => drawings(fixture).map((frame) => new URL(frame.src).searchParams.get('epoch'));
+      const before = epochs();
+
+      current = { ...foreign, listening: false, foreign: false };
+      vi.advanceTimersByTime(3000);
+      await settle(fixture);
+
+      expect(sent.some((call) => call.command === 'design_server_start')).toBe(true);
+      expect(epochs()).not.toEqual(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

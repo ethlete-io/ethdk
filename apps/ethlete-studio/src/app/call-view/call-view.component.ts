@@ -15,7 +15,19 @@ import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-i
 import { DomSanitizer } from '@angular/platform-browser';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { SystemViewComponent } from '../system-view/system-view.component';
-import { EMPTY, Subscription, catchError, debounceTime, finalize, map, of, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Subscription,
+  catchError,
+  debounceTime,
+  finalize,
+  first,
+  interval,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
 import { AgentDescriptor, AgentEvent, AgentTools, agentList$, agentRun$ } from '../../host/agent';
 import {
   AddedVariants,
@@ -96,6 +108,8 @@ const THUMB_ASPECT = 9 / 16;
  * several file events, and an agent writes a whole round of variants in a burst.
  */
 const SETTLE_MS = 300;
+
+const FOREIGN_SERVER_POLL_MS = 3000;
 
 @Component({
   selector: 'ethlete-call-view',
@@ -926,6 +940,8 @@ export class CallViewComponent {
   private run: Subscription | null = null;
 
   private watch: Subscription | null = null;
+
+  private foreignWatch: Subscription | null = null;
   protected view = signal<StudioView>(rememberedView().view ?? 'calls');
 
   protected design = signal<Project | null>(null);
@@ -1357,6 +1373,8 @@ export class CallViewComponent {
     this.slug.set('');
     this.variantKey.set('');
     this.dismiss();
+    this.foreignWatch?.unsubscribe();
+    this.foreignWatch = null;
     this.read();
     this.readServer();
     this.watchCalls();
@@ -1883,5 +1901,27 @@ export class CallViewComponent {
     this.server.set(state);
 
     if (state.listening && !answered) this.epoch.update((value) => value + 1);
+    if (state.listening && state.foreign) this.watchForeignServer();
+  }
+
+  private watchForeignServer() {
+    const checkout = this.checkout();
+
+    if (!checkout || (this.foreignWatch && !this.foreignWatch.closed)) return;
+
+    this.foreignWatch = interval(FOREIGN_SERVER_POLL_MS)
+      .pipe(
+        switchMap(() => designServerState$(checkout).pipe(catchError(() => EMPTY))),
+        first((state) => !state.listening || !state.foreign),
+        tap((state) => {
+          if (this.serverBusy()) return;
+
+          this.showServer(state);
+
+          if (!state.listening) this.startServer();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 }
