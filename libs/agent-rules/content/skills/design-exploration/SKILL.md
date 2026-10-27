@@ -280,12 +280,9 @@ A note is `<product>/notes/<timestamp>-<id>.json`:
 ## The order of a design
 
 A product design runs in this order. Each stage settles in calls before the next starts, and
-each stage draws with what the stages before it settled:
+each stage draws with what the stages before it settled (the wireframes draw with the kit only):
 
-1. **Foundations**: colours, colour themes and surface themes (the project's `themes` in
-   `config.json`), plus the type scale, spacing and radius.
-2. **Logo and CI**, if the project needs them.
-3. **Wireframes**: early, rough concepts of the main flows (a legacy call with `mode: 'wireframe'`;
+1. **Wireframes**: early, rough concepts of the main flows (a legacy call with `mode: 'wireframe'`;
    in a product, draw them with the wireframe kit, see "Draw a wireframe"). They show
    which components the product needs, not how they look. The stage ends with an inventory in
    the wireframe call: every part the wireframes need, each mapped to the SDK component it
@@ -299,7 +296,10 @@ each stage draws with what the stages before it settled:
    ],
    ```
 
-4. **Components**, from the SDK ones rendered with `ng()`, themed and set up for the project.
+2. **Foundations**: colours, colour themes and surface themes (the project's `themes` in
+   `config.json`), plus the type scale, spacing and radius.
+3. **Logo and CI**, if the project needs them.
+4. **Components**, the inventory is their queue, from the SDK ones rendered with `ng()`, themed and set up for the project.
    Each accepted one becomes a design-system entry.
 5. **Larger elements**: the shell, the navigation, headers, lists, built from the entries.
 6. **Pages**, built from the elements and the entries.
@@ -309,7 +309,7 @@ Do not start a stage before the one above it is settled, and do not draw a page 
 are not in the design system. If the user asks for a later stage first, say which earlier stage
 is missing, and draw that first.
 
-The stages map onto the layers of a product: foundations, components, elements, pages. A settled
+The stages map onto the layers of a product: wireframes, foundations, components, elements, pages. A settled
 Legacy call with a stage counts for that stage in this order.
 
 A later stage can show that an earlier one is incomplete. If a page needs a part that the system
