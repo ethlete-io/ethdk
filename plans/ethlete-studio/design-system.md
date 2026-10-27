@@ -602,6 +602,26 @@ Open points, each with a recommendation:
   `sketch.json`, `et design inbox` lists it). Recommendation: only if the tomflix rebuild shows that
   combine comments are common.
 
+### Sketch rounds CLI, as built (2026-10-27)
+
+- 89cea207a: `et design sketch variant <layer>/<name> <variant> --from <v> --by <model> [--round
+  <title> --note <why the running round lost>]` copies the `--from` folder, sets the status back to
+  `in progress` and removes `decision`. Without `--round` the variant joins the running (last)
+  round. With `--round`, `--note` goes onto the running round, then a new round starts; the two
+  flags go together. It refuses an unknown `--from`, a taken or invalid name, and a blank note.
+- `sketch new --round <title>` sets the title of round 1 (empty by default).
+- `sketch.json`: `rounds: [{ key: 'r1', title, note }, ...]` and `variantInfo[v].round`. An old
+  `sketch.json` reads as one round r1 with every variant, rewritten on the next write. A variant
+  that names an unknown round makes the sketch unreadable, with a message.
+- `/__design/sketches` and `sketch list --json` give `rounds` (never empty, oldest first, the last
+  one running) and always `variantInfo[v].round`.
+- Builder choices beyond the plan: the variant command removes any decision, a discard too; `--by`
+  is required but not stored (authors come from reports, not from `--from`); the agent names the
+  variant letter; `--note` replaces an existing note, and no command edits a title or note later;
+  the text output of `sketch list` does not show rounds.
+- The design-exploration skill has a section "Combine variants in a new round".
+- Next: the Studio round columns, after the author display.
+
 ### Studio reload and sketch header, as built (2026-10-27)
 
 - 793d9381b: `studio-lab` rating sketch b declares `interactions: ['disabled']`.
