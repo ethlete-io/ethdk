@@ -665,6 +665,7 @@ used (see "Legacy calls").
 Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
 in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
 three sketch open points in "Studio sketch view, as built".
+In progress since 2026-10-27: the sketch view matrix, the 400 px gap and the sketch open points.
 
 Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
 started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
