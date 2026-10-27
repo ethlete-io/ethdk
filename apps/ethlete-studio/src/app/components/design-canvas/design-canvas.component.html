@@ -92,7 +92,7 @@
   }
 
   @if (placedLines().length > 0) {
-    <svg class="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+    <svg class="pointer-events-none absolute top-0 left-0 z-1 overflow-visible" width="1" height="1" aria-hidden="true">
       <defs>
         <marker
           [attr.id]="ARROW_ID"
@@ -122,7 +122,7 @@
           [style.left.px]="line.middle.x"
           [style.top.px]="line.middle.y"
           [style.transform]="'translate(-50%, -50%) scale(' + labelScale() + ')'"
-          class="pointer-events-none absolute rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-[1.2rem] whitespace-nowrap text-[var(--et-surface-color-solid)]"
+          class="pointer-events-none absolute z-1 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-[1.2rem] whitespace-nowrap text-[var(--et-surface-color-solid)]"
           data-flow-label
           >{{ line.label }}</span
         >
@@ -185,6 +185,7 @@
       [style.left.px]="placed.x"
       [style.top.px]="placed.y"
       [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
+      [class]="placed.open ? 'z-4' : 'z-3'"
       class="absolute origin-top-left"
     >
       <button
@@ -223,7 +224,7 @@
   }
 
   @if (noteConnectors().length > 0) {
-    <svg class="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+    <svg class="pointer-events-none absolute top-0 left-0 z-2 overflow-visible" width="1" height="1" aria-hidden="true">
       @for (connector of noteConnectors(); track connector.key) {
         <path
           [attr.d]="connector.path"
@@ -241,7 +242,7 @@
       [style.top.px]="marker.y"
       [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
       [attr.data-note-marker]="marker.key"
-      class="pointer-events-none absolute size-3 origin-top-left border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
+      class="pointer-events-none absolute z-2 size-3 origin-top-left border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
     ></span>
   }
 
@@ -251,7 +252,7 @@
       [style.top.px]="group.y"
       [style.transform]="'scale(' + labelScale() + ')' + (group.anchor === 'above' ? ' translateY(-100%)' : '')"
       [attr.data-note-anchor]="group.anchor"
-      class="absolute flex w-max origin-top-left flex-col items-start gap-2"
+      class="absolute z-2 flex w-max origin-top-left flex-col items-start gap-2 has-[[data-canvas-popover]]:z-4"
     >
       @for (note of group.notes; track NOTE_KEY_OF(note)) {
         @if (note.heading || !notesCompact()) {
@@ -281,7 +282,7 @@
       [style.left.px]="placed.x"
       [style.top.px]="placed.y"
       [style.transform]="'scale(' + labelScale() + ')'"
-      class="absolute origin-top-left"
+      class="absolute z-4 origin-top-left"
       data-comment-draft
     >
       <ng-content select="[canvasDraft]" />

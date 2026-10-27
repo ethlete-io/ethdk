@@ -18,6 +18,7 @@ import { injectNoteStore } from './note-store';
     <div
       class="flex w-80 flex-col gap-2 rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-lg"
       data-note-form
+      data-canvas-popover
     >
       <et-form-field appearance="box">
         <et-textarea

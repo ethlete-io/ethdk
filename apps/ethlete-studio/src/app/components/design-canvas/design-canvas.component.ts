@@ -146,7 +146,7 @@ export class DesignCanvasComponent {
 
   public notes = input<CanvasNote[]>([]);
 
-  /** What a note shows; without it, the note's text. */
+  /** What a note shows; without it, the note's text. A note holding a `[data-canvas-popover]` element rises above the comment pins. */
   public noteTemplate = input<TemplateRef<{ $implicit: CanvasNote }> | null>(null);
 
   /** What an open pin shows; without it, the pin's text. */

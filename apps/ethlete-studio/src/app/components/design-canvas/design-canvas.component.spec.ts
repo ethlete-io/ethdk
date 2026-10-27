@@ -105,6 +105,40 @@ describe('DesignCanvasComponent', () => {
     expect(picks).toHaveLength(1);
   });
 
+  it('stacks notes over frames, pins over notes, and an open thread, the draft and a note in change over all', async () => {
+    const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
+    fixture.componentRef.setInput('notes', [
+      { id: 'n', text: 'Hero', frameId: 'a', point: { x: 40, y: 120 } },
+      { id: 'm', text: 'Library', at: { x: 0, y: -160 } },
+    ]);
+    fixture.componentRef.setInput('pins', [
+      { id: 'p', frameId: 'a', label: '1', text: 'one' },
+      { id: 'q', frameId: 'a', label: '2', text: 'two' },
+    ]);
+    fixture.componentRef.setInput('draft', { frameId: 'a', point: { x: 10, y: 10 } });
+    fixture.componentInstance.openPinId.set('q');
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const layer = (selector: string) => {
+      const element = host.querySelector(selector);
+
+      return Number(/(?:^|\s)z-(\d)(?:\s|$)/.exec(element?.getAttribute('class') ?? '')?.[1] ?? 0);
+    };
+    const pinLayer = (label: string) =>
+      Number(
+        /(?:^|\s)z-(\d)(?:\s|$)/.exec(
+          host.querySelector(`[aria-label="Comment ${label}"]`)?.parentElement?.className ?? '',
+        )?.[1] ?? 0,
+      );
+
+    expect(layer('ethlete-canvas-frame')).toBe(0);
+    expect([layer('[data-note-anchor="below"]'), layer('[data-note-marker]')]).toEqual([2, 2]);
+    expect(pinLayer('1')).toBe(3);
+    expect([pinLayer('2'), layer('[data-comment-draft]')]).toEqual([4, 4]);
+    expect(host.querySelector('[data-note-anchor="at"]')?.className).toContain('has-[[data-canvas-popover]]:z-4');
+  });
+
   it('lays a flow out left to right along its lines and draws each line with its label', async () => {
     const page = (id: string): CanvasFrame => ({ ...FITTED, id, label: id, width: 390, height: 844 });
 
