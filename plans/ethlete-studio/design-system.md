@@ -1329,6 +1329,22 @@ Flows:
   optional position per frame, so dragging can come later without a format change.
 - For now the agent writes flows and lines.
 
+Flows, as built (2026-10-27):
+
+- 97786e79d, 8e5aa8bd4: `<product>/flows/<name>.json` is
+  `{ frames: [{ part, state, position? }], lines: [{ from: { part, state }, to: { part, state }, label? }] }`.
+  Unknown keys are ignored, so free notes fit in later without a format change. A frame position
+  overrides the auto layout.
+- `et design check` rule `FLOW`: an unreadable or misshaped file, a frame that names a missing part
+  or state, a state listed twice, a line to a state that is not a frame of the flow.
+- `GET /__design/flows?product=`. Studio: tree group "Flows" before Sketches, one entry per flow; the
+  flow canvas lays the frames out left to right along the lines, with SVG lines, arrowheads and
+  labels; a preset picker at the top right, for the session only.
+- Lab: `studio-lab/flows/sign-in.json`, 4 library states, 3 lines, one between two states of the same
+  page. Proven headlessly: tree entry, layout, lines, labels, picker at 390 and 1440 px. Not proven:
+  drawn frame contents (the scratch copy could not resolve Tailwind).
+- Builder follow-ups: the flow format in the design-exploration skill; a proof with drawn frames.
+
 Notes:
 
 - A note stays on the canvas and is not a task, unlike a comment. The user writes, changes and
