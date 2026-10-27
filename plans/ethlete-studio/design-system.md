@@ -688,6 +688,9 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
   agent picks B), `pages-sketch`, `pages-inbox`, `pages-flows`, all drawn on B. Flows in
   `studio/flows/drafts/`, the inventory in `studio/inventory.ts` (20 SDK rows, 11 new parts).
 - Open foundations gap: no Studio tokens for subtle text, interaction, danger, disabled.
+- Tom (2026-10-27): clean slate. Only `pages/system` on shell B was accepted. The page sketches
+  `pages-sketch`, `pages-inbox`, `pages-flows`, the inventory and the four flows are deleted.
+  Each next step is one question to Tom, and nothing is drawn before he accepts it.
 
 Findings:
 
