@@ -536,6 +536,24 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   comment and note forms, the note being edited). Proven: the thread reply textarea sits on top of a
   note card; the note editor sits on top of a pin and a card.
 
+### Flow, tokens and note layout decisions (2026-10-27)
+
+- The design server watches `flows/` like the other files and sends an event, so a flow edit shows
+  in Studio without a server restart.
+- Long flow line labels: the gap between two flow frames grows with its label, up to a limit; above
+  it the label wraps. A short line needs no extra space.
+- A part that uses `var(--et-...)` without importing the tokens draws without them. No check warning
+  for now; add one only once it happens.
+- A part file that appears or disappears (for example on a merge) keeps redrawing its whole product.
+  Narrow it only if Studio visibly flickers.
+- `product new` writes `config.json` in the same layout as Prettier, without Prettier as a CLI
+  dependency.
+- In the part matrix the gap under a row grows by the tallest note column in that row, so a note card
+  never covers a frame or size label of the next row.
+- Turning on note mode also turns "Show notes" on, so a new note does not vanish after save.
+- The line from a note marker to its card stays right-angled; a straight line would cross the cards
+  above.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
