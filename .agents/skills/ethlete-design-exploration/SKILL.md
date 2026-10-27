@@ -110,12 +110,18 @@ The user comments on a state of a part in Studio, at a point, or on a sketch var
 
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
-et design inbox done <id>                  # delete a comment once handled
+et design inbox done <id>                  # delete a comment thread once handled
+et design comment reply <id> <text>        # answer a comment thread (takes --product)
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
 by changing the sketch or the part, then `inbox done`. A pick or discard decision is the user's
 cue, not yours to act on beyond what Studio already did.
+
+A comment is a thread: the user and you both reply. When a comment is unclear, ask with
+`comment reply` instead of guessing. The thread then moves to the "waiting for the user" group
+(`waitingForUser` in `--json`) and returns to the inbox when the user answers. A thread there is
+not work for you, but it still blocks `sketch merge` and `sketch discard` until it is done.
 
 ### Check a product
 
