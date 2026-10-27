@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core and Studio comments done; replies are open. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core and Studio comments done, with threads. States and interactions: in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -644,15 +644,32 @@ Open points, each with a recommendation:
 
 - A frame reload uses one global revision, so every visible frame reloads on each change.
   Recommendation: a per-part revision from the design server, so only the changed part reloads.
-- The merge lock counts every open comment on the target, also one on the current part made before
-  the sketch. Recommendation: keep it; withdrawing is one click.
-- At very low zoom a 48 px row gap is smaller than a tile caption. Recommendation: decide the value
-  after the user has seen the screenshot.
-- A pressed pin (open popover) renders as a hollow et-button. Recommendation: drop `[pressed]` on the
-  pin and mark the open one with a ring.
-- In the tree, a sketch row with two badges truncates its name to "compon...". Recommendation: show
-  the sketch name without its layer prefix, or one badge.
-- Not built, waiting for the user: replies, the thread in the popover, "Questions for you".
+- Done: the merge lock, the row gap, the pin ring and the sketch row names, as in "Comment follow-up
+  decisions" (53a10e894).
+- Done: replies, the thread in the popover and the "N ?" question count (35d609cee, b5402b4d5).
+
+### Studio comment threads, as built (2026-10-27)
+
+- 35d609cee: the pin popover shows the whole thread (`comment-thread.component.ts`): sender ("You"
+  or "Agent", the agent in the accent colour) and age per entry, a reply field (`Enter` sends,
+  `Shift+Enter` breaks the line), Withdraw and Reply. A reply goes through the `comment-reply`
+  endpoint as `{ by: 'user' }`.
+- `ListedComment.replies` is `{ by, text, createdAt }[]`, oldest first. `isQuestion` is true when
+  the agent has the last word; `lastSenderOf` falls back to the user, who wrote the first text.
+- A question shows as a dot on its pin, as the "question" badge in the tree, in the sidebar, and as
+  the "N ?" count on the Comment button ("N questions for you").
+- b5402b4d5: a part with a question shows only the "question" badge, not "comment open" too.
+
+### States and interactions step 1, as built (2026-10-27)
+
+- c1c848c75: `definePart` takes `interactions` (`hover`, `focus-visible`, `active`, `disabled`).
+  `et design check` fails on an unknown name (`system/rules/interactions.ts`).
+- `GET /__design/system` gives `ListedPart.interactions`; empty means rest only. The `targets` of
+  `/__design/sketches` carry it too.
+- The rewrite is `force-interactions.ts` (postcss and postcss-selector-parser). The server has no
+  Angular Vite plugin, so it runs in three places: a PostCSS plugin for every `.css` that Vite
+  serves, the `ng()` styles in `/__design/render`, and the `drawing({ styles })` strings, which
+  `frame.ts` sends to the new `POST /__design/force`.
 
 ### Token decisions (2026-10-27)
 
@@ -903,7 +920,8 @@ Each slice gets an "in progress" note here when it starts.
 States and interactions: in progress since 2026-10-27, in five steps: (1) `interactions` in
 `definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
-without a border and the live mode; (5) the studio-lab button. Step 1 started.
+without a border and the live mode; (5) the studio-lab button. Step 1 done (c1c848c75). Step 2
+started; it moves the studio-lab button (step 5) first, then builds the part table.
 
 Slice 1: done on 2026-10-27.
 
@@ -917,8 +935,8 @@ built" for its open points).
 
 Slice 5: the core and the Studio comments are done (see "Slices 4 and 5 core, as built" and "Studio
 comments, as built"): store, comment mode, draft, pins, Withdraw (1209478a5, c0a8e5532), the sidebar,
-other-size counts, merge lock and empty matrix cells (f13302bf3). Open: replies and threads (the user is
-deciding), and the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
+other-size counts, merge lock and empty matrix cells (f13302bf3), replies and threads (35d609cee). Open:
+the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
