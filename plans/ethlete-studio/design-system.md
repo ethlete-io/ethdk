@@ -505,10 +505,19 @@ Open points, each with a recommendation:
   in the real app with `et design sketch report` on `studio-lab`.
 - Decided: the merge preview keeps every state of every affected part. A state filter comes
   only once a product shows it is too slow.
-- Decided: `studio-lab` lists its `--lab-*` tokens file in the product's `styles`. Not done yet.
+- Decided: `studio-lab` lists its `--lab-*` tokens file in the product's `styles`. See "Token
+  decisions".
 - Decided: column heads keep the ellipsis at low zoom; the matrix is read near 100 %.
 - The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
   check whether the frame page reports a height after its web fonts load.
+
+### Token decisions (2026-10-27)
+
+- A product's token values live in one place: the CSS file of its foundations token part, for
+  example `foundations/tokens/tokens.css`. The part draws its swatches with it, and the product's
+  `styles` lists the same file, so every frame gets the tokens. No second theme file.
+- The core does not load foundations CSS into every frame by itself. The `styles` entry stays
+  explicit; a logo part's CSS, for example, must not become global.
 
 ### Slice 6 decisions (2026-10-27)
 
