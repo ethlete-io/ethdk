@@ -403,7 +403,7 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
 };
 
 /**
- * Copies variant `from` into a new variant, sets the sketch back to in progress and clears the user's decision.
+ * Copies variant `from` into a new variant, sets the sketch back to in progress and clears a pick. A discard decision is refused.
  * The new variant joins the running round, or starts the round `round` names after writing its `lostNote` into the
  * running round's note.
  */
@@ -415,6 +415,8 @@ export const addVariant = (options: {
 }): Sketch | string => {
   const { sketch, variant, from, round } = options;
 
+  if (sketch.decision?.kind === 'discard')
+    return `The user decided to discard ${sketch.target}. The user must pick a variant first to go on.`;
   if (!sketch.variants.includes(from))
     return `${sketch.target} has no variant "${from}" - it has ${sketch.variants.join(', ') || 'none'}`;
   if (!isVariantName(variant)) return `"${variant}" is no variant name - use lower case letters, digits and dashes`;

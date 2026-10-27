@@ -105,7 +105,7 @@ et design sketch variant <layer>/<name> c --from a --by <model id> --round "Soli
 ```
 
 `--from` copies a variant into the new one, sets the sketch back to in progress and clears the
-pick. Without `--round` the new variant joins the running round; with it, `--note` is required and
+pick; it refuses while the decision is a discard (the user picks a variant first). Without `--round` the new variant joins the running round; with it, `--note` is required and
 goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
 Letters continue across rounds (r1: a, b; r2: c, d). Draw the combined variant, then answer the
 comment with `inbox done` and mark the sketch `ready` again. `sketch new --round <title>` names

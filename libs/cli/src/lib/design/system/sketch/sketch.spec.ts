@@ -279,6 +279,22 @@ describe('addVariant', () => {
     expect(sketchJson(target, 'elements-hero')['decision']).toBeUndefined();
   });
 
+  it('refuses while the decision is a discard and changes nothing', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    decideSketch({
+      sketch: markSketchReady({ checkout: target, sketch }) as Sketch,
+      decision: { kind: 'discard' },
+    });
+
+    expect(addVariant({ sketch: find(target), variant: 'c', from: 'a' })).toBe(
+      'The user decided to discard elements/hero. The user must pick a variant first to go on.',
+    );
+    expect(find(target).variants).toEqual(['a', 'b']);
+    expect(sketchJson(target, 'elements-hero')).toMatchObject({ decision: { kind: 'discard' } });
+  });
+
   it('starts a new round with the note on the running one, and continues the letters', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
