@@ -23,7 +23,8 @@ export type ViewState = {
   sketchViews: Record<string, SketchViewPick>;
 };
 
-export type SketchViewPick = { size?: string; interaction?: string; merge?: boolean };
+/** `rounds` holds whether the user opened (`true`) or folded (`false`) a round, by round key. */
+export type SketchViewPick = { size?: string; interaction?: string; merge?: boolean; rounds?: Record<string, boolean> };
 
 export type FrameSize = { width?: number; height?: number };
 
@@ -53,11 +54,13 @@ const sketchViewMap = (value: unknown): Record<string, SketchViewPick> | undefin
     Object.entries(value as Record<string, unknown>).flatMap(([key, pick]) => {
       if (!pick || typeof pick !== 'object') return [];
 
-      const { size, interaction, merge } = pick as SketchViewPick;
+      const { size, interaction, merge, rounds } = pick as SketchViewPick;
+      const openRounds = openFlags(rounds);
       const valid: SketchViewPick = {
         ...(typeof size === 'string' && { size }),
         ...(typeof interaction === 'string' && { interaction }),
         ...(typeof merge === 'boolean' && { merge }),
+        ...(openRounds && Object.keys(openRounds).length > 0 && { rounds: openRounds }),
       };
 
       return Object.keys(valid).length === 0 ? [] : [[key, valid]];

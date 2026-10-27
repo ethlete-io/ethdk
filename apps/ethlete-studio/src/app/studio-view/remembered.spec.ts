@@ -146,6 +146,26 @@ describe('remembered view', () => {
     expect(rememberedView().sketchViews).toEqual({ a: { interaction: 'hover' } });
   });
 
+  it('keeps the open and folded rounds per sketch view and drops flags that are not booleans', () => {
+    rememberSketchView('web sketch:elements/rating', { rounds: { r1: true, r2: false } });
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        ...JSON.parse(localStorage.getItem(KEY) ?? '{}'),
+        sketchViews: {
+          ...rememberedView().sketchViews,
+          b: { rounds: { r1: 'yes' } },
+          c: { size: '520', rounds: { r1: 1, r2: true } },
+        },
+      }),
+    );
+
+    expect(rememberedView().sketchViews).toEqual({
+      'web sketch:elements/rating': { rounds: { r1: true, r2: false } },
+      c: { size: '520', rounds: { r2: true } },
+    });
+  });
+
   it('keeps valid frame sizes and drops the rest', () => {
     localStorage.setItem(
       KEY,

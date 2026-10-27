@@ -50,12 +50,26 @@ const MIN_FRAME_HEIGHT = 80;
 const FIT_PADDING = 64;
 const ROW_LABEL_GUTTER = 160;
 const COLUMN_HEAD_ROOM = 64;
+const GROUP_HEAD_ROOM = 48;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
-export type CanvasColumn = { key: string; label: string; muted?: boolean; title?: string };
+/** Neighbouring columns with the same group `key` share one head above their own. */
+export type CanvasColumnGroup = { key: string; label: string; note?: string; title?: string };
+
+export type CanvasColumn = {
+  key: string;
+  label: string;
+  muted?: boolean;
+  title?: string;
+  group?: CanvasColumnGroup;
+  /** A column without frames, `width` wide, with `note` below its head; its head is a button that emits `columnToggle`. */
+  folded?: { width: number; note?: string };
+};
+
+type ColumnGroupHead = CanvasColumnGroup & { x: number; width: number };
 
 type PlacedFrame = Rect & { frame: CanvasFrame; unsized: boolean; live: boolean; active: boolean; selected: boolean };
 
@@ -115,6 +129,9 @@ export class DesignCanvasComponent {
 
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
   public cameraChange = output<Camera | null>();
+
+  /** The key of a folded column or of a column group whose head the user clicked. */
+  public columnToggle = output<string>();
 
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
@@ -181,6 +198,9 @@ export class DesignCanvasComponent {
             frames: sized,
             columns: columns.map((column) => column.key),
             spacing: { ...SPACING, rowGap, groupGap: rowGap * GROUP_GAP_FACTOR, emptyColumnWidth: FALLBACK_WIDTH },
+            emptyWidths: Object.fromEntries(
+              columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
+            ),
           })
         : null;
     const sheet =
@@ -191,8 +211,19 @@ export class DesignCanvasComponent {
       return column ? [{ ...column, x: placed.x, width: placed.width }] : [];
     });
 
+    const groups = heads.reduce<ColumnGroupHead[]>((placed, head) => {
+      const last = placed.at(-1);
+
+      if (!head.group) return placed;
+      if (last?.key === head.group.key)
+        return [...placed.slice(0, -1), { ...last, width: head.x + head.width - last.x }];
+
+      return [...placed, { ...head.group, x: head.x, width: head.width }];
+    }, []);
+
     return {
       heads,
+      groups,
       rows: sheet.rows.filter((row) => row.name !== ''),
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
@@ -205,6 +236,8 @@ export class DesignCanvasComponent {
   protected rows = computed(() => this.layout().rows);
 
   protected columnHeads = computed(() => this.layout().heads);
+
+  protected groupHeads = computed(() => this.layout().groups);
 
   private bounds = computed(() => {
     const { frames, heads } = this.layout();
@@ -381,6 +414,11 @@ export class DesignCanvasComponent {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     this.pointPick.emit({ frameId: frame.id, point: null });
+  }
+
+  protected toggleColumn(key: string, event: MouseEvent) {
+    event.stopPropagation();
+    this.columnToggle.emit(key);
   }
 
   protected togglePin(id: string, event: MouseEvent) {
@@ -572,7 +610,8 @@ export class DesignCanvasComponent {
 
   private fitted(bounds: Rect, viewport: Size): Camera {
     const gutter = this.layout().rows.length > 0 ? ROW_LABEL_GUTTER : 0;
-    const headRoom = this.layout().heads.length > 0 ? COLUMN_HEAD_ROOM : 0;
+    const headRoom =
+      (this.layout().heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (this.layout().groups.length > 0 ? GROUP_HEAD_ROOM : 0);
     const camera = fitRect({
       rect: bounds,
       viewport: { width: viewport.width - gutter, height: viewport.height - headRoom },

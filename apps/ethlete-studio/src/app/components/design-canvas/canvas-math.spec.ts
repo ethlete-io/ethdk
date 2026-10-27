@@ -231,4 +231,18 @@ describe('canvas math', () => {
       ['x-b', 600, 150],
     ]);
   });
+
+  it('gives an empty matrix column its own width when it names one', () => {
+    const layout = layoutMatrix({
+      frames: [{ id: 'x-a', width: 300, height: 90, row: 'a', column: 'x' }],
+      columns: ['narrow', 'x'],
+      spacing: { columnGap: 40, rowGap: 60, emptyColumnWidth: 320 },
+      emptyWidths: { narrow: 120, x: 10 },
+    });
+
+    expect(layout.columns).toEqual([
+      { name: 'narrow', x: 0, width: 120 },
+      { name: 'x', x: 160, width: 300 },
+    ]);
+  });
 });

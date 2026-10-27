@@ -180,17 +180,19 @@ export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?
 
 /**
  * Places each frame at its row and its column: a column is as wide as its widest frame (an empty one
- * `emptyColumnWidth`), a row as tall as its tallest. Columns keep the order of `columns`, rows the order
+ * its `emptyWidths` entry, else `emptyColumnWidth`), a row as tall as its tallest. Columns keep the order of `columns`, rows the order
  * they first appear in. A row whose `rowGroup` differs from the row above it starts `groupGap` lower.
  */
 export const layoutMatrix = ({
   frames,
   columns,
   spacing,
+  emptyWidths = {},
 }: {
   frames: MatrixFrame[];
   columns: string[];
   spacing: MatrixSpacing;
+  emptyWidths?: Record<string, number>;
 }): MatrixLayout => {
   const rowNames = [...new Set(frames.map((frame) => frame.row))];
   const placedColumns: MatrixColumnPlace[] = [];
@@ -198,7 +200,8 @@ export const layoutMatrix = ({
 
   for (const name of columns) {
     const members = frames.filter((frame) => frame.column === name);
-    const width = members.length > 0 ? Math.max(...members.map((m) => m.width)) : spacing.emptyColumnWidth;
+    const width =
+      members.length > 0 ? Math.max(...members.map((m) => m.width)) : (emptyWidths[name] ?? spacing.emptyColumnWidth);
 
     placedColumns.push({ name, x, width });
     x += width + spacing.columnGap;

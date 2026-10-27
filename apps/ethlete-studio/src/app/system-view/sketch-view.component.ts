@@ -44,7 +44,15 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
-import { ALL, canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
+import {
+  ALL,
+  canPick,
+  mergePreviewOf,
+  pickedVariantOf,
+  roundColumnKeyOf,
+  sketchMatrixOf,
+  sketchRoundsOf,
+} from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard';
 
@@ -258,6 +266,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [pinPopover]="pinThread"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
+      (columnToggle)="toggleRound($event)"
       class="min-h-0 flex-1"
       arrangement="matrix"
     >
@@ -324,6 +333,8 @@ export class SketchViewComponent {
 
   public interaction = linkedSignal(() => this.remembered().interaction ?? null);
 
+  private openRounds = linkedSignal(() => this.remembered().rounds ?? {});
+
   private shownMode = linkedSignal<Shown>(() => (this.remembered().merge ? 'merge' : 'matrix'));
 
   private source = computed(() => ({
@@ -332,6 +343,7 @@ export class SketchViewComponent {
     sketch: this.sketch(),
     size: this.size(),
     interaction: this.interaction(),
+    openRounds: this.openRounds(),
     epoch: this.epoch(),
     revision: this.revision(),
     surface: this.surface(),
@@ -391,7 +403,7 @@ export class SketchViewComponent {
   );
 
   protected canvasColumns = computed(() =>
-    this.canvas().columns.map(({ key, label, title, drawing }) => ({ key, label, title, muted: drawing })),
+    this.canvas().columns.map(({ drawing, ...column }) => ({ ...column, muted: drawing })),
   );
 
   protected reportTitleOf(report: SketchReport) {
@@ -414,13 +426,26 @@ export class SketchViewComponent {
     this.canvasRef().fitAll();
   }
 
+  protected toggleRound(key: string) {
+    const round = sketchRoundsOf(this.sketch(), this.openRounds()).find(
+      (candidate) => roundColumnKeyOf(candidate.key) === key,
+    );
+
+    if (!round) return;
+
+    const rounds = { ...this.openRounds(), [round.key]: !round.open };
+
+    this.openRounds.set(rounds);
+    this.remember({ rounds });
+  }
+
   protected startComment(pick: FramePoint) {
     const draft = commentDraftOf(this.canvas().frames, pick);
 
     if (draft) this.commentStore.start(draft);
   }
 
-  /** Moves the camera to a comment: back to the matrix and to its size and interaction first, when the matrix offers them; `ALL` stays. */
+  /** Moves the camera to a comment: back to the matrix, into its round, and to its size and interaction first, when the matrix offers them; `ALL` stays. */
   public jumpTo(comment: NumberedComment) {
     const size = String(comment.size);
     const interaction = comment.interaction ?? REST;
@@ -430,16 +455,22 @@ export class SketchViewComponent {
       interaction !== this.matrix().interaction &&
       this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
+    const folded = sketchRoundsOf(this.sketch(), this.openRounds()).find(
+      (round) => !round.open && round.variants.includes(comment.sketch?.variant ?? ''),
+    );
+    const rounds = folded ? { ...this.openRounds(), [folded.key]: true } : null;
 
     if (resize) this.size.set(size);
     if (reinteract) this.interaction.set(interaction);
     if (leaveMerge) this.shownMode.set('matrix');
+    if (rounds) this.openRounds.set(rounds);
     this.remember({
       ...(resize && { size }),
       ...(reinteract && { interaction }),
       ...(leaveMerge && { merge: false }),
+      ...(rounds && { rounds }),
     });
-    if (resize || reinteract || leaveMerge)
+    if (resize || reinteract || leaveMerge || rounds)
       afterNextRender(() => this.focusComment(comment), { injector: this.injector });
     else this.focusComment(comment);
   }

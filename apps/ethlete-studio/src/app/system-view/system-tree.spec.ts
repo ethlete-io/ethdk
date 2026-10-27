@@ -11,6 +11,7 @@ import {
   pickedVariantOf,
   mergePreviewOf,
   sketchMatrixOf,
+  sketchRoundsOf,
   treeOf,
 } from './system-tree';
 
@@ -503,6 +504,74 @@ describe('sketchMatrixOf', () => {
       { key: 'a', label: 'a', drawing: false },
       { key: 'b', label: 'b', drawing: false },
     ]);
+  });
+
+  describe('rounds', () => {
+    const rounded = sketch({
+      status: 'ready',
+      variants: ['a', 'b', 'c'],
+      rounds: [
+        { key: 'r1', title: 'Pill or square', note: 'Too round' },
+        { key: 'r2', title: 'Combined', note: '' },
+      ],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r1', authors: ['gpt-5.6-sol'] }, c: { round: 'r2' } },
+    });
+
+    it('folds an older round into one column with its title, note and variants, and groups the newest', () => {
+      const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded });
+
+      expect(matrix.columns).toEqual([
+        { key: 'current', label: 'current', drawing: false },
+        {
+          key: 'round r1',
+          label: 'r1 · Pill or square · a b',
+          title: 'Open r1 · Pill or square · a b\n\nToo round',
+          drawing: false,
+          folded: { width: 240, note: 'Too round' },
+        },
+        {
+          key: 'c',
+          label: 'c',
+          drawing: false,
+          group: { key: 'round r2', label: 'r2 · Combined', title: 'Fold r2 · Combined' },
+        },
+      ]);
+      expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
+    });
+
+    it('opens and folds rounds as the user chose, and keeps a new round open', () => {
+      const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: false } });
+
+      expect(matrix.columns.map((column) => [column.key, column.group?.label, column.group?.note])).toEqual([
+        ['current', undefined, undefined],
+        ['a', 'r1 · Pill or square', 'Too round'],
+        ['b', 'r1 · Pill or square', 'Too round'],
+        ['round r2', undefined, undefined],
+      ]);
+      expect(matrix.columns[2]?.label).toBe('b · gpt-5.6-sol');
+      expect(sketchRoundsOf(rounded, { r1: false }).map((round) => round.open)).toEqual([false, true]);
+    });
+
+    it('shows one untitled round, and data older than rounds, as plain variant columns', () => {
+      const old = sketchMatrixOf({ ...source, part: part(), sketch: sketch({ status: 'ready' }) });
+      const one = sketchMatrixOf({
+        ...source,
+        part: part(),
+        sketch: sketch({
+          status: 'ready',
+          rounds: [{ key: 'r1', title: '', note: '' }],
+          variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
+        }),
+      });
+
+      for (const matrix of [old, one]) {
+        expect(matrix.columns).toEqual([
+          { key: 'current', label: 'current', drawing: false },
+          { key: 'a', label: 'a', drawing: false },
+          { key: 'b', label: 'b', drawing: false },
+        ]);
+      }
+    });
   });
 
   it('shows only variants for a new part, and fails a variant that does not load', () => {

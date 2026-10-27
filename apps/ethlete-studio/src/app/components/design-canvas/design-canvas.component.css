@@ -65,6 +65,28 @@
     font-style: italic;
   }
 
+  .et-design-canvas__group {
+    position: absolute;
+    top: calc(-6rem * var(--et-design-canvas-label-scale));
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transform-origin: 0 0;
+    font-size: 1.3rem;
+    white-space: nowrap;
+  }
+
+  .et-design-canvas__folded {
+    position: absolute;
+    top: calc(-6rem * var(--et-design-canvas-label-scale));
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    transform-origin: 0 0;
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+
   .et-design-canvas__resize {
     position: absolute;
     pointer-events: none;

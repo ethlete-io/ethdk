@@ -9,16 +9,72 @@
     <span [style.top.px]="row.y" class="et-design-canvas__row">{{ row.label ?? row.name }}</span>
   }
 
-  @for (column of columnHeads(); track column.key) {
-    <span
-      [style.left.px]="column.x"
-      [style.max-width.px]="column.width"
-      [class.et-design-canvas__column--muted]="column.muted"
-      [title]="column.title ?? column.label"
-      class="et-design-canvas__column"
+  @for (group of groupHeads(); track group.key) {
+    <div
+      [style.left.px]="group.x"
+      [style.width.px]="group.width / labelScale()"
+      [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
+      class="et-design-canvas__group"
     >
-      {{ column.label }}
-    </span>
+      <button
+        [title]="group.title ?? group.label"
+        (click)="toggleColumn(group.key, $event)"
+        class="min-w-0 shrink-0"
+        et-button
+        type="button"
+        variant="transparent"
+        color="surface"
+        size="sm"
+        aria-expanded="true"
+      >
+        {{ group.label }}
+      </button>
+      @if (group.note) {
+        <span [title]="group.note" class="min-w-0 truncate text-[var(--et-surface-color-muted-solid)]">
+          {{ group.note }}
+        </span>
+      }
+    </div>
+  }
+
+  @for (column of columnHeads(); track column.key) {
+    @if (column.folded; as folded) {
+      <div
+        [style.left.px]="column.x"
+        [style.width.px]="column.width / labelScale()"
+        [style.transform]="'scale(' + labelScale() + ')'"
+        class="et-design-canvas__folded"
+      >
+        <button
+          [title]="column.title ?? column.label"
+          (click)="toggleColumn(column.key, $event)"
+          class="w-full"
+          et-button
+          type="button"
+          variant="outline"
+          color="surface"
+          size="sm"
+          aria-expanded="false"
+        >
+          {{ column.label }}
+        </button>
+        @if (folded.note) {
+          <p class="m-0 line-clamp-[12] whitespace-pre-wrap text-[var(--et-surface-color-muted-solid)]">
+            {{ folded.note }}
+          </p>
+        }
+      </div>
+    } @else {
+      <span
+        [style.left.px]="column.x"
+        [style.max-width.px]="column.width"
+        [class.et-design-canvas__column--muted]="column.muted"
+        [title]="column.title ?? column.label"
+        class="et-design-canvas__column"
+      >
+        {{ column.label }}
+      </span>
+    }
   }
 
   @for (placed of placedFrames(); track placed.frame.id) {
