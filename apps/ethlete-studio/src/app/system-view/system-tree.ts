@@ -83,21 +83,29 @@ export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
   });
 };
 
-export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean; selectedKey: string | null };
+export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean };
 
-const holdsKey = (node: TreeGroup | TreeSection, selectedKey: string | null) =>
-  selectedKey !== null &&
-  (node.entries.some((entry) => entry.key === selectedKey) ||
-    ('sections' in node &&
-      !!node.sections?.some((section) => section.entries.some((entry) => entry.key === selectedKey))));
+/** The keys of the group and the section that hold the entry, outermost first. */
+export const holdersOf = (tree: TreeGroup[], key: string | null): string[] => {
+  if (key === null) return [];
 
-/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products. A group holding the selection never folds. */
-export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts, selectedKey }: OpenContext) =>
-  holdsKey(group, selectedKey) || (remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : true));
+  for (const group of tree) {
+    if (group.entries.some((entry) => entry.key === key)) return [group.key];
 
-/** Whether a section shows its entries: the remembered choice, else folded. A section holding the selection never folds. */
-export const isSectionOpen = (section: TreeSection, { remembered, selectedKey }: OpenContext) =>
-  holdsKey(section, selectedKey) || (remembered[section.key] ?? false);
+    const section = group.sections?.find((candidate) => candidate.entries.some((entry) => entry.key === key));
+
+    if (section) return [group.key, section.key];
+  }
+
+  return [];
+};
+
+/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products. */
+export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts }: OpenContext) =>
+  remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : true);
+
+/** Whether a section shows its entries: the remembered choice, else folded. */
+export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext) => remembered[section.key] ?? false;
 
 /** The groups of the tree that hold a part or a call, each with its entries in listed order. */
 export const treeOf = (parts: ListedPart[], calls: ListedCall[] = []): TreeGroup[] =>

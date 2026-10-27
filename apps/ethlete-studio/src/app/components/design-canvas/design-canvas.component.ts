@@ -9,9 +9,9 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { Subject, exhaustMap, tap } from 'rxjs';
+import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
 import { CanvasFrame } from './canvas-frame';
 import {
   Camera,
@@ -65,7 +65,16 @@ export class DesignCanvasComponent {
 
   public frames = input.required<CanvasFrame[]>();
 
+  /** Names what the canvas shows. A new key fits the camera again, or restores `restoredCamera`. */
+  public cameraKey = input<string | null>(null);
+
+  /** The camera to show instead of a fit, read when `cameraKey` changes. */
+  public restoredCamera = input<Camera | null>(null);
+
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
+
+  /** The camera after it came to rest, once it was fitted or restored. */
+  public cameraChange = outputFromObservable(toObservable(this.camera).pipe(skip(1), debounceTime(300)));
   protected smooth = signal(false);
   public selectedId = signal<string | null>(null);
   public activeId = signal<string | null>(null);
@@ -141,7 +150,7 @@ export class DesignCanvasComponent {
   private resizeStartWidth = 0;
   private swallowNextClick = false;
 
-  private fitted = false;
+  private fittedFor: string | null | undefined = undefined;
 
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
@@ -149,13 +158,14 @@ export class DesignCanvasComponent {
     effect(() => {
       const bounds = boundingRect(this.layout().frames);
       const viewport = this.viewport();
+      const key = this.cameraKey();
 
       if (!bounds || viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
-        if (this.fitted) return;
-        this.fitted = true;
-        this.camera.set(fitRect({ rect: bounds, viewport, padding: FIT_PADDING }));
+        if (this.fittedFor === key) return;
+        this.fittedFor = key;
+        this.camera.set(this.restoredCamera() ?? fitRect({ rect: bounds, viewport, padding: FIT_PADDING }));
       });
     });
 

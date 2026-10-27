@@ -1,5 +1,5 @@
 import { ListedCall, ListedPart, ListedProduct } from '../../host/design';
-import { callFramesOf, isGroupOpen, isSectionOpen, framesOf, treeOf } from './system-tree';
+import { callFramesOf, holdersOf, isGroupOpen, isSectionOpen, framesOf, treeOf } from './system-tree';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -113,7 +113,7 @@ describe('treeOf with calls', () => {
 describe('isGroupOpen and isSectionOpen', () => {
   const [legacy] = treeOf([], [call(), call({ slug: 'acme/pages/home' })]);
   const [parts] = treeOf([part()]);
-  const context = { remembered: {}, hasProducts: true, selectedKey: null };
+  const context = { remembered: {}, hasProducts: true };
   const components = legacy!.sections![0]!;
 
   it('opens part groups and folds Legacy and its sections by default', () => {
@@ -123,16 +123,18 @@ describe('isGroupOpen and isSectionOpen', () => {
     expect(isSectionOpen(components, context)).toBe(false);
   });
 
-  it('follows a remembered choice but never folds the selection', () => {
+  it('follows a remembered choice', () => {
     expect(isGroupOpen(parts!, { ...context, remembered: { components: false } })).toBe(false);
     expect(isSectionOpen(components, { ...context, remembered: { [components.key]: true } })).toBe(true);
+  });
 
-    const selectedKey = components.entries[0]!.key;
-    const held = { ...context, remembered: { legacy: false, [components.key]: false }, selectedKey };
+  it('names the group and the section that hold an entry', () => {
+    const tree = treeOf([part()], [call(), call({ slug: 'acme/pages/home' })]);
 
-    expect(isSectionOpen(components, held)).toBe(true);
-    expect(isGroupOpen(legacy!, held)).toBe(true);
-    expect(isSectionOpen(legacy!.sections![1]!, held)).toBe(false);
+    expect(holdersOf(tree, components.entries[0]!.key)).toEqual([legacy!.key, components.key]);
+    expect(holdersOf(tree, parts!.entries[0]!.key)).toEqual([parts!.key]);
+    expect(holdersOf(tree, 'missing')).toEqual([]);
+    expect(holdersOf(tree, null)).toEqual([]);
   });
 });
 

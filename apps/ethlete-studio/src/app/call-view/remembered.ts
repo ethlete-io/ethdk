@@ -1,3 +1,5 @@
+import { Camera } from '../components/design-canvas/canvas-math';
+
 /** What the window showed last, so a reload comes back to it. */
 export type ViewState = {
   checkout: string;
@@ -14,6 +16,12 @@ export type ViewState = {
   view: StudioView;
   /** Whether a system tree group or section is open, keyed by its tree key. */
   openGroups: Record<string, boolean>;
+  /** The product the system view shows. */
+  systemProduct: string;
+  /** The tree entry the system view shows, by its tree key. */
+  systemEntry: string;
+  /** The canvas camera per system entry, keyed by `cameraKeyOf`. */
+  cameras: Record<string, Camera>;
 };
 
 export type StudioView = 'calls' | 'system';
@@ -58,6 +66,38 @@ const openFlags = (value: unknown): Record<string, boolean> | undefined => {
   );
 };
 
+const isCamera = (value: unknown): value is Camera => {
+  if (!value || typeof value !== 'object') return false;
+
+  const { x, y, zoom } = value as Camera;
+
+  return [x, y, zoom].every((number) => typeof number === 'number' && Number.isFinite(number)) && zoom > 0;
+};
+
+const cameraMap = (value: unknown): Record<string, Camera> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter((entry): entry is [string, Camera] => isCamera(entry[1])),
+  );
+};
+
+/** The cameras with `camera` stored under `key`, without those of entries that no longer exist. */
+export const camerasWith = ({
+  cameras,
+  key,
+  camera,
+  existing,
+}: {
+  cameras: Record<string, Camera>;
+  key: string;
+  camera: Camera;
+  existing: ReadonlySet<string>;
+}): Record<string, Camera> => ({
+  ...Object.fromEntries(Object.entries(cameras).filter(([stored]) => existing.has(stored))),
+  [key]: camera,
+});
+
 const KEY = 'ethlete-studio.call-view';
 
 export const rememberedView = (): Partial<ViewState> => {
@@ -66,8 +106,20 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, variant, settledFeature, chatHidden, themes, view, openGroups } =
-      stored as Partial<ViewState>;
+    const {
+      checkout,
+      project,
+      slug,
+      variant,
+      settledFeature,
+      chatHidden,
+      themes,
+      view,
+      openGroups,
+      systemProduct,
+      systemEntry,
+      cameras,
+    } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -79,6 +131,9 @@ export const rememberedView = (): Partial<ViewState> => {
       themes: themePicks(themes),
       view: view === 'calls' || view === 'system' ? view : undefined,
       openGroups: openFlags(openGroups),
+      systemProduct: typeof systemProduct === 'string' ? systemProduct : undefined,
+      systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,
+      cameras: cameraMap(cameras),
     };
   } catch {
     return {};

@@ -1,11 +1,12 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { catchError, finalize, map, of, switchMap } from 'rxjs';
 import { ListedCall, ListedProduct, listedCalls$, listedSystem$, transferCall$ } from '../../host/design';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
-import { rememberView, rememberedView } from '../call-view/remembered';
+import { camerasWith, rememberView, rememberedView } from '../call-view/remembered';
+import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
   TreeEntry,
@@ -14,6 +15,7 @@ import {
   callFramesOf,
   callKeyOf,
   framesOf,
+  holdersOf,
   isGroupOpen,
   isSectionOpen,
   partKeyOf,
@@ -101,7 +103,13 @@ type Reading = { products: ListedProduct[]; error: string | null };
               <span class="studio__system-call-error" etProvideColor="danger">{{ message }}</span>
             }
           </header>
-          <ethlete-design-canvas [frames]="callFrames()" class="studio__system-canvas" />
+          <ethlete-design-canvas
+            [frames]="callFrames()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            (cameraChange)="rememberCamera($event)"
+            class="studio__system-canvas"
+          />
         </div>
       } @else if (reading(); as read) {
         @if (read.error) {
@@ -117,7 +125,13 @@ type Reading = { products: ListedProduct[]; error: string | null };
             <p>Its parts live in <code>.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.</p>
           </div>
         } @else if (part()) {
-          <ethlete-design-canvas [frames]="frames()" class="studio__system-canvas" />
+          <ethlete-design-canvas
+            [frames]="frames()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            (cameraChange)="rememberCamera($event)"
+            class="studio__system-canvas"
+          />
         } @else {
           <p class="studio__system-note">This product has no parts yet.</p>
         }
@@ -171,9 +185,11 @@ export class SystemViewComponent {
     { initialValue: [] },
   );
 
-  private pickedProduct = signal<string | null>(null);
+  private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
-  private picked = signal<string | null>(null);
+  private picked = signal(rememberedView().systemEntry ?? null);
+
+  private cameras = signal(rememberedView().cameras ?? {});
 
   protected transferring = signal(false);
 
@@ -203,6 +219,21 @@ export class SystemViewComponent {
     const call = this.call();
 
     return call ? callKeyOf(call.slug) : (this.part()?.key ?? null);
+  });
+
+  protected cameraKey = computed(() => {
+    const call = this.call();
+    const part = this.part();
+
+    if (call) return callKeyOf(call.slug);
+
+    return part ? `${this.product()?.name} ${part.key}` : null;
+  });
+
+  protected restoredCamera = computed(() => {
+    const key = this.cameraKey();
+
+    return key ? (this.cameras()[key] ?? null) : null;
   });
 
   /** The design project whose themes the shown frames wear: the open call's project, else the product. */
@@ -242,12 +273,19 @@ export class SystemViewComponent {
     });
   });
 
-  private openGroups = signal(rememberedView().openGroups ?? {});
+  private openGroups = linkedSignal<string[], Record<string, boolean>>({
+    source: computed(() => holdersOf(this.tree(), this.selectedKey()), {
+      equal: (a, b) => a.join('\n') === b.join('\n'),
+    }),
+    computation: (holders, previous) => ({
+      ...(previous?.value ?? rememberedView().openGroups ?? {}),
+      ...Object.fromEntries(holders.map((key) => [key, true])),
+    }),
+  });
 
   private openContext = computed<OpenContext>(() => ({
     remembered: this.openGroups(),
     hasProducts: this.products().length > 0,
-    selectedKey: this.selectedKey(),
   }));
 
   private nodes = computed(() => {
@@ -318,11 +356,32 @@ export class SystemViewComponent {
   }
 
   protected activate(key: string) {
-    if (this.nodes().entries.has(key)) this.picked.set(key);
+    if (!this.nodes().entries.has(key)) return;
+
+    this.picked.set(key);
+    rememberView({ systemEntry: key });
   }
 
   protected pickProduct(event: Event) {
-    this.pickedProduct.set((event.target as HTMLSelectElement).value);
+    const systemProduct = (event.target as HTMLSelectElement).value;
+
+    this.pickedProduct.set(systemProduct);
+    rememberView({ systemProduct });
+  }
+
+  protected rememberCamera(camera: Camera) {
+    const key = this.cameraKey();
+
+    if (!key) return;
+
+    const existing = new Set([
+      ...this.calls().map((listed) => callKeyOf(listed.slug)),
+      ...this.products().flatMap((listed) => listed.parts.map((part) => `${listed.name} ${partKeyOf(part)}`)),
+    ]);
+    const cameras = camerasWith({ cameras: this.cameras(), key, camera, existing });
+
+    this.cameras.set(cameras);
+    rememberView({ cameras });
   }
 
   protected markTransferred(slug: string) {

@@ -1,4 +1,4 @@
-import { rememberTheme, rememberedView, rememberView, themeName } from './remembered';
+import { camerasWith, rememberTheme, rememberedView, rememberView, themeName } from './remembered';
 
 const KEY = 'ethlete-studio.call-view';
 
@@ -72,5 +72,36 @@ describe('remembered view', () => {
     expect(themeName(['light', 'dark'], 'dim')).toBe('light');
     expect(themeName(['light', 'dark'], undefined)).toBe('light');
     expect(themeName([], undefined)).toBeUndefined();
+  });
+
+  it('keeps the system entry and only valid cameras', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        systemProduct: 'web',
+        systemEntry: 'components/button',
+        cameras: {
+          'web components/button': { x: 10, y: -4, zoom: 0.5 },
+          broken: { x: 1, y: 2, zoom: 0 },
+          text: 'camera',
+        },
+      }),
+    );
+
+    expect(rememberedView()).toEqual({
+      systemProduct: 'web',
+      systemEntry: 'components/button',
+      cameras: { 'web components/button': { x: 10, y: -4, zoom: 0.5 } },
+    });
+  });
+
+  it('stores a camera and drops those of entries that no longer exist', () => {
+    const camera = { x: 1, y: 2, zoom: 1 };
+    const stored = { kept: { x: 0, y: 0, zoom: 2 }, gone: { x: 3, y: 3, zoom: 1 } };
+
+    expect(camerasWith({ cameras: stored, key: 'new', camera, existing: new Set(['kept', 'new']) })).toEqual({
+      kept: stored.kept,
+      new: camera,
+    });
   });
 });
