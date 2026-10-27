@@ -434,6 +434,26 @@ disabled), so hover existed for solid only and focus, active and pressed were mi
 - `studio-lab` `components/button` moves to the states solid and outline with the interactions
   hover, focus-visible, active and disabled, so the lab tests the full table.
 
+### Frame reload decisions (2026-10-27)
+
+Not built yet. Studio has one global revision (`tick`), so each change reloads every visible frame,
+and no frame shows that it is out of date.
+
+- The design server sends an event with the ids of the affected parts. The Tauri `design_watch`
+  then reloads only the system list (the tree), no frames.
+- A changed part reloads itself, every part that imports it (through the Vite module graph), and
+  every sketch that shows it.
+- Shared files: `fixtures.ts` reloads its importers only; a CSS file in the product's `styles`
+  reloads every part of the product; `config.json` reloads all; a base part reloads in every product
+  that inherits it. When the server is not sure, it reloads all.
+- Studio renders at most 4 frames at a time, visible frames first. The builder may change the number
+  after a measurement. A frame is current, queued or rendering.
+- A queued or rendering frame shows a dot in the accent colour in its caption: still when queued,
+  pulsing while it renders. The old frame stays as it is until the new one has painted.
+- The status bar shows "Rendering N frames" while any frame is queued or rendering.
+- A failed render replaces the old frame at once, as today, so an error is never hidden.
+- Shots use the same per-part revision.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
@@ -642,8 +662,7 @@ Open points, each with a recommendation:
 
 Open points, each with a recommendation:
 
-- A frame reload uses one global revision, so every visible frame reloads on each change.
-  Recommendation: a per-part revision from the design server, so only the changed part reloads.
+- Decided: a frame reload per part, see "Frame reload decisions".
 - Done: the merge lock, the row gap, the pin ring and the sketch row names, as in "Comment follow-up
   decisions" (53a10e894).
 - Done: replies, the thread in the popover and the "N ?" question count (35d609cee, b5402b4d5).
@@ -917,10 +936,11 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
 
 Each slice gets an "in progress" note here when it starts.
 
-States and interactions: in progress since 2026-10-27, in five steps: (1) `interactions` in
+States and interactions: in progress since 2026-10-27, in six steps: (1) `interactions` in
 `definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
-without a border and the live mode; (5) the studio-lab button. Step 1 done (c1c848c75). Step 2
+without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
+"Frame reload decisions". Step 1 done (c1c848c75). Step 2
 started; it moves the studio-lab button (step 5) first, then builds the part table.
 
 Slice 1: done on 2026-10-27.
