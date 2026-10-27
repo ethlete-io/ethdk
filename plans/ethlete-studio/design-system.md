@@ -781,7 +781,10 @@ step. Each finding names what happened and the fix it needs.
   - `sketch variant` makes one letter per call. Prevent: accept `d,e,f --from b`.
 - Tom merged variant f of `elements/shell-main` in Studio (2026-10-27). The part note became the
   bare letter `'f'` (as `'b'` on `pages/system`), so the idea of the variant is lost. Prevent: a
-  merge without a note keeps the variant's own note; Studio's merge asks for a note.
+  merge without a note keeps the variant's own note. Tom (2026-10-28): "es ist auch nervig dass
+  ich beim merge immer einen text angeben muss. eig habe ich denke ich in der regel nichts mehr zu
+  sagen wenn ich etwas merge". So the merge must not ask for a note: the agent writes the note of
+  each variant when it draws it, the merge copies it into the part, and Tom's text is optional.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
