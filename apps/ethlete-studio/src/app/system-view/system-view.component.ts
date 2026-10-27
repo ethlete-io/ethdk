@@ -79,6 +79,9 @@ const BADGE =
 const BADGE_ACCENT =
   'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
 
+/** Never a product name: a product is a directory, and a directory name holds no slash. */
+const NEW_PRODUCT = '/new';
+
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
 
 @Component({
@@ -92,20 +95,28 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       class="flex min-h-0 flex-col overflow-y-auto border-r border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] pb-4 text-[var(--et-surface-color-solid)]"
       etProvideSurface="dark-elevated"
     >
-      @if (products().length > 1) {
+      @if (reading() && !reading()?.error) {
         <et-select
-          [value]="product()?.name ?? ''"
+          [value]="pickerValue()"
           (valueChange)="pickProduct($event)"
-          class="mx-4 mt-4 mb-1"
+          class="mx-4 mt-4 mb-1 flex-none"
           title="The product the system shows"
           aria-label="Product"
         >
           @for (listed of products(); track listed.name) {
-            <et-select-option [value]="listed.name">{{ listed.name }}</et-select-option>
+            <et-select-option [value]="listed.name" [label]="listed.name">
+              <span class="flex flex-col">
+                {{ listed.name }}
+                @if (listed.base) {
+                  <span class="text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]"
+                    >inherits from {{ listed.base }}</span
+                  >
+                }
+              </span>
+            </et-select-option>
           }
+          <et-select-option [value]="NEW_PRODUCT" label="New product">New product</et-select-option>
         </et-select>
-      } @else if (product(); as only) {
-        <h1 class="m-0 px-4 pt-4 pb-1 text-[1.5rem] font-semibold">{{ only.name }}</h1>
       }
 
       <et-tree
@@ -215,9 +226,30 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       </button>
     </ng-template>
 
+    <ng-template #newProductScreen let-heading>
+      <div class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]">
+        <h2 class="mb-2 text-h4 text-[var(--et-surface-color-solid)]">{{ heading }}</h2>
+        <p>Run this in the checkout to create one:</p>
+        <div class="my-3 flex items-center gap-2">
+          <pre
+            class="m-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] p-3 font-mono text-[var(--et-surface-color-solid)]"
+            >{{ NEW_PRODUCT_COMMAND }}</pre>
+          <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
+            {{ copied() ? 'Copied' : 'Copy' }}
+          </button>
+        </div>
+        <p>
+          Its parts live in
+          <code class="font-mono">.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.
+        </p>
+      </div>
+    </ng-template>
+
     <main class="relative grid min-h-0 min-w-0">
       @if (!port()) {
         <p [class]="NOTE">Start the design server to see the design system.</p>
+      } @else if (creating()) {
+        <ng-container [ngTemplateOutlet]="newProductScreen" [ngTemplateOutletContext]="{ $implicit: 'New product' }" />
       } @else if (call(); as shown) {
         <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
           <header class="flex items-center gap-3 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
@@ -263,24 +295,10 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
         @if (read.error) {
           <p [class]="NOTE">{{ read.error }}</p>
         } @else if (read.products.length === 0) {
-          <div
-            class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]"
-          >
-            <h2 class="mb-2 text-h4 text-[var(--et-surface-color-solid)]">No product yet</h2>
-            <p>Run this in the checkout to create one:</p>
-            <div class="my-3 flex items-center gap-2">
-              <pre
-                class="m-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] p-3 font-mono text-[var(--et-surface-color-solid)]"
-                >{{ NEW_PRODUCT_COMMAND }}</pre>
-              <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
-                {{ copied() ? 'Copied' : 'Copy' }}
-              </button>
-            </div>
-            <p>
-              Its parts live in
-              <code class="font-mono">.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.
-            </p>
-          </div>
+          <ng-container
+            [ngTemplateOutlet]="newProductScreen"
+            [ngTemplateOutletContext]="{ $implicit: 'No product yet' }"
+          />
         } @else if (sketchShown(); as shown) {
           <ethlete-sketch-view
             #sketchView
@@ -380,6 +398,8 @@ export class SystemViewComponent {
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
 
+  protected readonly NEW_PRODUCT = NEW_PRODUCT;
+
   protected copied = signal(false);
 
   protected reading = toSignal(
@@ -424,6 +444,8 @@ export class SystemViewComponent {
 
   private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
+  protected creating = signal(false);
+
   private picked = signal(rememberedView().systemEntry ?? null);
 
   private cameras = signal(rememberedView().cameras ?? {});
@@ -437,6 +459,8 @@ export class SystemViewComponent {
 
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
+
+  protected pickerValue = computed(() => (this.creating() ? NEW_PRODUCT : (this.product()?.name ?? NEW_PRODUCT)));
 
   private sketchList = toSignal(
     toObservable(
@@ -688,7 +712,9 @@ export class SystemViewComponent {
   );
   protected shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
-  protected commentable = computed(() => !this.call() && (this.sketchShown() !== null || this.part() !== null));
+  protected commentable = computed(
+    () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
+  );
 
   constructor() {
     this.commentStore.connect(
@@ -751,11 +777,16 @@ export class SystemViewComponent {
   protected activate(key: string) {
     if (!this.nodes().entries.has(key)) return;
 
+    this.creating.set(false);
     this.picked.set(key);
     rememberView({ systemEntry: key });
   }
 
   protected pickProduct(systemProduct: string) {
+    this.creating.set(systemProduct === NEW_PRODUCT);
+
+    if (systemProduct === NEW_PRODUCT) return;
+
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
   }

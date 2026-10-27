@@ -127,4 +127,35 @@ describe('SystemViewComponent on a reload', () => {
       ['hover', undefined],
     ]);
   });
+
+  it('offers the one product and "New product" in the picker', async () => {
+    const fixture = await mount({});
+    const element: HTMLElement = fixture.nativeElement;
+
+    expect(element.querySelector('et-select')).not.toBeNull();
+    expect([...element.querySelectorAll('et-select-option')].map((option) => option.textContent?.trim())).toEqual([
+      'web',
+      'New product',
+    ]);
+  });
+
+  it('shows the new-product screen while "New product" is picked, and goes back on another pick', async () => {
+    const fixture = await mount({ systemProduct: 'web' });
+    const element: HTMLElement = fixture.nativeElement;
+    const view = fixture.componentInstance;
+
+    view['pickProduct'](view['NEW_PRODUCT']);
+    await settle(fixture);
+
+    expect(element.querySelector('main h2')?.textContent?.trim()).toBe('New product');
+    expect(element.querySelector('main pre')?.textContent).toBe('npx et design product new web');
+    expect(view['pickerValue']()).toBe(view['NEW_PRODUCT']);
+    expect(rememberedView().systemProduct).toBe('web');
+
+    view['pickProduct']('web');
+    await settle(fixture);
+
+    expect(element.querySelector('main h2')).toBeNull();
+    expect(view['pickerValue']()).toBe('web');
+  });
 });
