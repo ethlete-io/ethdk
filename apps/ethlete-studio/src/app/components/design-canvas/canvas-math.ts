@@ -170,7 +170,7 @@ export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLay
   return { frames: placed, rows: [] };
 };
 
-export type MatrixFrame = SheetFrame & { column: string; rowLabel?: string; rowGroup?: string };
+export type MatrixFrame = SheetFrame & { column: string; rowLabel?: string; rowGroup?: string; fitted?: boolean };
 
 export type MatrixColumnPlace = { name: string; x: number; width: number };
 
@@ -182,6 +182,7 @@ export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?
  * Places each frame at its row and its column: a column is as wide as its widest frame (an empty one
  * its `emptyWidths` entry, else `emptyColumnWidth`), a row as tall as its tallest. Columns keep the order of `columns`, rows the order
  * they first appear in. A row whose `rowGroup` differs from the row above it starts `groupGap` lower.
+ * A `fitted` frame takes the width of its column, so the right edges in a column line up.
  */
 export const layoutMatrix = ({
   frames,
@@ -225,7 +226,14 @@ export const layoutMatrix = ({
       const column = placedColumns.find((candidate) => candidate.name === frame.column);
 
       if (column)
-        placed.push({ id: frame.id, row: frame.row, width: frame.width, height: frame.height, x: column.x, y });
+        placed.push({
+          id: frame.id,
+          row: frame.row,
+          width: frame.fitted ? column.width : frame.width,
+          height: frame.height,
+          x: column.x,
+          y,
+        });
     }
 
     y += Math.max(...members.map((m) => m.height)) + spacing.rowGap;

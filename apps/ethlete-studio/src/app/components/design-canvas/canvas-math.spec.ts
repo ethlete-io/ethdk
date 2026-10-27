@@ -232,6 +232,24 @@ describe('canvas math', () => {
     ]);
   });
 
+  it('gives a fitted matrix frame the width of its column, and keeps a frame at a width as it is', () => {
+    const layout = layoutMatrix({
+      frames: [
+        { id: 'save', width: 80, height: 40, row: 'solid', column: 'x', fitted: true },
+        { id: 'cancel', width: 120, height: 40, row: 'outline', column: 'x', fitted: true },
+        { id: 'page', width: 90, height: 40, row: 'page', column: 'x' },
+      ],
+      columns: ['x'],
+      spacing: { columnGap: 40, rowGap: 60, emptyColumnWidth: 320 },
+    });
+
+    expect(layout.frames.map(({ id, width }) => [id, width])).toEqual([
+      ['save', 120],
+      ['cancel', 120],
+      ['page', 90],
+    ]);
+  });
+
   it('gives an empty matrix column its own width when it names one', () => {
     const layout = layoutMatrix({
       frames: [{ id: 'x-a', width: 300, height: 90, row: 'a', column: 'x' }],

@@ -144,6 +144,36 @@ describe('DesignCanvasComponent', () => {
     expect(gapBelow(hover, outline)).toBe(96);
   });
 
+  it('widens every fitted tile in a matrix column to the widest one, so the right edges line up', async () => {
+    localStorage.setItem(
+      'ethlete-studio.call-view',
+      JSON.stringify({
+        measuredSizes: {
+          'acme components/button solid': { width: 100, height: 40 },
+          'acme components/button outline': { width: 140, height: 40 },
+        },
+      }),
+    );
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+    const cell = (row: string): CanvasFrame => ({ ...FITTED, id: row, row, column: 'current' });
+
+    fixture.componentRef.setInput('frames', [cell('solid'), cell('outline')]);
+    fixture.componentRef.setInput('cameraKey', 'acme components/button');
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [{ key: 'current', label: 'current' }]);
+    await fixture.whenStable();
+
+    const rightEdges = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map(({ nativeElement }) => parseFloat(nativeElement.style.left) + parseFloat(nativeElement.style.width));
+
+    expect(rightEdges).toEqual([140, 140]);
+  });
+
   it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {
     const fixture = await render([FITTED, { ...FITTED, id: 'wide', width: 320, height: 200 }]);
     const [fitted, wide] = fixture.debugElement

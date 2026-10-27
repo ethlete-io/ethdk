@@ -178,6 +178,7 @@ export class DesignCanvasComponent {
         ...(frame.rowLabel === undefined ? {} : { rowLabel: frame.rowLabel }),
         ...(frame.rowGroup === undefined ? {} : { rowGroup: frame.rowGroup }),
         column: frame.column ?? '',
+        fitted: frame.width === undefined,
         width: width ?? FALLBACK_WIDTH,
         height: height ?? FALLBACK_HEIGHT,
         unsized: width === undefined || height === undefined,
