@@ -702,6 +702,21 @@ Findings:
 - A kit page cannot fill the frame height without custom CSS.
 - `--round` on a one-variant `sketch new` still needs a title.
 
+As built (2026-10-27):
+
+- Flows on sketch-only pages, 5106b71c8, be8e6a1f4, 58af3f149: rule `FLOW` checks a frame whose part the
+  product lacks against the first variant of that part's open sketch; a name that exists nowhere still
+  fails. Studio's Flows view draws that variant (`flowFramesOf` takes the sketch list). The four flows
+  moved from `drafts/` to `studio/flows/`. Proven headlessly: `read-a-flow` draws `pages/flows` and
+  `pages/inbox` from their sketches.
+- Kit in elements, dd6e4c490, 37ac923d2: `WIREFRAME-KIT` fails components and foundations only. New
+  element `elements/shell-main` (shell b: top bar, side list, content, panel and overlay on demand);
+  `pages/system` imports it and drops its own CSS. The three page sketches still draw the shell inline
+  and need a redraw on `shell-main` once Tom picks. Studio lists kit pages under "Wireframes", not
+  kit elements.
+- Own sizes, 0e9c30133: no code change; a product's own `presets` already replace the base's whole.
+  `studio` lists `desktop` (1440x900) alone. No note, flow, part or sketch named phone or 390.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
