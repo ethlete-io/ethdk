@@ -1094,6 +1094,15 @@ Open points, each with a recommendation:
   bites at 2.5. Not yet checked in a running Studio; look at `studio-lab` `components/button`, its
   sketch, between the solid and the outline group.
 
+### Matrix tile width and server skew decisions (2026-10-27)
+
+- In a matrix of fitted frames (the part view and the sketch matrix), every tile in a column gets the
+  width of the widest tile in that column, so the right edges line up. The part keeps its own size
+  and stays at the left, with the same inner padding. Seen on `studio-lab` `components/button`: the
+  outline "Cancel" tiles were wider than the solid "Save" tiles.
+- A design server older than Studio (a stale `cli-runtime` in a long dev session) gets no version
+  check and no warning. A Studio restart fixes it.
+
 ### Studio comments, as built (2026-10-27)
 
 - f13302bf3: a Comments toolbar button (with the count) toggles a sidebar on the right
