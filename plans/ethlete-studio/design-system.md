@@ -455,6 +455,16 @@ completely, for example the `studio-lab` `components/button` sketch.
   a column there, so each pin shows in its cell.
 - The merge preview ("Where <part> is used") does not change: a nested part always stays at rest.
 
+### Fitted frames and live mode, as built (2026-10-27)
+
+- 242bdd69e (step 4): a fitted frame (no width) has no border; a selected or live frame keeps the
+  accent outline. A live frame shows a "Live · Esc" badge. Comment mode ends live mode, and a double
+  click does nothing while commenting. Esc reaches Studio only through the `design-explore:escape`
+  postMessage, since the iframe keydown listener is gone; that removes the `UnsubscriptionError` at
+  teardown.
+- 6fc599421: the part table drops the "in another interaction" count.
+- Expected, no action: a real hover on a cell that already forces hover adds nothing visible.
+
 ### Frame reload decisions (2026-10-27)
 
 Not built yet. Studio has one global revision (`tick`), so each change reloads every visible frame,
@@ -1153,9 +1163,9 @@ States and interactions: in progress since 2026-10-27, in six steps: (1) `intera
 `definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
 without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
-"Frame reload decisions". Steps 1, 2, 3 and 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02,
-129759c06, 5571eee5f, 97e42bd31). Next: the sketch view fixes in "Merge preview decisions", then
-step 4.
+"Frame reload decisions". Steps 1 to 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02, 129759c06, 5571eee5f, 97e42bd31,
+242bdd69e). Step 6: the server side is done (027805054); next the Studio side, with the "Frame reload
+file decisions". The product picker ("Picker decisions") comes next in the builder queue.
 
 Slice 1: done on 2026-10-27.
 
