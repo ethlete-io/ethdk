@@ -29,6 +29,9 @@ const ellipsed = (text: string) =>
     'min-width': '0',
   })}">${escaped(text)}</span>`;
 
+const caption = (label: string | undefined) =>
+  label ? `<div style="${styleOf({ font: '500 12px/1.2 sans-serif', color: INK })}">${escaped(label)}</div>` : '';
+
 export type BoxOptions = {
   direction?: 'row' | 'column';
   gap?: number;
@@ -162,9 +165,6 @@ export const button = (label: string, options: { primary?: boolean } = {}) =>
 /** A text field with an optional label above it and a placeholder inside. */
 export const input = (options: { label?: string; placeholder?: string; width?: Size } = {}) => {
   const { label, placeholder = '', width = '100%' } = options;
-  const caption = label
-    ? `<div style="${styleOf({ font: '500 12px/1.2 sans-serif', color: INK })}">${escaped(label)}</div>`
-    : '';
 
   return `<div data-wireframe="input" style="${styleOf({
     display: 'flex',
@@ -173,7 +173,7 @@ export const input = (options: { label?: string; placeholder?: string; width?: S
     width: sizeOf(width),
     'max-width': '100%',
     'min-width': '0',
-  })}">${caption}<div style="${styleOf({
+  })}">${caption(label)}<div style="${styleOf({
     height: '36px',
     padding: '0 12px',
     display: 'flex',
@@ -200,4 +200,163 @@ export const icon = (options: { size?: number } = {}) => {
     border: `1px solid ${LINE}`,
     'box-sizing': 'border-box',
   })}"></div>`;
+};
+
+const chevron = `<span style="${styleOf({
+  width: '7px',
+  height: '7px',
+  'flex-shrink': '0',
+  'margin-top': '-4px',
+  'border-right': `2px solid ${INK}`,
+  'border-bottom': `2px solid ${INK}`,
+  transform: 'rotate(45deg)',
+})}"></span>`;
+
+/** A dropdown field: an optional label above, the picked `value` inside and a chevron at its end. */
+export const select = (options: { label?: string; value?: string; width?: Size } = {}) => {
+  const { label, value = '', width = '100%' } = options;
+
+  return `<div data-wireframe="select" style="${styleOf({
+    display: 'flex',
+    'flex-direction': 'column',
+    gap: '6px',
+    width: sizeOf(width),
+    'max-width': '100%',
+    'min-width': '0',
+  })}">${caption(label)}<div style="${styleOf({
+    height: '36px',
+    padding: '0 12px',
+    display: 'flex',
+    'align-items': 'center',
+    'justify-content': 'space-between',
+    gap: '8px',
+    'box-sizing': 'border-box',
+    border: `1px solid ${LINE}`,
+    'border-radius': '6px',
+    background: '#ffffff',
+    color: INK,
+    font: '14px/1 sans-serif',
+  })}">${ellipsed(value)}${chevron}</div></div>`;
+};
+
+/** A row of tab labels over a line; the `active` one is bold and underlined. */
+export const tabs = (labels: string[], options: { active?: string } = {}) =>
+  `<div data-wireframe="tabs" style="${styleOf({
+    display: 'flex',
+    'align-self': 'flex-start',
+    'max-width': '100%',
+    'min-width': '0',
+    gap: '20px',
+    'border-bottom': `1px solid ${LINE}`,
+  })}">${labels
+    .map(
+      (label) =>
+        `<div${label === options.active ? ' data-active' : ''} style="${styleOf({
+          display: 'flex',
+          'align-items': 'center',
+          height: '36px',
+          'min-width': '0',
+          'margin-bottom': '-1px',
+          'border-bottom': `2px solid ${label === options.active ? INK : 'transparent'}`,
+          color: INK,
+          font: `${label === options.active ? 600 : 400} 14px/1 sans-serif`,
+        })}">${ellipsed(label)}</div>`,
+    )
+    .join('')}</div>`;
+
+/** Options joined in one bordered strip; the `active` one is filled. */
+export const segmented = (options: string[], settings: { active?: string } = {}) =>
+  `<div data-wireframe="segmented" style="${styleOf({
+    display: 'inline-flex',
+    'align-self': 'flex-start',
+    'max-width': '100%',
+    'min-width': '0',
+    height: '32px',
+    border: `1px solid ${LINE}`,
+    'border-radius': '6px',
+    overflow: 'hidden',
+    'box-sizing': 'border-box',
+  })}">${options
+    .map(
+      (option, index) =>
+        `<div${option === settings.active ? ' data-active' : ''} style="${styleOf({
+          display: 'flex',
+          'align-items': 'center',
+          'min-width': '0',
+          padding: '0 12px',
+          'border-left': index === 0 ? null : `1px solid ${LINE}`,
+          background: option === settings.active ? INK : PAPER,
+          color: option === settings.active ? PAPER : INK,
+          font: '500 13px/1 sans-serif',
+        })}">${ellipsed(option)}</div>`,
+    )
+    .join('')}</div>`;
+
+/** A square box with a label beside it; `checked` fills it and draws a tick. */
+export const checkbox = (label: string, options: { checked?: boolean } = {}) => {
+  const tick = options.checked
+    ? `<span style="${styleOf({
+        width: '4px',
+        height: '8px',
+        'margin-top': '-2px',
+        'border-right': `2px solid ${PAPER}`,
+        'border-bottom': `2px solid ${PAPER}`,
+        transform: 'rotate(45deg)',
+      })}"></span>`
+    : '';
+
+  return `<div data-wireframe="checkbox"${options.checked ? ' data-checked' : ''} style="${styleOf({
+    display: 'flex',
+    'align-items': 'center',
+    gap: '8px',
+    'min-width': '0',
+    color: INK,
+    font: '14px/1.2 sans-serif',
+  })}"><span style="${styleOf({
+    display: 'inline-flex',
+    'align-items': 'center',
+    'justify-content': 'center',
+    width: '16px',
+    height: '16px',
+    'flex-shrink': '0',
+    'box-sizing': 'border-box',
+    border: `1.5px solid ${INK}`,
+    'border-radius': '3px',
+    background: options.checked ? INK : '#ffffff',
+  })}">${tick}</span>${ellipsed(label)}</div>`;
+};
+
+/** A small pill with a count or a short text. */
+export const badge = (text: string | number) =>
+  `<span data-wireframe="badge" style="${styleOf({
+    display: 'inline-flex',
+    'align-items': 'center',
+    'align-self': 'center',
+    'flex-shrink': '0',
+    height: '18px',
+    'min-width': '18px',
+    padding: '0 6px',
+    'box-sizing': 'border-box',
+    'justify-content': 'center',
+    'border-radius': '9px',
+    background: INK,
+    color: PAPER,
+    font: '600 11px/1 sans-serif',
+  })}">${escaped(String(text))}</span>`;
+
+/** A status dot, filled or, with `hollow`, a ring. */
+export const dot = (options: { hollow?: boolean; size?: number } = {}) => {
+  const { hollow, size = 8 } = options;
+
+  return `<span data-wireframe="dot"${hollow ? ' data-hollow' : ''} style="${styleOf({
+    display: 'inline-block',
+    'align-self': 'center',
+    width: sizeOf(size),
+    height: sizeOf(size),
+    'flex-shrink': '0',
+    'box-sizing': 'border-box',
+    'border-radius': '50%',
+    border: `1.5px solid ${INK}`,
+    background: hollow ? 'transparent' : INK,
+  })}"></span>`;
 };
