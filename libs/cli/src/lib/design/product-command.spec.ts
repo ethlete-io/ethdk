@@ -3,6 +3,7 @@ import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { Readable } from 'stream';
+import { check, resolveConfig } from 'prettier';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkSystem } from './system/check-system';
 import { resolveProduct } from './system/resolve-product';
@@ -82,6 +83,26 @@ describe('designProduct', () => {
     expect(config?.products?.['shop']).toMatchObject({ styles: ['a.css'], head: 'h.html', providers: 'p.ts' });
     expect(config?.products?.['shop']).not.toHaveProperty('other');
     expect(config?.projects?.['app']).toEqual(project);
+  });
+
+  it('writes config.json in the layout prettier leaves as it is', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+    const long = Array.from({ length: 8 }, (_, index) => `src/styles/a-rather-long-stylesheet-name-${index}.css`);
+    const project = { styles: ['a.css', 'b.css'], themes: { color: ['brand', 'danger'], surface: [] }, empty: {} };
+
+    mkdirSync(join(target, DESIGN_DIR), { recursive: true });
+    writeFileSync(
+      configPathOf(target),
+      JSON.stringify({ projects: { app: project, wide: { styles: long, nested: [[1, 2], [3]], list: [{ a: 1 }] } } }),
+    );
+
+    expect(run(target, 'new', 'shop', '--from-project', 'app')).toBe(0);
+
+    const path = configPathOf(target);
+    const options = await resolveConfig(join(process.cwd(), 'config.json'));
+
+    expect(await check(readFileSync(path, 'utf8'), { ...options, filepath: path })).toBe(true);
   });
 
   it('exits 1 and changes nothing when the entry or the folder exists', () => {
