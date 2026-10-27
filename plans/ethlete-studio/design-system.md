@@ -839,8 +839,9 @@ border to 2px") showed as "question".
   view. The lock still counts the product comments too.
 - The pin number is global on purpose: `numberedCommentsOf` numbers all open comments of the
   product, sketch comments included, oldest first, so the panel and the pins agree.
-- Open: `CanvasPin.dot`, the question marker, is set, but the design canvas never draws it. So a
-  question pin and an answered pin look the same today. A small design-canvas slice draws it.
+- `CanvasPin.dot`, the question marker: the design canvas draws it since 35d609cee
+  (`design-canvas.component.html`, a 12 px dot in the primary accent at the top right of the pin).
+  Not verified yet: that a real question pin in `studio-lab` gets the dot end to end.
 - `studio-lab`: Components, button shows "question"; Sketches, button shows "answered"; the top bar
   shows "1 ?"; the panel lists 7001 as "answered" and 239f under "Questions for you"; the
   `components/button` sketch view shows the product-part button next to "3 open comments".
