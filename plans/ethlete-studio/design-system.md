@@ -744,6 +744,18 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
   authors in `variantInfo` and `madeBy`, a sketch with several rounds, agent replies with an author.
   The builder's "as built" message names where in `studio-lab` the user sees the feature.
 
+### Studio theming decision (2026-10-27)
+
+- Studio follows the SDK theming rules like any SDK consumer: colours, backgrounds, borders and
+  interaction states come from the surface and colour theming tokens (`--et-surface-*`,
+  `--et-theme-color-*`) and the theme providers, never from a hardcoded colour or a Tailwind
+  palette colour. Semantic colours resolve by theme type (`injectSemanticColorTheme`). Overlays and
+  popovers carry the theme context. Only the theme files in `apps/ethlete-studio/src/styles/`
+  define raw colour values.
+- Each Studio slice checks its UI against the `theming` skill. A finding today: almost all Studio
+  UI already uses the tokens; outside the theme files only a few spots use raw values, for example
+  the shadow `rgb(0 0 0 / 0.35)` in `styles.css` and the demo colours in `canvas-demo-view`.
+
 ### Design server restart decision (2026-10-27)
 
 - Studio runs the design server from the built copy `dist/apps/ethlete-studio/cli-runtime`, which
