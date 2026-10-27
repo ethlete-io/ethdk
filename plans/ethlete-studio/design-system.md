@@ -470,7 +470,11 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
   that this works for every kind of part; if not, there is no outline.
 - Bug: preview frames switch between the grey canvas and the page's own background (in
   `pages/library` `one` and `empty`, now and after differ). The page always has one background, so
-  the compare would see a change that does not exist. Fix first.
+  the compare would see a change that does not exist. Fixed in a076cc95f: `settingsLoaders` in
+  `serve.ts` imported a product's `styles` with `Promise.all`, and Vite appends a `<style>` when its
+  import settles, so `styles.css` (grey body) and `tokens.css` (navy body) landed in random order (43
+  grey in 48 loads). They now load in sequence, in config order (48 of 48 navy). A shot cached by a
+  running server stays wrong until a file changes or the server restarts.
 - Bug: on the switch to the preview, the first row starts in the middle of the canvas with about
   300 px empty above it. The fit must anchor at the top, as in d25e8a8b0.
 - The sketch header: the picked variant ("Picked b") uses the accent colour instead of a grey
