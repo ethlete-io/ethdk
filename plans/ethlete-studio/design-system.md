@@ -400,6 +400,35 @@ Open as build work; ethlete-sdk-97 handed off before them.
 - The merge lock keeps counting every open comment on the target part, also one older than the
   sketch: the merge changes the part, so the agent reviews each first.
 
+### States and interactions decisions (2026-10-27)
+
+Not built yet. The flat state list mixed states (solid, outline) with interactions (hover,
+disabled), so hover existed for solid only and focus, active and pressed were missing.
+
+- Two axes. A part declares its states (solid, outline, "solid pressed"); interactions come from a
+  fixed Studio list: rest, hover, focus-visible, active, disabled. pressed and loading are states,
+  since only some parts have them.
+- A part picks its interactions with `interactions` in `definePart`, for example
+  `interactions: ['hover', 'focus-visible', 'active', 'disabled']`. Without the field only rest
+  applies; `et design check` fails on an unknown name. No default per layer.
+- Forcing: the design server rewrites `:hover`, `:focus-visible` and `:active` in every CSS rule to
+  `:is(<pseudo>, [data-et-force~="<name>"])`; Studio sets the attribute on the part's root element
+  only, so a nested button stays at rest. disabled sets `disabled` and `aria-disabled` on the root.
+  This works the same in canvas iframes and screenshots, with the real component CSS. The build
+  first checks that the rewrite fits the server's Vite pipeline.
+- The part view is a full table: rows are states, columns are interactions. A part without
+  `interactions` shows the rest column only.
+- The sketch matrix keeps sketch variants as columns; an interaction switch above the canvas picks
+  one interaction for all cells, like the size switch.
+- A comment gets `interaction` (default rest). Its pin shows only on the matching cell; elsewhere
+  the label counts it, as for another size.
+- A fitted frame has no border, only the product background with some padding. Frames at presets
+  and `widths` keep the border, since there the size means a viewport.
+- A live mode per frame: a double click passes the real mouse and keyboard to the frame, `Esc`
+  ends it. Its own step before slice 10, apart from motion; motion builds on it later.
+- `studio-lab` `components/button` moves to the states solid and outline with the interactions
+  hover, focus-visible, active and disabled, so the lab tests the full table.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
@@ -859,6 +888,9 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
    `apps/ethlete-studio/src-tauri/src/tools.rs`.
 9. **Motion**: its own plan, `plans/ethlete-studio/motion.md`. A timeline, controlled time, a
    screenshot per keyframe. Motion is a tool that extends components and elements.
+   Before slice 10: states and interactions, fitted frames without a border, and the live mode, as in
+   "States and interactions decisions".
+
 10. **Studio designs Studio**: a full redesign of Studio through the whole workflow, as in "Slice
     10 decisions". It runs after slice 6 and before slices 7 to 9; the tomflix rebuild follows it.
 
