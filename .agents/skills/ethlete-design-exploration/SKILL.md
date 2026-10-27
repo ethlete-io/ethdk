@@ -198,12 +198,18 @@ A page that has no parts yet draws grey stand-ins from the wireframe kit; pages 
 import it, components and foundations may not:
 
 ```ts
-import { box, heading, textLines, image, button, input, icon } from '@design-system/kit';
+import { box, heading, textLines, image, button, input, icon, select } from '@design-system/kit';
 ```
 
-Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction, gap, padding, width, height, grow, plain, stackBelow })`,
+Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction, gap, padding, width, height, grow, plain, stackBelow, fill })`,
 `heading(text, { size })`, `textLines({ lines, width, size })`, `image({ width, height, ratio })`,
-`button(label, { primary })`, `input({ label, placeholder, width })`, `icon({ size })`. Draw for
+`button(label, { primary })`, `input({ label, placeholder, width })`, `icon({ size, glyph })`,
+`select({ label, value, width })`, `tabs(labels, { active })`, `segmented(options, { active })`,
+`checkbox(label, { checked })`, `badge(text)` and `dot({ hollow, size })`. Draw a control as its
+type: a picker is a `select`, a section switch `tabs`, a size switch `segmented`, a count a `badge`,
+a status a `dot`, never a row of buttons or an empty `icon`. Give an icon a `glyph` (`'plus'`,
+`'close'`, `'menu'`, `'more'`, …; another name draws its first letter). Give the root box of a page or a
+shell `fill: true` so it is as tall as the frame, instead of a hand-written `min-height`. Draw for
 every preset, not one width: give a picture a `ratio` (`'2/3'`) instead of a fixed height, and give
 a row `stackBelow: <px>`, the width below which it stacks its children, instead of fixed widths
 that only fit the desktop. Never use `vh`, `dvh` or `svh` in a part: a part has no viewport of its own, so the unit measures Studio's frame, not the page. A full page is a frame of a fixed size. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
