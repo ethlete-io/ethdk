@@ -1312,7 +1312,9 @@ Pages and wireframes, as built (2026-10-27):
 - Pages already held before slice 6: states with props, `@system/fixtures`, and a page importing
   an element or component. A shell and a dialog state need no new code.
 - b9fae0d96: the kit is `@design-system/kit` (`box`, `textLines`, `image`, `button`, `input`, `icon`),
-  each returning markup with a fixed grey inline style. `WIREFRAME-KIT` fails a non-page part that
+  each returning markup with a fixed grey inline style. It lives in the cli
+  (`libs/cli/design/wireframe-kit.ts`), not in a product, so the colour rule never scans it. More
+  commits: 49110d91b, 052c98525. `WIREFRAME-KIT` fails a non-page part that
   imports it. The system list gives each page `kitUses`, the kit calls in its source.
 - ade8021ca: the tree lists a page with `kitUses > 0` under Wireframes, after Pages, with the count.
 - The lab has `elements/shell-main`, `elements/login-dialog`, `pages/library` in the shell with a
