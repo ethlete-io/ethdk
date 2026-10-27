@@ -1,14 +1,14 @@
-.st-root {
+.st-shell {
   position: relative;
   min-height: 840px;
   font-family: sans-serif;
 }
 
-.st-root > [data-wireframe='box'] {
+.st-shell > [data-wireframe='box'] {
   min-height: inherit;
 }
 
-.st-dialog {
+.st-shell-overlay {
   position: absolute;
   inset: 0;
   display: grid;

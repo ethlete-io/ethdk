@@ -1,6 +1,6 @@
 import { definePart, drawing } from '@design-system';
 import { box, button, heading, icon, image, input, textLines } from '@design-system/kit';
-import styles from './system.css?inline';
+import shellMain from '@system/elements/shell-main';
 
 type View = 'part' | 'comment open' | 'no product' | 'new product open' | 'empty product';
 
@@ -90,7 +90,7 @@ const thread = () =>
   );
 
 const dialog = () =>
-  `<div class="st-dialog">${box(
+  box(
     [
       heading('New product', { size: 18 }),
       input({ label: 'Name', placeholder: 'studio' }),
@@ -99,21 +99,9 @@ const dialog = () =>
       row([button('Cancel'), button('Create', { primary: true })]),
     ],
     { width: 360, gap: 16, padding: 20 },
-  )}</div>`;
+  );
 
 const noProduct = (view: View) => view === 'no product' || view === 'new product open';
-
-const header = (view: View) =>
-  box(
-    [
-      row([icon(), heading('Studio', { size: 16 })]),
-      input({ placeholder: noProduct(view) ? 'No product' : 'studio', width: 200 }),
-      row([button('System', { primary: true }), button('Sketches'), button('Flows'), button('Inbox 3')], 4),
-      box([], { plain: true, padding: 0, grow: true }),
-      button('Checkout: ethlete-sdk'),
-    ],
-    { direction: 'row', gap: 16, padding: 12, stackBelow: 760 },
-  );
 
 const partHeader = () =>
   box(
@@ -134,22 +122,16 @@ export default definePart<Props>({
     'new product open': { view: 'new product open' },
     'empty product': { view: 'empty product' },
   },
-  render: ({ view }) =>
-    drawing({
-      body: `<div class="st-root">${box(
-        [
-          header(view),
-          box(
-            [
-              box([tree(view)], { width: 240 }),
-              box([hasParts(view) ? partHeader() : '', canvas(view)], { grow: true, padding: 24, gap: 20 }),
-              view === 'comment open' ? box([thread()], { width: 320 }) : '',
-            ],
-            { direction: 'row', plain: true, padding: 0, gap: 0, grow: true, stackBelow: 760 },
-          ),
-        ],
-        { plain: true, padding: 0, gap: 0 },
-      )}${view === 'new product open' ? dialog() : ''}</div>`,
-      styles,
-    }),
+  render: async ({ view }) => {
+    const shell = await shellMain.render({
+      section: 'System',
+      product: noProduct(view) ? null : 'studio',
+      side: tree(view),
+      content: (hasParts(view) ? partHeader() : '') + canvas(view),
+      ...(view === 'comment open' ? { panel: thread() } : {}),
+      ...(view === 'new product open' ? { overlay: dialog() } : {}),
+    });
+
+    return drawing({ body: shell.body, styles: shell.styles });
+  },
 });
