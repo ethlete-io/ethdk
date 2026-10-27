@@ -6,6 +6,19 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { rememberedView } from '../studio-view/remembered';
 import { SystemViewComponent } from './system-view.component';
 
+const watchChannels: { onmessage: () => void }[] = [];
+
+vi.mock('@tauri-apps/api/core', () => ({
+  Channel: class {
+    public onmessage = () => undefined;
+
+    public constructor() {
+      watchChannels.push(this);
+    }
+  },
+  invoke: () => Promise.resolve(),
+}));
+
 const KEY = 'ethlete-studio.call-view';
 
 const part = (layer: string, name: string): ListedPart => ({
@@ -158,5 +171,50 @@ describe('SystemViewComponent on a reload', () => {
 
     expect(element.querySelector('main h2')).toBeNull();
     expect(view['pickerValue']()).toBe('web');
+  });
+});
+
+describe('SystemViewComponent on a sketch report change', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    watchChannels.length = 0;
+    vi.stubGlobal('__TAURI_INTERNALS__', {});
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('lists the sketches again when the host reports a changed status file', async () => {
+    let sketchListings = 0;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) {
+        sketchListings++;
+
+        return json({ sketches: [] });
+      }
+
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({});
+    const before = sketchListings;
+
+    expect(before).toBeGreaterThan(0);
+    expect(watchChannels.length).toBeGreaterThan(0);
+
+    watchChannels.forEach((channel) => channel.onmessage());
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await settle(fixture);
+
+    expect(sketchListings).toBe(before + 1);
   });
 });
