@@ -813,6 +813,15 @@ step. Each finding names what happened and the fix it needs.
   wireframe answers only which regions exist, never labels, badges or field lists.
 - `design check --lint <file> --tsconfig` passed a part with an unused kit import (`image`).
   Prevent: the lint step reports unused imports.
+- Tom (2026-10-28): in the editor every import in a product part fails, for example "Cannot find
+  module '@design-system' or its corresponding type declarations" in `elements/shell-main.ts`. Only
+  the TS server sees it; `design check --tsconfig` and the render work. Cause: the aliases
+  (`@design-system`, `@design-system/kit`, `@system/*`) exist only in a tsconfig the CLI writes
+  on demand into `node_modules/.design-explore/`, which `writeCallsTsconfig`
+  (`libs/cli/src/lib/design/calls-tsconfig.ts`) builds for legacy calls; no `tsconfig.json` an
+  editor finds covers `.ethlete/design/<product>/`. Prevent: `design product new` and
+  `design check` write a gitignored `.ethlete/design/tsconfig.json` with the same paths that the
+  check uses, so the editor and the check type a part the same way.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
