@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; next the redesign layer by layer, starting with a foundations/tokens sketch. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: surfaces merged (variant A, 863901225), the accent sketch is open in Studio. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -564,6 +564,9 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   fixed in the merged part (`body` background `var(--surface-sunken)`). Next sketch: accent, on
   `foundations/tokens`, four hues at the same lightness and chroma (A blue, B violet, C teal, D
   amber).
+- The merged surfaces are committed in 863901225. Open: does a merge in Studio count as the go to
+  commit the merged part? Tom assumes it does; the `ethlete-design-exploration` skill does not say
+  so. Recommendation: yes, and write it into the skill.
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
