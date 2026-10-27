@@ -727,6 +727,12 @@ step. Each finding names what happened and the fix it needs.
   `HARD-CODED-COLOUR` also rejects a fallback inside `var()`. A wireframe that draws its own line
   must import the product colour tokens. Fix: the kit exports its line colour, or the divider
   above makes it unneeded.
+- Only a bordered kit `box` paints the wireframe paper. A region drawn in plain HTML is
+  transparent, so the shell showed Studio's dark frame behind light kit parts. The paper colour
+  is private too. Workaround: the shell sits in one bordered kit box. Fix: the kit `split` above
+  paints the paper.
+- A part with `height: 900px` and a 1px border overflowed its 900 px page frame, and Studio
+  showed a scroll bar. Nothing warned. Fix: the render check above.
 
 Findings:
 
