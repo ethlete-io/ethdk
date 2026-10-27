@@ -294,6 +294,12 @@ export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAd
 export const thumbUrl = ({ revision, ...address }: FrameAddress & { revision?: number }) =>
   frameUrl(address).replace('/frame.html?', '/__design/thumb?') + (revision ? `&revision=${revision}` : '');
 
+/** The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`. */
+export const callShotUrl = ({ width, revision, ...address }: FrameAddress & { width: number; revision?: number }) =>
+  frameUrl(address).replace('/frame.html?', '/__design/shot?') +
+  `&width=${width}` +
+  (revision ? `&revision=${revision}` : '');
+
 /**
  * Whether the design server on `port` has the thumbnail route. Without a call it answers 400, while
  * an `@ethlete/cli` older than the route answers 404. Draws nothing.

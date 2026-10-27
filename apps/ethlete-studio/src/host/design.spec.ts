@@ -1,4 +1,4 @@
-import { designReadError, frameUrl } from './design';
+import { callShotUrl, designReadError, frameUrl } from './design';
 
 describe('frameUrl', () => {
   it('encodes the slug and the variant', () => {
@@ -18,6 +18,17 @@ describe('frameUrl', () => {
     );
     expect(frameUrl({ port: 1, slug: 's', variant: 'v', color: 'brand' })).toBe(
       'http://localhost:1/frame.html?call=s&variant=v&color=brand',
+    );
+  });
+});
+
+describe('callShotUrl', () => {
+  it('asks the shot route for the variant at a width, under its theme, renewed by revision', () => {
+    expect(
+      callShotUrl({ port: 1, slug: 'shop/a b', variant: 'v', surface: 'dark', epoch: 2, width: 1280, revision: 3 }),
+    ).toBe('http://localhost:1/__design/shot?call=shop%2Fa%20b&variant=v&surface=dark&epoch=2&width=1280&revision=3');
+    expect(callShotUrl({ port: 1, slug: 's', variant: 'v', width: 390 })).toBe(
+      'http://localhost:1/__design/shot?call=s&variant=v&width=390',
     );
   });
 });

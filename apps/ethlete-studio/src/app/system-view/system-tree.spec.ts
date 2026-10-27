@@ -137,7 +137,7 @@ describe('isGroupOpen and isSectionOpen', () => {
 });
 
 describe('callFramesOf', () => {
-  it('draws one frame per variant at the call width', () => {
+  it('draws one frame per variant at the call width, pictured at that width', () => {
     const frames = callFramesOf({ port: 4402, call: call(), epoch: 2, revision: 3, surface: 'dark' });
 
     expect(frames.map((frame) => [frame.id, frame.label, frame.width, frame.height])).toEqual([
@@ -148,12 +148,15 @@ describe('callFramesOf', () => {
       'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2',
     );
     expect(frames[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/thumb?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3',
+      'http://localhost:4402/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&width=960&revision=3',
     );
   });
 
   it('falls back to 1280 without a width and fails one frame for a call that does not load', () => {
-    expect(callFramesOf({ port: 1, call: call({ frameWidth: 0 }) })[0]?.width).toBe(1280);
+    expect(callFramesOf({ port: 1, call: call({ frameWidth: 0 }) })[0]).toMatchObject({
+      width: 1280,
+      screenshot: 'http://localhost:1/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&width=1280',
+    });
     expect(
       callFramesOf({ port: 1, call: { slug: 'acme/x', project: 'acme', error: 'boom' } }).map((frame) => [
         frame.width,

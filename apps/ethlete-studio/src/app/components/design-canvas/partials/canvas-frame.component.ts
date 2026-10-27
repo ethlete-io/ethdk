@@ -1,9 +1,55 @@
-import { Component, ViewEncapsulation, computed, inject, input, output } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { Component, ElementRef, ViewEncapsulation, computed, inject, input, output, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
 import { ProvideColorDirective } from '@ethlete/core';
-import { EMPTY, Observable, Subject, filter, fromEvent, merge, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  filter,
+  fromEvent,
+  map,
+  merge,
+  of,
+  startWith,
+  switchMap,
+  take,
+  tap,
+  timer,
+} from 'rxjs';
 import { CanvasFrame, frameMessageOf } from '../canvas-frame';
+
+const UNREPORTED_PAINT_MS = 1000;
+
+const nextPaint$ = (view: Window) =>
+  new Observable<void>((subscriber) => {
+    let frame = view.requestAnimationFrame(() => {
+      frame = view.requestAnimationFrame(() => {
+        subscriber.next();
+        subscriber.complete();
+      });
+    });
+
+    return () => view.cancelAnimationFrame(frame);
+  });
+
+const painted$ = (iframe: HTMLIFrameElement) => {
+  const host = iframe.ownerDocument.defaultView;
+
+  if (!host) return of(true);
+
+  const reported$ = fromEvent<MessageEvent>(host, 'message').pipe(
+    filter((event) => event.source === iframe.contentWindow && frameMessageOf(event.data)?.type === 'height'),
+  );
+  const loadedSilently$ = fromEvent(iframe, 'load').pipe(switchMap(() => timer(UNREPORTED_PAINT_MS)));
+
+  return merge(reported$, loadedSilently$).pipe(
+    take(1),
+    switchMap(() => nextPaint$(host)),
+    map(() => true),
+    startWith(false),
+  );
+};
 
 @Component({
   selector: 'ethlete-canvas-frame',
@@ -14,18 +60,24 @@ import { CanvasFrame, frameMessageOf } from '../canvas-frame';
     </span>
     @if (frame().error) {
       <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
-    } @else if (live()) {
-      <iframe
-        #iframe
-        [src]="source()"
-        [title]="frame().label"
-        (load)="loadContent(iframe)"
-        class="et-canvas-frame__iframe"
-      ></iframe>
-    } @else if (frame().screenshot) {
-      <img [src]="frame().screenshot" class="et-canvas-frame__screenshot" alt="" />
     } @else {
-      <div class="et-canvas-frame__placeholder"></div>
+      @if (!painted()) {
+        @if (frame().screenshot) {
+          <img [src]="frame().screenshot" class="et-canvas-frame__screenshot" alt="" />
+        } @else {
+          <div class="et-canvas-frame__placeholder"></div>
+        }
+      }
+      @if (live()) {
+        <iframe
+          #iframe
+          [src]="source()"
+          [title]="frame().label"
+          [class.et-canvas-frame__iframe--painted]="painted()"
+          (load)="loadContent(iframe)"
+          class="et-canvas-frame__iframe"
+        ></iframe>
+      }
     }
     @if (!active()) {
       <div class="et-canvas-frame__shield"></div>
@@ -53,7 +105,14 @@ export class CanvasFrameComponent {
   public heightChange = output<number>();
   public escapeKeydown = output();
 
+  protected iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+
   protected source = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.frame().src));
+
+  protected painted = toSignal(
+    toObservable(this.iframe).pipe(switchMap((iframe) => (iframe ? painted$(iframe.nativeElement) : of(false)))),
+    { initialValue: false },
+  );
 
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 

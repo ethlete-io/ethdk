@@ -2,10 +2,10 @@ import {
   ListedCall,
   ListedPart,
   ListedProduct,
+  callShotUrl,
   frameUrl,
   partFrameUrl,
   partShotUrl,
-  thumbUrl,
 } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 
@@ -181,7 +181,7 @@ export const callFramesOf = ({ port, call, epoch, revision, surface, color }: Ca
       src: frameUrl(address),
       width,
       label: variant.name || variant.key,
-      screenshot: thumbUrl({ ...address, revision }),
+      screenshot: callShotUrl({ ...address, width, revision }),
     };
   });
 };

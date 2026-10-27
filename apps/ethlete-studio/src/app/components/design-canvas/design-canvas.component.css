@@ -149,6 +149,11 @@
     background: var(--et-surface-interaction-solid);
   }
 
+  .et-canvas-frame__iframe:not(.et-canvas-frame__iframe--painted) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .et-canvas-frame:not(.et-canvas-frame--active) .et-canvas-frame__iframe {
     pointer-events: none;
   }
