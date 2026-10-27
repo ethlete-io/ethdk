@@ -742,22 +742,30 @@ step. Each finding names what happened and the fix it needs.
 - The agent dictated the design. After the clean slate it asked yes/no questions about parts of
   the old, never accepted draft (product select, checkout, panel), with its own recommendation,
   and edited `shell-main` directly. Tom: "du diktierst mir in die Feder". No sketch, no variants,
-  no pick in Studio, so Studio was not tested at all. Fix: the agent asks Tom what the part needs
-  in an open question; a design choice goes to Studio as a sketch with variants; a direct edit is
-  only for a bug in a drawing Tom already accepted.
+  no pick in Studio, so Studio was not tested at all. Prevent: a design choice always goes to
+  Studio as a sketch with variants; a direct edit to a part is only for a bug in a drawing Tom
+  already accepted. The skill says so, and `design check` warns when an accepted part changes
+  outside a sketch merge.
 - The agent then overcorrected and asked Tom what the shell should hold. Tom: the agent's job is
   to deliver good variants, Tom picks the best. The process is: one sketch at a time, two to four
   strong variants, one state each, the agent looks at each shot before it marks the sketch ready.
+  Prevent: the skill names both failure modes (yes/no on content, "what do you want?") as
+  forbidden, and the builder prompt template starts with the question of the sketch and its
+  variants, never with a question to Tom.
 
 Findings:
 
 - A flow in `<product>/flows/` that names a page that exists only as a sketch fails `FLOW`, and
   `sketch merge` runs that check, so it refuses every page merge. A sketch cannot carry a flow.
+  Fix: a sketch can carry its flow changes, and `FLOW` resolves pages against the sketch too.
 - A product has no place for the inventory (only legacy calls have `inventory`); nothing reads
-  `studio/inventory.ts`.
-- Parts and variants have no cost field; the cost line goes into the variant `note`.
+  `studio/inventory.ts`. Fix: decide in a grill whether a product needs an inventory at all;
+  until then, an agent writes none.
+- Parts and variants have no cost field; the cost line goes into the variant `note`. Fix: a
+  `cost` field on a variant, shown next to the pick in Studio.
 - Only pages may import the kit, so a rough shell element cannot exist; each page repeats the
-  shell, and a shell pick has to be copied to every page.
+  shell, and a shell pick has to be copied to every page. Resolved: elements may use the kit
+  since `elements/shell-main`.
 - The agent cannot see whether a state fits its preset frame. Nothing in the CLI reports the
   drawn height of a state, and `et design check` does not fail on overflow. The matrix state of
   `pages-sketch` was 992 px in the 900 px desktop frame; after the fix to 128 px cells, only
