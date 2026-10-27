@@ -1350,7 +1350,10 @@ Flows, as built (2026-10-27):
 - Lab: `studio-lab/flows/sign-in.json`, 4 library states, 3 lines, one between two states of the same
   page. Proven headlessly: tree entry, layout, lines, labels, picker at 390 and 1440 px. Not proven:
   drawn frame contents (the scratch copy could not resolve Tailwind).
-- Builder follow-ups: the flow format in the design-exploration skill; a proof with drawn frames.
+- e70e6b8be: the design-exploration skill teaches flows, the wireframe kit and the `FLOW` and
+  `WIREFRAME-KIT` rules. Proven with drawn frames: `sign-in` shows the real library states, the
+  "login open" dialog and both line labels. Open: the rest of the skill's stage 3 still describes the
+  legacy call workflow; a docs rewrite later.
 
 Notes:
 
