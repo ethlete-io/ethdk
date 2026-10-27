@@ -386,6 +386,8 @@ Play:
 - A switch is a View Transition that fades opacity only. A part can give an element a
   `view-transition-name` so that it stays in place between two states, for example a poster.
   Everything else waits for slice 9.
+- Changed by the motion plan (`plans/ethlete-studio/motion.md`): a rule in a part switches by a
+  morph of the existing DOM, not by an opacity fade, and names its motion explicitly.
 - Controls: "back to start" and a reduced-motion switch that emulates `prefers-reduced-motion`.
   A speed control comes with the slice 9 timeline.
 
@@ -550,8 +552,8 @@ dropped. The user decides when it goes.
    prototype store, as in "Slice 7 decisions".
 8. **MCP server**: `et design mcp` over the core, as in "Slice 8 decisions". It replaces
    `apps/ethlete-studio/src-tauri/src/tools.rs`.
-9. **Motion**: its own plan. A timeline, controlled time, a screenshot per keyframe. Motion is a
-   tool that extends components and elements.
+9. **Motion**: its own plan, `plans/ethlete-studio/motion.md`. A timeline, controlled time, a
+   screenshot per keyframe. Motion is a tool that extends components and elements.
 
 Each slice gets an "in progress" note here when it starts.
 
