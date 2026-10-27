@@ -543,8 +543,10 @@ These change the "all" case of 027805054.
 
 ### Frame reload Studio, as built (2026-10-27)
 
-- 8ba222492, with partial proof; a verify run is open. Later headless runs saw iframes that never
-  painted, with an unknown cause (the server or this commit).
+- 8ba222492. The proof is complete and the commit needed no fix; the iframes that never painted
+  came from the test environment. Run twice: a card edit reloads 0 of 10 button frames, a button
+  edit 10, a `config.json` edit 10; at most 4 render at once with up to 6 queued; the status bar
+  counts "Rendering 10 frames" down to "Rendering 1 frame".
 - Studio batches `parts` events over 300 ms into per-part revisions in the frame URLs. `all` and the
   Reload button bump every frame. `errored` reloads the frames of parts and sketches with a load
   problem. Proven: a card edit reloads 0 of 10 button frames; a button edit reloads 10; a
@@ -557,6 +559,20 @@ These change the "all" case of 027805054.
   target or to a part in its variants; a revision per variant is a later step.
 - Follow-ups: the server drops the `changes` event; the frame page posts an error flag, so
   `errored` also covers runtime errors in the iframe; `drawnChanges$` goes.
+
+### Frame drag removal, as built (2026-10-27)
+
+- b5bd55b0f. The big solid · rest cell came from a stored `frameSizes` entry of 160×80 (the old
+  minimum clamp). Removed: `et-resize-handles` (e, s, se), `startResize`/`resize`, the minimum
+  sizes, the sizes signal and its CSS. `frameSizes` leaves the remembered view; old data still
+  loads, and the next write drops the key. A frame's size is now `frame.width`/`height`, else the
+  measured size.
+- The handle only showed on the live frame. No drag handle remains anywhere, and nothing else in
+  live mode used it.
+- A test that bites: a stored 160×80 must not change a fitted tile measured at 100×68. It failed
+  before the fix.
+- `studio-lab` `components/button` part view: solid · rest has the same size as the other cells,
+  and a double click on a frame shows no handles.
 
 ### Merge preview decisions (2026-10-27)
 
@@ -1402,7 +1418,7 @@ table; (3) the interaction switch in the sketch matrix and `interaction` on comm
 without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
 "Frame reload decisions". Steps 1 to 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02, 129759c06, 5571eee5f, 97e42bd31,
 242bdd69e). Step 6: the server side is done (027805054), the Studio side is built
-(8ba222492, see "Frame reload Studio, as built"); its verify run is open. The product picker ("Picker decisions") comes next in the builder queue.
+(8ba222492, see "Frame reload Studio, as built"), and proven. The product picker ("Picker decisions") comes next in the builder queue.
 
 Slice 1: done on 2026-10-27.
 
