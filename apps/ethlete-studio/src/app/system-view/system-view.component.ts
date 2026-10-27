@@ -42,6 +42,7 @@ import {
   sketchKeyOf,
   treeOf,
 } from './system-tree';
+import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
 type Reading = { products: ListedProduct[]; error: string | null };
@@ -249,10 +250,12 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
     ProvideSurfaceDirective,
     SketchViewComponent,
   ],
+  providers: [provideCommentStore()],
   host: { class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)]' },
 })
 export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
+  private commentStore = injectCommentStore();
   public port = input<number | null>(null);
   public epoch = input(0);
   public checkout = input('');
@@ -345,7 +348,11 @@ export class SystemViewComponent {
   );
 
   private tree = computed(() =>
-    treeOf(this.product()?.parts ?? [], { calls: this.calls(), sketches: this.sketches() }),
+    treeOf(this.product()?.parts ?? [], {
+      calls: this.calls(),
+      sketches: this.sketches(),
+      comments: this.commentStore.comments(),
+    }),
   );
 
   private sketch = computed(
@@ -543,6 +550,17 @@ export class SystemViewComponent {
       ...(group.sections ?? []).flatMap((section) => open(section, isSectionOpen(section, context))),
     ]);
   });
+
+  constructor() {
+    this.commentStore.connect(
+      computed(() => {
+        const port = this.port();
+        const product = this.product()?.name;
+
+        return { address: port && product ? { port, product } : null, revision: this.tick() };
+      }),
+    );
+  }
 
   protected entryOf(value: unknown) {
     return typeof value === 'string' ? this.nodes().entries.get(value) : undefined;
