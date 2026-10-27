@@ -275,6 +275,20 @@ Open points, each with a recommendation:
   `et design product new`; the list reloads and the new product is picked. `--from-project` stays
   CLI only.
 
+### Product picker, as built (2026-10-27)
+
+- c1e8f5806: the sidebar always shows an `et-select` of the products, with "New product" as the last
+  option. The open list shows "inherits from <base>" muted under a product with a base; the closed
+  select shows the name only. The select has `flex-none`, so it no longer stretches in the sidebar.
+- "New product" shows the empty state in the canvas (one shared template): "New product", "Run this
+  in the checkout to create one:", `npx et design product new web` with a copy button, and a hint on
+  the parts folder. A product or tree pick goes back. It is not remembered as the product.
+- With no product, the select shows "New product" and the canvas keeps "No product yet".
+- Builder choices beyond the plan: the option value `/new`; "New product" wins over a shown call;
+  comment mode is off while it is picked; the tree keeps the last product's entries; the select
+  hides while the products load or fail to load.
+- Open: the create form, as in "Picker decisions" ("Later").
+
 ### Studio Legacy and sketch API, as built (2026-10-27)
 
 - Legacy (ed013d95b): the tree lists `/__design/calls`, one group per project when there are
@@ -1188,8 +1202,8 @@ Slice 1: done on 2026-10-27.
 
 Slice 2: done on 2026-10-27. The canvas, the server, the CLI, the tree and Legacy are built, and
 the old Calls UI is removed (4b2383ae2). Open: a Rust slice removes the commands only the old UI
-used (see "Legacy calls"). Open: the pickers and "New product" as in "Picker decisions", first the
-two `et-select`s and the empty-state screen, then the create form and its endpoint.
+used (see "Legacy calls"). The pickers and the "New product" screen are done (c1e8f5806). Open: the create form and
+its endpoint, as in "Picker decisions".
 
 Slice 4: done on 2026-10-27, with the frame sizes and the sketch matrix (see "Sketch matrix, as
 built" for its open points).
