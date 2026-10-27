@@ -1393,7 +1393,9 @@ Notes server, as built (2026-10-27):
 - Endpoints: `GET /__design/notes`; `POST` `note`, `note-change`, `note-delete`, and `flow-note`,
   `flow-note-change`, `flow-note-delete` (`?flow=`). `/__design/flows` includes the notes. A change in
   `notes/` sends a `notes` event and redraws no part.
-- Studio half, 22510314b (headless proof pending): a state note shows on every rest frame of its
+- Studio half, 22510314b, proven headlessly (create, change and delete through the UI; a free note
+  appended to `flows/sign-in.json` with `at`). Open: at low zoom the note cards of the phone and the
+  desktop frame overlap. a state note shows on every rest frame of its
   part and state, at all sizes, not on interaction or sketch frames. With a point: a small square
   marker and the card beside it; without: a column of cards below the frame. On the flow canvas,
   free notes are large bold headings at `at`, or stacked above the top left of the frames. Cards
