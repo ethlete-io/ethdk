@@ -1,5 +1,5 @@
 import { definePart, drawing } from '@design-system';
-import { box, button, icon, image, input, textLines } from '@design-system/kit';
+import { box, button, heading, icon, image, input, textLines } from '@design-system/kit';
 import { films } from '@system/fixtures';
 
 type Props = { index: number; reviewing: boolean };
@@ -16,10 +16,10 @@ export default definePart<Props>({
           box([icon(), textLines({ lines: 1, width: 120 })], { direction: 'row', plain: true, padding: 0 }),
           box(
             [
-              image({ width: 220, height: 320 }),
+              image({ width: 220, ratio: '2/3' }),
               box(
                 [
-                  `<h1 style="margin:0;font:600 24px sans-serif">${film.title} (${film.year})</h1>`,
+                  heading(`${film.title} (${film.year})`),
                   textLines({ lines: 5 }),
                   box([button('Add to watchlist', { primary: true }), button('Share')], {
                     direction: 'row',
@@ -31,7 +31,7 @@ export default definePart<Props>({
                 { plain: true, padding: 0, grow: true },
               ),
             ],
-            { direction: 'row', gap: 24 },
+            { direction: 'row', gap: 24, stackBelow: 560 },
           ),
         ],
         { plain: true, padding: 24, gap: 24 },
