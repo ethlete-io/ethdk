@@ -3,7 +3,10 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DESIGN_DIR, readConfig } from './paths';
 import { serveDesign } from './serve';
+import { resolveProduct } from './system/resolve-product';
+import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 
 type ServerOptions = {
   server: { port: number; strictPort: boolean };
@@ -174,7 +177,7 @@ const serveAcme = async (target: string) => {
 
   plugin?.configureServer(vite);
 
-  const ask = (path: string, query = '', method = 'GET') =>
+  const ask = (path: string, query = '', method = 'GET', body?: unknown) =>
     new Promise<{ status: number; body: unknown; headers: Record<string, string> }>((done) => {
       const headers: Record<string, string> = {};
       const response = {
@@ -183,7 +186,15 @@ const serveAcme = async (target: string) => {
         end: (body: string) => done({ status: response.statusCode, body: JSON.parse(body) as unknown, headers }),
       };
 
-      handlers.get(path)?.({ url: query, method } as IncomingMessage, response as unknown as ServerResponse);
+      const request = {
+        url: query,
+        method,
+        async *[Symbol.asyncIterator]() {
+          if (body !== undefined) yield Buffer.from(JSON.stringify(body));
+        },
+      };
+
+      handlers.get(path)?.(request as unknown as IncomingMessage, response as unknown as ServerResponse);
     });
 
   return { plugin, ask, watchers, sent, invalidated, loaded };
@@ -269,5 +280,128 @@ describe('the design server for a design system', () => {
     watchers.get('add')?.(join(target, 'elsewhere.ts'));
 
     expect(sent).toHaveLength(1);
+  });
+
+  it('ignores a comment or a sketch decision when it keeps the parts registry', async () => {
+    const target = acme();
+    const { watchers, sent } = await serveAcme(target);
+
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+
+    expect(sent).toEqual([]);
+  });
+});
+
+const readySketch = (target: string) => {
+  const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+  const parsed = parseTarget('components/card');
+  const created = typeof parsed === 'string' ? parsed : createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+
+  if (typeof created === 'string') throw new Error(created);
+
+  return markSketchReady({ checkout: target, sketch: created }) as Sketch;
+};
+
+describe('the design server for sketches and comments', () => {
+  const sketchQuery = '?product=acme&sketch=components/card';
+
+  it('lists the open sketches with their variants and problems, and 404 for an unknown product', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const listed = await ask('/__design/sketches', '?product=acme');
+
+    expect(listed.status).toBe(200);
+    expect(listed.body).toMatchObject({
+      sketches: [
+        {
+          target: 'components/card',
+          status: 'ready',
+          variants: ['a', 'b'],
+          dir: expect.stringContaining('components-card'),
+          problems: [{ variant: 'a' }, { variant: 'b' }],
+        },
+      ],
+      unreadable: [],
+    });
+    expect((await ask('/__design/sketches', '?product=nope')).status).toBe(404);
+    expect((await ask('/__design/sketches', '')).status).toBe(400);
+    expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
+  });
+
+  it('previews the merge of a variant, and 404 for a variant the sketch lacks', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+
+    expect(await ask('/__design/sketch-preview', `${sketchQuery}&variant=a`)).toMatchObject({
+      status: 200,
+      body: { changed: ['components/card'], affected: expect.any(Array) },
+    });
+    expect((await ask('/__design/sketch-preview', `${sketchQuery}&variant=z`)).status).toBe(404);
+  });
+
+  it('writes a pick into sketch.json on POST only, and 422 for a variant that does not exist', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+    const file = join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json');
+
+    expect((await ask('/__design/sketch-decision', sketchQuery)).status).toBe(405);
+    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'z' })).status).toBe(
+      422,
+    );
+    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'nope' })).status).toBe(400);
+    expect(
+      (await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b', comment: 'calmer' }))
+        .status,
+    ).toBe(200);
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toMatchObject({
+      decision: { kind: 'pick', variant: 'b', comment: 'calmer' },
+    });
+    expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
+  });
+
+  it('discards a sketch, and 422 for a merge without a ready variant part', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { ask } = await serveAcme(target);
+
+    expect((await ask('/__design/sketch-merge', `${sketchQuery}&variant=a`, 'POST', {})).status).toBe(400);
+    expect((await ask('/__design/sketch-merge', `${sketchQuery}&variant=z`, 'POST', { note: 'x' })).status).toBe(422);
+    expect(await ask('/__design/sketch-discard', sketchQuery, 'POST')).toMatchObject({
+      status: 200,
+      body: { discarded: 'components/card' },
+    });
+    expect((await ask('/__design/sketch-discard', sketchQuery, 'POST')).status).toBe(404);
+  });
+
+  it('writes, lists and finishes a canvas comment', async () => {
+    const target = acme();
+    const { ask } = await serveAcme(target);
+    const on = { part: 'pages/home', state: 'empty', preset: 'phone', text: 'Say why it is empty.' };
+    const added = await ask('/__design/comment', '?product=acme', 'POST', { ...on, point: { x: 12, y: 30 } });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 12, y: 30 }, stale: null } });
+    expect((await ask('/__design/comment', '?product=acme', 'POST', { ...on, preset: 'gone' })).status).toBe(422);
+    expect((await ask('/__design/comment', '?product=acme')).status).toBe(405);
+    expect((await ask('/__design/comments', '?product=acme&part=pages/home')).body).toMatchObject({
+      comments: [{ id, text: on.text }],
+    });
+    expect((await ask('/__design/comments', '?product=acme&part=pages/other')).body).toMatchObject({ comments: [] });
+    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`)).status).toBe(405);
+    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(200);
+    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(404);
   });
 });

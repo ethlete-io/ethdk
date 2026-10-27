@@ -1,10 +1,29 @@
 import { existsSync, readFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
-import { relative, resolve, sep } from 'path';
+import { basename, dirname, relative, resolve, sep } from 'path';
 import { CALLS_PATH, callSlugsOf, listCalls } from './calls';
 import { writeCallsTsconfig } from './calls-tsconfig';
 import { markTransferred, TRANSFER_PATH } from './legacy';
 import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
+import {
+  Answer,
+  COMMENT_DONE_PATH,
+  COMMENT_PATH,
+  COMMENTS_PATH,
+  commentAnswer,
+  commentDoneAnswer,
+  commentsAnswer,
+  SKETCH_DECISION_PATH,
+  SKETCH_DISCARD_PATH,
+  SKETCH_MERGE_PATH,
+  SKETCH_PREVIEW_PATH,
+  SKETCHES_PATH,
+  sketchDecisionAnswer,
+  sketchDiscardAnswer,
+  sketchesAnswer,
+  sketchMergeAnswer,
+  sketchPreviewAnswer,
+} from './studio-api';
 import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
@@ -12,6 +31,7 @@ import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SystemModules } from './system/system-modules';
 import { DESIGN_SYSTEM_SPECIFIER } from './system/system-tsconfig';
+import { SKETCH_FILE } from './system/sketch/sketch';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
 import {
   assetRoot,
@@ -124,6 +144,9 @@ const sendJson = (response: ServerResponse, answer: { status: number; body: unkn
   send(response, { status: answer.status, type: 'application/json', body: JSON.stringify(answer.body) });
 };
 
+const isDecisionFile = (file: string) =>
+  basename(file) === SKETCH_FILE || (file.endsWith('.json') && basename(dirname(file)) === 'comments');
+
 const isInside = (folder: string, file: string) => file.startsWith(`${folder}${sep}`);
 
 /**
@@ -195,6 +218,7 @@ const designExplore = ({
       thumbs.forget(relative(callsRoot, file));
 
       if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
+      if (isDecisionFile(file)) return;
       if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
 
       system.forget();
@@ -261,6 +285,20 @@ const designExplore = ({
         return { status, body: { result } };
       }),
     );
+    const studio = (path: string, handle: (asked: Parameters<typeof sketchesAnswer>[0]) => Answer | Promise<Answer>) =>
+      vite.middlewares.use(
+        path,
+        answer(async (url, request) => handle({ target, url, request })),
+      );
+
+    studio(SKETCHES_PATH, sketchesAnswer);
+    studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
+    studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
+    studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
+    studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);
+    studio(COMMENTS_PATH, commentsAnswer);
+    studio(COMMENT_PATH, commentAnswer);
+    studio(COMMENT_DONE_PATH, commentDoneAnswer);
     vite.httpServer?.on('close', () => void Promise.all([thumbs.close(), shots.close()]));
     vite.watcher.add([designRoot, ...baseDirs]);
     vite.watcher.on('add', refresh);

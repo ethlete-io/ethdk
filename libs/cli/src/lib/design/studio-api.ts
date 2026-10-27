@@ -1,0 +1,233 @@
+import { IncomingMessage } from 'http';
+import { relative } from 'path';
+import { DesignConfig, readConfig } from './paths';
+import { createComment, deleteComment, DesignComment, listComments, staleReasonOf } from './system/comments/comment';
+import { Problem } from './system/problem';
+import { ResolvedProduct } from './system/resolve-product';
+import { openSketchProblemsOf } from './system/sketch/check-sketches';
+import { oneProductOf } from './system/sketch/cli-args';
+import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { mergePreviewOf } from './system/sketch/merge-preview';
+import { decideSketch, findSketch, listSketches, parseTarget, Sketch } from './system/sketch/sketch';
+
+export const SKETCHES_PATH = '/__design/sketches';
+export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
+export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
+export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
+export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
+export const COMMENTS_PATH = '/__design/comments';
+export const COMMENT_PATH = '/__design/comment';
+export const COMMENT_DONE_PATH = '/__design/comment-done';
+
+export type Answer = { status: number; body: unknown };
+
+type Asked = { target: string; url: URL; request: IncomingMessage };
+
+const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
+
+const productOf = ({ target, url }: Asked): { config: DesignConfig; product: ResolvedProduct } | Answer => {
+  const asked = url.searchParams.get('product');
+  const config = readConfig(target);
+
+  if (!config) return failure(404, 'no design config');
+  if (!asked) return failure(400, 'product is required');
+
+  const product = oneProductOf({ target, config, asked });
+
+  return typeof product === 'string' ? failure(404, product) : { config, product };
+};
+
+const isAnswer = (value: object): value is Answer => 'status' in value;
+
+const bodyOf = async (request: IncomingMessage): Promise<Record<string, unknown> | null> => {
+  const chunks: Buffer[] = [];
+
+  for await (const chunk of request) chunks.push(Buffer.from(chunk as Uint8Array));
+
+  try {
+    const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+
+    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const textOf = (value: unknown) => (typeof value === 'string' && value !== '' ? value : undefined);
+
+type Found = { asked: Asked; config: DesignConfig; product: ResolvedProduct };
+
+const withProduct = (method: 'GET' | 'POST', run: (found: Found) => Answer | Promise<Answer>) => (asked: Asked) => {
+  if ((asked.request.method ?? 'GET') !== method) return failure(405, method === 'POST' ? 'POST only' : 'GET only');
+
+  const found = productOf(asked);
+
+  return isAnswer(found) ? found : run({ ...found, asked });
+};
+
+const withSketch = (method: 'GET' | 'POST', run: (found: Found & { sketch: Sketch }) => Answer | Promise<Answer>) =>
+  withProduct(method, (found) => {
+    const parsed = parseTarget(found.asked.url.searchParams.get('sketch') ?? undefined);
+
+    if (typeof parsed === 'string') return failure(400, parsed);
+
+    const sketch = findSketch({ productDir: found.product.dir, product: found.product.name, sketch: parsed });
+
+    if (sketch === null) return failure(404, `no sketch on ${parsed.layer}/${parsed.name} in ${found.product.name}`);
+    if (typeof sketch === 'string') return failure(422, sketch);
+
+    return run({ ...found, sketch });
+  });
+
+const problemOf = ({ target, problem }: { target: string; problem: Problem }) => ({
+  rule: problem.rule,
+  file: relative(target, problem.file),
+  message: problem.message,
+});
+
+const sketchOf = ({ sketch: { dir, ...sketch }, target }: { sketch: Sketch; target: string }) => ({
+  ...sketch,
+  dir: relative(target, dir),
+});
+
+const commentOf = ({
+  comment,
+  target,
+  product,
+}: {
+  comment: DesignComment;
+  target: string;
+  product: ResolvedProduct;
+}) => {
+  const { file, ...rest } = comment;
+
+  return { ...rest, file: relative(target, file), stale: staleReasonOf({ product, comment }) };
+};
+
+/** The open sketches of `?product=`, each with its variants, status, decision and the rule problems of every variant. */
+export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
+  const { target } = asked;
+  const { unreadable, variants } = openSketchProblemsOf(product);
+  const sketches = listSketches({ productDir: product.dir, product: product.name }).filter(
+    (sketch): sketch is Sketch => typeof sketch !== 'string',
+  );
+
+  return {
+    status: 200,
+    body: {
+      sketches: sketches.map((sketch) => ({
+        ...sketchOf({ sketch, target }),
+        problems: variants
+          .filter((entry) => entry.sketch.target === sketch.target)
+          .map((entry) => ({
+            variant: entry.variant,
+            problems: entry.problems.map((p) => problemOf({ target, problem: p })),
+          })),
+      })),
+      unreadable: unreadable.map((problem) => problemOf({ target, problem })),
+    },
+  };
+});
+
+/** `?product=&sketch=<layer>/<name>&variant=`: the parts a merge of that variant changes and the elements and pages that show them. */
+export const sketchPreviewAnswer = withSketch('GET', ({ asked, product, sketch }) => {
+  const variant = asked.url.searchParams.get('variant') ?? '';
+
+  return sketch.variants.includes(variant)
+    ? { status: 200, body: mergePreviewOf({ product, sketch, variant }) }
+    : failure(404, `${sketch.target} has no variant "${variant}"`);
+});
+
+/** POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }` or `{ kind: 'discard', comment? }`: writes the decision into sketch.json. */
+export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch }) => {
+  const body = await bodyOf(asked.request);
+  const comment = textOf(body?.['comment']);
+  const variant = textOf(body?.['variant']);
+
+  if (body?.['kind'] !== 'pick' && body?.['kind'] !== 'discard') return failure(400, 'kind must be pick or discard');
+  if (body['kind'] === 'pick' && !variant) return failure(400, 'a pick needs a variant');
+
+  const decided = decideSketch({
+    sketch,
+    decision:
+      body['kind'] === 'pick' && variant
+        ? { kind: 'pick', variant, ...(comment ? { comment } : {}) }
+        : { kind: 'discard', ...(comment ? { comment } : {}) },
+  });
+
+  return typeof decided === 'string'
+    ? failure(422, decided)
+    : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
+});
+
+/** POST `?product=&sketch=&variant=`, body `{ note }`: merges the variant into the product, as `et design sketch merge` does. */
+export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
+  const body = await bodyOf(asked.request);
+  const variant = asked.url.searchParams.get('variant') ?? '';
+  const note = textOf(body?.['note']);
+
+  if (!variant || !note) return failure(400, 'a merge needs a variant and a note');
+
+  const merged = mergeSketch({ target: asked.target, config, product, sketch, variant, note });
+
+  return typeof merged === 'string' ? failure(422, merged) : { status: 200, body: { merged } };
+});
+
+/** POST `?product=&sketch=`: deletes the sketch with all its variants, as `et design sketch discard` does. */
+export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
+  const problem = discardSketch({ target: asked.target, sketch });
+
+  return problem ? failure(422, problem) : { status: 200, body: { discarded: sketch.target } };
+});
+
+/** `?product=[&part=<layer>/<name>]`: the open comments, oldest first, each with the reason it is stale or `null`. */
+export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
+  const part = asked.url.searchParams.get('part');
+  const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name });
+
+  return {
+    status: 200,
+    body: {
+      comments: comments
+        .filter((comment) => !part || comment.part === part)
+        .map((comment) => commentOf({ comment, target: asked.target, product })),
+      unreadable: unreadable.map(({ file, problem }) => ({ file: relative(asked.target, file), problem })),
+    },
+  };
+});
+
+/** POST `?product=`, body `{ part, state, preset, text, point?: { x, y }, sketch?: { target, variant } }`: writes a canvas comment. */
+export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const { part, state, preset, text, point, sketch } = body;
+  const created = createComment({
+    product,
+    comment: {
+      part: part as string,
+      state: state as string,
+      preset: preset as string,
+      text: text as string,
+      ...(point === undefined ? {} : { point: point as { x: number; y: number } }),
+      ...(sketch === undefined ? {} : { sketch: sketch as { target: string; variant: string } }),
+    },
+  });
+
+  return typeof created === 'string'
+    ? failure(422, created)
+    : { status: 200, body: commentOf({ comment: created, target: asked.target, product }) };
+});
+
+/** POST `?product=&id=`: deletes a comment the user has handled, as `et design inbox done` does. */
+export const commentDoneAnswer = withProduct('POST', ({ asked, product }) => {
+  const deleted = deleteComment({
+    products: [{ name: product.name, dir: product.dir }],
+    id: asked.url.searchParams.get('id') ?? '',
+  });
+
+  return typeof deleted === 'string' ? failure(404, deleted) : { status: 200, body: { id: deleted.id } };
+});
