@@ -64,9 +64,14 @@ front and the rest on first open. The `tools/treeshake` goldens `query-devtools-
 
 ### Styling
 
-Component styles are plain CSS (global `et-`-prefixed classes,
+This section is about the published libs under `libs/`. **The apps are different:**
+`apps/ethlete-studio` and `apps/timetrack` style with Tailwind utilities in their
+templates, add no per-component `.css` files, and use SDK components for controls
+(every button is an `et-button`).
+
+Lib component styles are plain CSS (global `et-`-prefixed classes,
 `ViewEncapsulation.None`) - see the `.css` files next to each component. **Do not
-use Tailwind in component source.** Tailwind utility classes are allowed **only in
+use Tailwind in lib component source.** In the libs, Tailwind utility classes are allowed **only in
 story files** (`*.stories.ts` and `stories/`), for demo layout - and Storybook's
 Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), so
 read the **`storybook-styling`** skill (`.agents/skills/storybook-styling/`) before
