@@ -31,7 +31,7 @@
   },
   "products": {
     "studio-lab": {
-      "styles": ["apps/ethlete-studio/src/styles.css"],
+      "styles": ["apps/ethlete-studio/src/styles.css", ".ethlete/design/studio-lab/theme.css"],
       "presets": {
         "phone": {
           "width": 390,

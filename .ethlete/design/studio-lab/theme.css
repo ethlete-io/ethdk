@@ -1,0 +1,9 @@
+:root {
+  --lab-ink: #e6e8ee;
+  --lab-surface: #232836;
+  --lab-accent: #7aa2f7;
+}
+
+body {
+  background: #161922;
+}
