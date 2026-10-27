@@ -716,6 +716,11 @@ As built (2026-10-27):
   kit elements.
 - Own sizes, 0e9c30133: no code change; a product's own `presets` already replace the base's whole.
   `studio` lists `desktop` (1440x900) alone. No note, flow, part or sketch named phone or 390.
+- Kit fidelity, 261a9bedb, b8f3258fc, 3baeae901, f81183a80, 21ee366d5: the kit draws `select`, `tabs`,
+  `segmented`, `checkbox`, `badge` and `dot`; `box({ fill: true })` is as tall as the frame (`min-height:
+100vh`), so `shell-main` drops its `min-height` hack; `icon` is a rounded square with an optional
+  `glyph`. Studio labels a sized frame with its state ("comment open · desktop"). `shell-main` and
+  `pages/system` use the new controls. The Inbox count stays text inside its tab.
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
