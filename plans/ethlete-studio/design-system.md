@@ -1364,6 +1364,19 @@ Notes:
 - A free note, for example a heading over a group of frames, belongs to one flow and lives in
   that flow's file.
 
+### Flow, wireframe and note decisions (2026-10-27)
+
+- Comment mode works on the flow canvas, built with slice 6c. A comment on a flow frame belongs to
+  that state, the same as a comment on the part canvas.
+- Studio remembers the picked flow preset per flow in the view state, like the size pick of the
+  sketch matrix.
+- A wireframe page may import real elements and components next to kit parts, so it grows into a
+  page step by step. Only a kit import outside `pages/` fails.
+- A state note shows on every rest frame of its state, at every size.
+- A note point is in CSS px and may shift between widths, the same as a comment point.
+- A free note without `at` stacks above the flow; a note created by a click always gets `at`.
+- A flow file write re-serializes the whole file in the standard JSON layout; accepted.
+
 Notes server, as built (2026-10-27):
 
 - 07d73981c, lab 948a7793b. The reader existed (c618028b5); its check rule is now `NOTE`. A state
