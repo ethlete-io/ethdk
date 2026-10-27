@@ -265,7 +265,7 @@ fn collect<R: AsyncRead + Unpin + Send + 'static>(source: R, log: Arc<Mutex<Vec<
 
 /// Studio runs the design tool itself, so a checkout needs no script and no design tooling of its
 /// own. Node is the one thing the machine must still carry.
-fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
+fn spawn(servers: &DesignServers, checkout: &str, preface: Vec<String>) -> StudioResult<()> {
     let entry = cli_entry(Path::new(checkout)).ok_or_else(|| {
         StudioError::Rejected(format!(
             "No copy of @ethlete/cli is reachable for {checkout}. Build one with \
@@ -299,7 +299,7 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
     })?;
 
     let stdin = child.stdin.take();
-    let log = Arc::new(Mutex::new(Vec::new()));
+    let log = Arc::new(Mutex::new(preface));
 
     if let Some(stdout) = child.stdout.take() {
         collect(stdout, log.clone());
@@ -319,6 +319,45 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
     );
 
     Ok(())
+}
+
+#[cfg(debug_assertions)]
+async fn build_cli() -> StudioResult<Vec<String>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let output = crate::child_env::command("npx")
+        .args(["nx", "cli-runtime", "ethlete-studio"])
+        .current_dir(root)
+        .env("NX_NO_CLOUD", "true")
+        .output()
+        .await
+        .map_err(|error| match error.kind() {
+            std::io::ErrorKind::NotFound => StudioError::NotInstalled("npx".to_owned()),
+            _ => StudioError::Io(error),
+        })?;
+
+    let mut lines = vec!["Building the CLI…".to_owned()];
+
+    for stream in [&output.stdout, &output.stderr] {
+        lines.extend(String::from_utf8_lossy(stream).lines().map(str::to_owned));
+    }
+
+    let overflow = lines.len().saturating_sub(LOG_LINES);
+
+    lines.drain(..overflow);
+
+    if output.status.success() {
+        return Ok(lines);
+    }
+
+    Err(StudioError::Rejected(format!(
+        "Building the CLI failed, the server was not started.\n{}",
+        lines.join("\n")
+    )))
+}
+
+#[cfg(not(debug_assertions))]
+async fn build_cli() -> StudioResult<Vec<String>> {
+    Ok(Vec::new())
 }
 
 async fn await_listening(servers: &DesignServers, checkout: &str, port: u16) {
@@ -408,7 +447,7 @@ pub async fn design_server_start(
         return Ok(current);
     }
 
-    spawn(servers.inner(), &checkout)?;
+    spawn(servers.inner(), &checkout, Vec::new())?;
     await_listening(servers.inner(), &checkout, port).await;
 
     state(servers.inner(), &checkout, port)
@@ -453,7 +492,9 @@ pub async fn design_server_restart(
         )));
     }
 
-    spawn(servers.inner(), &checkout)?;
+    let preface = build_cli().await?;
+
+    spawn(servers.inner(), &checkout, preface)?;
     await_listening(servers.inner(), &checkout, port).await;
 
     judged(servers.inner(), &checkout, port).await
@@ -526,7 +567,7 @@ mod tests {
         let checkout = dir.to_string_lossy().into_owned();
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design tool runs");
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
         let mut read = state(&servers, &checkout, PORT).expect("a state");
@@ -554,7 +595,7 @@ mod tests {
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design tool runs");
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
@@ -578,7 +619,7 @@ mod tests {
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design tool runs");
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
@@ -599,7 +640,7 @@ mod tests {
         let checkout = fake_checkout(PORT);
         let servers = DesignServers::default();
 
-        spawn(&servers, &checkout).expect("the design tool runs");
+        spawn(&servers, &checkout, Vec::new()).expect("the design tool runs");
         await_listening(&servers, &checkout, PORT).await;
 
         assert!(listening(PORT), "the design tool never answered");
@@ -626,7 +667,7 @@ mod tests {
 
         std::fs::create_dir_all(&bare).expect("a temporary checkout");
 
-        let refused = spawn(&DesignServers::default(), &bare.to_string_lossy());
+        let refused = spawn(&DesignServers::default(), &bare.to_string_lossy(), Vec::new());
 
         assert!(matches!(refused, Err(StudioError::Rejected(_))));
 
