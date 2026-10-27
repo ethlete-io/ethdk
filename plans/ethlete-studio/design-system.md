@@ -434,6 +434,30 @@ Open points, each with a recommendation:
   snag in the workflow goes into this plan as a finding.
 - Rebuilding the real app on the new system is its own step after the design.
 
+Slice 10 step 1, as built (6c4efbaa1, 4a44cea44, 8a15315aa, proven headlessly):
+
+- Base product `sdk` in `.ethlete/design/sdk`: `foundations/tokens` is the `themeCss()` output with
+  neutral light and dark surfaces, colour themes accent and danger, and the 62.5% root. Components
+  drawn by the `libs/components/design` mocks: button (7 states × 4 interactions), form-field (5
+  states), select (placeholder, selected, open).
+- Product `studio` with base `.ethlete/design/sdk`. Both list `styles: [sdk tokens.css]`.
+- Fix: `product new --base` no longer writes an empty `fixtures.ts` that hid the base fixtures.
+- With two products in the repo, `sketch` and `comment` need `--product`.
+
+Findings:
+
+- `product new` rewrites `config.json` without Prettier.
+- Tokens reach other parts only through config `styles`, so a `foundations/tokens` sketch changes
+  only the tokens frames, not the button and field next to it. After the merge, `studio`'s `styles`
+  must point at `.ethlete/design/studio/foundations/tokens/tokens.css`.
+- The button "active" and "disabled" frames are drawn far wider than their content, likely the
+  fitted-width bug of `elements/shell-main`.
+
+Remaining: the redesign layer by layer (Tom decides each sketch); Studio reads its tokens from the
+merged `tokens.css` instead of the generated `themes.css` and `surface-themes.css`; the app rebuild
+on it; tree rows with one dot per status; a cross-repo base from a package, not checked. The next
+builder resumes from `.claude/handoffs/studio-states-interactions.md`.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
