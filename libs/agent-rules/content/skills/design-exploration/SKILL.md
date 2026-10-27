@@ -82,18 +82,29 @@ A change to a part, or a new part, is a **sketch**: the question is the part, th
 answers. Variants are drawn at the same geometry, and one variant wins only against the others.
 
 ```bash
-et design sketch new <layer>/<name> --variants a,b [--product <p>]   # each variant starts as a copy of the part
-et design sketch report <layer>/<name> "variant b, phone"            # tell Studio what you build now
-et design sketch check [<layer>/<name>]                              # each variant laid over the product
-et design sketch ready <layer>/<name>                                # now the user can pick
+et design sketch new <layer>/<name> --variants a,b --by <model id> [--product <p>]   # each variant starts as a copy of the part
+et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
+et design sketch check [<layer>/<name>]                                            # each variant laid over the product
+et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
 ```
 
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. Use `sketch list` to see the open ones.
 
-Start each `sketch report` message with `variant <name>`, for example `"variant b, phone"`. Studio
-marks a variant as drawing, and hides its frames, only while the latest report names it this way.
+Name the variant you work on with `--variant`. Studio marks it as drawing, and hides its frames,
+while the latest report names it. The report also records your model id as an author of that
+variant, and a merge writes the picked variant's authors into the part's `madeBy`.
+
+### Your model id: `--by`
+
+Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `report`,
+`ready`, `rebase`, `merge`, `discard`, `inbox done` and `comment reply`. The id is the exact model
+id as free text, for example `claude-opus-5-5`, `gpt-5.6-sol` or `gemini-3-argon`. Studio shows it
+on the variant, the reply and the part, so the user sees which model made what.
+
+**Never guess your id.** Use the one your prompt names. If your prompt names none and you do not
+know your own exact id, ask the coordinator or the user before you write.
 
 ### The user decides, Studio merges
 
@@ -111,8 +122,8 @@ The user comments on a state of a part in Studio, at a point, or on a sketch var
 
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
-et design inbox done <id> --note <text>    # set the part note, delete the comment thread
-et design comment reply <id> <text>        # answer a comment thread (takes --product)
+et design inbox done <id> --note <text> --by <model id>   # set the part note, delete the comment thread
+et design comment reply <id> --by <model id> <text>       # answer a comment thread (takes --product)
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
@@ -286,7 +297,9 @@ node check-story.mjs --tsconfig <path> --story <story-id>
 
 ## Delegating a sketch
 
-Every brief names `model: opus`.
+Every brief names `model: opus`, and every prompt names the exact model id the sub-agent runs on,
+for example "Your model id is `claude-opus-5-5`; pass `--by claude-opus-5-5` to every write
+command." You know the id because you chose the model; the sub-agent does not, and must not guess.
 
 1. **One agent per sketch.** It draws all the variants of the sketch. Give it the sketch folder, the
    fixture it must not change, and the claim of each variant. Do not spawn one agent per
