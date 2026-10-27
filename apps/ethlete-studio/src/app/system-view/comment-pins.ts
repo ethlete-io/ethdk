@@ -7,9 +7,9 @@ export type NumberedComment = ListedComment & { number: number };
 /** A comment the user is typing, on a frame and optionally at a point on it. */
 export type CommentDraft = { frameId: string; place: FramePlace; point: { x: number; y: number } | null };
 
-/** Whether a thread waits for the user: the agent has the last word. */
-export const isQuestion = (comment: { replies: readonly Pick<CommentReply, 'by'>[] }) =>
-  comment.replies.at(-1)?.by === 'agent';
+export const isQuestion = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'question';
+
+export const isAnswered = (comment: Pick<ListedComment, 'threadState'>) => comment.threadState === 'answered';
 
 /** Who has the last word in a thread; the user wrote the first text. */
 export const lastSenderOf = (comment: { replies: readonly Pick<CommentReply, 'by'>[] }) =>

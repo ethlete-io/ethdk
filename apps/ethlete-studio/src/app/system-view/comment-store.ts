@@ -72,7 +72,7 @@ export class CommentStore {
   /** The open comments of the product, numbered oldest first. */
   public comments = computed(() => numberedCommentsOf(this.reading().comments));
 
-  /** The threads whose last word is the agent's. */
+  /** The threads with an open question from the agent. */
   public questions = computed(() => this.comments().filter(isQuestion));
 
   public active = signal(false);

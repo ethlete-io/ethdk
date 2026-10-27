@@ -475,7 +475,10 @@ export type CommentPlace = {
 };
 
 /** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */
-export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string };
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
+
+/** Who a thread waits for: the agent, the user to answer a question, or the user to close an answered thread. */
+export type ThreadState = 'agent' | 'question' | 'answered';
 
 export type ListedComment = CommentPlace & {
   id: string;
@@ -483,6 +486,7 @@ export type ListedComment = CommentPlace & {
   createdAt: string;
   /** The answers after the first text, oldest first. */
   replies: CommentReply[];
+  threadState: ThreadState;
   /** Why the comment points at nothing any more, or `null`. */
   stale: string | null;
 };

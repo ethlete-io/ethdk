@@ -28,6 +28,7 @@ const listed = (id: string, createdAt: string): ListedComment => ({
   text: `text ${id}`,
   createdAt,
   replies: [],
+  threadState: 'agent',
   stale: null,
 });
 
@@ -136,7 +137,7 @@ describe('CommentStore', () => {
     expect(store.draft()).toBeNull();
   });
 
-  it('posts a trimmed reply, reloads the thread, and counts the send; an agent reply makes a question', () => {
+  it('posts a trimmed reply, reloads the thread, and counts the send; only an agent question counts', () => {
     const { store } = setup();
 
     store.reply('a', '   ');
@@ -151,7 +152,15 @@ describe('CommentStore', () => {
     expect(store.questions()).toEqual([]);
 
     stored = stored.map((entry) =>
-      entry.id === 'b' ? { ...entry, replies: [{ by: 'agent', text: 'which one?', createdAt: '' }] } : entry,
+      entry.id === 'b'
+        ? {
+            ...entry,
+            replies: [{ by: 'agent', text: 'which one?', createdAt: '', question: true }],
+            threadState: 'question',
+          }
+        : entry.id === 'a'
+          ? { ...entry, replies: [{ by: 'agent', text: 'Done.', createdAt: '' }], threadState: 'answered' }
+          : entry,
     );
     changes.next();
     TestBed.tick();

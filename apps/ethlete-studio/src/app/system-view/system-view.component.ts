@@ -318,6 +318,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [restoredCamera]="restoredCamera()"
             (cameraChange)="rememberCamera($event)"
             (decide)="reloadSketches()"
+            (partOpen)="activate(shown.sketch.target)"
           >
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />

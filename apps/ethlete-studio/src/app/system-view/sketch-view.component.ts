@@ -190,6 +190,20 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             {{ openComments().length === 1 ? '1 open comment' : openComments().length + ' open comments' }}
           </button>
         }
+        @if (productCommentCount(); as count) {
+          <button
+            (click)="partOpen.emit()"
+            et-button
+            type="button"
+            variant="transparent"
+            color="surface"
+            size="sm"
+            title="Show the product part"
+            data-product-comments
+          >
+            {{ count === 1 ? '1 comment on the product part' : count + ' comments on the product part' }}
+          </button>
+        }
       </div>
 
       @if (error(); as message) {
@@ -313,6 +327,9 @@ export class SketchViewComponent {
   public cameraChange = output<Camera | null>();
 
   public decide = output<void>();
+
+  /** Asks to show the product part the sketch targets. */
+  public partOpen = output<void>();
   private canvasRef = viewChild.required(DesignCanvasComponent);
 
   protected note = signal('');
@@ -394,9 +411,13 @@ export class SketchViewComponent {
       (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
   );
 
-  protected pins = computed(() => pinsOf(this.canvas().frames, this.commentStore.comments()));
+  private sketchComments = computed(() => this.commentStore.comments().filter((comment) => !!comment.sketch));
+
+  protected pins = computed(() => pinsOf(this.canvas().frames, this.sketchComments()));
 
   protected openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.sketch().target));
+
+  protected productCommentCount = computed(() => this.openComments().filter((comment) => !comment.sketch).length);
 
   protected locked = computed(() => this.openComments().length > 0);
 
@@ -404,7 +425,7 @@ export class SketchViewComponent {
 
   protected notedFrames = computed(() =>
     withOtherSizeNotes(this.canvas().frames, {
-      comments: this.commentStore.comments(),
+      comments: this.sketchComments(),
       everyInteraction: this.showing() === 'matrix' && this.matrix().interaction === ALL,
     }),
   );

@@ -34,6 +34,7 @@ const HOVER_COMMENT: ListedComment = {
   text: 'Too light',
   createdAt: '2026-10-27T10:00:00Z',
   replies: [],
+  threadState: 'agent',
   stale: null,
 };
 

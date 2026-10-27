@@ -7,6 +7,7 @@ import {
   ageOf,
   commentGroupsOf,
   commentWhereOf,
+  isAnswered,
   isQuestion,
   lastSenderOf,
 } from './comment-pins';
@@ -48,6 +49,9 @@ import {
           <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]" data-comment-meta>
             <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
             <span class="shrink-0">{{ SENDER_LABELS[LAST_SENDER_OF(comment)] }}</span>
+            @if (IS_ANSWERED(comment)) {
+              <span class="shrink-0" data-comment-answered>answered</span>
+            }
             @if (comment.replies.length) {
               <span class="shrink-0">{{
                 comment.replies.length === 1 ? '1 reply' : comment.replies.length + ' replies'
@@ -121,5 +125,6 @@ export class CommentPanelComponent {
   protected readonly WHERE_OF = commentWhereOf;
   protected readonly AGE_OF = ageOf;
   protected readonly LAST_SENDER_OF = lastSenderOf;
+  protected readonly IS_ANSWERED = isAnswered;
   protected readonly SENDER_LABELS = SENDER_LABELS;
 }

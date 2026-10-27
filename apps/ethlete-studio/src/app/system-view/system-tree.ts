@@ -1,7 +1,7 @@
 import {
   CommentPlace,
-  CommentReply,
   ListedCall,
+  ListedComment,
   ListedPart,
   ListedProduct,
   ListedSketch,
@@ -13,7 +13,7 @@ import {
   partShotUrl,
 } from '../../host/design';
 import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
-import { isQuestion } from './comment-pins';
+import { isAnswered, isQuestion } from './comment-pins';
 
 export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'sketches' | 'legacy';
 
@@ -34,14 +34,16 @@ export type PartBadge =
   | 'sketch open'
   | 'comment open'
   | 'question'
+  | 'answered'
   | 'in progress'
   | 'ready';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
-type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string> };
+type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string>; answered: ReadonlySet<string> };
 
-const commentBadgesOf = (key: string, { commented, questioned }: CommentMarks): PartBadge[] => {
+const commentBadgesOf = (key: string, { commented, questioned, answered }: CommentMarks): PartBadge[] => {
   if (questioned.has(key)) return ['question'];
+  if (answered.has(key)) return ['answered'];
   return commented.has(key) ? ['comment open'] : [];
 };
 
@@ -161,7 +163,7 @@ export const treeOf = (
   }: {
     calls?: ListedCall[];
     sketches?: ListedSketch[];
-    comments?: (CommentPlace & { replies: readonly Pick<CommentReply, 'by'>[] })[];
+    comments?: (CommentPlace & Pick<ListedComment, 'threadState'>)[];
   } = {},
 ): TreeGroup[] => {
   const sketched = new Set(sketches.map((sketch) => sketch.target));
@@ -169,7 +171,11 @@ export const treeOf = (
     const own = comments.filter((comment) => !!comment.sketch === onSketch);
     const keyOf = (comment: CommentPlace) => comment.sketch?.target ?? comment.part;
 
-    return { commented: new Set(own.map(keyOf)), questioned: new Set(own.filter(isQuestion).map(keyOf)) };
+    return {
+      commented: new Set(own.map(keyOf)),
+      questioned: new Set(own.filter(isQuestion).map(keyOf)),
+      answered: new Set(own.filter(isAnswered).map(keyOf)),
+    };
   };
   const partMarks = marksOf(false);
   const sketchMarks = marksOf(true);

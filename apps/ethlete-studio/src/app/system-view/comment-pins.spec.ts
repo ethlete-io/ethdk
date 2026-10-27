@@ -26,6 +26,7 @@ const comment = (id: string, rest: Partial<ListedComment>): ListedComment => ({
   text: `text ${id}`,
   createdAt: `2026-10-27T10:00:0${id}Z`,
   replies: [],
+  threadState: 'agent',
   stale: null,
   ...rest,
 });
@@ -43,11 +44,10 @@ const frame = (id: string, variant?: string): CanvasFrame => ({
 });
 
 describe('isQuestion', () => {
-  it('is a question only when the agent has the last word', () => {
-    expect(isQuestion({ replies: [] })).toBe(false);
-    expect(isQuestion({ replies: [{ by: 'agent' }] })).toBe(true);
-    expect(isQuestion({ replies: [{ by: 'agent' }, { by: 'user' }] })).toBe(false);
-    expect(isQuestion({ replies: [{ by: 'user' }, { by: 'agent' }] })).toBe(true);
+  it('is a question only when the server says the agent asked one', () => {
+    expect(isQuestion({ threadState: 'agent' })).toBe(false);
+    expect(isQuestion({ threadState: 'question' })).toBe(true);
+    expect(isQuestion({ threadState: 'answered' })).toBe(false);
   });
 });
 
@@ -165,7 +165,10 @@ describe('comment pins', () => {
       problems: [],
     };
     const asked = numberedCommentsOf([
-      comment('1', { replies: [{ by: 'agent', text: 'which?', createdAt: '' }] }),
+      comment('1', {
+        replies: [{ by: 'agent', text: 'which?', createdAt: '', question: true }],
+        threadState: 'question',
+      }),
       comment('2', { sketch: { target: 'components/card', variant: 'b' } }),
     ]);
     const tree = treeOf([part], { comments: asked });
@@ -173,6 +176,24 @@ describe('comment pins', () => {
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['question']);
     expect(pinsOf([frame('a')], asked)[0]?.dot).toBe(true);
     expect(asked.map(lastSenderOf)).toEqual(['agent', 'user']);
+  });
+
+  it('marks an answered thread in the tree without a dot on its pin', () => {
+    const part = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product' as const,
+      note: null,
+      states: [],
+      problems: [],
+    };
+    const answered = numberedCommentsOf([
+      comment('1', { replies: [{ by: 'agent', text: 'Raised it.', createdAt: '' }], threadState: 'answered' }),
+    ]);
+    const tree = treeOf([part], { comments: answered });
+
+    expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['answered']);
+    expect(pinsOf([frame('a')], answered)[0]?.dot).toBeUndefined();
   });
 
   it('starts a draft only on a frame with a place', () => {
