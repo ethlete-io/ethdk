@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { ListedComment } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
-import { commentPlaceOf, numberedCommentsOf, otherSizeCountOf, pinsOf } from './comment-pins';
+import {
+  commentDraftOf,
+  commentPlaceOf,
+  draftKeyOf,
+  isCommentModeKey,
+  numberedCommentsOf,
+  otherSizeCountOf,
+  pinsOf,
+} from './comment-pins';
 import { treeOf } from './system-tree';
 
 const comment = (id: string, rest: Partial<ListedComment>): ListedComment => ({
@@ -68,5 +76,41 @@ describe('comment pins', () => {
     const tree = treeOf([part], { comments: comments.slice(1) });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['comment open']);
+  });
+
+  it('starts a draft only on a frame with a place', () => {
+    const bare: CanvasFrame = { id: 'c', src: '', label: '' };
+
+    expect(commentDraftOf([frame('a'), bare], { frameId: 'a', point: null })).toEqual({
+      frameId: 'a',
+      place: frame('a').place,
+      point: null,
+    });
+    expect(commentDraftOf([frame('a'), bare], { frameId: 'c', point: { x: 1, y: 1 } })).toBeNull();
+  });
+
+  it('sends on Enter, breaks the line on Shift+Enter, cancels on Esc, and waits while composing', () => {
+    const key = (key: string, shiftKey = false, isComposing = false) => draftKeyOf({ key, shiftKey, isComposing });
+
+    expect([key('Enter'), key('Enter', true), key('Escape'), key('Enter', false, true), key('a')]).toEqual([
+      'send',
+      null,
+      'cancel',
+      null,
+      null,
+    ]);
+  });
+
+  it('toggles comment mode on a bare C outside a text field', () => {
+    const key = (rest: Partial<Parameters<typeof isCommentModeKey>[0]>) =>
+      isCommentModeKey({ key: 'c', ctrlKey: false, metaKey: false, altKey: false, target: null, ...rest });
+
+    expect([
+      key({}),
+      key({ key: 'C' }),
+      key({ ctrlKey: true }),
+      key({ target: document.createElement('textarea') }),
+      key({ key: 'x' }),
+    ]).toEqual([true, true, false, false, false]);
   });
 });

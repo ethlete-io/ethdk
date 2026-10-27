@@ -99,7 +99,12 @@ export class DesignCanvasComponent {
   /** While on, a click on a frame that has a `place` reports the point instead of selecting the frame. */
   public pointing = input(false);
 
+  /** Where the projected `[canvasDraft]` content sits, or `null` to hide it. */
+  public draft = input<FramePoint | null>(null);
+
   public pointPick = output<FramePoint>();
+
+  public pinWithdraw = output<string>();
 
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
 
@@ -215,6 +220,13 @@ export class DesignCanvasComponent {
     });
   });
 
+  protected placedDraft = computed(() => {
+    const draft = this.draft();
+    const frame = draft && this.layout().frames.find((placed) => placed.frame.id === draft.frameId);
+
+    return frame && draft ? { x: frame.x + (draft.point?.x ?? frame.width), y: frame.y + (draft.point?.y ?? 0) } : null;
+  });
+
   protected pointTargets = computed(() =>
     this.pointing() ? this.layout().frames.filter((placed) => placed.frame.place) : [],
   );
@@ -304,6 +316,17 @@ export class DesignCanvasComponent {
       frameId: frame.id,
       point: { x: Math.max(0, (event.clientX - box.left) / scale), y: Math.max(0, (event.clientY - box.top) / scale) },
     });
+  }
+
+  protected pickCaption(frame: CanvasFrame, event: Event) {
+    event.stopPropagation();
+    if (this.consumeSwallowedClick()) return;
+    this.pointPick.emit({ frameId: frame.id, point: null });
+  }
+
+  protected withdrawPin(id: string) {
+    this.openPinId.set(null);
+    this.pinWithdraw.emit(id);
   }
 
   protected togglePin(id: string, event: MouseEvent) {

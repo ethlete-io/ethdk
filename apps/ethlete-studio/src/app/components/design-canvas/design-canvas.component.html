@@ -33,11 +33,13 @@
       [style.top.px]="placed.y"
       [style.width.px]="placed.width"
       [style.height.px]="placed.height"
+      [captionPickable]="pointing() && placed.frame.place !== undefined"
       (click)="select(placed.frame.id, $event)"
       (dblclick)="activate(placed.frame.id)"
       (heightChange)="storeHeight(placed.frame.id, $event)"
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
+      (captionClick)="pickCaption(placed.frame, $event)"
     />
   }
 
@@ -78,12 +80,36 @@
         {{ placed.pin.label }}
       </button>
       @if (placed.open) {
-        <p
-          [textContent]="placed.pin.text"
-          class="absolute top-0 left-full m-0 ml-2 w-72 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 text-[1.3rem] whitespace-pre-wrap text-[var(--et-surface-color-solid)] shadow-lg"
+        <div
+          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 text-[1.3rem] text-[var(--et-surface-color-solid)] shadow-lg"
           data-comment-text
-        ></p>
+        >
+          <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+          <button
+            (click)="withdrawPin(placed.pin.id)"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="xs"
+            data-comment-withdraw
+          >
+            Withdraw
+          </button>
+        </div>
       }
+    </div>
+  }
+
+  @if (placedDraft(); as placed) {
+    <div
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.transform]="'scale(' + labelScale() + ')'"
+      class="absolute origin-top-left"
+      data-comment-draft
+    >
+      <ng-content select="[canvasDraft]" />
     </div>
   }
 

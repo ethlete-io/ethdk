@@ -26,6 +26,10 @@ import {
 } from '../../host/design';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { FramePoint } from '../components/design-canvas/canvas-pin';
+import { CommentDraftComponent } from './comment-draft.component';
+import { commentDraftOf, pinsOf } from './comment-pins';
+import { injectCommentStore } from './comment-store';
 import { canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard';
@@ -196,17 +200,27 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [columns]="canvasColumns()"
       [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
       [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
+      [pins]="pins()"
+      [pointing]="commentStore.active()"
+      [draft]="commentStore.draft()"
       (cameraChange)="rememberCamera($event)"
+      (pointPick)="startComment($event)"
+      (pinWithdraw)="commentStore.withdraw($event)"
       class="min-h-0 flex-1"
       arrangement="matrix"
-    />
+    >
+      @if (commentStore.draft()) {
+        <ethlete-comment-draft canvasDraft />
+      }
+    </ethlete-design-canvas>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, DesignCanvasComponent, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, CommentDraftComponent, DesignCanvasComponent, ProvideColorDirective],
   host: { class: 'flex min-h-0 flex-col' },
 })
 export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
+  protected commentStore = injectCommentStore();
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public sketch = input.required<ListedSketch>();
@@ -293,6 +307,8 @@ export class SketchViewComponent {
       (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
   );
 
+  protected pins = computed(() => pinsOf(this.canvas().frames, this.commentStore.comments()));
+
   protected canvasColumns = computed(() =>
     this.canvas().columns.map(({ key, label, drawing }) => ({ key, label, muted: drawing })),
   );
@@ -304,6 +320,12 @@ export class SketchViewComponent {
   protected pickSize(size: string) {
     this.size.set(size);
     this.canvasRef().fitAll();
+  }
+
+  protected startComment(pick: FramePoint) {
+    const draft = commentDraftOf(this.canvas().frames, pick);
+
+    if (draft) this.commentStore.start(draft);
   }
 
   protected rememberCamera(camera: Camera) {

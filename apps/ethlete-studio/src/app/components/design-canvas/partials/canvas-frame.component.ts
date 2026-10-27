@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, ViewEncapsulation, computed, inject, input, output, viewChild } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { DomSanitizer } from '@angular/platform-browser';
@@ -54,12 +55,27 @@ const painted$ = (iframe: HTMLIFrameElement) => {
 @Component({
   selector: 'ethlete-canvas-frame',
   template: `
-    <span class="et-canvas-frame__label">
+    <ng-template #caption>
       {{ frame().label }}
       @if (frame().width !== undefined) {
         <span class="et-canvas-frame__width">{{ width() }}</span>
       }
-    </span>
+    </ng-template>
+    @if (captionPickable()) {
+      <span
+        [title]="'Comment on the state ' + frame().label"
+        (click)="captionClick.emit($event)"
+        (keydown.enter)="captionClick.emit($event)"
+        class="et-canvas-frame__label cursor-crosshair"
+        role="button"
+        tabindex="0"
+        data-comment-caption
+      >
+        <ng-container [ngTemplateOutlet]="caption" />
+      </span>
+    } @else {
+      <span class="et-canvas-frame__label"><ng-container [ngTemplateOutlet]="caption" /></span>
+    }
     @if (frame().error) {
       <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
     } @else {
@@ -91,7 +107,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [ProvideColorDirective],
+  imports: [NgTemplateOutlet, ProvideColorDirective],
   host: {
     class: 'et-canvas-frame',
     '[class.et-canvas-frame--selected]': 'selected()',
@@ -110,10 +126,12 @@ export class CanvasFrameComponent {
   public active = input(false);
   public selected = input(false);
   public captionBelow = input(false);
+  public captionPickable = input(false);
 
   public heightChange = output<number>();
   public widthChange = output<number>();
   public escapeKeydown = output();
+  public captionClick = output<Event>();
 
   protected iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
 

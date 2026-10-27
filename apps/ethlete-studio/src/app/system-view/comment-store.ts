@@ -10,14 +10,10 @@ import {
   listedComments$,
   writeComment$,
 } from '../../host/design';
-import { FramePlace } from '../components/design-canvas/canvas-frame';
-import { commentPlaceOf, numberedCommentsOf } from './comment-pins';
+import { CommentDraft, commentPlaceOf, numberedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
 export type CommentSource = { address: ProductAddress | null; revision: number };
-
-/** A comment the user is typing, on a frame and optionally at a point on it. */
-export type CommentDraft = { frameId: string; place: FramePlace; point: { x: number; y: number } | null };
 
 const NO_COMMENTS: ListedComments = { comments: [], unreadable: [] };
 

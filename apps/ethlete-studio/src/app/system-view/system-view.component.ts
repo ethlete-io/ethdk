@@ -15,6 +15,8 @@ import {
   listedSystem$,
   transferCall$,
 } from '../../host/design';
+import { CanvasFrame } from '../components/design-canvas/canvas-frame';
+import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import {
   ThemePick,
@@ -42,6 +44,8 @@ import {
   sketchKeyOf,
   treeOf,
 } from './system-tree';
+import { CommentDraftComponent } from './comment-draft.component';
+import { commentDraftOf, isCommentModeKey, pinsOf } from './comment-pins';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
@@ -137,6 +141,21 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       }
     </ng-template>
 
+    <ng-template #commentModeButton>
+      <button
+        [pressed]="commentStore.active()"
+        (click)="commentStore.toggle()"
+        et-button
+        type="button"
+        variant="outline"
+        color="surface"
+        size="sm"
+        title="Comment mode (C)"
+      >
+        Comment
+      </button>
+    </ng-template>
+
     <main class="relative grid min-h-0 min-w-0">
       @if (!port()) {
         <p [class]="NOTE">Start the design server to see the design system.</p>
@@ -219,21 +238,30 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             (decide)="reloadSketches()"
           >
             <ng-container [ngTemplateOutlet]="themeBar" />
+            <ng-container [ngTemplateOutlet]="commentModeButton" />
           </ethlete-sketch-view>
         } @else if (part()) {
-          @if (themeSwitches().length > 0) {
-            <div class="absolute top-3 right-4 z-1 flex gap-2">
-              <ng-container [ngTemplateOutlet]="themeBar" />
-            </div>
-          }
+          <div class="absolute top-3 right-4 z-1 flex gap-2">
+            <ng-container [ngTemplateOutlet]="themeBar" />
+            <ng-container [ngTemplateOutlet]="commentModeButton" />
+          </div>
           <ethlete-design-canvas
             [frames]="frames()"
             [arrangement]="arrangement()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
+            [pins]="partPins()"
+            [pointing]="commentStore.active()"
+            [draft]="commentStore.draft()"
             (cameraChange)="rememberCamera($event)"
+            (pointPick)="startComment(frames(), $event)"
+            (pinWithdraw)="commentStore.withdraw($event)"
             class="min-h-0"
-          />
+          >
+            @if (commentStore.draft()) {
+              <ethlete-comment-draft canvasDraft />
+            }
+          </ethlete-design-canvas>
         } @else {
           <p [class]="NOTE">This product has no parts yet.</p>
         }
@@ -249,13 +277,17 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
     ProvideColorDirective,
     ProvideSurfaceDirective,
     SketchViewComponent,
+    CommentDraftComponent,
   ],
   providers: [provideCommentStore()],
-  host: { class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)]' },
+  host: {
+    class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)]',
+    '(window:keydown)': 'handleCommentKey($event)',
+  },
 })
 export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
-  private commentStore = injectCommentStore();
+  protected commentStore = injectCommentStore();
   public port = input<number | null>(null);
   public epoch = input(0);
   public checkout = input('');
@@ -551,6 +583,10 @@ export class SystemViewComponent {
     ]);
   });
 
+  protected partPins = computed(() => pinsOf(this.frames(), this.commentStore.comments()));
+
+  private commentable = computed(() => !this.call() && (this.sketchShown() !== null || this.part() !== null));
+
   constructor() {
     this.commentStore.connect(
       computed(() => {
@@ -560,6 +596,18 @@ export class SystemViewComponent {
         return { address: port && product ? { port, product } : null, revision: this.tick() };
       }),
     );
+  }
+
+  protected startComment(frames: CanvasFrame[], pick: FramePoint) {
+    const draft = commentDraftOf(frames, pick);
+
+    if (draft) this.commentStore.start(draft);
+  }
+
+  protected handleCommentKey(event: KeyboardEvent) {
+    if (!this.commentable()) return;
+    if (event.key === 'Escape' && this.commentStore.active()) this.commentStore.end();
+    else if (isCommentModeKey(event) && !event.repeat) this.commentStore.toggle();
   }
 
   protected entryOf(value: unknown) {
