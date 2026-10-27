@@ -760,10 +760,31 @@ two `et-select`s and the empty-state screen, then the create form and its endpoi
 Slice 4: done on 2026-10-27, with the frame sizes and the sketch matrix (see "Sketch matrix, as
 built" for its open points).
 
-Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
-started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
-In progress since 2026-10-27: the Studio comments, as in "Comment UI decisions". Open after them:
-the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
+Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are half
+built:
+
+- Done: the comment file stores `size` (preset name, width or `fitted`) with a stale rule on a missing
+  size, `et design comment --size` (b3054bb4e, 7f2177aba); the design server signals comment changes
+  on the SSE stream `/__design/comment-events`, and the Tauri watcher no longer reports a change to
+  comment files only, so frames stay (7f2177aba, 2a52c7d33). Studio groundwork in 2a52c7d33, not
+  wired into any view: `FramePlace` on every part and matrix frame, `comment-pins.ts` (numbering,
+  `pinsOf`, `otherSizeCountOf`, `commentWhereOf`), the tree badge `comment open` (`treeOf` takes
+  `comments`), the canvas `pins`, `pointing` (overlay per frame with a `place`, `pointPick`), pin
+  popover with the text, `openPin()`, `focusFrame()`, and the host calls `listedComments$`,
+  `writeComment$`, `doneComment$`, `commentChanges$`.
+- Remaining, in order: (1) a comment store provided in `system-view` (comments of the product
+  reloaded on `commentChanges$` and `tick`, mode, panel open, write and withdraw); (2) in the part view
+  and the sketch view: toolbar button and key C, Esc ends the mode; bind `pins` and `pointing`; a draft
+  popover at the click point with an `et` textarea (Enter sends, Shift+Enter newline, Esc cancels,
+  the mode stays); a click on a tile label posts a state comment (`point: null` - the canvas-frame
+  caption needs a click output); (3) "Withdraw" in the pin popover (canvas output, calls
+  `doneComment$`); (4) the collapsible right panel with the selected part's comments, a click calls
+  `openPin`; (5) the count of other-size comments on a frame label; (6) the sketch view disables
+  Merge and Discard with "N open comments", a click opens the panel; (7) an open comment in
+  `studio-lab`; (8) verify headlessly (stubbed host, scratch server on 4492) and write "Studio
+  comments, as built"; the Studio changeset then needs `patch`, not `none`.
+  In progress since 2026-10-27: the Studio comments, as in "Comment UI decisions". Open after them:
+  the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
