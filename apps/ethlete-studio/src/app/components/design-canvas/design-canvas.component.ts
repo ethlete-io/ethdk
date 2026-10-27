@@ -288,7 +288,7 @@ export class DesignCanvasComponent {
     if (this.activeId() !== id) this.activeId.set(null);
   }
 
-  protected pickPoint(frame: { id: string; width: number }, event: MouseEvent | KeyboardEvent) {
+  protected pickPoint(frame: { id: string; width: number }, event: Event) {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     if (!(event instanceof MouseEvent)) {
