@@ -131,4 +131,63 @@
   .studio__system-empty code {
     font-family: var(--font-mono);
   }
+
+  .studio__system-call {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .studio__system-call-head {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    padding: 1.2rem 1.6rem;
+    border-bottom: 0.1rem solid var(--et-surface-border-solid);
+  }
+
+  .studio__system-call-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .studio__system-call-title h2 {
+    margin: 0.2rem 0 0;
+    overflow: hidden;
+    font-weight: 600;
+    font-size: 1.5rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .studio__system-call-eyebrow {
+    color: var(--et-surface-color-subtle-solid);
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+  }
+
+  .studio__system-call-error {
+    color: var(--et-theme-color-primary-solid);
+    font-size: 1.2rem;
+  }
+
+  .studio__system-button {
+    padding: 0.5rem 1rem;
+    border: 0.1rem solid var(--et-surface-border-solid);
+    border-radius: 0.6rem;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 1.2rem;
+    cursor: pointer;
+  }
+
+  .studio__system-button:hover {
+    background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
+  }
+
+  .studio__system-button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 }

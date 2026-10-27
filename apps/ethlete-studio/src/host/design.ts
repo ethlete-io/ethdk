@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, from, map, of, switchMap } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
@@ -395,3 +395,44 @@ export const partShotUrl = (address: PartAddress & { preset: string; revision?: 
   themeQuery(address) +
   (address.epoch ? `&epoch=${address.epoch}` : '') +
   (address.revision ? `&revision=${address.revision}` : '');
+
+/** A call of the old design-call workflow, as the design server lists it. One that fails to load carries its error. */
+export type ListedCall =
+  | {
+      slug: string;
+      project: string;
+      eyebrow: string;
+      headline: string;
+      stage: string | null;
+      legacy: boolean;
+      transferred: boolean;
+      closed: string | null;
+      frameWidth: number;
+      variants: { key: string; name: string }[];
+    }
+  | { slug: string; project: string; error: string };
+
+export const listedCalls$ = (port: number): Observable<ListedCall[]> =>
+  fromFetch(`http://localhost:${port}/__design/calls`).pipe(
+    switchMap((response) => {
+      if (!response.ok) throw new Error(`The design server answered ${response.status}.`);
+
+      return response.json() as Promise<ListedCall[]>;
+    }),
+  );
+
+export type TransferResult = 'marked' | 'already' | 'missing' | 'unreadable';
+
+/** Writes `transferred: true` into a call's `call.ts`. A missing or unreadable call fails. */
+export const transferCall$ = (port: number, slug: string): Observable<TransferResult> =>
+  fromFetch(`http://localhost:${port}/__design/transfer?call=${encodeURIComponent(slug)}`, { method: 'POST' }).pipe(
+    switchMap((response) =>
+      from(response.json() as Promise<{ result: TransferResult }>).pipe(
+        map(({ result }) => {
+          if (!response.ok) throw new Error(`The design server could not mark ${slug} transferred: ${result}.`);
+
+          return result;
+        }),
+      ),
+    ),
+  );

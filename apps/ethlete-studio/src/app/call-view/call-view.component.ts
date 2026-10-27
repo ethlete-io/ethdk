@@ -82,7 +82,7 @@ import {
   withTurn,
   writeSessions,
 } from './sessions';
-import { ThemePick, rememberTheme, rememberView, rememberedView, themeKey, themeName } from './remembered';
+import { StudioView, ThemePick, rememberTheme, rememberView, rememberedView, themeKey, themeName } from './remembered';
 
 const THUMB_WIDTH = 180;
 
@@ -754,7 +754,7 @@ const SETTLE_MS = 300;
       <span class="studio__status-item">
         <button
           [class.studio__status-button--on]="view() === 'calls'"
-          (click)="view.set('calls')"
+          (click)="showView('calls')"
           class="studio__status-button"
           type="button"
         >
@@ -762,7 +762,7 @@ const SETTLE_MS = 300;
         </button>
         <button
           [class.studio__status-button--on]="view() === 'system'"
-          (click)="view.set('system')"
+          (click)="showView('system')"
           class="studio__status-button"
           type="button"
         >
@@ -926,7 +926,7 @@ export class CallViewComponent {
   private run: Subscription | null = null;
 
   private watch: Subscription | null = null;
-  protected view = signal<'calls' | 'system'>('calls');
+  protected view = signal<StudioView>(rememberedView().view ?? 'calls');
 
   protected design = signal<Project | null>(null);
   protected epoch = signal(0);
@@ -1273,6 +1273,11 @@ export class CallViewComponent {
 
       if (rail && count) rail.scrollTop = rail.scrollHeight;
     });
+  }
+
+  protected showView(view: StudioView) {
+    this.view.set(view);
+    rememberView({ view });
   }
 
   protected setChatHidden(chatHidden: boolean) {

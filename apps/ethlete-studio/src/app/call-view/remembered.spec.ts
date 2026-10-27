@@ -30,6 +30,14 @@ describe('remembered view', () => {
     });
   });
 
+  it('remembers the calls or system view and drops an unknown one', () => {
+    rememberView({ view: 'system' });
+    expect(rememberedView().view).toBe('system');
+
+    localStorage.setItem(KEY, JSON.stringify({ view: 'grid' }));
+    expect(rememberedView().view).toBeUndefined();
+  });
+
   it('merges a patch into what was stored', () => {
     rememberView({ checkout: '/a', project: 'p' });
     rememberView({ project: '' });

@@ -10,7 +10,11 @@ export type ViewState = {
   chatHidden: boolean;
   /** The theme picked per design project, keyed by `themeKey`. */
   themes: Record<string, ThemePick>;
+  /** Whether the window shows the calls or the design system. */
+  view: StudioView;
 };
+
+export type StudioView = 'calls' | 'system';
 
 export type ThemePick = { surface?: string; color?: string };
 
@@ -50,7 +54,7 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, variant, settledFeature, chatHidden, themes } = stored as Partial<ViewState>;
+    const { checkout, project, slug, variant, settledFeature, chatHidden, themes, view } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -60,6 +64,7 @@ export const rememberedView = (): Partial<ViewState> => {
       settledFeature: typeof settledFeature === 'string' ? settledFeature : undefined,
       chatHidden: typeof chatHidden === 'boolean' ? chatHidden : undefined,
       themes: themePicks(themes),
+      view: view === 'calls' || view === 'system' ? view : undefined,
     };
   } catch {
     return {};

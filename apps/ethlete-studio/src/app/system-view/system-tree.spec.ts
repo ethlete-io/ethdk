@@ -1,5 +1,5 @@
-import { ListedPart, ListedProduct } from '../../host/design';
-import { framesOf, treeOf } from './system-tree';
+import { ListedCall, ListedPart, ListedProduct } from '../../host/design';
+import { callFramesOf, framesOf, treeOf } from './system-tree';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -43,6 +43,80 @@ describe('treeOf', () => {
     ]);
 
     expect(group?.entries.map((entry) => entry.badges)).toEqual([['from base'], ['overridden', 'error'], []]);
+  });
+});
+
+const call = (overrides: Partial<Extract<ListedCall, { headline: string }>> = {}): ListedCall => ({
+  slug: 'acme/components/button',
+  project: 'acme',
+  eyebrow: 'Button',
+  headline: 'Which button?',
+  stage: 'component',
+  legacy: true,
+  transferred: false,
+  closed: null,
+  frameWidth: 960,
+  variants: [
+    { key: 'a', name: 'Solid' },
+    { key: 'b', name: 'Ghost' },
+  ],
+  ...overrides,
+});
+
+describe('treeOf with calls', () => {
+  it('lists calls of one project in a single Legacy group after the parts', () => {
+    const tree = treeOf(
+      [part()],
+      [
+        call(),
+        call({ slug: 'acme/pages/home', transferred: true }),
+        { slug: 'acme/x', project: 'acme', error: 'boom' },
+      ],
+    );
+
+    expect(tree.map((group) => group.label)).toEqual(['Components', 'Legacy']);
+    expect(tree[1]?.entries).toEqual([
+      { key: 'legacy:acme/components/button', name: 'components/button', title: 'Which button?', badges: [] },
+      { key: 'legacy:acme/pages/home', name: 'pages/home', title: 'Which button?', badges: ['transferred'] },
+      { key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] },
+    ]);
+  });
+
+  it('splits Legacy per project once calls span several, and hides it without calls', () => {
+    const tree = treeOf([], [call(), call({ slug: 'other/a', project: 'other' })]);
+
+    expect(tree.map((group) => [group.key, group.label])).toEqual([
+      ['legacy/acme', 'Legacy · acme'],
+      ['legacy/other', 'Legacy · other'],
+    ]);
+    expect(treeOf([part()], [])).toHaveLength(1);
+  });
+});
+
+describe('callFramesOf', () => {
+  it('draws one frame per variant at the call width', () => {
+    const frames = callFramesOf({ port: 4402, call: call(), epoch: 2, revision: 3, surface: 'dark' });
+
+    expect(frames.map((frame) => [frame.id, frame.label, frame.width, frame.height])).toEqual([
+      ['a', 'Solid', 960, undefined],
+      ['b', 'Ghost', 960, undefined],
+    ]);
+    expect(frames[0]?.src).toBe(
+      'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2',
+    );
+    expect(frames[0]?.screenshot).toBe(
+      'http://localhost:4402/__design/thumb?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3',
+    );
+  });
+
+  it('falls back to 1280 without a width and fails one frame for a call that does not load', () => {
+    expect(callFramesOf({ port: 1, call: call({ frameWidth: 0 }) })[0]?.width).toBe(1280);
+    expect(
+      callFramesOf({ port: 1, call: { slug: 'acme/x', project: 'acme', error: 'boom' } }).map((frame) => [
+        frame.width,
+        frame.error,
+      ]),
+    ).toEqual([[1280, 'boom']]);
   });
 });
 
