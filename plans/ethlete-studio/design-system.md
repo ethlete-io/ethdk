@@ -670,7 +670,10 @@ Open points, each with a recommendation:
 
 - The matrix 550 px below the header (seen in the real app on `components/button`) did not happen
   headlessly. Assumed cause: an old saved fit camera comes back as a zoom. 91cf0ed1d saves only a
-  camera the user moved. Recommendation: check it again in the real app.
+  camera the user moved. Checked in the real app (2026-10-27): still there in the part view of
+  `studio-lab` `components/button` (the matrix sits centred, cut at the right), not in the sketch
+  view. The sketch view shows about 150 px between the solid and the outline group. Both are queued
+  as the builder slice after the frame reload, with a test that bites.
 
 ### Agent author decisions (2026-10-27)
 
