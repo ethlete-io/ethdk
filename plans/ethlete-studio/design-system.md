@@ -749,13 +749,16 @@ Open points, each with a recommendation:
 
 Open points, each with a recommendation:
 
-- The matrix 550 px below the header (seen in the real app on `components/button`) did not happen
-  headlessly. Assumed cause: an old saved fit camera comes back as a zoom. 91cf0ed1d saves only a
-  camera the user moved. Checked in the real app (2026-10-27): still there in the part view of
-  `studio-lab` `components/button` (the matrix sits centred, cut at the right), not in the sketch
-  view. The sketch view showed about 150 px between the solid and the outline group; 59e2bdb09 set
-  the group gap to the row gap × 2 (see "Sketch matrix gap decisions"), not yet checked in the real app. Both are queued
-  as the builder slice after the frame reload, with a test that bites.
+- Resolved (4798ba304): the matrix 550 px below the header came from an old stored camera, not from
+  layout. A restored camera skips the fit, and only a fit deleted a stored camera, so fit cameras
+  saved before 91cf0ed1d never went away (Tom's `studio-lab` `components/button` held x 250.7,
+  y 742.5, zoom 1.39). The camera store moved to the key `movedCameras` (`remembered.ts`); old
+  `cameras` entries are ignored and dropped on the next write. Side effect, seen once: every part
+  fits fresh, and cameras placed by hand before are forgotten. A spec fails without the fix. After:
+  frames at y 128, zoom 100 %.
+- Resolved: the sketch group gap in the real geometry (zoom 0.948) is 46 px between rows and 91 px
+  between the solid and the outline group, so 48 and 96 world px, as in "Sketch matrix gap
+  decisions".
 
 ### Agent author decisions (2026-10-27)
 
