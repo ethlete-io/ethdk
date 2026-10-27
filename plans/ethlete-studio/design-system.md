@@ -1132,6 +1132,12 @@ Open points, each with a recommendation:
   cli in `dist`, so a `dist/apps/ethlete-studio/cli-runtime` older than its source passes as
   `running`. In a dev build only, the footer also shows `stale` when the `libs/cli` source is newer
   than the built cli. A restart rebuilds the cli, and the line goes back to `running`.
+- Built in 6e818c148 (`design_server.rs` `judged`, behind `cfg!(debug_assertions)`): `stale` when a
+  file in `libs/cli/src`, `libs/cli/design` or `libs/cli/package.json` has a newer mtime than the
+  built cli's `src/index.js`. It skips `node_modules`, dot folders and `*.spec.*`, stops at the first
+  newer file or after 5000 entries, and a missing build counts as not stale. The Rust test
+  `a_cli_source_newer_than_its_build_reads_as_outdated` fails without the check. Known gap: a
+  deleted source file alone does not mark the server stale. Not yet seen in the real footer.
 
 ### Studio comments, as built (2026-10-27)
 
