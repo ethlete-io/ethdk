@@ -52,11 +52,12 @@ describe('upwardDependenciesOf', () => {
     ]);
   });
 
-  it('flags a foundation that uses anything', () => {
+  it('lets a foundation use another foundation, and flags anything else', () => {
     const target = acme();
 
+    write(target, 'acme/foundations/logo/logo.ts', part("import tokens from '@system/foundations/tokens';"));
     write(target, 'acme/foundations/palette/palette.ts', part("import button from '@system/components/button';"));
 
-    expect(rulesOf(target)).toEqual(['foundations may use no other layer, not @system/components/button']);
+    expect(rulesOf(target)).toEqual(['foundations may use foundations, not @system/components/button']);
   });
 });

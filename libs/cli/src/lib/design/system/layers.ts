@@ -4,7 +4,7 @@ export type Layer = (typeof LAYERS)[number];
 
 /** The layers a part of each layer may import. */
 export const LAYER_USES: Record<Layer, readonly Layer[]> = {
-  foundations: [],
+  foundations: ['foundations'],
   components: ['foundations', 'components'],
   elements: ['foundations', 'components'],
   pages: ['foundations', 'components', 'elements'],

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { isLayer, mayUse } from './layers';
 
 describe('layers', () => {
-  it('lets each layer use only the layers below it, and components each other', () => {
-    expect(mayUse({ from: 'foundations', to: 'foundations' })).toBe(false);
+  it('lets each layer use only the layers below it, and foundations and components their own layer', () => {
+    expect(mayUse({ from: 'foundations', to: 'foundations' })).toBe(true);
     expect(mayUse({ from: 'components', to: 'components' })).toBe(true);
     expect(mayUse({ from: 'components', to: 'elements' })).toBe(false);
     expect(mayUse({ from: 'elements', to: 'elements' })).toBe(false);
