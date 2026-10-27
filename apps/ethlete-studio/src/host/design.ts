@@ -450,3 +450,82 @@ export const transferCall$ = (port: number, slug: string): Observable<TransferRe
       ),
     ),
   );
+
+export type SketchDecision =
+  | { kind: 'pick'; variant: string; comment?: string; decidedAt: string }
+  | { kind: 'discard'; comment?: string; decidedAt: string };
+
+/** An open sketch of a product: `target` is `<layer>/<name>`, and each variant lists the rule problems it has laid over the product. */
+export type ListedSketch = {
+  target: string;
+  status: 'in progress' | 'ready';
+  createdAt: string;
+  decision?: SketchDecision;
+  product: string;
+  layer: string;
+  name: string;
+  dir: string;
+  variants: string[];
+  problems: { variant: string; problems: SystemProblem[] }[];
+};
+
+export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
+
+/** The parts a merge of one variant changes, and the elements and pages that show them, each as `<layer>/<name>`. */
+export type MergePreview = { changed: string[]; affected: string[] };
+
+export type SketchAddress = { port: number; product: string; sketch: string };
+
+const sketchUrl = ({ path, port, product, sketch, extra = '' }: SketchAddress & { path: string; extra?: string }) =>
+  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(sketch)}${extra}`;
+
+/** Reads a design server answer, and fails with the server's own `error` message when it refuses. */
+const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
+  fromFetch(url, init).pipe(
+    switchMap((response) =>
+      from(response.json().catch(() => null) as Promise<unknown>).pipe(
+        map((body) => {
+          if (response.ok) return body as TResult;
+
+          const error =
+            body !== null && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+              ? body.error
+              : null;
+
+          throw new Error(error ?? designReadError(response.status));
+        }),
+      ),
+    ),
+  );
+
+// A string body goes as text/plain, a simple request: the design server answers no CORS preflight.
+const postJson = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.stringify(body) });
+
+export const listedSketches$ = (port: number, product: string): Observable<ListedSketches> =>
+  designAnswer$<ListedSketches>(`http://localhost:${port}/__design/sketches?product=${encodeURIComponent(product)}`);
+
+export const sketchPreview$ = (address: SketchAddress & { variant: string }): Observable<MergePreview> =>
+  designAnswer$<MergePreview>(
+    sketchUrl({ ...address, path: 'sketch-preview', extra: `&variant=${encodeURIComponent(address.variant)}` }),
+  );
+
+export type SketchDecisionWrite =
+  { kind: 'pick'; variant: string; comment?: string } | { kind: 'discard'; comment?: string };
+
+/** Writes the user's pick or discard into `sketch.json`. A pick needs a sketch that is ready. */
+export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWrite): Observable<void> =>
+  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-decision' }), postJson(decision)).pipe(
+    map(() => undefined),
+  );
+
+/** Merges the picked variant into the product with `note` as the reason, and answers the merged parts. */
+export const mergeSketch$ = (address: SketchAddress, note: string): Observable<string[]> =>
+  designAnswer$<{ merged: string[] }>(sketchUrl({ ...address, path: 'sketch-merge' }), postJson({ note })).pipe(
+    map(({ merged }) => merged),
+  );
+
+/** Deletes the sketch with all its variants. */
+export const discardSketch$ = (address: SketchAddress): Observable<void> =>
+  designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-discard' }), { method: 'POST' }).pipe(
+    map(() => undefined),
+  );

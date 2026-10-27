@@ -1,10 +1,19 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
+import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { catchError, finalize, from, map, of, switchMap, tap } from 'rxjs';
-import { ListedCall, ListedProduct, Themes, listedCalls$, listedSystem$, transferCall$ } from '../../host/design';
+import {
+  ListedCall,
+  ListedProduct,
+  ListedSketch,
+  Themes,
+  listedCalls$,
+  listedSketches$,
+  listedSystem$,
+  transferCall$,
+} from '../../host/design';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import {
   ThemePick,
@@ -28,8 +37,10 @@ import {
   isGroupOpen,
   isSectionOpen,
   partKeyOf,
+  sketchKeyOf,
   treeOf,
 } from './system-tree';
+import { SketchViewComponent } from './sketch-view.component';
 
 type Reading = { products: ListedProduct[]; error: string | null };
 
@@ -141,17 +152,41 @@ type Reading = { products: ListedProduct[]; error: string | null };
         @if (read.error) {
           <p class="studio__system-note">{{ read.error }}</p>
         } @else if (read.products.length === 0) {
-          <div class="studio__system-empty">
-            <h2>No product yet</h2>
+          <div
+            class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]"
+          >
+            <h2 class="mb-2 text-h4 text-[var(--et-surface-color-solid)]">No product yet</h2>
             <p>Run this in the checkout to create one:</p>
-            <div class="studio__system-command">
-              <pre>{{ NEW_PRODUCT_COMMAND }}</pre>
-              <button (click)="copyCommand()" class="studio__system-button" type="button">
+            <div class="my-3 flex items-center gap-2">
+              <pre
+                class="m-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] p-3 font-mono text-[var(--et-surface-color-solid)]"
+                >{{ NEW_PRODUCT_COMMAND }}</pre>
+              <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
                 {{ copied() ? 'Copied' : 'Copy' }}
               </button>
             </div>
-            <p>Its parts live in <code>.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.</p>
+            <p>
+              Its parts live in
+              <code class="font-mono">.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.
+            </p>
           </div>
+        } @else if (sketchShown(); as shown) {
+          <ethlete-sketch-view
+            [port]="shown.port"
+            [product]="shown.product"
+            [sketch]="shown.sketch"
+            [part]="shown.part"
+            [epoch]="epoch()"
+            [revision]="tick()"
+            [surface]="surface()"
+            [color]="color()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            (cameraChange)="rememberCamera($event)"
+            (decide)="reloadSketches()"
+          >
+            <ng-container [ngTemplateOutlet]="themeBar" />
+          </ethlete-sketch-view>
         } @else if (part()) {
           @if (themeSwitches().length > 0) {
             <div class="studio__system-themes">
@@ -173,7 +208,15 @@ type Reading = { products: ListedProduct[]; error: string | null };
   `,
   styleUrl: './system-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, TREE_IMPORTS, DesignCanvasComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [
+    BUTTON_IMPORTS,
+    NgTemplateOutlet,
+    TREE_IMPORTS,
+    DesignCanvasComponent,
+    ProvideColorDirective,
+    ProvideSurfaceDirective,
+    SketchViewComponent,
+  ],
   host: { class: 'studio__system' },
 })
 export class SystemViewComponent {
@@ -216,6 +259,8 @@ export class SystemViewComponent {
     { initialValue: [] },
   );
 
+  private sketchReloads = signal(0);
+
   private pickedProduct = signal(rememberedView().systemProduct ?? null);
 
   private picked = signal(rememberedView().systemEntry ?? null);
@@ -232,7 +277,50 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  private tree = computed(() => treeOf(this.product()?.parts ?? [], this.calls()));
+  public sketches = toSignal(
+    toObservable(
+      computed(() => ({
+        port: this.port(),
+        product: this.product()?.name,
+        epoch: this.epoch(),
+        tick: this.tick(),
+        reloads: this.sketchReloads(),
+      })),
+    ).pipe(
+      switchMap(({ port, product }) =>
+        port && product
+          ? listedSketches$(port, product).pipe(
+              map(({ sketches }) => sketches),
+              catchError(() => of<ListedSketch[]>([])),
+            )
+          : of<ListedSketch[]>([]),
+      ),
+    ),
+    { initialValue: [] },
+  );
+
+  private tree = computed(() =>
+    treeOf(this.product()?.parts ?? [], { calls: this.calls(), sketches: this.sketches() }),
+  );
+
+  private sketch = computed(
+    () => this.sketches().find((listed) => sketchKeyOf(listed.target) === this.picked()) ?? null,
+  );
+
+  protected sketchShown = computed(() => {
+    const port = this.port();
+    const product = this.product();
+    const sketch = this.sketch();
+
+    if (!port || !product || !sketch) return null;
+
+    return {
+      port,
+      product,
+      sketch,
+      part: product.parts.find((candidate) => partKeyOf(candidate) === sketch.target) ?? null,
+    };
+  });
 
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
 
@@ -248,15 +336,21 @@ export class SystemViewComponent {
 
   protected selectedKey = computed(() => {
     const call = this.call();
+    const sketch = this.sketch();
 
-    return call ? callKeyOf(call.slug) : (this.part()?.key ?? null);
+    if (call) return callKeyOf(call.slug);
+
+    return sketch ? sketchKeyOf(sketch.target) : (this.part()?.key ?? null);
   });
 
   protected cameraKey = computed(() => {
     const call = this.call();
     const part = this.part();
 
+    const sketch = this.sketch();
+
     if (call) return callKeyOf(call.slug);
+    if (sketch) return `${this.product()?.name} ${sketchKeyOf(sketch.target)}`;
 
     return part ? `${this.product()?.name} ${part.key}` : null;
   });
@@ -290,9 +384,9 @@ export class SystemViewComponent {
     };
   });
 
-  private surface = computed(() => this.shownThemes()?.surface.current);
+  protected surface = computed(() => this.shownThemes()?.surface.current);
 
-  private color = computed(() => this.shownThemes()?.color.current);
+  protected color = computed(() => this.shownThemes()?.color.current);
 
   protected themeSwitches = computed(() => {
     const themes = this.shownThemes();
@@ -452,6 +546,7 @@ export class SystemViewComponent {
     const existing = new Set([
       ...this.calls().map((listed) => callKeyOf(listed.slug)),
       ...this.products().flatMap((listed) => listed.parts.map((part) => `${listed.name} ${partKeyOf(part)}`)),
+      ...this.sketches().map((listed) => `${listed.product} ${sketchKeyOf(listed.target)}`),
     ]);
     const cameras = camerasWith({ cameras: this.cameras(), key, camera, existing });
 
@@ -467,6 +562,10 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  protected reloadSketches() {
+    this.sketchReloads.update((value) => value + 1);
   }
 
   protected markTransferred(slug: string) {

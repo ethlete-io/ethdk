@@ -1,0 +1,281 @@
+import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, output, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { BUTTON_IMPORTS } from '@ethlete/components';
+import { ProvideColorDirective } from '@ethlete/core';
+import { Observable, catchError, concatMap, finalize, map, of, switchMap } from 'rxjs';
+import {
+  ListedPart,
+  ListedProduct,
+  ListedSketch,
+  MergePreview,
+  SketchAddress,
+  decideSketch$,
+  discardSketch$,
+  mergeSketch$,
+  sketchPreview$,
+} from '../../host/design';
+import { Camera } from '../components/design-canvas/canvas-math';
+import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { canPick, pickedVariantOf, sketchFramesOf } from './system-tree';
+
+type Busy = 'pick' | 'merge' | 'discard';
+
+type PreviewReading = { preview: MergePreview | null; error: string | null };
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
+
+@Component({
+  selector: 'ethlete-sketch-view',
+  template: `
+    @let shown = sketch();
+    <header class="flex items-center gap-3 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
+      <div class="min-w-0 flex-1">
+        <span class="font-mono text-small text-[var(--et-surface-color-subtle-solid)]">
+          Sketch · {{ shown.product }}
+        </span>
+        <h2 class="truncate text-h4">{{ shown.target }}</h2>
+      </div>
+      <ng-content />
+      <span
+        [class]="
+          shown.status === 'in progress'
+            ? 'border-[var(--et-theme-color-primary-solid)] text-[var(--et-theme-color-primary-solid)]'
+            : 'border-[var(--et-surface-border-solid)] text-[var(--et-surface-color-subtle-solid)]'
+        "
+        class="whitespace-nowrap rounded-full border px-2 font-mono text-small"
+      >
+        {{ shown.status }}
+      </span>
+    </header>
+
+    <section
+      class="flex flex-col gap-2 border-b border-[var(--et-surface-border-solid)] px-4 py-3 text-small"
+      aria-label="Decision"
+    >
+      <div class="flex flex-wrap gap-3" role="group" aria-label="Variants">
+        @for (variant of shown.variants; track variant) {
+          <div class="flex max-w-80 flex-col gap-1">
+            <button
+              [pressed]="variant === picked()"
+              [disabled]="busy() !== null || !pickable(variant)"
+              [title]="pickTitle(variant)"
+              (click)="pick(variant)"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+            >
+              {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
+            </button>
+            @for (problem of problemsOf(variant); track $index) {
+              <span [title]="problem.file" class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">
+                {{ problem.rule }}: {{ problem.message }}
+              </span>
+            }
+          </div>
+        }
+      </div>
+
+      @if (shown.status === 'in progress') {
+        <p class="text-[var(--et-surface-color-subtle-solid)]">
+          The agent is still drawing. You can pick once the sketch is ready.
+        </p>
+      }
+
+      @if (picked(); as variant) {
+        @if (previewReading(); as reading) {
+          @if (reading.error) {
+            <p class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ reading.error }}</p>
+          } @else if (reading.preview; as preview) {
+            <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
+              <dt class="text-[var(--et-surface-color-subtle-solid)]">Merging {{ variant }} changes</dt>
+              <dd class="font-mono">{{ preview.changed.join(', ') || 'nothing' }}</dd>
+              <dt class="text-[var(--et-surface-color-subtle-solid)]">Shown in</dt>
+              <dd class="font-mono">{{ preview.affected.join(', ') || 'no element or page' }}</dd>
+            </dl>
+          }
+        }
+      }
+
+      <div class="flex items-center gap-2">
+        <input
+          [value]="note()"
+          (input)="takeNote($event)"
+          class="min-w-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2.5 py-1 text-[var(--et-surface-color-solid)]"
+          placeholder="Why this shape - the note on the part, needed for a merge"
+          aria-label="Note"
+        />
+        <button
+          [disabled]="busy() !== null || !picked() || note().trim() === ''"
+          (click)="merge()"
+          et-button
+          type="button"
+          variant="outline"
+          color="surface"
+          size="sm"
+        >
+          {{ busy() === 'merge' ? 'Merging…' : 'Merge ' + (picked() ?? '') }}
+        </button>
+        <button
+          [disabled]="busy() !== null"
+          (click)="discard()"
+          et-button
+          type="button"
+          variant="transparent"
+          color="surface"
+          size="sm"
+        >
+          {{ confirmingDiscard() ? 'Discard all variants?' : 'Discard sketch' }}
+        </button>
+      </div>
+
+      @if (error(); as message) {
+        <p class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ message }}</p>
+      }
+    </section>
+
+    <ethlete-design-canvas
+      [frames]="frames()"
+      [cameraKey]="cameraKey()"
+      [restoredCamera]="restoredCamera()"
+      (cameraChange)="cameraChange.emit($event)"
+      class="min-h-0"
+    />
+  `,
+  encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS, DesignCanvasComponent, ProvideColorDirective],
+  host: { class: 'grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)]' },
+})
+export class SketchViewComponent {
+  private destroyRef = inject(DestroyRef);
+  public port = input.required<number>();
+  public product = input.required<ListedProduct>();
+  public sketch = input.required<ListedSketch>();
+  public part = input<ListedPart | null>(null);
+  public epoch = input(0);
+  public revision = input(0);
+  public surface = input<string | undefined>(undefined);
+  public color = input<string | undefined>(undefined);
+  public cameraKey = input<string | null>(null);
+  public restoredCamera = input<Camera | null>(null);
+
+  public cameraChange = output<Camera>();
+
+  public decide = output<void>();
+
+  protected note = signal('');
+
+  protected busy = signal<Busy | null>(null);
+
+  protected error = signal('');
+
+  protected confirmingDiscard = signal(false);
+
+  protected picked = computed(() => pickedVariantOf(this.sketch()));
+
+  private address = computed<SketchAddress>(() => ({
+    port: this.port(),
+    product: this.product().name,
+    sketch: this.sketch().target,
+  }));
+
+  protected frames = computed(() =>
+    sketchFramesOf({
+      port: this.port(),
+      product: this.product(),
+      part: this.part(),
+      sketch: this.sketch(),
+      epoch: this.epoch(),
+      revision: this.revision(),
+      surface: this.surface(),
+      color: this.color(),
+    }),
+  );
+
+  protected previewReading = toSignal(
+    toObservable(computed(() => ({ address: this.address(), variant: this.picked(), revision: this.revision() }))).pipe(
+      switchMap(({ address, variant }) =>
+        variant
+          ? sketchPreview$({ ...address, variant }).pipe(
+              map((preview): PreviewReading => ({ preview, error: null })),
+              catchError((error: unknown) => of<PreviewReading>({ preview: null, error: messageOf(error) })),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  protected takeNote(event: Event) {
+    this.note.set((event.target as HTMLInputElement).value);
+  }
+
+  protected pickable(variant: string) {
+    return canPick(this.sketch(), variant);
+  }
+
+  protected problemsOf(variant: string) {
+    return this.sketch().problems.find((entry) => entry.variant === variant)?.problems ?? [];
+  }
+
+  protected pickTitle(variant: string) {
+    if (this.sketch().status !== 'ready') return 'The sketch is still in progress';
+
+    return this.problemsOf(variant).length > 0 ? 'This variant breaks a rule' : '';
+  }
+
+  protected pick(variant: string) {
+    const comment = this.note().trim();
+
+    this.run('pick', decideSketch$(this.address(), { kind: 'pick', variant, ...(comment ? { comment } : {}) }));
+  }
+
+  protected merge() {
+    const variant = this.picked();
+    const note = this.note().trim();
+    const address = this.address();
+
+    if (!variant || !note) return;
+
+    this.run(
+      'merge',
+      decideSketch$(address, { kind: 'pick', variant, comment: note }).pipe(
+        concatMap(() => mergeSketch$(address, note)),
+      ),
+    );
+  }
+
+  protected discard() {
+    if (!this.confirmingDiscard()) {
+      this.confirmingDiscard.set(true);
+
+      return;
+    }
+
+    this.confirmingDiscard.set(false);
+    this.run('discard', discardSketch$(this.address()));
+  }
+
+  private run(busy: Busy, work$: Observable<unknown>) {
+    if (this.busy()) return;
+
+    this.busy.set(busy);
+    this.error.set('');
+
+    work$
+      .pipe(
+        catchError((error: unknown) => {
+          this.error.set(messageOf(error));
+
+          return of(null);
+        }),
+        finalize(() => {
+          this.busy.set(null);
+          this.decide.emit();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+  }
+}

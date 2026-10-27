@@ -1,5 +1,15 @@
-import { ListedCall, ListedPart, ListedProduct } from '../../host/design';
-import { callFramesOf, holdersOf, isGroupOpen, isSectionOpen, framesOf, treeOf } from './system-tree';
+import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import {
+  callFramesOf,
+  canPick,
+  holdersOf,
+  isGroupOpen,
+  isSectionOpen,
+  framesOf,
+  pickedVariantOf,
+  sketchFramesOf,
+  treeOf,
+} from './system-tree';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -65,14 +75,13 @@ const call = (overrides: Partial<Extract<ListedCall, { headline: string }>> = {}
 
 describe('treeOf with calls', () => {
   it('lists calls of one project in a single Legacy group after the parts', () => {
-    const tree = treeOf(
-      [part()],
-      [
+    const tree = treeOf([part()], {
+      calls: [
         call(),
         call({ slug: 'acme/pages/home', transferred: true }),
         { slug: 'acme/x', project: 'acme', error: 'boom' },
       ],
-    );
+    });
 
     expect(tree.map((group) => group.label)).toEqual(['Components', 'Legacy']);
     expect(tree[1]?.entries).toEqual([{ key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] }]);
@@ -91,7 +100,7 @@ describe('treeOf with calls', () => {
   });
 
   it('keys sections per project once calls span several', () => {
-    const tree = treeOf([], [call(), call({ slug: 'other/pages/a', project: 'other' })]);
+    const tree = treeOf([], { calls: [call(), call({ slug: 'other/pages/a', project: 'other' })] });
 
     expect(tree.map((group) => group.sections?.map((section) => section.key))).toEqual([
       ['legacy/acme/components'],
@@ -100,18 +109,18 @@ describe('treeOf with calls', () => {
   });
 
   it('splits Legacy per project once calls span several, and hides it without calls', () => {
-    const tree = treeOf([], [call(), call({ slug: 'other/a', project: 'other' })]);
+    const tree = treeOf([], { calls: [call(), call({ slug: 'other/a', project: 'other' })] });
 
     expect(tree.map((group) => [group.key, group.label])).toEqual([
       ['legacy/acme', 'Legacy · acme'],
       ['legacy/other', 'Legacy · other'],
     ]);
-    expect(treeOf([part()], [])).toHaveLength(1);
+    expect(treeOf([part()], { calls: [] })).toHaveLength(1);
   });
 });
 
 describe('isGroupOpen and isSectionOpen', () => {
-  const [legacy] = treeOf([], [call(), call({ slug: 'acme/pages/home' })]);
+  const [legacy] = treeOf([], { calls: [call(), call({ slug: 'acme/pages/home' })] });
   const [parts] = treeOf([part()]);
   const context = { remembered: {}, hasProducts: true };
   const components = legacy!.sections![0]!;
@@ -129,7 +138,7 @@ describe('isGroupOpen and isSectionOpen', () => {
   });
 
   it('names the group and the section that hold an entry', () => {
-    const tree = treeOf([part()], [call(), call({ slug: 'acme/pages/home' })]);
+    const tree = treeOf([part()], { calls: [call(), call({ slug: 'acme/pages/home' })] });
 
     expect(holdersOf(tree, components.entries[0]!.key)).toEqual([legacy!.key, components.key]);
     expect(holdersOf(tree, parts!.entries[0]!.key)).toEqual([parts!.key]);
@@ -208,5 +217,96 @@ describe('framesOf', () => {
       [undefined, 'phone', 'boom'],
       [undefined, 'desktop', 'boom'],
     ]);
+  });
+});
+
+const sketch = (overrides: Partial<ListedSketch> = {}): ListedSketch => ({
+  target: 'components/button',
+  status: 'in progress',
+  createdAt: '2026-10-27T10:00:00.000Z',
+  product: 'acme',
+  layer: 'components',
+  name: 'button',
+  dir: '.ethlete/design/acme/sketches/components-button',
+  variants: ['a', 'b'],
+  problems: [],
+  ...overrides,
+});
+
+describe('sketches in the tree', () => {
+  it('lists open sketches after the pages with their status, and badges the target part', () => {
+    const tree = treeOf([part({ name: 'button' }), part({ name: 'card' })], {
+      sketches: [
+        sketch(),
+        sketch({
+          target: 'elements/header',
+          status: 'ready',
+          problems: [{ variant: 'a', problems: [{ rule: 'LAYER', file: 'x', message: 'm' }] }],
+        }),
+      ],
+    });
+
+    expect(tree.map((group) => group.key)).toEqual(['components', 'sketches']);
+    expect(tree[0]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
+    expect(tree[1]?.entries.map((entry) => [entry.key, entry.badges])).toEqual([
+      ['sketch:components/button', ['in progress']],
+      ['sketch:elements/header', ['ready', 'error']],
+    ]);
+  });
+});
+
+describe('sketchFramesOf', () => {
+  const source = { port: 4400, product: product(), revision: 2 };
+
+  it('puts the current part first in each state row, then each variant at every preset', () => {
+    const frames = sketchFramesOf({
+      ...source,
+      part: part({ states: ['default'] }),
+      sketch: sketch({ variants: ['a'] }),
+    });
+
+    expect(frames.map((frame) => [frame.row, frame.label])).toEqual([
+      ['default', 'current · phone'],
+      ['default', 'current · desktop'],
+      ['default', 'a · phone'],
+      ['default', 'a · desktop'],
+    ]);
+    expect(frames[2]?.src).toContain('&sketch=components%2Fbutton&variant=a');
+    expect(frames[2]?.screenshot).toBeUndefined();
+    expect(new Set(frames.map((frame) => frame.id)).size).toBe(frames.length);
+  });
+
+  it('shows only variants for a new part, and fails a variant that does not load', () => {
+    const frames = sketchFramesOf({
+      ...source,
+      part: null,
+      sketch: sketch({ problems: [{ variant: 'b', problems: [{ rule: 'LOAD', file: 'x', message: 'boom' }] }] }),
+    });
+
+    expect(frames.map((frame) => [frame.label, frame.error])).toEqual([
+      ['a · phone', undefined],
+      ['a · desktop', undefined],
+      ['b · phone', 'boom'],
+      ['b · desktop', 'boom'],
+    ]);
+  });
+});
+
+describe('picking a variant', () => {
+  it('allows a pick only on a ready sketch and a variant without problems', () => {
+    const problems = [{ variant: 'b', problems: [{ rule: 'LAYER', file: 'x', message: 'm' }] }];
+
+    expect(canPick(sketch(), 'a')).toBe(false);
+    expect(canPick(sketch({ status: 'ready', problems }), 'a')).toBe(true);
+    expect(canPick(sketch({ status: 'ready', problems }), 'b')).toBe(false);
+  });
+
+  it('reads the picked variant, ignoring a discard and a variant that is gone', () => {
+    const decidedAt = '2026-10-27T11:00:00.000Z';
+
+    expect(pickedVariantOf(sketch({ decision: { kind: 'pick', variant: 'b', decidedAt } }))).toBe('b');
+    expect(pickedVariantOf(sketch({ decision: { kind: 'pick', variant: 'z', decidedAt } }))).toBeNull();
+    expect(pickedVariantOf(sketch({ decision: { kind: 'discard', decidedAt } }))).toBeNull();
+    expect(pickedVariantOf(sketch())).toBeNull();
   });
 });

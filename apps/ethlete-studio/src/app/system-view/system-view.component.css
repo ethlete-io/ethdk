@@ -111,8 +111,7 @@
     min-height: 0;
   }
 
-  .studio__system-note,
-  .studio__system-empty {
+  .studio__system-note {
     align-self: center;
     justify-self: center;
     max-width: 52rem;
@@ -120,37 +119,6 @@
     padding: 2.4rem;
     color: var(--et-surface-color-subtle-solid);
     font-size: 1.3rem;
-  }
-
-  .studio__system-empty h2 {
-    margin: 0 0 0.8rem;
-    color: var(--et-surface-color-solid);
-    font-weight: 600;
-    font-size: 1.6rem;
-  }
-
-  .studio__system-empty pre {
-    padding: 1.2rem;
-    border: 0.1rem solid var(--et-surface-border-solid);
-    border-radius: 0.6rem;
-    color: var(--et-surface-color-solid);
-    font-family: var(--font-mono);
-    font-size: 1.2rem;
-  }
-
-  .studio__system-command {
-    display: flex;
-    gap: 0.8rem;
-    align-items: center;
-  }
-
-  .studio__system-command pre {
-    flex: 1;
-    margin: 0;
-  }
-
-  .studio__system-empty code {
-    font-family: var(--font-mono);
   }
 
   .studio__system-call {
