@@ -90,7 +90,7 @@ describe('inboxOf', () => {
       `2020-01-01 09:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
       '    Say why.',
       `    reply: et design comment reply ${comment.id} --product acme "…"`,
-      `    done: et design inbox done ${comment.id}`,
+      `    done: et design inbox done ${comment.id} --note "…"`,
       '2026-10-27 10:00  acme  pick elements/hero variant b',
       '    Calmer.',
       '    run: et design sketch merge elements/hero --product acme --note "…"',
@@ -124,7 +124,7 @@ describe('inboxOf', () => {
       '    agent:',
       '      Which part?',
       `    reply: et design comment reply ${comment.id} --product acme "…"`,
-      `    done: et design inbox done ${comment.id}`,
+      `    done: et design inbox done ${comment.id} --note "…"`,
     ]);
 
     vi.setSystemTime('2026-10-27T13:00:00Z');

@@ -14,7 +14,7 @@ const host = vi.hoisted(() => ({
 vi.mock('../../host/design', () => ({
   listedComments$: host.list,
   writeComment$: host.write,
-  doneComment$: host.done,
+  withdrawComment$: host.done,
   commentChanges$: host.changes,
 }));
 
@@ -113,7 +113,7 @@ describe('CommentStore', () => {
     expect(store.busy()).toBe(false);
   });
 
-  it('withdraws a comment through comment-done, and ending the mode drops the draft', () => {
+  it('withdraws a comment through comment-withdraw, and ending the mode drops the draft', () => {
     const { store } = setup();
 
     store.withdraw('a');

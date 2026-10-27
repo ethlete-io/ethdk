@@ -10,6 +10,7 @@ import {
   replyToComment,
   staleReasonOf,
 } from './system/comments/comment';
+import { completeComment } from './system/comments/complete';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
@@ -30,6 +31,7 @@ export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
 export const COMMENTS_PATH = '/__design/comments';
 export const COMMENT_PATH = '/__design/comment';
 export const COMMENT_DONE_PATH = '/__design/comment-done';
+export const COMMENT_WITHDRAW_PATH = '/__design/comment-withdraw';
 export const COMMENT_REPLY_PATH = '/__design/comment-reply';
 export const COMMENT_EVENTS_PATH = '/__design/comment-events';
 
@@ -279,12 +281,29 @@ export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
     : { status: 200, body: commentOf({ comment: created, target: asked.target, product }) };
 });
 
-/** POST `?product=&id=`: deletes a comment the user has handled, as `et design inbox done` does. */
-export const commentDoneAnswer = withProduct('POST', ({ asked, product }) => {
-  const deleted = deleteComment({
-    products: [{ name: product.name, dir: product.dir }],
-    id: asked.url.searchParams.get('id') ?? '',
-  });
+/** POST `?product=`, body `{ id, note }`: replaces the note of the part the comment is about and deletes the comment, as `et design inbox done` does. */
+export const commentDoneAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+  const id = textOf(body?.['id']);
+  const note = textOf(body?.['note']);
+
+  if (!id || !note) return failure(400, 'the body must be { id, note }');
+
+  const done = completeComment({ products: [product], id, note });
+
+  return typeof done === 'string'
+    ? failure(done.startsWith('no open comment') ? 404 : 422, done)
+    : { status: 200, body: { id: done.id } };
+});
+
+/** POST `?product=`, body `{ id }`: deletes a comment without a note, as the user withdraws it in Studio. */
+export const commentWithdrawAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+  const id = textOf(body?.['id']);
+
+  if (!id) return failure(400, 'the body must be { id }');
+
+  const deleted = deleteComment({ products: [{ name: product.name, dir: product.dir }], id });
 
   return typeof deleted === 'string' ? failure(404, deleted) : { status: 200, body: { id: deleted.id } };
 });

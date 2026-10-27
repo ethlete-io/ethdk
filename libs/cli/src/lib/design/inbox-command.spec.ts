@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -54,7 +54,15 @@ describe('designComment and designInbox', () => {
       ],
     });
     expect(designComment({ target, argv: ['reply', id], invocation })).toBe(2);
-    expect(designInbox({ target, argv: ['done', id], invocation })).toBe(0);
+    expect(designInbox({ target, argv: ['done', id], invocation })).toBe(1);
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`))).toBe(true);
+    expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).toContain(
+      'A hero over a list of cards.',
+    );
+    expect(designInbox({ target, argv: ['done', id, '--note', 'A title over a list.'], invocation })).toBe(0);
+    expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).toContain(
+      "note: 'A title over a list.'",
+    );
     expect(existsSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`))).toBe(false);
     expect(designInbox({ target, argv: [], invocation })).toBe(0);
     expect(lines.pop()).toBe('inbox empty');
@@ -85,7 +93,7 @@ describe('designComment and designInbox', () => {
       }),
     ).toBe(1);
     expect(lines.pop()).toBe('part pages/nope no longer exists');
-    expect(designInbox({ target, argv: ['done', 'nope'], invocation })).toBe(1);
+    expect(designInbox({ target, argv: ['done', 'nope', '--note', 'x'], invocation })).toBe(1);
     expect(lines.pop()).toBe('no open comment "nope"');
   });
 });

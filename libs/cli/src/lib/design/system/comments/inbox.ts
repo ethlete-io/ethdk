@@ -88,7 +88,7 @@ const lineOf = (item: InboxItem, invocation: string) => {
       ...indented(item.text),
       ...item.replies.flatMap((reply) => [`    ${reply.by}:`, ...indented(reply.text, '      ')]),
       `    reply: ${invocation} comment reply ${item.id} --product ${item.product} ${quoted('…')}`,
-      `    done: ${invocation} inbox done ${item.id}`,
+      `    done: ${invocation} inbox done ${item.id} --note "…"`,
     ];
   }
 

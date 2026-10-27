@@ -1,10 +1,12 @@
 import { relative } from 'path';
-import { createComment, deleteComment, replyToComment } from './system/comments/comment';
+import { createComment, replyToComment } from './system/comments/comment';
+import { completeComment } from './system/comments/complete';
 import { inboxOf, inboxText } from './system/comments/inbox';
 import { productDirOf } from './system/product';
+import { ResolvedProduct } from './system/resolve-product';
 import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 
-export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id>'];
+export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id> --note <text>'];
 
 export const COMMENT_USAGE = [
   'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
@@ -23,11 +25,11 @@ const usage = (invocation: string, lines: string[]) =>
 /**
  * `et design inbox` lists what waits for the agent - comment threads whose last word is the user's and the
  * user's pick and discard decisions, oldest first - then the threads waiting for the user.
- * `et design inbox done <id>` deletes a comment thread the agent has handled.
+ * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about and deletes the thread.
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product']);
+  const args = argsOf(argv, ['--product', '--note']);
 
   if (typeof args === 'string') return usage(invocation, INBOX_USAGE);
 
@@ -44,10 +46,24 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
 
     if (!id || args.positional.length > 2) return usage(invocation, INBOX_USAGE);
 
-    const deleted = deleteComment({
-      products: names.map((name) => ({ name, dir: productDirOf({ target, product: name }) })),
-      id,
-    });
+    const note = args.values['--note'];
+
+    if (!note || note.trim() === '')
+      return fail(
+        'inbox done needs --note "<reason>": the note replaces the note of the part the comment was made on, so write it to explain the whole shape of the part - pass the old note unchanged if it still holds.',
+      );
+
+    const products: ResolvedProduct[] = [];
+
+    for (const name of names) {
+      const product = oneProductOf({ target, config, asked: name });
+
+      if (typeof product === 'string') return fail(product);
+
+      products.push(product);
+    }
+
+    const deleted = completeComment({ products, id, note });
 
     if (typeof deleted === 'string') return fail(deleted);
 

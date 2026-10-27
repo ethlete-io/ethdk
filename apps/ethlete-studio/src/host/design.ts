@@ -494,8 +494,6 @@ export const commentChanges$ = (port: number): Observable<void> => designEvents$
 /** Emits whenever a file outside the design folder that a frame draws changes, which the design watch does not see. */
 export const drawnChanges$ = (port: number): Observable<void> => designEvents$(port, 'changes');
 
-/** Deletes a comment the user has handled. */
-export const doneComment$ = (address: ProductAddress, id: string): Observable<void> =>
-  designAnswer$<unknown>(`${productUrl(address, 'comment-done')}&id=${encodeURIComponent(id)}`, {
-    method: 'POST',
-  }).pipe(map(() => undefined));
+/** Deletes a comment without a note, through `comment-withdraw`. */
+export const withdrawComment$ = (address: ProductAddress, id: string): Observable<void> =>
+  designAnswer$<unknown>(productUrl(address, 'comment-withdraw'), postJson({ id })).pipe(map(() => undefined));

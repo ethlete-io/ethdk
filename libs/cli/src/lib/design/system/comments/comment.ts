@@ -190,7 +190,7 @@ export const createComment = (options: {
 export const lastWordOf = (comment: Pick<DesignComment, 'replies'>) =>
   comment.replies[comment.replies.length - 1]?.by ?? 'user';
 
-const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
+export const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
   const { products, id } = options;
 
   if (!ID.test(id)) return `"${id}" is no comment id`;

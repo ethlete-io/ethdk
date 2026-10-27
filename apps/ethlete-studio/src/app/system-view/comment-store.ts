@@ -6,7 +6,7 @@ import {
   ListedComments,
   ProductAddress,
   commentChanges$,
-  doneComment$,
+  withdrawComment$,
   listedComments$,
   writeComment$,
 } from '../../host/design';
@@ -128,13 +128,13 @@ export class CommentStore {
     );
   }
 
-  /** Deletes a comment through `comment-done`. */
+  /** Deletes a comment through `comment-withdraw`. */
   public withdraw(id: string) {
     const address = this.address();
 
     if (!address || this.busy()) return;
 
-    this.run(doneComment$(address, id));
+    this.run(withdrawComment$(address, id));
   }
 
   private run(work$: Observable<unknown>) {

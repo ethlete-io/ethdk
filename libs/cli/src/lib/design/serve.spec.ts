@@ -523,8 +523,21 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id })).status).toBe(400);
     expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id: 'nope', text: 'x' })).status).toBe(404);
     expect((await ask('/__design/comment-reply', '?product=acme')).status).toBe(405);
-    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`)).status).toBe(405);
-    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(200);
-    expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(404);
+    const home = join(target, '.ethlete/design/acme/pages/home/home.ts');
+    const note = readFileSync(home, 'utf8');
+
+    expect((await ask('/__design/comment-done', '?product=acme', 'GET')).status).toBe(405);
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', { id })).status).toBe(400);
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', { id, note: 'A title.' })).status).toBe(200);
+    expect(readFileSync(home, 'utf8')).toContain("note: 'A title.'");
+    expect((await ask('/__design/comment-done', '?product=acme', 'POST', { id, note: 'A title.' })).status).toBe(404);
+
+    const withdrawn = (await ask('/__design/comment', '?product=acme', 'POST', on)).body as { id: string };
+
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', {})).status).toBe(400);
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(200);
+    expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(404);
+    expect(readFileSync(home, 'utf8')).toContain("note: 'A title.'");
+    expect(note).not.toContain("note: 'A title.'");
   });
 });
