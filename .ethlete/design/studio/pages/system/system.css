@@ -1,0 +1,16 @@
+.st-root {
+  position: relative;
+  min-height: 840px;
+  font-family: sans-serif;
+}
+
+.st-root > [data-wireframe='box'] {
+  min-height: inherit;
+}
+
+.st-dialog {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
