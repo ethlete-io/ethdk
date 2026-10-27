@@ -539,6 +539,19 @@ describe('sketchMatrixOf', () => {
       expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
     });
 
+    it('offers only the interactions of the part and of open rounds', () => {
+      const targets = [
+        { variant: 'a', states: ['default'], interactions: ['disabled'] },
+        { variant: 'c', states: ['default'] },
+      ];
+
+      expect(sketchMatrixOf({ ...source, part: null, sketch: { ...rounded, targets } }).interactions).toEqual(['rest']);
+      expect(
+        sketchMatrixOf({ ...source, part: null, sketch: { ...rounded, targets }, openRounds: { r1: true } })
+          .interactions,
+      ).toEqual(['rest', 'disabled']);
+    });
+
     it('opens and folds rounds as the user chose, and keeps a new round open', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: false } });
 

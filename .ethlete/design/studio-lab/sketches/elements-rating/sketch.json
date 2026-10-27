@@ -9,5 +9,28 @@
     "elements/list-row": "0182c25e208d63d1",
     "pages/library": "db7e213adaa1d82e",
     "fixtures.ts": "cc87e40089c46ba6"
+  },
+  "rounds": [
+    {
+      "key": "r1",
+      "title": "",
+      "note": "a and b showed bare stars or a bar; neither showed the score as a number at a glance"
+    },
+    {
+      "key": "r2",
+      "title": "Stars with a count",
+      "note": ""
+    }
+  ],
+  "variantInfo": {
+    "a": {
+      "round": "r1"
+    },
+    "b": {
+      "round": "r1"
+    },
+    "c": {
+      "round": "r2"
+    }
   }
 }

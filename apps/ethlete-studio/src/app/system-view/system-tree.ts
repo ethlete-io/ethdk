@@ -457,7 +457,12 @@ export const sketchMatrixOf = ({
   const sizes = sketchSizesOf({ product, sketch, part });
   const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
   const cell = cellSizeOf(product, size);
-  const interactions = sketchInteractionsOf({ sketch, part });
+  const rounds = sketchRoundsOf(sketch, openRounds);
+  const shown = new Set(rounds.flatMap((round) => (round.open ? round.variants : [])));
+  const interactions = sketchInteractionsOf({
+    sketch: { ...sketch, targets: sketch.targets?.filter((target) => shown.has(target.variant)) },
+    part,
+  });
   const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : ALL;
   const shownInteractions = interaction === ALL ? interactions : [interaction];
   const grouped = shownInteractions.length > 1;
@@ -465,7 +470,6 @@ export const sketchMatrixOf = ({
   const idOf = (column: string, { state, interaction: shown }: MatrixRow) =>
     [column, state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
   const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
-  const rounds = sketchRoundsOf(sketch, openRounds);
   const roundsGrouped = rounds.length > 1 || rounds.some((round) => round.title !== '');
   const foldedWidth = Math.max(FOLDED_MIN_WIDTH, Math.round((cell.width ?? FOLDED_FALLBACK_WIDTH) / 2));
   const variantColumnOf = (variant: string) => {
