@@ -785,6 +785,11 @@ step. Each finding names what happened and the fix it needs.
   ich beim merge immer einen text angeben muss. eig habe ich denke ich in der regel nichts mehr zu
   sagen wenn ich etwas merge". So the merge must not ask for a note: the agent writes the note of
   each variant when it draws it, the merge copies it into the part, and Tom's text is optional.
+- Tom (2026-10-28), during the content area round: "ich frag mich noch immer ob wireframes
+  wirklich noch relevant sind oder ob wir nicht hätten genauso gut direkt in den nächsten step
+  gehen können... fühlt sich noch immer komisch an". Open question for the process: which
+  questions need a wireframe at all. The drawing agents spent most of their effort on kit gaps
+  (alignment, padding, markers), which is look, not structure.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
