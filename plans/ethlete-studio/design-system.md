@@ -1382,7 +1382,10 @@ Notes:
   reports them.
 - No control removes a free note's `at`; delete and create again does the same.
 
-Flow comments and preset, as built (bc8801096, headless proof pending):
+Flow comments and preset, as built (bc8801096, proven headlessly 2026-10-27: pins on flow and part
+canvas, the other-size note, exclusive Comment/Note modes, a flow comment stored as
+`{part, state, size, point}`, no comment on empty flow space, the preset kept across reload and
+flow switch):
 
 - A flow frame's place is `{ part, state, size: <preset> }`, the same as a rest frame at that preset,
   so a flow comment uses the same store and pins on both canvases. On the flow a pin shows only
