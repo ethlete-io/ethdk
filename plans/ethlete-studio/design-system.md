@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core done; the Studio comments are not started. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core and Studio comments done; replies are open. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -542,6 +542,48 @@ Open points, each with a recommendation:
 - The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
   check whether the frame page reports a height after its web fonts load.
 
+### Studio comments, as built (2026-10-27)
+
+- f13302bf3: a Comments toolbar button (with the count) toggles a sidebar on the right
+  (`comment-panel.component.ts`); Studio remembers it (`commentsOpen` in the view state). Comment mode
+  never opens it. It lists every open comment of the product grouped by part, the shown part first
+  (`commentGroupsOf`); an entry shows number, text, where and age (`ageOf`). The meta line
+  (`data-comment-meta`) is the place for the last sender and the reply count. A click selects the part
+  or sketch, moves the camera to the pin and opens it; in a sketch it switches to the comment's size
+  when the matrix offers it, and a comment without a shown pin focuses the frame of its state.
+- f13302bf3: a frame label notes "N comments at other sizes" (`withOtherSizeNotes`).
+- f13302bf3: with open comments on the target, the sketch view disables Merge and Discard and shows
+  "N open comments"; a click opens the sidebar.
+- f13302bf3: the pin popover's Withdraw is `transparent`, like the draft's Cancel. Esc in comment mode
+  cancels a draft first and ends the mode only on a second press.
+- f13302bf3: a matrix cell whose column lacks the row's state is a dashed empty cell
+  (`CanvasFrame.empty`): "<variant> has no <state> state", or "new in this sketch" in `current`. It
+  takes the largest size in its row, has no place (not commentable) and cannot be activated.
+- f13302bf3: the row gap is 48 px when every frame fits its content (tile grid, fitted matrix), 120 px
+  for pages and parts with `widths`. 48 px is a start value for the user to look at.
+- 8bc302576: the studio-lab sample comment (on `components/button` variant b, `fitted`).
+- Verified: unit specs (`sketchMatrixOf` empty cells, `commentGroupsOf`, `ageOf`, `withOtherSizeNotes`,
+  `otherSizeFrameOf`), and headlessly against `:4221` with a stubbed host and a scratch design server
+  on 4494: the rating matrix with "a has no disabled state" (`/tmp/studio-rating-matrix.png`), the
+  button sketch lock ("1 open comment", Merge and Discard disabled), the sidebar and the jump that
+  opens the pin, draft placement at the click point with a constant on-screen width at 44 % and
+  150 %, Esc cancelling only the draft, a caption click in the tile grid starting a state comment,
+  and the tree badges and draft field.
+
+Open points, each with a recommendation:
+
+- A frame reload uses one global revision, so every visible frame reloads on each change.
+  Recommendation: a per-part revision from the design server, so only the changed part reloads.
+- The merge lock counts every open comment on the target, also one on the current part made before
+  the sketch. Recommendation: keep it; withdrawing is one click.
+- At very low zoom a 48 px row gap is smaller than a tile caption. Recommendation: decide the value
+  after the user has seen the screenshot.
+- A pressed pin (open popover) renders as a hollow et-button. Recommendation: drop `[pressed]` on the
+  pin and mark the open one with a ring.
+- In the tree, a sketch row with two badges truncates its name to "compon...". Recommendation: show
+  the sketch name without its layer prefix, or one badge.
+- Not built, waiting for the user: replies, the thread in the popover, "Questions for you".
+
 ### Token decisions (2026-10-27)
 
 - A product's token values live in one place: the CSS file of its foundations token part, for
@@ -794,32 +836,10 @@ two `et-select`s and the empty-state screen, then the create form and its endpoi
 Slice 4: done on 2026-10-27, with the frame sizes and the sketch matrix (see "Sketch matrix, as
 built" for its open points).
 
-Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are half
-built:
-
-- Done: the comment file stores `size` (preset name, width or `fitted`) with a stale rule on a missing
-  size, `et design comment --size` (b3054bb4e, 7f2177aba); the design server signals comment changes
-  on the SSE stream `/__design/comment-events`, and the Tauri watcher no longer reports a change to
-  comment files only, so frames stay (7f2177aba, 2a52c7d33). Studio groundwork in 2a52c7d33, not
-  wired into any view: `FramePlace` on every part and matrix frame, `comment-pins.ts` (numbering,
-  `pinsOf`, `otherSizeCountOf`, `commentWhereOf`), the tree badge `comment open` (`treeOf` takes
-  `comments`), the canvas `pins`, `pointing` (overlay per frame with a `place`, `pointPick`), pin
-  popover with the text, `openPin()`, `focusFrame()`, and the host calls `listedComments$`,
-  `writeComment$`, `doneComment$`, `commentChanges$`.
-- Done, not yet verified in a browser: (1) the comment store `system-view/comment-store.ts`
-  (`provideCommentStore()` in `system-view`, `injectCommentStore()`; `comments`, `active`, `draft`,
-  `panelOpen`, `busy`, `error`, `send`, `withdraw`) (1209478a5); (2) comment mode in the part view and
-  the sketch view: the Comment button and key C (handled in `system-view`), Esc ends it; the draft
-  `comment-draft.component.ts` is projected into the canvas as `[canvasDraft]` at the canvas `draft`
-  input; a click on a pickable caption (`captionPickable`, `captionClick`) starts a state comment;
-  (3) "Withdraw" in the pin popover (canvas output `pinWithdraw`) (c0a8e5532). The Studio changeset
-  is `patch` now.
-- Remaining, in order: (4) the collapsible right panel with the selected part's comments (store
-  `panelOpen` exists), a click calls `openPin`; (5) the count of other-size comments on a frame
-  label; (6) the sketch view disables Merge and Discard with "N open comments", a click opens the
-  panel; (7) an open comment in `studio-lab`; (8) verify headlessly (stubbed host, scratch server on 4492) and write "Studio comments, as built".
-  In progress since 2026-10-27: the Studio comments, as in "Comment UI decisions". Open after them:
-  the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
+Slice 5: the core and the Studio comments are done (see "Slices 4 and 5 core, as built" and "Studio
+comments, as built"): store, comment mode, draft, pins, Withdraw (1209478a5, c0a8e5532), the sidebar,
+other-size counts, merge lock and empty matrix cells (f13302bf3). Open: replies and threads (the user is
+deciding), and the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
