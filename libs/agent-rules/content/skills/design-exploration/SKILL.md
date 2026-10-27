@@ -111,12 +111,12 @@ The user comments on a state of a part in Studio, at a point, or on a sketch var
 
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
-et design inbox done <id>                  # delete a comment thread once handled
+et design inbox done <id> --note <text>    # set the part note, delete the comment thread
 et design comment reply <id> <text>        # answer a comment thread (takes --product)
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
-by changing the sketch or the part, then `inbox done`. A pick or discard decision is the user's
+by changing the sketch or the part, then `inbox done <id> --note "…"`. The note replaces the `note` of the part the comment was made on (for a sketch variant, the product's part), so write it to explain the whole shape of the part, and pass the old note unchanged when it still holds. `done` fails without `--note`; only the user withdraws a comment without one, in Studio. A pick or discard decision is the user's
 cue, not yours to act on beyond what Studio already did.
 
 A comment is a thread: the user and you both reply. When a comment is unclear, ask with
