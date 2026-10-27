@@ -842,7 +842,9 @@ border to 2px") showed as "question".
 - `CanvasPin.dot`, the question marker: the design canvas draws it since 35d609cee
   (`design-canvas.component.html`, a 12 px dot in the primary accent at the top right of the pin).
   Checked in the real app (2026-10-27): the question pin 239f in the `studio-lab`
-  `components/button` part view (solid, rest) shows "3" and no dot. Sent to the builder as a bug.
+  `components/button` part view (solid, rest) shows "3" and no dot. Cause: a stale server. The
+  running Studio's `cli-runtime` was built before fd6fd55f4 and sends no `threadState`; the data
+  is right. A Studio restart rebuilds the runtime. No code fault.
 - `studio-lab`: Components, button shows "question"; Sketches, button shows "answered"; the top bar
   shows "1 ?"; the panel lists 7001 as "answered" and 239f under "Questions for you"; the
   `components/button` sketch view shows the product-part button next to "3 open comments".
