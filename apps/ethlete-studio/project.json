@@ -9,6 +9,7 @@
     "build": {
       "executor": "@angular/build:application",
       "outputs": ["{options.outputPath}"],
+      "inputs": ["production", "^production", "{workspaceRoot}/.ethlete/design/studio/foundations/tokens/tokens.css"],
       "defaultConfiguration": "production",
       "options": {
         "browser": "apps/ethlete-studio/src/main.ts",

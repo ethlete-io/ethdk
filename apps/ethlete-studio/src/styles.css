@@ -1,4 +1,9 @@
+@layer studio-tokens, theme, base, components, utilities;
+
 @import 'tailwindcss' source('../');
+
+/* Keep this layer lowest: the product's --font-* and --radius-* names, SDK themes and body rule collide with Studio's own, which must win until the component layer maps them. */
+@import '../../../.ethlete/design/studio/foundations/tokens/tokens.css' layer(studio-tokens);
 
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
@@ -54,6 +59,49 @@
 
   --font-sans: 'Jost', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@theme inline {
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+  --color-surface-border: var(--surface-border);
+  --color-surface-shadow: var(--surface-shadow);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-text: var(--accent-text);
+  --color-on-accent: var(--on-accent);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-focus-ring: var(--focus-ring);
+
+  --text-ui-xs: var(--text-xs);
+  --text-ui-xs--line-height: var(--text-xs-line);
+  --text-ui-sm: var(--text-sm);
+  --text-ui-sm--line-height: var(--text-sm-line);
+  --text-ui-md: var(--text-md);
+  --text-ui-md--line-height: var(--text-md-line);
+  --text-ui-lg: var(--text-lg);
+  --text-ui-lg--line-height: var(--text-lg-line);
+  --text-ui-xl: var(--text-xl);
+  --text-ui-xl--line-height: var(--text-xl-line);
+
+  --font-weight-ui-regular: var(--weight-regular);
+  --font-weight-ui-medium: var(--weight-medium);
+  --font-weight-ui-strong: var(--weight-strong);
+
+  --spacing-space-1: var(--space-1);
+  --spacing-space-2: var(--space-2);
+  --spacing-space-3: var(--space-3);
+  --spacing-space-4: var(--space-4);
+  --spacing-space-5: var(--space-5);
+  --spacing-space-6: var(--space-6);
+  --spacing-space-7: var(--space-7);
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-md: var(--control-md);
+  --spacing-row: var(--row);
 }
 
 /* 1rem = 10px, so every rem in the app and in @ethlete/components lines up with the design system. */
