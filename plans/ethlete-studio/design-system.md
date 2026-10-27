@@ -733,6 +733,19 @@ Open points, each with a recommendation:
 - A page, or a part with `widths`, that declares interactions keeps the sheet layout: each
   interaction is drawn at every size in the state row ("320 · hover").
 
+### States and interactions step 3, as built (2026-10-27)
+
+- 129759c06: the button sketch variants a and b have the states solid and outline and the four
+  interactions.
+- 5571eee5f: a comment has an optional `interaction`. Rest is never written; a read fills it in.
+  `POST /__design/comment` takes it and refuses an unknown name or an interaction that the part or
+  variant does not declare. An existing comment of that kind becomes stale. `et design comment` has
+  `--interaction`, and an inbox line names an interaction other than rest.
+- 97e42bd31: the interaction switch sits next to the size switch. It lists rest plus the
+  interactions of the part and of every variant; without interactions there is no switch. Every cell
+  takes comments. A pin shows on the matching cell only; other cells say "1 comment in another
+  interaction". A click in the sidebar switches to the comment's interaction.
+
 ### Token decisions (2026-10-27)
 
 - A product's token values live in one place: the CSS file of its foundations token part, for
@@ -983,9 +996,9 @@ States and interactions: in progress since 2026-10-27, in six steps: (1) `intera
 `definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
 without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
-"Frame reload decisions". Steps 1, 2 and 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02).
-Step 3 started; it also allows comments on cells other than rest and moves the button sketch
-variants a and b to solid and outline.
+"Frame reload decisions". Steps 1, 2, 3 and 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02,
+129759c06, 5571eee5f, 97e42bd31). Next: the sketch view fixes in "Merge preview decisions", then
+step 4.
 
 Slice 1: done on 2026-10-27.
 
