@@ -425,6 +425,7 @@ disabled), so hover existed for solid only and focus, active and pressed were mi
   `interactions` shows the rest column only.
 - The sketch matrix keeps sketch variants as columns; an interaction switch above the canvas picks
   one interaction for all cells, like the size switch.
+  Changed by "Sketch interaction matrix decisions": the switch gets "all" as its default.
 - A comment gets `interaction` (default rest). Its pin shows only on the matching cell; elsewhere
   the label counts it, as for another size.
 - A fitted frame has no border, only the product background with some padding. Frames at presets
@@ -433,6 +434,24 @@ disabled), so hover existed for solid only and focus, active and pressed were mi
   ends it. Its own step before slice 10, apart from motion; motion builds on it later.
 - `studio-lab` `components/button` moves to the states solid and outline with the interactions
   hover, focus-visible, active and disabled, so the lab tests the full table.
+
+### Sketch interaction matrix decisions (2026-10-27)
+
+Not built yet. With one interaction per view, the user clicks five times to see one variant
+completely, for example the `studio-lab` `components/button` sketch.
+
+- The interaction switch of the sketch matrix gets the value "all", and it is the default. The
+  single interactions stay as filters.
+- With "all", each row is one state with one interaction ("solid · rest", "solid · hover"). The
+  columns stay the variants (current, a, b).
+- Rows go by state first, then by interaction in the Studio order: solid · rest … solid · disabled,
+  then outline · rest … The state name shows only in the first row of its group, and the gap
+  between groups is larger than the gap between rows.
+- "all" is the default at every size: fitted, presets and `widths`. Studio remembers the last pick
+  in the view state.
+- With "all", every interaction has its own cell, so each comment pin shows in its cell. The label
+  "N comment in another interaction" shows only while a single interaction is the filter.
+- The merge preview ("Where <part> is used") does not change: a nested part always stays at rest.
 
 ### Frame reload decisions (2026-10-27)
 
