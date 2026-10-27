@@ -1082,6 +1082,12 @@ Open points, each with a recommendation:
   (a stale height, or a width change before layout), fitted frames, and products with a real
   `@font-face`. Parked until it happens again; then a screenshot with the frame and the zoom.
 
+### Sketch matrix gap decisions (2026-10-27)
+
+- The gap between state groups is the row gap × 2: 96 px for fitted frames (row gap 48 px), 240 px
+  for sized frames (row gap 120 px). It replaces 120 px and 300 px, which were 2.5 times the row gap.
+- The group gap derives from the row gap; it has no constant of its own.
+
 ### Studio comments, as built (2026-10-27)
 
 - f13302bf3: a Comments toolbar button (with the count) toggles a sidebar on the right
