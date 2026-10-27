@@ -754,7 +754,24 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
   define raw colour values.
 - Each Studio slice checks its UI against the `theming` skill. A finding today: almost all Studio
   UI already uses the tokens; outside the theme files only a few spots use raw values, for example
-  the shadow `rgb(0 0 0 / 0.35)` in `styles.css` and the demo colours in `canvas-demo-view`.
+  the shadow `rgb(0 0 0 / 0.35)` in `styles.css` and the demo colours in `canvas-demo-view`. Fixed
+  in 31ca4ce3a and 99f31831b.
+
+### Studio theming details decisions (2026-10-27)
+
+- Studio turns off the Tailwind default palette with `--color-*: initial;` in its `@theme`, so a
+  palette class such as `bg-red-500` emits nothing. `transparent`, `currentColor` and the token
+  colours from the theme providers stay.
+- Shadows use the SDK convention `rgb(var(--et-shadow-color-rgb, 0 0 0) / <alpha>)`. A Studio theme
+  file sets `--et-shadow-color-rgb` only when a theme needs a non-black shadow. A real SDK shadow
+  token is later SDK work.
+- Error and warning colours always resolve by theme type (`injectSemanticColorTheme('error')`),
+  never by the theme name `danger`.
+- Studio stays dark only for now. The UI must not assume a dark surface (no fixed light text
+  colours), so a light theme can come later without a rebuild.
+- Everything Studio draws over a product frame (comment pins, merge preview outlines) uses
+  Studio's accent colour, not the product's.
+- `canvas-demo-view` is deleted, if nothing uses it.
 
 ### Design server restart decision (2026-10-27)
 
