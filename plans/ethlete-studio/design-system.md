@@ -393,6 +393,35 @@ Sketch view:
 
 Bug: the sketch view shows about 400 px of empty space above the frames.
 
+### Frame sizes, as built (2026-10-27)
+
+Core in 937128e10, Studio in fabc5cb90. The sketch view is unchanged.
+
+- `definePart({ widths: [240, 360, 520] })`. The parts list (`/__design/system`, `et design system
+--json`) carries `widths` when it is a non-empty list of positive numbers. Rule `WIDTHS` flags a
+  literal that is not; a `widths` held in a variable is not read and passes.
+- Shot route: `preset=` as before; `width=` draws at that width; neither fits the content. Both new
+  modes crop the PNG to `#root`, so the height fits the content. `frame.html?…&fit` draws `#root`
+  at `max-content` with 16 px padding and reports its width with the height message.
+- Studio: a page keeps one row per state and one frame per preset; a part with `widths` gets one
+  row per state and one frame per width; any other part is a grid of tiles (wrapping at 1600 px),
+  the state name under each tile. A fitted frame takes its width from the frame page, or from its
+  screenshot until it goes live.
+- `studio-lab` `components/card` declares `widths: [240, 360, 520]` and now fills its container.
+- Verified: unit specs (shot route, rule, list, `framesOf`, grid layout, frame message), and real
+  shots from a scratch design server (fitted button 101×68, card at 240 → 240×128, page presets).
+  Not verified: the Studio canvas itself, headless or by eye.
+
+Open points, each with a recommendation:
+
+- The canvas grid and the label below each tile were not looked at. Recommendation: check them in
+  Studio on `studio-lab` before the sketch view slice builds on them.
+- A fitted frame starts at 320 px until it reports its width, so the first camera fit can be off.
+  Recommendation: fit the camera again once every fitted frame reported, only while the user has
+  not moved it.
+- The sketch view still draws every part at the presets (`sketchFramesOf` keeps the old path).
+  Recommendation: switch it to `framesOf` in the sketch view slice, with the preset/width switch.
+
 ### Slice 6 decisions (2026-10-27)
 
 Pages:
@@ -636,7 +665,6 @@ used (see "Legacy calls").
 Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
 in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
 three sketch open points in "Studio sketch view, as built".
-In progress since 2026-10-27: the frame size decisions (core `widths` and the part view).
 
 Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
 started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
