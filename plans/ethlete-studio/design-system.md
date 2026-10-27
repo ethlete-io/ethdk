@@ -888,11 +888,10 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
    `apps/ethlete-studio/src-tauri/src/tools.rs`.
 9. **Motion**: its own plan, `plans/ethlete-studio/motion.md`. A timeline, controlled time, a
    screenshot per keyframe. Motion is a tool that extends components and elements.
-   Before slice 10: states and interactions, fitted frames without a border, and the live mode, as in
-   "States and interactions decisions".
-
 10. **Studio designs Studio**: a full redesign of Studio through the whole workflow, as in "Slice
     10 decisions". It runs after slice 6 and before slices 7 to 9; the tomflix rebuild follows it.
+    It needs states and interactions, fitted frames without a border, and the live mode first,
+    as in "States and interactions decisions".
 
 Each slice gets an "in progress" note here when it starts.
 
