@@ -1382,6 +1382,24 @@ Notes:
   reports them.
 - No control removes a free note's `at`; delete and create again does the same.
 
+### Wireframe kit fix decisions (2026-10-27)
+
+Seen on `studio-lab` `pages/film-detail` at phone 390: image and text stay side by side, the button
+sticks out with a horizontal scrollbar, the title is light on light, the input placeholder wraps.
+Causes: a kit row never stacks and the page gives the image 220 × 320 px; kit parts set no text
+colour, so text inherits the product colour; the kit button has `white-space: nowrap`.
+
+- A row `box` takes an explicit `stackBelow: <px>`; below that width it stacks its children. It is a
+  container query on the box's own width, so a row in a narrow column stacks too. The kit renders
+  the container. Risk: `container-type: inline-size` drops the intrinsic width, so a fitted frame
+  can collapse; prove a page in a fitted frame.
+- Every kit `box` sets the kit text colour, so text between kit parts stays kit grey. The kit gets
+  `heading(text)` for titles.
+- `image` takes `ratio` (for example `'2/3'`) and fills the width. The kit button is at most as wide
+  as its space and ends its text with "…". The design-exploration skill teaches `ratio` and
+  `stackBelow` instead of fixed px.
+- The builder then fixes `studio-lab` `pages/film-detail` to use them.
+
 Notes server, as built (2026-10-27):
 
 - 07d73981c, lab 948a7793b. The reader existed (c618028b5); its check rule is now `NOTE`. A state
