@@ -733,6 +733,10 @@ step. Each finding names what happened and the fix it needs.
   paints the paper.
 - A part with `height: 900px` and a 1px border overflowed its 900 px page frame, and Studio
   showed a scroll bar. Nothing warned. Fix: the render check above.
+- Tom, after the clean slate: "ich bin mit dem Wireframe-Prozess noch ziemlich auf Kriegsfuß".
+  The step-by-step rhythm (one question, one change, Tom looks in Studio) works, but each look
+  costs Tom a screenshot because no agent can see the drawing. Fix: the shot command above, so
+  the agent shows the result in the question.
 
 Findings:
 
