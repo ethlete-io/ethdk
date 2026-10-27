@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: pages, wireframe kit and flows done; open only slice C (numbered note markers, hover line, note size), in progress. Slice 10: step 1 (sdk base, studio product, tokens import) done; next the redesign layer by layer, starting with a foundations/tokens sketch. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; next the redesign layer by layer, starting with a foundations/tokens sketch. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -621,8 +621,8 @@ behaviour; Studio vitest 202, cli 347, tsc, ngc, eslint, `design check --product
   also got `phone`.
 - Proven headlessly on `film-detail` "rest" (number "1" on marker and card, phone only, desktop label
   "1 note at another size", line on hover only). Not proven headlessly: flows and the component
-  matrix (unit tests only); writing a note through the real UI. No doc page or skill documents the
-  note format.
+  matrix (unit tests only); writing a note through the real UI. The exploration skill documents the note format
+  (806aa94d9, 848f76d15).
 - Decided (2026-10-27): `phone` for `a1b2` confirmed. A click right on a marker in comment or note
   mode starts nothing; accepted. The thin vertical line along the left edge of phone frames (also
   on rows without notes, not the note line) gets its own check of the frame chrome. The
