@@ -98,6 +98,10 @@ A variant mirrors the product layout and holds only the parts it changes. Draw t
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. Use `sketch list` to see the open ones.
 
+A sketch on a foundations part such as `foundations/tokens` keeps the part's overview drawing: the
+variant adds its token group as a state, or extends that group's state. It never replaces the
+drawing with a demo scene, since the merge would drop every other group. A demo may be an extra state.
+
 Name the variant you work on with `--variant`. Studio marks it as drawing, and hides its frames,
 while the latest report names it. The report also records your model id as an author of that
 variant, and a merge writes the picked variant's authors into the part's `madeBy`.
