@@ -208,10 +208,10 @@ describe('framesOf', () => {
 
     expect(arrangementOf(page)).toBe('sheet');
     expect(frames.map((frame) => [frame.row, frame.label, frame.width, frame.height])).toEqual([
-      ['default', 'phone', 390, 844],
-      ['default', 'desktop', 1280, undefined],
-      ['disabled', 'phone', 390, 844],
-      ['disabled', 'desktop', 1280, undefined],
+      ['default', 'default · phone', 390, 844],
+      ['default', 'default · desktop', 1280, undefined],
+      ['disabled', 'disabled · phone', 390, 844],
+      ['disabled', 'disabled · desktop', 1280, undefined],
     ]);
     expect(frames[0]?.src).toBe(
       'http://localhost:4402/frame.html?product=acme&part=pages%2Fhome&state=default&surface=dark&epoch=2&revision=3',
@@ -273,8 +273,8 @@ describe('framesOf', () => {
     const frames = framesOf({ port: 4402, product: product(), part: card });
 
     expect(frames.map((frame) => [frame.id, frame.row, frame.label, frame.place?.size])).toEqual([
-      ['default 280', 'default', 'width', 280],
-      ['default 280 hover', 'default', 'width · hover', 280],
+      ['default 280', 'default', 'default · width', 280],
+      ['default 280 hover', 'default', 'default · width · hover', 280],
     ]);
   });
 

@@ -251,6 +251,9 @@ export const partColumnsOf = (part: ListedPart): { key: string; label: string }[
 
 const sizeLabelOf = (size: string, interaction: string) => (interaction === REST ? size : `${size} · ${interaction}`);
 
+const stateSizeLabelOf = ({ state, interaction }: Cell, size: string) =>
+  state === undefined ? sizeLabelOf(size, interaction) : `${state} · ${sizeLabelOf(size, interaction)}`;
+
 export const FITTED = 'fitted';
 
 type Cell = { state: string | undefined; interaction: string };
@@ -299,7 +302,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         src: partFrameUrl(addressOf(cell)),
         width,
         height,
-        label: sizeLabelOf(preset, cell.interaction),
+        label: stateSizeLabelOf(cell, preset),
         row: cell.state,
         screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
         error,
@@ -316,7 +319,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         id: idOf(cell, width),
         src: partFrameUrl(addressOf(cell)),
         width,
-        label: sizeLabelOf('width', cell.interaction),
+        label: stateSizeLabelOf(cell, 'width'),
         row: cell.state,
         screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
         error,
