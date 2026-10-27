@@ -391,7 +391,7 @@ Open points, each with a recommendation:
 
 ### Comment follow-up decisions (2026-10-27)
 
-Open as build work; ethlete-sdk-97 handed off before them.
+Built in 53a10e894; the merge lock needed no change.
 
 - The canvas row gap stays 48 px for fitted frames; Tom approved the rating matrix screenshot.
 - An open pin drops `[pressed]` and shows a ring in the accent colour instead of a hollow button.
