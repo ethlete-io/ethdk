@@ -459,11 +459,8 @@ Open points, each with a recommendation:
 
 - The canvas grid and the label below each tile were not looked at. Recommendation: check them in
   Studio on `studio-lab` before the sketch view slice builds on them.
-- A fitted frame starts at 320 px until it reports its width, so the first camera fit can be off.
-  Recommendation: fit the camera again once every fitted frame reported, only while the user has
-  not moved it.
-- The sketch view still draws every part at the presets (`sketchFramesOf` keeps the old path).
-  Recommendation: switch it to `framesOf` in the sketch view slice, with the preset/width switch.
+- Done: the camera fits again while fitted frames report their size (d25e8a8b0).
+- Done: the sketch view draws through `sketchMatrixOf` with a size switch (0f966f967).
 
 ### Sketch matrix, as built (2026-10-27)
 
@@ -503,16 +500,13 @@ Open points, each with a recommendation:
 
 Open points, each with a recommendation:
 
-- The report names its variant only by the words `variant <name>`. Recommendation: say so in the
-  design-exploration skill next to `sketch report`.
+- Done: the design-exploration skill names the variant in each report (4e2fd4d54).
 - The status watch reload was only seen through a stubbed channel. Recommendation: check it once
   in the real app with `et design sketch report` on `studio-lab`.
-- The merge preview draws every state of every affected part, which can be many pages.
-  Recommendation: keep it until a product shows it is too slow, then add a state filter.
-- `studio-lab` parts read `--lab-*` tokens that no frame loads, so they draw in the fallback
-  colours. Recommendation: list the tokens file in the product's styles.
-- Column heads shrink to the column width with an ellipsis at low zoom (the full name is the
-  title). Recommendation: leave it; the matrix is read near 100 %.
+- Decided: the merge preview keeps every state of every affected part. A state filter comes
+  only once a product shows it is too slow.
+- Decided: `studio-lab` lists its `--lab-*` tokens file in the product's `styles`. Not done yet.
+- Decided: column heads keep the ellipsis at low zoom; the matrix is read near 100 %.
 - The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
   check whether the frame page reports a height after its web fonts load.
 
