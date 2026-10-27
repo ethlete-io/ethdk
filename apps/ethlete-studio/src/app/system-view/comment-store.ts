@@ -8,10 +8,11 @@ import {
   commentChanges$,
   withdrawComment$,
   listedComments$,
+  replyToComment$,
   writeComment$,
 } from '../../host/design';
 import { rememberView, rememberedView } from '../studio-view/remembered';
-import { CommentDraft, commentPlaceOf, numberedCommentsOf } from './comment-pins';
+import { CommentDraft, commentPlaceOf, isQuestion, numberedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
 export type CommentSource = { address: ProductAddress | null; revision: number };
@@ -71,6 +72,9 @@ export class CommentStore {
   /** The open comments of the product, numbered oldest first. */
   public comments = computed(() => numberedCommentsOf(this.reading().comments));
 
+  /** The threads whose last word is the agent's. */
+  public questions = computed(() => this.comments().filter(isQuestion));
+
   public active = signal(false);
 
   public draft = signal<CommentDraft | null>(null);
@@ -78,6 +82,9 @@ export class CommentStore {
   public panelOpen = signal(rememberedView().commentsOpen ?? false);
 
   public busy = signal(false);
+
+  /** Counts the replies sent, so a reply field can clear itself after a send. */
+  public repliesSent = signal(0);
 
   public error = signal('');
 
@@ -125,6 +132,18 @@ export class CommentStore {
       writeComment$(address, { ...commentPlaceOf(draft.place, draft.point), text: trimmed }).pipe(
         tap(() => this.draft.set(null)),
       ),
+    );
+  }
+
+  /** Adds `text` as the user's reply to a thread through `comment-reply`. */
+  public reply(id: string, text: string) {
+    const address = this.address();
+    const trimmed = text.trim();
+
+    if (!address || !trimmed || this.busy()) return;
+
+    this.run(
+      replyToComment$(address, { id, text: trimmed }).pipe(tap(() => this.repliesSent.update((count) => count + 1))),
     );
   }
 

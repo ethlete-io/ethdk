@@ -1,5 +1,6 @@
 import {
   CommentPlace,
+  CommentReply,
   ListedCall,
   ListedPart,
   ListedProduct,
@@ -11,6 +12,7 @@ import {
   partShotUrl,
 } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
+import { isQuestion } from './comment-pins';
 
 export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'sketches' | 'legacy';
 
@@ -24,7 +26,23 @@ export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; layer
 ];
 
 export type PartBadge =
-  'from base' | 'overridden' | 'error' | 'transferred' | 'sketch open' | 'comment open' | 'in progress' | 'ready';
+  | 'from base'
+  | 'overridden'
+  | 'error'
+  | 'transferred'
+  | 'sketch open'
+  | 'comment open'
+  | 'question'
+  | 'in progress'
+  | 'ready';
+
+/** Which parts and sketches hold an open comment, and which of those wait for the user. */
+type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string> };
+
+const commentBadgesOf = (key: string, { commented, questioned }: CommentMarks): PartBadge[] => [
+  ...(commented.has(key) ? (['comment open'] as const) : []),
+  ...(questioned.has(key) ? (['question'] as const) : []),
+];
 
 export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[] };
 
@@ -34,23 +52,26 @@ export type TreeGroup = { key: string; label: string; entries: TreeEntry[]; sect
 
 export const partKeyOf = (part: Pick<ListedPart, 'layer' | 'name'>) => `${part.layer}/${part.name}`;
 
-const badgesOf = (part: ListedPart, sketched: ReadonlySet<string>, commented: ReadonlySet<string>): PartBadge[] => [
+const badgesOf = (
+  part: ListedPart,
+  { sketched, marks }: { sketched: ReadonlySet<string>; marks: CommentMarks },
+): PartBadge[] => [
   ...(part.origin === 'base' ? (['from base'] as const) : []),
   ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
   ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
-  ...(commented.has(partKeyOf(part)) ? (['comment open'] as const) : []),
+  ...commentBadgesOf(partKeyOf(part), marks),
   ...(part.problems.length > 0 ? (['error'] as const) : []),
 ];
 
 export const sketchKeyOf = (target: string) => `sketch:${target}`;
 
-const sketchEntryOf = (sketch: ListedSketch, commented: ReadonlySet<string>): TreeEntry => ({
+const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
   title: sketch.target,
   badges: [
     sketch.status,
-    ...(commented.has(sketch.target) ? (['comment open'] as const) : []),
+    ...commentBadgesOf(sketch.target, marks),
     ...(sketch.problems.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
   ],
 });
@@ -136,16 +157,26 @@ export const treeOf = (
     calls = [],
     sketches = [],
     comments = [],
-  }: { calls?: ListedCall[]; sketches?: ListedSketch[]; comments?: CommentPlace[] } = {},
+  }: {
+    calls?: ListedCall[];
+    sketches?: ListedSketch[];
+    comments?: (CommentPlace & { replies: readonly Pick<CommentReply, 'by'>[] })[];
+  } = {},
 ): TreeGroup[] => {
   const sketched = new Set(sketches.map((sketch) => sketch.target));
-  const commentedParts = new Set(comments.filter((comment) => !comment.sketch).map((comment) => comment.part));
-  const commentedSketches = new Set(comments.flatMap((comment) => comment.sketch?.target ?? []));
+  const marksOf = (onSketch: boolean): CommentMarks => {
+    const own = comments.filter((comment) => !!comment.sketch === onSketch);
+    const keyOf = (comment: CommentPlace) => comment.sketch?.target ?? comment.part;
+
+    return { commented: new Set(own.map(keyOf)), questioned: new Set(own.filter(isQuestion).map(keyOf)) };
+  };
+  const partMarks = marksOf(false);
+  const sketchMarks = marksOf(true);
 
   return SYSTEM_GROUPS.flatMap(({ key, label, layers }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);
     if (key === 'sketches')
-      return [{ key, label, entries: sketches.map((sketch) => sketchEntryOf(sketch, commentedSketches)) }];
+      return [{ key, label, entries: sketches.map((sketch) => sketchEntryOf(sketch, sketchMarks)) }];
 
     return [
       {
@@ -153,7 +184,11 @@ export const treeOf = (
         label,
         entries: parts
           .filter((part) => layers.includes(part.layer))
-          .map((part) => ({ key: partKeyOf(part), name: part.name, badges: badgesOf(part, sketched, commentedParts) })),
+          .map((part) => ({
+            key: partKeyOf(part),
+            name: part.name,
+            badges: badgesOf(part, { sketched, marks: partMarks }),
+          })),
       },
     ];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);

@@ -451,10 +451,15 @@ export type CommentPlace = {
   sketch?: { target: string; variant: string };
 };
 
+/** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */
+export type CommentReply = { by: 'user' | 'agent'; text: string; createdAt: string };
+
 export type ListedComment = CommentPlace & {
   id: string;
   text: string;
   createdAt: string;
+  /** The answers after the first text, oldest first. */
+  replies: CommentReply[];
   /** Why the comment points at nothing any more, or `null`. */
   stale: string | null;
 };
@@ -497,3 +502,9 @@ export const drawnChanges$ = (port: number): Observable<void> => designEvents$(p
 /** Deletes a comment without a note, through `comment-withdraw`. */
 export const withdrawComment$ = (address: ProductAddress, id: string): Observable<void> =>
   designAnswer$<unknown>(productUrl(address, 'comment-withdraw'), postJson({ id })).pipe(map(() => undefined));
+
+/** Adds a reply by the user to a comment thread, through `comment-reply`. */
+export const replyToComment$ = (
+  address: ProductAddress,
+  reply: { id: string; text: string },
+): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment-reply'), postJson(reply));

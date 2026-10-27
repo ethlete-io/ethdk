@@ -81,23 +81,22 @@
       >
         {{ placed.pin.label }}
       </button>
+      @if (placed.pin.dot) {
+        <span
+          class="pointer-events-none absolute -top-1 -right-1 size-3 rounded-full border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-theme-color-primary-solid)]"
+          data-comment-question
+        ></span>
+      }
       @if (placed.open) {
         <div
           class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 text-[1.3rem] text-[var(--et-surface-color-solid)] shadow-lg"
           data-comment-text
         >
-          <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
-          <button
-            (click)="withdrawPin(placed.pin.id)"
-            et-button
-            type="button"
-            variant="transparent"
-            color="surface"
-            size="xs"
-            data-comment-withdraw
-          >
-            Withdraw
-          </button>
+          @if (pinPopover(); as popover) {
+            <ng-container *ngTemplateOutlet="popover; context: { $implicit: placed.pin }" />
+          } @else {
+            <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+          }
         </div>
       }
     </div>

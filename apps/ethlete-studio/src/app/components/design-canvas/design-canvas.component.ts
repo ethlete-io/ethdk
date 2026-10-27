@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  TemplateRef,
   ViewEncapsulation,
   computed,
   effect,
@@ -11,6 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
@@ -64,7 +66,7 @@ const isEditable = (target: EventTarget | null) =>
   templateUrl: './design-canvas.component.html',
   styleUrl: './design-canvas.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CanvasFrameComponent, ResizeHandlesComponent],
+  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, ResizeHandlesComponent],
   host: {
     class: 'et-design-canvas',
     '[class.et-design-canvas--space]': 'spaceHeld()',
@@ -105,9 +107,10 @@ export class DesignCanvasComponent {
   /** Where the projected `[canvasDraft]` content sits, or `null` to hide it. */
   public draft = input<FramePoint | null>(null);
 
-  public pointPick = output<FramePoint>();
+  /** What an open pin shows; without it, the pin's text. */
+  public pinPopover = input<TemplateRef<{ $implicit: CanvasPin }> | null>(null);
 
-  public pinWithdraw = output<string>();
+  public pointPick = output<FramePoint>();
 
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
 
@@ -366,11 +369,6 @@ export class DesignCanvasComponent {
     event.stopPropagation();
     if (this.consumeSwallowedClick()) return;
     this.pointPick.emit({ frameId: frame.id, point: null });
-  }
-
-  protected withdrawPin(id: string) {
-    this.openPinId.set(null);
-    this.pinWithdraw.emit(id);
   }
 
   protected togglePin(id: string, event: MouseEvent) {

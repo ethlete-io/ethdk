@@ -9,6 +9,7 @@ const host = vi.hoisted(() => ({
   write: vi.fn<(address: ProductAddress, comment: CommentPlace & { text: string }) => Observable<unknown>>(),
   done: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
   changes: vi.fn<(port: number) => Observable<void>>(),
+  reply: vi.fn<(address: ProductAddress, reply: { id: string; text: string }) => Observable<unknown>>(),
 }));
 
 vi.mock('../../host/design', () => ({
@@ -16,6 +17,7 @@ vi.mock('../../host/design', () => ({
   writeComment$: host.write,
   withdrawComment$: host.done,
   commentChanges$: host.changes,
+  replyToComment$: host.reply,
 }));
 
 const listed = (id: string, createdAt: string): ListedComment => ({
@@ -25,6 +27,7 @@ const listed = (id: string, createdAt: string): ListedComment => ({
   size: 'phone',
   text: `text ${id}`,
   createdAt,
+  replies: [],
   stale: null,
 });
 
@@ -54,6 +57,13 @@ describe('CommentStore', () => {
     host.write.mockReset().mockReturnValue(of({}));
     host.done.mockReset().mockReturnValue(of(undefined));
     host.changes.mockReset().mockReturnValue(changes);
+    host.reply.mockReset().mockImplementation((_, { id, text }) => {
+      stored = stored.map((entry) =>
+        entry.id === id ? { ...entry, replies: [...entry.replies, { by: 'user', text, createdAt: '' }] } : entry,
+      );
+
+      return of({});
+    });
   });
 
   it('numbers the comments oldest first and reloads them on a comment change and a new revision', () => {
@@ -124,5 +134,37 @@ describe('CommentStore', () => {
     store.end();
     expect(store.active()).toBe(false);
     expect(store.draft()).toBeNull();
+  });
+
+  it('posts a trimmed reply, reloads the thread, and counts the send; an agent reply makes a question', () => {
+    const { store } = setup();
+
+    store.reply('a', '   ');
+    expect(host.reply).not.toHaveBeenCalled();
+
+    store.reply('a', ' smaller? ');
+    TestBed.tick();
+
+    expect(host.reply).toHaveBeenCalledWith(ADDRESS, { id: 'a', text: 'smaller?' });
+    expect(store.comments()[0]?.replies.map((reply) => reply.text)).toEqual(['smaller?']);
+    expect(store.repliesSent()).toBe(1);
+    expect(store.questions()).toEqual([]);
+
+    stored = stored.map((entry) =>
+      entry.id === 'b' ? { ...entry, replies: [{ by: 'agent', text: 'which one?', createdAt: '' }] } : entry,
+    );
+    changes.next();
+    TestBed.tick();
+    expect(store.questions().map((entry) => entry.id)).toEqual(['b']);
+  });
+
+  it('keeps the reply field and reports a failed reply', () => {
+    host.reply.mockReturnValue(throwError(() => new Error('gone')));
+    const { store } = setup();
+
+    store.reply('a', 'x');
+
+    expect(store.repliesSent()).toBe(0);
+    expect(store.error()).toBe('gone');
   });
 });

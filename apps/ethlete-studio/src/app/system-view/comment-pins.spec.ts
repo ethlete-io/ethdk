@@ -8,6 +8,8 @@ import {
   commentPlaceOf,
   draftKeyOf,
   isCommentModeKey,
+  isQuestion,
+  lastSenderOf,
   numberedCommentsOf,
   otherSizeCountOf,
   otherSizeFrameOf,
@@ -23,6 +25,7 @@ const comment = (id: string, rest: Partial<ListedComment>): ListedComment => ({
   size: 360,
   text: `text ${id}`,
   createdAt: `2026-10-27T10:00:0${id}Z`,
+  replies: [],
   stale: null,
   ...rest,
 });
@@ -37,6 +40,15 @@ const frame = (id: string, variant?: string): CanvasFrame => ({
     size: 360,
     ...(variant ? { sketch: { target: 'components/card', variant } } : {}),
   },
+});
+
+describe('isQuestion', () => {
+  it('is a question only when the agent has the last word', () => {
+    expect(isQuestion({ replies: [] })).toBe(false);
+    expect(isQuestion({ replies: [{ by: 'agent' }] })).toBe(true);
+    expect(isQuestion({ replies: [{ by: 'agent' }, { by: 'user' }] })).toBe(false);
+    expect(isQuestion({ replies: [{ by: 'user' }, { by: 'agent' }] })).toBe(true);
+  });
 });
 
 describe('comment pins', () => {
@@ -114,6 +126,26 @@ describe('comment pins', () => {
     const tree = treeOf([part], { comments: comments.slice(1) });
 
     expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['comment open']);
+  });
+
+  it('marks a question in the tree, on its pin, and by its last sender', () => {
+    const part = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product' as const,
+      note: null,
+      states: [],
+      problems: [],
+    };
+    const asked = numberedCommentsOf([
+      comment('1', { replies: [{ by: 'agent', text: 'which?', createdAt: '' }] }),
+      comment('2', { sketch: { target: 'components/card', variant: 'b' } }),
+    ]);
+    const tree = treeOf([part], { comments: asked });
+
+    expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['comment open', 'question']);
+    expect(pinsOf([frame('a')], asked)[0]?.dot).toBe(true);
+    expect(asked.map(lastSenderOf)).toEqual(['agent', 'user']);
   });
 
   it('starts a draft only on a frame with a place', () => {

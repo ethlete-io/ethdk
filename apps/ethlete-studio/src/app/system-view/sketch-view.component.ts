@@ -30,6 +30,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { CommentDraftComponent } from './comment-draft.component';
+import { CommentThreadComponent } from './comment-thread.component';
 import {
   NumberedComment,
   commentDraftOf,
@@ -52,6 +53,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 @Component({
   selector: 'ethlete-sketch-view',
   template: `
+    <ng-template #pinThread let-pin>
+      <ethlete-comment-thread [commentId]="pin.id" />
+    </ng-template>
+
     @let shown = sketch();
     <header class="flex items-center gap-3 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
       <div class="min-w-0 flex-1">
@@ -224,9 +229,9 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [pins]="pins()"
       [pointing]="commentStore.active()"
       [draft]="commentStore.draft()"
+      [pinPopover]="pinThread"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
-      (pinWithdraw)="commentStore.withdraw($event)"
       class="min-h-0 flex-1"
       arrangement="matrix"
     >
@@ -236,7 +241,14 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     </ethlete-design-canvas>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, CommentDraftComponent, DesignCanvasComponent, ProvideColorDirective],
+  imports: [
+    BUTTON_IMPORTS,
+    INPUT_IMPORTS,
+    CommentDraftComponent,
+    CommentThreadComponent,
+    DesignCanvasComponent,
+    ProvideColorDirective,
+  ],
   host: { class: 'flex min-h-0 flex-col' },
 })
 export class SketchViewComponent {

@@ -57,6 +57,7 @@ import {
   treeOf,
 } from './system-tree';
 import { CommentDraftComponent } from './comment-draft.component';
+import { CommentThreadComponent } from './comment-thread.component';
 import {
   NumberedComment,
   commentDraftOf,
@@ -74,7 +75,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
 const BADGE =
   'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-surface-border-solid)] px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
 
-const BADGE_ERROR =
+const BADGE_ACCENT =
   'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
@@ -82,6 +83,10 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
 @Component({
   selector: 'ethlete-system-view',
   template: `
+    <ng-template #pinThread let-pin>
+      <ethlete-comment-thread [commentId]="pin.id" />
+    </ng-template>
+
     <aside
       class="flex min-h-0 flex-col overflow-y-auto border-r border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] pb-4 text-[var(--et-surface-color-solid)]"
       etProvideSurface="dark-elevated"
@@ -125,7 +130,9 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
               </span>
               @for (badge of entry.badges; track badge) {
                 @if (badge === 'error') {
-                  <span [class]="BADGE_ERROR" etProvideColor="danger">error</span>
+                  <span [class]="BADGE_ACCENT" etProvideColor="danger">error</span>
+                } @else if (badge === 'question') {
+                  <span [class]="BADGE_ACCENT" data-tree-question>question</span>
                 } @else {
                   <span [class]="BADGE">{{ badge }}</span>
                 }
@@ -178,6 +185,21 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       >
         Comment
       </button>
+      @if (commentStore.questions().length; as questions) {
+        <button
+          [title]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
+          [attr.aria-label]="questions === 1 ? '1 question for you' : questions + ' questions for you'"
+          (click)="commentStore.showPanel(true)"
+          class="-ml-1.5"
+          et-button
+          type="button"
+          variant="filled"
+          size="sm"
+          data-comment-questions
+        >
+          {{ questions }} ?
+        </button>
+      }
       <button
         [pressed]="commentStore.panelOpen()"
         (click)="commentStore.showPanel(!commentStore.panelOpen())"
@@ -291,9 +313,9 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             [pins]="partPins()"
             [pointing]="commentStore.active()"
             [draft]="commentStore.draft()"
+            [pinPopover]="pinThread"
             (cameraChange)="rememberCamera($event)"
             (pointPick)="startComment(frames(), $event)"
-            (pinWithdraw)="commentStore.withdraw($event)"
             class="min-h-0"
           >
             @if (commentStore.draft()) {
@@ -325,6 +347,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
     ProvideSurfaceDirective,
     SketchViewComponent,
     CommentDraftComponent,
+    CommentThreadComponent,
     CommentPanelComponent,
   ],
   providers: [provideCommentStore()],
@@ -348,7 +371,7 @@ export class SystemViewComponent {
   private sketchView = viewChild<SketchViewComponent>('sketchView');
   protected readonly BADGE = BADGE;
 
-  protected readonly BADGE_ERROR = BADGE_ERROR;
+  protected readonly BADGE_ACCENT = BADGE_ACCENT;
 
   protected readonly NOTE = NOTE;
 

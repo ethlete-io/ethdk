@@ -1,4 +1,4 @@
-import { CommentPlace, ListedComment } from '../../host/design';
+import { CommentPlace, CommentReply, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
 
@@ -6,6 +6,16 @@ export type NumberedComment = ListedComment & { number: number };
 
 /** A comment the user is typing, on a frame and optionally at a point on it. */
 export type CommentDraft = { frameId: string; place: FramePlace; point: { x: number; y: number } | null };
+
+/** Whether a thread waits for the user: the agent has the last word. */
+export const isQuestion = (comment: { replies: readonly Pick<CommentReply, 'by'>[] }) =>
+  comment.replies.at(-1)?.by === 'agent';
+
+/** Who has the last word in a thread; the user wrote the first text. */
+export const lastSenderOf = (comment: { replies: readonly Pick<CommentReply, 'by'>[] }) =>
+  comment.replies.at(-1)?.by ?? 'user';
+
+export const SENDER_LABELS: Record<CommentReply['by'], string> = { user: 'You', agent: 'Agent' };
 
 /** Numbers the open comments of a product from 1, oldest first, so the list and the pins agree. */
 export const numberedCommentsOf = (comments: ListedComment[]): NumberedComment[] =>
@@ -37,6 +47,7 @@ export const pinsOf = (frames: CanvasFrame[], comments: NumberedComment[]): Canv
             frameId: frame.id,
             label: String(comment.number),
             text: comment.text,
+            ...(isQuestion(comment) ? { dot: true } : {}),
             ...(comment.point ? { point: comment.point } : {}),
           },
         ]
