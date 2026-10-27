@@ -900,6 +900,11 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
 
 Each slice gets an "in progress" note here when it starts.
 
+States and interactions: in progress since 2026-10-27, in five steps: (1) `interactions` in
+`definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
+table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
+without a border and the live mode; (5) the studio-lab button. Step 1 started.
+
 Slice 1: done on 2026-10-27.
 
 Slice 2: done on 2026-10-27. The canvas, the server, the CLI, the tree and Legacy are built, and
