@@ -181,12 +181,15 @@ lays the frames out along the lines.
 A page that has no parts yet draws grey stand-ins from the wireframe kit; only pages may import it:
 
 ```ts
-import { box, textLines, image, button, input, icon } from '@design-system/kit';
+import { box, heading, textLines, image, button, input, icon } from '@design-system/kit';
 ```
 
-Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction, gap, padding, width, height, grow, plain })`,
-`textLines({ lines, width, size })`, `image({ width, height })`, `button(label, { primary })`,
-`input({ label, placeholder, width })`, `icon({ size })`. Studio lists such a page under
+Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction, gap, padding, width, height, grow, plain, stackBelow })`,
+`heading(text, { size })`, `textLines({ lines, width, size })`, `image({ width, height, ratio })`,
+`button(label, { primary })`, `input({ label, placeholder, width })`, `icon({ size })`. Draw for
+every preset, not one width: give a picture a `ratio` (`'2/3'`) instead of a fixed height, and give
+a row `stackBelow: <px>`, the width below which it stacks its children, instead of fixed widths
+that only fit the desktop. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
 "Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`).
 A dialog without its own URL is an element that a page state shows ("login open"). Examples in
 `.ethlete/design/studio-lab`: `pages/film-detail`, `elements/shell-main`, `elements/login-dialog`,
