@@ -1138,7 +1138,8 @@ Open points, each with a recommendation:
 - A comment pin with no point sits on the right edge of its tile, not of the part. A pin with no
   point belongs to the whole state frame, and all such pins in a column line up.
 - The stale live report for `studio-lab` `components/button` variant b (written 12:24 by a seeding
-  run, never ended with `sketch ready`) is deleted. It kept the variant b column at "drawing…" with
+  run, never ended with `sketch ready`) is to be deleted; the builder's permission check blocked the
+  delete, so it stays as the live test case for the expiry below, and Tom deletes it after. It kept the variant b column at "drawing…" with
   no frames, so pin 7001 had no place to render. Not a code fault.
 - A `drawing` report expires 30 minutes after its `updatedAt`. Studio then draws the variant's frames
   as if it were drawn, and the column head shows "No report for 30 min" instead of "drawing…", so a
