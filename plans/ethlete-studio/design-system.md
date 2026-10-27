@@ -703,6 +703,15 @@ Findings:
   `pages-sketch` was 992 px in the 900 px desktop frame; after the fix to 128 px cells, only
   Tom's look in Studio showed that it fits. Rec: `et design check` (or a `design shot --report`) names every state
   taller or wider than its frame, so no agent has to start a server and measure by hand.
+- `pages-sketch`, `pages-inbox` and `pages-flows` each hold one variant (`a`), so Tom has nothing
+  to pick. The skill asks for two to four variants per question, but nothing enforces it: the
+  builder passed `--variants a` to `sketch new` after the shell pick, and treated each page as
+  "draw it on shell b", not as a question. To stop it:
+  - `et design sketch new` refuses fewer than two variants, and `sketch ready` and `check` fail
+    on a ready sketch with fewer than two.
+  - Each builder or subagent prompt for a sketch names the question of the sketch and its two to
+    four answers before any drawing starts. A pick upstream (the shell) does not make the page
+    below it a one-answer sketch.
 - The `sdk` base gives `studio` a phone preset that a desktop-only app does not need.
 - A kit page cannot fill the frame height without custom CSS.
 - `--round` on a one-variant `sketch new` still needs a title.
