@@ -676,6 +676,32 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
   SDK theme type that accepts a CSS colour would let `themes.ts` name the tokens and drop the map.
 - Next: the component list comes from the Studio wireframes, not from the current app.
 
+### Wireframes first decisions and round 1 (2026-10-27)
+
+- Tom: the component layer waits for the wireframes. The component list comes from the Studio
+  wireframes, not from the current app. Every SDK component needs a design in the `sdk` base,
+  the 3 mocks included; now only the ones the Studio wireframes need, one sketch round each,
+  button first, then form-field with input, textarea and label, then select, then tree.
+- Tom: the skill order is now wireframes, foundations, logo and CI, components (5157e0517).
+- Round 1 (not committed, Tom picks in Studio): sketches `pages-system` (shell variants A sidebar
+  plus fixed panel, B top bar plus tree plus panel on demand, C icon rail plus bottom panel; the
+  agent picks B), `pages-sketch`, `pages-inbox`, `pages-flows`, all drawn on B. Flows in
+  `studio/flows/drafts/`, the inventory in `studio/inventory.ts` (20 SDK rows, 11 new parts).
+- Open foundations gap: no Studio tokens for subtle text, interaction, danger, disabled.
+
+Findings:
+
+- A flow in `<product>/flows/` that names a page that exists only as a sketch fails `FLOW`, and
+  `sketch merge` runs that check, so it refuses every page merge. A sketch cannot carry a flow.
+- A product has no place for the inventory (only legacy calls have `inventory`); nothing reads
+  `studio/inventory.ts`.
+- Parts and variants have no cost field; the cost line goes into the variant `note`.
+- Only pages may import the kit, so a rough shell element cannot exist; each page repeats the
+  shell, and a shell pick has to be copied to every page.
+- The `sdk` base gives `studio` a phone preset that a desktop-only app does not need.
+- A kit page cannot fill the frame height without custom CSS.
+- `--round` on a one-variant `sketch new` still needs a title.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
