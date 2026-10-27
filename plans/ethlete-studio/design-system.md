@@ -510,6 +510,23 @@ These change the "all" case of 027805054.
   may be the one they missed.
 - `config.json` still reloads all. Comment files reload no frame (as built).
 
+### Frame reload files and done authors, as built (2026-10-27)
+
+- 69b6c4f73 (`libs/cli`): `parts` on a file added or removed. `config.json` sends `{ all: true }`;
+  comment files send no `parts` (only `comments`); `sketch.json` sends none (it holds decisions). A
+  file in `<product>/<layer>/<part>/...` sends that part with `sketch: null`; only its shots drop,
+  not the dependents'. A file in `sketches/<layer>-<part>/<variant>/...` sends every part drawn in
+  that variant, each with `sketch: { target, variant }`. A file in no part folder sends
+  `{ all: false, parts: [], errored: true }`.
+- New optional field `errored: true`: also reload the frames that show an error now. The server
+  cannot know which frames these are, so Studio applies it in the Studio side of step 6.
+- `inbox done --by`: a comment on a sketch variant adds the id to `variantInfo[v].authors` (if
+  absent; `madeBy` waits for the merge); a comment on a product part adds it to the part's `madeBy`
+  (if absent, the same write as the note). Studio's own "done" passes no author.
+- The design-exploration skill says in one sentence where `inbox done --by` stores the id.
+- Builder choices beyond the plan: the `errored` field, and a sketch-variant file reloads all frames
+  of that variant.
+
 ### Merge preview decisions (2026-10-27)
 
 Not built yet. In the `components/card` sketch the preview showed all three states of
