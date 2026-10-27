@@ -376,9 +376,14 @@ export type ListedSketch = {
   targets?: SketchTarget[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
-  /** The model ids that reported on each variant, in the order of their first report. Missing in old data. */
-  variantInfo?: Record<string, { authors?: string[] }>;
+  /** The model ids that reported on each variant, in the order of their first report, and the round of each variant. Missing in old data. */
+  variantInfo?: Record<string, { authors?: string[]; round?: string }>;
+  /** Oldest first; the last one runs. Missing from an `@ethlete/cli` older than sketch rounds. */
+  rounds?: SketchRound[];
 };
+
+/** A round of a sketch: `note` says why its variants lost, once a newer round runs. */
+export type SketchRound = { key: string; title: string; note: string };
 
 export type SketchTarget = {
   variant: string;
