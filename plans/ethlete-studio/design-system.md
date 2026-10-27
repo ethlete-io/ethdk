@@ -766,6 +766,19 @@ step. Each finding names what happened and the fix it needs.
     above, and `sketch check` prints the shot URL of each variant to look at.
   - The kit `fill: true` uses `100vh`, but the skill forbids `vh` in parts, so the shell needs a
     fixed `height: 900`. Prevent: `fill` uses `100%` of the frame.
+- Shell sketch round 2 ("Discord bubble rail", variants d, e, f from b), friction:
+  - The kit has no bubble: `icon()` sets its radius inline and shows one letter, so the agent
+    drew its own bubbles in variant CSS. Prevent: `icon({ round: true })` or a kit `avatar(text,
+{ active })`.
+  - `yarn et ...`, as the skill and the inbox output write it, fails with "Couldn't find a script
+    named et"; only `node dist/libs/cli/src/index.js` works. Prevent: an `et` script in the root
+    `package.json`, or the inbox prints the command that works in this repo.
+  - `sketch variant --round` asks for a note on the previous round but shows none of its variant
+    notes; the agent fixed its guess in `sketch.json` by hand. Prevent: `--round` prints the
+    running round's variant notes, or drafts the note from them.
+  - `sketch check` prints only "ok", so the agent cannot tell which variants and rules it
+    covered. Prevent: one line per variant with the rules it ran.
+  - `sketch variant` makes one letter per call. Prevent: accept `d,e,f --from b`.
 
 Findings:
 
