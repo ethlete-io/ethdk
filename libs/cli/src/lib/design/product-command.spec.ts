@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmdirSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -29,6 +29,17 @@ describe('designProduct', () => {
       'foundations',
       'pages',
     ]);
+    expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['shop'] })).toBe(0);
+  }, 60_000);
+
+  it('still passes the check once git drops the empty layer folders', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'shop');
+    for (const layer of ['foundations', 'components', 'elements', 'pages'])
+      rmdirSync(join(target, DESIGN_DIR, 'shop', layer));
+
     expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['shop'] })).toBe(0);
   }, 60_000);
 
