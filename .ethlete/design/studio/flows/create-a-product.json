@@ -1,0 +1,40 @@
+{
+  "frames": [
+    {
+      "part": "pages/system",
+      "state": "no product"
+    },
+    {
+      "part": "pages/system",
+      "state": "new product open"
+    },
+    {
+      "part": "pages/system",
+      "state": "empty product"
+    }
+  ],
+  "lines": [
+    {
+      "from": {
+        "part": "pages/system",
+        "state": "no product"
+      },
+      "to": {
+        "part": "pages/system",
+        "state": "new product open"
+      },
+      "label": "user clicks 'New product'"
+    },
+    {
+      "from": {
+        "part": "pages/system",
+        "state": "new product open"
+      },
+      "to": {
+        "part": "pages/system",
+        "state": "empty product"
+      },
+      "label": "user enters a name and clicks 'Create'"
+    }
+  ]
+}

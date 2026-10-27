@@ -1,0 +1,40 @@
+{
+  "frames": [
+    {
+      "part": "pages/system",
+      "state": "part"
+    },
+    {
+      "part": "pages/flows",
+      "state": "flow"
+    },
+    {
+      "part": "pages/inbox",
+      "state": "open"
+    }
+  ],
+  "lines": [
+    {
+      "from": {
+        "part": "pages/system",
+        "state": "part"
+      },
+      "to": {
+        "part": "pages/flows",
+        "state": "flow"
+      },
+      "label": "user clicks 'Flows'"
+    },
+    {
+      "from": {
+        "part": "pages/flows",
+        "state": "flow"
+      },
+      "to": {
+        "part": "pages/inbox",
+        "state": "open"
+      },
+      "label": "user clicks the frame 'inbox \u00b7 open'"
+    }
+  ]
+}
