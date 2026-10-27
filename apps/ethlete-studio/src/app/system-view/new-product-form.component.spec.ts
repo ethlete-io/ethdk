@@ -1,5 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { SelectOptionDirective } from '@ethlete/components';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedProduct } from '../../host/design';
 import { THEMES } from '../../themes';
@@ -85,10 +87,11 @@ describe('NewProductFormComponent', () => {
     fixture.autoDetectChanges();
     await settle(fixture);
 
-    const form = fixture.componentInstance as unknown as { BUILT_IN_BASE: string };
+    const labels = fixture.debugElement
+      .queryAll(By.css('et-select-option'))
+      .map((option) => option.injector.get(SelectOptionDirective).label());
 
-    expect(form.BUILT_IN_BASE).toBe('@ethlete/components');
-    expect((fixture.nativeElement as HTMLElement).querySelector('et-select')).not.toBeNull();
+    expect(labels).toEqual(['No base', '@ethlete/components']);
   });
 
   it('shows a refusal of the server in the error theme', async () => {
