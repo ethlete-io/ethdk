@@ -219,15 +219,25 @@ describe('framesOf', () => {
     );
   });
 
-  it('adds a column per declared interaction, forced through the address, with comments on rest only', () => {
+  it('adds a column per declared interaction, forced through the address, each taking comments in its interaction', () => {
     const button = part({ states: ['solid'], interactions: ['hover', 'disabled'] });
     const frames = framesOf({ port: 4402, product: product(), part: button });
 
     expect(partColumnsOf(button).map((column) => column.key)).toEqual(['rest', 'hover', 'disabled']);
-    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.place?.state])).toEqual([
-      ['solid', 'solid', 'rest', 'solid'],
-      ['solid hover', 'solid', 'hover', undefined],
-      ['solid disabled', 'solid', 'disabled', undefined],
+    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.place])).toEqual([
+      ['solid', 'solid', 'rest', { part: 'components/button', state: 'solid', size: 'fitted' }],
+      [
+        'solid hover',
+        'solid',
+        'hover',
+        { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'hover' },
+      ],
+      [
+        'solid disabled',
+        'solid',
+        'disabled',
+        { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'disabled' },
+      ],
     ]);
     expect(frames[1]?.src).toBe(
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fit',
@@ -243,7 +253,7 @@ describe('framesOf', () => {
 
     expect(frames.map((frame) => [frame.id, frame.row, frame.label, frame.place?.size])).toEqual([
       ['default 280', 'default', 'width', 280],
-      ['default 280 hover', 'default', 'width · hover', undefined],
+      ['default 280 hover', 'default', 'width · hover', 280],
     ]);
   });
 
@@ -328,6 +338,34 @@ describe('sketches in the tree', () => {
 
 describe('sketchMatrixOf', () => {
   const source = { port: 4400, product: product(), revision: 2 };
+
+  it('switches every cell to the picked interaction, with an empty cell where a column lacks it', () => {
+    const shown = { ...source, part: part({ states: ['solid'], interactions: ['hover'] }) };
+    const withTargets = sketch({
+      targets: [
+        { variant: 'a', states: ['solid'], interactions: ['hover', 'active'] },
+        { variant: 'b', states: ['solid'], interactions: [] },
+      ],
+    });
+    const rest = sketchMatrixOf({ ...shown, sketch: withTargets });
+    const hover = sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'hover' });
+
+    expect(rest.interactions).toEqual(['rest', 'hover', 'active']);
+    expect(rest.interaction).toBe('rest');
+    expect(rest.frames.map((frame) => frame.id)).toEqual(['current solid', 'a solid', 'b solid']);
+    expect(rest.frames.every((frame) => !frame.src.includes('interaction='))).toBe(true);
+    expect(sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'focus-visible' }).interaction).toBe('rest');
+    expect(hover.frames.map((frame) => [frame.id, frame.place?.interaction, frame.empty])).toEqual([
+      ['current solid hover', 'hover', undefined],
+      ['a solid hover', 'hover', undefined],
+      ['b solid hover', undefined, 'b has no hover interaction'],
+    ]);
+    expect(hover.frames[1]?.src).toContain('&interaction=hover');
+    expect(hover.frames[1]?.screenshot).toContain('&interaction=hover');
+    expect(sketchMatrixOf({ ...shown, part: part({ states: ['solid'] }), sketch: sketch() }).interactions).toEqual([
+      'rest',
+    ]);
+  });
 
   it('has a column for the current part and each variant, and a row per state any of them has', () => {
     const matrix = sketchMatrixOf({

@@ -1,5 +1,5 @@
 import { CommentPlace, CommentReply, ListedComment } from '../../host/design';
-import { CanvasFrame, FramePlace } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
 
 export type NumberedComment = ListedComment & { number: number };
@@ -23,11 +23,14 @@ export const numberedCommentsOf = (comments: ListedComment[]): NumberedComment[]
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
     .map((comment, index) => ({ ...comment, number: index + 1 }));
 
+const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
+
 /** Whether a comment was made on the frame that draws `place`. */
 export const isOnPlace = (comment: CommentPlace, place: FramePlace) =>
   comment.part === place.part &&
   comment.state === place.state &&
   comment.size === place.size &&
+  interactionOf(comment) === interactionOf(place) &&
   comment.sketch?.target === place.sketch?.target &&
   comment.sketch?.variant === place.sketch?.variant;
 
@@ -60,18 +63,30 @@ export const commentPlaceOf = (place: FramePlace, point: { x: number; y: number 
   ...(point ? { point: { x: Math.round(point.x), y: Math.round(point.y) } } : {}),
 });
 
-/** Where a comment sits, in words: state, size, sketch variant. */
+/** Where a comment sits, in words: state, size, interaction, sketch variant. */
 export const commentWhereOf = (comment: CommentPlace) =>
   [
     comment.state,
     typeof comment.size === 'number' ? `${comment.size} px` : comment.size,
+    ...(interactionOf(comment) === REST ? [] : [interactionOf(comment)]),
     ...(comment.sketch ? [`variant ${comment.sketch.variant}`] : []),
   ].join(' · ');
 
-/** How many comments sit on the frame's part and state at another size, where no pin can show them. */
+/** How many comments sit on the frame's part and state at another size, in any interaction, where no pin can show them. */
 export const otherSizeCountOf = (place: FramePlace, comments: CommentPlace[]) =>
-  comments.filter((comment) => isOnPlace(comment, { ...place, size: comment.size }) && comment.size !== place.size)
-    .length;
+  comments.filter(
+    (comment) =>
+      isOnPlace(comment, { ...place, size: comment.size, interaction: comment.interaction }) &&
+      comment.size !== place.size,
+  ).length;
+
+/** How many comments sit on the frame's part, state and size in another interaction, where no pin can show them. */
+export const otherInteractionCountOf = (place: FramePlace, comments: CommentPlace[]) =>
+  comments.filter(
+    (comment) =>
+      isOnPlace(comment, { ...place, interaction: comment.interaction }) &&
+      interactionOf(comment) !== interactionOf(place),
+  ).length;
 
 /** The open comments on a part, in its own states and in every sketch variant of it. */
 export const commentsOfPart = <T extends CommentPlace>(comments: T[], part: string) =>
@@ -101,19 +116,39 @@ export const ageOf = (createdAt: string, now: number) => {
   return `${Math.floor(minutes / (60 * 24))} d`;
 };
 
-/** The frames with a note on the label that counts the comments on the same state at other sizes. */
+const countNoteOf = (count: number, [one, many]: [string, string]) =>
+  count === 0 ? [] : [count === 1 ? `1 comment ${one}` : `${count} comments ${many}`];
+
+/** The frames with a note on the label that counts the comments on the same state at other sizes or in other interactions. */
 export const withOtherSizeNotes = (frames: CanvasFrame[], comments: CommentPlace[]): CanvasFrame[] =>
   frames.map((frame) => {
-    const count = frame.place ? otherSizeCountOf(frame.place, comments) : 0;
+    if (!frame.place) return frame;
 
-    if (count === 0) return frame;
+    const notes = [
+      ...countNoteOf(otherSizeCountOf(frame.place, comments), ['at another size', 'at other sizes']),
+      ...countNoteOf(otherInteractionCountOf(frame.place, comments), [
+        'in another interaction',
+        'in other interactions',
+      ]),
+    ];
 
-    return { ...frame, note: count === 1 ? '1 comment at another size' : `${count} comments at other sizes` };
+    return notes.length === 0 ? frame : { ...frame, note: notes.join(', ') };
   });
 
-/** The frame to move the camera to for a comment whose pin the canvas does not show: its state at the size on show. */
-export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) =>
-  frames.find((frame) => frame.place && isOnPlace({ ...comment, size: frame.place.size }, frame.place))?.id ?? null;
+/**
+ * The frame to move the camera to for a comment whose pin the canvas does not show: its state and
+ * interaction at the size on show, else its state in the interaction on show.
+ */
+export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) => {
+  const placed = frames.filter((frame): frame is CanvasFrame & { place: FramePlace } => !!frame.place);
+  const frame =
+    placed.find((candidate) => isOnPlace({ ...comment, size: candidate.place.size }, candidate.place)) ??
+    placed.find((candidate) =>
+      isOnPlace({ ...comment, size: candidate.place.size, interaction: candidate.place.interaction }, candidate.place),
+    );
+
+  return frame?.id ?? null;
+};
 
 /** The draft a click in comment mode starts, on a frame the canvas shows that has a place. */
 export const commentDraftOf = (frames: CanvasFrame[], pick: FramePoint): CommentDraft | null => {

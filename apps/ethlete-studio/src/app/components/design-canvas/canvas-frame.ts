@@ -1,9 +1,13 @@
 /** The state of a part, at a preset, a width or fitted, that a frame draws; a comment on the frame names it. */
+export const REST = 'rest';
+
 export type FramePlace = {
   part: string;
   state: string;
   /** A preset name, a width in CSS pixels, or `fitted`. */
   size: string | number;
+  /** The interaction forced on the frame; `rest` when missing. */
+  interaction?: string;
   sketch?: { target: string; variant: string };
 };
 

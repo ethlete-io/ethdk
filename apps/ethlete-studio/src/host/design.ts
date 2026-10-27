@@ -376,7 +376,14 @@ export type ListedSketch = {
   report?: SketchReport | null;
 };
 
-export type SketchTarget = { variant: string; states: string[]; widths?: number[]; error?: string };
+export type SketchTarget = {
+  variant: string;
+  states: string[];
+  widths?: number[];
+  /** Missing from an `@ethlete/cli` older than interactions. */
+  interactions?: string[];
+  error?: string;
+};
 
 /** `variant` is the variant the message names as `variant <name>`. */
 export type SketchReport = { message: string; updatedAt: string; variant: string | null };
@@ -451,6 +458,8 @@ export type CommentPlace = {
   part: string;
   state: string;
   size: FrameSize;
+  /** `rest` when missing, else the interaction forced on the frame. */
+  interaction?: string;
   /** CSS pixels from the frame's top left corner. */
   point?: { x: number; y: number };
   sketch?: { target: string; variant: string };

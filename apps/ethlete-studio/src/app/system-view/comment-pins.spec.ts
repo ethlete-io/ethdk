@@ -114,6 +114,28 @@ describe('comment pins', () => {
     expect(otherSizeFrameOf([frame('g', 'a')], wide)).toBeNull();
   });
 
+  it('pins a comment only on the frame of its interaction and counts it on the others', () => {
+    const hoverPlace = { part: 'components/card', state: 'empty', size: 360, interaction: 'hover' };
+    const hoverFrame: CanvasFrame = { ...frame('h'), place: hoverPlace };
+    const hoverComment = comment('1', { interaction: 'hover' });
+    const onHover = numberedCommentsOf([hoverComment, comment('2', { interaction: 'rest' })]);
+    const onRest = comment('3', {});
+
+    expect(pinsOf([frame('f'), hoverFrame], onHover).map((pin) => [pin.id, pin.frameId])).toEqual([
+      ['1', 'h'],
+      ['2', 'f'],
+    ]);
+    expect(withOtherSizeNotes([frame('f'), hoverFrame], [hoverComment]).map((noted) => noted.note)).toEqual([
+      '1 comment in another interaction',
+      undefined,
+    ]);
+    expect(withOtherSizeNotes([hoverFrame], [onRest, comment('4', { size: 520 })])[0]?.note).toBe(
+      '1 comment at another size, 1 comment in another interaction',
+    );
+    expect(otherSizeFrameOf([frame('f')], hoverComment)).toBe('f');
+    expect(commentPlaceOf(hoverPlace, null)).toEqual(hoverPlace);
+  });
+
   it('marks a commented part, and a sketch with a comment on a variant', () => {
     const part = {
       layer: 'components',

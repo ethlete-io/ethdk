@@ -11,7 +11,7 @@ import {
   partFrameUrl,
   partShotUrl,
 } from '../../host/design';
-import { CanvasFrame } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
 import { isQuestion } from './comment-pins';
 
 export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'sketches' | 'legacy';
@@ -213,8 +213,6 @@ const loadErrorOf = (problems: { rule: string; message: string }[]) =>
 const statesOf = (part: ListedPart, error: string | undefined): (string | undefined)[] =>
   part.states.length > 0 ? part.states : error ? [undefined] : [];
 
-export const REST = 'rest';
-
 /** Rest, then each interaction the part declares, in its order. */
 export const interactionsOf = (part: ListedPart): string[] => [REST, ...(part.interactions ?? [])];
 
@@ -239,8 +237,7 @@ export const arrangementOf = (part: ListedPart): FrameArrangement =>
 
 /**
  * Every state of a part in rest and in each interaction it declares: a page at every preset of the
- * product, a part with `widths` at each width, any other part fitted to its content. Only a rest frame
- * takes comments. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
+ * product, a part with `widths` at each width, any other part fitted to its content. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
  * one that does not load lists no states.
  */
 export const framesOf = (source: FramesSource): CanvasFrame[] => {
@@ -262,7 +259,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     ...(interaction === REST ? {} : { interaction }),
   });
   const placeOf = ({ state, interaction }: Cell, size: string | number) =>
-    state === undefined || interaction !== REST ? {} : { place: { part: key, state, size } };
+    state === undefined ? {} : { place: { part: key, state, size, ...(interaction === REST ? {} : { interaction }) } };
   const idOf = ({ state, interaction }: Cell, size?: string | number) =>
     [state ?? '', ...(size === undefined ? [] : [size]), ...(interaction === REST ? [] : [interaction])].join(' ');
 
@@ -317,6 +314,8 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   part: ListedPart | null;
   /** The preset name or the width the user picked for every cell; the first one when it is not offered. */
   size?: string | null;
+  /** The interaction the user picked for every cell; rest when it is not offered. */
+  interaction?: string | null;
 };
 
 export type MatrixColumn = { key: string; label: string; drawing: boolean };
@@ -327,6 +326,9 @@ export type SketchMatrix = {
   /** The preset names of a page or the container widths of a part, for the switch; empty when every cell fits its content. */
   sizes: string[];
   size: string | null;
+  /** Rest, then every interaction the part or a variant declares, for the switch. */
+  interactions: string[];
+  interaction: string;
 };
 
 const CURRENT = 'current';
@@ -360,10 +362,18 @@ const sketchSizesOf = ({
   return [...widths].sort((a, b) => a - b).map(String);
 };
 
+const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: ListedPart | null }) => [
+  ...new Set([
+    REST,
+    ...(part?.interactions ?? []),
+    ...(sketch.targets ?? []).flatMap((target) => target.interactions ?? []),
+  ]),
+];
+
 /**
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant, one
  * row per state - the current states first, then any state only a variant has. Every cell has the one
- * picked size. A column that lacks a row's state gets an empty cell there. A variant the agent reports
+ * picked size and interaction. A column that lacks a row's state or the interaction gets an empty cell there. A variant the agent reports
  * drawing while the sketch is in progress gets a column without frames.
  */
 export const sketchMatrixOf = ({
@@ -372,6 +382,7 @@ export const sketchMatrixOf = ({
   part,
   sketch,
   size: picked = null,
+  interaction: pickedInteraction = null,
   epoch,
   revision,
   surface,
@@ -380,11 +391,24 @@ export const sketchMatrixOf = ({
   const sizes = sketchSizesOf({ product, sketch, part });
   const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
   const cell = cellSizeOf(product, size);
+  const interactions = sketchInteractionsOf({ sketch, part });
+  const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : REST;
   const drawing = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
+  const idOf = (column: string, state: string) =>
+    [column, state, ...(interaction === REST ? [] : [interaction])].join(' ');
   const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
-  const columns: (MatrixColumn & { states: string[]; error?: string })[] = [
+  const columns: (MatrixColumn & { states: string[]; interactions: string[]; error?: string })[] = [
     ...(part
-      ? [{ key: CURRENT, label: CURRENT, drawing: false, states: part.states, error: loadErrorOf(part.problems) }]
+      ? [
+          {
+            key: CURRENT,
+            label: CURRENT,
+            drawing: false,
+            states: part.states,
+            interactions: interactionsOf(part),
+            error: loadErrorOf(part.problems),
+          },
+        ]
       : []),
     ...sketch.variants.map((variant) => {
       const target = targetOf(variant);
@@ -395,6 +419,7 @@ export const sketchMatrixOf = ({
         label: variant === drawing ? `${variant} · drawing …` : variant,
         drawing: variant === drawing,
         states: target?.states ?? part?.states ?? [],
+        interactions: [REST, ...(target?.interactions ?? part?.interactions ?? [])],
         error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
       };
     }),
@@ -414,10 +439,11 @@ export const sketchMatrixOf = ({
       color,
       ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
       ...(size === null ? { fit: true } : {}),
+      ...(interaction === REST ? {} : { interaction }),
     };
 
     return {
-      id: `${column.key} ${state ?? ''}`,
+      id: idOf(column.key, state ?? ''),
       src: partFrameUrl(address),
       ...(cell.width ? { width: cell.width } : {}),
       ...(cell.height ? { height: cell.height } : {}),
@@ -438,6 +464,7 @@ export const sketchMatrixOf = ({
               part: sketch.target,
               state,
               size: cell.preset ?? cell.width ?? FITTED,
+              ...(interaction === REST ? {} : { interaction }),
               ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
             },
           }),
@@ -451,18 +478,25 @@ export const sketchMatrixOf = ({
 
     return rows.flatMap((state): CanvasFrame[] => {
       if (state === undefined) return [];
-      if (column.states.includes(state)) return [frameOf(column, state)];
+
+      const missing = !column.states.includes(state)
+        ? `${column.key} has no ${state} state`
+        : !column.interactions.includes(interaction)
+          ? `${column.key} has no ${interaction} interaction`
+          : null;
+
+      if (missing === null) return [frameOf(column, state)];
 
       return [
         {
-          id: `${column.key} ${state}`,
+          id: idOf(column.key, state),
           src: '',
           ...(cell.width ? { width: cell.width } : {}),
           ...(cell.height ? { height: cell.height } : {}),
           label: cell.label,
           row: state,
           column: column.key,
-          empty: column.key === CURRENT ? 'new in this sketch' : `${column.key} has no ${state} state`,
+          empty: column.key === CURRENT ? 'new in this sketch' : missing,
         },
       ];
     });
@@ -473,6 +507,8 @@ export const sketchMatrixOf = ({
     frames,
     sizes,
     size,
+    interactions,
+    interaction,
   };
 };
 
@@ -550,7 +586,7 @@ export const mergePreviewOf = ({
     );
   });
 
-  return { columns, frames, sizes: [], size: null };
+  return { columns, frames, sizes: [], size: null, interactions: [REST], interaction: REST };
 };
 
 /** Whether the user may pick a variant: the sketch is ready and the variant breaks no rule. */

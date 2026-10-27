@@ -27,6 +27,7 @@ import {
   sketchPreview$,
 } from '../../host/design';
 import { Camera } from '../components/design-canvas/canvas-math';
+import { REST } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { CommentDraftComponent } from './comment-draft.component';
@@ -205,6 +206,23 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             }
           </div>
         }
+        @if (showing() === 'matrix' && matrix().interactions.length > 1) {
+          <div class="flex gap-1" role="group" aria-label="Interaction of every cell">
+            @for (name of matrix().interactions; track name) {
+              <button
+                [pressed]="name === matrix().interaction"
+                (click)="interaction.set(name)"
+                et-button
+                type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
+              >
+                {{ name }}
+              </button>
+            }
+          </div>
+        }
         @if (picked() && (previewReading()?.preview?.affected?.length ?? 0) > 0) {
           <button
             [pressed]="showing() === 'merge'"
@@ -290,6 +308,8 @@ export class SketchViewComponent {
 
   public size = signal<string | null>(null);
 
+  public interaction = signal<string | null>(null);
+
   private shownMode = signal<Shown>('matrix');
 
   private source = computed(() => ({
@@ -297,6 +317,7 @@ export class SketchViewComponent {
     product: this.product(),
     sketch: this.sketch(),
     size: this.size(),
+    interaction: this.interaction(),
     epoch: this.epoch(),
     revision: this.revision(),
     surface: this.surface(),
@@ -336,6 +357,7 @@ export class SketchViewComponent {
     () =>
       (this.sketch().status === 'in progress' && !!this.sketch().report) ||
       this.matrix().sizes.length > 1 ||
+      this.matrix().interactions.length > 1 ||
       (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
   );
 
@@ -366,15 +388,19 @@ export class SketchViewComponent {
     if (draft) this.commentStore.start(draft);
   }
 
-  /** Moves the camera to a comment: back to the matrix and to its size first, when the matrix offers it. */
+  /** Moves the camera to a comment: back to the matrix and to its size and interaction first, when the matrix offers them. */
   public jumpTo(comment: NumberedComment) {
     const size = String(comment.size);
+    const interaction = comment.interaction ?? REST;
     const resize = size !== this.matrix().size && this.matrix().sizes.includes(size);
+    const reinteract = interaction !== this.matrix().interaction && this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
 
     if (resize) this.size.set(size);
+    if (reinteract) this.interaction.set(interaction);
     if (leaveMerge) this.shownMode.set('matrix');
-    if (resize || leaveMerge) afterNextRender(() => this.focusComment(comment), { injector: this.injector });
+    if (resize || reinteract || leaveMerge)
+      afterNextRender(() => this.focusComment(comment), { injector: this.injector });
     else this.focusComment(comment);
   }
 
