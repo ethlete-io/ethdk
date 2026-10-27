@@ -17,6 +17,6 @@
   height: 100%;
   background: var(--lab-accent, currentColor);
 }
-.rating.is-disabled {
+.rating:is([disabled], [aria-disabled='true']) {
   opacity: 0.4;
 }
