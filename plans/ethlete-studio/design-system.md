@@ -822,6 +822,17 @@ step. Each finding names what happened and the fix it needs.
   editor finds covers `.ethlete/design/<product>/`. Prevent: `design product new` and
   `design check` write a gitignored `.ethlete/design/tsconfig.json` with the same paths that the
   check uses, so the editor and the check type a part the same way.
+- Real look sketch round (`elements-shell-main`, variants a dense, b single surface, c floating
+  panels), friction:
+  - A sketch on an element may not carry the page that uses it (`SKETCH`: "may change elements
+    and the layers below it"), so a shell look cannot be shown with its page; the page shot mixes
+    the new shell with the old kit tree. The agent moved the tree into the element's own state.
+    Prevent: a sketch on an element may carry the pages `sketch preview` lists under "shows".
+  - The kit writes inline styles, so an element's CSS cannot restyle kit markup a page passes in.
+  - The product tokens have no warning or danger colour; the warning marker uses the accent.
+  - The agent put layer counts back into the tree, though Tom's pick f of the side tree removed all
+    numbers. The brief said "keep this structure" but not what the earlier picks decided. Prevent:
+    a part's note lists what its picks ruled out, and the brief quotes the notes of the parts it draws.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
