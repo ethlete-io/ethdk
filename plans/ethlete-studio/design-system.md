@@ -447,9 +447,8 @@ Slice 10 step 1, as built (6c4efbaa1, 4a44cea44, 8a15315aa, proven headlessly):
 Findings:
 
 - `product new` rewrites `config.json` without Prettier.
-- Tokens reach other parts only through config `styles`, so a `foundations/tokens` sketch changes
-  only the tokens frames, not the button and field next to it. After the merge, `studio`'s `styles`
-  must point at `.ethlete/design/studio/foundations/tokens/tokens.css`.
+- Tokens reached other parts only through config `styles`, so a `foundations/tokens` sketch changed
+  only the tokens frames. Resolved by the tokens import (627b9739d).
 - The button "active" and "disabled" frames were drawn far wider than their content. It does not
   reproduce on the current tree: headless, all 35 `sdk` button frames are 110 px wide and stable,
   content 98 px (filled) or 90 px (small) in every interaction, and the `/__design/shot` PNGs match.
@@ -468,6 +467,17 @@ builder resumes from `.claude/handoffs/studio-states-interactions.md`.
 - Tokens: base components pick up a product's tokens override through an import, not only through
   the config `styles` entry, so a `foundations/tokens` sketch shows on every part (button, field).
   A small core change, built before the first foundations sketch.
+  As built (cli 627b9739d, skill 8a24a92ab, proven headlessly, 346 cli tests green, bite proven): a
+  part imports another part's stylesheet as `@system/<layer>/<name>.css?inline`. It resolves to the
+  drawing product's own part, else the base's, else the sketch variant's. `sdk` button, form-field
+  and select import `@system/foundations/tokens.css?inline` and put it first in `styles`. The tokens
+  entry is gone from config `styles` of `sdk` and `studio`; the import is the only path, so
+  `studio` needs no `styles` change after the tokens merge. Fix from the proof: a running server
+  kept the old resolution after a merge; now a part file that appears or disappears redraws its
+  whole product (`serve.ts` `unresolveParts`, `changed-parts.ts`). Proof: `studio` button
+  `rgb(37,99,235)`; a tokens sketch with accent `200 0 0` turned filled and outline buttons
+  `rgb(200,0,0)`; after `sketch merge` on the running server the product frame turned red with no
+  restart.
 - `sdk` stays in `.ethlete/design/sdk` for now. It moves to `libs/cli/design/systems` as a built-in
   base only after the redesign proves it (and a cross-repo base from a package is checked).
 - No `vh` in parts: the `ethlete-design-exploration` skill says so; a full page uses a frame with a
