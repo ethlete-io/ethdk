@@ -619,6 +619,10 @@ Open points, each with a recommendation:
   is required but not stored (authors come from reports, not from `--from`); the agent names the
   variant letter; `--note` replaces an existing note, and no command edits a title or note later;
   the text output of `sketch list` does not show rounds.
+- Decided after the build: `sketch variant` refuses while the decision is a discard, and says why;
+  a discard is the user's call, and no agent lifts it. The variant command still clears a pick. To
+  go on with the sketch, the user picks a variant, which replaces the discard. (Studio's "Discard
+  sketch" deletes at once and writes no decision; only the API writes a discard decision.)
 - The design-exploration skill has a section "Combine variants in a new round".
 - Next: the Studio round columns, after the author display.
 
