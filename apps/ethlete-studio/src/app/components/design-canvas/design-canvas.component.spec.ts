@@ -47,6 +47,40 @@ describe('DesignCanvasComponent', () => {
     expect(frame.nativeElement.style.height).toBe('70px');
   });
 
+  it('lays a flow out left to right along its lines and draws each line with its label', async () => {
+    const page = (id: string): CanvasFrame => ({ ...FITTED, id, label: id, width: 390, height: 844 });
+
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+
+    fixture.componentRef.setInput('frames', [page('done'), page('cart'), page('checkout')]);
+    fixture.componentRef.setInput('arrangement', 'flow');
+    fixture.componentRef.setInput('lines', [
+      { from: 'cart', to: 'checkout', label: 'user clicks "Zur Kasse"' },
+      { from: 'checkout', to: 'done' },
+    ]);
+    await fixture.whenStable();
+
+    const lefts = Object.fromEntries(
+      fixture.debugElement
+        .queryAll(By.directive(CanvasFrameComponent))
+        .map((frame) => [
+          (frame.componentInstance as CanvasFrameComponent).frame().id,
+          (frame.nativeElement as HTMLElement).style.left,
+        ]),
+    );
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(lefts).toEqual({ cart: '0px', checkout: '670px', done: '1340px' });
+    expect(host.querySelectorAll('[data-flow-line]')).toHaveLength(2);
+    expect([...host.querySelectorAll('[data-flow-label]')].map((label) => label.textContent?.trim())).toEqual([
+      'user clicks "Zur Kasse"',
+    ]);
+  });
+
   it('remembers the measured size and places the frame by it after a reload', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture).componentInstance as CanvasFrameComponent;

@@ -32,6 +32,8 @@ export type CanvasFrame = {
   note?: string;
   /** Draws a dashed empty cell with this text instead of a page, at the size of the row's other frames. */
   empty?: string;
+  /** Where a `flow` canvas puts the frame's top-left corner instead of laying it out. */
+  at?: { x: number; y: number };
 };
 
 /** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */

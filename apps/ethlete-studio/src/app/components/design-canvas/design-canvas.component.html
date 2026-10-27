@@ -85,6 +85,45 @@
     }
   }
 
+  @if (placedLines().length > 0) {
+    <svg class="pointer-events-none absolute top-0 left-0 overflow-visible" width="1" height="1" aria-hidden="true">
+      <defs>
+        <marker
+          [attr.id]="ARROW_ID"
+          viewBox="0 0 10 10"
+          refX="9"
+          refY="5"
+          markerWidth="5"
+          markerHeight="5"
+          orient="auto"
+        >
+          <path class="fill-[var(--et-surface-color-muted-solid)]" d="M 0 0 L 10 5 L 0 10 z" />
+        </marker>
+      </defs>
+      @for (line of placedLines(); track line.key) {
+        <path
+          [attr.d]="line.path"
+          [attr.marker-end]="'url(#' + ARROW_ID + ')'"
+          [attr.stroke-width]="2 * labelScale()"
+          class="fill-none stroke-[var(--et-surface-color-muted-solid)]"
+          data-flow-line
+        />
+      }
+    </svg>
+    @for (line of placedLines(); track line.key) {
+      @if (line.label) {
+        <span
+          [style.left.px]="line.middle.x"
+          [style.top.px]="line.middle.y"
+          [style.transform]="'translate(-50%, -50%) scale(' + labelScale() + ')'"
+          class="pointer-events-none absolute rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-[1.2rem] whitespace-nowrap text-[var(--et-surface-color-solid)]"
+          data-flow-label
+          >{{ line.label }}</span
+        >
+      }
+    }
+  }
+
   @for (placed of placedFrames(); track placed.frame.id) {
     <ethlete-canvas-frame
       [frame]="placed.frame"
