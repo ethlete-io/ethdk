@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); next Studio reads the merged tokens. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); Studio reads the merged tokens (9ed3560f4); next the slice 10 component layer. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -585,6 +585,26 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
 - The merged surfaces are committed in 863901225. Open: does a merge in Studio count as the go to
   commit the merged part? Tom assumes it does; the `ethlete-design-exploration` skill does not say
   so. Recommendation: yes, and write it into the skill.
+
+### Studio reads the merged tokens, as built (2026-10-27)
+
+- 9ed3560f4: `apps/ethlete-studio/src/styles.css` imports
+  `.ethlete/design/studio/foundations/tokens/tokens.css` through the build, in a layer
+  `studio-tokens` below Tailwind's `theme`. `@theme inline` exposes them as `bg-surface*`,
+  `text-text`, `text-accent*`, `text-ui-xs` to `text-ui-xl`, `font-ui-*`, `p-space-1` to `-7`,
+  `h-control-sm`/`-md`, `h-row`. The Nx build lists the file as an input.
+- Conflicts, held off by the low layer: the product's `--font-sans`/`--font-mono` and
+  `--radius-sm`/`-md`/`-lg`/`-full` share Tailwind's theme names (Studio's Jost and Tailwind's radii
+  win, so these tokens are not exposed); its `sdk` part redefines `.et-surface--dark`,
+  `.et-color--default`, `.et-color--danger` and the `:root` 62.5% and `body` rules. Open: rename the
+  product's font and radius tokens before the component layer reads them.
+- Still on the generated `themes.css`/`surface-themes.css`: every SDK component, Studio's `body`
+  and select picker, about 14 app files through `var(--et-surface-*)`/`--et-theme-color-*`, and
+  `bg-et-surface-bg`, `border-et-surface-border`, `text-et-surface-muted`.
+- Proven: a spec compiles `styles.css` with Tailwind and finds `--accent` in the layer (fails
+  without the import); headless, `--accent` resolves on the document, and the start view has zero
+  computed-style diffs and an identical screenshot before and after (only the shell, no design
+  server). Not checked: the dev server's watch on the token file.
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
