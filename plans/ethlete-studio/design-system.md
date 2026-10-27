@@ -450,8 +450,8 @@ Findings:
 - Tokens reach other parts only through config `styles`, so a `foundations/tokens` sketch changes
   only the tokens frames, not the button and field next to it. After the merge, `studio`'s `styles`
   must point at `.ethlete/design/studio/foundations/tokens/tokens.css`.
-- The button "active" and "disabled" frames are drawn far wider than their content, likely the
-  fitted-width bug of `elements/shell-main`.
+- The button "active" and "disabled" frames are drawn far wider than their content. Not the
+  `elements/shell-main` loop (that was height, not width); not checked yet.
 
 Remaining: the redesign layer by layer (Tom decides each sketch); Studio reads its tokens from the
 merged `tokens.css` instead of the generated `themes.css` and `surface-themes.css`; the app rebuild
@@ -1493,6 +1493,20 @@ headlessly):
 - A stacked image keeps its `width` cap. For a full-width image on phone, the author drops `width`.
   No hidden rule widens images in a stacked row.
 - The input placeholder ends in "…" instead of wrapping, like the button label. Kept.
+
+Fitted-frame resize loop, fixed (60bd969e9):
+
+- Seen on `studio-lab` `elements/shell-main`: the frame shrank, jumped back and shrank again.
+  Cause: the part uses `min-height: 100vh` and a fitted frame adds 16px padding on each side, so the
+  content is always 32px taller than the frame. Studio sized the frame to the content, the content
+  grew 32px with it, endlessly. The growing frame zoomed the canvas out; below zoom 0.5 Studio
+  swapped in the 832px screenshot, zoomed back in, went live, and the loop started over. The
+  overflow also caused the scrollbars. The width stayed 259px.
+- Fix in the measurement, not the part: Studio drops a measure that repeats the overflow it caused
+  itself (real content changes are still followed). `frame.ts` reports its viewport size and hides
+  overflow in fit mode.
+- Limit: a `vh` part in a fitted frame has no true size. It settles about 32px taller than its
+  start, and the live and screenshot heights can differ (632 vs 832).
 
 Notes server, as built (2026-10-27):
 
