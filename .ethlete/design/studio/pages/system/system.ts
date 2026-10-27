@@ -1,5 +1,5 @@
 import { definePart, drawing } from '@design-system';
-import { box, button, heading, icon, image, input, textLines } from '@design-system/kit';
+import { badge, box, button, dot, heading, image, input, segmented, select, textLines } from '@design-system/kit';
 import shellMain from '@system/elements/shell-main';
 
 type View = 'part' | 'comment open' | 'no product' | 'new product open' | 'empty product';
@@ -9,7 +9,7 @@ type Props = { view: View };
 const label = (text: string) => heading(text, { size: 13 });
 const row = (children: string[], gap = 8) => box(children, { direction: 'row', plain: true, padding: 0, gap });
 const stack = (children: string[], gap = 8) => box(children, { plain: true, padding: 0, gap });
-const item = (text: string) => row([icon({ size: 16 }), label(text)]);
+const item = (text: string) => row([dot({ hollow: text.endsWith('from base') }), label(text)]);
 
 const hasParts = (view: View) => view === 'part' || view === 'comment open';
 
@@ -38,13 +38,9 @@ const tree = (view: View) => {
 const frames = (view: View) =>
   box(
     ['primary', 'secondary', 'disabled'].map((state, index) =>
-      box(
-        [
-          row([label(state), view === 'comment open' && index === 0 ? icon({ size: 20 }) : '']),
-          image({ ratio: '4/3' }),
-        ],
-        { grow: true },
-      ),
+      box([row([label(state), view === 'comment open' && index === 0 ? badge(1) : '']), image({ ratio: '4/3' })], {
+        grow: true,
+      }),
     ),
     { direction: 'row', plain: true, padding: 0, gap: 16, stackBelow: 520 },
   );
@@ -65,9 +61,8 @@ const canvas = (view: View) => {
   return stack(
     [
       row([
-        button('Phone'),
-        button('Desktop', { primary: true }),
-        button('Theme: dark'),
+        segmented(['Phone', 'Desktop'], { active: 'Desktop' }),
+        select({ value: 'Theme: dark', width: 160 }),
         button('Hover'),
         button('Comment'),
       ]),
@@ -106,7 +101,15 @@ const noProduct = (view: View) => view === 'no product' || view === 'new product
 const partHeader = () =>
   box(
     [
-      row([heading('button', { size: 18 }), label('Overridden from base'), label('3 states'), label('Comments 1')], 16),
+      row(
+        [
+          heading('button', { size: 18 }),
+          label('Overridden from base'),
+          label('3 states'),
+          row([label('Comments'), badge(1)], 6),
+        ],
+        16,
+      ),
       textLines({ lines: 2, width: '70%' }),
     ],
     { gap: 10 },

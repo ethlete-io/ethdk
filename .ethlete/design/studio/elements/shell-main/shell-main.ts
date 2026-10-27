@@ -1,5 +1,5 @@
 import { definePart, drawing } from '@design-system';
-import { box, button, heading, icon, input, textLines } from '@design-system/kit';
+import { box, button, heading, icon, select, tabs, textLines } from '@design-system/kit';
 import styles from './shell-main.css?inline';
 
 type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
@@ -20,11 +20,11 @@ const row = (children: string[], gap = 8) => box(children, { direction: 'row', p
 const header = ({ section, product }: Pick<Props, 'section' | 'product'>) =>
   box(
     [
-      row([icon(), heading('Studio', { size: 16 })]),
-      input({ placeholder: product ?? 'No product', width: 200 }),
-      row(
-        SECTIONS.map((name) => button(name === 'Inbox' ? 'Inbox 3' : name, name === section ? { primary: true } : {})),
-        4,
+      row([icon({ glyph: 'studio' }), heading('Studio', { size: 16 })]),
+      select({ value: product ?? 'No product', width: 200 }),
+      tabs(
+        SECTIONS.map((name) => (name === 'Inbox' ? 'Inbox 3' : name)),
+        { active: section === 'Inbox' ? 'Inbox 3' : section },
       ),
       box([], { plain: true, padding: 0, grow: true }),
       button('Checkout: ethlete-sdk'),
