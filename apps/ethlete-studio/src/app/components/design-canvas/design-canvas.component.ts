@@ -85,13 +85,14 @@ const isEditable = (target: EventTarget | null) =>
 @Component({
   selector: 'ethlete-design-canvas',
   templateUrl: './design-canvas.component.html',
-  styleUrl: './design-canvas.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent],
   host: {
-    class: 'et-design-canvas',
-    '[class.et-design-canvas--space]': 'spaceHeld()',
-    '[class.et-design-canvas--panning]': 'panning()',
+    class:
+      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-[var(--et-surface-background-solid)] text-[var(--et-surface-color-solid)] select-none',
+    '[class.cursor-grab]': 'spaceHeld() && !panning()',
+    '[class.cursor-grabbing]': 'panning()',
+    '[attr.data-dragging]': '(spaceHeld() || panning()) || null',
     '(wheel)': 'moveCameraByWheel($event)',
     '(pointerdown)': 'startPan($event)',
     '(click)': 'clearSelection($event)',

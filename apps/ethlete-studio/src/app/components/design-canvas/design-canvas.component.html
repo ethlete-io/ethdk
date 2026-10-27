@@ -1,12 +1,16 @@
 <div
-  [class.et-design-canvas__world--smooth]="smooth()"
+  [class]="smooth() ? 'transition-transform duration-250 ease-[ease]' : ''"
   [style.transform]="worldTransform()"
   [style.--et-design-canvas-label-scale]="labelScale()"
   (transitionend)="smooth.set(false)"
-  class="et-design-canvas__world"
+  class="absolute top-0 left-0 origin-top-left"
 >
   @for (row of rows(); track row.name) {
-    <span [style.top.px]="row.y" class="et-design-canvas__row">{{ row.label ?? row.name }}</span>
+    <span
+      [style.top.px]="row.y"
+      class="absolute left-0 translate-x-[calc(-100%_-_4rem)] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-[var(--et-surface-color-muted-solid)]"
+      >{{ row.label ?? row.name }}</span
+    >
   }
 
   @for (group of groupHeads(); track group.key) {
@@ -14,7 +18,7 @@
       [style.left.px]="group.x"
       [style.width.px]="group.width / labelScale()"
       [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
-      class="et-design-canvas__group"
+      class="absolute top-[calc(-6rem_*_var(--et-design-canvas-label-scale))] flex origin-top-left items-center gap-[0.8rem] text-[1.3rem] whitespace-nowrap"
     >
       <button
         [title]="group.title ?? group.label"
@@ -43,7 +47,7 @@
         [style.left.px]="column.x"
         [style.width.px]="column.width / labelScale()"
         [style.transform]="'scale(' + labelScale() + ')'"
-        class="et-design-canvas__folded"
+        class="absolute top-[calc(-6rem_*_var(--et-design-canvas-label-scale))] flex origin-top-left flex-col gap-[1.2rem] text-[1.3rem] leading-[1.4]"
       >
         <button
           [title]="column.title ?? column.label"
@@ -69,9 +73,11 @@
       <span
         [style.left.px]="column.x"
         [style.max-width.px]="column.width"
-        [class.et-design-canvas__column--muted]="column.muted"
+        [class]="
+          column.muted ? 'italic text-[var(--et-surface-color-muted-solid)]' : 'text-[var(--et-surface-color-solid)]'
+        "
         [title]="column.title ?? column.label"
-        class="et-design-canvas__column"
+        class="absolute top-[calc(-3.2rem_*_var(--et-design-canvas-label-scale))] -translate-y-full overflow-hidden text-[length:calc(1.6rem_*_var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
       >
         {{ column.label }}
         @if (column.note) {
@@ -136,7 +142,7 @@
       [style.top.px]="placed.y"
       [style.width.px]="placed.width"
       [style.height.px]="placed.height"
-      [class.et-canvas-frame--unsized]="placed.unsized"
+      [attr.data-unsized]="placed.unsized || null"
       [captionPickable]="pointing() && placed.frame.place !== undefined"
       (click)="select(placed.frame.id, $event)"
       (dblclick)="activate(placed.frame.id)"
@@ -266,7 +272,9 @@
   }
 </div>
 
-<div class="et-design-canvas__hud">
+<div
+  class="absolute right-[1.2rem] bottom-[1.2rem] flex rounded-[0.3rem] border-[0.1rem] border-solid border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)]"
+>
   <button
     (click)="zoomBy(1 / ZOOM_STEP)"
     et-button
@@ -280,7 +288,7 @@
   </button>
   <button
     (click)="zoomTo(1)"
-    class="et-design-canvas__zoom"
+    class="tabular-nums"
     et-button
     type="button"
     variant="transparent"

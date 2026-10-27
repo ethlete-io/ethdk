@@ -36,13 +36,13 @@ describe('DesignCanvasComponent', () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture);
 
-    expect(frame.nativeElement.classList).toContain('et-canvas-frame--unsized');
+    expect(frame.nativeElement.hasAttribute('data-unsized')).toBe(true);
 
     (frame.componentInstance as CanvasFrameComponent).widthChange.emit(150);
     (frame.componentInstance as CanvasFrameComponent).heightChange.emit(70);
     await fixture.whenStable();
 
-    expect(frame.nativeElement.classList).not.toContain('et-canvas-frame--unsized');
+    expect(frame.nativeElement.hasAttribute('data-unsized')).toBe(false);
     expect(frame.nativeElement.style.width).toBe('150px');
     expect(frame.nativeElement.style.height).toBe('70px');
   });
@@ -153,7 +153,7 @@ describe('DesignCanvasComponent', () => {
 
     const reloaded = frameElement(await render([FITTED])).nativeElement as HTMLElement;
 
-    expect(reloaded.classList).not.toContain('et-canvas-frame--unsized');
+    expect(reloaded.hasAttribute('data-unsized')).toBe(false);
     expect(reloaded.style.width).toBe('150px');
     expect(reloaded.style.height).toBe('70px');
   });
@@ -268,8 +268,8 @@ describe('DesignCanvasComponent', () => {
       .queryAll(By.directive(CanvasFrameComponent))
       .map((frame) => frame.nativeElement as HTMLElement);
 
-    expect(fitted?.classList).toContain('et-canvas-frame--fitted');
-    expect(wide?.classList).not.toContain('et-canvas-frame--fitted');
+    expect(fitted?.hasAttribute('data-fitted')).toBe(true);
+    expect(wide?.hasAttribute('data-fitted')).toBe(false);
   });
 
   it('draws an outline over a frame at its offset in the frame', async () => {
@@ -298,8 +298,7 @@ describe('DesignCanvasComponent', () => {
     ];
     const fixture = await render(frames);
     const [first, second] = fixture.debugElement.queryAll(By.directive(CanvasFrameComponent));
-    const isLive = (frame = first) =>
-      (frame?.nativeElement as HTMLElement).classList.contains('et-canvas-frame--active');
+    const isLive = (frame = first) => (frame?.nativeElement as HTMLElement).hasAttribute('data-active');
 
     first?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
     await fixture.whenStable();

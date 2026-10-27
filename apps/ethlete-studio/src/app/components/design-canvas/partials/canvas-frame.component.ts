@@ -85,10 +85,10 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         ></span>
       }
       @if (frame().width !== undefined) {
-        <span class="et-canvas-frame__width">{{ width() }}</span>
+        <span class="tabular-nums text-[var(--et-surface-color-muted-solid)]">{{ width() }}</span>
       }
       @if (frame().note; as note) {
-        <span class="et-canvas-frame__width" data-frame-note>{{ note }}</span>
+        <span class="tabular-nums text-[var(--et-surface-color-muted-solid)]" data-frame-note>{{ note }}</span>
       }
       @if (active()) {
         <span
@@ -102,9 +102,10 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     @if (captionPickable()) {
       <span
         [title]="'Comment on the state ' + frame().label"
+        [class]="labelPlacement()"
         (click)="captionClick.emit($event)"
         (keydown.enter)="captionClick.emit($event)"
-        class="et-canvas-frame__label cursor-crosshair"
+        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-[var(--et-surface-color-solid)] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
         role="button"
         tabindex="0"
         data-comment-caption
@@ -112,7 +113,11 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         <ng-container [ngTemplateOutlet]="caption" />
       </span>
     } @else {
-      <span class="et-canvas-frame__label"><ng-container [ngTemplateOutlet]="caption" /></span>
+      <span
+        [class]="labelPlacement()"
+        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-[var(--et-surface-color-solid)] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
+        ><ng-container [ngTemplateOutlet]="caption"
+      /></span>
     }
     @if (frame().empty; as empty) {
       <div
@@ -122,7 +127,13 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         {{ empty }}
       </div>
     } @else if (frame().error) {
-      <div [etProvideColor]="errorTheme()" class="et-canvas-frame__error" role="alert">{{ frame().error }}</div>
+      <div
+        [etProvideColor]="errorTheme()"
+        class="absolute inset-0 box-border size-full overflow-hidden border-0 p-[1.6rem] font-[family-name:var(--font-mono)] text-[1.3rem] whitespace-pre-wrap text-[var(--et-theme-color-primary-solid)]"
+        role="alert"
+      >
+        {{ frame().error }}
+      </div>
     } @else {
       @if (!painted()) {
         @if (frame().screenshot) {
@@ -130,11 +141,11 @@ const painted$ = (iframe: HTMLIFrameElement) => {
             [src]="live() ? frame().screenshot : (admittedShot() ?? frame().screenshot)"
             (load)="readScreenshotSize($event)"
             (error)="settleScreenshot($event)"
-            class="et-canvas-frame__screenshot"
+            class="absolute inset-0 size-full border-0 object-none object-left-top"
             alt=""
           />
         } @else {
-          <div class="et-canvas-frame__placeholder"></div>
+          <div class="absolute inset-0 size-full border-0 bg-[var(--et-surface-interaction-solid)]"></div>
         }
       }
       @if (live()) {
@@ -143,26 +154,27 @@ const painted$ = (iframe: HTMLIFrameElement) => {
             #iframe
             [src]="source.url"
             [title]="frame().label"
-            [class.et-canvas-frame__iframe--painted]="source.src === shown()"
+            [class]="source.src !== shown() || !active() ? 'pointer-events-none' : ''"
+            [class.opacity-0]="source.src !== shown()"
             (load)="loadContent(iframe)"
-            class="et-canvas-frame__iframe"
+            class="absolute inset-0 size-full border-0 [color-scheme:normal] group-data-[dragging]/canvas:pointer-events-none"
           ></iframe>
         }
       }
     }
     @if (!active()) {
-      <div class="et-canvas-frame__shield"></div>
+      <div class="absolute inset-0 size-full border-0"></div>
     }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [NgTemplateOutlet, ProvideColorDirective],
   host: {
-    class: 'et-canvas-frame',
-    '[class.et-canvas-frame--selected]': 'selected()',
-    '[class.et-canvas-frame--active]': 'active()',
-    '[class.et-canvas-frame--empty]': 'frame().empty !== undefined',
-    '[class.et-canvas-frame--fitted]': 'frame().width === undefined',
-    '[class.et-canvas-frame--caption-below]': 'captionBelow()',
+    class:
+      'absolute block bg-[var(--et-surface-background-solid)] outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-[color:var(--et-surface-border-solid)] outline-solid data-[active]:outline-dashed data-[empty]:bg-transparent data-[empty]:not-data-[selected]:outline-none data-[fitted]:not-data-[selected]:outline-none data-[selected]:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] data-[selected]:outline-[color:var(--et-theme-color-primary-solid)] data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
+    '[attr.data-selected]': 'selected() || null',
+    '[attr.data-active]': 'active() || null',
+    '[attr.data-empty]': 'frame().empty !== undefined || null',
+    '[attr.data-fitted]': 'frame().width === undefined || null',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',
   },
@@ -191,6 +203,8 @@ export class CanvasFrameComponent {
 
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
   protected shown = linkedSignal<boolean, string | null>({ source: () => this.drawn(), computation: () => null });
+
+  protected labelPlacement = computed(() => (this.captionBelow() ? 'top-full pt-[0.4em]' : 'bottom-full pb-[0.4em]'));
 
   protected painted = computed(() => this.shown() !== null);
 
