@@ -4,9 +4,9 @@ import '@angular/compiler';
 setupTestBed();
 
 globalThis.IntersectionObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = () => undefined;
+  unobserve = () => undefined;
+  disconnect = () => undefined;
   takeRecords() {
     return [];
   }
