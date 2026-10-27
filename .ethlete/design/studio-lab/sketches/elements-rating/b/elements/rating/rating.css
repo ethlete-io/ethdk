@@ -1,0 +1,22 @@
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 14px sans-serif;
+  color: var(--lab-ink, currentColor);
+}
+.rating__bar {
+  width: 120px;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 20%, transparent);
+  overflow: hidden;
+}
+.rating__fill {
+  display: block;
+  height: 100%;
+  background: var(--lab-accent, currentColor);
+}
+.rating.is-disabled {
+  opacity: 0.4;
+}
