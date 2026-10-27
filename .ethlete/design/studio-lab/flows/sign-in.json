@@ -20,5 +20,6 @@
       "to": { "part": "pages/library", "state": "login open" },
       "label": "user clicks 'Anmelden'"
     }
-  ]
+  ],
+  "notes": [{ "id": "heading-library", "text": "Library before sign-in", "at": { "x": 0, "y": -160 } }]
 }
