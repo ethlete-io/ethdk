@@ -11,8 +11,9 @@ vars: [storybookUrl]
 A design exploration is a dialog. **The user is the designer. You find and frame. The user
 chooses.** A finding is not a licence to pick the fix.
 
-The unit of work is a **call**: one open question, with every answer drawn side by side at
-the same geometry. A variant wins or loses only against the other variants of its call.
+The unit of work is one open question, with every answer drawn side by side at the same
+geometry: a **sketch** on a product, or a **call** in a repository with the old setup. A variant wins
+or loses only against the other variants of its question.
 
 ## The rules
 
@@ -32,7 +33,7 @@ finished while the user is still talking about it.
 ## What one stop looks like
 
 - The question, in one sentence.
-- The call slug to look at.
+- The sketch (or call slug) to look at.
 - The variants, labelled A, B, C, one line each.
 - Your pick, one line on why.
 - Nothing else. No next step, no second finding.
@@ -46,108 +47,109 @@ If a second defect appears, add it to the open list and give it one line. Do not
 
 The exploration's plan file names the tool. Two shapes exist.
 
-**A repository with a `.ethlete/design` folder** draws each variant of a call in its own
-frame, and the user reads the call in Ethlete Studio. The tool is `et design`, from `@ethlete/cli`, so the repository itself needs no design
-tooling. A call argues in the repository it is about:
+**A repository with a `.ethlete/design` folder** keeps one design system per **product**, and the
+user reads and decides in Ethlete Studio. The tool is `et design`, from `@ethlete/cli`; run
+`et design --help` for every command.
 
 ```
 .ethlete/design/
-  config.json     the port, the default call, and one entry per project
-  calls/<project>/<group>/<slug>/
-    call.ts       the eyebrow, the headline, the intro, frameWidth, the variants and the round prose
-    fixture.ts    the data every variant shares
-    variant-a.ts  one default-exported drawing per variant
-    variant-b.ts
+  config.json                         the port and one `products` entry each
+  <product>/<layer>/<part>/           layer: foundations, components, elements, pages
+  <product>/sketches/<layer>-<name>/  an open sketch: sketch.json and one folder per variant
+  <product>/comments/<id>.json        a comment the user wrote in Studio
+  calls/                              old calls: Legacy, read-only
 ```
 
-The first segment of a slug is the **project**. `config.json` gives each project its own
-`styles` and its own `head`, so one project's type scale and fonts never reach another's
-drawings. A project the config names not draws bare.
+Studio no longer takes new calls. **New work goes to a product, never to a new call**; do not run
+`et design new`. Old calls stay in Studio's Legacy tab as reference for moving them into a
+product. They take no picks and no new variants.
 
-A project can also name `themes`: `{ "surface": ["light", "dark"], "color": ["brand", …] }`; the
-first name of each list is the default. A frame asked for a theme gets the
-`et-surface--<name>` and `et-color--<name>` classes on its root, so a drawing in such a project
-must not set a surface or colour class on its own root, and must take its colours from the theme
-tokens. An inner panel may set `et-surface--<name>`, to put a dark and a light panel side by side
-or to draw an elevated card. To try another value of a colour theme, a variant calls `themeCss()`
-in its own `styles`; it never changes the project's providers.
-
-### Make and track a call
-
-`et design --help` lists every command. Start a call with the tool, never by hand:
+### Create a product
 
 ```bash
-et design new <project>/<group>/<name> --stage component --variants a,b --feature <name>
-et design status <slug> drawing   # while you draw; check sets checking, then ready or failed
+et design product new <name> [--base @ethlete/components|<path>] [--from-project <name>]
 ```
 
-`new` writes `call.ts`, `fixture.ts` and one variant file per key, and the call renders at
-once. `stage` in `call.ts` names the stage of the design (see "The order of a design"). Every
-call needs one: `new` refuses to start without `--stage`, and `et design check --call` fails on a
-call without it. Ethlete Studio groups the calls by it, and the check warns when an element, page
-or prototype call imports nothing from the design system. The status shows on the call's row in Studio.
+It writes the `config.json` entry and the empty layer folders. A product on `@ethlete/components`
+takes the SDK as its base, so its parts start from the real components rendered with `ng()`.
+Without a base it gets the presets phone (390x844) and desktop (1440x900). `--from-project` copies
+`styles`, `head`, `providers` and `themes` from an old project entry. Studio never writes
+`config.json`; the command does.
 
-`feature: '<name>'` in `call.ts` groups a call under a feature in Studio. Set it at creation with
-`new --feature <name>`. A call without one shows under "No feature".
+### Propose a change as a sketch
 
-`et design [checkout]` serves the frames on the port `config.json` names. The
-checkout defaults to the working directory, and `DE_PORT` overrules the config, so two
-checkouts can be drawn at once. A repository that builds the tool rather than installing it
-wraps this in a script - in the ethlete SDK, `yarn design:check`. There, the user reads the
-calls in Ethlete Studio, started with `yarn studio`, and Studio serves the frames itself. Do not
-start `yarn design` next to it.
+A change to a part, or a new part, is a **sketch**: the question is the part, the variants are the
+answers. Variants are drawn at the same geometry, and one variant wins only against the others.
 
-Ethlete Studio carries its own copy of the tool, so it draws a checkout that installs nothing.
-The machine still needs Node, and the render stage still needs `playwright` where the copy in
-use can reach it.
+```bash
+et design sketch new <layer>/<name> --variants a,b [--product <p>]   # each variant starts as a copy of the part
+et design sketch report <layer>/<name> "variant b, phone"            # tell Studio what you build now
+et design sketch check [<layer>/<name>]                              # each variant laid over the product
+et design sketch ready <layer>/<name>                                # now the user can pick
+```
 
-`call.ts` calls `defineCall` from `@design-explore`. Each variant carries a `key`, a `name`,
-a `claim`, a `cost`, an optional `verdict` of `chosen` or `rejected`, and a `load` that
-imports its own module.
+A variant mirrors the product layout and holds only the parts it changes. Draw two to four
+variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
+cannot be picked. Use `sketch list` to see the open ones.
 
-In a call that runs past about a dozen variants, every variant names the pass that drew it with
-`round: 'r3'`. **That tag is the only thing that makes a round exist**, in the order the variants introduce
-them. A round whose variants all carry a verdict is **settled**.
+### The user decides, Studio merges
 
-`rounds` is prose only. Each entry gives a `key`, a `title` and a `note` saying what came out
-of that pass, which is how the intro stays short and each pass reads as a reply to the one
-before. An untagged round still draws - it says the bare key until somebody writes the entry. A
-`rounds` entry that no variant names is stale prose, and the check reports it. Write the note in the same pass that sets the verdicts, never
-before the user rules.
+The user picks a variant, or discards the sketch, in Studio. **Studio merges on the user's click.
+Never run `sketch merge` or `sketch discard` yourself, and never pick a variant.** Both refuse
+while the sketch has open comments, so handle those first. If a part the variant replaces changed
+in the product since the sketch was created, the merge refuses: bring each variant up to date, run
+`et design sketch rebase <layer>/<name>`, and mark it `ready` again. `sketch preview <layer>/<name>
+<variant>` lists the elements and pages a merge changes. The note on a part records why it has its
+current shape, and the merge sets it from the user's reason.
 
-A call with one variant and no `claim` is a **view**: one reference picture, drawn full
-width with no verdict tag. Use it for a picture that answers no question.
+### Read the inbox
 
-Two call-level fields take a call out of the open list:
+The user comments on a state of a part in Studio, at a point, or on a sketch variant.
 
-- `closed: 'shipped'` once the app implements the call, `closed: 'superseded'` once another
-  call replaced it. A closed call counts as settled, even with unruled variants.
-- `waitsFor: '<slug>'`, the full slug of another call, when this call is parked on it. Studio lists
-  it under "On hold" and leaves it out of the open counts until that call settles. Then it is
-  open again by itself, so remove the field only when the reason changes.
+```bash
+et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
+et design inbox done <id>                  # delete a comment once handled
+```
 
-Three constraints the tool puts on a variant file:
+Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
+by changing the sketch or the part, then `inbox done`. A pick or discard decision is the user's
+cue, not yours to act on beyond what Studio already did.
 
-- **Never import a package barrel.** The libraries resolve to source, so one barrel makes
-  the browser request every module in the library, and the requests fail with
-  `ERR_INSUFFICIENT_RESOURCES`. Import the one file you need.
-- **The fixture is shared, and a variant may not change it.** Variants drawn at three
-  geometries cannot be compared.
+### Check a product
+
+```bash
+et design check --product <name>   # layer dependencies, hard-coded colours, copied components, scripted motion, tsc
+et design system --json            # each part's origin, note, states, presets and problems
+```
+
+Without `--product`, `check` covers every product. A part may only use its own layer and the
+layers below it (see "The order of a design"). Pass the changed files to the check below as before.
+
+A project's `config.json` entry can name `themes`, `{ "surface": [...], "color": [...] }`; a
+frame asked for a theme gets the `et-surface--<name>` and `et-color--<name>` classes on its root,
+so a drawing must take its colours from the theme tokens and never set a surface or colour class
+on its own root. An inner panel may set `et-surface--<name>`.
+
+`et design [checkout]` serves the frames; the checkout defaults to the working directory and
+`DE_PORT` overrules the port. In the ethlete SDK the user reads Studio, started with `yarn studio`,
+which serves the frames itself: do not start `yarn design` next to it. Studio carries its own copy
+of the tool, so a checkout that installs nothing still draws.
+
+Three constraints on a drawing file:
+
+- **Never import a package barrel.** The libraries resolve to source, so one barrel makes the
+  browser request every module and the requests fail with `ERR_INSUFFICIENT_RESOURCES`. Import
+  the one file you need.
+- **The fixture is shared, and a variant may not change it.**
 - **One file per variant**, so a broken variant breaks its own frame only.
 
-A `<script>` in a drawing's `body` never runs. For behavior - a play button that restarts a
-CSS animation, a click that toggles a class - give the drawing a `setup(root)` function. The
-frame calls it once, after the markup is in `root`. `setup` has no cleanup hook, because each
-frame load is fresh. Wire behavior with one delegated listener on `root`. `setup` can also be an array of functions, run in order. If one throws, the
-markup stays and the error shows on top of it.
-
-For a prototype with states, render each state with `ngStates({ closed: …, open: … }, { imports })`
-and put its `body` in the drawing. `setup: flow.on([{ click: '.trigger', go: 'open' }])` swaps the
-states on a click, in a View Transition. To draw an open overlay, open it in
-the template (`<et-select [open]="true">`, `<div etMenu [open]="true">`): `ng()` returns the real
-panel, and the frame places it below its trigger. See `components/ssr/02-open-overlays`. `ngStates` wraps the states in a
-`<div data-de-states style="display: contents">` host. So `flow.body` must be the drawing's body,
-or contain it. A selector rule must not depend on that wrapper. See `components/ssr/01-states`.
+A `<script>` in a drawing never runs. For behavior give the drawing a `setup(root)` function
+(called once after the markup is in `root`, no cleanup, wire one delegated listener). Render each
+state of a prototype with `ngStates({ closed: …, open: … }, { imports })` and swap them with
+`setup: flow.on([{ click: '.trigger', go: 'open' }])`. To draw an open overlay, open it in the
+template (`<et-select [open]="true">`); `ng()` returns the real panel and the frame places it.
+`ngStates` wraps the states in `<div data-de-states style="display: contents">`, so a selector
+rule must not depend on that wrapper.
 
 **A repository with a sketch Storybook** draws every variant in the **same** story, side by
 side, under the real geometry the thing ships in. The default Storybook is
@@ -191,19 +193,11 @@ Do not start a stage before the one above it is settled, and do not draw a page 
 are not in the design system. If the user asks for a later stage first, say which earlier stage
 is missing, and draw that first.
 
-A quick exploration of an idea does not run this order: start it with `--stage sketch`. A
-sketch needs no settled stage before it, and Studio lists it apart from the seven stages. When
-the idea holds, draw it again at its real stage.
-
-A call made before the stage was required carries `legacy: true`, which
-`et design legacy <project>` writes once. It also writes the stage its group folder implies:
-`foundations` is `themes`, `components` is `component`, `pages` is `page`; another folder gets
-none. Run it again to add the stage to an old legacy call; a stage already there stays. A
-settled legacy call with a stage counts for that stage in this order. Never add `legacy` to a
-new call.
+The stages map onto the layers of a product: foundations, components, elements, pages. A settled
+Legacy call with a stage counts for that stage in this order.
 
 A later stage can show that an earlier one is incomplete. If a page needs a part that the system
-does not have, add it to the inventory and open a component call for it. Never draw the part
+does not have, add it to the inventory and open a component sketch for it. Never draw the part
 inline in the page.
 
 ## Draw from the design system
@@ -211,7 +205,7 @@ inline in the page.
 A call that invents its own button, field or row does not match the calls beside it. **Before
 you draw a part, look for it in this order, and draw new only when none of them has it:**
 
-1. The project's design system, `.ethlete/design/system/<project>/`.
+1. The product's design system, `.ethlete/design/<product>/` (and its base).
 2. The real SDK components, rendered on the design server with `ng()` from `@design-explore`:
 
    ```ts
@@ -244,22 +238,10 @@ you draw a part, look for it in this order, and draw new only when none of them 
 3. Only then a new drawing. Build it from the two above, and say in the variant's `claim`
    that the part is new.
 
-One entry is one folder:
-
-```
-.ethlete/design/system/<project>/<entry>/
-  <entry>.ts    exports the drawing function, with typed options; built from the SDK mocks
-  entry.md      what it is, when to use it, which SDK parts and options, do and do not
-```
-
-Its preview is a view call at `.ethlete/design/calls/<project>/system/<entry>/`, because the
-tool reads calls from `calls/` only. A variant imports the entry with a relative path. Read
-every `entry.md` of the project before the first drawing of a session.
-
-**An entry exists only because the user accepted it.** A `chosen` verdict is not enough: a
-chosen variant is often a layout or a one-off. When the user says to accept a part into the
-system, extract it in one commit: the entry folder, its preview call, and the source call's
-variant changed to import it. Never change an entry's look without a call the user settled.
+A part is one folder, `<product>/<layer>/<part>/`, with its drawing and states. Read the parts of
+the product before the first drawing of a session. **A part exists only because the user picked a
+sketch.** A `chosen` verdict in an old call is not enough. Never change a part's look without a
+sketch the user decided.
 
 ## Check before you look
 
@@ -293,11 +275,11 @@ et design check --call <slug> --variant b # one of them
 node check-story.mjs --tsconfig <path> --story <story-id>
 ```
 
-## Delegating a call
+## Delegating a sketch
 
 Every brief names `model: opus`.
 
-1. **One agent per call.** It draws all the variants of the call. Give it the call folder, the
+1. **One agent per sketch.** It draws all the variants of the sketch. Give it the sketch folder, the
    fixture it must not change, and the claim of each variant. Do not spawn one agent per
    variant: each would re-read the skill, the call, the fixture and the example, about 45-57k
    tokens each, so the cost is several times higher. Calls are independent, so several calls
@@ -305,9 +287,9 @@ Every brief names `model: opus`.
 2. **One check-and-fix agent, after the drawing agents return.** Give it the changed files
    and the call slug. It runs the check above, fixes what it reports, and repeats until the
    check says `ok`. It may not change what a variant draws, only what stops it rendering.
-3. **One write-up agent, once the user settles the call.** Give it the verdict in the
+3. **One write-up agent, once the user settles the sketch in Studio.** Give it the verdict in the
    user's own words and the plan file. It records what won, what lost and why, it sets each
-   variant's `verdict` in `call.ts`, and it writes that round's `note`. It runs while you open
+   variant's `verdict` in an old call's `call.ts` (a product sketch needs none; the merge sets the note). It runs while you open
    the next call.
 
 ## Screenshots
