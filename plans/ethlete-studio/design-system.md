@@ -894,6 +894,13 @@ step. Each finding names what happened and the fix it needs.
     `GET /__design/shot` answered a 30 s Playwright timeout as text inside a `.png` with status 200.
     Prevent: the shot answers an error status with "part root has zero size", and the skill says
     a filling element needs a min-height.
+  - Tom on `elements/part-tree` alone in Studio (232 px on an empty canvas): "angenommen ich will
+    nun part tree nochmal anpassen dann wäre es gut den auch im page kontext sehen zu können und
+    zu kommentieren ... so wird das schwierig die relationen in font size etc im großen ganzen zu
+    sehen". Prevent: Studio knows which pages use an element (the import graph), and a sketch on
+    an element shows each variant also inside those pages ("in context" rows: `pages/system` with
+    the variant swapped in), commentable like any frame. The part view offers the same "used in"
+    row for the merged element.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
