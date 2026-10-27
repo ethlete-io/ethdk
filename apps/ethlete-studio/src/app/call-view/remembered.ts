@@ -12,6 +12,8 @@ export type ViewState = {
   themes: Record<string, ThemePick>;
   /** Whether the window shows the calls or the design system. */
   view: StudioView;
+  /** Whether a system tree group or section is open, keyed by its tree key. */
+  openGroups: Record<string, boolean>;
 };
 
 export type StudioView = 'calls' | 'system';
@@ -46,6 +48,16 @@ const themePicks = (value: unknown): Record<string, ThemePick> | undefined => {
   );
 };
 
+const openFlags = (value: unknown): Record<string, boolean> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      (entry): entry is [string, boolean] => typeof entry[1] === 'boolean',
+    ),
+  );
+};
+
 const KEY = 'ethlete-studio.call-view';
 
 export const rememberedView = (): Partial<ViewState> => {
@@ -54,7 +66,8 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, project, slug, variant, settledFeature, chatHidden, themes, view } = stored as Partial<ViewState>;
+    const { checkout, project, slug, variant, settledFeature, chatHidden, themes, view, openGroups } =
+      stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -65,6 +78,7 @@ export const rememberedView = (): Partial<ViewState> => {
       chatHidden: typeof chatHidden === 'boolean' ? chatHidden : undefined,
       themes: themePicks(themes),
       view: view === 'calls' || view === 'system' ? view : undefined,
+      openGroups: openFlags(openGroups),
     };
   } catch {
     return {};

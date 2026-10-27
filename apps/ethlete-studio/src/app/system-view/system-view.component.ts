@@ -1,10 +1,24 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { catchError, finalize, map, of, switchMap } from 'rxjs';
 import { ListedCall, ListedProduct, listedCalls$, listedSystem$, transferCall$ } from '../../host/design';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
-import { callFramesOf, callKeyOf, framesOf, partKeyOf, treeOf } from './system-tree';
+import { rememberView, rememberedView } from '../call-view/remembered';
+import {
+  OpenContext,
+  TreeEntry,
+  TreeGroup,
+  TreeSection,
+  callFramesOf,
+  callKeyOf,
+  framesOf,
+  isGroupOpen,
+  isSectionOpen,
+  partKeyOf,
+  treeOf,
+} from './system-tree';
 
 type Reading = { products: ListedProduct[]; error: string | null };
 
@@ -27,30 +41,36 @@ type Reading = { products: ListedProduct[]; error: string | null };
         <h1 class="studio__system-title">{{ only.name }}</h1>
       }
 
-      @for (group of tree(); track group.key) {
-        <section class="studio__system-group">
-          <header class="studio__system-group-head">{{ group.label }}</header>
-
-          @for (entry of group.entries; track entry.key) {
-            <button
-              [class.studio__system-entry--active]="entry.key === selectedKey()"
-              [title]="entry.title ?? ''"
-              (click)="picked.set(entry.key)"
-              class="studio__system-entry"
-              type="button"
-            >
-              <span class="studio__system-entry-name">{{ entry.name }}</span>
-              @for (badge of entry.badges; track badge) {
-                @if (badge === 'error') {
-                  <span class="studio__system-badge studio__system-badge--error" etProvideColor="danger">error</span>
-                } @else {
-                  <span class="studio__system-badge">{{ badge }}</span>
-                }
+      <et-tree
+        [dataSource]="dataSource()"
+        [expandedValues]="expandedValues()"
+        (expandedValuesChange)="rememberOpen($event)"
+        (nodeActivate)="activate($event.value)"
+        class="studio__system-nav"
+        selectionMode="none"
+        aria-label="Design system"
+      >
+        <ng-template etTreeNodeDef let-node>
+          @let entry = entryOf(node.value);
+          @if (entry) {
+            <span [class.studio__system-entry--active]="entry.key === selectedKey()" [title]="entry.title ?? ''">
+              {{ node.label }}
+            </span>
+            @for (badge of entry.badges; track badge) {
+              @if (badge === 'error') {
+                <span class="studio__system-badge studio__system-badge--error" etProvideColor="danger">error</span>
+              } @else {
+                <span class="studio__system-badge">{{ badge }}</span>
               }
-            </button>
+            }
+          } @else {
+            {{ node.label }}
+            @if (countOf(node.value); as count) {
+              <span class="studio__system-count">{{ count }}</span>
+            }
           }
-        </section>
-      }
+        </ng-template>
+      </et-tree>
     </aside>
 
     <main class="studio__system-main">
@@ -106,7 +126,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
   `,
   styleUrl: './system-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [DesignCanvasComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [TREE_IMPORTS, DesignCanvasComponent, ProvideColorDirective, ProvideSurfaceDirective],
   host: { class: 'studio__system' },
 })
 export class SystemViewComponent {
@@ -153,7 +173,7 @@ export class SystemViewComponent {
 
   private pickedProduct = signal<string | null>(null);
 
-  protected picked = signal<string | null>(null);
+  private picked = signal<string | null>(null);
 
   protected transferring = signal(false);
 
@@ -165,7 +185,7 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  protected tree = computed(() => treeOf(this.product()?.parts ?? [], this.calls()));
+  private tree = computed(() => treeOf(this.product()?.parts ?? [], this.calls()));
 
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
 
@@ -221,6 +241,85 @@ export class SystemViewComponent {
       color: this.color(),
     });
   });
+
+  private openGroups = signal(rememberedView().openGroups ?? {});
+
+  private openContext = computed<OpenContext>(() => ({
+    remembered: this.openGroups(),
+    hasProducts: this.products().length > 0,
+    selectedKey: this.selectedKey(),
+  }));
+
+  protected nodes = computed(() => {
+    const entries = new Map<string, TreeEntry>();
+    const counts = new Map<string, number>();
+    const children = new Map<string | null, TreeNode<string>[]>();
+    const leaf = (entry: TreeEntry): TreeNode<string> => {
+      entries.set(entry.key, entry);
+
+      return { value: entry.key, label: entry.name, isLeaf: true };
+    };
+    const branch = (node: TreeGroup | TreeSection): TreeNode<string> => {
+      const sections = 'sections' in node ? (node.sections ?? []) : [];
+
+      children.set(node.key, [
+        ...node.entries.map(leaf),
+        ...sections.map((section) => {
+          counts.set(section.key, section.entries.length);
+
+          return branch(section);
+        }),
+      ]);
+
+      return { value: node.key, label: node.label };
+    };
+
+    children.set(null, this.tree().map(branch));
+
+    return { entries, counts, children };
+  });
+
+  protected dataSource = computed<TreeDataSource<string>>(() => {
+    const { children } = this.nodes();
+
+    return { loadChildren: (parent) => children.get(parent?.value ?? null) ?? [] };
+  });
+
+  protected expandedValues = computed(() => {
+    const context = this.openContext();
+    const open = (node: TreeGroup | TreeSection, isOpen: boolean) => (isOpen ? [node.key] : []);
+
+    return this.tree().flatMap((group) => [
+      ...open(group, isGroupOpen(group, context)),
+      ...(group.sections ?? []).flatMap((section) => open(section, isSectionOpen(section, context))),
+    ]);
+  });
+
+  protected entryOf(value: unknown) {
+    return typeof value === 'string' ? this.nodes().entries.get(value) : undefined;
+  }
+
+  protected countOf(value: unknown) {
+    return typeof value === 'string' ? this.nodes().counts.get(value) : undefined;
+  }
+
+  protected rememberOpen(expanded: readonly string[]) {
+    const was = this.expandedValues();
+    const changes = [...this.nodes().children.keys()].flatMap((key) =>
+      key !== null && expanded.includes(key) !== was.includes(key) ? [[key, expanded.includes(key)] as const] : [],
+    );
+
+    if (changes.length === 0) return;
+
+    const openGroups = { ...this.openGroups(), ...Object.fromEntries(changes) };
+
+    this.openGroups.set(openGroups);
+    rememberView({ openGroups });
+  }
+
+  protected activate(key: string) {
+    if (this.nodes().entries.has(key)) this.picked.set(key);
+  }
 
   protected pickProduct(event: Event) {
     this.pickedProduct.set((event.target as HTMLSelectElement).value);

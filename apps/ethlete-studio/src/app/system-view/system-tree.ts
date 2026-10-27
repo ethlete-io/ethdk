@@ -24,7 +24,9 @@ export type PartBadge = 'from base' | 'overridden' | 'error' | 'transferred';
 
 export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[] };
 
-export type TreeGroup = { key: string; label: string; entries: TreeEntry[] };
+export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
+
+export type TreeGroup = { key: string; label: string; entries: TreeEntry[]; sections?: TreeSection[] };
 
 export const partKeyOf = (part: Pick<ListedPart, 'layer' | 'name'>) => `${part.layer}/${part.name}`;
 
@@ -39,24 +41,63 @@ export const callKeyOf = (slug: string) => `legacy:${slug}`;
 const callBadgesOf = (call: ListedCall): PartBadge[] =>
   'error' in call ? ['error'] : call.transferred ? ['transferred'] : [];
 
-/** One Legacy group for all calls, or one per project once the calls span several. */
+const callEntryOf = (call: ListedCall, name: string): TreeEntry => ({
+  key: callKeyOf(call.slug),
+  name,
+  title: 'error' in call ? call.error : call.headline,
+  badges: callBadgesOf(call),
+});
+
+/** One Legacy group for all calls, or one per project once the calls span several. Calls sharing a stage (the first slug segment after the project) form a section. */
 export const legacyGroupsOf = (calls: ListedCall[]): TreeGroup[] => {
   const projects = [...new Set(calls.map((call) => call.project))];
   const split = projects.length > 1;
 
-  return projects.map((project) => ({
-    key: split ? `legacy/${project}` : 'legacy',
-    label: split ? `Legacy · ${project}` : 'Legacy',
-    entries: calls
-      .filter((call) => call.project === project)
-      .map((call) => ({
-        key: callKeyOf(call.slug),
-        name: call.slug.slice(project.length + 1) || call.slug,
-        title: 'error' in call ? call.error : call.headline,
-        badges: callBadgesOf(call),
-      })),
-  }));
+  return projects.map((project) => {
+    const groupKey = split ? `legacy/${project}` : 'legacy';
+    const entries: TreeEntry[] = [];
+    const sections = new Map<string, TreeSection>();
+
+    for (const call of calls.filter((listed) => listed.project === project)) {
+      const rest = call.slug.slice(project.length + 1) || call.slug;
+      const slash = rest.indexOf('/');
+
+      if (slash <= 0) {
+        entries.push(callEntryOf(call, rest));
+        continue;
+      }
+
+      const stage = rest.slice(0, slash);
+      const section = sections.get(stage) ?? { key: `${groupKey}/${stage}`, label: stage, entries: [] };
+
+      section.entries.push(callEntryOf(call, rest.slice(slash + 1)));
+      sections.set(stage, section);
+    }
+
+    return {
+      key: groupKey,
+      label: split ? `Legacy · ${project}` : 'Legacy',
+      entries,
+      sections: [...sections.values()],
+    };
+  });
 };
+
+export type OpenContext = { remembered: Record<string, boolean>; hasProducts: boolean; selectedKey: string | null };
+
+const holdsKey = (node: TreeGroup | TreeSection, selectedKey: string | null) =>
+  selectedKey !== null &&
+  (node.entries.some((entry) => entry.key === selectedKey) ||
+    ('sections' in node &&
+      !!node.sections?.some((section) => section.entries.some((entry) => entry.key === selectedKey))));
+
+/** Whether a group shows its entries: the remembered choice, else open - except Legacy beside products. A group holding the selection never folds. */
+export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts, selectedKey }: OpenContext) =>
+  holdsKey(group, selectedKey) || (remembered[group.key] ?? (group.key.startsWith('legacy') ? !hasProducts : true));
+
+/** Whether a section shows its entries: the remembered choice, else folded. A section holding the selection never folds. */
+export const isSectionOpen = (section: TreeSection, { remembered, selectedKey }: OpenContext) =>
+  holdsKey(section, selectedKey) || (remembered[section.key] ?? false);
 
 /** The groups of the tree that hold a part or a call, each with its entries in listed order. */
 export const treeOf = (parts: ListedPart[], calls: ListedCall[] = []): TreeGroup[] =>
@@ -72,7 +113,7 @@ export const treeOf = (parts: ListedPart[], calls: ListedCall[] = []): TreeGroup
               .map((part) => ({ key: partKeyOf(part), name: part.name, badges: badgesOf(part) })),
           },
         ],
-  ).filter((group) => group.entries.length > 0);
+  ).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
 
 export type FramesSource = {
   port: number;

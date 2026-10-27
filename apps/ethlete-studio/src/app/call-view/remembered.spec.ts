@@ -30,6 +30,14 @@ describe('remembered view', () => {
     });
   });
 
+  it('remembers which tree groups are open and drops non-boolean flags', () => {
+    localStorage.setItem(KEY, JSON.stringify({ openGroups: { legacy: true, 'legacy/pages': 'yes', x: false } }));
+    expect(rememberedView().openGroups).toEqual({ legacy: true, x: false });
+
+    localStorage.setItem(KEY, JSON.stringify({ openGroups: 3 }));
+    expect(rememberedView().openGroups).toBeUndefined();
+  });
+
   it('remembers the calls or system view and drops an unknown one', () => {
     rememberView({ view: 'system' });
     expect(rememberedView().view).toBe('system');

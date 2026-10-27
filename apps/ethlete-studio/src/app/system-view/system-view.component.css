@@ -34,47 +34,18 @@
     font-size: 1.3rem;
   }
 
-  .studio__system-group-head {
-    padding: 1.6rem 1.6rem 0.6rem;
-    color: var(--et-surface-color-muted-solid);
-    font-weight: 500;
-    font-size: 1.2rem;
+  .studio__system-nav {
+    padding: 0.8rem;
   }
 
-  .studio__system-entry {
-    display: flex;
-    gap: 0.6rem;
-    align-items: center;
-    width: 100%;
-    padding: 0.7rem 1.6rem;
-    border: 0;
-    border-left: 0.2rem solid transparent;
-    background: none;
-    color: inherit;
-    font: inherit;
-    font-size: 1.3rem;
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .studio__system-entry:hover {
-    background: color-mix(in srgb, var(--et-surface-interaction-solid) 6%, transparent);
+  .studio__system-count {
+    margin-left: auto;
+    opacity: 0.7;
   }
 
   .studio__system-entry--active {
-    border-left-color: var(--et-theme-color-primary-solid);
-    background: rgb(var(--et-theme-color-primary-rgb) / 0.12);
-  }
-
-  .studio__system-entry--active:hover {
-    background: rgb(var(--et-theme-color-primary-rgb) / 0.16);
-  }
-
-  .studio__system-entry-name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--et-theme-color-primary-solid);
+    font-weight: 600;
   }
 
   .studio__system-badge {

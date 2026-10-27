@@ -1,5 +1,5 @@
 import { ListedCall, ListedPart, ListedProduct } from '../../host/design';
-import { callFramesOf, framesOf, treeOf } from './system-tree';
+import { callFramesOf, isGroupOpen, isSectionOpen, framesOf, treeOf } from './system-tree';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -75,10 +75,27 @@ describe('treeOf with calls', () => {
     );
 
     expect(tree.map((group) => group.label)).toEqual(['Components', 'Legacy']);
-    expect(tree[1]?.entries).toEqual([
-      { key: 'legacy:acme/components/button', name: 'components/button', title: 'Which button?', badges: [] },
-      { key: 'legacy:acme/pages/home', name: 'pages/home', title: 'Which button?', badges: ['transferred'] },
-      { key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] },
+    expect(tree[1]?.entries).toEqual([{ key: 'legacy:acme/x', name: 'x', title: 'boom', badges: ['error'] }]);
+    expect(tree[1]?.sections).toEqual([
+      {
+        key: 'legacy/components',
+        label: 'components',
+        entries: [{ key: 'legacy:acme/components/button', name: 'button', title: 'Which button?', badges: [] }],
+      },
+      {
+        key: 'legacy/pages',
+        label: 'pages',
+        entries: [{ key: 'legacy:acme/pages/home', name: 'home', title: 'Which button?', badges: ['transferred'] }],
+      },
+    ]);
+  });
+
+  it('keys sections per project once calls span several', () => {
+    const tree = treeOf([], [call(), call({ slug: 'other/pages/a', project: 'other' })]);
+
+    expect(tree.map((group) => group.sections?.map((section) => section.key))).toEqual([
+      ['legacy/acme/components'],
+      ['legacy/other/pages'],
     ]);
   });
 
@@ -90,6 +107,32 @@ describe('treeOf with calls', () => {
       ['legacy/other', 'Legacy · other'],
     ]);
     expect(treeOf([part()], [])).toHaveLength(1);
+  });
+});
+
+describe('isGroupOpen and isSectionOpen', () => {
+  const [legacy] = treeOf([], [call(), call({ slug: 'acme/pages/home' })]);
+  const [parts] = treeOf([part()]);
+  const context = { remembered: {}, hasProducts: true, selectedKey: null };
+  const components = legacy!.sections![0]!;
+
+  it('opens part groups and folds Legacy and its sections by default', () => {
+    expect(isGroupOpen(parts!, context)).toBe(true);
+    expect(isGroupOpen(legacy!, context)).toBe(false);
+    expect(isGroupOpen(legacy!, { ...context, hasProducts: false })).toBe(true);
+    expect(isSectionOpen(components, context)).toBe(false);
+  });
+
+  it('follows a remembered choice but never folds the selection', () => {
+    expect(isGroupOpen(parts!, { ...context, remembered: { components: false } })).toBe(false);
+    expect(isSectionOpen(components, { ...context, remembered: { [components.key]: true } })).toBe(true);
+
+    const selectedKey = components.entries[0]!.key;
+    const held = { ...context, remembered: { legacy: false, [components.key]: false }, selectedKey };
+
+    expect(isSectionOpen(components, held)).toBe(true);
+    expect(isGroupOpen(legacy!, held)).toBe(true);
+    expect(isSectionOpen(legacy!.sections![1]!, held)).toBe(false);
   });
 });
 
