@@ -256,8 +256,8 @@ Open points, each with a recommendation:
   the picker UI is decided. Recommendation: decide it together with the workspace picker.
 - Themes per product: `ListedProduct` has no themes, so the view uses the theme of the old call
   view. Recommendation: list `themes` per product on the server, and pick per product.
-- A command that creates a product. Recommendation: `et design product new <name>`, which writes
-  the config entry and the layer folders. The empty state then shows that command.
+- A command that creates a product. Decided: `et design product new <name>`, see "Checkup
+  decisions". The empty state then shows that command.
 - The selected part is not remembered over a reload. Recommendation: store it with the other
   view state once the layout is settled.
 
@@ -436,8 +436,18 @@ State:
 - `et design check` fails on a note whose part or state no longer exists, with the same rule as
   for comments.
 - The design server lists the `themes` of each product, and Studio picks the theme per product.
-- Still open: a command that creates a product. The recommendation was
-  `et design product new <name>`, which writes the config entry and the layer folders.
+- `et design product new <name>` creates a product. It writes the `products` entry in
+  `config.json`, the folder `<name>/` with the four empty layer folders, and an empty
+  `fixtures.ts`. The new product passes `et design check` at once.
+  - `--base <path|@ethlete/components>` is optional. Without it, the product has no base.
+  - If the base has presets, the command writes none, and the product inherits them. Without a
+    base, it writes `phone` (390×844) and `desktop` (1440×900). More presets are added by hand.
+  - `--from-project <name>` copies `styles`, `head`, `providers` and `themes` from an old
+    `projects` entry. The old entry stays unchanged.
+  - If the entry or the folder exists, the command exits with code 1 and changes nothing.
+  - If `config.json` does not exist, the command creates it with only the `products` key.
+  - The empty state of Studio shows the command as text with a copy button. Studio never writes
+    `config.json`.
 
 ### Sketches
 
