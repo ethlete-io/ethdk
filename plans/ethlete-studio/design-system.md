@@ -813,6 +813,13 @@ border to 2px") showed as "question".
 - Everything Studio draws over a product frame (comment pins, merge preview outlines) uses
   Studio's accent colour, not the product's.
 - `canvas-demo-view` is deleted, if nothing uses it.
+- Built in ec59ffd0d. No template used a palette class; a headless before and after of 245
+  elements is identical. The Tailwind default shadows were black too: `--shadow-*` is reset, and
+  `sm`, `md` and `lg` use `rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.1)`; `xl` and larger no longer
+  exist in Studio. All ten `etProvideColor="danger"` (seven files) now use
+  `injectSemanticColorTheme('error')`. No warning or conflict UI exists yet. No fixed light text was
+  found. Pins already use Studio's accent, since the product draws in an iframe. `canvas-demo-view`
+  and its dev-only route are deleted. Visible change: pin and popover shadows are a bit lighter.
 
 ### Design server restart decision (2026-10-27)
 
