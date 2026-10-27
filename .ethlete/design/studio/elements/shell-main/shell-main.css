@@ -377,4 +377,12 @@
     color: var(--text);
     font-family: var(--font-code);
   }
+
+  .st-shell[data-panel='hidden'] .st-shell-stage .st-canvas {
+    padding-left: 0;
+  }
+
+  .st-shell[data-panel='hidden'] .st-shell-slot[data-kind='section'][data-active] .st-shell-bubble {
+    background: none;
+  }
 }

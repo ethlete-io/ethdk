@@ -9,6 +9,7 @@ type Props = {
   product: string;
   content?: string;
   side?: string;
+  panel?: 'hidden';
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -103,8 +104,18 @@ const projectSwitch = html`<button class="st-shell-project" type="button" aria-h
   ${icon(UP_DOWN, 16)}
 </button>`;
 
+const sidePanel = (product: string, side?: string) =>
+  html`<aside class="st-shell-side">
+    <header class="st-shell-side-head">
+      <span class="st-shell-side-title">${product}</span>
+      <button class="st-shell-collapse" type="button" title="Hide panel">${icon(PANEL, 18)}</button>
+    </header>
+    <div class="st-shell-side-list">${side ?? tree}</div>
+    <footer class="st-shell-side-foot">${projectSwitch}</footer>
+  </aside>`;
+
 export default definePart<Props>({
-  note: 'The canvas runs edge to edge behind a floating, rounded side panel that hides from its own header, while the dark rail stays put as the only fixed chrome.',
+  note: 'The canvas runs edge to edge behind a floating, rounded side panel that hides from its own header, while the dark rail stays put as the only fixed chrome. Hiding is a second click on the active section bubble, as in the VS Code activity bar; the panel goes and the bubble drops its fill but keeps the accent icon and bar.',
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
   states: {
@@ -112,21 +123,19 @@ export default definePart<Props>({
       section: 'System',
       product: 'studio',
     },
+    hidden: {
+      section: 'System',
+      product: 'studio',
+      panel: 'hidden',
+    },
   },
-  render: ({ product, section, content, side }) =>
+  render: ({ product, section, content, side, panel }) =>
     drawing({
-      body: html`<div class="st-shell" data-floating>
+      body: html`<div class="st-shell" data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}>
         ${rail(section, product)}
         <div class="st-shell-stage">
           <main class="st-shell-content">${content ?? canvas}</main>
-          <aside class="st-shell-side">
-            <header class="st-shell-side-head">
-              <span class="st-shell-side-title">${product}</span>
-              <button class="st-shell-collapse" type="button" title="Hide panel">${icon(PANEL, 18)}</button>
-            </header>
-            <div class="st-shell-side-list">${side ?? tree}</div>
-            <footer class="st-shell-side-foot">${projectSwitch}</footer>
-          </aside>
+          ${panel === 'hidden' ? '' : sidePanel(product, side)}
         </div>
       </div>`,
       styles: tokens + styles,
