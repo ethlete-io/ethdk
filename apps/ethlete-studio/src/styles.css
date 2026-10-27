@@ -1,12 +1,13 @@
-@layer studio-tokens, theme, base, components, utilities;
+@layer studio-tokens, theme, base, components, studio-sdk, utilities;
 
 @import 'tailwindcss' source('../');
 
-/* Keep this layer lowest: SDK themes and body rule collide with Studio's own, which must win until the component layer maps them. */
+/* Keep this layer lowest: its sdk part redefines the SDK themes and the body rule, which Studio's own must beat. */
 @import '../../../.ethlete/design/studio/foundations/tokens/tokens.css' layer(studio-tokens);
 
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
+@import './styles/sdk-token-map.css' layer(studio-sdk);
 
 @theme {
   --spacing: 0.4rem;
@@ -99,6 +100,14 @@
   --spacing-space-5: var(--space-5);
   --spacing-space-6: var(--space-6);
   --spacing-space-7: var(--space-7);
+
+  --spacing-control-sm: var(--control-sm);
+  --spacing-control-md: var(--control-md);
+  --spacing-row: var(--row);
+}
+
+/* These names equal the token names: emitted, each would read itself and leave the token invalid. */
+@theme inline reference {
   --font-ui: var(--font-ui);
   --font-code: var(--font-code);
 
@@ -106,10 +115,6 @@
   --radius-control-md: var(--radius-control-md);
   --radius-control-lg: var(--radius-control-lg);
   --radius-pill: var(--radius-pill);
-
-  --spacing-control-sm: var(--control-sm);
-  --spacing-control-md: var(--control-md);
-  --spacing-row: var(--row);
 }
 
 /* 1rem = 10px, so every rem in the app and in @ethlete/components lines up with the design system. */
