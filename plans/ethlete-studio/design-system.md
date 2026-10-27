@@ -712,6 +712,8 @@ Findings:
   - Each builder or subagent prompt for a sketch names the question of the sketch and its two to
     four answers before any drawing starts. A pick upstream (the shell) does not make the page
     below it a one-answer sketch.
+  - One open sketch at a time, as the skill's rule 1 says. Three page sketches with up to five
+    states each put about ten screens in front of Tom at once.
 - The `sdk` base gives `studio` a phone preset that a desktop-only app does not need.
 - A kit page cannot fill the frame height without custom CSS.
 - `--round` on a one-variant `sketch new` still needs a title.
