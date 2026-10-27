@@ -41,7 +41,7 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
 const FITTED_ROW_GAP = 48;
-const GROUP_GAP_FACTOR = 2.5;
+const GROUP_GAP_FACTOR = 2;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;

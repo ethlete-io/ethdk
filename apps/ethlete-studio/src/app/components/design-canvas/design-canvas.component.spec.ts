@@ -111,6 +111,39 @@ describe('DesignCanvasComponent', () => {
     expect(fixture.nativeElement.querySelector('et-resize-handles')).toBeNull();
   });
 
+  it('sets a state group of fitted matrix rows apart by twice the row gap', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+    const cell = (row: string, group: string): CanvasFrame => ({
+      ...FITTED,
+      id: row,
+      row,
+      rowGroup: group,
+      column: 'current',
+    });
+
+    fixture.componentRef.setInput('frames', [
+      cell('solid · rest', 'solid'),
+      cell('solid · hover', 'solid'),
+      cell('outline · rest', 'outline'),
+    ]);
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [{ key: 'current', label: 'current' }]);
+    await fixture.whenStable();
+
+    const [rest, hover, outline] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((frame) => frame.nativeElement as HTMLElement);
+    const gapBelow = (above: HTMLElement | undefined, below: HTMLElement | undefined) =>
+      parseFloat(below?.style.top ?? '') - parseFloat(above?.style.top ?? '') - parseFloat(above?.style.height ?? '');
+
+    expect(gapBelow(rest, hover)).toBe(48);
+    expect(gapBelow(hover, outline)).toBe(96);
+  });
+
   it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {
     const fixture = await render([FITTED, { ...FITTED, id: 'wide', width: 320, height: 200 }]);
     const [fitted, wide] = fixture.debugElement
