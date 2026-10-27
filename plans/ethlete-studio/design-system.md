@@ -800,6 +800,20 @@ step. Each finding names what happened and the fix it needs.
     its first character. Prevent: add the glyphs, and reject an unknown name.
   - A variant that is reported as in progress still renders in `/__design/shot`, though the skill
     says a report hides its frames. Prevent: the skill says what a report hides, and where.
+  - Only variant a got `authors` in `sketch.json`; b and c, made by the same `sketch new
+--by`, have none. Prevent: `sketch new` writes the author on every variant.
+- Side tree round 2 ("Fewer numbers", variants d, e, f from b), friction:
+  - `icon({ glyph: '!' })` draws its fallback letter at 60% of the icon, so a 14 px marker shows an
+    8 px "!". Prevent: a kit `warning` glyph or an `attention` marker.
+  - `heading` sets its font on the `h2`, so a wrapper can fade a count but not lighten its weight.
+    Prevent: the muted `text()` above.
+  - Every CLI usage line prints `yarn et design ...`, which fails here (see round 2 of the shell).
+- Tom picked variant f of `pages/system` in Studio (2026-10-28). The sketch kept status `ready`
+  with `decision: pick`, and nothing merged. The inbox then printed
+  `run: yarn et design sketch merge ...` as the agent's task, but the skill says "Studio merges on
+  the user's click. Never run `sketch merge` yourself". The agent cannot tell which one is wrong.
+  Prevent: one rule. Either the pick merges in Studio, or the inbox and the skill both name the
+  merge as the agent's step after a pick.
 
 Findings:
 
