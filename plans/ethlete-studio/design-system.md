@@ -579,7 +579,7 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
 - Each merge replaced the part drawing with the variant's demo scene, so the tokens page showed
   only the last round. `tokens.ts` is now an overview with the states surfaces, accent, type and
   spacing, values read at runtime (6b3b86c44). Skill rule: a sketch on a foundations part keeps the
-  overview and adds its group as a state (6b95e620d). Not verified: the overview in Studio.
+  overview and adds its group as a state (6b95e620d). Tom checked the overview in Studio (2026-10-27): all good.
 - Next: Studio reads its tokens from the merged `tokens.css`, then the slice 10 component layer
   (also: map the SDK dark tokens onto the new surface tokens).
 - The merged surfaces are committed in 863901225. Open: does a merge in Studio count as the go to
