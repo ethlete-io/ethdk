@@ -379,22 +379,30 @@ export type MatrixColumn = {
 export type ShownRound = SketchRound & { variants: string[]; open: boolean };
 
 /**
- * The rounds of a sketch, oldest first, with their variants. A round is open when the user opened it in
- * `openRounds`, else while it is the newest. Data older than rounds reads as one untitled round `r1`.
+ * The rounds of a sketch, oldest first, with their variants. A round is open as the user chose in
+ * `openRounds`, else while it is the newest. A newest round missing from `openRounds` came after that
+ * choice, so it opens alone and every older round folds again. Data older than rounds reads as one
+ * untitled round `r1`.
  */
 export const sketchRoundsOf = (sketch: ListedSketch, openRounds: Record<string, boolean> = {}): ShownRound[] => {
   const rounds: SketchRound[] = sketch.rounds?.length ? sketch.rounds : [{ key: 'r1', title: '', note: '' }];
   const fallback = rounds[0]?.key;
+  const newest = rounds[rounds.length - 1]?.key ?? '';
+  const chosen = newest in openRounds ? openRounds : {};
 
-  return rounds.map((round, index) => ({
+  return rounds.map((round) => ({
     ...round,
     variants: sketch.variants.filter((variant) => (sketch.variantInfo?.[variant]?.round ?? fallback) === round.key),
-    open: openRounds[round.key] ?? index === rounds.length - 1,
+    open: chosen[round.key] ?? round.key === newest,
   }));
 };
 
 /** The canvas column or column group key of a round. */
 export const roundColumnKeyOf = (round: string) => `round ${round}`;
+
+/** The open flag of every round, to remember; it names the newest round, so a later round folds the older ones again. */
+export const openRoundsOf = (rounds: ShownRound[]): Record<string, boolean> =>
+  Object.fromEntries(rounds.map((round) => [round.key, round.open]));
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 

@@ -11,6 +11,7 @@ import {
   pickedVariantOf,
   mergePreviewOf,
   sketchMatrixOf,
+  openRoundsOf,
   sketchRoundsOf,
   treeOf,
 } from './system-tree';
@@ -589,7 +590,7 @@ describe('sketchMatrixOf', () => {
 
       expect(sketchMatrixOf({ ...source, part: null, sketch: { ...rounded, targets } }).interactions).toEqual(['rest']);
       expect(
-        sketchMatrixOf({ ...source, part: null, sketch: { ...rounded, targets }, openRounds: { r1: true } })
+        sketchMatrixOf({ ...source, part: null, sketch: { ...rounded, targets }, openRounds: { r1: true, r2: true } })
           .interactions,
       ).toEqual(['rest', 'disabled']);
     });
@@ -605,6 +606,14 @@ describe('sketchMatrixOf', () => {
       ]);
       expect(matrix.columns[2]?.label).toBe('b · gpt-5.6-sol');
       expect(sketchRoundsOf(rounded, { r1: false }).map((round) => round.open)).toEqual([false, true]);
+    });
+
+    it('folds the older rounds again when a newer round came after the choice', () => {
+      const third = { ...rounded, rounds: [...(rounded.rounds ?? []), { key: 'r3', title: 'Smaller', note: '' }] };
+      const chosen = openRoundsOf(sketchRoundsOf(rounded, { r1: true, r2: true }));
+
+      expect(sketchRoundsOf(rounded, chosen).map((round) => round.open)).toEqual([true, true]);
+      expect(sketchRoundsOf(third, chosen).map((round) => round.open)).toEqual([false, false, true]);
     });
 
     it('shows one untitled round, and data older than rounds, as plain variant columns', () => {

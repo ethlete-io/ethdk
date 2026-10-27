@@ -54,6 +54,7 @@ import {
   reportExpiryOf,
   roundColumnKeyOf,
   sketchMatrixOf,
+  openRoundsOf,
   sketchRoundsOf,
 } from './system-tree';
 
@@ -590,13 +591,12 @@ export class SketchViewComponent {
   }
 
   protected toggleRound(key: string) {
-    const round = sketchRoundsOf(this.sketch(), this.openRounds()).find(
-      (candidate) => roundColumnKeyOf(candidate.key) === key,
-    );
+    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
+    const round = shown.find((candidate) => roundColumnKeyOf(candidate.key) === key);
 
     if (!round) return;
 
-    const rounds = { ...this.openRounds(), [round.key]: !round.open };
+    const rounds = { ...openRoundsOf(shown), [round.key]: !round.open };
 
     this.openRounds.set(rounds);
     this.remember({ rounds });
@@ -618,10 +618,9 @@ export class SketchViewComponent {
       interaction !== this.matrix().interaction &&
       this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
-    const folded = sketchRoundsOf(this.sketch(), this.openRounds()).find(
-      (round) => !round.open && round.variants.includes(comment.sketch?.variant ?? ''),
-    );
-    const rounds = folded ? { ...this.openRounds(), [folded.key]: true } : null;
+    const shown = sketchRoundsOf(this.sketch(), this.openRounds());
+    const folded = shown.find((round) => !round.open && round.variants.includes(comment.sketch?.variant ?? ''));
+    const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
 
     if (resize) this.size.set(size);
     if (reinteract) this.interaction.set(interaction);
