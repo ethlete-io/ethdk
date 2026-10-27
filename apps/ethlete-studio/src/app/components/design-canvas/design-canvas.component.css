@@ -96,6 +96,10 @@
     outline: none;
   }
 
+  .et-canvas-frame--fitted {
+    outline: none;
+  }
+
   .et-canvas-frame--unsized {
     opacity: 0;
     pointer-events: none;

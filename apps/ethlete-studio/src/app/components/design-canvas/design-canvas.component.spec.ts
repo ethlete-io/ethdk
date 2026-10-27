@@ -98,4 +98,48 @@ describe('DesignCanvasComponent', () => {
     expect(frame.style.width).toBe('400px');
     expect(frame.style.height).toBe('70px');
   });
+
+  it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {
+    const fixture = await render([FITTED, { ...FITTED, id: 'wide', width: 320, height: 200 }]);
+    const [fitted, wide] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((frame) => frame.nativeElement as HTMLElement);
+
+    expect(fitted?.classList).toContain('et-canvas-frame--fitted');
+    expect(wide?.classList).not.toContain('et-canvas-frame--fitted');
+  });
+
+  it('makes a double-clicked frame live, marks it, and ends it on Esc from the frame or on comment mode', async () => {
+    const frames = [
+      { ...FITTED, width: 320, height: 200 },
+      { ...FITTED, id: 'other', width: 320, height: 200 },
+    ];
+    const fixture = await render(frames);
+    const [first, second] = fixture.debugElement.queryAll(By.directive(CanvasFrameComponent));
+    const isLive = (frame = first) =>
+      (frame?.nativeElement as HTMLElement).classList.contains('et-canvas-frame--active');
+
+    first?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+
+    expect(isLive()).toBe(true);
+    expect(first?.nativeElement.querySelector('[data-live-badge]')).not.toBeNull();
+
+    second?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+
+    expect([isLive(first), isLive(second)]).toEqual([false, true]);
+
+    (second?.componentInstance as CanvasFrameComponent).escapeKeydown.emit();
+    await fixture.whenStable();
+
+    expect(isLive(second)).toBe(false);
+
+    first?.triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    fixture.componentRef.setInput('pointing', true);
+    await fixture.whenStable();
+
+    expect(isLive()).toBe(false);
+    expect(first?.nativeElement.querySelector('[data-live-badge]')).toBeNull();
+  });
 });

@@ -73,6 +73,14 @@ const painted$ = (iframe: HTMLIFrameElement) => {
       @if (frame().note; as note) {
         <span class="et-canvas-frame__width" data-frame-note>{{ note }}</span>
       }
+      @if (active()) {
+        <span
+          class="rounded-sm bg-[var(--et-theme-color-primary-solid)] px-[0.4em] text-[var(--et-theme-color-on-primary)]"
+          data-live-badge
+        >
+          Live · Esc
+        </span>
+      }
     </ng-template>
     @if (captionPickable()) {
       <span
@@ -135,6 +143,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     '[class.et-canvas-frame--selected]': 'selected()',
     '[class.et-canvas-frame--active]': 'active()',
     '[class.et-canvas-frame--empty]': 'frame().empty !== undefined',
+    '[class.et-canvas-frame--fitted]': 'frame().width === undefined',
     '[class.et-canvas-frame--caption-below]': 'captionBelow()',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',
@@ -256,10 +265,6 @@ export class CanvasFrameComponent {
     return merge(
       height$.pipe(tap((height) => this.heightChange.emit(height))),
       width$.pipe(tap((width) => this.widthChange.emit(width))),
-      fromEvent<KeyboardEvent>(view, 'keydown').pipe(
-        filter((event) => event.key === 'Escape'),
-        tap(() => this.escapeKeydown.emit()),
-      ),
     );
   }
 

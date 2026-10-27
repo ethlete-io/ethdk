@@ -120,7 +120,7 @@ export class DesignCanvasComponent {
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
   public selectedId = signal<string | null>(null);
-  public activeId = signal<string | null>(null);
+  public activeId = linkedSignal<boolean, string | null>({ source: this.pointing, computation: () => null });
   protected spaceHeld = signal(false);
   protected panning = signal(false);
   private sizes = linkedSignal<string | null, Record<string, FrameSize>>({
@@ -410,6 +410,7 @@ export class DesignCanvasComponent {
   }
 
   protected activate(id: string) {
+    if (this.pointing()) return;
     if (this.frames().find((frame) => frame.id === id)?.empty !== undefined) return;
 
     this.selectedId.set(id);
