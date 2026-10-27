@@ -886,6 +886,16 @@ step. Each finding names what happened and the fix it needs.
   "a section of the app is a page, never a state of the shell", and `design check` could warn
   when an element's state differs from another state only inside a slot. Order agreed with Tom:
   all pages first (shell sections as pages), components after.
+  - Split (20367eb09) friction: a page cannot pass a child's state as props,
+    `partTree.states['components-open']` fails with `TS2345: Argument of type 'Props | undefined'`
+    because `states` is a `Record`; the parts now name-export their state props. Prevent:
+    `definePart` keeps the state keys in its type, or a `part.state('name')` helper.
+  - An element that fills its container (`position: absolute; inset: 0`) has zero size alone, and
+    `GET /__design/shot` answered a 30 s Playwright timeout as text inside a `.png` with status 200.
+    Prevent: the shot answers an error status with "part root has zero size", and the skill says
+    a filling element needs a min-height.
+  - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
+    the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
