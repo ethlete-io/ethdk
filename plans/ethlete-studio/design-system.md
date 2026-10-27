@@ -691,6 +691,12 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
 - Tom (2026-10-27): clean slate. Only `pages/system` on shell B was accepted. The page sketches
   `pages-sketch`, `pages-inbox`, `pages-flows`, the inventory and the four flows are deleted.
   Each next step is one question to Tom, and nothing is drawn before he accepts it.
+- Tom: design granularly, the shell first. `pages/system` and `elements/shell-main` are cut to one
+  state each. The shell keeps the logo, the four section tabs, the side list and the content.
+  Product select, checkout, panel, overlay and the other states come back one question at a time.
+- Finding: the kit `heading` and `tabs` shrink in a narrow row, so "Studio" wrapped and the tabs
+  were cut off in the element frame. `shell-main.css` sets `flex-shrink: 0` and `nowrap` on its
+  bar. Rec: the kit sets both on `heading` and `tabs` itself.
 
 Findings:
 

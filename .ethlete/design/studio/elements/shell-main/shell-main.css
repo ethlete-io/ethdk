@@ -1,11 +1,8 @@
 .st-shell {
-  position: relative;
   font-family: sans-serif;
 }
 
-.st-shell-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+.st-shell-bar * {
+  flex-shrink: 0;
+  white-space: nowrap;
 }

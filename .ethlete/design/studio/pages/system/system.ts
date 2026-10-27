@@ -36,7 +36,6 @@ export default definePart({
   render: async () => {
     const shell = await shellMain.render({
       section: 'System',
-      product: 'studio',
       side: tree(),
       content: frames(),
     });
