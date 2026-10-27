@@ -5,7 +5,7 @@ import { INTERACTIONS } from '../../force-interactions';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from '../sketch/overlay';
 import { interactionNamesOf, stateNamesOf, widthsOf } from '../sketch/part-definition';
-import { findSketch, parseTarget } from '../sketch/sketch';
+import { findSketch, parseTarget, Sketch } from '../sketch/sketch';
 
 /** A point on a frame, in CSS pixels from its top left corner, at the comment's size. */
 export type CommentPoint = { x: number; y: number };
@@ -314,3 +314,17 @@ export const deleteComment = (options: {
 /** The open comments made on any variant of the sketch on a target. */
 export const commentsOnSketch = (options: { productDir: string; product: string; sketch: string }) =>
   listComments(options).comments.filter((comment) => comment.sketch?.target === options.sketch);
+
+/** Deletes the open comments on the variants of a sketch, or only those on `variant`. Answers with the deleted comments. */
+export const closeSketchComments = (options: { sketch: Sketch; variant?: string }): DesignComment[] => {
+  const { sketch, variant } = options;
+  const closed = commentsOnSketch({
+    productDir: resolve(sketch.dir, '..', '..'),
+    product: sketch.product,
+    sketch: sketch.target,
+  }).filter((comment) => variant === undefined || comment.sketch?.variant === variant);
+
+  for (const comment of closed) rmSync(comment.file);
+
+  return closed;
+};

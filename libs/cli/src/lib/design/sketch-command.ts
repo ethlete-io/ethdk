@@ -1,5 +1,6 @@
 import { relative } from 'path';
 import { DesignConfig } from './paths';
+import { closeSketchComments } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf, typecheckVariant } from './system/sketch/check-sketches';
@@ -118,6 +119,13 @@ const varied = (context: Context) =>
     const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
 
     console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
+
+    if (title === undefined) return 0;
+
+    const closed = closeSketchComments({ sketch, variant: from });
+
+    if (closed.length > 0)
+      console.log(`closed ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`);
 
     return 0;
   });

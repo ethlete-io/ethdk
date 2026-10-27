@@ -52,6 +52,12 @@ const mergeResult = (target: string, found: { product: ReturnType<typeof resolve
 const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
   reasonOf(mergeResult(target, found));
 
+const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: string; variant: string }) =>
+  createComment({
+    product,
+    comment: { part: 'elements/hero', state: 'default', size: 'phone', text: 'Bigger.', ...(sketch ? { sketch } : {}) },
+  }) as DesignComment;
+
 const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero');
 
 describe('mergeSketch', () => {
@@ -240,36 +246,24 @@ describe('mergeSketch', () => {
     expect(resolveAcme(target).parts.find((part) => part.name === 'card')?.origin).toBe('overridden');
   }, 120_000);
 
-  it('refuses while the sketch has open comments', () => {
+  it('deletes the open comments on the sketch and keeps those on the product part', () => {
     const target = acme();
     const found = readySketch(target);
-    const comment = createComment({
-      product: found.product,
-      comment: {
-        part: 'elements/hero',
-        state: 'default',
-        size: 'phone',
-        text: 'Bigger.',
-        sketch: { target: 'elements/hero', variant: 'a' },
-      },
-    });
-
-    expect(typeof comment).toBe('object');
-    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toContain('elements/hero has 1 open comment(s)');
-    expect(discardSketch({ target, sketch: found.sketch })).toContain('elements/hero has 1 open comment(s)');
-    expect(existsSync(found.sketch.dir)).toBe(true);
+    const onSketch = commentOn(found.product, { target: 'elements/hero', variant: 'a' });
+    const onPart = commentOn(found.product);
 
     replyToComment({
       products: [{ name: found.product.name, dir: found.product.dir }],
-      id: (comment as DesignComment).id,
+      id: onSketch.id,
       by: 'agent',
       author: 'gpt-5.6-sol',
       text: 'Bigger how?',
     });
 
-    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toContain('elements/hero has 1 open comment(s)');
-    expect(discardSketch({ target, sketch: found.sketch })).toContain('elements/hero has 1 open comment(s)');
-  });
+    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
+    expect(existsSync(onSketch.file)).toBe(false);
+    expect(existsSync(onPart.file)).toBe(true);
+  }, 120_000);
 });
 
 describe('discardSketch', () => {
@@ -280,5 +274,17 @@ describe('discardSketch', () => {
     expect(discardSketch({ target, sketch })).toBeNull();
     expect(existsSync(sketch.dir)).toBe(false);
     expect(existsSync(join(heroOf(target), 'hero.ts'))).toBe(true);
+  });
+
+  it('deletes the open comments on the sketch and keeps those on the product part', () => {
+    const target = acme();
+    const { product, sketch } = readySketch(target);
+    const onSketch = commentOn(product, { target: 'elements/hero', variant: 'b' });
+    const onPart = commentOn(product);
+
+    expect(discardSketch({ target, sketch })).toBeNull();
+    expect(existsSync(sketch.dir)).toBe(false);
+    expect(existsSync(onSketch.file)).toBe(false);
+    expect(existsSync(onPart.file)).toBe(true);
   });
 });

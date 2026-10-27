@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -128,6 +128,59 @@ describe('designSketch', () => {
       ],
       variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, c: { round: 'r2' }, d: { round: 'r2' } },
     });
+  });
+
+  it('closes the open comments on the variant a new round starts from', () => {
+    const target = acme();
+    const lines = output();
+    const comments = join(target, DESIGN_DIR, 'acme/comments');
+    const comment = (id: string, sketch?: { target: string; variant: string }) => {
+      const file = join(comments, `${id}.json`);
+
+      writeFileSync(
+        file,
+        JSON.stringify({
+          part: 'components/button',
+          state: 'default',
+          size: 'phone',
+          text: 'Rounder.',
+          createdAt: '2026-10-27T10:00:00Z',
+          ...(sketch ? { sketch } : {}),
+        }),
+      );
+
+      return file;
+    };
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    mkdirSync(comments, { recursive: true });
+
+    const onA = comment('on-a', { target: 'components/button', variant: 'a' });
+    const onB = comment('on-b', { target: 'components/button', variant: 'b' });
+    const onPart = comment('on-part');
+
+    expect(write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(0);
+    expect(existsSync(onB)).toBe(true);
+    expect(
+      write(
+        target,
+        'variant',
+        'components/button',
+        'd',
+        '--from',
+        'a',
+        '--round',
+        'Rounder',
+        '--note',
+        'too square',
+        '--product',
+        'acme',
+      ),
+    ).toBe(0);
+    expect(lines.pop()).toBe('closed 1 comment(s) on variant a: on-a');
+    expect(existsSync(onA)).toBe(false);
+    expect(existsSync(onB)).toBe(true);
+    expect(existsSync(onPart)).toBe(true);
   });
 
   it('opens, lists, previews, readies and discards a sketch', () => {

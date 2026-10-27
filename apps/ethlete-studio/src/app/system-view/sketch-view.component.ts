@@ -158,7 +158,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           />
         </et-form-field>
         <button
-          [disabled]="busy() !== null || locked() || !picked()"
+          [disabled]="busy() !== null || !picked()"
           [loading]="busy() === 'merge'"
           (click)="merge()"
           et-button
@@ -171,29 +171,17 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           Merge {{ picked() ?? '' }}
         </button>
         <button
-          [disabled]="busy() !== null || locked()"
+          [disabled]="busy() !== null"
           (click)="discard()"
           et-button
           type="button"
           variant="transparent"
           color="surface"
           size="sm"
+          data-discard
         >
           {{ confirmingDiscard() ? 'Discard all variants?' : 'Discard sketch' }}
         </button>
-        @if (locked()) {
-          <button
-            (click)="commentStore.showPanel(true)"
-            et-button
-            type="button"
-            variant="transparent"
-            size="sm"
-            title="Withdraw or resolve them to merge or discard"
-            data-merge-lock
-          >
-            {{ openComments().length === 1 ? '1 open comment' : openComments().length + ' open comments' }}
-          </button>
-        }
         @if (productCommentCount(); as count) {
           <button
             (click)="partOpen.emit()"
@@ -564,11 +552,9 @@ export class SketchViewComponent {
 
   protected pins = computed(() => pinsOf(this.canvas().frames, this.sketchComments()));
 
-  protected openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.sketch().target));
+  private openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.sketch().target));
 
   protected productCommentCount = computed(() => this.openComments().filter((comment) => !comment.sketch).length);
-
-  protected locked = computed(() => this.openComments().length > 0);
 
   protected interactionChoices = computed(() => [ALL, ...this.matrix().interactions]);
 

@@ -3,24 +3,12 @@ import { tmpdir } from 'os';
 import { dirname, join, resolve } from 'path';
 import { DesignConfig } from '../../paths';
 import { checkSystem } from '../check-system';
-import { commentsOnSketch } from '../comments/comment';
+import { closeSketchComments } from '../comments/comment';
 import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { madeByOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
-
-const openCommentsProblemOf = (sketch: Sketch) => {
-  const open = commentsOnSketch({
-    productDir: resolve(sketch.dir, '..', '..'),
-    product: sketch.product,
-    sketch: sketch.target,
-  });
-
-  return open.length > 0
-    ? `${sketch.target} has ${open.length} open comment(s) - handle them and run inbox done first: ${open.map((comment) => comment.id).join(', ')}`
-    : null;
-};
 
 const swap = (entries: { from: string; to: string }[]) => {
   const backup = mkdtempSync(join(tmpdir(), 'ethlete-sketch-merge-'));
@@ -81,10 +69,6 @@ const mergeOrReason = (options: {
 
   if (typeof pick === 'string') return pick;
 
-  const open = openCommentsProblemOf(sketch);
-
-  if (open) return open;
-
   const { variant } = pick;
   const dir = variantDirOf(sketch, variant);
   const { parts, problems } = partFilesOf(dir);
@@ -139,6 +123,7 @@ const mergeOrReason = (options: {
   }
 
   swapped.drop();
+  closeSketchComments({ sketch });
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
 
@@ -149,9 +134,8 @@ const mergeOrReason = (options: {
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
  * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
  * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
- * product's old files come back and the sketch stays. Refuses without a pick, while the sketch has
- * open comments, and when a part the variant replaces changed in the product since the sketch's
- * baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
+ * product's old files come back and the sketch stays; otherwise the open comments on its variants are deleted. Refuses without a
+ * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
  * would let it, the parts that changed (`[]` without a baseline).
  */
 export const mergeSketch = (options: {
@@ -166,12 +150,9 @@ export const mergeSketch = (options: {
   return typeof merged === 'string' ? { reason: merged } : merged;
 };
 
-/** Deletes a sketch with all its variants. Refuses while it has open comments. */
+/** Deletes a sketch with all its variants and the open comments on them. */
 export const discardSketch = (options: { target: string; sketch: Sketch }): string | null => {
-  const open = openCommentsProblemOf(options.sketch);
-
-  if (open) return open;
-
+  closeSketchComments({ sketch: options.sketch });
   rmSync(options.sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: options.target, sketch: options.sketch });
 

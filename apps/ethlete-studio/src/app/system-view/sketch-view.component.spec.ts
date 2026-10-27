@@ -1,9 +1,9 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { THEMES } from '../../themes';
-import { provideCommentStore } from './comment-store';
+import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
 const PRODUCT: ListedProduct = { name: 'web', base: null, presets: {}, parts: [], problems: [] };
@@ -169,6 +169,47 @@ describe('SketchViewComponent merge without a note', () => {
 
     expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'b' }, 'sketch-merge': {} });
     expect(completed).toEqual(['components/card']);
+  });
+
+  it('lets the user merge and discard while the sketch has open comments', async () => {
+    const comment = {
+      part: 'components/card',
+      state: 'empty',
+      size: 360,
+      interaction: 'rest',
+      sketch: { target: 'components/card', variant: 'b' },
+      id: 'c1',
+      text: 'Tighter',
+      createdAt: '2026-10-27T10:00:00Z',
+      replies: [],
+      threadState: 'agent',
+      stale: null,
+    };
+
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments')
+        ? json({ comments: [comment, { ...comment, id: 'c2', sketch: undefined }], unreadable: [] })
+        : new Promise(() => undefined),
+    );
+
+    TestBed.runInInjectionContext(() => injectCommentStore()).connect(
+      signal({ address: { port: 4402, product: 'web' }, revision: 0 }),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', SKETCH);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('[data-product-comments]')).not.toBeNull();
+    expect(root.querySelector('[data-merge-lock]')).toBeNull();
+    expect(root.querySelector<HTMLButtonElement>('[data-merge]')?.disabled).toBe(false);
+    expect(root.querySelector<HTMLButtonElement>('[data-discard]')?.disabled).toBe(false);
   });
 });
 

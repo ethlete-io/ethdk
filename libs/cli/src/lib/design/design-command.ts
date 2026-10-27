@@ -62,7 +62,7 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} sketch merge <layer>/<name> [--note <reason>] --by <model id> | sketch discard <layer>/<name> --by <model id>`,
     '  Merge the variant the user picked, set the note and madeBy (its authors) on the target, then check and',
-    '  restore the old files on failure. Or drop the sketch. Both refuse while the sketch has open comments. Merge refuses without a pick,',
+    '  restore the old files on failure. Or drop the sketch. Both delete the open comments on its variants. Merge refuses without a pick,',
     '  and when a part the variant replaces changed in the product since the sketch was created.',
     '',
     `${invocation} sketch rebase <layer>/<name> --by <model id>`,
