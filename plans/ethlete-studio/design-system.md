@@ -847,6 +847,15 @@ step. Each finding names what happened and the fix it needs.
   - "e ist ein zustand von d quasi". The agent's brief made a state (UI hidden) a variant; variants
     must be alternatives, a hidden mode is a further state of the picked variant. Prevent: the
     skill says a variant never stands for a state of another variant. Tom merges f.
+- Round 3 "Smaller tree type" (g 12 px, h 11.5 px denser, i 11 px with muted groups, all from f):
+  - Tom: "werden meine kommentare nun eig beantwortet und dann gelöscht vom agenten in einem zuge?
+    ... eigentlich wäre es smart wenn wir comments eher resolven damit man auf diese zurückgreifen
+    kann". `inbox done` and `sketch variant --round` delete the comment file, so the thread and its
+    answer are gone. Prevent: close means resolve. The thread keeps its file with `resolved` (who,
+    when, the note or the round that answered it); the inbox and the open-comment merge gate skip
+    resolved threads; Studio shows them hidden by default, behind a "show resolved" toggle.
+  - `design sketch variant --help` runs the `--by` check and prints the usage of all sketch
+    commands. Prevent: `--help` skips the checks and prints the usage of that one command.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
