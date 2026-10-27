@@ -555,6 +555,18 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   on one line if it fits 120 chars, and puts an array of arrays on many lines. A spec runs the
   Prettier check with the repo `.prettierrc.js`. Gap: long number arrays do not wrap like Prettier
   (none in `config.json` today).
+- Slice B as built (each spec fails without its fix; Studio vitest 201, tsc, ngc, eslint; proven
+  headlessly):
+  - Flow labels, 11adcb4b1 and 109ed97ab: `flow-layout.ts` grows the column gap to fit the longest
+    label between two columns, 280 px up to 560 px; label width estimated at 7 px per character, not
+    measured. The max label width is the real gap minus margins, divided by the label scale, so a
+    label wraps instead of covering frames at any zoom (109ed97ab fixed an overlap at 59%).
+  - Matrix notes, 1b9712c10: `layoutMatrix` takes a `below` map; the canvas measures each note
+    column after each render and starts the next row below the tallest.
+  - Note mode, 806b5e015: `toggleNotes()` also calls `showNotes(true)`, so the remembered setting
+    updates.
+  - Lab: new `flows/review-a-film.json` (long label), notes `20261027T170000Z-b7c8` and
+    `20261027T170100Z-d9e0` on `components/button` solid.
 - Slice A verified by specs that bite (cli vitest 347, Studio vitest 199, tsc, ngc, eslint); no
   headless run against a live server and Studio.
 - In the part matrix the gap under a row grows by the tallest note column in that row, so a note card
