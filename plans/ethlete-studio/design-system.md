@@ -571,6 +571,27 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
   hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
   may serve there too.
 
+### Merge preview server, as built (2026-10-27)
+
+- be5a84a5c: the server side of the label, the compare and the outlines. The Studio side comes
+  after the round columns slice.
+- `/__design/sketch-preview` gives `target` (for example `components/card`) for the "Where card is
+  used" label.
+- `GET /__design/sketch-compare?product&sketch&variant[&size][&surface&color]` answers
+  `{ target, variant, changed: Row[], unchanged: Row[] }`, with `Row = { part, state, preset?,
+width?, outlines: { now: Rect[], merged: Rect[] }, error? }`. One request answers when all rows
+  are done. An unknown variant gives 404; a server that cannot draw gives 503.
+- A row is changed when the now and merged PNGs differ in any byte, so in any pixel. There is no
+  threshold. A failed shot or part goes into `changed` with `error`. In the real `studio-lab` card
+  sketch only `pages/library · empty` is changed.
+- Outlines: a Vite transform marks the first element of each part's drawing with
+  `data-et-part="<layer>/<name>"`. Parts that share a root element get a space-joined list. Nested
+  instances get the mark too. Rects are in CSS px from the top left of the shot, at scale 1. An
+  element with zero size (`display: contents`) gets no outline.
+- Builder calls: the compare size is the `size` preset or width, else the first one; other parts
+  are fitted, as in Studio's `mergePreviewOf`. Only the rest interaction is compared, with the
+  states the product has now.
+
 ### Sketch rounds decisions (2026-10-27)
 
 Not built yet. The user may like solid from variant a and outline from variant b. A variant is a
@@ -711,6 +732,13 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
   directly into the part's `madeBy`. Only when the id is not there yet.
 - `sketch new|ready|rebase|discard` keep requiring `--by` and keep not storing it; a merge stores the
   variant's authors, not its own `--by`. `madeBy` names who designed, not who ran a command.
+
+### Studio lab decision (2026-10-27)
+
+- `studio-lab` stays current with Studio, so the user can see each new feature in the real app.
+  Each Studio slice also changes the `studio-lab` data so the feature shows there: for example
+  authors in `variantInfo` and `madeBy`, a sketch with several rounds, agent replies with an author.
+  The builder's "as built" message names where in `studio-lab` the user sees the feature.
 
 ### Design server restart decision (2026-10-27)
 
