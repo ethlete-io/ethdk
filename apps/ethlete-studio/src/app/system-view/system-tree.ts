@@ -14,6 +14,7 @@ import {
 } from '../../host/design';
 import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
 import { isAnswered, isQuestion } from './comment-pins';
+import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
 
 export type SystemGroupKey = 'foundations' | 'components' | 'elements' | 'pages' | 'sketches' | 'legacy';
 
@@ -664,6 +665,8 @@ export type MergePreviewSource = Omit<FramesSource, 'part'> & {
   affected: string[];
   /** The preset or width the matrix shows; a part that offers it takes it, any other its first size. */
   size?: string | null;
+  /** The compared states to show; without them, every state of every affected part. */
+  rows?: CompareRow[] | null;
 };
 
 /**
@@ -677,6 +680,7 @@ export const mergePreviewOf = ({
   variant,
   affected,
   size = null,
+  rows = null,
   epoch,
   revision,
   surface,
@@ -695,9 +699,12 @@ export const mergePreviewOf = ({
     const cell = cellSizeOf(product, size !== null && offered.includes(size) ? size : (offered[0] ?? null));
     const error = loadErrorOf(part.problems);
     const states = part.states.length > 0 ? part.states : [''];
+    const rowOf = (state: string) => rows?.find((row) => row.part === key && (row.state === state || row.state === ''));
+    const shown = rows === null ? states : states.filter((state) => rowOf(state) !== undefined);
 
-    return states.flatMap((state) =>
-      columns.map((column): CanvasFrame => {
+    return shown.flatMap((state) =>
+      MERGE_COLUMNS.map((column): CanvasFrame => {
+        const rowError = rowOf(state)?.error;
         const address: PartAddress = {
           port,
           product: product.name,
@@ -707,25 +714,25 @@ export const mergePreviewOf = ({
           revision,
           surface,
           color,
-          ...(column.key === 'merged' ? { sketch: sketch.target, variant } : {}),
+          ...(column === 'merged' ? { sketch: sketch.target, variant } : {}),
           ...(cell.width === undefined ? { fit: true } : {}),
         };
 
         return {
-          id: `${column.key} ${key} ${state}`,
+          id: mergeFrameIdOf({ column, part: key, state }),
           src: partFrameUrl(address),
           ...(cell.width ? { width: cell.width } : {}),
           ...(cell.height ? { height: cell.height } : {}),
           label: cell.label,
           row: state ? `${key} · ${state}` : key,
-          column: column.key,
+          column,
           screenshot: partShotUrl({
             ...address,
             preset: cell.preset,
             width: cell.preset ? undefined : cell.width,
             revision,
           }),
-          error: column.key === 'now' ? error : undefined,
+          error: rowError ?? (column === 'now' ? error : undefined),
         };
       }),
     );

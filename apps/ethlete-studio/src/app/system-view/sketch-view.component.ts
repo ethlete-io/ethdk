@@ -15,7 +15,7 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { Observable, catchError, concatMap, finalize, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, concatMap, finalize, map, of, startWith, switchMap } from 'rxjs';
 import {
   ListedPart,
   ListedProduct,
@@ -44,6 +44,7 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
+import { SketchCompare, mergeOutlinesOf, partNameOf, sketchCompare$, unchangedLinesOf } from './merge-preview';
 import {
   ALL,
   canPick,
@@ -59,6 +60,8 @@ type Busy = 'pick' | 'merge' | 'discard';
 type Shown = 'matrix' | 'merge';
 
 type PreviewReading = { preview: MergePreview | null; error: string | null };
+
+type CompareReading = { compare: SketchCompare | null; error: string | null };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -269,8 +272,44 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             color="surface"
             size="sm"
           >
-            {{ showing() === 'merge' ? 'Back to the variants' : 'Show merge preview' }}
+            {{ showing() === 'merge' ? 'Back to the variants' : 'Where ' + targetName() + ' is used' }}
           </button>
+        }
+      </div>
+    }
+
+    @if (showing() === 'merge') {
+      <div
+        class="flex flex-col items-start gap-1 border-b border-[var(--et-surface-border-solid)] px-4 py-2 text-small"
+        data-merge-preview
+      >
+        <p>{{ shown.target }} appears in these parts. Left: now. Right: after merging {{ picked() }}.</p>
+        @if (compareReading(); as reading) {
+          @if (reading.error) {
+            <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]" role="alert">
+              {{ reading.error }}
+            </p>
+          } @else if (reading.compare; as compare) {
+            @if (compare.changed.length === 0) {
+              <p class="text-[var(--et-surface-color-subtle-solid)]">No part changes visibly.</p>
+            }
+            @for (line of unchangedLines(); track line.part) {
+              <button
+                [pressed]="showUnchanged()"
+                (click)="showUnchanged.set(!showUnchanged())"
+                et-button
+                type="button"
+                variant="transparent"
+                color="surface"
+                size="xs"
+                data-merge-unchanged
+              >
+                {{ line.text }}
+              </button>
+            }
+          } @else {
+            <p class="text-[var(--et-surface-color-subtle-solid)]">Comparing now and after the merge…</p>
+          }
         }
       </div>
     }
@@ -281,6 +320,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
       [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
       [pins]="pins()"
+      [outlines]="outlines()"
       [pointing]="commentStore.active()"
       [draft]="commentStore.draft()"
       [pinPopover]="pinThread"
@@ -390,16 +430,59 @@ export class SketchViewComponent {
     { initialValue: null },
   );
 
+  protected targetName = computed(() => partNameOf(this.sketch().target));
+
+  protected showUnchanged = linkedSignal({ source: this.picked, computation: () => false });
+
+  private hasAffected = computed(() => (this.previewReading()?.preview?.affected.length ?? 0) > 0);
+
+  protected compareReading = toSignal(
+    toObservable(
+      computed(() => ({
+        address: this.address(),
+        variant: this.picked(),
+        on: this.shownMode() === 'merge' && this.hasAffected(),
+        size: this.size(),
+        surface: this.surface(),
+        color: this.color(),
+        revision: this.revision(),
+      })),
+    ).pipe(
+      switchMap(({ address, variant, on, size, surface, color }) =>
+        variant && on
+          ? sketchCompare$({ ...address, variant, size, surface, color }).pipe(
+              map((compare): CompareReading => ({ compare, error: null })),
+              catchError((error: unknown) => of<CompareReading>({ compare: null, error: messageOf(error) })),
+              startWith<CompareReading>({ compare: null, error: null }),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  private shownRows = computed(() => {
+    const compare = this.compareReading()?.compare;
+
+    return compare ? [...compare.changed, ...(this.showUnchanged() ? compare.unchanged : [])] : null;
+  });
+
+  protected unchangedLines = computed(() => unchangedLinesOf(this.compareReading()?.compare?.unchanged ?? []));
+
   private mergePreview = computed(() => {
     const variant = this.picked();
     const affected = this.previewReading()?.preview?.affected ?? [];
 
-    return variant && affected.length > 0 ? mergePreviewOf({ ...this.source(), variant, affected }) : null;
+    return variant && affected.length > 0
+      ? mergePreviewOf({ ...this.source(), variant, affected, rows: this.shownRows() })
+      : null;
   });
 
   protected showing = computed<Shown>(() =>
     this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
   );
+
+  protected outlines = computed(() => (this.showing() === 'merge' ? mergeOutlinesOf(this.shownRows() ?? []) : []));
 
   public canvas = computed(() => (this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix()));
 

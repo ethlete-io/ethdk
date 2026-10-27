@@ -14,6 +14,7 @@ import {
   sketchRoundsOf,
   treeOf,
 } from './system-tree';
+import { CompareRow, mergeOutlinesOf, unchangedLinesOf } from './merge-preview';
 
 const part = (overrides: Partial<ListedPart> = {}): ListedPart => ({
   layer: 'components',
@@ -631,6 +632,60 @@ describe('mergePreviewOf', () => {
     expect(preview.frames[1]?.src).toContain(
       '&part=elements%2Fheader&state=default&sketch=components%2Fbutton&variant=b',
     );
+  });
+});
+
+describe('mergePreviewOf with compared rows', () => {
+  const library = part({ layer: 'pages', name: 'library', states: ['one', 'empty', 'many'] });
+  const row = (state: string, extra: Partial<CompareRow> = {}): CompareRow => ({
+    part: 'pages/library',
+    state,
+    preset: 'desktop',
+    outlines: { now: [], merged: [] },
+    ...extra,
+  });
+  const previewOf = (rows: CompareRow[]) =>
+    mergePreviewOf({
+      port: 4400,
+      product: product([part(), library]),
+      sketch: sketch(),
+      variant: 'b',
+      affected: ['pages/library'],
+      rows,
+    });
+
+  it('draws only the compared states, and a row error on both sides', () => {
+    const preview = previewOf([row('empty'), row('many', { error: 'the variant threw' })]);
+
+    expect(preview.frames.map((frame) => [frame.id, frame.error])).toEqual([
+      ['now pages/library empty', undefined],
+      ['merged pages/library empty', undefined],
+      ['now pages/library many', 'the variant threw'],
+      ['merged pages/library many', 'the variant threw'],
+    ]);
+  });
+
+  it('puts each outline on the frame of its side', () => {
+    const rect = { x: 10, y: 20, width: 30, height: 40 };
+    const rows = [row('empty', { outlines: { now: [], merged: [rect] } })];
+    const ids = new Set(previewOf(rows).frames.map((frame) => frame.id));
+    const outlines = mergeOutlinesOf(rows);
+
+    expect(outlines).toEqual([{ frameId: 'merged pages/library empty', ...rect }]);
+    expect(outlines.every((outline) => ids.has(outline.frameId))).toBe(true);
+  });
+});
+
+describe('unchangedLinesOf', () => {
+  it('sums the unchanged states of each part into one line', () => {
+    const at = (part: string, state: string): CompareRow => ({ part, state, outlines: { now: [], merged: [] } });
+
+    expect(
+      unchangedLinesOf([at('pages/library', 'one'), at('elements/header', ''), at('pages/library', 'many')]),
+    ).toEqual([
+      { part: 'pages/library', text: '2 states of pages/library without visible change' },
+      { part: 'elements/header', text: '1 state of elements/header without visible change' },
+    ]);
   });
 });
 
