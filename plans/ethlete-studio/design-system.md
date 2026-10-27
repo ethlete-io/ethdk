@@ -598,6 +598,19 @@ b by Codex Sol, c by Claude Opus. Today only comment replies know `by: 'user' | 
 - The coordinating agent writes the exact id into each sub-agent prompt; an agent never guesses its
   id. This goes into the `ethlete-design-exploration` skill.
 
+### Agent authors, as built (2026-10-27)
+
+- 6746f09aa (CLI): `--by` is required on `sketch new|report|ready|rebase|merge|discard`, `inbox
+done` and `comment reply`; without it the command exits 2 with its usage. `sketch.json` has
+  `variantInfo: { a: { authors: [...] } }`, in first-report order, without duplicates. `sketch
+report` takes `--variant`. A merge writes the picked variant's authors as `madeBy` in
+  `definePart`, and removes `madeBy` when there are none.
+- The API gives `variantInfo[v].authors`, `report.author`, `report.variant`, `replies[].author` and
+  `part.madeBy` (`[]` when unknown).
+- 414e7f23b (agent-rules): the synced skill tells agents to pass the exact model id to every write.
+  No `et update` migration, since the callers are agents. The `@ethlete/cli` changeset is major.
+- Not built yet: the Studio display.
+
 ### Design server restart decision (2026-10-27)
 
 - Studio runs the design server from the built copy `dist/apps/ethlete-studio/cli-runtime`, which
