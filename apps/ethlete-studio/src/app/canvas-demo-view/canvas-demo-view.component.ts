@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, ViewEncapsulation, inject } from '@angular/core';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
@@ -9,20 +10,40 @@ const PRESETS = [
   { name: 'Desktop', width: 1280 },
 ];
 
-const MOCK_SCREENSHOT = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400"><rect width="100%" height="100%" fill="#e8ecf8"/><text x="40" y="80" font-size="48" font-family="sans-serif">Cached screenshot</text></svg>',
-)}`;
+const TOKENS = [
+  '--et-surface-background-solid',
+  '--et-surface-color-solid',
+  '--et-surface-border-solid',
+  '--et-theme-color-primary-solid',
+  '--et-theme-color-on-primary-solid',
+  '--et-surface-interaction-solid',
+  '--et-surface-color-subtle-solid',
+];
 
-const mockPage = (state: string, width: number) => `<!doctype html>
+const tokenVars = (style: CSSStyleDeclaration) => {
+  return TOKENS.map((token) => `${token}: ${style.getPropertyValue(token)};`).join(' ');
+};
+
+const mockScreenshot = (style: CSSStyleDeclaration) => {
+  const fill = style.getPropertyValue('--et-surface-interaction-solid');
+  const ink = style.getPropertyValue('--et-surface-color-solid');
+
+  return `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400"><rect width="100%" height="100%" fill="${fill}"/><text x="40" y="80" font-size="48" font-family="sans-serif" fill="${ink}">Cached screenshot</text></svg>`,
+  )}`;
+};
+
+const mockPage = (style: CSSStyleDeclaration, { state, width }: { state: string; width: number }) => `<!doctype html>
 <html>
   <head>
     <style>
-      body { margin: 0; padding: 24px; font: 15px/1.5 system-ui, sans-serif; background: #fff; color: #1b1b1f; }
+      :root { ${tokenVars(style)} }
+      body { margin: 0; padding: 24px; font: 15px/1.5 system-ui, sans-serif; background: var(--et-surface-background-solid); color: var(--et-surface-color-solid); }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-      .card { padding: 16px; border: 1px solid #ddd; border-radius: 8px; }
-      button { padding: 8px 16px; border: 0; border-radius: 6px; background: #3a5bd9; color: #fff; cursor: pointer; }
-      button:hover { background: #1f3ba8; }
-      button:disabled { background: #bbb; cursor: default; }
+      .card { padding: 16px; border: 1px solid var(--et-surface-border-solid); border-radius: 8px; }
+      button { padding: 8px 16px; border: 0; border-radius: 6px; background: var(--et-theme-color-primary-solid); color: var(--et-theme-color-on-primary-solid); cursor: pointer; }
+      button:hover { background: color-mix(in srgb, var(--et-theme-color-primary-solid) 80%, var(--et-surface-color-solid)); }
+      button:disabled { background: var(--et-surface-color-subtle-solid); cursor: default; }
     </style>
   </head>
   <body>
@@ -51,15 +72,18 @@ const mockPage = (state: string, width: number) => `<!doctype html>
   `,
 })
 export class CanvasDemoViewComponent {
+  private document = inject(DOCUMENT);
+  private readonly style = getComputedStyle(this.document.body);
+
   protected frames: CanvasFrame[] = STATES.flatMap((state) =>
     PRESETS.map(({ name, width }) => ({
       id: `${state}-${width}`,
-      src: URL.createObjectURL(new Blob([mockPage(state, width)], { type: 'text/html' })),
+      src: URL.createObjectURL(new Blob([mockPage(this.style, { state, width })], { type: 'text/html' })),
       width,
       height: state === 'disabled' ? 480 : undefined,
       label: name,
       row: state,
-      screenshot: state === 'hover' && width === 1280 ? MOCK_SCREENSHOT : undefined,
+      screenshot: state === 'hover' && width === 1280 ? mockScreenshot(this.style) : undefined,
       error: state === 'disabled' && width === 768 ? 'Render failed: mock error for the canvas demo.' : undefined,
     })),
   );

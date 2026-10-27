@@ -72,7 +72,7 @@ body {
     padding: 0.4rem;
     background: var(--et-surface-background-solid);
     color: var(--et-surface-color-solid);
-    box-shadow: 0 0.8rem 2.4rem rgb(0 0 0 / 0.35);
+    box-shadow: 0 0.8rem 2.4rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.35);
   }
 
   option {
