@@ -591,8 +591,11 @@ Also seen there: on `pages/library` "add open" the dialog backdrop ends at about
 of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
 Fixed in 9222b044f: the scrim in `pages/library/library.ts` was `position: absolute; inset: 0`, so it
 filled only `.lab-shell` (480px). It is now `position: fixed; inset: 0`, and frames are iframes, so it
-fills the frame. Also fixes "login open" and "login error". `design check --product studio-lab` ok;
-no rendered measurement yet.
+fills the frame. Also fixes "login open" and "login error". Rendered check, all pass (headless):
+the scrim fills the viewport at phone 390x844 and desktop 1440x900 for all three states, live and in
+`/__design/shot`; fitted frames stay at 512px over 4s at iframe heights 300 and 900, no loop.
+Finding, also on "three" and older than the fix: a fitted frame measures 512px live, but its fitted
+shot is 480px high.
 
 ### Comment follow-up decisions (2026-10-27)
 
