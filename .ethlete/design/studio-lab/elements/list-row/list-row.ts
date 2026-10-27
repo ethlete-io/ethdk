@@ -5,6 +5,7 @@ type Props = { index: number; selected: boolean };
 
 export default definePart<Props>({
   note: 'A film row for the lab: title, year and a selected state.',
+  madeBy: ['gpt-5.6-sol', 'claude-opus-5-5'],
   states: { first: { index: 0, selected: false }, selected: { index: 1, selected: true } },
   render: ({ index, selected }) => {
     const film = films[index] ?? { title: 'Untitled', year: 0 };

@@ -4,6 +4,7 @@ type Props = { label: string; variant: 'solid' | 'outline' };
 
 export default definePart<Props>({
   note: 'Lab button: solid or outline, with hover, focus-visible, active and disabled.',
+  madeBy: ['gemini-3-argon'],
   states: {
     solid: { label: 'Save', variant: 'solid' },
     outline: { label: 'Cancel', variant: 'outline' },

@@ -14,5 +14,12 @@
     "kind": "pick",
     "variant": "b",
     "decidedAt": "2026-10-27T09:48:47.107Z"
+  },
+  "variantInfo": {
+    "a": {
+      "authors": [
+        "claude-opus-5-5"
+      ]
+    }
   }
 }

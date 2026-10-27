@@ -1,0 +1,11 @@
+{
+  "part": "components/button",
+  "state": "outline",
+  "size": "fitted",
+  "text": "The outline border looks thin next to the solid one.",
+  "point": { "x": 20, "y": 18 },
+  "createdAt": "2026-10-27T12:00:00.000Z",
+  "replies": [
+    { "by": "agent", "author": "gpt-5.6-sol", "text": "Raised the outline border to 2px in the next round.", "createdAt": "2026-10-27T12:05:00.000Z" }
+  ]
+}
