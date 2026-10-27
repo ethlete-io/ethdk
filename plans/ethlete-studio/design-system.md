@@ -1382,6 +1382,16 @@ Notes:
   reports them.
 - No control removes a free note's `at`; delete and create again does the same.
 
+Flow comments and preset, as built (bc8801096, headless proof pending):
+
+- A flow frame's place is `{ part, state, size: <preset> }`, the same as a rest frame at that preset,
+  so a flow comment uses the same store and pins on both canvases. On the flow a pin shows only
+  while its preset is picked. Comment (with count and questions) sits next to Note in the flow bar;
+  the modes are exclusive; `c` toggles. A sidebar click on a comment that pins on the shown flow
+  opens it there. Lab: `comments/20261027T150000Z-f1a0.json`.
+- The preset is remembered per flow as `ViewState.flowPresets["<product> flow:<name>"]`, else the
+  previous pick, else the first preset.
+
 ### Wireframe kit fix decisions (2026-10-27)
 
 Seen on `studio-lab` `pages/film-detail` at phone 390: image and text stay side by side, the button
