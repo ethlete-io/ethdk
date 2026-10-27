@@ -698,6 +698,36 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
   were cut off in the element frame. `shell-main.css` sets `flex-shrink: 0` and `nowrap` on its
   bar. Rec: the kit sets both on `heading` and `tabs` itself.
 
+Studio as a product, findings from the clean-slate session (2026-10-27). Tom: this design
+process exists only to test Studio as a product, and here the tool worked against us at every
+step. Each finding names what happened and the fix it needs.
+
+- No gate between agent and Tom. The builder drew three page sketches, four flows and an
+  inventory that Tom never accepted, and Studio showed all of it as open work. Fix: a sketch or
+  flow starts only from an accepted question; Studio shows one open sketch at a time.
+- Nothing pushes a wireframe to start small. `pages/system` had five states and `shell-main`
+  four, so Tom saw about ten screens at once. Fix: the skill says one state per new part, and
+  each further state is its own question.
+- A sketch with one variant is valid (see above). Fix: the CLI refuses it.
+- `design check` passes broken drawings: wrapped text, cut-off tabs, content running into the
+  panel, a missing bottom border, a state taller than its frame. Fix: a check that renders each
+  state and reports overflow, clipping and text that wraps where it should not.
+- An element has no frame size. Only pages get the product presets
+  (`apps/ethlete-studio/src/app/system-view/system-tree.ts:296-340`); any other part is fitted
+  to its content, so the shell showed portrait at about 780 px. `widths` gives a width, never a
+  height, and the label then reads as a width. Fix: a part can name the presets it is drawn at.
+- No agent can see a drawing. Only the design server renders a PNG (`/__design/shot`), Tom's
+  server is off limits, and starting an own server was denied by the permission check. Every
+  visual question went back to Tom as a screenshot. Fix: `et design shot <part> --state <s>
+--preset <p> --out <file>` renders without a server.
+- The kit has no shape for an app window. A `box` is either bordered with round corners or
+  plain, so a shell built from boxes looks like stacked cards. Fix: a kit `split` or `divider`
+  that draws one line between regions.
+- The kit grey is private (`LINE` in `libs/cli/design/wireframe-kit.ts:10`), and
+  `HARD-CODED-COLOUR` also rejects a fallback inside `var()`. A wireframe that draws its own line
+  must import the product colour tokens. Fix: the kit exports its line colour, or the divider
+  above makes it unneeded.
+
 Findings:
 
 - A flow in `<product>/flows/` that names a page that exists only as a sketch fails `FLOW`, and
