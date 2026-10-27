@@ -1388,9 +1388,14 @@ Notes server, as built (2026-10-27):
 - Endpoints: `GET /__design/notes`; `POST` `note`, `note-change`, `note-delete`, and `flow-note`,
   `flow-note-change`, `flow-note-delete` (`?flow=`). `/__design/flows` includes the notes. A change in
   `notes/` sends a `notes` event and redraws no part.
-- Studio half in progress: a dashed card that always shows its text, a small square marker at a
-  point, a free note as a large bold heading without a card, a "Note" toggle next to Comment, the
-  two modes mutually exclusive.
+- Studio half, 22510314b (headless proof pending): a state note shows on every rest frame of its
+  part and state, at all sizes, not on interaction or sketch frames. With a point: a small square
+  marker and the card beside it; without: a column of cards below the frame. On the flow canvas,
+  free notes are large bold headings at `at`, or stacked above the top left of the frames. Cards
+  always show their text, with a dashed surface border, scaled like line labels. A "Note" toggle
+  sits next to Comment and in the flow bar; the two modes switch each other off. In note mode a
+  click on a frame makes a pointed note, on a caption a note on the whole state, on empty flow
+  space a free note. A click on a note opens Save, Delete and Cancel.
 
 ### Slice 7 decisions (2026-10-27)
 
