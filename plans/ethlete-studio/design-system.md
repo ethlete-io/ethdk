@@ -779,6 +779,9 @@ step. Each finding names what happened and the fix it needs.
   - `sketch check` prints only "ok", so the agent cannot tell which variants and rules it
     covered. Prevent: one line per variant with the rules it ran.
   - `sketch variant` makes one letter per call. Prevent: accept `d,e,f --from b`.
+- Tom merged variant f of `elements/shell-main` in Studio (2026-10-27). The part note became the
+  bare letter `'f'` (as `'b'` on `pages/system`), so the idea of the variant is lost. Prevent: a
+  merge without a note keeps the variant's own note; Studio's merge asks for a note.
 
 Findings:
 
