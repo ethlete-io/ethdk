@@ -567,6 +567,11 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
     updates.
   - Lab: new `flows/review-a-film.json` (long label), notes `20261027T170000Z-b7c8` and
     `20261027T170100Z-d9e0` on `components/button` solid.
+  - Decided (2026-10-27): the matrix reserves note room at zoom 1. Between 25% and 100% the
+    counter-scaled cards can still reach into the next row; accepted, because zoom-dependent rows
+    would move while zooming and fight auto-fit. Reserve at the fitted zoom only if Tom sees overlap
+    on page matrices. Sheet and grid layouts reserve no note room, and right-to-left arc labels keep
+    their fixed 480 px limit, until a real case shows a problem.
 - Slice A verified by specs that bite (cli vitest 347, Studio vitest 199, tsc, ngc, eslint); no
   headless run against a live server and Studio.
 - In the part matrix the gap under a row grows by the tallest note column in that row, so a note card
