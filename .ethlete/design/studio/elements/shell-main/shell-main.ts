@@ -8,7 +8,7 @@ type Props = {
   section: Section;
   product: string;
   content?: string;
-  side: string;
+  side?: string;
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
@@ -111,7 +111,6 @@ export default definePart<Props>({
     system: {
       section: 'System',
       product: 'studio',
-      side: tree,
     },
   },
   render: ({ product, section, content, side }) =>
@@ -125,7 +124,7 @@ export default definePart<Props>({
               <span class="st-shell-side-title">${product}</span>
               <button class="st-shell-collapse" type="button" title="Hide panel">${icon(PANEL, 18)}</button>
             </header>
-            <div class="st-shell-side-list">${side}</div>
+            <div class="st-shell-side-list">${side ?? tree}</div>
             <footer class="st-shell-side-foot">${projectSwitch}</footer>
           </aside>
         </div>
