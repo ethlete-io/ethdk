@@ -369,6 +369,28 @@ State:
   that matches no prop in the states of its flow.
 - "Back to start" resets the store to its start values.
 
+### Slice 8 decisions (2026-10-27)
+
+- The MCP server runs in the CLI as `et design mcp` and calls the core directly. It works in
+  every terminal session, without Studio. The server in
+  `apps/ethlete-studio/src-tauri/src/tools.rs` goes.
+- One tool per deterministic core operation: the parts list, check, screenshot, the sketch
+  commands (new, ready, merge, discard), the live report, and inbox read and done. Every tool
+  is also a CLI command, and every such CLI command is also a tool. The agent writes part
+  files with its normal file tools.
+- The screenshot tool takes part, state, preset and theme and returns the image. It draws the
+  same way as the Studio screenshot cache, so agent and user see the same thing.
+- The workspace is the working directory of the session. The product is an argument, optional
+  when the workspace has only one product.
+- `ethlete-agents sync` registers the server in `.mcp.json` and in the Codex config, in this
+  repo and in every consumer repo.
+- A new skill in `libs/agent-rules` explains the system and its tools, and says that motion
+  comes later. `design-exploration` stays for the dialog process and points to sketches
+  instead of calls.
+- The unused Studio chat code points to `et design mcp`, so it still runs. Then `tools.rs` is
+  deleted.
+- No tools for the old calls. The agent reads them as files.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
@@ -462,9 +484,8 @@ No new calls, no picks. The user can mark a call "transferred" and deletes the t
 6. **Pages and wireframes**: page states, the wireframe kit, the remaining kit-part count.
 7. **Interaction**: a clickable prototype. Part rules, flow-line triggers, play mode and the
    prototype store, as in "Slice 7 decisions".
-8. **MCP server** over the core. It replaces the chat-only tools in
-   `apps/ethlete-studio/src-tauri/src/tools.rs` and also works in terminal sessions. The agent
-   instructions say motion comes later as an update.
+8. **MCP server**: `et design mcp` over the core, as in "Slice 8 decisions". It replaces
+   `apps/ethlete-studio/src-tauri/src/tools.rs`.
 9. **Motion**: its own plan. A timeline, controlled time, a screenshot per keyframe. Motion is a
    tool that extends components and elements.
 
