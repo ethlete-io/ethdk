@@ -604,6 +604,26 @@ same x and y, in empty space.
   uncommitted `notes/20261027T144809Z-db30.json`, and `library` "three",
   `notes/20261027T163000Z-e5f6.json`).
 
+Slice C, as built (2c6878d4e cli, c2ea12698 Studio; 3 CLI and 7 Studio specs fail with the old
+behaviour; Studio vitest 202, cli 347, tsc, ngc, eslint, `design check --product studio-lab` ok):
+
+- `note.ts` stores `size`, typed and checked like a comment's size. A pointed note without size, or
+  with a preset the product lacks, is refused; clearing the point drops the size. `et design check`:
+  a pointed note without size is an error; a size the product no longer has is stale (also the
+  `stale` field in Studio's note listing). A note without size stays readable and shows at every
+  size.
+- A pointed note shows only on frames at its size; on a flow it follows the picked preset. Studio
+  writes `size`. Frame label "1 comment, 1 note at another size" ("other sizes" if spread), following
+  Show notes. Marker and card show the same number per frame; the line shows only while the pointer
+  is over the marker or the card (the marker takes pointer events).
+- Lab notes: db30 and e5f6 `phone`, b7c8 `fitted` (component matrix frames are fitted), d9e0 has no
+  point; db30 committed. A third pointed note, `notes/20261027T120000Z-a1b2.json` (library "empty"),
+  also got `phone`.
+- Proven headlessly on `film-detail` "rest" (number "1" on marker and card, phone only, desktop label
+  "1 note at another size", line on hover only). Not proven headlessly: flows and the component
+  matrix (unit tests only); writing a note through the real UI. No doc page or skill documents the
+  note format.
+
 Also seen there: on `pages/library` "add open" the dialog backdrop ends at about 410px and the rest
 of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
 Fixed in 9222b044f: the scrim in `pages/library/library.ts` was `position: absolute; inset: 0`, so it
