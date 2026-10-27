@@ -2,6 +2,7 @@ import { dirname, relative, sep } from 'path';
 import { Interaction, INTERACTIONS } from '../force-interactions';
 import { DesignPreset } from '../paths';
 import { ruleProblemsOf } from './check-system';
+import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { PartOrigin, ResolvedPart } from './resolve-product';
 import { SystemModules } from './system-modules';
@@ -20,6 +21,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions the part is drawn in besides rest, in the order it declares them. */
   interactions: Interaction[];
+  /** The calls of wireframe kit parts in a page's source; a page with any is a wireframe. */
+  kitUses: number;
   problems: Problem[];
 };
 
@@ -145,6 +148,7 @@ export const listSystem = async (options: {
                 states,
                 ...widths,
                 interactions,
+                kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                 problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                   relativeTo,
                 ),

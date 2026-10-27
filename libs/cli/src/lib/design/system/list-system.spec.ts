@@ -147,6 +147,27 @@ describe('listSystem', () => {
     expect(partOf('hero')?.problems).toEqual([expect.objectContaining({ rule: 'INTERACTIONS' })]);
   });
 
+  it('counts the wireframe kit calls of a page and loads the page through the kit', async () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/pages/login/login.ts',
+      `import { definePart, drawing } from '@design-system';
+import { box, button, input } from '@design-system/kit';
+export default definePart({ note: '', states: { rest: {} }, render: () => drawing({ body: box([input(), button('Go')]), styles: '' }) });
+`,
+    );
+
+    const [product] = await list(target, ['acme']);
+    const kitUses = Object.fromEntries(
+      product?.parts.map((part) => [`${part.layer}/${part.name}`, part.kitUses]) ?? [],
+    );
+
+    expect(kitUses).toMatchObject({ 'pages/home': 0, 'pages/login': 3, 'components/button': 0 });
+    expect(product?.parts.find((part) => part.name === 'login')?.problems).toEqual([]);
+  });
+
   it('loads a base part with the parts of the product that uses it', async () => {
     const target = acme();
     const config = readConfig(target) ?? {};

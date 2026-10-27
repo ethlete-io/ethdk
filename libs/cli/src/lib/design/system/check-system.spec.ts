@@ -62,6 +62,31 @@ describe('checkSystem', () => {
     );
   }, 60_000);
 
+  it('types a page drawn with the wireframe kit and fails a component that imports it', () => {
+    const target = acme();
+    const lines = output();
+    const kitPart = `import { definePart, drawing } from '@design-system';
+import { box, button, icon, image, input, textLines } from '@design-system/kit';
+export default definePart({
+  note: '',
+  states: { rest: {} },
+  render: () => drawing({ body: box([icon(), image({ height: 80 }), textLines({ lines: 2 }), input({ label: 'Mail' }), button('Go', { primary: true })], { direction: 'column' }), styles: '' }),
+});
+`;
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), kitPart);
+
+    expect(check(target, ['acme'])).toBe(0);
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/components/button/button.ts'), kitPart);
+    lines.length = 0;
+
+    expect(check(target, ['acme'])).toBe(1);
+    expect(lines).toEqual([
+      `WIREFRAME-KIT ${DESIGN_DIR}/acme/components/button/button.ts: components may not use @design-system/kit - only pages draw with the wireframe kit`,
+    ]);
+  }, 60_000);
+
   it('fails on a type error', () => {
     const target = acme();
     const lines = output();

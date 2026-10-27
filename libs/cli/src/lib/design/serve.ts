@@ -42,6 +42,7 @@ import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system/system-modules';
+import { KIT_SPECIFIER } from './system/kit';
 import { DESIGN_SYSTEM_SPECIFIER } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
@@ -482,6 +483,7 @@ export const createDesignServer = async (options: { target: string; config: Desi
       alias: [
         { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
         { find: new RegExp(`^${DESIGN_SYSTEM_SPECIFIER}$`), replacement: resolve(here, 'define-part.ts') },
+        { find: new RegExp(`^${KIT_SPECIFIER}$`), replacement: resolve(here, 'wireframe-kit.ts') },
         ...workspaceAliases(target),
       ],
     },
