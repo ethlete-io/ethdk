@@ -10,5 +10,5 @@
     "noEmit": true,
     "ignoreDeprecations": "6.0"
   },
-  "include": ["web/**/*.ts", "define-call.ts", "define-part.ts"]
+  "include": ["web/**/*.ts", "define-call.ts", "define-part.ts", "mark-part.ts"]
 }

@@ -20,11 +20,13 @@ import {
   commentsAnswer,
   SKETCH_DECISION_PATH,
   SKETCH_DISCARD_PATH,
+  SKETCH_COMPARE_PATH,
   SKETCH_MERGE_PATH,
   SKETCH_PREVIEW_PATH,
   SKETCHES_PATH,
   sketchDecisionAnswer,
   sketchDiscardAnswer,
+  sketchCompareAnswer,
   sketchesAnswer,
   sketchMergeAnswer,
   sketchPreviewAnswer,
@@ -32,6 +34,7 @@ import {
 import { forceInteractionsPlugin } from './force-interactions';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
+import { partMarksTransform } from './part-marks';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -245,6 +248,7 @@ const designExplore = ({
 
     return null;
   },
+  transform: partMarksTransform(system),
   transformIndexHtml: {
     order: 'pre' as const,
     handler: (html: string, ctx: { path: string; originalUrl?: string }) => {
@@ -411,12 +415,14 @@ const designExplore = ({
             url,
             request,
             load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
+            pictureOf: shots.pictureOf,
           }),
         ),
       );
 
     studio(SKETCHES_PATH, sketchesAnswer);
     studio(SKETCH_PREVIEW_PATH, sketchPreviewAnswer);
+    studio(SKETCH_COMPARE_PATH, sketchCompareAnswer);
     studio(SKETCH_DECISION_PATH, sketchDecisionAnswer);
     studio(SKETCH_MERGE_PATH, sketchMergeAnswer);
     studio(SKETCH_DISCARD_PATH, sketchDiscardAnswer);

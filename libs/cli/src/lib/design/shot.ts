@@ -30,6 +30,27 @@ type Frame = { search: string; size: Size | null; clip: boolean };
 
 type GraphModule = { id: string | null; importers: Set<GraphModule> };
 
+/** An element a part render marked as its root, in CSS pixels from the top left of the picture. */
+export type PartMark = { parts: string[]; x: number; y: number; width: number; height: number };
+
+/** One drawn PNG and the part roots in it. */
+export type Picture = { png: Buffer; marks: PartMark[] };
+
+const marksIn = (clip: boolean) => `(() => {
+  const origin = ${clip} ? document.getElementById('root').getBoundingClientRect() : { left: -scrollX, top: -scrollY };
+
+  return [...document.querySelectorAll('[data-et-part]')]
+    .map((element) => ({ element, rect: element.getBoundingClientRect() }))
+    .filter(({ rect }) => rect.width > 0 && rect.height > 0)
+    .map(({ element, rect }) => ({
+      parts: element.getAttribute('data-et-part').split(' ').filter(Boolean),
+      x: Math.round(rect.left - origin.left),
+      y: Math.round(rect.top - origin.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    }));
+})()`;
+
 /** The ids of the given modules and of every module that imports one of them, directly or not. */
 export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
   const seen = new Set<GraphModule>();
@@ -58,9 +79,9 @@ export const createPartShooter = (options: {
 }) => {
   const { base, system } = options;
   const drawQueue = createDrawQueue(options);
-  const cache = new Map<string, { drawn: Drawn; shot: Promise<Buffer> }>();
+  const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
 
-  const draw = async (browser: Browser, frame: Frame) => {
+  const draw = async (browser: Browser, frame: Frame): Promise<Picture> => {
     const context = await browser.newContext({
       viewport: { width: frame.size?.width ?? FIT_VIEWPORT_WIDTH, height: frame.size?.height ?? VIEWPORT_HEIGHT },
     });
@@ -71,9 +92,12 @@ export const createPartShooter = (options: {
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.evaluate(settled);
 
-      if (frame.clip) return await page.locator('#root').screenshot({ type: 'png' });
+      const marks: unknown = await page.evaluate(marksIn(frame.clip));
+      const png = frame.clip
+        ? await page.locator('#root').screenshot({ type: 'png' })
+        : await page.screenshot({ fullPage: true, type: 'png' });
 
-      return await page.screenshot({ fullPage: true, type: 'png' });
+      return { png, marks: Array.isArray(marks) ? (marks as PartMark[]) : [] };
     } finally {
       await context.close();
     }
@@ -183,7 +207,10 @@ export const createPartShooter = (options: {
           return;
         }
 
-        sendShot(response, callShotOf({ slug, variant, width: pixels, params }));
+        sendShot(
+          response,
+          callShotOf({ slug, variant, width: pixels, params }).then((picture) => picture.png),
+        );
 
         return;
       }
@@ -212,9 +239,11 @@ export const createPartShooter = (options: {
           sketch: sketch && variant ? { target: sketch, variant } : null,
           interaction: params.get('interaction'),
           params,
-        }),
+        }).then((picture) => picture.png),
       );
     },
+    /** Draws one state of a part as `partShotOf` does for the middleware, with the part roots it holds. */
+    pictureOf: partShotOf,
     /** Drops the pictures of the parts `change` redraws. */
     forget: (change: PartsChange) => {
       for (const [key, { drawn }] of cache) {

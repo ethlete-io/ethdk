@@ -17,6 +17,7 @@ import { openSketchProblemsOf } from './system/sketch/check-sketches';
 import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { readPartModule } from './system/list-system';
+import { compareMerge, PictureOf } from './merge-compare';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
 import { decideSketch, findSketch, listSketches, parseTarget, readSketchReport, Sketch } from './system/sketch/sketch';
@@ -25,6 +26,7 @@ import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
 export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
+export const SKETCH_COMPARE_PATH = '/__design/sketch-compare';
 export const SKETCH_DECISION_PATH = '/__design/sketch-decision';
 export const SKETCH_MERGE_PATH = '/__design/sketch-merge';
 export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
@@ -37,10 +39,14 @@ export const COMMENT_EVENTS_PATH = '/__design/comment-events';
 
 export type Answer = { status: number; body: unknown };
 
-/** Answers with the module of a part file as one variant of a sketch draws it. */
-export type VariantPartLoader = (options: { file: string; product: string; sketch: SketchVariant }) => Promise<unknown>;
+/** Answers with the module of a part file as one variant of a sketch draws it, or as the product does without one. */
+export type VariantPartLoader = (options: {
+  file: string;
+  product: string;
+  sketch: SketchVariant | null;
+}) => Promise<unknown>;
 
-type Asked = { target: string; url: URL; request: IncomingMessage; load?: VariantPartLoader };
+type Asked = { target: string; url: URL; request: IncomingMessage; load?: VariantPartLoader; pictureOf?: PictureOf };
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
 
@@ -202,8 +208,34 @@ export const sketchPreviewAnswer = withSketch('GET', ({ asked, product, sketch }
   const variant = asked.url.searchParams.get('variant') ?? '';
 
   return sketch.variants.includes(variant)
-    ? { status: 200, body: mergePreviewOf({ product, sketch, variant }) }
+    ? { status: 200, body: { target: sketch.target, ...mergePreviewOf({ product, sketch, variant }) } }
     : failure(404, `${sketch.target} has no variant "${variant}"`);
+});
+
+/**
+ * `?product=&sketch=&variant=` with optional `size=` (a preset or a width) and `surface=`/`color=`: each state of every
+ * element and page that shows the sketch target, drawn now and after merging the variant, split into `changed` and
+ * `unchanged` by whether any pixel differs, with the outline of every instance of the target in both pictures.
+ */
+export const sketchCompareAnswer = withSketch('GET', async ({ asked, product, sketch }) => {
+  const variant = asked.url.searchParams.get('variant') ?? '';
+  const { load, pictureOf } = asked;
+
+  if (!sketch.variants.includes(variant)) return failure(404, `${sketch.target} has no variant "${variant}"`);
+  if (!load || !pictureOf) return failure(503, 'this server draws no pictures');
+
+  return {
+    status: 200,
+    body: await compareMerge({
+      product,
+      sketch,
+      variant,
+      size: asked.url.searchParams.get('size'),
+      params: asked.url.searchParams,
+      pictureOf,
+      load: ({ file, product: name }) => load({ file, product: name, sketch: null }),
+    }),
+  };
 });
 
 /** POST `?product=&sketch=`, body `{ kind: 'pick', variant, comment? }` or `{ kind: 'discard', comment? }`: writes the decision into sketch.json. */

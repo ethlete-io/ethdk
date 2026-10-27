@@ -7,6 +7,7 @@ import { DESIGN_DIR, readConfig } from './paths';
 import { serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
+import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 type ServerOptions = {
   server: { port: number; strictPort: boolean };
@@ -15,6 +16,7 @@ type ServerOptions = {
     load: (id: string) => string | null;
     resolveId: (id: string, importer?: string) => string | null;
     transformIndexHtml: { handler: (html: string, ctx: { path: string; originalUrl?: string }) => string };
+    transform: (code: string, id: string) => string | null;
     configureServer: (vite: unknown) => void;
   }[];
 };
@@ -460,9 +462,33 @@ describe('the design server for sketches and comments', () => {
 
     expect(await ask('/__design/sketch-preview', `${sketchQuery}&variant=a`)).toMatchObject({
       status: 200,
-      body: { changed: ['components/card'], affected: expect.any(Array) },
+      body: { target: 'components/card', changed: ['components/card'], affected: expect.any(Array) },
     });
     expect((await ask('/__design/sketch-preview', `${sketchQuery}&variant=z`)).status).toBe(404);
+    expect((await ask('/__design/sketch-compare', `${sketchQuery}&variant=z`)).status).toBe(404);
+  });
+
+  it('marks the root of a part module, as the product or a sketch variant draws it', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = createSystemModules({ target, config: readConfig(target) ?? {} });
+    const sketch = { target: 'components/card', variant: 'b' };
+    const idOf = (part: string, drawn: typeof sketch | null) =>
+      productModuleIdOf({
+        file: system.partOf({ product: 'acme', part, sketch: drawn })?.file ?? '',
+        product: 'acme',
+        sketch: drawn,
+      });
+    const code = 'export default definePart({});\n';
+
+    expect(plugin?.transform(code, idOf('elements/hero', null))).toContain('__etMarkPart(__etPart, "elements/hero")');
+    expect(plugin?.transform(code, idOf('components/card', sketch))).toContain(
+      '__etMarkPart(__etPart, "components/card")',
+    );
+    expect(plugin?.transform(code, '/some/other.ts')).toBeNull();
   });
 
   it('writes a pick into sketch.json on POST only, and 422 for a variant that does not exist', async () => {

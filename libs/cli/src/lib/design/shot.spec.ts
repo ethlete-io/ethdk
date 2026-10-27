@@ -13,11 +13,15 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
+const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
+const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
+  script.includes('data-et-part') ? marks : true,
+);
 const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
   newPage: async () => ({
     goto,
     screenshot,
-    evaluate: async () => true,
+    evaluate,
     locator: () => ({ first: () => ({ waitFor: async () => undefined }), screenshot: rootScreenshot }),
   }),
   close: async () => undefined,
@@ -206,6 +210,30 @@ describe('createPartShooter', () => {
     expect((await ask(shots, 'product=acme&part=components/nope&state=long&preset=phone')).status).toBe(404);
     expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=tv')).status).toBe(404);
     expect(screenshot).not.toHaveBeenCalled();
+  });
+});
+
+describe('createPartShooter pictures', () => {
+  it('keeps the part roots of a picture, measured from the shot root of a fitted part or the page of a preset', async () => {
+    const { shots } = acme();
+    const ask = (preset: string | null) =>
+      shots.pictureOf({
+        product: 'acme',
+        part: 'components/card',
+        state: 'long',
+        preset,
+        width: null,
+        sketch: null,
+        interaction: null,
+        params: new URLSearchParams(),
+      });
+
+    expect(await ask(null)).toEqual({ png: Buffer.from('fitted'), marks });
+    expect(await ask('phone')).toEqual({ png: Buffer.from('png'), marks });
+    expect(evaluate.mock.calls.map(([script]) => script).filter((script) => script.includes('data-et-part'))).toEqual([
+      expect.stringContaining('true ?'),
+      expect.stringContaining('false ?'),
+    ]);
   });
 });
 
