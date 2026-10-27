@@ -104,6 +104,13 @@ export const send = (response: ServerResponse, { status, type, body }: Shot) => 
   response.end(body);
 };
 
+/** Whether a call may draw from a file under the calls root: its own, or one in a folder above it. */
+export const callDrawsFrom = ({ slug, file }: { slug: string; file: string }) => {
+  const folder = posix.dirname(file.replace(/\\/g, '/'));
+
+  return folder === '.' || slug.startsWith(`${folder}/`) || folder === slug || folder.startsWith(`${slug}/`);
+};
+
 /**
  * Draws variants into PNGs in the shared Chromium of a draw queue. Each finished picture is kept per
  * query until its call is drawn again.
@@ -175,12 +182,8 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
     },
     /** Drops the pictures a changed file may draw into: its own call's, or every call below its folder. */
     forget: (file: string) => {
-      const folder = posix.dirname(file.replace(/\\/g, '/'));
-
       for (const [key, entry] of cache) {
-        const shared = folder === '.' || entry.slug.startsWith(`${folder}/`);
-
-        if (shared || folder === entry.slug || folder.startsWith(`${entry.slug}/`)) cache.delete(key);
+        if (callDrawsFrom({ slug: entry.slug, file })) cache.delete(key);
       }
     },
     close: async () => {

@@ -125,6 +125,51 @@ describe('createPartShooter', () => {
   });
 });
 
+describe('createPartShooter for a call', () => {
+  it('draws a variant at the asked width, at full height, under the asked theme', async () => {
+    const { shots } = acme();
+    const shot = await ask(shots, 'call=acme/login&variant=a&width=1280&color=brand');
+
+    expect(shot).toMatchObject({ status: 200, type: 'image/png' });
+    expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 } });
+    expect(goto.mock.calls[0]?.[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
+    expect(screenshot).toHaveBeenCalledWith({ fullPage: true, type: 'png' });
+  });
+
+  it('keeps one picture per variant, width and theme until a file of its call changes', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/login&variant=a&width=390');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(3);
+
+    shots.forgetCalls('acme/login/call.ts');
+    await ask(shots, 'call=acme/login&variant=a&width=1280');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(4);
+
+    shots.forgetCalls('acme/shared.ts');
+    await ask(shots, 'call=acme/other&variant=a&width=1280');
+    expect(screenshot).toHaveBeenCalledTimes(5);
+  });
+
+  it('answers 400 without a call, a variant or a positive whole width', async () => {
+    const { shots } = acme();
+
+    for (const query of ['call=acme/login&variant=a', 'variant=a&width=1280', 'call=acme/login&width=1280']) {
+      expect((await ask(shots, query)).status).toBe(400);
+    }
+
+    for (const width of ['0', '-5', '12.5', 'wide']) {
+      expect((await ask(shots, `call=acme/login&variant=a&width=${width}`)).status).toBe(400);
+    }
+
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+});
+
 describe('dependentIdsOf', () => {
   it('walks every importer once, also around a cycle', () => {
     type Node = { id: string | null; importers: Set<Node> };

@@ -2,11 +2,24 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { chromiumOf } from './browser';
 import { DesignPreset } from './paths';
 import { fileOfModuleId, productOfModuleId, SystemModules } from './system/system-modules';
-import { Browser, createDrawQueue, openFrame, send, sendShot, settled, ThumbMissingError } from './thumb';
+import {
+  Browser,
+  callDrawsFrom,
+  createDrawQueue,
+  openFrame,
+  send,
+  sendShot,
+  settled,
+  ThumbMissingError,
+} from './thumb';
 
 export const SHOT_PATH = '/__design/shot';
 
 const VIEWPORT_HEIGHT = 800;
+
+type Drawn = { product: string; file: string } | { slug: string };
+
+type Frame = { search: string; preset: Pick<DesignPreset, 'width' | 'height'> };
 
 type GraphModule = { id: string | null; importers: Set<GraphModule> };
 
@@ -26,8 +39,9 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
 };
 
 /**
- * Draws one state of a part at one preset width, at full height, into a PNG. Each picture is kept
- * per part, state, preset and theme until a module it was drawn from changes.
+ * Draws one state of a part at one preset width, or one variant of a call at a given width, at full
+ * height, into a PNG. Each picture is kept per frame, size and theme until a file it was drawn from
+ * changes.
  */
 export const createPartShooter = (options: {
   target: string;
@@ -37,9 +51,9 @@ export const createPartShooter = (options: {
 }) => {
   const { base, system } = options;
   const drawQueue = createDrawQueue(options);
-  const cache = new Map<string, { product: string; file: string; shot: Promise<Buffer> }>();
+  const cache = new Map<string, { drawn: Drawn; shot: Promise<Buffer> }>();
 
-  const draw = async (browser: Browser, frame: { search: string; preset: DesignPreset }) => {
+  const draw = async (browser: Browser, frame: Frame) => {
     const context = await browser.newContext({
       viewport: { width: frame.preset.width, height: frame.preset.height ?? VIEWPORT_HEIGHT },
     });
@@ -56,7 +70,36 @@ export const createPartShooter = (options: {
     }
   };
 
-  const shotOf = (options: {
+  const themeOf = (params: URLSearchParams) => ({
+    surface: params.get('surface') ?? '',
+    color: params.get('color') ?? '',
+  });
+
+  const cached = (options: {
+    key: unknown[];
+    drawn: Drawn;
+    search: URLSearchParams;
+    params: URLSearchParams;
+    size: Pick<DesignPreset, 'width' | 'height'>;
+  }) => {
+    const theme = themeOf(options.params);
+    const key = JSON.stringify([...options.key, theme.surface, theme.color]);
+    const kept = cache.get(key);
+
+    if (kept) return kept.shot;
+    if (theme.surface) options.search.set('surface', theme.surface);
+    if (theme.color) options.search.set('color', theme.color);
+
+    const search = options.search.toString();
+    const shot = drawQueue.run((browser) => draw(browser, { search, preset: options.size }));
+
+    cache.set(key, { drawn: options.drawn, shot });
+    shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
+
+    return shot;
+  };
+
+  const partShotOf = (options: {
     product: string;
     part: string;
     state: string;
@@ -72,41 +115,63 @@ export const createPartShooter = (options: {
     if (!size)
       return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`));
 
-    const theme = { surface: params.get('surface') ?? '', color: params.get('color') ?? '' };
-    const key = JSON.stringify([product, part, state, preset, theme.surface, theme.color]);
-    const cached = cache.get(key);
+    return cached({
+      key: ['part', product, part, state, preset],
+      drawn: { product, file },
+      search: new URLSearchParams({ product, part, state }),
+      params,
+      size,
+    });
+  };
 
-    if (cached) return cached.shot;
+  const callShotOf = (options: { slug: string; variant: string; width: number; params: URLSearchParams }) => {
+    const { slug, variant, width, params } = options;
 
-    const search = new URLSearchParams({ product, part, state });
-
-    if (theme.surface) search.set('surface', theme.surface);
-    if (theme.color) search.set('color', theme.color);
-
-    const shot = drawQueue.run((browser) => draw(browser, { search: search.toString(), preset: size }));
-
-    cache.set(key, { product, file, shot });
-    shot.catch(() => cache.get(key)?.shot === shot && cache.delete(key));
-
-    return shot;
+    return cached({
+      key: ['call', slug, variant, width],
+      drawn: { slug },
+      search: new URLSearchParams({ call: slug, variant }),
+      params,
+      size: { width },
+    });
   };
 
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
+      const [slug, variant, width] = ['call', 'variant', 'width'].map((name) => params.get(name));
+
+      if (slug || variant || width) {
+        const pixels = Number(width);
+
+        if (!slug || !variant || !Number.isInteger(pixels) || pixels <= 0) {
+          send(response, {
+            status: 400,
+            type: 'text/plain; charset=utf-8',
+            body: 'design-explore: pass call, variant and a width in pixels',
+          });
+
+          return;
+        }
+
+        sendShot(response, callShotOf({ slug, variant, width: pixels, params }));
+
+        return;
+      }
+
       const [product, part, state, preset] = ['product', 'part', 'state', 'preset'].map((name) => params.get(name));
 
       if (!product || !part || !state || !preset) {
         send(response, {
           status: 400,
           type: 'text/plain; charset=utf-8',
-          body: 'design-explore: pass product, part, state and preset',
+          body: 'design-explore: pass product, part, state and preset, or call, variant and width',
         });
 
         return;
       }
 
-      sendShot(response, shotOf({ product, part, state, preset, params }));
+      sendShot(response, partShotOf({ product, part, state, preset, params }));
     },
     /** Drops the pictures drawn from one of the given module ids, each of which names its product. */
     forget: (ids: string[]) => {
@@ -118,8 +183,14 @@ export const createPartShooter = (options: {
         }),
       );
 
-      for (const [key, entry] of cache) {
-        if (drawn.has(JSON.stringify([entry.product, entry.file]))) cache.delete(key);
+      for (const [key, { drawn: from }] of cache) {
+        if ('file' in from && drawn.has(JSON.stringify([from.product, from.file]))) cache.delete(key);
+      }
+    },
+    /** Drops the call pictures a changed file under the calls root may draw into. */
+    forgetCalls: (file: string) => {
+      for (const [key, { drawn }] of cache) {
+        if ('slug' in drawn && callDrawsFrom({ slug: drawn.slug, file })) cache.delete(key);
       }
     },
     clear: () => cache.clear(),

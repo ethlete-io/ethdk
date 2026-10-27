@@ -214,8 +214,13 @@ const designExplore = ({
       vite.ws.send({ type: 'full-reload' });
     };
 
-    const refresh = (file: string) => {
+    const forgetCalls = (file: string) => {
       thumbs.forget(relative(callsRoot, file));
+      shots.forgetCalls(relative(callsRoot, file));
+    };
+
+    const refresh = (file: string) => {
+      forgetCalls(file);
 
       if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
       if (isDecisionFile(file)) return;
@@ -227,7 +232,7 @@ const designExplore = ({
     };
 
     const change = (file: string) => {
-      thumbs.forget(relative(callsRoot, file));
+      forgetCalls(file);
       shots.forget(dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []));
     };
 
