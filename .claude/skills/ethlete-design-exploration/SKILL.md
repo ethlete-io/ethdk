@@ -173,6 +173,10 @@ It is `<product>/flows/<name>.json`; `position` and `label` are optional:
 }
 ```
 
+Every flow line is labelled, and the element the label names is visible in the frame before it: a line
+labelled "user clicks 'Log in'" starts from a frame that shows a "Log in" button. A line that names
+nothing the reader can see, or a label for a control the page lacks, is a defect.
+
 A line may join two states of one page. Lines hold for every preset. Without `position`, Studio
 lays the frames out along the lines.
 
@@ -189,7 +193,7 @@ Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction
 `button(label, { primary })`, `input({ label, placeholder, width })`, `icon({ size })`. Draw for
 every preset, not one width: give a picture a `ratio` (`'2/3'`) instead of a fixed height, and give
 a row `stackBelow: <px>`, the width below which it stacks its children, instead of fixed widths
-that only fit the desktop. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
+that only fit the desktop. Never use `vh`, `dvh` or `svh` in a part: a part has no viewport of its own, so the unit measures Studio's frame, not the page. A full page is a frame of a fixed size. Put titles in `heading`, never in hand-written markup. Studio lists such a page under
 "Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`).
 A dialog without its own URL is an element that a page state shows ("login open"). Examples in
 `.ethlete/design/studio-lab`: `pages/film-detail`, `elements/shell-main`, `elements/login-dialog`,
