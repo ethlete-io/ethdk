@@ -79,7 +79,7 @@ import { NoteFormComponent } from './note-form.component';
 import { partNotesOf } from './note-places';
 import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
-import { ListedFlow, listedFlows$ } from '../../host/design-flows';
+import { ListedFlow, flowChanges$, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
@@ -600,6 +600,20 @@ export class SystemViewComponent {
 
   public sketches = computed(() => this.sketchList() ?? []);
 
+  private flowChanges = toSignal(
+    toObservable(this.port).pipe(
+      switchMap((port) =>
+        port
+          ? flowChanges$(port).pipe(
+              scan((count) => count + 1, 0),
+              catchError(() => EMPTY),
+            )
+          : EMPTY,
+      ),
+    ),
+    { initialValue: 0 },
+  );
+
   private flowList = toSignal(
     toObservable(
       computed(() => ({
@@ -608,6 +622,7 @@ export class SystemViewComponent {
         epoch: this.epoch(),
         tick: this.tick(),
         notes: this.noteStore.writes(),
+        flows: this.flowChanges(),
       })),
     ).pipe(
       switchMap(({ port, product }) =>

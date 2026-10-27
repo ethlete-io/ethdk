@@ -355,7 +355,7 @@ describe('the design server for a design system', () => {
     expect(sent).toEqual([]);
   });
 
-  it('signals a change to a comment file on its own event stream', async () => {
+  it('signals a change to a comment, note or flow file on its own event stream', async () => {
     const target = acme();
     const { handlers, watchers } = await serveAcme(target);
     const written: string[] = [];
@@ -373,10 +373,20 @@ describe('the design server for a design system', () => {
     watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
     watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/components/card/card.ts'));
     watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/notes/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/flows/sign-in.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/flows/checkout.json'));
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/flows/checkout.json'));
     closed.forEach((close) => close());
     watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
 
-    expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n', 'event: notes\ndata: {}\n\n']);
+    expect(written).toEqual([
+      ': open\n\n',
+      'event: comments\ndata: {}\n\n',
+      'event: notes\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+      'event: flows\ndata: {}\n\n',
+    ]);
   });
 
   it('sends no event of its own for a drawn file outside the design folder', async () => {

@@ -466,6 +466,44 @@ describe('SystemViewComponent on a flow', () => {
     expect(flowViewOf(second)['preset']()).toBe('desktop');
   });
 
+  it('reads the flows again when the design server reports a changed flow file', async () => {
+    const streams: EventTarget[] = [];
+    let frames = flow.frames;
+
+    vi.stubGlobal(
+      'EventSource',
+      class extends EventTarget {
+        public constructor() {
+          super();
+          streams.push(this);
+        }
+
+        public close() {
+          return undefined;
+        }
+      },
+    );
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([flowProduct]);
+      if (url.includes('/__design/flows')) return json({ flows: [{ ...flow, frames }], unreadable: [] });
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/notes')) return json({ notes: [], unreadable: [] });
+
+      return json([]);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const shown = () => flowViewOf(fixture).flow().frames.length;
+
+    expect(shown()).toBe(2);
+
+    frames = flow.frames.slice(0, 1);
+    streams.forEach((stream) => stream.dispatchEvent(new Event('flows')));
+    await settle(fixture);
+
+    expect(shown()).toBe(1);
+  });
+
   it('shows the notes at start, hides them on "Show notes", and remembers that per product for the next start', async () => {
     const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
     const host = (fixture: ComponentFixture<SystemViewComponent>) => fixture.nativeElement as HTMLElement;

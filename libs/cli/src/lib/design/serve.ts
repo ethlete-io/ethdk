@@ -210,11 +210,13 @@ const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirna
 
 const isNoteFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'notes';
 
+const isFlowFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'flows';
+
 const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file) || isNoteFile(file);
 
 /**
- * A server-sent event stream for Studio: `comments` when a comment file changed, `notes` when a note file changed, and
- * `parts` with the parts any change redraws and the revision it gave them.
+ * A server-sent event stream for Studio: `comments` when a comment file changed, `notes` when a note file changed,
+ * `flows` when a flow file changed, and `parts` with the parts any change redraws and the revision it gave them.
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
@@ -231,7 +233,7 @@ const createDesignEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: (event: 'comments' | 'notes' | 'parts', data: object = {}) => {
+    signal: (event: 'comments' | 'notes' | 'flows' | 'parts', data: object = {}) => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
@@ -360,6 +362,7 @@ const designExplore = ({
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
       if (isNoteFile(file)) return events.signal('notes');
+      if (isFlowFile(file)) return events.signal('flows');
 
       forgetCalls(file);
 
@@ -377,6 +380,7 @@ const designExplore = ({
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
       if (isNoteFile(file)) return events.signal('notes');
+      if (isFlowFile(file)) return events.signal('flows');
 
       forgetCalls(file);
       const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
