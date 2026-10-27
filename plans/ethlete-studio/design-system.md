@@ -539,7 +539,11 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
-  in Studio without a server restart.
+  in Studio without a server restart. As built, e1aa11c2c: `serve.ts` sends a `flows` event when a
+  `.json` in a `flows/` folder is added, changed or removed; a flow file no longer rebuilds the parts
+  registry. Studio's `flowChanges$` (`host/design-flows.ts`) refetches `flowList`. Finding: the
+  server never cached flows (`listFlows` reads per request); Studio refetched only on the tick that
+  the Tauri host watcher moves, so the stale view likely came from a headless run.
 - Long flow line labels: the gap between two flow frames grows with its label, up to a limit; above
   it the label wraps. A short line needs no extra space.
 - A part that uses `var(--et-...)` without importing the tokens draws without them. No check warning
@@ -547,7 +551,12 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
 - A part file that appears or disappears (for example on a merge) keeps redrawing its whole product.
   Narrow it only if Studio visibly flickers.
 - `product new` writes `config.json` in the same layout as Prettier, without Prettier as a CLI
-  dependency.
+  dependency. As built, 1184684eb: `json-layout.ts` (`jsonLayoutOf`) expands objects, keeps an array
+  on one line if it fits 120 chars, and puts an array of arrays on many lines. A spec runs the
+  Prettier check with the repo `.prettierrc.js`. Gap: long number arrays do not wrap like Prettier
+  (none in `config.json` today).
+- Slice A verified by specs that bite (cli vitest 347, Studio vitest 199, tsc, ngc, eslint); no
+  headless run against a live server and Studio.
 - In the part matrix the gap under a row grows by the tallest note column in that row, so a note card
   never covers a frame or size label of the next row.
 - Turning on note mode also turns "Show notes" on, so a new note does not vanish after save.
