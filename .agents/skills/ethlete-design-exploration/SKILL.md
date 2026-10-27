@@ -54,6 +54,7 @@ user reads and decides in Ethlete Studio. The tool is `et design`, from `@ethlet
 .ethlete/design/
   config.json                         the port and one `products` entry each
   <product>/<layer>/<part>/           layer: foundations, components, elements, pages
+  <product>/flows/<name>.json         a flow: pages and their states joined by lines
   <product>/sketches/<layer>-<name>/  an open sketch: sketch.json and one folder per variant
   <product>/comments/<id>.json        a comment the user wrote in Studio
   calls/                              old calls: Legacy, read-only
@@ -154,6 +155,43 @@ Pass `--question` only when you cannot go on without the user's answer. Studio l
 threads under "Questions for you". A report of what you did is no question: reply without the
 flag, and the thread shows as "answered" until the user withdraws it or replies.
 
+### Draw a flow
+
+A flow joins states of pages into a path the user reads left to right in Studio's Flows view.
+It is `<product>/flows/<name>.json`; `position` and `label` are optional:
+
+```json
+{
+  "frames": [{ "part": "pages/library", "state": "empty", "position": { "x": 0, "y": 0 } }],
+  "lines": [
+    {
+      "from": { "part": "pages/library", "state": "empty" },
+      "to": { "part": "pages/film-detail", "state": "default" },
+      "label": "user adds a film"
+    }
+  ]
+}
+```
+
+A line may join two states of one page. Lines hold for every preset. Without `position`, Studio
+lays the frames out along the lines.
+
+### Draw a wireframe
+
+A page that has no parts yet draws grey stand-ins from the wireframe kit; only pages may import it:
+
+```ts
+import { box, textLines, image, button, input, icon } from '@design-system/kit';
+```
+
+Signatures are in `libs/cli/design/wireframe-kit.ts`: `box(children, { direction, gap, padding, width, height, grow, plain })`,
+`textLines({ lines, width, size })`, `image({ width, height })`, `button(label, { primary })`,
+`input({ label, placeholder, width })`, `icon({ size })`. Studio lists such a page under
+"Wireframes" with its kit-use count. A shell is a normal element named by purpose (`shell-main`).
+A dialog without its own URL is an element that a page state shows ("login open"). Examples in
+`.ethlete/design/studio-lab`: `pages/film-detail`, `elements/shell-main`, `elements/login-dialog`,
+`flows/sign-in.json`.
+
 ### Check a product
 
 ```bash
@@ -162,7 +200,9 @@ et design system --json            # each part's origin, note, states, presets a
 ```
 
 Without `--product`, `check` covers every product. A part may only use its own layer and the
-layers below it (see "The order of a design"). Pass the changed files to the check below as before.
+layers below it (see "The order of a design"). Rule `FLOW` reports a misshaped flow file, a frame
+naming a missing part or state, a duplicate state, and a line to a state that is not a frame of
+the flow. Rule `WIREFRAME-KIT` reports a non-page importing the kit. Pass the changed files to the check below as before.
 
 A project's `config.json` entry can name `themes`, `{ "surface": [...], "color": [...] }`; a
 frame asked for a theme gets the `et-surface--<name>` and `et-color--<name>` classes on its root,
@@ -209,7 +249,8 @@ each stage draws with what the stages before it settled:
 1. **Foundations**: colours, colour themes and surface themes (the project's `themes` in
    `config.json`), plus the type scale, spacing and radius.
 2. **Logo and CI**, if the project needs them.
-3. **Wireframes**: early, rough concepts of the main flows (`mode: 'wireframe'`). They show
+3. **Wireframes**: early, rough concepts of the main flows (a legacy call with `mode: 'wireframe'`;
+   in a product, draw them with the wireframe kit, see "Draw a wireframe"). They show
    which components the product needs, not how they look. The stage ends with an inventory in
    the wireframe call: every part the wireframes need, each mapped to the SDK component it
    starts from, or marked new with the component call that draws it. The inventory is the
