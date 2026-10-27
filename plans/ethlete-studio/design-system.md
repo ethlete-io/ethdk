@@ -484,6 +484,30 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
   hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
   may serve there too.
 
+### Agent author decisions (2026-10-27)
+
+Not built yet. The user wants to see which model made what, for example variant a by Gemini Argon,
+b by Codex Sol, c by Claude Opus. Today only comment replies know `by: 'user' | 'agent'`.
+
+- An author goes on sketch variants, thread replies, reports, comments an agent closes with
+  `inbox done`, and parts after a merge.
+- Every CLI command with which an agent writes, `sketch new` included, needs `--by <model id>` and
+  fails without it.
+- `et design sketch report` takes `--variant` and `--by`. The CLI keeps the authors per variant in
+  `sketch.json`; the variant name comes from the flag, no longer from the message text.
+- The name is the exact model id as free text, for example `gemini-3-argon`, `gpt-5.6-sol`,
+  `claude-opus-5-5`. No fixed list.
+- Several authors are kept in the order of their first report. Studio shows the first and "+N";
+  the tooltip lists all.
+- A merge writes `madeBy: string[]` into `definePart`, next to `note`. A later merge replaces it;
+  git keeps the history.
+- Studio shows the author in each variant column head ("a · gemini-3-argon"), in the thread
+  ("Agent · gpt-5.6-sol"), in the part view head ("made by gemini-3-argon") and in a report's
+  tooltip.
+- Old data without an author shows none. No migration.
+- The coordinating agent writes the exact id into each sub-agent prompt; an agent never guesses its
+  id. This goes into the `ethlete-design-exploration` skill.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
