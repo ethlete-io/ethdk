@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: surfaces merged (variant A, 863901225), the accent sketch is open in Studio. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); next Studio reads the merged tokens. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -564,6 +564,24 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   fixed in the merged part (`body` background `var(--surface-sunken)`). Next sketch: accent, on
   `foundations/tokens`, four hues at the same lightness and chroma (A blue, B violet, C teal, D
   amber).
+
+### Slice 10 foundations, as built (2026-10-27)
+
+- Frame border above the content: 843034c8f. Headless at DPR 1.25 / 67 % all four edges show
+  (before: bottom 0, right 10); strength stays uneven (13 to 40). Not checked: the dashed active
+  border, Tom's window.
+- Tom merged in Studio, the builder committed each merge: surfaces A neutral grey (863901225),
+  accent C teal, oklch(0.68 0.11 190) with dark `--on-accent` (46a83c113), type scale B compact,
+  13 px base, `--text-sm` 11.5 px kept as merged (b371ecf31), spacing and radius B balanced, 4 px
+  grid, radius 4/6/10, controls 24/28, row 24 (dec74dc6e).
+- A Studio merge counts as the go to commit the merged part, not the open sketches (skill,
+  7fe17018a).
+- Each merge replaced the part drawing with the variant's demo scene, so the tokens page showed
+  only the last round. `tokens.ts` is now an overview with the states surfaces, accent, type and
+  spacing, values read at runtime (6b3b86c44). Skill rule: a sketch on a foundations part keeps the
+  overview and adds its group as a state (6b95e620d). Not verified: the overview in Studio.
+- Next: Studio reads its tokens from the merged `tokens.css`, then the slice 10 component layer
+  (also: map the SDK dark tokens onto the new surface tokens).
 - The merged surfaces are committed in 863901225. Open: does a merge in Studio count as the go to
   commit the merged part? Tom assumes it does; the `ethlete-design-exploration` skill does not say
   so. Recommendation: yes, and write it into the skill.
