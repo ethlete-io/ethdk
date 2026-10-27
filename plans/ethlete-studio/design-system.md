@@ -899,8 +899,11 @@ Open points, each with a recommendation:
 - Decided: `studio-lab` lists its `--lab-*` tokens file in the product's `styles`. See "Token
   decisions".
 - Decided: column heads keep the ellipsis at low zoom; the matrix is read near 100 %.
-- The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
-  check whether the frame page reports a height after its web fonts load.
+- The card at 520 px with the long state showed its frame cut at the bottom once. Not the web
+  fonts: a headless repro on `studio-lab` loads no web fonts, and the reported heights match the
+  content, also after resizes from 360 to 520 to 240 to 520 px. Still untested: the Studio side
+  (a stale height, or a width change before layout), fitted frames, and products with a real
+  `@font-face`. Parked until it happens again; then a screenshot with the frame and the zoom.
 
 ### Studio comments, as built (2026-10-27)
 
