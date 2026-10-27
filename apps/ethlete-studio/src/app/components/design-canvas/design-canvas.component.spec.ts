@@ -47,6 +47,28 @@ describe('DesignCanvasComponent', () => {
     expect(frame.nativeElement.style.height).toBe('70px');
   });
 
+  it('shows only the marker of a pointed note once labels stop holding their size', async () => {
+    const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
+
+    fixture.componentRef.setInput('notes', [
+      { id: 'n', text: 'Hero', frameId: 'a', point: { x: 40, y: 120 } },
+      { id: 'h', text: 'Library', heading: true, at: { x: 0, y: -160 } },
+    ]);
+    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.2 });
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+
+    expect(host.querySelector('[data-note="n"]')).toBeNull();
+    expect(host.querySelector('[data-note-marker]')).not.toBeNull();
+    expect(host.querySelector('[data-note="h"]')).not.toBeNull();
+
+    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.3 });
+    await fixture.whenStable();
+
+    expect(host.querySelector('[data-note="n"]')).not.toBeNull();
+  });
+
   it('shows each note at its place, and reports the world point of a click on empty space while pointing', async () => {
     const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
     const picks: { x: number; y: number }[] = [];

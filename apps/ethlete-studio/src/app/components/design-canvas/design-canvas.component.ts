@@ -56,6 +56,7 @@ const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
+const LABEL_MIN_ZOOM = 0.25;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
@@ -374,7 +375,9 @@ export class DesignCanvasComponent {
     return `translate(${x}px, ${y}px) scale(${zoom})`;
   });
 
-  protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, 0.25));
+  protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
+
+  protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
 
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 

@@ -231,22 +231,24 @@
             data-note-marker
           ></span>
         }
-        <div
-          [class]="
-            note.heading
-              ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-[var(--et-surface-color-solid)]'
-              : 'max-w-[28rem] rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-3 py-2 text-[1.3rem] text-[var(--et-surface-color-solid)]'
-          "
-          [class.ml-4]="group.anchor === 'point'"
-          [class.mt-2]="group.anchor === 'point'"
-          [attr.data-note]="note.id"
-        >
-          @if (noteTemplate(); as template) {
-            <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />
-          } @else {
-            <p [textContent]="note.text" class="m-0 whitespace-pre-wrap"></p>
-          }
-        </div>
+        @if (note.heading || !notesCompact()) {
+          <div
+            [class]="
+              note.heading
+                ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-[var(--et-surface-color-solid)]'
+                : 'max-w-[28rem] rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-3 py-2 text-[1.3rem] text-[var(--et-surface-color-solid)]'
+            "
+            [class.ml-4]="group.anchor === 'point'"
+            [class.mt-2]="group.anchor === 'point'"
+            [attr.data-note]="note.id"
+          >
+            @if (noteTemplate(); as template) {
+              <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />
+            } @else {
+              <p [textContent]="note.text" class="m-0 whitespace-pre-wrap"></p>
+            }
+          </div>
+        }
       }
     </div>
   }
