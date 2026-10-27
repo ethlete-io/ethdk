@@ -16,6 +16,14 @@ describe('frameMessageOf', () => {
     });
   });
 
+  it('reads that the frame page hit an error', () => {
+    const href = 'http://localhost:1/frame.html?product=web&part=components%2Fbutton&state=solid';
+
+    expect(
+      frameMessageOf({ type: 'design-explore:height', variant: 'solid', height: 80, href, errored: true }),
+    ).toEqual({ type: 'height', height: 80, href, errored: true });
+  });
+
   it('reads an Esc from inside the frame', () => {
     expect(frameMessageOf({ type: 'design-explore:escape', variant: 'default' })).toEqual({ type: 'escape' });
   });

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
+import { Component, DOCUMENT, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
@@ -34,7 +34,7 @@ import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
-import { NO_FRAME_REVISIONS, frameRevisionsWith } from './frame-revisions';
+import { NO_FRAME_REVISIONS, frameReports$, frameRevisionsWith, frameRevisionsWithReport } from './frame-revisions';
 import { rememberView, rememberedView } from './remembered';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
@@ -249,6 +249,13 @@ export class StudioViewComponent {
           this.frameRevisions.update((revisions) => changes.reduce(frameRevisionsWith, revisions));
           this.drawnChange$.next();
         }),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    frameReports$(inject(DOCUMENT))
+      .pipe(
+        tap((report) => this.frameRevisions.update((revisions) => frameRevisionsWithReport(revisions, report))),
         takeUntilDestroyed(),
       )
       .subscribe();

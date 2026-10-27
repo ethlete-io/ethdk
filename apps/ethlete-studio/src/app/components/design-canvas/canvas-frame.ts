@@ -34,7 +34,9 @@ export type CanvasFrame = {
   empty?: string;
 };
 
-export type FrameMessage = { type: 'height'; height: number; width?: number } | { type: 'escape' };
+/** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */
+export type FrameMessage =
+  { type: 'height'; height: number; width?: number; href?: string; errored?: true } | { type: 'escape' };
 
 /** Reads a message the frame page posts to its parent. A cross-origin frame reaches the canvas only this way. */
 export const frameMessageOf = (data: unknown): FrameMessage | null => {
@@ -45,6 +47,8 @@ export const frameMessageOf = (data: unknown): FrameMessage | null => {
       type: 'height',
       height: data.height,
       ...('width' in data && typeof data.width === 'number' ? { width: data.width } : {}),
+      ...('href' in data && typeof data.href === 'string' ? { href: data.href } : {}),
+      ...('errored' in data && data.errored === true ? { errored: true as const } : {}),
     };
 
   return null;

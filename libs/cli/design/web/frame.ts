@@ -13,6 +13,18 @@ const sketchVariant = params.get('variant') ?? '';
 const fit = product !== null && params.has('fit');
 const interaction = product ? params.get('interaction') : null;
 
+// Listens before the drawing loads, so an error it throws while loading counts; `report` exists only once `reporting` is set.
+let errored = false;
+let reporting = false;
+
+const reportError = () => {
+  errored = true;
+  if (reporting) report();
+};
+
+addEventListener('error', reportError);
+addEventListener('unhandledrejection', reportError);
+
 await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
 
 const root = document.querySelector('#root') as HTMLElement;
@@ -28,6 +40,8 @@ if (fit) {
 }
 
 const fail = (message: string): null => {
+  errored = true;
+
   const text = document.createElement('pre');
 
   text.textContent = message;
@@ -40,6 +54,8 @@ const fail = (message: string): null => {
 };
 
 const showSetupError = (message: string) => {
+  errored = true;
+
   const banner = document.createElement('pre');
 
   banner.textContent = message;
@@ -131,13 +147,24 @@ const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
   const width = fit ? { width: Math.ceil(root.getBoundingClientRect().width) } : {};
 
-  parent.postMessage({ type: 'design-explore:height', variant: key, height, ...width }, '*');
+  parent.postMessage(
+    {
+      type: 'design-explore:height',
+      variant: key,
+      height,
+      ...width,
+      href: location.href,
+      ...(errored ? { errored: true } : {}),
+    },
+    '*',
+  );
 };
 
 const reported = new ResizeObserver(report);
 
 reported.observe(document.documentElement);
 if (fit) reported.observe(root);
+reporting = true;
 report();
 
 addEventListener('keydown', (event) => {
