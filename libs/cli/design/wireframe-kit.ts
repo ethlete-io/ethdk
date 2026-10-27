@@ -190,19 +190,40 @@ export const input = (options: { label?: string; placeholder?: string; width?: S
   })}">${ellipsed(placeholder)}</div></div>`;
 };
 
-/** A grey circle that holds the place of an icon. */
-export const icon = (options: { size?: number } = {}) => {
-  const { size = 24 } = options;
+const GLYPHS: Record<string, string> = {
+  plus: '+',
+  minus: '\u2212',
+  close: '\u00d7',
+  check: '\u2713',
+  menu: '\u2261',
+  more: '\u22ef',
+  'chevron-down': '\u25be',
+  'chevron-right': '\u203a',
+  'arrow-left': '\u2190',
+  'arrow-right': '\u2192',
+};
 
-  return `<div data-wireframe="icon" style="${styleOf({
+/**
+ * A rounded grey square that holds the place of an icon. A `glyph` name (`'plus'`, `'close'`, `'menu'`,
+ * `'more'`, `'check'`, `'chevron-down'`, …) draws its mark inside; an unknown name draws its first letter.
+ */
+export const icon = (options: { size?: number; glyph?: string } = {}) => {
+  const { size = 24, glyph } = options;
+  const mark = glyph === undefined ? '' : (GLYPHS[glyph] ?? glyph.charAt(0).toUpperCase());
+
+  return `<div data-wireframe="icon"${glyph === undefined ? '' : ` data-glyph="${escaped(glyph)}"`} style="${styleOf({
+    display: 'inline-flex',
+    'align-items': 'center',
+    'justify-content': 'center',
     width: sizeOf(size),
     height: sizeOf(size),
     'flex-shrink': '0',
-    'border-radius': '50%',
+    'border-radius': sizeOf(Math.max(3, Math.round(size / 4))),
     background: FILL,
-    border: `1px solid ${LINE}`,
+    color: INK,
+    font: `600 ${sizeOf(Math.round(size * 0.6))}/1 sans-serif`,
     'box-sizing': 'border-box',
-  })}"></div>`;
+  })}">${escaped(mark)}</div>`;
 };
 
 const chevron = `<span style="${styleOf({

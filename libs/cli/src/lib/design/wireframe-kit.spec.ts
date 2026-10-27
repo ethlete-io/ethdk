@@ -7,6 +7,7 @@ import {
   checkbox,
   dot,
   heading,
+  icon,
   image,
   input,
   segmented,
@@ -146,5 +147,19 @@ describe('wireframe kit', () => {
       'min-height:100vh',
     );
     expect(box()).not.toContain('min-height');
+  });
+
+  it('draws an icon as a rounded square, not a circle that reads as a radio button', () => {
+    const element = render(icon()).firstElementChild;
+
+    expect(styleOf(element)).not.toContain('border-radius:50%');
+    expect(styleOf(element)).toContain('border-radius:6px');
+    expect(element?.textContent).toBe('');
+  });
+
+  it('draws a known glyph as its mark and an unknown one as its first letter', () => {
+    expect(render(icon({ glyph: 'plus' })).firstElementChild?.textContent).toBe('+');
+    expect(render(icon({ glyph: 'close' })).firstElementChild?.textContent).toBe('\u00d7');
+    expect(render(icon({ glyph: 'search' })).firstElementChild?.textContent).toBe('S');
   });
 });
