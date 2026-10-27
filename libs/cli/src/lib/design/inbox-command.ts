@@ -1,5 +1,5 @@
 import { relative } from 'path';
-import { createComment, deleteComment } from './system/comments/comment';
+import { createComment, deleteComment, replyToComment } from './system/comments/comment';
 import { inboxOf, inboxText } from './system/comments/inbox';
 import { productDirOf } from './system/product';
 import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/cli-args';
@@ -8,6 +8,7 @@ export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id
 
 export const COMMENT_USAGE = [
   'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
+  'comment reply <id> <text> [--product <name>]',
 ];
 
 const fail = (message: string, code = 1) => {
@@ -20,8 +21,9 @@ const usage = (invocation: string, lines: string[]) =>
   fail(lines.map((line) => `usage: ${invocation} ${line}`).join('\n'), 2);
 
 /**
- * `et design inbox` lists what waits for the agent - open comments and the user's pick and discard
- * decisions, oldest first - and `et design inbox done <id>` deletes a comment the agent has handled.
+ * `et design inbox` lists what waits for the agent - comment threads whose last word is the user's and the
+ * user's pick and discard decisions, oldest first - then the threads waiting for the user.
+ * `et design inbox done <id>` deletes a comment thread the agent has handled.
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -56,10 +58,14 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
 
   if (args.positional.length > 0) return usage(invocation, INBOX_USAGE);
 
-  const { items, unreadable } = inboxOf({ target, config, products: names });
+  const { items, waiting, unreadable } = inboxOf({ target, config, products: names });
 
   unreadable.forEach((problem) => console.error(problem));
-  console.log(args.flags.has('--json') ? JSON.stringify(items, null, 2) : inboxText(items, invocation));
+  console.log(
+    args.flags.has('--json')
+      ? JSON.stringify({ items, waitingForUser: waiting }, null, 2)
+      : inboxText({ items, waiting }, invocation),
+  );
 
   return unreadable.length > 0 ? 1 : 0;
 };
@@ -78,12 +84,56 @@ const sizeOf = (value: string | undefined) => {
   return /^\d+$/u.test(value) ? (Number(value) > 0 ? Number(value) : null) : value;
 };
 
-/** `et design comment …` writes a comment on a state of a part, as Studio does from the canvas. */
+const designCommentReply = (options: {
+  target: string;
+  positional: string[];
+  asked: string | undefined;
+  invocation: string;
+}) => {
+  const { target, positional, asked, invocation } = options;
+  const [id, ...words] = positional;
+
+  if (!id || words.length === 0) return usage(invocation, COMMENT_USAGE);
+
+  const config = configOf(target);
+
+  if (typeof config === 'string') return fail(config);
+
+  const names = productNamesOf({ config, asked });
+
+  if (typeof names === 'string') return fail(names);
+
+  const replied = replyToComment({
+    products: names.map((name) => ({ name, dir: productDirOf({ target, product: name }) })),
+    id,
+    by: 'agent',
+    text: words.join(' '),
+  });
+
+  if (typeof replied === 'string') return fail(replied);
+
+  console.log(`replied: ${relative(target, replied.file)}`);
+
+  return 0;
+};
+
+/**
+ * `et design comment …` writes a comment on a state of a part, as Studio does from the canvas.
+ * `et design comment reply <id> <text>` answers a comment thread as the agent.
+ */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const args = argsOf(argv, ['--product', '--size', '--at', '--sketch', '--variant']);
 
   if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
+
+  if (args.positional[0] === 'reply')
+    return designCommentReply({
+      target,
+      positional: args.positional.slice(1),
+      asked: args.values['--product'],
+      invocation,
+    });
 
   const [part, state, ...words] = args.positional;
   const size = sizeOf(args.values['--size']);

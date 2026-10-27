@@ -7,6 +7,7 @@ import {
   deleteComment,
   DesignComment,
   listComments,
+  replyToComment,
   staleReasonOf,
 } from './system/comments/comment';
 import { Problem } from './system/problem';
@@ -29,6 +30,7 @@ export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
 export const COMMENTS_PATH = '/__design/comments';
 export const COMMENT_PATH = '/__design/comment';
 export const COMMENT_DONE_PATH = '/__design/comment-done';
+export const COMMENT_REPLY_PATH = '/__design/comment-reply';
 export const COMMENT_EVENTS_PATH = '/__design/comment-events';
 
 export type Answer = { status: number; body: unknown };
@@ -237,7 +239,7 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
   return problem ? failure(422, problem) : { status: 200, body: { discarded: sketch.target } };
 });
 
-/** `?product=[&part=<layer>/<name>]`: the open comments, oldest first, each with the reason it is stale or `null`. */
+/** `?product=[&part=<layer>/<name>]`: the open comments with their `replies`, oldest first, each with the reason it is stale or `null`. */
 export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   const part = asked.url.searchParams.get('part');
   const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name });
@@ -285,4 +287,19 @@ export const commentDoneAnswer = withProduct('POST', ({ asked, product }) => {
   });
 
   return typeof deleted === 'string' ? failure(404, deleted) : { status: 200, body: { id: deleted.id } };
+});
+
+/** POST `?product=`, body `{ id, text }`: adds a reply by the user to a comment thread. Answers with the updated comment. */
+export const commentReplyAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+  const id = textOf(body?.['id']);
+  const text = textOf(body?.['text']);
+
+  if (!id || !text) return failure(400, 'the body must be { id, text }');
+
+  const replied = replyToComment({ products: [{ name: product.name, dir: product.dir }], id, by: 'user', text });
+
+  return typeof replied === 'string'
+    ? failure(replied.startsWith('no open comment') ? 404 : 422, replied)
+    : { status: 200, body: commentOf({ comment: replied, target: asked.target, product }) };
 });

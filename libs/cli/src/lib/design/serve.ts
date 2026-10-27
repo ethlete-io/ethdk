@@ -8,11 +8,13 @@ import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
 import {
   Answer,
   COMMENT_DONE_PATH,
+  COMMENT_REPLY_PATH,
   COMMENT_EVENTS_PATH,
   COMMENT_PATH,
   COMMENTS_PATH,
   commentAnswer,
   commentDoneAnswer,
+  commentReplyAnswer,
   commentsAnswer,
   SKETCH_DECISION_PATH,
   SKETCH_DISCARD_PATH,
@@ -404,6 +406,7 @@ const designExplore = ({
     studio(COMMENTS_PATH, commentsAnswer);
     studio(COMMENT_PATH, commentAnswer);
     studio(COMMENT_DONE_PATH, commentDoneAnswer);
+    studio(COMMENT_REPLY_PATH, commentReplyAnswer);
     vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
     vite.httpServer?.on('close', () => {
       events.close();

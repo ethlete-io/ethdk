@@ -2,7 +2,7 @@ import { relative } from 'path';
 import { DesignConfig } from '../../paths';
 import { productDirOf } from '../product';
 import { listSketches } from '../sketch/sketch';
-import { DesignComment, listComments } from './comment';
+import { DesignComment, lastWordOf, listComments } from './comment';
 
 export type InboxComment = Omit<DesignComment, 'file'> & { kind: 'comment'; file: string; at: string };
 
@@ -13,13 +13,15 @@ export type InboxDecision = (DecisionOn & { kind: 'pick'; variant: string }) | (
 export type InboxItem = InboxComment | InboxDecision;
 
 /**
- * Everything that waits for the agent, across the named products, oldest first: each open comment and
- * each pick or discard the user decided on a sketch. `unreadable` names the files that could not be read.
+ * Everything that waits for the agent, across the named products, oldest first: each comment thread whose
+ * last word is the user's and each pick or discard the user decided on a sketch. `waiting` holds the threads
+ * whose last word is the agent's. `unreadable` names the files that could not be read.
  */
 export const inboxOf = (options: { target: string; config: DesignConfig; products?: string[] }) => {
   const { target, config } = options;
   const products = options.products ?? Object.keys(config.products ?? {});
   const items: InboxItem[] = [];
+  const waiting: InboxComment[] = [];
   const unreadable: string[] = [];
 
   for (const product of products) {
@@ -27,14 +29,16 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
     const comments = listComments({ productDir, product });
 
     unreadable.push(...comments.unreadable.map(({ file, problem }) => `${relative(target, file)}: ${problem}`));
-    items.push(
-      ...comments.comments.map((comment): InboxComment => ({
+    for (const comment of comments.comments) {
+      const item: InboxComment = {
         ...comment,
         kind: 'comment',
         file: relative(target, comment.file),
-        at: comment.createdAt,
-      })),
-    );
+        at: comment.replies[comment.replies.length - 1]?.createdAt ?? comment.createdAt,
+      };
+
+      (lastWordOf(comment) === 'user' ? items : waiting).push(item);
+    }
 
     for (const sketch of listSketches({ productDir, product })) {
       if (typeof sketch === 'string') {
@@ -58,10 +62,14 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
     }
   }
 
-  return { items: items.sort((a, b) => a.at.localeCompare(b.at)), unreadable };
+  const byTime = (a: { at: string }, b: { at: string }) => a.at.localeCompare(b.at);
+
+  return { items: items.sort(byTime), waiting: waiting.sort(byTime), unreadable };
 };
 
 const quoted = (text: string) => JSON.stringify(text);
+
+const indented = (text: string, by = '    ') => text.split('\n').map((line) => `${by}${line}`);
 
 const lineOf = (item: InboxItem, invocation: string) => {
   const when = item.at.slice(0, 16).replace('T', ' ');
@@ -77,7 +85,9 @@ const lineOf = (item: InboxItem, invocation: string) => {
 
     return [
       `${when}  ${item.product}  comment ${item.id}  ${where}`,
-      ...item.text.split('\n').map((line) => `    ${line}`),
+      ...indented(item.text),
+      ...item.replies.flatMap((reply) => [`    ${reply.by}:`, ...indented(reply.text, '      ')]),
+      `    reply: ${invocation} comment reply ${item.id} --product ${item.product} ${quoted('…')}`,
       `    done: ${invocation} inbox done ${item.id}`,
     ];
   }
@@ -98,6 +108,13 @@ const lineOf = (item: InboxItem, invocation: string) => {
   ];
 };
 
-/** The inbox as text, one block per item, with the command that settles it. */
-export const inboxText = (items: InboxItem[], invocation: string) =>
-  items.length === 0 ? 'inbox empty' : items.flatMap((item) => lineOf(item, invocation)).join('\n');
+/** The inbox as text, one block per item with the command that settles it, then the threads waiting for the user. */
+export const inboxText = (inbox: { items: InboxItem[]; waiting: InboxComment[] }, invocation: string) => {
+  const work = inbox.items.length === 0 ? ['inbox empty'] : inbox.items.flatMap((item) => lineOf(item, invocation));
+  const waiting =
+    inbox.waiting.length === 0
+      ? []
+      : ['', 'waiting for the user:', ...inbox.waiting.flatMap((item) => lineOf(item, invocation))];
+
+  return [...work, ...waiting].join('\n');
+};

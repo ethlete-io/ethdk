@@ -38,9 +38,22 @@ describe('designComment and designInbox', () => {
     const id = /^comment (\S+):/u.exec(lines.pop() ?? '')?.[1] ?? '';
 
     expect(designInbox({ target, argv: ['--json'], invocation })).toBe(0);
-    expect(JSON.parse(lines.pop() ?? '')).toEqual([
-      expect.objectContaining({ kind: 'comment', id, part: 'pages/home', point: { x: 10, y: 20 }, text: 'Say why.' }),
-    ]);
+    expect(JSON.parse(lines.pop() ?? '')).toEqual({
+      items: [
+        expect.objectContaining({ kind: 'comment', id, part: 'pages/home', point: { x: 10, y: 20 }, text: 'Say why.' }),
+      ],
+      waitingForUser: [],
+    });
+    expect(designComment({ target, argv: ['reply', id, '--product', 'acme', 'Which', 'part?'], invocation })).toBe(0);
+    expect(lines.pop()).toBe(`replied: .ethlete/design/acme/comments/${id}.json`);
+    expect(designInbox({ target, argv: ['--json'], invocation })).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')).toEqual({
+      items: [],
+      waitingForUser: [
+        expect.objectContaining({ id, replies: [expect.objectContaining({ by: 'agent', text: 'Which part?' })] }),
+      ],
+    });
+    expect(designComment({ target, argv: ['reply', id], invocation })).toBe(2);
     expect(designInbox({ target, argv: ['done', id], invocation })).toBe(0);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`))).toBe(false);
     expect(designInbox({ target, argv: [], invocation })).toBe(0);

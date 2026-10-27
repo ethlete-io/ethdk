@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, decideSketch, markSketchReady, Sketch } from '../sketch/sketch';
-import { createComment, DesignComment } from './comment';
+import { createComment, DesignComment, replyToComment } from './comment';
 import { inboxOf, inboxText } from './inbox';
 
 const acme = () => {
@@ -84,11 +84,12 @@ describe('inboxOf', () => {
 
   it('prints each item with the command that settles it', () => {
     const { target, comment } = setup();
-    const text = inboxText(inboxOf({ target, config: readConfig(target) ?? {} }).items, 'et design');
+    const text = inboxText(inboxOf({ target, config: readConfig(target) ?? {} }), 'et design');
 
     expect(text.split('\n')).toEqual([
       `2020-01-01 09:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
       '    Say why.',
+      `    reply: et design comment reply ${comment.id} --product acme "…"`,
       `    done: et design inbox done ${comment.id}`,
       '2026-10-27 10:00  acme  pick elements/hero variant b',
       '    Calmer.',
@@ -96,6 +97,40 @@ describe('inboxOf', () => {
       '2026-10-27 11:00  acme-base  discard components/card',
       '    run: et design sketch discard components/card --product acme-base',
     ]);
-    expect(inboxText([], 'et design')).toBe('inbox empty');
+    expect(inboxText({ items: [], waiting: [] }, 'et design')).toBe('inbox empty');
+  });
+
+  it("moves a thread whose last word is the agent's to waiting, and back once the user replies", () => {
+    const { target, comment } = setup();
+    const products = [{ name: 'acme', dir: join(target, '.ethlete/design/acme') }];
+    const inbox = () => inboxOf({ target, config: readConfig(target) ?? {} });
+
+    vi.setSystemTime('2026-10-27T12:00:00Z');
+    replyToComment({ products, id: comment.id, by: 'agent', text: 'Which part?' });
+
+    expect(inbox().items.map((item) => item.kind)).toEqual(['pick', 'discard']);
+    expect(inbox().waiting).toEqual([
+      expect.objectContaining({
+        id: comment.id,
+        at: '2026-10-27T12:00:00.000Z',
+        replies: [{ by: 'agent', text: 'Which part?', createdAt: '2026-10-27T12:00:00.000Z' }],
+      }),
+    ]);
+    expect(inboxText(inbox(), 'et design').split('\n').slice(-8)).toEqual([
+      '',
+      'waiting for the user:',
+      `2026-10-27 12:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
+      '    Say why.',
+      '    agent:',
+      '      Which part?',
+      `    reply: et design comment reply ${comment.id} --product acme "…"`,
+      `    done: et design inbox done ${comment.id}`,
+    ]);
+
+    vi.setSystemTime('2026-10-27T13:00:00Z');
+    replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
+
+    expect(inbox().waiting).toEqual([]);
+    expect(inbox().items[2]).toEqual(expect.objectContaining({ id: comment.id, at: '2026-10-27T13:00:00.000Z' }));
   });
 });

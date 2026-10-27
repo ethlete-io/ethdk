@@ -506,13 +506,23 @@ describe('the design server for sketches and comments', () => {
     const added = await ask('/__design/comment', '?product=acme', 'POST', { ...on, point: { x: 12, y: 30 } });
     const { id } = added.body as { id: string };
 
-    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 12, y: 30 }, stale: null } });
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 12, y: 30 }, replies: [], stale: null } });
     expect((await ask('/__design/comment', '?product=acme', 'POST', { ...on, size: 'gone' })).status).toBe(422);
     expect((await ask('/__design/comment', '?product=acme')).status).toBe(405);
     expect((await ask('/__design/comments', '?product=acme&part=pages/home')).body).toMatchObject({
       comments: [{ id, text: on.text }],
     });
     expect((await ask('/__design/comments', '?product=acme&part=pages/other')).body).toMatchObject({ comments: [] });
+    expect(await ask('/__design/comment-reply', '?product=acme', 'POST', { id, text: 'The title.' })).toMatchObject({
+      status: 200,
+      body: { id, replies: [{ by: 'user', text: 'The title.', createdAt: expect.any(String) }], stale: null },
+    });
+    expect((await ask('/__design/comments', '?product=acme')).body).toMatchObject({
+      comments: [{ id, replies: [{ by: 'user', text: 'The title.' }] }],
+    });
+    expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id })).status).toBe(400);
+    expect((await ask('/__design/comment-reply', '?product=acme', 'POST', { id: 'nope', text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/comment-reply', '?product=acme')).status).toBe(405);
     expect((await ask('/__design/comment-done', `?product=acme&id=${id}`)).status).toBe(405);
     expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(200);
     expect((await ask('/__design/comment-done', `?product=acme&id=${id}`, 'POST')).status).toBe(404);

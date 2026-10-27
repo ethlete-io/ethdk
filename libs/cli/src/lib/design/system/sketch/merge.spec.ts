@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
-import { createComment } from '../comments/comment';
+import { createComment, DesignComment, replyToComment } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
 import {
@@ -194,6 +194,16 @@ describe('mergeSketch', () => {
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toContain('elements/hero has 1 open comment(s)');
     expect(discardSketch({ target, sketch: found.sketch })).toContain('elements/hero has 1 open comment(s)');
     expect(existsSync(found.sketch.dir)).toBe(true);
+
+    replyToComment({
+      products: [{ name: found.product.name, dir: found.product.dir }],
+      id: (comment as DesignComment).id,
+      by: 'agent',
+      text: 'Bigger how?',
+    });
+
+    expect(merge(target, { ...found, sketch: picked(found.sketch) })).toContain('elements/hero has 1 open comment(s)');
+    expect(discardSketch({ target, sketch: found.sketch })).toContain('elements/hero has 1 open comment(s)');
   });
 });
 

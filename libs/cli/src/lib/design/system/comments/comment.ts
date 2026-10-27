@@ -14,6 +14,9 @@ export type CommentSize = string | number;
 
 export const FITTED = 'fitted';
 
+/** One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`). */
+export type CommentReply = { by: 'user' | 'agent'; text: string; createdAt: string };
+
 export type CommentFile = {
   part: string;
   state: string;
@@ -22,9 +25,10 @@ export type CommentFile = {
   sketch?: { target: string; variant: string };
   text: string;
   createdAt: string;
+  replies?: CommentReply[];
 };
 
-export type DesignComment = CommentFile & { id: string; product: string; file: string };
+export type DesignComment = CommentFile & { id: string; product: string; file: string; replies: CommentReply[] };
 
 const ID = /^[A-Za-z0-9-]+$/u;
 
@@ -34,6 +38,17 @@ export const isPoint = (value: unknown): value is CommentPoint => {
   const point = value as CommentPoint | undefined;
 
   return typeof point?.x === 'number' && typeof point.y === 'number' && point.x >= 0 && point.y >= 0;
+};
+
+const isReply = (value: unknown) => {
+  const reply = value as Partial<CommentReply> | undefined;
+
+  return (
+    (reply?.by === 'user' || reply?.by === 'agent') &&
+    typeof reply.text === 'string' &&
+    reply.text !== '' &&
+    typeof reply.createdAt === 'string'
+  );
 };
 
 const shapeProblemOf = (value: Partial<CommentFile>) => {
@@ -49,6 +64,8 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
     (typeof value.sketch?.target !== 'string' || typeof value.sketch.variant !== 'string')
   )
     return 'sketch must be { target, variant }';
+  if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
+    return 'replies must be [{ by: "user" | "agent", text, createdAt }]';
 
   return null;
 };
@@ -66,7 +83,13 @@ export const listComments = (options: { productDir: string; product: string }) =
 
       return problem
         ? { file, problem }
-        : { ...(parsed as CommentFile), id: name.slice(0, -'.json'.length), product: options.product, file };
+        : {
+            ...(parsed as CommentFile),
+            replies: parsed.replies ?? [],
+            id: name.slice(0, -'.json'.length),
+            product: options.product,
+            file,
+          };
     } catch (error) {
       return { file, problem: `is no JSON: ${error instanceof Error ? error.message : String(error)}` };
     }
@@ -160,14 +183,14 @@ export const createComment = (options: {
   mkdirSync(dir, { recursive: true });
   writeFileSync(file, `${JSON.stringify(comment, null, 2)}\n`);
 
-  return { ...comment, id, product: product.name, file };
+  return { ...comment, replies: [], id, product: product.name, file };
 };
 
-/** Deletes a done comment by its id, searching the named products. Answers with the deleted comment. */
-export const deleteComment = (options: {
-  products: { name: string; dir: string }[];
-  id: string;
-}): DesignComment | string => {
+/** Who spoke last in a comment thread: the user wrote the comment, so a thread without replies is the user's. */
+export const lastWordOf = (comment: Pick<DesignComment, 'replies'>) =>
+  comment.replies[comment.replies.length - 1]?.by ?? 'user';
+
+const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
   const { products, id } = options;
 
   if (!ID.test(id)) return `"${id}" is no comment id`;
@@ -177,14 +200,45 @@ export const deleteComment = (options: {
       (comment) => comment.id === id,
     );
 
-    if (found) {
-      rmSync(found.file);
-
-      return found;
-    }
+    if (found) return found;
   }
 
   return `no open comment "${id}"`;
+};
+
+/** Adds a reply to the thread of an open comment, searching the named products. Answers with the updated comment. */
+export const replyToComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  by: CommentReply['by'];
+  text: string;
+}): DesignComment | string => {
+  const { by, text } = options;
+
+  if (text.trim() === '') return 'a reply needs a text';
+
+  const found = findComment(options);
+
+  if (typeof found === 'string') return found;
+
+  const replies = [...found.replies, { by, text, createdAt: new Date().toISOString() }];
+  const stored = JSON.parse(readFileSync(found.file, 'utf8')) as CommentFile;
+
+  writeFileSync(found.file, `${JSON.stringify({ ...stored, replies }, null, 2)}\n`);
+
+  return { ...found, replies };
+};
+
+/** Deletes a done or withdrawn comment thread by its id, searching the named products. Answers with the deleted comment. */
+export const deleteComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+}): DesignComment | string => {
+  const found = findComment(options);
+
+  if (typeof found !== 'string') rmSync(found.file);
+
+  return found;
 };
 
 /** The open comments made on any variant of the sketch on a target. */

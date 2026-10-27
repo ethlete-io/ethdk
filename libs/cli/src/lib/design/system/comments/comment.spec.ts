@@ -5,7 +5,15 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, Sketch } from '../sketch/sketch';
-import { commentsOnSketch, createComment, deleteComment, DesignComment, listComments } from './comment';
+import {
+  commentsOnSketch,
+  createComment,
+  deleteComment,
+  DesignComment,
+  lastWordOf,
+  listComments,
+  replyToComment,
+} from './comment';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-comment-'));
@@ -98,5 +106,38 @@ describe('listComments and deleteComment', () => {
     expect(existsSync(second.file)).toBe(false);
     expect(deleteComment({ products, id: second.id })).toBe(`no open comment "${second.id}"`);
     expect(deleteComment({ products, id: '../x' })).toBe('"../x" is no comment id');
+  });
+});
+
+describe('replyToComment', () => {
+  it('appends replies to the thread and reads a file without replies as an empty list', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const comment = createComment({ product, comment: on }) as DesignComment;
+    const products = [{ name: 'acme', dir: product.dir }];
+
+    expect(comment.replies).toEqual([]);
+    expect(lastWordOf(comment)).toBe('user');
+
+    const answered = replyToComment({ products, id: comment.id, by: 'agent', text: 'Which part?' }) as DesignComment;
+
+    expect(lastWordOf(answered)).toBe('agent');
+    replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
+
+    const [listed] = listComments({ productDir: product.dir, product: 'acme' }).comments;
+
+    expect(listed?.text).toBe(on.text);
+    expect(listed?.replies).toEqual([
+      { by: 'agent', text: 'Which part?', createdAt: expect.any(String) },
+      { by: 'user', text: 'The title.', createdAt: expect.any(String) },
+    ]);
+    expect(lastWordOf(listed as DesignComment)).toBe('user');
+    expect(replyToComment({ products, id: comment.id, by: 'agent', text: ' ' })).toBe('a reply needs a text');
+    expect(replyToComment({ products, id: 'nope', by: 'agent', text: 'Hi.' })).toBe('no open comment "nope"');
+
+    writeFileSync(comment.file, JSON.stringify({ ...on, createdAt: 'x', replies: [{ by: 'bot', text: 'Hi.' }] }));
+    expect(listComments({ productDir: product.dir, product: 'acme' }).unreadable).toEqual([
+      { file: comment.file, problem: expect.stringContaining('replies must be') },
+    ]);
   });
 });
