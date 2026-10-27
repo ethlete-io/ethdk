@@ -1307,6 +1307,17 @@ Wireframes:
   it uses at least one kit part. The core counts the kit-part uses in the page source, without a
   render, and the tree shows the count next to the page.
 
+Pages and wireframes, as built (2026-10-27):
+
+- Pages already held before slice 6: states with props, `@system/fixtures`, and a page importing
+  an element or component. A shell and a dialog state need no new code.
+- b9fae0d96: the kit is `@design-system/kit` (`box`, `textLines`, `image`, `button`, `input`, `icon`),
+  each returning markup with a fixed grey inline style. `WIREFRAME-KIT` fails a non-page part that
+  imports it. The system list gives each page `kitUses`, the kit calls in its source.
+- ade8021ca: the tree lists a page with `kitUses > 0` under Wireframes, after Pages, with the count.
+- The lab has `elements/shell-main`, `elements/login-dialog`, `pages/library` in the shell with a
+  "login open" state, and the wireframe `pages/film-detail`.
+
 Flows:
 
 - A product has many named flows, one file each: `<product>/flows/<name>.json`, for example
