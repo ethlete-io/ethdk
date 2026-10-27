@@ -475,6 +475,21 @@ and no frame shows that it is out of date.
 - A failed render replaces the old frame at once, as today, so an error is never hidden.
 - Shots use the same per-part revision.
 
+### Frame reload, as built (2026-10-27)
+
+- 027805054 (server side of step 6): `/__design/comment-events` sends a new SSE event `parts`:
+  `{ revision, all: true }` or `{ revision, all: false, parts: [{ product, part, sketch: { target,
+variant } | null }] }`. `revision` is server-wide and goes up by 1 per event. `all` is sent for a
+  change of `config.json` and for any file added or removed. A change that no frame draws sends no
+  event. The shot cache drops exactly that set of parts.
+- The old `changes` event still fires, so Studio works as before until the Studio slice moves to
+  `parts`. The Tauri host is unchanged.
+- Built choices: a new event name, so one edit does not reload twice; a file added or removed
+  (for example `sketch new`) reloads all; a part counts only after a frame or shot has loaded it,
+  because the module graph decides.
+- Next: the Studio slice stops the watch tick from reloading frames and keeps a revision per drawn
+  part.
+
 ### Merge preview decisions (2026-10-27)
 
 Not built yet. In the `components/card` sketch the preview showed all three states of
