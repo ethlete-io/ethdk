@@ -503,6 +503,37 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
   hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
   may serve there too.
 
+### Sketch rounds decisions (2026-10-27)
+
+Not built yet. The user may like solid from variant a and outline from variant b. A variant is a
+folder of code that replaces the part whole on merge, and states share CSS, so Studio cannot put
+two variants together; the agent must draw a new one.
+
+- To combine variants, the user writes a comment on the sketch, for example "solid like a, outline
+  like b". The agent draws a new variant from it. Studio never combines variants itself.
+- New command `et design sketch variant <target> <name> --from <variant>`: copies a variant into a
+  new one, sets the sketch back to `in progress` and clears the pick. It is the only way a status
+  moves back.
+- Older variants stay next to the new one and stay pickable. Merge or discard removes every variant
+  that was not picked, as now.
+- Rounds, as in the old calls: `sketch.json` gets `rounds: [{ key, title, note }]`, and each
+  variant belongs to one round. `sketch new` starts round 1. The variant command starts a new round
+  or adds to the running one. Variant letters continue across rounds (r1: a-b, r2: c-e). Before a
+  new round starts, the agent writes into the old round's note what it showed and why its variants
+  lost.
+- The sketch matrix groups variant columns by round, with the round title above the group. The
+  newest round is open; older rounds are collapsed to a narrow column with the title, the note and
+  the variant names ("r1 · Pill or square · a b"). A click opens a round. Studio remembers the open
+  rounds per sketch.
+- The design-exploration skill (`libs/agent-rules/content/`) tells the agent how to answer a
+  combine comment: a new round with the combined variant, and a note on the old round.
+
+Open points, each with a recommendation:
+
+- A structured "Combine" decision (the user picks a variant per matrix row, Studio stores it in
+  `sketch.json`, `et design inbox` lists it). Recommendation: only if the tomflix rebuild shows that
+  combine comments are common.
+
 ### Studio reload and sketch header, as built (2026-10-27)
 
 - 793d9381b: `studio-lab` rating sketch b declares `interactions: ['disabled']`.
