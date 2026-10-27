@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); Studio reads the merged tokens (9ed3560f4); component layer: SDK tokens mapped (see "Component layer: SDK tokens mapped, as built"), next the component inventory. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: done, with slice C (numbered note markers, hover line, note size; 2c6878d4e, c2ea12698) and the note format in the exploration skill (806aa94d9, 848f76d15). Slice 10: step 1 (sdk base, studio product, tokens import) done; the redesign runs layer by layer: foundations merged: surfaces, accent, type, spacing (see "Slice 10 foundations, as built"); Studio reads the merged tokens (9ed3560f4); component layer: SDK tokens mapped and app classes swapped (see "Component layer: SDK tokens mapped, as built"); the component list comes from the Studio wireframes. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -660,16 +660,21 @@ src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the 
   self-referencing token. Headless (own build and design server): the accent resolves to #25aea7, a
   `sm` button is 28 px with a 6 px radius, the new-product fields 13 px. Screenshots
   `/tmp/st-shots/map-{before,after}-*.png`: teal replaces mint, controls are smaller and denser.
-- Still on the old token names: about 14 app files use `var(--et-surface-*)`/`--et-theme-color-*`
-  and `bg-et-surface-bg`, `border-et-surface-border`, `text-et-surface-muted`; they now resolve to
-  the Studio tokens through the map.
+- Class swap, as built: the app templates and `styles.css` use the Studio tokens where one matches
+  directly (`bg-surface`, `bg-surface-raised` in the two `dark-elevated` containers, `text-text`,
+  `text-text-muted`, `border-surface-border`, `text-accent`/`bg-accent`/`ring-accent`, `text-on-accent`,
+  `var(--accent)`). Proven headlessly: computed colours of every element in six views (landing,
+  comments, sketch, flow, wireframe, checkouts) are identical before and after.
+- Left on the SDK names, no direct Studio token: subtle text (`--et-surface-color-subtle-solid`, 23
+  uses), surface interaction (the `color-mix` hover and tint backgrounds), the `::picker(select)`
+  background (follows the surface context), and every `--et-theme-color-*` in an error-themed
+  element (no danger token). Context-dependent, so not swapped: `BADGE_ACCENT` (also drawn with the
+  error theme) and the comment number badge inside `et-button color="surface"` (grey there, not accent).
 - Open: Studio has no token for subtle text, accent active/disabled, danger, or `--surface-sunken`
   as an SDK surface; select option height stays the SDK's 36 px (`--row` 24 px clips two-line
   options); the tree row height and the body font (still Jost, not `--font-ui`) are not mapped; an
   SDK theme type that accepts a CSS colour would let `themes.ts` name the tokens and drop the map.
-- Next: the component inventory (button, form-field, input, textarea, select, label, tree) in the
-  running app: looks right or needs a sketch; then swap the old token classes where a direct
-  equivalent exists.
+- Next: the component list comes from the Studio wireframes, not from the current app.
 
 ### Flow, tokens and note layout decisions (2026-10-27)
 
