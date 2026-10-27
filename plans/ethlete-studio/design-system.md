@@ -325,13 +325,44 @@ Open points, each with a recommendation:
 - The comment field `preset` becomes `size`: a preset name, a width such as `520`, or `fitted`.
   A pin shows only on a frame of the same size; other sizes show only a count on the label. A
   point in percent would land on another element once the layout wraps differently.
-- Numbered pins open a popover with the text and "Withdraw". A collapsible panel on the right
-  lists all comments of the selected part; a click in the list moves the camera to the pin.
+- Numbered pins open a popover with the text and "Withdraw". The comment sidebar lists the
+  threads; see "Comment thread decisions", which replaces the earlier panel for one part.
 - "Withdraw" deletes a comment through `comment-done`, without a restriction and without a note.
 - With open comments, the sketch view disables Merge and Discard with "N open comments"; a click
   on it opens the panel.
 - The design server sends its own signal on a change under `comments/`. Studio then reloads the
   comments only, not the frames.
+
+### Comment thread decisions (2026-10-27)
+
+- The user and the agent both reply. The agent replies with `et design comment reply <id> <text>`,
+  so it can ask back instead of guessing.
+- The comment file gets `replies: { by: 'user' | 'agent', text, createdAt }[]`. The first text
+  stays in the comment itself and is always the user's.
+- Done and withdraw act on the whole thread: done deletes it and writes the note, withdraw deletes
+  it without a note.
+- `et design inbox` lists a thread as work only when the last word is the user's. A thread whose
+  last word is the agent's goes into a separate group, "waiting for the user".
+- Every open thread blocks merge and discard, whoever has the last word.
+- The pin popover shows the whole thread with sender and time, and a reply field (`Enter` sends,
+  `Shift+Enter` breaks the line).
+- The comment sidebar lists all open threads of the product, grouped by part, the selected part's
+  group on top. Each entry shows the first text, the last sender, the reply count and the age. A
+  click selects the part, moves the camera to the pin and opens its popover.
+- An agent question (the last word is the agent's) shows in four places: a group "Questions for
+  you" at the top of the sidebar, an accent dot on the pin, a tree badge "question" next to
+  "comment open", and a count on the comment toolbar button.
+- A toolbar button of its own toggles the sidebar, and Studio remembers the state. A click on the
+  question count opens it. Comment mode does not open it, and it never opens by itself.
+
+### Sketch matrix cell and spacing decisions (2026-10-27)
+
+- A cell whose variant lacks the row's state is a dashed empty cell at the size of the other cells
+  in the row; at size `fitted` it takes the size of the largest one. It reads "a has no disabled
+  state"; in the `current` column, "new in this sketch". It takes no comment, since a comment
+  needs a state the part has.
+- The canvas row gap is 48 px for fitted frames (the tile grid, the matrix at `fitted`) and stays
+  120 px for pages and parts with `widths`. 48 px is a start value until Tom has seen it in Studio.
 
 ### Docs decision (2026-10-27)
 
