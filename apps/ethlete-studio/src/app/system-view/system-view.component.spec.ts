@@ -166,6 +166,14 @@ describe('SystemViewComponent on a reload', () => {
     ]);
   });
 
+  it('heads the sidebar with the Studio mark beside the "Studio" label', async () => {
+    const fixture = await mount({});
+    const header = (fixture.nativeElement as HTMLElement).querySelector('aside > header');
+
+    expect(header?.querySelector('ethlete-studio-mark svg path')).not.toBeNull();
+    expect(header?.textContent?.trim()).toBe('Studio');
+  });
+
   it('offers the one product and "New product" in the picker', async () => {
     const fixture = await mount({});
     const element: HTMLElement = fixture.nativeElement;

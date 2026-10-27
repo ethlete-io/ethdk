@@ -30,6 +30,7 @@ import {
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { StudioMarkComponent } from '../components/studio-mark.component';
 import {
   ThemePick,
   camerasWith,
@@ -111,6 +112,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       class="flex min-h-0 flex-col overflow-y-auto border-r border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] pb-4 text-[var(--et-surface-color-solid)]"
       etProvideSurface="dark-elevated"
     >
+      <header class="flex flex-none items-center gap-2 px-4 pt-4 font-semibold text-ui-lg">
+        <ethlete-studio-mark class="size-5 flex-none" />
+        <span>Studio</span>
+      </header>
+
       @if (reading() && !reading()?.error) {
         <et-select
           [value]="pickerValue()"
@@ -470,6 +476,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     CommentPanelComponent,
     NoteBodyComponent,
     NoteFormComponent,
+    StudioMarkComponent,
   ],
   providers: [provideCommentStore(), provideNoteStore()],
   host: {
