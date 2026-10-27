@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
+Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5. Studio: sketch view built, old Calls UI removed; next are the frame size decisions and slice 5 comments.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -351,6 +351,19 @@ Open points, each with a recommendation:
 - The preview draws no old and new frames of the affected parts. Recommendation: add it in Studio
   now that a frame URL with `sketch` and `variant` draws the variant.
 
+### Studio fixes, as built (2026-10-27)
+
+- d8cee09f4: when a design server that Studio did not start goes away, Studio starts its own
+  server and the frames load again. Cause of "Failed to fetch" after a restart: a server left by
+  a Studio build before 5e43611f5 crashed with EPIPE on its first log line.
+- accd23ecd: the design server reads `config.json` again when it changes, so a new product shows
+  without a restart. Still needs a restart: the port, `render.packages`, `render.modules`, and
+  the `base` folder of a new product.
+- 3f34d1751: Studio remembers the picked checkout across a restart.
+- 4c24ef421: the `studio-lab` product in this repo is the test bed for new Studio features. It has
+  no themes, no base, no comments and no ready or merged sketch yet.
+- Open bug: about 400 px of empty space above the sketch frames.
+
 ### Frame size decisions (2026-10-27)
 
 These replace "one row per state and one frame per preset" for every part.
@@ -585,10 +598,13 @@ State:
 The old calls stay in a read-only Legacy tab, as reference for the transfer into the new system.
 No new calls, no picks. The user can mark a call "transferred". The tab disappears when `calls/` is empty or missing.
 
-Decided 2026-10-27: the old call UI stays for now, next to the system view. A switch in the
-status bar chooses "Calls" or "System", and Studio remembers the choice. The user still works
-with verdicts and the prompt composer there. The removal of the old UI is postponed, not
-dropped. The user decides when it goes.
+Decided 2026-10-27, later the same day: the old call UI goes, because the Legacy section of the
+system view replaces it. Removed in 4b2383ae2. The '' route is `studio-view/StudioViewComponent`:
+the system view plus a status bar with the checkout picker, the server lifecycle and the update
+buttons. Legacy calls stay reachable under Legacy in the system tree. The Rust commands that only
+the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `design_set_verdict`,
+`design_set_closed`, `design_set_mode`, `design_add_variants`, `tools::design_check`) are still in
+`src-tauri`. Recommendation: remove them in one Rust slice with their tests.
 
 ## Slices
 
