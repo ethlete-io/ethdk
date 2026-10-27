@@ -1364,6 +1364,21 @@ Notes:
 - A free note, for example a heading over a group of frames, belongs to one flow and lives in
   that flow's file.
 
+Notes server, as built (2026-10-27):
+
+- 07d73981c, lab 948a7793b. The reader existed (c618028b5); its check rule is now `NOTE`. A state
+  note is `notes/<id>.json` `{ part, state, point?, text }`, the point in CSS px. A free note sits in
+  the flow file as `notes: [{ id, text, at? }]`, `at` the top left on the flow canvas, may be
+  negative. A write rewrites only `notes` and keeps the other keys and their order, but the file is
+  re-serialized with the `JSON.stringify` layout. `FLOW` also reports a misshaped free note and a
+  duplicate id; `createNote` refuses a missing part or state.
+- Endpoints: `GET /__design/notes`; `POST` `note`, `note-change`, `note-delete`, and `flow-note`,
+  `flow-note-change`, `flow-note-delete` (`?flow=`). `/__design/flows` includes the notes. A change in
+  `notes/` sends a `notes` event and redraws no part.
+- Studio half in progress: a dashed card that always shows its text, a small square marker at a
+  point, a free note as a large bold heading without a card, a "Note" toggle next to Comment, the
+  two modes mutually exclusive.
+
 ### Slice 7 decisions (2026-10-27)
 
 Rules:
