@@ -1132,6 +1132,18 @@ Open points, each with a recommendation:
   `studio-lab` `components/button`: the solid right edges were 13 px short in every column, now both
   rows end at 114, 268, 422, 576 and 730. Specs in `canvas-math.spec.ts` and
   `design-canvas.component.spec.ts` fail without the fix.
+
+### No-point pin and drawing report decisions (2026-10-27)
+
+- A comment pin with no point sits on the right edge of its tile, not of the part. A pin with no
+  point belongs to the whole state frame, and all such pins in a column line up.
+- The stale live report for `studio-lab` `components/button` variant b (written 12:24 by a seeding
+  run, never ended with `sketch ready`) is deleted. It kept the variant b column at "drawing…" with
+  no frames, so pin 7001 had no place to render. Not a code fault.
+- A `drawing` report expires 30 minutes after its `updatedAt`. Studio then draws the variant's frames
+  as if it were drawn, and the column head shows "No report for 30 min" instead of "drawing…", so a
+  stopped agent stays visible and is not taken for a finished one. A new report from the agent
+  ends the note. `sketch ready` and a discard still end a report at once.
 - Replaced the same day: a stale built cli now shows as `stale`. The existing check
   (`design_server.rs` `is_stale`) compares the running server's stamp with the stamp of the built
   cli in `dist`, so a `dist/apps/ethlete-studio/cli-runtime` older than its source passes as
