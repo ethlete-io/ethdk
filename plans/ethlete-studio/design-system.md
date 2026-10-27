@@ -274,6 +274,13 @@ Open points, each with a recommendation:
   products). A new design server endpoint creates the product with the code of
   `et design product new`; the list reloads and the new product is picked. `--from-project` stays
   CLI only.
+- Built in 6d26694c3 (cli) and b305d0311 (Studio): `POST /__design/product { name, base? }` shares
+  `createProduct` (`product-command.ts`) with the CLI; 201, 409 for an existing name, 400 for a bad
+  name, an unknown base or a base with its own base. The server writes the base as
+  `.ethlete/design/<base>` and reloads `config.json`. `new-product-form.component.ts`: Name, Base
+  ("No base" plus products without a base), Create product, then the command as before. Success
+  reloads and picks the product; a refusal shows under the fields in the error colour. Headless proof
+  on a scratch checkout.
 
 ### Product picker, as built (2026-10-27)
 
