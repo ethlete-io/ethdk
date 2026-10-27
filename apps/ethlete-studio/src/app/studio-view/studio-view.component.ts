@@ -50,10 +50,10 @@ const STATUS_ITEM =
   template: `
     @if (serverDown(); as down) {
       <div
-        class="mx-auto mt-15 flex w-full max-w-180 flex-col items-start gap-2.5 px-5 text-[1.2rem] text-[var(--et-surface-color-muted-solid)]"
+        class="mx-auto mt-15 flex w-full max-w-180 flex-col items-start gap-2.5 px-5 text-[1.2rem] text-text-muted"
         role="alert"
       >
-        <h3 class="m-0 text-[1.4rem] text-[var(--et-surface-color-solid)]">The design server stopped</h3>
+        <h3 class="m-0 text-[1.4rem] text-text">The design server stopped</h3>
         @if (watcherHint()) {
           <p class="m-0">The system ran out of file watchers (inotify). Raise fs.inotify.max_user_instances.</p>
         }
@@ -82,7 +82,7 @@ const STATUS_ITEM =
     }
 
     <footer
-      class="flex h-8 items-center gap-4 border-t border-[var(--et-surface-border-solid)] bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
+      class="flex h-8 items-center gap-4 border-t border-surface-border bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-3.5"
     >
       <ethlete-checkouts [remembered]="remembered" (pick)="setCheckout($event)" />
 
@@ -101,7 +101,7 @@ const STATUS_ITEM =
 
       @if (renderQueue.count(); as rendering) {
         <span [class]="STATUS_ITEM" data-rendering>
-          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-[var(--et-theme-color-primary-solid)]"></i>
+          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-accent"></i>
           Rendering {{ rendering }} {{ rendering === 1 ? 'frame' : 'frames' }}
         </span>
       }
@@ -109,9 +109,7 @@ const STATUS_ITEM =
       @if (serverLine(); as line) {
         <span [title]="serverNote()" [class]="STATUS_ITEM" data-server-line>
           <i
-            [style.background]="
-              server()?.listening ? 'var(--et-theme-color-primary-solid)' : 'var(--et-surface-color-subtle-solid)'
-            "
+            [style.background]="server()?.listening ? 'var(--accent)' : 'var(--et-surface-color-subtle-solid)'"
             class="size-1.5 shrink-0 rounded-full"
           ></i>
           <span class="overflow-hidden text-ellipsis">{{ line }}</span>
@@ -163,8 +161,7 @@ const STATUS_ITEM =
     UpdateCheckButtonComponent,
   ],
   host: {
-    class:
-      'grid h-dvh grid-rows-[minmax(0,1fr)_auto] bg-[var(--et-surface-background-solid)] text-[var(--et-surface-color-solid)]',
+    class: 'grid h-dvh grid-rows-[minmax(0,1fr)_auto] bg-surface text-text',
   },
 })
 export class StudioViewComponent {

@@ -95,7 +95,7 @@ const isEditable = (target: EventTarget | null) =>
   imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent],
   host: {
     class:
-      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-[var(--et-surface-background-solid)] text-[var(--et-surface-color-solid)] select-none',
+      'group/canvas relative block h-full touch-none overflow-hidden overscroll-none bg-surface text-text select-none',
     '[class.cursor-grab]': 'spaceHeld() && !panning()',
     '[class.cursor-grabbing]': 'panning()',
     '[attr.data-dragging]': '(spaceHeld() || panning()) || null',

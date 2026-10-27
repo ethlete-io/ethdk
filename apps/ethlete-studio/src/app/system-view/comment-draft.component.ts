@@ -7,9 +7,7 @@ import { injectCommentStore } from './comment-store';
 @Component({
   selector: 'ethlete-comment-draft',
   template: `
-    <div
-      class="flex w-80 flex-col gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-lg"
-    >
+    <div class="flex w-80 flex-col gap-2 rounded-md border border-surface-border bg-surface p-3 shadow-lg">
       <et-form-field appearance="box">
         <et-textarea
           [(value)]="text"

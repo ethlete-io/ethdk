@@ -21,7 +21,7 @@ import { injectNoteStore } from './note-store';
   template: `
     <div class="absolute top-3 right-4 z-1 flex gap-2">
       <div
-        class="flex gap-0.5 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-0.5"
+        class="flex gap-0.5 rounded-[0.6rem] border border-surface-border bg-surface p-0.5"
         role="group"
         aria-label="Preset"
       >

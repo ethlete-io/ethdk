@@ -81,22 +81,17 @@ const painted$ = (iframe: HTMLIFrameElement) => {
           [class.animate-pulse]="state === 'rendering'"
           [title]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
           [attr.data-reload]="state"
-          class="size-[0.6em] shrink-0 self-center rounded-full bg-[var(--et-theme-color-primary-solid)]"
+          class="size-[0.6em] shrink-0 self-center rounded-full bg-accent"
         ></span>
       }
       @if (frame().width !== undefined) {
-        <span class="tabular-nums text-[var(--et-surface-color-muted-solid)]">{{ width() }}</span>
+        <span class="tabular-nums text-text-muted">{{ width() }}</span>
       }
       @if (frame().note; as note) {
-        <span class="tabular-nums text-[var(--et-surface-color-muted-solid)]" data-frame-note>{{ note }}</span>
+        <span class="tabular-nums text-text-muted" data-frame-note>{{ note }}</span>
       }
       @if (active()) {
-        <span
-          class="rounded-sm bg-[var(--et-theme-color-primary-solid)] px-[0.4em] text-[var(--et-theme-color-on-primary)]"
-          data-live-badge
-        >
-          Live · Esc
-        </span>
+        <span class="rounded-sm bg-accent px-[0.4em] text-on-accent" data-live-badge> Live · Esc </span>
       }
     </ng-template>
     @if (captionPickable()) {
@@ -105,7 +100,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         [class]="labelPlacement()"
         (click)="captionClick.emit($event)"
         (keydown.enter)="captionClick.emit($event)"
-        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-[var(--et-surface-color-solid)] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
+        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))] cursor-crosshair"
         role="button"
         tabindex="0"
         data-comment-caption
@@ -115,13 +110,13 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     } @else {
       <span
         [class]="labelPlacement()"
-        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-[var(--et-surface-color-solid)] text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
+        class="absolute left-0 flex gap-[0.6em] whitespace-nowrap text-text text-[length:calc(1.2rem_*_var(--et-design-canvas-label-scale))]"
         ><ng-container [ngTemplateOutlet]="caption"
       /></span>
     }
     @if (frame().empty; as empty) {
       <div
-        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-[var(--et-surface-border-solid)] p-4 text-center text-[calc(1.3rem*var(--et-design-canvas-label-scale))] text-[var(--et-surface-color-muted-solid)]"
+        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-surface-border p-4 text-center text-[calc(1.3rem*var(--et-design-canvas-label-scale))] text-text-muted"
         data-empty-cell
       >
         {{ empty }}
@@ -167,7 +162,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     }
     @if (bordered()) {
       <div
-        class="pointer-events-none absolute inset-0 outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-[color:var(--et-surface-border-solid)] outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-[color:var(--et-theme-color-primary-solid)]"
+        class="pointer-events-none absolute inset-0 outline-[length:calc(0.1rem_*_var(--et-design-canvas-label-scale))] outline-surface-border outline-solid group-data-[active]/frame:outline-dashed group-data-[selected]/frame:outline-[length:calc(0.2rem_*_var(--et-design-canvas-label-scale))] group-data-[selected]/frame:outline-accent"
         data-frame-border
       ></div>
     }
@@ -176,7 +171,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
   imports: [NgTemplateOutlet, ProvideColorDirective],
   host: {
     class:
-      'group/frame absolute block bg-[var(--et-surface-background-solid)] data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
+      'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',

@@ -15,7 +15,7 @@ import { workspaceRoot$ } from '../../host/workspace';
 
 const NONE: DesignRoots = { search: '', roots: [] };
 
-const LABEL = 'w-22.5 shrink-0 text-[1.1rem] text-[var(--et-surface-color-muted-solid)]';
+const LABEL = 'w-22.5 shrink-0 text-[1.1rem] text-text-muted';
 
 /** One checkout the panel lists, and whether Studio already keeps it. */
 type Row = {
@@ -61,7 +61,7 @@ type Row = {
 
       @if (open()) {
         <div
-          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
+          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-surface-border bg-surface-raised p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
           etProvideSurface="dark-elevated"
         >
           <div class="flex items-center gap-2">
@@ -89,16 +89,14 @@ type Row = {
             @for (row of rows(); track row.path) {
               <li
                 [style.background]="
-                  row.path === current()
-                    ? 'color-mix(in srgb, var(--et-theme-color-primary-solid) 14%, transparent)'
-                    : null
+                  row.path === current() ? 'color-mix(in srgb, var(--accent) 14%, transparent)' : null
                 "
                 class="group flex items-center gap-2 rounded-sm px-1 py-0.5 hover:bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_8%,transparent)]"
               >
                 <button
                   [title]="row.path"
                   (click)="choose(row.path)"
-                  class="min-w-0 flex-1 cursor-pointer overflow-hidden border-0 bg-transparent p-0 text-left font-mono text-[1.1rem] text-ellipsis whitespace-nowrap text-[var(--et-surface-color-subtle-solid)] group-hover:text-[var(--et-surface-color-solid)]"
+                  class="min-w-0 flex-1 cursor-pointer overflow-hidden border-0 bg-transparent p-0 text-left font-mono text-[1.1rem] text-ellipsis whitespace-nowrap text-[var(--et-surface-color-subtle-solid)] group-hover:text-text"
                   type="button"
                 >
                   {{ row.path }}
@@ -130,9 +128,7 @@ type Row = {
                 }
               </li>
             } @empty {
-              <li class="p-1 text-[1.1rem] text-[var(--et-surface-color-muted-solid)]">
-                No checkout yet. Scan a folder, or name one below.
-              </li>
+              <li class="p-1 text-[1.1rem] text-text-muted">No checkout yet. Scan a folder, or name one below.</li>
             }
           </ul>
 

@@ -124,8 +124,8 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--et-surface-background-solid);
-  color: var(--et-surface-color-solid);
+  background-color: var(--surface);
+  color: var(--text);
   font-family: var(--font-sans);
   /* 1rem is 10px here, so text that inherits its size would read at 10px without this. */
   font-size: var(--text-base);
@@ -141,11 +141,11 @@ body {
 
   ::picker(select) {
     margin-block: 0.4rem;
-    border: 0.1rem solid var(--et-surface-border-solid);
+    border: 0.1rem solid var(--surface-border);
     border-radius: 0.6rem;
     padding: 0.4rem;
     background: var(--et-surface-background-solid);
-    color: var(--et-surface-color-solid);
+    color: var(--text);
     box-shadow: 0 0.8rem 2.4rem rgb(var(--et-shadow-color-rgb, 0 0 0) / 0.35);
   }
 

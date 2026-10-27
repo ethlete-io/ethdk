@@ -11,22 +11,22 @@ import { workspaceRoot$ } from '../../host/workspace';
     <div class="flex h-dvh min-h-0 flex-col gap-4 overflow-auto p-8">
       <div class="flex items-baseline gap-4">
         <h1 class="text-h2">Agent bridge</h1>
-        <a class="text-et-surface-muted" routerLink="/">Back to Studio</a>
+        <a class="text-text-muted" routerLink="/">Back to Studio</a>
       </div>
 
       @if (clis().length === 0) {
-        <p class="text-et-surface-muted">No agent CLI answered on this machine. {{ trouble() }}</p>
+        <p class="text-text-muted">No agent CLI answered on this machine. {{ trouble() }}</p>
       } @else {
         <div class="flex flex-wrap items-center gap-2">
           @for (found of clis(); track found.id) {
             <button
-              [class.bg-et-surface-bg]="cli()?.id === found.id"
+              [class.bg-surface]="cli()?.id === found.id"
               (click)="pick(found)"
-              class="rounded border border-et-surface-border px-3 py-1"
+              class="rounded border border-surface-border px-3 py-1"
               type="button"
             >
               {{ found.label }}
-              <span class="text-et-surface-muted">{{ found.version }}</span>
+              <span class="text-text-muted">{{ found.version }}</span>
             </button>
           }
         </div>
@@ -36,14 +36,14 @@ import { workspaceRoot$ } from '../../host/workspace';
         <input
           [value]="where()"
           (input)="cwd.set(typed($event))"
-          class="grow rounded border border-et-surface-border px-3 py-1 text-mono"
+          class="grow rounded border border-surface-border px-3 py-1 text-mono"
           placeholder="The checkout the agent works in"
         />
         <select
           [value]="model()"
           [disabled]="!cli()"
           (change)="model.set(typed($event))"
-          class="w-48 rounded border border-et-surface-border px-3 py-1"
+          class="w-48 rounded border border-surface-border px-3 py-1"
         >
           <option value="">CLI default</option>
           @for (name of cli()?.suggestedModels ?? []; track name) {
@@ -55,7 +55,7 @@ import { workspaceRoot$ } from '../../host/workspace';
       <textarea
         [value]="prompt()"
         (input)="prompt.set(typed($event))"
-        class="h-24 rounded border border-et-surface-border p-3"
+        class="h-24 rounded border border-surface-border p-3"
         placeholder="What should the agent do?"
       ></textarea>
 
@@ -63,7 +63,7 @@ import { workspaceRoot$ } from '../../host/workspace';
         <button
           [disabled]="running()"
           (click)="send()"
-          class="rounded border border-et-surface-border px-3 py-1"
+          class="rounded border border-surface-border px-3 py-1"
           type="button"
         >
           Send
@@ -71,24 +71,22 @@ import { workspaceRoot$ } from '../../host/workspace';
         <button
           [disabled]="!running()"
           (click)="stop()"
-          class="rounded border border-et-surface-border px-3 py-1"
+          class="rounded border border-surface-border px-3 py-1"
           type="button"
         >
           Stop
         </button>
       </div>
 
-      <ul
-        class="flex grow flex-col gap-1 overflow-auto rounded border border-et-surface-border bg-et-surface-bg p-4 text-mono"
-      >
+      <ul class="flex grow flex-col gap-1 overflow-auto rounded border border-surface-border bg-surface p-4 text-mono">
         @for (event of events(); track $index) {
           <li>
             @switch (event.kind) {
               @case ('started') {
-                <span class="text-et-surface-muted">{{ event.cli }} {{ event.model }} started</span>
+                <span class="text-text-muted">{{ event.cli }} {{ event.model }} started</span>
               }
               @case ('action') {
-                <span>{{ event.action }}</span> <span class="text-et-surface-muted">{{ event.detail }}</span>
+                <span>{{ event.action }}</span> <span class="text-text-muted">{{ event.detail }}</span>
               }
               @case ('message') {
                 <span>{{ event.text }}</span>
@@ -97,7 +95,7 @@ import { workspaceRoot$ } from '../../host/workspace';
                 <span>{{ event.message }}</span>
               }
               @case ('finished') {
-                <span class="text-et-surface-muted">{{ event.ok ? 'finished' : 'stopped' }} {{ event.summary }}</span>
+                <span class="text-text-muted">{{ event.ok ? 'finished' : 'stopped' }} {{ event.summary }}</span>
               }
             }
           </li>

@@ -8,7 +8,7 @@
   @for (row of rows(); track row.name) {
     <span
       [style.top.px]="row.y"
-      class="absolute left-0 translate-x-[calc(-100%_-_4rem)] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-[var(--et-surface-color-muted-solid)]"
+      class="absolute left-0 translate-x-[calc(-100%_-_4rem)] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text-muted"
       >{{ row.label ?? row.name }}</span
     >
   }
@@ -34,7 +34,7 @@
         {{ group.label }}
       </button>
       @if (group.note) {
-        <span [title]="group.note" class="min-w-0 truncate text-[var(--et-surface-color-muted-solid)]">
+        <span [title]="group.note" class="min-w-0 truncate text-text-muted">
           {{ group.note }}
         </span>
       }
@@ -63,29 +63,22 @@
           {{ column.label }}
         </button>
         @if (folded.note) {
-          <p
-            [textContent]="folded.note"
-            class="m-0 line-clamp-[12] whitespace-pre-wrap text-[var(--et-surface-color-muted-solid)]"
-          ></p>
+          <p [textContent]="folded.note" class="m-0 line-clamp-[12] whitespace-pre-wrap text-text-muted"></p>
         }
       </div>
     } @else {
       <span
         [style.left.px]="column.x"
         [style.max-width.px]="column.width"
-        [class]="
-          column.muted ? 'italic text-[var(--et-surface-color-muted-solid)]' : 'text-[var(--et-surface-color-solid)]'
-        "
+        [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
         [title]="column.title ?? column.label"
         class="absolute top-[calc(-3.2rem_*_var(--et-design-canvas-label-scale))] -translate-y-full overflow-hidden text-[length:calc(1.6rem_*_var(--et-design-canvas-label-scale))] leading-[1.4] font-semibold text-ellipsis whitespace-nowrap"
       >
         {{ column.label }}
         @if (column.note) {
-          <span
-            class="block text-[0.8em] font-normal whitespace-normal text-[var(--et-surface-color-muted-solid)]"
-            data-column-note
-            >{{ column.note }}</span
-          >
+          <span class="block text-[0.8em] font-normal whitespace-normal text-text-muted" data-column-note>{{
+            column.note
+          }}</span>
         }
       </span>
     }
@@ -103,7 +96,7 @@
           markerHeight="5"
           orient="auto"
         >
-          <path class="fill-[var(--et-surface-color-muted-solid)]" d="M 0 0 L 10 5 L 0 10 z" />
+          <path class="fill-text-muted" d="M 0 0 L 10 5 L 0 10 z" />
         </marker>
       </defs>
       @for (line of placedLines(); track line.key) {
@@ -111,7 +104,7 @@
           [attr.d]="line.path"
           [attr.marker-end]="'url(#' + ARROW_ID + ')'"
           [attr.stroke-width]="2 * labelScale()"
-          class="fill-none stroke-[var(--et-surface-color-muted-solid)]"
+          class="fill-none stroke-text-muted"
           data-flow-line
         />
       }
@@ -123,7 +116,7 @@
           [style.top.px]="line.middle.y"
           [style.transform]="'translate(-50%, -50%) scale(' + labelScale() + ')'"
           [style.max-width.px]="line.room / labelScale()"
-          class="pointer-events-none absolute z-1 w-max rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-center text-[1.2rem] text-[var(--et-surface-color-solid)]"
+          class="pointer-events-none absolute z-1 w-max rounded-[0.6rem] border border-surface-border bg-surface px-2 py-1 text-center text-[1.2rem] text-text"
           data-flow-label
           >{{ line.label }}</span
         >
@@ -160,7 +153,7 @@
       [style.top.px]="outline.y"
       [style.width.px]="outline.width"
       [style.height.px]="outline.height"
-      class="pointer-events-none absolute rounded-sm outline-2 outline-offset-2 outline-[var(--et-theme-color-primary-solid)] outline-solid"
+      class="pointer-events-none absolute rounded-sm outline-2 outline-offset-2 outline-accent outline-solid"
       data-part-outline
     ></div>
   }
@@ -174,7 +167,7 @@
       [title]="pointingLabel() + ' ' + target.frame.label"
       (click)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
       (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
-      class="absolute cursor-crosshair bg-[color-mix(in_srgb,var(--et-theme-color-primary-solid)_6%,transparent)]"
+      class="absolute cursor-crosshair bg-accent/6"
       role="button"
       tabindex="0"
       data-comment-target
@@ -194,7 +187,7 @@
         [attr.aria-label]="'Comment ' + placed.pin.label"
         [attr.aria-expanded]="placed.open"
         (click)="togglePin(placed.pin.id, $event)"
-        class="min-w-8 rounded-full shadow-md ring-[var(--et-theme-color-primary-solid)] ring-offset-2 ring-offset-[var(--et-surface-background-solid)]"
+        class="min-w-8 rounded-full shadow-md ring-accent ring-offset-2 ring-offset-surface"
         et-button
         type="button"
         variant="filled"
@@ -205,13 +198,13 @@
       </button>
       @if (placed.pin.dot) {
         <span
-          class="pointer-events-none absolute -top-1 -right-1 size-3 rounded-full border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-theme-color-primary-solid)]"
+          class="pointer-events-none absolute -top-1 -right-1 size-3 rounded-full border-2 border-surface bg-accent"
           data-comment-question
         ></span>
       }
       @if (placed.open) {
         <div
-          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 text-[1.3rem] text-[var(--et-surface-color-solid)] shadow-lg"
+          class="absolute top-0 left-full ml-2 flex w-72 flex-col items-start gap-2 rounded-md border border-surface-border bg-surface p-3 text-[1.3rem] text-text shadow-lg"
           data-comment-text
         >
           @if (pinPopover(); as popover) {
@@ -231,7 +224,7 @@
           [attr.d]="connector.path"
           [attr.stroke-width]="labelScale()"
           [attr.data-note-connector]="connector.key"
-          class="fill-none stroke-[var(--et-surface-color-muted-solid)]"
+          class="fill-none stroke-text-muted"
         />
       }
     </svg>
@@ -245,7 +238,7 @@
       [attr.data-note-marker]="marker.key"
       (pointerenter)="hoveredNote.set(marker.key)"
       (pointerleave)="hoveredNote.set(null)"
-      class="absolute z-2 flex size-[1.8rem] origin-top-left items-center justify-center rounded-full border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)] text-[1.1rem] leading-none font-bold text-[var(--et-surface-background-solid)]"
+      class="absolute z-2 flex size-[1.8rem] origin-top-left items-center justify-center rounded-full border-2 border-surface bg-text-muted text-[1.1rem] leading-none font-bold text-surface"
       >{{ marker.number }}</span
     >
   }
@@ -266,8 +259,8 @@
             #noteCard
             [class]="
               note.heading
-                ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-[var(--et-surface-color-solid)]'
-                : 'max-w-[28rem] rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-3 py-2 text-[1.3rem] text-[var(--et-surface-color-solid)]'
+                ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-text'
+                : 'max-w-[28rem] rounded-sm border border-dashed border-surface-border bg-surface px-3 py-2 text-[1.3rem] text-text'
             "
             [attr.data-note]="note.id"
             [attr.data-note-key]="NOTE_KEY_OF(note)"
@@ -276,7 +269,7 @@
           >
             @if (noteNumbers().get(NOTE_KEY_OF(note)); as number) {
               <span
-                class="float-left mt-[0.1rem] mr-2 flex size-[1.8rem] items-center justify-center rounded-full bg-[var(--et-surface-color-muted-solid)] text-[1.1rem] leading-none font-bold text-[var(--et-surface-background-solid)]"
+                class="float-left mt-[0.1rem] mr-2 flex size-[1.8rem] items-center justify-center rounded-full bg-text-muted text-[1.1rem] leading-none font-bold text-surface"
                 data-note-number
                 >{{ number }}</span
               >
@@ -306,7 +299,7 @@
 </div>
 
 <div
-  class="absolute right-[1.2rem] bottom-[1.2rem] flex rounded-[0.3rem] border-[0.1rem] border-solid border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)]"
+  class="absolute right-[1.2rem] bottom-[1.2rem] flex rounded-[0.3rem] border-[0.1rem] border-solid border-surface-border bg-surface"
 >
   <button
     (click)="zoomBy(1 / ZOOM_STEP)"

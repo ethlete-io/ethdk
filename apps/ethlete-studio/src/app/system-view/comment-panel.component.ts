@@ -15,7 +15,7 @@ import {
 @Component({
   selector: 'ethlete-comment-panel',
   template: `
-    <header class="flex items-center gap-2 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
+    <header class="flex items-center gap-2 border-b border-surface-border px-4 py-3">
       <h2 class="m-0 flex-1 text-[1.4rem] font-semibold">Comments</h2>
       <button
         (click)="dismiss.emit()"
@@ -65,9 +65,7 @@ import {
     <div class="min-h-0 overflow-y-auto">
       @if (questions().length) {
         <section class="flex flex-col gap-0.5 p-2" aria-label="Questions for you" data-comment-questions-group>
-          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-[var(--et-theme-color-primary-solid)]">
-            Questions for you
-          </h3>
+          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-accent">Questions for you</h3>
           @for (comment of questions(); track comment.id) {
             <ng-container *ngTemplateOutlet="entry; context: { $implicit: comment }" />
           }
@@ -76,7 +74,7 @@ import {
       @for (group of groups(); track group.part) {
         <section [attr.aria-label]="group.part" class="flex flex-col gap-0.5 p-2" data-comment-group>
           <h3
-            [class.text-[var(--et-theme-color-primary-solid)]]="group.part === selected()"
+            [class.text-accent]="group.part === selected()"
             class="m-0 px-2 py-1 font-mono text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]"
           >
             {{ group.part }}
@@ -95,8 +93,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   imports: [BUTTON_IMPORTS, NgTemplateOutlet],
   host: {
-    class:
-      'grid min-h-0 w-80 grid-rows-[auto_minmax(0,1fr)] border-l border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)]',
+    class: 'grid min-h-0 w-80 grid-rows-[auto_minmax(0,1fr)] border-l border-surface-border bg-surface',
   },
 })
 export class CommentPanelComponent {

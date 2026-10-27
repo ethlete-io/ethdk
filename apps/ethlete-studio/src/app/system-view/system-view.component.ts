@@ -86,7 +86,7 @@ import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view
 type Reading = { products: ListedProduct[]; error: string | null };
 
 const BADGE =
-  'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-surface-border-solid)] px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
+  'shrink-0 whitespace-nowrap rounded-full border border-surface-border px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
 
 const BADGE_ACCENT =
   'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
@@ -109,7 +109,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     </ng-template>
 
     <aside
-      class="flex min-h-0 flex-col overflow-y-auto border-r border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] pb-4 text-[var(--et-surface-color-solid)]"
+      class="flex min-h-0 flex-col overflow-y-auto border-r border-surface-border bg-surface-raised pb-4 text-text"
       etProvideSurface="dark-elevated"
     >
       <header class="flex flex-none items-center gap-2 px-4 pt-4 font-semibold text-ui-lg">
@@ -156,7 +156,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <span class="flex min-w-0 items-center gap-1.5">
               <span
                 [class.font-semibold]="entry.key === selectedKey()"
-                [style.color]="entry.key === selectedKey() ? 'var(--et-theme-color-primary-solid)' : null"
+                [style.color]="entry.key === selectedKey() ? 'var(--accent)' : null"
                 [title]="entry.title ?? ''"
                 class="min-w-0 truncate"
               >
@@ -193,7 +193,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
         <div
           [attr.aria-label]="themeSwitch.label"
-          class="flex gap-0.5 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-0.5"
+          class="flex gap-0.5 rounded-[0.6rem] border border-surface-border bg-surface p-0.5"
           role="group"
         >
           @for (name of themeSwitch.names; track name) {
@@ -289,15 +289,15 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 
     <ng-template #newProductScreen let-heading>
       <div class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]">
-        <h2 class="mb-2 text-h4 text-[var(--et-surface-color-solid)]">{{ heading }}</h2>
+        <h2 class="mb-2 text-h4 text-text">{{ heading }}</h2>
         @if (port(); as port) {
           <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
         }
         <p>Or run this in the checkout:</p>
         <div class="my-3 flex items-center gap-2">
-          <pre
-            class="m-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] p-3 font-mono text-[var(--et-surface-color-solid)]"
-            >{{ NEW_PRODUCT_COMMAND }}</pre>
+          <pre class="m-0 flex-1 rounded-md border border-surface-border p-3 font-mono text-text">{{
+            NEW_PRODUCT_COMMAND
+          }}</pre>
           <button (click)="copyCommand()" et-button type="button" variant="outline" color="surface" size="sm">
             {{ copied() ? 'Copied' : 'Copy' }}
           </button>
@@ -316,7 +316,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         <ng-container [ngTemplateOutlet]="newProductScreen" [ngTemplateOutletContext]="{ $implicit: 'New product' }" />
       } @else if (call(); as shown) {
         <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
-          <header class="flex items-center gap-3 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
+          <header class="flex items-center gap-3 border-b border-surface-border px-4 py-3">
             <div class="min-w-0 flex-1">
               <span class="font-mono text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]">{{ shown.slug }}</span>
               @if ('headline' in shown) {
