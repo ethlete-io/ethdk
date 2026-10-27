@@ -782,6 +782,24 @@ step. Each finding names what happened and the fix it needs.
 - Tom merged variant f of `elements/shell-main` in Studio (2026-10-27). The part note became the
   bare letter `'f'` (as `'b'` on `pages/system`), so the idea of the variant is lost. Prevent: a
   merge without a note keeps the variant's own note; Studio's merge asks for a note.
+- Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
+  with status columns), friction:
+  - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
+    only `sketch check` found them, and the shot rendered fine. Prevent: `design check` types the
+    sketch folders too.
+  - `box({ padding })` is typed `number`, but the runtime accepts `'4px 8px'`, so per-side padding
+    renders and then fails the typecheck. Tree indentation needed spacer boxes. Prevent: accept
+    `[y, x]` or per-side padding, or an `indent` option.
+  - The missing row `align` hit again: a 13 px heading sits 1 to 3 px above an 18 px badge, and a
+    dot in a column box sticks to the top. Every label was nudged by hand.
+  - No selected-row look, no `justify`, no muted text: the agent used a bordered box for the
+    selection, an empty `grow` box as a spacer, and small headings for all secondary text.
+    Prevent: a kit `listRow(label, { selected, depth, trailing })`, a `spacer()`, a
+    `text(value, { muted })`.
+  - No `warn`, `comment` or `edit` glyph; `glyph: '!'` works only because an unknown name draws
+    its first character. Prevent: add the glyphs, and reject an unknown name.
+  - A variant that is reported as in progress still renders in `/__design/shot`, though the skill
+    says a report hides its frames. Prevent: the skill says what a report hides, and where.
 
 Findings:
 
