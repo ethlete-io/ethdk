@@ -19,7 +19,7 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
-import { CanvasPin, FramePoint } from './canvas-pin';
+import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
   Point,
@@ -113,6 +113,8 @@ export class DesignCanvasComponent {
   public restoredCamera = input<Camera | null>(null);
 
   public pins = input<CanvasPin[]>([]);
+
+  public outlines = input<FrameOutline[]>([]);
 
   /** While on, a click on a frame that has a `place` reports the point instead of selecting the frame. */
   public pointing = input(false);
@@ -279,6 +281,16 @@ export class DesignCanvasComponent {
             },
           ]
         : [];
+    });
+  });
+
+  protected placedOutlines = computed(() => {
+    const byId = new Map(this.layout().frames.map((placed) => [placed.frame.id, placed]));
+
+    return this.outlines().flatMap((outline) => {
+      const frame = byId.get(outline.frameId);
+
+      return frame ? [{ ...outline, x: frame.x + outline.x, y: frame.y + outline.y }] : [];
     });
   });
 

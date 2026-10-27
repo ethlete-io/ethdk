@@ -154,6 +154,25 @@ describe('DesignCanvasComponent', () => {
     expect(wide?.classList).not.toContain('et-canvas-frame--fitted');
   });
 
+  it('draws an outline over a frame at its offset in the frame', async () => {
+    const fixture = await render([{ ...FITTED, id: 'wide', width: 320, height: 200 }]);
+
+    fixture.componentRef.setInput('outlines', [
+      { frameId: 'wide', x: 12, y: 34, width: 56, height: 78 },
+      { frameId: 'gone', x: 0, y: 0, width: 1, height: 1 },
+    ]);
+    await fixture.whenStable();
+
+    const frame = frameElement(fixture).nativeElement as HTMLElement;
+    const outlines = [...fixture.nativeElement.querySelectorAll('[data-part-outline]')] as HTMLElement[];
+
+    expect(outlines).toHaveLength(1);
+    expect(parseFloat(outlines[0]?.style.left ?? '') - parseFloat(frame.style.left)).toBe(12);
+    expect(parseFloat(outlines[0]?.style.top ?? '') - parseFloat(frame.style.top)).toBe(34);
+    expect(outlines[0]?.style.width).toBe('56px');
+    expect(outlines[0]?.style.height).toBe('78px');
+  });
+
   it('makes a double-clicked frame live, marks it, and ends it on Esc from the frame or on comment mode', async () => {
     const frames = [
       { ...FITTED, width: 320, height: 200 },

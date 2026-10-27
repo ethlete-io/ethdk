@@ -101,6 +101,17 @@
     />
   }
 
+  @for (outline of placedOutlines(); track $index) {
+    <div
+      [style.left.px]="outline.x"
+      [style.top.px]="outline.y"
+      [style.width.px]="outline.width"
+      [style.height.px]="outline.height"
+      class="pointer-events-none absolute rounded-sm outline-2 outline-offset-2 outline-[var(--et-theme-color-primary-solid)] outline-solid"
+      data-part-outline
+    ></div>
+  }
+
   @for (target of pointTargets(); track target.frame.id) {
     <div
       [style.left.px]="target.x"
