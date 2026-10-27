@@ -775,17 +775,18 @@ built:
   `comments`), the canvas `pins`, `pointing` (overlay per frame with a `place`, `pointPick`), pin
   popover with the text, `openPin()`, `focusFrame()`, and the host calls `listedComments$`,
   `writeComment$`, `doneComment$`, `commentChanges$`.
-- Remaining, in order: (1) a comment store provided in `system-view` (comments of the product
-  reloaded on `commentChanges$` and `tick`, mode, panel open, write and withdraw); (2) in the part view
-  and the sketch view: toolbar button and key C, Esc ends the mode; bind `pins` and `pointing`; a draft
-  popover at the click point with an `et` textarea (Enter sends, Shift+Enter newline, Esc cancels,
-  the mode stays); a click on a tile label posts a state comment (`point: null` - the canvas-frame
-  caption needs a click output); (3) "Withdraw" in the pin popover (canvas output, calls
-  `doneComment$`); (4) the collapsible right panel with the selected part's comments, a click calls
-  `openPin`; (5) the count of other-size comments on a frame label; (6) the sketch view disables
-  Merge and Discard with "N open comments", a click opens the panel; (7) an open comment in
-  `studio-lab`; (8) verify headlessly (stubbed host, scratch server on 4492) and write "Studio
-  comments, as built"; the Studio changeset then needs `patch`, not `none`.
+- Done, not yet verified in a browser: (1) the comment store `system-view/comment-store.ts`
+  (`provideCommentStore()` in `system-view`, `injectCommentStore()`; `comments`, `active`, `draft`,
+  `panelOpen`, `busy`, `error`, `send`, `withdraw`) (1209478a5); (2) comment mode in the part view and
+  the sketch view: the Comment button and key C (handled in `system-view`), Esc ends it; the draft
+  `comment-draft.component.ts` is projected into the canvas as `[canvasDraft]` at the canvas `draft`
+  input; a click on a pickable caption (`captionPickable`, `captionClick`) starts a state comment;
+  (3) "Withdraw" in the pin popover (canvas output `pinWithdraw`) (c0a8e5532). The Studio changeset
+  is `patch` now.
+- Remaining, in order: (4) the collapsible right panel with the selected part's comments (store
+  `panelOpen` exists), a click calls `openPin`; (5) the count of other-size comments on a frame
+  label; (6) the sketch view disables Merge and Discard with "N open comments", a click opens the
+  panel; (7) an open comment in `studio-lab`; (8) verify headlessly (stubbed host, scratch server on 4492) and write "Studio comments, as built".
   In progress since 2026-10-27: the Studio comments, as in "Comment UI decisions". Open after them:
   the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
