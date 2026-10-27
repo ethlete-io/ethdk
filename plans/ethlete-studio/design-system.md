@@ -486,6 +486,26 @@ builder resumes from `.claude/handoffs/studio-states-interactions.md`.
   note editor). Seen: a note card covered the reply field of an open comment thread. Prove headlessly
   with an open thread over a note.
 
+As built, skill rules and lab flows (agent-rules c28c7b30a, lab 2ca95f12f, proven headlessly,
+`et design check --product studio-lab` ok):
+
+- Skill: no `vh`, `dvh` or `svh` in parts, a full page is a fixed-size frame; every flow line has a
+  label, and the element it names is visible in the frame before.
+- Flow `add-a-film`: library empty → add open → one → film-detail rest, labels "user clicks 'Add a
+  film'", "user clicks 'Save film'", "user clicks the film 'Night Train'".
+- Flow `sign-in`: library three → login open → login error → signed in, labels "user clicks 'Log
+  in'", "wrong password, user clicks 'Log in'", "right password, user clicks 'Log in'".
+- `shell-main` shows a "Log in" button or the signed-in user "Ada"; its `min-height: 100vh` is now
+  a fixed 480px. `login-dialog` has a password field; new element `add-film-dialog`; dialogs render
+  only in the states that need one. The old `sign-in` flow is gone; Tom's notes and comments still
+  point at existing frames.
+
+Findings:
+
+- The design server caches flow files, so a flow edit needs a server restart before Studio shows
+  it.
+- At the phone preset the gaps between flow frames are narrow, so long line labels are tight.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
