@@ -1427,6 +1427,23 @@ colour, so text inherits the product colour; the kit button has `white-space: no
   `stackBelow` instead of fixed px.
 - The builder then fixes `studio-lab` `pages/film-detail` to use them.
 
+Wireframe kit fix, as built (kit 2dc8bd572, skill ae6a590ca, film-detail 2c20cbd63, proven
+headlessly):
+
+- `box` takes `stackBelow?: number` (rows only); every box sets the kit ink colour. A stacking row
+  renders an outer box with `container-type: inline-size` and
+  `contain-intrinsic-inline-size: <stackBelow>px`, a scoped `<style>` with an `@container` rule keyed
+  by threshold (nested rows do not clash), and an inner flex row. Rows without `stackBelow` are
+  unchanged. Without the intrinsic size a fitted frame collapsed the row to 122px; with it the row is
+  560px wide and stays a row.
+- `heading(text, { size? })` is a kit-grey `<h2>`, escaped, long words break. `image` `ratio?` sets
+  `aspect-ratio` and fills the width; every image has `max-width: 100%`. The button has
+  `max-width: 100%` and its label ends in "…". The input placeholder also ends in "…" instead of
+  wrapping. Kit count 12 → 13.
+- film-detail: heading, image `{ width: 220, ratio: '2/3' }`, `stackBelow: 560`. Phone 390 is a
+  column without horizontal scroll, title `rgb(107,107,107)`, buttons inside the width; desktop is a
+  row.
+
 Notes server, as built (2026-10-27):
 
 - 07d73981c, lab 948a7793b. The reader existed (c618028b5); its check rule is now `NOTE`. A state
