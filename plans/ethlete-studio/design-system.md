@@ -841,7 +841,8 @@ border to 2px") showed as "question".
   product, sketch comments included, oldest first, so the panel and the pins agree.
 - `CanvasPin.dot`, the question marker: the design canvas draws it since 35d609cee
   (`design-canvas.component.html`, a 12 px dot in the primary accent at the top right of the pin).
-  Not verified yet: that a real question pin in `studio-lab` gets the dot end to end.
+  Checked in the real app (2026-10-27): the question pin 239f in the `studio-lab`
+  `components/button` part view (solid, rest) shows "3" and no dot. Sent to the builder as a bug.
 - `studio-lab`: Components, button shows "question"; Sketches, button shows "answered"; the top bar
   shows "1 ?"; the panel lists 7001 as "answered" and 239f under "Questions for you"; the
   `components/button` sketch view shows the product-part button next to "3 open comments".
