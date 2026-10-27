@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -75,8 +75,30 @@ describe('designSketch', () => {
     expect(write(target, 'report', 'components/button', '--variant', 'b', 'desktop', '--product', 'acme')).toBe(0);
     expect(run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
-      a: { round: 'r1' },
-      b: { authors: ['gpt-5.6-sol', 'claude-opus-5-5'], round: 'r1' },
+      a: { authors: ['claude-opus-5-5'], round: 'r1' },
+      b: { authors: ['claude-opus-5-5', 'gpt-5.6-sol'], round: 'r1' },
+    });
+  });
+
+  it('records the author of every variant that new, variant and ready write', () => {
+    const target = acme();
+    const lines = output();
+
+    run(target, 'new', 'components/button', '--variants', 'a,b', '--by', 'gpt-5.6-sol', '--product', 'acme');
+    run(target, 'variant', 'components/button', 'c', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
+    run(target, 'variant', 'components/button', 'd', '--from', 'a', '--by', 'claude-opus-5-5', '--product', 'acme');
+
+    const file = join(target, DESIGN_DIR, 'acme/sketches/components-button/sketch.json');
+    const stored = JSON.parse(readFileSync(file, 'utf8'));
+    writeFileSync(file, JSON.stringify({ ...stored, variantInfo: { ...stored.variantInfo, d: { round: 'r1' } } }));
+
+    expect(run(target, 'ready', 'components/button', '--by', 'gpt-5.6-terra', '--product', 'acme')).toBe(0);
+    expect(run(target, 'list', '--json')).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
+      a: { authors: ['gpt-5.6-sol'], round: 'r1' },
+      b: { authors: ['gpt-5.6-sol'], round: 'r1' },
+      c: { authors: ['claude-opus-5-5'], round: 'r1' },
+      d: { authors: ['gpt-5.6-terra'], round: 'r1' },
     });
   });
 
@@ -126,13 +148,13 @@ describe('designSketch', () => {
     });
     expect(write(target, 'merge', 'components/button', 'a', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe(
-      'usage: sketch merge <layer>/<name> --note <reason> - it merges the variant the user picked',
+      'usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked',
     );
     expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button is in progress - mark it ready before a merge');
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button is ready');
-    expect(write(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
+    expect(write(target, 'merge', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
     expect(write(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button now compares with the product as it is');

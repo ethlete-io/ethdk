@@ -118,6 +118,60 @@ describe('SketchViewComponent merge preview', () => {
   });
 });
 
+describe('SketchViewComponent merge without a note', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideCommentStore(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('merges the picked variant with an empty note field and sends no note', async () => {
+    const bodies: Record<string, unknown> = {};
+
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      const path = ['sketch-decision', 'sketch-merge'].find((entry) => url.includes(`/__design/${entry}`));
+
+      if (path) {
+        bodies[path] = JSON.parse(String(init?.body ?? '{}'));
+
+        return json(path === 'sketch-merge' ? { merged: ['components/card'] } : {});
+      }
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const completed: string[] = [];
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', SKETCH);
+    fixture.componentInstance.mergeComplete.subscribe((target) => completed.push(target));
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+    const button = root.querySelector<HTMLButtonElement>('[data-merge]');
+
+    expect(button?.disabled).toBe(false);
+
+    button?.click();
+    await settle(fixture);
+
+    expect(bodies).toEqual({ 'sketch-decision': { kind: 'pick', variant: 'b' }, 'sketch-merge': {} });
+    expect(completed).toEqual(['components/card']);
+  });
+});
+
 describe('SketchViewComponent on a refused merge', () => {
   beforeEach(() => {
     localStorage.clear();

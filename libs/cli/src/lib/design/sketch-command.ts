@@ -27,7 +27,7 @@ export const SKETCH_USAGE = [
   'sketch check [<layer>/<name>] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
-  'sketch merge <layer>/<name> --note <reason> --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> [--note <reason>] --by <model id> [--product <name>]',
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
 ];
 
@@ -76,7 +76,13 @@ const created = (context: Context) => {
   if (typeof parsed === 'string') return fail(parsed);
 
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
-  const sketch = createSketch({ product, sketch: parsed, variants, roundTitle: args.values['--round'] });
+  const sketch = createSketch({
+    product,
+    sketch: parsed,
+    variants,
+    roundTitle: args.values['--round'],
+    author: authorOf(args) ?? undefined,
+  });
 
   if (typeof sketch === 'string') return fail(sketch);
 
@@ -103,6 +109,7 @@ const varied = (context: Context) =>
       sketch,
       variant,
       from,
+      author: authorOf(context.args) ?? undefined,
       ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote } } : {}),
     });
 
@@ -169,7 +176,7 @@ const reported = (context: Context) =>
 
 const readied = (context: Context) =>
   withSketch(context, ({ sketch }) => {
-    const ready = markSketchReady({ checkout: context.target, sketch });
+    const ready = markSketchReady({ checkout: context.target, sketch, author: authorOf(context.args) ?? undefined });
 
     if (typeof ready === 'string') return fail(ready);
 
@@ -252,8 +259,8 @@ const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const note = context.args.values['--note'];
 
-    if (context.args.positional.length > 1 || note === undefined)
-      return fail(`usage: sketch merge <layer>/<name> --note <reason> - it merges the variant the user picked`);
+    if (context.args.positional.length > 1)
+      return fail(`usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked`);
 
     const result = mergeSketch({ target: context.target, config: context.config, product, sketch, note });
 

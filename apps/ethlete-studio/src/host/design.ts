@@ -475,11 +475,15 @@ export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWr
     map(() => undefined),
   );
 
-/** Merges the picked variant into the product with `note` as the reason, and answers the merged parts. A stale baseline fails with {@link MergeNeedsRebaseError}. */
-export const mergeSketch$ = (address: SketchAddress, note: string): Observable<string[]> =>
-  designAnswer$<{ merged: string[] }>(sketchUrl({ ...address, path: 'sketch-merge' }), postJson({ note })).pipe(
-    map(({ merged }) => merged),
-  );
+/**
+ * Merges the picked variant into the product with `note` as the reason, and answers the merged parts. Without a note the
+ * part keeps the note the variant file holds. A stale baseline fails with {@link MergeNeedsRebaseError}.
+ */
+export const mergeSketch$ = (address: SketchAddress, note?: string): Observable<string[]> =>
+  designAnswer$<{ merged: string[] }>(
+    sketchUrl({ ...address, path: 'sketch-merge' }),
+    postJson(note ? { note } : {}),
+  ).pipe(map(({ merged }) => merged));
 
 /** Deletes the sketch with all its variants. */
 export const discardSketch$ = (address: SketchAddress): Observable<void> =>

@@ -7,7 +7,7 @@ import { commentsOnSketch } from '../comments/comment';
 import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
-import { withMadeBy, withNote } from './part-definition';
+import { madeByOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
 
 const openCommentsProblemOf = (sketch: Sketch) => {
@@ -71,7 +71,7 @@ const mergeOrReason = (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-  note: string;
+  note?: string;
 }): string[] | string | MergeRefusal => {
   const { target, config, product, sketch, note } = options;
 
@@ -80,7 +80,6 @@ const mergeOrReason = (options: {
   const pick = pickOf(sketch);
 
   if (typeof pick === 'string') return pick;
-  if (note.trim() === '') return 'a merge needs --note with the reason for the new shape';
 
   const open = openCommentsProblemOf(sketch);
 
@@ -118,8 +117,10 @@ const mergeOrReason = (options: {
   if (!existsSync(held))
     return `variant "${variant}" holds no ${sketch.target}, and the product has no ${sketch.target} to carry the note`;
 
-  const withNewNote = withNote(readFileSync(held, 'utf8'), note);
-  const noted = withNewNote === null ? null : withMadeBy(withNewNote, authorsOf(sketch, variant));
+  const source = readFileSync(held, 'utf8');
+  const withNewNote = note?.trim() ? withNote(source, note.trim()) : source;
+  const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
+  const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
 
   if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
 
@@ -146,7 +147,7 @@ const mergeOrReason = (options: {
 
 /**
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
- * over the product's, sets `note` and `madeBy` (the variant's authors) on the target, runs the check
+ * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
  * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
  * product's old files come back and the sketch stays. Refuses without a pick, while the sketch has
  * open comments, and when a part the variant replaces changed in the product since the sketch's
@@ -158,7 +159,7 @@ export const mergeSketch = (options: {
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-  note: string;
+  note?: string;
 }): string[] | MergeRefusal => {
   const merged = mergeOrReason(options);
 

@@ -593,15 +593,14 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketch-decision', '?product=acme&sketch=elements/none', 'POST', {})).status).toBe(404);
   });
 
-  it('discards a sketch, and refuses a merge without a note or a pick', async () => {
+  it('discards a sketch, and refuses a merge without a pick', async () => {
     const target = acme();
 
     readySketch(target);
 
     const { ask } = await serveAcme(target);
 
-    expect((await ask('/__design/sketch-merge', sketchQuery, 'POST', {})).status).toBe(400);
-    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', { note: 'x' })).toMatchObject({
+    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', {})).toMatchObject({
       status: 422,
       body: { error: expect.stringContaining('has no pick') },
     });

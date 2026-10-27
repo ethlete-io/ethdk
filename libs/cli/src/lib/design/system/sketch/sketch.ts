@@ -208,18 +208,22 @@ const stubOf = (name: string) =>
     '',
   ].join('\n');
 
+const variantInfoOf = (round: string, author: string | undefined): SketchVariantInfo =>
+  author ? { authors: [author], round } : { round };
+
 /**
- * Opens a sketch on a target, in progress, with one folder per variant, all in round 1. Each variant starts from the
- * part the product resolves for the target, or from an empty part when the target is new. A target
- * holds one open sketch at a time.
+ * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
+ * author. Each variant starts from the part the product resolves for the target, or from an empty part when the target
+ * is new. A target holds one open sketch at a time.
  */
 export const createSketch = (options: {
   product: ResolvedProduct;
   sketch: SketchTarget;
   variants: string[];
   roundTitle?: string;
+  author?: string;
 }): Sketch | string => {
-  const { product, sketch, variants, roundTitle } = options;
+  const { product, sketch, variants, roundTitle, author } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
 
@@ -252,7 +256,7 @@ export const createSketch = (options: {
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
     rounds: [firstRoundOf(roundTitle)],
-    variantInfo: Object.fromEntries(variants.map((variant) => [variant, { round: FIRST_ROUND }])),
+    variantInfo: Object.fromEntries(variants.map((variant) => [variant, variantInfoOf(FIRST_ROUND, author)])),
     product: product.name,
     layer: sketch.layer,
     name: sketch.name,
@@ -355,14 +359,22 @@ export const readSketchReport = (options: { checkout: string; sketch: Sketch }):
 export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) =>
   rmSync(sketchReportPath(options), { force: true });
 
-/** Marks an in-progress sketch ready for the user to pick, and ends its live report. */
-export const markSketchReady = (options: { checkout: string; sketch: Sketch }): Sketch | string => {
-  const { checkout, sketch } = options;
+/**
+ * Marks an in-progress sketch ready for the user to pick, ends its live report, and records `author` on each variant
+ * that has no author yet.
+ */
+export const markSketchReady = (options: { checkout: string; sketch: Sketch; author?: string }): Sketch | string => {
+  const { checkout, sketch, author } = options;
 
   if (sketch.status !== 'in progress') return `${sketch.target} is ${sketch.status}, not in progress`;
   if (sketch.variants.length === 0) return `${sketch.target} holds no variant`;
 
-  const ready: Sketch = { ...sketch, status: 'ready' };
+  const authored = author
+    ? sketch.variants
+        .filter((variant) => authorsOf(sketch, variant).length === 0)
+        .reduce((current, variant) => withAuthor({ sketch: current, variant, author }), sketch)
+    : sketch;
+  const ready: Sketch = { ...authored, status: 'ready' };
 
   writeSketchFile(ready);
   clearSketchReport({ checkout, sketch });
@@ -403,7 +415,7 @@ export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch
 };
 
 /**
- * Copies variant `from` into a new variant, sets the sketch back to in progress and clears a pick. A discard decision is refused.
+ * Copies variant `from` into a new variant by `author`, sets the sketch back to in progress and clears a pick. A discard decision is refused.
  * The new variant joins the running round, or starts the round `round` names after writing its `lostNote` into the
  * running round's note.
  */
@@ -412,8 +424,9 @@ export const addVariant = (options: {
   variant: string;
   from: string;
   round?: { title: string; lostNote: string };
+  author?: string;
 }): Sketch | string => {
-  const { sketch, variant, from, round } = options;
+  const { sketch, variant, from, round, author } = options;
 
   if (sketch.decision?.kind === 'discard')
     return `The user decided to discard ${sketch.target}. The user must pick a variant first to go on.`;
@@ -439,7 +452,7 @@ export const addVariant = (options: {
     ...undecided,
     status: 'in progress',
     rounds,
-    variantInfo: { ...sketch.variantInfo, [variant]: { round: runningRoundOf({ rounds }).key } },
+    variantInfo: { ...sketch.variantInfo, [variant]: variantInfoOf(runningRoundOf({ rounds }).key, author) },
     variants: [...sketch.variants, variant].sort(),
   };
 

@@ -96,6 +96,45 @@ describe('mergeSketch', () => {
     expect(existsSync(sketchReportPath({ checkout: target, sketch: found.sketch }))).toBe(false);
   }, 120_000);
 
+  it('keeps the note and madeBy of the variant file without a note or authors, and adds new authors to madeBy', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const heroFile = (dir: string) => join(dir, 'b/elements/hero/hero.ts');
+    const mergeWithoutNote = (sketch: Sketch) =>
+      reasonOf(mergeSketch({ target, config, product: resolveAcme(target), sketch: picked(sketch) }));
+    const first = readySketch(target).sketch;
+
+    writeFileSync(
+      heroFile(first.dir),
+      readFileSync(heroFile(first.dir), 'utf8').replace(
+        "note: 'One featured film with its play button.',",
+        "note: 'Calm hero.',\n  madeBy: ['gpt-5.6-sol'],",
+      ),
+    );
+
+    expect(mergeWithoutNote(first)).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain(
+      "note: 'Calm hero.',\n  madeBy: ['gpt-5.6-sol'],",
+    );
+
+    const product = resolveAcme(target);
+    const created = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+      author: 'claude-opus-5-5',
+    }) as Sketch;
+
+    expect(mergeWithoutNote(markSketchReady({ checkout: target, sketch: created }) as Sketch)).toEqual([
+      'elements/hero',
+    ]);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain(
+      "note: 'Calm hero.',\n  madeBy: ['gpt-5.6-sol', 'claude-opus-5-5'],",
+    );
+  }, 240_000);
+
   it('puts the old files back and keeps the sketch when the check fails', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -130,9 +169,6 @@ describe('mergeSketch', () => {
 
     expect(reasonOf(mergeSketch({ target, config, product, sketch: ready, note: 'x' }))).toBe(
       'elements/hero has no pick - the user picks a variant in Studio before a merge',
-    );
-    expect(reasonOf(mergeSketch({ target, config, product, sketch: picked(ready, 'a'), note: ' ' }))).toContain(
-      'needs --note',
     );
     expect(
       reasonOf(mergeSketch({ target, config, product, sketch: { ...picked(ready, 'a'), variants: [] }, note: 'x' })),

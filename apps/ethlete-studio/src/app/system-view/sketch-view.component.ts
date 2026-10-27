@@ -152,13 +152,13 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       <div class="flex items-end gap-2">
         <et-form-field class="min-w-0 flex-1" appearance="box">
           <et-label>Note</et-label>
-          <et-input [(value)]="note" placeholder="Why this shape - the note on the part, needed for a merge" />
+          <et-input
+            [(value)]="note"
+            placeholder="Optional - why this shape; the variant's own note stays without one"
+          />
         </et-form-field>
-        @if (picked() && note().trim() === '') {
-          <span class="self-center text-[var(--et-surface-color-subtle-solid)]">Needs a note</span>
-        }
         <button
-          [disabled]="busy() !== null || locked() || !picked() || note().trim() === ''"
+          [disabled]="busy() !== null || locked() || !picked()"
           [loading]="busy() === 'merge'"
           (click)="merge()"
           et-button
@@ -688,12 +688,12 @@ export class SketchViewComponent {
     const note = this.note().trim();
     const address = this.address();
 
-    if (!variant || !note || this.busy()) return;
+    if (!variant || this.busy()) return;
 
     this.merging.emit(true);
     this.run(
       'merge',
-      decideSketch$(address, { kind: 'pick', variant, comment: note }).pipe(
+      decideSketch$(address, { kind: 'pick', variant, ...(note ? { comment: note } : {}) }).pipe(
         concatMap(() => mergeSketch$(address, note)),
         tap(() => this.mergeComplete.emit(address.sketch)),
         finalize(() => this.merging.emit(false)),

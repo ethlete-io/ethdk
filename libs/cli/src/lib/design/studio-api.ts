@@ -287,15 +287,12 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
 });
 
 /**
- * POST `?product=&sketch=`, body `{ note }`: merges the picked variant into the product, as `et design sketch merge` does.
+ * POST `?product=&sketch=`, body `{ note? }`: merges the picked variant into the product, as `et design sketch merge` does.
  * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command.
  */
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
-
-  if (!note) return failure(400, 'a merge needs a note');
-
   const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
 
   if (Array.isArray(merged)) return { status: 200, body: { merged } };

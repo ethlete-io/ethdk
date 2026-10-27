@@ -105,8 +105,10 @@ variant adds its token group as a state, or extends that group's state. It never
 drawing with a demo scene, since the merge would drop every other group. A demo may be an extra state.
 
 Name the variant you work on with `--variant`. Studio marks it as drawing, and hides its frames,
-while the latest report names it. The report also records your model id as an author of that
-variant, and a merge writes the picked variant's authors into the part's `madeBy`.
+while the latest report names it. `sketch new`, `sketch variant` and each report record your
+model id as an author of the variants they write, and `sketch ready` records it on every variant
+that has no author yet. A merge adds the picked variant's authors to the `madeBy` the part file
+already holds, and never removes it.
 
 ### Combine variants in a new round
 
@@ -142,7 +144,8 @@ while the sketch has open comments, so handle those first. If a part the variant
 in the product since the sketch was created, the merge refuses: bring each variant up to date, run
 `et design sketch rebase <layer>/<name>`, and mark it `ready` again. `sketch preview <layer>/<name>
 <variant>` lists the elements and pages a merge changes. The note on a part records why it has its
-current shape, and the merge sets it from the user's reason.
+current shape. The user's reason is optional: with one, the merge sets the note from it; without
+one, the part keeps the `note` the picked variant file holds, so write that note while you draw.
 
 ### Read the inbox
 
