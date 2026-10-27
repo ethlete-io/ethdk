@@ -876,6 +876,16 @@ step. Each finding names what happened and the fix it needs.
   - `design check --tsconfig` does not typecheck sketch variants; the subagent had to rewrite the
     generated `node_modules/.design-explore/system-studio.tsconfig.json` per variant to run tsc.
     Prevent: the check covers the variants of the open sketch and prints the tsc output.
+- Inbox round on `elements/shell-main` (stopped and discarded): Tom: "wir bauen ja gerade alle
+  pages in shell-main. das ist doch quatsch oder? shell-main sollte doch eig eher nur ein element
+  sein was die shell beinhaltet? das system fällt doch schon wieder auseinander". The real-look
+  rounds put the System page content (tree, canvas frames) into the shell as defaults, and the next
+  section went in as a shell state. Fixed: the shell holds only the chrome (states open, hidden),
+  the tree and the canvas frames are their own elements, and each section is a page that composes
+  them. Prevent: a sketch on an element may not add a state that is page content; the skill says
+  "a section of the app is a page, never a state of the shell", and `design check` could warn
+  when an element's state differs from another state only inside a slot. Order agreed with Tom:
+  all pages first (shell sections as pages), components after.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
