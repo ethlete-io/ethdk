@@ -22,6 +22,57 @@ export type ViewState = {
   systemEntry: string;
   /** The canvas camera per system entry, keyed by `cameraKeyOf`. */
   cameras: Record<string, Camera>;
+  /** The size a user gave a canvas frame, keyed by `frameSizeKey`. */
+  frameSizes: Record<string, FrameSize>;
+};
+
+export type FrameSize = { width?: number; height?: number };
+
+export const frameSizeKey = (cameraKey: string, frameId: string) => `${cameraKey} ${frameId}`;
+
+const isSize = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+const frameSizeMap = (value: unknown): Record<string, FrameSize> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).flatMap(([key, size]) => {
+      if (!size || typeof size !== 'object') return [];
+
+      const { width, height } = size as FrameSize;
+      const valid: FrameSize = { ...(isSize(width) && { width }), ...(isSize(height) && { height }) };
+
+      return valid.width === undefined && valid.height === undefined ? [] : [[key, valid]];
+    }),
+  );
+};
+
+/** The sizes stored for the frames of one canvas, keyed by frame id. */
+export const frameSizesOf = (stored: Record<string, FrameSize>, cameraKey: string): Record<string, FrameSize> => {
+  const prefix = frameSizeKey(cameraKey, '');
+
+  return Object.fromEntries(
+    Object.entries(stored)
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([key, size]) => [key.slice(prefix.length), size]),
+  );
+};
+
+/** The stored sizes with `size` merged into the one of a frame. */
+export const frameSizesWith = ({
+  stored,
+  cameraKey,
+  frameId,
+  size,
+}: {
+  stored: Record<string, FrameSize>;
+  cameraKey: string;
+  frameId: string;
+  size: FrameSize;
+}): Record<string, FrameSize> => {
+  const key = frameSizeKey(cameraKey, frameId);
+
+  return { ...stored, [key]: { ...stored[key], ...size } };
 };
 
 export type StudioView = 'calls' | 'system';
@@ -119,6 +170,7 @@ export const rememberedView = (): Partial<ViewState> => {
       systemProduct,
       systemEntry,
       cameras,
+      frameSizes,
     } = stored as Partial<ViewState>;
 
     return {
@@ -134,6 +186,7 @@ export const rememberedView = (): Partial<ViewState> => {
       systemProduct: typeof systemProduct === 'string' ? systemProduct : undefined,
       systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,
       cameras: cameraMap(cameras),
+      frameSizes: frameSizeMap(frameSizes),
     };
   } catch {
     return {};

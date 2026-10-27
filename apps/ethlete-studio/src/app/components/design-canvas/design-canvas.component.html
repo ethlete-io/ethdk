@@ -36,8 +36,8 @@
       class="et-design-canvas__resize"
     >
       <et-resize-handles
-        [edges]="['e']"
-        (resizeStarted)="startResize(active.width)"
+        [edges]="['e', 's', 'se']"
+        (resizeStarted)="startResize({ width: active.width, height: active.height })"
         (resizeMoved)="resize(active.frame.id, $event)"
       />
     </div>

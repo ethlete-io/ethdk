@@ -1,4 +1,12 @@
-import { camerasWith, rememberTheme, rememberedView, rememberView, themeName } from './remembered';
+import {
+  camerasWith,
+  frameSizesOf,
+  frameSizesWith,
+  rememberTheme,
+  rememberedView,
+  rememberView,
+  themeName,
+} from './remembered';
 
 const KEY = 'ethlete-studio.call-view';
 
@@ -102,6 +110,28 @@ describe('remembered view', () => {
     expect(camerasWith({ cameras: stored, key: 'new', camera, existing: new Set(['kept', 'new']) })).toEqual({
       kept: stored.kept,
       new: camera,
+    });
+  });
+
+  it('keeps valid frame sizes and drops the rest', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        frameSizes: { 'a f': { width: 300, height: 'x' }, 'a g': { width: -1 }, 'a h': 'no', 'a i': { height: 200 } },
+      }),
+    );
+
+    expect(rememberedView().frameSizes).toEqual({ 'a f': { width: 300 }, 'a i': { height: 200 } });
+  });
+
+  it('reads and merges the sizes of one canvas', () => {
+    const stored = { 'a f': { width: 300 }, 'ab f': { width: 10 } };
+
+    expect(frameSizesOf(stored, 'a')).toEqual({ f: { width: 300 } });
+
+    expect(frameSizesWith({ stored, cameraKey: 'a', frameId: 'f', size: { height: 90 } })['a f']).toEqual({
+      width: 300,
+      height: 90,
     });
   });
 });

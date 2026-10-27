@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   input,
+  linkedSignal,
   signal,
   untracked,
 } from '@angular/core';
@@ -13,6 +14,7 @@ import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
+import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../call-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import {
   Camera,
@@ -33,6 +35,7 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 const SPACING = { columnGap: 40, rowGap: 120 };
 const FALLBACK_HEIGHT = 600;
 const MIN_FRAME_WIDTH = 160;
+const MIN_FRAME_HEIGHT = 80;
 const FIT_PADDING = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
@@ -81,14 +84,17 @@ export class DesignCanvasComponent {
   public activeId = signal<string | null>(null);
   protected spaceHeld = signal(false);
   protected panning = signal(false);
-  private widths = signal<Record<string, number>>({});
+  private sizes = linkedSignal<string | null, Record<string, FrameSize>>({
+    source: this.cameraKey,
+    computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().frameSizes ?? {}, key)),
+  });
   private measuredHeights = signal<Record<string, number>>({});
 
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
 
   private layout = computed(() => {
-    const widths = this.widths();
+    const sizes = this.sizes();
     const heights = this.measuredHeights();
     const frames = this.frames();
     const byId = new Map(frames.map((frame) => [frame.id, frame]));
@@ -96,8 +102,8 @@ export class DesignCanvasComponent {
       frames.map((frame) => ({
         id: frame.id,
         row: frame.row ?? '',
-        width: widths[frame.id] ?? frame.width,
-        height: frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
+        width: sizes[frame.id]?.width ?? frame.width,
+        height: sizes[frame.id]?.height ?? frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
       })),
       SPACING,
     );
@@ -148,7 +154,7 @@ export class DesignCanvasComponent {
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
   private panStart$ = new Subject<PointerEvent>();
-  private resizeStartWidth = 0;
+  private resizeStart: Size = { width: 0, height: 0 };
   private swallowNextClick = false;
 
   private fittedFor: string | null | undefined = undefined;
@@ -212,14 +218,36 @@ export class DesignCanvasComponent {
     this.measuredHeights.update((heights) => (heights[id] === height ? heights : { ...heights, [id]: height }));
   }
 
-  protected startResize(width: number) {
-    this.resizeStartWidth = width;
+  protected startResize(size: Size) {
+    this.resizeStart = size;
   }
 
   protected resize(id: string, event: ResizeMoveEvent) {
-    const width = Math.max(MIN_FRAME_WIDTH, Math.round(this.resizeStartWidth + event.totalDx / this.camera().zoom));
+    const zoom = this.camera().zoom;
+    const size: FrameSize = {};
 
-    this.widths.update((widths) => ({ ...widths, [id]: width }));
+    if (event.edge.includes('e')) {
+      size.width = Math.max(MIN_FRAME_WIDTH, Math.round(this.resizeStart.width + event.totalDx / zoom));
+    }
+
+    if (event.edge.includes('s')) {
+      size.height = Math.max(MIN_FRAME_HEIGHT, Math.round(this.resizeStart.height + event.totalDy / zoom));
+    }
+
+    this.sizes.update((sizes) => ({ ...sizes, [id]: { ...sizes[id], ...size } }));
+
+    const key = this.cameraKey();
+
+    if (key !== null) {
+      rememberView({
+        frameSizes: frameSizesWith({
+          stored: rememberedView().frameSizes ?? {},
+          cameraKey: key,
+          frameId: id,
+          size,
+        }),
+      });
+    }
   }
 
   protected startPan(event: PointerEvent) {
