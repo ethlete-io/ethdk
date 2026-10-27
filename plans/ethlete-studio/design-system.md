@@ -686,7 +686,23 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
   `part.madeBy` (`[]` when unknown).
 - 414e7f23b (agent-rules): the synced skill tells agents to pass the exact model id to every write.
   No `et update` migration, since the callers are agents. The `@ethlete/cli` changeset is major.
-- Not built yet: the Studio display.
+- The Studio display: built, see "Agent author display, as built".
+
+### Agent author display, as built (2026-10-27)
+
+- 15021ef34: the matrix column head shows the first author after the variant, for example
+  "a · gemini-3-argon". With more authors it adds a count: "b · gpt-5.6-sol +1". The tooltip lists
+  all of them: "b by gpt-5.6-sol, claude-opus-5-5". While an agent draws, the head shows
+  "a · claude-opus-5-5 · drawing …". Old data without authors shows only "a" and the old tooltip.
+- A comment thread shows an agent reply as "Agent · gpt-5.6-sol". An old reply without an author
+  shows "Agent".
+- The part view has no header. Therefore "made by gemini-3-argon +1" (mono, subtle) is the first
+  item in the floating bar at the top right, next to the theme and comment buttons. Its tooltip
+  lists all authors. An empty or missing `madeBy` shows nothing.
+- The report tooltip shows the message, a blank line, then "by claude-opus-5-5". A report without
+  an author shows only the message.
+- Builder calls use the same format: "made by" with the first author and "+N", and the column
+  tooltip "<variant> by a, b".
 
 ### Agent author follow-up decisions (2026-10-27)
 
