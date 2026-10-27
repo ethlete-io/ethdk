@@ -326,6 +326,29 @@ Comments:
   products, oldest first, as text or `--json`. `et design inbox done <id>` deletes a comment.
 - `et design check` fails on a comment whose part or state no longer exists.
 
+### Studio sketch view, as built (2026-10-27)
+
+`system-view/sketch-view.component.ts` (32ad5a861); the pure part is `sketchFramesOf`, `canPick`
+and `pickedVariantOf` in `system-tree.ts`.
+
+- A Sketches group lists the open sketches with their status; the target part gets "sketch open".
+- The canvas has one row per state of the target: the current part at every preset, then each
+  variant at every preset. A variant with problems lists them and cannot be picked.
+- Pick writes `sketch-decision`. Merge needs a pick and a note, writes the pick again with the
+  note, then calls `sketch-merge` without a variant. Discard asks once more, then calls
+  `sketch-discard`. A refusal shows the server's message. The preview lists changed and affected
+  parts as text.
+
+Open points, each with a recommendation:
+
+- The renderer cannot draw a variant: `frame.html` and the shot route ignore `sketch` and
+  `variant`, so variant frames show the current part. Recommendation: resolve a part through
+  `overlaySketch` when the frame URL names a sketch and a variant.
+- A new part has no states in the listing, so its variants get one row without a state.
+  Recommendation: list states per variant in `sketches`.
+- The preview draws no old and new frames of the affected parts. Recommendation: add it with
+  the renderer change.
+
 ### Slice 6 decisions (2026-10-27)
 
 Pages:
