@@ -724,6 +724,10 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
   an author shows only the message.
 - Builder calls use the same format: "made by" with the first author and "+N", and the column
   tooltip "<variant> by a, b".
+- c7ec853d7: `studio-lab` shows it. Sketch `components/button` has authors on a and b, sketch
+  `components/card` on a; the part view of `components/button` and `elements/list-row` shows "made
+  by"; a comment on `components/button` (state outline) has an agent reply with an author. The live
+  report is a temp file and is gone after a reboot.
 
 ### Agent author follow-up decisions (2026-10-27)
 
