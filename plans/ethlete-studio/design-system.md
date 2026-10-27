@@ -458,6 +458,29 @@ merged `tokens.css` instead of the generated `themes.css` and `surface-themes.cs
 on it; tree rows with one dot per status; a cross-repo base from a package, not checked. The next
 builder resumes from `.claude/handoffs/studio-states-interactions.md`.
 
+### Slice 10, lab and note follow-up decisions (2026-10-27)
+
+- Tokens: base components pick up a product's tokens override through an import, not only through
+  the config `styles` entry, so a `foundations/tokens` sketch shows on every part (button, field).
+  A small core change, built before the first foundations sketch.
+- `sdk` stays in `.ethlete/design/sdk` for now. It moves to `libs/cli/design/systems` as a built-in
+  base only after the redesign proves it (and a cross-repo base from a package is checked).
+- No `vh` in parts: the `ethlete-design-exploration` skill says so; a full page uses a frame with a
+  fixed size. A check warning can follow if the rule is often broken.
+- Real lab flows: the builder rebuilds `studio-lab` with two flows that make sense. "Add a film":
+  empty library → "add a film" dialog → library with one film → film detail. "Sign in": library
+  with a "Log in" button in the shell → login dialog → wrong-password error → signed-in library.
+  Every line has a label, and the element it names is visible in the frame before. The
+  `ethlete-design-exploration` skill gets that rule. Seen: the old `sign-in` flow showed a film
+  count growing, one line had no label, and "user clicks 'Anmelden'" named a button the page lacks.
+- Pointed notes: a small marker at the point; the card sits outside the frame, below it in the
+  column of notes without a point; a thin line connects marker and card. The card never covers the
+  design. Free dragging of cards may come later (needs a stored position).
+- A "Show notes" toggle in the toolbar, on at start, remembered per product like the flow preset.
+- Fixed z-order, bottom to top: frames, flow lines, notes, comment pins, open popovers (thread,
+  note editor). Seen: a note card covered the reply field of an open comment thread. Prove headlessly
+  with an open thread over a note.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
