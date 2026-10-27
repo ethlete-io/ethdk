@@ -362,7 +362,7 @@ Open points, each with a recommendation:
   state"; in the `current` column, "new in this sketch". It takes no comment, since a comment
   needs a state the part has.
 - The canvas row gap is 48 px for fitted frames (the tile grid, the matrix at `fitted`) and stays
-  120 px for pages and parts with `widths`. 48 px is a start value until Tom has seen it in Studio.
+  120 px for pages and parts with `widths`. Tom approved 48 px from a screenshot.
 
 ### Comment done note (2026-10-27)
 
@@ -387,6 +387,18 @@ Open points, each with a recommendation:
   sketch, and all work goes through sketches, comments, the inbox and the CLI, not the chat. Each
   snag in the workflow goes into this plan as a finding.
 - Rebuilding the real app on the new system is its own step after the design.
+
+### Comment follow-up decisions (2026-10-27)
+
+Open as build work; ethlete-sdk-97 handed off before them.
+
+- The canvas row gap stays 48 px for fitted frames; Tom approved the rating matrix screenshot.
+- An open pin drops `[pressed]` and shows a ring in the accent colour instead of a hollow button.
+- The Sketches group in the tree names a sketch without its layer prefix ("card", not
+  "components/card"); the full name is the tooltip. The look of tree rows and badges is a design
+  question again in slice 10.
+- The merge lock keeps counting every open comment on the target part, also one older than the
+  sketch: the merge changes the part, so the agent reviews each first.
 
 ### Docs decision (2026-10-27)
 
