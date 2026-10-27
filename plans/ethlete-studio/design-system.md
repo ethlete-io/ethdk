@@ -833,6 +833,10 @@ step. Each finding names what happened and the fix it needs.
   - The agent put layer counts back into the tree, though Tom's pick f of the side tree removed all
     numbers. The brief said "keep this structure" but not what the earlier picks decided. Prevent:
     a part's note lists what its picks ruled out, and the brief quotes the notes of the parts it draws.
+- Real look round 2 ("Calmer and collapsible", d panel collapse, e full hide, f floating panel,
+  from a): `sketch variant --round` closed Tom's seven comments on a, as 26a6baffb intends.
+  Friction: `--from a` copies all of a's code, so variant e (chrome hidden) had to delete most of
+  it by hand. Prevent: nothing needed now; note it if it recurs.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
