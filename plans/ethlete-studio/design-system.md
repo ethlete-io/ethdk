@@ -814,6 +814,14 @@ step. Each finding names what happened and the fix it needs.
   the user's click. Never run `sketch merge` yourself". The agent cannot tell which one is wrong.
   Prevent: one rule. Either the pick merges in Studio, or the inbox and the skill both name the
   merge as the agent's step after a pick.
+- The merge refuses while a comment is open, so Tom had to withdraw his own comment on b before he
+  could merge f. Tom: "es ist nervig dass ich immer die kommentare withdrawen muss um eine variante
+  zu mergen". The agent answered the comment with a new round but never ran `inbox done`, and
+  nothing reminded it. Prevent: `sketch variant --from <v> --round` closes the open comments on
+  `<v>` with the round note, and a pick in Studio closes the comments of the sketch it merges.
+- The merge of f wrote the bare note `'f'` again and removed `madeBy` from `pages/system`, because
+  variant f had no `authors` (see the missing authors above). Prevent: a merge never drops
+  `madeBy`, and `sketch variant --by` records its author.
 
 Findings:
 
