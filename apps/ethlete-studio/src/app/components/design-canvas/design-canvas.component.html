@@ -48,7 +48,7 @@
         <button
           [title]="column.title ?? column.label"
           (click)="toggleColumn(column.key, $event)"
-          class="w-full"
+          class="w-full whitespace-normal"
           et-button
           type="button"
           variant="outline"
@@ -59,9 +59,10 @@
           {{ column.label }}
         </button>
         @if (folded.note) {
-          <p class="m-0 line-clamp-[12] whitespace-pre-wrap text-[var(--et-surface-color-muted-solid)]">
-            {{ folded.note }}
-          </p>
+          <p
+            [textContent]="folded.note"
+            class="m-0 line-clamp-[12] whitespace-pre-wrap text-[var(--et-surface-color-muted-solid)]"
+          ></p>
         }
       </div>
     } @else {
