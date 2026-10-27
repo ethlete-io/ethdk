@@ -1,5 +1,5 @@
 import { FlowState, ListedFlow } from '../../host/design-flows';
-import { partFrameUrl, partShotUrl } from '../../host/design';
+import { ListedSketch, partFrameUrl, partShotUrl } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { CanvasLine } from '../components/design-canvas/flow-layout';
 import { FramesSource, TreeGroup, partKeyOf } from './system-tree';
@@ -27,24 +27,53 @@ export const withFlowGroup = (tree: TreeGroup[], flows: ListedFlow[]): TreeGroup
   return at === -1 ? [...tree, group] : [...tree.slice(0, at), group, ...tree.slice(at)];
 };
 
-export type FlowFramesSource = Omit<FramesSource, 'part'> & { flow: ListedFlow; preset: string };
+export type FlowFramesSource = Omit<FramesSource, 'part'> & {
+  flow: ListedFlow;
+  preset: string;
+  sketches?: ListedSketch[];
+};
+
+const sketchedOf = (sketches: ListedSketch[], { product, key }: { product: string; key: string }) => {
+  const sketch = sketches.find((candidate) => candidate.product === product && candidate.target === key);
+  const variant = sketch?.variants[0];
+
+  if (!sketch || variant === undefined) return null;
+
+  const target = sketch.targets?.find((candidate) => candidate.variant === variant);
+
+  return { layer: sketch.layer, variant, states: target?.states ?? [], error: target?.error };
+};
 
 /**
  * Each state of a flow at one preset: a page at the preset's size, any other part at its width, and
- * the flow's lines between them.
+ * the flow's lines between them. A part the product lacks draws as the first variant of its open sketch.
  */
 export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[]; lines: CanvasLine[] } => {
-  const { port, product, flow, preset, epoch, revision, surface, color } = source;
+  const { port, product, flow, preset, epoch, revision, surface, color, sketches = [] } = source;
   const size = product.presets[preset];
   const frames = flow.frames.map(({ part: key, state, position }): CanvasFrame => {
     const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
-    const address = { port, product: product.name, part: key, state, epoch, revision, surface, color };
-    const error = !part
+    const sketched = part ? null : sketchedOf(sketches, { product: product.name, key });
+    const address = {
+      port,
+      product: product.name,
+      part: key,
+      state,
+      epoch,
+      revision,
+      surface,
+      color,
+      ...(sketched ? { sketch: key, variant: sketched.variant } : {}),
+    };
+    const known = part ?? sketched;
+    const error = !known
       ? `no part ${key}`
-      : !part.states.includes(state)
+      : !known.states.includes(state)
         ? `${key} has no state "${state}"`
-        : part.problems.find((problem) => problem.rule === 'LOAD')?.message;
-    const page = part?.layer === 'pages';
+        : part
+          ? part.problems.find((problem) => problem.rule === 'LOAD')?.message
+          : sketched?.error;
+    const page = known?.layer === 'pages';
 
     return {
       id: frameIdOf({ part: key, state }),

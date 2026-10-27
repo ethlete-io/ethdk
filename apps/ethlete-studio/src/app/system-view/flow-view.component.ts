@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal, output, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { ListedProduct } from '../../host/design';
+import { ListedProduct, ListedSketch } from '../../host/design';
 import { ListedFlow } from '../../host/design-flows';
 import { Camera, Point } from '../components/design-canvas/canvas-math';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
@@ -90,6 +90,7 @@ export class FlowViewComponent {
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public flow = input.required<ListedFlow>();
+  public sketches = input<ListedSketch[]>([]);
   public epoch = input(0);
   public revision = input(0);
   public surface = input<string | undefined>(undefined);
@@ -121,6 +122,7 @@ export class FlowViewComponent {
       product: this.product(),
       flow: this.flow(),
       preset: this.preset(),
+      sketches: this.sketches(),
       epoch: this.epoch(),
       revision: this.revision(),
       surface: this.surface(),

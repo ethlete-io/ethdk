@@ -392,6 +392,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [port]="shown.port"
             [product]="shown.product"
             [flow]="shown.flow"
+            [sketches]="sketches()"
             [epoch]="epoch()"
             [revision]="shown.revision"
             [surface]="surface()"

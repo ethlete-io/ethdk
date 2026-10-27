@@ -1,5 +1,5 @@
 import { ListedFlow } from '../../host/design-flows';
-import { ListedPart, ListedProduct } from '../../host/design';
+import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { flowFramesOf, flowKeyOf, withFlowGroup } from './flow-frames';
 
 const part = (layer: string, name: string, states: string[]): ListedPart => ({
@@ -52,6 +52,52 @@ describe('flowFramesOf', () => {
       width: 390,
       height: 844,
     });
+  });
+});
+
+describe('flowFramesOf with a sketch-only page', () => {
+  const sketch = (variants: string[]): ListedSketch => ({
+    target: 'pages/pay',
+    status: 'in progress',
+    createdAt: '2026-10-27T00:00:00.000Z',
+    product: 'shop',
+    layer: 'pages',
+    name: 'pay',
+    dir: '.ethlete/design/shop/sketches/pages-pay',
+    variants,
+    problems: [],
+    targets: variants.map((variant) => ({ variant, states: variant === 'a' ? ['open'] : ['other'] })),
+  });
+  const paying: ListedFlow = {
+    ...flow,
+    frames: [
+      { part: 'pages/pay', state: 'open' },
+      { part: 'pages/pay', state: 'closed' },
+    ],
+    lines: [],
+  };
+
+  it('draws the first variant of the open sketch at the page size', () => {
+    const { frames } = flowFramesOf({
+      port: 4500,
+      product,
+      flow: paying,
+      preset: 'desktop',
+      sketches: [sketch(['a', 'b'])],
+    });
+
+    expect(frames.map(({ id, width, height, error }) => ({ id, width, height, error }))).toEqual([
+      { id: 'pages/pay open', width: 1280, height: 800, error: undefined },
+      { id: 'pages/pay closed', width: 1280, height: 800, error: 'pages/pay has no state "closed"' },
+    ]);
+    expect(frames[0]?.src).toContain('&sketch=pages%2Fpay&variant=a');
+    expect(frames[0]?.screenshot).toContain('&sketch=pages%2Fpay&variant=a');
+  });
+
+  it('still fails a part with neither a part nor a sketch', () => {
+    const { frames } = flowFramesOf({ port: 4500, product, flow: paying, preset: 'desktop', sketches: [] });
+
+    expect(frames[0]?.error).toBe('no part pages/pay');
   });
 });
 
