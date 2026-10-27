@@ -254,6 +254,24 @@ Either way:
   settled.
 - Keep the rejected variants drawn, marked as rejected.
 
+### Notes
+
+A note explains a state: why it looks this way, what it shows. A comment is feedback that needs
+an answer. Write a note when nothing is asked of the reader.
+
+A note is `<product>/notes/<timestamp>-<id>.json`:
+
+```json
+{ "part": "button", "state": "disabled", "point": { "x": 24, "y": 8 }, "size": "mobile", "text": "Muted, not hidden." }
+```
+
+- `part`, `state` and `text` are required. `point` is optional, in CSS pixels.
+- `size` is required when `point` is set: the preset (or width) the note was written at. A
+  pointed note shows only at that size; a note without a point shows at every size.
+- A free note on a flow is an entry in the `notes` array of `flows/<name>.json`:
+  `{ "id": "…", "text": "…", "at": { "x": 0, "y": -40 } }`. `at` is optional, the note's top-left
+  corner on the flow canvas, and may be negative.
+
 ## The order of a design
 
 A product design runs in this order. Each stage settles in calls before the next starts, and
