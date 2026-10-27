@@ -5,6 +5,7 @@ import { join } from 'path';
 import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkSystem } from './system/check-system';
+import { resolveProduct } from './system/resolve-product';
 import { configPathOf, DESIGN_DIR, readConfig } from './paths';
 import { designProduct, newProductAnswer } from './product-command';
 
@@ -52,6 +53,19 @@ describe('designProduct', () => {
     run(target, 'new', 'shop', '--base', '@ethlete/components');
 
     expect(readConfig(target)?.products?.['shop']).toEqual({ base: '@ethlete/components' });
+  });
+
+  it("writes no fixtures.ts with a base, so the base's fixture set shows through", () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'kit');
+    writeFileSync(join(target, DESIGN_DIR, 'kit/fixtures.ts'), 'export const films = [];\n');
+    run(target, 'new', 'shop', '--base', `${DESIGN_DIR}/kit`);
+
+    const config = readConfig(target)?.products?.['shop'] ?? {};
+
+    expect(resolveProduct({ target, name: 'shop', config }).fixtures).toBe(join(target, DESIGN_DIR, 'kit/fixtures.ts'));
   });
 
   it('copies styles, head, providers and themes from a project and leaves the project alone', () => {

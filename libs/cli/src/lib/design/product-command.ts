@@ -61,7 +61,7 @@ export const createProduct = (options: {
 
   for (const layer of LAYERS) mkdirSync(`${dir}/${layer}`, { recursive: true });
 
-  writeFileSync(`${dir}/fixtures.ts`, '');
+  if (!base) writeFileSync(`${dir}/fixtures.ts`, '');
 
   return null;
 };
