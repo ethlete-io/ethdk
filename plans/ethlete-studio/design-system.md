@@ -398,6 +398,10 @@ Built in 53a10e894; the merge lock needed no change.
 - The Sketches group in the tree names a sketch without its layer prefix ("card", not
   "components/card"); the full name is the tooltip. The look of tree rows and badges is a design
   question again in slice 10.
+- A tree row with a question hides "comment open", since a question implies an open comment. In
+  slice 10, a row keeps its full name and shows one dot per status, labels in the tooltip, the
+  question dot in the accent colour.
+- The "N ?" question count stays attached to the Comment toolbar button as one control.
 - The merge lock keeps counting every open comment on the target part, also one older than the
   sketch: the merge changes the part, so the agent reviews each first.
 
