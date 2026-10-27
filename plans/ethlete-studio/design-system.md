@@ -837,6 +837,16 @@ step. Each finding names what happened and the fix it needs.
   from a): `sketch variant --round` closed Tom's seven comments on a, as 26a6baffb intends.
   Friction: `--from a` copies all of a's code, so variant e (chrome hidden) had to delete most of
   it by hand. Prevent: nothing needed now; note it if it recurs.
+- Tom on round 2 (2026-10-28):
+  - "es ist echt kaum zu erkennen ob an einem frame noch vom ki gearbeitet wird". Studio barely
+    shows that an agent still draws a variant. Prevent: a clear in-progress state on the frame
+    (label and dimmed frame) until `sketch ready`.
+  - "doof dass wir die 2te round jetzt einfach hinten dran rendern anstelle darunter". Studio
+    renders a new round to the right of the old one. Prevent: each round is its own row, newest
+    below (or on top), with the round title.
+  - "e ist ein zustand von d quasi". The agent's brief made a state (UI hidden) a variant; variants
+    must be alternatives, a hidden mode is a further state of the picked variant. Prevent: the
+    skill says a variant never stands for a state of another variant. Tom merges f.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
