@@ -1,0 +1,25 @@
+{
+  "frames": [
+    { "part": "pages/library", "state": "empty" },
+    { "part": "pages/library", "state": "add open" },
+    { "part": "pages/library", "state": "one" },
+    { "part": "pages/film-detail", "state": "rest" }
+  ],
+  "lines": [
+    {
+      "from": { "part": "pages/library", "state": "empty" },
+      "to": { "part": "pages/library", "state": "add open" },
+      "label": "user clicks 'Add a film'"
+    },
+    {
+      "from": { "part": "pages/library", "state": "add open" },
+      "to": { "part": "pages/library", "state": "one" },
+      "label": "user clicks 'Save film'"
+    },
+    {
+      "from": { "part": "pages/library", "state": "one" },
+      "to": { "part": "pages/film-detail", "state": "rest" },
+      "label": "user clicks the film 'Night Train'"
+    }
+  ]
+}

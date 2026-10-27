@@ -10,7 +10,7 @@ export default definePart<Props>({
     const submit = await button.render({ label: 'Log in', variant: 'solid' });
 
     return drawing({
-      body: `<div class="lab-login" role="dialog" aria-label="Log in"><h2>Log in</h2><label>Email<input value="ada@filmbox.test"></label>${
+      body: `<div class="lab-login" role="dialog" aria-label="Log in"><h2>Log in</h2><label>Email<input value="ada@filmbox.test"></label><label>Password<input type="password" value="••••••"></label>${
         error ? '<p class="lab-login-error">That password does not match.</p>' : ''
       }${submit.body}</div>`,
       styles: `${submit.styles}

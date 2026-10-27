@@ -1,25 +1,25 @@
 {
   "frames": [
-    { "part": "pages/library", "state": "empty" },
-    { "part": "pages/library", "state": "one" },
     { "part": "pages/library", "state": "three" },
-    { "part": "pages/library", "state": "login open" }
+    { "part": "pages/library", "state": "login open" },
+    { "part": "pages/library", "state": "login error" },
+    { "part": "pages/library", "state": "signed in" }
   ],
   "lines": [
     {
-      "from": { "part": "pages/library", "state": "empty" },
-      "to": { "part": "pages/library", "state": "one" },
-      "label": "user adds a film"
-    },
-    {
-      "from": { "part": "pages/library", "state": "one" },
-      "to": { "part": "pages/library", "state": "three" }
-    },
-    {
       "from": { "part": "pages/library", "state": "three" },
       "to": { "part": "pages/library", "state": "login open" },
-      "label": "user clicks 'Anmelden'"
+      "label": "user clicks 'Log in'"
+    },
+    {
+      "from": { "part": "pages/library", "state": "login open" },
+      "to": { "part": "pages/library", "state": "login error" },
+      "label": "wrong password, user clicks 'Log in'"
+    },
+    {
+      "from": { "part": "pages/library", "state": "login error" },
+      "to": { "part": "pages/library", "state": "signed in" },
+      "label": "right password, user clicks 'Log in'"
     }
-  ],
-  "notes": [{ "id": "heading-library", "text": "Library before sign-in", "at": { "x": 0, "y": -160 } }]
+  ]
 }
