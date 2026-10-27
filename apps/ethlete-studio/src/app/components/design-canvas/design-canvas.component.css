@@ -93,6 +93,13 @@
     white-space: nowrap;
   }
 
+  .et-canvas-frame--caption-below .et-canvas-frame__label {
+    top: 100%;
+    bottom: auto;
+    padding-top: 0.4em;
+    padding-bottom: 0;
+  }
+
   .et-canvas-frame__width {
     color: var(--et-surface-color-muted-solid);
     font-variant-numeric: tabular-nums;

@@ -120,3 +120,27 @@ export const layoutSheet = (frames: SheetFrame[], spacing: SheetSpacing): SheetL
 
   return { frames: placed, rows };
 };
+
+export type GridSpacing = SheetSpacing & { lineWidth: number };
+
+/** Places frames left to right and starts a new line once a frame would pass `lineWidth`. */
+export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLayout => {
+  const placed: SheetLayout['frames'] = [];
+  let x = 0;
+  let y = 0;
+  let lineHeight = 0;
+
+  for (const frame of frames) {
+    if (x > 0 && x + frame.width > spacing.lineWidth) {
+      x = 0;
+      y += lineHeight + spacing.rowGap;
+      lineHeight = 0;
+    }
+
+    placed.push({ ...frame, x, y });
+    x += frame.width + spacing.columnGap;
+    lineHeight = Math.max(lineHeight, frame.height);
+  }
+
+  return { frames: placed, rows: [] };
+};

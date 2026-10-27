@@ -4,6 +4,7 @@ import {
   boundingRect,
   clampZoom,
   fitRect,
+  layoutGrid,
   layoutSheet,
   rectsIntersect,
   screenToWorld,
@@ -111,6 +112,26 @@ describe('canvas math', () => {
       { id: 'a-375', x: 0, y: 0 },
       { id: 'a-1280', x: 415, y: 0 },
       { id: 'b-375', x: 0, y: 380 },
+    ]);
+  });
+
+  it('lays tiles out in lines that wrap before the line width', () => {
+    const layout = layoutGrid(
+      [
+        { id: 'a', width: 200, height: 50, row: '' },
+        { id: 'b', width: 300, height: 120, row: '' },
+        { id: 'c', width: 400, height: 80, row: '' },
+        { id: 'd', width: 900, height: 60, row: '' },
+      ],
+      { columnGap: 40, rowGap: 60, lineWidth: 800 },
+    );
+
+    expect(layout.rows).toEqual([]);
+    expect(layout.frames.map(({ id, x, y }) => [id, x, y])).toEqual([
+      ['a', 0, 0],
+      ['b', 240, 0],
+      ['c', 0, 180],
+      ['d', 0, 320],
     ]);
   });
 });

@@ -56,14 +56,21 @@ const painted$ = (iframe: HTMLIFrameElement) => {
   template: `
     <span class="et-canvas-frame__label">
       {{ frame().label }}
-      <span class="et-canvas-frame__width">{{ width() }}</span>
+      @if (frame().width !== undefined) {
+        <span class="et-canvas-frame__width">{{ width() }}</span>
+      }
     </span>
     @if (frame().error) {
       <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
     } @else {
       @if (!painted()) {
         @if (frame().screenshot) {
-          <img [src]="frame().screenshot" class="et-canvas-frame__screenshot" alt="" />
+          <img
+            [src]="frame().screenshot"
+            (load)="readScreenshotSize($event)"
+            class="et-canvas-frame__screenshot"
+            alt=""
+          />
         } @else {
           <div class="et-canvas-frame__placeholder"></div>
         }
@@ -89,6 +96,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     class: 'et-canvas-frame',
     '[class.et-canvas-frame--selected]': 'selected()',
     '[class.et-canvas-frame--active]': 'active()',
+    '[class.et-canvas-frame--caption-below]': 'captionBelow()',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',
   },
@@ -101,8 +109,10 @@ export class CanvasFrameComponent {
   public live = input(false);
   public active = input(false);
   public selected = input(false);
+  public captionBelow = input(false);
 
   public heightChange = output<number>();
+  public widthChange = output<number>();
   public escapeKeydown = output();
 
   protected iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
@@ -125,6 +135,13 @@ export class CanvasFrameComponent {
       .subscribe();
   }
 
+  protected readScreenshotSize(event: Event) {
+    const image = event.target as HTMLImageElement;
+
+    if (this.frame().width === undefined) this.widthChange.emit(image.naturalWidth);
+    if (this.frame().height === undefined) this.heightChange.emit(image.naturalHeight);
+  }
+
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
   }
@@ -144,8 +161,23 @@ export class CanvasFrameComponent {
       return () => observer.disconnect();
     });
 
+    const fitted = content.body.firstElementChild;
+    const width$ =
+      this.frame().width === undefined && fitted
+        ? new Observable<number>((subscriber) => {
+            const observer = new view.ResizeObserver(() =>
+              subscriber.next(Math.ceil(fitted.getBoundingClientRect().width)),
+            );
+
+            observer.observe(fitted);
+
+            return () => observer.disconnect();
+          })
+        : EMPTY;
+
     return merge(
       height$.pipe(tap((height) => this.heightChange.emit(height))),
+      width$.pipe(tap((width) => this.widthChange.emit(width))),
       fromEvent<KeyboardEvent>(view, 'keydown').pipe(
         filter((event) => event.key === 'Escape'),
         tap(() => this.escapeKeydown.emit()),
@@ -164,6 +196,7 @@ export class CanvasFrameComponent {
         const message = frameMessageOf(data);
 
         if (message?.type === 'height') this.heightChange.emit(message.height);
+        if (message?.type === 'height' && message.width !== undefined) this.widthChange.emit(message.width);
         if (message?.type === 'escape') this.escapeKeydown.emit();
       }),
     );

@@ -16,6 +16,7 @@
       [live]="placed.live"
       [active]="placed.active"
       [selected]="placed.selected"
+      [captionBelow]="arrangement() === 'grid'"
       [style.left.px]="placed.x"
       [style.top.px]="placed.y"
       [style.width.px]="placed.width"
@@ -23,6 +24,7 @@
       (click)="select(placed.frame.id, $event)"
       (dblclick)="activate(placed.frame.id)"
       (heightChange)="storeHeight(placed.frame.id, $event)"
+      (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
     />
   }

@@ -219,6 +219,7 @@ export type ListedPart = {
   origin: PartOrigin;
   note: string | null;
   states: string[];
+  widths?: number[];
   problems: SystemProblem[];
 };
 
@@ -256,6 +257,8 @@ export type PartAddress = {
   epoch?: number;
   surface?: string;
   color?: string;
+  /** Draws the part at the size of its content instead of the size of the frame. */
+  fit?: boolean;
 };
 
 const themeQuery = ({ surface, color }: { surface?: string; color?: string }) =>
@@ -266,11 +269,17 @@ const partQuery = ({ product, part, state }: PartAddress) =>
 
 export const partFrameUrl = (address: PartAddress) =>
   `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
+  (address.fit ? '&fit' : '') +
   (address.epoch ? `&epoch=${address.epoch}` : '');
 
-/** The address of a PNG of one state of a part at one preset, renewed with each `revision`. */
-export const partShotUrl = (address: PartAddress & { preset: string; revision?: number }) =>
-  `http://localhost:${address.port}/__design/shot?${partQuery(address)}&preset=${encodeURIComponent(address.preset)}` +
+/**
+ * The address of a PNG of one state of a part at one preset or one container width, or fitted to its
+ * content with neither, renewed with each `revision`.
+ */
+export const partShotUrl = (address: PartAddress & { preset?: string; width?: number; revision?: number }) =>
+  `http://localhost:${address.port}/__design/shot?${partQuery(address)}` +
+  (address.preset ? `&preset=${encodeURIComponent(address.preset)}` : '') +
+  (address.width ? `&width=${address.width}` : '') +
   themeQuery(address) +
   (address.epoch ? `&epoch=${address.epoch}` : '') +
   (address.revision ? `&revision=${address.revision}` : '');

@@ -3,7 +3,8 @@ import { definePart, drawing } from '@design-system';
 type Props = { title: string; body: string };
 
 export default definePart<Props>({
-  note: 'Lab card: a title and a short body.',
+  note: 'Lab card: a title and a short body. It fills its container, so it lists the widths it is drawn at.',
+  widths: [240, 360, 520],
   states: {
     default: { title: 'Card title', body: 'A short body text.' },
     long: {
@@ -15,7 +16,7 @@ export default definePart<Props>({
     drawing({
       body: `<article class="lab-card"><h3>${title}</h3><p>${body}</p></article>`,
       styles: `
-        .lab-card { width: 280px; padding: 16px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); font-family: sans-serif; }
+        .lab-card { box-sizing: border-box; padding: 16px; border-radius: 10px; background: var(--lab-surface); color: var(--lab-ink); font-family: sans-serif; }
         .lab-card h3 { margin: 0 0 6px; font-size: 16px; }
         .lab-card p { margin: 0; font-size: 14px; }
       `,

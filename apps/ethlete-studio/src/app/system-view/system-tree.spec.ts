@@ -1,5 +1,6 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import {
+  arrangementOf,
   callFramesOf,
   canPick,
   holdersOf,
@@ -178,9 +179,11 @@ describe('callFramesOf', () => {
 });
 
 describe('framesOf', () => {
-  it('draws one row per state and one frame per preset', () => {
-    const frames = framesOf({ port: 4402, product: product(), part: part(), epoch: 2, surface: 'dark', revision: 3 });
+  it('draws a page in one row per state and one frame per preset', () => {
+    const page = part({ layer: 'pages', name: 'home' });
+    const frames = framesOf({ port: 4402, product: product(), part: page, epoch: 2, surface: 'dark', revision: 3 });
 
+    expect(arrangementOf(page)).toBe('sheet');
     expect(frames.map((frame) => [frame.row, frame.label, frame.width, frame.height])).toEqual([
       ['default', 'phone', 390, 844],
       ['default', 'desktop', 1280, undefined],
@@ -188,12 +191,46 @@ describe('framesOf', () => {
       ['disabled', 'desktop', 1280, undefined],
     ]);
     expect(frames[0]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&surface=dark&epoch=2',
+      'http://localhost:4402/frame.html?product=acme&part=pages%2Fhome&state=default&surface=dark&epoch=2',
     );
     expect(frames[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&preset=phone&surface=dark&epoch=2&revision=3',
+      'http://localhost:4402/__design/shot?product=acme&part=pages%2Fhome&state=default&preset=phone&surface=dark&epoch=2&revision=3',
     );
     expect(frames.every((frame) => frame.error === undefined)).toBe(true);
+  });
+
+  it('draws a small part as one tile per state, fitted to its content and named by the state', () => {
+    const button = part();
+    const frames = framesOf({ port: 4402, product: product(), part: button, epoch: 2, revision: 3 });
+
+    expect(arrangementOf(button)).toBe('grid');
+    expect(frames.map((frame) => [frame.id, frame.row, frame.label, frame.width, frame.height])).toEqual([
+      ['default', undefined, 'default', undefined, undefined],
+      ['disabled', undefined, 'disabled', undefined, undefined],
+    ]);
+    expect(frames[0]?.src).toBe(
+      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2',
+    );
+    expect(frames[0]?.screenshot).toBe(
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&epoch=2&revision=3',
+    );
+  });
+
+  it('draws a part with widths in one row per state and one frame per width', () => {
+    const card = part({ layer: 'elements', name: 'card', widths: [280, 480] });
+    const frames = framesOf({ port: 4402, product: product(), part: card, revision: 3 });
+
+    expect(arrangementOf(card)).toBe('sheet');
+    expect(frames.map((frame) => [frame.row, frame.width, frame.height])).toEqual([
+      ['default', 280, undefined],
+      ['default', 480, undefined],
+      ['disabled', 280, undefined],
+      ['disabled', 480, undefined],
+    ]);
+    expect(frames[1]?.src).toBe('http://localhost:4402/frame.html?product=acme&part=elements%2Fcard&state=default');
+    expect(frames[1]?.screenshot).toBe(
+      'http://localhost:4402/__design/shot?product=acme&part=elements%2Fcard&state=default&width=480&revision=3',
+    );
   });
 
   it('marks frames failed only for a LOAD problem, not for a rule problem', () => {
@@ -206,7 +243,7 @@ describe('framesOf', () => {
     expect(ruled.every((frame) => frame.error === undefined)).toBe(true);
   });
 
-  it('gives a part that does not load one unlabelled row with the error', () => {
+  it('gives a part that does not load one frame with the error', () => {
     const frames = framesOf({
       port: 1,
       product: product(),
@@ -214,8 +251,7 @@ describe('framesOf', () => {
     });
 
     expect(frames.map((frame) => [frame.row, frame.label, frame.error])).toEqual([
-      [undefined, 'phone', 'boom'],
-      [undefined, 'desktop', 'boom'],
+      [undefined, 'components/button', 'boom'],
     ]);
   });
 });

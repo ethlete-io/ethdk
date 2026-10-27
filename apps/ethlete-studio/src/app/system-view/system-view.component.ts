@@ -30,6 +30,7 @@ import {
   TreeEntry,
   TreeGroup,
   TreeSection,
+  arrangementOf,
   callFramesOf,
   callKeyOf,
   framesOf,
@@ -225,6 +226,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
           }
           <ethlete-design-canvas
             [frames]="frames()"
+            [arrangement]="arrangement()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             (cameraChange)="rememberCamera($event)"
@@ -445,6 +447,12 @@ export class SystemViewComponent {
       surface: this.surface(),
       color: this.color(),
     });
+  });
+
+  protected arrangement = computed(() => {
+    const part = this.part();
+
+    return part ? arrangementOf(part.listed) : 'sheet';
   });
 
   protected frames = computed(() => {

@@ -8,6 +8,14 @@ describe('frameMessageOf', () => {
     });
   });
 
+  it('reads the width a frame that fits its content reports', () => {
+    expect(frameMessageOf({ type: 'design-explore:height', variant: 'default', height: 96, width: 212 })).toEqual({
+      type: 'height',
+      height: 96,
+      width: 212,
+    });
+  });
+
   it('reads an Esc from inside the frame', () => {
     expect(frameMessageOf({ type: 'design-explore:escape', variant: 'default' })).toEqual({ type: 'escape' });
   });

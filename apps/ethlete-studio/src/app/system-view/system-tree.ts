@@ -157,13 +157,14 @@ const loadErrorOf = (problems: { rule: string; message: string }[]) =>
     .map((problem) => problem.message)
     .join('\n') || undefined;
 
-/** Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and one that does not load lists no states. */
-export const framesOf = ({ port, product, part, epoch, revision, surface, color }: FramesSource): CanvasFrame[] => {
+const statesOf = (part: ListedPart, error: string | undefined): (string | undefined)[] =>
+  part.states.length > 0 ? part.states : error ? [undefined] : [];
+
+const presetFramesOf = ({ port, product, part, epoch, revision, surface, color }: FramesSource): CanvasFrame[] => {
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
-  const rows: (string | undefined)[] = part.states.length > 0 ? part.states : error ? [undefined] : [];
 
-  return rows.flatMap((state) =>
+  return statesOf(part, error).flatMap((state) =>
     Object.entries(product.presets).map(([preset, { width, height }]) => {
       const address = { port, product: product.name, part: key, state: state ?? '', epoch, surface, color };
 
@@ -179,6 +180,59 @@ export const framesOf = ({ port, product, part, epoch, revision, surface, color 
       };
     }),
   );
+};
+
+export type FrameArrangement = 'sheet' | 'grid';
+
+/** A page and a part with `widths` show a row per state; any other part shows its states as a grid of tiles. */
+export const arrangementOf = (part: ListedPart): FrameArrangement =>
+  part.layer === 'pages' || (part.widths?.length ?? 0) > 0 ? 'sheet' : 'grid';
+
+/**
+ * A page at every preset of the product, a part with `widths` at each width, any other part fitted to
+ * its content, one frame per state. Only a `LOAD` problem fails the frames: a part that breaks a rule
+ * still renders, and one that does not load lists no states.
+ */
+export const framesOf = (source: FramesSource): CanvasFrame[] => {
+  const { port, product, part, epoch, revision, surface, color } = source;
+  const key = partKeyOf(part);
+  const error = loadErrorOf(part.problems);
+  const states = statesOf(part, error);
+  const addressOf = (state: string | undefined) => ({
+    port,
+    product: product.name,
+    part: key,
+    state: state ?? '',
+    epoch,
+    surface,
+    color,
+  });
+
+  if (part.layer === 'pages') return presetFramesOf(source);
+
+  const widths = part.widths ?? [];
+
+  if (widths.length > 0) {
+    return states.flatMap((state) =>
+      widths.map((width) => ({
+        id: `${state ?? ''} ${width}`,
+        src: partFrameUrl(addressOf(state)),
+        width,
+        label: 'width',
+        row: state,
+        screenshot: partShotUrl({ ...addressOf(state), width, revision }),
+        error,
+      })),
+    );
+  }
+
+  return states.map((state) => ({
+    id: state ?? '',
+    src: partFrameUrl({ ...addressOf(state), fit: true }),
+    label: state ?? key,
+    screenshot: partShotUrl({ ...addressOf(state), revision }),
+    error,
+  }));
 };
 
 export type SketchFramesSource = Omit<FramesSource, 'part'> & {
@@ -205,7 +259,7 @@ export const sketchFramesOf = ({
   surface,
   color,
 }: SketchFramesSource): CanvasFrame[] => {
-  const current = part ? framesOf({ port, product, part, epoch, revision, surface, color }) : [];
+  const current = part ? presetFramesOf({ port, product, part, epoch, revision, surface, color }) : [];
   const rows: (string | undefined)[] = part && part.states.length > 0 ? part.states : [undefined];
   const presets = Object.entries(product.presets);
 

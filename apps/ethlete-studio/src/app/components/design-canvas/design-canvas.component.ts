@@ -23,6 +23,7 @@ import {
   Size,
   boundingRect,
   fitRect,
+  layoutGrid,
   layoutSheet,
   panCamera,
   rectsIntersect,
@@ -33,6 +34,8 @@ import {
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
+const GRID_SPACING = { columnGap: 40, rowGap: 80, lineWidth: 1600 };
+const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const MIN_FRAME_WIDTH = 160;
 const MIN_FRAME_HEIGHT = 80;
@@ -69,6 +72,9 @@ export class DesignCanvasComponent {
 
   public frames = input.required<CanvasFrame[]>();
 
+  /** `sheet` puts each row of frames on its own line; `grid` flows the frames as tiles with their label below. */
+  public arrangement = input<'sheet' | 'grid'>('sheet');
+
   /** Names what the canvas shows. A new key fits the camera again, or restores `restoredCamera`. */
   public cameraKey = input<string | null>(null);
 
@@ -89,6 +95,7 @@ export class DesignCanvasComponent {
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().frameSizes ?? {}, key)),
   });
   private measuredHeights = signal<Record<string, number>>({});
+  private measuredWidths = signal<Record<string, number>>({});
 
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
@@ -96,17 +103,16 @@ export class DesignCanvasComponent {
   private layout = computed(() => {
     const sizes = this.sizes();
     const heights = this.measuredHeights();
+    const widths = this.measuredWidths();
     const frames = this.frames();
     const byId = new Map(frames.map((frame) => [frame.id, frame]));
-    const sheet = layoutSheet(
-      frames.map((frame) => ({
-        id: frame.id,
-        row: frame.row ?? '',
-        width: sizes[frame.id]?.width ?? frame.width,
-        height: sizes[frame.id]?.height ?? frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
-      })),
-      SPACING,
-    );
+    const sized = frames.map((frame) => ({
+      id: frame.id,
+      row: frame.row ?? '',
+      width: sizes[frame.id]?.width ?? frame.width ?? widths[frame.id] ?? FALLBACK_WIDTH,
+      height: sizes[frame.id]?.height ?? frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
+    }));
+    const sheet = this.arrangement() === 'grid' ? layoutGrid(sized, GRID_SPACING) : layoutSheet(sized, SPACING);
 
     return {
       rows: sheet.rows.filter((row) => row.name !== ''),
@@ -216,6 +222,10 @@ export class DesignCanvasComponent {
 
   protected storeHeight(id: string, height: number) {
     this.measuredHeights.update((heights) => (heights[id] === height ? heights : { ...heights, [id]: height }));
+  }
+
+  protected storeWidth(id: string, width: number) {
+    this.measuredWidths.update((widths) => (widths[id] === width ? widths : { ...widths, [id]: width }));
   }
 
   protected startResize(size: Size) {
