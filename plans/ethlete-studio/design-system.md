@@ -451,6 +451,8 @@ completely, for example the `studio-lab` `components/button` sketch.
   in the view state.
 - With "all", every interaction has its own cell, so each comment pin shows in its cell. The label
   "N comment in another interaction" shows only while a single interaction is the filter.
+- The part view table drops the "N comment in another interaction" label too: every interaction is
+  a column there, so each pin shows in its cell.
 - The merge preview ("Where <part> is used") does not change: a nested part always stays at rest.
 
 ### Frame reload decisions (2026-10-27)
