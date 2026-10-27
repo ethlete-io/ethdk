@@ -484,6 +484,27 @@ describe('sketchMatrixOf', () => {
     expect(ready.frames.some((frame) => frame.column === 'b')).toBe(true);
   });
 
+  it('names the first author of a variant in its head, counts the rest, and lists all in the title', () => {
+    const matrix = sketchMatrixOf({
+      ...source,
+      part: part(),
+      sketch: sketch({
+        status: 'ready',
+        variantInfo: { a: { authors: ['gemini-3-argon'] }, b: { authors: ['gpt-5.6-sol', 'claude-opus-5-5'] } },
+      }),
+    });
+    const unauthored = sketchMatrixOf({ ...source, part: part(), sketch: sketch({ status: 'ready' }) });
+
+    expect(matrix.columns.slice(1)).toEqual([
+      { key: 'a', label: 'a · gemini-3-argon', title: 'a by gemini-3-argon', drawing: false },
+      { key: 'b', label: 'b · gpt-5.6-sol +1', title: 'b by gpt-5.6-sol, claude-opus-5-5', drawing: false },
+    ]);
+    expect(unauthored.columns.slice(1)).toEqual([
+      { key: 'a', label: 'a', drawing: false },
+      { key: 'b', label: 'b', drawing: false },
+    ]);
+  });
+
   it('shows only variants for a new part, and fails a variant that does not load', () => {
     const matrix = sketchMatrixOf({
       ...source,

@@ -14,7 +14,7 @@ import { injectCommentStore } from './comment-store';
           <li [attr.data-comment-by]="entry.by" class="flex flex-col gap-0.5">
             <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]">
               <span [class.text-[var(--et-theme-color-primary-solid)]]="entry.by === 'agent'" class="font-semibold">{{
-                SENDER_LABELS[entry.by]
+                entry.author ? SENDER_LABELS[entry.by] + ' · ' + entry.author : SENDER_LABELS[entry.by]
               }}</span>
               <time [attr.datetime]="entry.createdAt" [title]="entry.createdAt">{{
                 AGE_OF(entry.createdAt, now())

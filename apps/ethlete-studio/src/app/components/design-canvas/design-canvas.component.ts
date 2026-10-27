@@ -55,7 +55,7 @@ const LIVE_MIN_ZOOM = 0.5;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
-export type CanvasColumn = { key: string; label: string; muted?: boolean };
+export type CanvasColumn = { key: string; label: string; muted?: boolean; title?: string };
 
 type PlacedFrame = Rect & { frame: CanvasFrame; unsized: boolean; live: boolean; active: boolean; selected: boolean };
 

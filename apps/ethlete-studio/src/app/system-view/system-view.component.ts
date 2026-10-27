@@ -46,6 +46,7 @@ import {
   TreeGroup,
   TreeSection,
   arrangementOf,
+  authorsLabelOf,
   callFramesOf,
   callKeyOf,
   framesOf,
@@ -319,8 +320,18 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </ethlete-sketch-view>
         } @else if (awaitingPicked()) {
-        } @else if (part()) {
+        } @else if (part(); as partShown) {
           <div class="absolute top-3 right-4 z-1 flex gap-2">
+            @let madeBy = partShown.listed.madeBy ?? [];
+            @if (madeBy.length > 0) {
+              <span
+                [title]="'made by ' + madeBy.join(', ')"
+                class="self-center font-mono text-small whitespace-nowrap text-[var(--et-surface-color-subtle-solid)]"
+                data-made-by
+              >
+                made by {{ AUTHORS_LABEL_OF(madeBy) }}
+              </span>
+            }
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </div>
@@ -395,6 +406,8 @@ export class SystemViewComponent {
   protected readonly BADGE_ACCENT = BADGE_ACCENT;
 
   protected readonly NOTE = NOTE;
+
+  protected readonly AUTHORS_LABEL_OF = authorsLabelOf;
 
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
 

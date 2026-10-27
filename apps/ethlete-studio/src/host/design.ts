@@ -239,6 +239,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
+  /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
+  madeBy?: string[];
   problems: SystemProblem[];
 };
 
@@ -374,6 +376,8 @@ export type ListedSketch = {
   targets?: SketchTarget[];
   /** What the agent draws right now, `null` when it reports nothing. */
   report?: SketchReport | null;
+  /** The model ids that reported on each variant, in the order of their first report. Missing in old data. */
+  variantInfo?: Record<string, { authors?: string[] }>;
 };
 
 export type SketchTarget = {
@@ -385,8 +389,8 @@ export type SketchTarget = {
   error?: string;
 };
 
-/** `variant` is the variant the message names as `variant <name>`. */
-export type SketchReport = { message: string; updatedAt: string; variant: string | null };
+/** `variant` and `author` are `null` or missing in a report written before they were recorded. */
+export type SketchReport = { message: string; updatedAt: string; variant: string | null; author?: string | null };
 
 export type ListedSketches = { sketches: ListedSketch[]; unreadable: SystemProblem[] };
 
@@ -466,7 +470,7 @@ export type CommentPlace = {
 };
 
 /** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */
-export type CommentReply = { by: 'user' | 'agent'; text: string; createdAt: string };
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string };
 
 export type ListedComment = CommentPlace & {
   id: string;

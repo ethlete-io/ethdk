@@ -14,7 +14,7 @@
       [style.left.px]="column.x"
       [style.max-width.px]="column.width"
       [class.et-design-canvas__column--muted]="column.muted"
-      [title]="column.label"
+      [title]="column.title ?? column.label"
       class="et-design-canvas__column"
     >
       {{ column.label }}

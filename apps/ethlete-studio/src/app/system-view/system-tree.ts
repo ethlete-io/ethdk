@@ -321,7 +321,11 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
 /** The interaction switch value that shows every interaction in its own row. */
 export const ALL = 'all';
 
-export type MatrixColumn = { key: string; label: string; drawing: boolean };
+export type MatrixColumn = { key: string; label: string; drawing: boolean; title?: string };
+
+/** The first author and "+N" for the rest, or `null` without authors. */
+export const authorsLabelOf = (authors: string[]) =>
+  authors.length === 0 ? null : authors.length === 1 ? authors[0] : `${authors[0]} +${authors.length - 1}`;
 
 export type SketchMatrix = {
   columns: MatrixColumn[];
@@ -440,9 +444,13 @@ export const sketchMatrixOf = ({
       const target = targetOf(variant);
       const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
 
+      const authors = sketch.variantInfo?.[variant]?.authors ?? [];
+      const named = [variant, authorsLabelOf(authors)].filter(Boolean).join(' · ');
+
       return {
         key: variant,
-        label: variant === drawing ? `${variant} · drawing …` : variant,
+        label: variant === drawing ? `${named} · drawing …` : named,
+        ...(authors.length > 0 ? { title: `${variant} by ${authors.join(', ')}` } : {}),
         drawing: variant === drawing,
         states: target?.states ?? part?.states ?? [],
         interactions: [REST, ...(target?.interactions ?? part?.interactions ?? [])],
@@ -550,7 +558,12 @@ export const sketchMatrixOf = ({
   });
 
   return {
-    columns: columns.map(({ key, label, drawing: isDrawing }) => ({ key, label, drawing: isDrawing })),
+    columns: columns.map(({ key, label, title, drawing: isDrawing }) => ({
+      key,
+      label,
+      drawing: isDrawing,
+      ...(title === undefined ? {} : { title }),
+    })),
     frames,
     sizes,
     size,

@@ -22,6 +22,7 @@ import {
   ListedSketch,
   MergePreview,
   SketchAddress,
+  SketchReport,
   decideSketch$,
   discardSketch$,
   mergeSketch$,
@@ -187,7 +188,10 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         class="flex flex-wrap items-center gap-2 border-b border-[var(--et-surface-border-solid)] px-4 py-2 text-small"
       >
         @if (shown.status === 'in progress' && shown.report; as report) {
-          <span [title]="report.message" class="min-w-0 flex-1 truncate text-[var(--et-surface-color-subtle-solid)]">
+          <span
+            [title]="reportTitleOf(report)"
+            class="min-w-0 flex-1 truncate text-[var(--et-surface-color-subtle-solid)]"
+          >
             Agent: {{ report.message }}
           </span>
         } @else {
@@ -387,8 +391,12 @@ export class SketchViewComponent {
   );
 
   protected canvasColumns = computed(() =>
-    this.canvas().columns.map(({ key, label, drawing }) => ({ key, label, muted: drawing })),
+    this.canvas().columns.map(({ key, label, title, drawing }) => ({ key, label, title, muted: drawing })),
   );
+
+  protected reportTitleOf(report: SketchReport) {
+    return report.author ? `${report.message}\n\nby ${report.author}` : report.message;
+  }
 
   protected sizeLabel(size: string) {
     return size in this.product().presets ? size : `${size} px`;
