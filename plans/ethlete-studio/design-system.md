@@ -606,6 +606,22 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   computed-style diffs and an identical screenshot before and after (only the shell, no design
   server). Not checked: the dev server's watch on the token file.
 
+### Token names and logo decisions (2026-10-27)
+
+- Rename the product tokens that clash with Tailwind theme variables (`--font-sans`, `--font-mono`,
+  `--radius-sm` to `--radius-full`), for example to `--font-ui`, `--font-code`, `--radius-control`,
+  before the component layer reads them. Tom accepted this.
+- Studio gets a logo: a sketch round on `foundations/logo` in product `studio` (variants A grid,
+  B stroke S, C sketch over a part, D Ethlete E; the builder picks B). After Tom's pick: a 1024 px
+  export with literal colours (the marks use CSS variables), `tauri icon`, and the mark in the
+  sidebar header.
+
+Findings:
+
+- A foundations part could not import the tokens part: `sketch check` flagged UPWARD-DEPENDENCY.
+  Fixed: a foundation may use another foundation (cd2c4a6fe).
+- `dist/libs/cli` was older than the last `libs/cli` commit; the sketch agent rebuilt it.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
