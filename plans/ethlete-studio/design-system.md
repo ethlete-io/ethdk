@@ -253,14 +253,26 @@ mock frames at `#/canvas-demo`. It does not connect to the design server yet.
 
 Open points, each with a recommendation:
 
-- Product picker: one product shows its name, many show a plain `<select>`. Provisional until
-  the picker UI is decided. Recommendation: decide it together with the workspace picker.
-- Themes per product: `ListedProduct` has no themes, so the view uses the theme of the old call
-  view. Recommendation: list `themes` per product on the server, and pick per product.
-- A command that creates a product. Decided: `et design product new <name>`, see "Checkup
-  decisions". The empty state then shows that command.
-- The selected part is not remembered over a reload. Recommendation: store it with the other
-  view state once the layout is settled.
+- Product picker: decided, see "Picker decisions".
+- Themes per product: done. The server lists `themes` per product (5a16985e5), and Studio
+  remembers the pick per checkout and product.
+- A command that creates a product: done, `et design product new <name>`. The empty state shows it.
+- The selected part over a reload: done, Studio remembers it as `systemEntry` (25837501a).
+
+### Picker decisions (2026-10-27)
+
+- The checkout picker stays in the status bar; the product picker stays at the top of the sidebar.
+- The product picker is always an SDK `et-select`, also with one product. Its last option is
+  "New product".
+- The checkout picker becomes an SDK `et-select`. Its panel (add, search, forget) stays.
+- In the open list, a product with a base shows "inherits from <base>" muted below its name. The
+  closed select shows the name only.
+- "New product" shows the empty-state screen in the canvas area, headed "New product", with the
+  command and the copy button. The picker shows "New product" as picked; another pick goes back.
+- Later: that screen gets a form with a name and an optional base (an `et-select` of the existing
+  products). A new design server endpoint creates the product with the code of
+  `et design product new`; the list reloads and the new product is picked. `--from-project` stays
+  CLI only.
 
 ### Studio Legacy and sketch API, as built (2026-10-27)
 
@@ -702,7 +714,8 @@ Slice 1: done on 2026-10-27.
 
 Slice 2: done on 2026-10-27. The canvas, the server, the CLI, the tree and Legacy are built, and
 the old Calls UI is removed (4b2383ae2). Open: a Rust slice removes the commands only the old UI
-used (see "Legacy calls").
+used (see "Legacy calls"). Open: the pickers and "New product" as in "Picker decisions", first the
+two `et-select`s and the empty-state screen, then the create form and its endpoint.
 
 Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
 in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
