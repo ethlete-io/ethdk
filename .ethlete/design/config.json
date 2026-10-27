@@ -42,6 +42,23 @@
           "height": 900
         }
       }
+    },
+    "sdk": {
+      "styles": [".ethlete/design/sdk/foundations/tokens/tokens.css"],
+      "presets": {
+        "phone": {
+          "width": 390,
+          "height": 844
+        },
+        "desktop": {
+          "width": 1440,
+          "height": 900
+        }
+      }
+    },
+    "studio": {
+      "styles": [".ethlete/design/sdk/foundations/tokens/tokens.css"],
+      "base": ".ethlete/design/sdk"
     }
   }
 }
