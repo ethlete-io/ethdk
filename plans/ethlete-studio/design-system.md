@@ -293,6 +293,11 @@ Open points, each with a recommendation:
 - Merge keeps its order: it writes the pick and the note (`sketch-decision`) first, then merges. A
   refused merge keeps both, and a rebase keeps them, so after the rebase the user only clicks Merge
   again.
+- Built in 37051efb0, 99b45c14b, dead141e7: `baseLabelOf` (`system-view.component.ts`) shows the
+  last folder segment, an @-name whole. The form always shows the Base select: "No base", each
+  product without a base, `@ethlete/components`. `POST /__design/product` accepts the built-in base
+  and stores it as written (`isBuiltInBase` in `system/base.ts`). The endpoint, label and option
+  tests fail without the change.
 
 ### Product picker, as built (2026-10-27)
 
