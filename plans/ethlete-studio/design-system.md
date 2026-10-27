@@ -647,8 +647,8 @@ empty` as two frames with an accent outline round the card (`--et-theme-color-pr
 
 Open points, each with a recommendation:
 
-- Not built: the rendering dot while the compare runs. The line reads "Comparing now and after the
-  merge…" instead. Recommendation: add the dot as decided, in a small slice.
+- Done (c8638c528): the pulsing rendering dot in the primary accent stands before "Comparing now and
+  after the merge…" while the compare runs.
 - Not checked in the real app. Recommendation: look at it in Studio on `studio-lab` after the
   restart that rebuilds the cli.
 
