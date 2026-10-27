@@ -548,6 +548,19 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   with small steps. Each variant shows the same mini scene: sidebar, canvas area, card, popover.
 - No reference apps; the builder draws the directions freely.
 
+### Surfaces sketch and frame border decisions (2026-10-27)
+
+- Surfaces sketch: Tom picks the variant himself in Studio (pick or comment); the builder reads it
+  there.
+- The white strip around the dark root in the shots comes from the copied SDK `body` rule. The
+  builder fixes it in the sketch: `body` background `surface-sunken`, margin 0.
+- Mapping the SDK dark tokens onto the new surface tokens waits for the slice 10 component layer.
+- Frame border: the 1 px outline on `ethlete-canvas-frame` stays on frames with content. It moves
+  above the content as a pointer-events-none overlay after the iframe, set outward by the outline
+  width, also for the selected and active states. Cause: at a fractional device-pixel ratio (1.25)
+  the live iframe snaps right and down and covers the outline there, so only the left and top
+  edges showed.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
