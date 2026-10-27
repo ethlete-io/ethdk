@@ -158,17 +158,46 @@ describe('the parts event of the design server', () => {
     expect(keys.filter((key) => key.endsWith(' b'))).toHaveLength(plain);
   });
 
-  it('redraws all parts for config.json, and for a file that comes or goes', async () => {
+  it('redraws all parts for config.json', async () => {
     const { emit, changes } = await serveAcme();
 
     emit('change', 'config.json');
+
+    expect(changes()).toEqual([{ revision: 1, all: true }]);
+  });
+
+  it('redraws only the part whose folder a file comes to or goes from', async () => {
+    const { emit, changes } = await serveAcme();
+
     emit('add', 'acme/components/badge/badge.ts');
     emit('unlink', 'acme/components/badge/badge.ts');
 
     expect(changes()).toEqual([
-      { revision: 1, all: true },
-      { revision: 2, all: true },
-      { revision: 3, all: true },
+      { revision: 1, all: false, parts: [{ product: 'acme', part: 'components/badge', sketch: null }] },
+      { revision: 2, all: false, parts: [{ product: 'acme', part: 'components/badge', sketch: null }] },
+    ]);
+  });
+
+  it('redraws the frames of the sketch variant whose folder a file comes to', async () => {
+    const { emit, changes, keysOf } = await serveAcme();
+
+    emit('add', 'acme/sketches/components-card/a/components/card/extra.css');
+
+    const keys = keysOf(changes()[0]) as string[];
+
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.every((key) => key.endsWith(' a'))).toBe(true);
+  });
+
+  it('asks frames that show an error to reload for a file in no part folder', async () => {
+    const { emit, changes } = await serveAcme();
+
+    emit('add', 'acme/notes.md');
+    emit('add', 'acme/sketches/components-card/notes.md');
+
+    expect(changes()).toEqual([
+      { revision: 1, all: false, parts: [], errored: true },
+      { revision: 2, all: false, parts: [], errored: true },
     ]);
   });
 

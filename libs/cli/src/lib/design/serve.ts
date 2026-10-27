@@ -33,7 +33,7 @@ import { forceInteractionsPlugin } from './force-interactions';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
-import { ALL_PARTS, changedPartsOf, PartsChange } from './changed-parts';
+import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
@@ -287,7 +287,7 @@ const designExplore = ({
     let revision = 0;
 
     const redraw = (change: PartsChange) => {
-      if (!change.all && change.parts.length === 0) return;
+      if (!change.all && change.parts.length === 0 && !change.errored) return;
 
       revision += 1;
       if (change.all) shots.clear();
@@ -332,7 +332,7 @@ const designExplore = ({
 
       system.forget();
       reload(`${VIRTUAL}/system`);
-      redraw(ALL_PARTS);
+      redraw(addedPartsOf({ designRoot, baseDirs, system, file: resolve(file) }));
       if (!isInside(designRoot, file)) events.signal('changes');
     };
 

@@ -131,7 +131,7 @@ export const findSketch = (options: { productDir: string; product: string; sketc
   return existsSync(dir) ? readSketch({ product: options.product, dir }) : null;
 };
 
-const writeSketchFile = (sketch: Sketch) => {
+export const writeSketchFile = (sketch: Sketch) => {
   const file: SketchFile = {
     target: partKeyOf(sketch),
     status: sketch.status,
@@ -213,6 +213,22 @@ export const createSketch = (options: {
 
 const reportSlugOf = (sketch: Sketch) => `sketches/${sketch.product}/${sketchFolderOf(sketch)}`;
 
+/** The sketch with `author` among the authors of `variant`; the same sketch when it is there already. */
+export const withAuthor = (options: { sketch: Sketch; variant: string; author: string }): Sketch => {
+  const { sketch, variant, author } = options;
+  const authors = authorsOf(sketch, variant);
+
+  return authors.includes(author)
+    ? sketch
+    : {
+        ...sketch,
+        variantInfo: {
+          ...sketch.variantInfo,
+          [variant]: { ...sketch.variantInfo?.[variant], authors: [...authors, author] },
+        },
+      };
+};
+
 /** Where the live report of the agent on a sketch is kept, next to the call statuses. */
 export const sketchReportPath = (options: { checkout: string; sketch: Sketch }) =>
   statusPath({ checkout: options.checkout, slug: reportSlugOf(options.sketch) });
@@ -238,16 +254,7 @@ export const reportSketch = (options: {
     return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ') || 'none'}`;
   if (author.trim() === '') return 'a report needs --by <model id>';
 
-  const authors = authorsOf(sketch, variant);
-  const reported: Sketch = authors.includes(author)
-    ? sketch
-    : {
-        ...sketch,
-        variantInfo: {
-          ...sketch.variantInfo,
-          [variant]: { ...sketch.variantInfo?.[variant], authors: [...authors, author] },
-        },
-      };
+  const reported = withAuthor({ sketch, variant, author });
 
   if (reported !== sketch) writeSketchFile(reported);
 

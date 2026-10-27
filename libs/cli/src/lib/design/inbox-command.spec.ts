@@ -3,7 +3,9 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { designComment, designInbox } from './inbox-command';
-import { DESIGN_DIR } from './paths';
+import { DESIGN_DIR, readConfig } from './paths';
+import { createSketch, parseTarget, readSketch } from './system/sketch/sketch';
+import { createSystemModules } from './system/system-modules';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-inbox-command-'));
@@ -81,6 +83,64 @@ describe('designComment and designInbox', () => {
     expect(existsSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`))).toBe(false);
     expect(designInbox({ target, argv: [], invocation })).toBe(0);
     expect(lines.pop()).toBe('inbox empty');
+  });
+
+  it('stores the id of inbox done in the madeBy of the part, once', () => {
+    const target = acme();
+    const lines = output();
+    const home = join(target, DESIGN_DIR, 'acme/pages/home/home.ts');
+    const argv = ['pages/home', 'empty', '--size', 'phone', '--product', 'acme', 'Say', 'why.'];
+    const done = () => {
+      designComment({ target, argv, invocation });
+
+      const id = /^comment (\S+):/u.exec(lines.pop() ?? '')?.[1] ?? '';
+
+      return designInbox({ target, argv: ['done', id, '--note', 'A hero.', '--by', 'gpt-5.6-sol'], invocation });
+    };
+
+    expect(done()).toBe(0);
+    expect(done()).toBe(0);
+    expect(readFileSync(home, 'utf8').match(/madeBy: \['gpt-5\.6-sol'\]/gu)).toHaveLength(1);
+  });
+
+  it('stores the id of inbox done in the authors of the sketch variant a comment sat on', () => {
+    const target = acme();
+    const lines = output();
+    const config = readConfig(target) ?? {};
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/card');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+    designComment({
+      target,
+      argv: [
+        'pages/home',
+        'empty',
+        '--size',
+        'phone',
+        '--sketch',
+        'components/card',
+        '--variant',
+        'a',
+        '--product',
+        'acme',
+        'Why?',
+      ],
+      invocation,
+    });
+
+    const id = /^comment (\S+):/u.exec(lines.pop() ?? '')?.[1] ?? '';
+    const done = () =>
+      designInbox({ target, argv: ['done', id, '--note', 'A hero.', '--by', 'gpt-5.6-sol'], invocation });
+
+    expect(done()).toBe(0);
+
+    const sketch = readSketch({ product: 'acme', dir: join(target, DESIGN_DIR, 'acme/sketches/components-card') });
+
+    expect(typeof sketch === 'string' ? sketch : sketch.variantInfo).toEqual({ a: { authors: ['gpt-5.6-sol'] } });
+    expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).not.toContain('madeBy');
   });
 
   it('refuses a comment without a size, a bad point or a stale part', () => {

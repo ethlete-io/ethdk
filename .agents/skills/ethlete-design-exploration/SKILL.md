@@ -126,7 +126,7 @@ et design comment reply <id> --by <model id> <text>       # answer a comment thr
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
-by changing the sketch or the part, then `inbox done <id> --note "…"`. The note replaces the `note` of the part the comment was made on (for a sketch variant, the product's part), so write it to explain the whole shape of the part, and pass the old note unchanged when it still holds. `done` fails without `--note`; only the user withdraws a comment without one, in Studio. A pick or discard decision is the user's
+by changing the sketch or the part, then `inbox done <id> --note "…"`. The note replaces the `note` of the part the comment was made on (for a sketch variant, the product's part), so write it to explain the whole shape of the part, and pass the old note unchanged when it still holds. `done` fails without `--note`; only the user withdraws a comment without one, in Studio. `done` also stores your `--by` where the comment sat: in the authors of the sketch variant, or in the `madeBy` of the part. A pick or discard decision is the user's
 cue, not yours to act on beyond what Studio already did.
 
 A comment is a thread: the user and you both reply. When a comment is unclear, ask with

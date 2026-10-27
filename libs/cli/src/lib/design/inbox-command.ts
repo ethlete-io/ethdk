@@ -72,7 +72,7 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
       products.push(product);
     }
 
-    const deleted = completeComment({ products, id, note });
+    const deleted = completeComment({ products, id, note, author: authorOf(args) ?? undefined });
 
     if (typeof deleted === 'string') return fail(deleted);
 

@@ -1,5 +1,6 @@
-import { resolve } from 'path';
+import { relative, resolve, sep } from 'path';
 import { DesignConfig } from './paths';
+import { isLayer } from './system/layers';
 import { partKeyOf } from './system/resolve-product';
 import {
   fileOfModuleId,
@@ -12,8 +13,11 @@ import {
 /** One part as a frame draws it: in a product, or in one variant of one of the product's sketches. */
 export type DrawnPart = { product: string; part: string; sketch: SketchVariant | null };
 
-/** The parts a file change redraws, or every part when the server cannot tell. */
-export type PartsChange = { all: true } | { all: false; parts: DrawnPart[] };
+/**
+ * The parts a file change redraws, or every part when the server cannot tell. `errored` asks a frame
+ * that shows an error to reload too: a new file may be the one it missed.
+ */
+export type PartsChange = { all: true } | { all: false; parts: DrawnPart[]; errored?: true };
 
 export const ALL_PARTS: PartsChange = { all: true };
 
@@ -76,4 +80,56 @@ export const changedPartsOf = (options: {
   }
 
   return { all: false, parts: [...parts.values()] };
+};
+
+const partFolderOf = (segments: string[]) => {
+  const [layer, name, inside] = segments;
+
+  return layer && name && inside !== undefined && isLayer(layer) ? `${layer}/${name}` : null;
+};
+
+/**
+ * The frames a file that came or went redraws: the part whose folder holds it, or the variant whose
+ * folder holds it. A file in no part folder redraws no part, only the frames that show an error.
+ */
+export const addedPartsOf = (options: {
+  designRoot: string;
+  baseDirs: string[];
+  system: SystemModules;
+  file: string;
+}) => {
+  const { designRoot, baseDirs, system, file } = options;
+  const none: PartsChange = { all: false, parts: [], errored: true };
+  const inDesign = relative(designRoot, file).split(sep);
+  const [product, ...rest] = inDesign;
+
+  if (product && !inDesign[0]?.startsWith('..') && system.productOf(product)) {
+    if (rest[0] === 'sketches') {
+      const [folder, variant, ...inside] = rest.slice(1);
+      const layer = folder?.split('-')[0];
+
+      if (!folder || !variant || inside.length === 0 || !layer || !isLayer(layer)) return none;
+
+      const target = `${layer}/${folder.slice(layer.length + 1)}`;
+      const parts = everyPartOf(system, product).filter(
+        (drawn) => drawn.sketch?.target === target && drawn.sketch.variant === variant,
+      );
+
+      return parts.length > 0 ? ({ all: false, parts } satisfies PartsChange) : none;
+    }
+
+    const part = partFolderOf(rest);
+
+    return part ? ({ all: false, parts: [{ product, part, sketch: null }] } satisfies PartsChange) : none;
+  }
+
+  const baseDir = baseDirs.find((dir) => file.startsWith(`${dir}${sep}`));
+  const part = baseDir ? partFolderOf(relative(baseDir, file).split(sep)) : null;
+
+  if (!part) return none;
+
+  return {
+    all: false,
+    parts: system.products().map((name) => ({ product: name, part, sketch: null })),
+  } satisfies PartsChange;
 };

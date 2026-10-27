@@ -54,6 +54,16 @@ export const stateNamesOf = (source: string): string[] | null => {
   return names.includes(null) ? null : (names as string[]);
 };
 
+/** The model ids in the `madeBy` literal of a part file; none when it has no such array of strings. */
+export const madeByOf = (source: string): string[] => {
+  const { definition } = definitionOf(source);
+  const current = definition ? propertyOf(definition, 'madeBy')?.initializer : undefined;
+
+  if (!current || !ts.isArrayLiteralExpression(current)) return [];
+
+  return current.elements.flatMap((element) => (ts.isStringLiteralLike(element) ? [element.text] : []));
+};
+
 const quoted = (text: string) => `'${text.replace(/\\/gu, '\\\\').replace(/'/gu, "\\'").replace(/\r?\n/gu, '\\n')}'`;
 
 /** The part file with its `note` replaced, or `null` when it holds no `definePart({ note: '…' })` literal. */
