@@ -515,6 +515,10 @@ b by Codex Sol, c by Claude Opus. Today only comment replies know `by: 'user' | 
   "restart design server" (`design_server_restart`) first runs `npx nx cli-runtime ethlete-studio`
   in the SDK checkout, then starts the server; its log shows "Building the CLI…". A release build
   keeps the shipped copy. No watch process: the user decides when the server restarts.
+- Built (fd9586658): the build runs in the SDK root (`CARGO_MANIFEST_DIR/../../..`). The footer log
+  starts with "Building the CLI…" and shows the last 40 lines of the build output. If the build
+  fails, the server does not start, and Studio shows the error with the output tail. A plain start
+  does not build.
 
 ### Docs decision (2026-10-27)
 
