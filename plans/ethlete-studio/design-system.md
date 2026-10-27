@@ -610,7 +610,8 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
 
 - Rename the product tokens that clash with Tailwind theme variables (`--font-sans`, `--font-mono`,
   `--radius-sm` to `--radius-full`), for example to `--font-ui`, `--font-code`, `--radius-control`,
-  before the component layer reads them. Tom accepted this.
+  before the component layer reads them. Tom accepted this. Done: `--font-ui`, `--font-code`,
+  `--radius-control-sm|md|lg`, `--radius-pill`, exposed in `@theme inline` (commit 07908b7b8).
 - Studio gets a logo: a sketch round on `foundations/logo` in product `studio` (variants A grid,
   B stroke S, C sketch over a part, D Ethlete E; the builder picks B). After Tom's pick: a 1024 px
   export with literal colours (the marks use CSS variables), `tauri icon`, and the mark in the
