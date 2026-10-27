@@ -720,6 +720,8 @@ step. Each finding names what happened and the fix it needs.
   server is off limits, and starting an own server was denied by the permission check. Every
   visual question went back to Tom as a screenshot. Fix: `et design shot <part> --state <s>
 --preset <p> --out <file>` renders without a server.
+  Tom (2026-10-27): an agent may fetch `GET /__design/shot` from his open Studio server, read
+  only, as long as it never steers Studio. The command stays the fix for a session without Studio.
 - The kit has no shape for an app window. A `box` is either bordered with round corners or
   plain, so a shell built from boxes looks like stacked cards. Fix: a kit `split` or `divider`
   that draws one line between regions.
