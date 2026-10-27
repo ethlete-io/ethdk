@@ -4,7 +4,6 @@ import { configPathOf, DesignConfig, DesignProduct, readConfig } from './paths';
 import { LAYERS } from './system/layers';
 import { productDirOf } from './system/product';
 
-const PRESETS = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
 const FROM_PROJECT_KEYS = ['styles', 'head', 'providers', 'themes'] as const;
 
 const valueOf = (argv: string[], flag: string) => {
@@ -66,12 +65,12 @@ export const designProduct = (options: { target: string; argv: string[]; invocat
     }
 
     for (const key of FROM_PROJECT_KEYS) {
-      if (project[key] !== undefined) Object.assign(entry, { [key]: JSON.parse(JSON.stringify(project[key])) });
+      if (project[key] !== undefined) Object.assign(entry, { [key]: project[key] });
     }
   }
 
   if (base) entry.base = base;
-  else entry.presets = JSON.parse(JSON.stringify(PRESETS));
+  else entry.presets = { phone: { width: 390, height: 844 }, desktop: { width: 1440, height: 900 } };
 
   const configPath = configPathOf(target);
 
