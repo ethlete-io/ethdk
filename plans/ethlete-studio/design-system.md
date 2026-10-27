@@ -625,6 +625,25 @@ width?, outlines: { now: Rect[], merged: Rect[] }, error? }`. One request answer
   are fitted, as in Studio's `mergePreviewOf`. Only the rest interaction is compared, with the
   states the product has now.
 
+### Merge preview Studio, as built (2026-10-27)
+
+- 4b72f29a6: an `outlines` input on the design canvas. cf3295aba: the merge preview in Studio; the
+  compare call is in `system-view/merge-preview.ts`.
+- On `studio-lab`, sketch `components/card`, variant b, "Where card is used" shows the label "components/card
+  appears in these parts. Left: now. Right: after merging b.", the changed row `pages/library ·
+empty` as two frames with an accent outline round the card (`--et-theme-color-primary-solid`), and
+  "2 states of pages/library without visible change" (`one`, `three`). A click on that line adds
+  those frames. Verified headlessly on own servers: 2 frames, 2 outlines.
+- A row error becomes the frame error on both sides (spec only, not seen live). A failed compare
+  request shows in the header in the semantic error colour.
+
+Open points, each with a recommendation:
+
+- Not built: the rendering dot while the compare runs. The line reads "Comparing now and after the
+  merge…" instead. Recommendation: add the dot as decided, in a small slice.
+- Not checked in the real app. Recommendation: look at it in Studio on `studio-lab` after the
+  restart that rebuilds the cli.
+
 ### Sketch rounds decisions (2026-10-27)
 
 Not built yet. The user may like solid from variant a and outline from variant b. A variant is a
