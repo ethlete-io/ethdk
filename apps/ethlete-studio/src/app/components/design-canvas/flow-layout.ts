@@ -7,9 +7,22 @@ export type CanvasLine = FlowLink & { label?: string };
 
 export type FlowBox = { id: string; width: number; height: number; at?: Point };
 
-export type FlowSpacing = { columnGap: number; rowGap: number };
+export type FlowSpacing = { columnGap: number; rowGap: number; maxColumnGap: number };
 
 const ARC_RISE = 96;
+const LABEL_CHAR_WIDTH = 7;
+const LABEL_CHROME = 18;
+const LABEL_MARGIN = 40;
+
+/** The widest a line label gets in a gap of `maxColumnGap`; a longer label wraps. */
+export const flowLabelMaxWidthOf = ({ maxColumnGap }: FlowSpacing) => maxColumnGap - 2 * LABEL_MARGIN;
+
+/** The gap a label needs between two columns: the normal gap, or wider to fit it, up to `maxColumnGap`. */
+export const flowGapOf = (label: string | undefined, spacing: FlowSpacing) => {
+  const width = label ? label.length * LABEL_CHAR_WIDTH + LABEL_CHROME + 2 * LABEL_MARGIN : 0;
+
+  return Math.min(spacing.maxColumnGap, Math.max(spacing.columnGap, width));
+};
 
 /**
  * The column of each frame along the links, left to right: a frame sits one column after the
@@ -58,10 +71,13 @@ export const flowColumnsOf = (ids: string[], links: FlowLink[]): Map<string, num
   return columns;
 };
 
-/** Each frame at its `at`, or in its column of `flowColumnsOf`, under the frames before it in that column. */
+/**
+ * Each frame at its `at`, or in its column of `flowColumnsOf`, under the frames before it in that column. The gap
+ * after a column grows with the longest label of a line into the next column.
+ */
 export const layoutFlow = (
   boxes: FlowBox[],
-  { links, spacing }: { links: FlowLink[]; spacing: FlowSpacing },
+  { links, spacing }: { links: CanvasLine[]; spacing: FlowSpacing },
 ): (Rect & { id: string })[] => {
   const columns = flowColumnsOf(
     boxes.map((box) => box.id),
@@ -72,12 +88,21 @@ export const layoutFlow = (
   const widths = used.map((column) =>
     Math.max(...laid.filter((box) => columns.get(box.id) === column).map((box) => box.width)),
   );
-  const lefts = new Map(
-    used.map((column, index) => [
-      column,
-      widths.slice(0, index).reduce((x, width) => x + width + spacing.columnGap, 0),
-    ]),
-  );
+  const columnOfLaid = new Map(laid.map((box) => [box.id, columns.get(box.id) ?? 0]));
+  const gapAfter = (index: number) =>
+    Math.max(
+      spacing.columnGap,
+      ...links
+        .filter((link) => columnOfLaid.get(link.from) === used[index] && columnOfLaid.get(link.to) === used[index + 1])
+        .map((link) => flowGapOf(link.label, spacing)),
+    );
+  const lefts = new Map<number, number>();
+  let left = 0;
+
+  for (const [index, column] of used.entries()) {
+    lefts.set(column, left);
+    left += (widths[index] ?? 0) + gapAfter(index);
+  }
   const tops = new Map<number, number>();
 
   return boxes.map(({ id, width, height, at }) => {

@@ -1,0 +1,19 @@
+{
+  "frames": [
+    { "part": "pages/library", "state": "three" },
+    { "part": "pages/film-detail", "state": "rest" },
+    { "part": "pages/film-detail", "state": "reviewing" }
+  ],
+  "lines": [
+    {
+      "from": { "part": "pages/library", "state": "three" },
+      "to": { "part": "pages/film-detail", "state": "rest" },
+      "label": "user clicks a film"
+    },
+    {
+      "from": { "part": "pages/film-detail", "state": "rest" },
+      "to": { "part": "pages/film-detail", "state": "reviewing" },
+      "label": "user scrolls past the cast list, clicks 'Write a review' and starts typing the first sentence of the review"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { flowColumnsOf, flowCurveOf, layoutFlow } from './flow-layout';
+import { flowColumnsOf, flowCurveOf, flowLabelMaxWidthOf, layoutFlow } from './flow-layout';
 
-const spacing = { columnGap: 100, rowGap: 50 };
+const spacing = { columnGap: 100, rowGap: 50, maxColumnGap: 400 };
 
 describe('flowColumnsOf', () => {
   it('puts each frame one column after the furthest frame that links to it', () => {
@@ -72,6 +72,24 @@ describe('layoutFlow', () => {
       { id: 'a', x: 5000, y: 40, width: 200, height: 100 },
       { id: 'b', x: 0, y: 0, width: 300, height: 100 },
     ]);
+  });
+
+  it('widens a gap for a long line label up to the limit, and keeps the normal gap for a short one', () => {
+    const wide = { columnGap: 200, rowGap: 50, maxColumnGap: 400 };
+    const box = (id: string) => ({ id, width: 100, height: 100 });
+    const leftsOf = (label: string) =>
+      layoutFlow([box('a'), box('b'), box('c')], {
+        links: [
+          { from: 'a', to: 'b', label },
+          { from: 'b', to: 'c', label: 'ok' },
+        ],
+        spacing: wide,
+      }).map((frame) => frame.x);
+
+    expect(leftsOf('next')).toEqual([0, 300, 600]);
+    expect(leftsOf('x'.repeat(30))).toEqual([0, 100 + 30 * 7 + 18 + 80, 100 + 30 * 7 + 18 + 80 + 300]);
+    expect(leftsOf('x'.repeat(200))).toEqual([0, 500, 800]);
+    expect(flowLabelMaxWidthOf(wide)).toBe(320);
   });
 });
 

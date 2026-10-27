@@ -122,7 +122,8 @@
           [style.left.px]="line.middle.x"
           [style.top.px]="line.middle.y"
           [style.transform]="'translate(-50%, -50%) scale(' + labelScale() + ')'"
-          class="pointer-events-none absolute z-1 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-[1.2rem] whitespace-nowrap text-[var(--et-surface-color-solid)]"
+          [style.max-width.px]="FLOW_LABEL_MAX_WIDTH"
+          class="pointer-events-none absolute z-1 w-max rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1 text-center text-[1.2rem] text-[var(--et-surface-color-solid)]"
           data-flow-label
           >{{ line.label }}</span
         >

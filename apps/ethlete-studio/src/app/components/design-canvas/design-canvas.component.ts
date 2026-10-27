@@ -41,11 +41,11 @@ import {
   wheelZoomFactor,
   zoomAtPoint,
 } from './canvas-math';
-import { CanvasLine, flowCurveOf, layoutFlow } from './flow-layout';
+import { CanvasLine, flowCurveOf, flowLabelMaxWidthOf, layoutFlow } from './flow-layout';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
-const FLOW_SPACING = { columnGap: 280, rowGap: 120 };
+const FLOW_SPACING = { columnGap: 280, rowGap: 120, maxColumnGap: 560 };
 
 const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
   Object.keys(a).length === Object.keys(b).length && Object.entries(a).every(([key, top]) => b[key] === top);
@@ -365,6 +365,8 @@ export class DesignCanvasComponent {
   private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
 
   protected readonly NOTE_KEY_OF = noteKeyOf;
+
+  protected readonly FLOW_LABEL_MAX_WIDTH = flowLabelMaxWidthOf(FLOW_SPACING);
 
   protected placedDraft = computed(() => {
     const draft = this.draft();

@@ -171,6 +171,23 @@ describe('DesignCanvasComponent', () => {
     expect([...host.querySelectorAll('[data-flow-label]')].map((label) => label.textContent?.trim())).toEqual([
       'user clicks "Zur Kasse"',
     ]);
+    expect(host.querySelector<HTMLElement>('[data-flow-label]')?.style.maxWidth).toBe('480px');
+
+    fixture.componentRef.setInput('lines', [
+      {
+        from: 'cart',
+        to: 'checkout',
+        label: 'user fills in the shipping address and the credit card details, then clicks "Pay now"',
+      },
+      { from: 'checkout', to: 'done' },
+    ]);
+    await fixture.whenStable();
+
+    const checkout = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .find((frame) => (frame.componentInstance as CanvasFrameComponent).frame().id === 'checkout');
+
+    expect((checkout?.nativeElement as HTMLElement).style.left).toBe('950px');
   });
 
   it('remembers the measured size and places the frame by it after a reload', async () => {
