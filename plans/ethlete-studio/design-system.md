@@ -46,7 +46,7 @@ must store a state.
 | Pages       | page states composed of components and elements     | foundations, comps, elements |
 
 - Wireframes are pages built from a fixed wireframe kit that Studio ships (box, text lines,
-  image placeholder, button placeholder). A wireframe becomes a page as kit parts are swapped
+  image, button, input and icon). A wireframe becomes a page as kit parts are swapped
   for system parts. Studio shows how many kit parts remain.
 - Each part records the reason for its current shape as a short note on the part
   ("button: variant C, because …"). History lives in git only. No decision log.
@@ -391,6 +391,22 @@ State:
   deleted.
 - No tools for the old calls. The agent reads them as files.
 
+### Checkup decisions (2026-10-27)
+
+- Merge needs a pick in `sketch.json` and merges only the picked variant. Otherwise it refuses
+  with a message. Today it checks neither.
+- A sketch on a target that exists only in the base can be merged: merge creates the target in
+  the product, so the part becomes "overridden", and writes the note there.
+- A sketch records the state of each part it changes when it is created. If one of those parts
+  changed in the product since then, merge refuses, as a conflict in git does. The agent brings
+  the variant up to date. Without this, the second of two sketches that change the same part
+  overwrites the first one silently, because a variant replaces a whole part folder.
+- `et design check` fails on a note whose part or state no longer exists, with the same rule as
+  for comments.
+- The design server lists the `themes` of each product, and Studio picks the theme per product.
+- Still open: a command that creates a product. The recommendation was
+  `et design product new <name>`, which writes the config entry and the layer folders.
+
 ### Sketches
 
 - A sketch always has a target: an existing part or a new one. A free sketch (mood, palette,
@@ -441,7 +457,7 @@ State:
 - Only frames in view run live. Frames out of view show a cached screenshot from the same core
   that makes the agent's screenshots, so agent and user see the same presets.
 - Top: workspace and product picker. Left: a tree with Foundations, Components, Elements,
-  Pages, Wireframes, Sketches and Legacy. Each entry shows badges: from base, overridden, sketch
+  Pages, Wireframes, Flows, Sketches and Legacy. Each entry shows badges: from base, overridden, sketch
   open, comment open.
 - A sketch shows on its target's canvas: the current version left, the variants right in the
   same states and widths. "Sketches" in the tree lists open sketches as jump targets.
@@ -469,7 +485,7 @@ State:
 ### Legacy calls
 
 The old calls stay in a read-only Legacy tab, as reference for the transfer into the new system.
-No new calls, no picks. The user can mark a call "transferred" and deletes the tab when done.
+No new calls, no picks. The user can mark a call "transferred". The tab disappears when `calls/` is empty or missing.
 
 ## Slices
 
