@@ -300,6 +300,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </ethlete-sketch-view>
+        } @else if (awaitingPicked()) {
         } @else if (part()) {
           <div class="absolute top-3 right-4 z-1 flex gap-2">
             <ng-container [ngTemplateOutlet]="themeBar" />
@@ -401,12 +402,14 @@ export class SystemViewComponent {
 
   private callReloads = signal(0);
 
-  public calls = toSignal(
+  private callList = toSignal(
     toObservable(
       computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick(), reloads: this.callReloads() })),
     ).pipe(switchMap(({ port }) => (port ? listedCalls$(port).pipe(catchError(() => of<ListedCall[]>([]))) : of([])))),
-    { initialValue: [] },
+    { initialValue: null },
   );
+
+  public calls = computed(() => this.callList() ?? []);
 
   private sketchReloads = signal(0);
 
@@ -435,7 +438,7 @@ export class SystemViewComponent {
     return products.find((listed) => listed.name === this.pickedProduct()) ?? products[0] ?? null;
   });
 
-  public sketches = toSignal(
+  private sketchList = toSignal(
     toObservable(
       computed(() => ({
         port: this.port(),
@@ -452,11 +455,15 @@ export class SystemViewComponent {
               map(({ sketches }) => sketches),
               catchError(() => of<ListedSketch[]>([])),
             )
-          : of<ListedSketch[]>([]),
+          : of(null),
       ),
     ),
-    { initialValue: [] },
+    { initialValue: null },
   );
+
+  public sketches = computed(() => this.sketchList() ?? []);
+
+  private listsRead = computed(() => this.callList() !== null && this.sketchList() !== null);
 
   private tree = computed(() =>
     treeOf(this.product()?.parts ?? [], {
@@ -486,43 +493,6 @@ export class SystemViewComponent {
   });
 
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
-
-  protected part = computed(() => {
-    const parts = this.product()?.parts ?? [];
-    const first = treeOf(parts)[0]?.entries[0]?.key;
-    const listed =
-      parts.find((candidate) => partKeyOf(candidate) === this.picked()) ??
-      parts.find((candidate) => partKeyOf(candidate) === first);
-
-    return listed ? { key: partKeyOf(listed), listed } : null;
-  });
-
-  protected selectedKey = computed(() => {
-    const call = this.call();
-    const sketch = this.sketch();
-
-    if (call) return callKeyOf(call.slug);
-
-    return sketch ? sketchKeyOf(sketch.target) : (this.part()?.key ?? null);
-  });
-
-  protected cameraKey = computed(() => {
-    const call = this.call();
-    const part = this.part();
-
-    const sketch = this.sketch();
-
-    if (call) return callKeyOf(call.slug);
-    if (sketch) return `${this.product()?.name} ${sketchKeyOf(sketch.target)}`;
-
-    return part ? `${this.product()?.name} ${part.key}` : null;
-  });
-
-  protected restoredCamera = computed(() => {
-    const key = this.cameraKey();
-
-    return key ? (this.cameras()[key] ?? null) : null;
-  });
 
   private themePicks = signal(rememberedView().themes ?? {});
 
@@ -578,6 +548,79 @@ export class SystemViewComponent {
     });
   });
 
+  private nodes = computed(() => {
+    const entries = new Map<string, TreeEntry>();
+    const counts = new Map<string, number>();
+    const children = new Map<string | null, TreeNode<string>[]>();
+    const leaf = (entry: TreeEntry): TreeNode<string> => {
+      entries.set(entry.key, entry);
+
+      return { value: entry.key, label: entry.name, isLeaf: true };
+    };
+    const branch = (node: TreeGroup | TreeSection): TreeNode<string> => {
+      const sections = 'sections' in node ? (node.sections ?? []) : [];
+
+      children.set(node.key, [
+        ...node.entries.map(leaf),
+        ...sections.map((section) => {
+          counts.set(section.key, section.entries.length);
+
+          return branch(section);
+        }),
+      ]);
+
+      return { value: node.key, label: node.label };
+    };
+
+    children.set(null, this.tree().map(branch));
+
+    return { entries, counts, children };
+  });
+
+  /** True while the remembered entry may still be a call or a sketch whose list has not arrived. */
+  protected awaitingPicked = computed(() => {
+    const picked = this.picked();
+
+    return picked !== null && !this.listsRead() && !this.nodes().entries.has(picked);
+  });
+
+  protected part = computed(() => {
+    const parts = this.product()?.parts ?? [];
+    const first = treeOf(parts)[0]?.entries[0]?.key;
+    const listed =
+      parts.find((candidate) => partKeyOf(candidate) === this.picked()) ??
+      (this.awaitingPicked() ? undefined : parts.find((candidate) => partKeyOf(candidate) === first));
+
+    return listed ? { key: partKeyOf(listed), listed } : null;
+  });
+
+  protected selectedKey = computed(() => {
+    const call = this.call();
+    const sketch = this.sketch();
+
+    if (call) return callKeyOf(call.slug);
+
+    return sketch ? sketchKeyOf(sketch.target) : (this.part()?.key ?? null);
+  });
+
+  protected cameraKey = computed(() => {
+    const call = this.call();
+    const part = this.part();
+
+    const sketch = this.sketch();
+
+    if (call) return callKeyOf(call.slug);
+    if (sketch) return `${this.product()?.name} ${sketchKeyOf(sketch.target)}`;
+
+    return part ? `${this.product()?.name} ${part.key}` : null;
+  });
+
+  protected restoredCamera = computed(() => {
+    const key = this.cameraKey();
+
+    return key ? (this.cameras()[key] ?? null) : null;
+  });
+
   protected arrangement = computed(() => {
     const part = this.part();
 
@@ -622,35 +665,6 @@ export class SystemViewComponent {
     remembered: this.openGroups(),
     hasProducts: this.products().length > 0,
   }));
-
-  private nodes = computed(() => {
-    const entries = new Map<string, TreeEntry>();
-    const counts = new Map<string, number>();
-    const children = new Map<string | null, TreeNode<string>[]>();
-    const leaf = (entry: TreeEntry): TreeNode<string> => {
-      entries.set(entry.key, entry);
-
-      return { value: entry.key, label: entry.name, isLeaf: true };
-    };
-    const branch = (node: TreeGroup | TreeSection): TreeNode<string> => {
-      const sections = 'sections' in node ? (node.sections ?? []) : [];
-
-      children.set(node.key, [
-        ...node.entries.map(leaf),
-        ...sections.map((section) => {
-          counts.set(section.key, section.entries.length);
-
-          return branch(section);
-        }),
-      ]);
-
-      return { value: node.key, label: node.label };
-    };
-
-    children.set(null, this.tree().map(branch));
-
-    return { entries, counts, children };
-  });
 
   protected dataSource = computed<TreeDataSource<string>>(() => {
     const { children } = this.nodes();
@@ -758,11 +772,13 @@ export class SystemViewComponent {
 
     if (!key) return;
 
-    const existing = new Set([
-      ...this.calls().map((listed) => callKeyOf(listed.slug)),
-      ...this.products().flatMap((listed) => listed.parts.map((part) => `${listed.name} ${partKeyOf(part)}`)),
-      ...this.sketches().map((listed) => `${listed.product} ${sketchKeyOf(listed.target)}`),
-    ]);
+    const existing = this.listsRead()
+      ? new Set([
+          ...this.calls().map((listed) => callKeyOf(listed.slug)),
+          ...this.products().flatMap((listed) => listed.parts.map((part) => `${listed.name} ${partKeyOf(part)}`)),
+          ...this.sketches().map((listed) => `${listed.product} ${sketchKeyOf(listed.target)}`),
+        ])
+      : null;
     const cameras = camerasWith({ cameras: this.cameras(), key, camera, existing });
 
     this.cameras.set(cameras);

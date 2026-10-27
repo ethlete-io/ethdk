@@ -19,7 +19,11 @@ export type ViewState = {
   measuredSizes: Record<string, FrameSize>;
   /** Whether the system view shows its comment sidebar. */
   commentsOpen: boolean;
+  /** The size, interaction and mode a sketch view showed, keyed by its camera key. */
+  sketchViews: Record<string, SketchViewPick>;
 };
+
+export type SketchViewPick = { size?: string; interaction?: string; merge?: boolean };
 
 export type FrameSize = { width?: number; height?: number };
 
@@ -38,6 +42,25 @@ const frameSizeMap = (value: unknown): Record<string, FrameSize> | undefined => 
       const valid: FrameSize = { ...(isSize(width) && { width }), ...(isSize(height) && { height }) };
 
       return valid.width === undefined && valid.height === undefined ? [] : [[key, valid]];
+    }),
+  );
+};
+
+const sketchViewMap = (value: unknown): Record<string, SketchViewPick> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).flatMap(([key, pick]) => {
+      if (!pick || typeof pick !== 'object') return [];
+
+      const { size, interaction, merge } = pick as SketchViewPick;
+      const valid: SketchViewPick = {
+        ...(typeof size === 'string' && { size }),
+        ...(typeof interaction === 'string' && { interaction }),
+        ...(typeof merge === 'boolean' && { merge }),
+      };
+
+      return Object.keys(valid).length === 0 ? [] : [[key, valid]];
     }),
   );
 };
@@ -126,7 +149,7 @@ const cameraMap = (value: unknown): Record<string, Camera> | undefined => {
   );
 };
 
-/** The cameras with `camera` stored under `key`, without those of entries that no longer exist. */
+/** The cameras with `camera` stored under `key`, without those of entries that no longer exist. A `null` `existing` keeps all. */
 export const camerasWith = ({
   cameras,
   key,
@@ -136,9 +159,9 @@ export const camerasWith = ({
   cameras: Record<string, Camera>;
   key: string;
   camera: Camera;
-  existing: ReadonlySet<string>;
+  existing: ReadonlySet<string> | null;
 }): Record<string, Camera> => ({
-  ...Object.fromEntries(Object.entries(cameras).filter(([stored]) => existing.has(stored))),
+  ...Object.fromEntries(Object.entries(cameras).filter(([stored]) => existing?.has(stored) ?? true)),
   [key]: camera,
 });
 
@@ -160,6 +183,7 @@ export const rememberedView = (): Partial<ViewState> => {
       frameSizes,
       measuredSizes,
       commentsOpen,
+      sketchViews,
     } = stored as Partial<ViewState>;
 
     return {
@@ -172,6 +196,7 @@ export const rememberedView = (): Partial<ViewState> => {
       frameSizes: frameSizeMap(frameSizes),
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
+      sketchViews: sketchViewMap(sketchViews),
     };
   } catch {
     return {};
@@ -192,4 +217,11 @@ export const rememberTheme = (key: string, pick: ThemePick) => {
   const themes = rememberedView().themes ?? {};
 
   rememberView({ themes: { ...themes, [key]: { ...themes[key], ...pick } } });
+};
+
+/** Remembers part of what one sketch view shows and keeps the rest. */
+export const rememberSketchView = (key: string, pick: SketchViewPick) => {
+  const sketchViews = rememberedView().sketchViews ?? {};
+
+  rememberView({ sketchViews: { ...sketchViews, [key]: { ...sketchViews[key], ...pick } } });
 };

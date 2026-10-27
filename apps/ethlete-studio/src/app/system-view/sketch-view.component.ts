@@ -7,12 +7,13 @@ import {
   computed,
   inject,
   input,
+  linkedSignal,
   output,
   signal,
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { Observable, catchError, concatMap, finalize, map, of, switchMap } from 'rxjs';
 import {
@@ -26,6 +27,7 @@ import {
   mergeSketch$,
   sketchPreview$,
 } from '../../host/design';
+import { SketchViewPick, rememberSketchView, rememberedView } from '../studio-view/remembered';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { REST } from '../components/design-canvas/canvas-frame';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
@@ -95,6 +97,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               type="button"
               variant="outline"
               color="surface"
+              pressedColor="inherit"
               size="sm"
             >
               {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
@@ -129,13 +132,14 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         }
       }
 
-      <div class="flex items-center gap-2">
-        <et-input
-          [(value)]="note"
-          class="min-w-0 flex-1"
-          placeholder="Why this shape - the note on the part, needed for a merge"
-          aria-label="Note"
-        />
+      <div class="flex items-end gap-2">
+        <et-form-field class="min-w-0 flex-1" appearance="box">
+          <et-label>Note</et-label>
+          <et-input [(value)]="note" placeholder="Why this shape - the note on the part, needed for a merge" />
+        </et-form-field>
+        @if (picked() && note().trim() === '') {
+          <span class="self-center text-[var(--et-surface-color-subtle-solid)]">Needs a note</span>
+        }
         <button
           [disabled]="busy() !== null || locked() || !picked() || note().trim() === ''"
           (click)="merge()"
@@ -211,7 +215,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
             @for (name of matrix().interactions; track name) {
               <button
                 [pressed]="name === matrix().interaction"
-                (click)="interaction.set(name)"
+                (click)="pickInteraction(name)"
                 et-button
                 type="button"
                 variant="outline"
@@ -261,6 +265,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    FORM_FIELD_IMPORTS,
     INPUT_IMPORTS,
     CommentDraftComponent,
     CommentThreadComponent,
@@ -306,11 +311,16 @@ export class SketchViewComponent {
     sketch: this.sketch().target,
   }));
 
-  public size = signal<string | null>(null);
+  private remembered = linkedSignal<string | null, SketchViewPick>({
+    source: this.cameraKey,
+    computation: (key) => (key === null ? {} : (rememberedView().sketchViews?.[key] ?? {})),
+  });
 
-  public interaction = signal<string | null>(null);
+  public size = linkedSignal(() => this.remembered().size ?? null);
 
-  private shownMode = signal<Shown>('matrix');
+  public interaction = linkedSignal(() => this.remembered().interaction ?? null);
+
+  private shownMode = linkedSignal<Shown>(() => (this.remembered().merge ? 'merge' : 'matrix'));
 
   private source = computed(() => ({
     port: this.port(),
@@ -379,6 +389,13 @@ export class SketchViewComponent {
 
   protected pickSize(size: string) {
     this.size.set(size);
+    this.remember({ size });
+    this.canvasRef().fitAll();
+  }
+
+  protected pickInteraction(interaction: string) {
+    this.interaction.set(interaction);
+    this.remember({ interaction });
     this.canvasRef().fitAll();
   }
 
@@ -399,6 +416,11 @@ export class SketchViewComponent {
     if (resize) this.size.set(size);
     if (reinteract) this.interaction.set(interaction);
     if (leaveMerge) this.shownMode.set('matrix');
+    this.remember({
+      ...(resize && { size }),
+      ...(reinteract && { interaction }),
+      ...(leaveMerge && { merge: false }),
+    });
     if (resize || reinteract || leaveMerge)
       afterNextRender(() => this.focusComment(comment), { injector: this.injector });
     else this.focusComment(comment);
@@ -409,7 +431,10 @@ export class SketchViewComponent {
   }
 
   protected toggleMergePreview() {
-    this.shownMode.update((mode) => (mode === 'merge' ? 'matrix' : 'merge'));
+    const merge = this.showing() !== 'merge';
+
+    this.shownMode.set(merge ? 'merge' : 'matrix');
+    this.remember({ merge });
   }
 
   protected pickable(variant: string) {
@@ -456,6 +481,12 @@ export class SketchViewComponent {
 
     this.confirmingDiscard.set(false);
     this.run('discard', discardSketch$(this.address()));
+  }
+
+  private remember(pick: SketchViewPick) {
+    const key = this.cameraKey();
+
+    if (key !== null && Object.keys(pick).length > 0) rememberSketchView(key, pick);
   }
 
   private focusComment(comment: NumberedComment) {

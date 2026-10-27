@@ -2,6 +2,7 @@ import {
   camerasWith,
   frameSizesOf,
   frameSizesWith,
+  rememberSketchView,
   rememberTheme,
   rememberedView,
   rememberView,
@@ -104,6 +105,37 @@ describe('remembered view', () => {
       kept: stored.kept,
       new: camera,
     });
+  });
+
+  it('keeps every camera while the entries are not all listed yet', () => {
+    const stored = { sketch: { x: 0, y: 0, zoom: 2 } };
+
+    expect(camerasWith({ cameras: stored, key: 'part', camera: { x: 1, y: 2, zoom: 1 }, existing: null })).toEqual({
+      sketch: stored.sketch,
+      part: { x: 1, y: 2, zoom: 1 },
+    });
+  });
+
+  it('keeps the size, interaction and mode per sketch view', () => {
+    rememberSketchView('web sketch:elements/rating', { size: '520' });
+    rememberSketchView('web sketch:elements/rating', { interaction: 'hover', merge: true });
+    rememberSketchView('web sketch:components/card', { merge: false });
+
+    expect(rememberedView().sketchViews).toEqual({
+      'web sketch:elements/rating': { size: '520', interaction: 'hover', merge: true },
+      'web sketch:components/card': { merge: false },
+    });
+  });
+
+  it('drops sketch view fields of the wrong type', () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        sketchViews: { a: { size: 520, interaction: 'hover', merge: 'yes' }, b: { size: null }, c: 'no' },
+      }),
+    );
+
+    expect(rememberedView().sketchViews).toEqual({ a: { interaction: 'hover' } });
   });
 
   it('keeps valid frame sizes and drops the rest', () => {
