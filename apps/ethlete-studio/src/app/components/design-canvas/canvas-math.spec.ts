@@ -232,6 +232,24 @@ describe('canvas math', () => {
     ]);
   });
 
+  it('starts a matrix row below what hangs under the frames of the row above', () => {
+    const layout = layoutMatrix({
+      frames: [
+        { id: 'tall', width: 100, height: 200, row: 'a', column: 'x' },
+        { id: 'short', width: 100, height: 50, row: 'a', column: 'y' },
+        { id: 'next', width: 100, height: 50, row: 'b', column: 'x' },
+      ],
+      columns: ['x', 'y'],
+      spacing: { columnGap: 40, rowGap: 60, emptyColumnWidth: 320 },
+      below: { tall: 20, short: 300 },
+    });
+
+    expect(layout.rows).toEqual([
+      { name: 'a', y: 0 },
+      { name: 'b', y: 410 },
+    ]);
+  });
+
   it('gives a fitted matrix frame the width of its column, and keeps a frame at a width as it is', () => {
     const layout = layoutMatrix({
       frames: [

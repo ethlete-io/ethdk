@@ -287,6 +287,33 @@ describe('DesignCanvasComponent', () => {
     expect(gapBelow(hover, outline)).toBe(96);
   });
 
+  it('lowers the next matrix row below the note column of a frame', async () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.dataset['noteFrame'] === undefined ? 0 : 200;
+    });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+    const cell = (row: string): CanvasFrame => ({ ...FITTED, id: row, row, rowGroup: 'solid', column: 'current' });
+
+    fixture.componentRef.setInput('frames', [cell('rest'), cell('hover')]);
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [{ key: 'current', label: 'current' }]);
+    fixture.componentRef.setInput('notes', [{ id: 'n', text: 'A long note', frameId: 'rest', point: { x: 4, y: 4 } }]);
+    await fixture.whenStable();
+
+    const [rest, hover] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((frame) => frame.nativeElement as HTMLElement);
+
+    expect(
+      parseFloat(hover?.style.top ?? '') - parseFloat(rest?.style.top ?? '') - parseFloat(rest?.style.height ?? ''),
+    ).toBe(16 + 200 + 48);
+    vi.restoreAllMocks();
+  });
+
   it('widens every fitted tile in a matrix column to the widest one, so the right edges line up', async () => {
     localStorage.setItem(
       'ethlete-studio.call-view',

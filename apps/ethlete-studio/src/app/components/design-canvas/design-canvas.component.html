@@ -249,10 +249,12 @@
 
   @for (group of placedNotes(); track group.key) {
     <div
+      #noteColumn
       [style.left.px]="group.x"
       [style.top.px]="group.y"
       [style.transform]="'scale(' + labelScale() + ')' + (group.anchor === 'above' ? ' translateY(-100%)' : '')"
       [attr.data-note-anchor]="group.anchor"
+      [attr.data-note-frame]="group.frameId"
       class="absolute z-2 flex w-max origin-top-left flex-col items-start gap-2 has-[[data-canvas-popover]]:z-4"
     >
       @for (note of group.notes; track NOTE_KEY_OF(note)) {

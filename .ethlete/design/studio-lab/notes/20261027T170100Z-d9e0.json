@@ -1,0 +1,5 @@
+{
+  "part": "components/button",
+  "state": "solid",
+  "text": "Loading keeps the label and the width, so the row does not jump."
+}

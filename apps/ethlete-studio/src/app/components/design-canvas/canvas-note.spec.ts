@@ -15,7 +15,7 @@ describe('placeNotes', () => {
     ];
 
     expect(placeNotes(notes, { frames, bounds })).toEqual([
-      { key: 'below a', anchor: 'below', x: 100, y: 1060, notes },
+      { key: 'below a', anchor: 'below', frameId: 'a', x: 100, y: 1060, notes },
     ]);
   });
 
@@ -44,7 +44,9 @@ describe('placeNotes', () => {
       { id: 'm', text: 'u', frameId: 'b' },
     ];
 
-    expect(placeNotes(notes, { frames, bounds })).toEqual([{ key: 'below b', anchor: 'below', x: 800, y: 816, notes }]);
+    expect(placeNotes(notes, { frames, bounds })).toEqual([
+      { key: 'below b', anchor: 'below', frameId: 'b', x: 800, y: 816, notes },
+    ]);
   });
 
   it('puts a free note at its world point, and one without a point above the top left of everything', () => {

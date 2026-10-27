@@ -189,11 +189,14 @@ export const layoutMatrix = ({
   columns,
   spacing,
   emptyWidths = {},
+  below = {},
 }: {
   frames: MatrixFrame[];
   columns: string[];
   spacing: MatrixSpacing;
   emptyWidths?: Record<string, number>;
+  /** By frame id, how far content hangs below the frame; the next row starts below it. */
+  below?: Record<string, number>;
 }): MatrixLayout => {
   const rowNames = [...new Set(frames.map((frame) => frame.row))];
   const placedColumns: MatrixColumnPlace[] = [];
@@ -236,7 +239,7 @@ export const layoutMatrix = ({
         });
     }
 
-    y += Math.max(...members.map((m) => m.height)) + spacing.rowGap;
+    y += Math.max(...members.map((m) => m.height + (below[m.id] ?? 0))) + spacing.rowGap;
   }
 
   return { frames: placed, rows, columns: placedColumns };

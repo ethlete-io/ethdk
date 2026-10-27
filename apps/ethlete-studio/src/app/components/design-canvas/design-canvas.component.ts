@@ -21,7 +21,7 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
-import { CanvasNote, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
+import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
@@ -164,6 +164,7 @@ export class DesignCanvasComponent {
   public columnToggle = output<string>();
 
   private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
+  private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
@@ -180,6 +181,11 @@ export class DesignCanvasComponent {
 
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
+
+  private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
+
+  /** By frame id, the height of the note column below it at zoom 1. */
+  private noteColumnHeights = signal<Record<string, number>>({}, { equal: sameTops });
 
   private layout = computed(() => {
     const measured = this.measured();
@@ -227,6 +233,9 @@ export class DesignCanvasComponent {
             spacing: { ...SPACING, rowGap, groupGap: rowGap * GROUP_GAP_FACTOR, emptyColumnWidth: FALLBACK_WIDTH },
             emptyWidths: Object.fromEntries(
               columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
+            ),
+            below: Object.fromEntries(
+              Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height]),
             ),
           })
         : null;
@@ -362,8 +371,6 @@ export class DesignCanvasComponent {
 
   protected noteMarkers = computed(() => placeNoteMarkers(this.notes(), this.framesById()));
 
-  private noteCardTops = signal<Record<string, number>>({}, { equal: sameTops });
-
   protected readonly NOTE_KEY_OF = noteKeyOf;
 
   protected readonly FLOW_LABEL_MAX_WIDTH = flowLabelMaxWidthOf(FLOW_SPACING);
@@ -422,6 +429,18 @@ export class DesignCanvasComponent {
     afterEveryRender({
       read: () => {
         const cards = this.noteCards();
+
+        if (!this.notesCompact()) {
+          this.noteColumnHeights.set(
+            Object.fromEntries(
+              this.noteColumns().flatMap(({ nativeElement }) => {
+                const frameId = nativeElement.dataset['noteFrame'];
+
+                return frameId === undefined ? [] : [[frameId, nativeElement.offsetHeight]];
+              }),
+            ),
+          );
+        }
 
         if (cards.length === 0 && Object.keys(this.noteCardTops()).length === 0) return;
 

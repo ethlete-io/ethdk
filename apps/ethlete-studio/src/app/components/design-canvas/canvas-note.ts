@@ -18,7 +18,7 @@ export type CanvasNote = {
 /** Where a group of notes sits: `below` hangs under a frame, `at` at a world point, `above` stands on top of everything. */
 export type NoteAnchor = 'below' | 'at' | 'above';
 
-export type PlacedNoteGroup = Point & { key: string; anchor: NoteAnchor; notes: CanvasNote[] };
+export type PlacedNoteGroup = Point & { key: string; anchor: NoteAnchor; notes: CanvasNote[]; frameId?: string };
 
 /** The marker of a pointed note on its frame; `column` is the top left of the column below the frame its card sits in. */
 export type PlacedNoteMarker = Point & { key: string; column: Point };
@@ -26,12 +26,13 @@ export type PlacedNoteMarker = Point & { key: string; column: Point };
 /** Tells apart the copies of one note on several frames. */
 export const noteKeyOf = (note: Pick<CanvasNote, 'id' | 'frameId'>) => `${note.id} ${note.frameId ?? ''}`;
 
-const BELOW_GAP = 16;
+/** The space between a frame and the column of notes below it. */
+export const NOTE_BELOW_GAP = 16;
 const ABOVE_GAP = 24;
 const CONNECTOR_GUTTER = 12;
 const CONNECTOR_DROP = 16;
 
-const columnBelow = (frame: Rect): Point => ({ x: frame.x, y: frame.y + frame.height + BELOW_GAP });
+const columnBelow = (frame: Rect): Point => ({ x: frame.x, y: frame.y + frame.height + NOTE_BELOW_GAP });
 
 /** Puts each note on the canvas; a note on a frame the canvas does not show is left out. */
 export const placeNotes = (
@@ -61,7 +62,7 @@ export const placeNotes = (
       const frame = frames.get(frameId);
 
       return frame
-        ? [{ key: `below ${frameId}`, anchor: 'below' as const, ...columnBelow(frame), notes: stacked }]
+        ? [{ key: `below ${frameId}`, anchor: 'below' as const, frameId, ...columnBelow(frame), notes: stacked }]
         : [];
     }),
     ...single,
@@ -92,5 +93,5 @@ export const noteConnectorPath = (
   const gutter = column.x - CONNECTOR_GUTTER * scale;
   const cardY = column.y + (top + CONNECTOR_DROP) * scale;
 
-  return `M ${x} ${y} V ${column.y - BELOW_GAP / 2} H ${gutter} V ${cardY} H ${column.x}`;
+  return `M ${x} ${y} V ${column.y - NOTE_BELOW_GAP / 2} H ${gutter} V ${cardY} H ${column.x}`;
 };
