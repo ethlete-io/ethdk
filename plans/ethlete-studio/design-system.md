@@ -804,6 +804,13 @@ step. Each finding names what happened and the fix it needs.
     Prevent: `image({ grow })` and a box option that fills its parent.
   - A note line can only be a small `heading`; `textLines` draws grey bars. Prevent: the muted
     `text()` above.
+- Tom on the content area round (2026-10-28): "was hier gerade entsteht ist müll leider. und auch
+  einfach zu filigran für wireframes. der canvas soll ein unendlicher canvas bleiben nichts
+  weiter." The agent asked a question Studio had already answered: the content is Studio's
+  infinite canvas, and all three variants replaced it with new layouts (focus view, matrix,
+  inspector) at a detail level no wireframe needs. Prevent: before a sketch, the agent lists what
+  the running app already does in that region and keeps it, unless the question is about it; a
+  wireframe answers only which regions exist, never labels, badges or field lists.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
