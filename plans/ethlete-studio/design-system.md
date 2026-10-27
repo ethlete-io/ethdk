@@ -490,6 +490,16 @@ variant } | null }] }`. `revision` is server-wide and goes up by 1 per event. `a
 - Next: the Studio slice stops the watch tick from reloading frames and keeps a revision per drawn
   part.
 
+### Frame reload file decisions (2026-10-27)
+
+These change the "all" case of 027805054.
+
+- A file added or removed reloads only the frames of its part. The server maps it by its folder,
+  for example `components/button/...` or `sketches/components-button/c/...`.
+- A file in no part folder reloads nothing, except frames that show an error now, since the file
+  may be the one they missed.
+- `config.json` still reloads all. Comment files reload no frame (as built).
+
 ### Merge preview decisions (2026-10-27)
 
 Not built yet. In the `components/card` sketch the preview showed all three states of
@@ -610,6 +620,14 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
 - 414e7f23b (agent-rules): the synced skill tells agents to pass the exact model id to every write.
   No `et update` migration, since the callers are agents. The `@ethlete/cli` changeset is major.
 - Not built yet: the Studio display.
+
+### Agent author follow-up decisions (2026-10-27)
+
+- `inbox done` deletes the comment, so its `--by` goes where the comment sat: on a sketch variant,
+  into that variant's authors (a merge then carries them into `madeBy`); on a product part,
+  directly into the part's `madeBy`. Only when the id is not there yet.
+- `sketch new|ready|rebase|discard` keep requiring `--by` and keep not storing it; a merge stores the
+  variant's authors, not its own `--by`. `madeBy` names who designed, not who ran a command.
 
 ### Design server restart decision (2026-10-27)
 
