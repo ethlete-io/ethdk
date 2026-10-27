@@ -929,7 +929,11 @@ export class SystemViewComponent {
   protected partPins = computed(() => pinsOf(this.frames(), this.commentStore.comments()));
   protected partNotes = computed(() => partNotesOf(this.frames(), this.noteStore.notes()));
   protected notedFrames = computed(() =>
-    withOtherSizeNotes(this.frames(), { comments: this.commentStore.comments(), everyInteraction: true }),
+    withOtherSizeNotes(this.frames(), {
+      comments: this.commentStore.comments(),
+      notes: this.notesShown() ? this.noteStore.notes() : [],
+      everyInteraction: true,
+    }),
   );
   protected shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 

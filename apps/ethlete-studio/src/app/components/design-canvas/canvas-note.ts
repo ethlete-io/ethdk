@@ -1,8 +1,8 @@
 import { Point, Rect } from './canvas-math';
 
 /**
- * A note that always shows its text. With `frameId` its card hangs below that frame, and a `point` adds a marker on
- * the frame joined to the card; otherwise at `at` in world coordinates, or stacked above the top left of everything.
+ * A note that always shows its text. With `frameId` its card hangs below that frame, and a `point` adds a numbered
+ * marker on the frame; otherwise at `at` in world coordinates, or stacked above the top left of everything.
  * A `heading` has no card.
  */
 export type CanvasNote = {
@@ -20,8 +20,11 @@ export type NoteAnchor = 'below' | 'at' | 'above';
 
 export type PlacedNoteGroup = Point & { key: string; anchor: NoteAnchor; notes: CanvasNote[]; frameId?: string };
 
-/** The marker of a pointed note on its frame; `column` is the top left of the column below the frame its card sits in. */
-export type PlacedNoteMarker = Point & { key: string; column: Point };
+/**
+ * The marker of a pointed note on its frame; `column` is the top left of the column below the frame its card sits in,
+ * `number` counts the pointed notes of the frame from 1, as the card shows it.
+ */
+export type PlacedNoteMarker = Point & { key: string; number: number; column: Point };
 
 /** Tells apart the copies of one note on several frames. */
 export const noteKeyOf = (note: Pick<CanvasNote, 'id' | 'frameId'>) => `${note.id} ${note.frameId ?? ''}`;
@@ -73,14 +76,29 @@ export const placeNotes = (
 };
 
 /** The markers of the pointed notes on frames the canvas shows. */
-export const placeNoteMarkers = (notes: CanvasNote[], frames: Map<string, Rect>): PlacedNoteMarker[] =>
-  notes.flatMap((note) => {
+export const placeNoteMarkers = (notes: CanvasNote[], frames: Map<string, Rect>): PlacedNoteMarker[] => {
+  const counts = new Map<string, number>();
+
+  return notes.flatMap((note) => {
     const frame = note.frameId === undefined ? undefined : frames.get(note.frameId);
 
-    return frame && note.point
-      ? [{ key: noteKeyOf(note), x: frame.x + note.point.x, y: frame.y + note.point.y, column: columnBelow(frame) }]
-      : [];
+    if (!frame || !note.point || note.frameId === undefined) return [];
+
+    const number = (counts.get(note.frameId) ?? 0) + 1;
+
+    counts.set(note.frameId, number);
+
+    return [
+      {
+        key: noteKeyOf(note),
+        number,
+        x: frame.x + note.point.x,
+        y: frame.y + note.point.y,
+        column: columnBelow(frame),
+      },
+    ];
   });
+};
 
 /**
  * The line from a marker to the left edge of its card, `top` CSS pixels down the column at `scale`. It runs

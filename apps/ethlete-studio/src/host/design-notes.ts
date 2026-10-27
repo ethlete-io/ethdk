@@ -11,6 +11,8 @@ export type ListedNote = {
   state: string;
   /** CSS pixels from the frame's top left corner. */
   point?: Point;
+  /** The size a pointed note was written at, a preset name, a width in CSS pixels, or `fitted`; it shows only there. */
+  size?: string | number;
   text: string;
   file: string;
   /** Why the note points at nothing any more, or `null`. */
@@ -39,7 +41,7 @@ export const listedNotes$ = (address: ProductAddress): Observable<ListedNotes> =
 
 export const writeNote$ = (
   address: ProductAddress,
-  note: { part: string; state: string; text: string; point?: Point },
+  note: { part: string; state: string; text: string; point?: Point; size?: string | number },
 ): Observable<void> => designAnswer$<unknown>(noteUrl(address, 'note'), post(note)).pipe(done);
 
 /** Changes a note on a state; `point: null` puts it on the whole state. */

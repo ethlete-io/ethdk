@@ -82,7 +82,7 @@ describe('NoteStore', () => {
     expect(store.notes().map((note) => note.id)).toEqual(['a', 'b']);
   });
 
-  it('writes a note on a state at its rounded point, counts the write, and keeps note mode on', () => {
+  it('writes a note on a state at its rounded point and the size it was written at, and keeps note mode on', () => {
     const { store } = setup();
 
     store.toggle();
@@ -95,6 +95,7 @@ describe('NoteStore', () => {
       state: 'empty',
       text: 'Hero',
       point: { x: 10, y: 21 },
+      size: PLACE.size,
     });
     expect(store.writes()).toBe(1);
     expect(store.draft()).toBeNull();

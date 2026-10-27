@@ -65,6 +65,7 @@ describe('DesignCanvasComponent', () => {
     expect(host.querySelector('[data-note="h"]')).not.toBeNull();
 
     fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.3 });
+    host.querySelector('[data-note-marker]')?.dispatchEvent(new Event('pointerenter'));
     await fixture.whenStable();
 
     expect(host.querySelector('[data-note="n"]')).not.toBeNull();
@@ -87,9 +88,17 @@ describe('DesignCanvasComponent', () => {
     const marker = host.querySelector<HTMLElement>('[data-note-marker="n a"]');
     const heading = host.querySelector<HTMLElement>('[data-note-anchor="at"]');
 
-    expect([column?.style.left, column?.style.top, column?.textContent?.trim()]).toEqual(['0px', '860px', 'Hero']);
+    expect([column?.style.left, column?.style.top, column?.textContent?.trim()]).toEqual(['0px', '860px', '1Hero']);
     expect([marker?.style.left, marker?.style.top]).toEqual(['40px', '120px']);
+    expect(host.querySelector('[data-note-connector]')).toBeNull();
+
+    marker?.dispatchEvent(new Event('pointerenter'));
+    await fixture.whenStable();
+
     expect(host.querySelector('[data-note-connector="n a"]')?.getAttribute('d')).toMatch(/^M 40 120 V 852 /);
+
+    marker?.dispatchEvent(new Event('pointerleave'));
+    await fixture.whenStable();
     expect([heading?.style.left, heading?.style.top, heading?.textContent?.trim()]).toEqual([
       '0px',
       '-160px',
@@ -103,6 +112,42 @@ describe('DesignCanvasComponent', () => {
     await fixture.whenStable();
     host.dispatchEvent(new MouseEvent('click', { clientX: 30, clientY: 50, bubbles: true }));
     expect(picks).toHaveLength(1);
+  });
+
+  it('numbers the pointed notes of each frame on marker and card, and draws a line only while one is hovered', async () => {
+    const fixture = await render([
+      { ...FITTED, id: 'a', width: 390, height: 844 },
+      { ...FITTED, id: 'b', width: 390, height: 844 },
+    ]);
+
+    fixture.componentRef.setInput('notes', [
+      { id: 'n', text: 'Hero', frameId: 'a', point: { x: 40, y: 120 } },
+      { id: 'w', text: 'Whole', frameId: 'a' },
+      { id: 'm', text: 'Button', frameId: 'a', point: { x: 80, y: 600 } },
+      { id: 'o', text: 'Other', frameId: 'b', point: { x: 10, y: 10 } },
+    ]);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const numberOf = (selector: string) => host.querySelector(selector)?.textContent?.trim();
+    const card = host.querySelector('[data-note-key="m a"]');
+    const connectors = () =>
+      [...host.querySelectorAll('[data-note-connector]')].map((path) => path.getAttribute('data-note-connector'));
+
+    expect(['n a', 'm a', 'o b'].map((key) => numberOf(`[data-note-marker="${key}"]`))).toEqual(['1', '2', '1']);
+    expect(
+      ['n a', 'm a', 'o b', 'w a'].map((key) => numberOf(`[data-note-key="${key}"] [data-note-number]`) ?? null),
+    ).toEqual(['1', '2', '1', null]);
+    expect(connectors()).toEqual([]);
+
+    card?.dispatchEvent(new Event('pointerenter'));
+    await fixture.whenStable();
+    expect(connectors()).toEqual(['m a']);
+
+    card?.dispatchEvent(new Event('pointerleave'));
+    host.querySelector('[data-note-key="w a"]')?.dispatchEvent(new Event('pointerenter'));
+    await fixture.whenStable();
+    expect(connectors()).toEqual([]);
   });
 
   it('stacks notes over frames, pins over notes, and an open thread, the draft and a note in change over all', async () => {

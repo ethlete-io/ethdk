@@ -18,23 +18,31 @@ const stateNoteOf = (note: ListedNote, frameId: string): CanvasNote => ({
   ...(note.point ? { point: note.point } : {}),
 });
 
+/** Whether a note shows at a size: a pointed note only at the size it was written at, any other at every size. */
+export const showsAtSize = (note: Pick<ListedNote, 'point' | 'size'>, size: string | number) =>
+  !note.point || note.size === undefined || note.size === size;
+
 const isRestFrameOf = (place: FramePlace | undefined, note: ListedNote) =>
   !!place &&
   !place.sketch &&
   (place.interaction ?? REST) === REST &&
   place.part === note.part &&
-  place.state === note.state;
+  place.state === note.state &&
+  showsAtSize(note, place.size);
 
-/** Each note on every frame that draws its part and state at rest. */
+/** Each note on every frame that draws its part and state at rest, at its size. */
 export const partNotesOf = (frames: CanvasFrame[], notes: ListedNote[]): CanvasNote[] =>
   notes.flatMap((note) =>
     frames.filter((frame) => isRestFrameOf(frame.place, note)).map((frame) => stateNoteOf(note, frame.id)),
   );
 
-/** The notes on the states of a flow, on their frames, and the flow's free notes as headings. */
-export const flowNotesOf = (flow: ListedFlow, notes: ListedNote[]): CanvasNote[] => [
+/** The notes on the states of a flow at the picked preset, on their frames, and the flow's free notes as headings. */
+export const flowNotesOf = (
+  flow: ListedFlow,
+  { notes, preset }: { notes: ListedNote[]; preset: string },
+): CanvasNote[] => [
   ...notes.flatMap((note) =>
-    flow.frames.some((frame) => frame.part === note.part && frame.state === note.state)
+    showsAtSize(note, preset) && flow.frames.some((frame) => frame.part === note.part && frame.state === note.state)
       ? [stateNoteOf(note, frameIdOf(note))]
       : [],
   ),

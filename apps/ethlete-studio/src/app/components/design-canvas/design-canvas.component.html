@@ -243,8 +243,11 @@
       [style.top.px]="marker.y"
       [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
       [attr.data-note-marker]="marker.key"
-      class="pointer-events-none absolute z-2 size-3 origin-top-left border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
-    ></span>
+      (pointerenter)="hoveredNote.set(marker.key)"
+      (pointerleave)="hoveredNote.set(null)"
+      class="absolute z-2 flex size-[1.8rem] origin-top-left items-center justify-center rounded-full border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)] text-[1.1rem] leading-none font-bold text-[var(--et-surface-background-solid)]"
+      >{{ marker.number }}</span
+    >
   }
 
   @for (group of placedNotes(); track group.key) {
@@ -268,7 +271,16 @@
             "
             [attr.data-note]="note.id"
             [attr.data-note-key]="NOTE_KEY_OF(note)"
+            (pointerenter)="hoveredNote.set(noteNumbers().has(NOTE_KEY_OF(note)) ? NOTE_KEY_OF(note) : null)"
+            (pointerleave)="hoveredNote.set(null)"
           >
+            @if (noteNumbers().get(NOTE_KEY_OF(note)); as number) {
+              <span
+                class="float-left mt-[0.1rem] mr-2 flex size-[1.8rem] items-center justify-center rounded-full bg-[var(--et-surface-color-muted-solid)] text-[1.1rem] leading-none font-bold text-[var(--et-surface-background-solid)]"
+                data-note-number
+                >{{ number }}</span
+              >
+            }
             @if (noteTemplate(); as template) {
               <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />
             } @else {

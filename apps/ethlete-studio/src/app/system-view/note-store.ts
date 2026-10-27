@@ -131,7 +131,7 @@ export class NoteStore {
             part: draft.place.part,
             state: draft.place.state,
             text: trimmed,
-            ...(draft.point ? { point: roundedPoint(draft.point) } : {}),
+            ...(draft.point ? { point: roundedPoint(draft.point), size: draft.place.size } : {}),
           });
 
     this.run(write$.pipe(tap(() => this.draft.set(null))));

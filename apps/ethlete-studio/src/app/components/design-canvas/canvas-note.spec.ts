@@ -26,14 +26,23 @@ describe('placeNotes', () => {
           { id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } },
           { id: 'm', text: 'u', frameId: 'a' },
           { id: 'g', text: 'v', frameId: 'gone', point: { x: 1, y: 1 } },
+          { id: 'o', text: 'w', frameId: 'b', point: { x: 2, y: 3 } },
+          { id: 'p', text: 'x', frameId: 'a', point: { x: 5, y: 6 } },
         ],
         frames,
-      ),
-    ).toEqual([{ key: 'n a', x: 140, y: 320, column: { x: 100, y: 1060 } }]);
+      ).map(({ key, number }) => [key, number]),
+    ).toEqual([
+      ['n a', 1],
+      ['o b', 1],
+      ['p a', 2],
+    ]);
+    expect(placeNoteMarkers([{ id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } }], frames)).toEqual([
+      { key: 'n a', number: 1, x: 140, y: 320, column: { x: 100, y: 1060 } },
+    ]);
   });
 
   it('runs the connector through the gap below the frame and left of the column to the card', () => {
-    const marker = { key: 'n a', x: 140, y: 320, column: { x: 100, y: 1060 } };
+    const marker = { key: 'n a', number: 1, x: 140, y: 320, column: { x: 100, y: 1060 } };
 
     expect(noteConnectorPath(marker, { top: 50, scale: 2 })).toBe('M 140 320 V 1052 H 76 V 1192 H 100');
   });

@@ -111,6 +111,23 @@ describe('comment pins', () => {
     expect(variant?.note).toBeUndefined();
     expect(withOtherSizeNotes([frame('f')], { comments: [wide] })[0]?.note).toBe('1 comment at another size');
     expect(otherSizeFrameOf([frame('g', 'a'), frame('f')], wide)).toBe('f');
+
+    const pointed = { part: 'components/card', state: 'empty', point: { x: 1, y: 2 } };
+    const notes = [
+      { ...pointed, size: 520 },
+      { ...pointed, size: 360 },
+      { part: 'components/card', state: 'empty' },
+    ];
+    const [noted, sketched] = withOtherSizeNotes([frame('f'), frame('g', 'a')], { comments: [wide], notes });
+
+    expect(noted?.note).toBe('1 comment, 1 note at another size');
+    expect(sketched?.note).toBeUndefined();
+    expect(withOtherSizeNotes([frame('f')], { comments: others, notes })[0]?.note).toBe(
+      '2 comments, 1 note at other sizes',
+    );
+    expect(withOtherSizeNotes([frame('f')], { comments: [], notes: [{ ...pointed, size: 'fitted' }] })[0]?.note).toBe(
+      '1 note at another size',
+    );
     expect(otherSizeFrameOf([frame('g', 'a')], wide)).toBeNull();
   });
 

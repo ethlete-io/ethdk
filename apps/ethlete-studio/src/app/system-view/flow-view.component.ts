@@ -129,10 +129,14 @@ export class FlowViewComponent {
   );
 
   protected notedFrames = computed(() =>
-    withOtherSizeNotes(this.drawn().frames, { comments: this.commentStore.comments(), everyInteraction: true }),
+    withOtherSizeNotes(this.drawn().frames, {
+      comments: this.commentStore.comments(),
+      notes: this.notesShown() ? this.noteStore.notes() : [],
+      everyInteraction: true,
+    }),
   );
 
-  protected notes = computed(() => flowNotesOf(this.flow(), this.noteStore.notes()));
+  protected notes = computed(() => flowNotesOf(this.flow(), { notes: this.noteStore.notes(), preset: this.preset() }));
 
   protected pins = computed(() => pinsOf(this.drawn().frames, this.commentStore.comments()));
 

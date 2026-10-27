@@ -72,13 +72,31 @@ export const commentWhereOf = (comment: CommentPlace) =>
     ...(comment.sketch ? [`variant ${comment.sketch.variant}`] : []),
   ].join(' · ');
 
-/** How many comments sit on the frame's part and state at another size, in any interaction, where no pin can show them. */
-export const otherSizeCountOf = (place: FramePlace, comments: CommentPlace[]) =>
+const otherSizeCommentsOf = (place: FramePlace, comments: CommentPlace[]) =>
   comments.filter(
     (comment) =>
       isOnPlace(comment, { ...place, size: comment.size, interaction: comment.interaction }) &&
       comment.size !== place.size,
-  ).length;
+  );
+
+/** How many comments sit on the frame's part and state at another size, in any interaction, where no pin can show them. */
+export const otherSizeCountOf = (place: FramePlace, comments: CommentPlace[]) =>
+  otherSizeCommentsOf(place, comments).length;
+
+/** A note on a state; a pointed one with a `size` shows only at that size. */
+export type SizedNote = { part: string; state: string; point?: unknown; size?: string | number };
+
+const otherSizeNotesOf = (place: FramePlace, notes: SizedNote[]) =>
+  place.sketch
+    ? []
+    : notes.filter(
+        (note): note is SizedNote & { size: string | number } =>
+          !!note.point &&
+          note.size !== undefined &&
+          note.part === place.part &&
+          note.state === place.state &&
+          note.size !== place.size,
+      );
 
 /** How many comments sit on the frame's part, state and size in another interaction, where no pin can show them. */
 export const otherInteractionCountOf = (place: FramePlace, comments: CommentPlace[]) =>
@@ -116,22 +134,40 @@ export const ageOf = (createdAt: string, now: number) => {
   return `${Math.floor(minutes / (60 * 24))} d`;
 };
 
+const countOf = (count: number, noun: string) => (count === 1 ? `1 ${noun}` : `${count} ${noun}s`);
+
 const countNoteOf = (count: number, [one, many]: [string, string]) =>
-  count === 0 ? [] : [count === 1 ? `1 comment ${one}` : `${count} comments ${many}`];
+  count === 0 ? [] : [`${countOf(count, 'comment')} ${count === 1 ? one : many}`];
+
+const otherSizeNoteOf = (place: FramePlace, { comments, notes }: { comments: CommentPlace[]; notes: SizedNote[] }) => {
+  const sizedComments = otherSizeCommentsOf(place, comments);
+  const sizedNotes = otherSizeNotesOf(place, notes);
+  const counts = [
+    ...(sizedComments.length > 0 ? [countOf(sizedComments.length, 'comment')] : []),
+    ...(sizedNotes.length > 0 ? [countOf(sizedNotes.length, 'note')] : []),
+  ];
+  const sizes = new Set([...sizedComments, ...sizedNotes].map((item) => item.size));
+
+  return counts.length === 0 ? [] : [`${counts.join(', ')} ${sizes.size === 1 ? 'at another size' : 'at other sizes'}`];
+};
 
 /**
- * The frames with a note on the label that counts the comments on the same state at other sizes, and in
- * other interactions unless `everyInteraction` says each interaction has a frame of its own.
+ * The frames with a note on the label that counts the comments and pointed notes on the same state at other
+ * sizes, and the comments in other interactions unless `everyInteraction` says each interaction has a frame of its own.
  */
 export const withOtherSizeNotes = (
   frames: CanvasFrame[],
-  { comments, everyInteraction = false }: { comments: CommentPlace[]; everyInteraction?: boolean },
+  {
+    comments,
+    notes: stateNotes = [],
+    everyInteraction = false,
+  }: { comments: CommentPlace[]; notes?: SizedNote[]; everyInteraction?: boolean },
 ): CanvasFrame[] =>
   frames.map((frame) => {
     if (!frame.place) return frame;
 
     const notes = [
-      ...countNoteOf(otherSizeCountOf(frame.place, comments), ['at another size', 'at other sizes']),
+      ...otherSizeNoteOf(frame.place, { comments, notes: stateNotes }),
       ...(everyInteraction
         ? []
         : countNoteOf(otherInteractionCountOf(frame.place, comments), [

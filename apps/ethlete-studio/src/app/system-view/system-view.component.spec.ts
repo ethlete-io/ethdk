@@ -351,6 +351,7 @@ describe('SystemViewComponent on a flow', () => {
     part: 'pages/library',
     state: 'empty',
     point: { x: 40, y: 120 },
+    size: 'phone',
     text: 'Invites the first film',
     file: 'notes/n1.json',
     stale: null,
@@ -391,17 +392,23 @@ describe('SystemViewComponent on a flow', () => {
     expect(flowView['pins']().map((pin) => [pin.frameId, pin.label])).toEqual([['pages/library one', '1']]);
   });
 
-  it('notes on a flow frame the comments made at another size', async () => {
+  it('notes on a flow frame the comments and pointed notes made at another size, and shows a note only at its own', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
     const flowView = flowViewOf(fixture);
-    const noteOf = () => flowView['notedFrames']().find((frame) => frame.id === 'pages/library one')?.note;
+    const noteOf = (id: string) => flowView['notedFrames']().find((frame) => frame.id === id)?.note;
+    const shownNotes = () => flowView['notes']().map((shown) => shown.id);
 
-    expect(noteOf()).toBe('1 comment at another size');
+    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([
+      '1 comment at another size',
+      undefined,
+    ]);
+    expect(shownNotes()).toEqual(['n1']);
 
     flowView['pickPreset']('desktop');
     await settle(fixture);
 
-    expect(noteOf()).toBeUndefined();
+    expect([noteOf('pages/library one'), noteOf('pages/library empty')]).toEqual([undefined, '1 note at another size']);
+    expect(shownNotes()).toEqual([]);
   });
 
   it('turns comment mode on with C, ends note mode, and drafts a comment at the preset on a frame click', async () => {

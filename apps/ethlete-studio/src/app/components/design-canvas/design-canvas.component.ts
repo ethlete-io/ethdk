@@ -378,6 +378,11 @@ export class DesignCanvasComponent {
 
   protected noteMarkers = computed(() => placeNoteMarkers(this.notes(), this.framesById()));
 
+  protected noteNumbers = computed(() => new Map(this.noteMarkers().map((marker) => [marker.key, marker.number])));
+
+  /** The key of the pointed note whose marker or card the pointer is over; only its line shows. */
+  protected hoveredNote = signal<string | null>(null);
+
   protected readonly NOTE_KEY_OF = noteKeyOf;
 
   protected placedDraft = computed(() => {
@@ -411,7 +416,7 @@ export class DesignCanvasComponent {
     const scale = this.labelScale();
 
     return this.noteMarkers().flatMap((marker) => {
-      const top = tops[marker.key];
+      const top = marker.key === this.hoveredNote() ? tops[marker.key] : undefined;
 
       return top === undefined ? [] : [{ key: marker.key, path: noteConnectorPath(marker, { top, scale }) }];
     });
