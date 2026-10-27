@@ -262,12 +262,21 @@ export const designReadError = (status: number) =>
     ? "This checkout's @ethlete/cli has no system view. Update it."
     : `The design server answered ${status}.`;
 
+export const OLDER_SERVER_MESSAGE = 'The design server is older than Studio - restart it.';
+
+/** Reads a design server answer as JSON. An older server answers a path it does not know with its HTML index, which fails here. */
+export const designJson = (response: Response): Promise<unknown> => {
+  if (response.headers.get('content-type')?.includes('text/html')) throw new Error(OLDER_SERVER_MESSAGE);
+
+  return response.json();
+};
+
 export const listedSystem$ = (port: number): Observable<ListedProduct[]> =>
   fromFetch(`http://localhost:${port}/__design/system`).pipe(
     switchMap((response) => {
       if (!response.ok) throw new Error(designReadError(response.status));
 
-      return response.json() as Promise<ListedProduct[]>;
+      return designJson(response) as Promise<ListedProduct[]>;
     }),
   );
 
@@ -338,7 +347,7 @@ export const listedCalls$ = (port: number): Observable<ListedCall[]> =>
     switchMap((response) => {
       if (!response.ok) throw new Error(designReadError(response.status));
 
-      return response.json() as Promise<ListedCall[]>;
+      return designJson(response) as Promise<ListedCall[]>;
     }),
   );
 
@@ -348,7 +357,7 @@ export type TransferResult = 'marked' | 'already' | 'missing' | 'unreadable';
 export const transferCall$ = (port: number, slug: string): Observable<TransferResult> =>
   fromFetch(`http://localhost:${port}/__design/transfer?call=${encodeURIComponent(slug)}`, { method: 'POST' }).pipe(
     switchMap((response) =>
-      from(response.json() as Promise<{ result: TransferResult }>).pipe(
+      from(designJson(response) as Promise<{ result: TransferResult }>).pipe(
         map(({ result }) => {
           if (!response.ok) throw new Error(`The design server could not mark ${slug} transferred: ${result}.`);
 
@@ -436,7 +445,7 @@ const refusalOf = (body: unknown, status: number) => {
 export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
   fromFetch(url, init).pipe(
     switchMap((response) =>
-      from(response.json().catch(() => null) as Promise<unknown>).pipe(
+      from(designJson(response).catch(() => null)).pipe(
         map((body) => {
           if (response.ok) return body as TResult;
 

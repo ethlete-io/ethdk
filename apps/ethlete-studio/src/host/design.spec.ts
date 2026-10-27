@@ -1,4 +1,5 @@
-import { callShotUrl, designReadError, frameUrl } from './design';
+import { firstValueFrom } from 'rxjs';
+import { OLDER_SERVER_MESSAGE, callShotUrl, designAnswer$, designReadError, frameUrl, listedSystem$ } from './design';
 
 describe('frameUrl', () => {
   it('encodes the slug and the variant', () => {
@@ -37,5 +38,31 @@ describe('designReadError', () => {
   it('names an outdated cli for a 404 and the status otherwise', () => {
     expect(designReadError(404)).toBe("This checkout's @ethlete/cli has no system view. Update it.");
     expect(designReadError(500)).toBe('The design server answered 500.');
+  });
+});
+
+describe('an older design server', () => {
+  const html = () =>
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(new Response('<!doctype html><html></html>', { headers: { 'content-type': 'text/html' } })),
+      ),
+    );
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('is named when a note or comment request gets its HTML index', async () => {
+    html();
+
+    await expect(firstValueFrom(designAnswer$('http://localhost:1/__design/notes'))).rejects.toThrow(
+      OLDER_SERVER_MESSAGE,
+    );
+  });
+
+  it('is named when the system read gets its HTML index', async () => {
+    html();
+
+    await expect(firstValueFrom(listedSystem$(1))).rejects.toThrow(OLDER_SERVER_MESSAGE);
   });
 });
