@@ -361,6 +361,19 @@ export const createDesignServer = async (options: { target: string; config: Desi
   });
 };
 
+const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {
+  let closing = false;
+  const shutDown = () => {
+    if (closing) return;
+    closing = true;
+    void server.close().finally(() => process.exit(0));
+  };
+
+  process.stdin.once('end', shutDown);
+  process.stdin.once('close', shutDown);
+  process.stdin.resume();
+};
+
 /**
  * Starts the design server for a checkout and keeps it running. The returned exit code is the
  * command's, not the server's: a listening server holds the process open on its own.
@@ -380,6 +393,10 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
   await server.listen();
   console.log(`design-explore: drawing ${target}`);
   server.printUrls();
+
+  if (process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1') {
+    exitWhenStdinCloses(server);
+  }
 
   return 0;
 };

@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use serde::Serialize;
 use tokio::io::{AsyncBufReadExt, AsyncRead, BufReader};
-use tokio::process::Child;
+use tokio::process::{Child, ChildStdin};
 
 use crate::design::{port_of, read_config};
 use crate::error::{StudioError, StudioResult};
@@ -47,6 +47,7 @@ pub struct ServerState {
 
 struct Server {
     child: Child,
+    _stdin: Option<ChildStdin>,
     log: Arc<Mutex<Vec<String>>>,
 }
 
@@ -279,11 +280,14 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
         .arg("design")
         .arg(checkout)
         .current_dir(checkout)
-        .stdin(Stdio::null())
+        .env("ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE", "1")
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
 
+    // The server exits when its stdin closes, so Studio must hold the pipe for the server's whole
+    // life: its death by any route, SIGKILL included, is what closes it.
     // The server starts a bundler, which starts workers of its own, so a stop has to reach the
     // whole group. Its own group is what makes that reachable.
     #[cfg(unix)]
@@ -294,6 +298,7 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
         _ => StudioError::Io(error),
     })?;
 
+    let stdin = child.stdin.take();
     let log = Arc::new(Mutex::new(Vec::new()));
 
     if let Some(stdout) = child.stdout.take() {
@@ -304,11 +309,14 @@ fn spawn(servers: &DesignServers, checkout: &str) -> StudioResult<()> {
         collect(stderr, log.clone());
     }
 
-    servers
-        .0
-        .lock()
-        .map_err(|_| StudioError::Poisoned)?
-        .insert(checkout.to_owned(), Server { child, log });
+    servers.0.lock().map_err(|_| StudioError::Poisoned)?.insert(
+        checkout.to_owned(),
+        Server {
+            child,
+            _stdin: stdin,
+            log,
+        },
+    );
 
     Ok(())
 }
@@ -484,7 +492,7 @@ mod tests {
         std::fs::create_dir_all(entry.parent().expect("a parent")).expect("a temporary checkout");
         std::fs::write(
             &entry,
-            format!("const {{ createServer }} = require('node:http');\ncreateServer((_, response) => response.end('ok')).listen({port});\n"),
+            format!("const {{ createServer }} = require('node:http');\nconst server = createServer((_, response) => response.end('ok')).listen({port});\nif (process.env.ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE === '1') process.stdin.on('end', () => server.close(() => process.exit(0))).resume();\n"),
         )
         .expect("a design tool");
 
@@ -581,6 +589,34 @@ mod tests {
         assert!(!listening(PORT), "a server outlived the app");
         assert!(!state(&servers, &checkout, PORT).expect("a state").managed);
 
+        let _ = std::fs::remove_dir_all(&checkout);
+    }
+
+    #[tokio::test]
+    async fn a_server_stops_when_the_app_dies_without_stopping_it() {
+        const PORT: u16 = 45877;
+
+        let checkout = fake_checkout(PORT);
+        let servers = DesignServers::default();
+
+        spawn(&servers, &checkout).expect("the design tool runs");
+        await_listening(&servers, &checkout, PORT).await;
+
+        assert!(listening(PORT), "the design tool never answered");
+
+        servers
+            .0
+            .lock()
+            .expect("the servers")
+            .get_mut(&checkout)
+            .expect("a server")
+            ._stdin
+            .take();
+        await_stopped(PORT).await;
+
+        assert!(!listening(PORT), "a server outlived its stdin");
+
+        stop_every(&servers);
         let _ = std::fs::remove_dir_all(&checkout);
     }
 

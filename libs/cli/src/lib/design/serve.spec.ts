@@ -25,7 +25,7 @@ vi.mock('vite', () => ({
   createServer: async (options: ServerOptions) => {
     created.push(options);
 
-    return { listen: async () => undefined, printUrls: () => undefined };
+    return { listen: async () => undefined, printUrls: () => undefined, close: async () => undefined };
   },
 }));
 
@@ -63,6 +63,24 @@ describe('serveDesign', () => {
     expect(await serveDesign({ target: makeTarget() })).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('no config'));
     expect(created).toHaveLength(0);
+  });
+
+  it('exits when stdin closes, only if asked to', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+    process.stdin.emit('end');
+    await new Promise((done) => setTimeout(done, 0));
+    expect(exit).not.toHaveBeenCalled();
+
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '1');
+    expect(await serveDesign({ target })).toBe(0);
+    process.stdin.emit('end');
+    await new Promise((done) => setTimeout(done, 0));
+    expect(exit).toHaveBeenCalledWith(0);
+    vi.unstubAllEnvs();
   });
 
   it('serves the call registry and workspace aliases on the configured port', async () => {
