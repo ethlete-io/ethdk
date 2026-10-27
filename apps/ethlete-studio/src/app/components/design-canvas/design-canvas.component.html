@@ -33,6 +33,7 @@
       [style.top.px]="placed.y"
       [style.width.px]="placed.width"
       [style.height.px]="placed.height"
+      [class.et-canvas-frame--unsized]="placed.unsized"
       [captionPickable]="pointing() && placed.frame.place !== undefined"
       (click)="select(placed.frame.id, $event)"
       (dblclick)="activate(placed.frame.id)"

@@ -1,5 +1,5 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { EMPTY, Subscription, catchError, debounceTime, finalize, first, interval, of, switchMap, tap } from 'rxjs';
@@ -7,6 +7,7 @@ import {
   Project,
   ServerState,
   designChanges$,
+  drawnChanges$,
   designProject$,
   designServerRestart$,
   designServerStart$,
@@ -158,6 +159,12 @@ export class StudioViewComponent {
   private watch: Subscription | null = null;
   private foreignWatch: Subscription | null = null;
 
+  private listeningPort = computed(() => {
+    const state = this.server();
+
+    return state?.listening ? state.port : null;
+  });
+
   protected serverLine = computed(() => {
     const state = this.server();
 
@@ -194,6 +201,17 @@ export class StudioViewComponent {
 
     return state && !state.listening ? state.log.slice(-5).join(' · ') : '';
   });
+
+  constructor() {
+    toObservable(this.listeningPort)
+      .pipe(
+        switchMap((port) => (port === null ? EMPTY : drawnChanges$(port).pipe(catchError(() => EMPTY)))),
+        debounceTime(SETTLE_MS),
+        tap(() => this.tick.update((value) => value + 1)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+  }
 
   protected setCheckout(path: string) {
     this.checkout.set(path);

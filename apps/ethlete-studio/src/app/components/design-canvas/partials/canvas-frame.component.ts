@@ -1,7 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, ElementRef, ViewEncapsulation, computed, inject, input, output, viewChild } from '@angular/core';
-import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { DomSanitizer } from '@angular/platform-browser';
+import {
+  Component,
+  ElementRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  viewChildren,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProvideColorDirective } from '@ethlete/core';
 import {
   EMPTY,
@@ -92,14 +102,16 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         }
       }
       @if (live()) {
-        <iframe
-          #iframe
-          [src]="source()"
-          [title]="frame().label"
-          [class.et-canvas-frame__iframe--painted]="painted()"
-          (load)="loadContent(iframe)"
-          class="et-canvas-frame__iframe"
-        ></iframe>
+        @for (source of sources(); track source.src) {
+          <iframe
+            #iframe
+            [src]="source.url"
+            [title]="frame().label"
+            [class.et-canvas-frame__iframe--painted]="source.src === shown()"
+            (load)="loadContent(iframe)"
+            class="et-canvas-frame__iframe"
+          ></iframe>
+        }
       }
     }
     @if (!active()) {
@@ -133,14 +145,26 @@ export class CanvasFrameComponent {
   public escapeKeydown = output();
   public captionClick = output<Event>();
 
-  protected iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
+  private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
-  protected source = computed(() => this.sanitizer.bypassSecurityTrustResourceUrl(this.frame().src));
+  /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
+  protected shown = linkedSignal<boolean, string | null>({ source: this.live, computation: () => null });
 
-  protected painted = toSignal(
-    toObservable(this.iframe).pipe(switchMap((iframe) => (iframe ? painted$(iframe.nativeElement) : of(false)))),
-    { initialValue: false },
-  );
+  protected painted = computed(() => this.shown() !== null);
+
+  protected sources = linkedSignal<string[], { src: string; url: SafeResourceUrl }[]>({
+    source: () => [...new Set([this.shown(), this.frame().src])].filter((src): src is string => src !== null),
+    computation: (addresses, previous) =>
+      addresses.map(
+        (src) =>
+          previous?.value.find((source) => source.src === src) ?? {
+            src,
+            url: this.sanitizer.bypassSecurityTrustResourceUrl(src),
+          },
+      ),
+  });
+
+  private newest = computed(() => this.iframes().at(-1)?.nativeElement ?? null);
 
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 
@@ -153,9 +177,26 @@ export class CanvasFrameComponent {
       .subscribe();
 
     // A cross-origin frame page posts its first size before its load event, so listen from the moment the iframe exists.
-    toObservable(this.iframe)
+    toObservable(this.newest)
       .pipe(
-        switchMap((iframe) => (iframe ? this.watchMessages$(iframe.nativeElement) : EMPTY)),
+        switchMap((iframe) => (iframe ? this.watchMessages$(iframe) : EMPTY)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
+    toObservable(this.newest)
+      .pipe(
+        switchMap((iframe) => {
+          const src = iframe && this.sources().at(-1)?.src;
+
+          return iframe && src
+            ? painted$(iframe).pipe(
+                filter(Boolean),
+                map(() => src),
+              )
+            : EMPTY;
+        }),
+        tap((src) => this.shown.set(src)),
         takeUntilDestroyed(),
       )
       .subscribe();

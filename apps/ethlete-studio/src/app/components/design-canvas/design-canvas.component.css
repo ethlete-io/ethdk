@@ -91,6 +91,11 @@
     outline: calc(0.1rem * var(--et-design-canvas-label-scale)) solid var(--et-surface-border-solid);
   }
 
+  .et-canvas-frame--unsized {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .et-canvas-frame--selected {
     outline: calc(0.2rem * var(--et-design-canvas-label-scale)) solid var(--et-theme-color-primary-solid);
   }
@@ -136,7 +141,7 @@
   }
 
   .et-canvas-frame__screenshot {
-    object-fit: cover;
+    object-fit: none;
     object-position: top left;
   }
 
@@ -152,6 +157,10 @@
 
   .et-canvas-frame__placeholder {
     background: var(--et-surface-interaction-solid);
+  }
+
+  .et-canvas-frame__iframe {
+    color-scheme: normal;
   }
 
   .et-canvas-frame__iframe:not(.et-canvas-frame__iframe--painted) {

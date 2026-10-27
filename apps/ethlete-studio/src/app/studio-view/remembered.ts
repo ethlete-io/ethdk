@@ -15,6 +15,8 @@ export type ViewState = {
   cameras: Record<string, Camera>;
   /** The size a user gave a canvas frame, keyed by `frameSizeKey`. */
   frameSizes: Record<string, FrameSize>;
+  /** The size a fitted frame's content measured last, keyed by `frameSizeKey`, so a reload places it at once. */
+  measuredSizes: Record<string, FrameSize>;
 };
 
 export type FrameSize = { width?: number; height?: number };
@@ -146,7 +148,7 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, themes, openGroups, systemProduct, systemEntry, cameras, frameSizes } =
+    const { checkout, themes, openGroups, systemProduct, systemEntry, cameras, frameSizes, measuredSizes } =
       stored as Partial<ViewState>;
 
     return {
@@ -157,6 +159,7 @@ export const rememberedView = (): Partial<ViewState> => {
       systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,
       cameras: cameraMap(cameras),
       frameSizes: frameSizeMap(frameSizes),
+      measuredSizes: frameSizeMap(measuredSizes),
     };
   } catch {
     return {};

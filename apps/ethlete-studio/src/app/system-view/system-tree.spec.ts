@@ -158,10 +158,10 @@ describe('callFramesOf', () => {
       ['b', 'Ghost', 960, undefined],
     ]);
     expect(frames[0]?.src).toBe(
-      'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2',
+      'http://localhost:4402/frame.html?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3',
     );
     expect(frames[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&width=960&revision=3',
+      'http://localhost:4402/__design/shot?call=acme%2Fcomponents%2Fbutton&variant=a&surface=dark&epoch=2&revision=3&width=960',
     );
   });
 
@@ -192,7 +192,7 @@ describe('framesOf', () => {
       ['disabled', 'desktop', 1280, undefined],
     ]);
     expect(frames[0]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=pages%2Fhome&state=default&surface=dark&epoch=2',
+      'http://localhost:4402/frame.html?product=acme&part=pages%2Fhome&state=default&surface=dark&epoch=2&revision=3',
     );
     expect(frames[0]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=pages%2Fhome&state=default&preset=phone&surface=dark&epoch=2&revision=3',
@@ -210,7 +210,7 @@ describe('framesOf', () => {
       ['disabled', undefined, 'disabled', undefined, undefined],
     ]);
     expect(frames[0]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2',
+      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2&revision=3',
     );
     expect(frames[0]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&epoch=2&revision=3',
@@ -228,7 +228,9 @@ describe('framesOf', () => {
       ['disabled', 280, undefined],
       ['disabled', 480, undefined],
     ]);
-    expect(frames[1]?.src).toBe('http://localhost:4402/frame.html?product=acme&part=elements%2Fcard&state=default');
+    expect(frames[1]?.src).toBe(
+      'http://localhost:4402/frame.html?product=acme&part=elements%2Fcard&state=default&revision=3',
+    );
     expect(frames[1]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=elements%2Fcard&state=default&width=480&revision=3',
     );

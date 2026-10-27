@@ -14,7 +14,7 @@ import {
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
+import { Subject, buffer, debounceTime, exhaustMap, skip, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import { CanvasPin, FramePoint } from './canvas-pin';
@@ -48,10 +48,11 @@ const COLUMN_HEAD_ROOM = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const ZOOM_STEP = 1.5;
+const MEASURE_WRITE_MS = 500;
 
 export type CanvasColumn = { key: string; label: string; muted?: boolean };
 
-type PlacedFrame = Rect & { frame: CanvasFrame; live: boolean; active: boolean; selected: boolean };
+type PlacedFrame = Rect & { frame: CanvasFrame; unsized: boolean; live: boolean; active: boolean; selected: boolean };
 
 const isEditable = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
@@ -120,25 +121,37 @@ export class DesignCanvasComponent {
     source: this.cameraKey,
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().frameSizes ?? {}, key)),
   });
-  private measuredHeights = signal<Record<string, number>>({});
-  private measuredWidths = signal<Record<string, number>>({});
+  private measured = linkedSignal<string | null, Record<string, FrameSize>>({
+    source: this.cameraKey,
+    computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
+  });
+  private measure$ = new Subject<{ cameraKey: string; frameId: string; size: FrameSize }>();
 
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
 
   private layout = computed(() => {
     const sizes = this.sizes();
-    const heights = this.measuredHeights();
-    const widths = this.measuredWidths();
+    const measured = this.measured();
     const frames = this.frames();
     const byId = new Map(frames.map((frame) => [frame.id, frame]));
-    const sized = frames.map((frame) => ({
-      id: frame.id,
-      row: frame.row ?? '',
-      column: frame.column ?? '',
-      width: sizes[frame.id]?.width ?? frame.width ?? widths[frame.id] ?? FALLBACK_WIDTH,
-      height: sizes[frame.id]?.height ?? frame.height ?? heights[frame.id] ?? FALLBACK_HEIGHT,
-    }));
+    const known = (frame: CanvasFrame) => ({
+      width: sizes[frame.id]?.width ?? frame.width ?? measured[frame.id]?.width,
+      height: sizes[frame.id]?.height ?? frame.height ?? measured[frame.id]?.height,
+    });
+    const sized = frames.map((frame) => {
+      const { width, height } = known(frame);
+
+      return {
+        id: frame.id,
+        row: frame.row ?? '',
+        column: frame.column ?? '',
+        width: width ?? FALLBACK_WIDTH,
+        height: height ?? FALLBACK_HEIGHT,
+        unsized: width === undefined || height === undefined,
+      };
+    });
+    const unsized = new Set(sized.filter((frame) => frame.unsized).map((frame) => frame.id));
     const arrangement = this.arrangement();
     const columns = this.columns();
     const matrix =
@@ -162,7 +175,7 @@ export class DesignCanvasComponent {
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
 
-        return frame ? [{ ...placed, frame }] : [];
+        return frame ? [{ ...placed, frame, unsized: unsized.has(frame.id) }] : [];
       }),
     };
   });
@@ -188,12 +201,13 @@ export class DesignCanvasComponent {
     const activeId = this.activeId();
     const selectedId = this.selectedId();
 
-    return this.layout().frames.map(({ x, y, width, height, frame }) => ({
+    return this.layout().frames.map(({ x, y, width, height, frame, unsized }) => ({
       x,
       y,
       width,
       height,
       frame,
+      unsized,
       active: frame.id === activeId,
       selected: frame.id === selectedId,
       live: frame.id === activeId || (!!visible && rectsIntersect({ x, y, width, height }, visible)),
@@ -277,6 +291,21 @@ export class DesignCanvasComponent {
         this.camera.set(restored ?? fitted);
       });
     });
+
+    this.measure$
+      .pipe(
+        buffer(this.measure$.pipe(debounceTime(MEASURE_WRITE_MS))),
+        tap((measures) =>
+          rememberView({
+            measuredSizes: measures.reduce(
+              (stored, measure) => frameSizesWith({ stored, ...measure }),
+              rememberedView().measuredSizes ?? {},
+            ),
+          }),
+        ),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     this.panStart$
       .pipe(
@@ -370,11 +399,11 @@ export class DesignCanvasComponent {
   }
 
   protected storeHeight(id: string, height: number) {
-    this.measuredHeights.update((heights) => (heights[id] === height ? heights : { ...heights, [id]: height }));
+    this.storeMeasure(id, { height });
   }
 
   protected storeWidth(id: string, width: number) {
-    this.measuredWidths.update((widths) => (widths[id] === width ? widths : { ...widths, [id]: width }));
+    this.storeMeasure(id, { width });
   }
 
   protected startResize(size: Size) {
@@ -497,6 +526,16 @@ export class DesignCanvasComponent {
 
   protected zoomBy(factor: number) {
     this.zoomTo(this.camera().zoom * factor);
+  }
+
+  private storeMeasure(id: string, size: FrameSize) {
+    const known = this.measured()[id];
+    const key = this.cameraKey();
+
+    if (Object.entries(size).every(([side, value]) => known?.[side as keyof FrameSize] === value)) return;
+
+    this.measured.update((measured) => ({ ...measured, [id]: { ...measured[id], ...size } }));
+    if (key !== null) this.measure$.next({ cameraKey: key, frameId: id, size });
   }
 
   private fitted(bounds: Rect, viewport: Size): Camera {

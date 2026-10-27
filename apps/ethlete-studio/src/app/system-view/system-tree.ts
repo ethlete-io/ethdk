@@ -183,7 +183,7 @@ const presetFramesOf = ({ port, product, part, epoch, revision, surface, color }
 
   return statesOf(part, error).flatMap((state) =>
     Object.entries(product.presets).map(([preset, { width, height }]) => {
-      const address = { port, product: product.name, part: key, state: state ?? '', epoch, surface, color };
+      const address = { port, product: product.name, part: key, state: state ?? '', epoch, revision, surface, color };
 
       return {
         id: `${state ?? ''} ${preset}`,
@@ -224,6 +224,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     part: key,
     state: state ?? '',
     epoch,
+    revision,
     surface,
     color,
   });
@@ -361,6 +362,7 @@ export const sketchMatrixOf = ({
         part: sketch.target,
         state: state ?? '',
         epoch,
+        revision,
         surface,
         color,
         ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
@@ -451,6 +453,7 @@ export const mergePreviewOf = ({
           part: key,
           state,
           epoch,
+          revision,
           surface,
           color,
           ...(column.key === 'merged' ? { sketch: sketch.target, variant } : {}),
@@ -511,14 +514,14 @@ export const callFramesOf = ({ port, call, epoch, revision, surface, color }: Ca
   const width = call.frameWidth > 0 ? call.frameWidth : DEFAULT_CALL_WIDTH;
 
   return call.variants.map((variant) => {
-    const address = { port, slug: call.slug, variant: variant.key, epoch, surface, color };
+    const address = { port, slug: call.slug, variant: variant.key, epoch, revision, surface, color };
 
     return {
       id: variant.key,
       src: frameUrl(address),
       width,
       label: variant.name || variant.key,
-      screenshot: callShotUrl({ ...address, width, revision }),
+      screenshot: callShotUrl({ ...address, width }),
     };
   });
 };

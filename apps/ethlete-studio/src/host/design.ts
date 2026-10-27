@@ -173,6 +173,8 @@ export type FrameAddress = {
   variant: string;
   /** Changes when the server started again, so a frame that met a dead port loads once more. */
   epoch?: number;
+  /** Changes with each design change, so the frame and its shot draw anew. */
+  revision?: number;
   /** The surface theme the frame root wears. */
   surface?: string;
   /** The colour theme the frame root wears. */
@@ -180,17 +182,16 @@ export type FrameAddress = {
 };
 
 /** The address the checkout's design server draws one variant at. */
-export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAddress) =>
+export const frameUrl = ({ port, slug, variant, epoch, revision, surface, color }: FrameAddress) =>
   `http://localhost:${port}/frame.html?call=${encodeURIComponent(slug)}&variant=${encodeURIComponent(variant)}` +
   (surface ? `&surface=${encodeURIComponent(surface)}` : '') +
   (color ? `&color=${encodeURIComponent(color)}` : '') +
-  (epoch ? `&epoch=${epoch}` : '');
+  (epoch ? `&epoch=${epoch}` : '') +
+  (revision ? `&revision=${revision}` : '');
 
 /** The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`. */
-export const callShotUrl = ({ width, revision, ...address }: FrameAddress & { width: number; revision?: number }) =>
-  frameUrl(address).replace('/frame.html?', '/__design/shot?') +
-  `&width=${width}` +
-  (revision ? `&revision=${revision}` : '');
+export const callShotUrl = ({ width, ...address }: FrameAddress & { width: number }) =>
+  `${frameUrl(address).replace('/frame.html?', '/__design/shot?')}&width=${width}`;
 
 export type DesignRoots = {
   /** The folder a scan walks. Empty until the user names one. */
@@ -271,6 +272,8 @@ export type PartAddress = {
   part: string;
   state: string;
   epoch?: number;
+  /** Changes with each design change, so the frame and its shot draw anew. */
+  revision?: number;
   surface?: string;
   color?: string;
   /** Draws the part at the size of its content instead of the size of the frame. */
@@ -290,13 +293,14 @@ const partQuery = ({ product, part, state, sketch, variant }: PartAddress) =>
 export const partFrameUrl = (address: PartAddress) =>
   `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
   (address.fit ? '&fit' : '') +
-  (address.epoch ? `&epoch=${address.epoch}` : '');
+  (address.epoch ? `&epoch=${address.epoch}` : '') +
+  (address.revision ? `&revision=${address.revision}` : '');
 
 /**
  * The address of a PNG of one state of a part at one preset or one container width, or fitted to its
  * content with neither, renewed with each `revision`.
  */
-export const partShotUrl = (address: PartAddress & { preset?: string; width?: number; revision?: number }) =>
+export const partShotUrl = (address: PartAddress & { preset?: string; width?: number }) =>
   `http://localhost:${address.port}/__design/shot?${partQuery(address)}` +
   (address.preset ? `&preset=${encodeURIComponent(address.preset)}` : '') +
   (address.width ? `&width=${address.width}` : '') +
@@ -472,8 +476,7 @@ export const writeComment$ = (
   comment: CommentPlace & { text: string },
 ): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
 
-/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
-export const commentChanges$ = (port: number): Observable<void> =>
+const designEvents$ = (port: number, name: 'comments' | 'changes'): Observable<void> =>
   new Observable<EventSource>((subscriber) => {
     const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
 
@@ -481,9 +484,15 @@ export const commentChanges$ = (port: number): Observable<void> =>
 
     return () => events.close();
   }).pipe(
-    switchMap((events) => fromEvent(events, 'comments')),
+    switchMap((events) => fromEvent(events, name)),
     map(() => undefined),
   );
+
+/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
+export const commentChanges$ = (port: number): Observable<void> => designEvents$(port, 'comments');
+
+/** Emits whenever a file outside the design folder that a frame draws changes, which the design watch does not see. */
+export const drawnChanges$ = (port: number): Observable<void> => designEvents$(port, 'changes');
 
 /** Deletes a comment the user has handled. */
 export const doneComment$ = (address: ProductAddress, id: string): Observable<void> =>
