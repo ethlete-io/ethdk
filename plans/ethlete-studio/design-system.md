@@ -623,6 +623,12 @@ behaviour; Studio vitest 202, cli 347, tsc, ngc, eslint, `design check --product
   "1 note at another size", line on hover only). Not proven headlessly: flows and the component
   matrix (unit tests only); writing a note through the real UI. No doc page or skill documents the
   note format.
+- Decided (2026-10-27): `phone` for `a1b2` confirmed. A click right on a marker in comment or note
+  mode starts nothing; accepted. The thin vertical line along the left edge of phone frames (also
+  on rows without notes, not the note line) gets its own check of the frame chrome. The
+  `ethlete-design-exploration` skill gets a short notes section: the file format (`part`, `state`,
+  `point`, `size`, `text`) and when to write a note instead of a comment - a note explains a state,
+  a comment is feedback that needs an answer.
 
 Also seen there: on `pages/library` "add open" the dialog backdrop ends at about 410px and the rest
 of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
