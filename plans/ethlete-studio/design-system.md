@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status: slice 1 done (2026-10-27). Slice 2 (canvas only) in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5. Studio: sketch view built, old Calls UI removed; next are the frame size decisions and slice 5 comments.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core done; the Studio comments are not started. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -610,8 +610,8 @@ the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `d
 
 1. **Core and data model**: workspace, product, base, layers, fixtures, states, presets, and
    `et design check` with all rules above.
-2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI leaves when the user
-   says so (see "Legacy calls").
+2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI is removed (see
+   "Legacy calls").
 3. **First real test**: rebuild the tomflix system with the new workflow, from its old calls in
    Legacy - foundations, components and elements only. It runs after slices 4 and 5, as the
    battle test of the workflow.
@@ -629,8 +629,16 @@ Each slice gets an "in progress" note here when it starts.
 
 Slice 1: done on 2026-10-27.
 
-Slice 2: the canvas, the server and its CLI are done. The Studio UI is in progress since
-2026-10-27: the canvas on `/__design/system` and `/__design/shot`, then the tree, then Legacy.
+Slice 2: done on 2026-10-27. The canvas, the server, the CLI, the tree and Legacy are built, and
+the old Calls UI is removed (4b2383ae2). Open: a Rust slice removes the commands only the old UI
+used (see "Legacy calls").
+
+Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
+in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
+three sketch open points in "Studio sketch view, as built".
+
+Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
+started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
 (decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
