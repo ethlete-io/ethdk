@@ -1,0 +1,20 @@
+{
+  "part": "components/button",
+  "state": "solid",
+  "size": "fitted",
+  "text": "The shipped solid button reads heavy in the card footer next to the ghost link.",
+  "point": {
+    "x": 30,
+    "y": 16
+  },
+  "createdAt": "2026-10-27T12:37:42.561Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "gpt-5.6-sol",
+      "text": "Should I lighten the solid button everywhere, or add a quieter secondary variant for footers like this one?",
+      "createdAt": "2026-10-27T12:37:45.988Z",
+      "question": true
+    }
+  ]
+}
