@@ -71,6 +71,7 @@ import {
 import { CommentPanelComponent } from './comment-panel.component';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
+import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
 
@@ -84,6 +85,8 @@ const BADGE_ACCENT =
 const NEW_PRODUCT = '/new';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
+
+const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
 
 @Component({
   selector: 'ethlete-system-view',
@@ -308,7 +311,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             [sketch]="shown.sketch"
             [part]="shown.part"
             [epoch]="epoch()"
-            [revision]="tick()"
+            [revision]="sketchRevision()"
             [surface]="surface()"
             [color]="color()"
             [cameraKey]="cameraKey()"
@@ -399,6 +402,8 @@ export class SystemViewComponent {
   public projectThemes = input<Record<string, Themes>>({});
 
   public tick = input(0);
+
+  public frameRevisions = input(NO_FRAME_REVISIONS);
   private partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
   private sketchView = viewChild<SketchViewComponent>('sketchView');
   protected readonly BADGE = BADGE;
@@ -527,6 +532,23 @@ export class SystemViewComponent {
       sketch,
       part: product.parts.find((candidate) => partKeyOf(candidate) === sketch.target) ?? null,
     };
+  });
+
+  protected sketchRevision = computed(() => {
+    const shown = this.sketchShown();
+
+    if (!shown) return 0;
+
+    const { product, sketch, part } = shown;
+
+    return sketchRevisionOf(this.frameRevisions(), {
+      product: product.name,
+      target: sketch.target,
+      errored:
+        failsToLoad(part?.problems ?? []) ||
+        (sketch.targets ?? []).some((target) => !!target.error) ||
+        sketch.problems.some((entry) => failsToLoad(entry.problems)),
+    });
   });
 
   protected call = computed(() => this.calls().find((listed) => callKeyOf(listed.slug) === this.picked()) ?? null);
@@ -682,7 +704,12 @@ export class SystemViewComponent {
       product,
       part: part.listed,
       epoch: this.epoch(),
-      revision: this.tick(),
+      revision: revisionOf(this.frameRevisions(), {
+        product: product.name,
+        part: part.key,
+        sketch: null,
+        errored: failsToLoad(part.listed.problems),
+      }),
       surface: this.surface(),
       color: this.color(),
     });

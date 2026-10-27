@@ -8,16 +8,18 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, signalHostElementIntersection } from '@ethlete/core';
 import {
   EMPTY,
   Observable,
   Subject,
   filter,
+  finalize,
   fromEvent,
   map,
   merge,
@@ -25,12 +27,16 @@ import {
   startWith,
   switchMap,
   take,
+  takeUntil,
   tap,
   timer,
 } from 'rxjs';
 import { CanvasFrame, frameMessageOf } from '../canvas-frame';
+import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 
 const UNREPORTED_PAINT_MS = 1000;
+
+type Wanted = { kind: 'page' | 'shot'; src: string };
 
 const nextPaint$ = (view: Window) =>
   new Observable<void>((subscriber) => {
@@ -67,6 +73,14 @@ const painted$ = (iframe: HTMLIFrameElement) => {
   template: `
     <ng-template #caption>
       {{ frame().label }}
+      @if (reload(); as state) {
+        <span
+          [class.animate-pulse]="state === 'rendering'"
+          [title]="state === 'rendering' ? 'Rendering' : 'Waiting to render'"
+          [attr.data-reload]="state"
+          class="size-[0.6em] shrink-0 self-center rounded-full bg-[var(--et-theme-color-primary-solid)]"
+        ></span>
+      }
       @if (frame().width !== undefined) {
         <span class="et-canvas-frame__width">{{ width() }}</span>
       }
@@ -110,8 +124,9 @@ const painted$ = (iframe: HTMLIFrameElement) => {
       @if (!painted()) {
         @if (frame().screenshot) {
           <img
-            [src]="frame().screenshot"
+            [src]="live() ? frame().screenshot : (admittedShot() ?? frame().screenshot)"
             (load)="readScreenshotSize($event)"
+            (error)="settleScreenshot($event)"
             class="et-canvas-frame__screenshot"
             alt=""
           />
@@ -151,6 +166,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
 })
 export class CanvasFrameComponent {
   private sanitizer = inject(DomSanitizer);
+  private queue = injectFrameRenderQueue();
 
   public frame = input.required<CanvasFrame>();
   public width = input.required<number>();
@@ -167,13 +183,45 @@ export class CanvasFrameComponent {
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
+  private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
+
   /** The address of the iframe on show. A new address mounts a second iframe that replaces it once it painted. */
-  protected shown = linkedSignal<boolean, string | null>({ source: this.live, computation: () => null });
+  protected shown = linkedSignal<boolean, string | null>({ source: () => this.drawn(), computation: () => null });
 
   protected painted = computed(() => this.shown() !== null);
 
+  private admittedPage = linkedSignal<boolean, string | null>({ source: () => this.drawn(), computation: () => null });
+
+  protected admittedShot = signal<string | null>(null);
+
+  private loadedShot = linkedSignal<boolean, string | null>({
+    source: () => this.live() || !!this.frame().error,
+    computation: () => null,
+  });
+
+  private settled$ = new Subject<string>();
+
+  /** Set while the frame waits for a render slot or renders a new address over the one it shows. */
+  protected reload = signal<RenderSlotState | null>(null);
+
+  private intersection = signalHostElementIntersection();
+
+  private visible = computed(() => this.intersection()[0]?.isIntersecting ?? false);
+
+  private wanted = computed<Wanted | null>(
+    () => {
+      const frame = this.frame();
+
+      if (frame.empty !== undefined || frame.error) return null;
+      if (this.live()) return { kind: 'page', src: frame.src };
+
+      return frame.screenshot ? { kind: 'shot', src: frame.screenshot } : null;
+    },
+    { equal: (a, b) => a?.kind === b?.kind && a?.src === b?.src },
+  );
+
   protected sources = linkedSignal<string[], { src: string; url: SafeResourceUrl }[]>({
-    source: () => [...new Set([this.shown(), this.frame().src])].filter((src): src is string => src !== null),
+    source: () => [...new Set([this.shown(), this.admittedPage()])].filter((src): src is string => src !== null),
     computation: (addresses, previous) =>
       addresses.map(
         (src) =>
@@ -189,6 +237,13 @@ export class CanvasFrameComponent {
   private contentLoad$ = new Subject<HTMLIFrameElement>();
 
   constructor() {
+    toObservable(this.wanted)
+      .pipe(
+        switchMap((wanted) => (wanted ? this.admit$(wanted) : EMPTY)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
+
     merge(this.contentLoad$, toObservable(this.live).pipe(filter((live) => !live)))
       .pipe(
         switchMap((iframe) => (typeof iframe === 'boolean' ? EMPTY : this.watchContent$(iframe))),
@@ -216,7 +271,10 @@ export class CanvasFrameComponent {
               )
             : EMPTY;
         }),
-        tap((src) => this.shown.set(src)),
+        tap((src) => {
+          this.shown.set(src);
+          this.settled$.next(src);
+        }),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -225,12 +283,47 @@ export class CanvasFrameComponent {
   protected readScreenshotSize(event: Event) {
     const image = event.target as HTMLImageElement;
 
+    this.settleScreenshot(event);
+
     if (this.frame().width === undefined) this.widthChange.emit(image.naturalWidth);
     if (this.frame().height === undefined) this.heightChange.emit(image.naturalHeight);
   }
 
+  protected settleScreenshot(event: Event) {
+    const src = (event.target as HTMLImageElement).getAttribute('src');
+
+    if (this.live() || src === null) return;
+
+    this.loadedShot.set(src);
+    this.settled$.next(src);
+  }
+
   protected loadContent(iframe: HTMLIFrameElement) {
     this.contentLoad$.next(iframe);
+  }
+
+  private admit$({ kind, src }: Wanted) {
+    const admitted = kind === 'page' ? this.admittedPage : this.admittedShot;
+    const current = kind === 'page' ? this.shown : this.loadedShot;
+    const shown = current();
+
+    if (shown === null || shown === src) {
+      admitted.set(src);
+      this.reload.set(null);
+
+      return EMPTY;
+    }
+
+    return this.queue
+      .slot$(() => this.visible())
+      .pipe(
+        tap((state) => {
+          this.reload.set(state);
+          if (state === 'rendering') admitted.set(src);
+        }),
+        takeUntil(this.settled$.pipe(filter((painted) => painted === src))),
+        finalize(() => this.reload.set(null)),
+      );
   }
 
   private watchContent$(iframe: HTMLIFrameElement) {

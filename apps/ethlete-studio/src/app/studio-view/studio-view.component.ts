@@ -2,22 +2,39 @@ import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } fr
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
-import { EMPTY, Subscription, catchError, debounceTime, finalize, first, interval, of, switchMap, tap } from 'rxjs';
+import {
+  EMPTY,
+  Subject,
+  Subscription,
+  buffer,
+  catchError,
+  debounceTime,
+  finalize,
+  first,
+  interval,
+  merge,
+  of,
+  share,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {
   Project,
   ServerState,
   designChanges$,
-  drawnChanges$,
   designProject$,
   designServerRestart$,
   designServerStart$,
   designServerState$,
   designServerStop$,
 } from '../../host/design';
+import { partsChanges$ } from '../../host/design-parts';
+import { injectFrameRenderQueue } from '../components/design-canvas/frame-render-queue';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
+import { NO_FRAME_REVISIONS, frameRevisionsWith } from './frame-revisions';
 import { rememberView, rememberedView } from './remembered';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
@@ -60,6 +77,7 @@ const STATUS_ITEM =
         [checkout]="checkout()"
         [projectThemes]="design()?.themes ?? {}"
         [tick]="tick()"
+        [frameRevisions]="frameRevisions()"
       />
     }
 
@@ -80,6 +98,13 @@ const STATUS_ITEM =
 
       <ethlete-update-button />
       <ethlete-update-check-button />
+
+      @if (renderQueue.count(); as rendering) {
+        <span [class]="STATUS_ITEM" data-rendering>
+          <i class="size-1.5 shrink-0 animate-pulse rounded-full bg-[var(--et-theme-color-primary-solid)]"></i>
+          Rendering {{ rendering }} {{ rendering === 1 ? 'frame' : 'frames' }}
+        </span>
+      }
 
       @if (serverLine(); as line) {
         <span [title]="serverNote()" [class]="STATUS_ITEM" data-server-line>
@@ -144,6 +169,7 @@ const STATUS_ITEM =
 })
 export class StudioViewComponent {
   private destroyRef = inject(DestroyRef);
+  protected renderQueue = injectFrameRenderQueue();
 
   protected readonly STATUS_ITEM = STATUS_ITEM;
   protected remembered = rememberedView().checkout ?? '';
@@ -155,6 +181,9 @@ export class StudioViewComponent {
   protected trouble = signal('');
   protected epoch = signal(0);
   protected tick = signal(0);
+  public frameRevisions = signal(NO_FRAME_REVISIONS);
+
+  private drawnChange$ = new Subject<void>();
 
   private watch: Subscription | null = null;
   private foreignWatch: Subscription | null = null;
@@ -205,9 +234,20 @@ export class StudioViewComponent {
   constructor() {
     toObservable(this.listeningPort)
       .pipe(
-        switchMap((port) => (port === null ? EMPTY : drawnChanges$(port).pipe(catchError(() => EMPTY)))),
-        debounceTime(SETTLE_MS),
-        tap(() => this.tick.update((value) => value + 1)),
+        switchMap((port) => {
+          if (port === null) return EMPTY;
+
+          const changes$ = partsChanges$(port).pipe(
+            catchError(() => EMPTY),
+            share(),
+          );
+
+          return changes$.pipe(buffer(changes$.pipe(debounceTime(SETTLE_MS))));
+        }),
+        tap((changes) => {
+          this.frameRevisions.update((revisions) => changes.reduce(frameRevisionsWith, revisions));
+          this.drawnChange$.next();
+        }),
         takeUntilDestroyed(),
       )
       .subscribe();
@@ -289,6 +329,7 @@ export class StudioViewComponent {
 
   protected reload() {
     this.tick.update((value) => value + 1);
+    this.frameRevisions.update((revisions) => frameRevisionsWith(revisions, { all: true }));
     this.read();
   }
 
@@ -322,7 +363,7 @@ export class StudioViewComponent {
 
     if (!checkout) return;
 
-    this.watch = designChanges$(checkout)
+    this.watch = merge(designChanges$(checkout), this.drawnChange$)
       .pipe(
         debounceTime(SETTLE_MS),
         tap(() => this.tick.update((value) => value + 1)),
