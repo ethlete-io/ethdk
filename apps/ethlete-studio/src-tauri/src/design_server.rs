@@ -28,6 +28,13 @@ const POLL: Duration = Duration::from_millis(250);
 
 const STOP_GRACE: Duration = Duration::from_secs(3);
 
+/// Must name everything `npx nx cli-runtime ethlete-studio` builds the cli out of.
+const CLI_SOURCES: [&str; 3] = ["libs/cli/src", "libs/cli/design", "libs/cli/package.json"];
+
+const BUILT_CLI: &str = "dist/apps/ethlete-studio/cli-runtime/node_modules/@ethlete/cli/src/index.js";
+
+const SOURCE_SCAN_LIMIT: usize = 5000;
+
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerState {
@@ -166,10 +173,62 @@ async fn judged(servers: &DesignServers, checkout: &str, port: u16) -> StudioRes
     let mut current = state(servers, checkout, port)?;
 
     if current.listening {
-        current.stale = is_stale(checkout, port).await;
+        current.stale = (cfg!(debug_assertions) && built_cli_outdated()) || is_stale(checkout, port).await;
     }
 
     Ok(current)
+}
+
+fn built_cli_outdated() -> bool {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let sources: Vec<_> = CLI_SOURCES.iter().map(|source| root.join(source)).collect();
+
+    source_newer_than(&root.join(BUILT_CLI), &sources, SOURCE_SCAN_LIMIT)
+}
+
+fn source_newer_than(built: &Path, sources: &[std::path::PathBuf], limit: usize) -> bool {
+    let Ok(built) = std::fs::metadata(built).and_then(|meta| meta.modified()) else {
+        return false;
+    };
+
+    let mut pending = sources.to_vec();
+    let mut seen = 0;
+
+    while let Some(path) = pending.pop() {
+        seen += 1;
+
+        if seen > limit {
+            return false;
+        }
+
+        let Ok(meta) = std::fs::metadata(&path) else {
+            continue;
+        };
+
+        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
+
+        if meta.is_dir() {
+            if name == "node_modules" || name.starts_with('.') {
+                continue;
+            }
+
+            if let Ok(entries) = std::fs::read_dir(&path) {
+                pending.extend(entries.flatten().map(|entry| entry.path()));
+            }
+
+            continue;
+        }
+
+        if name.contains(".spec.") {
+            continue;
+        }
+
+        if meta.modified().is_ok_and(|modified| modified > built) {
+            return true;
+        }
+    }
+
+    false
 }
 
 fn pids_on_port(port: u16) -> Vec<i32> {
@@ -504,6 +563,41 @@ pub async fn design_server_restart(
 mod tests {
     use super::*;
     use tokio::process::Command;
+
+    #[test]
+    fn a_cli_source_newer_than_its_build_reads_as_outdated() {
+        let root = std::env::temp_dir().join(format!("ethlete-studio-{}-cli-source", std::process::id()));
+        let built = root.join("dist/index.js");
+        let source = root.join("src/lib/design/serve.ts");
+        let spec = root.join("src/lib/design/serve.spec.ts");
+
+        for file in [&built, &source, &spec] {
+            std::fs::create_dir_all(file.parent().expect("a parent")).expect("a directory");
+            std::fs::write(file, "").expect("a file");
+        }
+
+        let at = |file: &Path, seconds: u64| {
+            std::fs::File::options()
+                .write(true)
+                .open(file)
+                .and_then(|handle| handle.set_modified(std::time::UNIX_EPOCH + Duration::from_secs(seconds)))
+                .expect("an mtime");
+        };
+
+        let sources = [root.join("src")];
+
+        at(&built, 2_000);
+        at(&source, 1_000);
+        at(&spec, 3_000);
+        assert!(!source_newer_than(&built, &sources, 100));
+
+        at(&source, 3_000);
+        assert!(source_newer_than(&built, &sources, 100));
+        assert!(!source_newer_than(&built, &sources, 2));
+        assert!(!source_newer_than(&root.join("dist/missing.js"), &sources, 100));
+
+        std::fs::remove_dir_all(&root).expect("cleaned up");
+    }
 
     #[test]
     fn a_checkout_nobody_started_reads_as_not_managed() {
