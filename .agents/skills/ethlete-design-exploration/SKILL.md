@@ -265,7 +265,7 @@ A note is `<product>/notes/<timestamp>-<id>.json`:
 ```
 
 - `part`, `state` and `text` are required. `point` is optional, in CSS pixels.
-- `size` is required when `point` is set: the preset (or width) the note was written at. A
+- `size` is required when `point` is set: the preset, the CSS pixel width, or `"fitted"` the note was written at. A
   pointed note shows only at that size; a note without a point shows at every size.
 - A free note on a flow is an entry in the `notes` array of `flows/<name>.json`:
   `{ "id": "…", "text": "…", "at": { "x": 0, "y": -40 } }`. `at` is optional, the note's top-left
