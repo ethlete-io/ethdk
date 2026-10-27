@@ -219,7 +219,34 @@ const designExplore = ({
       shots.forgetCalls(relative(callsRoot, file));
     };
 
+    const configPath = configPathOf(target);
+
+    const reloadConfig = () => {
+      let next: DesignConfig | null;
+
+      try {
+        next = readConfig(target);
+      } catch (error) {
+        console.error(
+          `design-explore: ${configPath} is invalid, keeping the last good config (${error instanceof Error ? error.message : String(error)})`,
+        );
+
+        return;
+      }
+
+      if (!next) return;
+
+      for (const key of Object.keys(config)) delete config[key as keyof DesignConfig];
+      Object.assign(config, next);
+      system.forget();
+      shots.clear();
+      reload(`${VIRTUAL}/env`);
+      reload(`${VIRTUAL}/system`);
+    };
+
     const refresh = (file: string) => {
+      if (resolve(file) === configPath) return reloadConfig();
+
       forgetCalls(file);
 
       if (isCallFile({ callsRoot, file })) return reload(VIRTUAL);
@@ -232,6 +259,8 @@ const designExplore = ({
     };
 
     const change = (file: string) => {
+      if (resolve(file) === configPath) return reloadConfig();
+
       forgetCalls(file);
       shots.forget(dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []));
     };

@@ -300,6 +300,33 @@ describe('the design server for a design system', () => {
     expect(sent).toHaveLength(1);
   });
 
+  it('serves a product added to config.json while it runs, and keeps the last good config when it breaks', async () => {
+    const target = acme();
+    const configPath = join(target, DESIGN_DIR, 'config.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as { products: Record<string, unknown> };
+    const { ask, watchers, sent } = await serveAcme(target);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(404);
+
+    writeFileSync(configPath, JSON.stringify({ products: { ...config.products, extra: {} } }));
+    watchers.get('change')?.(configPath);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(200);
+    expect(sent).toHaveLength(2);
+
+    writeFileSync(configPath, '{ broken');
+    watchers.get('change')?.(configPath);
+
+    expect(error).toHaveBeenCalledTimes(1);
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(200);
+
+    writeFileSync(configPath, JSON.stringify({ products: { acme: config.products['acme'] } }));
+    watchers.get('change')?.(configPath);
+
+    expect((await ask('/__design/system', '?product=extra')).status).toBe(404);
+  });
+
   it('ignores a comment or a sketch decision when it keeps the parts registry', async () => {
     const target = acme();
     const { watchers, sent } = await serveAcme(target);
