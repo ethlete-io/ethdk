@@ -400,6 +400,64 @@ const readySketch = (target: string) => {
   return markSketchReady({ checkout: target, sketch: created }) as Sketch;
 };
 
+describe('the design server for flows', () => {
+  it('lists the flows of a product with the problems the flow rule finds in each', async () => {
+    const target = acme();
+    const dir = join(target, DESIGN_DIR, 'acme/flows');
+    const line = { from: { part: 'pages/home', state: 'empty' }, to: { part: 'pages/home', state: 'default' } };
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, 'browse.json'),
+      JSON.stringify({
+        frames: [
+          { part: 'pages/home', state: 'empty' },
+          { part: 'pages/home', state: 'default' },
+        ],
+        lines: [{ ...line, label: 'a film' }],
+      }),
+    );
+    writeFileSync(join(dir, 'gone.json'), JSON.stringify({ frames: [{ part: 'pages/home', state: 'loading' }] }));
+    writeFileSync(join(dir, 'torn.json'), '{');
+
+    const { ask } = await serveAcme(target);
+
+    expect(await ask('/__design/flows', '?product=acme')).toMatchObject({
+      status: 200,
+      body: {
+        flows: [
+          {
+            name: 'browse',
+            file: '.ethlete/design/acme/flows/browse.json',
+            frames: [
+              { part: 'pages/home', state: 'empty' },
+              { part: 'pages/home', state: 'default' },
+            ],
+            lines: [{ ...line, label: 'a film' }],
+            problems: [],
+          },
+          {
+            name: 'gone',
+            file: '.ethlete/design/acme/flows/gone.json',
+            frames: [{ part: 'pages/home', state: 'loading' }],
+            lines: [],
+            problems: [
+              {
+                rule: 'FLOW',
+                file: '.ethlete/design/acme/flows/gone.json',
+                message: 'pages/home has no state "loading" - fix or drop the frame',
+              },
+            ],
+          },
+        ],
+        unreadable: [{ file: '.ethlete/design/acme/flows/torn.json', problem: expect.stringMatching(/^is no JSON/) }],
+      },
+    });
+    expect((await ask('/__design/flows', '?product=nope')).status).toBe(404);
+    expect((await ask('/__design/flows', '?product=acme', 'POST')).status).toBe(405);
+  });
+});
+
 describe('the design server for sketches and comments', () => {
   const sketchQuery = '?product=acme&sketch=components/card';
 

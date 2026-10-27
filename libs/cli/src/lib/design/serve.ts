@@ -14,6 +14,8 @@ import {
   COMMENT_EVENTS_PATH,
   COMMENT_PATH,
   COMMENTS_PATH,
+  FLOWS_PATH,
+  flowsAnswer,
   commentAnswer,
   commentDoneAnswer,
   commentReplyAnswer,
@@ -441,6 +443,7 @@ const designExplore = ({
     studio(COMMENT_DONE_PATH, commentDoneAnswer);
     studio(COMMENT_WITHDRAW_PATH, commentWithdrawAnswer);
     studio(COMMENT_REPLY_PATH, commentReplyAnswer);
+    studio(FLOWS_PATH, flowsAnswer);
     vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
     vite.httpServer?.on('close', () => {
       events.close();

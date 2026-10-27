@@ -13,6 +13,8 @@ import {
   staleReasonOf,
 } from './system/comments/comment';
 import { completeComment } from './system/comments/complete';
+import { listFlows } from './system/flows/flow';
+import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
@@ -38,6 +40,7 @@ export const COMMENT_DONE_PATH = '/__design/comment-done';
 export const COMMENT_WITHDRAW_PATH = '/__design/comment-withdraw';
 export const COMMENT_REPLY_PATH = '/__design/comment-reply';
 export const COMMENT_EVENTS_PATH = '/__design/comment-events';
+export const FLOWS_PATH = '/__design/flows';
 
 export type Answer = { status: number; body: unknown };
 
@@ -383,4 +386,24 @@ export const commentReplyAnswer = withProduct('POST', async ({ asked, product })
   return typeof replied === 'string'
     ? failure(replied.startsWith('no open comment') ? 404 : 422, replied)
     : { status: 200, body: commentOf({ comment: replied, target: asked.target, product }) };
+});
+
+/** `?product=`: the product's flows by name, each with its frames, its lines and what the flow rule finds in it. */
+export const flowsAnswer = withProduct('GET', ({ asked, product }) => {
+  const { flows, unreadable } = listFlows(product.dir);
+  const problems = flowProblemsOf(product);
+
+  return {
+    status: 200,
+    body: {
+      flows: flows.map(({ file, ...flow }) => ({
+        ...flow,
+        file: relative(asked.target, file),
+        problems: problems
+          .filter((problem) => problem.file === file)
+          .map((problem) => problemOf({ target: asked.target, problem })),
+      })),
+      unreadable: unreadable.map(({ file, problem }) => ({ file: relative(asked.target, file), problem })),
+    },
+  };
 });

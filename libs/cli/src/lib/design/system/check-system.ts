@@ -5,6 +5,7 @@ import { importProblemsOf } from './imports';
 import { Problem } from './problem';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
 import { componentCopiesOf } from './rules/component-copy';
+import { flowProblemsOf } from './rules/flow';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
@@ -25,6 +26,7 @@ const RULES = [
   badWidthsOf,
   unknownInteractionsOf,
   kitOutsidePagesOf,
+  flowProblemsOf,
 ];
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */
