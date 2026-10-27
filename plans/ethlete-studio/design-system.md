@@ -1459,10 +1459,15 @@ No new calls, no picks. The user can mark a call "transferred". The tab disappea
 Decided 2026-10-27, later the same day: the old call UI goes, because the Legacy section of the
 system view replaces it. Removed in 4b2383ae2. The '' route is `studio-view/StudioViewComponent`:
 the system view plus a status bar with the checkout picker, the server lifecycle and the update
-buttons. Legacy calls stay reachable under Legacy in the system tree. The Rust commands that only
-the old UI called (`design_statuses`, `design_status_watch`, `design_system`, `design_set_verdict`,
-`design_set_closed`, `design_set_mode`, `design_add_variants`, `tools::design_check`) are still in
-`src-tauri`. Recommendation: remove them in one Rust slice with their tests.
+buttons. Legacy calls stay reachable under Legacy in the system tree.
+
+Removed in 02672803d: `design_statuses`, `design_system`, `design_set_verdict`, `design_set_closed`,
+`design_set_mode`, `design_add_variants`, `tools::design_check`, `call_status.rs`, the `design.rs`
+write helpers and `CheckReceipt`, with their tests. `tools.rs` keeps MCP serving for slice 8.
+Correction: `design_status_watch` was wrongly on the list. It stays, because the sketch view needs
+it: `host/design.ts` `designStatusChanges$` arms it, and the system view reloads the sketches on each
+report change, as in 0f966f967. 02672803d removed it too, so live report lines and "drawing…" stopped
+reaching Studio; the builder restores it.
 
 ## Slices
 
