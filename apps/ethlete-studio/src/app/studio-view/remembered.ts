@@ -11,8 +11,11 @@ export type ViewState = {
   systemProduct: string;
   /** The tree entry the system view shows, by its tree key. */
   systemEntry: string;
-  /** The canvas camera per system entry, keyed by `cameraKeyOf`. */
-  cameras: Record<string, Camera>;
+  /**
+   * The canvas camera the user moved per system entry, keyed by `cameraKeyOf`. Never `cameras`: that key
+   * still holds fitted cameras saved by older builds, which would come back as a stray zoom.
+   */
+  movedCameras: Record<string, Camera>;
   /** The size a fitted frame's content measured last, keyed by `frameSizeKey`, so a reload places it at once. */
   measuredSizes: Record<string, FrameSize>;
   /** Whether the system view shows its comment sidebar. */
@@ -185,7 +188,7 @@ export const rememberedView = (): Partial<ViewState> => {
       openGroups,
       systemProduct,
       systemEntry,
-      cameras,
+      movedCameras,
       measuredSizes,
       commentsOpen,
       sketchViews,
@@ -197,7 +200,7 @@ export const rememberedView = (): Partial<ViewState> => {
       openGroups: openFlags(openGroups),
       systemProduct: typeof systemProduct === 'string' ? systemProduct : undefined,
       systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,
-      cameras: cameraMap(cameras),
+      movedCameras: cameraMap(movedCameras),
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
       sketchViews: sketchViewMap(sketchViews),

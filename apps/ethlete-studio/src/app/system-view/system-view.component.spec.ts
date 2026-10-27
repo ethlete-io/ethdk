@@ -121,15 +121,26 @@ describe('SystemViewComponent on a reload', () => {
   it('keeps the camera of a sketch while the sketches are still being listed', async () => {
     const fixture = await mount({
       systemEntry: 'foundations/tokens',
-      cameras: { 'web sketch:elements/rating': SKETCH_CAMERA },
+      movedCameras: { 'web sketch:elements/rating': SKETCH_CAMERA },
     });
 
     fixture.componentInstance['rememberCamera']({ x: 0, y: 0, zoom: 1 });
 
-    expect(rememberedView().cameras).toEqual({
+    expect(rememberedView().movedCameras).toEqual({
       'web sketch:elements/rating': SKETCH_CAMERA,
       'web foundations/tokens': { x: 0, y: 0, zoom: 1 },
     });
+  });
+
+  it('fits a part whose only stored camera is a fitted one an older build saved', async () => {
+    const fixture = await mount({
+      systemProduct: 'web',
+      systemEntry: 'elements/rating',
+      cameras: { 'web elements/rating': { x: 250, y: 742, zoom: 1.39 } },
+    });
+
+    expect(fixture.componentInstance['cameraKey']()).toBe('web elements/rating');
+    expect(fixture.componentInstance['restoredCamera']()).toBeNull();
   });
 
   it('counts no comment of another interaction in the part table, where each interaction has its own frame', async () => {

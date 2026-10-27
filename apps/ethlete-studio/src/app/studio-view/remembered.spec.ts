@@ -82,7 +82,7 @@ describe('remembered view', () => {
       JSON.stringify({
         systemProduct: 'web',
         systemEntry: 'components/button',
-        cameras: {
+        movedCameras: {
           'web components/button': { x: 10, y: -4, zoom: 0.5 },
           broken: { x: 1, y: 2, zoom: 0 },
           text: 'camera',
@@ -93,7 +93,7 @@ describe('remembered view', () => {
     expect(rememberedView()).toEqual({
       systemProduct: 'web',
       systemEntry: 'components/button',
-      cameras: { 'web components/button': { x: 10, y: -4, zoom: 0.5 } },
+      movedCameras: { 'web components/button': { x: 10, y: -4, zoom: 0.5 } },
     });
   });
 

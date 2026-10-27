@@ -468,7 +468,7 @@ export class SystemViewComponent {
 
   private picked = signal(rememberedView().systemEntry ?? null);
 
-  private cameras = signal(rememberedView().cameras ?? {});
+  private cameras = signal(rememberedView().movedCameras ?? {});
 
   protected transferring = signal(false);
 
@@ -857,7 +857,7 @@ export class SystemViewComponent {
     const cameras = camerasWith({ cameras: this.cameras(), key, camera, existing });
 
     this.cameras.set(cameras);
-    rememberView({ cameras });
+    rememberView({ movedCameras: cameras });
   }
 
   protected copyCommand() {
