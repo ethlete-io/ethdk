@@ -767,7 +767,7 @@ export class SystemViewComponent {
     rememberTheme(key, { [kind]: name });
   }
 
-  protected rememberCamera(camera: Camera) {
+  protected rememberCamera(camera: Camera | null) {
     const key = this.cameraKey();
 
     if (!key) return;

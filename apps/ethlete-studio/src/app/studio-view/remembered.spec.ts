@@ -107,6 +107,14 @@ describe('remembered view', () => {
     });
   });
 
+  it('drops the camera of an entry that was fitted again', () => {
+    const stored = { fitted: { x: 0, y: -900, zoom: 0.2 }, kept: { x: 0, y: 0, zoom: 2 } };
+
+    expect(camerasWith({ cameras: stored, key: 'fitted', camera: null, existing: null })).toEqual({
+      kept: stored.kept,
+    });
+  });
+
   it('keeps every camera while the entries are not all listed yet', () => {
     const stored = { sketch: { x: 0, y: 0, zoom: 2 } };
 

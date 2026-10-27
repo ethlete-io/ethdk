@@ -149,7 +149,10 @@ const cameraMap = (value: unknown): Record<string, Camera> | undefined => {
   );
 };
 
-/** The cameras with `camera` stored under `key`, without those of entries that no longer exist. A `null` `existing` keeps all. */
+/**
+ * The cameras with `camera` stored under `key`, or none under it for a `null` camera, without those of
+ * entries that no longer exist. A `null` `existing` keeps all.
+ */
 export const camerasWith = ({
   cameras,
   key,
@@ -158,11 +161,13 @@ export const camerasWith = ({
 }: {
   cameras: Record<string, Camera>;
   key: string;
-  camera: Camera;
+  camera: Camera | null;
   existing: ReadonlySet<string> | null;
 }): Record<string, Camera> => ({
-  ...Object.fromEntries(Object.entries(cameras).filter(([stored]) => existing?.has(stored) ?? true)),
-  [key]: camera,
+  ...Object.fromEntries(
+    Object.entries(cameras).filter(([stored]) => stored !== key && (existing?.has(stored) ?? true)),
+  ),
+  ...(camera === null ? {} : { [key]: camera }),
 });
 
 const KEY = 'ethlete-studio.call-view';

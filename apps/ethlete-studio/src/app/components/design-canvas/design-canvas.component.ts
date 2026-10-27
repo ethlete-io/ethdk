@@ -13,10 +13,10 @@ import {
   untracked,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
-import { Subject, buffer, debounceTime, exhaustMap, skip, tap } from 'rxjs';
+import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import { CanvasPin, FramePoint } from './canvas-pin';
@@ -113,10 +113,10 @@ export class DesignCanvasComponent {
 
   public pointPick = output<FramePoint>();
 
-  public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
+  /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
+  public cameraChange = output<Camera | null>();
 
-  /** The camera after it came to rest, once it was fitted or restored. */
-  public cameraChange = outputFromObservable(toObservable(this.camera).pipe(skip(1), debounceTime(300)));
+  public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
   public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
   public selectedId = signal<string | null>(null);
@@ -132,6 +132,7 @@ export class DesignCanvasComponent {
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
   });
   private measure$ = new Subject<{ cameraKey: string; frameId: string; size: FrameSize }>();
+  private userCamera$ = new Subject<Camera | null>();
 
   private dimensions = signalElementDimensions(this.host);
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
@@ -312,6 +313,14 @@ export class DesignCanvasComponent {
         this.camera.set(restored ?? fitted);
       });
     });
+
+    this.userCamera$
+      .pipe(
+        debounceTime(300),
+        tap((camera) => this.cameraChange.emit(camera)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
 
     this.measure$
       .pipe(
@@ -531,6 +540,7 @@ export class DesignCanvasComponent {
 
     if (bounds) this.moveCamera(this.fitted(bounds, this.viewport()), true);
     this.following = true;
+    this.userCamera$.next(null);
   }
 
   public fitSelection() {
@@ -576,6 +586,7 @@ export class DesignCanvasComponent {
     this.following = false;
     this.smooth.set(smooth);
     this.camera.set(camera);
+    this.userCamera$.next(camera);
   }
 
   private pointerPosition(event: MouseEvent): Point {

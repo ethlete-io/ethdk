@@ -290,7 +290,7 @@ export class SketchViewComponent {
 
   public restoredCamera = input<Camera | null>(null);
 
-  public cameraChange = output<Camera>();
+  public cameraChange = output<Camera | null>();
 
   public decide = output<void>();
   private canvasRef = viewChild.required(DesignCanvasComponent);
@@ -436,7 +436,7 @@ export class SketchViewComponent {
     else this.focusComment(comment);
   }
 
-  protected rememberCamera(camera: Camera) {
+  protected rememberCamera(camera: Camera | null) {
     if (this.showing() === 'matrix') this.cameraChange.emit(camera);
   }
 

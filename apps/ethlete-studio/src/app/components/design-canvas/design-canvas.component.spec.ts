@@ -67,6 +67,26 @@ describe('DesignCanvasComponent', () => {
     expect(reloaded.style.height).toBe('70px');
   });
 
+  it('reports a camera the user moved, and a fit as no camera to keep', async () => {
+    const fixture = await render([FITTED]);
+    const canvas = fixture.componentInstance;
+    const reported: unknown[] = [];
+
+    vi.useFakeTimers();
+    canvas.cameraChange.subscribe((camera) => reported.push(camera));
+    canvas.camera.set({ x: 5, y: -900, zoom: 0.2 });
+    vi.advanceTimersByTime(400);
+    expect(reported).toEqual([]);
+
+    canvas['zoomBy'](2);
+    vi.advanceTimersByTime(400);
+    expect(reported).toEqual([{ x: 10, y: -1800, zoom: 0.4 }]);
+
+    canvas.fitAll();
+    vi.advanceTimersByTime(400);
+    expect(reported.at(-1)).toBeNull();
+  });
+
   it('lets a hand-dragged size win over a measured one', async () => {
     rememberView({
       frameSizes: { 'acme components/button default': { width: 400 } },
