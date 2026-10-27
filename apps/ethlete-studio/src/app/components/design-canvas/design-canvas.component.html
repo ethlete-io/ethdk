@@ -41,6 +41,52 @@
     />
   }
 
+  @for (target of pointTargets(); track target.frame.id) {
+    <div
+      [style.left.px]="target.x"
+      [style.top.px]="target.y"
+      [style.width.px]="target.width"
+      [style.height.px]="target.height"
+      [title]="'Comment on ' + target.frame.label"
+      (click)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
+      (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
+      class="absolute cursor-crosshair bg-[color-mix(in_srgb,var(--et-theme-color-primary-solid)_6%,transparent)]"
+      role="button"
+      tabindex="0"
+      data-comment-target
+    ></div>
+  }
+
+  @for (placed of placedPins(); track placed.pin.id) {
+    <div
+      [style.left.px]="placed.x"
+      [style.top.px]="placed.y"
+      [style.transform]="'scale(' + labelScale() + ') translate(-50%, -50%)'"
+      class="absolute origin-top-left"
+    >
+      <button
+        [pressed]="placed.open"
+        [attr.aria-label]="'Comment ' + placed.pin.label"
+        (click)="togglePin(placed.pin.id, $event)"
+        class="min-w-8 rounded-full shadow-md"
+        et-button
+        type="button"
+        variant="filled"
+        size="xs"
+        data-comment-pin
+      >
+        {{ placed.pin.label }}
+      </button>
+      @if (placed.open) {
+        <p
+          [textContent]="placed.pin.text"
+          class="absolute top-0 left-full m-0 ml-2 w-72 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 text-[1.3rem] whitespace-pre-wrap text-[var(--et-surface-color-solid)] shadow-lg"
+          data-comment-text
+        ></p>
+      }
+    </div>
+  }
+
   @if (activeFrame(); as active) {
     <div
       [style.left.px]="active.x"

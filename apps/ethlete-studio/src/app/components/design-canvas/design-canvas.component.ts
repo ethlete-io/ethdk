@@ -7,6 +7,7 @@ import {
   inject,
   input,
   linkedSignal,
+  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -16,6 +17,7 @@ import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElement
 import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
+import { CanvasPin, FramePoint } from './canvas-pin';
 import {
   Camera,
   Point,
@@ -92,10 +94,18 @@ export class DesignCanvasComponent {
   /** The camera to show instead of a fit, read when `cameraKey` changes. */
   public restoredCamera = input<Camera | null>(null);
 
+  public pins = input<CanvasPin[]>([]);
+
+  /** While on, a click on a frame that has a `place` reports the point instead of selecting the frame. */
+  public pointing = input(false);
+
+  public pointPick = output<FramePoint>();
+
   public camera = signal<Camera>({ x: 0, y: 0, zoom: 1 });
 
   /** The camera after it came to rest, once it was fitted or restored. */
   public cameraChange = outputFromObservable(toObservable(this.camera).pipe(skip(1), debounceTime(300)));
+  public openPinId = signal<string | null>(null);
   protected smooth = signal(false);
   public selectedId = signal<string | null>(null);
   public activeId = signal<string | null>(null);
@@ -185,6 +195,30 @@ export class DesignCanvasComponent {
     }));
   });
 
+  protected placedPins = computed(() => {
+    const byId = new Map(this.layout().frames.map((placed) => [placed.frame.id, placed]));
+    const openId = this.openPinId();
+
+    return this.pins().flatMap((pin) => {
+      const frame = byId.get(pin.frameId);
+
+      return frame
+        ? [
+            {
+              pin,
+              x: frame.x + (pin.point?.x ?? frame.width),
+              y: frame.y + (pin.point?.y ?? 0),
+              open: pin.id === openId,
+            },
+          ]
+        : [];
+    });
+  });
+
+  protected pointTargets = computed(() =>
+    this.pointing() ? this.layout().frames.filter((placed) => placed.frame.place) : [],
+  );
+
   protected activeFrame = computed(() => this.placedFrames().find((placed) => placed.active) ?? null);
 
   protected worldTransform = computed(() => {
@@ -254,6 +288,47 @@ export class DesignCanvasComponent {
     if (this.activeId() !== id) this.activeId.set(null);
   }
 
+  protected pickPoint(frame: { id: string; width: number }, event: MouseEvent | KeyboardEvent) {
+    event.stopPropagation();
+    if (this.consumeSwallowedClick()) return;
+    if (!(event instanceof MouseEvent)) {
+      this.pointPick.emit({ frameId: frame.id, point: null });
+
+      return;
+    }
+
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const scale = box.width / frame.width;
+
+    this.pointPick.emit({
+      frameId: frame.id,
+      point: { x: Math.max(0, (event.clientX - box.left) / scale), y: Math.max(0, (event.clientY - box.top) / scale) },
+    });
+  }
+
+  protected togglePin(id: string, event: MouseEvent) {
+    event.stopPropagation();
+    this.openPinId.set(this.openPinId() === id ? null : id);
+  }
+
+  /** Opens a pin's text and moves the camera to its frame. */
+  public openPin(id: string) {
+    const pin = this.pins().find((candidate) => candidate.id === id);
+
+    this.openPinId.set(pin ? id : null);
+    if (pin) this.focusFrame(pin.frameId);
+  }
+
+  /** Selects a frame and moves the camera to it. */
+  public focusFrame(id: string) {
+    const placed = this.layout().frames.find((candidate) => candidate.frame.id === id);
+
+    if (!placed) return;
+
+    this.selectedId.set(id);
+    this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING, maxZoom: 1 }), true);
+  }
+
   protected activate(id: string) {
     this.selectedId.set(id);
     this.activeId.set(id);
@@ -266,6 +341,7 @@ export class DesignCanvasComponent {
   protected clearSelection(event: MouseEvent) {
     if (this.consumeSwallowedClick()) return;
     if (event.target !== this.host.nativeElement) return;
+    this.openPinId.set(null);
     this.selectedId.set(null);
     this.activeId.set(null);
   }
@@ -350,7 +426,8 @@ export class DesignCanvasComponent {
     }
 
     if (event.key === 'Escape') {
-      if (this.activeId()) this.leaveActiveFrame();
+      if (this.openPinId()) this.openPinId.set(null);
+      else if (this.activeId()) this.leaveActiveFrame();
       else this.selectedId.set(null);
 
       return;

@@ -12,11 +12,24 @@ use crate::design::{read_config, DESIGN_DIR};
 #[derive(Default)]
 pub struct DesignWatch(Mutex<Option<RecommendedWatcher>>);
 
-/// Reports every change under `root`, and every change under a folder created inside it later.
+/// A product's `comments/<id>.json`. The design server signals those itself, so the frames stay.
+fn is_comment_file(path: &Path) -> bool {
+    path.extension().is_some_and(|extension| extension == "json")
+        && path
+            .parent()
+            .and_then(Path::file_name)
+            .is_some_and(|name| name == "comments")
+}
+
+/// Reports every change under `root`, and every change under a folder created inside it later,
+/// except one that touched comment files only.
 fn watch_root(root: &Path, report: impl Fn() + Send + 'static) -> Result<RecommendedWatcher, String> {
     let mut watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
         // Reading a call file is not a change to it, and the design server reads every one of them.
-        if event.is_ok_and(|event| !event.kind.is_access()) {
+        let Ok(event) = event else { return };
+
+        if !event.kind.is_access() && !(!event.paths.is_empty() && event.paths.iter().all(|path| is_comment_file(path)))
+        {
             report();
         }
     })
@@ -149,5 +162,19 @@ mod tests {
 
         drop(watch);
         let _ = std::fs::remove_dir_all(&checkout);
+    }
+
+    #[test]
+    fn a_comment_file_is_told_apart_from_a_part_file() {
+        assert!(is_comment_file(Path::new(
+            "/c/.ethlete/design/lab/comments/20261027T101010Z-ab12.json"
+        )));
+        assert!(!is_comment_file(Path::new("/c/.ethlete/design/lab/comments")));
+        assert!(!is_comment_file(Path::new(
+            "/c/.ethlete/design/lab/components/card/part.ts"
+        )));
+        assert!(!is_comment_file(Path::new(
+            "/c/.ethlete/design/lab/sketches/x-y/sketch.json"
+        )));
     }
 }

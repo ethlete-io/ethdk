@@ -1,4 +1,5 @@
 import {
+  CommentPlace,
   ListedCall,
   ListedPart,
   ListedProduct,
@@ -22,7 +23,8 @@ export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; layer
   { key: 'legacy', label: 'Legacy', layers: [] },
 ];
 
-export type PartBadge = 'from base' | 'overridden' | 'error' | 'transferred' | 'sketch open' | 'in progress' | 'ready';
+export type PartBadge =
+  'from base' | 'overridden' | 'error' | 'transferred' | 'sketch open' | 'comment open' | 'in progress' | 'ready';
 
 export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[] };
 
@@ -32,19 +34,24 @@ export type TreeGroup = { key: string; label: string; entries: TreeEntry[]; sect
 
 export const partKeyOf = (part: Pick<ListedPart, 'layer' | 'name'>) => `${part.layer}/${part.name}`;
 
-const badgesOf = (part: ListedPart, sketched: ReadonlySet<string>): PartBadge[] => [
+const badgesOf = (part: ListedPart, sketched: ReadonlySet<string>, commented: ReadonlySet<string>): PartBadge[] => [
   ...(part.origin === 'base' ? (['from base'] as const) : []),
   ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
   ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
+  ...(commented.has(partKeyOf(part)) ? (['comment open'] as const) : []),
   ...(part.problems.length > 0 ? (['error'] as const) : []),
 ];
 
 export const sketchKeyOf = (target: string) => `sketch:${target}`;
 
-const sketchEntryOf = (sketch: ListedSketch): TreeEntry => ({
+const sketchEntryOf = (sketch: ListedSketch, commented: ReadonlySet<string>): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.target,
-  badges: [sketch.status, ...(sketch.problems.some((entry) => entry.problems.length > 0) ? (['error'] as const) : [])],
+  badges: [
+    sketch.status,
+    ...(commented.has(sketch.target) ? (['comment open'] as const) : []),
+    ...(sketch.problems.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
+  ],
 });
 
 export const callKeyOf = (slug: string) => `legacy:${slug}`;
@@ -118,16 +125,26 @@ export const isGroupOpen = (group: TreeGroup, { remembered, hasProducts }: OpenC
 /** Whether a section shows its entries: the remembered choice, else folded. */
 export const isSectionOpen = (section: TreeSection, { remembered }: OpenContext) => remembered[section.key] ?? false;
 
-/** The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order. */
+/**
+ * The groups of the tree that hold a part, an open sketch or a call, each with its entries in listed order.
+ * A comment on a sketch variant marks the sketch, any other comment its part.
+ */
 export const treeOf = (
   parts: ListedPart[],
-  { calls = [], sketches = [] }: { calls?: ListedCall[]; sketches?: ListedSketch[] } = {},
+  {
+    calls = [],
+    sketches = [],
+    comments = [],
+  }: { calls?: ListedCall[]; sketches?: ListedSketch[]; comments?: CommentPlace[] } = {},
 ): TreeGroup[] => {
   const sketched = new Set(sketches.map((sketch) => sketch.target));
+  const commentedParts = new Set(comments.filter((comment) => !comment.sketch).map((comment) => comment.part));
+  const commentedSketches = new Set(comments.flatMap((comment) => comment.sketch?.target ?? []));
 
   return SYSTEM_GROUPS.flatMap(({ key, label, layers }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);
-    if (key === 'sketches') return [{ key, label, entries: sketches.map(sketchEntryOf) }];
+    if (key === 'sketches')
+      return [{ key, label, entries: sketches.map((sketch) => sketchEntryOf(sketch, commentedSketches)) }];
 
     return [
       {
@@ -135,7 +152,7 @@ export const treeOf = (
         label,
         entries: parts
           .filter((part) => layers.includes(part.layer))
-          .map((part) => ({ key: partKeyOf(part), name: part.name, badges: badgesOf(part, sketched) })),
+          .map((part) => ({ key: partKeyOf(part), name: part.name, badges: badgesOf(part, sketched, commentedParts) })),
       },
     ];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
@@ -177,10 +194,13 @@ const presetFramesOf = ({ port, product, part, epoch, revision, surface, color }
         row: state,
         screenshot: partShotUrl({ ...address, preset, revision }),
         error,
+        ...(state === undefined ? {} : { place: { part: key, state, size: preset } }),
       };
     }),
   );
 };
+
+export const FITTED = 'fitted';
 
 export type FrameArrangement = 'sheet' | 'grid';
 
@@ -222,6 +242,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
         row: state,
         screenshot: partShotUrl({ ...addressOf(state), width, revision }),
         error,
+        ...(state === undefined ? {} : { place: { part: key, state, size: width } }),
       })),
     );
   }
@@ -232,6 +253,7 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     label: state ?? key,
     screenshot: partShotUrl({ ...addressOf(state), revision }),
     error,
+    ...(state === undefined ? {} : { place: { part: key, state, size: FITTED } }),
   }));
 };
 
@@ -360,6 +382,16 @@ export const sketchMatrixOf = ({
           revision,
         }),
         error: column.states.length > 0 ? undefined : column.error,
+        ...(state === undefined
+          ? {}
+          : {
+              place: {
+                part: sketch.target,
+                state,
+                size: cell.preset ?? cell.width ?? FITTED,
+                ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+              },
+            }),
       };
     });
   });

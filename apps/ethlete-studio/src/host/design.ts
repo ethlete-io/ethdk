@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, from, map, switchMap } from 'rxjs';
+import { Observable, from, fromEvent, map, switchMap } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
@@ -101,8 +101,8 @@ export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
 
 /**
- * Reports every change under the checkout's calls root. A call or a variant that an agent or an
- * editor wrote outside this window reaches the list through it, so nothing waits for a reload.
+ * Reports every change under the checkout's design folder except one to comment files only. A call or a
+ * part that an agent or an editor wrote outside this window reaches the view through it.
  */
 export const designChanges$ = (checkout: string): Observable<void> =>
   new Observable<void>((subscriber) => {
@@ -432,3 +432,61 @@ export const discardSketch$ = (address: SketchAddress): Observable<void> =>
   designAnswer$<unknown>(sketchUrl({ ...address, path: 'sketch-discard' }), { method: 'POST' }).pipe(
     map(() => undefined),
   );
+
+/** A frame's size: a preset name, a width in CSS pixels, or `fitted` to its content. */
+export type FrameSize = string | number;
+
+/** Where on which frame a comment sits. Without `point` the comment is on the whole state. */
+export type CommentPlace = {
+  /** `<layer>/<name>`. */
+  part: string;
+  state: string;
+  size: FrameSize;
+  /** CSS pixels from the frame's top left corner. */
+  point?: { x: number; y: number };
+  sketch?: { target: string; variant: string };
+};
+
+export type ListedComment = CommentPlace & {
+  id: string;
+  text: string;
+  createdAt: string;
+  /** Why the comment points at nothing any more, or `null`. */
+  stale: string | null;
+};
+
+export type ListedComments = { comments: ListedComment[]; unreadable: { file: string; problem: string }[] };
+
+export type ProductAddress = { port: number; product: string };
+
+const productUrl = ({ port, product }: ProductAddress, path: string) =>
+  `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}`;
+
+/** The open comments of a product, oldest first. */
+export const listedComments$ = (address: ProductAddress): Observable<ListedComments> =>
+  designAnswer$<ListedComments>(productUrl(address, 'comments'));
+
+/** Writes a comment into the product's `comments/` folder. */
+export const writeComment$ = (
+  address: ProductAddress,
+  comment: CommentPlace & { text: string },
+): Observable<ListedComment> => designAnswer$<ListedComment>(productUrl(address, 'comment'), postJson(comment));
+
+/** Emits whenever a comment file of the checkout changes, from the design server's own event stream. */
+export const commentChanges$ = (port: number): Observable<void> =>
+  new Observable<EventSource>((subscriber) => {
+    const events = new EventSource(`http://localhost:${port}/__design/comment-events`);
+
+    subscriber.next(events);
+
+    return () => events.close();
+  }).pipe(
+    switchMap((events) => fromEvent(events, 'comments')),
+    map(() => undefined),
+  );
+
+/** Deletes a comment the user has handled. */
+export const doneComment$ = (address: ProductAddress, id: string): Observable<void> =>
+  designAnswer$<unknown>(`${productUrl(address, 'comment-done')}&id=${encodeURIComponent(id)}`, {
+    method: 'POST',
+  }).pipe(map(() => undefined));

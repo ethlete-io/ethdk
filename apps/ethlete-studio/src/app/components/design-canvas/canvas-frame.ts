@@ -1,3 +1,12 @@
+/** The state of a part, at a preset, a width or fitted, that a frame draws; a comment on the frame names it. */
+export type FramePlace = {
+  part: string;
+  state: string;
+  /** A preset name, a width in CSS pixels, or `fitted`. */
+  size: string | number;
+  sketch?: { target: string; variant: string };
+};
+
 export type CanvasFrame = {
   id: string;
   src: string;
@@ -10,6 +19,7 @@ export type CanvasFrame = {
   column?: string;
   screenshot?: string;
   error?: string;
+  place?: FramePlace;
 };
 
 export type FrameMessage = { type: 'height'; height: number; width?: number } | { type: 'escape' };
