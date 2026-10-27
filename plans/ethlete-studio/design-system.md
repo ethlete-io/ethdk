@@ -232,6 +232,34 @@ mock frames at `#/canvas-demo`. It does not connect to the design server yet.
 - Labels and outlines keep their screen size down to 25 % zoom.
 - Studio has no e2e suite, so the canvas has no permanent behaviour test yet. The pan and zoom
   math has unit specs.
+- A cross-origin frame sends its height and `Esc` with `postMessage` (abc276276). The 600 px
+  fallback now holds only until the frame page reports.
+
+### Studio system view, as built (2026-10-27)
+
+`apps/ethlete-studio/src/app/system-view/` (0b28379f7). The pure part is `system-tree.ts`.
+
+- It reads `/__design/system` from the checkout's design server, and reloads on each change of
+  `.ethlete/design` and each server restart. JSON answers carry `access-control-allow-origin: *`
+  (badefe639).
+- Tree groups follow the layers: Foundations, Components, Elements, Pages. Sketches and Legacy
+  follow. An empty group is hidden.
+- Badges: "from base", "overridden", and "error" for any problem.
+- A part's canvas has one row per state and one frame per preset. Only a `LOAD` problem replaces
+  the frames with the error. A part with a rule problem still renders and shows the badge.
+- A shot URL carries the change revision, so a picture is fetched again after a change.
+- No command creates a product. The empty state shows a `products` example for `config.json`.
+
+Open points, each with a recommendation:
+
+- Product picker: one product shows its name, many show a plain `<select>`. Provisional until
+  the picker UI is decided. Recommendation: decide it together with the workspace picker.
+- Themes per product: `ListedProduct` has no themes, so the view uses the theme of the old call
+  view. Recommendation: list `themes` per product on the server, and pick per product.
+- A command that creates a product. Recommendation: `et design product new <name>`, which writes
+  the config entry and the layer folders. The empty state then shows that command.
+- The selected part is not remembered over a reload. Recommendation: store it with the other
+  view state once the layout is settled.
 
 ### Slice 4 and 5 decisions (2026-10-27)
 
