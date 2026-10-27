@@ -1,5 +1,5 @@
 import { definePart, drawing } from '@design-system';
-import { box, dot, heading, icon, image } from '@design-system/kit';
+import { box, dot, heading, icon } from '@design-system/kit';
 import shellMain from '@system/elements/shell-main';
 
 const label = (text: string, size = 13) => heading(text, { size });
@@ -62,21 +62,18 @@ const layerRows = (layer: Layer) => [
 
 const tree = () => stack(LAYERS.flatMap(layerRows), 2);
 
-const frames = () =>
-  box(
-    ['primary', 'secondary', 'disabled'].map((state) => box([label(state), image({ ratio: '4/3' })], { grow: true })),
-    { direction: 'row', plain: true, padding: 0, gap: 16, stackBelow: 520 },
-  );
+const canvas = () => box([label('infinite canvas')], { grow: true, height: 852 });
 
 export default definePart({
-  note: 'f',
+  note: 'The System page: the shell, a quiet collapsible tree of the product parts, and the infinite canvas.',
+  madeBy: ['claude-opus-5-5'],
   states: { part: {} },
   render: async () => {
     const shell = await shellMain.render({
       section: 'System',
       product: 'studio',
       side: tree(),
-      content: frames(),
+      content: canvas(),
     });
 
     return drawing({ body: shell.body, styles: shell.styles });

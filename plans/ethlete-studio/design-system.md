@@ -811,6 +811,8 @@ step. Each finding names what happened and the fix it needs.
   inspector) at a detail level no wireframe needs. Prevent: before a sketch, the agent lists what
   the running app already does in that region and keeps it, unless the question is about it; a
   wireframe answers only which regions exist, never labels, badges or field lists.
+- `design check --lint <file> --tsconfig` passed a part with an unused kit import (`image`).
+  Prevent: the lint step reports unused imports.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
