@@ -245,7 +245,8 @@ mock frames at `#/canvas-demo`. It does not connect to the design server yet.
 - Tree groups follow the layers: Foundations, Components, Elements, Pages. Sketches and Legacy
   follow. An empty group is hidden.
 - Badges: "from base", "overridden", and "error" for any problem.
-- A part's canvas has one row per state and one frame per preset. Only a `LOAD` problem replaces
+- A part's canvas has one row per state and one frame per preset (replaced: see "Frame size
+  decisions"). Only a `LOAD` problem replaces
   the frames with the error. A part with a rule problem still renders and shows the badge.
 - A shot URL carries the change revision, so a picture is fetched again after a change.
 - No command creates a product. The empty state shows a `products` example for `config.json`.
@@ -349,6 +350,35 @@ Open points, each with a recommendation:
   Vite loader in the Studio answers and a `sketchFramesOf` change).
 - The preview draws no old and new frames of the affected parts. Recommendation: add it in Studio
   now that a frame URL with `sketch` and `variant` draws the variant.
+
+### Frame size decisions (2026-10-27)
+
+These replace "one row per state and one frame per preset" for every part.
+
+Frames:
+
+- Only pages get the viewport presets of the product, always all of them. A page cannot pick a
+  subset.
+- Foundations, components and elements get no viewport preset. Their frame fits the content plus
+  a small margin.
+- A part that responds to its width declares container widths, for example
+  `widths: [280, 480, 720]`. Studio shows one frame per width; the height fits the content.
+- A part that fills its container must declare `widths`. Without `widths` it fits its content.
+- A handle to drag a frame to any width comes later, not now.
+
+Part view:
+
+- A small part shows all its states as a grid of tiles, with the state name under each tile.
+- A page, and a part with `widths`, show one row per state and one frame per preset or width.
+
+Sketch view:
+
+- A matrix: one row per state, one column per variant (`current`, `a`, `b`).
+- For a page or a part with `widths`, a switch above the matrix picks one preset or one width
+  for all cells.
+- A variant that the agent still draws shows only its column head ("drawing …"), no frames.
+
+Bug: the sketch view shows about 400 px of empty space above the frames.
 
 ### Slice 6 decisions (2026-10-27)
 
