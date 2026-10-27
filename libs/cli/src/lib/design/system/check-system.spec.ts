@@ -83,7 +83,7 @@ export default definePart({
 
     expect(check(target, ['acme'])).toBe(1);
     expect(lines).toEqual([
-      `WIREFRAME-KIT ${DESIGN_DIR}/acme/components/button/button.ts: components may not use @design-system/kit - only pages draw with the wireframe kit`,
+      `WIREFRAME-KIT ${DESIGN_DIR}/acme/components/button/button.ts: components may not use @design-system/kit - only elements and pages draw with the wireframe kit`,
     ]);
   }, 60_000);
 

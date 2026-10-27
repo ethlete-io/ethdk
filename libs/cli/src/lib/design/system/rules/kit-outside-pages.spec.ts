@@ -30,23 +30,24 @@ const rulesOf = (target: string) =>
   );
 
 describe('kitOutsidePagesOf', () => {
-  it('lets a page use the kit', () => {
+  it('lets a page and an element use the kit', () => {
     const target = acme();
 
     write(target, 'acme/pages/home/home.ts', kitPart);
+    write(target, 'acme/elements/hero/hero.ts', kitPart);
 
     expect(rulesOf(target)).toEqual([]);
   });
 
-  it('flags a component and an element that import the kit', () => {
+  it('flags a component and a foundation that import the kit', () => {
     const target = acme();
 
     write(target, 'acme/components/button/button.ts', kitPart);
-    write(target, 'acme/elements/hero/hero.ts', kitPart);
+    write(target, 'acme/foundations/palette/palette.ts', kitPart);
 
     expect(rulesOf(target)).toEqual([
-      'WIREFRAME-KIT components may not use @design-system/kit - only pages draw with the wireframe kit',
-      'WIREFRAME-KIT elements may not use @design-system/kit - only pages draw with the wireframe kit',
+      'WIREFRAME-KIT foundations may not use @design-system/kit - only elements and pages draw with the wireframe kit',
+      'WIREFRAME-KIT components may not use @design-system/kit - only elements and pages draw with the wireframe kit',
     ]);
   });
 });
