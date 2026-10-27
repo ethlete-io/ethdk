@@ -48,7 +48,7 @@ describe('canvas math', () => {
     expect(wheelZoomFactor(1000)).toBe(wheelZoomFactor(25));
   });
 
-  it('fits a rect centered into the viewport', () => {
+  it('fits a rect centered across and at the top of the viewport', () => {
     const camera = fitRect({
       rect: { x: 100, y: 50, width: 2000, height: 500 },
       viewport: { width: 1000, height: 800 },
@@ -57,7 +57,29 @@ describe('canvas math', () => {
 
     expect(camera.zoom).toBeCloseTo(0.45);
     expect(camera.x + (100 + 1000) * camera.zoom).toBeCloseTo(500);
-    expect(camera.y + (50 + 250) * camera.zoom).toBeCloseTo(400);
+    expect(camera.y + 50 * camera.zoom).toBeCloseTo(50);
+  });
+
+  it('stops at maxZoom', () => {
+    expect(
+      fitRect({
+        rect: { x: 0, y: 0, width: 100, height: 50 },
+        viewport: { width: 1000, height: 600 },
+        padding: 0,
+        maxZoom: 1,
+      }).zoom,
+    ).toBe(1);
+  });
+
+  it('centers a rect that fills the height', () => {
+    const camera = fitRect({
+      rect: { x: 0, y: 0, width: 100, height: 1000 },
+      viewport: { width: 1000, height: 600 },
+      padding: 0,
+    });
+
+    expect(camera.y).toBeCloseTo(0);
+    expect(camera.x + 50 * camera.zoom).toBeCloseTo(500);
   });
 
   it('fits by the tighter axis', () => {

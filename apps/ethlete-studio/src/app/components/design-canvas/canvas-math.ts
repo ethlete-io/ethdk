@@ -34,18 +34,20 @@ export const zoomAtPoint = ({ camera, point, zoom }: ZoomAtPointOptions): Camera
 
 export const wheelZoomFactor = (deltaY: number) => Math.exp(-Math.max(-25, Math.min(25, deltaY)) * 0.01);
 
-export type FitRectOptions = { rect: Rect; viewport: Size; padding: number };
+export type FitRectOptions = { rect: Rect; viewport: Size; padding: number; maxZoom?: number };
 
-export const fitRect = ({ rect, viewport, padding }: FitRectOptions): Camera => {
+export const fitRect = ({ rect, viewport, padding, maxZoom = Infinity }: FitRectOptions): Camera => {
   const room = {
     width: Math.max(1, viewport.width - padding * 2),
     height: Math.max(1, viewport.height - padding * 2),
   };
-  const zoom = clampZoom(Math.min(room.width / Math.max(1, rect.width), room.height / Math.max(1, rect.height)));
+  const zoom = clampZoom(
+    Math.min(room.width / Math.max(1, rect.width), room.height / Math.max(1, rect.height), maxZoom),
+  );
 
   return {
     x: viewport.width / 2 - (rect.x + rect.width / 2) * zoom,
-    y: viewport.height / 2 - (rect.y + rect.height / 2) * zoom,
+    y: Math.min(viewport.height / 2 - (rect.y + rect.height / 2) * zoom, padding - rect.y * zoom),
     zoom,
   };
 };

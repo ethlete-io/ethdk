@@ -133,6 +133,14 @@ export class CanvasFrameComponent {
         takeUntilDestroyed(),
       )
       .subscribe();
+
+    // A cross-origin frame page posts its first size before its load event, so listen from the moment the iframe exists.
+    toObservable(this.iframe)
+      .pipe(
+        switchMap((iframe) => (iframe ? this.watchMessages$(iframe.nativeElement) : EMPTY)),
+        takeUntilDestroyed(),
+      )
+      .subscribe();
   }
 
   protected readScreenshotSize(event: Event) {
@@ -150,7 +158,7 @@ export class CanvasFrameComponent {
     const content = iframe.contentDocument;
     const view = content?.defaultView;
 
-    if (!content || !view) return this.watchMessages$(iframe);
+    if (!content || !view) return EMPTY;
 
     const root = content.documentElement;
     const height$ = new Observable<number>((subscriber) => {

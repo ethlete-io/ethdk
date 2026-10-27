@@ -40,6 +40,7 @@ const FALLBACK_HEIGHT = 600;
 const MIN_FRAME_WIDTH = 160;
 const MIN_FRAME_HEIGHT = 80;
 const FIT_PADDING = 64;
+const ROW_LABEL_GUTTER = 160;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const ZOOM_STEP = 1.5;
@@ -165,6 +166,8 @@ export class DesignCanvasComponent {
 
   private fittedFor: string | null | undefined = undefined;
 
+  private following = false;
+
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
   constructor() {
@@ -176,9 +179,19 @@ export class DesignCanvasComponent {
       if (!bounds || viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
-        if (this.fittedFor === key) return;
+        const fitted = this.fitted(bounds, viewport);
+
+        if (this.fittedFor === key) {
+          if (this.following) this.camera.set(fitted);
+
+          return;
+        }
+
+        const restored = this.restoredCamera();
+
         this.fittedFor = key;
-        this.camera.set(this.restoredCamera() ?? fitRect({ rect: bounds, viewport, padding: FIT_PADDING }));
+        this.following = restored === null;
+        this.camera.set(restored ?? fitted);
       });
     });
 
@@ -229,6 +242,7 @@ export class DesignCanvasComponent {
   }
 
   protected startResize(size: Size) {
+    this.following = false;
     this.resizeStart = size;
   }
 
@@ -324,10 +338,12 @@ export class DesignCanvasComponent {
     if (event.code === 'Space') this.spaceHeld.set(false);
   }
 
-  protected fitAll() {
+  /** Fits every frame into view, and keeps fitting as frames report their size until the user moves the camera. */
+  public fitAll() {
     const bounds = boundingRect(this.layout().frames);
 
-    if (bounds) this.moveCamera(fitRect({ rect: bounds, viewport: this.viewport(), padding: FIT_PADDING }), true);
+    if (bounds) this.moveCamera(this.fitted(bounds, this.viewport()), true);
+    this.following = true;
   }
 
   public fitSelection() {
@@ -346,7 +362,20 @@ export class DesignCanvasComponent {
     this.zoomTo(this.camera().zoom * factor);
   }
 
+  private fitted(bounds: Rect, viewport: Size): Camera {
+    const gutter = this.layout().rows.length > 0 ? ROW_LABEL_GUTTER : 0;
+    const camera = fitRect({
+      rect: bounds,
+      viewport: { width: viewport.width - gutter, height: viewport.height },
+      padding: FIT_PADDING,
+      maxZoom: 1,
+    });
+
+    return { ...camera, x: camera.x + gutter };
+  }
+
   private moveCamera(camera: Camera, smooth = false) {
+    this.following = false;
     this.smooth.set(smooth);
     this.camera.set(camera);
   }
