@@ -1,0 +1,67 @@
+@layer components {
+  .st-canvas {
+    position: relative;
+    height: 100%;
+    min-height: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: var(--st-shell-inset-left, 0px);
+  }
+
+  .st-canvas-frames {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-6);
+  }
+
+  .st-canvas-frame {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .st-canvas-caption {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+  }
+
+  .st-canvas-frame[data-selected] .st-canvas-caption {
+    color: var(--accent-text);
+  }
+
+  .st-canvas-stage {
+    width: 240px;
+    height: 160px;
+    border-radius: var(--radius-control-md);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+  }
+
+  .st-canvas-frame[data-selected] .st-canvas-stage {
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .st-canvas-zoom {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: var(--control-sm);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-control-md);
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .st-canvas-zoom-value {
+    color: var(--text);
+    font-family: var(--font-code);
+  }
+}

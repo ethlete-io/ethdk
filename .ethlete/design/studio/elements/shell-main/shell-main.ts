@@ -7,8 +7,8 @@ type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 type Props = {
   section: Section;
   product: string;
-  content?: string;
-  side?: string;
+  side: string;
+  content: string;
   panel?: 'hidden';
 };
 
@@ -48,84 +48,38 @@ const rail = (section: Section, product: string) =>
     ${slot(icon(ALL, 18), 'All products', false, 'all')}
   </nav>`;
 
-type TreePart = { name: string; open?: boolean; warns?: boolean };
-type TreeLayer = { title: string; open: boolean; parts: TreePart[] };
-
-const TREE: TreeLayer[] = [
-  { title: 'Foundations', open: false, parts: [] },
-  { title: 'Elements', open: false, parts: [] },
-  {
-    title: 'Components',
-    open: true,
-    parts: [{ name: 'button', open: true }, { name: 'form-field' }, { name: 'select', warns: true }],
-  },
-  { title: 'Pages', open: false, parts: [] },
-];
-
-const STATES = [
-  { name: 'primary', inert: false },
-  { name: 'secondary', inert: false },
-  { name: 'disabled', inert: true },
-];
-
-const small = (paths: string, cls: string) =>
-  `<svg class="${cls}" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-
-const chevron = (open: boolean) =>
-  small(open ? '<path d="m4.5 6.5 3.5 3.5 3.5-3.5"/>' : '<path d="m6.5 4.5 3.5 3.5-3.5 3.5"/>', 'st-tree-chevron');
-
-const warning = small('<path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3"/><path d="M8 11.5v.01"/>', 'st-tree-warn');
-
-const row = (depth: number, lead: string, label: string, extra = '', selected = false) =>
-  `<div class="st-tree-row" data-depth="${depth}"${selected ? ' data-selected' : ''}><span class="st-tree-lead">${lead}</span><span class="st-tree-label">${label}</span>${extra}</div>`;
-
-const dot = (inert: boolean) => `<span class="st-tree-dot"${inert ? ' data-inert' : ''}></span>`;
-
-const partRows = (part: TreePart) => [
-  row(1, chevron(part.open === true), part.name, part.warns ? warning : ''),
-  ...(part.open ? STATES.map((state, index) => row(2, dot(state.inert), state.name, '', index === 0)) : []),
-];
-
-const layerRows = (layer: TreeLayer) => [row(0, chevron(layer.open), layer.title), ...layer.parts.flatMap(partRows)];
-
-const tree = `<div class="st-tree">${TREE.flatMap(layerRows).join('')}</div>`;
-
-const frame = (part: string, state: string, selected: boolean) =>
-  `<figure class="st-canvas-frame"${selected ? ' data-selected' : ''}><figcaption class="st-canvas-caption">${part} / ${state}</figcaption><div class="st-canvas-stage"></div></figure>`;
-
-const canvas = html`<div class="st-canvas">
-  <div class="st-canvas-frames">${STATES.map((state, index) => frame('button', state.name, index === 0)).join('')}</div>
-  <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">100%</span></div>
-</div>`;
-
 const projectSwitch = html`<button class="st-shell-project" type="button" aria-haspopup="listbox">
   <span class="st-shell-project-badge">E</span>
   <span class="st-shell-project-name">ethlete-sdk</span>
   ${icon(UP_DOWN, 16)}
 </button>`;
 
-const sidePanel = (product: string, side?: string) =>
+const sidePanel = (product: string, side: string) =>
   html`<aside class="st-shell-side">
     <header class="st-shell-side-head">
       <span class="st-shell-side-title">${product}</span>
       <button class="st-shell-collapse" type="button" title="Hide panel">${icon(PANEL, 18)}</button>
     </header>
-    <div class="st-shell-side-list">${side ?? tree}</div>
+    <div class="st-shell-side-list">${side}</div>
     <footer class="st-shell-side-foot">${projectSwitch}</footer>
   </aside>`;
 
 export default definePart<Props>({
-  note: 'The canvas runs edge to edge behind a floating, rounded side panel that hides from its own header, while the dark rail stays put as the only fixed chrome. Hiding is a second click on the active section bubble, as in the VS Code activity bar; the panel goes and the bubble drops its fill but keeps the accent icon and bar.',
+  note: 'Chrome only: the canvas runs edge to edge behind a floating, rounded side panel that hides from its own header, while the dark rail stays put as the only fixed chrome. Hiding is a second click on the active section bubble, as in the VS Code activity bar; the panel goes and the bubble drops its fill but keeps the accent icon and bar. The page fills the panel list (side) and the canvas (content).',
   madeBy: ['claude-opus-5-5'],
   widths: [1440],
   states: {
-    system: {
+    open: {
       section: 'System',
       product: 'studio',
+      side: '',
+      content: '',
     },
     hidden: {
       section: 'System',
       product: 'studio',
+      side: '',
+      content: '',
       panel: 'hidden',
     },
   },
@@ -134,7 +88,7 @@ export default definePart<Props>({
       body: html`<div class="st-shell" data-floating${panel === 'hidden' ? ' data-panel="hidden"' : ''}>
         ${rail(section, product)}
         <div class="st-shell-stage">
-          <main class="st-shell-content">${content ?? canvas}</main>
+          <main class="st-shell-content">${content}</main>
           ${panel === 'hidden' ? '' : sidePanel(product, side)}
         </div>
       </div>`,
