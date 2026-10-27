@@ -1087,6 +1087,9 @@ Open points, each with a recommendation:
 - The gap between state groups is the row gap × 2: 96 px for fitted frames (row gap 48 px), 240 px
   for sized frames (row gap 120 px). It replaces 120 px and 300 px, which were 2.5 times the row gap.
 - The group gap derives from the row gap; it has no constant of its own.
+- Built in 59e2bdb09: `GROUP_GAP_FACTOR` in `design-canvas.component.ts` went from 2.5 to 2. A spec
+  bites at 2.5. Not yet checked in a running Studio; look at `studio-lab` `components/button`, its
+  sketch, between the solid and the outline group.
 
 ### Studio comments, as built (2026-10-27)
 
