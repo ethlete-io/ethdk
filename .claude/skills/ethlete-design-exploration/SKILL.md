@@ -76,6 +76,11 @@ Without a base it gets the presets phone (390x844) and desktop (1440x900). `--fr
 `styles`, `head`, `providers` and `themes` from an old project entry. Studio never writes
 `config.json`; the command does.
 
+A part that uses tokens imports them with
+`import tokens from '@system/foundations/tokens.css?inline'` and puts them first in its `styles`.
+Never list a `tokens.css` in config `styles`. A product's own `foundations/tokens`, or a sketch of
+it, then replaces the base's tokens in every part.
+
 ### Propose a change as a sketch
 
 A change to a part, or a new part, is a **sketch**: the question is the part, the variants are the
