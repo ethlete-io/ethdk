@@ -1444,6 +1444,14 @@ headlessly):
   column without horizontal scroll, title `rgb(107,107,107)`, buttons inside the width; desktop is a
   row.
 
+### Wireframe kit follow-up decisions (2026-10-27)
+
+- In a fitted frame a stacking row is exactly `stackBelow` wide, even if its content wants more.
+  `stackBelow` is the width the author says the row needs; a wider row needs a larger threshold.
+- A stacked image keeps its `width` cap. For a full-width image on phone, the author drops `width`.
+  No hidden rule widens images in a stacked row.
+- The input placeholder ends in "…" instead of wrapping, like the button label. Kept.
+
 Notes server, as built (2026-10-27):
 
 - 07d73981c, lab 948a7793b. The reader existed (c618028b5); its check rule is now `NOTE`. A state
