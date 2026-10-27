@@ -13,6 +13,7 @@ import {
   lastWordOf,
   listComments,
   replyToComment,
+  resolveComment,
   threadStateOf,
 } from './comment';
 
@@ -136,6 +137,41 @@ describe('listComments and deleteComment', () => {
     expect(existsSync(second.file)).toBe(false);
     expect(deleteComment({ products, id: second.id })).toBe(`no open comment "${second.id}"`);
     expect(deleteComment({ products, id: '../x' })).toBe('"../x" is no comment id');
+  });
+});
+
+describe('resolveComment', () => {
+  it('keeps the file, marks it resolved, leaves it out of the open comments and refuses a reply or a second resolve', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const comment = createComment({ product, comment: on }) as DesignComment;
+    const products = [{ name: 'acme', dir: product.dir }];
+
+    expect(
+      resolveComment({ products, id: comment.id, reason: 'done', author: 'gpt-5.6-sol', note: 'Empty, said why.' }),
+    ).toEqual(expect.objectContaining({ id: comment.id, resolved: expect.objectContaining({ reason: 'done' }) }));
+    expect(JSON.parse(readFileSync(comment.file, 'utf8'))).toEqual({
+      ...on,
+      createdAt: comment.createdAt,
+      resolved: {
+        by: 'agent',
+        author: 'gpt-5.6-sol',
+        reason: 'done',
+        resolvedAt: expect.any(String),
+        note: 'Empty, said why.',
+      },
+    });
+    expect(listComments({ productDir: product.dir, product: 'acme' }).comments).toEqual([]);
+    expect(listComments({ productDir: product.dir, product: 'acme', withResolved: true }).comments).toEqual([
+      expect.objectContaining({ id: comment.id, resolved: expect.objectContaining({ by: 'agent' }) }),
+    ]);
+
+    const refusal = `comment "${comment.id}" is resolved (done) - it takes no reply and no done`;
+
+    expect(replyToComment({ products, id: comment.id, by: 'user', text: 'More.' })).toBe(refusal);
+    expect(resolveComment({ products, id: comment.id, reason: 'done' })).toBe(refusal);
+    expect(deleteComment({ products, id: comment.id })).toBe(refusal);
+    expect(existsSync(comment.file)).toBe(true);
   });
 });
 

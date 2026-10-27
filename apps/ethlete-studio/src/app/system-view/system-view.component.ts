@@ -454,9 +454,12 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     @if (commentStore.panelOpen() && commentable()) {
       <ethlete-comment-panel
         [comments]="commentStore.comments()"
+        [resolved]="commentStore.resolved()"
+        [resolvedShown]="commentStore.resolvedShown()"
         [selected]="shownPart()"
         (jump)="jumpTo($event)"
         (dismiss)="commentStore.showPanel(false)"
+        (resolvedToggle)="commentStore.showResolved($event)"
       />
     }
   `,

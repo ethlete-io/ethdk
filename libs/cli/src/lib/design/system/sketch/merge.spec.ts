@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
-import { createComment, DesignComment, replyToComment } from '../comments/comment';
+import { commentsOnSketch, CommentFile, createComment, DesignComment, replyToComment } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
 import {
@@ -51,6 +51,8 @@ const mergeResult = (target: string, found: { product: ReturnType<typeof resolve
 
 const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
   reasonOf(mergeResult(target, found));
+
+const resolvedOf = (comment: DesignComment) => (JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile).resolved;
 
 const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: string; variant: string }) =>
   createComment({
@@ -246,7 +248,7 @@ describe('mergeSketch', () => {
     expect(resolveAcme(target).parts.find((part) => part.name === 'card')?.origin).toBe('overridden');
   }, 120_000);
 
-  it('deletes the open comments on the sketch and keeps those on the product part', () => {
+  it('resolves the open comments on the sketch and keeps those on the product part open', () => {
     const target = acme();
     const found = readySketch(target);
     const onSketch = commentOn(found.product, { target: 'elements/hero', variant: 'a' });
@@ -261,8 +263,9 @@ describe('mergeSketch', () => {
     });
 
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
-    expect(existsSync(onSketch.file)).toBe(false);
-    expect(existsSync(onPart.file)).toBe(true);
+    expect(resolvedOf(onSketch)).toMatchObject({ by: 'user', reason: 'merge' });
+    expect(resolvedOf(onPart)).toBeUndefined();
+    expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: 'elements/hero' })).toEqual([]);
   }, 120_000);
 });
 
@@ -276,15 +279,15 @@ describe('discardSketch', () => {
     expect(existsSync(join(heroOf(target), 'hero.ts'))).toBe(true);
   });
 
-  it('deletes the open comments on the sketch and keeps those on the product part', () => {
+  it('resolves the open comments on the sketch and keeps those on the product part open', () => {
     const target = acme();
     const { product, sketch } = readySketch(target);
     const onSketch = commentOn(product, { target: 'elements/hero', variant: 'b' });
     const onPart = commentOn(product);
 
-    expect(discardSketch({ target, sketch })).toBeNull();
+    expect(discardSketch({ target, sketch, author: 'gpt-5.6-sol' })).toBeNull();
     expect(existsSync(sketch.dir)).toBe(false);
-    expect(existsSync(onSketch.file)).toBe(false);
-    expect(existsSync(onPart.file)).toBe(true);
+    expect(resolvedOf(onSketch)).toMatchObject({ by: 'agent', author: 'gpt-5.6-sol', reason: 'discard' });
+    expect(resolvedOf(onPart)).toBeUndefined();
   });
 });

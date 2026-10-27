@@ -12,7 +12,7 @@ import {
   writeComment$,
 } from '../../host/design';
 import { rememberView, rememberedView } from '../studio-view/remembered';
-import { CommentDraft, commentPlaceOf, isQuestion, numberedCommentsOf } from './comment-pins';
+import { CommentDraft, commentPlaceOf, isQuestion, numberedCommentsOf, resolvedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
 export type CommentSource = { address: ProductAddress | null; revision: number };
@@ -70,7 +70,13 @@ export class CommentStore {
   );
 
   /** The open comments of the product, numbered oldest first. */
-  public comments = computed(() => numberedCommentsOf(this.reading().comments));
+  public comments = computed(() => numberedCommentsOf(this.reading().comments.filter((comment) => !comment.resolved)));
+
+  /** The resolved threads of the product, the latest resolved first. */
+  public resolved = computed(() => resolvedCommentsOf(this.reading().comments));
+
+  /** Whether the comment sidebar lists the resolved threads too. */
+  public resolvedShown = signal(rememberedView().resolvedShown ?? false);
 
   /** The threads with an open question from the agent. */
   public questions = computed(() => this.comments().filter(isQuestion));
@@ -108,6 +114,12 @@ export class CommentStore {
   public showPanel(open: boolean) {
     this.panelOpen.set(open);
     rememberView({ commentsOpen: open });
+  }
+
+  /** Shows or hides the resolved threads in the sidebar, and remembers it for the next start. */
+  public showResolved(shown: boolean) {
+    this.resolvedShown.set(shown);
+    rememberView({ resolvedShown: shown });
   }
 
   public start(draft: CommentDraft) {

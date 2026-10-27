@@ -60,8 +60,9 @@ const mergeOrReason = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   note?: string;
+  author?: string;
 }): string[] | string | MergeRefusal => {
-  const { target, config, product, sketch, note } = options;
+  const { target, config, product, sketch, note, author } = options;
 
   if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - mark it ready before a merge`;
 
@@ -123,7 +124,7 @@ const mergeOrReason = (options: {
   }
 
   swapped.drop();
-  closeSketchComments({ sketch });
+  closeSketchComments({ sketch, reason: 'merge', author, note });
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
 
@@ -134,7 +135,7 @@ const mergeOrReason = (options: {
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
  * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
  * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
- * product's old files come back and the sketch stays; otherwise the open comments on its variants are deleted. Refuses without a
+ * product's old files come back and the sketch stays; otherwise the open comments on its variants are resolved, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
  * would let it, the parts that changed (`[]` without a baseline).
  */
@@ -144,15 +145,16 @@ export const mergeSketch = (options: {
   product: ResolvedProduct;
   sketch: Sketch;
   note?: string;
+  author?: string;
 }): string[] | MergeRefusal => {
   const merged = mergeOrReason(options);
 
   return typeof merged === 'string' ? { reason: merged } : merged;
 };
 
-/** Deletes a sketch with all its variants and the open comments on them. */
-export const discardSketch = (options: { target: string; sketch: Sketch }): string | null => {
-  closeSketchComments({ sketch: options.sketch });
+/** Deletes a sketch with all its variants and resolves the open comments on them, by `author` or the user. */
+export const discardSketch = (options: { target: string; sketch: Sketch; author?: string }): string | null => {
+  closeSketchComments({ sketch: options.sketch, reason: 'discard', author: options.author });
   rmSync(options.sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: options.target, sketch: options.sketch });
 

@@ -3,13 +3,13 @@ import { dirname, resolve } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { findSketch, parseTarget, withAuthor, writeSketchFile } from '../sketch/sketch';
 import { madeByOf, withMadeBy, withNote } from '../sketch/part-definition';
-import { deleteComment, DesignComment, findComment } from './comment';
+import { DesignComment, findComment, resolveComment } from './comment';
 
 /**
  * Completes a handled comment thread: replaces the `note` of the part it was made on, in its product, with
- * `note`, then deletes the thread. A part the product only takes from its base is copied into the product first.
+ * `note`, then resolves the thread with that note. A part the product only takes from its base is copied into the product first.
  * With `author`, its model id is stored where the comment sat unless it is there already: in the authors of
- * the sketch variant, or in the `madeBy` of the part. Answers with the deleted comment, or with why nothing changed.
+ * the sketch variant, or in the `madeBy` of the part. Answers with the resolved comment, or with why nothing changed.
  */
 export const completeComment = (options: {
   products: ResolvedProduct[];
@@ -58,5 +58,5 @@ export const completeComment = (options: {
     }
   }
 
-  return deleteComment({ products: [{ name: product.name, dir: product.dir }], id });
+  return resolveComment({ products: [{ name: product.name, dir: product.dir }], id, reason: 'done', author, note });
 };

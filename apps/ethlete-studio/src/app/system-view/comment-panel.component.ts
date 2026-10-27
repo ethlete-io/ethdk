@@ -3,6 +3,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import {
   NumberedComment,
+  ResolvedComment,
   SENDER_LABELS,
   ageOf,
   commentGroupsOf,
@@ -10,6 +11,7 @@ import {
   isAnswered,
   isQuestion,
   lastSenderOf,
+  resolvedByOf,
 } from './comment-pins';
 
 @Component({
@@ -17,6 +19,20 @@ import {
   template: `
     <header class="flex items-center gap-2 border-b border-surface-border px-4 py-3">
       <h2 class="m-0 flex-1 text-[1.4rem] font-semibold">Comments</h2>
+      @if (resolved().length) {
+        <button
+          [attr.aria-pressed]="resolvedShown()"
+          (click)="resolvedToggle.emit(!resolvedShown())"
+          et-button
+          type="button"
+          variant="transparent"
+          color="surface"
+          size="xs"
+          data-comment-resolved-toggle
+        >
+          {{ resolvedShown() ? 'Hide resolved' : 'Show resolved (' + resolved().length + ')' }}
+        </button>
+      }
       <button
         (click)="dismiss.emit()"
         et-button
@@ -88,6 +104,41 @@ import {
           <p class="m-0 p-4 text-small text-[var(--et-surface-color-subtle-solid)]">No open comments.</p>
         }
       }
+      @if (resolvedShown() && resolved().length) {
+        <section class="flex flex-col gap-2 p-2 opacity-60" aria-label="Resolved" data-comment-resolved-group>
+          <h3 class="m-0 px-2 py-1 text-[1.1rem] font-semibold text-[var(--et-surface-color-subtle-solid)]">
+            Resolved
+          </h3>
+          @for (comment of resolved(); track comment.id) {
+            <article class="flex flex-col gap-0.5 px-2 py-1" data-comment-resolved>
+              <span [textContent]="comment.text" class="line-clamp-3 text-[1.3rem] whitespace-pre-wrap"></span>
+              @for (reply of comment.replies; track $index) {
+                <span class="line-clamp-2 text-[1.2rem] whitespace-pre-wrap"
+                  ><span class="font-semibold">{{ reply.author ?? SENDER_LABELS[reply.by] }}:</span>
+                  {{ reply.text }}</span
+                >
+              }
+              @if (comment.resolved.note; as note) {
+                <span
+                  [textContent]="note"
+                  class="text-[1.2rem] whitespace-pre-wrap italic"
+                  data-comment-resolved-note
+                ></span>
+              }
+              <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]" data-comment-meta>
+                <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
+                <span class="shrink-0" data-comment-resolved-by>{{ RESOLVED_BY_OF(comment) }}</span>
+                <time
+                  [attr.datetime]="comment.resolved.resolvedAt"
+                  [title]="comment.resolved.resolvedAt"
+                  class="shrink-0"
+                  >{{ AGE_OF(comment.resolved.resolvedAt, now()) }}</time
+                >
+              </span>
+            </article>
+          }
+        </section>
+      }
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
@@ -98,11 +149,15 @@ import {
 })
 export class CommentPanelComponent {
   public comments = input.required<NumberedComment[]>();
+  /** The resolved threads, listed read-only below the open ones while `resolvedShown`. */
+  public resolved = input<ResolvedComment[]>([]);
+  public resolvedShown = input(false);
   /** The part the canvas shows; its group comes first. */
   public selected = input<string | null>(null);
 
   public jump = output<NumberedComment>();
   public dismiss = output();
+  public resolvedToggle = output<boolean>();
 
   protected questions = computed(() => this.comments().filter(isQuestion));
 
@@ -115,6 +170,7 @@ export class CommentPanelComponent {
 
   protected now = computed(() => {
     this.comments();
+    this.resolved();
 
     return Date.now();
   });
@@ -124,4 +180,5 @@ export class CommentPanelComponent {
   protected readonly LAST_SENDER_OF = lastSenderOf;
   protected readonly IS_ANSWERED = isAnswered;
   protected readonly SENDER_LABELS = SENDER_LABELS;
+  protected readonly RESOLVED_BY_OF = resolvedByOf;
 }

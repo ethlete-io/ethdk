@@ -46,6 +46,18 @@ describe('staleCommentsOf', () => {
     expect(staleCommentsOf(resolveAcme(target))).toEqual([]);
   });
 
+  it('passes a resolved comment whose part is gone, and fails a malformed resolution', () => {
+    const target = acme();
+    const resolved = { by: 'agent', author: 'gpt-5.6-sol', reason: 'merge', resolvedAt: '2026-10-28T10:00:00Z' };
+
+    comment(target, 'resolved', { part: 'elements/footer', resolved });
+    const broken = comment(target, 'broken', { resolved: { ...resolved, reason: 'gone' } });
+
+    expect(staleCommentsOf(resolveAcme(target))).toEqual([
+      { rule: 'COMMENT', file: broken, message: expect.stringContaining('resolved must be') },
+    ]);
+  });
+
   it('fails a comment whose part or state is gone', () => {
     const target = acme();
     const state = comment(target, 'state', { state: 'loading' });

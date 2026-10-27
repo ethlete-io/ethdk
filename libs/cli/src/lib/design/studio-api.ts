@@ -152,7 +152,7 @@ const commentOf = ({
   return {
     ...rest,
     file: relative(target, file),
-    stale: staleReasonOf({ product, comment }),
+    stale: comment.resolved ? null : staleReasonOf({ product, comment }),
     threadState: threadStateOf(comment),
   };
 };
@@ -316,12 +316,12 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
 });
 
 /**
- * `?product=[&part=<layer>/<name>]`: the open comments with their `replies`, oldest first, each with the reason it
- * is stale or `null` and its `threadState` (`agent`, `question` or `answered`).
+ * `?product=[&part=<layer>/<name>]`: every comment with its `replies`, oldest first, each with the reason it
+ * is stale or `null`, its `threadState` (`agent`, `question` or `answered`) and, once closed, its `resolved`.
  */
 export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   const part = asked.url.searchParams.get('part');
-  const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name });
+  const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name, withResolved: true });
 
   return {
     status: 200,
@@ -359,7 +359,7 @@ export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
     : { status: 200, body: commentOf({ comment: created, target: asked.target, product }) };
 });
 
-/** POST `?product=`, body `{ id, note }`: replaces the note of the part the comment is about and deletes the comment, as `et design inbox done` does. */
+/** POST `?product=`, body `{ id, note }`: replaces the note of the part the comment is about and resolves the comment, as `et design inbox done` does. */
 export const commentDoneAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
   const id = textOf(body?.['id']);

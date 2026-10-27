@@ -122,10 +122,17 @@ const varied = (context: Context) =>
 
     if (title === undefined) return 0;
 
-    const closed = closeSketchComments({ sketch, variant: from });
+    const closed = closeSketchComments({
+      sketch,
+      variant: from,
+      reason: 'round',
+      author: authorOf(context.args) ?? undefined,
+      note: lostNote,
+      round: round?.key,
+    });
 
     if (closed.length > 0)
-      console.log(`closed ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`);
+      console.log(`resolved ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`);
 
     return 0;
   });
@@ -270,7 +277,14 @@ const merged = (context: Context) =>
     if (context.args.positional.length > 1)
       return fail(`usage: sketch merge <layer>/<name> [--note <reason>] - it merges the variant the user picked`);
 
-    const result = mergeSketch({ target: context.target, config: context.config, product, sketch, note });
+    const result = mergeSketch({
+      target: context.target,
+      config: context.config,
+      product,
+      sketch,
+      note,
+      author: authorOf(context.args) ?? undefined,
+    });
 
     if (!Array.isArray(result)) return fail(result.reason);
 
@@ -283,7 +297,7 @@ const merged = (context: Context) =>
 
 const discarded = (context: Context) =>
   withSketch(context, ({ sketch }) => {
-    const problem = discardSketch({ target: context.target, sketch });
+    const problem = discardSketch({ target: context.target, sketch, author: authorOf(context.args) ?? undefined });
 
     if (problem) return fail(problem);
 

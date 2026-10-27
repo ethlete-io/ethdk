@@ -123,7 +123,7 @@ et design sketch variant <layer>/<name> c --from a --by <model id> --round "Soli
 pick; it refuses while the decision is a discard (the user picks a variant first). Without `--round` the new variant joins the running round; with it, `--note` is required and
 goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
 Letters continue across rounds (r1: a, b; r2: c, d). A new round answers the comments on the
-`--from` variant and deletes them; a variant without `--round` leaves them open. Draw the combined
+`--from` variant and resolves them; a variant without `--round` leaves them open. Draw the combined
 variant and mark the sketch `ready` again. `sketch new --round <title>` names
 round 1.
 
@@ -140,7 +140,7 @@ know your own exact id, ask the coordinator or the user before you write.
 ### The user decides, Studio merges
 
 The user picks a variant, or discards the sketch, in Studio. **Studio merges on the user's click.
-Never run `sketch merge` or `sketch discard` yourself, and never pick a variant.** Both delete
+Never run `sketch merge` or `sketch discard` yourself, and never pick a variant.** Both resolve
 the open comments on the sketch's variants: the user's click answers them. Comments on the
 product's parts stay. If a part the variant replaces changed
 in the product since the sketch was created, the merge refuses: bring each variant up to date, run
@@ -155,7 +155,7 @@ The user comments on a state of a part in Studio, at a point, or on a sketch var
 
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
-et design inbox done <id> --note <text> --by <model id>   # set the part note, delete the comment thread
+et design inbox done <id> --note <text> --by <model id>   # set the part note, resolve the comment thread
 et design comment reply <id> --by <model id> <text> [--question]   # answer a comment thread (takes --product)
 ```
 
@@ -167,6 +167,9 @@ A comment is a thread: the user and you both reply. When a comment is unclear, a
 `comment reply --question` instead of guessing. The thread then moves to the "waiting for the user" group
 (`waitingForUser` in `--json`) and returns to the inbox when the user answers. A thread there is
 not work for you.
+
+A resolved thread stays in its file with `resolved` (who, when, why), so the user can look back at it in
+Studio. It leaves the inbox and the check, and a reply or `done` on it fails.
 
 Pass `--question` only when you cannot go on without the user's answer. Studio lists only those
 threads under "Questions for you". A report of what you did is no question: reply without the

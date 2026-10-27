@@ -1,11 +1,11 @@
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, decideSketch, markSketchReady, Sketch } from '../sketch/sketch';
-import { createComment, DesignComment, replyToComment } from './comment';
+import { createComment, DesignComment, replyToComment, resolveComment } from './comment';
 import { inboxOf, inboxText } from './inbox';
 
 const acme = () => {
@@ -56,6 +56,21 @@ const setup = () => {
 
 describe('inboxOf', () => {
   afterEach(() => vi.useRealTimers());
+
+  it('leaves a resolved comment thread out', () => {
+    const { target, comment } = setup();
+
+    resolveComment({
+      products: [{ name: 'acme', dir: dirname(dirname(comment.file)) }],
+      id: comment.id,
+      reason: 'done',
+    });
+
+    const { items, waiting } = inboxOf({ target, config: readConfig(target) ?? {} });
+
+    expect(items.filter((item) => item.kind === 'comment')).toEqual([]);
+    expect(waiting).toEqual([]);
+  });
 
   it('lists open comments and open decisions of all products, oldest first', () => {
     const { target, comment } = setup();

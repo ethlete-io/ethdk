@@ -20,6 +20,8 @@ export type ViewState = {
   measuredSizes: Record<string, FrameSize>;
   /** Whether the system view shows its comment sidebar. */
   commentsOpen: boolean;
+  /** Whether the comment sidebar lists the resolved threads too. */
+  resolvedShown: boolean;
   /** The size, interaction and mode a sketch view showed, keyed by its camera key. */
   sketchViews: Record<string, SketchViewPick>;
   /** The preset a flow view showed, keyed by its camera key. */
@@ -205,6 +207,7 @@ export const rememberedView = (): Partial<ViewState> => {
       movedCameras,
       measuredSizes,
       commentsOpen,
+      resolvedShown,
       sketchViews,
       flowPresets,
       notesShown,
@@ -219,6 +222,7 @@ export const rememberedView = (): Partial<ViewState> => {
       movedCameras: cameraMap(movedCameras),
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
+      resolvedShown: typeof resolvedShown === 'boolean' ? resolvedShown : undefined,
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
       notesShown: openFlags(notesShown),

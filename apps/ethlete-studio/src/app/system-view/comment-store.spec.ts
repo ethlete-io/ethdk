@@ -2,6 +2,7 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { CommentPlace, ListedComment, ListedComments, ProductAddress } from '../../host/design';
+import { rememberedView } from '../studio-view/remembered';
 import { CommentSource, injectCommentStore, provideCommentStore } from './comment-store';
 
 const host = vi.hoisted(() => ({
@@ -85,6 +86,32 @@ describe('CommentStore', () => {
     TestBed.tick();
     expect(host.list).toHaveBeenCalledTimes(3);
     expect(host.changes).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps resolved threads out of the open comments and remembers whether the sidebar shows them', () => {
+    localStorage.clear();
+    stored = [
+      ...stored,
+      {
+        ...listed('c', '2026-10-27T10:00:00Z'),
+        resolved: { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', resolvedAt: '2026-10-28T09:00:00Z' },
+      },
+    ];
+
+    const { store } = setup();
+
+    expect(store.comments().map((comment) => [comment.id, comment.number])).toEqual([
+      ['a', 1],
+      ['b', 2],
+    ]);
+    expect(store.resolved().map((comment) => comment.id)).toEqual(['c']);
+    expect(store.resolvedShown()).toBe(false);
+
+    store.showResolved(true);
+
+    expect(store.resolvedShown()).toBe(true);
+    expect(rememberedView().resolvedShown).toBe(true);
+    localStorage.clear();
   });
 
   it('sends a draft at its rounded point, keeps the mode on, and reloads', () => {

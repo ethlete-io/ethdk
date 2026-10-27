@@ -30,7 +30,7 @@ const invocation = 'et design';
 describe('designComment and designInbox', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('writes a comment, lists it and deletes it once done', () => {
+  it('writes a comment, lists it and resolves it once done', () => {
     const target = acme();
     const lines = output();
     const argv = ['pages/home', 'empty', '--size', 'phone', '--at', '10,20', '--product', 'acme', 'Say', 'why.'];
@@ -103,9 +103,13 @@ describe('designComment and designInbox', () => {
     expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).toContain(
       "note: 'A title over a list.'",
     );
-    expect(existsSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`))).toBe(false);
+    expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`), 'utf8'))).toMatchObject({
+      resolved: { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', note: 'A title over a list.' },
+    });
     expect(designInbox({ target, argv: [], invocation })).toBe(0);
     expect(lines.pop()).toBe('inbox empty');
+    expect(designComment({ target, argv: ['reply', id, '--by', 'gpt-5.6-sol', 'More?'], invocation })).toBe(1);
+    expect(lines.pop()).toBe(`comment "${id}" is resolved (done) - it takes no reply and no done`);
   });
 
   it('stores the id of inbox done in the madeBy of the part, once', () => {

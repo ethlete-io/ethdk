@@ -30,6 +30,22 @@ export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string
  */
 export type ThreadState = 'agent' | 'question' | 'answered';
 
+/** Why a thread was resolved: `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch. */
+export type CommentResolveReason = 'done' | 'round' | 'merge' | 'discard';
+
+/**
+ * How a thread was closed. `author` is the model id of the agent; `round` is the key of the round a `round` resolution started.
+ * A comment file without it is open.
+ */
+export type CommentResolution = {
+  by: 'user' | 'agent';
+  author?: string;
+  reason: CommentResolveReason;
+  resolvedAt: string;
+  note?: string;
+  round?: string;
+};
+
 export type CommentFile = {
   part: string;
   state: string;
@@ -41,6 +57,7 @@ export type CommentFile = {
   text: string;
   createdAt: string;
   replies?: CommentReply[];
+  resolved?: CommentResolution;
 };
 
 export type DesignComment = CommentFile & {
@@ -77,6 +94,24 @@ const isReply = (value: unknown) => {
 export const isSize = (value: unknown): value is CommentSize =>
   (typeof value === 'string' && value !== '') || (typeof value === 'number' && value > 0);
 
+const RESOLVE_REASONS: readonly CommentResolveReason[] = ['done', 'round', 'merge', 'discard'];
+
+const isOptionalText = (value: unknown) => value === undefined || (typeof value === 'string' && value !== '');
+
+const isResolution = (value: unknown) => {
+  const resolved = value as Partial<CommentResolution> | undefined;
+
+  return (
+    (resolved?.by === 'user' || resolved?.by === 'agent') &&
+    RESOLVE_REASONS.some((reason) => reason === resolved.reason) &&
+    typeof resolved.resolvedAt === 'string' &&
+    resolved.resolvedAt !== '' &&
+    isOptionalText(resolved.author) &&
+    isOptionalText(resolved.note) &&
+    isOptionalText(resolved.round)
+  );
+};
+
 const isKnownInteraction = (value: unknown) => value === REST || INTERACTIONS.some((known) => known === value);
 
 const shapeProblemOf = (value: Partial<CommentFile>) => {
@@ -95,12 +130,14 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
     return 'sketch must be { target, variant }';
   if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
     return 'replies must be [{ by: "user" | "agent", author?, text, createdAt, question?: true }], question only on an agent reply';
+  if (value.resolved !== undefined && !isResolution(value.resolved))
+    return `resolved must be { by: "user" | "agent", author?, reason: ${RESOLVE_REASONS.join(' | ')}, resolvedAt, note?, round? }`;
 
   return null;
 };
 
-/** Every comment file of a product, oldest first; a file that cannot be read answers with its problem. */
-export const listComments = (options: { productDir: string; product: string }) => {
+/** The open comment files of a product, oldest first, or every one with `withResolved`; a file that cannot be read answers with its problem. */
+export const listComments = (options: { productDir: string; product: string; withResolved?: boolean }) => {
   const dir = commentsDirOf(options.productDir);
   const files = existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')) : [];
   const read = files.map((name): DesignComment | { file: string; problem: string } => {
@@ -128,6 +165,7 @@ export const listComments = (options: { productDir: string; product: string }) =
   return {
     comments: read
       .filter((entry): entry is DesignComment => !('problem' in entry))
+      .filter((comment) => options.withResolved || !comment.resolved)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)),
     unreadable: read.filter((entry): entry is { file: string; problem: string } => 'problem' in entry),
   };
@@ -255,10 +293,12 @@ export const findComment = (options: { products: { name: string; dir: string }[]
   if (!ID.test(id)) return `"${id}" is no comment id`;
 
   for (const product of products) {
-    const found = listComments({ productDir: product.dir, product: product.name }).comments.find(
+    const found = listComments({ productDir: product.dir, product: product.name, withResolved: true }).comments.find(
       (comment) => comment.id === id,
     );
 
+    if (found?.resolved)
+      return `comment "${id}" is resolved (${found.resolved.reason}) - it takes no reply and no done`;
     if (found) return found;
   }
 
@@ -299,7 +339,7 @@ export const replyToComment = (options: {
   return { ...found, replies };
 };
 
-/** Deletes a done or withdrawn comment thread by its id, searching the named products. Answers with the deleted comment. */
+/** Deletes a withdrawn comment thread by its id, searching the named products. Answers with the deleted comment. */
 export const deleteComment = (options: {
   products: { name: string; dir: string }[];
   id: string;
@@ -311,20 +351,72 @@ export const deleteComment = (options: {
   return found;
 };
 
+const resolutionOf = (options: {
+  reason: CommentResolveReason;
+  author?: string;
+  note?: string;
+  round?: string;
+}): CommentResolution => {
+  const { reason, author, note, round } = options;
+
+  return {
+    by: author ? 'agent' : 'user',
+    ...(author ? { author } : {}),
+    reason,
+    resolvedAt: new Date().toISOString(),
+    ...(note?.trim() ? { note: note.trim() } : {}),
+    ...(round ? { round } : {}),
+  };
+};
+
+const withResolution = (comment: DesignComment, resolved: CommentResolution): DesignComment => {
+  const stored = JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile;
+
+  writeFileSync(comment.file, `${JSON.stringify({ ...stored, resolved }, null, 2)}\n`);
+
+  return { ...comment, resolved };
+};
+
+/**
+ * Resolves an open comment thread by its id, searching the named products: the file stays, marked `resolved`.
+ * Without `author` the user resolved it. Answers with the resolved comment.
+ */
+export const resolveComment = (options: {
+  products: { name: string; dir: string }[];
+  id: string;
+  reason: CommentResolveReason;
+  author?: string;
+  note?: string;
+}): DesignComment | string => {
+  const found = findComment(options);
+
+  return typeof found === 'string' ? found : withResolution(found, resolutionOf(options));
+};
+
 /** The open comments made on any variant of the sketch on a target. */
 export const commentsOnSketch = (options: { productDir: string; product: string; sketch: string }) =>
   listComments(options).comments.filter((comment) => comment.sketch?.target === options.sketch);
 
-/** Deletes the open comments on the variants of a sketch, or only those on `variant`. Answers with the deleted comments. */
-export const closeSketchComments = (options: { sketch: Sketch; variant?: string }): DesignComment[] => {
+/**
+ * Resolves the open comments on the variants of a sketch, or only those on `variant`, for `reason`. `round` is the key
+ * of the round a `round` resolution started; without `author` the user resolved them. Answers with the resolved comments.
+ */
+export const closeSketchComments = (options: {
+  sketch: Sketch;
+  variant?: string;
+  reason: Exclude<CommentResolveReason, 'done'>;
+  author?: string;
+  note?: string;
+  round?: string;
+}): DesignComment[] => {
   const { sketch, variant } = options;
-  const closed = commentsOnSketch({
+  const resolved = resolutionOf(options);
+
+  return commentsOnSketch({
     productDir: resolve(sketch.dir, '..', '..'),
     product: sketch.product,
     sketch: sketch.target,
-  }).filter((comment) => variant === undefined || comment.sketch?.variant === variant);
-
-  for (const comment of closed) rmSync(comment.file);
-
-  return closed;
+  })
+    .filter((comment) => variant === undefined || comment.sketch?.variant === variant)
+    .map((comment) => withResolution(comment, resolved));
 };

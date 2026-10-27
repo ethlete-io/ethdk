@@ -510,6 +510,19 @@ export type CommentPlace = {
 /** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */
 export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
 
+/**
+ * How a thread was closed: by `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch.
+ * `author` is the model id of the agent; `round` is the key of the round a `round` resolution started.
+ */
+export type CommentResolution = {
+  by: 'user' | 'agent';
+  author?: string;
+  reason: 'done' | 'round' | 'merge' | 'discard';
+  resolvedAt: string;
+  note?: string;
+  round?: string;
+};
+
 /** Who a thread waits for: the agent, the user to answer a question, or the user to close an answered thread. */
 export type ThreadState = 'agent' | 'question' | 'answered';
 
@@ -522,6 +535,8 @@ export type ListedComment = CommentPlace & {
   threadState: ThreadState;
   /** Why the comment points at nothing any more, or `null`. */
   stale: string | null;
+  /** Set once the thread is closed; an open thread has none. */
+  resolved?: CommentResolution;
 };
 
 export type ListedComments = { comments: ListedComment[]; unreadable: { file: string; problem: string }[] };
@@ -531,7 +546,7 @@ export type ProductAddress = { port: number; product: string };
 const productUrl = ({ port, product }: ProductAddress, path: string) =>
   `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}`;
 
-/** The open comments of a product, oldest first. */
+/** The comments of a product, open and resolved, oldest first. */
 export const listedComments$ = (address: ProductAddress): Observable<ListedComments> =>
   designAnswer$<ListedComments>(productUrl(address, 'comments'));
 
