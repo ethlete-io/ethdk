@@ -740,6 +740,24 @@ report` takes `--variant`. A merge writes the picked variant's authors as `madeB
 - `sketch new|ready|rebase|discard` keep requiring `--by` and keep not storing it; a merge stores the
   variant's authors, not its own `--by`. `madeBy` names who designed, not who ran a command.
 
+### Product comments and answered threads decisions (2026-10-27)
+
+Seen in the real app: a comment on the product part `components/button` showed in the part view
+and again in the sketch view's "current" column, and a plain agent report ("Raised the outline
+border to 2px") showed as "question".
+
+- The sketch view shows only comments on sketch variants. For comments on the product part it
+  shows one line, for example "1 comment on the product part", that links to the part view. Open
+  comments on the target part still block merge and discard.
+- `et design comment reply --question` marks a real question. Any other agent reply makes the
+  thread "answered". The tree badge shows "question" or "answered"; "Questions for you" and the
+  "N ?" count include only real questions. The user closes an answered thread with Withdraw, or
+  replies. Until then an answered thread still blocks merge and discard. The design-exploration
+  skill tells agents when to pass `--question`.
+- `studio-lab` data: the comment "The outline border looks thin…" (20261027T120000Z-7001) moves to
+  variant b of the `components/button` sketch. The part view gets its own product comment with
+  fitting text. The lab then holds one real question and one answered thread.
+
 ### Studio lab decision (2026-10-27)
 
 - `studio-lab` stays current with Studio, so the user can see each new feature in the real app.
