@@ -26,7 +26,7 @@ const comment = (target: string, id: string, body: object) => {
     JSON.stringify({
       part: 'pages/home',
       state: 'empty',
-      preset: 'phone',
+      size: 'phone',
       text: 'x',
       createdAt: '2026-10-27T10:00:00Z',
       ...body,

@@ -7,7 +7,7 @@ import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/
 export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id>'];
 
 export const COMMENT_USAGE = [
-  'comment <layer>/<name> <state> [--preset <preset> | --width <px>] <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
+  'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
 ];
 
 const fail = (message: string, code = 1) => {
@@ -72,16 +72,21 @@ const pointOf = (value: string | undefined) => {
   return x === undefined || y === undefined || rest.length > 0 || Number.isNaN(x) || Number.isNaN(y) ? null : { x, y };
 };
 
+const sizeOf = (value: string | undefined) => {
+  if (!value) return null;
+
+  return /^\d+$/u.test(value) ? (Number(value) > 0 ? Number(value) : null) : value;
+};
+
 /** `et design comment …` writes a comment on a state of a part, as Studio does from the canvas. */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--preset', '--width', '--at', '--sketch', '--variant']);
+  const args = argsOf(argv, ['--product', '--size', '--at', '--sketch', '--variant']);
 
   if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
 
   const [part, state, ...words] = args.positional;
-  const preset = args.values['--preset'];
-  const width = args.values['--width'] === undefined ? undefined : Number(args.values['--width']);
+  const size = sizeOf(args.values['--size']);
   const point = pointOf(args.values['--at']);
   const sketch = args.values['--sketch'];
   const variant = args.values['--variant'];
@@ -89,8 +94,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
   if (
     !part ||
     !state ||
-    (preset !== undefined && width !== undefined) ||
-    (width !== undefined && !(width > 0)) ||
+    size === null ||
     words.length === 0 ||
     point === null ||
     (sketch === undefined) !== (variant === undefined)
@@ -110,8 +114,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
     comment: {
       part,
       state,
-      ...(preset ? { preset } : {}),
-      ...(width ? { width } : {}),
+      size,
       text: words.join(' '),
       ...(point ? { point } : {}),
       ...(sketch && variant ? { sketch: { target: sketch, variant } } : {}),

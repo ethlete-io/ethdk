@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stateNamesOf, withNote } from './part-definition';
+import { stateNamesOf, widthsOf, withNote } from './part-definition';
 
 const part = `import { definePart } from '@design-system';
 export default definePart({
@@ -31,5 +31,13 @@ describe('withNote', () => {
 
   it('answers null without a note literal', () => {
     expect(withNote(part.replace("'Old reason.'", 'reason'), 'x')).toBeNull();
+  });
+});
+
+describe('widthsOf', () => {
+  it('reads a literal list, an absent one as empty, and anything else as unknown', () => {
+    expect(widthsOf(`export default definePart({ widths: [240, 520], states: {} });`)).toEqual([240, 520]);
+    expect(widthsOf(`export default definePart({ states: {} });`)).toEqual([]);
+    expect(widthsOf(`export default definePart({ widths: WIDTHS, states: {} });`)).toBeNull();
   });
 });

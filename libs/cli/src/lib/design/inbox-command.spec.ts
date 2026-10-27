@@ -31,7 +31,7 @@ describe('designComment and designInbox', () => {
   it('writes a comment, lists it and deletes it once done', () => {
     const target = acme();
     const lines = output();
-    const argv = ['pages/home', 'empty', '--preset', 'phone', '--at', '10,20', '--product', 'acme', 'Say', 'why.'];
+    const argv = ['pages/home', 'empty', '--size', 'phone', '--at', '10,20', '--product', 'acme', 'Say', 'why.'];
 
     expect(designComment({ target, argv, invocation })).toBe(0);
 
@@ -47,27 +47,27 @@ describe('designComment and designInbox', () => {
     expect(lines.pop()).toBe('inbox empty');
   });
 
-  it('refuses a comment with a preset and a width, a bad point or a stale part', () => {
+  it('refuses a comment without a size, a bad point or a stale part', () => {
     const target = acme();
     const lines = output();
 
     expect(
       designComment({
         target,
-        argv: ['pages/home', 'empty', 'x', '--preset', 'phone', '--width', '360', '--product', 'acme'],
+        argv: ['pages/home', 'empty', 'x', '--product', 'acme'],
         invocation,
       }),
     ).toBe(2);
     expect(
-      designComment({ target, argv: ['pages/home', 'empty', 'x', '--width', '0', '--product', 'acme'], invocation }),
+      designComment({ target, argv: ['pages/home', 'empty', 'x', '--size', '0', '--product', 'acme'], invocation }),
     ).toBe(2);
     expect(
-      designComment({ target, argv: ['pages/home', 'empty', 'x', '--preset', 'phone', '--at', '1'], invocation }),
+      designComment({ target, argv: ['pages/home', 'empty', 'x', '--size', 'phone', '--at', '1'], invocation }),
     ).toBe(2);
     expect(
       designComment({
         target,
-        argv: ['pages/nope', 'empty', 'x', '--preset', 'phone', '--product', 'acme'],
+        argv: ['pages/nope', 'empty', 'x', '--size', 'phone', '--product', 'acme'],
         invocation,
       }),
     ).toBe(1);

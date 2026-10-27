@@ -184,7 +184,7 @@ describe('mergeSketch', () => {
       comment: {
         part: 'elements/hero',
         state: 'default',
-        preset: 'phone',
+        size: 'phone',
         text: 'Bigger.',
         sketch: { target: 'elements/hero', variant: 'a' },
       },

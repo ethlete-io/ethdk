@@ -35,7 +35,7 @@ const setup = () => {
   }) as Sketch;
   const comment = createComment({
     product: acmeProduct,
-    comment: { part: 'pages/home', state: 'empty', preset: 'phone', point: { x: 12, y: 30 }, text: 'Say why.' },
+    comment: { part: 'pages/home', state: 'empty', size: 'phone', point: { x: 12, y: 30 }, text: 'Say why.' },
   }) as DesignComment;
 
   const stored = JSON.parse(readFileSync(comment.file, 'utf8')) as object;

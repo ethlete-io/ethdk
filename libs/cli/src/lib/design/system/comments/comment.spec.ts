@@ -18,7 +18,7 @@ const acme = () => {
 const resolveAcme = (target: string) =>
   resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
 
-const on = { part: 'pages/home', state: 'empty', preset: 'phone', text: 'Say why it is empty.' };
+const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };
 
 describe('createComment', () => {
   it('writes one JSON file per comment under comments/', () => {
@@ -34,16 +34,12 @@ describe('createComment', () => {
     });
   });
 
-  it('takes a width or nothing in place of a preset', () => {
+  it('takes a preset, a width or fitted as the size', () => {
     const product = resolveAcme(acme());
-    const fitted = { part: on.part, state: on.state, text: on.text };
 
-    expect(createComment({ product, comment: { ...fitted, width: 360 } })).toMatchObject({ width: 360 });
-    expect(createComment({ product, comment: fitted })).not.toHaveProperty('preset');
-    expect(createComment({ product, comment: { ...on, width: 360 } })).toBe(
-      'a comment has a preset or a width, not both',
-    );
-    expect(createComment({ product, comment: { ...fitted, width: 0 } })).toBe('width must be a positive number');
+    expect(createComment({ product, comment: { ...on, size: 'fitted' } })).toMatchObject({ size: 'fitted' });
+    expect(createComment({ product, comment: { ...on, size: 0 } })).toContain('size must be');
+    expect(createComment({ product, comment: { ...on, size: '' } })).toContain('size must be');
   });
 
   it('refuses a comment that points at nothing', () => {
@@ -53,7 +49,7 @@ describe('createComment', () => {
       'part pages/about no longer exists',
     );
     expect(createComment({ product, comment: { ...on, state: 'error' } })).toBe('pages/home has no state "error"');
-    expect(createComment({ product, comment: { ...on, preset: 'tablet' } })).toBe('preset "tablet" no longer exists');
+    expect(createComment({ product, comment: { ...on, size: 'tablet' } })).toBe('preset "tablet" no longer exists');
     expect(createComment({ product, comment: { ...on, text: '' } })).toBe('text must be a non-empty string');
     expect(createComment({ product, comment: { ...on, point: { x: -1, y: 0 } } })).toContain('point must be');
     expect(createComment({ product, comment: { ...on, sketch: { target: 'pages/home', variant: 'a' } } })).toBe(
@@ -65,7 +61,7 @@ describe('createComment', () => {
     const target = acme();
     const product = resolveAcme(target);
     const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'banner' }, variants: ['a'] }) as Sketch;
-    const comment = { part: 'elements/banner', state: 'default', preset: 'desktop', text: 'Taller.' };
+    const comment = { part: 'elements/banner', state: 'default', size: 'desktop', text: 'Taller.' };
 
     expect(createComment({ product, comment })).toBe('part elements/banner no longer exists');
     expect(

@@ -215,7 +215,7 @@ const serveAcme = async (target: string) => {
       handlers.get(path)?.(request as unknown as IncomingMessage, response as unknown as ServerResponse);
     });
 
-  return { plugin, ask, watchers, sent, invalidated, loaded };
+  return { plugin, ask, handlers, watchers, sent, invalidated, loaded };
 };
 
 describe('the design server for a design system', () => {
@@ -336,6 +336,29 @@ describe('the design server for a design system', () => {
     watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
 
     expect(sent).toEqual([]);
+  });
+
+  it('signals a change to a comment file on its own event stream', async () => {
+    const target = acme();
+    const { handlers, watchers } = await serveAcme(target);
+    const written: string[] = [];
+    const closed: (() => void)[] = [];
+    const response = {
+      writeHead: () => response,
+      write: (chunk: string) => written.push(chunk),
+    };
+    const request = { on: (_event: string, listener: () => void) => closed.push(listener) };
+
+    handlers.get('/__design/comment-events')?.(
+      request as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/components/card/card.ts'));
+    closed.forEach((close) => close());
+    watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+
+    expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n']);
   });
 });
 
@@ -459,12 +482,12 @@ describe('the design server for sketches and comments', () => {
   it('writes, lists and finishes a canvas comment', async () => {
     const target = acme();
     const { ask } = await serveAcme(target);
-    const on = { part: 'pages/home', state: 'empty', preset: 'phone', text: 'Say why it is empty.' };
+    const on = { part: 'pages/home', state: 'empty', size: 'phone', text: 'Say why it is empty.' };
     const added = await ask('/__design/comment', '?product=acme', 'POST', { ...on, point: { x: 12, y: 30 } });
     const { id } = added.body as { id: string };
 
     expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 12, y: 30 }, stale: null } });
-    expect((await ask('/__design/comment', '?product=acme', 'POST', { ...on, preset: 'gone' })).status).toBe(422);
+    expect((await ask('/__design/comment', '?product=acme', 'POST', { ...on, size: 'gone' })).status).toBe(422);
     expect((await ask('/__design/comment', '?product=acme')).status).toBe(405);
     expect((await ask('/__design/comments', '?product=acme&part=pages/home')).body).toMatchObject({
       comments: [{ id, text: on.text }],

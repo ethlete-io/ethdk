@@ -3,7 +3,7 @@ import { listNotes } from '../notes/note';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
 
-/** An open comment whose part, state, preset or sketch variant is gone, and a comment file that cannot be read. */
+/** An open comment whose part, state, size or sketch variant is gone, and a comment file that cannot be read. */
 export const staleCommentsOf = (product: ResolvedProduct): Problem[] => {
   const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name });
 

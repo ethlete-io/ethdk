@@ -1,7 +1,14 @@
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
 import { DesignConfig, readConfig } from './paths';
-import { createComment, deleteComment, DesignComment, listComments, staleReasonOf } from './system/comments/comment';
+import {
+  CommentSize,
+  createComment,
+  deleteComment,
+  DesignComment,
+  listComments,
+  staleReasonOf,
+} from './system/comments/comment';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
@@ -22,6 +29,7 @@ export const SKETCH_DISCARD_PATH = '/__design/sketch-discard';
 export const COMMENTS_PATH = '/__design/comments';
 export const COMMENT_PATH = '/__design/comment';
 export const COMMENT_DONE_PATH = '/__design/comment-done';
+export const COMMENT_EVENTS_PATH = '/__design/comment-events';
 
 export type Answer = { status: number; body: unknown };
 
@@ -245,20 +253,19 @@ export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   };
 });
 
-/** POST `?product=`, body `{ part, state, preset? | width?, text, point?: { x, y }, sketch?: { target, variant } }`: writes a canvas comment. */
+/** POST `?product=`, body `{ part, state, size, text, point?: { x, y }, sketch?: { target, variant } }`: writes a canvas comment. */
 export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
 
   if (!body) return failure(400, 'the body must be a JSON object');
 
-  const { part, state, preset, width, text, point, sketch } = body;
+  const { part, state, size, text, point, sketch } = body;
   const created = createComment({
     product,
     comment: {
       part: part as string,
       state: state as string,
-      ...(preset === undefined ? {} : { preset: preset as string }),
-      ...(width === undefined ? {} : { width: width as number }),
+      size: size as CommentSize,
       text: text as string,
       ...(point === undefined ? {} : { point: point as { x: number; y: number } }),
       ...(sketch === undefined ? {} : { sketch: sketch as { target: string; variant: string } }),

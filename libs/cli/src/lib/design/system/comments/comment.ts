@@ -3,19 +3,21 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { resolve } from 'path';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from '../sketch/overlay';
-import { stateNamesOf } from '../sketch/part-definition';
+import { stateNamesOf, widthsOf } from '../sketch/part-definition';
 import { findSketch, parseTarget } from '../sketch/sketch';
 
-/** A point on a frame, in CSS pixels from its top left corner, at the comment's preset or width. */
+/** A point on a frame, in CSS pixels from its top left corner, at the comment's size. */
 export type CommentPoint = { x: number; y: number };
+
+/** The size of the frame a comment was made on: a preset name, a width in CSS pixels, or `fitted` to its content. */
+export type CommentSize = string | number;
+
+export const FITTED = 'fitted';
 
 export type CommentFile = {
   part: string;
   state: string;
-  /** The page preset the frame was drawn at. Without it and without `width` the frame fits its content. */
-  preset?: string;
-  /** The width in CSS pixels a part with `widths` was drawn at. */
-  width?: number;
+  size: CommentSize;
   point?: CommentPoint;
   sketch?: { target: string; variant: string };
   text: string;
@@ -38,11 +40,8 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
   for (const key of ['part', 'state', 'text', 'createdAt'] as const)
     if (typeof value[key] !== 'string' || value[key] === '') return `${key} must be a non-empty string`;
 
-  if (value.preset !== undefined && (typeof value.preset !== 'string' || value.preset === ''))
-    return 'preset must be a non-empty string';
-  if (value.width !== undefined && (typeof value.width !== 'number' || !(value.width > 0)))
-    return 'width must be a positive number';
-  if (value.preset !== undefined && value.width !== undefined) return 'a comment has a preset or a width, not both';
+  if (!(typeof value.size === 'string' && value.size !== '') && !(typeof value.size === 'number' && value.size > 0))
+    return `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
 
   if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
   if (
@@ -93,8 +92,21 @@ export const goneStateOf = (options: { product: ResolvedProduct; part: string; s
   return states && !states.includes(state) ? `${key} has no state "${state}"` : null;
 };
 
+/** Why a size points at nothing: a preset the product lacks, or a width a part with readable `widths` lacks. */
+const goneSizeOf = (options: { product: ResolvedProduct; part: string; size: CommentSize }) => {
+  const { product, part: key, size } = options;
+
+  if (typeof size === 'string')
+    return size === FITTED || product.presets[size] ? null : `preset "${size}" no longer exists`;
+
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+  const widths = part ? widthsOf(part.source) : null;
+
+  return widths === null || widths.includes(size) ? null : `${key} has no width ${size}`;
+};
+
 /**
- * Why a comment no longer points at anything: its sketch variant, part, state or preset is gone.
+ * Why a comment no longer points at anything: its sketch variant, part, state or size is gone.
  * `null` when it still does. A part whose states are not an object literal keeps any state.
  */
 export const staleReasonOf = (options: {
@@ -121,10 +133,7 @@ export const staleReasonOf = (options: {
   const gone = goneStateOf({ product: drawn, part: comment.part, state: comment.state });
 
   if (gone) return gone;
-  if (comment.preset !== undefined && !product.presets[comment.preset])
-    return `preset "${comment.preset}" no longer exists`;
-
-  return null;
+  return goneSizeOf({ product: drawn, part: comment.part, size: comment.size });
 };
 
 const newId = () =>

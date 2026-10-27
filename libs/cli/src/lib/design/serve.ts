@@ -8,6 +8,7 @@ import { aliasPattern, fsUrl, isCallFile } from './vite-paths';
 import {
   Answer,
   COMMENT_DONE_PATH,
+  COMMENT_EVENTS_PATH,
   COMMENT_PATH,
   COMMENTS_PATH,
   commentAnswer,
@@ -170,8 +171,35 @@ const sendJson = (response: ServerResponse, answer: { status: number; body: unkn
   send(response, { status: answer.status, type: 'application/json', body: JSON.stringify(answer.body) });
 };
 
-const isDecisionFile = (file: string) =>
-  basename(file) === SKETCH_FILE || (file.endsWith('.json') && basename(dirname(file)) === 'comments');
+const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'comments';
+
+const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file);
+
+/** A server-sent event stream that tells Studio a comment file changed, so it reloads the comments and not the frames. */
+const createCommentEvents = () => {
+  const listeners = new Set<ServerResponse>();
+
+  return {
+    middleware: (request: IncomingMessage, response: ServerResponse) => {
+      response.writeHead(200, {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        connection: 'keep-alive',
+        'access-control-allow-origin': '*',
+      });
+      response.write(': open\n\n');
+      listeners.add(response);
+      request.on('close', () => listeners.delete(response));
+    },
+    signal: () => {
+      for (const response of listeners) response.write('event: comments\ndata: {}\n\n');
+    },
+    close: () => {
+      for (const response of listeners) response.end();
+      listeners.clear();
+    },
+  };
+};
 
 const isInside = (folder: string, file: string) => file.startsWith(`${folder}${sep}`);
 
@@ -270,8 +298,11 @@ const designExplore = ({
       reload(`${VIRTUAL}/system`);
     };
 
+    const commentEvents = createCommentEvents();
+
     const refresh = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
+      if (isCommentFile(file)) return commentEvents.signal();
 
       forgetCalls(file);
 
@@ -286,6 +317,7 @@ const designExplore = ({
 
     const change = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
+      if (isCommentFile(file)) return commentEvents.signal();
 
       forgetCalls(file);
       shots.forget(dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []));
@@ -366,7 +398,11 @@ const designExplore = ({
     studio(COMMENTS_PATH, commentsAnswer);
     studio(COMMENT_PATH, commentAnswer);
     studio(COMMENT_DONE_PATH, commentDoneAnswer);
-    vite.httpServer?.on('close', () => void Promise.all([thumbs.close(), shots.close()]));
+    vite.middlewares.use(COMMENT_EVENTS_PATH, commentEvents.middleware);
+    vite.httpServer?.on('close', () => {
+      commentEvents.close();
+      void Promise.all([thumbs.close(), shots.close()]);
+    });
     vite.watcher.add([designRoot, ...baseDirs]);
     vite.watcher.on('add', refresh);
     vite.watcher.on('unlink', refresh);

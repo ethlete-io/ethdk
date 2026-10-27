@@ -93,3 +93,17 @@ export const hasBadWidths = (source: string) => {
 
   return LITERALS.includes(widths.kind);
 };
+
+/**
+ * The widths a part file writes as a literal in `definePart({ widths: [...] })`, read without running it.
+ * An empty list when it has none; `null` when they are not a literal list of numbers, so they cannot be known.
+ */
+export const widthsOf = (source: string): number[] | null => {
+  const { definition } = definitionOf(source);
+  const widths = definition ? propertyOf(definition, 'widths')?.initializer : undefined;
+
+  if (!widths) return [];
+  if (!ts.isArrayLiteralExpression(widths) || !widths.elements.every(ts.isNumericLiteral)) return null;
+
+  return widths.elements.map((element) => Number((element as ts.NumericLiteral).text));
+};
