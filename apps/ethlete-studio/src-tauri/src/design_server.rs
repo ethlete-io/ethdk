@@ -212,6 +212,10 @@ fn source_newer_than(built: &Path, sources: &[std::path::PathBuf], limit: usize)
                 continue;
             }
 
+            if meta.modified().is_ok_and(|modified| modified > built) {
+                return true;
+            }
+
             if let Ok(entries) = std::fs::read_dir(&path) {
                 pending.extend(entries.flatten().map(|entry| entry.path()));
             }
@@ -578,18 +582,26 @@ mod tests {
 
         let at = |file: &Path, seconds: u64| {
             std::fs::File::options()
-                .write(true)
+                .read(true)
                 .open(file)
                 .and_then(|handle| handle.set_modified(std::time::UNIX_EPOCH + Duration::from_secs(seconds)))
                 .expect("an mtime");
         };
 
         let sources = [root.join("src")];
+        let dirs = [root.join("src"), root.join("src/lib"), root.join("src/lib/design")];
 
         at(&built, 2_000);
         at(&source, 1_000);
         at(&spec, 3_000);
+        for dir in &dirs {
+            at(dir, 1_000);
+        }
         assert!(!source_newer_than(&built, &sources, 100));
+
+        at(&dirs[2], 3_000);
+        assert!(source_newer_than(&built, &sources, 100));
+        at(&dirs[2], 1_000);
 
         at(&source, 3_000);
         assert!(source_newer_than(&built, &sources, 100));
