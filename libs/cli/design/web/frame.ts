@@ -35,6 +35,7 @@ const color = params.get('color');
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
 if (fit) {
+  document.documentElement.style.overflow = 'hidden';
   root.style.width = 'max-content';
   root.style.padding = '16px';
 }
@@ -153,6 +154,7 @@ const report = () => {
       variant: key,
       height,
       ...width,
+      viewport: { width: innerWidth, height: innerHeight },
       href: location.href,
       ...(errored ? { errored: true } : {}),
     },

@@ -24,6 +24,7 @@ import {
   map,
   merge,
   of,
+  share,
   startWith,
   switchMap,
   take,
@@ -31,10 +32,12 @@ import {
   tap,
   timer,
 } from 'rxjs';
-import { CanvasFrame, frameMessageOf } from '../canvas-frame';
+import { CanvasFrame, FrameMessage, MeasuredSide, followedSizes, frameMessageOf } from '../canvas-frame';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 
 const UNREPORTED_PAINT_MS = 1000;
+
+type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 
 type Wanted = { kind: 'page' | 'shot'; src: string };
 
@@ -334,8 +337,10 @@ export class CanvasFrameComponent {
     if (!content || !view) return EMPTY;
 
     const root = content.documentElement;
-    const height$ = new Observable<number>((subscriber) => {
-      const observer = new view.ResizeObserver(() => subscriber.next(Math.ceil(root.getBoundingClientRect().height)));
+    const height$ = new Observable<MeasuredSide>((subscriber) => {
+      const observer = new view.ResizeObserver(() =>
+        subscriber.next({ size: Math.ceil(root.getBoundingClientRect().height), viewport: iframe.clientHeight }),
+      );
 
       observer.observe(root);
 
@@ -345,9 +350,9 @@ export class CanvasFrameComponent {
     const fitted = content.body.firstElementChild;
     const width$ =
       this.frame().width === undefined && fitted
-        ? new Observable<number>((subscriber) => {
+        ? new Observable<MeasuredSide>((subscriber) => {
             const observer = new view.ResizeObserver(() =>
-              subscriber.next(Math.ceil(fitted.getBoundingClientRect().width)),
+              subscriber.next({ size: Math.ceil(fitted.getBoundingClientRect().width), viewport: iframe.clientWidth }),
             );
 
             observer.observe(fitted);
@@ -357,8 +362,14 @@ export class CanvasFrameComponent {
         : EMPTY;
 
     return merge(
-      height$.pipe(tap((height) => this.heightChange.emit(height))),
-      width$.pipe(tap((width) => this.widthChange.emit(width))),
+      height$.pipe(
+        followedSizes,
+        tap((height) => this.heightChange.emit(height)),
+      ),
+      width$.pipe(
+        followedSizes,
+        tap((width) => this.widthChange.emit(width)),
+      ),
     );
   }
 
@@ -367,15 +378,29 @@ export class CanvasFrameComponent {
 
     if (!host) return EMPTY;
 
-    return fromEvent<MessageEvent>(host, 'message').pipe(
+    const messages$ = fromEvent<MessageEvent>(host, 'message').pipe(
       filter((event) => !!iframe.contentWindow && event.source === iframe.contentWindow),
-      tap(({ data }) => {
-        const message = frameMessageOf(data);
+      map(({ data }) => frameMessageOf(data)),
+      share(),
+    );
+    const reports$ = messages$.pipe(filter((message): message is HeightMessage => message?.type === 'height'));
 
-        if (message?.type === 'height') this.heightChange.emit(message.height);
-        if (message?.type === 'height' && message.width !== undefined) this.widthChange.emit(message.width);
-        if (message?.type === 'escape') this.escapeKeydown.emit();
-      }),
+    return merge(
+      reports$.pipe(
+        map((report) => ({ size: report.height, viewport: report.viewport?.height })),
+        followedSizes,
+        tap((height) => this.heightChange.emit(height)),
+      ),
+      reports$.pipe(
+        map((report) => (report.width === undefined ? null : { size: report.width, viewport: report.viewport?.width })),
+        filter((measure) => measure !== null),
+        followedSizes,
+        tap((width) => this.widthChange.emit(width)),
+      ),
+      messages$.pipe(
+        filter((message) => message?.type === 'escape'),
+        tap(() => this.escapeKeydown.emit()),
+      ),
     );
   }
 }

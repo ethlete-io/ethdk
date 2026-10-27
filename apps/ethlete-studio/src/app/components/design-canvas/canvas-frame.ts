@@ -1,3 +1,5 @@
+import { Observable, filter, map, pairwise, startWith } from 'rxjs';
+
 /** The state of a part, at a preset, a width or fitted, that a frame draws; a comment on the frame names it. */
 export const REST = 'rest';
 
@@ -38,20 +40,67 @@ export type CanvasFrame = {
 
 /** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */
 export type FrameMessage =
-  { type: 'height'; height: number; width?: number; href?: string; errored?: true } | { type: 'escape' };
+  | {
+      type: 'height';
+      height: number;
+      width?: number;
+      viewport?: { width: number; height: number };
+      href?: string;
+      errored?: true;
+    }
+  | { type: 'escape' };
+
+const viewportOf = (data: object) => {
+  if (!('viewport' in data) || typeof data.viewport !== 'object' || data.viewport === null) return null;
+
+  const { viewport } = data;
+
+  return 'width' in viewport &&
+    typeof viewport.width === 'number' &&
+    'height' in viewport &&
+    typeof viewport.height === 'number'
+    ? { width: viewport.width, height: viewport.height }
+    : null;
+};
 
 /** Reads a message the frame page posts to its parent. A cross-origin frame reaches the canvas only this way. */
 export const frameMessageOf = (data: unknown): FrameMessage | null => {
   if (typeof data !== 'object' || data === null || !('type' in data)) return null;
   if (data.type === 'design-explore:escape') return { type: 'escape' };
-  if (data.type === 'design-explore:height' && 'height' in data && typeof data.height === 'number')
-    return {
-      type: 'height',
-      height: data.height,
-      ...('width' in data && typeof data.width === 'number' ? { width: data.width } : {}),
-      ...('href' in data && typeof data.href === 'string' ? { href: data.href } : {}),
-      ...('errored' in data && data.errored === true ? { errored: true as const } : {}),
-    };
+  if (data.type !== 'design-explore:height' || !('height' in data) || typeof data.height !== 'number') return null;
 
-  return null;
+  const viewport = viewportOf(data);
+
+  return {
+    type: 'height',
+    height: data.height,
+    ...('width' in data && typeof data.width === 'number' ? { width: data.width } : {}),
+    ...(viewport ? { viewport } : {}),
+    ...('href' in data && typeof data.href === 'string' ? { href: data.href } : {}),
+    ...('errored' in data && data.errored === true ? { errored: true as const } : {}),
+  };
 };
+
+/** One side of a frame page measured, with the length of the page's own viewport on that side when known. */
+export type MeasuredSide = { size: number; viewport?: number };
+
+const feedsBack = (previous: MeasuredSide | null, next: MeasuredSide) =>
+  previous !== null &&
+  next.viewport !== undefined &&
+  previous.viewport !== undefined &&
+  next.viewport === previous.size &&
+  next.size > next.viewport &&
+  next.size - next.viewport === previous.size - previous.viewport;
+
+/**
+ * The sizes a frame takes from its page's measures. Content sized in `vh` or `vw` grows with the frame that
+ * follows it, so a measure taken right after the frame took the last one, and over it by the same amount, is dropped.
+ */
+export const followedSizes = (measures$: Observable<MeasuredSide>) =>
+  measures$.pipe(
+    startWith(null),
+    pairwise(),
+    filter((pair): pair is [MeasuredSide | null, MeasuredSide] => pair[1] !== null),
+    filter(([previous, next]) => !feedsBack(previous, next)),
+    map(([, next]) => next.size),
+  );
