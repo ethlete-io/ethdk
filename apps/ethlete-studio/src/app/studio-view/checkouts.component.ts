@@ -61,7 +61,7 @@ type Row = {
 
       @if (open()) {
         <div
-          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-[0_1.2rem_3.2rem_rgb(0_0_0/45%)]"
+          class="absolute bottom-[calc(100%+0.8rem)] left-0 z-2 flex w-130 max-w-[90vw] flex-col gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-[0_1.2rem_3.2rem_rgb(var(--et-shadow-color-rgb,0_0_0)/45%)]"
           etProvideSurface="dark-elevated"
         >
           <div class="flex items-center gap-2">
