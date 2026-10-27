@@ -454,6 +454,27 @@ and no frame shows that it is out of date.
 - A failed render replaces the old frame at once, as today, so an error is never hidden.
 - Shots use the same per-part revision.
 
+### Merge preview decisions (2026-10-27)
+
+Not built yet. In the `components/card` sketch the preview showed all three states of
+`pages/library`, but only `empty` draws the card, and nothing said what the preview shows.
+
+- The button "Show merge preview" becomes "Where <part> is used", for example "Where card is used".
+  Above the canvas: "components/card appears in these parts. Left: now. Right: after merging b."
+- The server compares the before and after shots. The preview shows only rows with a visible
+  change; below them a row such as "2 states of pages/library without visible change" opens the
+  rest on a click. While the compare runs, a row shows the rendering dot from "Frame reload
+  decisions".
+- Each instance of the target part in a preview frame gets an outline in the accent colour. The
+  render marks the part's first element, for example with `data-et-part`. The builder first checks
+  that this works for every kind of part; if not, there is no outline.
+- Bug: preview frames switch between the grey canvas and the page's own background (in
+  `pages/library` `one` and `empty`, now and after differ). The page always has one background, so
+  the compare would see a change that does not exist. Fix first.
+- A page or a part with `widths` that declares interactions keeps the sheet layout as built ("320 ·
+  hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
+  may serve there too.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
@@ -624,8 +645,8 @@ Open points, each with a recommendation:
 - Done: the design-exploration skill names the variant in each report (4e2fd4d54).
 - The status watch reload was only seen through a stubbed channel. Recommendation: check it once
   in the real app with `et design sketch report` on `studio-lab`.
-- Decided: the merge preview keeps every state of every affected part. A state filter comes
-  only once a product shows it is too slow.
+- Replaced: the merge preview showed every state of every affected part. It now shows only rows
+  with a visible change, as in "Merge preview decisions".
 - Decided: `studio-lab` lists its `--lab-*` tokens file in the product's `styles`. See "Token
   decisions".
 - Decided: column heads keep the ellipsis at low zoom; the matrix is read near 100 %.
