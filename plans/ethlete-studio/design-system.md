@@ -282,6 +282,18 @@ Open points, each with a recommendation:
   reloads and picks the product; a refusal shows under the fields in the error colour. Headless proof
   on a scratch checkout.
 
+### Picker base and merge order decisions (2026-10-27)
+
+- The open picker names a base by its last folder segment ("inherits from web"), not the stored
+  path `.ethlete/design/web`. The built-in base shows as `@ethlete/components`.
+- The Base select of the New product form offers "No base", every product without a base of its
+  own, and the built-in base `@ethlete/components`, which the CLI already accepts.
+- `et design inbox` lists a stale baseline as "needs rebase" also while the sketch is in progress,
+  so the agent adapts its variants before it sets `ready`.
+- Merge keeps its order: it writes the pick and the note (`sketch-decision`) first, then merges. A
+  refused merge keeps both, and a rebase keeps them, so after the rebase the user only clicks Merge
+  again.
+
 ### Product picker, as built (2026-10-27)
 
 - c1e8f5806: the sidebar always shows an `et-select` of the products, with "New product" as the last
