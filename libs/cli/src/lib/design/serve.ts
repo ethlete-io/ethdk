@@ -175,8 +175,11 @@ const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirna
 
 const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file);
 
-/** A server-sent event stream that tells Studio a comment file changed, so it reloads the comments and not the frames. */
-const createCommentEvents = () => {
+/**
+ * A server-sent event stream for Studio: `comments` when a comment file changed, `changes` when a file outside the
+ * design folder that a frame draws changed. Studio watches the design folder itself.
+ */
+const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
 
   return {
@@ -191,8 +194,8 @@ const createCommentEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: () => {
-      for (const response of listeners) response.write('event: comments\ndata: {}\n\n');
+    signal: (event: 'comments' | 'changes') => {
+      for (const response of listeners) response.write(`event: ${event}\ndata: {}\n\n`);
     },
     close: () => {
       for (const response of listeners) response.end();
@@ -265,7 +268,6 @@ const designExplore = ({
     const reload = (id: string) => {
       const module = vite.moduleGraph.getModuleById(`\0${id}`);
       if (module) vite.moduleGraph.invalidateModule(module);
-      vite.ws.send({ type: 'full-reload' });
     };
 
     const forgetCalls = (file: string) => {
@@ -298,11 +300,11 @@ const designExplore = ({
       reload(`${VIRTUAL}/system`);
     };
 
-    const commentEvents = createCommentEvents();
+    const events = createDesignEvents();
 
     const refresh = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
-      if (isCommentFile(file)) return commentEvents.signal();
+      if (isCommentFile(file)) return events.signal('comments');
 
       forgetCalls(file);
 
@@ -313,14 +315,18 @@ const designExplore = ({
       system.forget();
       shots.clear();
       reload(`${VIRTUAL}/system`);
+      if (!isInside(designRoot, file)) events.signal('changes');
     };
 
     const change = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
-      if (isCommentFile(file)) return commentEvents.signal();
+      if (isCommentFile(file)) return events.signal('comments');
 
       forgetCalls(file);
-      shots.forget(dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []));
+      const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
+
+      shots.forget(dependents);
+      if (dependents.length > 0 && !isInside(designRoot, file)) events.signal('changes');
     };
 
     const answer =
@@ -398,9 +404,9 @@ const designExplore = ({
     studio(COMMENTS_PATH, commentsAnswer);
     studio(COMMENT_PATH, commentAnswer);
     studio(COMMENT_DONE_PATH, commentDoneAnswer);
-    vite.middlewares.use(COMMENT_EVENTS_PATH, commentEvents.middleware);
+    vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
     vite.httpServer?.on('close', () => {
-      commentEvents.close();
+      events.close();
       void Promise.all([thumbs.close(), shots.close()]);
     });
     vite.watcher.add([designRoot, ...baseDirs]);
@@ -449,9 +455,11 @@ export const createDesignServer = async (options: { target: string; config: Desi
     plugins: [designExplore({ target, config, system })],
     ...(listen ? {} : { appType: 'custom' as const, logLevel: 'error' as const }),
     server: {
+      // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
+      hmr: false,
       ...(listen
         ? { port: portOf(config), strictPort: true }
-        : { middlewareMode: true, hmr: false, ws: false as const, watch: null }),
+        : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
       fs: { allow: [target, here, ...baseDirs] },

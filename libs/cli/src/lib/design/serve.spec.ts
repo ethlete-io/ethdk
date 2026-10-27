@@ -171,11 +171,12 @@ const serveAcme = async (target: string) => {
   const sent: unknown[] = [];
   const invalidated: string[] = [];
   const loaded: string[] = [];
+  const modulesByFile = new Map<string, { id: string; importers: Set<never> }[]>();
   const vite = {
     moduleGraph: {
       getModuleById: (id: string) => ({ id }),
       invalidateModule: (module: { id: string }) => invalidated.push(module.id),
-      getModulesByFile: () => undefined,
+      getModulesByFile: (file: string) => modulesByFile.get(file),
     },
     ws: { send: (message: unknown) => sent.push(message) },
     middlewares: { use: (path: string, handler: Handler) => handlers.set(path, handler) },
@@ -215,7 +216,7 @@ const serveAcme = async (target: string) => {
       handlers.get(path)?.(request as unknown as IncomingMessage, response as unknown as ServerResponse);
     });
 
-  return { plugin, ask, handlers, watchers, sent, invalidated, loaded };
+  return { plugin, ask, handlers, watchers, sent, invalidated, loaded, modulesByFile };
 };
 
 describe('the design server for a design system', () => {
@@ -286,18 +287,16 @@ describe('the design server for a design system', () => {
     );
   });
 
-  it('rebuilds the parts registry and reloads the frames when a part file comes or goes', async () => {
+  it('rebuilds the parts registry when a part file comes or goes, and leaves the frames to Studio', async () => {
     const target = acme();
     const { watchers, sent, invalidated } = await serveAcme(target);
 
     watchers.get('add')?.(join(target, '.ethlete/design/acme/components/badge/badge.ts'));
 
-    expect(invalidated).toEqual(['\0virtual:design-explore/system']);
-    expect(sent).toEqual([{ type: 'full-reload' }]);
-
     watchers.get('add')?.(join(target, 'elsewhere.ts'));
 
-    expect(sent).toHaveLength(1);
+    expect(invalidated).toEqual(['\0virtual:design-explore/system']);
+    expect(sent).toEqual([]);
   });
 
   it('serves a product added to config.json while it runs, and keeps the last good config when it breaks', async () => {
@@ -313,7 +312,7 @@ describe('the design server for a design system', () => {
     watchers.get('change')?.(configPath);
 
     expect((await ask('/__design/system', '?product=extra')).status).toBe(200);
-    expect(sent).toHaveLength(2);
+    expect(sent).toEqual([]);
 
     writeFileSync(configPath, '{ broken');
     watchers.get('change')?.(configPath);
@@ -359,6 +358,27 @@ describe('the design server for a design system', () => {
     watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
 
     expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n']);
+  });
+
+  it('signals a change to a drawn file outside the design folder, which Studio does not watch', async () => {
+    const target = acme();
+    const { handlers, watchers, modulesByFile } = await serveAcme(target);
+    const written: string[] = [];
+    const response = { writeHead: () => response, write: (chunk: string) => written.push(chunk) };
+    const drawn = join(target, 'src/styles.css');
+    const inside = join(target, DESIGN_DIR, 'acme/components/card/card.ts');
+
+    modulesByFile.set(drawn, [{ id: drawn, importers: new Set() }]);
+    modulesByFile.set(inside, [{ id: inside, importers: new Set() }]);
+    handlers.get('/__design/comment-events')?.(
+      { on: () => undefined } as unknown as IncomingMessage,
+      response as unknown as ServerResponse,
+    );
+    watchers.get('change')?.(join(target, 'src/unused.ts'));
+    watchers.get('change')?.(inside);
+    watchers.get('change')?.(drawn);
+
+    expect(written).toEqual([': open\n\n', 'event: changes\ndata: {}\n\n']);
   });
 });
 
