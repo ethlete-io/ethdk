@@ -63,7 +63,7 @@ export default definePart<Props>({
             { direction: 'row', plain: true, padding: 0, gap: 0, grow: true, stackBelow: 760 },
           ),
         ],
-        { plain: true, padding: 0, gap: 0 },
+        { plain: true, padding: 0, gap: 0, fill: true },
       )}${overlay ? `<div class="st-shell-overlay">${overlay}</div>` : ''}</div>`,
       styles,
     }),

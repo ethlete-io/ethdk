@@ -1,11 +1,6 @@
 .st-shell {
   position: relative;
-  min-height: 840px;
   font-family: sans-serif;
-}
-
-.st-shell > [data-wireframe='box'] {
-  min-height: inherit;
 }
 
 .st-shell-overlay {

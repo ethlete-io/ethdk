@@ -139,4 +139,12 @@ describe('wireframe kit', () => {
     expect(styleOf(render(dot()).firstElementChild)).toContain('background:#6b6b6b');
     expect(styleOf(render(dot({ hollow: true })).firstElementChild)).toContain('background:transparent');
   });
+
+  it('makes a `fill` box at least as tall as the frame', () => {
+    expect(styleOf(render(box([], { fill: true })).firstElementChild)).toContain('min-height:100vh');
+    expect(styleOf(render(box([], { direction: 'row', stackBelow: 400, fill: true })).firstElementChild)).toContain(
+      'min-height:100vh',
+    );
+    expect(box()).not.toContain('min-height');
+  });
 });

@@ -43,15 +43,18 @@ export type BoxOptions = {
   plain?: boolean;
   /** For a row: below this width in px the box stacks its children in a column. */
   stackBelow?: number;
+  /** Makes the box at least as tall as the frame, for the root box of a page or a shell. */
+  fill?: boolean;
 };
 
 /** A grey-bordered area that lays out `children` in a column, or in a row. */
 export const box = (children: string | string[] = [], options: BoxOptions = {}) => {
-  const { direction = 'column', gap = 12, padding = 16, width, height, grow, plain, stackBelow } = options;
+  const { direction = 'column', gap = 12, padding = 16, width, height, grow, plain, stackBelow, fill } = options;
   const stacks = direction === 'row' && stackBelow !== undefined;
   const frame = {
     width: width === undefined ? null : sizeOf(width),
     height: height === undefined ? null : sizeOf(height),
+    'min-height': fill ? '100vh' : null,
     flex: grow ? '1 1 0' : null,
     'min-width': '0',
     padding: sizeOf(padding),
