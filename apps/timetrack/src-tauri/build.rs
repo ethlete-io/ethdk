@@ -97,6 +97,12 @@ const COMMANDS: &[&str] = &[
 ];
 
 fn main() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux")
+        && std::env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu")
+    {
+        println!("cargo:rustc-link-arg-bin=timetrack=-Wl,--export-dynamic-symbol=mallinfo");
+    }
+
     println!("cargo:rerun-if-env-changed=TIMETRACK_GOOGLE_CLIENT_ID");
     println!("cargo:rerun-if-env-changed=TIMETRACK_GOOGLE_CLIENT_SECRET");
 
