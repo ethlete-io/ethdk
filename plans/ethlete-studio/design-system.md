@@ -1467,7 +1467,11 @@ write helpers and `CheckReceipt`, with their tests. `tools.rs` keeps MCP serving
 Correction: `design_status_watch` was wrongly on the list. It stays, because the sketch view needs
 it: `host/design.ts` `designStatusChanges$` arms it, and the system view reloads the sketches on each
 report change, as in 0f966f967. 02672803d removed it too, so live report lines and "drawing…" stopped
-reaching Studio; the builder restores it.
+reaching Studio. Restored in a442b6acf (`StatusWatch` and `watch_statuses` in a trimmed
+`call_status.rs`). The Studio spec "lists the sketches again when the host reports a changed status
+file" fails without it. Open: the Rust watch test has no fail-without proof yet, and one `cargo test`
+run failed `stop_reaches_the_whole_group` ("the design tool never answered"); flaky or real is not
+checked yet.
 
 ## Slices
 
