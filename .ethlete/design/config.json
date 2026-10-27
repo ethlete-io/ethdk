@@ -56,7 +56,13 @@
       }
     },
     "studio": {
-      "base": ".ethlete/design/sdk"
+      "base": ".ethlete/design/sdk",
+      "presets": {
+        "desktop": {
+          "width": 1440,
+          "height": 900
+        }
+      }
     }
   }
 }
