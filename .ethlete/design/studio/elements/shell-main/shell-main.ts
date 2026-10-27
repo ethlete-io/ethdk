@@ -1,5 +1,4 @@
-import { definePart, drawing } from '@design-system';
-import { box, heading, textLines } from '@design-system/kit';
+import { definePart, drawing, html } from '@design-system';
 import tokens from '@system/foundations/tokens.css?inline';
 import styles from './shell-main.css?inline';
 
@@ -8,43 +7,129 @@ type Section = 'System' | 'Sketches' | 'Flows' | 'Inbox';
 type Props = {
   section: Section;
   product: string;
-  content: string;
+  content?: string;
   side: string;
 };
 
 const SECTIONS: Section[] = ['System', 'Sketches', 'Flows', 'Inbox'];
 
-const PRODUCTS = ['studio', 'timetrack', 'docs'];
+const RECENT_PRODUCTS = ['studio', 'timetrack', 'docs'];
 
-const MARKS: Record<Section, string> = { System: 'Sy', Sketches: 'Sk', Flows: 'Fl', Inbox: 'In' };
+const ICONS: Record<Section, string> = {
+  System:
+    '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  Sketches: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>',
+  Flows: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H14a4 4 0 0 1 4 4v5.5"/>',
+  Inbox: '<path d="M4 13 6.5 6h11l2.5 7v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h4.5l1.5 2.5h4l1.5-2.5H20"/>',
+};
 
-const bubble = (mark: string, active = false) =>
-  `<div class="st-shell-slot"${active ? ' data-active' : ''}><div class="st-shell-bubble">${mark}</div></div>`;
+const icon = (paths: string, size = 20) =>
+  `<svg class="st-shell-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
-const logo = `<div class="st-shell-slot" data-logo><div class="st-shell-bubble">St</div></div>`;
+const ALL = '<circle cx="5.5" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="18.5" cy="12" r="1.25"/>';
+const UP_DOWN = '<path d="m8 9 4-4 4 4"/><path d="m8 15 4 4 4-4"/>';
+const PANEL = '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>';
+
+const mark = (size: number) =>
+  `<svg class="st-shell-mark" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio"><path d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>`;
+
+const slot = (inner: string, label: string, active: boolean, kind: string) =>
+  `<div class="st-shell-slot" data-kind="${kind}"${active ? ' data-active' : ''}><span class="st-shell-bubble" title="${label}">${inner}</span></div>`;
 
 const rail = (section: Section, product: string) =>
-  `<div class="st-shell-rail">${logo}<div class="st-shell-sep"></div>${SECTIONS.map((s) => bubble(MARKS[s], s === section)).join('')}<div class="st-shell-rail-gap"></div><div class="st-shell-sep"></div>${PRODUCTS.map((p) => bubble(p.charAt(0).toUpperCase(), p === product)).join('')}${bubble('+')}</div>`;
+  html`<nav class="st-shell-rail">
+    <div class="st-shell-slot" data-kind="logo"><span class="st-shell-logo">${mark(24)}</span></div>
+    <div class="st-shell-sep"></div>
+    ${SECTIONS.map((s) => slot(icon(ICONS[s]), s, s === section, 'section')).join('')}
+    <div class="st-shell-rail-gap"></div>
+    <div class="st-shell-sep"></div>
+    ${RECENT_PRODUCTS.map((p) => slot(p.charAt(0).toUpperCase(), p, p === product, 'product')).join('')}
+    ${slot(icon(ALL, 18), 'All products', false, 'all')}
+  </nav>`;
+
+type TreePart = { name: string; open?: boolean; warns?: boolean };
+type TreeLayer = { title: string; open: boolean; parts: TreePart[] };
+
+const TREE: TreeLayer[] = [
+  { title: 'Foundations', open: false, parts: [] },
+  { title: 'Elements', open: false, parts: [] },
+  {
+    title: 'Components',
+    open: true,
+    parts: [{ name: 'button', open: true }, { name: 'form-field' }, { name: 'select', warns: true }],
+  },
+  { title: 'Pages', open: false, parts: [] },
+];
+
+const STATES = [
+  { name: 'primary', inert: false },
+  { name: 'secondary', inert: false },
+  { name: 'disabled', inert: true },
+];
+
+const small = (paths: string, cls: string) =>
+  `<svg class="${cls}" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+
+const chevron = (open: boolean) =>
+  small(open ? '<path d="m4.5 6.5 3.5 3.5 3.5-3.5"/>' : '<path d="m6.5 4.5 3.5 3.5-3.5 3.5"/>', 'st-tree-chevron');
+
+const warning = small('<path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3"/><path d="M8 11.5v.01"/>', 'st-tree-warn');
+
+const row = (depth: number, lead: string, label: string, extra = '', selected = false) =>
+  `<div class="st-tree-row" data-depth="${depth}"${selected ? ' data-selected' : ''}><span class="st-tree-lead">${lead}</span><span class="st-tree-label">${label}</span>${extra}</div>`;
+
+const dot = (inert: boolean) => `<span class="st-tree-dot"${inert ? ' data-inert' : ''}></span>`;
+
+const partRows = (part: TreePart) => [
+  row(1, chevron(part.open === true), part.name, part.warns ? warning : ''),
+  ...(part.open ? STATES.map((state, index) => row(2, dot(state.inert), state.name, '', index === 0)) : []),
+];
+
+const layerRows = (layer: TreeLayer) => [row(0, chevron(layer.open), layer.title), ...layer.parts.flatMap(partRows)];
+
+const tree = `<div class="st-tree">${TREE.flatMap(layerRows).join('')}</div>`;
+
+const frame = (part: string, state: string, selected: boolean) =>
+  `<figure class="st-canvas-frame"${selected ? ' data-selected' : ''}><figcaption class="st-canvas-caption">${part} / ${state}</figcaption><div class="st-canvas-stage"></div></figure>`;
+
+const canvas = html`<div class="st-canvas">
+  <div class="st-canvas-frames">${STATES.map((state, index) => frame('button', state.name, index === 0)).join('')}</div>
+  <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">100%</span></div>
+</div>`;
+
+const projectSwitch = html`<button class="st-shell-project" type="button" aria-haspopup="listbox">
+  <span class="st-shell-project-badge">E</span>
+  <span class="st-shell-project-name">ethlete-sdk</span>
+  ${icon(UP_DOWN, 16)}
+</button>`;
 
 export default definePart<Props>({
-  note: 'f',
+  note: 'The canvas runs edge to edge behind a floating, rounded side panel that hides from its own header, while the dark rail stays put as the only fixed chrome.',
+  madeBy: ['claude-opus-5-5'],
   widths: [1440],
   states: {
     system: {
       section: 'System',
       product: 'studio',
-      content: textLines({ lines: 3, width: 320 }),
-      side: textLines({ lines: 6, width: 160 }),
+      side: tree,
     },
   },
-  render: ({ section, product, content, side }) =>
+  render: ({ product, section, content, side }) =>
     drawing({
-      body: box(
-        [
-          `<div class="st-shell">${rail(section, product)}<div class="st-shell-side"><div class="st-shell-side-head">${heading(product, { size: 16 })}</div><div class="st-shell-side-list">${side}</div><div class="st-shell-side-foot">${heading('ethlete-sdk · next', { size: 12 })}</div></div><div class="st-shell-content">${content}</div></div>`,
-        ],
-        { padding: 0, gap: 0, height: 900 },
-      ),
+      body: html`<div class="st-shell" data-floating>
+        ${rail(section, product)}
+        <div class="st-shell-stage">
+          <main class="st-shell-content">${content ?? canvas}</main>
+          <aside class="st-shell-side">
+            <header class="st-shell-side-head">
+              <span class="st-shell-side-title">${product}</span>
+              <button class="st-shell-collapse" type="button" title="Hide panel">${icon(PANEL, 18)}</button>
+            </header>
+            <div class="st-shell-side-list">${side}</div>
+            <footer class="st-shell-side-foot">${projectSwitch}</footer>
+          </aside>
+        </div>
+      </div>`,
       styles: tokens + styles,
     }),
 });
