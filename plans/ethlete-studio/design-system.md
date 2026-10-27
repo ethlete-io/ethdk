@@ -649,6 +649,26 @@ Open points, each with a recommendation:
 - The design-exploration skill has a section "Combine variants in a new round".
 - Next: the Studio round columns, after the author display.
 
+### Sketch rounds Studio, as built (2026-10-27)
+
+- 150568d89, d8e706294, 48d3c42bb, 95a6b82e7: round-grouped matrix columns.
+- One untitled round, or old data: the columns stay as before, without a round header (the
+  `studio-lab` card sketch).
+- Several rounds, or one titled round: the newest round is open, and its columns share a header
+  button, for example "r2 · Stars with a count". A click folds it. An older round folds into one
+  narrow column (half the cell width, at least 240 px) with the head button "r1 · a b" and its note
+  below; a click opens it. An open older round shows its note on one line next to its header, with
+  the full note in the tooltip.
+- Studio remembers open and folded per sketch. A new newest round opens by default. A jump to a
+  comment in a folded round opens that round.
+- The interaction switch and the rows come only from the part and the open rounds. Fixed on the
+  way: the interactions of a folded variant made empty rows, and Fit zoomed to 20 %.
+- Builder calls: no extra "running" label, since the newest open round is the running one. The
+  newest round can fold too. The pick buttons stay flat, one per variant.
+- Visible in `studio-lab`, Sketches, rating (`elements/rating`): round 1 with a and b and the note
+  "a and b showed bare stars or a bar; neither showed the score as a number at a glance"; round 2
+  "Stars with a count" with c (a plus a "3/5" count). The sketch is ready, so the user can pick c.
+
 ### Studio reload and sketch header, as built (2026-10-27)
 
 - 793d9381b: `studio-lab` rating sketch b declares `interactions: ['disabled']`.
