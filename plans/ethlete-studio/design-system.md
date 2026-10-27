@@ -745,6 +745,9 @@ step. Each finding names what happened and the fix it needs.
   no pick in Studio, so Studio was not tested at all. Fix: the agent asks Tom what the part needs
   in an open question; a design choice goes to Studio as a sketch with variants; a direct edit is
   only for a bug in a drawing Tom already accepted.
+- The agent then overcorrected and asked Tom what the shell should hold. Tom: the agent's job is
+  to deliver good variants, Tom picks the best. The process is: one sketch at a time, two to four
+  strong variants, one state each, the agent looks at each shot before it marks the sketch ready.
 
 Findings:
 
