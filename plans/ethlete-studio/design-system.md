@@ -595,7 +595,9 @@ fills the frame. Also fixes "login open" and "login error". Rendered check, all 
 the scrim fills the viewport at phone 390x844 and desktop 1440x900 for all three states, live and in
 `/__design/shot`; fitted frames stay at 512px over 4s at iframe heights 300 and 900, no loop.
 Finding, also on "three" and older than the fix: a fitted frame measures 512px live, but its fitted
-shot is 480px high.
+shot is 480px high. Decided (2026-10-27): the builder finds the cause (likely the 16px fit padding
+the shot lacks) and makes live frame and shot the same size, so a frame does not jump at the zoom 0.5
+swap.
 
 ### Comment follow-up decisions (2026-10-27)
 
