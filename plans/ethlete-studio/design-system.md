@@ -357,11 +357,9 @@ Open points, each with a recommendation:
 - Resolved: `frame.html` and the shot route draw a part through `overlaySketch` when the
   address names `sketch` and `variant`; the system registry lists each variant's parts as
   `sketchParts`.
-- A new part has no states in the listing, so its variants get one row without a state, and that
-  frame fails with no state "". Recommendation: list states per variant in `sketches` (needs the
-  Vite loader in the Studio answers and a `sketchFramesOf` change).
-- The preview draws no old and new frames of the affected parts. Recommendation: add it in Studio
-  now that a frame URL with `sketch` and `variant` draws the variant.
+- Resolved (186b3c80c, 0f966f967): states per variant come from `targets`; the sketch matrix
+  replaces `sketchFramesOf`.
+- Resolved (0f966f967): the merge preview draws the affected parts before and after the merge.
 
 ### Studio fixes, as built (2026-10-27)
 
@@ -437,8 +435,6 @@ Open points, each with a recommendation:
 
 ### Sketch matrix, as built (2026-10-27)
 
-Only the groundwork is built; the matrix itself is not.
-
 - 186b3c80c (core): `/__design/sketches` gives each sketch `targets` (per variant: `states`,
   `widths`, `error`, read through the Vite loader with the variant overlay) and `report`
   (`{ message, updatedAt, variant }` or `null`). `variant` is the name after `variant ` in the report
@@ -452,27 +448,39 @@ Only the groundwork is built; the matrix itself is not.
 - Verified headlessly (stubbed host, scratch design server on `DE_PORT`): button tiles fit their
   content, card rows per width, page presets, row names visible.
 
-Remaining steps, in order:
-
-1. `system-tree.ts`: replace `sketchFramesOf` with a matrix builder. Columns `current` (when the part
-   exists) and each variant; rows are the states of the current part, then any state only a variant
-   has (`targets`). Cell size: page presets, else the union of `widths`, else fitted; one picked
-   preset or width for all cells. A column whose variant is `report.variant` while the sketch is in
-   progress gets no frames. `PartAddress` takes `sketch` and `variant` so `partShotUrl` gives variant
-   frames a screenshot too.
-2. Canvas: `CanvasFrame.column`, a `matrix` arrangement with a `columns` input and column heads, and
-   a `layoutMatrix` in `canvas-math.ts` (column x from the widest cell, an empty column 320 px).
-3. Sketch view: the preset/width switch above the canvas (et-buttons), calling `fitAll()` on a switch.
-4. Merge preview: old and new frames of `preview.affected`, the new ones through `sketch` and
-   `variant` on the frame URL.
-5. `studio-lab`: a ready sketch for a new part with different states per variant, for the test bed.
+- 0f966f967 (Studio): `sketchMatrixOf` in `system-tree.ts` gives columns `current` (when the part
+  exists) and each variant, one row per state (current states first, then states only a variant
+  has), and every cell at one size: a page preset, a width from the part or any variant, or fitted.
+  A variant named by `report.variant` while the sketch is in progress gets only its head
+  ("b · drawing …"). `PartAddress` takes `sketch` and `variant`, so variant cells have screenshots.
+  The canvas has a `matrix` arrangement (`layoutMatrix`, column heads, an empty column 320 px wide);
+  the fit leaves room for the heads. A size switch (et-buttons) sits above the canvas and refits.
+  The agent's report line shows there while the sketch is in progress.
+- 0f966f967: "Show merge preview" (after a pick, when parts are affected) swaps the canvas to
+  `mergePreviewOf`: every state of each affected part, column `now` and `after merging <variant>`.
+- 0f966f967: Studio arms `design_status_watch` and reloads the sketches on its signal, so a new
+  report shows without a reload.
+- fb8c7a0a5 (`studio-lab`): `elements/rating`, a ready sketch of a new part (a: stars, 3 states;
+  b: bar, 4 states). `components/card`, a ready sketch with b picked (more padding), and
+  `pages/library` now draws the card in its empty state, so the card sketch has a merge preview.
+- Verified: unit specs (`sketchMatrixOf`, `mergePreviewOf`, `layoutMatrix`), and headlessly against
+  `:4221` with a stubbed host and a scratch design server on 4492: the rating matrix in progress
+  with "b · drawing …", the reload when the stubbed status channel fires after a new report (the
+  drawing column moved to a), the ready matrix with the state only b has, the card width switch
+  (240 → 520 px), and the merge preview of `pages/library`.
 
 Open points, each with a recommendation:
 
 - The report names its variant only by the words `variant <name>`. Recommendation: say so in the
   design-exploration skill next to `sketch report`.
-- The sketch list re-reads on a checkout change only, and the report lives in the temp folder.
-  Recommendation: arm `design_status_watch` in Studio and reload the sketches on its signal.
+- The status watch reload was only seen through a stubbed channel. Recommendation: check it once
+  in the real app with `et design sketch report` on `studio-lab`.
+- The merge preview draws every state of every affected part, which can be many pages.
+  Recommendation: keep it until a product shows it is too slow, then add a state filter.
+- `studio-lab` parts read `--lab-*` tokens that no frame loads, so they draw in the fallback
+  colours. Recommendation: list the tokens file in the product's styles.
+- Column heads shrink to the column width with an ellipsis at low zoom (the full name is the
+  title). Recommendation: leave it; the matrix is read near 100 %.
 - The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
   check whether the frame page reports a height after its web fonts load.
 
@@ -717,11 +725,8 @@ the old Calls UI is removed (4b2383ae2). Open: a Rust slice removes the commands
 used (see "Legacy calls"). Open: the pickers and "New product" as in "Picker decisions", first the
 two `et-select`s and the empty-state screen, then the create form and its endpoint.
 
-Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
-in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
-three sketch open points in "Studio sketch view, as built".
-In progress since 2026-10-27: the sketch view matrix and the sketch open points (the 400 px gap is
-fixed; see "Sketch matrix, as built" for the remaining steps).
+Slice 4: done on 2026-10-27, with the frame sizes and the sketch matrix (see "Sketch matrix, as
+built" for its open points).
 
 Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
 started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
