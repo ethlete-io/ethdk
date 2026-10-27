@@ -408,7 +408,7 @@ const sketchUrl = ({ path, port, product, sketch, extra = '' }: SketchAddress & 
   `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(sketch)}${extra}`;
 
 /** Reads a design server answer, and fails with the server's own `error` message when it refuses. */
-const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
+export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
   fromFetch(url, init).pipe(
     switchMap((response) =>
       from(response.json().catch(() => null) as Promise<unknown>).pipe(

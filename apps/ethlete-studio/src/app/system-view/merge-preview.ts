@@ -1,6 +1,5 @@
-import { fromFetch } from 'rxjs/fetch';
-import { Observable, from, map, switchMap } from 'rxjs';
-import { SketchAddress, designReadError } from '../../host/design';
+import { Observable } from 'rxjs';
+import { SketchAddress, designAnswer$ } from '../../host/design';
 import { FrameOutline } from '../components/design-canvas/canvas-pin';
 
 export type CompareRect = { x: number; y: number; width: number; height: number };
@@ -45,22 +44,7 @@ const sketchCompareUrl = ({ port, product, sketch, variant, size, surface, color
 
 /** Compares every state that shows the sketch target before and after merging `variant`; one answer once all are drawn. */
 export const sketchCompare$ = (address: SketchCompareAddress): Observable<SketchCompare> =>
-  fromFetch(sketchCompareUrl(address)).pipe(
-    switchMap((response) =>
-      from(response.json().catch(() => null) as Promise<unknown>).pipe(
-        map((body) => {
-          if (response.ok) return body as SketchCompare;
-
-          const error =
-            body !== null && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
-              ? body.error
-              : null;
-
-          throw new Error(error ?? designReadError(response.status));
-        }),
-      ),
-    ),
-  );
+  designAnswer$<SketchCompare>(sketchCompareUrl(address));
 
 /** One line per part, for example "2 states of pages/library without visible change". */
 export const unchangedLinesOf = (rows: CompareRow[]): UnchangedLine[] => {
