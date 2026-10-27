@@ -257,7 +257,7 @@ const merged = (context: Context) =>
 
     const result = mergeSketch({ target: context.target, config: context.config, product, sketch, note });
 
-    if (typeof result === 'string') return fail(result);
+    if (!Array.isArray(result)) return fail(result.reason);
 
     const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
 

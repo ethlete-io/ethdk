@@ -1,6 +1,8 @@
 import { relative } from 'path';
 import { DesignConfig } from '../../paths';
 import { productDirOf } from '../product';
+import { staleBaselineOf } from '../sketch/baseline';
+import { oneProductOf } from '../sketch/cli-args';
 import { listSketches } from '../sketch/sketch';
 import { DesignComment, lastWordOf, listComments, REST, ThreadState, threadStateOf } from './comment';
 
@@ -15,11 +17,14 @@ type DecisionOn = { product: string; target: string; comment?: string; at: strin
 
 export type InboxDecision = (DecisionOn & { kind: 'pick'; variant: string }) | (DecisionOn & { kind: 'discard' });
 
-export type InboxItem = InboxComment | InboxDecision;
+/** A sketch whose baseline is stale: `changed` names the parts that changed in the product, `[]` when it records no baseline. */
+export type InboxRebase = { kind: 'rebase'; product: string; target: string; changed: string[]; at: string };
+
+export type InboxItem = InboxComment | InboxDecision | InboxRebase;
 
 /**
  * Everything that waits for the agent, across the named products, oldest first: each comment thread whose
- * last word is the user's and each pick or discard the user decided on a sketch. `waiting` holds the threads
+ * last word is the user's, each pick or discard the user decided on a sketch, and each sketch that needs a rebase. `waiting` holds the threads
  * whose last word is the agent's. `unreadable` names the files that could not be read.
  */
 export const inboxOf = (options: { target: string; config: DesignConfig; products?: string[] }) => {
@@ -46,12 +51,20 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
       (lastWordOf(comment) === 'user' ? items : waiting).push(item);
     }
 
-    for (const sketch of listSketches({ productDir, product })) {
+    const sketches = listSketches({ productDir, product });
+    const resolved = sketches.length > 0 ? oneProductOf({ target, config, asked: product }) : null;
+
+    if (typeof resolved === 'string') unreadable.push(resolved);
+
+    for (const sketch of sketches) {
       if (typeof sketch === 'string') {
         unreadable.push(sketch);
         continue;
       }
 
+      const changed = resolved && typeof resolved !== 'string' ? staleBaselineOf({ product: resolved, sketch }) : null;
+
+      if (changed) items.push({ kind: 'rebase', product, target: sketch.target, changed, at: sketch.createdAt });
       if (!sketch.decision) continue;
 
       const { decision } = sketch;
@@ -101,6 +114,12 @@ const lineOf = (item: InboxItem, invocation: string) => {
       `    done: ${invocation} inbox done ${item.id} --note "…" --by <model id>`,
     ];
   }
+
+  if (item.kind === 'rebase')
+    return [
+      `${when}  ${item.product}  needs rebase ${item.target}: ${item.changed.length > 0 ? `${item.changed.join(', ')} changed in the product` : 'it records no baseline'}`,
+      `    bring each variant up to date, then run: ${invocation} sketch rebase ${item.target} --product ${item.product} --by <model id>`,
+    ];
 
   const said = item.comment ? [`    ${item.comment}`] : [];
 

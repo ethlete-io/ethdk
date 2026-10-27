@@ -63,21 +63,16 @@ const pickOf = (sketch: Sketch) => {
   return { variant: decision.variant };
 };
 
-/**
- * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
- * over the product's, sets `note` and `madeBy` (the variant's authors) on the target, runs the check
- * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
- * product's old files come back and the sketch stays. Refuses without a pick, while the sketch has
- * open comments, and when a part the variant replaces changed in the product since the sketch's
- * baseline. Answers with the merged part keys, or with why nothing was merged.
- */
-export const mergeSketch = (options: {
+/** Why a merge did nothing; `changed` names the parts a rebase must take in, `[]` when the sketch records no baseline. */
+export type MergeRefusal = { reason: string; changed?: string[] };
+
+const mergeOrReason = (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
   note: string;
-}): string[] | string => {
+}): string[] | string | MergeRefusal => {
   const { target, config, product, sketch, note } = options;
 
   if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - mark it ready before a merge`;
@@ -100,12 +95,18 @@ export const mergeSketch = (options: {
   const fixtures = fixturesOf(dir);
 
   if (!sketch.baseline)
-    return `${sketch.target} records no baseline of the product - compare each variant with the product, then run sketch rebase ${sketch.target}`;
+    return {
+      reason: `${sketch.target} records no baseline of the product - compare each variant with the product, then run sketch rebase ${sketch.target}`,
+      changed: [],
+    };
 
   const conflicts = conflictsOf({ product, baseline: sketch.baseline, parts, fixtures: fixtures !== null });
 
   if (conflicts.length > 0)
-    return `${conflicts.join(', ')} changed in the product since the sketch on ${sketch.target} was created - bring variant "${variant}" up to date, then run sketch rebase ${sketch.target}`;
+    return {
+      reason: `${conflicts.join(', ')} changed in the product since the sketch on ${sketch.target} was created - bring variant "${variant}" up to date, then run sketch rebase ${sketch.target}`,
+      changed: conflicts,
+    };
 
   const targetDir = resolve(product.dir, sketch.layer, sketch.name);
   const noteFile = resolve(targetDir, `${sketch.name}.ts`);
@@ -141,6 +142,27 @@ export const mergeSketch = (options: {
   clearSketchReport({ checkout: target, sketch });
 
   return [...(inherited ? [sketch.target] : []), ...parts.map(partKeyOf)];
+};
+
+/**
+ * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
+ * over the product's, sets `note` and `madeBy` (the variant's authors) on the target, runs the check
+ * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
+ * product's old files come back and the sketch stays. Refuses without a pick, while the sketch has
+ * open comments, and when a part the variant replaces changed in the product since the sketch's
+ * baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase
+ * would let it, the parts that changed (`[]` without a baseline).
+ */
+export const mergeSketch = (options: {
+  target: string;
+  config: DesignConfig;
+  product: ResolvedProduct;
+  sketch: Sketch;
+  note: string;
+}): string[] | MergeRefusal => {
+  const merged = mergeOrReason(options);
+
+  return typeof merged === 'string' ? { reason: merged } : merged;
 };
 
 /** Deletes a sketch with all its variants. Refuses while it has open comments. */

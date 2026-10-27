@@ -1,5 +1,6 @@
 import { IncomingMessage } from 'http';
 import { relative } from 'path';
+import { repoInvocation } from '../invocation';
 import { DesignConfig, readConfig } from './paths';
 import {
   CommentSize,
@@ -266,7 +267,10 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
     : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
 });
 
-/** POST `?product=&sketch=`, body `{ note }`: merges the picked variant into the product, as `et design sketch merge` does. */
+/**
+ * POST `?product=&sketch=`, body `{ note }`: merges the picked variant into the product, as `et design sketch merge` does.
+ * A merge refused for a stale baseline answers 422 with `changed` (the parts, `[]` without a baseline) and the `rebase` command.
+ */
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
   const body = await bodyOf(asked.request);
   const note = textOf(body?.['note']);
@@ -275,7 +279,17 @@ export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, prod
 
   const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
 
-  return typeof merged === 'string' ? failure(422, merged) : { status: 200, body: { merged } };
+  if (Array.isArray(merged)) return { status: 200, body: { merged } };
+  if (!merged.changed) return failure(422, merged.reason);
+
+  return {
+    status: 422,
+    body: {
+      error: merged.reason,
+      changed: merged.changed,
+      rebase: `${repoInvocation({ root: asked.target, subcommand: 'design' })} sketch rebase ${sketch.target} --product ${product.name} --by <model id>`,
+    },
+  };
 });
 
 /** POST `?product=&sketch=`: deletes the sketch with all its variants, as `et design sketch discard` does. */

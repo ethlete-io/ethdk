@@ -526,6 +526,18 @@ describe('the design server for sketches and comments', () => {
       status: 422,
       body: { error: expect.stringContaining('has no pick') },
     });
+    expect((await ask('/__design/sketch-decision', sketchQuery, 'POST', { kind: 'pick', variant: 'b' })).status).toBe(
+      200,
+    );
+    writeFileSync(join(target, DESIGN_DIR, 'acme-base/components/card/card.css'), '.acme-card { padding: 0; }');
+    expect(await ask('/__design/sketch-merge', sketchQuery, 'POST', { note: 'x' })).toMatchObject({
+      status: 422,
+      body: {
+        error: expect.stringContaining('changed in the product'),
+        changed: ['components/card'],
+        rebase: expect.stringMatching(/ sketch rebase components\/card --product acme --by <model id>$/u),
+      },
+    });
     expect(await ask('/__design/sketch-discard', sketchQuery, 'POST')).toMatchObject({
       status: 200,
       body: { discarded: 'components/card' },

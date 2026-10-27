@@ -32,7 +32,7 @@ const unauthored = (options: { invocation: string; command: string; lines: strin
 
 /**
  * `et design inbox` lists what waits for the agent - comment threads whose last word is the user's and the
- * user's pick and discard decisions, oldest first - then the threads waiting for the user.
+ * user's pick and discard decisions and the sketches that need a rebase, oldest first - then the threads waiting for the user.
  * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about and deletes the thread.
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {

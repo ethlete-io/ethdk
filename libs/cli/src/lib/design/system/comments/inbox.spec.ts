@@ -100,6 +100,35 @@ describe('inboxOf', () => {
     expect(inboxText({ items: [], waiting: [] }, 'et design')).toBe('inbox empty');
   });
 
+  it('lists a sketch whose baseline is stale as needing a rebase, with the changed parts', () => {
+    const { target } = setup();
+    const productDir = join(target, '.ethlete/design/acme');
+    const home = join(productDir, 'sketches/pages-home/sketch.json');
+    const unbased = JSON.parse(readFileSync(home, 'utf8')) as Record<string, unknown>;
+
+    delete unbased['baseline'];
+
+    writeFileSync(join(productDir, 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+    writeFileSync(home, JSON.stringify({ ...unbased, createdAt: '2026-10-27T12:00:00.000Z' }));
+
+    const inbox = inboxOf({ target, config: readConfig(target) ?? {} });
+
+    expect(inbox.items.filter((item) => item.kind === 'rebase')).toEqual([
+      { kind: 'rebase', product: 'acme', target: 'pages/home', changed: [], at: '2026-10-27T12:00:00.000Z' },
+      expect.objectContaining({ product: 'acme', target: 'elements/hero', changed: ['elements/hero'] }),
+    ]);
+
+    const text = inboxText(inbox, 'et design');
+
+    expect(text).toContain(
+      [
+        '2026-10-27 12:00  acme  needs rebase pages/home: it records no baseline',
+        '    bring each variant up to date, then run: et design sketch rebase pages/home --product acme --by <model id>',
+      ].join('\n'),
+    );
+    expect(text).toContain('  acme  needs rebase elements/hero: elements/hero changed in the product');
+  });
+
   it("moves a thread whose last word is the agent's to waiting, and back once the user replies", () => {
     const { target, comment } = setup();
     const products = [{ name: 'acme', dir: join(target, '.ethlete/design/acme') }];

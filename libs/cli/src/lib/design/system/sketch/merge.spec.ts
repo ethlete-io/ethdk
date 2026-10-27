@@ -38,7 +38,9 @@ const readySketch = (target: string, sketch: SketchTarget = { layer: 'elements',
 const picked = (sketch: Sketch, variant = 'b') =>
   decideSketch({ sketch, decision: { kind: 'pick', variant } }) as Sketch;
 
-const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
+const reasonOf = (result: ReturnType<typeof mergeSketch>) => (Array.isArray(result) ? result : result.reason);
+
+const mergeResult = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
   mergeSketch({
     target,
     config: readConfig(target) ?? {},
@@ -46,6 +48,9 @@ const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>;
     sketch: found.sketch,
     note: 'Variant b, because it is calmer.',
   });
+
+const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
+  reasonOf(mergeResult(target, found));
 
 const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero');
 
@@ -117,31 +122,35 @@ describe('mergeSketch', () => {
     const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] }) as Sketch;
     const config = readConfig(target) ?? {};
 
-    expect(mergeSketch({ target, config, product, sketch, note: 'x' })).toBe(
+    expect(reasonOf(mergeSketch({ target, config, product, sketch, note: 'x' }))).toBe(
       'elements/hero is in progress - mark it ready before a merge',
     );
 
     const ready = markSketchReady({ checkout: target, sketch }) as Sketch;
 
-    expect(mergeSketch({ target, config, product, sketch: ready, note: 'x' })).toBe(
+    expect(reasonOf(mergeSketch({ target, config, product, sketch: ready, note: 'x' }))).toBe(
       'elements/hero has no pick - the user picks a variant in Studio before a merge',
     );
-    expect(mergeSketch({ target, config, product, sketch: picked(ready, 'a'), note: ' ' })).toContain('needs --note');
+    expect(reasonOf(mergeSketch({ target, config, product, sketch: picked(ready, 'a'), note: ' ' }))).toContain(
+      'needs --note',
+    );
     expect(
-      mergeSketch({ target, config, product, sketch: { ...picked(ready, 'a'), variants: [] }, note: 'x' }),
+      reasonOf(mergeSketch({ target, config, product, sketch: { ...picked(ready, 'a'), variants: [] }, note: 'x' })),
     ).toContain('no variant "a", the one picked');
 
     const card = createSketch({ product, sketch: { layer: 'components', name: 'card' }, variants: ['a'] }) as Sketch;
 
     writeFileSync(join(card.dir, 'a/components/card/card.ts'), 'export default 1;');
     expect(
-      mergeSketch({
-        target,
-        config,
-        product,
-        sketch: picked(markSketchReady({ checkout: target, sketch: card }) as Sketch, 'a'),
-        note: 'x',
-      }),
+      reasonOf(
+        mergeSketch({
+          target,
+          config,
+          product,
+          sketch: picked(markSketchReady({ checkout: target, sketch: card }) as Sketch, 'a'),
+          note: 'x',
+        }),
+      ),
     ).toContain("holds no definePart({ note: '…' })");
   });
 
@@ -154,9 +163,11 @@ describe('mergeSketch', () => {
 
     writeFileSync(join(heroOf(target), 'hero.css'), '.acme-hero { padding: 0; }');
 
-    expect(merge(target, found)).toBe(
-      'elements/hero changed in the product since the sketch on elements/hero was created - bring variant "b" up to date, then run sketch rebase elements/hero',
-    );
+    expect(mergeResult(target, found)).toEqual({
+      reason:
+        'elements/hero changed in the product since the sketch on elements/hero was created - bring variant "b" up to date, then run sketch rebase elements/hero',
+      changed: ['elements/hero'],
+    });
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toBe('.acme-hero { padding: 0; }');
 
     const rebased = rebaseSketch({ product: resolveAcme(target), sketch: found.sketch });
@@ -167,9 +178,10 @@ describe('mergeSketch', () => {
   it('refuses a sketch that records no baseline', () => {
     const target = acme();
     const ready = readySketch(target);
-    expect(merge(target, { ...ready, sketch: { ...picked(ready.sketch), baseline: undefined } })).toContain(
-      'records no baseline of the product',
-    );
+    const refused = mergeResult(target, { ...ready, sketch: { ...picked(ready.sketch), baseline: undefined } });
+
+    expect(refused).toMatchObject({ changed: [] });
+    expect(reasonOf(refused)).toContain('records no baseline of the product');
   });
 
   it('copies a target the product takes from its base into the product to carry the note', () => {

@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
-import { PartFile } from '../product';
+import { fixturesOf, PartFile, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 
 export const FIXTURES_KEY = 'fixtures.ts';
@@ -50,4 +50,28 @@ export const conflictsOf = (options: {
   const now = baselineOf(product);
 
   return [...parts.map(partKeyOf), ...(fixtures ? [FIXTURES_KEY] : [])].filter((key) => now[key] !== baseline[key]);
+};
+
+/**
+ * The parts, and `fixtures.ts`, any variant of the sketch replaces that changed in the product since its
+ * baseline, or `[]` when it records none. `null` while the baseline is current and a merge needs no rebase.
+ */
+export const staleBaselineOf = (options: {
+  product: ResolvedProduct;
+  sketch: { dir: string; variants: string[]; baseline?: Record<string, string> };
+}): string[] | null => {
+  const { product, sketch } = options;
+
+  if (!sketch.baseline) return [];
+
+  const dirs = sketch.variants.map((variant) => resolve(sketch.dir, variant));
+  const changed = conflictsOf({
+    product,
+    baseline: sketch.baseline,
+    parts: dirs.flatMap((dir) => partFilesOf(dir).parts),
+    fixtures: dirs.some((dir) => fixturesOf(dir) !== null),
+  });
+  const unique = [...new Set(changed)];
+
+  return unique.length > 0 ? unique : null;
 };
