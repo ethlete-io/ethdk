@@ -487,11 +487,17 @@ State:
 The old calls stay in a read-only Legacy tab, as reference for the transfer into the new system.
 No new calls, no picks. The user can mark a call "transferred". The tab disappears when `calls/` is empty or missing.
 
+Decided 2026-10-27: the old call UI stays for now, next to the system view. A switch in the
+status bar chooses "Calls" or "System", and Studio remembers the choice. The user still works
+with verdicts and the prompt composer there. The removal of the old UI is postponed, not
+dropped. The user decides when it goes.
+
 ## Slices
 
 1. **Core and data model**: workspace, product, base, layers, fixtures, states, presets, and
    `et design check` with all rules above.
-2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI leaves.
+2. **Canvas and navigation**: as above, plus the Legacy tab. The old UI leaves when the user
+   says so (see "Legacy calls").
 3. **First real test**: rebuild the tomflix system with the new workflow, from its old calls in
    Legacy - foundations, components and elements only. It runs after slices 4 and 5, as the
    battle test of the workflow.
