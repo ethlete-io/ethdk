@@ -1,4 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
+import tokens from './tokens.css?inline';
 
 type Props = { surface: 'light' | 'dark' };
 
@@ -25,7 +26,7 @@ export default definePart<Props>({
         <div class="sdk-token"><span class="sdk-token-chip et-color--accent"></span>accent</div>
         <div class="sdk-token"><span class="sdk-token-chip et-color--danger"></span>danger</div>
       </div>`,
-      styles: `
+      styles: `${tokens}
         .sdk-tokens { display: flex; gap: 1.6rem; padding: 1.6rem; background: var(--et-surface-background-solid); color: var(--et-surface-color-solid); }
         .sdk-token { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; font-size: 1.2rem; }
         .sdk-token-chip { width: 4.8rem; height: 4.8rem; border-radius: 0.8rem; border: 0.1rem solid var(--et-surface-border-solid); }
