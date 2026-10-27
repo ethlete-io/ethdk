@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 6: pages, wireframe kit and flows done; open only slice C (numbered note markers, hover line, note size), in progress. Slice 10: step 1 (sdk base, studio product, tokens import) done; next the redesign layer by layer, starting with a foundations/tokens sketch. Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
