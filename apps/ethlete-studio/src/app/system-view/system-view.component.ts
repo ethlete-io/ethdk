@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
+import { BUTTON_IMPORTS, SELECT_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
@@ -67,16 +67,17 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       etProvideSurface="dark-elevated"
     >
       @if (products().length > 1) {
-        <select
+        <et-select
           [value]="product()?.name ?? ''"
-          (change)="pickProduct($event)"
-          class="mx-4 mt-4 mb-1 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1.5 text-small text-[var(--et-surface-color-solid)]"
+          (valueChange)="pickProduct($event)"
+          class="mx-4 mt-4 mb-1"
           title="The product the system shows"
+          aria-label="Product"
         >
           @for (listed of products(); track listed.name) {
-            <option [value]="listed.name">{{ listed.name }}</option>
+            <et-select-option [value]="listed.name">{{ listed.name }}</et-select-option>
           }
-        </select>
+        </et-select>
       } @else if (product(); as only) {
         <h1 class="m-0 px-4 pt-4 pb-1 text-[1.5rem] font-semibold">{{ only.name }}</h1>
       }
@@ -271,6 +272,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
+    SELECT_IMPORTS,
     NgTemplateOutlet,
     TREE_IMPORTS,
     DesignCanvasComponent,
@@ -639,9 +641,7 @@ export class SystemViewComponent {
     rememberView({ systemEntry: key });
   }
 
-  protected pickProduct(event: Event) {
-    const systemProduct = (event.target as HTMLSelectElement).value;
-
+  protected pickProduct(systemProduct: string) {
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
   }

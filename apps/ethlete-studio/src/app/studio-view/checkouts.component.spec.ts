@@ -1,5 +1,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { SelectDirective } from '@ethlete/components';
 import { CheckoutsComponent } from './checkouts.component';
 
 const stubHost = (roots: string[]) => {
@@ -36,7 +38,7 @@ const mount = async (roots: string[], remembered: string) => {
 };
 
 const picker = (fixture: ComponentFixture<CheckoutsComponent>) =>
-  (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('select');
+  fixture.debugElement.query(By.directive(SelectDirective))?.injector.get(SelectDirective<string>);
 
 describe('CheckoutsComponent', () => {
   beforeEach(() => {
@@ -50,12 +52,12 @@ describe('CheckoutsComponent', () => {
   it('shows the remembered checkout in the picker, not the first kept one', async () => {
     const fixture = await mount(['/dev/alpha', '/dev/beta'], '/dev/beta');
 
-    expect(picker(fixture)?.value).toBe('/dev/beta');
+    expect(picker(fixture)?.value()).toBe('/dev/beta');
   });
 
   it('names a Windows checkout by its folder', async () => {
     const fixture = await mount(['C:\\Users\\tom\\dev\\alpha'], '');
 
-    expect(picker(fixture)?.selectedOptions[0]?.textContent?.trim()).toBe('alpha');
+    expect((fixture.nativeElement as HTMLElement).querySelector('et-select')?.textContent).toContain('alpha');
   });
 });

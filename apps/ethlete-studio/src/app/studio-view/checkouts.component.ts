@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, of, switchMap, tap } from 'rxjs';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
 import {
   DesignRoots,
@@ -17,9 +17,6 @@ const NONE: DesignRoots = { search: '', roots: [] };
 
 const LABEL = 'w-22.5 shrink-0 text-[1.1rem] text-[var(--et-surface-color-muted-solid)]';
 
-const FIELD =
-  'min-w-0 flex-1 rounded-sm border border-[var(--et-surface-border-solid)] bg-[color-mix(in_srgb,var(--et-surface-interaction-solid)_5%,transparent)] px-1.5 py-1 font-mono text-[1.1rem] text-[var(--et-surface-color-solid)] outline-none focus:border-[var(--et-theme-color-primary-solid)]';
-
 /** One checkout the panel lists, and whether Studio already keeps it. */
 type Row = {
   path: string;
@@ -30,18 +27,19 @@ type Row = {
   selector: 'ethlete-checkouts',
   template: `
     <span class="relative flex min-w-0 flex-[0_1_44rem] items-center gap-1.5">
-      <select
+      <et-select
         [disabled]="!held().roots.length"
+        [value]="current()"
         [title]="current() || 'The checkout the design work lives in'"
-        (change)="choose(typed($event))"
-        class="min-w-30 flex-[0_1_44rem] border-0 bg-transparent py-0.5 font-mono text-[1.1rem] tracking-[0.02em] text-ellipsis text-[var(--et-surface-color-subtle-solid)] outline-none focus:text-[var(--et-surface-color-solid)]"
+        (valueChange)="choose($event)"
+        class="min-w-30 flex-[0_1_44rem] font-mono text-[1.1rem]"
+        aria-label="Checkout"
+        placeholder="No checkout"
       >
         @for (root of held().roots; track root) {
-          <option [value]="root" [selected]="root === current()">{{ folderName(root) }}</option>
-        } @empty {
-          <option value="">No checkout</option>
+          <et-select-option [value]="root">{{ folderName(root) }}</et-select-option>
         }
-      </select>
+      </et-select>
 
       <button
         (click)="toggle()"
@@ -68,7 +66,12 @@ type Row = {
         >
           <div class="flex items-center gap-2">
             <span [class]="LABEL">Search folder</span>
-            <input [value]="search()" [class]="FIELD" (input)="search.set(typed($event))" placeholder="/home/tom/dev" />
+            <et-input
+              [(value)]="search"
+              class="min-w-0 flex-1 font-mono text-[1.1rem]"
+              placeholder="/home/tom/dev"
+              aria-label="Search folder"
+            />
             <button
               [disabled]="busy() || !search().trim()"
               (click)="scan()"
@@ -135,7 +138,12 @@ type Row = {
 
           <div class="flex items-center gap-2">
             <span [class]="LABEL">Add by hand</span>
-            <input [value]="hand()" [class]="FIELD" (input)="hand.set(typed($event))" placeholder="/path/to/checkout" />
+            <et-input
+              [(value)]="hand"
+              class="min-w-0 flex-1 font-mono text-[1.1rem]"
+              placeholder="/path/to/checkout"
+              aria-label="Checkout path"
+            />
             <button
               [disabled]="busy() || !hand().trim()"
               (click)="add(hand())"
@@ -159,7 +167,7 @@ type Row = {
     </span>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, ProvideColorDirective, ProvideSurfaceDirective],
 })
 export class CheckoutsComponent {
   private destroyRef = inject(DestroyRef);
@@ -170,7 +178,6 @@ export class CheckoutsComponent {
   public pick = output<string>();
 
   protected readonly LABEL = LABEL;
-  protected readonly FIELD = FIELD;
 
   protected held = signal<DesignRoots>(NONE);
   protected current = signal('');
@@ -205,10 +212,6 @@ export class CheckoutsComponent {
 
   protected folderName(path: string) {
     return path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-  }
-
-  protected typed(event: Event) {
-    return (event.target as HTMLInputElement | HTMLSelectElement).value;
   }
 
   protected toggle() {

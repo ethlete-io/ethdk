@@ -1,6 +1,7 @@
 import { Component, input, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { SelectDirective } from '@ethlete/components';
 import { Project, Themes } from '../../host/design';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { StudioViewComponent } from './studio-view.component';
@@ -116,15 +117,14 @@ describe('StudioViewComponent', () => {
     stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }) });
 
     const fixture = await mount();
-    const picker = element(fixture).querySelector<HTMLSelectElement>('ethlete-checkouts select');
+    const picker = fixture.debugElement.query(By.directive(SelectDirective))?.injector.get(SelectDirective<string>);
 
     stubHost({
       design_roots: () => ({ search: '', roots: [CHECKOUT, '/broken'] }),
       design_project: () => Promise.reject('No design config in /broken.'),
     });
 
-    if (picker) picker.value = '/broken';
-    picker?.dispatchEvent(new Event('change'));
+    picker?.value.set('/broken');
     await settle(fixture);
 
     expect(system(fixture)?.port()).toBeNull();
@@ -135,10 +135,9 @@ describe('StudioViewComponent', () => {
     stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }) });
 
     const first = await mount();
-    const picker = element(first).querySelector<HTMLSelectElement>('ethlete-checkouts select');
+    const picker = first.debugElement.query(By.directive(SelectDirective))?.injector.get(SelectDirective<string>);
 
-    if (picker) picker.value = '/other';
-    picker?.dispatchEvent(new Event('change'));
+    picker?.value.set('/other');
     await settle(first);
     first.destroy();
 

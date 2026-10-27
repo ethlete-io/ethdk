@@ -10,7 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { BUTTON_IMPORTS } from '@ethlete/components';
+import { BUTTON_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { Observable, catchError, concatMap, finalize, map, of, switchMap } from 'rxjs';
 import {
@@ -115,10 +115,9 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       }
 
       <div class="flex items-center gap-2">
-        <input
-          [value]="note()"
-          (input)="takeNote($event)"
-          class="min-w-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2.5 py-1 text-[var(--et-surface-color-solid)]"
+        <et-input
+          [(value)]="note"
+          class="min-w-0 flex-1"
           placeholder="Why this shape - the note on the part, needed for a merge"
           aria-label="Note"
         />
@@ -215,7 +214,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     </ethlete-design-canvas>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, CommentDraftComponent, DesignCanvasComponent, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, INPUT_IMPORTS, CommentDraftComponent, DesignCanvasComponent, ProvideColorDirective],
   host: { class: 'flex min-h-0 flex-col' },
 })
 export class SketchViewComponent {
@@ -334,10 +333,6 @@ export class SketchViewComponent {
 
   protected toggleMergePreview() {
     this.shownMode.update((mode) => (mode === 'merge' ? 'matrix' : 'merge'));
-  }
-
-  protected takeNote(event: Event) {
-    this.note.set((event.target as HTMLInputElement).value);
   }
 
   protected pickable(variant: string) {
