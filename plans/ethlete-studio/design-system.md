@@ -1127,6 +1127,11 @@ Open points, each with a recommendation:
   width of the widest tile in that column, so the right edges line up. The part keeps its own size
   and stays at the left, with the same inner padding. Seen on `studio-lab` `components/button`: the
   outline "Cancel" tiles were wider than the solid "Save" tiles.
+- Built in 20bac33fc: `layoutMatrix` (`canvas-math.ts`) gives a fitted frame (no
+  `CanvasFrame.width`) the width of its column; frames with a given width keep it. Headless on
+  `studio-lab` `components/button`: the solid right edges were 13 px short in every column, now both
+  rows end at 114, 268, 422, 576 and 730. Specs in `canvas-math.spec.ts` and
+  `design-canvas.component.spec.ts` fail without the fix.
 - Replaced the same day: a stale built cli now shows as `stale`. The existing check
   (`design_server.rs` `is_stale`) compares the running server's stamp with the stamp of the built
   cli in `dist`, so a `dist/apps/ethlete-studio/cli-runtime` older than its source passes as
