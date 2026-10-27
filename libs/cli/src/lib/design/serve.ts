@@ -92,13 +92,15 @@ const workspaceAliases = (target: string) => {
   });
 };
 
+// Sequential on purpose: Vite appends a sheet's <style> when its import settles, so parallel
+// imports let the head order, and with it the winning rule, change from load to load.
 const settingsLoaders = (target: string, settings: Record<string, DesignProject>) =>
   `{\n${Object.entries(settings)
     .map(
       ([name, entry]) =>
-        `  ${JSON.stringify(name)}: () => Promise.all([${(entry.styles ?? [])
-          .map((style) => `import(${JSON.stringify(fsUrl(resolve(target, style)))})`)
-          .join(', ')}]),`,
+        `  ${JSON.stringify(name)}: () => Promise.resolve()${(entry.styles ?? [])
+          .map((style) => `.then(() => import(${JSON.stringify(fsUrl(resolve(target, style)))}))`)
+          .join('')},`,
     )
     .join('\n')}\n}`;
 

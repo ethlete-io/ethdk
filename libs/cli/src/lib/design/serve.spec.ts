@@ -263,7 +263,11 @@ describe('the design server for a design system', () => {
       products: Record<string, Record<string, unknown>>;
     };
 
-    config.products['acme'] = { ...config.products['acme'], styles: ['acme.css'], head: 'head.html' };
+    config.products['acme'] = {
+      ...config.products['acme'],
+      styles: ['acme.css', 'acme-tokens.css'],
+      head: 'head.html',
+    };
     writeFileSync(join(target, '.ethlete/design/config.json'), JSON.stringify(config));
     writeFileSync(join(target, 'head.html'), '<link rel="icon" href="acme.svg">');
 
@@ -277,7 +281,7 @@ describe('the design server for a design system', () => {
       /"acme": \{[^}]*"components\/card": \(\) => import\("\/@fs\/[^"]*acme-base\/components\/card\/card\.ts\?design-product=acme"\)/,
     );
     expect(env).toMatch(
-      /productEnvs = \{\n {2}"acme-base": \(\) => Promise.all\(\[\]\),\n {2}"acme": \(\) => Promise.all\(\[import\("[^"]*acme\.css"\)\]\)/,
+      /productEnvs = \{\n {2}"acme-base": \(\) => Promise.resolve\(\),\n {2}"acme": \(\) => Promise.resolve\(\)\.then\(\(\) => import\("[^"]*acme\.css"\)\)\.then\(\(\) => import\("[^"]*acme-tokens\.css"\)\),/,
     );
     expect(html('/frame.html?product=acme&part=components/card&state=default')).toBe(
       '<link rel="icon" href="acme.svg">',
