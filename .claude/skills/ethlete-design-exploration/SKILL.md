@@ -187,7 +187,8 @@ Every flow line is labelled, and the element the label names is visible in the f
 labelled "user clicks 'Log in'" starts from a frame that shows a "Log in" button. A line that names
 nothing the reader can see, or a label for a control the page lacks, is a defect.
 
-A line may join two states of one page. Lines hold for every preset. Without `position`, Studio
+A line may join two states of one page. A frame may name a page that exists only as an open sketch;
+the flow then shows its first variant. Lines hold for every preset. Without `position`, Studio
 lays the frames out along the lines.
 
 ### Draw a wireframe
@@ -218,7 +219,7 @@ et design system --json            # each part's origin, note, states, presets a
 
 Without `--product`, `check` covers every product. A part may only use its own layer and the
 layers below it (see "The order of a design"). Rule `FLOW` reports a misshaped flow file, a frame
-naming a missing part or state, a duplicate state, and a line to a state that is not a frame of
+naming a part or state that exists neither in the product nor in an open sketch of that part, a duplicate state, and a line to a state that is not a frame of
 the flow. Rule `WIREFRAME-KIT` reports a non-page importing the kit. Pass the changed files to the check below as before.
 
 A project's `config.json` entry can name `themes`, `{ "surface": [...], "color": [...] }`; a
