@@ -1100,8 +1100,11 @@ Open points, each with a recommendation:
   width of the widest tile in that column, so the right edges line up. The part keeps its own size
   and stays at the left, with the same inner padding. Seen on `studio-lab` `components/button`: the
   outline "Cancel" tiles were wider than the solid "Save" tiles.
-- A design server older than Studio (a stale `cli-runtime` in a long dev session) gets no version
-  check and no warning. A Studio restart fixes it.
+- Replaced the same day: a stale built cli now shows as `stale`. The existing check
+  (`design_server.rs` `is_stale`) compares the running server's stamp with the stamp of the built
+  cli in `dist`, so a `dist/apps/ethlete-studio/cli-runtime` older than its source passes as
+  `running`. In a dev build only, the footer also shows `stale` when the `libs/cli` source is newer
+  than the built cli. A restart rebuilds the cli, and the line goes back to `running`.
 
 ### Studio comments, as built (2026-10-27)
 
