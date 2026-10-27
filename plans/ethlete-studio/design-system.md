@@ -1376,6 +1376,11 @@ Notes:
 - A note point is in CSS px and may shift between widths, the same as a comment point.
 - A free note without `at` stacks above the flow; a note created by a click always gets `at`.
 - A flow file write re-serializes the whole file in the standard JSON layout; accepted.
+- Moving a note (drag to a new point or `at`) comes in a later slice; until then delete and create
+  again.
+- Notes whose state is gone get a list later, like stale comments; until then the `NOTE` check
+  reports them.
+- No control removes a free note's `at`; delete and create again does the same.
 
 Notes server, as built (2026-10-27):
 
