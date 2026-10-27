@@ -139,7 +139,10 @@ describe('designComment and designInbox', () => {
 
     const sketch = readSketch({ product: 'acme', dir: join(target, DESIGN_DIR, 'acme/sketches/components-card') });
 
-    expect(typeof sketch === 'string' ? sketch : sketch.variantInfo).toEqual({ a: { authors: ['gpt-5.6-sol'] } });
+    expect(typeof sketch === 'string' ? sketch : sketch.variantInfo).toEqual({
+      a: { authors: ['gpt-5.6-sol'], round: 'r1' },
+      b: { round: 'r1' },
+    });
     expect(readFileSync(join(target, DESIGN_DIR, 'acme/pages/home/home.ts'), 'utf8')).not.toContain('madeBy');
   });
 

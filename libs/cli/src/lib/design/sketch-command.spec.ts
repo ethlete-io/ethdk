@@ -43,6 +43,7 @@ describe('designSketch', () => {
 
     for (const argv of [
       ['new', 'components/button', '--variants', 'a,b'],
+      ['variant', 'components/button', 'c', '--from', 'a'],
       ['report', 'components/button', '--variant', 'a', 'phone'],
       ['ready', 'components/button'],
       ['rebase', 'components/button'],
@@ -74,7 +75,36 @@ describe('designSketch', () => {
     expect(write(target, 'report', 'components/button', '--variant', 'b', 'desktop', '--product', 'acme')).toBe(0);
     expect(run(target, 'list', '--json')).toBe(0);
     expect(JSON.parse(lines.pop() ?? '')[0].variantInfo).toEqual({
-      b: { authors: ['gpt-5.6-sol', 'claude-opus-5-5'] },
+      a: { round: 'r1' },
+      b: { authors: ['gpt-5.6-sol', 'claude-opus-5-5'], round: 'r1' },
+    });
+  });
+
+  it('adds a variant from another, in the running round or a new one', () => {
+    const target = acme();
+    const lines = output();
+    const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill or square', '--product', 'acme');
+
+    expect(variant('c')).toBe(1);
+    expect(lines.pop()).toContain('usage: sketch variant <layer>/<name> <variant> --from <variant>');
+    expect(variant('c', '--from', 'a', '--round', 'Combined')).toBe(1);
+    expect(lines.pop()).toContain('usage: sketch variant');
+    expect(variant('c', '--from', 'z')).toBe(1);
+    expect(lines.pop()).toBe('components/button has no variant "z" - it has a, b');
+    expect(variant('c', '--from', 'a', '--round', 'Combined', '--note', 'the user wants a with b')).toBe(0);
+    expect(lines.pop()).toBe('components/button in progress: variant c from a in round r2');
+    expect(variant('d', '--from', 'c')).toBe(0);
+    expect(lines.pop()).toBe('components/button in progress: variant d from c in round r2');
+    expect(run(target, 'list', '--json')).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')[0]).toMatchObject({
+      variants: ['a', 'b', 'c', 'd'],
+      rounds: [
+        { key: 'r1', title: 'Pill or square', note: 'the user wants a with b' },
+        { key: 'r2', title: 'Combined', note: '' },
+      ],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, c: { round: 'r2' }, d: { round: 'r2' } },
     });
   });
 

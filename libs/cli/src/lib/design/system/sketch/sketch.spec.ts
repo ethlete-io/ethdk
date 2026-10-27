@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import {
+  addVariant,
   authorsOf,
   createSketch,
   decideSketch,
@@ -12,6 +13,7 @@ import {
   listSketches,
   markSketchReady,
   parseTarget,
+  readSketch,
   readSketchReport,
   rebaseSketch,
   reportSketch,
@@ -70,6 +72,8 @@ describe('createSketch', () => {
       status: 'in progress',
       createdAt: expect.any(String),
       baseline: baselineOf(resolveAcme(target)),
+      rounds: [{ key: 'r1', title: '', note: '' }],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
     });
     expect(readFileSync(join(dir, 'b/components/card/card.ts'), 'utf8')).toContain("note: 'A card with one action.'");
     expect(existsSync(join(dir, 'a/components/card/card.css'))).toBe(true);
@@ -179,22 +183,31 @@ describe('status', () => {
     report('b', 'gpt-5.6-sol');
 
     expect(sketchJson(target, 'elements-hero')['variantInfo']).toEqual({
-      a: { authors: ['gemini-3-argon', 'claude-opus-5-5'] },
-      b: { authors: ['gpt-5.6-sol'] },
+      a: { authors: ['gemini-3-argon', 'claude-opus-5-5'], round: 'r1' },
+      b: { authors: ['gpt-5.6-sol'], round: 'r1' },
     });
     expect(report('c', 'gpt-5.6-sol')).toBe('elements/hero has no variant "c" - it has a, b');
   });
 
-  it('reads a sketch and a report written before authors were recorded', () => {
+  it('reads a sketch and a report written before authors and rounds were recorded', () => {
     const target = acme();
-    const sketch = open(target, 'elements/hero');
+    const dir = open(target, 'elements/hero').dir;
+
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'elements/hero', status: 'ready', createdAt: '2026-10-01T00:00:00.000Z' }),
+    );
+
+    const sketch = readSketch({ product: 'acme', dir }) as Sketch;
+
+    expect(sketch.rounds).toEqual([{ key: 'r1', title: '', note: '' }]);
+    expect(sketch.variantInfo).toEqual({ a: { round: 'r1' }, b: { round: 'r1' } });
 
     writeFileSync(
       sketchReportPath({ checkout: target, sketch }),
       JSON.stringify({ state: 'drawing', updatedAt: '2026-10-01T00:00:00.000Z', message: 'variant b, phone' }),
     );
 
-    expect(sketchJson(target, 'elements-hero')['variantInfo']).toBeUndefined();
     expect(authorsOf(sketch, 'a')).toEqual([]);
     expect(readSketchReport({ checkout: target, sketch })).toMatchObject({ variant: null, author: null });
   });
@@ -232,5 +245,94 @@ describe('rebaseSketch', () => {
 
     expect(rebased.baseline?.['elements/hero']).not.toBe(before);
     expect(sketchJson(target, 'elements-hero')).toMatchObject({ baseline: rebased.baseline, status: 'in progress' });
+  });
+});
+
+describe('addVariant', () => {
+  const find = (target: string) =>
+    findSketch({
+      productDir: join(target, DESIGN_DIR, 'acme'),
+      product: 'acme',
+      sketch: { layer: 'elements', name: 'hero' },
+    }) as Sketch;
+
+  it('copies a variant into the running round, back to in progress and without the pick', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const dir = sketch.dir;
+
+    writeFileSync(join(dir, 'b/elements/hero/hero.css'), '.acme-hero { gap: 1rem; }');
+    decideSketch({
+      sketch: markSketchReady({ checkout: target, sketch }) as Sketch,
+      decision: { kind: 'pick', variant: 'a' },
+    });
+
+    const added = addVariant({ sketch: find(target), variant: 'c', from: 'b' }) as Sketch;
+
+    expect(added.variants).toEqual(['a', 'b', 'c']);
+    expect(readFileSync(join(dir, 'c/elements/hero/hero.css'), 'utf8')).toBe('.acme-hero { gap: 1rem; }');
+    expect(sketchJson(target, 'elements-hero')).toMatchObject({
+      status: 'in progress',
+      rounds: [{ key: 'r1', title: '', note: '' }],
+      variantInfo: { a: { round: 'r1' }, b: { round: 'r1' }, c: { round: 'r1' } },
+    });
+    expect(sketchJson(target, 'elements-hero')['decision']).toBeUndefined();
+  });
+
+  it('starts a new round with the note on the running one, and continues the letters', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    reportSketch({ checkout: target, sketch, variant: 'a', author: 'gpt-5.6-sol', message: 'phone' });
+
+    addVariant({
+      sketch: find(target),
+      variant: 'c',
+      from: 'a',
+      round: { title: 'Solid a, outline b', lostNote: 'pill or square; the user wants both' },
+    });
+    addVariant({ sketch: find(target), variant: 'd', from: 'c' });
+
+    expect(find(target).rounds).toEqual([
+      { key: 'r1', title: '', note: 'pill or square; the user wants both' },
+      { key: 'r2', title: 'Solid a, outline b', note: '' },
+    ]);
+    expect(find(target).variantInfo).toEqual({
+      a: { authors: ['gpt-5.6-sol'], round: 'r1' },
+      b: { round: 'r1' },
+      c: { round: 'r2' },
+      d: { round: 'r2' },
+    });
+  });
+
+  it('refuses an unknown source, a taken or bad name, and a new round without a note', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    expect(addVariant({ sketch, variant: 'c', from: 'z' })).toBe('elements/hero has no variant "z" - it has a, b');
+    expect(addVariant({ sketch, variant: 'b', from: 'a' })).toBe('elements/hero already has a variant "b"');
+    expect(addVariant({ sketch, variant: 'C', from: 'a' })).toContain('is no variant name');
+    expect(addVariant({ sketch, variant: 'c', from: 'a', round: { title: 'x', lostNote: ' ' } })).toContain(
+      'needs a note on the running round',
+    );
+    expect(find(target).variants).toEqual(['a', 'b']);
+  });
+
+  it('refuses a sketch.json whose variant names an unknown round', () => {
+    const target = acme();
+    const dir = open(target, 'elements/hero').dir;
+
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({
+        target: 'elements/hero',
+        status: 'ready',
+        createdAt: '2026-10-01T00:00:00.000Z',
+        rounds: [{ key: 'r1', title: '', note: '' }],
+        variantInfo: { a: { round: 'r9' } },
+      }),
+    );
+
+    expect(readSketch({ product: 'acme', dir })).toContain('variant a names round "r9"');
   });
 });

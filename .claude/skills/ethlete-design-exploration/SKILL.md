@@ -95,9 +95,25 @@ Name the variant you work on with `--variant`. Studio marks it as drawing, and h
 while the latest report names it. The report also records your model id as an author of that
 variant, and a merge writes the picked variant's authors into the part's `madeBy`.
 
+### Combine variants in a new round
+
+Studio never combines variants. When the user asks for one in a comment ("solid like a, outline
+like b"), draw it as a new variant in a new round:
+
+```bash
+et design sketch variant <layer>/<name> c --from a --by <model id> --round "Solid a, outline b" --note "r1 showed pill and square; the user wants a's solid with b's outline"
+```
+
+`--from` copies a variant into the new one, sets the sketch back to in progress and clears the
+pick. Without `--round` the new variant joins the running round; with it, `--note` is required and
+goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
+Letters continue across rounds (r1: a, b; r2: c, d). Draw the combined variant, then answer the
+comment with `inbox done` and mark the sketch `ready` again. `sketch new --round <title>` names
+round 1.
+
 ### Your model id: `--by`
 
-Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `report`,
+Every command that writes takes `--by <model id>` and fails without it: `sketch new`, `variant`, `report`,
 `ready`, `rebase`, `merge`, `discard`, `inbox done` and `comment reply`. The id is the exact model
 id as free text, for example `claude-opus-5-5`, `gpt-5.6-sol` or `gemini-3-argon`. Studio shows it
 on the variant, the reply and the part, so the user sees which model made what.

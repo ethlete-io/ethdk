@@ -416,6 +416,8 @@ describe('the design server for sketches and comments', () => {
           target: 'components/card',
           status: 'ready',
           variants: ['a', 'b'],
+          rounds: [{ key: 'r1', title: '', note: '' }],
+          variantInfo: { a: { round: 'r1' }, b: { round: 'r1' } },
           dir: expect.stringContaining('components-card'),
           problems: [{ variant: 'a' }, { variant: 'b' }],
           targets: [

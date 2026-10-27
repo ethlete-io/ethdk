@@ -7,6 +7,7 @@ import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNa
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
+  addVariant,
   createSketch,
   findSketch,
   listSketches,
@@ -18,7 +19,8 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b --by <model id> [--product <name>]',
+  'sketch new <layer>/<name> --variants a,b --by <model id> [--round <title>] [--product <name>]',
+  'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -29,7 +31,7 @@ export const SKETCH_USAGE = [
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
 ];
 
-const WRITES = new Set(['new', 'report', 'ready', 'rebase', 'merge', 'discard']);
+const WRITES = new Set(['new', 'variant', 'report', 'ready', 'rebase', 'merge', 'discard']);
 
 type Context = { target: string; config: DesignConfig; args: Args };
 
@@ -74,7 +76,7 @@ const created = (context: Context) => {
   if (typeof parsed === 'string') return fail(parsed);
 
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
-  const sketch = createSketch({ product, sketch: parsed, variants });
+  const sketch = createSketch({ product, sketch: parsed, variants, roundTitle: args.values['--round'] });
 
   if (typeof sketch === 'string') return fail(sketch);
 
@@ -82,6 +84,36 @@ const created = (context: Context) => {
 
   return 0;
 };
+
+const VARIANT_USAGE =
+  'usage: sketch variant <layer>/<name> <variant> --from <variant> [--round <title> --note <why the running round lost>]';
+
+const varied = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const { positional, values } = context.args;
+    const variant = positional[1];
+    const from = values['--from'];
+    const title = values['--round'];
+    const lostNote = values['--note'];
+
+    if (positional.length !== 2 || !variant || !from || (title === undefined) !== (lostNote === undefined))
+      return fail(VARIANT_USAGE);
+
+    const added = addVariant({
+      sketch,
+      variant,
+      from,
+      ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote } } : {}),
+    });
+
+    if (typeof added === 'string') return fail(added);
+
+    const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
+
+    console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
+
+    return 0;
+  });
 
 const listed = (context: Context) => {
   const names = productNamesOf({ config: context.config, asked: context.args.values['--product'] });
@@ -247,6 +279,7 @@ const discarded = (context: Context) =>
 
 const COMMANDS: Record<string, (context: Context) => number> = {
   new: created,
+  variant: varied,
   list: listed,
   report: reported,
   ready: readied,
@@ -257,12 +290,12 @@ const COMMANDS: Record<string, (context: Context) => number> = {
   discard: discarded,
 };
 
-/** `et design sketch <command> …` opens, reports on, readies, checks, previews, rebases, merges and discards sketches. */
+/** `et design sketch <command> …` opens, adds variants to, reports on, readies, checks, previews, rebases, merges and discards sketches. */
 export const designSketch = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by']);
+  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by', '--from', '--round']);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
   if (!run || typeof args === 'string' || unauthored) {
