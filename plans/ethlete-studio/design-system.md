@@ -541,6 +541,23 @@ These change the "all" case of 027805054.
 - Builder choices beyond the plan: the `errored` field, and a sketch-variant file reloads all frames
   of that variant.
 
+### Frame reload Studio, as built (2026-10-27)
+
+- 8ba222492, with partial proof; a verify run is open. Later headless runs saw iframes that never
+  painted, with an unknown cause (the server or this commit).
+- Studio batches `parts` events over 300 ms into per-part revisions in the frame URLs. `all` and the
+  Reload button bump every frame. `errored` reloads the frames of parts and sketches with a load
+  problem. Proven: a card edit reloads 0 of 10 button frames; a button edit reloads 10; a
+  `config.json` edit reloads 10.
+- Queue: at most 4 frames render at once, visible frames first. The first load skips the queue. The
+  old frame stays until the new one paints. The caption dot shows queued; a pulsing dot in the
+  primary accent shows rendering. The status bar shows "Rendering N frame(s)".
+- Deviations: `tick` still bumps on design changes, but drives only the tree, the lists, the
+  comments and the legacy call frames. The sketch view reloads as a whole on any change to its
+  target or to a part in its variants; a revision per variant is a later step.
+- Follow-ups: the server drops the `changes` event; the frame page posts an error flag, so
+  `errored` also covers runtime errors in the iframe; `drawnChanges$` goes.
+
 ### Merge preview decisions (2026-10-27)
 
 Not built yet. In the `components/card` sketch the preview showed all three states of
@@ -777,6 +794,22 @@ border to 2px") showed as "question".
 - `studio-lab` data: the comment "The outline border looks thin…" (20261027T120000Z-7001) moves to
   variant b of the `components/button` sketch. The part view gets its own product comment with
   fitting text. The lab then holds one real question and one answered thread.
+
+### Answered threads server, as built (2026-10-27)
+
+- d4a106c80, bdfbf05d2 (help), b56340707 (lab data). The Studio side is in progress.
+- A flagged reply is `{ by: 'agent', author, text, createdAt, question: true }`. Only an agent reply
+  can carry `question`, and only as `true`. The CLI prints "asked: <file>".
+- `threadStateOf(comment)` gives `'agent'` (the user spoke last, or no replies), `'question'` (the
+  agent spoke last, with the flag) or `'answered'` (the agent spoke last without the flag; also
+  old data). `/__design/comments` and `inbox --json` add `threadState`. The inbox text marks
+  "(question)" and "(answered)" and shows a flagged reply as "agent <id> asks:". An answered thread
+  still waits for the user and blocks merge and discard.
+- The skill: an agent passes `--question` only when it cannot go on without the answer.
+- `studio-lab`: answered is on the `components/button` sketch, variant b, state outline ("The
+  outline border looks thin next to the solid one."). The question is on the product part
+  `components/button`, state solid ("The shipped solid button reads heavy in the card footer next
+  to the ghost link."). Until the Studio side lands, Studio shows both as questions.
 
 ### Studio lab decision (2026-10-27)
 
@@ -1349,8 +1382,8 @@ States and interactions: in progress since 2026-10-27, in six steps: (1) `intera
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
 without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
 "Frame reload decisions". Steps 1 to 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02, 129759c06, 5571eee5f, 97e42bd31,
-242bdd69e). Step 6: the server side is done (027805054); next the Studio side, with the "Frame reload
-file decisions". The product picker ("Picker decisions") comes next in the builder queue.
+242bdd69e). Step 6: the server side is done (027805054), the Studio side is built
+(8ba222492, see "Frame reload Studio, as built"); its verify run is open. The product picker ("Picker decisions") comes next in the builder queue.
 
 Slice 1: done on 2026-10-27.
 
