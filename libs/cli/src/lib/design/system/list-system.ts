@@ -20,6 +20,7 @@ export type ListedProduct = {
   name: string;
   base: string | null;
   presets: Record<string, DesignPreset>;
+  themes: { surface: string[]; color: string[] };
   parts: ListedPart[];
   problems: Problem[];
 };
@@ -50,8 +51,9 @@ const read = async (options: { part: ResolvedPart; product: string; load: PartLo
 };
 
 /**
- * Each named product of a workspace with its resolved parts: where each comes from, its note, the
- * names of its states, and the problems the rules and the loading of its module find in it.
+ * Each named product of a workspace with its own theme names and its resolved parts: where each
+ * comes from, its note, the names of its states, and the problems the rules and the loading of its
+ * module find in it. Base parts draw under the product's themes, so a base's themes are not inherited.
  * Problem files are relative to the workspace.
  */
 export const listSystem = async (options: {
@@ -76,6 +78,7 @@ export const listSystem = async (options: {
           name,
           base: product.config.base ?? null,
           presets: product.presets,
+          themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
               const { note, states, problem } = await read({ part, product: name, load });

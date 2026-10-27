@@ -50,6 +50,7 @@ describe('listSystem', () => {
       name: 'acme',
       base: '.ethlete/design/acme-base',
       presets: { phone: { width: 390, height: 844 }, desktop: { width: 1280 } },
+      themes: { surface: [], color: [] },
       problems: [],
     });
     expect(product?.parts.map(({ layer, name, origin, states }) => [`${layer}/${name}`, origin, states])).toEqual([
@@ -64,6 +65,29 @@ describe('listSystem', () => {
       'Pill shape, because Acme rounds every action.',
     );
     expect(product?.parts.every((part) => part.problems.length === 0)).toBe(true);
+  });
+
+  it("lists each product's own theme names, not its base's", async () => {
+    const target = acme();
+    const file = join(target, DESIGN_DIR, 'config.json');
+    const config = readConfig(target) ?? {};
+
+    writeFileSync(
+      file,
+      JSON.stringify({
+        products: {
+          'acme-base': { ...config.products?.['acme-base'], themes: { surface: ['base-light'], color: ['base'] } },
+          acme: { ...config.products?.['acme'], themes: { surface: ['light', 'dark'] } },
+        },
+      }),
+    );
+
+    const products = await list(target, ['acme', 'acme-base']);
+
+    expect(products.map(({ name, themes }) => [name, themes])).toEqual([
+      ['acme', { surface: ['light', 'dark'], color: [] }],
+      ['acme-base', { surface: ['base-light'], color: ['base'] }],
+    ]);
   });
 
   it('puts a rule problem and a load error on the part they belong to', async () => {
