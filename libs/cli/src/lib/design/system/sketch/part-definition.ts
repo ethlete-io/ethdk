@@ -66,6 +66,41 @@ export const withNote = (source: string, note: string): string | null => {
   return `${source.slice(0, current.getStart(file))}${quoted(note)}${source.slice(current.getEnd())}`;
 };
 
+const lineStartOf = (source: string, position: number) => {
+  const newline = source.lastIndexOf('\n', position - 1);
+
+  return newline === -1 ? position : newline;
+};
+
+/**
+ * The part file with `madeBy` in its `definePart({ … })` set to the model ids, written next to `note`; an empty
+ * list removes it. `null` when the file holds no `definePart({ note })` to write it next to.
+ */
+export const withMadeBy = (source: string, madeBy: string[]): string | null => {
+  const { file, definition } = definitionOf(source);
+  const note = definition ? propertyOf(definition, 'note') : undefined;
+
+  if (!definition || !note) return null;
+
+  const current = propertyOf(definition, 'madeBy');
+  const value = `madeBy: [${madeBy.map(quoted).join(', ')}]`;
+
+  if (current) {
+    if (madeBy.length > 0) return `${source.slice(0, current.getStart(file))}${value}${source.slice(current.getEnd())}`;
+
+    const end = source[current.getEnd()] === ',' ? current.getEnd() + 1 : current.getEnd();
+
+    return `${source.slice(0, lineStartOf(source, current.getStart(file)))}${source.slice(end)}`;
+  }
+
+  if (madeBy.length === 0) return source;
+
+  const start = note.getStart(file);
+  const indent = /^\n?([ \t]*)/u.exec(source.slice(lineStartOf(source, start), start))?.[1] ?? '';
+
+  return `${source.slice(0, note.getEnd())},\n${indent}${value}${source.slice(note.getEnd())}`;
+};
+
 const LITERALS = [
   ts.SyntaxKind.StringLiteral,
   ts.SyntaxKind.NoSubstitutionTemplateLiteral,

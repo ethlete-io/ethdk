@@ -65,9 +65,25 @@ describe('mergeSketch', () => {
     cpSync(join(target, DESIGN_DIR, 'acme-base/components/card'), join(variantDir, 'components/card'), {
       recursive: true,
     });
-    reportSketch({ checkout: target, sketch: found.sketch, message: 'variant b' });
+    found.sketch = reportSketch({
+      checkout: target,
+      sketch: found.sketch,
+      variant: 'b',
+      author: 'gpt-5.6-sol',
+      message: 'phone',
+    }) as Sketch;
+    found.sketch = reportSketch({
+      checkout: target,
+      sketch: found.sketch,
+      variant: 'b',
+      author: 'claude-opus-5-5',
+      message: 'phone',
+    }) as Sketch;
 
     expect(merge(target, found)).toEqual(['components/card', 'elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain(
+      "madeBy: ['gpt-5.6-sol', 'claude-opus-5-5']",
+    );
     expect(readFileSync(join(heroOf(target), 'hero.css'), 'utf8')).toContain('--acme-accent');
     expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain("note: 'Variant b, because it is calmer.'");
     expect(existsSync(join(target, DESIGN_DIR, 'acme/components/card/card.ts'))).toBe(true);
@@ -199,6 +215,7 @@ describe('mergeSketch', () => {
       products: [{ name: found.product.name, dir: found.product.dir }],
       id: (comment as DesignComment).id,
       by: 'agent',
+      author: 'gpt-5.6-sol',
       text: 'Bigger how?',
     });
 

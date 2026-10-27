@@ -7,7 +7,8 @@ export type { Drawing } from './define-call';
 export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
 
 /**
- * One part of a product's design system. `note` records why the part has its current shape,
+ * One part of a product's design system. `note` records why the part has its current shape, and
+ * `madeBy` the model ids that drew it, written by a sketch merge.
  * `states` names each state it is drawn in with the props for that state, and `render` draws it.
  * A part that responds to its width lists the container `widths` it is drawn at; without them a
  * component or element is drawn at the size of its content, and a page at every viewport preset.
@@ -15,6 +16,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  */
 export type Part<P> = {
   note: string;
+  madeBy?: string[];
   states: Record<string, P>;
   widths?: number[];
   interactions?: Interaction[];

@@ -27,6 +27,12 @@ export const argsOf = (argv: string[], valueFlags: string[]): Args | string => {
   return args;
 };
 
+/** The model id `--by` names, the agent that runs a write command; `null` when it is missing or blank. */
+export const authorOf = (args: Args) => args.values['--by']?.trim() || null;
+
+export const NEEDS_AUTHOR =
+  'needs --by <model id>: the exact model id the coordinator gave you, e.g. claude-opus-5-5. Never guess it.';
+
 export const configOf = (target: string): DesignConfig | string =>
   readConfig(target) ?? `design-explore: no config at ${configPathOf(target)}`;
 

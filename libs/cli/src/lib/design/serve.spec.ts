@@ -234,6 +234,7 @@ describe('the design server for a design system', () => {
       name: 'palette',
       origin: 'product',
       note: 'n',
+      madeBy: [],
       states: ['one'],
       interactions: [],
       problems: [],

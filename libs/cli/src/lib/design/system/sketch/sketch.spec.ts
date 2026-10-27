@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import {
+  authorsOf,
   createSketch,
   decideSketch,
   findSketch,
@@ -134,16 +135,20 @@ describe('status', () => {
     const target = acme();
     const sketch = open(target, 'elements/hero');
 
-    reportSketch({ checkout: target, sketch, message: 'variant b, phone' });
+    reportSketch({ checkout: target, sketch, variant: 'b', author: 'gpt-5.6-sol', message: 'phone' });
 
     const path = sketchReportPath({ checkout: target, sketch });
 
-    expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(expect.objectContaining({ message: 'variant b, phone' }));
-    expect(readSketchReport({ checkout: target, sketch })).toMatchObject({ message: 'variant b, phone', variant: 'b' });
+    expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(expect.objectContaining({ message: 'phone' }));
+    expect(readSketchReport({ checkout: target, sketch })).toMatchObject({
+      message: 'phone',
+      variant: 'b',
+      author: 'gpt-5.6-sol',
+    });
 
-    reportSketch({ checkout: target, sketch, message: 'a first pass on the layout' });
+    reportSketch({ checkout: target, sketch, variant: 'a', author: 'gpt-5.6-sol', message: 'variant b, desktop' });
 
-    expect(readSketchReport({ checkout: target, sketch })?.variant).toBeNull();
+    expect(readSketchReport({ checkout: target, sketch })?.variant).toBe('a');
 
     const ready = markSketchReady({ checkout: target, sketch });
 
@@ -153,6 +158,45 @@ describe('status', () => {
     expect(markSketchReady({ checkout: target, sketch: ready as Sketch })).toBe(
       'elements/hero is ready, not in progress',
     );
+  });
+
+  it('keeps the authors of each variant in the order of their first report, without duplicates', () => {
+    const target = acme();
+    const report = (variant: string, author: string) => {
+      const sketch = findSketch({
+        productDir: join(target, DESIGN_DIR, 'acme'),
+        product: 'acme',
+        sketch: { layer: 'elements', name: 'hero' },
+      }) as Sketch;
+
+      return reportSketch({ checkout: target, sketch, variant, author, message: 'phone' });
+    };
+
+    open(target, 'elements/hero');
+    report('a', 'gemini-3-argon');
+    report('a', 'claude-opus-5-5');
+    report('a', 'gemini-3-argon');
+    report('b', 'gpt-5.6-sol');
+
+    expect(sketchJson(target, 'elements-hero')['variantInfo']).toEqual({
+      a: { authors: ['gemini-3-argon', 'claude-opus-5-5'] },
+      b: { authors: ['gpt-5.6-sol'] },
+    });
+    expect(report('c', 'gpt-5.6-sol')).toBe('elements/hero has no variant "c" - it has a, b');
+  });
+
+  it('reads a sketch and a report written before authors were recorded', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    writeFileSync(
+      sketchReportPath({ checkout: target, sketch }),
+      JSON.stringify({ state: 'drawing', updatedAt: '2026-10-01T00:00:00.000Z', message: 'variant b, phone' }),
+    );
+
+    expect(sketchJson(target, 'elements-hero')['variantInfo']).toBeUndefined();
+    expect(authorsOf(sketch, 'a')).toEqual([]);
+    expect(readSketchReport({ checkout: target, sketch })).toMatchObject({ variant: null, author: null });
   });
 
   it('takes a pick only once ready, and a discard at any time', () => {

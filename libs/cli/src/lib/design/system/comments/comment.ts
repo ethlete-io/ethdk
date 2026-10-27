@@ -17,8 +17,11 @@ export const FITTED = 'fitted';
 
 export const REST = 'rest';
 
-/** One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`). */
-export type CommentReply = { by: 'user' | 'agent'; text: string; createdAt: string };
+/**
+ * One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`).
+ * `author` is the model id of the agent; a reply written before it was recorded has none.
+ */
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string };
 
 export type CommentFile = {
   part: string;
@@ -58,7 +61,8 @@ const isReply = (value: unknown) => {
     (reply?.by === 'user' || reply?.by === 'agent') &&
     typeof reply.text === 'string' &&
     reply.text !== '' &&
-    typeof reply.createdAt === 'string'
+    typeof reply.createdAt === 'string' &&
+    (reply.author === undefined || (typeof reply.author === 'string' && reply.author !== ''))
   );
 };
 
@@ -80,7 +84,7 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
   )
     return 'sketch must be { target, variant }';
   if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
-    return 'replies must be [{ by: "user" | "agent", text, createdAt }]';
+    return 'replies must be [{ by: "user" | "agent", author?, text, createdAt }]';
 
   return null;
 };
@@ -248,17 +252,19 @@ export const replyToComment = (options: {
   products: { name: string; dir: string }[];
   id: string;
   by: CommentReply['by'];
+  author?: string;
   text: string;
 }): DesignComment | string => {
-  const { by, text } = options;
+  const { by, author, text } = options;
 
   if (text.trim() === '') return 'a reply needs a text';
+  if (by === 'agent' && !author?.trim()) return 'an agent reply needs --by <model id>';
 
   const found = findComment(options);
 
   if (typeof found === 'string') return found;
 
-  const replies = [...found.replies, { by, text, createdAt: new Date().toISOString() }];
+  const replies = [...found.replies, { by, ...(author ? { author } : {}), text, createdAt: new Date().toISOString() }];
   const stored = JSON.parse(readFileSync(found.file, 'utf8')) as CommentFile;
 
   writeFileSync(found.file, `${JSON.stringify({ ...stored, replies }, null, 2)}\n`);

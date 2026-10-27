@@ -87,9 +87,12 @@ const lineOf = (item: InboxItem, invocation: string) => {
     return [
       `${when}  ${item.product}  comment ${item.id}  ${where}`,
       ...indented(item.text),
-      ...item.replies.flatMap((reply) => [`    ${reply.by}:`, ...indented(reply.text, '      ')]),
-      `    reply: ${invocation} comment reply ${item.id} --product ${item.product} ${quoted('…')}`,
-      `    done: ${invocation} inbox done ${item.id} --note "…"`,
+      ...item.replies.flatMap((reply) => [
+        `    ${reply.by}${reply.author ? ` ${reply.author}` : ''}:`,
+        ...indented(reply.text, '      '),
+      ]),
+      `    reply: ${invocation} comment reply ${item.id} --product ${item.product} --by <model id> ${quoted('…')}`,
+      `    done: ${invocation} inbox done ${item.id} --note "…" --by <model id>`,
     ];
   }
 
@@ -99,13 +102,13 @@ const lineOf = (item: InboxItem, invocation: string) => {
     return [
       `${when}  ${item.product}  pick ${item.target} variant ${item.variant}`,
       ...said,
-      `    run: ${invocation} sketch merge ${item.target} --product ${item.product} --note ${quoted('…')}`,
+      `    run: ${invocation} sketch merge ${item.target} --product ${item.product} --note ${quoted('…')} --by <model id>`,
     ];
 
   return [
     `${when}  ${item.product}  discard ${item.target}`,
     ...said,
-    `    run: ${invocation} sketch discard ${item.target} --product ${item.product}`,
+    `    run: ${invocation} sketch discard ${item.target} --product ${item.product} --by <model id>`,
   ];
 };
 

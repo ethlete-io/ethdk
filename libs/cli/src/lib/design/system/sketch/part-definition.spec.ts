@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stateNamesOf, widthsOf, withNote } from './part-definition';
+import { stateNamesOf, widthsOf, withMadeBy, withNote } from './part-definition';
 
 const part = `import { definePart } from '@design-system';
 export default definePart({
@@ -31,6 +31,23 @@ describe('withNote', () => {
 
   it('answers null without a note literal', () => {
     expect(withNote(part.replace("'Old reason.'", 'reason'), 'x')).toBeNull();
+  });
+});
+
+describe('withMadeBy', () => {
+  it('writes madeBy next to the note, and a later call replaces it', () => {
+    const made = withMadeBy(part, ['gemini-3-argon', 'gpt-5.6-sol']) ?? '';
+
+    expect(made).toContain("  note: 'Old reason.',\n  madeBy: ['gemini-3-argon', 'gpt-5.6-sol'],\n  states:");
+    expect(withMadeBy(made, ['claude-opus-5-5'])).toBe(
+      made.replace("'gemini-3-argon', 'gpt-5.6-sol'", "'claude-opus-5-5'"),
+    );
+  });
+
+  it('removes madeBy for no authors, and answers null without a note', () => {
+    expect(withMadeBy(withMadeBy(part, ['gpt-5.6-sol']) ?? '', [])).toBe(part);
+    expect(withMadeBy(part, [])).toBe(part);
+    expect(withMadeBy('export default definePart({ states: {} });', ['x'])).toBeNull();
   });
 });
 

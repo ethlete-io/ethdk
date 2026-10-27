@@ -89,13 +89,13 @@ describe('inboxOf', () => {
     expect(text.split('\n')).toEqual([
       `2020-01-01 09:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
       '    Say why.',
-      `    reply: et design comment reply ${comment.id} --product acme "…"`,
-      `    done: et design inbox done ${comment.id} --note "…"`,
+      `    reply: et design comment reply ${comment.id} --product acme --by <model id> "…"`,
+      `    done: et design inbox done ${comment.id} --note "…" --by <model id>`,
       '2026-10-27 10:00  acme  pick elements/hero variant b',
       '    Calmer.',
-      '    run: et design sketch merge elements/hero --product acme --note "…"',
+      '    run: et design sketch merge elements/hero --product acme --note "…" --by <model id>',
       '2026-10-27 11:00  acme-base  discard components/card',
-      '    run: et design sketch discard components/card --product acme-base',
+      '    run: et design sketch discard components/card --product acme-base --by <model id>',
     ]);
     expect(inboxText({ items: [], waiting: [] }, 'et design')).toBe('inbox empty');
   });
@@ -106,14 +106,14 @@ describe('inboxOf', () => {
     const inbox = () => inboxOf({ target, config: readConfig(target) ?? {} });
 
     vi.setSystemTime('2026-10-27T12:00:00Z');
-    replyToComment({ products, id: comment.id, by: 'agent', text: 'Which part?' });
+    replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?' });
 
     expect(inbox().items.map((item) => item.kind)).toEqual(['pick', 'discard']);
     expect(inbox().waiting).toEqual([
       expect.objectContaining({
         id: comment.id,
         at: '2026-10-27T12:00:00.000Z',
-        replies: [{ by: 'agent', text: 'Which part?', createdAt: '2026-10-27T12:00:00.000Z' }],
+        replies: [{ by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?', createdAt: '2026-10-27T12:00:00.000Z' }],
       }),
     ]);
     expect(inboxText(inbox(), 'et design').split('\n').slice(-8)).toEqual([
@@ -121,10 +121,10 @@ describe('inboxOf', () => {
       'waiting for the user:',
       `2026-10-27 12:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
       '    Say why.',
-      '    agent:',
+      '    agent gpt-5.6-sol:',
       '      Which part?',
-      `    reply: et design comment reply ${comment.id} --product acme "…"`,
-      `    done: et design inbox done ${comment.id} --note "…"`,
+      `    reply: et design comment reply ${comment.id} --product acme --by <model id> "…"`,
+      `    done: et design inbox done ${comment.id} --note "…" --by <model id>`,
     ]);
 
     vi.setSystemTime('2026-10-27T13:00:00Z');

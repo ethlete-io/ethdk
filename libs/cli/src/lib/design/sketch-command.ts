@@ -3,7 +3,7 @@ import { DesignConfig } from './paths';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf, typecheckVariant } from './system/sketch/check-sketches';
-import { Args, argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
@@ -18,16 +18,18 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b [--product <name>]',
+  'sketch new <layer>/<name> --variants a,b --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
-  'sketch report <layer>/<name> <text> [--product <name>]',
-  'sketch ready <layer>/<name> [--product <name>]',
+  'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
+  'sketch ready <layer>/<name> --by <model id> [--product <name>]',
   'sketch check [<layer>/<name>] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
-  'sketch rebase <layer>/<name> [--product <name>]',
-  'sketch merge <layer>/<name> --note <reason> [--product <name>]',
-  'sketch discard <layer>/<name> [--product <name>]',
+  'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
+  'sketch merge <layer>/<name> --note <reason> --by <model id> [--product <name>]',
+  'sketch discard <layer>/<name> --by <model id> [--product <name>]',
 ];
+
+const WRITES = new Set(['new', 'report', 'ready', 'rebase', 'merge', 'discard']);
 
 type Context = { target: string; config: DesignConfig; args: Args };
 
@@ -122,12 +124,15 @@ const listed = (context: Context) => {
 const reported = (context: Context) =>
   withSketch(context, ({ sketch }) => {
     const message = context.args.positional.slice(1).join(' ');
+    const variant = context.args.values['--variant'];
+    const author = authorOf(context.args);
 
-    if (message === '') return fail(`usage: sketch report <layer>/<name> <text>`);
+    if (message === '' || !variant || !author)
+      return fail(`usage: sketch report <layer>/<name> --variant <key> --by <model id> <text>`);
 
-    reportSketch({ checkout: context.target, sketch, message });
+    const reported = reportSketch({ checkout: context.target, sketch, variant, author, message });
 
-    return 0;
+    return typeof reported === 'string' ? fail(reported) : 0;
   });
 
 const readied = (context: Context) =>
@@ -257,10 +262,12 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const args = argsOf(rest, ['--product', '--variants', '--note']);
+  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by']);
+  const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
-  if (!run || typeof args === 'string') {
+  if (!run || typeof args === 'string' || unauthored) {
     if (typeof args === 'string') console.error(args);
+    if (unauthored) console.error(`sketch ${command} ${NEEDS_AUTHOR}`);
 
     console.error(SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n'));
 

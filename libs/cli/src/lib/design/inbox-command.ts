@@ -4,13 +4,13 @@ import { completeComment } from './system/comments/complete';
 import { inboxOf, inboxText } from './system/comments/inbox';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
-import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/cli-args';
+import { argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 
-export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id> --note <text>'];
+export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id> --note <text> --by <model id>'];
 
 export const COMMENT_USAGE = [
   'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--interaction <name>] [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
-  'comment reply <id> <text> [--product <name>]',
+  'comment reply <id> --by <model id> <text> [--product <name>]',
 ];
 
 const fail = (message: string, code = 1) => {
@@ -22,6 +22,14 @@ const fail = (message: string, code = 1) => {
 const usage = (invocation: string, lines: string[]) =>
   fail(lines.map((line) => `usage: ${invocation} ${line}`).join('\n'), 2);
 
+const unauthored = (options: { invocation: string; command: string; lines: string[] }) =>
+  fail(
+    [`${options.command} ${NEEDS_AUTHOR}`, ...options.lines.map((line) => `usage: ${options.invocation} ${line}`)].join(
+      '\n',
+    ),
+    2,
+  );
+
 /**
  * `et design inbox` lists what waits for the agent - comment threads whose last word is the user's and the
  * user's pick and discard decisions, oldest first - then the threads waiting for the user.
@@ -29,7 +37,7 @@ const usage = (invocation: string, lines: string[]) =>
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--note']);
+  const args = argsOf(argv, ['--product', '--note', '--by']);
 
   if (typeof args === 'string') return usage(invocation, INBOX_USAGE);
 
@@ -45,6 +53,7 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
     const id = args.positional[1];
 
     if (!id || args.positional.length > 2) return usage(invocation, INBOX_USAGE);
+    if (authorOf(args) === null) return unauthored({ invocation, command: 'inbox done', lines: INBOX_USAGE });
 
     const note = args.values['--note'];
 
@@ -104,12 +113,14 @@ const designCommentReply = (options: {
   target: string;
   positional: string[];
   asked: string | undefined;
+  author: string | null;
   invocation: string;
 }) => {
-  const { target, positional, asked, invocation } = options;
+  const { target, positional, asked, author, invocation } = options;
   const [id, ...words] = positional;
 
   if (!id || words.length === 0) return usage(invocation, COMMENT_USAGE);
+  if (author === null) return unauthored({ invocation, command: 'comment reply', lines: COMMENT_USAGE });
 
   const config = configOf(target);
 
@@ -123,6 +134,7 @@ const designCommentReply = (options: {
     products: names.map((name) => ({ name, dir: productDirOf({ target, product: name }) })),
     id,
     by: 'agent',
+    author,
     text: words.join(' '),
   });
 
@@ -139,7 +151,7 @@ const designCommentReply = (options: {
  */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--size', '--interaction', '--at', '--sketch', '--variant']);
+  const args = argsOf(argv, ['--product', '--size', '--interaction', '--at', '--sketch', '--variant', '--by']);
 
   if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
 
@@ -148,6 +160,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
       target,
       positional: args.positional.slice(1),
       asked: args.values['--product'],
+      author: authorOf(args),
       invocation,
     });
 

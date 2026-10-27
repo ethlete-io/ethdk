@@ -148,7 +148,13 @@ describe('replyToComment', () => {
     expect(comment.replies).toEqual([]);
     expect(lastWordOf(comment)).toBe('user');
 
-    const answered = replyToComment({ products, id: comment.id, by: 'agent', text: 'Which part?' }) as DesignComment;
+    const answered = replyToComment({
+      products,
+      id: comment.id,
+      by: 'agent',
+      author: 'gpt-5.6-sol',
+      text: 'Which part?',
+    }) as DesignComment;
 
     expect(lastWordOf(answered)).toBe('agent');
     replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
@@ -157,12 +163,27 @@ describe('replyToComment', () => {
 
     expect(listed?.text).toBe(on.text);
     expect(listed?.replies).toEqual([
-      { by: 'agent', text: 'Which part?', createdAt: expect.any(String) },
+      { by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?', createdAt: expect.any(String) },
       { by: 'user', text: 'The title.', createdAt: expect.any(String) },
     ]);
     expect(lastWordOf(listed as DesignComment)).toBe('user');
-    expect(replyToComment({ products, id: comment.id, by: 'agent', text: ' ' })).toBe('a reply needs a text');
-    expect(replyToComment({ products, id: 'nope', by: 'agent', text: 'Hi.' })).toBe('no open comment "nope"');
+    expect(replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: ' ' })).toBe(
+      'a reply needs a text',
+    );
+    expect(replyToComment({ products, id: comment.id, by: 'agent', text: 'Hi.' })).toBe(
+      'an agent reply needs --by <model id>',
+    );
+    expect(replyToComment({ products, id: 'nope', by: 'agent', author: 'gpt-5.6-sol', text: 'Hi.' })).toBe(
+      'no open comment "nope"',
+    );
+
+    writeFileSync(
+      comment.file,
+      JSON.stringify({ ...on, createdAt: 'x', replies: [{ by: 'agent', text: 'Hi.', createdAt: 'x' }] }),
+    );
+    expect(listComments({ productDir: product.dir, product: 'acme' }).comments[0]?.replies).toEqual([
+      { by: 'agent', text: 'Hi.', createdAt: 'x' },
+    ]);
 
     writeFileSync(comment.file, JSON.stringify({ ...on, createdAt: 'x', replies: [{ by: 'bot', text: 'Hi.' }] }));
     expect(listComments({ productDir: product.dir, product: 'acme' }).unreadable).toEqual([

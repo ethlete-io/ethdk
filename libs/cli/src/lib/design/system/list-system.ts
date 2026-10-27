@@ -13,6 +13,8 @@ export type ListedPart = {
   name: string;
   origin: PartOrigin;
   note: string | null;
+  /** The model ids that drew the part, written by the last sketch merge; empty when none is known. */
+  madeBy: string[];
   states: string[];
   /** The container widths the part is drawn at, when it declares valid ones. */
   widths?: number[];
@@ -33,7 +35,12 @@ export type ListedProduct = {
 /** Answers with the module of a part file as one product draws it. */
 export type PartLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
-type PartModule = { default?: { note?: unknown; states?: unknown; widths?: unknown; interactions?: unknown } };
+type PartModule = {
+  default?: { note?: unknown; madeBy?: unknown; states?: unknown; widths?: unknown; interactions?: unknown };
+};
+
+const madeByOf = (madeBy: unknown) =>
+  Array.isArray(madeBy) ? madeBy.filter((author): author is string => typeof author === 'string' && author !== '') : [];
 
 const widthsOf = (widths: unknown) =>
   Array.isArray(widths) &&
@@ -65,6 +72,7 @@ export const readPartModule = async (options: {
     if (!states || typeof states !== 'object') {
       return {
         note: null,
+        madeBy: [],
         states: [],
         interactions: [],
         problem: 'default-exports no definePart({ note, states, render })',
@@ -73,6 +81,7 @@ export const readPartModule = async (options: {
 
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,
+      madeBy: madeByOf(loaded.madeBy),
       states: Object.keys(states),
       ...widthsOf(loaded.widths),
       interactions: interactionsOf(loaded.interactions),
@@ -81,6 +90,7 @@ export const readPartModule = async (options: {
   } catch (error) {
     return {
       note: null,
+      madeBy: [],
       states: [],
       interactions: [],
       problem: error instanceof Error ? error.message : String(error),
@@ -119,7 +129,7 @@ export const listSystem = async (options: {
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
-              const { note, states, interactions, problem, ...widths } = await readPartModule({
+              const { note, madeBy, states, interactions, problem, ...widths } = await readPartModule({
                 part,
                 product: name,
                 load,
@@ -131,6 +141,7 @@ export const listSystem = async (options: {
                 name: part.name,
                 origin: part.origin,
                 note,
+                madeBy,
                 states,
                 ...widths,
                 interactions,
