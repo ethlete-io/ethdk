@@ -88,7 +88,7 @@ const lineOf = (item: InboxItem, invocation: string) => {
     return [
       `${when}  ${item.product}  pick ${item.target} variant ${item.variant}`,
       ...said,
-      `    run: ${invocation} sketch merge ${item.target} ${item.variant} --product ${item.product} --note ${quoted('…')}`,
+      `    run: ${invocation} sketch merge ${item.target} --product ${item.product} --note ${quoted('…')}`,
     ];
 
   return [

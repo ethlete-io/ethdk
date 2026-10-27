@@ -12,6 +12,7 @@ import {
   listSketches,
   markSketchReady,
   parseTarget,
+  rebaseSketch,
   reportSketch,
   Sketch,
 } from './system/sketch/sketch';
@@ -23,7 +24,8 @@ export const SKETCH_USAGE = [
   'sketch ready <layer>/<name> [--product <name>]',
   'sketch check [<layer>/<name>] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
-  'sketch merge <layer>/<name> <variant> --note <reason> [--product <name>]',
+  'sketch rebase <layer>/<name> [--product <name>]',
+  'sketch merge <layer>/<name> --note <reason> [--product <name>]',
   'sketch discard <layer>/<name> [--product <name>]',
 ];
 
@@ -139,6 +141,14 @@ const readied = (context: Context) =>
     return 0;
   });
 
+const rebased = (context: Context) =>
+  withSketch(context, ({ product, sketch }) => {
+    rebaseSketch({ product, sketch });
+    console.log(`${sketch.target} now compares with the product as it is`);
+
+    return 0;
+  });
+
 const checked = (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
@@ -203,14 +213,16 @@ const previewed = (context: Context) =>
 
 const merged = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
-    const variant = context.args.positional[1];
     const note = context.args.values['--note'];
 
-    if (!variant || note === undefined) return fail(`usage: sketch merge <layer>/<name> <variant> --note <reason>`);
+    if (context.args.positional.length > 1 || note === undefined)
+      return fail(`usage: sketch merge <layer>/<name> --note <reason> - it merges the variant the user picked`);
 
-    const result = mergeSketch({ target: context.target, config: context.config, product, sketch, variant, note });
+    const result = mergeSketch({ target: context.target, config: context.config, product, sketch, note });
 
     if (typeof result === 'string') return fail(result);
+
+    const variant = sketch.decision?.kind === 'pick' ? sketch.decision.variant : '';
 
     console.log(`merged ${sketch.target} variant ${variant} into ${product.name}: ${result.join(', ')}`);
 
@@ -235,11 +247,12 @@ const COMMANDS: Record<string, (context: Context) => number> = {
   ready: readied,
   check: checked,
   preview: previewed,
+  rebase: rebased,
   merge: merged,
   discard: discarded,
 };
 
-/** `et design sketch <command> …` opens, reports on, readies, checks, previews, merges and discards sketches. */
+/** `et design sketch <command> …` opens, reports on, readies, checks, previews, rebases, merges and discards sketches. */
 export const designSketch = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;

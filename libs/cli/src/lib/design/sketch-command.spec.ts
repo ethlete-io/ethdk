@@ -52,9 +52,17 @@ describe('designSketch', () => {
       affected: ['elements/hero', 'pages/home'],
     });
     expect(run(target, 'merge', 'components/button', 'a', '--product', 'acme', '--note', 'x')).toBe(1);
+    expect(lines.pop()).toBe(
+      'usage: sketch merge <layer>/<name> --note <reason> - it merges the variant the user picked',
+    );
+    expect(run(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
     expect(lines.pop()).toBe('components/button is in progress - mark it ready before a merge');
     expect(run(target, 'ready', 'components/button', '--product', 'acme')).toBe(0);
     expect(lines.pop()).toBe('components/button is ready');
+    expect(run(target, 'merge', 'components/button', '--product', 'acme', '--note', 'x')).toBe(1);
+    expect(lines.pop()).toBe('components/button has no pick - the user picks a variant in Studio before a merge');
+    expect(run(target, 'rebase', 'components/button', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('components/button now compares with the product as it is');
     expect(run(target, 'discard', 'components/button', '--product', 'acme')).toBe(0);
     expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button'))).toBe(false);
     expect(run(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);

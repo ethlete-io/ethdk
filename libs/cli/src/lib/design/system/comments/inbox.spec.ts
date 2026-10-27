@@ -92,7 +92,7 @@ describe('inboxOf', () => {
       `    done: et design inbox done ${comment.id}`,
       '2026-10-27 10:00  acme  pick elements/hero variant b',
       '    Calmer.',
-      '    run: et design sketch merge elements/hero b --product acme --note "…"',
+      '    run: et design sketch merge elements/hero --product acme --note "…"',
       '2026-10-27 11:00  acme-base  discard components/card',
       '    run: et design sketch discard components/card --product acme-base',
     ]);

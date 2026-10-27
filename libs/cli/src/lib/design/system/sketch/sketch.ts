@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { statusPath, writeStatus } from '../../status';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { baselineOf } from './baseline';
 
 export const SKETCH_STATUSES = ['in progress', 'ready'] as const;
 
@@ -19,6 +20,8 @@ export type SketchFile = {
   target: string;
   status: SketchStatus;
   createdAt: string;
+  /** The content hash of each part and of the fixtures in the product when the sketch was created or rebased. */
+  baseline?: Record<string, string>;
   decision?: SketchDecision;
 };
 
@@ -111,6 +114,7 @@ const writeSketchFile = (sketch: Sketch) => {
     target: partKeyOf(sketch),
     status: sketch.status,
     createdAt: sketch.createdAt,
+    ...(sketch.baseline ? { baseline: sketch.baseline } : {}),
     ...(sketch.decision ? { decision: sketch.decision } : {}),
   };
 
@@ -171,6 +175,7 @@ export const createSketch = (options: {
     target: key,
     status: 'in progress',
     createdAt: new Date().toISOString(),
+    baseline: baselineOf(product),
     product: product.name,
     layer: sketch.layer,
     name: sketch.name,
@@ -234,4 +239,16 @@ export const decideSketch = (options: {
   writeSketchFile(decided);
 
   return decided;
+};
+
+/**
+ * Records the product as it is now as the sketch's baseline, once the agent has brought each variant
+ * up to date with the parts that changed in the product since the sketch was created.
+ */
+export const rebaseSketch = (options: { product: ResolvedProduct; sketch: Sketch }): Sketch => {
+  const rebased: Sketch = { ...options.sketch, baseline: baselineOf(options.product) };
+
+  writeSketchFile(rebased);
+
+  return rebased;
 };

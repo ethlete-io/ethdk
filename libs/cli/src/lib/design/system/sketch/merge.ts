@@ -6,6 +6,7 @@ import { checkSystem } from '../check-system';
 import { commentsOnSketch } from '../comments/comment';
 import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
+import { conflictsOf } from './baseline';
 import { withNote } from './part-definition';
 import { clearSketchReport, Sketch, variantDirOf } from './sketch';
 
@@ -51,48 +52,77 @@ const swap = (entries: { from: string; to: string }[]) => {
   };
 };
 
+const pickOf = (sketch: Sketch) => {
+  const decision = sketch.decision;
+
+  if (decision?.kind !== 'pick')
+    return `${sketch.target} has no pick - the user picks a variant in Studio before a merge`;
+  if (!sketch.variants.includes(decision.variant))
+    return `${sketch.target} has no variant "${decision.variant}", the one picked - it has ${sketch.variants.join(', ') || 'none'}`;
+
+  return { variant: decision.variant };
+};
+
 /**
- * Merges the picked variant of a ready sketch into the product: copies each part it holds over the
- * product's, sets `note` on the target, runs the check and deletes the sketch. When the check fails,
- * the product's old files come back and the sketch stays. Refuses while the sketch has open comments.
- * Answers with the merged part keys, or with why nothing was merged.
+ * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
+ * over the product's, sets `note` on the target, runs the check and deletes the sketch. A target the
+ * product only takes from its base is copied into the product first. When the check fails, the
+ * product's old files come back and the sketch stays. Refuses without a pick, while the sketch has
+ * open comments, and when a part the variant replaces changed in the product since the sketch's
+ * baseline. Answers with the merged part keys, or with why nothing was merged.
  */
 export const mergeSketch = (options: {
   target: string;
   config: DesignConfig;
   product: ResolvedProduct;
   sketch: Sketch;
-  variant: string;
   note: string;
 }): string[] | string => {
-  const { target, config, product, sketch, variant, note } = options;
+  const { target, config, product, sketch, note } = options;
 
-  if (!sketch.variants.includes(variant))
-    return `${sketch.target} has no variant "${variant}" - it has ${sketch.variants.join(', ') || 'none'}`;
   if (sketch.status !== 'ready') return `${sketch.target} is ${sketch.status} - mark it ready before a merge`;
+
+  const pick = pickOf(sketch);
+
+  if (typeof pick === 'string') return pick;
   if (note.trim() === '') return 'a merge needs --note with the reason for the new shape';
 
   const open = openCommentsProblemOf(sketch);
 
   if (open) return open;
 
+  const { variant } = pick;
   const dir = variantDirOf(sketch, variant);
   const { parts, problems } = partFilesOf(dir);
 
   if (problems.length > 0) return problems.map((problem) => `${problem.file}: ${problem.message}`).join('\n');
 
-  const noteFile = resolve(product.dir, sketch.layer, sketch.name, `${sketch.name}.ts`);
-  const held = parts.find((part) => partKeyOf(part) === sketch.target)?.file ?? noteFile;
+  const fixtures = fixturesOf(dir);
+
+  if (!sketch.baseline)
+    return `${sketch.target} records no baseline of the product - compare each variant with the product, then run sketch rebase ${sketch.target}`;
+
+  const conflicts = conflictsOf({ product, baseline: sketch.baseline, parts, fixtures: fixtures !== null });
+
+  if (conflicts.length > 0)
+    return `${conflicts.join(', ')} changed in the product since the sketch on ${sketch.target} was created - bring variant "${variant}" up to date, then run sketch rebase ${sketch.target}`;
+
+  const targetDir = resolve(product.dir, sketch.layer, sketch.name);
+  const noteFile = resolve(targetDir, `${sketch.name}.ts`);
+  const carried = parts.find((part) => partKeyOf(part) === sketch.target)?.file;
+  const inherited =
+    carried || existsSync(noteFile) ? null : product.parts.find((part) => partKeyOf(part) === sketch.target);
+  const held = carried ?? (inherited ? inherited.file : noteFile);
 
   if (!existsSync(held))
-    return `variant "${variant}" holds no ${sketch.target}, and the product has no own ${sketch.target} to carry the note`;
+    return `variant "${variant}" holds no ${sketch.target}, and the product has no ${sketch.target} to carry the note`;
 
   const noted = withNote(readFileSync(held, 'utf8'), note);
 
   if (noted === null) return `${held} holds no definePart({ note: '…' }) to set the note on`;
 
-  const fixtures = fixturesOf(dir);
   const swapped = swap([
+    ...(inherited ? [{ from: dirname(inherited.file), to: targetDir }] : []),
     ...parts.map((part) => ({ from: dirname(part.file), to: resolve(product.dir, part.layer, part.name) })),
     ...(fixtures ? [{ from: fixtures, to: resolve(product.dir, 'fixtures.ts') }] : []),
   ]);
@@ -109,7 +139,7 @@ export const mergeSketch = (options: {
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
 
-  return parts.map(partKeyOf);
+  return [...(inherited ? [sketch.target] : []), ...parts.map(partKeyOf)];
 };
 
 /** Deletes a sketch with all its variants. Refuses while it has open comments. */

@@ -162,15 +162,14 @@ export const sketchDecisionAnswer = withSketch('POST', async ({ asked, sketch })
     : { status: 200, body: sketchOf({ sketch: decided, target: asked.target }) };
 });
 
-/** POST `?product=&sketch=&variant=`, body `{ note }`: merges the variant into the product, as `et design sketch merge` does. */
+/** POST `?product=&sketch=`, body `{ note }`: merges the picked variant into the product, as `et design sketch merge` does. */
 export const sketchMergeAnswer = withSketch('POST', async ({ asked, config, product, sketch }) => {
   const body = await bodyOf(asked.request);
-  const variant = asked.url.searchParams.get('variant') ?? '';
   const note = textOf(body?.['note']);
 
-  if (!variant || !note) return failure(400, 'a merge needs a variant and a note');
+  if (!note) return failure(400, 'a merge needs a note');
 
-  const merged = mergeSketch({ target: asked.target, config, product, sketch, variant, note });
+  const merged = mergeSketch({ target: asked.target, config, product, sketch, note });
 
   return typeof merged === 'string' ? failure(422, merged) : { status: 200, body: { merged } };
 });

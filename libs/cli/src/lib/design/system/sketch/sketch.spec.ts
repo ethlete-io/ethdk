@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -11,10 +11,12 @@ import {
   listSketches,
   markSketchReady,
   parseTarget,
+  rebaseSketch,
   reportSketch,
   Sketch,
   sketchReportPath,
 } from './sketch';
+import { baselineOf } from './baseline';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-'));
@@ -55,7 +57,7 @@ describe('parseTarget', () => {
 });
 
 describe('createSketch', () => {
-  it('writes sketch.json in progress and starts each variant from the resolved part', () => {
+  it('writes sketch.json in progress with the baseline and starts each variant from the resolved part', () => {
     const target = acme();
     const sketch = open(target, 'components/card');
     const dir = join(target, DESIGN_DIR, 'acme/sketches/components-card');
@@ -65,6 +67,7 @@ describe('createSketch', () => {
       target: 'components/card',
       status: 'in progress',
       createdAt: expect.any(String),
+      baseline: baselineOf(resolveAcme(target)),
     });
     expect(readFileSync(join(dir, 'b/components/card/card.ts'), 'utf8')).toContain("note: 'A card with one action.'");
     expect(existsSync(join(dir, 'a/components/card/card.css'))).toBe(true);
@@ -163,5 +166,20 @@ describe('status', () => {
       comment: 'bolder',
       decidedAt: expect.any(String),
     });
+  });
+});
+
+describe('rebaseSketch', () => {
+  it('records the product as it is now as the baseline', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+    const before = sketch.baseline?.['elements/hero'];
+
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero {}');
+
+    const rebased = rebaseSketch({ product: resolveAcme(target), sketch });
+
+    expect(rebased.baseline?.['elements/hero']).not.toBe(before);
+    expect(sketchJson(target, 'elements-hero')).toMatchObject({ baseline: rebased.baseline, status: 'in progress' });
   });
 });
