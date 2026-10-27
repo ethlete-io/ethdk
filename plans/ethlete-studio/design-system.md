@@ -536,6 +536,18 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   comment and note forms, the note being edited). Proven: the thread reply textarea sits on top of a
   note card; the note editor sits on top of a pin and a card.
 
+### Slice 10 foundations framing decisions (2026-10-27)
+
+- One sketch per question, in this order: surfaces, accent, type scale, spacing and radius. Each
+  sketch draws with what the ones before it settled.
+- Dark only for now. Token names stay neutral (`surface`, not `dark-bg`). Open: a light theme, as
+  its own sketch later.
+- The current Studio look is not a reference. No variant reproduces it; every variant is new.
+- First sketch: `foundations/tokens` in product `studio`, the dark surfaces with their elevation
+  steps. Variants: A neutral grey, B cool (slightly blue), C warm (slightly brown), D near black
+  with small steps. Each variant shows the same mini scene: sidebar, canvas area, card, popover.
+- No reference apps; the builder draws the directions freely.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
