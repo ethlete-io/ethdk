@@ -2,9 +2,15 @@ import { Component, ViewEncapsulation, computed, input, linkedSignal, output } f
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ListedProduct } from '../../host/design';
 import { ListedFlow } from '../../host/design-flows';
-import { Camera } from '../components/design-canvas/canvas-math';
+import { Camera, Point } from '../components/design-canvas/canvas-math';
+import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
+import { commentDraftOf } from './comment-pins';
 import { flowFramesOf } from './flow-frames';
+import { NoteBodyComponent } from './note-body.component';
+import { NoteFormComponent } from './note-form.component';
+import { flowNotesOf } from './note-places';
+import { injectNoteStore } from './note-store';
 
 @Component({
   selector: 'ethlete-flow-view',
@@ -32,21 +38,36 @@ import { flowFramesOf } from './flow-frames';
       </div>
       <ng-content />
     </div>
+    <ng-template #noteBody let-note>
+      <ethlete-note-body [note]="note" [flow]="flow().name" />
+    </ng-template>
     <ethlete-design-canvas
       [frames]="drawn().frames"
       [lines]="drawn().lines"
       [cameraKey]="cameraKey() + ' ' + preset()"
       [restoredCamera]="restoredCamera()"
+      [notes]="notes()"
+      [noteTemplate]="noteBody"
+      [pointing]="noteStore.active()"
+      [draft]="noteStore.draft()"
       (cameraChange)="cameraChange.emit($event)"
+      (pointPick)="startNote($event)"
+      (spacePick)="startFreeNote($event)"
       class="min-h-0"
       arrangement="flow"
-    />
+      pointingLabel="Note on"
+    >
+      @if (noteStore.draft()) {
+        <ethlete-note-form canvasDraft />
+      }
+    </ethlete-design-canvas>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, DesignCanvasComponent],
+  imports: [BUTTON_IMPORTS, DesignCanvasComponent, NoteBodyComponent, NoteFormComponent],
   host: { class: 'relative grid min-h-0' },
 })
 export class FlowViewComponent {
+  protected noteStore = injectNoteStore();
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public flow = input.required<ListedFlow>();
@@ -55,6 +76,7 @@ export class FlowViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
+
   public restoredCamera = input<Camera | null>(null);
 
   public cameraChange = output<Camera | null>();
@@ -78,4 +100,16 @@ export class FlowViewComponent {
       color: this.color(),
     }),
   );
+
+  protected notes = computed(() => flowNotesOf(this.flow(), this.noteStore.notes()));
+
+  protected startNote(pick: FramePoint) {
+    const draft = commentDraftOf(this.drawn().frames, pick);
+
+    if (draft) this.noteStore.start(draft);
+  }
+
+  protected startFreeNote(at: Point) {
+    this.noteStore.start({ flow: this.flow().name, at });
+  }
 }

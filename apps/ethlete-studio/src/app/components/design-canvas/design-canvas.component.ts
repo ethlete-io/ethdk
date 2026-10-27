@@ -19,6 +19,7 @@ import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
+import { CanvasNote, noteKeyOf, placeNotes } from './canvas-note';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
@@ -33,6 +34,7 @@ import {
   layoutSheet,
   panCamera,
   rectsIntersect,
+  screenToWorld,
   visibleWorldRect,
   wheelZoomFactor,
   zoomAtPoint,
@@ -128,13 +130,24 @@ export class DesignCanvasComponent {
   /** While on, a click on a frame that has a `place` reports the point instead of selecting the frame. */
   public pointing = input(false);
 
-  /** Where the projected `[canvasDraft]` content sits, or `null` to hide it. */
-  public draft = input<FramePoint | null>(null);
+  /** Names the frame a click in pointing mode lands on, before the frame's label. */
+  public pointingLabel = input('Comment on');
+
+  /** Where the projected `[canvasDraft]` content sits: on a frame, at a world point, or `null` to hide it. */
+  public draft = input<FramePoint | { at: Point } | null>(null);
+
+  public notes = input<CanvasNote[]>([]);
+
+  /** What a note shows; without it, the note's text. */
+  public noteTemplate = input<TemplateRef<{ $implicit: CanvasNote }> | null>(null);
 
   /** What an open pin shows; without it, the pin's text. */
   public pinPopover = input<TemplateRef<{ $implicit: CanvasPin }> | null>(null);
 
   public pointPick = output<FramePoint>();
+
+  /** The world point of a click on empty space in pointing mode. */
+  public spacePick = output<Point>();
 
   /** The camera after the user moved it and it came to rest; `null` after a fit, so a reload fits again. */
   public cameraChange = output<Camera | null>();
@@ -272,9 +285,10 @@ export class DesignCanvasComponent {
   private bounds = computed(() => {
     const { frames, heads } = this.layout();
     const middles = this.placedLines().map(({ middle }) => ({ ...middle, width: 1, height: 1 }));
+    const notes = this.notes().flatMap((note) => (note.at ? [{ ...note.at, width: 1, height: 1 }] : []));
 
     return (
-      boundingRect([...frames, ...middles]) ??
+      boundingRect([...frames, ...middles, ...notes]) ??
       boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
     );
   });
@@ -331,8 +345,20 @@ export class DesignCanvasComponent {
     });
   });
 
+  protected placedNotes = computed(() =>
+    placeNotes(this.notes(), {
+      frames: new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])),
+      bounds: boundingRect(this.layout().frames),
+    }),
+  );
+
+  protected readonly NOTE_KEY_OF = noteKeyOf;
+
   protected placedDraft = computed(() => {
     const draft = this.draft();
+
+    if (draft && 'at' in draft) return draft.at;
+
     const frame = draft && this.layout().frames.find((placed) => placed.frame.id === draft.frameId);
 
     return frame && draft ? { x: frame.x + (draft.point?.x ?? frame.width), y: frame.y + (draft.point?.y ?? 0) } : null;
@@ -503,6 +529,7 @@ export class DesignCanvasComponent {
   protected clearSelection(event: MouseEvent) {
     if (this.consumeSwallowedClick()) return;
     if (event.target !== this.host.nativeElement) return;
+    if (this.pointing()) this.spacePick.emit(screenToWorld(this.camera(), this.pointerPosition(event)));
     this.openPinId.set(null);
     this.selectedId.set(null);
     this.activeId.set(null);

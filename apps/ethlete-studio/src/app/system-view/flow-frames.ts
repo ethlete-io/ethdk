@@ -6,7 +6,7 @@ import { FramesSource, TreeGroup, partKeyOf } from './system-tree';
 
 export const flowKeyOf = (name: string) => `flow:${name}`;
 
-const frameIdOf = ({ part, state }: FlowState) => `${part} ${state}`;
+export const frameIdOf = ({ part, state }: FlowState) => `${part} ${state}`;
 
 /** The tree with a Flows group after the groups of parts, one entry per flow. */
 export const withFlowGroup = (tree: TreeGroup[], flows: ListedFlow[]): TreeGroup[] => {
@@ -55,6 +55,7 @@ export const flowFramesOf = (source: FlowFramesSource): { frames: CanvasFrame[];
       screenshot: partShotUrl(page ? { ...address, preset } : { ...address, width: size?.width }),
       ...(error ? { error } : {}),
       ...(position ? { at: position } : {}),
+      place: { part: key, state, size: preset },
     };
   });
 

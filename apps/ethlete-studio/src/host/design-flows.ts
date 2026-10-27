@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { ProductAddress, SystemProblem, designAnswer$ } from './design';
+import { FlowNote } from './design-notes';
 
 export type FlowState = { part: string; state: string };
 
@@ -8,6 +9,7 @@ export type ListedFlow = {
   file: string;
   frames: (FlowState & { position?: { x: number; y: number } })[];
   lines: { from: FlowState; to: FlowState; label?: string }[];
+  notes: FlowNote[];
   problems: SystemProblem[];
 };
 

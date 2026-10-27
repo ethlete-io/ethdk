@@ -164,7 +164,7 @@
       [style.top.px]="target.y"
       [style.width.px]="target.width"
       [style.height.px]="target.height"
-      [title]="'Comment on ' + target.frame.label"
+      [title]="pointingLabel() + ' ' + target.frame.label"
       (click)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
       (keydown.enter)="pickPoint({ id: target.frame.id, width: target.width }, $event)"
       class="absolute cursor-crosshair bg-[color-mix(in_srgb,var(--et-theme-color-primary-solid)_6%,transparent)]"
@@ -210,6 +210,41 @@
             <ng-container *ngTemplateOutlet="popover; context: { $implicit: placed.pin }" />
           } @else {
             <p [textContent]="placed.pin.text" class="m-0 whitespace-pre-wrap"></p>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @for (group of placedNotes(); track group.key) {
+    <div
+      [style.left.px]="group.x"
+      [style.top.px]="group.y"
+      [style.transform]="'scale(' + labelScale() + ')' + (group.anchor === 'above' ? ' translateY(-100%)' : '')"
+      [attr.data-note-anchor]="group.anchor"
+      class="absolute flex w-max origin-top-left flex-col items-start gap-2"
+    >
+      @for (note of group.notes; track NOTE_KEY_OF(note)) {
+        @if (group.anchor === 'point') {
+          <span
+            class="pointer-events-none absolute -top-1.5 -left-1.5 size-3 border-2 border-[var(--et-surface-background-solid)] bg-[var(--et-surface-color-muted-solid)]"
+            data-note-marker
+          ></span>
+        }
+        <div
+          [class]="
+            note.heading
+              ? 'text-[3.2rem] leading-tight font-bold whitespace-pre text-[var(--et-surface-color-solid)]'
+              : 'max-w-[28rem] rounded-sm border border-dashed border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-3 py-2 text-[1.3rem] text-[var(--et-surface-color-solid)]'
+          "
+          [class.ml-4]="group.anchor === 'point'"
+          [class.mt-2]="group.anchor === 'point'"
+          [attr.data-note]="note.id"
+        >
+          @if (noteTemplate(); as template) {
+            <ng-container *ngTemplateOutlet="template; context: { $implicit: note }" />
+          } @else {
+            <p [textContent]="note.text" class="m-0 whitespace-pre-wrap"></p>
           }
         </div>
       }

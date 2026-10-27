@@ -73,6 +73,10 @@ import { injectCommentStore, provideCommentStore } from './comment-store';
 import { NewProductFormComponent } from './new-product-form.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { FlowViewComponent } from './flow-view.component';
+import { NoteBodyComponent } from './note-body.component';
+import { NoteFormComponent } from './note-form.component';
+import { partNotesOf } from './note-places';
+import { injectNoteStore, provideNoteStore } from './note-store';
 import { flowKeyOf, withFlowGroup } from './flow-frames';
 import { ListedFlow, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
@@ -202,10 +206,30 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
       }
     </ng-template>
 
+    <ng-template #noteBody let-note>
+      <ethlete-note-body [note]="note" />
+    </ng-template>
+
+    <ng-template #noteModeButton>
+      <button
+        [pressed]="noteStore.active()"
+        (click)="toggleNotes()"
+        et-button
+        type="button"
+        variant="outline"
+        color="surface"
+        size="sm"
+        title="Note mode"
+        data-note-mode
+      >
+        Note
+      </button>
+    </ng-template>
+
     <ng-template #commentModeButton>
       <button
         [pressed]="commentStore.active()"
-        (click)="commentStore.toggle()"
+        (click)="toggleComments()"
         et-button
         type="button"
         variant="outline"
@@ -356,6 +380,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             (cameraChange)="rememberCamera($event)"
           >
             <ng-container [ngTemplateOutlet]="themeBar" />
+            <ng-container [ngTemplateOutlet]="noteModeButton" />
           </ethlete-flow-view>
         } @else if (awaitingPicked()) {
         } @else if (part(); as partShown) {
@@ -371,6 +396,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </span>
             }
             <ng-container [ngTemplateOutlet]="themeBar" />
+            <ng-container [ngTemplateOutlet]="noteModeButton" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </div>
           <ethlete-design-canvas
@@ -381,14 +407,19 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             [pins]="partPins()"
-            [pointing]="commentStore.active()"
-            [draft]="commentStore.draft()"
+            [pointing]="commentStore.active() || noteStore.active()"
+            [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
+            [draft]="noteStore.draft() ?? commentStore.draft()"
             [pinPopover]="pinThread"
+            [notes]="partNotes()"
+            [noteTemplate]="noteBody"
             (cameraChange)="rememberCamera($event)"
-            (pointPick)="startComment(frames(), $event)"
+            (pointPick)="noteStore.active() ? startNote($event) : startComment(frames(), $event)"
             class="min-h-0"
           >
-            @if (commentStore.draft()) {
+            @if (noteStore.draft()) {
+              <ethlete-note-form canvasDraft />
+            } @else if (commentStore.draft()) {
               <ethlete-comment-draft canvasDraft />
             }
           </ethlete-design-canvas>
@@ -421,8 +452,10 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     CommentDraftComponent,
     CommentThreadComponent,
     CommentPanelComponent,
+    NoteBodyComponent,
+    NoteFormComponent,
   ],
-  providers: [provideCommentStore()],
+  providers: [provideCommentStore(), provideNoteStore()],
   host: {
     class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)_auto]',
     '(window:keydown)': 'handleCommentKey($event)',
@@ -432,6 +465,7 @@ export class SystemViewComponent {
   protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
+  protected noteStore = injectNoteStore();
   private injector = inject(Injector);
   public port = input<number | null>(null);
   public epoch = input(0);
@@ -551,7 +585,13 @@ export class SystemViewComponent {
 
   private flowList = toSignal(
     toObservable(
-      computed(() => ({ port: this.port(), product: this.product()?.name, epoch: this.epoch(), tick: this.tick() })),
+      computed(() => ({
+        port: this.port(),
+        product: this.product()?.name,
+        epoch: this.epoch(),
+        tick: this.tick(),
+        notes: this.noteStore.writes(),
+      })),
     ).pipe(
       switchMap(({ port, product }) =>
         port && product
@@ -841,6 +881,7 @@ export class SystemViewComponent {
   });
 
   protected partPins = computed(() => pinsOf(this.frames(), this.commentStore.comments()));
+  protected partNotes = computed(() => partNotesOf(this.frames(), this.noteStore.notes()));
   protected notedFrames = computed(() =>
     withOtherSizeNotes(this.frames(), { comments: this.commentStore.comments(), everyInteraction: true }),
   );
@@ -853,14 +894,31 @@ export class SystemViewComponent {
   protected readonly BASE_LABEL_OF = baseLabelOf;
 
   constructor() {
-    this.commentStore.connect(
-      computed(() => {
-        const port = this.port();
-        const product = this.product()?.name;
+    const source = computed(() => {
+      const port = this.port();
+      const product = this.product()?.name;
 
-        return { address: port && product ? { port, product } : null, revision: this.tick() };
-      }),
-    );
+      return { address: port && product ? { port, product } : null, revision: this.tick() };
+    });
+
+    this.commentStore.connect(source);
+    this.noteStore.connect(source);
+  }
+
+  protected toggleComments() {
+    this.commentStore.toggle();
+    if (this.commentStore.active()) this.noteStore.end();
+  }
+
+  protected toggleNotes() {
+    this.noteStore.toggle();
+    if (this.noteStore.active()) this.commentStore.end();
+  }
+
+  protected startNote(pick: FramePoint) {
+    const draft = commentDraftOf(this.frames(), pick);
+
+    if (draft) this.noteStore.start(draft);
   }
 
   protected startComment(frames: CanvasFrame[], pick: FramePoint) {
@@ -870,10 +928,12 @@ export class SystemViewComponent {
   }
 
   protected handleCommentKey(event: KeyboardEvent) {
+    if (event.key === 'Escape' && (this.noteStore.draft() || this.noteStore.editing())) return this.noteStore.cancel();
+    if (event.key === 'Escape' && this.noteStore.active()) return this.noteStore.end();
     if (!this.commentable()) return;
     if (event.key === 'Escape' && this.commentStore.draft()) this.commentStore.cancel();
     else if (event.key === 'Escape' && this.commentStore.active()) this.commentStore.end();
-    else if (isCommentModeKey(event) && !event.repeat) this.commentStore.toggle();
+    else if (isCommentModeKey(event) && !event.repeat) this.toggleComments();
   }
 
   /** Shows the part or sketch a comment sits on, then moves the camera to its pin and opens it. */

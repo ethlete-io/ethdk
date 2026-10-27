@@ -31,6 +31,7 @@ const flow: ListedFlow = {
   lines: [
     { from: { part: 'pages/cart', state: 'filled' }, to: { part: 'pages/cart', state: 'checkout' }, label: 'pay' },
   ],
+  notes: [],
   problems: [],
 };
 
@@ -46,6 +47,7 @@ describe('flowFramesOf', () => {
     ]);
     expect(frames[0]?.screenshot).toContain('preset=desktop');
     expect(lines).toEqual([{ from: 'pages/cart filled', to: 'pages/cart checkout', label: 'pay' }]);
+    expect(frames[2]?.place).toEqual({ part: 'elements/toast', state: 'saved', size: 'desktop' });
     expect(flowFramesOf({ port: 4500, product, flow, preset: 'phone' }).frames[0]).toMatchObject({
       width: 390,
       height: 844,

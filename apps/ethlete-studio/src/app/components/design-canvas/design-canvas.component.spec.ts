@@ -47,6 +47,38 @@ describe('DesignCanvasComponent', () => {
     expect(frame.nativeElement.style.height).toBe('70px');
   });
 
+  it('shows each note at its place, and reports the world point of a click on empty space while pointing', async () => {
+    const fixture = await render([{ ...FITTED, id: 'a', width: 390, height: 844 }]);
+    const picks: { x: number; y: number }[] = [];
+
+    fixture.componentInstance.spacePick.subscribe((point) => picks.push(point));
+    fixture.componentRef.setInput('notes', [
+      { id: 'n', text: 'Hero', frameId: 'a', point: { x: 40, y: 120 } },
+      { id: 'h', text: 'Library', heading: true, at: { x: 0, y: -160 } },
+    ]);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const pointed = host.querySelector<HTMLElement>('[data-note-anchor="point"]');
+    const heading = host.querySelector<HTMLElement>('[data-note-anchor="at"]');
+
+    expect([pointed?.style.left, pointed?.style.top, pointed?.textContent?.trim()]).toEqual(['40px', '120px', 'Hero']);
+    expect(pointed?.querySelector('[data-note-marker]')).not.toBeNull();
+    expect([heading?.style.left, heading?.style.top, heading?.textContent?.trim()]).toEqual([
+      '0px',
+      '-160px',
+      'Library',
+    ]);
+
+    host.dispatchEvent(new MouseEvent('click', { clientX: 30, clientY: 50, bubbles: true }));
+    expect(picks).toEqual([]);
+
+    fixture.componentRef.setInput('pointing', true);
+    await fixture.whenStable();
+    host.dispatchEvent(new MouseEvent('click', { clientX: 30, clientY: 50, bubbles: true }));
+    expect(picks).toHaveLength(1);
+  });
+
   it('lays a flow out left to right along its lines and draws each line with its label', async () => {
     const page = (id: string): CanvasFrame => ({ ...FITTED, id, label: id, width: 390, height: 844 });
 
