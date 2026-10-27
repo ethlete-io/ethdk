@@ -91,6 +91,9 @@ A variant mirrors the product layout and holds only the parts it changes. Draw t
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. Use `sketch list` to see the open ones.
 
+Start each `sketch report` message with `variant <name>`, for example `"variant b, phone"`. Studio
+marks a variant as drawing, and hides its frames, only while the latest report names it this way.
+
 ### The user decides, Studio merges
 
 The user picks a variant, or discards the sketch, in Studio. **Studio merges on the user's click.
