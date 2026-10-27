@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
-import { staleCommentsOf } from './stale-comment';
+import { staleCommentsOf, staleNotesOf } from './stale-comment';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-stale-comment-'));
@@ -75,6 +75,38 @@ describe('staleCommentsOf', () => {
 
     expect(staleCommentsOf(resolveAcme(target))).toEqual([
       { rule: 'COMMENT', file, message: 'text must be a non-empty string' },
+    ]);
+  });
+});
+
+const note = (target: string, id: string, body: object) => {
+  const dir = join(target, DESIGN_DIR, 'acme/notes');
+
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${id}.json`), JSON.stringify({ part: 'pages/home', state: 'empty', text: 'x', ...body }));
+
+  return join(dir, `${id}.json`);
+};
+
+describe('staleNotesOf', () => {
+  it('passes a note that still points at its part and state', () => {
+    const target = acme();
+
+    note(target, 'ok', { point: { x: 4, y: 8 } });
+
+    expect(staleNotesOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('fails a note whose part or state is gone, and a note file it cannot read', () => {
+    const target = acme();
+    const part = note(target, 'a-part', { part: 'elements/footer' });
+    const state = note(target, 'b-state', { state: 'loading' });
+    const bad = note(target, 'c-bad', { point: { x: -1, y: 0 } });
+
+    expect(staleNotesOf(resolveAcme(target))).toEqual([
+      { rule: 'COMMENT', file: bad, message: 'point must be { x, y } in CSS pixels, both >= 0' },
+      { rule: 'COMMENT', file: part, message: 'part elements/footer no longer exists - move or drop the note' },
+      { rule: 'COMMENT', file: state, message: 'pages/home has no state "loading" - move or drop the note' },
     ]);
   });
 });

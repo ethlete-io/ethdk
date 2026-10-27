@@ -25,7 +25,7 @@ const ID = /^[A-Za-z0-9-]+$/u;
 
 export const commentsDirOf = (productDir: string) => resolve(productDir, 'comments');
 
-const isPoint = (value: unknown): value is CommentPoint => {
+export const isPoint = (value: unknown): value is CommentPoint => {
   const point = value as CommentPoint | undefined;
 
   return typeof point?.x === 'number' && typeof point.y === 'number' && point.x >= 0 && point.y >= 0;
@@ -72,6 +72,18 @@ export const listComments = (options: { productDir: string; product: string }) =
   };
 };
 
+/** Why a part key and state name point at nothing in a product, or `null`. A part whose states are not an object literal keeps any state. */
+export const goneStateOf = (options: { product: ResolvedProduct; part: string; state: string }) => {
+  const { product, part: key, state } = options;
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+  if (!part) return `part ${key} no longer exists`;
+
+  const states = stateNamesOf(part.source);
+
+  return states && !states.includes(state) ? `${key} has no state "${state}"` : null;
+};
+
 /**
  * Why a comment no longer points at anything: its sketch variant, part, state or preset is gone.
  * `null` when it still does. A part whose states are not an object literal keeps any state.
@@ -97,13 +109,9 @@ export const staleReasonOf = (options: {
     drawn = overlaySketch({ product, sketch, variant: comment.sketch.variant });
   }
 
-  const part = drawn.parts.find((candidate) => partKeyOf(candidate) === comment.part);
+  const gone = goneStateOf({ product: drawn, part: comment.part, state: comment.state });
 
-  if (!part) return `part ${comment.part} no longer exists`;
-
-  const states = stateNamesOf(part.source);
-
-  if (states && !states.includes(comment.state)) return `${comment.part} has no state "${comment.state}"`;
+  if (gone) return gone;
   if (!product.presets[comment.preset]) return `preset "${comment.preset}" no longer exists`;
 
   return null;

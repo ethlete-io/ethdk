@@ -7,7 +7,7 @@ import { resolveProduct, ResolvedProduct } from './resolve-product';
 import { componentCopiesOf } from './rules/component-copy';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { scriptedMotionOf } from './rules/motion';
-import { staleCommentsOf } from './rules/stale-comment';
+import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { writeSystemTsconfig } from './system-tsconfig';
 
@@ -18,6 +18,7 @@ const RULES = [
   componentCopiesOf,
   scriptedMotionOf,
   staleCommentsOf,
+  staleNotesOf,
 ];
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */
