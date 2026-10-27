@@ -523,6 +523,19 @@ classes became data attributes (frame: `data-selected`, `data-active`, `data-emp
 equivalent. Empty, error and unsized frames were not seen visually (no such data); specs cover
 them.
 
+Pointed notes, "Show notes" and z-order, as built (proven headlessly):
+
+- 62a13aa52: a pointed note is a small square marker at the point. Its card sits in the column
+  below the frame with the notes without a point. A thin right-angled line runs from the marker
+  down into the gap, along the column's left edge, into the card's left edge, so it never crosses a
+  card. Below zoom 0.25 markers only. New lab note `notes/20261027T163000Z-e5f6.json` (pointed,
+  library "three").
+- 2d15c4646: a "Show notes" button next to "Note" in the part and flow toolbars, on at start,
+  remembered per product (`notesShown`, keyed like product themes); survives reloads.
+- e804e1bc9: z-order frames < flow lines and labels < notes < comment pins < open popovers (thread,
+  comment and note forms, the note being edited). Proven: the thread reply textarea sits on top of a
+  note card; the note editor sits on top of a pin and a card.
+
 ### Comment follow-up decisions (2026-10-27)
 
 Built in 53a10e894; the merge lock needed no change.
