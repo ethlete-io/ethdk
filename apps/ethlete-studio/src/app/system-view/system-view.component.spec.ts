@@ -381,6 +381,19 @@ describe('SystemViewComponent on a flow', () => {
     expect(flowView['pins']().map((pin) => [pin.frameId, pin.label])).toEqual([['pages/library one', '1']]);
   });
 
+  it('notes on a flow frame the comments made at another size', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const flowView = flowViewOf(fixture);
+    const noteOf = () => flowView['notedFrames']().find((frame) => frame.id === 'pages/library one')?.note;
+
+    expect(noteOf()).toBe('1 comment at another size');
+
+    flowView['pickPreset']('desktop');
+    await settle(fixture);
+
+    expect(noteOf()).toBeUndefined();
+  });
+
   it('turns comment mode on with C, ends note mode, and drafts a comment at the preset on a frame click', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
     const view = fixture.componentInstance;

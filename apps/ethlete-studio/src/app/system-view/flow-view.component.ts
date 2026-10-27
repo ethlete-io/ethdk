@@ -7,7 +7,7 @@ import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { rememberFlowPreset, rememberedView } from '../studio-view/remembered';
 import { CommentDraftComponent } from './comment-draft.component';
-import { NumberedComment, commentDraftOf, pinsOf } from './comment-pins';
+import { NumberedComment, commentDraftOf, pinsOf, withOtherSizeNotes } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { CommentThreadComponent } from './comment-thread.component';
 import { flowFramesOf } from './flow-frames';
@@ -49,7 +49,7 @@ import { injectNoteStore } from './note-store';
       <ethlete-note-body [note]="note" [flow]="flow().name" />
     </ng-template>
     <ethlete-design-canvas
-      [frames]="drawn().frames"
+      [frames]="notedFrames()"
       [lines]="drawn().lines"
       [cameraKey]="cameraKey() + ' ' + preset()"
       [restoredCamera]="restoredCamera()"
@@ -125,6 +125,10 @@ export class FlowViewComponent {
       surface: this.surface(),
       color: this.color(),
     }),
+  );
+
+  protected notedFrames = computed(() =>
+    withOtherSizeNotes(this.drawn().frames, { comments: this.commentStore.comments(), everyInteraction: true }),
   );
 
   protected notes = computed(() => flowNotesOf(this.flow(), this.noteStore.notes()));
