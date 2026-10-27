@@ -11,6 +11,7 @@ const key = (product ? params.get('state') : params.get('variant')) ?? '';
 const sketch = product ? params.get('sketch') : null;
 const sketchVariant = params.get('variant') ?? '';
 const fit = product !== null && params.has('fit');
+const interaction = product ? params.get('interaction') : null;
 
 await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
 
@@ -86,6 +87,18 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
 
 const loaded = await (product ? drawPart(product) : drawCall());
 
+const partRootOf = (container: HTMLElement) =>
+  [...container.children].find((child) => !['STYLE', 'SCRIPT', 'LINK'].includes(child.tagName)) ?? null;
+
+const force = (element: Element, name: string) => {
+  if (name === 'disabled') {
+    element.setAttribute('disabled', '');
+    element.setAttribute('aria-disabled', 'true');
+  } else {
+    element.setAttribute('data-et-force', name);
+  }
+};
+
 const forced = async (css: string) => {
   if (!/:(?:hover|focus-visible|active)/iu.test(css)) return css;
 
@@ -100,6 +113,9 @@ if (loaded) {
   style.textContent = await forced(loaded.styles);
   document.head.append(style);
   const error = mountDrawing(root, loaded);
+  const partRoot = partRootOf(root);
+
+  if (interaction && partRoot) force(partRoot, interaction);
 
   if (error)
     showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);

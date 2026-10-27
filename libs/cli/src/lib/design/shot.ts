@@ -115,9 +115,10 @@ export const createPartShooter = (options: {
     preset: string | null;
     width: number | null;
     sketch: SketchVariant | null;
+    interaction: string | null;
     params: URLSearchParams;
   }) => {
-    const { product, part, state, preset, width, sketch, params } = options;
+    const { product, part, state, preset, width, sketch, interaction, params } = options;
     const file = system.partOf({ product, part, sketch })?.file;
     const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
 
@@ -133,7 +134,7 @@ export const createPartShooter = (options: {
       return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`));
 
     return cached({
-      key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant],
+      key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant, interaction],
       drawn: { product, file },
       search: new URLSearchParams({
         product,
@@ -141,6 +142,7 @@ export const createPartShooter = (options: {
         state,
         ...(size ? {} : { fit: '' }),
         ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
+        ...(interaction ? { interaction } : {}),
       }),
       params,
       size: size ?? null,
@@ -207,6 +209,7 @@ export const createPartShooter = (options: {
           preset: preset ?? null,
           width: pixels,
           sketch: sketch && variant ? { target: sketch, variant } : null,
+          interaction: params.get('interaction'),
           params,
         }),
       );

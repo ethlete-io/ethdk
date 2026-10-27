@@ -160,6 +160,18 @@ describe('createPartShooter', () => {
     expect(screenshot).not.toHaveBeenCalled();
   });
 
+  it('passes the interaction to the frame and keeps one picture per interaction', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long&interaction=hover');
+    await ask(shots, 'product=acme&part=components/card&state=long&interaction=hover');
+    await ask(shots, 'product=acme&part=components/card&state=long');
+
+    expect(newContext).toHaveBeenCalledTimes(2);
+    expect(new URL(goto.mock.calls[0]?.[0] ?? '').searchParams.get('interaction')).toBe('hover');
+    expect(new URL(goto.mock.calls[1]?.[0] ?? '').searchParams.has('interaction')).toBe(false);
+  });
+
   it('keeps one picture per preset, width and fit', async () => {
     const { shots } = acme();
 
