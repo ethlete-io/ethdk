@@ -59,8 +59,9 @@ must store a state.
   version.
 - Tokens are CSS variables.
 - Each product has one fixture set (for example 30 films with posters). All pages use it.
-- A component or page declares its own list of named states (variants, sizes, hover,
-  disabled, loading; "empty", "3 filters active", "error").
+- A component or page declares its own list of named states (variants, sizes, pressed,
+  loading; "empty", "3 filters active", "error"). Interactions (hover, focus-visible, active,
+  disabled) are a second axis; see "States and interactions decisions".
 - Each product declares its viewport presets (for example phone, fold outer, fold inner,
   tablet, desktop).
 
