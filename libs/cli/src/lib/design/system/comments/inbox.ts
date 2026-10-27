@@ -70,7 +70,7 @@ const lineOf = (item: InboxItem, invocation: string) => {
     const where = [
       item.part,
       item.state,
-      item.preset,
+      item.preset ?? (item.width === undefined ? 'fitted' : `${item.width} px`),
       ...(item.point ? [`at ${item.point.x},${item.point.y}`] : []),
       ...(item.sketch ? [`sketch ${item.sketch.target} variant ${item.sketch.variant}`] : []),
     ].join(' · ');

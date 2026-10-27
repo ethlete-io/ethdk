@@ -47,11 +47,20 @@ describe('designComment and designInbox', () => {
     expect(lines.pop()).toBe('inbox empty');
   });
 
-  it('refuses a comment without a preset, a bad point or a stale part', () => {
+  it('refuses a comment with a preset and a width, a bad point or a stale part', () => {
     const target = acme();
     const lines = output();
 
-    expect(designComment({ target, argv: ['pages/home', 'empty', 'x', '--product', 'acme'], invocation })).toBe(2);
+    expect(
+      designComment({
+        target,
+        argv: ['pages/home', 'empty', 'x', '--preset', 'phone', '--width', '360', '--product', 'acme'],
+        invocation,
+      }),
+    ).toBe(2);
+    expect(
+      designComment({ target, argv: ['pages/home', 'empty', 'x', '--width', '0', '--product', 'acme'], invocation }),
+    ).toBe(2);
     expect(
       designComment({ target, argv: ['pages/home', 'empty', 'x', '--preset', 'phone', '--at', '1'], invocation }),
     ).toBe(2);

@@ -34,6 +34,18 @@ describe('createComment', () => {
     });
   });
 
+  it('takes a width or nothing in place of a preset', () => {
+    const product = resolveAcme(acme());
+    const fitted = { part: on.part, state: on.state, text: on.text };
+
+    expect(createComment({ product, comment: { ...fitted, width: 360 } })).toMatchObject({ width: 360 });
+    expect(createComment({ product, comment: fitted })).not.toHaveProperty('preset');
+    expect(createComment({ product, comment: { ...on, width: 360 } })).toBe(
+      'a comment has a preset or a width, not both',
+    );
+    expect(createComment({ product, comment: { ...fitted, width: 0 } })).toBe('width must be a positive number');
+  });
+
   it('refuses a comment that points at nothing', () => {
     const product = resolveAcme(acme());
 

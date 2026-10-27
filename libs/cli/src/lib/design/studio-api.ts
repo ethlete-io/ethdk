@@ -245,19 +245,20 @@ export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   };
 });
 
-/** POST `?product=`, body `{ part, state, preset, text, point?: { x, y }, sketch?: { target, variant } }`: writes a canvas comment. */
+/** POST `?product=`, body `{ part, state, preset? | width?, text, point?: { x, y }, sketch?: { target, variant } }`: writes a canvas comment. */
 export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
 
   if (!body) return failure(400, 'the body must be a JSON object');
 
-  const { part, state, preset, text, point, sketch } = body;
+  const { part, state, preset, width, text, point, sketch } = body;
   const created = createComment({
     product,
     comment: {
       part: part as string,
       state: state as string,
-      preset: preset as string,
+      ...(preset === undefined ? {} : { preset: preset as string }),
+      ...(width === undefined ? {} : { width: width as number }),
       text: text as string,
       ...(point === undefined ? {} : { point: point as { x: number; y: number } }),
       ...(sketch === undefined ? {} : { sketch: sketch as { target: string; variant: string } }),

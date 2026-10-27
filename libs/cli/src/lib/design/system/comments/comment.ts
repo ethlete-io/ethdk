@@ -6,13 +6,16 @@ import { overlaySketch } from '../sketch/overlay';
 import { stateNamesOf } from '../sketch/part-definition';
 import { findSketch, parseTarget } from '../sketch/sketch';
 
-/** A point on a frame, in CSS pixels from its top left corner, at the comment's preset. */
+/** A point on a frame, in CSS pixels from its top left corner, at the comment's preset or width. */
 export type CommentPoint = { x: number; y: number };
 
 export type CommentFile = {
   part: string;
   state: string;
-  preset: string;
+  /** The page preset the frame was drawn at. Without it and without `width` the frame fits its content. */
+  preset?: string;
+  /** The width in CSS pixels a part with `widths` was drawn at. */
+  width?: number;
   point?: CommentPoint;
   sketch?: { target: string; variant: string };
   text: string;
@@ -32,8 +35,14 @@ export const isPoint = (value: unknown): value is CommentPoint => {
 };
 
 const shapeProblemOf = (value: Partial<CommentFile>) => {
-  for (const key of ['part', 'state', 'preset', 'text', 'createdAt'] as const)
+  for (const key of ['part', 'state', 'text', 'createdAt'] as const)
     if (typeof value[key] !== 'string' || value[key] === '') return `${key} must be a non-empty string`;
+
+  if (value.preset !== undefined && (typeof value.preset !== 'string' || value.preset === ''))
+    return 'preset must be a non-empty string';
+  if (value.width !== undefined && (typeof value.width !== 'number' || !(value.width > 0)))
+    return 'width must be a positive number';
+  if (value.preset !== undefined && value.width !== undefined) return 'a comment has a preset or a width, not both';
 
   if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
   if (
@@ -112,7 +121,8 @@ export const staleReasonOf = (options: {
   const gone = goneStateOf({ product: drawn, part: comment.part, state: comment.state });
 
   if (gone) return gone;
-  if (!product.presets[comment.preset]) return `preset "${comment.preset}" no longer exists`;
+  if (comment.preset !== undefined && !product.presets[comment.preset])
+    return `preset "${comment.preset}" no longer exists`;
 
   return null;
 };
