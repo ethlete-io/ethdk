@@ -28,5 +28,20 @@
         "color": ["brand", "danger", "warning"]
       }
     }
+  },
+  "products": {
+    "studio-lab": {
+      "styles": ["apps/ethlete-studio/src/styles.css"],
+      "presets": {
+        "phone": {
+          "width": 390,
+          "height": 844
+        },
+        "desktop": {
+          "width": 1440,
+          "height": 900
+        }
+      }
+    }
   }
 }
