@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { chromiumOf } from './browser';
 import { DesignPreset } from './paths';
-import { fileOfModuleId, productOfModuleId, SystemModules } from './system/system-modules';
+import { fileOfModuleId, productOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
 import {
   Browser,
   callDrawsFrom,
@@ -104,21 +104,33 @@ export const createPartShooter = (options: {
     part: string;
     state: string;
     preset: string;
+    sketch: SketchVariant | null;
     params: URLSearchParams;
   }) => {
-    const { product, part, state, preset, params } = options;
-    const file = system.partOf({ product, part })?.file;
+    const { product, part, state, preset, sketch, params } = options;
+    const file = system.partOf({ product, part, sketch })?.file;
     const size = system.productOf(product)?.presets[preset];
 
     if (!file)
-      return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no part "${part}"`));
+      return Promise.reject(
+        new ThumbMissingError(
+          sketch
+            ? `design-explore: variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product}" has no part "${part}"`
+            : `design-explore: product "${product}" has no part "${part}"`,
+        ),
+      );
     if (!size)
       return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`));
 
     return cached({
-      key: ['part', product, part, state, preset],
+      key: ['part', product, part, state, preset, sketch?.target, sketch?.variant],
       drawn: { product, file },
-      search: new URLSearchParams({ product, part, state }),
+      search: new URLSearchParams({
+        product,
+        part,
+        state,
+        ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
+      }),
       params,
       size,
     });
@@ -139,9 +151,9 @@ export const createPartShooter = (options: {
   return {
     middleware: (request: IncomingMessage, response: ServerResponse) => {
       const params = new URL(request.url ?? '', 'http://localhost').searchParams;
-      const [slug, variant, width] = ['call', 'variant', 'width'].map((name) => params.get(name));
+      const [slug, variant, width, sketch] = ['call', 'variant', 'width', 'sketch'].map((name) => params.get(name));
 
-      if (slug || variant || width) {
+      if (slug || width || (variant && !sketch)) {
         const pixels = Number(width);
 
         if (!slug || !variant || !Number.isInteger(pixels) || pixels <= 0) {
@@ -171,7 +183,17 @@ export const createPartShooter = (options: {
         return;
       }
 
-      sendShot(response, partShotOf({ product, part, state, preset, params }));
+      sendShot(
+        response,
+        partShotOf({
+          product,
+          part,
+          state,
+          preset,
+          sketch: sketch && variant ? { target: sketch, variant } : null,
+          params,
+        }),
+      );
     },
     /** Drops the pictures drawn from one of the given module ids, each of which names its product. */
     forget: (ids: string[]) => {

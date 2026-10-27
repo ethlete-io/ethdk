@@ -3,7 +3,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
-import { createSystemModules, fileOfModuleId, productModuleIdOf, productOfModuleId } from './system-modules';
+import { createSketch, parseTarget } from './sketch/sketch';
+import {
+  createSystemModules,
+  fileOfModuleId,
+  productModuleIdOf,
+  productOfModuleId,
+  sketchOfModuleId,
+} from './system-modules';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-modules-'));
@@ -40,6 +47,34 @@ describe('createSystemModules', () => {
     expect(system.resolveId('./hero.css?inline', hero)).toBeNull();
     expect(system.resolveId('@system/components/button', join(target, 'other.ts'))).toBeNull();
     expect(system.resolveId('@system/components/button', productModuleIdOf({ file, product: 'nope' }))).toBeNull();
+  });
+
+  it('resolves @system imports inside a sketch variant to the parts that variant holds', () => {
+    const { target, system } = acme();
+    const product = system.productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+
+    const design = join(target, DESIGN_DIR);
+    const sketch = { target: 'components/button', variant: 'b' };
+    const hero = productModuleIdOf({ file: join(design, 'acme/elements/hero/hero.ts'), product: 'acme', sketch });
+    const variantButton = join(design, 'acme/sketches/components-button/b/components/button/button.ts');
+
+    expect(system.resolveId('@system/components/button', hero)).toBe(
+      productModuleIdOf({ file: variantButton, product: 'acme', sketch }),
+    );
+    expect(system.partOf({ product: 'acme', part: 'components/button', sketch })?.file).toBe(variantButton);
+    expect(
+      system.partOf({ product: 'acme', part: 'components/button', sketch: { ...sketch, variant: 'z' } }),
+    ).toBeNull();
+    expect(system.partOf({ product: 'acme', part: 'components/button' })?.file).toBe(
+      join(design, 'acme/components/button/button.ts'),
+    );
+    expect(sketchOfModuleId(hero)).toEqual(sketch);
+    expect(sketchOfModuleId(productModuleIdOf({ file: 'x.ts', product: 'acme' }))).toBeNull();
   });
 
   it('keeps a resolved product until forget', () => {

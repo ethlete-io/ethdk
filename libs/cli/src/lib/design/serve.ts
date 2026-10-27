@@ -29,7 +29,8 @@ import { mappedSubpathOf } from './render-packages';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
-import { createSystemModules, productModuleIdOf, SystemModules } from './system/system-modules';
+import { partKeyOf, ResolvedPart } from './system/resolve-product';
+import { createSystemModules, productModuleIdOf, SketchVariant, SystemModules } from './system/system-modules';
 import { DESIGN_SYSTEM_SPECIFIER } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
@@ -125,18 +126,43 @@ const env = (target: string, config: DesignConfig) => {
 };
 
 /** Each product's parts, keyed `<layer>/<name>`, each loaded as the product resolves it. */
+const partsRegistry = (options: { parts: ResolvedPart[]; product: string; sketch?: SketchVariant; indent: string }) =>
+  options.parts
+    .map(
+      (part) =>
+        `${options.indent}${JSON.stringify(partKeyOf(part))}: () => import(${JSON.stringify(fsUrl(productModuleIdOf({ file: part.file, product: options.product, sketch: options.sketch })))}),`,
+    )
+    .join('\n');
+
+const sketchRegistry = (system: SystemModules, product: string) =>
+  system
+    .sketchesOf(product)
+    .map(
+      ({ target, variants }) =>
+        `    ${JSON.stringify(target)}: {\n${variants
+          .map(
+            (variant) =>
+              `      ${JSON.stringify(variant)}: {\n${partsRegistry({
+                parts: system.drawnOf(product, { target, variant })?.parts ?? [],
+                product,
+                sketch: { target, variant },
+                indent: '        ',
+              })}\n      },`,
+          )
+          .join('\n')}\n    },`,
+    )
+    .join('\n');
+
 const systemRegistry = (system: SystemModules) =>
   `export const parts = {\n${system
     .products()
     .map(
       (product) =>
-        `  ${JSON.stringify(product)}: {\n${(system.productOf(product)?.parts ?? [])
-          .map(
-            (part) =>
-              `    ${JSON.stringify(`${part.layer}/${part.name}`)}: () => import(${JSON.stringify(fsUrl(productModuleIdOf({ file: part.file, product })))}),`,
-          )
-          .join('\n')}\n  },`,
+        `  ${JSON.stringify(product)}: {\n${partsRegistry({ parts: system.productOf(product)?.parts ?? [], product, indent: '    ' })}\n  },`,
     )
+    .join('\n')}\n};\nexport const sketchParts = {\n${system
+    .products()
+    .map((product) => `  ${JSON.stringify(product)}: {\n${sketchRegistry(system, product)}\n  },`)
     .join('\n')}\n};\n`;
 
 const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) => {

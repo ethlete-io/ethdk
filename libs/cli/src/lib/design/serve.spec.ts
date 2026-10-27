@@ -378,6 +378,22 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);
   });
 
+  it('registers the parts of each sketch variant, resolved through that variant', async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /"b": \{[^}]*"components\/card": \(\) => import\("\/@fs\/[^"]*components-card\/b\/components\/card\/card\.ts\?design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+    expect(system).toMatch(
+      /"b": \{[^}]*"elements\/hero": \(\) => import\("[^"]*acme\/elements\/hero\/hero\.ts\?design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+  });
+
   it('previews the merge of a variant, and 404 for a variant the sketch lacks', async () => {
     const target = acme();
 

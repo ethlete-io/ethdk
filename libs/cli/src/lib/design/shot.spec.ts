@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, readConfig } from './paths';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
+import { createSketch, parseTarget } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
@@ -113,6 +114,28 @@ describe('createPartShooter', () => {
       'components/card',
     ]);
     expect(screenshot).toHaveBeenCalledTimes(2);
+  });
+
+  it('draws a part as a sketch variant holds it when the address names the sketch and the variant', async () => {
+    const { target, config, shots } = acme();
+    const product = createSystemModules({ target, config }).productOf('acme');
+    const parsed = parseTarget('components/button');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a', 'b'] });
+
+    const part = 'product=acme&part=elements/hero&state=default&preset=phone';
+
+    expect(await ask(shots, `${part}&sketch=components/button&variant=b`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, `${part}&sketch=components/button&variant=a`)).toMatchObject({ status: 200 });
+    expect(await ask(shots, part)).toMatchObject({ status: 200 });
+    expect(goto.mock.calls.map(([url]) => new URL(url).search)).toEqual([
+      '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=b',
+      '?product=acme&part=elements%2Fhero&state=default&sketch=components%2Fbutton&variant=a',
+      '?product=acme&part=elements%2Fhero&state=default',
+    ]);
+    expect((await ask(shots, `${part}&sketch=components/button&variant=z`)).status).toBe(404);
   });
 
   it('answers 400 without a product, part, state or preset, and 404 for one the product lacks', async () => {

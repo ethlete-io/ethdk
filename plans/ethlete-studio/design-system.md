@@ -341,13 +341,14 @@ and `pickedVariantOf` in `system-tree.ts`.
 
 Open points, each with a recommendation:
 
-- The renderer cannot draw a variant: `frame.html` and the shot route ignore `sketch` and
-  `variant`, so variant frames show the current part. Recommendation: resolve a part through
-  `overlaySketch` when the frame URL names a sketch and a variant.
-- A new part has no states in the listing, so its variants get one row without a state.
-  Recommendation: list states per variant in `sketches`.
-- The preview draws no old and new frames of the affected parts. Recommendation: add it with
-  the renderer change.
+- Resolved: `frame.html` and the shot route draw a part through `overlaySketch` when the
+  address names `sketch` and `variant`; the system registry lists each variant's parts as
+  `sketchParts`.
+- A new part has no states in the listing, so its variants get one row without a state, and that
+  frame fails with no state "". Recommendation: list states per variant in `sketches` (needs the
+  Vite loader in the Studio answers and a `sketchFramesOf` change).
+- The preview draws no old and new frames of the affected parts. Recommendation: add it in Studio
+  now that a frame URL with `sketch` and `variant` draws the variant.
 
 ### Slice 6 decisions (2026-10-27)
 

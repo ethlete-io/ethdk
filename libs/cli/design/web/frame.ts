@@ -1,13 +1,15 @@
 import { Drawing, mountDrawing, placeOverlays } from '@design-explore';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
-import { parts } from 'virtual:design-explore/system';
+import { parts, sketchParts } from 'virtual:design-explore/system';
 
 const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
 const product = params.get('product');
 const partKey = params.get('part') ?? '';
 const key = (product ? params.get('state') : params.get('variant')) ?? '';
+const sketch = product ? params.get('sketch') : null;
+const sketchVariant = params.get('variant') ?? '';
 
 await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
 
@@ -58,8 +60,13 @@ const drawCall = async (): Promise<Drawing | null> => {
 };
 
 const drawPart = async (name: string): Promise<Drawing | null> => {
-  const load = parts[name]?.[partKey];
-  if (!load) return fail(`design-explore: product "${name}" has no part "${partKey}"`);
+  const load = sketch ? sketchParts[name]?.[sketch]?.[sketchVariant]?.[partKey] : parts[name]?.[partKey];
+  if (!load)
+    return fail(
+      sketch
+        ? `design-explore: variant "${sketchVariant}" of the sketch on ${sketch} in product "${name}" has no part "${partKey}"`
+        : `design-explore: product "${name}" has no part "${partKey}"`,
+    );
 
   try {
     const part = (await load()).default;

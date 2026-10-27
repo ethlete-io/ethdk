@@ -20,4 +20,9 @@ declare module 'virtual:design-explore/system' {
 
   /** Each product's parts by `<layer>/<name>`, each resolved as that product draws it. */
   export const parts: Record<string, Record<string, () => Promise<{ default: Part }>>>;
+  /** Each product's parts by sketch target, variant and `<layer>/<name>`, each resolved as that variant draws it. */
+  export const sketchParts: Record<
+    string,
+    Record<string, Record<string, Record<string, () => Promise<{ default: Part }>>>>
+  >;
 }
