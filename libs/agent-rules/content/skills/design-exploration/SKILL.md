@@ -195,6 +195,23 @@ lays the frames out along the lines.
 
 ### Draw a wireframe
 
+A wireframe exists to iterate fast, in minutes per round, rough enough to redraw with a client at
+the table. It answers one thing: which regions a screen has and what each region holds. These
+rules are strict:
+
+- **Keep what exists.** Before a sketch, list what the running app already does on that screen.
+  Keep it as a labelled box, and draw only what is still open.
+- **One sketch per screen or flow**, never one per region or per detail. The variants differ in
+  layout: where the regions sit and how big they are.
+- **Regions and names only.** A region is a box with a label; a list shows item names. Draw no
+  counts, badges, status markers, inspectors, size labels or field lists. If a detail matters,
+  write it as a word in the region label.
+- **Never polish.** Do not fix alignment, spacing or a kit gap. When the kit lacks a shape, draw a
+  labelled box. Look at each shot only for a broken frame: overflow, a scroll bar, clipped text.
+- **Draw it yourself.** A wireframe round is small work: no subagent, no friction report.
+- **Stop early.** When the regions of the main screens are settled, the stage ends. Comments on
+  the look of a wireframe belong to the next stage, not to a new wireframe round.
+
 A page that has no parts yet draws grey stand-ins from the wireframe kit; pages and elements may
 import it, components and foundations may not:
 
