@@ -30,4 +30,11 @@ describe('styles.css', () => {
     expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--accent: oklch\(0\.68 0\.11 190\)/);
     expect(css).toContain('--surface-sunken: oklch(0.17 0 0)');
   });
+
+  it('exposes the renamed font and radius tokens without shadowing Tailwind defaults', () => {
+    const css = compileStyles();
+
+    expect(css).toMatch(/@layer studio-tokens\s*{[\s\S]*--font-ui: system-ui[\s\S]*--radius-control-md: 0\.6rem/);
+    expect(css).not.toMatch(/--radius-md: 0\.6rem/);
+  });
 });

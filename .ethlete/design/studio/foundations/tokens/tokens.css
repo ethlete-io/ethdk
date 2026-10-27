@@ -388,7 +388,7 @@
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   font-size: var(--text-md);
   line-height: var(--text-md-line);
   background: var(--surface-sunken);
@@ -419,8 +419,8 @@ body {
 
 /* Studio type scale, variant B: compact */
 :root {
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-code: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --text-xs: 1rem;
   --text-xs-line: 1.4rem;
   --text-sm: 1.15rem;
@@ -445,10 +445,10 @@ body {
   --space-5: 2rem;
   --space-6: 2.4rem;
   --space-7: 3.2rem;
-  --radius-sm: 0.4rem;
-  --radius-md: 0.6rem;
-  --radius-lg: 1rem;
-  --radius-full: 999px;
+  --radius-control-sm: 0.4rem;
+  --radius-control-md: 0.6rem;
+  --radius-control-lg: 1rem;
+  --radius-pill: 999px;
   --control-sm: 2.4rem;
   --control-md: 2.8rem;
   --row: 2.4rem;

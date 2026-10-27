@@ -2,7 +2,7 @@
 
 @import 'tailwindcss' source('../');
 
-/* Keep this layer lowest: the product's --font-* and --radius-* names, SDK themes and body rule collide with Studio's own, which must win until the component layer maps them. */
+/* Keep this layer lowest: SDK themes and body rule collide with Studio's own, which must win until the component layer maps them. */
 @import '../../../.ethlete/design/studio/foundations/tokens/tokens.css' layer(studio-tokens);
 
 @import './styles/themes.css';
@@ -99,6 +99,14 @@
   --spacing-space-5: var(--space-5);
   --spacing-space-6: var(--space-6);
   --spacing-space-7: var(--space-7);
+  --font-ui: var(--font-ui);
+  --font-code: var(--font-code);
+
+  --radius-control-sm: var(--radius-control-sm);
+  --radius-control-md: var(--radius-control-md);
+  --radius-control-lg: var(--radius-control-lg);
+  --radius-pill: var(--radius-pill);
+
   --spacing-control-sm: var(--control-sm);
   --spacing-control-md: var(--control-md);
   --spacing-row: var(--row);
