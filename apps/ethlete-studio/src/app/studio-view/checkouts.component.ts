@@ -2,7 +2,7 @@ import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, outp
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, catchError, of, switchMap, tap } from 'rxjs';
 import { BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { ProvideColorDirective, ProvideSurfaceDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   DesignRoots,
   designRoots$,
@@ -158,7 +158,7 @@ type Row = {
           </div>
 
           @if (trouble(); as message) {
-            <p class="m-0 text-[1.1rem] text-[var(--et-theme-color-ink-solid)]" etProvideColor="danger">
+            <p [etProvideColor]="errorTheme()" class="m-0 text-[1.1rem] text-[var(--et-theme-color-ink-solid)]">
               {{ message }}
             </p>
           }
@@ -170,6 +170,7 @@ type Row = {
   imports: [BUTTON_IMPORTS, INPUT_IMPORTS, SELECT_IMPORTS, ProvideColorDirective, ProvideSurfaceDirective],
 })
 export class CheckoutsComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
 
   /** The checkout the window showed last. It wins over the first kept one when Studio still keeps it. */

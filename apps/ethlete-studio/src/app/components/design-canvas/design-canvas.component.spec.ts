@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
+import { THEMES } from '../../../themes';
 import { rememberView, rememberedView } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import { DesignCanvasComponent } from './design-canvas.component';
@@ -9,7 +11,9 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 const FITTED: CanvasFrame = { id: 'default', src: 'about:blank', label: 'default', error: 'not drawn in jsdom' };
 
 const render = async (frames: CanvasFrame[]) => {
-  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+  });
 
   const fixture: ComponentFixture<DesignCanvasComponent> = TestBed.createComponent(DesignCanvasComponent);
 

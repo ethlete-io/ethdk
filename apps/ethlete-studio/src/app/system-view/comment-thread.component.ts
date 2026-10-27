@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { CommentReply } from '../../host/design';
 import { SENDER_LABELS, ageOf, draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
@@ -35,7 +35,9 @@ import { injectCommentStore } from './comment-store';
         />
       </et-form-field>
       @if (store.error(); as message) {
-        <p class="m-0 text-small text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ message }}</p>
+        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
+          {{ message }}
+        </p>
       }
       <div class="flex w-full justify-between gap-2">
         <button
@@ -67,6 +69,7 @@ import { injectCommentStore } from './comment-store';
   host: { class: 'flex w-full flex-col items-start gap-2' },
 })
 export class CommentThreadComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   protected store = injectCommentStore();
 
   public commentId = input.required<string>();

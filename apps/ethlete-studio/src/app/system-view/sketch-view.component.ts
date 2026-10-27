@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { Observable, catchError, concatMap, finalize, map, of, switchMap } from 'rxjs';
 import {
   ListedPart,
@@ -112,7 +112,11 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               {{ variant === picked() ? 'Picked ' + variant : 'Pick ' + variant }}
             </button>
             @for (problem of problemsOf(variant); track $index) {
-              <span [title]="problem.file" class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">
+              <span
+                [title]="problem.file"
+                [etProvideColor]="errorTheme()"
+                class="text-[var(--et-theme-color-primary-solid)]"
+              >
                 {{ problem.rule }}: {{ problem.message }}
               </span>
             }
@@ -129,7 +133,9 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       @if (picked(); as variant) {
         @if (previewReading(); as reading) {
           @if (reading.error) {
-            <p class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ reading.error }}</p>
+            <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">
+              {{ reading.error }}
+            </p>
           } @else if (reading.preview; as preview) {
             <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-0.5">
               <dt class="text-[var(--et-surface-color-subtle-solid)]">Merging {{ variant }} changes</dt>
@@ -187,7 +193,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       </div>
 
       @if (error(); as message) {
-        <p class="text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ message }}</p>
+        <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">{{ message }}</p>
       }
     </section>
 
@@ -288,6 +294,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
   host: { class: 'flex min-h-0 flex-col' },
 })
 export class SketchViewComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
   private injector = inject(Injector);

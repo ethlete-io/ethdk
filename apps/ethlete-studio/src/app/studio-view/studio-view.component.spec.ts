@@ -2,7 +2,9 @@ import { Component, input, provideZonelessChangeDetection } from '@angular/core'
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SelectDirective } from '@ethlete/components';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { Project, Themes } from '../../host/design';
+import { THEMES } from '../../themes';
 import { SystemViewComponent } from '../system-view/system-view.component';
 import { StudioViewComponent } from './studio-view.component';
 
@@ -95,7 +97,9 @@ describe('StudioViewComponent', () => {
     sent.length = 0;
     localStorage.clear();
     stubHost();
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
     TestBed.overrideComponent(StudioViewComponent, {
       remove: { imports: [SystemViewComponent] },
       add: { imports: [SystemViewStubComponent] },

@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, SELECT_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
-import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
+import { ProvideColorDirective, ProvideSurfaceDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { EMPTY, catchError, debounceTime, finalize, from, map, of, scan, switchMap, tap } from 'rxjs';
 import {
   ListedCall,
@@ -146,7 +146,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </span>
               @for (badge of entry.badges; track badge) {
                 @if (badge === 'error') {
-                  <span [class]="BADGE_ACCENT" etProvideColor="danger">error</span>
+                  <span [class]="BADGE_ACCENT" [etProvideColor]="errorTheme()">error</span>
                 } @else if (badge === 'question') {
                   <span [class]="BADGE_ACCENT" data-tree-question>question</span>
                 } @else {
@@ -282,7 +282,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
               </button>
             }
             @if (transferError(); as message) {
-              <span class="text-[1.2rem] text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{
+              <span [etProvideColor]="errorTheme()" class="text-[1.2rem] text-[var(--et-theme-color-primary-solid)]">{{
                 message
               }}</span>
             }
@@ -392,6 +392,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
   },
 })
 export class SystemViewComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
   private injector = inject(Injector);

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import {
   EMPTY,
   Subject,
@@ -89,7 +89,7 @@ const STATUS_ITEM =
       <button (click)="reload()" et-button type="button" variant="transparent" color="surface" size="xs">Reload</button>
 
       @if (trouble(); as message) {
-        <span [title]="message" [class]="STATUS_ITEM" etProvideColor="danger">
+        <span [title]="message" [class]="STATUS_ITEM" [etProvideColor]="errorTheme()">
           <span class="overflow-hidden text-ellipsis text-[var(--et-theme-color-ink-solid)]">{{ message }}</span>
         </span>
       }
@@ -168,6 +168,7 @@ const STATUS_ITEM =
   },
 })
 export class StudioViewComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   private destroyRef = inject(DestroyRef);
   protected renderQueue = injectFrameRenderQueue();
 

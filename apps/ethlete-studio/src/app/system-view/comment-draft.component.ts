@@ -1,6 +1,6 @@
 import { Component, ViewEncapsulation, afterRenderEffect, linkedSignal, viewChild } from '@angular/core';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, TextareaComponent } from '@ethlete/components';
-import { ProvideColorDirective } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 
@@ -20,7 +20,9 @@ import { injectCommentStore } from './comment-store';
         />
       </et-form-field>
       @if (store.error(); as message) {
-        <p class="m-0 text-small text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ message }}</p>
+        <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
+          {{ message }}
+        </p>
       }
       <div class="flex justify-end gap-2">
         <button (click)="store.cancel()" et-button type="button" variant="transparent" color="surface" size="xs">
@@ -43,6 +45,7 @@ import { injectCommentStore } from './comment-store';
   imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, ProvideColorDirective],
 })
 export class CommentDraftComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   protected store = injectCommentStore();
   private field = viewChild.required(TextareaComponent);
 

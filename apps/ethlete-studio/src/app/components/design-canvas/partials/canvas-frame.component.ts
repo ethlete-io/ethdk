@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ProvideColorDirective, signalHostElementIntersection } from '@ethlete/core';
+import { ProvideColorDirective, injectSemanticColorTheme, signalHostElementIntersection } from '@ethlete/core';
 import {
   EMPTY,
   Observable,
@@ -119,7 +119,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         {{ empty }}
       </div>
     } @else if (frame().error) {
-      <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
+      <div [etProvideColor]="errorTheme()" class="et-canvas-frame__error" role="alert">{{ frame().error }}</div>
     } @else {
       @if (!painted()) {
         @if (frame().screenshot) {
@@ -165,6 +165,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
   },
 })
 export class CanvasFrameComponent {
+  protected errorTheme = injectSemanticColorTheme('error');
   private sanitizer = inject(DomSanitizer);
   private queue = injectFrameRenderQueue();
 
