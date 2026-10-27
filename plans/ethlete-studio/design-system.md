@@ -1419,6 +1419,14 @@ As built (2026-10-27):
   already show (system read error, comment and note stores, sketch and new-product forms). Before,
   `designAnswer$` silently turned the HTML into `null`.
 
+Follow-up decisions (2026-10-27), all kept as built:
+
+- Below zoom 0.25 a note without a point has no marker and disappears completely. Its text is not
+  readable at that zoom anyway.
+- Below zoom 0.25 a marker is not clickable; a note opens only after zooming in.
+- The outdated-server check looks at `content-type: text/html` only. An old server always answers
+  HTML; a wider check would hide real errors behind the wrong message.
+
 ### Wireframe kit fix decisions (2026-10-27)
 
 Seen on `studio-lab` `pages/film-detail` at phone 390: image and text stay side by side, the button
