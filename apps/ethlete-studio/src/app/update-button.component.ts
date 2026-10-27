@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, signal } from '@angular/core';
 import { EMPTY, catchError } from 'rxjs';
 import { updateInstall$ } from '../host/update';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { injectUpdateCheck } from './update-check';
 
 /** Offers the restart once a newer release is downloaded, and shows nothing before that. */
@@ -12,14 +13,18 @@ import { injectUpdateCheck } from './update-check';
         [disabled]="installing()"
         [title]="failure() ?? 'Installs v' + version + ' and restarts Ethlete Studio'"
         (click)="install()"
-        class="studio__verb"
+        et-button
         type="button"
+        variant="transparent"
+        color="surface"
+        size="xs"
       >
         {{ failure() ? 'Update failed - retry' : 'Restart to update' }}
       </button>
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS],
 })
 export class UpdateButtonComponent {
   protected version = injectUpdateCheck().version;

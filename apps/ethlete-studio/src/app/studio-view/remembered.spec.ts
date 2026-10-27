@@ -24,18 +24,19 @@ describe('remembered view', () => {
   });
 
   it('drops fields of the wrong type', () => {
+    localStorage.setItem(KEY, JSON.stringify({ checkout: 1, systemProduct: 'web', systemEntry: null }));
+
+    expect(rememberedView()).toEqual({ systemProduct: 'web' });
+  });
+
+  it('forgets what the removed calls view kept and leaves the rest', () => {
     localStorage.setItem(
       KEY,
-      JSON.stringify({ checkout: 1, project: 'p', slug: null, variant: 'v', settledFeature: '', chatHidden: 'yes' }),
+      JSON.stringify({ checkout: '/a', project: 'p', slug: 's', variant: 'v', chatHidden: true, view: 'calls' }),
     );
+    rememberView({ systemProduct: 'web' });
 
-    expect(rememberedView()).toEqual({
-      checkout: undefined,
-      project: 'p',
-      slug: undefined,
-      variant: 'v',
-      settledFeature: '',
-    });
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).toEqual({ checkout: '/a', systemProduct: 'web' });
   });
 
   it('remembers which tree groups are open and drops non-boolean flags', () => {
@@ -46,19 +47,11 @@ describe('remembered view', () => {
     expect(rememberedView().openGroups).toBeUndefined();
   });
 
-  it('remembers the calls or system view and drops an unknown one', () => {
-    rememberView({ view: 'system' });
-    expect(rememberedView().view).toBe('system');
-
-    localStorage.setItem(KEY, JSON.stringify({ view: 'grid' }));
-    expect(rememberedView().view).toBeUndefined();
-  });
-
   it('merges a patch into what was stored', () => {
-    rememberView({ checkout: '/a', project: 'p' });
-    rememberView({ project: '' });
+    rememberView({ checkout: '/a', systemProduct: 'web' });
+    rememberView({ systemProduct: 'app' });
 
-    expect(rememberedView()).toMatchObject({ checkout: '/a', project: '' });
+    expect(rememberedView()).toMatchObject({ checkout: '/a', systemProduct: 'app' });
   });
 
   it('keeps a theme pick per project and drops malformed picks', () => {

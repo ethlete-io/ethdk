@@ -4,7 +4,7 @@ import { Routes } from '@angular/router';
 export const APP_ROUTES: Routes = [
   {
     path: '',
-    loadComponent: () => import('./call-view/call-view.component').then((m) => m.CallViewComponent),
+    loadComponent: () => import('./studio-view/studio-view.component').then((m) => m.StudioViewComponent),
   },
   {
     path: 'agent',

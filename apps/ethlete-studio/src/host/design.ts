@@ -1,5 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
-import { Observable, catchError, from, map, of, switchMap } from 'rxjs';
+import { Observable, from, map, switchMap } from 'rxjs';
 import { fromFetch } from 'rxjs/fetch';
 import { HostShellMissingError, hasHostShell, invokeHost$ } from './invoke';
 
@@ -45,15 +45,6 @@ export type InventoryPart = {
   sdk: string | null;
   new: boolean;
   /** The slug of the component call a new part is drawn in. */
-  call: string | null;
-};
-
-/** One entry of a project's design system, with the text of its `entry.md` and its preview call. */
-export type SystemEntry = {
-  project: string;
-  name: string;
-  entry: string | null;
-  /** The slug of the preview call, `<project>/system/<name>`. Null while it does not exist. */
   call: string | null;
 };
 
@@ -109,10 +100,6 @@ export type Themes = {
 export const designProject$ = (checkout: string): Observable<Project> =>
   invokeHost$<Project>('design_project', { checkout });
 
-/** Lists the design system entries of every project of a checkout. */
-export const designSystem$ = (checkout: string): Observable<SystemEntry[]> =>
-  invokeHost$<SystemEntry[]>('design_system', { checkout });
-
 /**
  * Reports every change under the checkout's calls root. A call or a variant that an agent or an
  * editor wrote outside this window reaches the list through it, so nothing waits for a reload.
@@ -131,113 +118,6 @@ export const designChanges$ = (checkout: string): Observable<void> =>
 
     invoke('design_watch', { checkout, changes }).catch((error: unknown) => subscriber.error(error));
   });
-
-/** What the last check said about one variant. A variant no run ever checked has none. */
-export type CheckReceipt = {
-  ok: boolean;
-  /** When the check ran, in seconds since the epoch. */
-  at: number;
-  said: string;
-};
-
-/** Which variant of which call a check, or a verdict, is about. */
-export type VariantAddress = {
-  checkout: string;
-  slug: string;
-  variant: string;
-};
-
-/** Reads what the last `check_call` said about one variant, or `null` when no run ever checked it. */
-export const designCheck$ = (address: VariantAddress): Observable<CheckReceipt | null> =>
-  invokeHost$<CheckReceipt | null>('design_check', address);
-
-/** The state `et design new`, `et design check --call` or `et design status` last recorded for a call. */
-export type CallStatus = {
-  state: 'scaffolded' | 'drawing' | 'checking' | 'ready' | 'failed';
-  /** An ISO timestamp. */
-  updatedAt: string;
-  /** What a failed check said. */
-  message?: string;
-};
-
-/** Reads the recorded state of each named call. A call with none is left out. */
-export const designStatuses$ = (checkout: string, slugs: string[]): Observable<Record<string, CallStatus>> =>
-  invokeHost$<Record<string, CallStatus>>('design_statuses', { checkout, slugs });
-
-/** Emits whenever a recorded call state changes. */
-export const designStatusChanges$ = (): Observable<void> =>
-  new Observable<void>((subscriber) => {
-    if (!hasHostShell()) {
-      subscriber.error(new HostShellMissingError());
-
-      return;
-    }
-
-    const changes = new Channel<void>();
-
-    changes.onmessage = () => subscriber.next();
-
-    invoke('design_status_watch', { changes }).catch((error: unknown) => subscriber.error(error));
-  });
-
-/** Which variant of which call the user ruled about, and how. */
-export type VerdictWrite = {
-  checkout: string;
-  slug: string;
-  variant: string;
-  verdict: Verdict | null;
-  /** Written as the note of the variant's round, replacing the one it had. Left out keeps the note. */
-  note?: string;
-};
-
-/** Writes one variant's verdict into its call file. A `null` verdict opens the variant again. */
-export const designSetVerdict$ = (write: VerdictWrite): Observable<void> =>
-  invokeHost$<void>('design_set_verdict', write);
-
-/** Which call closes, and how. A `null` state reopens it. */
-export type ClosedWrite = {
-  checkout: string;
-  slug: string;
-  closed: CallClosed | null;
-};
-
-/** Writes whether a call is closed into its call file. */
-export const designSetClosed$ = (write: ClosedWrite): Observable<void> => invokeHost$<void>('design_set_closed', write);
-
-/** Which call changes mode, and to which one. */
-export type ModeWrite = {
-  checkout: string;
-  slug: string;
-  mode: CallMode;
-};
-
-/**
- * Writes the mode into the call file. The mode belongs to the call, so every variant of it is
- * drawn under the same rules and the thumbnail column compares like with like.
- */
-export const designSetMode$ = (write: ModeWrite): Observable<void> => invokeHost$<void>('design_set_mode', write);
-
-/** How many variants a call gets, and what the round they answer asks. */
-export type VariantsWrite = {
-  checkout: string;
-  slug: string;
-  count: number;
-  roundTitle: string;
-};
-
-/** The round Studio opened, and the key of every variant it created for it. */
-export type AddedVariants = {
-  round: string;
-  keys: string[];
-};
-
-/**
- * Opens a new round on a call and creates the empty variants it asks for: a stub component file
- * each, and an entry each in the call file. The name, the claim and the cost stay empty, because
- * only the drawing can argue them.
- */
-export const designAddVariants$ = (write: VariantsWrite): Observable<AddedVariants> =>
-  invokeHost$<AddedVariants>('design_add_variants', write);
 
 /** What a checkout's design server is doing, and what Studio may do about it. */
 export type ServerState = {
@@ -290,27 +170,12 @@ export const frameUrl = ({ port, slug, variant, epoch, surface, color }: FrameAd
   (color ? `&color=${encodeURIComponent(color)}` : '') +
   (epoch ? `&epoch=${epoch}` : '');
 
-/** The address of a variant's thumbnail: a PNG the design server draws, renewed with each `revision`. */
-export const thumbUrl = ({ revision, ...address }: FrameAddress & { revision?: number }) =>
-  frameUrl(address).replace('/frame.html?', '/__design/thumb?') + (revision ? `&revision=${revision}` : '');
-
 /** The address of a PNG of a whole variant at `width`, drawn like a part shot, renewed with each `revision`. */
 export const callShotUrl = ({ width, revision, ...address }: FrameAddress & { width: number; revision?: number }) =>
   frameUrl(address).replace('/frame.html?', '/__design/shot?') +
   `&width=${width}` +
   (revision ? `&revision=${revision}` : '');
 
-/**
- * Whether the design server on `port` has the thumbnail route. Without a call it answers 400, while
- * an `@ethlete/cli` older than the route answers 404. Draws nothing.
- */
-export const drawsThumbs$ = (port: number): Observable<boolean> =>
-  fromFetch(`http://localhost:${port}/__design/thumb`).pipe(
-    map((response) => response.status !== 404),
-    catchError(() => of(true)),
-  );
-
-/** The checkouts Studio keeps, and the folder a scan walks for more. */
 export type DesignRoots = {
   /** The folder a scan walks. Empty until the user names one. */
   search: string;

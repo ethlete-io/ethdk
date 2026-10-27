@@ -23,7 +23,7 @@ import {
   rememberedView,
   themeKey,
   themeName,
-} from '../call-view/remembered';
+} from '../studio-view/remembered';
 import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
@@ -44,15 +44,26 @@ import { SketchViewComponent } from './sketch-view.component';
 
 type Reading = { products: ListedProduct[]; error: string | null };
 
+const BADGE =
+  'whitespace-nowrap rounded-full border border-[var(--et-surface-border-solid)] px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
+
+const BADGE_ERROR =
+  'whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
+
+const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
+
 @Component({
   selector: 'ethlete-system-view',
   template: `
-    <aside class="studio__system-tree" etProvideSurface="dark-elevated">
+    <aside
+      class="flex min-h-0 flex-col overflow-y-auto border-r border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] pb-4 text-[var(--et-surface-color-solid)]"
+      etProvideSurface="dark-elevated"
+    >
       @if (products().length > 1) {
         <select
           [value]="product()?.name ?? ''"
           (change)="pickProduct($event)"
-          class="studio__system-product"
+          class="mx-4 mt-4 mb-1 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] px-2 py-1.5 text-small text-[var(--et-surface-color-solid)]"
           title="The product the system shows"
         >
           @for (listed of products(); track listed.name) {
@@ -60,7 +71,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
           }
         </select>
       } @else if (product(); as only) {
-        <h1 class="studio__system-title">{{ only.name }}</h1>
+        <h1 class="m-0 px-4 pt-4 pb-1 text-[1.5rem] font-semibold">{{ only.name }}</h1>
       }
 
       <et-tree
@@ -68,27 +79,31 @@ type Reading = { products: ListedProduct[]; error: string | null };
         [expandedValues]="expandedValues()"
         (expandedValuesChange)="rememberOpen($event)"
         (nodeActivate)="activate($event.value)"
-        class="studio__system-nav"
+        class="p-2"
         selectionMode="none"
         aria-label="Design system"
       >
         <ng-template etTreeNodeDef let-node>
           @let entry = entryOf(node.value);
           @if (entry) {
-            <span [class.studio__system-entry--active]="entry.key === selectedKey()" [title]="entry.title ?? ''">
+            <span
+              [class.font-semibold]="entry.key === selectedKey()"
+              [style.color]="entry.key === selectedKey() ? 'var(--et-theme-color-primary-solid)' : null"
+              [title]="entry.title ?? ''"
+            >
               {{ node.label }}
             </span>
             @for (badge of entry.badges; track badge) {
               @if (badge === 'error') {
-                <span class="studio__system-badge studio__system-badge--error" etProvideColor="danger">error</span>
+                <span [class]="BADGE_ERROR" etProvideColor="danger">error</span>
               } @else {
-                <span class="studio__system-badge">{{ badge }}</span>
+                <span [class]="BADGE">{{ badge }}</span>
               }
             }
           } @else {
             {{ node.label }}
             @if (countOf(node.value); as count) {
-              <span class="studio__system-count">{{ count }}</span>
+              <span class="ml-auto opacity-70">{{ count }}</span>
             }
           }
         </ng-template>
@@ -97,12 +112,20 @@ type Reading = { products: ListedProduct[]; error: string | null };
 
     <ng-template #themeBar>
       @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
-        <div [attr.aria-label]="themeSwitch.label" class="studio__system-switch" role="group">
+        <div
+          [attr.aria-label]="themeSwitch.label"
+          class="flex gap-0.5 rounded-[0.6rem] border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-0.5"
+          role="group"
+        >
           @for (name of themeSwitch.names; track name) {
             <button
-              [attr.aria-pressed]="name === themeSwitch.current"
+              [pressed]="name === themeSwitch.current"
               (click)="pickTheme(themeSwitch.kind, name)"
+              et-button
               type="button"
+              variant="transparent"
+              color="surface"
+              size="xs"
             >
               {{ name }}
             </button>
@@ -111,33 +134,40 @@ type Reading = { products: ListedProduct[]; error: string | null };
       }
     </ng-template>
 
-    <main class="studio__system-main">
+    <main class="relative grid min-h-0 min-w-0">
       @if (!port()) {
-        <p class="studio__system-note">Start the design server to see the design system.</p>
+        <p [class]="NOTE">Start the design server to see the design system.</p>
       } @else if (call(); as shown) {
-        <div class="studio__system-call">
-          <header class="studio__system-call-head">
-            <div class="studio__system-call-title">
-              <span class="studio__system-call-eyebrow">{{ shown.slug }}</span>
+        <div class="grid min-h-0 grid-rows-[auto_minmax(0,1fr)]">
+          <header class="flex items-center gap-3 border-b border-[var(--et-surface-border-solid)] px-4 py-3">
+            <div class="min-w-0 flex-1">
+              <span class="font-mono text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]">{{ shown.slug }}</span>
               @if ('headline' in shown) {
-                <h2>{{ shown.headline }}</h2>
+                <h2 class="m-0 mt-0.5 overflow-hidden text-[1.5rem] font-semibold text-ellipsis whitespace-nowrap">
+                  {{ shown.headline }}
+                </h2>
               }
             </div>
             <ng-container [ngTemplateOutlet]="themeBar" />
             @if ('transferred' in shown && shown.transferred) {
-              <span class="studio__system-badge">transferred</span>
+              <span [class]="BADGE">transferred</span>
             } @else if (!('error' in shown)) {
               <button
                 [disabled]="transferring()"
                 (click)="markTransferred(shown.slug)"
-                class="studio__system-button"
+                et-button
                 type="button"
+                variant="outline"
+                color="surface"
+                size="sm"
               >
                 Mark transferred
               </button>
             }
             @if (transferError(); as message) {
-              <span class="studio__system-call-error" etProvideColor="danger">{{ message }}</span>
+              <span class="text-[1.2rem] text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{
+                message
+              }}</span>
             }
           </header>
           <ethlete-design-canvas
@@ -145,12 +175,12 @@ type Reading = { products: ListedProduct[]; error: string | null };
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             (cameraChange)="rememberCamera($event)"
-            class="studio__system-canvas"
+            class="min-h-0"
           />
         </div>
       } @else if (reading(); as read) {
         @if (read.error) {
-          <p class="studio__system-note">{{ read.error }}</p>
+          <p [class]="NOTE">{{ read.error }}</p>
         } @else if (read.products.length === 0) {
           <div
             class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]"
@@ -189,7 +219,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
           </ethlete-sketch-view>
         } @else if (part()) {
           @if (themeSwitches().length > 0) {
-            <div class="studio__system-themes">
+            <div class="absolute top-3 right-4 z-1 flex gap-2">
               <ng-container [ngTemplateOutlet]="themeBar" />
             </div>
           }
@@ -198,15 +228,14 @@ type Reading = { products: ListedProduct[]; error: string | null };
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             (cameraChange)="rememberCamera($event)"
-            class="studio__system-canvas"
+            class="min-h-0"
           />
         } @else {
-          <p class="studio__system-note">This product has no parts yet.</p>
+          <p [class]="NOTE">This product has no parts yet.</p>
         }
       }
     </main>
   `,
-  styleUrl: './system-view.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
     BUTTON_IMPORTS,
@@ -217,7 +246,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
     ProvideSurfaceDirective,
     SketchViewComponent,
   ],
-  host: { class: 'studio__system' },
+  host: { class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)]' },
 })
 export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
@@ -228,6 +257,9 @@ export class SystemViewComponent {
 
   public tick = input(0);
 
+  protected readonly BADGE = BADGE;
+  protected readonly BADGE_ERROR = BADGE_ERROR;
+  protected readonly NOTE = NOTE;
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
 
   protected copied = signal(false);

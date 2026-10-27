@@ -14,7 +14,7 @@ import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular
 import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
-import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../call-view/remembered';
+import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import {
   Camera,

@@ -3,17 +3,8 @@ import { Camera } from '../components/design-canvas/canvas-math';
 /** What the window showed last, so a reload comes back to it. */
 export type ViewState = {
   checkout: string;
-  /** The project the window is in. An empty name means the welcome screen. */
-  project: string;
-  slug: string;
-  variant: string;
-  /** The settled feature group the explorer left unfolded. An empty name folds them all. */
-  settledFeature: string;
-  chatHidden: boolean;
   /** The theme picked per design project, keyed by `themeKey`. */
   themes: Record<string, ThemePick>;
-  /** Whether the window shows the calls or the design system. */
-  view: StudioView;
   /** Whether a system tree group or section is open, keyed by its tree key. */
   openGroups: Record<string, boolean>;
   /** The product the system view shows. */
@@ -74,8 +65,6 @@ export const frameSizesWith = ({
 
   return { ...stored, [key]: { ...stored[key], ...size } };
 };
-
-export type StudioView = 'calls' | 'system';
 
 export type ThemePick = { surface?: string; color?: string };
 
@@ -157,31 +146,12 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const {
-      checkout,
-      project,
-      slug,
-      variant,
-      settledFeature,
-      chatHidden,
-      themes,
-      view,
-      openGroups,
-      systemProduct,
-      systemEntry,
-      cameras,
-      frameSizes,
-    } = stored as Partial<ViewState>;
+    const { checkout, themes, openGroups, systemProduct, systemEntry, cameras, frameSizes } =
+      stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
-      project: typeof project === 'string' ? project : undefined,
-      slug: typeof slug === 'string' ? slug : undefined,
-      variant: typeof variant === 'string' ? variant : undefined,
-      settledFeature: typeof settledFeature === 'string' ? settledFeature : undefined,
-      chatHidden: typeof chatHidden === 'boolean' ? chatHidden : undefined,
       themes: themePicks(themes),
-      view: view === 'calls' || view === 'system' ? view : undefined,
       openGroups: openFlags(openGroups),
       systemProduct: typeof systemProduct === 'string' ? systemProduct : undefined,
       systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,

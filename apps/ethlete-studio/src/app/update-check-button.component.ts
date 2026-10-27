@@ -1,4 +1,5 @@
 import { Component, ViewEncapsulation, computed, isDevMode } from '@angular/core';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { injectUpdateCheck } from './update-check';
 
 const LABELS = {
@@ -16,8 +17,11 @@ const LABELS = {
       <button
         [disabled]="update.state() === 'checking'"
         (click)="update.check()"
-        class="studio__verb"
+        et-button
         type="button"
+        variant="transparent"
+        color="surface"
+        size="xs"
         data-update-check
       >
         {{ label() }}
@@ -25,6 +29,7 @@ const LABELS = {
     }
   `,
   encapsulation: ViewEncapsulation.None,
+  imports: [BUTTON_IMPORTS],
 })
 export class UpdateCheckButtonComponent {
   protected update = injectUpdateCheck();

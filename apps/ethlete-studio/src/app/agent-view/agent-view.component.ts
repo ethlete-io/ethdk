@@ -11,7 +11,7 @@ import { workspaceRoot$ } from '../../host/workspace';
     <div class="flex h-dvh min-h-0 flex-col gap-4 overflow-auto p-8">
       <div class="flex items-baseline gap-4">
         <h1 class="text-h2">Agent bridge</h1>
-        <a class="text-et-surface-muted" routerLink="/">Back to calls</a>
+        <a class="text-et-surface-muted" routerLink="/">Back to Studio</a>
       </div>
 
       @if (clis().length === 0) {
