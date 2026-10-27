@@ -552,7 +552,19 @@ Pointed notes, "Show notes" and z-order, as built (proven headlessly):
   never covers a frame or size label of the next row.
 - Turning on note mode also turns "Show notes" on, so a new note does not vanish after save.
 - The line from a note marker to its card stays right-angled; a straight line would cross the cards
-  above.
+  above. Replaced the same day, see below.
+
+### Pointed note link decision (2026-10-27)
+
+Seen on the `add-a-film` flow: the always-on line ran down through the whole frame and crossed text
+and buttons, the thing the card below the frame was meant to avoid.
+
+- A pointed note's marker shows a small number, and its card below the frame shows the same number
+  (numbered per frame). The line from marker to card appears only while the pointer is over the
+  marker or the card. No line otherwise.
+
+Also seen there: on `pages/library` "add open" the dialog backdrop ends at about 410px and the rest
+of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
 
 ### Comment follow-up decisions (2026-10-27)
 
