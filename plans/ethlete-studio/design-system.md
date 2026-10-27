@@ -1,6 +1,6 @@
 # Ethlete Studio - the design system model
 
-Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core and Studio sketch view done; the frame size decisions and three sketch follow-ups are open. Slice 5: core and Studio comments done, with threads. States and interactions: in progress. Slice 3 inventory done; the rebuild waits for slices 4 and 5.
+Status (2026-10-27): slices 1 and 2 done; the old Calls UI is removed. Slice 4: core, Studio sketch view, frame sizes and the sketch matrix done. Slice 5: core and Studio comments done, with threads. States and interactions: done (steps 1 to 6). Slice 3 inventory done; the rebuild follows slice 10, as in "Slice 10 decisions". Open items per slice are at the end of this file.
 
 This plan replaces the call model (project → feature → call → variant, the 1-7 workflow, call
 stages and `legacy: true`). The bridge from the design system to the app code is out of scope. Decide it when
@@ -752,7 +752,8 @@ Open points, each with a recommendation:
   headlessly. Assumed cause: an old saved fit camera comes back as a zoom. 91cf0ed1d saves only a
   camera the user moved. Checked in the real app (2026-10-27): still there in the part view of
   `studio-lab` `components/button` (the matrix sits centred, cut at the right), not in the sketch
-  view. The sketch view shows about 150 px between the solid and the outline group. Both are queued
+  view. The sketch view showed about 150 px between the solid and the outline group; 59e2bdb09 set
+  the group gap to the row gap × 2 (see "Sketch matrix gap decisions"), not yet checked in the real app. Both are queued
   as the builder slice after the frame reload, with a test that bites.
 
 ### Agent author decisions (2026-10-27)
@@ -1154,8 +1155,8 @@ Open points, each with a recommendation:
   file in `libs/cli/src`, `libs/cli/design` or `libs/cli/package.json` has a newer mtime than the
   built cli's `src/index.js`. It skips `node_modules`, dot folders and `*.spec.*`, stops at the first
   newer file or after 5000 entries, and a missing build counts as not stale. The Rust test
-  `a_cli_source_newer_than_its_build_reads_as_outdated` fails without the check. Known gap: a
-  deleted source file alone does not mark the server stale. Not yet seen in the real footer.
+  `a_cli_source_newer_than_its_build_reads_as_outdated` fails without the check. 1e2d102c4: a
+  directory with a newer mtime counts too, so a deleted source file also marks the server stale. Not yet seen in the real footer.
 
 ### Studio comments, as built (2026-10-27)
 
@@ -1512,6 +1513,6 @@ other-size counts, merge lock and empty matrix cells (f13302bf3), replies and th
 the merge state and the "needs rebase" inbox entry, as in "Merge and rebase decisions".
 
 Slice 3: the inventory is done (`tomflix-inventory.md`). The rebuild waits on purpose
-(decided 2026-10-27). Tomflix stays out until the new workflow works: canvas, sketches and
+(decided 2026-10-27) and runs after slice 10. Tomflix stays out until the new workflow works: canvas, sketches and
 feedback. Then the old tomflix calls move to Legacy, and the rebuild from them is the battle
 test of the workflow. The inventory is the reference for it.
