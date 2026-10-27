@@ -13,6 +13,7 @@ import {
   lastWordOf,
   listComments,
   replyToComment,
+  threadStateOf,
 } from './comment';
 
 const acme = () => {
@@ -188,6 +189,49 @@ describe('replyToComment', () => {
     writeFileSync(comment.file, JSON.stringify({ ...on, createdAt: 'x', replies: [{ by: 'bot', text: 'Hi.' }] }));
     expect(listComments({ productDir: product.dir, product: 'acme' }).unreadable).toEqual([
       { file: comment.file, problem: expect.stringContaining('replies must be') },
+    ]);
+  });
+
+  it('marks a reply that asks the user with --question and keeps any other agent reply answered', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const comment = createComment({ product, comment: on }) as DesignComment;
+    const products = [{ name: 'acme', dir: product.dir }];
+    const agent = { products, id: comment.id, by: 'agent' as const, author: 'gpt-5.6-sol' };
+
+    expect(threadStateOf(comment)).toBe('agent');
+
+    const asked = replyToComment({ ...agent, text: 'Round or square?', question: true }) as DesignComment;
+
+    expect(asked.replies[asked.replies.length - 1]).toEqual({
+      by: 'agent',
+      author: 'gpt-5.6-sol',
+      text: 'Round or square?',
+      createdAt: expect.any(String),
+      question: true,
+    });
+    expect(threadStateOf(asked)).toBe('question');
+    expect(JSON.parse(readFileSync(comment.file, 'utf8')).replies[0].question).toBe(true);
+
+    replyToComment({ products, id: comment.id, by: 'user', text: 'Round.' });
+    expect(threadStateOf(listComments({ productDir: product.dir, product: 'acme' }).comments[0] as DesignComment)).toBe(
+      'agent',
+    );
+
+    const reported = replyToComment({ ...agent, text: 'Made it round.' }) as DesignComment;
+
+    expect(reported.replies[reported.replies.length - 1]).not.toHaveProperty('question');
+    expect(threadStateOf(reported)).toBe('answered');
+    expect(replyToComment({ products, id: comment.id, by: 'user', text: 'Hm?', question: true })).toBe(
+      'only an agent reply can be a question',
+    );
+
+    writeFileSync(
+      comment.file,
+      JSON.stringify({ ...on, createdAt: 'x', replies: [{ by: 'user', text: 'Hi.', createdAt: 'x', question: true }] }),
+    );
+    expect(listComments({ productDir: product.dir, product: 'acme' }).unreadable).toEqual([
+      { file: comment.file, problem: expect.stringContaining('question only on an agent reply') },
     ]);
   });
 });

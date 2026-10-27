@@ -10,7 +10,7 @@ export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id
 
 export const COMMENT_USAGE = [
   'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--interaction <name>] [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
-  'comment reply <id> --by <model id> <text> [--product <name>]',
+  'comment reply <id> --by <model id> <text> [--question] [--product <name>]',
 ];
 
 const fail = (message: string, code = 1) => {
@@ -114,9 +114,10 @@ const designCommentReply = (options: {
   positional: string[];
   asked: string | undefined;
   author: string | null;
+  question: boolean;
   invocation: string;
 }) => {
-  const { target, positional, asked, author, invocation } = options;
+  const { target, positional, asked, author, question, invocation } = options;
   const [id, ...words] = positional;
 
   if (!id || words.length === 0) return usage(invocation, COMMENT_USAGE);
@@ -136,18 +137,19 @@ const designCommentReply = (options: {
     by: 'agent',
     author,
     text: words.join(' '),
+    question,
   });
 
   if (typeof replied === 'string') return fail(replied);
 
-  console.log(`replied: ${relative(target, replied.file)}`);
+  console.log(`${question ? 'asked' : 'replied'}: ${relative(target, replied.file)}`);
 
   return 0;
 };
 
 /**
  * `et design comment …` writes a comment on a state of a part, as Studio does from the canvas.
- * `et design comment reply <id> <text>` answers a comment thread as the agent.
+ * `et design comment reply <id> <text>` answers a comment thread as the agent; `--question` marks a reply that waits for the user's answer.
  */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -161,6 +163,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
       positional: args.positional.slice(1),
       asked: args.values['--product'],
       author: authorOf(args),
+      question: args.flags.has('--question'),
       invocation,
     });
 

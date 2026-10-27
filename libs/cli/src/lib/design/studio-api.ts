@@ -8,6 +8,7 @@ import {
   DesignComment,
   listComments,
   replyToComment,
+  threadStateOf,
   staleReasonOf,
 } from './system/comments/comment';
 import { completeComment } from './system/comments/complete';
@@ -128,7 +129,12 @@ const commentOf = ({
 }) => {
   const { file, ...rest } = comment;
 
-  return { ...rest, file: relative(target, file), stale: staleReasonOf({ product, comment }) };
+  return {
+    ...rest,
+    file: relative(target, file),
+    stale: staleReasonOf({ product, comment }),
+    threadState: threadStateOf(comment),
+  };
 };
 
 const targetsOf = async ({
@@ -279,7 +285,10 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
   return problem ? failure(422, problem) : { status: 200, body: { discarded: sketch.target } };
 });
 
-/** `?product=[&part=<layer>/<name>]`: the open comments with their `replies`, oldest first, each with the reason it is stale or `null`. */
+/**
+ * `?product=[&part=<layer>/<name>]`: the open comments with their `replies`, oldest first, each with the reason it
+ * is stale or `null` and its `threadState` (`agent`, `question` or `answered`).
+ */
 export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   const part = asked.url.searchParams.get('part');
   const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name });

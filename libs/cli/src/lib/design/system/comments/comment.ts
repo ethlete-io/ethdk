@@ -20,8 +20,15 @@ export const REST = 'rest';
 /**
  * One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`).
  * `author` is the model id of the agent; a reply written before it was recorded has none.
+ * `question` marks an agent reply that waits for the user's answer (`--question`).
  */
-export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string };
+export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
+
+/**
+ * Who a thread waits on: `agent` when the user spoke last, `question` when the agent's last reply asks the user,
+ * `answered` when the agent's last reply asks nothing. An answered thread stays open until the user withdraws it or replies.
+ */
+export type ThreadState = 'agent' | 'question' | 'answered';
 
 export type CommentFile = {
   part: string;
@@ -62,7 +69,8 @@ const isReply = (value: unknown) => {
     typeof reply.text === 'string' &&
     reply.text !== '' &&
     typeof reply.createdAt === 'string' &&
-    (reply.author === undefined || (typeof reply.author === 'string' && reply.author !== ''))
+    (reply.author === undefined || (typeof reply.author === 'string' && reply.author !== '')) &&
+    (reply.question === undefined || (reply.question === true && reply.by === 'agent'))
   );
 };
 
@@ -84,7 +92,7 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
   )
     return 'sketch must be { target, variant }';
   if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
-    return 'replies must be [{ by: "user" | "agent", author?, text, createdAt }]';
+    return 'replies must be [{ by: "user" | "agent", author?, text, createdAt, question?: true }], question only on an agent reply';
 
   return null;
 };
@@ -231,6 +239,14 @@ export const createComment = (options: {
 export const lastWordOf = (comment: Pick<DesignComment, 'replies'>) =>
   comment.replies[comment.replies.length - 1]?.by ?? 'user';
 
+export const threadStateOf = (comment: Pick<DesignComment, 'replies'>): ThreadState => {
+  const last = comment.replies[comment.replies.length - 1];
+
+  if (last?.by !== 'agent') return 'agent';
+
+  return last.question ? 'question' : 'answered';
+};
+
 export const findComment = (options: { products: { name: string; dir: string }[]; id: string }) => {
   const { products, id } = options;
 
@@ -254,17 +270,26 @@ export const replyToComment = (options: {
   by: CommentReply['by'];
   author?: string;
   text: string;
+  question?: boolean;
 }): DesignComment | string => {
-  const { by, author, text } = options;
+  const { by, author, text, question } = options;
 
   if (text.trim() === '') return 'a reply needs a text';
   if (by === 'agent' && !author?.trim()) return 'an agent reply needs --by <model id>';
+  if (question && by !== 'agent') return 'only an agent reply can be a question';
 
   const found = findComment(options);
 
   if (typeof found === 'string') return found;
 
-  const replies = [...found.replies, { by, ...(author ? { author } : {}), text, createdAt: new Date().toISOString() }];
+  const reply: CommentReply = {
+    by,
+    ...(author ? { author } : {}),
+    text,
+    createdAt: new Date().toISOString(),
+    ...(question ? { question: true as const } : {}),
+  };
+  const replies = [...found.replies, reply];
   const stored = JSON.parse(readFileSync(found.file, 'utf8')) as CommentFile;
 
   writeFileSync(found.file, `${JSON.stringify({ ...stored, replies }, null, 2)}\n`);

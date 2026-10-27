@@ -62,7 +62,30 @@ describe('designComment and designInbox', () => {
       waitingForUser: [
         expect.objectContaining({
           id,
+          threadState: 'answered',
           replies: [expect.objectContaining({ by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?' })],
+        }),
+      ],
+    });
+    expect(
+      designComment({
+        target,
+        argv: ['reply', id, '--question', '--product', 'acme', '--by', 'gpt-5.6-sol', 'Title', 'or', 'list?'],
+        invocation,
+      }),
+    ).toBe(0);
+    expect(lines.pop()).toBe(`asked: .ethlete/design/acme/comments/${id}.json`);
+    expect(designInbox({ target, argv: ['--json'], invocation })).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')).toEqual({
+      items: [],
+      waitingForUser: [
+        expect.objectContaining({
+          id,
+          threadState: 'question',
+          replies: [
+            expect.objectContaining({ text: 'Which part?' }),
+            expect.objectContaining({ by: 'agent', text: 'Title or list?', question: true }),
+          ],
         }),
       ],
     });

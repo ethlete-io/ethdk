@@ -2,9 +2,14 @@ import { relative } from 'path';
 import { DesignConfig } from '../../paths';
 import { productDirOf } from '../product';
 import { listSketches } from '../sketch/sketch';
-import { DesignComment, lastWordOf, listComments, REST } from './comment';
+import { DesignComment, lastWordOf, listComments, REST, ThreadState, threadStateOf } from './comment';
 
-export type InboxComment = Omit<DesignComment, 'file'> & { kind: 'comment'; file: string; at: string };
+export type InboxComment = Omit<DesignComment, 'file'> & {
+  kind: 'comment';
+  file: string;
+  at: string;
+  threadState: ThreadState;
+};
 
 type DecisionOn = { product: string; target: string; comment?: string; at: string };
 
@@ -35,6 +40,7 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
         kind: 'comment',
         file: relative(target, comment.file),
         at: comment.replies[comment.replies.length - 1]?.createdAt ?? comment.createdAt,
+        threadState: threadStateOf(comment),
       };
 
       (lastWordOf(comment) === 'user' ? items : waiting).push(item);
@@ -85,10 +91,10 @@ const lineOf = (item: InboxItem, invocation: string) => {
     ].join(' · ');
 
     return [
-      `${when}  ${item.product}  comment ${item.id}  ${where}`,
+      `${when}  ${item.product}  comment ${item.id}${item.threadState === 'agent' ? '' : ` (${item.threadState})`}  ${where}`,
       ...indented(item.text),
       ...item.replies.flatMap((reply) => [
-        `    ${reply.by}${reply.author ? ` ${reply.author}` : ''}:`,
+        `    ${reply.by}${reply.author ? ` ${reply.author}` : ''}${reply.question ? ' asks' : ''}:`,
         ...indented(reply.text, '      '),
       ]),
       `    reply: ${invocation} comment reply ${item.id} --product ${item.product} --by <model id> ${quoted('…')}`,

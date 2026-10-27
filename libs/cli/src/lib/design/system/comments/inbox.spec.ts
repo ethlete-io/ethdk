@@ -113,13 +113,14 @@ describe('inboxOf', () => {
       expect.objectContaining({
         id: comment.id,
         at: '2026-10-27T12:00:00.000Z',
+        threadState: 'answered',
         replies: [{ by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?', createdAt: '2026-10-27T12:00:00.000Z' }],
       }),
     ]);
     expect(inboxText(inbox(), 'et design').split('\n').slice(-8)).toEqual([
       '',
       'waiting for the user:',
-      `2026-10-27 12:00  acme  comment ${comment.id}  pages/home · empty · phone · at 12,30`,
+      `2026-10-27 12:00  acme  comment ${comment.id} (answered)  pages/home · empty · phone · at 12,30`,
       '    Say why.',
       '    agent gpt-5.6-sol:',
       '      Which part?',
@@ -131,6 +132,32 @@ describe('inboxOf', () => {
     replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
 
     expect(inbox().waiting).toEqual([]);
-    expect(inbox().items[2]).toEqual(expect.objectContaining({ id: comment.id, at: '2026-10-27T13:00:00.000Z' }));
+    expect(inbox().items[2]).toEqual(
+      expect.objectContaining({ id: comment.id, at: '2026-10-27T13:00:00.000Z', threadState: 'agent' }),
+    );
+  });
+
+  it('marks a waiting thread whose last agent reply asks the user as a question', () => {
+    const { target, comment } = setup();
+    const products = [{ name: 'acme', dir: join(target, '.ethlete/design/acme') }];
+
+    vi.setSystemTime('2026-10-27T12:00:00Z');
+    replyToComment({
+      products,
+      id: comment.id,
+      by: 'agent',
+      author: 'gpt-5.6-sol',
+      text: 'Which part?',
+      question: true,
+    });
+
+    const inbox = inboxOf({ target, config: readConfig(target) ?? {} });
+
+    expect(inbox.waiting).toEqual([expect.objectContaining({ id: comment.id, threadState: 'question' })]);
+    expect(inboxText(inbox, 'et design').split('\n').slice(-6, -3)).toEqual([
+      `2026-10-27 12:00  acme  comment ${comment.id} (question)  pages/home · empty · phone · at 12,30`,
+      '    Say why.',
+      '    agent gpt-5.6-sol asks:',
+    ]);
   });
 });

@@ -138,7 +138,7 @@ The user comments on a state of a part in Studio, at a point, or on a sketch var
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
 et design inbox done <id> --note <text> --by <model id>   # set the part note, delete the comment thread
-et design comment reply <id> --by <model id> <text>       # answer a comment thread (takes --product)
+et design comment reply <id> --by <model id> <text> [--question]   # answer a comment thread (takes --product)
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
@@ -146,9 +146,13 @@ by changing the sketch or the part, then `inbox done <id> --note "…"`. The not
 cue, not yours to act on beyond what Studio already did.
 
 A comment is a thread: the user and you both reply. When a comment is unclear, ask with
-`comment reply` instead of guessing. The thread then moves to the "waiting for the user" group
+`comment reply --question` instead of guessing. The thread then moves to the "waiting for the user" group
 (`waitingForUser` in `--json`) and returns to the inbox when the user answers. A thread there is
 not work for you, but it still blocks `sketch merge` and `sketch discard` until it is done.
+
+Pass `--question` only when you cannot go on without the user's answer. Studio lists only those
+threads under "Questions for you". A report of what you did is no question: reply without the
+flag, and the thread shows as "answered" until the user withdraws it or replies.
 
 ### Check a product
 
