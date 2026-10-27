@@ -10,6 +10,7 @@ import {
   listedComments$,
   writeComment$,
 } from '../../host/design';
+import { rememberView, rememberedView } from '../studio-view/remembered';
 import { CommentDraft, commentPlaceOf, numberedCommentsOf } from './comment-pins';
 
 /** What the store reads from: the product on the design server, and a revision that forces a reload. */
@@ -74,7 +75,7 @@ export class CommentStore {
 
   public draft = signal<CommentDraft | null>(null);
 
-  public panelOpen = signal(false);
+  public panelOpen = signal(rememberedView().commentsOpen ?? false);
 
   public busy = signal(false);
 
@@ -94,6 +95,12 @@ export class CommentStore {
   public end() {
     this.active.set(false);
     this.cancel();
+  }
+
+  /** Shows or hides the comment sidebar, and remembers it for the next start. */
+  public showPanel(open: boolean) {
+    this.panelOpen.set(open);
+    rememberView({ commentsOpen: open });
   }
 
   public start(draft: CommentDraft) {

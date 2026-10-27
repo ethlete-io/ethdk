@@ -70,6 +70,9 @@ const painted$ = (iframe: HTMLIFrameElement) => {
       @if (frame().width !== undefined) {
         <span class="et-canvas-frame__width">{{ width() }}</span>
       }
+      @if (frame().note; as note) {
+        <span class="et-canvas-frame__width" data-frame-note>{{ note }}</span>
+      }
     </ng-template>
     @if (captionPickable()) {
       <span
@@ -86,7 +89,14 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     } @else {
       <span class="et-canvas-frame__label"><ng-container [ngTemplateOutlet]="caption" /></span>
     }
-    @if (frame().error) {
+    @if (frame().empty; as empty) {
+      <div
+        class="absolute inset-0 box-border flex items-center justify-center rounded-md border-2 border-dashed border-[var(--et-surface-border-solid)] p-4 text-center text-[calc(1.3rem*var(--et-design-canvas-label-scale))] text-[var(--et-surface-color-muted-solid)]"
+        data-empty-cell
+      >
+        {{ empty }}
+      </div>
+    } @else if (frame().error) {
       <div class="et-canvas-frame__error" etProvideColor="danger" role="alert">{{ frame().error }}</div>
     } @else {
       @if (!painted()) {
@@ -124,6 +134,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     class: 'et-canvas-frame',
     '[class.et-canvas-frame--selected]': 'selected()',
     '[class.et-canvas-frame--active]': 'active()',
+    '[class.et-canvas-frame--empty]': 'frame().empty !== undefined',
     '[class.et-canvas-frame--caption-below]': 'captionBelow()',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',

@@ -1,7 +1,9 @@
 import {
   Component,
   DestroyRef,
+  Injector,
   ViewEncapsulation,
+  afterNextRender,
   computed,
   inject,
   input,
@@ -28,7 +30,14 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { CommentDraftComponent } from './comment-draft.component';
-import { commentDraftOf, pinsOf } from './comment-pins';
+import {
+  NumberedComment,
+  commentDraftOf,
+  commentsOfPart,
+  otherSizeFrameOf,
+  pinsOf,
+  withOtherSizeNotes,
+} from './comment-pins';
 import { injectCommentStore } from './comment-store';
 import { canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
 
@@ -122,7 +131,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           aria-label="Note"
         />
         <button
-          [disabled]="busy() !== null || !picked() || note().trim() === ''"
+          [disabled]="busy() !== null || locked() || !picked() || note().trim() === ''"
           (click)="merge()"
           et-button
           type="button"
@@ -133,7 +142,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
           {{ busy() === 'merge' ? 'Merging…' : 'Merge ' + (picked() ?? '') }}
         </button>
         <button
-          [disabled]="busy() !== null"
+          [disabled]="busy() !== null || locked()"
           (click)="discard()"
           et-button
           type="button"
@@ -143,6 +152,19 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         >
           {{ confirmingDiscard() ? 'Discard all variants?' : 'Discard sketch' }}
         </button>
+        @if (locked()) {
+          <button
+            (click)="commentStore.showPanel(true)"
+            et-button
+            type="button"
+            variant="transparent"
+            size="sm"
+            title="Withdraw or resolve them to merge or discard"
+            data-merge-lock
+          >
+            {{ openComments().length === 1 ? '1 open comment' : openComments().length + ' open comments' }}
+          </button>
+        }
       </div>
 
       @if (error(); as message) {
@@ -195,7 +217,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
     }
 
     <ethlete-design-canvas
-      [frames]="canvas().frames"
+      [frames]="notedFrames()"
       [columns]="canvasColumns()"
       [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
       [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
@@ -220,6 +242,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 export class SketchViewComponent {
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
+  private injector = inject(Injector);
   public port = input.required<number>();
   public product = input.required<ListedProduct>();
   public sketch = input.required<ListedSketch>();
@@ -229,12 +252,12 @@ export class SketchViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
+
   public restoredCamera = input<Camera | null>(null);
 
   public cameraChange = output<Camera>();
 
   public decide = output<void>();
-
   private canvasRef = viewChild.required(DesignCanvasComponent);
 
   protected note = signal('');
@@ -295,9 +318,7 @@ export class SketchViewComponent {
     this.shownMode() === 'merge' && this.mergePreview() !== null ? 'merge' : 'matrix',
   );
 
-  protected canvas = computed(() =>
-    this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix(),
-  );
+  public canvas = computed(() => (this.showing() === 'merge' ? (this.mergePreview() ?? this.matrix()) : this.matrix()));
 
   protected hasToolbar = computed(
     () =>
@@ -307,6 +328,12 @@ export class SketchViewComponent {
   );
 
   protected pins = computed(() => pinsOf(this.canvas().frames, this.commentStore.comments()));
+
+  protected openComments = computed(() => commentsOfPart(this.commentStore.comments(), this.sketch().target));
+
+  protected locked = computed(() => this.openComments().length > 0);
+
+  protected notedFrames = computed(() => withOtherSizeNotes(this.canvas().frames, this.commentStore.comments()));
 
   protected canvasColumns = computed(() =>
     this.canvas().columns.map(({ key, label, drawing }) => ({ key, label, muted: drawing })),
@@ -325,6 +352,18 @@ export class SketchViewComponent {
     const draft = commentDraftOf(this.canvas().frames, pick);
 
     if (draft) this.commentStore.start(draft);
+  }
+
+  /** Moves the camera to a comment: back to the matrix and to its size first, when the matrix offers it. */
+  public jumpTo(comment: NumberedComment) {
+    const size = String(comment.size);
+    const resize = size !== this.matrix().size && this.matrix().sizes.includes(size);
+    const leaveMerge = this.showing() === 'merge';
+
+    if (resize) this.size.set(size);
+    if (leaveMerge) this.shownMode.set('matrix');
+    if (resize || leaveMerge) afterNextRender(() => this.focusComment(comment), { injector: this.injector });
+    else this.focusComment(comment);
   }
 
   protected rememberCamera(camera: Camera) {
@@ -379,6 +418,13 @@ export class SketchViewComponent {
 
     this.confirmingDiscard.set(false);
     this.run('discard', discardSketch$(this.address()));
+  }
+
+  private focusComment(comment: NumberedComment) {
+    const frame = otherSizeFrameOf(this.canvas().frames, comment);
+
+    if (this.pins().some((pin) => pin.id === comment.id)) this.canvasRef().openPin(comment.id);
+    else if (frame) this.canvasRef().focusFrame(frame);
   }
 
   private run(busy: Busy, work$: Observable<unknown>) {

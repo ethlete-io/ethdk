@@ -91,6 +91,11 @@
     outline: calc(0.1rem * var(--et-design-canvas-label-scale)) solid var(--et-surface-border-solid);
   }
 
+  .et-canvas-frame--empty {
+    background: transparent;
+    outline: none;
+  }
+
   .et-canvas-frame--unsized {
     opacity: 0;
     pointer-events: none;

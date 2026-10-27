@@ -1,5 +1,17 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  Injector,
+  ViewEncapsulation,
+  afterNextRender,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, SELECT_IMPORTS, TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
@@ -45,7 +57,15 @@ import {
   treeOf,
 } from './system-tree';
 import { CommentDraftComponent } from './comment-draft.component';
-import { commentDraftOf, isCommentModeKey, pinsOf } from './comment-pins';
+import {
+  NumberedComment,
+  commentDraftOf,
+  isCommentModeKey,
+  otherSizeFrameOf,
+  pinsOf,
+  withOtherSizeNotes,
+} from './comment-pins';
+import { CommentPanelComponent } from './comment-panel.component';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
@@ -158,6 +178,18 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
       >
         Comment
       </button>
+      <button
+        [pressed]="commentStore.panelOpen()"
+        (click)="commentStore.showPanel(!commentStore.panelOpen())"
+        et-button
+        type="button"
+        variant="outline"
+        color="surface"
+        size="sm"
+        title="Show the comments of the product"
+      >
+        Comments{{ commentStore.comments().length > 0 ? ' · ' + commentStore.comments().length : '' }}
+      </button>
     </ng-template>
 
     <main class="relative grid min-h-0 min-w-0">
@@ -228,6 +260,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
           </div>
         } @else if (sketchShown(); as shown) {
           <ethlete-sketch-view
+            #sketchView
             [port]="shown.port"
             [product]="shown.product"
             [sketch]="shown.sketch"
@@ -250,7 +283,8 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </div>
           <ethlete-design-canvas
-            [frames]="frames()"
+            #partCanvas
+            [frames]="notedFrames()"
             [arrangement]="arrangement()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
@@ -271,6 +305,14 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
         }
       }
     </main>
+    @if (commentStore.panelOpen() && commentable()) {
+      <ethlete-comment-panel
+        [comments]="commentStore.comments()"
+        [selected]="shownPart()"
+        (jump)="jumpTo($event)"
+        (dismiss)="commentStore.showPanel(false)"
+      />
+    }
   `,
   encapsulation: ViewEncapsulation.None,
   imports: [
@@ -283,26 +325,33 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
     ProvideSurfaceDirective,
     SketchViewComponent,
     CommentDraftComponent,
+    CommentPanelComponent,
   ],
   providers: [provideCommentStore()],
   host: {
-    class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)]',
+    class: 'grid min-h-0 grid-cols-[28rem_minmax(0,1fr)_auto]',
     '(window:keydown)': 'handleCommentKey($event)',
   },
 })
 export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
   protected commentStore = injectCommentStore();
+  private injector = inject(Injector);
   public port = input<number | null>(null);
   public epoch = input(0);
   public checkout = input('');
+
   public projectThemes = input<Record<string, Themes>>({});
 
   public tick = input(0);
-
+  private partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
+  private sketchView = viewChild<SketchViewComponent>('sketchView');
   protected readonly BADGE = BADGE;
+
   protected readonly BADGE_ERROR = BADGE_ERROR;
+
   protected readonly NOTE = NOTE;
+
   protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
 
   protected copied = signal(false);
@@ -589,8 +638,10 @@ export class SystemViewComponent {
   });
 
   protected partPins = computed(() => pinsOf(this.frames(), this.commentStore.comments()));
+  protected notedFrames = computed(() => withOtherSizeNotes(this.frames(), this.commentStore.comments()));
+  protected shownPart = computed(() => this.sketch()?.target ?? this.part()?.key ?? null);
 
-  private commentable = computed(() => !this.call() && (this.sketchShown() !== null || this.part() !== null));
+  protected commentable = computed(() => !this.call() && (this.sketchShown() !== null || this.part() !== null));
 
   constructor() {
     this.commentStore.connect(
@@ -611,8 +662,21 @@ export class SystemViewComponent {
 
   protected handleCommentKey(event: KeyboardEvent) {
     if (!this.commentable()) return;
-    if (event.key === 'Escape' && this.commentStore.active()) this.commentStore.end();
+    if (event.key === 'Escape' && this.commentStore.draft()) this.commentStore.cancel();
+    else if (event.key === 'Escape' && this.commentStore.active()) this.commentStore.end();
     else if (isCommentModeKey(event) && !event.repeat) this.commentStore.toggle();
+  }
+
+  /** Shows the part or sketch a comment sits on, then moves the camera to its pin and opens it. */
+  protected jumpTo(comment: NumberedComment) {
+    const sketchKey = sketchKeyOf(comment.part);
+    const key = comment.sketch && this.nodes().entries.has(sketchKey) ? sketchKey : comment.part;
+
+    if (key === this.selectedKey()) this.focusComment(comment);
+    else {
+      this.activate(key);
+      afterNextRender(() => this.focusComment(comment), { injector: this.injector });
+    }
   }
 
   protected entryOf(value: unknown) {
@@ -710,5 +774,18 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private focusComment(comment: NumberedComment) {
+    const sketchView = this.sketchView();
+    const canvas = this.partCanvas();
+
+    if (sketchView) return sketchView.jumpTo(comment);
+    if (!canvas) return;
+
+    const frame = otherSizeFrameOf(this.frames(), comment);
+
+    if (this.partPins().some((pin) => pin.id === comment.id)) canvas.openPin(comment.id);
+    else if (frame) canvas.focusFrame(frame);
   }
 }

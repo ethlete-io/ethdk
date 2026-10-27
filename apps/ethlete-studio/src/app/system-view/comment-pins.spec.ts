@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { ListedComment } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import {
+  ageOf,
   commentDraftOf,
+  commentGroupsOf,
   commentPlaceOf,
   draftKeyOf,
   isCommentModeKey,
   numberedCommentsOf,
   otherSizeCountOf,
+  otherSizeFrameOf,
   pinsOf,
+  withOtherSizeNotes,
 } from './comment-pins';
 import { treeOf } from './system-tree';
 
@@ -62,6 +66,40 @@ describe('comment pins', () => {
       size: 'fitted',
       point: { x: 2, y: 2 },
     });
+  });
+
+  it('groups the comments by part with the selected part on top, and tells their age', () => {
+    const numbered = numberedCommentsOf([
+      comment('1', { part: 'pages/home' }),
+      comment('2', {}),
+      comment('3', { part: 'elements/rating' }),
+    ]);
+    const groups = commentGroupsOf(numbered, 'pages/home');
+    const now = Date.parse('2026-10-27T12:00:00Z');
+
+    expect(groups.map((group) => [group.part, group.comments.map((entry) => entry.id)])).toEqual([
+      ['pages/home', ['1']],
+      ['components/card', ['2']],
+      ['elements/rating', ['3']],
+    ]);
+    expect(commentGroupsOf(numbered, null)[0]?.part).toBe('components/card');
+    expect(
+      ['2026-10-27T11:59:30Z', '2026-10-27T11:55:00Z', '2026-10-27T09:00:00Z', '2026-10-25T12:00:00Z'].map(
+        (createdAt) => ageOf(createdAt, now),
+      ),
+    ).toEqual(['now', '5 min', '3 h', '2 d']);
+  });
+
+  it('notes the comments at other sizes on a label, and finds the frame of their state', () => {
+    const wide = comment('1', { size: 520 });
+    const others = [wide, comment('2', { size: 'fitted' }), comment('3', {})];
+    const [plain, variant] = withOtherSizeNotes([frame('f'), frame('g', 'a')], others);
+
+    expect(plain?.note).toBe('2 comments at other sizes');
+    expect(variant?.note).toBeUndefined();
+    expect(withOtherSizeNotes([frame('f')], [wide])[0]?.note).toBe('1 comment at another size');
+    expect(otherSizeFrameOf([frame('g', 'a'), frame('f')], wide)).toBe('f');
+    expect(otherSizeFrameOf([frame('g', 'a')], wide)).toBeNull();
   });
 
   it('marks a commented part, and a sketch with a comment on a variant', () => {

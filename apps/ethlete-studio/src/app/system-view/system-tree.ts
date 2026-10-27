@@ -310,8 +310,8 @@ const sketchSizesOf = ({
 /**
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant, one
  * row per state - the current states first, then any state only a variant has. Every cell has the one
- * picked size. A variant the agent reports drawing while the sketch is in progress gets a column without
- * frames.
+ * picked size. A column that lacks a row's state gets an empty cell there. A variant the agent reports
+ * drawing while the sketch is in progress gets a column without frames.
  */
 export const sketchMatrixOf = ({
   port,
@@ -349,52 +349,69 @@ export const sketchMatrixOf = ({
   const states = [...new Set(columns.flatMap((column) => column.states))];
   const rows: (string | undefined)[] = states.length > 0 ? states : [undefined];
 
+  const frameOf = (column: (typeof columns)[number], state: string | undefined): CanvasFrame => {
+    const address: PartAddress = {
+      port,
+      product: product.name,
+      part: sketch.target,
+      state: state ?? '',
+      epoch,
+      revision,
+      surface,
+      color,
+      ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
+      ...(size === null ? { fit: true } : {}),
+    };
+
+    return {
+      id: `${column.key} ${state ?? ''}`,
+      src: partFrameUrl(address),
+      ...(cell.width ? { width: cell.width } : {}),
+      ...(cell.height ? { height: cell.height } : {}),
+      label: cell.label,
+      row: state,
+      column: column.key,
+      screenshot: partShotUrl({
+        ...address,
+        preset: cell.preset,
+        width: cell.preset ? undefined : cell.width,
+        revision,
+      }),
+      error: column.states.length > 0 ? undefined : column.error,
+      ...(state === undefined
+        ? {}
+        : {
+            place: {
+              part: sketch.target,
+              state,
+              size: cell.preset ?? cell.width ?? FITTED,
+              ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+            },
+          }),
+    };
+  };
+
   const frames = columns.flatMap((column) => {
     if (column.drawing) return [];
 
-    const shown =
-      column.states.length > 0 ? rows.filter((row) => row !== undefined && column.states.includes(row)) : [rows[0]];
+    if (column.states.length === 0) return [frameOf(column, rows[0])];
 
-    return shown.map((state): CanvasFrame => {
-      const address: PartAddress = {
-        port,
-        product: product.name,
-        part: sketch.target,
-        state: state ?? '',
-        epoch,
-        revision,
-        surface,
-        color,
-        ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
-        ...(size === null ? { fit: true } : {}),
-      };
+    return rows.flatMap((state): CanvasFrame[] => {
+      if (state === undefined) return [];
+      if (column.states.includes(state)) return [frameOf(column, state)];
 
-      return {
-        id: `${column.key} ${state ?? ''}`,
-        src: partFrameUrl(address),
-        ...(cell.width ? { width: cell.width } : {}),
-        ...(cell.height ? { height: cell.height } : {}),
-        label: cell.label,
-        row: state,
-        column: column.key,
-        screenshot: partShotUrl({
-          ...address,
-          preset: cell.preset,
-          width: cell.preset ? undefined : cell.width,
-          revision,
-        }),
-        error: column.states.length > 0 ? undefined : column.error,
-        ...(state === undefined
-          ? {}
-          : {
-              place: {
-                part: sketch.target,
-                state,
-                size: cell.preset ?? cell.width ?? FITTED,
-                ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
-              },
-            }),
-      };
+      return [
+        {
+          id: `${column.key} ${state}`,
+          src: '',
+          ...(cell.width ? { width: cell.width } : {}),
+          ...(cell.height ? { height: cell.height } : {}),
+          label: cell.label,
+          row: state,
+          column: column.key,
+          empty: column.key === CURRENT ? 'new in this sketch' : `${column.key} has no ${state} state`,
+        },
+      ];
     });
   });
 

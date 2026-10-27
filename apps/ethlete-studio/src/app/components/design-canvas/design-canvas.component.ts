@@ -37,7 +37,8 @@ import {
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
-const GRID_SPACING = { columnGap: 40, rowGap: 80, lineWidth: 1600 };
+const FITTED_ROW_GAP = 48;
+const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
 const MIN_FRAME_WIDTH = 160;
@@ -139,8 +140,19 @@ export class DesignCanvasComponent {
       width: sizes[frame.id]?.width ?? frame.width ?? measured[frame.id]?.width,
       height: sizes[frame.id]?.height ?? frame.height ?? measured[frame.id]?.height,
     });
+    const drawn = frames.filter((frame) => frame.empty === undefined).map((frame) => ({ frame, ...known(frame) }));
+    const rowMax = (frame: CanvasFrame, side: 'width' | 'height') => {
+      const sizes = drawn.flatMap((other) => {
+        const value = other[side];
+
+        return other.frame.row === frame.row && value !== undefined ? [value] : [];
+      });
+
+      return sizes.length > 0 ? Math.max(...sizes) : frame[side];
+    };
     const sized = frames.map((frame) => {
-      const { width, height } = known(frame);
+      const { width, height } =
+        frame.empty === undefined ? known(frame) : { width: rowMax(frame, 'width'), height: rowMax(frame, 'height') };
 
       return {
         id: frame.id,
@@ -154,15 +166,17 @@ export class DesignCanvasComponent {
     const unsized = new Set(sized.filter((frame) => frame.unsized).map((frame) => frame.id));
     const arrangement = this.arrangement();
     const columns = this.columns();
+    const rowGap = frames.every((frame) => frame.width === undefined) ? FITTED_ROW_GAP : SPACING.rowGap;
     const matrix =
       arrangement === 'matrix'
         ? layoutMatrix({
             frames: sized,
             columns: columns.map((column) => column.key),
-            spacing: { ...SPACING, emptyColumnWidth: FALLBACK_WIDTH },
+            spacing: { ...SPACING, rowGap, emptyColumnWidth: FALLBACK_WIDTH },
           })
         : null;
-    const sheet = matrix ?? (arrangement === 'grid' ? layoutGrid(sized, GRID_SPACING) : layoutSheet(sized, SPACING));
+    const sheet =
+      matrix ?? (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -382,6 +396,8 @@ export class DesignCanvasComponent {
   }
 
   protected activate(id: string) {
+    if (this.frames().find((frame) => frame.id === id)?.empty !== undefined) return;
+
     this.selectedId.set(id);
     this.activeId.set(id);
   }

@@ -20,6 +20,10 @@ export type CanvasFrame = {
   screenshot?: string;
   error?: string;
   place?: FramePlace;
+  /** A muted line after the label. */
+  note?: string;
+  /** Draws a dashed empty cell with this text instead of a page, at the size of the row's other frames. */
+  empty?: string;
 };
 
 export type FrameMessage = { type: 'height'; height: number; width?: number } | { type: 'escape' };

@@ -313,15 +313,37 @@ describe('sketchMatrixOf', () => {
     expect(matrix.sizes).toEqual([]);
     expect(matrix.frames.map((frame) => [frame.column, frame.row, frame.width])).toEqual([
       ['current', 'default', undefined],
+      ['current', 'loading', undefined],
       ['a', 'default', undefined],
       ['a', 'loading', undefined],
       ['b', 'default', undefined],
+      ['b', 'loading', undefined],
     ]);
     expect(matrix.frames[0]?.src).toContain('&fit');
     expect(matrix.frames[0]?.src).not.toContain('variant=');
-    expect(matrix.frames[2]?.src).toContain('&sketch=components%2Fbutton&variant=a');
-    expect(matrix.frames[2]?.screenshot).toContain('&sketch=components%2Fbutton&variant=a');
+    expect(matrix.frames[3]?.src).toContain('&sketch=components%2Fbutton&variant=a');
+    expect(matrix.frames[3]?.screenshot).toContain('&sketch=components%2Fbutton&variant=a');
     expect(new Set(matrix.frames.map((frame) => frame.id)).size).toBe(matrix.frames.length);
+  });
+
+  it('draws an empty cell without a place where a column lacks the state of the row', () => {
+    const matrix = sketchMatrixOf({
+      ...source,
+      part: part({ states: ['default'] }),
+      sketch: sketch({
+        targets: [
+          { variant: 'a', states: ['default'] },
+          { variant: 'b', states: ['default', 'disabled'] },
+        ],
+      }),
+    });
+    const empty = matrix.frames.filter((frame) => frame.empty !== undefined);
+
+    expect(empty.map((frame) => [frame.column, frame.row, frame.empty, frame.place])).toEqual([
+      ['current', 'disabled', 'new in this sketch', undefined],
+      ['a', 'disabled', 'a has no disabled state', undefined],
+    ]);
+    expect(empty.every((frame) => frame.src === '' && frame.screenshot === undefined)).toBe(true);
   });
 
   it('gives every cell of a page the picked preset, or the first one', () => {

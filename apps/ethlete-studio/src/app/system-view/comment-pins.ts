@@ -62,6 +62,48 @@ export const otherSizeCountOf = (place: FramePlace, comments: CommentPlace[]) =>
   comments.filter((comment) => isOnPlace(comment, { ...place, size: comment.size }) && comment.size !== place.size)
     .length;
 
+/** The open comments on a part, in its own states and in every sketch variant of it. */
+export const commentsOfPart = <T extends CommentPlace>(comments: T[], part: string) =>
+  comments.filter((comment) => comment.part === part);
+
+export type CommentGroup = { part: string; comments: NumberedComment[] };
+
+/** The open comments grouped by part: the selected part first, then the others by name. */
+export const commentGroupsOf = (comments: NumberedComment[], selected: string | null): CommentGroup[] => {
+  const parts = [...new Set(comments.map((comment) => comment.part))].sort((a, b) =>
+    a === selected ? -1 : b === selected ? 1 : a.localeCompare(b),
+  );
+
+  return parts.map((part) => ({ part, comments: commentsOfPart(comments, part) }));
+};
+
+const MINUTE = 60_000;
+
+/** How long ago a comment was written, in the largest whole unit: `now`, `5 min`, `3 h`, `2 d`. */
+export const ageOf = (createdAt: string, now: number) => {
+  const minutes = Math.floor((now - Date.parse(createdAt)) / MINUTE);
+
+  if (!(minutes >= 1)) return 'now';
+  if (minutes < 60) return `${minutes} min`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)} h`;
+
+  return `${Math.floor(minutes / (60 * 24))} d`;
+};
+
+/** The frames with a note on the label that counts the comments on the same state at other sizes. */
+export const withOtherSizeNotes = (frames: CanvasFrame[], comments: CommentPlace[]): CanvasFrame[] =>
+  frames.map((frame) => {
+    const count = frame.place ? otherSizeCountOf(frame.place, comments) : 0;
+
+    if (count === 0) return frame;
+
+    return { ...frame, note: count === 1 ? '1 comment at another size' : `${count} comments at other sizes` };
+  });
+
+/** The frame to move the camera to for a comment whose pin the canvas does not show: its state at the size on show. */
+export const otherSizeFrameOf = (frames: CanvasFrame[], comment: CommentPlace) =>
+  frames.find((frame) => frame.place && isOnPlace({ ...comment, size: frame.place.size }, frame.place))?.id ?? null;
+
 /** The draft a click in comment mode starts, on a frame the canvas shows that has a place. */
 export const commentDraftOf = (frames: CanvasFrame[], pick: FramePoint): CommentDraft | null => {
   const place = frames.find((frame) => frame.id === pick.frameId)?.place;

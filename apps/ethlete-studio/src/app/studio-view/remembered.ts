@@ -17,6 +17,8 @@ export type ViewState = {
   frameSizes: Record<string, FrameSize>;
   /** The size a fitted frame's content measured last, keyed by `frameSizeKey`, so a reload places it at once. */
   measuredSizes: Record<string, FrameSize>;
+  /** Whether the system view shows its comment sidebar. */
+  commentsOpen: boolean;
 };
 
 export type FrameSize = { width?: number; height?: number };
@@ -148,8 +150,17 @@ export const rememberedView = (): Partial<ViewState> => {
 
     if (!stored || typeof stored !== 'object') return {};
 
-    const { checkout, themes, openGroups, systemProduct, systemEntry, cameras, frameSizes, measuredSizes } =
-      stored as Partial<ViewState>;
+    const {
+      checkout,
+      themes,
+      openGroups,
+      systemProduct,
+      systemEntry,
+      cameras,
+      frameSizes,
+      measuredSizes,
+      commentsOpen,
+    } = stored as Partial<ViewState>;
 
     return {
       checkout: typeof checkout === 'string' ? checkout : undefined,
@@ -160,6 +171,7 @@ export const rememberedView = (): Partial<ViewState> => {
       cameras: cameraMap(cameras),
       frameSizes: frameSizeMap(frameSizes),
       measuredSizes: frameSizeMap(measuredSizes),
+      commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
     };
   } catch {
     return {};
