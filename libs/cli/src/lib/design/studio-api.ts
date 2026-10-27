@@ -7,8 +7,12 @@ import { ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf } from './system/sketch/check-sketches';
 import { oneProductOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { readPartModule } from './system/list-system';
 import { mergePreviewOf } from './system/sketch/merge-preview';
-import { decideSketch, findSketch, listSketches, parseTarget, Sketch } from './system/sketch/sketch';
+import { overlaySketch } from './system/sketch/overlay';
+import { decideSketch, findSketch, listSketches, parseTarget, readSketchReport, Sketch } from './system/sketch/sketch';
+import { partKeyOf } from './system/resolve-product';
+import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
 export const SKETCH_PREVIEW_PATH = '/__design/sketch-preview';
@@ -21,7 +25,10 @@ export const COMMENT_DONE_PATH = '/__design/comment-done';
 
 export type Answer = { status: number; body: unknown };
 
-type Asked = { target: string; url: URL; request: IncomingMessage };
+/** Answers with the module of a part file as one variant of a sketch draws it. */
+export type VariantPartLoader = (options: { file: string; product: string; sketch: SketchVariant }) => Promise<unknown>;
+
+type Asked = { target: string; url: URL; request: IncomingMessage; load?: VariantPartLoader };
 
 const failure = (status: number, message: string): Answer => ({ status, body: { error: message } });
 
@@ -106,8 +113,45 @@ const commentOf = ({
   return { ...rest, file: relative(target, file), stale: staleReasonOf({ product, comment }) };
 };
 
-/** The open sketches of `?product=`, each with its variants, status, decision and the rule problems of every variant. */
-export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
+const targetsOf = async ({
+  product,
+  sketch,
+  load,
+}: {
+  product: ResolvedProduct;
+  sketch: Sketch;
+  load?: VariantPartLoader;
+}) =>
+  Promise.all(
+    sketch.variants.map(async (variant) => {
+      const file = overlaySketch({ product, sketch, variant }).parts.find(
+        (part) => partKeyOf(part) === sketch.target,
+      )?.file;
+
+      if (!file || !load)
+        return { variant, states: [], ...(file ? {} : { error: `variant ${variant} has no part ${sketch.target}` }) };
+
+      const { states, problem, ...widths } = await readPartModule({
+        part: { file },
+        product: product.name,
+        load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
+      });
+
+      return {
+        variant,
+        states,
+        ...('widths' in widths ? { widths: widths.widths } : {}),
+        ...(problem ? { error: problem } : {}),
+      };
+    }),
+  );
+
+/**
+ * The open sketches of `?product=`, each with its variants, status, decision, the rule problems of every
+ * variant, the states and widths of the target as each variant draws it (`targets`), and the live report
+ * of the agent (`report`, `null` when none runs).
+ */
+export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
   const { target } = asked;
   const { unreadable, variants } = openSketchProblemsOf(product);
   const sketches = listSketches({ productDir: product.dir, product: product.name }).filter(
@@ -117,15 +161,19 @@ export const sketchesAnswer = withProduct('GET', ({ asked, product }) => {
   return {
     status: 200,
     body: {
-      sketches: sketches.map((sketch) => ({
-        ...sketchOf({ sketch, target }),
-        problems: variants
-          .filter((entry) => entry.sketch.target === sketch.target)
-          .map((entry) => ({
-            variant: entry.variant,
-            problems: entry.problems.map((p) => problemOf({ target, problem: p })),
-          })),
-      })),
+      sketches: await Promise.all(
+        sketches.map(async (sketch) => ({
+          ...sketchOf({ sketch, target }),
+          problems: variants
+            .filter((entry) => entry.sketch.target === sketch.target)
+            .map((entry) => ({
+              variant: entry.variant,
+              problems: entry.problems.map((p) => problemOf({ target, problem: p })),
+            })),
+          targets: await targetsOf({ product, sketch, load: asked.load }),
+          report: readSketchReport({ checkout: target, sketch }),
+        })),
+      ),
       unreadable: unreadable.map((problem) => problemOf({ target, problem })),
     },
   };

@@ -348,7 +348,14 @@ const designExplore = ({
     const studio = (path: string, handle: (asked: Parameters<typeof sketchesAnswer>[0]) => Answer | Promise<Answer>) =>
       vite.middlewares.use(
         path,
-        answer(async (url, request) => handle({ target, url, request })),
+        answer(async (url, request) =>
+          handle({
+            target,
+            url,
+            request,
+            load: ({ file, product, sketch }) => vite.ssrLoadModule(productModuleIdOf({ file, product, sketch })),
+          }),
+        ),
       );
 
     studio(SKETCHES_PATH, sketchesAnswer);

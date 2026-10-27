@@ -357,7 +357,7 @@ describe('the design server for sketches and comments', () => {
 
     readySketch(target);
 
-    const { ask } = await serveAcme(target);
+    const { ask, loaded } = await serveAcme(target);
     const listed = await ask('/__design/sketches', '?product=acme');
 
     expect(listed.status).toBe(200);
@@ -369,10 +369,16 @@ describe('the design server for sketches and comments', () => {
           variants: ['a', 'b'],
           dir: expect.stringContaining('components-card'),
           problems: [{ variant: 'a' }, { variant: 'b' }],
+          targets: [
+            { variant: 'a', states: ['one'] },
+            { variant: 'b', states: ['one'] },
+          ],
+          report: null,
         },
       ],
       unreadable: [],
     });
+    expect(loaded).toContainEqual(expect.stringMatching(/components\/card\/card\.ts\?.*design-variant=a/u));
     expect((await ask('/__design/sketches', '?product=nope')).status).toBe(404);
     expect((await ask('/__design/sketches', '')).status).toBe(400);
     expect((await ask('/__design/sketches', '?product=acme', 'POST')).status).toBe(405);

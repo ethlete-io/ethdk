@@ -11,6 +11,7 @@ import {
   listSketches,
   markSketchReady,
   parseTarget,
+  readSketchReport,
   rebaseSketch,
   reportSketch,
   Sketch,
@@ -138,11 +139,17 @@ describe('status', () => {
     const path = sketchReportPath({ checkout: target, sketch });
 
     expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(expect.objectContaining({ message: 'variant b, phone' }));
+    expect(readSketchReport({ checkout: target, sketch })).toMatchObject({ message: 'variant b, phone', variant: 'b' });
+
+    reportSketch({ checkout: target, sketch, message: 'a first pass on the layout' });
+
+    expect(readSketchReport({ checkout: target, sketch })?.variant).toBeNull();
 
     const ready = markSketchReady({ checkout: target, sketch });
 
     expect(sketchJson(target, 'elements-hero')['status']).toBe('ready');
     expect(existsSync(path)).toBe(false);
+    expect(readSketchReport({ checkout: target, sketch })).toBeNull();
     expect(markSketchReady({ checkout: target, sketch: ready as Sketch })).toBe(
       'elements/hero is ready, not in progress',
     );

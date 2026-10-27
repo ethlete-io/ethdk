@@ -42,7 +42,12 @@ const widthsOf = (widths: unknown) =>
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
 
-const read = async (options: { part: ResolvedPart; product: string; load: PartLoader }) => {
+/** The note, state names and widths a part module declares, or the problem that kept it from loading. */
+export const readPartModule = async (options: {
+  part: Pick<ResolvedPart, 'file'>;
+  product: string;
+  load: PartLoader;
+}) => {
   const { part, product, load } = options;
 
   try {
@@ -95,7 +100,7 @@ export const listSystem = async (options: {
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
-              const { note, states, problem, ...widths } = await read({ part, product: name, load });
+              const { note, states, problem, ...widths } = await readPartModule({ part, product: name, load });
               const own = problems.filter((found) => belongsTo(part, found));
 
               return {

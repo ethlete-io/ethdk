@@ -203,6 +203,31 @@ export const reportSketch = (options: { checkout: string; sketch: Sketch; messag
     message: options.message,
   });
 
+export type SketchReport = { message: string; updatedAt: string; variant: string | null };
+
+const REPORTED_VARIANT = /\bvariant\s+([a-z0-9][a-z0-9-]*)/iu;
+
+/** The live report of the agent on a sketch, with the variant its message names as `variant <name>`, or `null` when none is running. */
+export const readSketchReport = (options: { checkout: string; sketch: Sketch }): SketchReport | null => {
+  const path = sketchReportPath(options);
+
+  if (!existsSync(path)) return null;
+
+  try {
+    const { message, updatedAt } = JSON.parse(readFileSync(path, 'utf8')) as { message?: unknown; updatedAt?: unknown };
+    const text = typeof message === 'string' ? message : '';
+    const named = REPORTED_VARIANT.exec(text)?.[1]?.toLowerCase();
+
+    return {
+      message: text,
+      updatedAt: typeof updatedAt === 'string' ? updatedAt : '',
+      variant: named && options.sketch.variants.includes(named) ? named : null,
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) =>
   rmSync(sketchReportPath(options), { force: true });
 
