@@ -70,6 +70,7 @@ import {
 } from './comment-pins';
 import { CommentPanelComponent } from './comment-panel.component';
 import { injectCommentStore, provideCommentStore } from './comment-store';
+import { NewProductFormComponent } from './new-product-form.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 
@@ -235,7 +236,10 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     <ng-template #newProductScreen let-heading>
       <div class="max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]">
         <h2 class="mb-2 text-h4 text-[var(--et-surface-color-solid)]">{{ heading }}</h2>
-        <p>Run this in the checkout to create one:</p>
+        @if (port(); as port) {
+          <ethlete-new-product-form [port]="port" [products]="products()" (create)="showCreated($event)" />
+        }
+        <p>Or run this in the checkout:</p>
         <div class="my-3 flex items-center gap-2">
           <pre
             class="m-0 flex-1 rounded-md border border-[var(--et-surface-border-solid)] p-3 font-mono text-[var(--et-surface-color-solid)]"
@@ -386,6 +390,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ProvideColorDirective,
     ProvideSurfaceDirective,
     SketchViewComponent,
+    NewProductFormComponent,
     CommentDraftComponent,
     CommentThreadComponent,
     CommentPanelComponent,
@@ -426,8 +431,12 @@ export class SystemViewComponent {
 
   protected copied = signal(false);
 
+  private productReloads = signal(0);
+
   protected reading = toSignal(
-    toObservable(computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick() }))).pipe(
+    toObservable(
+      computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick(), reloads: this.productReloads() })),
+    ).pipe(
       switchMap(({ port }) =>
         port
           ? listedSystem$(port).pipe(
@@ -838,6 +847,11 @@ export class SystemViewComponent {
 
     this.pickedProduct.set(systemProduct);
     rememberView({ systemProduct });
+  }
+
+  protected showCreated(systemProduct: string) {
+    this.pickProduct(systemProduct);
+    this.productReloads.update((value) => value + 1);
   }
 
   protected pickTheme(kind: keyof ThemePick, name: string) {
