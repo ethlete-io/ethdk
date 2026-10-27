@@ -752,6 +752,20 @@ step. Each finding names what happened and the fix it needs.
   Prevent: the skill names both failure modes (yes/no on content, "what do you want?") as
   forbidden, and the builder prompt template starts with the question of the sketch and its
   variants, never with a question to Tom.
+- Shell sketch round (`elements-shell-main`, variants a, b, c), friction the drawing agent hit:
+  - A row `box` has no cross-axis alignment, so text sits at the top next to a 24 px icon (the
+    accepted shell has this bug too). Prevent: `align: 'center'` in `BoxOptions`.
+  - `tabs()` draws its bottom line as an inline style; inside a bar it floats above the bar
+    border, and only `!important` removes it. Prevent: `tabs(..., { line: false })`, or the line
+    in a class.
+  - The kit has no vertical nav or rail, and no glyphs for sections, so icon fallbacks repeat
+    letters ("S" for System and Sketches). Prevent: a kit `navList(labels, { active })`.
+  - `sketch new` copies the part with its `note`, so each variant said "Shell b: ..." until the
+    agent overwrote it. Prevent: `sketch check` fails a variant whose note equals the base note.
+  - `sketch check` passed a misaligned logo and the floating tab line. Prevent: the render check
+    above, and `sketch check` prints the shot URL of each variant to look at.
+  - The kit `fill: true` uses `100vh`, but the skill forbids `vh` in parts, so the shell needs a
+    fixed `height: 900`. Prevent: `fill` uses `100%` of the frame.
 
 Findings:
 
