@@ -623,6 +623,8 @@ Open points, each with a recommendation:
   a discard is the user's call, and no agent lifts it. The variant command still clears a pick. To
   go on with the sketch, the user picks a variant, which replaces the discard. (Studio's "Discard
   sketch" deletes at once and writes no decision; only the API writes a discard decision.)
+  Built in 0def240c9: the message is "The user decided to discard <target>. The user must pick a
+  variant first to go on.", with a non-zero exit and `sketch.json` untouched.
 - The design-exploration skill has a section "Combine variants in a new round".
 - Next: the Studio round columns, after the author display.
 
