@@ -361,6 +361,8 @@ export type ListedProduct = {
   name: string;
   base: string | null;
   presets: Record<string, SystemPreset>;
+  /** Missing from an `@ethlete/cli` older than product themes. */
+  themes?: Themes;
   parts: ListedPart[];
   problems: SystemProblem[];
 };

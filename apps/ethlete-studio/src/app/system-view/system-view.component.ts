@@ -1,11 +1,20 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, DestroyRef, ViewEncapsulation, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { TREE_IMPORTS, TreeDataSource, TreeNode } from '@ethlete/components';
 import { ProvideColorDirective, ProvideSurfaceDirective } from '@ethlete/core';
-import { catchError, finalize, map, of, switchMap } from 'rxjs';
-import { ListedCall, ListedProduct, listedCalls$, listedSystem$, transferCall$ } from '../../host/design';
+import { catchError, finalize, from, map, of, switchMap, tap } from 'rxjs';
+import { ListedCall, ListedProduct, Themes, listedCalls$, listedSystem$, transferCall$ } from '../../host/design';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
-import { camerasWith, rememberView, rememberedView } from '../call-view/remembered';
+import {
+  ThemePick,
+  camerasWith,
+  rememberTheme,
+  rememberView,
+  rememberedView,
+  themeKey,
+  themeName,
+} from '../call-view/remembered';
 import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
@@ -75,6 +84,22 @@ type Reading = { products: ListedProduct[]; error: string | null };
       </et-tree>
     </aside>
 
+    <ng-template #themeBar>
+      @for (themeSwitch of themeSwitches(); track themeSwitch.kind) {
+        <div [attr.aria-label]="themeSwitch.label" class="studio__system-switch" role="group">
+          @for (name of themeSwitch.names; track name) {
+            <button
+              [attr.aria-pressed]="name === themeSwitch.current"
+              (click)="pickTheme(themeSwitch.kind, name)"
+              type="button"
+            >
+              {{ name }}
+            </button>
+          }
+        </div>
+      }
+    </ng-template>
+
     <main class="studio__system-main">
       @if (!port()) {
         <p class="studio__system-note">Start the design server to see the design system.</p>
@@ -87,6 +112,7 @@ type Reading = { products: ListedProduct[]; error: string | null };
                 <h2>{{ shown.headline }}</h2>
               }
             </div>
+            <ng-container [ngTemplateOutlet]="themeBar" />
             @if ('transferred' in shown && shown.transferred) {
               <span class="studio__system-badge">transferred</span>
             } @else if (!('error' in shown)) {
@@ -117,14 +143,21 @@ type Reading = { products: ListedProduct[]; error: string | null };
         } @else if (read.products.length === 0) {
           <div class="studio__system-empty">
             <h2>No product yet</h2>
-            <p>
-              Name a product under <code>products</code> in <code>.ethlete/design/config.json</code>, with its presets,
-              for example:
-            </p>
-            <pre>{{ EXAMPLE_CONFIG }}</pre>
+            <p>Run this in the checkout to create one:</p>
+            <div class="studio__system-command">
+              <pre>{{ NEW_PRODUCT_COMMAND }}</pre>
+              <button (click)="copyCommand()" class="studio__system-button" type="button">
+                {{ copied() ? 'Copied' : 'Copy' }}
+              </button>
+            </div>
             <p>Its parts live in <code>.ethlete/design/&lt;product&gt;/&lt;layer&gt;/&lt;name&gt;</code>.</p>
           </div>
         } @else if (part()) {
+          @if (themeSwitches().length > 0) {
+            <div class="studio__system-themes">
+              <ng-container [ngTemplateOutlet]="themeBar" />
+            </div>
+          }
           <ethlete-design-canvas
             [frames]="frames()"
             [cameraKey]="cameraKey()"
@@ -140,23 +173,21 @@ type Reading = { products: ListedProduct[]; error: string | null };
   `,
   styleUrl: './system-view.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [TREE_IMPORTS, DesignCanvasComponent, ProvideColorDirective, ProvideSurfaceDirective],
+  imports: [NgTemplateOutlet, TREE_IMPORTS, DesignCanvasComponent, ProvideColorDirective, ProvideSurfaceDirective],
   host: { class: 'studio__system' },
 })
 export class SystemViewComponent {
   private destroyRef = inject(DestroyRef);
   public port = input<number | null>(null);
   public epoch = input(0);
-  public surface = input<string>();
-  public color = input<string>();
+  public checkout = input('');
+  public projectThemes = input<Record<string, Themes>>({});
 
   public tick = input(0);
 
-  protected readonly EXAMPLE_CONFIG = JSON.stringify(
-    { products: { web: { presets: { phone: { width: 390, height: 844 }, desktop: { width: 1280 } } } } },
-    null,
-    2,
-  );
+  protected readonly NEW_PRODUCT_COMMAND = 'npx et design product new web';
+
+  protected copied = signal(false);
 
   protected reading = toSignal(
     toObservable(computed(() => ({ port: this.port(), epoch: this.epoch(), tick: this.tick() }))).pipe(
@@ -236,8 +267,43 @@ export class SystemViewComponent {
     return key ? (this.cameras()[key] ?? null) : null;
   });
 
-  /** The design project whose themes the shown frames wear: the open call's project, else the product. */
-  public shownProject = computed(() => this.call()?.project ?? this.product()?.name ?? '');
+  private themePicks = signal(rememberedView().themes ?? {});
+
+  /** The themes the shown entry names - a call's design project, else the product - with the name each frame wears. */
+  private shownThemes = computed(() => {
+    const call = this.call();
+    const product = this.product();
+    const project = call?.project ?? product?.name;
+
+    if (!project) return null;
+
+    const names = call ? this.projectThemes()[call.project] : product?.themes;
+    const key = themeKey(this.checkout(), project);
+    const pick = this.themePicks()[key] ?? {};
+    const surface = names?.surface ?? [];
+    const color = names?.color ?? [];
+
+    return {
+      key,
+      surface: { names: surface, current: themeName(surface, pick.surface) },
+      color: { names: color, current: themeName(color, pick.color) },
+    };
+  });
+
+  private surface = computed(() => this.shownThemes()?.surface.current);
+
+  private color = computed(() => this.shownThemes()?.color.current);
+
+  protected themeSwitches = computed(() => {
+    const themes = this.shownThemes();
+
+    if (!themes) return [];
+
+    return [
+      { kind: 'surface' as const, label: 'Surface theme', ...themes.surface },
+      { kind: 'color' as const, label: 'Colour theme', ...themes.color },
+    ].filter((theme) => theme.names.length > 1);
+  });
 
   protected callFrames = computed(() => {
     const port = this.port();
@@ -369,6 +435,15 @@ export class SystemViewComponent {
     rememberView({ systemProduct });
   }
 
+  protected pickTheme(kind: keyof ThemePick, name: string) {
+    const key = this.shownThemes()?.key;
+
+    if (!key) return;
+
+    this.themePicks.update((picks) => ({ ...picks, [key]: { ...picks[key], [kind]: name } }));
+    rememberTheme(key, { [kind]: name });
+  }
+
   protected rememberCamera(camera: Camera) {
     const key = this.cameraKey();
 
@@ -382,6 +457,16 @@ export class SystemViewComponent {
 
     this.cameras.set(cameras);
     rememberView({ cameras });
+  }
+
+  protected copyCommand() {
+    from(navigator.clipboard.writeText(this.NEW_PRODUCT_COMMAND))
+      .pipe(
+        tap(() => this.copied.set(true)),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected markTransferred(slug: string) {

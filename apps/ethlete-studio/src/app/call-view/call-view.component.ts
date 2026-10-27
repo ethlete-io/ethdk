@@ -104,8 +104,8 @@ const SETTLE_MS = 300;
       <ethlete-system-view
         [port]="server()?.listening ? (design()?.port ?? null) : null"
         [epoch]="epoch()"
-        [surface]="theme().surface"
-        [color]="theme().color"
+        [checkout]="checkout()"
+        [projectThemes]="design()?.themes ?? {}"
         [tick]="revision()"
       />
     }
@@ -1103,7 +1103,7 @@ export class CallViewComponent {
     };
   });
 
-  protected theme = computed((): ThemePick => {
+  private theme = computed((): ThemePick => {
     const themes = this.callThemes();
 
     return { surface: themes?.surface.current, color: themes?.color.current };
