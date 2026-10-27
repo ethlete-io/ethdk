@@ -1,0 +1,24 @@
+{
+  "frames": [
+    { "part": "pages/library", "state": "empty" },
+    { "part": "pages/library", "state": "one" },
+    { "part": "pages/library", "state": "three" },
+    { "part": "pages/library", "state": "login open" }
+  ],
+  "lines": [
+    {
+      "from": { "part": "pages/library", "state": "empty" },
+      "to": { "part": "pages/library", "state": "one" },
+      "label": "user adds a film"
+    },
+    {
+      "from": { "part": "pages/library", "state": "one" },
+      "to": { "part": "pages/library", "state": "three" }
+    },
+    {
+      "from": { "part": "pages/library", "state": "three" },
+      "to": { "part": "pages/library", "state": "login open" },
+      "label": "user clicks 'Anmelden'"
+    }
+  ]
+}

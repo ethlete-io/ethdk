@@ -72,6 +72,9 @@ import { CommentPanelComponent } from './comment-panel.component';
 import { injectCommentStore, provideCommentStore } from './comment-store';
 import { NewProductFormComponent } from './new-product-form.component';
 import { SketchViewComponent } from './sketch-view.component';
+import { FlowViewComponent } from './flow-view.component';
+import { flowKeyOf, withFlowGroup } from './flow-frames';
+import { ListedFlow, listedFlows$ } from '../../host/design-flows';
 import { NO_FRAME_REVISIONS, revisionOf, sketchRevisionOf } from '../studio-view/frame-revisions';
 
 type Reading = { products: ListedProduct[]; error: string | null };
@@ -336,6 +339,21 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />
           </ethlete-sketch-view>
+        } @else if (flowShown(); as shown) {
+          <ethlete-flow-view
+            [port]="shown.port"
+            [product]="shown.product"
+            [flow]="shown.flow"
+            [epoch]="epoch()"
+            [revision]="shown.revision"
+            [surface]="surface()"
+            [color]="color()"
+            [cameraKey]="cameraKey()"
+            [restoredCamera]="restoredCamera()"
+            (cameraChange)="rememberCamera($event)"
+          >
+            <ng-container [ngTemplateOutlet]="themeBar" />
+          </ethlete-flow-view>
         } @else if (awaitingPicked()) {
         } @else if (part(); as partShown) {
           <div class="absolute top-3 right-4 z-1 flex gap-2">
@@ -395,6 +413,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
     ProvideColorDirective,
     ProvideSurfaceDirective,
     SketchViewComponent,
+    FlowViewComponent,
     NewProductFormComponent,
     CommentDraftComponent,
     CommentThreadComponent,
@@ -527,16 +546,58 @@ export class SystemViewComponent {
 
   public sketches = computed(() => this.sketchList() ?? []);
 
-  private listsRead = computed(() => this.callList() !== null && this.sketchList() !== null);
+  private flowList = toSignal(
+    toObservable(
+      computed(() => ({ port: this.port(), product: this.product()?.name, epoch: this.epoch(), tick: this.tick() })),
+    ).pipe(
+      switchMap(({ port, product }) =>
+        port && product
+          ? listedFlows$({ port, product }).pipe(
+              map(({ flows }) => flows),
+              catchError(() => of<ListedFlow[]>([])),
+            )
+          : of(null),
+      ),
+    ),
+    { initialValue: null },
+  );
+
+  private listsRead = computed(
+    () => this.callList() !== null && this.sketchList() !== null && this.flowList() !== null,
+  );
 
   private tree = computed(() =>
-    treeOf(this.product()?.parts ?? [], {
-      calls: this.calls(),
-      sketches: this.sketches(),
-      comments: this.commentStore.comments(),
-      merging: this.mergingSketch(),
-    }),
+    withFlowGroup(
+      treeOf(this.product()?.parts ?? [], {
+        calls: this.calls(),
+        sketches: this.sketches(),
+        comments: this.commentStore.comments(),
+        merging: this.mergingSketch(),
+      }),
+      this.flowList() ?? [],
+    ),
   );
+
+  private flow = computed(
+    () => (this.flowList() ?? []).find((listed) => flowKeyOf(listed.name) === this.picked()) ?? null,
+  );
+
+  protected flowShown = computed(() => {
+    const port = this.port();
+    const product = this.product();
+    const flow = this.flow();
+
+    if (!port || !product || !flow) return null;
+
+    const revision = Math.max(
+      0,
+      ...flow.frames.map((frame) =>
+        revisionOf(this.frameRevisions(), { product: product.name, part: frame.part, sketch: null, errored: false }),
+      ),
+    );
+
+    return { port, product, flow, revision };
+  });
 
   private sketch = computed(
     () => this.sketches().find((listed) => sketchKeyOf(listed.target) === this.picked()) ?? null,
@@ -680,7 +741,10 @@ export class SystemViewComponent {
     const call = this.call();
     const sketch = this.sketch();
 
+    const flow = this.flow();
+
     if (call) return callKeyOf(call.slug);
+    if (flow) return flowKeyOf(flow.name);
 
     return sketch ? sketchKeyOf(sketch.target) : (this.part()?.key ?? null);
   });
@@ -693,6 +757,10 @@ export class SystemViewComponent {
 
     if (call) return callKeyOf(call.slug);
     if (sketch) return `${this.product()?.name} ${sketchKeyOf(sketch.target)}`;
+
+    const flow = this.flow();
+
+    if (flow) return `${this.product()?.name} ${flowKeyOf(flow.name)}`;
 
     return part ? `${this.product()?.name} ${part.key}` : null;
   });
