@@ -9,7 +9,7 @@ import { argsOf, configOf, oneProductOf, productNamesOf } from './system/sketch/
 export const INBOX_USAGE = ['inbox [--product <name>] [--json]', 'inbox done <id> --note <text>'];
 
 export const COMMENT_USAGE = [
-  'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
+  'comment <layer>/<name> <state> --size <preset|px|fitted> <text> [--interaction <name>] [--at <x>,<y>] [--sketch <layer>/<name> --variant <key>] [--product <name>]',
   'comment reply <id> <text> [--product <name>]',
 ];
 
@@ -139,7 +139,7 @@ const designCommentReply = (options: {
  */
 export const designComment = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
-  const args = argsOf(argv, ['--product', '--size', '--at', '--sketch', '--variant']);
+  const args = argsOf(argv, ['--product', '--size', '--interaction', '--at', '--sketch', '--variant']);
 
   if (typeof args === 'string') return usage(invocation, COMMENT_USAGE);
 
@@ -156,6 +156,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
   const point = pointOf(args.values['--at']);
   const sketch = args.values['--sketch'];
   const variant = args.values['--variant'];
+  const interaction = args.values['--interaction'];
 
   if (
     !part ||
@@ -182,6 +183,7 @@ export const designComment = (options: { target: string; argv: string[]; invocat
       state,
       size,
       text: words.join(' '),
+      ...(interaction ? { interaction } : {}),
       ...(point ? { point } : {}),
       ...(sketch && variant ? { sketch: { target: sketch, variant } } : {}),
     },

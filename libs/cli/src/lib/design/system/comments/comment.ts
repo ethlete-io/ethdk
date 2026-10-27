@@ -1,9 +1,10 @@
 import { randomBytes } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
+import { INTERACTIONS } from '../../force-interactions';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { overlaySketch } from '../sketch/overlay';
-import { stateNamesOf, widthsOf } from '../sketch/part-definition';
+import { interactionNamesOf, stateNamesOf, widthsOf } from '../sketch/part-definition';
 import { findSketch, parseTarget } from '../sketch/sketch';
 
 /** A point on a frame, in CSS pixels from its top left corner, at the comment's size. */
@@ -14,6 +15,8 @@ export type CommentSize = string | number;
 
 export const FITTED = 'fitted';
 
+export const REST = 'rest';
+
 /** One answer in a comment thread, by the user (from Studio) or by the agent (`et design comment reply`). */
 export type CommentReply = { by: 'user' | 'agent'; text: string; createdAt: string };
 
@@ -21,6 +24,8 @@ export type CommentFile = {
   part: string;
   state: string;
   size: CommentSize;
+  /** `rest` or one of the part's interactions; a file without it is on `rest`. */
+  interaction?: string;
   point?: CommentPoint;
   sketch?: { target: string; variant: string };
   text: string;
@@ -28,7 +33,13 @@ export type CommentFile = {
   replies?: CommentReply[];
 };
 
-export type DesignComment = CommentFile & { id: string; product: string; file: string; replies: CommentReply[] };
+export type DesignComment = CommentFile & {
+  id: string;
+  product: string;
+  file: string;
+  interaction: string;
+  replies: CommentReply[];
+};
 
 const ID = /^[A-Za-z0-9-]+$/u;
 
@@ -51,6 +62,8 @@ const isReply = (value: unknown) => {
   );
 };
 
+const isKnownInteraction = (value: unknown) => value === REST || INTERACTIONS.some((known) => known === value);
+
 const shapeProblemOf = (value: Partial<CommentFile>) => {
   for (const key of ['part', 'state', 'text', 'createdAt'] as const)
     if (typeof value[key] !== 'string' || value[key] === '') return `${key} must be a non-empty string`;
@@ -58,6 +71,8 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
   if (!(typeof value.size === 'string' && value.size !== '') && !(typeof value.size === 'number' && value.size > 0))
     return `size must be a preset name, a width in CSS pixels or "${FITTED}"`;
 
+  if (value.interaction !== undefined && !isKnownInteraction(value.interaction))
+    return `interaction must be ${REST} or one of ${INTERACTIONS.join(', ')}`;
   if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
   if (
     value.sketch !== undefined &&
@@ -85,6 +100,7 @@ export const listComments = (options: { productDir: string; product: string }) =
         ? { file, problem }
         : {
             ...(parsed as CommentFile),
+            interaction: parsed.interaction ?? REST,
             replies: parsed.replies ?? [],
             id: name.slice(0, -'.json'.length),
             product: options.product,
@@ -128,8 +144,21 @@ const goneSizeOf = (options: { product: ResolvedProduct; part: string; size: Com
   return widths === null || widths.includes(size) ? null : `${key} has no width ${size}`;
 };
 
+/** Why an interaction points at nothing: one the part no longer declares. */
+const goneInteractionOf = (options: { product: ResolvedProduct; part: string; interaction?: string }) => {
+  const { product, part: key, interaction = REST } = options;
+
+  if (interaction === REST) return null;
+
+  const part = product.parts.find((candidate) => partKeyOf(candidate) === key);
+
+  return part && !interactionNamesOf(part.source).includes(interaction)
+    ? `${key} has no interaction "${interaction}"`
+    : null;
+};
+
 /**
- * Why a comment no longer points at anything: its sketch variant, part, state or size is gone.
+ * Why a comment no longer points at anything: its sketch variant, part, state, size or interaction is gone.
  * `null` when it still does. A part whose states are not an object literal keeps any state.
  */
 export const staleReasonOf = (options: {
@@ -156,7 +185,10 @@ export const staleReasonOf = (options: {
   const gone = goneStateOf({ product: drawn, part: comment.part, state: comment.state });
 
   if (gone) return gone;
-  return goneSizeOf({ product: drawn, part: comment.part, size: comment.size });
+  return (
+    goneSizeOf({ product: drawn, part: comment.part, size: comment.size }) ??
+    goneInteractionOf({ product: drawn, part: comment.part, interaction: comment.interaction })
+  );
 };
 
 const newId = () =>
@@ -171,8 +203,13 @@ export const createComment = (options: {
   comment: Omit<CommentFile, 'createdAt'>;
 }): DesignComment | string => {
   const { product } = options;
-  const comment: CommentFile = { ...options.comment, createdAt: new Date().toISOString() };
-  const problem = shapeProblemOf(comment) ?? staleReasonOf({ product, comment });
+  const { interaction, ...rest } = options.comment;
+  const comment: CommentFile = {
+    ...rest,
+    ...(interaction === undefined || interaction === REST ? {} : { interaction }),
+    createdAt: new Date().toISOString(),
+  };
+  const problem = shapeProblemOf({ ...comment, interaction }) ?? staleReasonOf({ product, comment });
 
   if (problem) return problem;
 
@@ -183,7 +220,7 @@ export const createComment = (options: {
   mkdirSync(dir, { recursive: true });
   writeFileSync(file, `${JSON.stringify(comment, null, 2)}\n`);
 
-  return { ...comment, replies: [], id, product: product.name, file };
+  return { ...comment, interaction: comment.interaction ?? REST, replies: [], id, product: product.name, file };
 };
 
 /** Who spoke last in a comment thread: the user wrote the comment, so a thread without replies is the user's. */

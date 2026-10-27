@@ -2,7 +2,7 @@ import { relative } from 'path';
 import { DesignConfig } from '../../paths';
 import { productDirOf } from '../product';
 import { listSketches } from '../sketch/sketch';
-import { DesignComment, lastWordOf, listComments } from './comment';
+import { DesignComment, lastWordOf, listComments, REST } from './comment';
 
 export type InboxComment = Omit<DesignComment, 'file'> & { kind: 'comment'; file: string; at: string };
 
@@ -79,6 +79,7 @@ const lineOf = (item: InboxItem, invocation: string) => {
       item.part,
       item.state,
       typeof item.size === 'number' ? `${item.size} px` : item.size,
+      ...(item.interaction === REST ? [] : [item.interaction]),
       ...(item.point ? [`at ${item.point.x},${item.point.y}`] : []),
       ...(item.sketch ? [`sketch ${item.sketch.target} variant ${item.sketch.variant}`] : []),
     ].join(' · ');

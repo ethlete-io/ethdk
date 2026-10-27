@@ -82,6 +82,35 @@ describe('createComment', () => {
   });
 });
 
+describe('the interaction of a comment', () => {
+  const onButton = { part: 'components/button', state: 'default', size: 'fitted', text: 'Too dark.' };
+
+  it('stores a forced interaction, leaves rest out of the file and reads a file without it as rest', () => {
+    const product = resolveAcme(acme());
+    const hover = createComment({ product, comment: { ...onButton, interaction: 'hover' } }) as DesignComment;
+    const rest = createComment({ product, comment: { ...onButton, interaction: 'rest' } }) as DesignComment;
+    const old = createComment({ product, comment: onButton }) as DesignComment;
+
+    expect(JSON.parse(readFileSync(hover.file, 'utf8'))).toMatchObject({ interaction: 'hover' });
+    expect(JSON.parse(readFileSync(rest.file, 'utf8'))).not.toHaveProperty('interaction');
+    expect([hover.interaction, rest.interaction, old.interaction]).toEqual(['hover', 'rest', 'rest']);
+    expect(
+      listComments({ productDir: product.dir, product: 'acme' }).comments.map((comment) => comment.interaction),
+    ).toEqual(['hover', 'rest', 'rest']);
+  });
+
+  it('refuses an unknown interaction and one the part does not declare', () => {
+    const product = resolveAcme(acme());
+
+    expect(createComment({ product, comment: { ...onButton, interaction: 'pressed' } })).toContain(
+      'interaction must be rest or one of hover',
+    );
+    expect(createComment({ product, comment: { ...on, interaction: 'hover' } })).toBe(
+      'pages/home has no interaction "hover"',
+    );
+  });
+});
+
 describe('listComments and deleteComment', () => {
   it('lists oldest first, reports a broken file, and deletes by id', () => {
     const target = acme();
