@@ -1,6 +1,6 @@
 import { cpSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../../paths';
 import { ruleProblemsOf } from '../check-system';
@@ -27,6 +27,23 @@ const flow = (target: string, name: string, body: unknown) => {
   writeFileSync(file, typeof body === 'string' ? body : JSON.stringify(body));
 
   return file;
+};
+
+const sketchPage = (target: string, page: string, states: string) => {
+  const dir = join(target, DESIGN_DIR, `acme/sketches/pages-${page}`);
+  const part = join(dir, `a/pages/${page}/${page}.ts`);
+
+  mkdirSync(dirname(part), { recursive: true });
+  writeFileSync(
+    join(dir, 'sketch.json'),
+    JSON.stringify({ target: `pages/${page}`, status: 'in progress', createdAt: '2026-10-27T00:00:00.000Z' }),
+  );
+  writeFileSync(
+    part,
+    `import { definePart, drawing, html } from '@design-system';
+export default definePart({ note: '', states: ${states}, render: () => drawing({ body: html\`<main></main>\`, styles: '' }) });
+`,
+  );
 };
 
 const browse = {
@@ -83,6 +100,36 @@ describe('flowProblemsOf', () => {
     expect(flowProblemsOf(resolveAcme(target))).toEqual([
       { rule: 'FLOW', file, message: 'pages/home has no state "loading" - fix or drop the frame' },
       { rule: 'FLOW', file, message: 'part pages/search no longer exists - fix or drop the frame' },
+    ]);
+  });
+
+  it('passes a page that exists only as a sketch, with the states of its first variant', () => {
+    const target = acme();
+
+    sketchPage(target, 'search', '{ default: {} }');
+    flow(target, 'search', {
+      frames: [
+        { part: 'pages/home', state: 'default' },
+        { part: 'pages/search', state: 'default' },
+      ],
+      lines: [{ from: { part: 'pages/home', state: 'default' }, to: { part: 'pages/search', state: 'default' } }],
+    });
+
+    expect(flowProblemsOf(resolveAcme(target))).toEqual([]);
+  });
+
+  it('fails a state the first variant of a sketch-only page lacks', () => {
+    const target = acme();
+
+    sketchPage(target, 'search', '{ default: {} }');
+    const file = flow(target, 'search', { frames: [{ part: 'pages/search', state: 'loading' }] });
+
+    expect(flowProblemsOf(resolveAcme(target))).toEqual([
+      {
+        rule: 'FLOW',
+        file,
+        message: 'pages/search has no state "loading" in sketch variant a - fix or drop the frame',
+      },
     ]);
   });
 
