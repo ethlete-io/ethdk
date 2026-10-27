@@ -33,6 +33,7 @@ import { forceInteractionsPlugin } from './force-interactions';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
+import { ALL_PARTS, changedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
 import { partKeyOf, ResolvedPart } from './system/resolve-product';
@@ -184,7 +185,7 @@ const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCom
 
 /**
  * A server-sent event stream for Studio: `comments` when a comment file changed, `changes` when a file outside the
- * design folder that a frame draws changed. Studio watches the design folder itself.
+ * design folder that a frame draws changed, and `parts` with the parts any change redraws and the revision it gave them.
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
@@ -201,8 +202,8 @@ const createDesignEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: (event: 'comments' | 'changes') => {
-      for (const response of listeners) response.write(`event: ${event}\ndata: {}\n\n`);
+    signal: (event: 'comments' | 'changes' | 'parts', data: object = {}) => {
+      for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
       for (const response of listeners) response.end();
@@ -282,6 +283,18 @@ const designExplore = ({
       shots.forgetCalls(relative(callsRoot, file));
     };
 
+    const events = createDesignEvents();
+    let revision = 0;
+
+    const redraw = (change: PartsChange) => {
+      if (!change.all && change.parts.length === 0) return;
+
+      revision += 1;
+      if (change.all) shots.clear();
+      else shots.forget(change);
+      events.signal('parts', { revision, ...change });
+    };
+
     const configPath = configPathOf(target);
 
     const reloadConfig = () => {
@@ -302,12 +315,10 @@ const designExplore = ({
       for (const key of Object.keys(config)) delete config[key as keyof DesignConfig];
       Object.assign(config, next);
       system.forget();
-      shots.clear();
       reload(`${VIRTUAL}/env`);
       reload(`${VIRTUAL}/system`);
+      redraw(ALL_PARTS);
     };
-
-    const events = createDesignEvents();
 
     const refresh = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
@@ -320,8 +331,8 @@ const designExplore = ({
       if (isInside(callsRoot, file) || ![designRoot, ...baseDirs].some((dir) => isInside(dir, file))) return;
 
       system.forget();
-      shots.clear();
       reload(`${VIRTUAL}/system`);
+      redraw(ALL_PARTS);
       if (!isInside(designRoot, file)) events.signal('changes');
     };
 
@@ -332,7 +343,7 @@ const designExplore = ({
       forgetCalls(file);
       const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
 
-      shots.forget(dependents);
+      redraw(changedPartsOf({ target, config, system, file, dependents }));
       if (dependents.length > 0 && !isInside(designRoot, file)) events.signal('changes');
     };
 

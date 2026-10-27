@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { changedPartsOf } from './changed-parts';
 import { DESIGN_DIR, readConfig } from './paths';
 import { createDesignServer } from './serve';
 import { createPartShooter, dependentIdsOf } from './shot';
@@ -103,7 +104,15 @@ describe('createPartShooter', () => {
 
     const baseCardCss = join(target, DESIGN_DIR, 'acme-base/components/card/card.css');
 
-    shots.forget(dependentIdsOf(vite.moduleGraph.getModulesByFile(baseCardCss) ?? []));
+    shots.forget(
+      changedPartsOf({
+        target,
+        config,
+        system,
+        file: baseCardCss,
+        dependents: dependentIdsOf(vite.moduleGraph.getModulesByFile(baseCardCss) ?? []),
+      }),
+    );
     screenshot.mockClear();
 
     for (const part of ['pages/home', 'components/card', 'elements/hero']) {

@@ -1,7 +1,8 @@
 import { IncomingMessage, ServerResponse } from 'http';
 import { chromiumOf } from './browser';
+import { DrawnPart, PartsChange, redraws } from './changed-parts';
 import { DesignPreset } from './paths';
-import { fileOfModuleId, productOfModuleId, SketchVariant, SystemModules } from './system/system-modules';
+import { SketchVariant, SystemModules } from './system/system-modules';
 import {
   Browser,
   callDrawsFrom,
@@ -21,7 +22,7 @@ const VIEWPORT_HEIGHT = 800;
 
 const FIT_VIEWPORT_WIDTH = 1280;
 
-type Drawn = { product: string; file: string } | { slug: string };
+type Drawn = { part: DrawnPart } | { slug: string };
 
 type Size = Pick<DesignPreset, 'width' | 'height'>;
 
@@ -47,7 +48,7 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
 /**
  * Draws one state of a part at one preset, at one container width, or fitted to its content, or one
  * variant of a call at a given width, at full height, into a PNG. Each picture is kept per frame, size
- * and theme until a file it was drawn from changes.
+ * and theme until a change redraws its part.
  */
 export const createPartShooter = (options: {
   target: string;
@@ -135,7 +136,7 @@ export const createPartShooter = (options: {
 
     return cached({
       key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant, interaction],
-      drawn: { product, file },
+      drawn: { part: { product, part, sketch } },
       search: new URLSearchParams({
         product,
         part,
@@ -214,18 +215,10 @@ export const createPartShooter = (options: {
         }),
       );
     },
-    /** Drops the pictures drawn from one of the given module ids, each of which names its product. */
-    forget: (ids: string[]) => {
-      const drawn = new Set(
-        ids.flatMap((id) => {
-          const product = productOfModuleId(id);
-
-          return product ? [JSON.stringify([product, fileOfModuleId(id)])] : [];
-        }),
-      );
-
-      for (const [key, { drawn: from }] of cache) {
-        if ('file' in from && drawn.has(JSON.stringify([from.product, from.file]))) cache.delete(key);
+    /** Drops the pictures of the parts `change` redraws. */
+    forget: (change: PartsChange) => {
+      for (const [key, { drawn }] of cache) {
+        if ('part' in drawn && redraws(change, drawn.part)) cache.delete(key);
       }
     },
     /** Drops the call pictures a changed file under the calls root may draw into. */
