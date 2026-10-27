@@ -6,7 +6,7 @@ import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { rememberedView } from '../studio-view/remembered';
 import { SketchViewComponent } from './sketch-view.component';
-import { SystemViewComponent } from './system-view.component';
+import { baseLabelOf, SystemViewComponent } from './system-view.component';
 
 const watchChannels: { onmessage: () => void }[] = [];
 
@@ -98,6 +98,14 @@ const mount = async (remembered: object) => {
 
   return fixture;
 };
+
+describe('baseLabelOf', () => {
+  it('names a base path by its last folder and keeps the built-in base whole', () => {
+    expect(baseLabelOf('.ethlete/design/web')).toBe('web');
+    expect(baseLabelOf('../shared/web/')).toBe('web');
+    expect(baseLabelOf('@ethlete/components')).toBe('@ethlete/components');
+  });
+});
 
 describe('SystemViewComponent on a reload', () => {
   beforeEach(() => {

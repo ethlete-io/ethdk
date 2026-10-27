@@ -88,6 +88,9 @@ const BADGE_ACCENT =
 /** Never a product name: a product is a directory, and a directory name holds no slash. */
 const NEW_PRODUCT = '/new';
 
+export const baseLabelOf = (base: string) =>
+  base.startsWith('@') ? base : (base.split('/').filter(Boolean).at(-1) ?? base);
+
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
 
 const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) => problem.rule === 'LOAD');
@@ -117,7 +120,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                 {{ listed.name }}
                 @if (listed.base) {
                   <span class="text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]"
-                    >inherits from {{ listed.base }}</span
+                    >inherits from {{ BASE_LABEL_OF(listed.base) }}</span
                   >
                 }
               </span>
@@ -846,6 +849,8 @@ export class SystemViewComponent {
   protected commentable = computed(
     () => !this.creating() && !this.call() && (this.sketchShown() !== null || this.part() !== null),
   );
+
+  protected readonly BASE_LABEL_OF = baseLabelOf;
 
   constructor() {
     this.commentStore.connect(

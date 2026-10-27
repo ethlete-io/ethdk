@@ -6,6 +6,7 @@ import { EMPTY, catchError, finalize, tap } from 'rxjs';
 import { ListedProduct, designAnswer$ } from '../../host/design';
 
 const NO_BASE = '';
+const BUILT_IN_BASE = '@ethlete/components';
 
 @Component({
   selector: 'ethlete-new-product-form',
@@ -15,17 +16,16 @@ const NO_BASE = '';
         <et-label>Name</et-label>
         <et-input [(value)]="name" class="font-mono" placeholder="web" />
       </et-form-field>
-      @if (bases().length > 0) {
-        <et-form-field appearance="box">
-          <et-label>Base</et-label>
-          <et-select [(value)]="base">
-            <et-select-option [value]="NO_BASE" label="No base">No base</et-select-option>
-            @for (listed of bases(); track listed.name) {
-              <et-select-option [value]="listed.name" [label]="listed.name">{{ listed.name }}</et-select-option>
-            }
-          </et-select>
-        </et-form-field>
-      }
+      <et-form-field appearance="box">
+        <et-label>Base</et-label>
+        <et-select [(value)]="base">
+          <et-select-option [value]="NO_BASE" label="No base">No base</et-select-option>
+          @for (listed of bases(); track listed.name) {
+            <et-select-option [value]="listed.name" [label]="listed.name">{{ listed.name }}</et-select-option>
+          }
+          <et-select-option [value]="BUILT_IN_BASE" [label]="BUILT_IN_BASE">{{ BUILT_IN_BASE }}</et-select-option>
+        </et-select>
+      </et-form-field>
       @if (error(); as message) {
         <p [etProvideColor]="errorTheme()" class="m-0 text-small text-[var(--et-theme-color-primary-solid)]">
           {{ message }}
@@ -48,6 +48,7 @@ export class NewProductFormComponent {
   public products = input<ListedProduct[]>([]);
   public create = output<string>();
   protected readonly NO_BASE = NO_BASE;
+  protected readonly BUILT_IN_BASE = BUILT_IN_BASE;
 
   protected name = signal('');
 

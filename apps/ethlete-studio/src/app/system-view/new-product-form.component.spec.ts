@@ -78,6 +78,19 @@ describe('NewProductFormComponent', () => {
     expect(fixture.componentInstance['bases']().map((listed) => listed.name)).toEqual(['web']);
   });
 
+  it('lists the built-in base last, also with no product yet', async () => {
+    const fixture = TestBed.createComponent(NewProductFormComponent);
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const form = fixture.componentInstance as unknown as { BUILT_IN_BASE: string };
+
+    expect(form.BUILT_IN_BASE).toBe('@ethlete/components');
+    expect((fixture.nativeElement as HTMLElement).querySelector('et-select')).not.toBeNull();
+  });
+
   it('shows a refusal of the server in the error theme', async () => {
     vi.stubGlobal('fetch', () => json({ error: 'PRODUCT EXISTS - web is declared' }, 409));
     const fixture = TestBed.createComponent(NewProductFormComponent);
