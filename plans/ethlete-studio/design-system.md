@@ -1392,14 +1392,19 @@ Flow comments and preset, as built (bc8801096, headless proof pending):
 - The preset is remembered per flow as `ViewState.flowPresets["<product> flow:<name>"]`, else the
   previous pick, else the first preset.
 
-Open points, each with a recommendation (asked 2026-10-27, not yet answered):
+### Note and flow comment decisions (2026-10-27)
 
-- Note cards of a pointed note overlap the next frame at low zoom. Recommendation: put the card
-  under the frame and keep only a small numbered marker at the point.
-- A flow shows no hint of comments at another preset. Recommendation: the "N comments at another
-  size" frame note of the part canvas on flow frames too.
-- The sidebar lists a flow comment as a part comment and opens the part view. Recommendation: keep
-  it; a state appears in many flows.
+- Note cards at low zoom: a state note still shows on every rest frame of its state. Below a zoom
+  threshold each frame shows the marker only, no card - the same rule as a label that does not
+  fit. This stops the phone and desktop cards of one note from overlapping (~21% zoom).
+- Flow frames get the "N comments at another size" frame note (`withOtherSizeNotes`, as on the
+  part canvas), so a comment made at another preset is visible on a flow.
+- The comments sidebar keeps listing a flow comment as a part comment. A jump from outside the
+  shown flow opens the part; inside the shown flow it opens on the flow. The comment belongs to
+  the state, and a state appears in many flows.
+- An outdated design server: when a `/__design` request gets HTML instead of JSON, Studio shows
+  "The design server is older than Studio - restart it". Studio does not restart the server
+  itself.
 
 ### Wireframe kit fix decisions (2026-10-27)
 
