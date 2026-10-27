@@ -503,6 +503,24 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
   hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
   may serve there too.
 
+### Studio reload and sketch header, as built (2026-10-27)
+
+- 793d9381b: `studio-lab` rating sketch b declares `interactions: ['disabled']`.
+- 9daaca75a: Studio waits for the products, sketch and call lists before it picks a part or deletes a
+  camera. Before, a reload showed tokens and deleted the sketch's camera. The merge preview, the size
+  and the interaction are remembered per sketch in `sketchViews`.
+- 9daaca75a: the sketch header items of "Merge preview decisions" are done: "Picked b" is filled in
+  the accent colour, the note is an `et-form-field` labelled "Note", and "Needs a note" shows while
+  the note is empty.
+- 9daaca75a: an interaction switch fits again from the top; the merge preview always fits fresh.
+
+Open points, each with a recommendation:
+
+- The matrix 550 px below the header (seen in the real app on `components/button`) did not happen
+  headlessly. Assumed cause: an old saved fit camera comes back as a zoom. Recommendation: the
+  running slice saves only a camera the user moved, and a fit deletes it; check it again in the
+  real app after that slice.
+
 ### Agent author decisions (2026-10-27)
 
 Not built yet. The user wants to see which model made what, for example variant a by Gemini Argon,
