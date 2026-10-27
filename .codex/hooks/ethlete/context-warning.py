@@ -177,8 +177,16 @@ AGENT_PROFILES = {
         "emits_system_message": True,
         "act_now": "Run /{handoff} now and continue in a fresh session.",
         "act_later": "consider /{handoff} to continue in a fresh session",
-        "recommend": "recommend the user run /{handoff} to save state and start a fresh session",
-        "suggest": "suggest the user run /{handoff} to save state and start a fresh session",
+        "recommend": (
+            "first apply the handoff skill's save test yourself; if it calls for a file, "
+            "recommend the user run /{handoff} to save state and start a fresh session, "
+            "otherwise recommend /clear and say nothing is left to hand off"
+        ),
+        "suggest": (
+            "first apply the handoff skill's save test yourself; if it calls for a file, "
+            "suggest the user run /{handoff} to save state and start a fresh session, "
+            "otherwise suggest /clear and say nothing is left to hand off"
+        ),
         "save_now": (
             "run the handoff skill's save mode right now - finish only an in-flight atomic "
             "edit first, nothing new. Apply its own test: with every change committed, no "
@@ -210,11 +218,13 @@ AGENT_PROFILES = {
         "recommend": (
             "tell the user you are near the context limit, then follow "
             ".agents/skills/{handoff}/SKILL.md to save a handoff and have them start a "
+            "fresh session; when its save test calls for no file, only tell them to start a "
             "fresh session"
         ),
         "suggest": (
-            "suggest saving a handoff via .agents/skills/{handoff}/SKILL.md and "
-            "continuing in a fresh session"
+            "first apply the save test in .agents/skills/{handoff}/SKILL.md yourself; if it "
+            "calls for a file, suggest saving a handoff and continuing in a fresh session, "
+            "otherwise suggest a fresh session and say nothing is left to hand off"
         ),
         "save_now": (
             "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now - finish "
