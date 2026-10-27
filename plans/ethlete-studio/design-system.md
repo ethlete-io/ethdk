@@ -623,6 +623,16 @@ Findings:
   Fixed: a foundation may use another foundation (cd2c4a6fe).
 - `dist/libs/cli` was older than the last `libs/cli` commit; the sketch agent rebuilt it.
 
+### Studio logo, as built
+
+- Tom merged variant B (stroke S) in Studio; the part `foundations/logo` is aadcffbb9.
+- App icon (2173ee0b1): `apps/ethlete-studio/src-tauri/app-icon.svg` is the source, with the
+  tokens resolved to literal colours (`--accent` #25aea7, `--on-accent` #051211). `npx tauri icon
+src-tauri/app-icon.svg -o <tmp>` from `apps/ethlete-studio`, then copy only the six files
+  `tauri.conf.json` lists. The 32 px PNG still reads as an S.
+- Sidebar (e4c73e961): `StudioMarkComponent` draws the mark with `fill-accent` and
+  `stroke-on-accent` beside a "Studio" label at the top of the system view's sidebar.
+
 ### Flow, tokens and note layout decisions (2026-10-27)
 
 - The design server watches `flows/` like the other files and sends an event, so a flow edit shows
