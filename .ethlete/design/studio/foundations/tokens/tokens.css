@@ -435,3 +435,21 @@ body {
   --weight-medium: 500;
   --weight-strong: 600;
 }
+
+/* Studio spacing and radius, variant B: balanced */
+:root {
+  --space-1: 0.4rem;
+  --space-2: 0.8rem;
+  --space-3: 1.2rem;
+  --space-4: 1.6rem;
+  --space-5: 2rem;
+  --space-6: 2.4rem;
+  --space-7: 3.2rem;
+  --radius-sm: 0.4rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 1rem;
+  --radius-full: 999px;
+  --control-sm: 2.4rem;
+  --control-md: 2.8rem;
+  --row: 2.4rem;
+}
