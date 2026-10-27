@@ -213,48 +213,44 @@ const loadErrorOf = (problems: { rule: string; message: string }[]) =>
 const statesOf = (part: ListedPart, error: string | undefined): (string | undefined)[] =>
   part.states.length > 0 ? part.states : error ? [undefined] : [];
 
-const presetFramesOf = ({ port, product, part, epoch, revision, surface, color }: FramesSource): CanvasFrame[] => {
-  const key = partKeyOf(part);
-  const error = loadErrorOf(part.problems);
+export const REST = 'rest';
 
-  return statesOf(part, error).flatMap((state) =>
-    Object.entries(product.presets).map(([preset, { width, height }]) => {
-      const address = { port, product: product.name, part: key, state: state ?? '', epoch, revision, surface, color };
+/** Rest, then each interaction the part declares, in its order. */
+export const interactionsOf = (part: ListedPart): string[] => [REST, ...(part.interactions ?? [])];
 
-      return {
-        id: `${state ?? ''} ${preset}`,
-        src: partFrameUrl(address),
-        width,
-        height,
-        label: preset,
-        row: state,
-        screenshot: partShotUrl({ ...address, preset, revision }),
-        error,
-        ...(state === undefined ? {} : { place: { part: key, state, size: preset } }),
-      };
-    }),
-  );
-};
+/** The columns of a fitted part's table: rest, then each interaction the part declares. */
+export const partColumnsOf = (part: ListedPart): { key: string; label: string }[] =>
+  interactionsOf(part).map((key) => ({ key, label: key }));
+
+const sizeLabelOf = (size: string, interaction: string) => (interaction === REST ? size : `${size} · ${interaction}`);
 
 export const FITTED = 'fitted';
 
-export type FrameArrangement = 'sheet' | 'grid';
+type Cell = { state: string | undefined; interaction: string };
 
-/** A page and a part with `widths` show a row per state; any other part shows its states as a grid of tiles. */
-export const arrangementOf = (part: ListedPart): FrameArrangement =>
-  part.layer === 'pages' || (part.widths?.length ?? 0) > 0 ? 'sheet' : 'grid';
+export type FrameArrangement = 'sheet' | 'matrix';
 
 /**
- * A page at every preset of the product, a part with `widths` at each width, any other part fitted to
- * its content, one frame per state. Only a `LOAD` problem fails the frames: a part that breaks a rule
- * still renders, and one that does not load lists no states.
+ * A page and a part with `widths` show a row per state with a frame per size and interaction; any other
+ * part shows a table with a row per state and a column per interaction.
+ */
+export const arrangementOf = (part: ListedPart): FrameArrangement =>
+  part.layer === 'pages' || (part.widths?.length ?? 0) > 0 ? 'sheet' : 'matrix';
+
+/**
+ * Every state of a part in rest and in each interaction it declares: a page at every preset of the
+ * product, a part with `widths` at each width, any other part fitted to its content. Only a rest frame
+ * takes comments. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
+ * one that does not load lists no states.
  */
 export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const { port, product, part, epoch, revision, surface, color } = source;
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
   const states = statesOf(part, error);
-  const addressOf = (state: string | undefined) => ({
+  const interactions = interactionsOf(part);
+  const cells = states.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
+  const addressOf = ({ state, interaction }: Cell) => ({
     port,
     product: product.name,
     part: key,
@@ -263,34 +259,55 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     revision,
     surface,
     color,
+    ...(interaction === REST ? {} : { interaction }),
   });
+  const placeOf = ({ state, interaction }: Cell, size: string | number) =>
+    state === undefined || interaction !== REST ? {} : { place: { part: key, state, size } };
+  const idOf = ({ state, interaction }: Cell, size?: string | number) =>
+    [state ?? '', ...(size === undefined ? [] : [size]), ...(interaction === REST ? [] : [interaction])].join(' ');
 
-  if (part.layer === 'pages') return presetFramesOf(source);
-
-  const widths = part.widths ?? [];
-
-  if (widths.length > 0) {
-    return states.flatMap((state) =>
-      widths.map((width) => ({
-        id: `${state ?? ''} ${width}`,
-        src: partFrameUrl(addressOf(state)),
+  if (part.layer === 'pages') {
+    return cells.flatMap((cell) =>
+      Object.entries(product.presets).map(([preset, { width, height }]) => ({
+        id: idOf(cell, preset),
+        src: partFrameUrl(addressOf(cell)),
         width,
-        label: 'width',
-        row: state,
-        screenshot: partShotUrl({ ...addressOf(state), width, revision }),
+        height,
+        label: sizeLabelOf(preset, cell.interaction),
+        row: cell.state,
+        screenshot: partShotUrl({ ...addressOf(cell), preset, revision }),
         error,
-        ...(state === undefined ? {} : { place: { part: key, state, size: width } }),
+        ...placeOf(cell, preset),
       })),
     );
   }
 
-  return states.map((state) => ({
-    id: state ?? '',
-    src: partFrameUrl({ ...addressOf(state), fit: true }),
-    label: state ?? key,
-    screenshot: partShotUrl({ ...addressOf(state), revision }),
+  const widths = part.widths ?? [];
+
+  if (widths.length > 0) {
+    return cells.flatMap((cell) =>
+      widths.map((width) => ({
+        id: idOf(cell, width),
+        src: partFrameUrl(addressOf(cell)),
+        width,
+        label: sizeLabelOf('width', cell.interaction),
+        row: cell.state,
+        screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+        error,
+        ...placeOf(cell, width),
+      })),
+    );
+  }
+
+  return cells.map((cell) => ({
+    id: idOf(cell),
+    src: partFrameUrl({ ...addressOf(cell), fit: true }),
+    label: cell.state === undefined ? key : '',
+    row: cell.state,
+    column: cell.interaction,
+    screenshot: partShotUrl({ ...addressOf(cell), revision }),
     error,
-    ...(state === undefined ? {} : { place: { part: key, state, size: FITTED } }),
+    ...placeOf(cell, FITTED),
   }));
 };
 

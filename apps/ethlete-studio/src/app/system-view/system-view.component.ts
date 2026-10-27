@@ -49,6 +49,7 @@ import {
   callFramesOf,
   callKeyOf,
   framesOf,
+  partColumnsOf,
   holdersOf,
   isGroupOpen,
   isSectionOpen,
@@ -308,6 +309,7 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
             #partCanvas
             [frames]="notedFrames()"
             [arrangement]="arrangement()"
+            [columns]="partColumns()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             [pins]="partPins()"
@@ -580,6 +582,12 @@ export class SystemViewComponent {
     const part = this.part();
 
     return part ? arrangementOf(part.listed) : 'sheet';
+  });
+
+  protected partColumns = computed(() => {
+    const part = this.part();
+
+    return part ? partColumnsOf(part.listed) : [];
   });
 
   protected frames = computed(() => {

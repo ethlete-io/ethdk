@@ -1,6 +1,7 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import {
   arrangementOf,
+  partColumnsOf,
   callFramesOf,
   canPick,
   holdersOf,
@@ -200,14 +201,15 @@ describe('framesOf', () => {
     expect(frames.every((frame) => frame.error === undefined)).toBe(true);
   });
 
-  it('draws a small part as one tile per state, fitted to its content and named by the state', () => {
+  it('draws a small part as a table with one row per state and only the rest column, fitted to its content', () => {
     const button = part();
     const frames = framesOf({ port: 4402, product: product(), part: button, epoch: 2, revision: 3 });
 
-    expect(arrangementOf(button)).toBe('grid');
-    expect(frames.map((frame) => [frame.id, frame.row, frame.label, frame.width, frame.height])).toEqual([
-      ['default', undefined, 'default', undefined, undefined],
-      ['disabled', undefined, 'disabled', undefined, undefined],
+    expect(arrangementOf(button)).toBe('matrix');
+    expect(partColumnsOf(button)).toEqual([{ key: 'rest', label: 'rest' }]);
+    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.width, frame.height])).toEqual([
+      ['default', 'default', 'rest', undefined, undefined],
+      ['disabled', 'disabled', 'rest', undefined, undefined],
     ]);
     expect(frames[0]?.src).toBe(
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2&revision=3',
@@ -215,6 +217,34 @@ describe('framesOf', () => {
     expect(frames[0]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&epoch=2&revision=3',
     );
+  });
+
+  it('adds a column per declared interaction, forced through the address, with comments on rest only', () => {
+    const button = part({ states: ['solid'], interactions: ['hover', 'disabled'] });
+    const frames = framesOf({ port: 4402, product: product(), part: button });
+
+    expect(partColumnsOf(button).map((column) => column.key)).toEqual(['rest', 'hover', 'disabled']);
+    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.place?.state])).toEqual([
+      ['solid', 'solid', 'rest', 'solid'],
+      ['solid hover', 'solid', 'hover', undefined],
+      ['solid disabled', 'solid', 'disabled', undefined],
+    ]);
+    expect(frames[1]?.src).toBe(
+      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fit',
+    );
+    expect(frames[2]?.screenshot).toBe(
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled',
+    );
+  });
+
+  it('draws each interaction of a part with widths at every width in the row of its state', () => {
+    const card = part({ layer: 'elements', name: 'card', states: ['default'], widths: [280], interactions: ['hover'] });
+    const frames = framesOf({ port: 4402, product: product(), part: card });
+
+    expect(frames.map((frame) => [frame.id, frame.row, frame.label, frame.place?.size])).toEqual([
+      ['default 280', 'default', 'width', 280],
+      ['default 280 hover', 'default', 'width · hover', undefined],
+    ]);
   });
 
   it('draws a part with widths in one row per state and one frame per width', () => {

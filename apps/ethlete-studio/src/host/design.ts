@@ -237,6 +237,8 @@ export type ListedPart = {
   note: string | null;
   states: string[];
   widths?: number[];
+  /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
+  interactions?: string[];
   problems: SystemProblem[];
 };
 
@@ -281,14 +283,17 @@ export type PartAddress = {
   /** With `variant`, draws the part as that variant of the sketch of `sketch` (a `<layer>/<name>`) has it. */
   sketch?: string;
   variant?: string;
+  /** Forces an interaction (hover, focus-visible, active, disabled) on the part's root element; rest without one. */
+  interaction?: string;
 };
 
 const themeQuery = ({ surface, color }: { surface?: string; color?: string }) =>
   (surface ? `&surface=${encodeURIComponent(surface)}` : '') + (color ? `&color=${encodeURIComponent(color)}` : '');
 
-const partQuery = ({ product, part, state, sketch, variant }: PartAddress) =>
+const partQuery = ({ product, part, state, sketch, variant, interaction }: PartAddress) =>
   `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}` +
-  (sketch && variant ? `&sketch=${encodeURIComponent(sketch)}&variant=${encodeURIComponent(variant)}` : '');
+  (sketch && variant ? `&sketch=${encodeURIComponent(sketch)}&variant=${encodeURIComponent(variant)}` : '') +
+  (interaction ? `&interaction=${encodeURIComponent(interaction)}` : '');
 
 export const partFrameUrl = (address: PartAddress) =>
   `http://localhost:${address.port}/frame.html?${partQuery(address)}${themeQuery(address)}` +
