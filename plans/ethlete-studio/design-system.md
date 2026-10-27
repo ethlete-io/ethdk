@@ -739,6 +739,12 @@ step. Each finding names what happened and the fix it needs.
   The step-by-step rhythm (one question, one change, Tom looks in Studio) works, but each look
   costs Tom a screenshot because no agent can see the drawing. Fix: the shot command above, so
   the agent shows the result in the question.
+- The agent dictated the design. After the clean slate it asked yes/no questions about parts of
+  the old, never accepted draft (product select, checkout, panel), with its own recommendation,
+  and edited `shell-main` directly. Tom: "du diktierst mir in die Feder". No sketch, no variants,
+  no pick in Studio, so Studio was not tested at all. Fix: the agent asks Tom what the part needs
+  in an open question; a design choice goes to Studio as a sketch with variants; a direct edit is
+  only for a bug in a drawing Tom already accepted.
 
 Findings:
 
