@@ -1310,7 +1310,8 @@ State:
   - ctrl + wheel, pinch: zoom to the pointer
   - `Shift+1` fit all, `Shift+2` fit selection, `Shift+0` 100 %
   - double-click a frame: the frame becomes active (click, hover, scroll inside); `Esc` leaves
-  - drag the edge of an active frame: free width
+  - drag the edge of an active frame: free width (replaced by "Frame size decisions": no drag
+    handle for now, and a fitted tile never has one)
 - Only frames in view run live. Frames out of view show a cached screenshot from the same core
   that makes the agent's screenshots, so agent and user see the same presets.
 - Top: workspace and product picker. Left: a tree with Foundations, Components, Elements,
