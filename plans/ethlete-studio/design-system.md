@@ -606,10 +606,12 @@ filled only `.lab-shell` (480px). It is now `position: fixed; inset: 0`, and fra
 fills the frame. Also fixes "login open" and "login error". Rendered check, all pass (headless):
 the scrim fills the viewport at phone 390x844 and desktop 1440x900 for all three states, live and in
 `/__design/shot`; fitted frames stay at 512px over 4s at iframe heights 300 and 900, no loop.
-Finding, also on "three" and older than the fix: a fitted frame measures 512px live, but its fitted
-shot is 480px high. Decided (2026-10-27): the builder finds the cause (likely the 16px fit padding
-the shot lacks) and makes live frame and shot the same size, so a frame does not jump at the zoom 0.5
-swap.
+A reported 512px live vs 480px shot mismatch was wrong: the check compared a live `&fit` frame with
+a `width=390` shot, two different renders. A shot without preset or width also loads with fit, so the
+16px padding is in the PNG too (`shot.ts` `partShotOf`). Measured headless, live and PNG equal:
+`pages/library` fit 319x512, no-fit 390x480; `list-row` 352x69; `film-detail` reviewing 674x492;
+`card` 173x115. In the canvas each frame keeps its size from live (68-100%) to shot (<50%). No code
+change. Not checked: Tom's window (HiDPI), other products.
 
 ### Comment follow-up decisions (2026-10-27)
 
