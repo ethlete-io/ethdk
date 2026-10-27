@@ -790,6 +790,20 @@ step. Each finding names what happened and the fix it needs.
   gehen können... fühlt sich noch immer komisch an". Open question for the process: which
   questions need a wireframe at all. The drawing agents spent most of their effort on kit gaps
   (alignment, padding, markers), which is look, not structure.
+- Content area sketch round (`pages-system`, variants a focus view, b state matrix, c canvas plus
+  inspector), friction:
+  - Confirmed: `sketch new --by` and `sketch ready --by` write no `authors`; only `sketch report`
+    does. All three variants have none, so a merge drops `madeBy` again. Prevent: `new`,
+    `variant` and `ready` record `--by`, and `ready` refuses a variant without authors.
+  - A variant is a copy of the whole page file, so a new helper can collide with a copied one
+    (`stateRow`), and the shot then shows the Vite error overlay, not the design. Prevent: shared
+    page helpers live in an importable module, and the shot reports a build error as an error.
+  - A `box` with `height: 1` draws a 3 px rounded bar, so variant c has no dividers (see `split`).
+  - To fill the shell height, `image` needs a growing wrapper and the content root a hard-coded
+    `height: 852` (900 minus the shell padding); `fill: true` means `min-height: 100vh`.
+    Prevent: `image({ grow })` and a box option that fills its parent.
+  - A note line can only be a small `heading`; `textLines` draws grey bars. Prevent: the muted
+    `text()` above.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
