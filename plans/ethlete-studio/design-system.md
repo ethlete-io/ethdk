@@ -563,6 +563,21 @@ and buttons, the thing the card below the frame was meant to avoid.
   (numbered per frame). The line from marker to card appears only while the pointer is over the
   marker or the card. No line otherwise.
 
+### Note size decisions (2026-10-27)
+
+Replaces "a state note shows on every rest frame of its state" for pointed notes. Seen on
+`film-detail` "rest": a note pointed at the text under the phone title showed on desktop too, at the
+same x and y, in empty space.
+
+- A pointed note stores the size (preset) it was written at, as `size` like a comment's place, and
+  shows only at that size. A note without a point still shows at every size.
+- The frame note for other sizes covers notes too, in one line with comments, for example "1 comment,
+  1 note at another size". On a flow it follows the picked preset, as for comments.
+- `size` is required on a pointed note; `et design check` reports a missing one as an error. The
+  builder adds `size: "phone"` to the two existing pointed lab notes (`film-detail` "rest", Tom's
+  uncommitted `notes/20261027T144809Z-db30.json`, and `library` "three",
+  `notes/20261027T163000Z-e5f6.json`).
+
 Also seen there: on `pages/library` "add open" the dialog backdrop ends at about 410px and the rest
 of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
 Fixed in 9222b044f: the scrim in `pages/library/library.ts` was `position: absolute; inset: 0`, so it
