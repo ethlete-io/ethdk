@@ -131,6 +131,25 @@ describe('StudioViewComponent', () => {
     expect(status(fixture)).toContain('No design config in /broken.');
   });
 
+  it('opens the checkout picked last after a restart', async () => {
+    stubHost({ design_roots: () => ({ search: '', roots: [CHECKOUT, '/other'] }) });
+
+    const first = await mount();
+    const picker = element(first).querySelector<HTMLSelectElement>('ethlete-checkouts select');
+
+    if (picker) picker.value = '/other';
+    picker?.dispatchEvent(new Event('change'));
+    await settle(first);
+    first.destroy();
+
+    const again = TestBed.createComponent(StudioViewComponent);
+
+    again.autoDetectChanges();
+    await settle(again);
+
+    expect(system(again)?.checkout()).toBe('/other');
+  });
+
   it('bumps the tick on a reload', async () => {
     const fixture = await mount();
     const before = system(fixture)?.tick() ?? 0;

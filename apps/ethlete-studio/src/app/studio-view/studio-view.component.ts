@@ -17,7 +17,7 @@ import { SystemViewComponent } from '../system-view/system-view.component';
 import { UpdateButtonComponent } from '../update-button.component';
 import { UpdateCheckButtonComponent } from '../update-check-button.component';
 import { CheckoutsComponent } from './checkouts.component';
-import { rememberedView } from './remembered';
+import { rememberView, rememberedView } from './remembered';
 
 /** One edit lands as several file events, and an agent writes a whole round in a burst. */
 const SETTLE_MS = 300;
@@ -200,6 +200,7 @@ export class StudioViewComponent {
     this.design.set(null);
     this.foreignWatch?.unsubscribe();
     this.foreignWatch = null;
+    rememberView({ checkout: path });
     this.read();
     this.readServer();
     this.watchChanges();
