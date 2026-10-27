@@ -68,10 +68,11 @@
       class="absolute origin-top-left"
     >
       <button
-        [pressed]="placed.open"
+        [class.ring-2]="placed.open"
         [attr.aria-label]="'Comment ' + placed.pin.label"
+        [attr.aria-expanded]="placed.open"
         (click)="togglePin(placed.pin.id, $event)"
-        class="min-w-8 rounded-full shadow-md"
+        class="min-w-8 rounded-full shadow-md ring-[var(--et-theme-color-primary-solid)] ring-offset-2 ring-offset-[var(--et-surface-background-solid)]"
         et-button
         type="button"
         variant="filled"

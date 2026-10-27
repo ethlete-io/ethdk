@@ -279,6 +279,8 @@ describe('sketches in the tree', () => {
         sketch(),
         sketch({
           target: 'elements/header',
+          layer: 'elements',
+          name: 'header',
           status: 'ready',
           problems: [{ variant: 'a', problems: [{ rule: 'LAYER', file: 'x', message: 'm' }] }],
         }),
@@ -287,9 +289,9 @@ describe('sketches in the tree', () => {
 
     expect(tree.map((group) => group.key)).toEqual(['components', 'sketches']);
     expect(tree[0]?.entries.map((entry) => entry.badges)).toEqual([['sketch open'], []]);
-    expect(tree[1]?.entries.map((entry) => [entry.key, entry.badges])).toEqual([
-      ['sketch:components/button', ['in progress']],
-      ['sketch:elements/header', ['ready', 'error']],
+    expect(tree[1]?.entries.map((entry) => [entry.key, entry.name, entry.title, entry.badges])).toEqual([
+      ['sketch:components/button', 'button', 'components/button', ['in progress']],
+      ['sketch:elements/header', 'header', 'elements/header', ['ready', 'error']],
     ]);
   });
 });

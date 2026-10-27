@@ -65,6 +65,29 @@ export const visibleWorldRect = ({ camera, viewport, margin }: VisibleWorldRectO
   };
 };
 
+export type FocusRectOptions = { rect: Rect; camera: Camera; viewport: Size; padding: number };
+
+/** The camera that brings a rect into view at the current zoom, or `null` when it is already in view. */
+export const focusRect = ({ rect, camera, viewport, padding }: FocusRectOptions): Camera | null => {
+  const view = visibleWorldRect({ camera, viewport, margin: -padding });
+
+  if (rect.width > view.width || rect.height > view.height) return fitRect({ rect, viewport, padding });
+
+  const inView =
+    rect.x >= view.x &&
+    rect.y >= view.y &&
+    rect.x + rect.width <= view.x + view.width &&
+    rect.y + rect.height <= view.y + view.height;
+
+  if (inView) return null;
+
+  return {
+    x: viewport.width / 2 - (rect.x + rect.width / 2) * camera.zoom,
+    y: viewport.height / 2 - (rect.y + rect.height / 2) * camera.zoom,
+    zoom: camera.zoom,
+  };
+};
+
 export const rectsIntersect = (a: Rect, b: Rect) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 

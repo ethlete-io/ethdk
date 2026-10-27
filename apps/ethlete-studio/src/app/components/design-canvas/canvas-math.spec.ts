@@ -4,6 +4,7 @@ import {
   boundingRect,
   clampZoom,
   fitRect,
+  focusRect,
   layoutGrid,
   layoutMatrix,
   layoutSheet,
@@ -98,6 +99,29 @@ describe('canvas math', () => {
     });
 
     expect(rect).toEqual({ x: 0, y: -50, width: 500, height: 400 });
+  });
+
+  describe('focusRect', () => {
+    const viewport = { width: 1000, height: 600 };
+    const camera = { x: 0, y: 0, zoom: 0.5 };
+
+    it('keeps the camera when the rect is already in view', () => {
+      expect(
+        focusRect({ rect: { x: 200, y: 200, width: 400, height: 300 }, camera, viewport, padding: 64 }),
+      ).toBeNull();
+    });
+
+    it('pans to centre a rect outside the view without changing the zoom', () => {
+      expect(focusRect({ rect: { x: 3000, y: 2000, width: 400, height: 200 }, camera, viewport, padding: 64 })).toEqual(
+        { x: 500 - 3200 * 0.5, y: 300 - 2100 * 0.5, zoom: 0.5 },
+      );
+    });
+
+    it('fits a rect larger than the view at the current zoom', () => {
+      const rect = { x: 0, y: 0, width: 4000, height: 300 };
+
+      expect(focusRect({ rect, camera, viewport, padding: 64 })).toEqual(fitRect({ rect, viewport, padding: 64 }));
+    });
   });
 
   it('detects overlapping rects but not touching ones', () => {

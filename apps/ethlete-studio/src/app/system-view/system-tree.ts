@@ -46,7 +46,8 @@ export const sketchKeyOf = (target: string) => `sketch:${target}`;
 
 const sketchEntryOf = (sketch: ListedSketch, commented: ReadonlySet<string>): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
-  name: sketch.target,
+  name: sketch.name,
+  title: sketch.target,
   badges: [
     sketch.status,
     ...(commented.has(sketch.target) ? (['comment open'] as const) : []),

@@ -25,6 +25,7 @@ import {
   Size,
   boundingRect,
   fitRect,
+  focusRect,
   layoutGrid,
   layoutMatrix,
   layoutSheet,
@@ -392,7 +393,10 @@ export class DesignCanvasComponent {
     if (!placed) return;
 
     this.selectedId.set(id);
-    this.moveCamera(fitRect({ rect: placed, viewport: this.viewport(), padding: FIT_PADDING, maxZoom: 1 }), true);
+
+    const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
+
+    if (camera) this.moveCamera(camera, true);
   }
 
   protected activate(id: string) {
