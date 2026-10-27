@@ -508,6 +508,14 @@ b by Codex Sol, c by Claude Opus. Today only comment replies know `by: 'user' | 
 - The coordinating agent writes the exact id into each sub-agent prompt; an agent never guesses its
   id. This goes into the `ethlete-design-exploration` skill.
 
+### Design server restart decision (2026-10-27)
+
+- Studio runs the design server from the built copy `dist/apps/ethlete-studio/cli-runtime`, which
+  only a full Studio start rebuilds. In a dev build only (`cfg(debug_assertions)`), the footer
+  "restart design server" (`design_server_restart`) first runs `npx nx cli-runtime ethlete-studio`
+  in the SDK checkout, then starts the server; its log shows "Building the CLI…". A release build
+  keeps the shipped copy. No watch process: the user decides when the server restarts.
+
 ### Docs decision (2026-10-27)
 
 - The full `apps/docs/cli/design.md` page comes after the tomflix rebuild, when the workflow has
