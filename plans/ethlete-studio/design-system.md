@@ -330,6 +330,13 @@ Open points, each with a recommendation:
 - The merge stays in the design server. It moves to a worker only once a merge visibly hangs.
 - While a merge runs, the Merge button shows `loading` and Discard is disabled; the sketch in the
   sidebar shows "merging". On success the sketch goes away and Studio selects the target part.
+- Built in 3510747e9 (cli) and 0ce3cf91e (Studio): a refused merge answers 422
+  `{ error, changed, rebase }`; `et design inbox` lists "needs rebase <target>" with the
+  `et design sketch rebase` command. Studio shows a refusal box with the reason, "Changed in the
+  product <part>", the command and a Copy `et-button`; the merging state as decided. Lab data: the
+  `studio-lab` `components/card` sketch has its baseline hash set to `0000000000000000`, so its merge
+  is refused. Specs in inbox, serve, sketch view and system view fail without the change. The
+  headless app proof is pending.
 
 ### Comment UI decisions (2026-10-27)
 
