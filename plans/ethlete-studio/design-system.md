@@ -565,6 +565,10 @@ and buttons, the thing the card below the frame was meant to avoid.
 
 Also seen there: on `pages/library` "add open" the dialog backdrop ends at about 410px and the rest
 of the frame stays dark - a lab drawing bug, likely the fixed 480px `shell-main` height.
+Fixed in 9222b044f: the scrim in `pages/library/library.ts` was `position: absolute; inset: 0`, so it
+filled only `.lab-shell` (480px). It is now `position: fixed; inset: 0`, and frames are iframes, so it
+fills the frame. Also fixes "login open" and "login error". `design check --product studio-lab` ok;
+no rendered measurement yet.
 
 ### Comment follow-up decisions (2026-10-27)
 
