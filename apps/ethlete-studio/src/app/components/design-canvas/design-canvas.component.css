@@ -29,8 +29,6 @@
     top: 0;
     left: 0;
     transform-origin: 0 0;
-    --et-resize-handles-edge-size: calc(0.8rem * var(--et-design-canvas-label-scale));
-    --et-resize-handles-outset: calc(0.4rem * var(--et-design-canvas-label-scale));
   }
 
   .et-design-canvas__world--smooth {
@@ -85,11 +83,6 @@
     transform-origin: 0 0;
     font-size: 1.3rem;
     line-height: 1.4;
-  }
-
-  .et-design-canvas__resize {
-    position: absolute;
-    pointer-events: none;
   }
 
   .et-design-canvas__hud {

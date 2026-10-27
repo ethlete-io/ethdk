@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { THEMES } from '../../../themes';
-import { rememberView, rememberedView } from '../../studio-view/remembered';
+import { rememberedView } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
 import { DesignCanvasComponent } from './design-canvas.component';
 import { CanvasFrameComponent } from './partials/canvas-frame.component';
@@ -47,7 +47,7 @@ describe('DesignCanvasComponent', () => {
     expect(frame.nativeElement.style.height).toBe('70px');
   });
 
-  it('remembers the measured size apart from a user resize, and places the frame by it after a reload', async () => {
+  it('remembers the measured size and places the frame by it after a reload', async () => {
     const fixture = await render([FITTED]);
     const frame = frameElement(fixture).componentInstance as CanvasFrameComponent;
 
@@ -58,7 +58,6 @@ describe('DesignCanvasComponent', () => {
     vi.advanceTimersByTime(500);
 
     expect(rememberedView().measuredSizes).toEqual({ 'acme components/button default': { width: 150, height: 70 } });
-    expect(rememberedView().frameSizes).toBeUndefined();
 
     fixture.destroy();
     TestBed.resetTestingModule();
@@ -91,16 +90,25 @@ describe('DesignCanvasComponent', () => {
     expect(reported.at(-1)).toBeNull();
   });
 
-  it('lets a hand-dragged size win over a measured one', async () => {
-    rememberView({
-      frameSizes: { 'acme components/button default': { width: 400 } },
-      measuredSizes: { 'acme components/button default': { width: 150, height: 70 } },
-    });
+  it('sizes a fitted frame by its measured content, whatever size an older Studio stored for it', async () => {
+    localStorage.setItem(
+      'ethlete-studio.call-view',
+      JSON.stringify({
+        frameSizes: { 'acme components/button default': { width: 160, height: 80 } },
+        measuredSizes: { 'acme components/button default': { width: 100, height: 68 } },
+      }),
+    );
 
-    const frame = frameElement(await render([FITTED])).nativeElement as HTMLElement;
+    const fixture = await render([FITTED]);
+    const frame = frameElement(fixture).nativeElement as HTMLElement;
 
-    expect(frame.style.width).toBe('400px');
-    expect(frame.style.height).toBe('70px');
+    expect(frame.style.width).toBe('100px');
+    expect(frame.style.height).toBe('68px');
+
+    frameElement(fixture).triggerEventHandler('dblclick', new MouseEvent('dblclick'));
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('et-resize-handles')).toBeNull();
   });
 
   it('draws no border on a fitted frame, but keeps it on a frame at a width', async () => {

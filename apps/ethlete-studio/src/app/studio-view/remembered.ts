@@ -13,8 +13,6 @@ export type ViewState = {
   systemEntry: string;
   /** The canvas camera per system entry, keyed by `cameraKeyOf`. */
   cameras: Record<string, Camera>;
-  /** The size a user gave a canvas frame, keyed by `frameSizeKey`. */
-  frameSizes: Record<string, FrameSize>;
   /** The size a fitted frame's content measured last, keyed by `frameSizeKey`, so a reload places it at once. */
   measuredSizes: Record<string, FrameSize>;
   /** Whether the system view shows its comment sidebar. */
@@ -188,7 +186,6 @@ export const rememberedView = (): Partial<ViewState> => {
       systemProduct,
       systemEntry,
       cameras,
-      frameSizes,
       measuredSizes,
       commentsOpen,
       sketchViews,
@@ -201,7 +198,6 @@ export const rememberedView = (): Partial<ViewState> => {
       systemProduct: typeof systemProduct === 'string' ? systemProduct : undefined,
       systemEntry: typeof systemEntry === 'string' ? systemEntry : undefined,
       cameras: cameraMap(cameras),
-      frameSizes: frameSizeMap(frameSizes),
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
       sketchViews: sketchViewMap(sketchViews),

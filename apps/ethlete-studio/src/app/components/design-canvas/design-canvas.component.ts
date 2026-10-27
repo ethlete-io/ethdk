@@ -15,7 +15,7 @@ import {
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS } from '@ethlete/components';
-import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
+import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame } from './canvas-frame';
@@ -45,8 +45,6 @@ const GROUP_GAP_FACTOR = 2.5;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
-const MIN_FRAME_WIDTH = 160;
-const MIN_FRAME_HEIGHT = 80;
 const FIT_PADDING = 64;
 const ROW_LABEL_GUTTER = 160;
 const COLUMN_HEAD_ROOM = 64;
@@ -81,7 +79,7 @@ const isEditable = (target: EventTarget | null) =>
   templateUrl: './design-canvas.component.html',
   styleUrl: './design-canvas.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent, ResizeHandlesComponent],
+  imports: [BUTTON_IMPORTS, NgTemplateOutlet, CanvasFrameComponent],
   host: {
     class: 'et-design-canvas',
     '[class.et-design-canvas--space]': 'spaceHeld()',
@@ -140,10 +138,6 @@ export class DesignCanvasComponent {
   public activeId = linkedSignal<boolean, string | null>({ source: this.pointing, computation: () => null });
   protected spaceHeld = signal(false);
   protected panning = signal(false);
-  private sizes = linkedSignal<string | null, Record<string, FrameSize>>({
-    source: this.cameraKey,
-    computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().frameSizes ?? {}, key)),
-  });
   private measured = linkedSignal<string | null, Record<string, FrameSize>>({
     source: this.cameraKey,
     computation: (key) => (key === null ? {} : frameSizesOf(rememberedView().measuredSizes ?? {}, key)),
@@ -155,13 +149,12 @@ export class DesignCanvasComponent {
   private viewport = computed<Size>(() => this.dimensions().client ?? { width: 0, height: 0 });
 
   private layout = computed(() => {
-    const sizes = this.sizes();
     const measured = this.measured();
     const frames = this.frames();
     const byId = new Map(frames.map((frame) => [frame.id, frame]));
     const known = (frame: CanvasFrame) => ({
-      width: sizes[frame.id]?.width ?? frame.width ?? measured[frame.id]?.width,
-      height: sizes[frame.id]?.height ?? frame.height ?? measured[frame.id]?.height,
+      width: frame.width ?? measured[frame.id]?.width,
+      height: frame.height ?? measured[frame.id]?.height,
     });
     const drawn = frames.filter((frame) => frame.empty === undefined).map((frame) => ({ frame, ...known(frame) }));
     const rowMax = (frame: CanvasFrame, side: 'width' | 'height') => {
@@ -300,8 +293,6 @@ export class DesignCanvasComponent {
     this.pointing() ? this.layout().frames.filter((placed) => placed.frame.place) : [],
   );
 
-  protected activeFrame = computed(() => this.placedFrames().find((placed) => placed.active) ?? null);
-
   protected worldTransform = computed(() => {
     const { x, y, zoom } = this.camera();
 
@@ -313,7 +304,6 @@ export class DesignCanvasComponent {
   protected zoomPercent = computed(() => Math.round(this.camera().zoom * 100));
 
   private panStart$ = new Subject<PointerEvent>();
-  private resizeStart: Size = { width: 0, height: 0 };
   private swallowNextClick = false;
 
   private fittedFor: string | null | undefined = undefined;
@@ -473,39 +463,6 @@ export class DesignCanvasComponent {
 
   protected storeWidth(id: string, width: number) {
     this.storeMeasure(id, { width });
-  }
-
-  protected startResize(size: Size) {
-    this.following = false;
-    this.resizeStart = size;
-  }
-
-  protected resize(id: string, event: ResizeMoveEvent) {
-    const zoom = this.camera().zoom;
-    const size: FrameSize = {};
-
-    if (event.edge.includes('e')) {
-      size.width = Math.max(MIN_FRAME_WIDTH, Math.round(this.resizeStart.width + event.totalDx / zoom));
-    }
-
-    if (event.edge.includes('s')) {
-      size.height = Math.max(MIN_FRAME_HEIGHT, Math.round(this.resizeStart.height + event.totalDy / zoom));
-    }
-
-    this.sizes.update((sizes) => ({ ...sizes, [id]: { ...sizes[id], ...size } }));
-
-    const key = this.cameraKey();
-
-    if (key !== null) {
-      rememberView({
-        frameSizes: frameSizesWith({
-          stored: rememberedView().frameSizes ?? {},
-          cameraKey: key,
-          frameId: id,
-          size,
-        }),
-      });
-    }
   }
 
   protected startPan(event: PointerEvent) {

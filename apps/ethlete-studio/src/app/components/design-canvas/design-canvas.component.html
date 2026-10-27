@@ -170,22 +170,6 @@
       <ng-content select="[canvasDraft]" />
     </div>
   }
-
-  @if (activeFrame(); as active) {
-    <div
-      [style.left.px]="active.x"
-      [style.top.px]="active.y"
-      [style.width.px]="active.width"
-      [style.height.px]="active.height"
-      class="et-design-canvas__resize"
-    >
-      <et-resize-handles
-        [edges]="['e', 's', 'se']"
-        (resizeStarted)="startResize({ width: active.width, height: active.height })"
-        (resizeMoved)="resize(active.frame.id, $event)"
-      />
-    </div>
-  }
 </div>
 
 <div class="et-design-canvas__hud">

@@ -166,15 +166,25 @@ describe('remembered view', () => {
     });
   });
 
-  it('keeps valid frame sizes and drops the rest', () => {
+  it('keeps valid measured sizes, drops the rest, and forgets the sizes an older Studio stored by hand', () => {
     localStorage.setItem(
       KEY,
       JSON.stringify({
-        frameSizes: { 'a f': { width: 300, height: 'x' }, 'a g': { width: -1 }, 'a h': 'no', 'a i': { height: 200 } },
+        measuredSizes: {
+          'a f': { width: 300, height: 'x' },
+          'a g': { width: -1 },
+          'a h': 'no',
+          'a i': { height: 200 },
+        },
+        frameSizes: { 'a f': { width: 160, height: 80 } },
       }),
     );
 
-    expect(rememberedView().frameSizes).toEqual({ 'a f': { width: 300 }, 'a i': { height: 200 } });
+    expect(rememberedView().measuredSizes).toEqual({ 'a f': { width: 300 }, 'a i': { height: 200 } });
+
+    rememberView({ commentsOpen: true });
+
+    expect(JSON.parse(localStorage.getItem(KEY) ?? '{}')).not.toHaveProperty('frameSizes');
   });
 
   it('reads and merges the sizes of one canvas', () => {
