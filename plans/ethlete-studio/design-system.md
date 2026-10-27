@@ -856,6 +856,13 @@ step. Each finding names what happened and the fix it needs.
     resolved threads; Studio shows them hidden by default, behind a "show resolved" toggle.
   - `design sketch variant --help` runs the `--by` check and prints the usage of all sketch
     commands. Prevent: `--help` skips the checks and prints the usage of that one command.
+- Round "Hidden panel" (a new state `hidden` on the merged shell, variants a, b, c):
+  - Tom: "wieso zeigen wir bei system eig nun 4 mal das gleiche an? wir arbeiten nun ja an
+    hidden". The matrix draws every state of every variant, so the unchanged `system` row repeats
+    the current part four times and pushes the state under work down. Prevent: a sketch knows which
+    states it works on. A state whose render is the same as `current` in every variant folds to
+    one thin row ("system · unchanged in a b c"), which opens on a click; the sketch view starts
+    on the changed states. The CLI can find "unchanged" by a hash of the rendered HTML per state.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
