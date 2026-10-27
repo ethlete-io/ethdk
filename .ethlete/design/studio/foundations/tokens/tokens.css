@@ -405,3 +405,13 @@ body {
   --text: oklch(0.94 0 0);
   --text-muted: oklch(0.72 0 0);
 }
+
+/* Studio accent, variant C: teal */
+:root {
+  --accent: oklch(0.68 0.11 190);
+  --accent-hover: oklch(0.74 0.11 190);
+  --accent-text: oklch(0.8 0.1 190);
+  --on-accent: oklch(0.17 0.02 190);
+  --accent-subtle: oklch(0.68 0.11 190 / 0.2);
+  --focus-ring: oklch(0.76 0.11 190);
+}
