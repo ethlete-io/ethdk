@@ -565,8 +565,9 @@ These change the "all" case of 027805054.
   part reloads. Headless proof: a runtime throw in the button outline frame reloaded at revision 1,
   then 2; a control run without a throw had no reloads. 0d198f89f removes `drawnChanges$`.
 - Pins with a fresh server, headless: 239f shows the question dot. The "answered, no dot" case
-  (7001) is not proven: in that run the sketch `components/button` variant b column stayed
-  "drawing…" with no frames. The builder checks if that is a bug.
+  (7001) is proven after fb346c749: the pin renders on outline, variant b, with no question dot.
+  The "drawing…" column came from a stale report file, see "No-point pin and drawing report
+  decisions".
 
 ### Frame drag removal, as built (2026-10-27)
 
@@ -1146,6 +1147,12 @@ Open points, each with a recommendation:
   as if it were drawn, and the column head shows "No report for 30 min" instead of "drawing…", so a
   stopped agent stays visible and is not taken for a finished one. A new report from the agent
   ends the note. `sketch ready` and a discard still end a report at once.
+- Built in fb346c749 (Studio only): `reportExpiryOf` in `system-tree.ts` is `updatedAt` + 30 min;
+  past it the column draws its frames and the head shows a muted second line "No report for 30 min".
+  A missing or unreadable `updatedAt` never expires. `sketch-view.component.ts` sets one RxJS timer
+  at the expiry, restarted by a new report; no polling. Specs at 29:59 and 30:00 and a timer-only
+  flip fail without the fix. Live on own servers, `studio-lab` `components/button` variant b: a
+  45-minute-old report drew 30 frames with the note; a fresh one showed "drawing …" and no frames.
 - Replaced the same day: a stale built cli now shows as `stale`. The existing check
   (`design_server.rs` `is_stale`) compares the running server's stamp with the stamp of the built
   cli in `dist`, so a `dist/apps/ethlete-studio/cli-runtime` older than its source passes as
