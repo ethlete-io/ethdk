@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,6 +47,19 @@ describe('checkSystem', () => {
     expect(lines).toEqual([
       `HARD-CODED-COLOUR ${DESIGN_DIR}/acme/elements/hero/hero.css: #fff outside foundations - use a foundations token`,
     ]);
+  }, 60_000);
+
+  it('fails on an interaction Studio does not know', () => {
+    const target = acme();
+    const lines = output();
+    const button = join(target, DESIGN_DIR, 'acme/components/button/button.ts');
+
+    writeFileSync(button, readFileSync(button, 'utf8').replace("'active'", "'pressed'"));
+
+    expect(check(target, ['acme'])).toBe(1);
+    expect(lines[0]).toBe(
+      `INTERACTIONS ${DESIGN_DIR}/acme/components/button/button.ts: unknown interaction "pressed" - interactions are hover, focus-visible, active, disabled; rest is always drawn, and pressed or loading is a state`,
+    );
   }, 60_000);
 
   it('fails on a type error', () => {

@@ -1,4 +1,5 @@
 import { dirname, relative, sep } from 'path';
+import { Interaction, INTERACTIONS } from '../force-interactions';
 import { DesignPreset } from '../paths';
 import { ruleProblemsOf } from './check-system';
 import { Problem } from './problem';
@@ -15,6 +16,8 @@ export type ListedPart = {
   states: string[];
   /** The container widths the part is drawn at, when it declares valid ones. */
   widths?: number[];
+  /** The interactions the part is drawn in besides rest, in the order it declares them. */
+  interactions: Interaction[];
   problems: Problem[];
 };
 
@@ -30,7 +33,7 @@ export type ListedProduct = {
 /** Answers with the module of a part file as one product draws it. */
 export type PartLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
-type PartModule = { default?: { note?: unknown; states?: unknown; widths?: unknown } };
+type PartModule = { default?: { note?: unknown; states?: unknown; widths?: unknown; interactions?: unknown } };
 
 const widthsOf = (widths: unknown) =>
   Array.isArray(widths) &&
@@ -39,10 +42,15 @@ const widthsOf = (widths: unknown) =>
     ? { widths: widths as number[] }
     : {};
 
+const isInteraction = (name: unknown): name is Interaction => INTERACTIONS.some((known) => known === name);
+
+const interactionsOf = (interactions: unknown): Interaction[] =>
+  Array.isArray(interactions) ? [...new Set(interactions.filter(isInteraction))] : [];
+
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
 
-/** The note, state names and widths a part module declares, or the problem that kept it from loading. */
+/** The note, state names, widths and interactions a part module declares, or the problem that kept it from loading. */
 export const readPartModule = async (options: {
   part: Pick<ResolvedPart, 'file'>;
   product: string;
@@ -55,17 +63,28 @@ export const readPartModule = async (options: {
     const states = loaded?.states;
 
     if (!states || typeof states !== 'object') {
-      return { note: null, states: [], problem: 'default-exports no definePart({ note, states, render })' };
+      return {
+        note: null,
+        states: [],
+        interactions: [],
+        problem: 'default-exports no definePart({ note, states, render })',
+      };
     }
 
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,
       states: Object.keys(states),
       ...widthsOf(loaded.widths),
+      interactions: interactionsOf(loaded.interactions),
       problem: null,
     };
   } catch (error) {
-    return { note: null, states: [], problem: error instanceof Error ? error.message : String(error) };
+    return {
+      note: null,
+      states: [],
+      interactions: [],
+      problem: error instanceof Error ? error.message : String(error),
+    };
   }
 };
 
@@ -100,7 +119,11 @@ export const listSystem = async (options: {
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
-              const { note, states, problem, ...widths } = await readPartModule({ part, product: name, load });
+              const { note, states, interactions, problem, ...widths } = await readPartModule({
+                part,
+                product: name,
+                load,
+              });
               const own = problems.filter((found) => belongsTo(part, found));
 
               return {
@@ -110,6 +133,7 @@ export const listSystem = async (options: {
                 note,
                 states,
                 ...widths,
+                interactions,
                 problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                   relativeTo,
                 ),

@@ -2,6 +2,7 @@ import { statSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
 import { Worker } from 'worker_threads';
+import { forceInteractions } from './force-interactions';
 import { DesignConfig } from './paths';
 import { FieldSpec } from './render-fields';
 import {
@@ -13,6 +14,8 @@ import {
 } from './render-packages';
 
 export const RENDER_PATH = '/__design/render';
+
+export const FORCE_PATH = '/__design/force';
 
 const mtimeOf = (path: string) => {
   try {
@@ -110,7 +113,10 @@ const readBody = (request: IncomingMessage) =>
     request.on('error', reject);
   });
 
-/** Answers `POST /__design/render` with the rendered markup and styles, or a 500 with the error. */
+/**
+ * Answers `POST /__design/render` with the rendered markup and styles, the styles rewritten so a frame
+ * can force their interactions, or a 500 with the error.
+ */
 export const renderMiddleware =
   (render: (ask: RenderAsk) => Promise<RenderResult>) => (request: IncomingMessage, response: ServerResponse) => {
     if (request.method !== 'POST') {
@@ -133,6 +139,27 @@ export const renderMiddleware =
         }
 
         response.setHeader('content-type', 'application/json');
-        response.end(JSON.stringify(result));
+        response.end(JSON.stringify({ ...result, styles: result.styles.map(forceInteractions) }));
       });
   };
+
+/** Answers `POST /__design/force` with the posted CSS, rewritten so a frame can force its interactions. */
+export const forceMiddleware = (request: IncomingMessage, response: ServerResponse) => {
+  if (request.method !== 'POST') {
+    response.statusCode = 405;
+    response.end();
+
+    return;
+  }
+
+  void readBody(request).then(
+    (css) => {
+      response.setHeader('content-type', 'text/css; charset=utf-8');
+      response.end(forceInteractions(css));
+    },
+    () => {
+      response.statusCode = 400;
+      response.end();
+    },
+  );
+};

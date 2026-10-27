@@ -29,7 +29,8 @@ import {
   sketchMergeAnswer,
   sketchPreviewAnswer,
 } from './studio-api';
-import { createRenderer, RENDER_PATH, renderMiddleware } from './render';
+import { forceInteractionsPlugin } from './force-interactions';
+import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
 import { buildStampOf, STAMP_PATH } from './stamp';
@@ -350,6 +351,7 @@ const designExplore = ({
       response.end(JSON.stringify(stamp));
     });
     vite.middlewares.use(RENDER_PATH, renderMiddleware(createRenderer({ target, config })));
+    vite.middlewares.use(FORCE_PATH, forceMiddleware);
     vite.middlewares.use(THUMB_PATH, thumbs.middleware);
     vite.middlewares.use(SHOT_PATH, shots.middleware);
     vite.middlewares.use(
@@ -446,7 +448,7 @@ export const createDesignServer = async (options: { target: string; config: Desi
     root: resolve(here, 'web'),
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
     // own pipeline so no checkout's postcss config reaches a drawing.
-    css: { postcss: { plugins: [tailwind()] } },
+    css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin()] } },
     cacheDir: resolve(workRootOf(target), 'vite'),
     resolve: {
       alias: [

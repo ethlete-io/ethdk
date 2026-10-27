@@ -6,6 +6,7 @@ import { Problem } from './problem';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
 import { componentCopiesOf } from './rules/component-copy';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
+import { unknownInteractionsOf } from './rules/interactions';
 import { scriptedMotionOf } from './rules/motion';
 import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { upwardDependenciesOf } from './rules/upward-dependency';
@@ -21,6 +22,7 @@ const RULES = [
   staleCommentsOf,
   staleNotesOf,
   badWidthsOf,
+  unknownInteractionsOf,
 ];
 
 /** Every problem the rules find in a resolved product, its resolution problems first. */

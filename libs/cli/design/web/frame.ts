@@ -86,10 +86,18 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
 
 const loaded = await (product ? drawPart(product) : drawCall());
 
+const forced = async (css: string) => {
+  if (!/:(?:hover|focus-visible|active)/iu.test(css)) return css;
+
+  const response = await fetch('/__design/force', { method: 'POST', body: css }).catch(() => null);
+
+  return response?.ok ? response.text() : css;
+};
+
 if (loaded) {
   const style = document.createElement('style');
 
-  style.textContent = loaded.styles;
+  style.textContent = await forced(loaded.styles);
   document.head.append(style);
   const error = mountDrawing(root, loaded);
 

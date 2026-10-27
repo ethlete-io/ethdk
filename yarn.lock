@@ -4514,6 +4514,8 @@ __metadata:
   resolution: "@ethlete/cli@workspace:libs/cli"
   dependencies:
     "@tailwindcss/postcss": "npm:4.3.3"
+    postcss: "npm:8.5.21"
+    postcss-selector-parser: "npm:7.1.1"
     typescript: "npm:6.0.3"
     vite: "npm:8.1.5"
   peerDependencies:
@@ -19999,7 +20001,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-selector-parser@npm:^7.0.0, postcss-selector-parser@npm:^7.1.1":
+"postcss-selector-parser@npm:7.1.1, postcss-selector-parser@npm:^7.0.0, postcss-selector-parser@npm:^7.1.1":
   version: 7.1.1
   resolution: "postcss-selector-parser@npm:7.1.1"
   dependencies:

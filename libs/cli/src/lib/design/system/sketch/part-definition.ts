@@ -107,3 +107,18 @@ export const widthsOf = (source: string): number[] | null => {
 
   return widths.elements.map((element) => Number((element as ts.NumericLiteral).text));
 };
+
+/**
+ * The names a part file writes as string literals in `definePart({ interactions: [...] })`, read
+ * without running it. An empty list when it has none or they are not written as a literal list.
+ */
+export const interactionNamesOf = (source: string): string[] => {
+  const { definition } = definitionOf(source);
+  const interactions = definition ? propertyOf(definition, 'interactions')?.initializer : undefined;
+
+  if (!interactions || !ts.isArrayLiteralExpression(interactions)) return [];
+
+  return interactions.elements.flatMap((element) =>
+    ts.isStringLiteral(element) || ts.isNoSubstitutionTemplateLiteral(element) ? [element.text] : [],
+  );
+};

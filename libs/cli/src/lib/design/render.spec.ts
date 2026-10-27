@@ -1,9 +1,11 @@
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { Readable } from 'stream';
 import { describe, expect, it } from 'vitest';
 import { mountDrawing, unseenStyles } from '../../../design/define-call';
-import { isStale } from './render';
+import { forceMiddleware, isStale, renderMiddleware } from './render';
 import {
   entryOf,
   entryOfBuilt,
@@ -323,5 +325,34 @@ describe('mountDrawing', () => {
       }),
     ).toBe(thrown);
     expect(calls).toEqual(['a']);
+  });
+});
+
+const post = (body: string, middleware: (request: IncomingMessage, response: ServerResponse) => void) =>
+  new Promise<{ status: number; body: string }>((settle) => {
+    const request = Object.assign(Readable.from([Buffer.from(body)]), { method: 'POST' }) as unknown as IncomingMessage;
+    const response = {
+      statusCode: 200,
+      setHeader: () => undefined,
+      end: (text = '') => settle({ status: response.statusCode, body: text }),
+    };
+
+    middleware(request, response as unknown as ServerResponse);
+  });
+
+describe('forcing interactions in the CSS a frame receives', () => {
+  const forced = '.x:is(:hover, [data-et-force~="hover"]){}';
+
+  it('rewrites the component styles of a render', async () => {
+    const answered = await post(
+      '{}',
+      renderMiddleware(async () => ({ markup: '<b></b>', styles: ['.x:hover{}'] })),
+    );
+
+    expect(JSON.parse(answered.body)).toEqual({ markup: '<b></b>', styles: [forced] });
+  });
+
+  it('rewrites posted CSS, the styles of a drawing', async () => {
+    expect(await post('.x:hover{}', forceMiddleware)).toEqual({ status: 200, body: forced });
   });
 });

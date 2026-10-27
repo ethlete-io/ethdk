@@ -141,9 +141,14 @@ const targetsOf = async ({
       )?.file;
 
       if (!file || !load)
-        return { variant, states: [], ...(file ? {} : { error: `variant ${variant} has no part ${sketch.target}` }) };
+        return {
+          variant,
+          states: [],
+          interactions: [],
+          ...(file ? {} : { error: `variant ${variant} has no part ${sketch.target}` }),
+        };
 
-      const { states, problem, ...widths } = await readPartModule({
+      const { states, interactions, problem, ...widths } = await readPartModule({
         part: { file },
         product: product.name,
         load: () => load({ file, product: product.name, sketch: { target: sketch.target, variant } }),
@@ -153,6 +158,7 @@ const targetsOf = async ({
         variant,
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
+        interactions,
         ...(problem ? { error: problem } : {}),
       };
     }),
@@ -160,7 +166,7 @@ const targetsOf = async ({
 
 /**
  * The open sketches of `?product=`, each with its variants, status, decision, the rule problems of every
- * variant, the states and widths of the target as each variant draws it (`targets`), and the live report
+ * variant, the states, widths and interactions of the target as each variant draws it (`targets`), and the live report
  * of the agent (`report`, `null` when none runs).
  */
 export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {

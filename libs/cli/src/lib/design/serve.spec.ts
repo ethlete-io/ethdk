@@ -235,6 +235,7 @@ describe('the design server for a design system', () => {
       origin: 'product',
       note: 'n',
       states: ['one'],
+      interactions: [],
       problems: [],
     });
     expect(loaded).toContainEqual(expect.stringMatching(/acme-base\/components\/card\/card\.ts\?design-product=acme$/));

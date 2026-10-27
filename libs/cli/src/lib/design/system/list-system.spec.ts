@@ -129,6 +129,24 @@ describe('listSystem', () => {
     expect(partOf('button')).not.toHaveProperty('widths');
   });
 
+  it("lists a part's known interactions once each, and an INTERACTIONS problem for an unknown one", async () => {
+    const target = acme();
+    const hero = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(
+      hero,
+      readFileSync(hero, 'utf8').replace('  states:', "  interactions: ['hover', 'pressed', 'hover'],\n  states:"),
+    );
+
+    const [product] = await list(target, ['acme']);
+    const partOf = (name: string) => product?.parts.find((part) => part.name === name);
+
+    expect(partOf('button')?.interactions).toEqual(['hover', 'focus-visible', 'active', 'disabled']);
+    expect(partOf('palette')?.interactions).toEqual([]);
+    expect(partOf('hero')?.interactions).toEqual(['hover']);
+    expect(partOf('hero')?.problems).toEqual([expect.objectContaining({ rule: 'INTERACTIONS' })]);
+  });
+
   it('loads a base part with the parts of the product that uses it', async () => {
     const target = acme();
     const config = readConfig(target) ?? {};
@@ -148,5 +166,26 @@ describe('listSystem', () => {
 
     expect(await drawCard('acme')).toContain('border-radius: 999px');
     expect(await drawCard('acme-base')).not.toContain('border-radius');
+  });
+
+  it('serves the CSS a part imports with its interactions forceable', async () => {
+    const target = acme();
+
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme/components/button/button.css'),
+      '.acme-button:hover { opacity: 0.8; }',
+    );
+
+    const config = readConfig(target) ?? {};
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const button = createSystemModules({ target, config }).partOf({ product: 'acme', part: 'components/button' });
+    const loaded = (await vite.ssrLoadModule(productModuleIdOf({ file: button?.file ?? '', product: 'acme' }))) as {
+      default: { render: (props: { label: string }) => { styles: string } };
+    };
+
+    expect(loaded.default.render({ label: 'x' }).styles).toContain('.acme-button:is(:hover, [data-et-force~="hover"])');
   });
 });
