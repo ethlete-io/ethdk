@@ -690,6 +690,19 @@ Open points, each with a recommendation:
   serves, the `ng()` styles in `/__design/render`, and the `drawing({ styles })` strings, which
   `frame.ts` sends to the new `POST /__design/force`.
 
+### States and interactions step 2, as built (2026-10-27)
+
+- c62f52cd4: the `studio-lab` button has the states solid and outline, the interactions hover,
+  focus-visible, active and disabled, and real pseudo-class CSS. This is step 5, done early.
+- 37cc9d271: frame and shot URLs take `interaction=<name>`. After mount, `frame.ts` sets
+  `data-et-force` on the first element child of `#root`, or `disabled` and `aria-disabled` for
+  disabled. The shot cache keys on the interaction.
+- 95764db02: a fitted part uses the matrix arrangement. `partColumnsOf` gives rest plus the declared
+  interactions; the rest column keeps its old frame ids. A headless check confirmed each column
+  through computed styles.
+- A page, or a part with `widths`, that declares interactions keeps the sheet layout: each
+  interaction is drawn at every size in the state row ("320 · hover").
+
 ### Token decisions (2026-10-27)
 
 - A product's token values live in one place: the CSS file of its foundations token part, for
@@ -940,8 +953,9 @@ States and interactions: in progress since 2026-10-27, in six steps: (1) `intera
 `definePart` and the CSS rewrite in the server; (2) Studio forces the interaction and shows the part
 table; (3) the interaction switch in the sketch matrix and `interaction` on comments; (4) fitted frames
 without a border and the live mode; (5) the studio-lab button; (6) the frame reload per part, as in
-"Frame reload decisions". Step 1 done (c1c848c75). Step 2
-started; it moves the studio-lab button (step 5) first, then builds the part table.
+"Frame reload decisions". Steps 1, 2 and 5 done (c1c848c75, c62f52cd4, 37cc9d271, 95764db02).
+Step 3 started; it also allows comments on cells other than rest and moves the button sketch
+variants a and b to solid and outline.
 
 Slice 1: done on 2026-10-27.
 
