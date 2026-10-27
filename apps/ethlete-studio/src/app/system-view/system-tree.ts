@@ -314,9 +314,12 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   part: ListedPart | null;
   /** The preset name or the width the user picked for every cell; the first one when it is not offered. */
   size?: string | null;
-  /** The interaction the user picked for every cell; rest when it is not offered. */
+  /** The interaction the user picked for every cell, or `ALL`; `ALL` when it is not offered. */
   interaction?: string | null;
 };
+
+/** The interaction switch value that shows every interaction in its own row. */
+export const ALL = 'all';
 
 export type MatrixColumn = { key: string; label: string; drawing: boolean };
 
@@ -326,8 +329,9 @@ export type SketchMatrix = {
   /** The preset names of a page or the container widths of a part, for the switch; empty when every cell fits its content. */
   sizes: string[];
   size: string | null;
-  /** Rest, then every interaction the part or a variant declares, for the switch. */
+  /** Rest, then every interaction the part or a variant declares in Studio order, for the switch. */
   interactions: string[];
+  /** A single interaction, or `ALL`. */
   interaction: string;
 };
 
@@ -362,19 +366,39 @@ const sketchSizesOf = ({
   return [...widths].sort((a, b) => a - b).map(String);
 };
 
-const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: ListedPart | null }) => [
-  ...new Set([
-    REST,
-    ...(part?.interactions ?? []),
-    ...(sketch.targets ?? []).flatMap((target) => target.interactions ?? []),
-  ]),
-];
+/** The order Studio shows interactions in; one it does not know goes last. */
+const STUDIO_INTERACTIONS = [REST, 'hover', 'focus-visible', 'active', 'disabled'];
+
+const studioRankOf = (interaction: string) => {
+  const rank = STUDIO_INTERACTIONS.indexOf(interaction);
+
+  return rank === -1 ? STUDIO_INTERACTIONS.length : rank;
+};
+
+const sketchInteractionsOf = ({ sketch, part }: { sketch: ListedSketch; part: ListedPart | null }) =>
+  [
+    ...new Set([
+      REST,
+      ...(part?.interactions ?? []),
+      ...(sketch.targets ?? []).flatMap((target) => target.interactions ?? []),
+    ]),
+  ].sort((a, b) => studioRankOf(a) - studioRankOf(b));
+
+type MatrixRow = {
+  state: string | undefined;
+  interaction: string;
+  key: string | undefined;
+  label?: string;
+  group?: string;
+};
 
 /**
- * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant, one
- * row per state - the current states first, then any state only a variant has. Every cell has the one
- * picked size and interaction. A column that lacks a row's state or the interaction gets an empty cell there. A variant the agent reports
- * drawing while the sketch is in progress gets a column without frames.
+ * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
+ * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
+ * row per state in the picked interaction; the current states come first, then any state only a variant
+ * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
+ * cell there. A variant the agent reports drawing while the sketch is in progress gets a column without
+ * frames.
  */
 export const sketchMatrixOf = ({
   port,
@@ -392,10 +416,12 @@ export const sketchMatrixOf = ({
   const size = picked !== null && sizes.includes(picked) ? picked : (sizes[0] ?? null);
   const cell = cellSizeOf(product, size);
   const interactions = sketchInteractionsOf({ sketch, part });
-  const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : REST;
+  const interaction = pickedInteraction !== null && interactions.includes(pickedInteraction) ? pickedInteraction : ALL;
+  const shownInteractions = interaction === ALL ? interactions : [interaction];
+  const grouped = shownInteractions.length > 1;
   const drawing = sketch.status === 'in progress' ? (sketch.report?.variant ?? null) : null;
-  const idOf = (column: string, state: string) =>
-    [column, state, ...(interaction === REST ? [] : [interaction])].join(' ');
+  const idOf = (column: string, { state, interaction: shown }: MatrixRow) =>
+    [column, state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
   const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
   const columns: (MatrixColumn & { states: string[]; interactions: string[]; error?: string })[] = [
     ...(part
@@ -425,9 +451,30 @@ export const sketchMatrixOf = ({
     }),
   ];
   const states = [...new Set(columns.flatMap((column) => column.states))];
-  const rows: (string | undefined)[] = states.length > 0 ? states : [undefined];
+  const rows: MatrixRow[] =
+    states.length === 0
+      ? [{ state: undefined, interaction: shownInteractions[0] ?? REST, key: undefined }]
+      : states.flatMap((state) =>
+          shownInteractions.map((shown, index): MatrixRow =>
+            grouped
+              ? {
+                  state,
+                  interaction: shown,
+                  key: `${state} · ${shown}`,
+                  group: state,
+                  ...(index === 0 ? {} : { label: shown }),
+                }
+              : { state, interaction: shown, key: state },
+          ),
+        );
+  const rowOf = (row: MatrixRow) => ({
+    row: row.key,
+    ...(row.label === undefined ? {} : { rowLabel: row.label }),
+    ...(row.group === undefined ? {} : { rowGroup: row.group }),
+  });
 
-  const frameOf = (column: (typeof columns)[number], state: string | undefined): CanvasFrame => {
+  const frameOf = (column: (typeof columns)[number], row: MatrixRow): CanvasFrame => {
+    const { state, interaction: shown } = row;
     const address: PartAddress = {
       port,
       product: product.name,
@@ -439,16 +486,16 @@ export const sketchMatrixOf = ({
       color,
       ...(column.key === CURRENT ? {} : { sketch: sketch.target, variant: column.key }),
       ...(size === null ? { fit: true } : {}),
-      ...(interaction === REST ? {} : { interaction }),
+      ...(shown === REST ? {} : { interaction: shown }),
     };
 
     return {
-      id: idOf(column.key, state ?? ''),
+      id: idOf(column.key, row),
       src: partFrameUrl(address),
       ...(cell.width ? { width: cell.width } : {}),
       ...(cell.height ? { height: cell.height } : {}),
       label: cell.label,
-      row: state,
+      ...rowOf(row),
       column: column.key,
       screenshot: partShotUrl({
         ...address,
@@ -464,7 +511,7 @@ export const sketchMatrixOf = ({
               part: sketch.target,
               state,
               size: cell.preset ?? cell.width ?? FITTED,
-              ...(interaction === REST ? {} : { interaction }),
+              ...(shown === REST ? {} : { interaction: shown }),
               ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
             },
           }),
@@ -474,27 +521,27 @@ export const sketchMatrixOf = ({
   const frames = columns.flatMap((column) => {
     if (column.drawing) return [];
 
-    if (column.states.length === 0) return [frameOf(column, rows[0])];
+    if (column.states.length === 0) return rows[0] ? [frameOf(column, rows[0])] : [];
 
-    return rows.flatMap((state): CanvasFrame[] => {
-      if (state === undefined) return [];
+    return rows.flatMap((row): CanvasFrame[] => {
+      if (row.state === undefined) return [];
 
-      const missing = !column.states.includes(state)
-        ? `${column.key} has no ${state} state`
-        : !column.interactions.includes(interaction)
-          ? `${column.key} has no ${interaction} interaction`
+      const missing = !column.states.includes(row.state)
+        ? `${column.key} has no ${row.state} state`
+        : !column.interactions.includes(row.interaction)
+          ? `${column.key} has no ${row.interaction} interaction`
           : null;
 
-      if (missing === null) return [frameOf(column, state)];
+      if (missing === null) return [frameOf(column, row)];
 
       return [
         {
-          id: idOf(column.key, state),
+          id: idOf(column.key, row),
           src: '',
           ...(cell.width ? { width: cell.width } : {}),
           ...(cell.height ? { height: cell.height } : {}),
           label: cell.label,
-          row: state,
+          ...rowOf(row),
           column: column.key,
           empty: column.key === CURRENT ? 'new in this sketch' : missing,
         },

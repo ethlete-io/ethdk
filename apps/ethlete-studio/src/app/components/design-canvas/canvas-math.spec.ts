@@ -182,6 +182,29 @@ describe('canvas math', () => {
     ]);
   });
 
+  it('labels a matrix row by its row label, and opens a larger gap where the row group changes', () => {
+    const row = (name: string, rowGroup: string, rowLabel?: string) => ({
+      id: name,
+      width: 100,
+      height: 40,
+      row: name,
+      column: 'x',
+      rowGroup,
+      ...(rowLabel ? { rowLabel } : {}),
+    });
+    const layout = layoutMatrix({
+      frames: [row('solid · rest', 'solid'), row('solid · hover', 'solid', 'hover'), row('outline · rest', 'outline')],
+      columns: ['x'],
+      spacing: { columnGap: 40, rowGap: 60, groupGap: 150, emptyColumnWidth: 320 },
+    });
+
+    expect(layout.rows).toEqual([
+      { name: 'solid · rest', y: 0 },
+      { name: 'solid · hover', y: 100, label: 'hover' },
+      { name: 'outline · rest', y: 290 },
+    ]);
+  });
+
   it('places a matrix by row and column, sizing a column by its widest frame and an empty one by default', () => {
     const layout = layoutMatrix({
       frames: [

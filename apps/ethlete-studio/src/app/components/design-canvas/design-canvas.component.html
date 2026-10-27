@@ -6,7 +6,7 @@
   class="et-design-canvas__world"
 >
   @for (row of rows(); track row.name) {
-    <span [style.top.px]="row.y" class="et-design-canvas__row">{{ row.name }}</span>
+    <span [style.top.px]="row.y" class="et-design-canvas__row">{{ row.label ?? row.name }}</span>
   }
 
   @for (column of columnHeads(); track column.key) {

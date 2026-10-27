@@ -43,7 +43,7 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
-import { canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
+import { ALL, canPick, mergePreviewOf, pickedVariantOf, sketchMatrixOf } from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard';
 
@@ -212,7 +212,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         }
         @if (showing() === 'matrix' && matrix().interactions.length > 1) {
           <div class="flex gap-1" role="group" aria-label="Interaction of every cell">
-            @for (name of matrix().interactions; track name) {
+            @for (name of interactionChoices(); track name) {
               <button
                 [pressed]="name === matrix().interaction"
                 (click)="pickInteraction(name)"
@@ -377,7 +377,14 @@ export class SketchViewComponent {
 
   protected locked = computed(() => this.openComments().length > 0);
 
-  protected notedFrames = computed(() => withOtherSizeNotes(this.canvas().frames, this.commentStore.comments()));
+  protected interactionChoices = computed(() => [ALL, ...this.matrix().interactions]);
+
+  protected notedFrames = computed(() =>
+    withOtherSizeNotes(this.canvas().frames, {
+      comments: this.commentStore.comments(),
+      everyInteraction: this.showing() === 'matrix' && this.matrix().interaction === ALL,
+    }),
+  );
 
   protected canvasColumns = computed(() =>
     this.canvas().columns.map(({ key, label, drawing }) => ({ key, label, muted: drawing })),
@@ -405,12 +412,15 @@ export class SketchViewComponent {
     if (draft) this.commentStore.start(draft);
   }
 
-  /** Moves the camera to a comment: back to the matrix and to its size and interaction first, when the matrix offers them. */
+  /** Moves the camera to a comment: back to the matrix and to its size and interaction first, when the matrix offers them; `ALL` stays. */
   public jumpTo(comment: NumberedComment) {
     const size = String(comment.size);
     const interaction = comment.interaction ?? REST;
     const resize = size !== this.matrix().size && this.matrix().sizes.includes(size);
-    const reinteract = interaction !== this.matrix().interaction && this.matrix().interactions.includes(interaction);
+    const reinteract =
+      this.matrix().interaction !== ALL &&
+      interaction !== this.matrix().interaction &&
+      this.matrix().interactions.includes(interaction);
     const leaveMerge = this.showing() === 'merge';
 
     if (resize) this.size.set(size);

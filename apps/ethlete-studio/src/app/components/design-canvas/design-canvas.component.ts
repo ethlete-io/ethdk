@@ -41,6 +41,7 @@ import { CanvasFrameComponent } from './partials/canvas-frame.component';
 
 const SPACING = { columnGap: 40, rowGap: 120 };
 const FITTED_ROW_GAP = 48;
+const GROUP_GAP_FACTOR = 2.5;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
@@ -161,6 +162,8 @@ export class DesignCanvasComponent {
       return {
         id: frame.id,
         row: frame.row ?? '',
+        ...(frame.rowLabel === undefined ? {} : { rowLabel: frame.rowLabel }),
+        ...(frame.rowGroup === undefined ? {} : { rowGroup: frame.rowGroup }),
         column: frame.column ?? '',
         width: width ?? FALLBACK_WIDTH,
         height: height ?? FALLBACK_HEIGHT,
@@ -176,7 +179,7 @@ export class DesignCanvasComponent {
         ? layoutMatrix({
             frames: sized,
             columns: columns.map((column) => column.key),
-            spacing: { ...SPACING, rowGap, emptyColumnWidth: FALLBACK_WIDTH },
+            spacing: { ...SPACING, rowGap, groupGap: rowGap * GROUP_GAP_FACTOR, emptyColumnWidth: FALLBACK_WIDTH },
           })
         : null;
     const sheet =

@@ -105,11 +105,11 @@ describe('comment pins', () => {
   it('notes the comments at other sizes on a label, and finds the frame of their state', () => {
     const wide = comment('1', { size: 520 });
     const others = [wide, comment('2', { size: 'fitted' }), comment('3', {})];
-    const [plain, variant] = withOtherSizeNotes([frame('f'), frame('g', 'a')], others);
+    const [plain, variant] = withOtherSizeNotes([frame('f'), frame('g', 'a')], { comments: others });
 
     expect(plain?.note).toBe('2 comments at other sizes');
     expect(variant?.note).toBeUndefined();
-    expect(withOtherSizeNotes([frame('f')], [wide])[0]?.note).toBe('1 comment at another size');
+    expect(withOtherSizeNotes([frame('f')], { comments: [wide] })[0]?.note).toBe('1 comment at another size');
     expect(otherSizeFrameOf([frame('g', 'a'), frame('f')], wide)).toBe('f');
     expect(otherSizeFrameOf([frame('g', 'a')], wide)).toBeNull();
   });
@@ -125,13 +125,18 @@ describe('comment pins', () => {
       ['1', 'h'],
       ['2', 'f'],
     ]);
-    expect(withOtherSizeNotes([frame('f'), hoverFrame], [hoverComment]).map((noted) => noted.note)).toEqual([
-      '1 comment in another interaction',
-      undefined,
-    ]);
-    expect(withOtherSizeNotes([hoverFrame], [onRest, comment('4', { size: 520 })])[0]?.note).toBe(
+    expect(
+      withOtherSizeNotes([frame('f'), hoverFrame], { comments: [hoverComment] }).map((noted) => noted.note),
+    ).toEqual(['1 comment in another interaction', undefined]);
+    expect(withOtherSizeNotes([hoverFrame], { comments: [onRest, comment('4', { size: 520 })] })[0]?.note).toBe(
       '1 comment at another size, 1 comment in another interaction',
     );
+    expect(
+      withOtherSizeNotes([frame('f'), hoverFrame], {
+        comments: [hoverComment, onRest],
+        everyInteraction: true,
+      }).map((noted) => noted.note),
+    ).toEqual([undefined, undefined]);
     expect(otherSizeFrameOf([frame('f')], hoverComment)).toBe('f');
     expect(commentPlaceOf(hoverPlace, null)).toEqual(hoverPlace);
   });

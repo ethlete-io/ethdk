@@ -347,14 +347,14 @@ describe('sketchMatrixOf', () => {
         { variant: 'b', states: ['solid'], interactions: [] },
       ],
     });
-    const rest = sketchMatrixOf({ ...shown, sketch: withTargets });
+    const rest = sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'rest' });
     const hover = sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'hover' });
 
     expect(rest.interactions).toEqual(['rest', 'hover', 'active']);
     expect(rest.interaction).toBe('rest');
     expect(rest.frames.map((frame) => frame.id)).toEqual(['current solid', 'a solid', 'b solid']);
     expect(rest.frames.every((frame) => !frame.src.includes('interaction='))).toBe(true);
-    expect(sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'focus-visible' }).interaction).toBe('rest');
+    expect(sketchMatrixOf({ ...shown, sketch: withTargets, interaction: 'focus-visible' }).interaction).toBe('all');
     expect(hover.frames.map((frame) => [frame.id, frame.place?.interaction, frame.empty])).toEqual([
       ['current solid hover', 'hover', undefined],
       ['a solid hover', 'hover', undefined],
@@ -365,6 +365,32 @@ describe('sketchMatrixOf', () => {
     expect(sketchMatrixOf({ ...shown, part: part({ states: ['solid'] }), sketch: sketch() }).interactions).toEqual([
       'rest',
     ]);
+  });
+
+  it('shows every interaction by default, a row per state and interaction in Studio order', () => {
+    const shown = { ...source, part: part({ states: ['solid', 'outline'], interactions: ['disabled', 'hover'] }) };
+    const withTargets = sketch({
+      variants: ['b'],
+      targets: [{ variant: 'b', states: ['solid', 'outline'], interactions: ['disabled'] }],
+    });
+    const all = sketchMatrixOf({ ...shown, sketch: withTargets });
+
+    expect(all.interaction).toBe('all');
+    expect(all.interactions).toEqual(['rest', 'hover', 'disabled']);
+    expect(
+      all.frames
+        .filter((frame) => frame.column === 'b')
+        .map((frame) => [frame.row, frame.rowLabel, frame.rowGroup, frame.place?.interaction, frame.empty]),
+    ).toEqual([
+      ['solid · rest', undefined, 'solid', undefined, undefined],
+      ['solid · hover', 'hover', 'solid', undefined, 'b has no hover interaction'],
+      ['solid · disabled', 'disabled', 'solid', 'disabled', undefined],
+      ['outline · rest', undefined, 'outline', undefined, undefined],
+      ['outline · hover', 'hover', 'outline', undefined, 'b has no hover interaction'],
+      ['outline · disabled', 'disabled', 'outline', 'disabled', undefined],
+    ]);
+    expect(all.frames.find((frame) => frame.id === 'current outline hover')?.src).toContain('&interaction=hover');
+    expect(sketchMatrixOf({ ...shown, sketch: withTargets, size: '520' }).interaction).toBe('all');
   });
 
   it('has a column for the current part and each variant, and a row per state any of them has', () => {

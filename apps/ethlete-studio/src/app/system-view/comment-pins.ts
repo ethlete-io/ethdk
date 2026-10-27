@@ -119,17 +119,25 @@ export const ageOf = (createdAt: string, now: number) => {
 const countNoteOf = (count: number, [one, many]: [string, string]) =>
   count === 0 ? [] : [count === 1 ? `1 comment ${one}` : `${count} comments ${many}`];
 
-/** The frames with a note on the label that counts the comments on the same state at other sizes or in other interactions. */
-export const withOtherSizeNotes = (frames: CanvasFrame[], comments: CommentPlace[]): CanvasFrame[] =>
+/**
+ * The frames with a note on the label that counts the comments on the same state at other sizes, and in
+ * other interactions unless `everyInteraction` says each interaction has a frame of its own.
+ */
+export const withOtherSizeNotes = (
+  frames: CanvasFrame[],
+  { comments, everyInteraction = false }: { comments: CommentPlace[]; everyInteraction?: boolean },
+): CanvasFrame[] =>
   frames.map((frame) => {
     if (!frame.place) return frame;
 
     const notes = [
       ...countNoteOf(otherSizeCountOf(frame.place, comments), ['at another size', 'at other sizes']),
-      ...countNoteOf(otherInteractionCountOf(frame.place, comments), [
-        'in another interaction',
-        'in other interactions',
-      ]),
+      ...(everyInteraction
+        ? []
+        : countNoteOf(otherInteractionCountOf(frame.place, comments), [
+            'in another interaction',
+            'in other interactions',
+          ])),
     ];
 
     return notes.length === 0 ? frame : { ...frame, note: notes.join(', ') };

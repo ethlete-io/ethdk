@@ -104,7 +104,7 @@ export const boundingRect = (rects: Rect[]): Rect | null => {
 
 export type SheetFrame = { id: string; width: number; height: number; row: string };
 
-export type SheetRow = { name: string; y: number };
+export type SheetRow = { name: string; y: number; label?: string };
 
 export type SheetLayout = { frames: (SheetFrame & Rect)[]; rows: SheetRow[] };
 
@@ -170,18 +170,18 @@ export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLay
   return { frames: placed, rows: [] };
 };
 
-export type MatrixFrame = SheetFrame & { column: string };
+export type MatrixFrame = SheetFrame & { column: string; rowLabel?: string; rowGroup?: string };
 
 export type MatrixColumnPlace = { name: string; x: number; width: number };
 
 export type MatrixLayout = SheetLayout & { columns: MatrixColumnPlace[] };
 
-export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number };
+export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?: number };
 
 /**
  * Places each frame at its row and its column: a column is as wide as its widest frame (an empty one
  * `emptyColumnWidth`), a row as tall as its tallest. Columns keep the order of `columns`, rows the order
- * they first appear in.
+ * they first appear in. A row whose `rowGroup` differs from the row above it starts `groupGap` lower.
  */
 export const layoutMatrix = ({
   frames,
@@ -208,10 +208,15 @@ export const layoutMatrix = ({
   const placed: SheetLayout['frames'] = [];
   let y = 0;
 
-  for (const name of rowNames) {
-    const members = frames.filter((frame) => frame.row === name);
+  let group: string | undefined;
 
-    rows.push({ name, y });
+  for (const [index, name] of rowNames.entries()) {
+    const members = frames.filter((frame) => frame.row === name);
+    const first = members[0];
+
+    if (index > 0 && first?.rowGroup !== group) y += (spacing.groupGap ?? spacing.rowGap) - spacing.rowGap;
+    group = first?.rowGroup;
+    rows.push({ name, y, ...(first?.rowLabel === undefined ? {} : { label: first.rowLabel }) });
 
     for (const frame of members) {
       const column = placedColumns.find((candidate) => candidate.name === frame.column);
