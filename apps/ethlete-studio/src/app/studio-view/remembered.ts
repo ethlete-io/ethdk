@@ -22,6 +22,8 @@ export type ViewState = {
   commentsOpen: boolean;
   /** The size, interaction and mode a sketch view showed, keyed by its camera key. */
   sketchViews: Record<string, SketchViewPick>;
+  /** The preset a flow view showed, keyed by its camera key. */
+  flowPresets: Record<string, string>;
 };
 
 /** `rounds` holds whether the user opened (`true`) or folded (`false`) a round, by round key. */
@@ -137,6 +139,16 @@ const openFlags = (value: unknown): Record<string, boolean> | undefined => {
   );
 };
 
+const nameMap = (value: unknown): Record<string, string> | undefined => {
+  if (!value || typeof value !== 'object') return undefined;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  );
+};
+
 const isCamera = (value: unknown): value is Camera => {
   if (!value || typeof value !== 'object') return false;
 
@@ -192,6 +204,7 @@ export const rememberedView = (): Partial<ViewState> => {
       measuredSizes,
       commentsOpen,
       sketchViews,
+      flowPresets,
     } = stored as Partial<ViewState>;
 
     return {
@@ -204,6 +217,7 @@ export const rememberedView = (): Partial<ViewState> => {
       measuredSizes: frameSizeMap(measuredSizes),
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
       sketchViews: sketchViewMap(sketchViews),
+      flowPresets: nameMap(flowPresets),
     };
   } catch {
     return {};
@@ -232,3 +246,7 @@ export const rememberSketchView = (key: string, pick: SketchViewPick) => {
 
   rememberView({ sketchViews: { ...sketchViews, [key]: { ...sketchViews[key], ...pick } } });
 };
+
+/** Remembers the preset one flow view shows and keeps those of the other flows. */
+export const rememberFlowPreset = (key: string, preset: string) =>
+  rememberView({ flowPresets: { ...rememberedView().flowPresets, [key]: preset } });

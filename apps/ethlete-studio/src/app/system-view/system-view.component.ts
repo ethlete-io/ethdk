@@ -368,6 +368,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           </ethlete-sketch-view>
         } @else if (flowShown(); as shown) {
           <ethlete-flow-view
+            #flowView
             [port]="shown.port"
             [product]="shown.product"
             [flow]="shown.flow"
@@ -381,6 +382,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           >
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="noteModeButton" />
+            <ng-container [ngTemplateOutlet]="commentModeButton" />
           </ethlete-flow-view>
         } @else if (awaitingPicked()) {
         } @else if (part(); as partShown) {
@@ -478,6 +480,7 @@ export class SystemViewComponent {
   public frameRevisions = input(NO_FRAME_REVISIONS);
   private partCanvas = viewChild<DesignCanvasComponent>('partCanvas');
   private sketchView = viewChild<SketchViewComponent>('sketchView');
+  private flowView = viewChild<FlowViewComponent>('flowView');
   protected readonly BADGE = BADGE;
 
   protected readonly BADGE_ACCENT = BADGE_ACCENT;
@@ -936,8 +939,10 @@ export class SystemViewComponent {
     else if (isCommentModeKey(event) && !event.repeat) this.toggleComments();
   }
 
-  /** Shows the part or sketch a comment sits on, then moves the camera to its pin and opens it. */
+  /** Opens the pin of a comment on the shown flow, else shows the part or sketch it sits on, moves the camera to its pin and opens it. */
   protected jumpTo(comment: NumberedComment) {
+    if (this.flowView()?.jumpTo(comment)) return;
+
     const sketchKey = sketchKeyOf(comment.part);
     const key = comment.sketch && this.nodes().entries.has(sketchKey) ? sketchKey : comment.part;
 

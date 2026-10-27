@@ -4,7 +4,9 @@ import { By } from '@angular/platform-browser';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
+import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { rememberedView } from '../studio-view/remembered';
+import { FlowViewComponent } from './flow-view.component';
 import { SketchViewComponent } from './sketch-view.component';
 import { baseLabelOf, SystemViewComponent } from './system-view.component';
 
@@ -320,5 +322,124 @@ describe('SystemViewComponent on a merge', () => {
     const root: HTMLElement = fixture.nativeElement;
 
     expect(root.querySelector('[data-tree-kit-count]')?.textContent?.trim()).toBe('6');
+  });
+});
+
+describe('SystemViewComponent on a flow', () => {
+  const library: ListedPart = { ...part('pages', 'library'), states: ['empty', 'one'] };
+  const flowProduct: ListedProduct = {
+    ...PRODUCT,
+    presets: { phone: { width: 390 }, desktop: { width: 1280 } },
+    parts: [library],
+  };
+  const flow = {
+    name: 'sign-in',
+    file: 'flows/sign-in.json',
+    frames: [
+      { part: 'pages/library', state: 'empty' },
+      { part: 'pages/library', state: 'one' },
+    ],
+    lines: [],
+    notes: [],
+    problems: [],
+  };
+  const comment: ListedComment = { ...HOVER_COMMENT, part: 'pages/library', state: 'one', size: 'desktop' };
+  delete comment.interaction;
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system')) return json([flowProduct]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/flows')) return json({ flows: [flow], unreadable: [] });
+      if (url.includes('/__design/comments')) return json({ comments: [comment], unreadable: [] });
+      if (url.includes('/__design/notes')) return json({ notes: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  const flowViewOf = (fixture: ComponentFixture<SystemViewComponent>): FlowViewComponent =>
+    fixture.debugElement.query(By.directive(FlowViewComponent)).componentInstance;
+
+  it('pins a comment on a state at the shown preset to its flow frame, and nothing at another preset', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const flowView = flowViewOf(fixture);
+
+    expect(flowView['pins']()).toEqual([]);
+
+    flowView['pickPreset']('desktop');
+    await settle(fixture);
+
+    expect(flowView['pins']().map((pin) => [pin.frameId, pin.label])).toEqual([['pages/library one', '1']]);
+  });
+
+  it('turns comment mode on with C, ends note mode, and drafts a comment at the preset on a frame click', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const view = fixture.componentInstance;
+    const flowRoot: HTMLElement = fixture.debugElement.query(By.directive(FlowViewComponent)).nativeElement;
+
+    expect(flowRoot.querySelector('[title="Comment mode (C)"]')).not.toBeNull();
+
+    view['toggleNotes']();
+    view['handleCommentKey'](new KeyboardEvent('keydown', { key: 'c' }));
+    await settle(fixture);
+
+    expect(view['commentStore'].active()).toBe(true);
+    expect(view['noteStore'].active()).toBe(false);
+
+    flowViewOf(fixture)['pick']({ frameId: 'pages/library empty', point: { x: 4, y: 8 } });
+
+    expect(view['commentStore'].draft()).toEqual({
+      frameId: 'pages/library empty',
+      place: { part: 'pages/library', state: 'empty', size: 'phone' },
+      point: { x: 4, y: 8 },
+    });
+    expect(view['noteStore'].draft()).toBeNull();
+  });
+
+  it('opens the pin of a listed comment on the shown flow instead of leaving it', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    flowViewOf(fixture)['pickPreset']('desktop');
+    await settle(fixture);
+    fixture.componentInstance['jumpTo']({ ...comment, number: 1 });
+    await settle(fixture);
+
+    const canvas: DesignCanvasComponent = fixture.debugElement.query(
+      By.directive(DesignCanvasComponent),
+    ).componentInstance;
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('flow:sign-in');
+    expect(canvas.openPinId()).toBe(comment.id);
+  });
+
+  it('starts no free note on empty space in comment mode', async () => {
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    fixture.componentInstance['toggleComments']();
+    flowViewOf(fixture)['startFreeNote']({ x: 10, y: 10 });
+
+    expect(fixture.componentInstance['noteStore'].draft()).toBeNull();
+  });
+
+  it('remembers the picked preset per flow for the next start', async () => {
+    const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+
+    flowViewOf(first)['pickPreset']('desktop');
+    first.destroy();
+
+    expect(rememberedView().flowPresets).toEqual({ 'web flow:sign-in': 'desktop' });
+
+    const second = await mount(JSON.parse(localStorage.getItem(KEY) ?? '{}'));
+
+    expect(flowViewOf(second)['preset']()).toBe('desktop');
   });
 });
