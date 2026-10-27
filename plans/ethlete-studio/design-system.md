@@ -811,6 +811,24 @@ border to 2px") showed as "question".
   `components/button`, state solid ("The shipped solid button reads heavy in the card footer next
   to the ghost link."). Until the Studio side lands, Studio shows both as questions.
 
+### Answered threads Studio, as built (2026-10-27)
+
+- fd6fd55f4. Tree badge: "question" in the accent colour, "answered" neutral. The priority is
+  question, then answered, then comment open.
+- "N ?" and "Questions for you" count only real questions. An answered thread stays in its part's
+  group in the panel, with "answered" in the subtle line under it, and still blocks merge and
+  discard.
+- Sketch view: pins and size notes use only comments with `sketch`. Next to the "N open comments"
+  lock, a transparent `et-button` "1 comment on the product part" (plural for more) opens the part
+  view. The lock still counts the product comments too.
+- The pin number is global on purpose: `numberedCommentsOf` numbers all open comments of the
+  product, sketch comments included, oldest first, so the panel and the pins agree.
+- Open: `CanvasPin.dot`, the question marker, is set, but the design canvas never draws it. So a
+  question pin and an answered pin look the same today. A small design-canvas slice draws it.
+- `studio-lab`: Components, button shows "question"; Sketches, button shows "answered"; the top bar
+  shows "1 ?"; the panel lists 7001 as "answered" and 239f under "Questions for you"; the
+  `components/button` sketch view shows the product-part button next to "3 open comments".
+
 ### Studio lab decision (2026-10-27)
 
 - `studio-lab` stays current with Studio, so the user can see each new feature in the real app.
