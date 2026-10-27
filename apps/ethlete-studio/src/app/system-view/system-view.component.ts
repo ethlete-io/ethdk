@@ -250,7 +250,7 @@ export class SystemViewComponent {
     selectedKey: this.selectedKey(),
   }));
 
-  protected nodes = computed(() => {
+  private nodes = computed(() => {
     const entries = new Map<string, TreeEntry>();
     const counts = new Map<string, number>();
     const children = new Map<string | null, TreeNode<string>[]>();
