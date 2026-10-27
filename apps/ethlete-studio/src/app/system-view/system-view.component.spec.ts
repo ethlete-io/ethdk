@@ -2,6 +2,7 @@ import { WritableSignal, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { ListedNote } from '../../host/design-notes';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
@@ -345,6 +346,15 @@ describe('SystemViewComponent on a flow', () => {
   };
   const comment: ListedComment = { ...HOVER_COMMENT, part: 'pages/library', state: 'one', size: 'desktop' };
   delete comment.interaction;
+  const note: ListedNote = {
+    id: 'n1',
+    part: 'pages/library',
+    state: 'empty',
+    point: { x: 40, y: 120 },
+    text: 'Invites the first film',
+    file: 'notes/n1.json',
+    stale: null,
+  };
 
   beforeEach(() => {
     localStorage.clear();
@@ -354,7 +364,7 @@ describe('SystemViewComponent on a flow', () => {
       if (url.includes('/__design/calls')) return json([]);
       if (url.includes('/__design/flows')) return json({ flows: [flow], unreadable: [] });
       if (url.includes('/__design/comments')) return json({ comments: [comment], unreadable: [] });
-      if (url.includes('/__design/notes')) return json({ notes: [], unreadable: [] });
+      if (url.includes('/__design/notes')) return json({ notes: [note], unreadable: [] });
 
       return new Promise(() => undefined);
     });
@@ -454,5 +464,27 @@ describe('SystemViewComponent on a flow', () => {
     const second = await mount(JSON.parse(localStorage.getItem(KEY) ?? '{}'));
 
     expect(flowViewOf(second)['preset']()).toBe('desktop');
+  });
+
+  it('shows the notes at start, hides them on "Show notes", and remembers that per product for the next start', async () => {
+    const first = await mount({ systemProduct: 'web', systemEntry: 'flow:sign-in' });
+    const host = (fixture: ComponentFixture<SystemViewComponent>) => fixture.nativeElement as HTMLElement;
+    const toggle = host(first).querySelector<HTMLButtonElement>('[data-notes-shown]');
+
+    expect(host(first).querySelector('[data-note="n1"]')).not.toBeNull();
+
+    toggle?.click();
+    await settle(first);
+
+    expect(host(first).querySelector('[data-note="n1"]')).toBeNull();
+    expect(host(first).querySelector('[data-note-marker]')).toBeNull();
+    first.destroy();
+
+    expect(rememberedView().notesShown).toEqual({ ' web': false });
+
+    const second = await mount(JSON.parse(localStorage.getItem(KEY) ?? '{}'));
+
+    expect(host(second).querySelector('[data-note="n1"]')).toBeNull();
+    expect(host(second).querySelector('[data-notes-shown]')?.getAttribute('aria-pressed')).toBe('false');
   });
 });

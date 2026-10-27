@@ -33,6 +33,7 @@ import { DesignCanvasComponent } from '../components/design-canvas/design-canvas
 import {
   ThemePick,
   camerasWith,
+  rememberNotesShown,
   rememberTheme,
   rememberView,
   rememberedView,
@@ -212,6 +213,18 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
 
     <ng-template #noteModeButton>
       <button
+        [pressed]="notesShown()"
+        (click)="showNotes(!notesShown())"
+        et-button
+        type="button"
+        variant="outline"
+        color="surface"
+        size="sm"
+        data-notes-shown
+      >
+        Show notes
+      </button>
+      <button
         [pressed]="noteStore.active()"
         (click)="toggleNotes()"
         et-button
@@ -369,6 +382,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         } @else if (flowShown(); as shown) {
           <ethlete-flow-view
             #flowView
+            [notesShown]="notesShown()"
             [port]="shown.port"
             [product]="shown.product"
             [flow]="shown.flow"
@@ -413,7 +427,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [pointingLabel]="noteStore.active() ? 'Note on' : 'Comment on'"
             [draft]="noteStore.draft() ?? commentStore.draft()"
             [pinPopover]="pinThread"
-            [notes]="partNotes()"
+            [notes]="notesShown() ? partNotes() : []"
             [noteTemplate]="noteBody"
             (cameraChange)="rememberCamera($event)"
             (pointPick)="noteStore.active() ? startNote($event) : startComment(frames(), $event)"
@@ -685,6 +699,20 @@ export class SystemViewComponent {
 
   private themePicks = signal(rememberedView().themes ?? {});
 
+  private notesShownPicks = signal(rememberedView().notesShown ?? {});
+
+  private notesKey = computed(() => {
+    const product = this.product();
+
+    return product ? themeKey(this.checkout(), product.name) : null;
+  });
+
+  protected notesShown = computed(() => {
+    const key = this.notesKey();
+
+    return key === null || (this.notesShownPicks()[key] ?? true);
+  });
+
   /** The themes the shown entry names - a call's design project, else the product - with the name each frame wears. */
   private shownThemes = computed(() => {
     const call = this.call();
@@ -911,6 +939,15 @@ export class SystemViewComponent {
   protected toggleComments() {
     this.commentStore.toggle();
     if (this.commentStore.active()) this.noteStore.end();
+  }
+
+  protected showNotes(shown: boolean) {
+    const key = this.notesKey();
+
+    if (key === null) return;
+
+    this.notesShownPicks.update((picks) => ({ ...picks, [key]: shown }));
+    rememberNotesShown(key, shown);
   }
 
   protected toggleNotes() {

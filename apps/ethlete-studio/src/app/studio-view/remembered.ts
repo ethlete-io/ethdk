@@ -24,6 +24,8 @@ export type ViewState = {
   sketchViews: Record<string, SketchViewPick>;
   /** The preset a flow view showed, keyed by its camera key. */
   flowPresets: Record<string, string>;
+  /** Whether the canvas shows the notes of a product, keyed by `themeKey`. */
+  notesShown: Record<string, boolean>;
 };
 
 /** `rounds` holds whether the user opened (`true`) or folded (`false`) a round, by round key. */
@@ -205,6 +207,7 @@ export const rememberedView = (): Partial<ViewState> => {
       commentsOpen,
       sketchViews,
       flowPresets,
+      notesShown,
     } = stored as Partial<ViewState>;
 
     return {
@@ -218,6 +221,7 @@ export const rememberedView = (): Partial<ViewState> => {
       commentsOpen: typeof commentsOpen === 'boolean' ? commentsOpen : undefined,
       sketchViews: sketchViewMap(sketchViews),
       flowPresets: nameMap(flowPresets),
+      notesShown: openFlags(notesShown),
     };
   } catch {
     return {};
@@ -250,3 +254,7 @@ export const rememberSketchView = (key: string, pick: SketchViewPick) => {
 /** Remembers the preset one flow view shows and keeps those of the other flows. */
 export const rememberFlowPreset = (key: string, preset: string) =>
   rememberView({ flowPresets: { ...rememberedView().flowPresets, [key]: preset } });
+
+/** Remembers whether the canvas shows the notes of one product and keeps those of the others. */
+export const rememberNotesShown = (key: string, shown: boolean) =>
+  rememberView({ notesShown: { ...rememberedView().notesShown, [key]: shown } });

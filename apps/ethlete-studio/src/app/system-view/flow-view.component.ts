@@ -53,7 +53,7 @@ import { injectNoteStore } from './note-store';
       [lines]="drawn().lines"
       [cameraKey]="cameraKey() + ' ' + preset()"
       [restoredCamera]="restoredCamera()"
-      [notes]="notes()"
+      [notes]="notesShown() ? notes() : []"
       [noteTemplate]="noteBody"
       [pins]="pins()"
       [pinPopover]="pinThread"
@@ -95,6 +95,7 @@ export class FlowViewComponent {
   public surface = input<string | undefined>(undefined);
   public color = input<string | undefined>(undefined);
   public cameraKey = input<string | null>(null);
+  public notesShown = input(true);
   public restoredCamera = input<Camera | null>(null);
 
   public cameraChange = output<Camera | null>();
