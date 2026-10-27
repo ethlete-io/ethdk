@@ -39,10 +39,10 @@ export type PartBadge =
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
 type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string> };
 
-const commentBadgesOf = (key: string, { commented, questioned }: CommentMarks): PartBadge[] => [
-  ...(commented.has(key) ? (['comment open'] as const) : []),
-  ...(questioned.has(key) ? (['question'] as const) : []),
-];
+const commentBadgesOf = (key: string, { commented, questioned }: CommentMarks): PartBadge[] => {
+  if (questioned.has(key)) return ['question'];
+  return commented.has(key) ? ['comment open'] : [];
+};
 
 export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[] };
 

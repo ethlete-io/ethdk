@@ -143,7 +143,7 @@ describe('comment pins', () => {
     ]);
     const tree = treeOf([part], { comments: asked });
 
-    expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['comment open', 'question']);
+    expect(tree.find((group) => group.key === 'components')?.entries[0]?.badges).toEqual(['question']);
     expect(pinsOf([frame('a')], asked)[0]?.dot).toBe(true);
     expect(asked.map(lastSenderOf)).toEqual(['agent', 'user']);
   });
