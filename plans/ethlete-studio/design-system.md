@@ -471,6 +471,11 @@ Not built yet. In the `components/card` sketch the preview showed all three stat
 - Bug: preview frames switch between the grey canvas and the page's own background (in
   `pages/library` `one` and `empty`, now and after differ). The page always has one background, so
   the compare would see a change that does not exist. Fix first.
+- Bug: on the switch to the preview, the first row starts in the middle of the canvas with about
+  300 px empty above it. The fit must anchor at the top, as in d25e8a8b0.
+- The sketch header: the picked variant ("Picked b") uses the accent colour instead of a grey
+  filled button; the note is a visible `et-form-field` with a label; next to a disabled Merge,
+  "Needs a note" shows while the note is missing.
 - A page or a part with `widths` that declares interactions keeps the sheet layout as built ("320 ·
   hover"), until a real page declares interactions; then the interaction switch of the sketch matrix
   may serve there too.
