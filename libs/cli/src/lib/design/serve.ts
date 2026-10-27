@@ -32,6 +32,7 @@ import {
   sketchPreviewAnswer,
 } from './studio-api';
 import { forceInteractionsPlugin } from './force-interactions';
+import { newProductAnswer, PRODUCT_PATH } from './product-command';
 import { createRenderer, FORCE_PATH, forceMiddleware, RENDER_PATH, renderMiddleware } from './render';
 import { mappedSubpathOf } from './render-packages';
 import { partMarksTransform } from './part-marks';
@@ -384,6 +385,16 @@ const designExplore = ({
         });
 
         return { status: 200, body: products };
+      }),
+    );
+    vite.middlewares.use(
+      PRODUCT_PATH,
+      answer(async (_url, request) => {
+        const created = await newProductAnswer({ target, request });
+
+        if (created.status === 201) reloadConfig();
+
+        return created;
       }),
     );
     vite.middlewares.use(

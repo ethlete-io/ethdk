@@ -1,10 +1,12 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmdirSync, writeFileSync } from 'fs';
+import { IncomingMessage } from 'http';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { Readable } from 'stream';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkSystem } from './system/check-system';
 import { configPathOf, DESIGN_DIR, readConfig } from './paths';
-import { designProduct } from './product-command';
+import { designProduct, newProductAnswer } from './product-command';
 
 const make = () => mkdtempSync(join(tmpdir(), 'cli-design-product-'));
 
@@ -85,4 +87,48 @@ describe('designProduct', () => {
     expect(readFileSync(configPathOf(target), 'utf8')).toBe(before);
     expect(existsSync(join(target, DESIGN_DIR, 'other/fixtures.ts'))).toBe(false);
   });
+
+  it('creates a product over POST with another product as its base', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'web');
+
+    expect(await post(target, { name: 'shop', base: 'web' })).toEqual({ status: 201, body: { name: 'shop' } });
+    expect(readConfig(target)?.products?.['shop']).toEqual({ base: '.ethlete/design/web' });
+    expect(checkSystem({ target, config: readConfig(target) ?? {}, products: ['shop'] })).toBe(0);
+  }, 60_000);
+
+  it('refuses over POST a name that exists, an unknown base and a GET', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const target = make();
+
+    run(target, 'new', 'web');
+    const before = readFileSync(configPathOf(target), 'utf8');
+
+    expect(await post(target, { name: 'web' })).toMatchObject({
+      status: 409,
+      body: { error: expect.stringContaining('PRODUCT EXISTS') },
+    });
+    expect(await post(target, { name: 'shop', base: 'nope' })).toMatchObject({ status: 400 });
+    expect(await post(target, { name: 'Shop' })).toMatchObject({
+      status: 400,
+      body: { error: expect.stringContaining('BAD NAME') },
+    });
+    expect(
+      await newProductAnswer({
+        target,
+        request: Object.assign(Readable.from([]), { method: 'GET' }) as unknown as IncomingMessage,
+      }),
+    ).toMatchObject({ status: 405 });
+    expect(readFileSync(configPathOf(target), 'utf8')).toBe(before);
+  });
 });
+
+const post = (target: string, body: unknown) =>
+  newProductAnswer({
+    target,
+    request: Object.assign(Readable.from([Buffer.from(JSON.stringify(body))]), {
+      method: 'POST',
+    }) as unknown as IncomingMessage,
+  });
