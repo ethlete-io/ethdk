@@ -39,16 +39,20 @@ const browse = {
     { from: { part: 'pages/home', state: 'empty' }, to: { part: 'pages/home', state: 'default' }, label: 'a film' },
     { from: { part: 'pages/home', state: 'default' }, to: { part: 'elements/hero', state: 'default' } },
   ],
-  notes: [{ text: 'free notes come later', position: { x: 0, y: 0 } }],
+  notes: [
+    { id: 'browsing', text: 'Browsing', at: { x: 0, y: -120 } },
+    { id: 'later', text: 'Studio places this one' },
+  ],
+  owner: 'kept, not read',
 };
 
 describe('listFlows', () => {
-  it('reads each flow file by name, with its frames and lines', () => {
+  it('reads each flow file by name, with its frames, lines and free notes', () => {
     const target = acme();
     const file = flow(target, 'browse', browse);
 
     expect(listFlows(resolveAcme(target).dir)).toEqual({
-      flows: [{ name: 'browse', file, frames: browse.frames, lines: browse.lines }],
+      flows: [{ name: 'browse', file, frames: browse.frames, lines: browse.lines, notes: browse.notes }],
       unreadable: [],
     });
   });
@@ -110,11 +114,38 @@ describe('flowProblemsOf', () => {
       lines: [{ from: { part: 'a', state: 'b' }, to: { part: 'a', state: 'c' }, label: 3 }],
     });
     const json = flow(target, 'c-json', '{');
+    const note = flow(target, 'd-note', {
+      frames: [],
+      notes: [
+        { id: 'a', text: 'x' },
+        { id: 'b', text: '' },
+      ],
+    });
 
     expect(flowProblemsOf(resolveAcme(target))).toEqual([
       { rule: 'FLOW', file: shape, message: 'frames[0] must be { part: "<layer>/<name>", state, position? }' },
       { rule: 'FLOW', file: label, message: 'lines[0] must be { from: { part, state }, to: { part, state }, label? }' },
       { rule: 'FLOW', file: json, message: expect.stringMatching(/^is no JSON: /) },
+      {
+        rule: 'FLOW',
+        file: note,
+        message: 'notes[1] must be { id, text, at?: { x, y } }, at in CSS pixels on the flow canvas',
+      },
+    ]);
+  });
+
+  it('fails two free notes with one id', () => {
+    const target = acme();
+    const file = flow(target, 'twice', {
+      frames: [],
+      notes: [
+        { id: 'a', text: 'x' },
+        { id: 'a', text: 'y' },
+      ],
+    });
+
+    expect(flowProblemsOf(resolveAcme(target))).toEqual([
+      { rule: 'FLOW', file, message: 'has two notes with the id "a" - give each its own' },
     ]);
   });
 

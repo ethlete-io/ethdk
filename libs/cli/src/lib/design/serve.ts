@@ -16,6 +16,20 @@ import {
   COMMENTS_PATH,
   FLOWS_PATH,
   flowsAnswer,
+  FLOW_NOTE_CHANGE_PATH,
+  FLOW_NOTE_DELETE_PATH,
+  FLOW_NOTE_PATH,
+  flowNoteAnswer,
+  flowNoteChangeAnswer,
+  flowNoteDeleteAnswer,
+  NOTE_CHANGE_PATH,
+  NOTE_DELETE_PATH,
+  NOTE_PATH,
+  NOTES_PATH,
+  noteAnswer,
+  noteChangeAnswer,
+  noteDeleteAnswer,
+  notesAnswer,
   commentAnswer,
   commentDoneAnswer,
   commentReplyAnswer,
@@ -188,11 +202,13 @@ const sendJson = (response: ServerResponse, answer: { status: number; body: unkn
 
 const isCommentFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'comments';
 
-const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file);
+const isNoteFile = (file: string) => file.endsWith('.json') && basename(dirname(file)) === 'notes';
+
+const isDecisionFile = (file: string) => basename(file) === SKETCH_FILE || isCommentFile(file) || isNoteFile(file);
 
 /**
- * A server-sent event stream for Studio: `comments` when a comment file changed, and `parts` with the parts any change
- * redraws and the revision it gave them.
+ * A server-sent event stream for Studio: `comments` when a comment file changed, `notes` when a note file changed, and
+ * `parts` with the parts any change redraws and the revision it gave them.
  */
 const createDesignEvents = () => {
   const listeners = new Set<ServerResponse>();
@@ -209,7 +225,7 @@ const createDesignEvents = () => {
       listeners.add(response);
       request.on('close', () => listeners.delete(response));
     },
-    signal: (event: 'comments' | 'parts', data: object = {}) => {
+    signal: (event: 'comments' | 'notes' | 'parts', data: object = {}) => {
       for (const response of listeners) response.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     },
     close: () => {
@@ -331,6 +347,7 @@ const designExplore = ({
     const refresh = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
+      if (isNoteFile(file)) return events.signal('notes');
 
       forgetCalls(file);
 
@@ -346,6 +363,7 @@ const designExplore = ({
     const change = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
+      if (isNoteFile(file)) return events.signal('notes');
 
       forgetCalls(file);
       const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
@@ -444,6 +462,13 @@ const designExplore = ({
     studio(COMMENT_WITHDRAW_PATH, commentWithdrawAnswer);
     studio(COMMENT_REPLY_PATH, commentReplyAnswer);
     studio(FLOWS_PATH, flowsAnswer);
+    studio(NOTES_PATH, notesAnswer);
+    studio(NOTE_PATH, noteAnswer);
+    studio(NOTE_CHANGE_PATH, noteChangeAnswer);
+    studio(NOTE_DELETE_PATH, noteDeleteAnswer);
+    studio(FLOW_NOTE_PATH, flowNoteAnswer);
+    studio(FLOW_NOTE_CHANGE_PATH, flowNoteChangeAnswer);
+    studio(FLOW_NOTE_DELETE_PATH, flowNoteDeleteAnswer);
     vite.middlewares.use(COMMENT_EVENTS_PATH, events.middleware);
     vite.httpServer?.on('close', () => {
       events.close();

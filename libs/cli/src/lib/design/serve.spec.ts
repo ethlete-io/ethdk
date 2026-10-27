@@ -342,6 +342,7 @@ describe('the design server for a design system', () => {
     watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
     watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/sketches/components-card/sketch.json'));
     watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
+    watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/notes/20260101T000000Z-ab12.json'));
 
     expect(sent).toEqual([]);
   });
@@ -363,10 +364,11 @@ describe('the design server for a design system', () => {
     );
     watchers.get('add')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
     watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/components/card/card.ts'));
+    watchers.get('change')?.(join(target, DESIGN_DIR, 'acme/notes/20260101T000000Z-ab12.json'));
     closed.forEach((close) => close());
     watchers.get('unlink')?.(join(target, DESIGN_DIR, 'acme/comments/20260101T000000Z-ab12.json'));
 
-    expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n']);
+    expect(written).toEqual([': open\n\n', 'event: comments\ndata: {}\n\n', 'event: notes\ndata: {}\n\n']);
   });
 
   it('sends no event of its own for a drawn file outside the design folder', async () => {
@@ -644,5 +646,62 @@ describe('the design server for sketches and comments', () => {
     expect((await ask('/__design/comment-withdraw', '?product=acme', 'POST', { id: withdrawn.id })).status).toBe(404);
     expect(readFileSync(home, 'utf8')).toContain("note: 'A title.'");
     expect(note).not.toContain("note: 'A title.'");
+  });
+
+  it('writes, lists, changes and deletes a note on a state', async () => {
+    const target = acme();
+    const { ask } = await serveAcme(target);
+    const on = { part: 'pages/home', state: 'empty', text: 'The first visit.' };
+    const added = await ask('/__design/note', '?product=acme', 'POST', { ...on, point: { x: 4, y: 8 } });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { ...on, point: { x: 4, y: 8 }, stale: null } });
+    expect((await ask('/__design/note', '?product=acme', 'POST', { ...on, state: 'loading' })).status).toBe(422);
+    expect((await ask('/__design/note', '?product=acme')).status).toBe(405);
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({
+      notes: [{ id, ...on, file: `.ethlete/design/acme/notes/${id}.json` }],
+      unreadable: [],
+    });
+    expect(
+      await ask('/__design/note-change', '?product=acme', 'POST', { id, text: 'A first visit.', point: null }),
+    ).toMatchObject({ status: 200, body: { id, text: 'A first visit.' } });
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({
+      notes: [{ id, text: 'A first visit.' }],
+    });
+    expect((await ask('/__design/note-change', '?product=acme', 'POST', { id, text: '' })).status).toBe(422);
+    expect((await ask('/__design/note-change', '?product=acme', 'POST', { id: 'nope', text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/note-delete', '?product=acme', 'POST', { id })).status).toBe(200);
+    expect((await ask('/__design/note-delete', '?product=acme', 'POST', { id })).status).toBe(404);
+    expect((await ask('/__design/notes', '?product=acme')).body).toMatchObject({ notes: [] });
+  });
+
+  it('adds, changes and deletes a free note of a flow and keeps the rest of the flow file', async () => {
+    const target = acme();
+    const dir = join(target, DESIGN_DIR, 'acme/flows');
+    const flow = { frames: [{ part: 'pages/home', state: 'empty' }], owner: 'kept' };
+
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'browse.json'), JSON.stringify(flow));
+
+    const { ask } = await serveAcme(target);
+    const added = await ask('/__design/flow-note', '?product=acme&flow=browse', 'POST', {
+      text: 'Browsing',
+      at: { x: 0, y: -80 },
+    });
+    const { id } = added.body as { id: string };
+
+    expect(added).toMatchObject({ status: 200, body: { text: 'Browsing', at: { x: 0, y: -80 } } });
+    expect((await ask('/__design/flows', '?product=acme')).body).toMatchObject({
+      flows: [{ name: 'browse', notes: [{ id, text: 'Browsing', at: { x: 0, y: -80 } }], problems: [] }],
+    });
+    expect(
+      await ask('/__design/flow-note-change', '?product=acme&flow=browse', 'POST', { id, text: 'Browse' }),
+    ).toMatchObject({ status: 200, body: { id, text: 'Browse', at: { x: 0, y: -80 } } });
+    expect((await ask('/__design/flow-note', '?product=acme', 'POST', { text: 'x' })).status).toBe(400);
+    expect((await ask('/__design/flow-note', '?product=acme&flow=gone', 'POST', { text: 'x' })).status).toBe(404);
+    expect((await ask('/__design/flow-note', '?product=acme&flow=browse', 'POST', { text: 3 })).status).toBe(422);
+    expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(200);
+    expect((await ask('/__design/flow-note-delete', '?product=acme&flow=browse', 'POST', { id })).status).toBe(404);
+    expect(JSON.parse(readFileSync(join(dir, 'browse.json'), 'utf8'))).toEqual(flow);
   });
 });

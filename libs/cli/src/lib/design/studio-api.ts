@@ -7,13 +7,15 @@ import {
   createComment,
   deleteComment,
   DesignComment,
+  goneStateOf,
   listComments,
   replyToComment,
   threadStateOf,
   staleReasonOf,
 } from './system/comments/comment';
 import { completeComment } from './system/comments/complete';
-import { listFlows } from './system/flows/flow';
+import { addFlowNote, changeFlowNote, deleteFlowNote, FlowNote, FlowNoteChange, listFlows } from './system/flows/flow';
+import { changeNote, createNote, deleteNote, DesignNote, listNotes, NoteChange } from './system/notes/note';
 import { flowProblemsOf } from './system/rules/flow';
 import { Problem } from './system/problem';
 import { ResolvedProduct } from './system/resolve-product';
@@ -41,6 +43,13 @@ export const COMMENT_WITHDRAW_PATH = '/__design/comment-withdraw';
 export const COMMENT_REPLY_PATH = '/__design/comment-reply';
 export const COMMENT_EVENTS_PATH = '/__design/comment-events';
 export const FLOWS_PATH = '/__design/flows';
+export const NOTES_PATH = '/__design/notes';
+export const NOTE_PATH = '/__design/note';
+export const NOTE_CHANGE_PATH = '/__design/note-change';
+export const NOTE_DELETE_PATH = '/__design/note-delete';
+export const FLOW_NOTE_PATH = '/__design/flow-note';
+export const FLOW_NOTE_CHANGE_PATH = '/__design/flow-note-change';
+export const FLOW_NOTE_DELETE_PATH = '/__design/flow-note-delete';
 
 export type Answer = { status: number; body: unknown };
 
@@ -407,3 +416,117 @@ export const flowsAnswer = withProduct('GET', ({ asked, product }) => {
     },
   };
 });
+
+const noteOf = ({ note, target, product }: { note: DesignNote; target: string; product: ResolvedProduct }) => {
+  const { file, ...rest } = note;
+
+  return { ...rest, file: relative(target, file), stale: goneStateOf({ product, part: note.part, state: note.state }) };
+};
+
+const changeOf = (body: Record<string, unknown>, place: 'point' | 'at') => ({
+  ...(body['text'] === undefined ? {} : { text: body['text'] as string }),
+  ...(body[place] === undefined ? {} : { [place]: body[place] as { x: number; y: number } | null }),
+});
+
+const missingNoteStatusOf = (problem: string) => (/^no (note|flow) |has no note /u.test(problem) ? 404 : 422);
+
+/** `?product=`: the notes on the product's states, each with the reason its part or state is gone, or `null`. */
+export const notesAnswer = withProduct('GET', ({ asked, product }) => {
+  const { notes, unreadable } = listNotes(product.dir);
+
+  return {
+    status: 200,
+    body: {
+      notes: notes.map((note) => noteOf({ note, target: asked.target, product })),
+      unreadable: unreadable.map(({ file, problem }) => ({ file: relative(asked.target, file), problem })),
+    },
+  };
+});
+
+/** POST `?product=`, body `{ part, state, text, point?: { x, y } }`: writes a note on a state into `<product>/notes/`. */
+export const noteAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+
+  if (!body) return failure(400, 'the body must be a JSON object');
+
+  const { part, state, text, point } = body;
+  const created = createNote({
+    product,
+    note: {
+      part: part as string,
+      state: state as string,
+      text: text as string,
+      ...(point === undefined ? {} : { point: point as { x: number; y: number } }),
+    },
+  });
+
+  return typeof created === 'string'
+    ? failure(422, created)
+    : { status: 200, body: noteOf({ note: created, target: asked.target, product }) };
+});
+
+/** POST `?product=`, body `{ id, text?, point?: { x, y } | null }`: changes a note on a state; `point: null` drops its point. */
+export const noteChangeAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+  const id = textOf(body?.['id']);
+
+  if (!body || !id) return failure(400, 'the body must be { id, text?, point? }');
+
+  const changed = changeNote({ productDir: product.dir, id, change: changeOf(body, 'point') as NoteChange });
+
+  return typeof changed === 'string'
+    ? failure(missingNoteStatusOf(changed), changed)
+    : { status: 200, body: noteOf({ note: changed, target: asked.target, product }) };
+});
+
+/** POST `?product=`, body `{ id }`: deletes a note on a state. */
+export const noteDeleteAnswer = withProduct('POST', async ({ asked, product }) => {
+  const body = await bodyOf(asked.request);
+  const id = textOf(body?.['id']);
+
+  if (!id) return failure(400, 'the body must be { id }');
+
+  const deleted = deleteNote({ productDir: product.dir, id });
+
+  return typeof deleted === 'string' ? failure(missingNoteStatusOf(deleted), deleted) : { status: 200, body: { id } };
+});
+
+const withFlowNote = (run: (found: Found & { name: string; body: Record<string, unknown> }) => FlowNote | string) =>
+  withProduct('POST', async (found) => {
+    const name = found.asked.url.searchParams.get('flow');
+    const body = await bodyOf(found.asked.request);
+
+    if (!name) return failure(400, 'flow is required');
+    if (!body) return failure(400, 'the body must be a JSON object');
+
+    const answer = run({ ...found, name, body });
+
+    return typeof answer === 'string' ? failure(missingNoteStatusOf(answer), answer) : { status: 200, body: answer };
+  });
+
+/** POST `?product=&flow=`, body `{ text, at?: { x, y } }`: adds a free note to `<product>/flows/<flow>.json`. */
+export const flowNoteAnswer = withFlowNote(({ product, name, body }) =>
+  addFlowNote({
+    productDir: product.dir,
+    name,
+    note: {
+      text: body['text'] as string,
+      ...(body['at'] === undefined ? {} : { at: body['at'] as { x: number; y: number } }),
+    },
+  }),
+);
+
+/** POST `?product=&flow=`, body `{ id, text?, at?: { x, y } | null }`: changes a free note of a flow; `at: null` lets Studio place it. */
+export const flowNoteChangeAnswer = withFlowNote(({ product, name, body }) =>
+  changeFlowNote({
+    productDir: product.dir,
+    name,
+    id: String(body['id'] ?? ''),
+    change: changeOf(body, 'at') as FlowNoteChange,
+  }),
+);
+
+/** POST `?product=&flow=`, body `{ id }`: deletes a free note of a flow. */
+export const flowNoteDeleteAnswer = withFlowNote(({ product, name, body }) =>
+  deleteFlowNote({ productDir: product.dir, name, id: String(body['id'] ?? '') }),
+);

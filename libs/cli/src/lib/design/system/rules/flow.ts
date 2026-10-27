@@ -26,10 +26,21 @@ const problemsOfFlow = (product: ResolvedProduct, flow: DesignFlow): string[] =>
       .map((end) => `lines[${index}] names ${nameOf(end)}, which is no frame of the flow - add it to frames`),
   );
 
-  return [...doubled, ...gone, ...loose];
+  const ids = new Set<string>();
+  const twice = flow.notes.flatMap((note) => {
+    if (ids.has(note.id)) return [`has two notes with the id "${note.id}" - give each its own`];
+    ids.add(note.id);
+
+    return [];
+  });
+
+  return [...doubled, ...gone, ...loose, ...twice];
 };
 
-/** A flow file that cannot be read, a frame whose part or state is gone, and a line between states the flow does not show. */
+/**
+ * A flow file that cannot be read, a frame whose part or state is gone, a line between states the flow does not show,
+ * and two free notes with one id.
+ */
 export const flowProblemsOf = (product: ResolvedProduct): Problem[] => {
   const { flows, unreadable } = listFlows(product.dir);
 

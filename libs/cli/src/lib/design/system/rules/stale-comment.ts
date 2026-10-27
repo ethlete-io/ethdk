@@ -17,16 +17,16 @@ export const staleCommentsOf = (product: ResolvedProduct): Problem[] => {
   ];
 };
 
-/** A note whose part or state is gone, and a note file that cannot be read, under the comment rule. */
+/** A note whose part or state is gone, and a note file that cannot be read. */
 export const staleNotesOf = (product: ResolvedProduct): Problem[] => {
   const { notes, unreadable } = listNotes(product.dir);
 
   return [
-    ...unreadable.map(({ file, problem }) => ({ rule: 'COMMENT', file, message: problem })),
+    ...unreadable.map(({ file, problem }) => ({ rule: 'NOTE', file, message: problem })),
     ...notes.flatMap((note) => {
       const gone = goneStateOf({ product, part: note.part, state: note.state });
 
-      return gone ? [{ rule: 'COMMENT', file: note.file, message: `${gone} - move or drop the note` }] : [];
+      return gone ? [{ rule: 'NOTE', file: note.file, message: `${gone} - move or drop the note` }] : [];
     }),
   ];
 };

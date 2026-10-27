@@ -104,9 +104,9 @@ describe('staleNotesOf', () => {
     const bad = note(target, 'c-bad', { point: { x: -1, y: 0 } });
 
     expect(staleNotesOf(resolveAcme(target))).toEqual([
-      { rule: 'COMMENT', file: bad, message: 'point must be { x, y } in CSS pixels, both >= 0' },
-      { rule: 'COMMENT', file: part, message: 'part elements/footer no longer exists - move or drop the note' },
-      { rule: 'COMMENT', file: state, message: 'pages/home has no state "loading" - move or drop the note' },
+      { rule: 'NOTE', file: bad, message: 'point must be { x, y } in CSS pixels, both >= 0' },
+      { rule: 'NOTE', file: part, message: 'part elements/footer no longer exists - move or drop the note' },
+      { rule: 'NOTE', file: state, message: 'pages/home has no state "loading" - move or drop the note' },
     ]);
   });
 });
