@@ -62,26 +62,6 @@
     background: var(--et-surface-background-solid);
   }
 
-  .et-design-canvas__hud-button {
-    min-width: 2.8rem;
-    padding: 0.4rem 0.8rem;
-    border: 0;
-    background: none;
-    color: var(--et-surface-color-solid);
-    font-family: var(--font-mono);
-    font-size: 1.2rem;
-    cursor: pointer;
-
-    &:hover {
-      background: color-mix(in srgb, var(--et-surface-interaction-solid) 14%, transparent);
-    }
-
-    &:focus-visible {
-      outline: 0.2rem solid var(--et-theme-color-primary-solid);
-      outline-offset: -0.2rem;
-    }
-  }
-
   .et-design-canvas__zoom {
     font-variant-numeric: tabular-nums;
   }

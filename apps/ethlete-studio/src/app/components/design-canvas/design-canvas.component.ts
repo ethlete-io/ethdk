@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { outputFromObservable, takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { BUTTON_IMPORTS } from '@ethlete/components';
 import { ResizeHandlesComponent, ResizeMoveEvent, dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, debounceTime, exhaustMap, skip, tap } from 'rxjs';
 import { CanvasFrame } from './canvas-frame';
@@ -47,7 +48,7 @@ const isEditable = (target: EventTarget | null) =>
   templateUrl: './design-canvas.component.html',
   styleUrl: './design-canvas.component.css',
   encapsulation: ViewEncapsulation.None,
-  imports: [CanvasFrameComponent, ResizeHandlesComponent],
+  imports: [BUTTON_IMPORTS, CanvasFrameComponent, ResizeHandlesComponent],
   host: {
     class: 'et-design-canvas',
     '[class.et-design-canvas--space]': 'spaceHeld()',

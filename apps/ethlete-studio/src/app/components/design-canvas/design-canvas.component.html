@@ -45,19 +45,49 @@
 </div>
 
 <div class="et-design-canvas__hud">
-  <button (click)="zoomBy(1 / ZOOM_STEP)" class="et-design-canvas__hud-button" type="button" aria-label="Zoom out">
+  <button
+    (click)="zoomBy(1 / ZOOM_STEP)"
+    et-button
+    type="button"
+    variant="transparent"
+    color="surface"
+    size="sm"
+    aria-label="Zoom out"
+  >
     −
   </button>
   <button
     (click)="zoomTo(1)"
-    class="et-design-canvas__hud-button et-design-canvas__zoom"
+    class="et-design-canvas__zoom"
+    et-button
     type="button"
+    variant="transparent"
+    color="surface"
+    size="sm"
     title="Zoom to 100 % (Shift+0)"
   >
     {{ zoomPercent() }} %
   </button>
-  <button (click)="zoomBy(ZOOM_STEP)" class="et-design-canvas__hud-button" type="button" aria-label="Zoom in">+</button>
-  <button (click)="fitAll()" class="et-design-canvas__hud-button" type="button" title="Zoom to fit (Shift+1)">
+  <button
+    (click)="zoomBy(ZOOM_STEP)"
+    et-button
+    type="button"
+    variant="transparent"
+    color="surface"
+    size="sm"
+    aria-label="Zoom in"
+  >
+    +
+  </button>
+  <button
+    (click)="fitAll()"
+    et-button
+    type="button"
+    variant="transparent"
+    color="surface"
+    size="sm"
+    title="Zoom to fit (Shift+1)"
+  >
     Fit
   </button>
 </div>
