@@ -52,10 +52,10 @@ import { SketchViewComponent } from './sketch-view.component';
 type Reading = { products: ListedProduct[]; error: string | null };
 
 const BADGE =
-  'whitespace-nowrap rounded-full border border-[var(--et-surface-border-solid)] px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
+  'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-surface-border-solid)] px-1.5 py-px text-[1rem] text-[var(--et-surface-color-subtle-solid)]';
 
 const BADGE_ERROR =
-  'whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
+  'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
 
 const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-[var(--et-surface-color-subtle-solid)]';
 
@@ -94,20 +94,23 @@ const NOTE = 'm-0 max-w-130 self-center justify-self-center p-6 text-small text-
         <ng-template etTreeNodeDef let-node>
           @let entry = entryOf(node.value);
           @if (entry) {
-            <span
-              [class.font-semibold]="entry.key === selectedKey()"
-              [style.color]="entry.key === selectedKey() ? 'var(--et-theme-color-primary-solid)' : null"
-              [title]="entry.title ?? ''"
-            >
-              {{ node.label }}
-            </span>
-            @for (badge of entry.badges; track badge) {
-              @if (badge === 'error') {
-                <span [class]="BADGE_ERROR" etProvideColor="danger">error</span>
-              } @else {
-                <span [class]="BADGE">{{ badge }}</span>
+            <span class="flex min-w-0 items-center gap-1.5">
+              <span
+                [class.font-semibold]="entry.key === selectedKey()"
+                [style.color]="entry.key === selectedKey() ? 'var(--et-theme-color-primary-solid)' : null"
+                [title]="entry.title ?? ''"
+                class="min-w-0 truncate"
+              >
+                {{ node.label }}
+              </span>
+              @for (badge of entry.badges; track badge) {
+                @if (badge === 'error') {
+                  <span [class]="BADGE_ERROR" etProvideColor="danger">error</span>
+                } @else {
+                  <span [class]="BADGE">{{ badge }}</span>
+                }
               }
-            }
+            </span>
           } @else {
             {{ node.label }}
             @if (countOf(node.value); as count) {

@@ -1,5 +1,5 @@
 import { Component, ViewEncapsulation, afterRenderEffect, linkedSignal, viewChild } from '@angular/core';
-import { BUTTON_IMPORTS, TEXTAREA_IMPORTS, TextareaComponent } from '@ethlete/components';
+import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, TextareaComponent } from '@ethlete/components';
 import { ProvideColorDirective } from '@ethlete/core';
 import { draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
@@ -10,12 +10,15 @@ import { injectCommentStore } from './comment-store';
     <div
       class="flex w-80 flex-col gap-2 rounded-md border border-[var(--et-surface-border-solid)] bg-[var(--et-surface-background-solid)] p-3 shadow-lg"
     >
-      <et-textarea
-        [(value)]="text"
-        (keydown)="handleKey($event)"
-        aria-label="Comment"
-        placeholder="Enter sends, Shift+Enter breaks the line"
-      />
+      <et-form-field appearance="box">
+        <et-textarea
+          [(value)]="text"
+          (keydown)="handleKey($event)"
+          aria-label="Comment"
+          placeholder="Enter sends, Shift+Enter breaks the line"
+          rows="3"
+        />
+      </et-form-field>
       @if (store.error(); as message) {
         <p class="m-0 text-small text-[var(--et-theme-color-primary-solid)]" etProvideColor="danger">{{ message }}</p>
       }
@@ -37,7 +40,7 @@ import { injectCommentStore } from './comment-store';
     </div>
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [BUTTON_IMPORTS, TEXTAREA_IMPORTS, ProvideColorDirective],
+  imports: [BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS, ProvideColorDirective],
 })
 export class CommentDraftComponent {
   protected store = injectCommentStore();
