@@ -388,8 +388,9 @@
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  font-size: 1.4rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: var(--text-md-line);
   background: var(--surface-sunken);
   color: var(--text);
 }
@@ -414,4 +415,23 @@ body {
   --on-accent: oklch(0.17 0.02 190);
   --accent-subtle: oklch(0.68 0.11 190 / 0.2);
   --focus-ring: oklch(0.76 0.11 190);
+}
+
+/* Studio type scale, variant B: compact */
+:root {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --text-xs: 1rem;
+  --text-xs-line: 1.4rem;
+  --text-sm: 1.15rem;
+  --text-sm-line: 1.6rem;
+  --text-md: 1.3rem;
+  --text-md-line: 1.8rem;
+  --text-lg: 1.5rem;
+  --text-lg-line: 2rem;
+  --text-xl: 1.7rem;
+  --text-xl-line: 2.2rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 600;
 }
