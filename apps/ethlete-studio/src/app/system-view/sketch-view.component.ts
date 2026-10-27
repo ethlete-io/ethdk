@@ -15,11 +15,12 @@ import {
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, INPUT_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
-import { Observable, catchError, concatMap, finalize, map, of, startWith, switchMap, timer } from 'rxjs';
+import { Observable, catchError, concatMap, finalize, from, map, of, startWith, switchMap, tap, timer } from 'rxjs';
 import {
   ListedPart,
   ListedProduct,
   ListedSketch,
+  MergeNeedsRebaseError,
   MergePreview,
   SketchAddress,
   SketchReport,
@@ -161,14 +162,16 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
         }
         <button
           [disabled]="busy() !== null || locked() || !picked() || note().trim() === ''"
+          [loading]="busy() === 'merge'"
           (click)="merge()"
           et-button
           type="button"
           variant="outline"
           color="surface"
           size="sm"
+          data-merge
         >
-          {{ busy() === 'merge' ? 'Merging…' : 'Merge ' + (picked() ?? '') }}
+          Merge {{ picked() ?? '' }}
         </button>
         <button
           [disabled]="busy() !== null || locked()"
@@ -212,6 +215,39 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
       @if (error(); as message) {
         <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">{{ message }}</p>
+      }
+      @if (refusal(); as refused) {
+        <div class="flex flex-col gap-1.5" data-merge-refusal>
+          <p [etProvideColor]="errorTheme()" class="text-[var(--et-theme-color-primary-solid)]">
+            {{ refused.message }}
+          </p>
+          <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3">
+            <dt class="text-[var(--et-surface-color-subtle-solid)]">Changed in the product</dt>
+            <dd class="font-mono" data-merge-refusal-changed>
+              {{ refused.changed.join(', ') || 'unknown - the sketch records no baseline' }}
+            </dd>
+          </dl>
+          <p class="text-[var(--et-surface-color-subtle-solid)]">
+            The agent brings the variant up to date with the product, then records it with:
+          </p>
+          <div class="flex items-center gap-2">
+            <pre
+              class="m-0 min-w-0 flex-1 overflow-x-auto rounded-md border border-[var(--et-surface-border-solid)] px-3 py-2 font-mono text-[var(--et-surface-color-solid)]"
+              data-rebase-command
+              >{{ refused.rebase }}</pre>
+            <button
+              (click)="copyRebase(refused.rebase)"
+              et-button
+              type="button"
+              variant="outline"
+              color="surface"
+              size="sm"
+              data-copy-rebase
+            >
+              {{ copiedRebase() ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </div>
       }
     </section>
 
@@ -378,6 +414,12 @@ export class SketchViewComponent {
 
   /** Asks to show the product part the sketch targets. */
   public partOpen = output<void>();
+
+  /** Whether a merge of this sketch runs. */
+  public merging = output<boolean>();
+
+  /** The sketch's target once its merge succeeded. */
+  public mergeComplete = output<string>();
   private canvasRef = viewChild.required(DesignCanvasComponent);
 
   protected note = signal('');
@@ -385,6 +427,10 @@ export class SketchViewComponent {
   protected busy = signal<Busy | null>(null);
 
   protected error = signal('');
+
+  protected refusal = signal<MergeNeedsRebaseError | null>(null);
+
+  protected copiedRebase = signal(false);
 
   protected confirmingDiscard = signal(false);
 
@@ -647,14 +693,27 @@ export class SketchViewComponent {
     const note = this.note().trim();
     const address = this.address();
 
-    if (!variant || !note) return;
+    if (!variant || !note || this.busy()) return;
 
+    this.merging.emit(true);
     this.run(
       'merge',
       decideSketch$(address, { kind: 'pick', variant, comment: note }).pipe(
         concatMap(() => mergeSketch$(address, note)),
+        tap(() => this.mergeComplete.emit(address.sketch)),
+        finalize(() => this.merging.emit(false)),
       ),
     );
+  }
+
+  protected copyRebase(command: string) {
+    from(navigator.clipboard.writeText(command))
+      .pipe(
+        tap(() => this.copiedRebase.set(true)),
+        catchError(() => of(null)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected discard() {
@@ -686,11 +745,14 @@ export class SketchViewComponent {
 
     this.busy.set(busy);
     this.error.set('');
+    this.refusal.set(null);
+    this.copiedRebase.set(false);
 
     work$
       .pipe(
         catchError((error: unknown) => {
-          this.error.set(messageOf(error));
+          if (error instanceof MergeNeedsRebaseError) this.refusal.set(error);
+          else this.error.set(messageOf(error));
 
           return of(null);
         }),

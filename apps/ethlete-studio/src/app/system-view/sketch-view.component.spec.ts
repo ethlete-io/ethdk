@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideColorThemesWithTailwind4 } from '@ethlete/core';
 import { ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { THEMES } from '../../themes';
 import { provideCommentStore } from './comment-store';
 import { SketchViewComponent } from './sketch-view.component';
 
@@ -113,5 +115,75 @@ describe('SketchViewComponent merge preview', () => {
     await settle(fixture);
 
     expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'No report for 30 min' });
+  });
+});
+
+describe('SketchViewComponent on a refused merge', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), provideCommentStore(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('shows the reason, the changed parts and the rebase command with a copy button', async () => {
+    const rebase = 'npx et design sketch rebase components/card --product web --by <model id>';
+    const writeText = vi.fn(() => Promise.resolve());
+
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) return json({});
+      if (url.includes('/__design/sketch-merge'))
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              error: 'components/card changed in the product since the sketch on components/card was created',
+              changed: ['components/card', 'fixtures.ts'],
+              rebase,
+            }),
+            { status: 422 },
+          ),
+        );
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const merging: boolean[] = [];
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', SKETCH);
+    fixture.componentInstance.merging.subscribe((value) => merging.push(value));
+    fixture.autoDetectChanges();
+    fixture.componentInstance['note'].set('Calmer.');
+    await settle(fixture);
+
+    const root: HTMLElement = fixture.nativeElement;
+
+    root.querySelector<HTMLButtonElement>('[data-merge]')?.click();
+    await settle(fixture);
+
+    const refusal = root.querySelector('[data-merge-refusal]');
+
+    expect(merging).toEqual([true, false]);
+    expect(refusal?.textContent).toContain('components/card changed in the product');
+    expect(refusal?.querySelector('[data-merge-refusal-changed]')?.textContent?.trim()).toBe(
+      'components/card, fixtures.ts',
+    );
+    expect(refusal?.querySelector('[data-rebase-command]')?.textContent).toBe(rebase);
+
+    refusal?.querySelector<HTMLButtonElement>('[data-copy-rebase]')?.click();
+    await settle(fixture);
+
+    expect(writeText).toHaveBeenCalledWith(rebase);
+    expect(refusal?.querySelector('[data-copy-rebase]')?.textContent?.trim()).toBe('Copied');
   });
 });

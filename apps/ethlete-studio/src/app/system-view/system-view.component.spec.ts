@@ -1,9 +1,11 @@
-import { provideZonelessChangeDetection } from '@angular/core';
+import { WritableSignal, provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ListedComment, ListedPart, ListedProduct } from '../../host/design';
+import { By } from '@angular/platform-browser';
+import { ListedComment, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
 import { CanvasFrame } from '../components/design-canvas/canvas-frame';
 import { Camera } from '../components/design-canvas/canvas-math';
 import { rememberedView } from '../studio-view/remembered';
+import { SketchViewComponent } from './sketch-view.component';
 import { SystemViewComponent } from './system-view.component';
 
 const watchChannels: { onmessage: () => void }[] = [];
@@ -227,5 +229,72 @@ describe('SystemViewComponent on a sketch report change', () => {
     await settle(fixture);
 
     expect(sketchListings).toBe(before + 1);
+  });
+});
+
+describe('SystemViewComponent on a merge', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('EventSource', SilentEventSource);
+    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
+
+  it('marks the sketch "merging" while the merge runs, then selects the target part', async () => {
+    const sketch: ListedSketch = {
+      target: 'elements/rating',
+      status: 'ready',
+      createdAt: '2026-10-27T10:00:00Z',
+      decision: { kind: 'pick', variant: 'b', decidedAt: '2026-10-27T10:00:00Z' },
+      product: 'web',
+      layer: 'elements',
+      name: 'rating',
+      dir: 'rating',
+      variants: ['a', 'b'],
+      problems: [],
+    };
+    let sketches = [sketch];
+    let finishMerge = () => undefined as void;
+
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/sketches')) return json({ sketches, unreadable: [] });
+      if (url.includes('/__design/system')) return json([PRODUCT]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+      if (url.includes('/__design/sketch-decision')) return json({});
+      if (url.includes('/__design/sketch-merge'))
+        return new Promise<Response>((done) => {
+          finishMerge = () => {
+            sketches = [];
+            done(new Response(JSON.stringify({ merged: ['elements/rating'] })));
+          };
+        });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemEntry: 'sketch:elements/rating' });
+    const root: HTMLElement = fixture.nativeElement;
+    const sketchView = fixture.debugElement.query(By.directive(SketchViewComponent)).componentInstance as object;
+
+    expect(fixture.componentInstance['selectedKey']()).toBe('sketch:elements/rating');
+
+    (sketchView as { note: WritableSignal<string> })['note'].set('Calmer.');
+    await settle(fixture);
+    root.querySelector<HTMLButtonElement>('[data-merge]')?.click();
+    await settle(fixture);
+
+    expect(root.querySelector('[data-tree-merging]')?.textContent).toContain('merging');
+
+    finishMerge();
+    await settle(fixture);
+
+    expect(root.querySelector('[data-tree-merging]')).toBeNull();
+    expect(fixture.componentInstance['selectedKey']()).toBe('elements/rating');
+    expect(rememberedView().systemEntry).toBe('elements/rating');
   });
 });

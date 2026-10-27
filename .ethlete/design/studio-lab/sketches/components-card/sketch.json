@@ -5,7 +5,7 @@
   "baseline": {
     "foundations/tokens": "39e21d4fa77461c1",
     "components/button": "35d7f28a9862a6d4",
-    "components/card": "19d902dceb3b18ce",
+    "components/card": "0000000000000000",
     "elements/list-row": "0182c25e208d63d1",
     "pages/library": "db7e213adaa1d82e",
     "fixtures.ts": "cc87e40089c46ba6"

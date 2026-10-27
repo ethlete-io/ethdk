@@ -37,7 +37,8 @@ export type PartBadge =
   | 'question'
   | 'answered'
   | 'in progress'
-  | 'ready';
+  | 'ready'
+  | 'merging';
 
 /** Which parts and sketches hold an open comment, and which of those wait for the user. */
 type CommentMarks = { commented: ReadonlySet<string>; questioned: ReadonlySet<string>; answered: ReadonlySet<string> };
@@ -69,12 +70,15 @@ const badgesOf = (
 
 export const sketchKeyOf = (target: string) => `sketch:${target}`;
 
-const sketchEntryOf = (sketch: ListedSketch, marks: CommentMarks): TreeEntry => ({
+const sketchEntryOf = (
+  sketch: ListedSketch,
+  { marks, merging }: { marks: CommentMarks; merging: boolean },
+): TreeEntry => ({
   key: sketchKeyOf(sketch.target),
   name: sketch.name,
   title: sketch.target,
   badges: [
-    sketch.status,
+    merging ? 'merging' : sketch.status,
     ...commentBadgesOf(sketch.target, marks),
     ...(sketch.problems.some((entry) => entry.problems.length > 0) ? (['error'] as const) : []),
   ],
@@ -161,10 +165,13 @@ export const treeOf = (
     calls = [],
     sketches = [],
     comments = [],
+    merging = null,
   }: {
     calls?: ListedCall[];
     sketches?: ListedSketch[];
     comments?: (CommentPlace & Pick<ListedComment, 'threadState'>)[];
+    /** The target of the sketch whose merge runs. */
+    merging?: string | null;
   } = {},
 ): TreeGroup[] => {
   const sketched = new Set(sketches.map((sketch) => sketch.target));
@@ -184,7 +191,15 @@ export const treeOf = (
   return SYSTEM_GROUPS.flatMap(({ key, label, layers }) => {
     if (key === 'legacy') return legacyGroupsOf(calls);
     if (key === 'sketches')
-      return [{ key, label, entries: sketches.map((sketch) => sketchEntryOf(sketch, sketchMarks)) }];
+      return [
+        {
+          key,
+          label,
+          entries: sketches.map((sketch) =>
+            sketchEntryOf(sketch, { marks: sketchMarks, merging: sketch.target === merging }),
+          ),
+        },
+      ];
 
     return [
       {

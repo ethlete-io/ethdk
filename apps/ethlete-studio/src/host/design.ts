@@ -407,6 +407,29 @@ export type SketchAddress = { port: number; product: string; sketch: string };
 const sketchUrl = ({ path, port, product, sketch, extra = '' }: SketchAddress & { path: string; extra?: string }) =>
   `http://localhost:${port}/__design/${path}?product=${encodeURIComponent(product)}&sketch=${encodeURIComponent(sketch)}${extra}`;
 
+/** A merge refused because the sketch's baseline is stale: the parts that changed in the product, `[]` without a baseline, and the command that records the product again. */
+export class MergeNeedsRebaseError extends Error {
+  public readonly changed: string[];
+  public readonly rebase: string;
+
+  public constructor(options: { message: string; changed: string[]; rebase: string }) {
+    super(options.message);
+    this.changed = options.changed;
+    this.rebase = options.rebase;
+  }
+}
+
+const refusalOf = (body: unknown, status: number) => {
+  const answer = body !== null && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+  const message = typeof answer['error'] === 'string' ? answer['error'] : designReadError(status);
+  const changed = answer['changed'];
+  const rebase = answer['rebase'];
+
+  return Array.isArray(changed) && typeof rebase === 'string'
+    ? new MergeNeedsRebaseError({ message, changed: changed.map(String), rebase })
+    : new Error(message);
+};
+
 /** Reads a design server answer, and fails with the server's own `error` message when it refuses. */
 export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observable<TResult> =>
   fromFetch(url, init).pipe(
@@ -415,12 +438,7 @@ export const designAnswer$ = <TResult>(url: string, init?: RequestInit): Observa
         map((body) => {
           if (response.ok) return body as TResult;
 
-          const error =
-            body !== null && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
-              ? body.error
-              : null;
-
-          throw new Error(error ?? designReadError(response.status));
+          throw refusalOf(body, response.status);
         }),
       ),
     ),
@@ -446,7 +464,7 @@ export const decideSketch$ = (address: SketchAddress, decision: SketchDecisionWr
     map(() => undefined),
   );
 
-/** Merges the picked variant into the product with `note` as the reason, and answers the merged parts. */
+/** Merges the picked variant into the product with `note` as the reason, and answers the merged parts. A stale baseline fails with {@link MergeNeedsRebaseError}. */
 export const mergeSketch$ = (address: SketchAddress, note: string): Observable<string[]> =>
   designAnswer$<{ merged: string[] }>(sketchUrl({ ...address, path: 'sketch-merge' }), postJson({ note })).pipe(
     map(({ merged }) => merged),

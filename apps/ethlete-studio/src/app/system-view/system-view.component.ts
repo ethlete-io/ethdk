@@ -149,6 +149,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   <span [class]="BADGE_ACCENT" [etProvideColor]="errorTheme()">error</span>
                 } @else if (badge === 'question') {
                   <span [class]="BADGE_ACCENT" data-tree-question>question</span>
+                } @else if (badge === 'merging') {
+                  <span [class]="BADGE_ACCENT" data-tree-merging>merging</span>
                 } @else {
                   <span [class]="BADGE">{{ badge }}</span>
                 }
@@ -319,6 +321,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             (cameraChange)="rememberCamera($event)"
             (decide)="reloadSketches()"
             (partOpen)="activate(shown.sketch.target)"
+            (merging)="mergingSketch.set($event ? shown.sketch.target : null)"
+            (mergeComplete)="selectMerged($event)"
           >
             <ng-container [ngTemplateOutlet]="themeBar" />
             <ng-container [ngTemplateOutlet]="commentModeButton" />
@@ -453,6 +457,8 @@ export class SystemViewComponent {
 
   private sketchReloads = signal(0);
 
+  protected mergingSketch = signal<string | null>(null);
+
   private statusChanges = toSignal(
     designStatusChanges$().pipe(
       debounceTime(200),
@@ -514,6 +520,7 @@ export class SystemViewComponent {
       calls: this.calls(),
       sketches: this.sketches(),
       comments: this.commentStore.comments(),
+      merging: this.mergingSketch(),
     }),
   );
 
@@ -868,6 +875,12 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  protected selectMerged(target: string) {
+    this.creating.set(false);
+    this.picked.set(target);
+    rememberView({ systemEntry: target });
   }
 
   protected reloadSketches() {
