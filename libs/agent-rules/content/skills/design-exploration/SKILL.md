@@ -74,7 +74,8 @@ et design product new <name> [--base @ethlete/components|<path>] [--from-project
 
 It writes the `config.json` entry and the empty layer folders. A product on `@ethlete/components`
 takes the SDK as its base, so its parts start from the real components rendered with `ng()`.
-Without a base it gets the presets phone (390x844) and desktop (1440x900). `--from-project` copies
+Without a base it gets the presets phone (390x844) and desktop (1440x900). A product's own `presets`
+replace its base's whole: a desktop-only app lists `desktop` alone and draws no phone state. `--from-project` copies
 `styles`, `head`, `providers` and `themes` from an old project entry. Studio never writes
 `config.json`; the command does.
 
