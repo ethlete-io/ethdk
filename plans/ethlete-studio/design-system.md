@@ -362,7 +362,8 @@ Open points, each with a recommendation:
 - 3f34d1751: Studio remembers the picked checkout across a restart.
 - 4c24ef421: the `studio-lab` product in this repo is the test bed for new Studio features. It has
   no themes, no base, no comments and no ready or merged sketch yet.
-- Open bug: about 400 px of empty space above the sketch frames.
+- d25e8a8b0: the empty space above the sketch frames came from the camera fit centering a short,
+  wide layout. The fit now anchors at the top.
 
 ### Frame size decisions (2026-10-27)
 
@@ -421,6 +422,47 @@ Open points, each with a recommendation:
   not moved it.
 - The sketch view still draws every part at the presets (`sketchFramesOf` keeps the old path).
   Recommendation: switch it to `framesOf` in the sketch view slice, with the preset/width switch.
+
+### Sketch matrix, as built (2026-10-27)
+
+Only the groundwork is built; the matrix itself is not.
+
+- 186b3c80c (core): `/__design/sketches` gives each sketch `targets` (per variant: `states`,
+  `widths`, `error`, read through the Vite loader with the variant overlay) and `report`
+  (`{ message, updatedAt, variant }` or `null`). `variant` is the name after `variant ` in the report
+  message, only when the sketch has it. The Tauri `design_statuses` command could read the report
+  too, but no Studio code calls it.
+- d25e8a8b0 (Studio canvas): the fit anchors at the top, stops at 100 %, leaves 160 px for the row
+  names, and fits again while frames report their size until the user moves the camera (`fitAll()` is
+  public and turns that on again). A cross-origin frame now listens for size messages from the moment
+  the iframe exists: before, the first message came before the load event, so every fitted tile
+  kept 320x600.
+- Verified headlessly (stubbed host, scratch design server on `DE_PORT`): button tiles fit their
+  content, card rows per width, page presets, row names visible.
+
+Remaining steps, in order:
+
+1. `system-tree.ts`: replace `sketchFramesOf` with a matrix builder. Columns `current` (when the part
+   exists) and each variant; rows are the states of the current part, then any state only a variant
+   has (`targets`). Cell size: page presets, else the union of `widths`, else fitted; one picked
+   preset or width for all cells. A column whose variant is `report.variant` while the sketch is in
+   progress gets no frames. `PartAddress` takes `sketch` and `variant` so `partShotUrl` gives variant
+   frames a screenshot too.
+2. Canvas: `CanvasFrame.column`, a `matrix` arrangement with a `columns` input and column heads, and
+   a `layoutMatrix` in `canvas-math.ts` (column x from the widest cell, an empty column 320 px).
+3. Sketch view: the preset/width switch above the canvas (et-buttons), calling `fitAll()` on a switch.
+4. Merge preview: old and new frames of `preview.affected`, the new ones through `sketch` and
+   `variant` on the frame URL.
+5. `studio-lab`: a ready sketch for a new part with different states per variant, for the test bed.
+
+Open points, each with a recommendation:
+
+- The report names its variant only by the words `variant <name>`. Recommendation: say so in the
+  design-exploration skill next to `sketch report`.
+- The sketch list re-reads on a checkout change only, and the report lives in the temp folder.
+  Recommendation: arm `design_status_watch` in Studio and reload the sketches on its signal.
+- The card at 520 px with the long state showed its frame cut at the bottom once. Recommendation:
+  check whether the frame page reports a height after its web fonts load.
 
 ### Slice 6 decisions (2026-10-27)
 
@@ -665,7 +707,8 @@ used (see "Legacy calls").
 Slice 4: the core and the Studio sketch view are done (see "Studio sketch view, as built"). Open,
 in this order: the frame size decisions with the 400 px gap above the sketch frames, then the
 three sketch open points in "Studio sketch view, as built".
-In progress since 2026-10-27: the sketch view matrix, the 400 px gap and the sketch open points.
+In progress since 2026-10-27: the sketch view matrix and the sketch open points (the 400 px gap is
+fixed; see "Sketch matrix, as built" for the remaining steps).
 
 Slice 5: the core is done (see "Slices 4 and 5 core, as built"). The Studio comments are not
 started: a point on a frame posts a `comment`, a list with `comment-done`, and a tree badge.
