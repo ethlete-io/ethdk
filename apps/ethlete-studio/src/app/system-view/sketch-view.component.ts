@@ -308,7 +308,14 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
               </button>
             }
           } @else {
-            <p class="text-[var(--et-surface-color-subtle-solid)]">Comparing now and after the merge…</p>
+            <p class="flex items-center gap-2 text-[var(--et-surface-color-subtle-solid)]">
+              <span
+                class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-[var(--et-theme-color-primary-solid)]"
+                data-merge-compare-rendering
+                title="Rendering"
+              ></span>
+              Comparing now and after the merge…
+            </p>
           }
         }
       </div>
