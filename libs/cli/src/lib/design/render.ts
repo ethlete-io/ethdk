@@ -3,7 +3,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { resolve } from 'path';
 import { Worker } from 'worker_threads';
 import { forceInteractions } from './force-interactions';
-import { DesignConfig } from './paths';
+import { DesignConfig, packageFileOf } from './paths';
 import { FieldSpec } from './render-fields';
 import {
   DEFAULT_RENDER_MODULES,
@@ -59,7 +59,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   };
 
   const start = () => {
-    const started = new Worker(resolve(__dirname, 'render-worker.js'), { workerData });
+    const started = new Worker(packageFileOf(resolve(__dirname, 'render-worker.js')), { workerData });
 
     started.on('message', (response: RenderResponse) => {
       const { id, watched: loaded, ...result } = response;

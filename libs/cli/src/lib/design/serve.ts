@@ -70,6 +70,7 @@ import { SKETCH_FILE } from './system/sketch/sketch';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
 import {
   assetRoot,
+  snapshotPackage,
   callsRootOf,
   configPathOf,
   DESIGN_DIR,
@@ -576,6 +577,8 @@ export const serveDesign = async (options: { target: string }): Promise<number> 
 
     return 1;
   }
+
+  snapshotPackage(target);
 
   const server = await createDesignServer({ target, config, listen: true });
 

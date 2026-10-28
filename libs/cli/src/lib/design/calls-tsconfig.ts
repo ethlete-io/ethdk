@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
-import { assetRoot, callsRootOf, readConfig, workRootOf } from './paths';
+import { installedAssetRoot, callsRootOf, readConfig, workRootOf } from './paths';
 import { typePathsOf } from './render-packages';
 
 export const DRAWING_COMPILER_OPTIONS = {
@@ -24,8 +24,8 @@ export const DRAWING_COMPILER_OPTIONS = {
 export const writeCallsTsconfig = (target: string) => {
   const work = workRootOf(target);
   const path = resolve(work, 'tsconfig.json');
-  const defineCall = resolve(assetRoot(), 'define-call.ts');
-  const inlineCss = resolve(assetRoot(), 'css-inline.d.ts');
+  const defineCall = resolve(installedAssetRoot(), 'define-call.ts');
+  const inlineCss = resolve(installedAssetRoot(), 'css-inline.d.ts');
   const typePaths = typePathsOf({ packages: readConfig(target)?.render?.packages ?? {}, target });
 
   const config = {

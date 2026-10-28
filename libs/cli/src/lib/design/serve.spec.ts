@@ -1,15 +1,16 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DESIGN_DIR, readConfig } from './paths';
+import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
 import { serveDesign } from './serve';
 import { resolveProduct } from './system/resolve-product';
 import { createSketch, markSketchReady, parseTarget, Sketch } from './system/sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system/system-modules';
 
 type ServerOptions = {
+  root: string;
   server: { port: number; strictPort: boolean };
   resolve: { alias: { find: RegExp; replacement: string }[] };
   plugins: {
@@ -83,6 +84,23 @@ describe('serveDesign', () => {
     await new Promise((done) => setTimeout(done, 0));
     expect(exit).toHaveBeenCalledWith(0);
     vi.unstubAllEnvs();
+  });
+
+  it('keeps serving the frame assets it started with when the package is rebuilt', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const probe = `rebuild-probe-${process.pid}.txt`;
+    const installed = resolve(installedAssetRoot(), 'web', probe);
+
+    try {
+      writeFileSync(installed, 'started', 'utf8');
+      expect(await serveDesign({ target: makeTarget({ port: 4999 }) })).toBe(0);
+      writeFileSync(installed, 'rebuilt', 'utf8');
+
+      expect(readFileSync(resolve(created[0]?.root ?? '', probe), 'utf8')).toBe('started');
+    } finally {
+      rmSync(installed, { force: true });
+    }
   });
 
   it('serves the call registry and workspace aliases on the configured port', async () => {
