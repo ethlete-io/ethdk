@@ -1,0 +1,257 @@
+# Ethlete Studio - pain points from the self-test
+
+We design Studio in Studio to find where the tool and the workflow hurt. This list collects each
+pain point that `design-system.md` reports (state on 2026-10-28). `Lnnn` is a line in
+`design-system.md`, where the full report is.
+
+Each entry has:
+
+- **Pain** - what went wrong while we used Studio, the CLI or the workflow.
+- **Where** - the incident that showed it.
+- **Now** - the workaround that we use today.
+- **Fix** - the options for the tool or the workflow.
+
+Status: **open**, **fixed** (fix checked), **unverified** (fix built, not checked), **triage** (a
+round 1 report from L700-L1100). A pass on 2026-10-28 checked and fixed most entries.
+
+Not in this list: the design choices for the Studio pages themselves (for example the zoom
+composition of the Sketches page, L3020). Those choices go to Studio as sketches.
+
+## 1. Studio app (native and WebKit)
+
+### 1.1 Trackpad pinch kills the WebKit content process - open (L2844)
+
+- **Pain:** a pinch on the macOS trackpad crashes the content process, and Studio reloads fully.
+  All view state is lost.
+- **Where:** page exploration of the Sketches page, on Tom's real trackpad.
+- **Now:** do not pinch. Use the zoom chip.
+- **Fix:** the cause is not known. Do these steps in order:
+  1. Get the result of Tom's retest after the full restart (L2872).
+  2. Reproduce on a new, empty WKWebView.
+  3. Compare a pinch over the chrome, over a live iframe, and over an inactive iframe.
+  4. Record the order of the native events.
+  5. Then choose: gesture handling in the canvas / a minimal wry repro for upstream / a native
+     workaround.
+- Do not ship a fix on a guess. Log each crash of the content process, because the automatic
+  reload hides it.
+
+### 1.2 Studio freezes at 100% CPU during frame reloads - fixed, one check open (L2697, L2965, L3076)
+
+- **Pain:** Studio hung two times. Cmd+R and SIGTERM did not help. Only a kill of the WebContent
+  process helped.
+- **Where:** fast reloads of sketch frames while we drew the Sketches page.
+- **Fix done:** `frame.ts` has no top-level await during an iframe removal. A native test with 40
+  replacements passed.
+- **Open:** a 100-cycle run started, but nobody recorded the result. Run it again.
+- **Options not taken:** a bounded log of module-load failures with the active frame; a native
+  menu item that creates the webview again.
+
+## 2. Review on the canvas
+
+### 2.1 Each sketch builds its own camera - unverified (L2595, L2940)
+
+- **Pain:** the Sketches page sketch needed real zoom and pan. The agent wrote a local camera in
+  `canvas-setup.ts`. That camera has fixed column widths and different behavior from the real
+  canvas. Most bugs in rounds c and d came from this copy.
+- **Fix done (`b9ebae71d`):** `canvas-camera.ts` holds the camera for the Studio canvas and the
+  sketch. `canvas-viewport.ts` is the shared element, imported as `ethlete-studio/canvas`. The
+  local camera is deleted.
+- **Open:** the Angular canvas uses the camera module, not the shared element. Nobody checked the
+  System view visually or the wheel zoom on a real trackpad.
+- **Decide (Tom):** which chip both use (`− | 100 % | + | Fit` or `Fit | 100%`), and the 100%
+  composition (frame 64 px from the top-left).
+
+### 2.2 A new sketch adds controls that already exist - unverified (L2562)
+
+- **Pain:** the sketch added a zoom toolbar. The accepted `canvas-frames` chip already does this.
+- **Now:** the sketch reuses the chip.
+- **Fix done:** the shared canvas element (2.1). No check for repeated markup.
+
+### 2.3 Zoom breaks the sketch layout - unverified (L2737, L2748, L2763, L2921)
+
+- **Pain:** at 100% the full drawing was offscreen. At high zoom the variant heads stretched past
+  the viewport. The first fit measured a header that was not stable yet.
+- **Now:** round d anchors the focused frame and clamps the heads. Round e reopened the heads.
+- **Fix done (`b9ebae71d`):** camera targets `all`, `focused` and `visible`. The viewport fits
+  again after the layout is stable. In the app, 100% now anchors a frame at the top-left.
+
+### 2.4 Outlines and pins are clipped - fixed (L2773, L2876)
+
+- **Pain:** the Merge button outline, the frame edges and a comment pin were cut off.
+- **Fix done:** a contour gutter in round e.
+- **Fix done (`48a1c9a79`):** `data-et-skip="CLIPPED"` skips one element. Only `.sk-crop` has it
+  now. The archived variants in `sketches/pages-sketches/*` keep the old page skip.
+- **Option:** include focus rings and painted bounds in the geometry check.
+
+### 2.5 Double-click on a frame did nothing - fixed (L2818)
+
+- **Pain:** pointer capture lost the target of the double-click.
+- **Fix done:** the canvas remembers the frame of the pointerdown.
+
+### 2.6 Note cards overlap the next row - open (L1140)
+
+- **Pain:** between 25% and 100% zoom, note cards reach into the next row of the matrix.
+- **Fix:** reserve note room at the fitted zoom / accept it.
+
+### 2.7 The newest round is dimmed while in progress - fixed (L978)
+
+- **Pain:** the agent cannot judge the newest round in its context.
+- **Fix done:** the dim is a Studio overlay. `et design shot` draws undimmed, and the skill says so.
+
+## 3. Feedback, rounds and merge
+
+### 3.1 A new round resolves the comments too early - unverified (L2648)
+
+- **Pain:** when a feedback round starts, the source comments resolve before the new round exists.
+  Tom cannot see which comments are really done.
+- **Fix done (`3504d8352`):** a round, merge, discard or `inbox done` marks a comment "addressed".
+  Only Tom resolves it in Studio. Old files read as addressed.
+- **Open:** check the badge and the Resolve button in the running app. Decide (Tom) if the pins of
+  addressed comments look different.
+
+### 3.2 Tom withdraws his own comments before a merge - unverified (L1047, L1011)
+
+- **Pain:** open comments block the merge, and the pick does not close them. The agent cannot
+  reply to a resolved comment to say what it changed.
+- **Fix done (`3504d8352`):** comments do not block a merge. The agent can reply to an addressed
+  comment. A reply by Tom opens it again.
+
+### 3.3 Two sources disagree on who merges - fixed (L1041, L1770)
+
+- **Pain:** the inbox and the skill give different steps after a pick.
+- **Now:** Studio writes the decision, and the agent runs `sketch merge`.
+- **Fix done (`3504d8352`):** Studio merges with its Merge button. The inbox and the skill tell
+  the agent not to run `sketch merge`. Pick and Merge are still two clicks.
+
+### 3.4 A merged part changes without a sketch - unverified (L2493, L2497, L763)
+
+- **Pain:** the agent changed an accepted part directly. Tom saw it only later.
+- **Now:** the rule says each change to a merged part is a sketch, with one variant if there is no
+  choice. The skill has the rule.
+- **Fix done (`e554d1297`):** a merge records the folder hash in `<product>/merged.json`. The
+  command `design check` warns, and Studio shows a "changed" badge, when the hash differs and no
+  open sketch holds the part. The next merge of a sketch clears the flag.
+- **Limit:** parts merged before this change have no record until their next merge.
+- **Open:** check the badge in the running app. Decide (Tom) on its look.
+
+### 3.5 Rounds cannot be edited after creation - fixed (L1514, L1520)
+
+- **Pain:** no command changes the title or note of a round. `sketch list` does not show rounds.
+- **Fix done (`987871473`):** `sketch round <sketch> <round> --title --note`. `sketch list` shows
+  the rounds.
+
+## 4. Render checks and shots
+
+### 4.1 The render check fails in the sandbox - fixed (L2586)
+
+- **Pain:** `listen EPERM ::1:5173`. The failure looks like a drawing failure.
+- **Now:** run the check outside the sandbox.
+- **Fix done (`41bc90f74`):** `EPERM` and `EACCES` give a permission error, not a drawing error.
+
+### 4.2 Checks pass, but the design is wrong - fixed (L2560, L2623, L2720)
+
+- **Pain:** the render checks passed on a blank band and on wrong zoom states. Geometry checks
+  cannot judge whitespace or composition.
+- **Now:** the review needs a screenshot at an intermediate zoom (L2921).
+- **Fix done:** `et design shot` (4.6).
+
+### 4.3 A broken shot looks like a normal image - fixed (L912, L814)
+
+- **Pain:** `/__design/shot` returns status 200 with text in a `.png` after a 30 s timeout. A build
+  error shows the Vite overlay as the shot.
+- **Fix done (`2d10626fe`, `41bc90f74`):** zero size gives 422, a timeout gives 504, a Vite
+  overlay gives 422 with the build message. The overlay case has no browser test.
+
+### 4.4 Skip rules and empty states give wrong results - fixed (L1000, L1003)
+
+- **Pain:** `checks.skip` uses the part as the only key, so the last variant wins. The empty
+  `default` state of a scaffold reports ZERO-SIZE, and `sketch report` prints nothing.
+- **Fix done (`48a1c9a79`):** skips are kept per product, sketch and variant. The scaffold draws a
+  label, so the `default` state has a size.
+
+### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
+
+- **Pain:** a cached wrong shot stays until a file changes. A flow edit, and a change to the port
+  or `render.*`, need a server restart.
+- **Fix done (`41bc90f74`):** a flow edit clears the shot and thumbnail caches. A change to
+  `render.*` restarts the worker. Shots use the new port.
+- **Limit:** the Vite server keeps listening on the old port until a restart.
+
+### 4.6 Useful helpers live only in `/private/tmp` - fixed, one gap (L3055)
+
+- **Pain:** the agent wrote scratch scripts for batch shots, zoom-state shots, a sketch audit,
+  painted bounds and interactions. Each session writes them again.
+- **Fix done (`1902a2675`):** `et design shot <part> --states [--variants]` writes one labelled
+  contact sheet. The skill points to it.
+- **Gap:** no zoom states for a page, because only the Studio canvas has a zoom. No CLI for
+  comparison geometry.
+
+### 4.7 Fitted `vh` parts have no true height - known limit (L2264)
+
+- **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
+
+## 5. Drawing parts and pages
+
+### 5.1 Page sketches cannot use Tailwind - unverified (L2797)
+
+- **Pain:** the app uses Tailwind, but the sketches use plain CSS. The design server has a
+  Tailwind 4 pipeline, but `styles.css` uses `source('../')`, so it does not scan the sketch
+  folder.
+- **Fix done (`f27c66d0e`):** `.ethlete/design/studio/styles.css` imports the app styles and
+  registers the folders with `@source`. A spec checks that a utility compiles.
+- **Open:** check a utility in a live sketch frame, and that the app `styles.css` loads one time.
+
+### 5.2 Sketches cannot share code - unverified (L949, L998, L996)
+
+- **Pain:** a variant cannot import a sibling, and a page cannot import a page. The agent copies
+  data between variants.
+- **Fix done (`4927aeac8`):** all three. A sketch `shared/` folder imported as `@shared/...` (a
+  merge copies it into the part), `sketch new --like`, and `embedPage()`.
+- **Open:** nobody ran them on a live design server.
+
+### 5.3 Editor and typecheck gaps - fixed (L833, L1009, L975)
+
+- **Pain:** the editor shows errors on `@design-system` and `@system/*`. `design check` and
+  `sketch check` use different typecheck paths. ESLint skips `libs/cli/design/`.
+- **Fix done (`d761ddd93`, `9b7358d94`):** the server and `design check` write gitignored editor
+  tsconfigs. One typecheck path. ESLint covers `libs/cli/design/`.
+
+### 5.4 CLI usage text is wrong - fixed (L790, L793, L1014)
+
+- **Pain:** usage lines print `yarn et ...`, which fails here. An unknown subcommand gives no
+  error. `sketch variant --round` does not show the notes of the previous round. `sketch report`
+  needs `--product` with one open sketch.
+- **Fix done (`987871473`):** the prefix is `yarn design`. An unknown command exits 2 with the
+  usage. `--round` prints the notes of the previous round.
+
+### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
+
+- **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
+  dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
+- **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+## 6. Agent process
+
+These pains came from how the agent worked, not from the tool. Each one has a rule now.
+
+| Pain                                                          | Rule                                                                                       | Ref   |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----- |
+| The agent said "visually checked" after static fit shots only | Define the check from the design claim first. Report exactly which states and actions ran. | L2720 |
+| The exploration became a second canvas implementation         | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940 |
+| One unchosen idea grew into four screens                      | Draw about three different alternatives next to each other.                                | L3020 |
+| The agent blamed the wrong cause for an alignment comment     | Look at the real render before you name a cause.                                           | L2659 |
+| A synthetic `dblclick` passed, a real double-click failed     | Use real pointer sequences.                                                                | L2818 |
+| The agent extended the sketch while the tool was broken       | Stop the design work while a broken tool is repaired.                                      | L2982 |
+| New controls duplicated accepted controls                     | List the accepted controls before you draw. Name what you reuse.                           | L2579 |
+| Shared elements were extracted too early                      | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607 |
+
+## 7. Open checks
+
+These fixes are built, but nobody checked them in the real Studio.
+
+1. Merge preview, after a restart that rebuilds the CLI (L1464).
+2. The status-watch reload with `et design sketch report` (L1918).
+3. The `stale` footer (L1980).
+4. The merge and rebase UI, headless (L363).
+5. Shot size against live size on Tom's HiDPI window (L1214).
+6. Round d on macOS WebKit, at 800%, and on touch (L2792).
