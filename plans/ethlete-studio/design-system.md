@@ -2421,6 +2421,27 @@ fails with `report()` made a no-op; it calls `watch_statuses` directly, so the c
 flaky, not a regression. Likely cause, not confirmed: its fake tool listens on the fixed ports
 45872-45877, which a parallel `cargo test` from another agent can take.
 
+### Studio design pages, as built (2026-10-28)
+
+The design product `studio` (`.ethlete/design/studio/`, base `sdk`) draws Studio itself. The
+handoff for this work is `studio-wireframes-handoff.md` next to this file.
+
+- `elements/shell-main` is chrome only: rail, floating side panel, canvas paper. A section of the
+  app is a page under `pages/`, never a state of the shell.
+- `elements/part-tree` lists frames, not states. A part drawn in one frame (`button`) is a leaf.
+- `elements/canvas-frames` draws the base button in one frame: rows filled, outline, tonal;
+  columns rest, hover, active, focus-visible, pressed, disabled; every label reads "Save".
+- `pages/system` composes the three.
+- `pages/inbox` (variant a, flat list, merged): newest first, in two groups, the part on the
+  canvas on top and "Andere" below. A bar holds the open count and "Erledigte zeigen". States:
+  `open`, `with-resolved`, `active-only`, `active-clear` (the active part has none, others
+  have some), `all-clear` (an empty state). The canvas shows a pin on each commented cell.
+- Inbox data follows the comment model: a human writes for an AI agent, and the agent answers. The
+  one human-to-human case is a teammate QC pass. Agents are mixed (Claude, Codex, Gemini) and show
+  their provider logo (`pages/inbox/agent-logos.ts`).
+- Next pages, paused by Tom on 2026-10-28: Sketches (variant matrix), Flows, merge compare. Then
+  components, then page states, then the build into the real app.
+
 ## Slices
 
 1. **Core and data model**: workspace, product, base, layers, fixtures, states, presets, and
