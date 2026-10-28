@@ -85,6 +85,18 @@ Skill rules 9a501e071; server snapshot b88ca124a (Tom restarts :4402 to get it);
 `definePart({ checks: { skip: [...] } })`; about 3 s on `studio`; a merge does not run it);
 Studio small-part grid 4dbfb0f4b and tree from frames 4f5bf7811.
 
+## Open sketch at handoff (2026-10-28)
+
+`pages/sketches` (Studio's Sketches page), status ready, waiting for Tom's pick. Round 1 a stacked
+rounds, b round switcher, c matrix (builder pick c). Round 2 "Studio-Farben und Page-Sketches":
+d, e, f from a, b, c, with teal buttons (variants carry the accent mapping of
+`apps/ethlete-studio/src/styles/sdk-token-map.css` in `sketch-data.css`) and a second state
+`page-sketch` (a sketch on `pages/system`, frames scaled down, no "Im Kontext"). Tom's two colour
+comments are resolved by the round; his question on page and shell sketches is answered in its
+thread. After the merge: run `design check --product studio`, prettier on the part files, commit
+the part; then a one-variant sketch on `foundations/tokens` that adds the accent mapping, so pages
+no longer carry it.
+
 ## Open, wait for Tom
 
 - Done: the render check's `OVERFLOW` on `components/select` was a real SDK bug, the picker
