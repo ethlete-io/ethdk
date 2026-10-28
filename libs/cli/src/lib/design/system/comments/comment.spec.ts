@@ -121,7 +121,7 @@ describe('listComments and deleteComment', () => {
     const second = createComment({ product, comment: { ...on, state: 'default' } }) as DesignComment;
     const dir = join(product.dir, 'comments');
 
-    writeFileSync(first.file, JSON.stringify({ ...on, createdAt: '2026-10-28T00:00:00.000Z' }));
+    writeFileSync(first.file, JSON.stringify({ ...on, createdAt: '2999-01-01T00:00:00.000Z' }));
     writeFileSync(join(dir, 'broken.json'), '{');
 
     const listed = listComments({ productDir: product.dir, product: 'acme' });
