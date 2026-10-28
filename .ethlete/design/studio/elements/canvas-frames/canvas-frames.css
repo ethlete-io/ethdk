@@ -9,15 +9,29 @@
     padding-left: var(--st-shell-inset-left, 0px);
   }
 
-  .st-canvas-frames {
-    display: grid;
-    grid-template-columns: auto repeat(var(--st-cols), 130px);
-    align-items: center;
+  .st-canvas-frame {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
     gap: var(--space-2);
   }
 
-  .st-canvas-frame {
-    margin: 0;
+  .st-canvas-title {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+  }
+
+  .st-canvas-grid {
+    display: grid;
+    grid-template-columns: auto repeat(var(--st-cols), 120px);
+    align-items: center;
+    justify-items: center;
+    gap: var(--space-6) var(--space-3);
+    padding: var(--space-7);
+    border-radius: var(--radius-control-md);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .st-canvas-caption {
@@ -28,26 +42,18 @@
   }
 
   .st-canvas-row-caption {
-    text-align: right;
-    padding-right: var(--space-2);
+    justify-self: end;
+    padding-right: var(--space-4);
   }
 
   .st-canvas-row-caption[data-selected] {
     color: var(--accent-text);
   }
 
-  .st-canvas-stage {
-    height: 88px;
+  .st-canvas-cell {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-control-md);
-    background: var(--surface);
-    box-shadow: inset 0 0 0 1px var(--surface-border);
-  }
-
-  .st-canvas-frame[data-selected] .st-canvas-stage {
-    box-shadow: 0 0 0 1px var(--accent);
   }
 
   .st-canvas-zoom {

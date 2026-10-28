@@ -21,9 +21,6 @@ const forced = (markup: string, interaction: (typeof interactions)[number]) => {
   return markup;
 };
 
-const cell = (selected: boolean, stage: string) =>
-  `<div class="st-canvas-frame"${selected ? ' data-selected' : ''}><div class="st-canvas-stage">${stage}</div></div>`;
-
 export const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
@@ -54,21 +51,25 @@ export default definePart<Props>({
     const first = rows[0]?.cells[0]?.drawn;
     return drawing({
       body: html`<div class="st-canvas">
-        <div class="st-canvas-frames" style="--st-cols: ${interactions.length}">
-          <span class="st-canvas-corner">${part}</span>
-          ${interactions.map((interaction) => `<span class="st-canvas-caption">${interaction}</span>`).join('')}
-          ${rows
-            .map(
-              ({ state, cells }) =>
-                `<span class="st-canvas-caption st-canvas-row-caption"${state === selected ? ' data-selected' : ''}>${state}</span>` +
-                cells
-                  .map(({ interaction, drawn }) =>
-                    cell(state === selected && interaction === 'rest', forced(drawn.body, interaction)),
-                  )
-                  .join(''),
-            )
-            .join('')}
-        </div>
+        <figure class="st-canvas-frame">
+          <figcaption class="st-canvas-title">${part}</figcaption>
+          <div class="st-canvas-grid" style="--st-cols: ${interactions.length}">
+            <span></span>
+            ${interactions.map((interaction) => `<span class="st-canvas-caption">${interaction}</span>`).join('')}
+            ${rows
+              .map(
+                ({ state, cells }) =>
+                  `<span class="st-canvas-caption st-canvas-row-caption"${state === selected ? ' data-selected' : ''}>${state}</span>` +
+                  cells
+                    .map(
+                      ({ interaction, drawn }) =>
+                        `<div class="st-canvas-cell">${forced(drawn.body, interaction)}</div>`,
+                    )
+                    .join(''),
+              )
+              .join('')}
+          </div>
+        </figure>
         <div class="st-canvas-zoom"><span>Fit</span><span class="st-canvas-zoom-value">${zoom}</span></div>
       </div>`,
       styles: tokens + first?.styles + styles,
