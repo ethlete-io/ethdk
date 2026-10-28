@@ -3,7 +3,8 @@
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
-    "isolatedModules": true
+    "isolatedModules": true,
+    "lib": ["es2022", "dom"]
   },
   "include": [
     "vite.config.ts",

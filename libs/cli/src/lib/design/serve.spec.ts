@@ -78,7 +78,7 @@ describe('serveDesign', () => {
 
   it('reports a forbidden port as a permission failure, not a drawing failure', async () => {
     const target = makeTarget({ port: 4999 });
-    const { createDesignServer } = await import('./serve');
+    const { createDesignServer } = await import('./serve.js');
     const server = await createDesignServer({ target, config: readConfig(target) ?? {}, listen: true, port: 0 });
 
     listenFailure = Object.assign(new Error('listen EPERM: operation not permitted ::1:5173'), { code: 'EPERM' });
