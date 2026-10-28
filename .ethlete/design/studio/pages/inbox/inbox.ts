@@ -3,7 +3,7 @@ import canvasFrames, { defaultFrames } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import styles from './inbox.css?inline';
 
-type Props = { showResolved: boolean };
+type Props = { showResolved: boolean; openOn: 'all' | 'others' | 'none' };
 
 type Comment = {
   id: string;
@@ -143,10 +143,18 @@ const row = (c: Comment) =>
     </div>
   </div>`;
 
+const groupHead = (title: string, count: number) =>
+  `<div class="ib-group"><span class="ib-group-title">${title}</span><span class="ib-group-count">${count}</span></div>`;
+
 const group = (title: string, comments: Comment[]) =>
+  comments.length === 0 ? '' : groupHead(title, comments.length) + comments.map(row).join('');
+
+const activeGroup = (comments: Comment[]) =>
   comments.length === 0
-    ? ''
-    : `<div class="ib-group"><span class="ib-group-title">${title}</span><span class="ib-group-count">${comments.length}</span></div>${comments.map(row).join('')}`;
+    ? `${groupHead(ACTIVE_PART, 0)}<p class="ib-group-empty">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
+    : group(ACTIVE_PART, comments);
+
+const empty = `<div class="ib-empty">${icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-empty-icon')}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, Claude und dem Team erscheinen hier.</p></div>`;
 
 const pinned = (body: string, comments: Comment[]) => {
   let index = -1;
@@ -158,16 +166,21 @@ const pinned = (body: string, comments: Comment[]) => {
   });
 };
 
-export const open: Props = { showResolved: false };
-export const withResolved: Props = { showResolved: true };
+export const open: Props = { showResolved: false, openOn: 'all' };
+export const withResolved: Props = { showResolved: true, openOn: 'all' };
+export const activeClear: Props = { showResolved: false, openOn: 'others' };
+export const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin.',
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
   madeBy: ['claude-opus-5-5'],
-  states: { open, 'with-resolved': withResolved },
-  render: async ({ showResolved }) => {
-    const visible = COMMENTS.filter((c) => showResolved || !c.resolved);
-    const unresolved = COMMENTS.filter((c) => !c.resolved).length;
+  states: { open, 'with-resolved': withResolved, 'active-clear': activeClear, 'all-clear': allClear },
+  render: async ({ showResolved, openOn }) => {
+    const comments = COMMENTS.filter(
+      (c) => c.resolved || openOn === 'all' || (openOn === 'others' && c.part !== ACTIVE_PART),
+    );
+    const visible = comments.filter((c) => showResolved || !c.resolved);
+    const unresolved = comments.filter((c) => !c.resolved).length;
     const frames = await canvasFrames.render(defaultFrames);
     const side = html`<div class="ib">
       <div class="ib-bar">
@@ -175,10 +188,7 @@ export default definePart<Props>({
         <label class="ib-toggle">Erledigte zeigen ${toggle(showResolved)}</label>
       </div>
       <div class="ib-list">
-        ${group(
-          ACTIVE_PART,
-          visible.filter((c) => c.part === ACTIVE_PART),
-        )}${group(
+        ${visible.length === 0 ? empty : activeGroup(visible.filter((c) => c.part === ACTIVE_PART))}${group(
           'Andere',
           visible.filter((c) => c.part !== ACTIVE_PART),
         )}
