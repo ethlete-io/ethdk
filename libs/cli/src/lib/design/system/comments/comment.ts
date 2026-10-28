@@ -243,6 +243,14 @@ export const staleReasonOf = (options: {
   );
 };
 
+let lastCreatedAt = 0;
+
+const strictlyLaterNow = () => {
+  lastCreatedAt = Math.max(Date.now(), lastCreatedAt + 1);
+
+  return new Date(lastCreatedAt).toISOString();
+};
+
 const newId = () =>
   `${new Date()
     .toISOString()
@@ -259,7 +267,7 @@ export const createComment = (options: {
   const comment: CommentFile = {
     ...rest,
     ...(interaction === undefined || interaction === REST ? {} : { interaction }),
-    createdAt: new Date().toISOString(),
+    createdAt: strictlyLaterNow(),
   };
   const problem = shapeProblemOf({ ...comment, interaction }) ?? staleReasonOf({ product, comment });
 
