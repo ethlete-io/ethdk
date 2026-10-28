@@ -14,6 +14,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * A part that responds to its width lists the container `widths` it is drawn at; without them a
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
+ * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
+ * `CLIPPED` for a part that cuts its content.
  */
 export type Part<P, S extends string = string> = {
   note: string;
@@ -21,8 +23,12 @@ export type Part<P, S extends string = string> = {
   states: Record<S, P>;
   widths?: number[];
   interactions?: Interaction[];
+  checks?: { skip?: RenderCheck[] };
   render: (props: P, options?: RenderOptions) => Drawing | Promise<Drawing>;
 };
+
+/** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
+export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
 
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };

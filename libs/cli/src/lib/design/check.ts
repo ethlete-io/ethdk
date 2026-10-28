@@ -4,7 +4,7 @@ import { writeCallsTsconfig } from './calls-tsconfig';
 import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
-import { checkSystem } from './system/check-system';
+import { checkSystemRendered } from './system/check-system';
 import { resolveProduct } from './system/resolve-product';
 import { typecheckVariant } from './system/sketch/check-sketches';
 import { listSketches, Sketch } from './system/sketch/sketch';
@@ -305,13 +305,13 @@ export const checkDesign = async (options: { target: string; argv: string[]; inv
       return 2;
     }
 
-    return checkSystem({ target, config: readConfig(target) ?? {}, products });
+    return checkSystemRendered({ target, config: readConfig(target) ?? {}, products });
   }
 
   const config = argv.length === 0 ? readConfig(target) : null;
 
   if (config?.products && Object.keys(config.products).length > 0)
-    return checkSystem({ target, config, products: Object.keys(config.products) });
+    return checkSystemRendered({ target, config, products: Object.keys(config.products) });
 
   const slug = flags['--call']?.[0];
   let failure = '';

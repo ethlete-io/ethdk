@@ -5,6 +5,7 @@ import { importProblemsOf } from './imports';
 import { Problem } from './problem';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
 import { componentCopiesOf } from './rules/component-copy';
+import { renderIssueLineOf, renderIssuesOf } from './render-check';
 import { flowProblemsOf } from './rules/flow';
 import { hardCodedColoursOf } from './rules/hard-coded-colour';
 import { unknownInteractionsOf } from './rules/interactions';
@@ -40,11 +41,9 @@ export const ruleProblemsOf = (product: ResolvedProduct): Problem[] => [
 const lineOf = (target: string, problem: Problem) =>
   `${problem.rule} ${relative(target, problem.file)}: ${problem.message}`;
 
-/**
- * Checks the design system of each named product: the rules, then `tsc --noEmit` over its
- * generated tsconfig. Prints one line per problem and `ok` when there is none.
- */
-export const checkSystem = (options: { target: string; config: DesignConfig; products: string[] }) => {
+type CheckOptions = { target: string; config: DesignConfig; products: string[] };
+
+const reportSystem = (options: CheckOptions) => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
@@ -77,7 +76,39 @@ export const checkSystem = (options: { target: string; config: DesignConfig; pro
     if (result.kind === 'failed') report({ rule: 'TYPE-ERROR', file: product.dir, message: `\n${result.output}` });
   }
 
-  if (failed) return 1;
+  return failed ? 1 : 0;
+};
+
+/**
+ * Checks the design system of each named product: the rules, then `tsc --noEmit` over its
+ * generated tsconfig. Prints one line per problem and `ok` when there is none.
+ */
+export const checkSystem = (options: CheckOptions) => {
+  const code = reportSystem(options);
+
+  if (code === 0) console.log('ok');
+
+  return code;
+};
+
+/**
+ * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
+ * render rule a drawing breaks. Without a browser it prints one skip line and passes on the other checks.
+ */
+export const checkSystemRendered = async (options: CheckOptions) => {
+  const code = reportSystem(options);
+
+  if (code !== 0) return code;
+
+  const rendered = await renderIssuesOf({
+    ...options,
+    jobs: options.products.map((product) => ({ product, sketch: null, parts: null })),
+  });
+
+  if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+  else rendered.issues.forEach((issue) => console.error(renderIssueLineOf(issue)));
+
+  if ('issues' in rendered && rendered.issues.length > 0) return 1;
 
   console.log('ok');
 

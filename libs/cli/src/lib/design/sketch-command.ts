@@ -6,6 +6,7 @@ import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf, typecheckVariant } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
+import { renderIssueLineOf, renderIssuesOf } from './system/render-check';
 import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
   addVariant,
@@ -217,7 +218,7 @@ const rebased = (context: Context) =>
     return 0;
   });
 
-const checked = (context: Context) => {
+const checked = async (context: Context) => {
   const { target, config, args } = context;
   const product = oneProductOf({ target, config, asked: args.values['--product'] });
 
@@ -254,6 +255,28 @@ const checked = (context: Context) => {
   }
 
   if (failed) return 1;
+
+  const rendered = await renderIssuesOf({
+    target,
+    config,
+    jobs: chosen.map(({ sketch, variant }) => {
+      const preview = mergePreviewOf({ product, sketch, variant });
+
+      return {
+        product: product.name,
+        sketch: { target: sketch.target, variant },
+        parts: [...preview.changed, ...preview.affected],
+      };
+    }),
+  });
+
+  if ('unavailable' in rendered) console.log(`RENDER CHECK SKIPPED - ${rendered.unavailable}`);
+  else
+    rendered.issues.forEach((issue) =>
+      console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
+    );
+
+  if ('issues' in rendered && rendered.issues.length > 0) return 1;
 
   console.log('ok');
 
@@ -315,7 +338,7 @@ const discarded = (context: Context) =>
     return 0;
   });
 
-const COMMANDS: Record<string, (context: Context) => number> = {
+const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
   variant: varied,
   list: listed,

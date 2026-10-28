@@ -250,7 +250,7 @@ describe('designSketch', () => {
     expect(lines.pop()).toBe('NO SKETCH on components/button in acme');
   });
 
-  it('checks each variant of the open sketches', () => {
+  it('checks each variant of the open sketches', async () => {
     const target = acme();
     const lines = output();
 
@@ -260,9 +260,37 @@ describe('designSketch', () => {
       '.acme-hero { color: #fff; }',
     );
 
-    expect(run(target, 'check', '--product', 'acme')).toBe(1);
+    expect(await run(target, 'check', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe(
       `elements/hero b: HARD-CODED-COLOUR ${DESIGN_DIR}/acme/sketches/elements-hero/b/elements/hero/hero.css: #fff outside foundations - use a foundations token`,
     );
+  }, 120_000);
+
+  it('draws each variant of the open sketches and reports what breaks a render rule', async (context) => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'elements/hero', '--variants', 'a,b', '--product', 'acme');
+    writeFileSync(
+      join(target, DESIGN_DIR, 'acme/sketches/elements-hero/b/elements/hero/hero.ts'),
+      `import { definePart, drawing, html } from '@design-system';
+
+export default definePart({
+  note: 'A hero.',
+  states: { default: {} },
+  render: () => drawing({ body: html\`<button style="width: 60px">Save the draft now</button>\`, styles: '' }),
+});
+`,
+    );
+
+    const code = await run(target, 'check', '--product', 'acme');
+
+    if (lines.some((line) => line.startsWith('RENDER CHECK SKIPPED'))) return context.skip();
+
+    expect(code).toBe(1);
+    expect(lines).toContain(
+      'elements/hero b: WRAP acme elements/hero default at fitted: button[data-et-part=elements/hero] - "Save the draft now" breaks onto 4 lines',
+    );
+    expect(lines.filter((line) => line.startsWith('elements/hero a:'))).toEqual([]);
   }, 120_000);
 });
