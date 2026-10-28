@@ -907,6 +907,12 @@ step. Each finding names what happened and the fix it needs.
     and applies it the way the shot's frame does. The base button's `pressed` swaps the fill
     (filled looks outline, outline and tonal look filled): that is the toggle look of the mock,
     to settle in the components phase.
+  - Tom on the 3x6 grid of separate frames: "sieht nett aus aber da geht noch was. wir müssen bei
+    so einzel components von den frames wegkommen. es kann ruhig 1 frame sein in dem alle sind".
+    One frame per state x interaction cell is noise for a small component. The design drawing now
+    puts all 18 buttons in one frame. Prevent: Studio's own part matrix does the same for small
+    parts: one frame per part (or per state) with the interactions laid out inside it, captions as
+    a header row and a first column; separate frames only for parts that fill a page width.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
