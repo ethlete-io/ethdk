@@ -992,6 +992,17 @@ step. Each finding names what happened and the fix it needs.
     agent writes it again. Prevent: a stub helper in the repo, next to the Studio e2e setup.
   - tsc on `tsconfig.app.json` does not check Angular templates; only the dev server caught a
     template type error. `nx serve` beside Tom's serve needs `NX_WORKSPACE_DATA_DIRECTORY`.
+- Sketches page round (`pages/sketches`, a stacked rounds, b round switcher, c matrix), friction:
+  - `@system/...` imports from a helper file in a part folder fail at render ("Failed to
+    resolve") while tsc accepts them. Prevent: resolve `@system` for every file in a part folder.
+  - A page cannot import a page (UPWARD-DEPENDENCY), so "in context" rebuilds `pages/system` from
+    its elements and can drift. Prevent: a helper that embeds a page.
+  - Bug: the render check keys `checks.skip` by part only (`render-check.ts` ~260), so the last
+    loaded variant wins. Prevent: key it by product, sketch and variant.
+  - Sample data and agent logos are copied into each variant. Prevent: a per-sketch shared file.
+  - The scaffold's empty `default` state reports ZERO-SIZE, and `sketch report` prints nothing.
+  - The base SDK button draws in SDK blue inside the Studio chrome, so the pick buttons look off
+    the Studio palette.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
