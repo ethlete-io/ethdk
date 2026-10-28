@@ -20,7 +20,7 @@ import { BUTTON_IMPORTS } from '@ethlete/components';
 import { dragGestureFrom, signalElementDimensions } from '@ethlete/core';
 import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
-import { CanvasFrame } from './canvas-frame';
+import { CanvasFrame, placeableFramesOf } from './canvas-frame';
 import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
@@ -217,6 +217,9 @@ export class DesignCanvasComponent {
   /** By frame id, the height of the note column below it at zoom 1. */
   private noteColumnHeights = signal<Record<string, number>>({}, { equal: sameTops });
 
+  /** By grid frame id, the box of each of its cells from the frame's top left corner. */
+  private cellRects = signal<Record<string, Record<string, Rect>>>({});
+
   private layout = computed(() => {
     const measured = this.measured();
     const frames = this.frames();
@@ -411,8 +414,27 @@ export class DesignCanvasComponent {
     }));
   });
 
+  /** The placed frames that take comments: each measured cell of a grid in place of its frame, owned by it. */
+  private targets = computed(() => {
+    const cellRects = this.cellRects();
+
+    return this.layout().frames.flatMap((placed) => {
+      if (!placed.frame.grid) return [{ ...placed, owner: placed.frame.id }];
+
+      const rects = cellRects[placed.frame.id] ?? {};
+
+      return placeableFramesOf([placed.frame]).flatMap((frame) => {
+        const rect = rects[frame.id];
+
+        return rect ? [{ ...rect, x: placed.x + rect.x, y: placed.y + rect.y, frame, owner: placed.frame.id }] : [];
+      });
+    });
+  });
+
+  private framesById = computed(() => new Map(this.targets().map((placed) => [placed.frame.id, placed])));
+
   protected placedPins = computed(() => {
-    const byId = new Map(this.layout().frames.map((placed) => [placed.frame.id, placed]));
+    const byId = this.framesById();
     const openId = this.openPinId();
 
     return this.pins().flatMap((pin) => {
@@ -432,7 +454,7 @@ export class DesignCanvasComponent {
   });
 
   protected placedOutlines = computed(() => {
-    const byId = new Map(this.layout().frames.map((placed) => [placed.frame.id, placed]));
+    const byId = this.framesById();
 
     return this.outlines().flatMap((outline) => {
       const frame = byId.get(outline.frameId);
@@ -440,8 +462,6 @@ export class DesignCanvasComponent {
       return frame ? [{ ...outline, x: frame.x + outline.x, y: frame.y + outline.y }] : [];
     });
   });
-
-  private framesById = computed(() => new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])));
 
   protected placedNotes = computed(() =>
     placeNotes(this.notes(), { frames: this.framesById(), bounds: boundingRect(this.layout().frames) }),
@@ -461,13 +481,13 @@ export class DesignCanvasComponent {
 
     if (draft && 'at' in draft) return draft.at;
 
-    const frame = draft && this.layout().frames.find((placed) => placed.frame.id === draft.frameId);
+    const frame = draft && this.framesById().get(draft.frameId);
 
     return frame && draft ? { x: frame.x + (draft.point?.x ?? frame.width), y: frame.y + (draft.point?.y ?? 0) } : null;
   });
 
   protected pointTargets = computed(() =>
-    this.pointing() ? this.layout().frames.filter((placed) => placed.frame.place) : [],
+    this.pointing() ? this.targets().filter((placed) => placed.frame.place) : [],
   );
 
   protected worldTransform = computed(() => {
@@ -651,11 +671,11 @@ export class DesignCanvasComponent {
 
   /** Selects a frame and moves the camera to it. */
   public focusFrame(id: string) {
-    const placed = this.layout().frames.find((candidate) => candidate.frame.id === id);
+    const placed = this.framesById().get(id);
 
     if (!placed) return;
 
-    this.selectedId.set(id);
+    this.selectedId.set(placed.owner);
 
     const camera = focusRect({ rect: placed, camera: this.camera(), viewport: this.viewport(), padding: FIT_PADDING });
 
@@ -689,6 +709,10 @@ export class DesignCanvasComponent {
 
   protected storeWidth(id: string, width: number) {
     this.storeMeasure(id, { width });
+  }
+
+  protected storeCells(id: string, rects: Record<string, Rect>) {
+    this.cellRects.update((all) => ({ ...all, [id]: rects }));
   }
 
   protected startPan(event: PointerEvent) {

@@ -156,11 +156,13 @@ describe('SystemViewComponent on a reload', () => {
     expect(fixture.componentInstance['restoredCamera']()).toBeNull();
   });
 
-  it('counts no comment of another interaction in the part table, where each interaction has its own frame', async () => {
+  it('draws a small part in one grid frame whose cells take comments in their own interaction', async () => {
     const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
     const frames: CanvasFrame[] = fixture.componentInstance['notedFrames']();
+    const placeable: CanvasFrame[] = fixture.componentInstance['placeableFrames']();
 
-    expect(frames.map((frame) => [frame.place?.interaction ?? 'rest', frame.note])).toEqual([
+    expect(frames.map((frame) => [frame.id, frame.grid?.columns])).toEqual([['elements/rating', ['rest', 'hover']]]);
+    expect(placeable.map((frame) => [frame.place?.interaction ?? 'rest', frame.note])).toEqual([
       ['rest', undefined],
       ['hover', undefined],
     ]);

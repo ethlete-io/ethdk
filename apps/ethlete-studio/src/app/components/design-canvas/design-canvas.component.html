@@ -181,6 +181,7 @@
       (widthChange)="storeWidth(placed.frame.id, $event)"
       (escapeKeydown)="leaveActiveFrame()"
       (captionClick)="pickCaption(placed.frame, $event)"
+      (cellsChange)="storeCells(placed.frame.id, $event)"
     />
   }
 

@@ -1,8 +1,6 @@
 import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/design';
+import { placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import {
-  arrangementOf,
-  partColumnsOf,
-  partSectionsOf,
   usingPagesOf,
   callFramesOf,
   canPick,
@@ -10,6 +8,7 @@ import {
   isGroupOpen,
   isSectionOpen,
   framesOf,
+  isSmallPart,
   pickedVariantOf,
   mergePreviewOf,
   PENDING_LABEL,
@@ -211,7 +210,7 @@ describe('framesOf', () => {
     const page = part({ layer: 'pages', name: 'home' });
     const frames = framesOf({ port: 4402, product: product(), part: page, epoch: 2, surface: 'dark', revision: 3 });
 
-    expect(arrangementOf(page)).toBe('sheet');
+    expect(isSmallPart(page)).toBe(false);
     expect(frames.map((frame) => [frame.row, frame.label, frame.width, frame.height])).toEqual([
       ['default', 'default · phone', 390, 844],
       ['default', 'default · desktop', 1280, undefined],
@@ -227,48 +226,51 @@ describe('framesOf', () => {
     expect(frames.every((frame) => frame.error === undefined)).toBe(true);
   });
 
-  it('draws a small part as a table with one row per state and only the rest column, fitted to its content', () => {
+  it('draws a small part in one frame: a grid with a row per state and a column per interaction', () => {
     const button = part();
     const frames = framesOf({ port: 4402, product: product(), part: button, epoch: 2, revision: 3 });
 
-    expect(arrangementOf(button)).toBe('matrix');
-    expect(partColumnsOf(button)).toEqual([{ key: 'rest', label: 'rest' }]);
-    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.width, frame.height])).toEqual([
-      ['default', 'default', 'rest', undefined, undefined],
-      ['disabled', 'disabled', 'rest', undefined, undefined],
+    expect(isSmallPart(button)).toBe(true);
+    expect(frames.map((frame) => [frame.id, frame.label, frame.row, frame.width, frame.place])).toEqual([
+      ['components/button', 'components/button', undefined, undefined, undefined],
     ]);
-    expect(frames[0]?.src).toBe(
+    expect(frames[0]?.grid?.columns).toEqual(['rest']);
+    expect(frames[0]?.grid?.rows).toEqual(['default', 'disabled']);
+    expect(frames[0]?.grid?.cells[0]?.src).toBe(
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2&revision=3',
     );
-    expect(frames[0]?.screenshot).toBe(
+    expect(frames[0]?.grid?.cells[0]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&epoch=2&revision=3',
     );
   });
 
-  it('adds a column per declared interaction, forced through the address, each taking comments in its interaction', () => {
-    const button = part({ states: ['solid'], interactions: ['hover', 'disabled'] });
-    const frames = framesOf({ port: 4402, product: product(), part: button });
+  it('forces each interaction on its grid cell, and each cell takes comments in its state and interaction', () => {
+    const button = part({ states: ['solid', 'ghost'], interactions: ['hover', 'disabled'] });
+    const [frame, ...rest] = framesOf({ port: 4402, product: product(), part: button });
+    const cells = frame?.grid?.cells ?? [];
 
-    expect(partColumnsOf(button).map((column) => column.key)).toEqual(['rest', 'hover', 'disabled']);
-    expect(frames.map((frame) => [frame.id, frame.row, frame.column, frame.place])).toEqual([
-      ['solid', 'solid', 'rest', { part: 'components/button', state: 'solid', size: 'fitted' }],
-      [
-        'solid hover',
-        'solid',
-        'hover',
-        { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'hover' },
-      ],
-      [
-        'solid disabled',
-        'solid',
-        'disabled',
-        { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'disabled' },
-      ],
+    expect(rest).toEqual([]);
+    expect(frame?.grid?.columns).toEqual(['rest', 'hover', 'disabled']);
+    expect(cells.map((cell) => [cell.id, cell.row, cell.column])).toEqual([
+      ['solid', 'solid', 'rest'],
+      ['solid hover', 'solid', 'hover'],
+      ['solid disabled', 'solid', 'disabled'],
+      ['ghost', 'ghost', 'rest'],
+      ['ghost hover', 'ghost', 'hover'],
+      ['ghost disabled', 'ghost', 'disabled'],
     ]);
-    expect(frames[1]?.src).toBe(
+    expect(placeableFramesOf(frame ? [frame] : []).map((placed) => [placed.id, placed.place])).toEqual([
+      ['solid', { part: 'components/button', state: 'solid', size: 'fitted' }],
+      ['solid hover', { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'hover' }],
+      ['solid disabled', { part: 'components/button', state: 'solid', size: 'fitted', interaction: 'disabled' }],
+      ['ghost', { part: 'components/button', state: 'ghost', size: 'fitted' }],
+      ['ghost hover', { part: 'components/button', state: 'ghost', size: 'fitted', interaction: 'hover' }],
+      ['ghost disabled', { part: 'components/button', state: 'ghost', size: 'fitted', interaction: 'disabled' }],
+    ]);
+    expect(cells[1]?.src).toBe(
       'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fit',
     );
-    expect(frames[2]?.screenshot).toBe(
+    expect(cells[2]?.screenshot).toBe(
       'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled',
     );
   });
@@ -287,7 +289,7 @@ describe('framesOf', () => {
     const card = part({ layer: 'elements', name: 'card', widths: [280, 480] });
     const frames = framesOf({ port: 4402, product: product(), part: card, revision: 3 });
 
-    expect(arrangementOf(card)).toBe('sheet');
+    expect(isSmallPart(card)).toBe(false);
     expect(frames.map((frame) => [frame.row, frame.width, frame.height])).toEqual([
       ['default', 280, undefined],
       ['default', 480, undefined],
@@ -383,16 +385,10 @@ describe('pages that use a part', () => {
         id: 'used in pages/system',
         width: 390,
         height: 844,
-        column: 'used in pages/system',
         place: { part: 'pages/system', state: 'open', size: 'phone' },
       },
     ]);
     expect(used[0]?.screenshot).toContain('part=pages%2Fsystem');
-    expect(partSectionsOf([system])).toEqual(['part', 'used in']);
-    expect(partColumnsOf(tree, [system]).map((column) => [column.key, column.section])).toEqual([
-      ['rest', 'part'],
-      ['used in pages/system', 'used in'],
-    ]);
   });
 
   it('adds an in context band to an element sketch: each page with each variant swapped in, commentable', () => {

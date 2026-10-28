@@ -252,30 +252,7 @@ export const usingPagesOf = (product: ListedProduct, part: ListedPart | null): L
     use.product === product.name ? product.parts.filter((page) => partKeyOf(page) === use.part) : [],
   );
 
-const PART_SECTION = 'part';
 const USED_IN = 'used in';
-const usedInColumnKeyOf = (page: string) => `${USED_IN} ${page}`;
-
-/**
- * The columns of a fitted part's table: rest, then each interaction the part declares. With `pages`, the
- * table is one band and the pages that use the part a second band below it, one column per page.
- */
-export const partColumnsOf = (
-  part: ListedPart,
-  pages: ListedPart[] = [],
-): { key: string; label: string; section?: string }[] => {
-  const own = interactionsOf(part).map((key) => ({ key, label: key }));
-
-  if (pages.length === 0) return own;
-
-  return [
-    ...own.map((column) => ({ ...column, section: PART_SECTION })),
-    ...pages.map((page) => ({ key: usedInColumnKeyOf(partKeyOf(page)), label: partKeyOf(page), section: USED_IN })),
-  ];
-};
-
-/** The canvas bands of a fitted part's table: none for one band, else the table and the pages that use it. */
-export const partSectionsOf = (pages: ListedPart[]) => (pages.length === 0 ? [] : [PART_SECTION, USED_IN]);
 
 /** The first state of a page at the product's first preset, or fitted when the product has none, to show a part inside it. */
 const pageFrameOf = (options: {
@@ -328,18 +305,14 @@ export const FITTED = 'fitted';
 
 type Cell = { state: string | undefined; interaction: string };
 
-export type FrameArrangement = 'sheet' | 'matrix';
-
-/**
- * A page and a part with `widths` show a row per state with a frame per size and interaction; any other
- * part shows a table with a row per state and a column per interaction.
- */
-export const arrangementOf = (part: ListedPart): FrameArrangement =>
-  part.layer === 'pages' || (part.widths?.length ?? 0) > 0 ? 'sheet' : 'matrix';
+/** A part that is no page and declares no `widths` fits its content and draws every state in one frame. */
+export const isSmallPart = (part: Pick<ListedPart, 'layer' | 'widths'>) =>
+  part.layer !== 'pages' && (part.widths?.length ?? 0) === 0;
 
 /**
  * Every state of a part in rest and in each interaction it declares: a page at every preset of the
- * product, a part with `widths` at each width, any other part fitted to its content. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
+ * product, a part with `widths` at each width, any other part in one frame of fitted cells, a row per state
+ * and a column per interaction. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
  * one that does not load lists no states.
  */
 const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
@@ -398,25 +371,39 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
     );
   }
 
-  return cells.map((cell) => ({
-    id: idOf(cell),
-    src: partFrameUrl({ ...addressOf(cell), fit: true }),
-    label: cell.state === undefined ? key : '',
-    row: cell.state,
-    column: cell.interaction,
-    screenshot: partShotUrl({ ...addressOf(cell), revision }),
-    error,
-    ...placeOf(cell, FITTED),
-  }));
+  const [first] = cells;
+
+  if (!first) return [];
+  if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: key, error }];
+
+  return [
+    {
+      id: key,
+      src: '',
+      label: key,
+      grid: {
+        columns: interactions,
+        rows: states.filter((state) => state !== undefined),
+        cells: cells.map((cell) => ({
+          id: idOf(cell),
+          row: cell.state ?? '',
+          column: cell.interaction,
+          label: `${cell.state} · ${cell.interaction}`,
+          src: partFrameUrl({ ...addressOf(cell), fit: true }),
+          screenshot: partShotUrl({ ...addressOf(cell), revision }),
+          ...placeOf(cell, FITTED),
+        })),
+      },
+    },
+  ];
 };
 
 /**
  * Every state of a part as `ownFramesOf` draws it, then a `used in` row with the first state of each page
- * of the product that uses the part; in a fitted part's table, that row is a band of its own.
+ * of the product that uses the part.
  */
 export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const pages = usingPagesOf(source.product, source.part);
-  const matrix = arrangementOf(source.part) === 'matrix';
 
   return [
     ...ownFramesOf(source),
@@ -431,7 +418,6 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
               id: `${USED_IN} ${key}`,
               row: USED_IN,
               rowLabel: USED_IN,
-              ...(matrix ? { column: usedInColumnKeyOf(key) } : {}),
             },
           ]
         : [];

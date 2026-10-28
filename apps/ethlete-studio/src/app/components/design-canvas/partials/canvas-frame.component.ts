@@ -33,7 +33,9 @@ import {
   timer,
 } from 'rxjs';
 import { CanvasFrame, FrameMessage, MeasuredSide, followedSizes, frameMessageOf } from '../canvas-frame';
+import { Rect, Size } from '../canvas-math';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
+import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
 
 const UNREPORTED_PAINT_MS = 1000;
 
@@ -129,6 +131,13 @@ const painted$ = (iframe: HTMLIFrameElement) => {
       >
         {{ frame().error }}
       </div>
+    } @else if (frame().grid; as grid) {
+      <ethlete-canvas-frame-grid
+        [grid]="grid"
+        [live]="live()"
+        (sizeChange)="readGridSize($event)"
+        (cellsChange)="cellsChange.emit($event)"
+      />
     } @else {
       @if (!painted()) {
         @if (frame().screenshot) {
@@ -181,7 +190,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     }
   `,
   encapsulation: ViewEncapsulation.None,
-  imports: [NgTemplateOutlet, ProvideColorDirective],
+  imports: [NgTemplateOutlet, ProvideColorDirective, CanvasFrameGridComponent],
   host: {
     class:
       'group/frame absolute block bg-surface data-[empty]:bg-transparent data-[unsized]:pointer-events-none data-[unsized]:opacity-0',
@@ -211,11 +220,14 @@ export class CanvasFrameComponent {
   public widthChange = output<number>();
   public escapeKeydown = output();
   public captionClick = output<Event>();
+  public cellsChange = output<Record<string, Rect>>();
 
   private iframes = viewChildren<ElementRef<HTMLIFrameElement>>('iframe');
 
   protected bordered = computed(
-    () => this.selected() || (this.frame().empty === undefined && this.frame().width !== undefined),
+    () =>
+      this.selected() ||
+      (this.frame().empty === undefined && (this.frame().width !== undefined || this.frame().grid !== undefined)),
   );
   private drawn = computed(() => this.live() && this.frame().empty === undefined && !this.frame().error);
 
@@ -248,7 +260,7 @@ export class CanvasFrameComponent {
     () => {
       const frame = this.frame();
 
-      if (frame.empty !== undefined || frame.error) return null;
+      if (frame.empty !== undefined || frame.error || frame.grid) return null;
       if (this.live()) return { kind: 'page', src: frame.src };
 
       return frame.screenshot ? { kind: 'shot', src: frame.screenshot } : null;
@@ -323,6 +335,11 @@ export class CanvasFrameComponent {
 
     if (this.frame().width === undefined) this.widthChange.emit(image.naturalWidth);
     if (this.frame().height === undefined) this.heightChange.emit(image.naturalHeight);
+  }
+
+  protected readGridSize({ width, height }: Size) {
+    this.widthChange.emit(width);
+    this.heightChange.emit(height);
   }
 
   protected settleScreenshot(event: Event) {

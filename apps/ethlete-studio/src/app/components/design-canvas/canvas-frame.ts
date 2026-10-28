@@ -38,7 +38,36 @@ export type CanvasFrame = {
   empty?: string;
   /** Where a `flow` canvas puts the frame's top-left corner instead of laying it out. */
   at?: { x: number; y: number };
+  /** Draws a table of fitted cells inside the frame instead of `src`; each cell takes comments of its own. */
+  grid?: FrameGrid;
 };
+
+/** One fitted page in a frame's grid, at a row and a column of it. */
+export type FrameCell = {
+  id: string;
+  row: string;
+  column: string;
+  label: string;
+  src: string;
+  screenshot?: string;
+  place?: FramePlace;
+};
+
+export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[] };
+
+/** The frames that take comments: each cell of a grid in place of its frame. */
+export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>
+  frames.flatMap((frame) =>
+    frame.grid
+      ? frame.grid.cells.map(({ id, label, src, screenshot, place }) => ({
+          id,
+          label,
+          src,
+          ...(screenshot ? { screenshot } : {}),
+          ...(place ? { place } : {}),
+        }))
+      : [frame],
+  );
 
 /** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */
 export type FrameMessage =

@@ -27,7 +27,7 @@ import {
   listedSystem$,
   transferCall$,
 } from '../../host/design';
-import { CanvasFrame } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, placeableFramesOf } from '../components/design-canvas/canvas-frame';
 import { FramePoint } from '../components/design-canvas/canvas-pin';
 import { DesignCanvasComponent } from '../components/design-canvas/design-canvas.component';
 import { StudioMarkComponent } from '../components/studio-mark.component';
@@ -47,14 +47,10 @@ import {
   TreeEntry,
   TreeGroup,
   TreeSection,
-  arrangementOf,
   authorsLabelOf,
   callFramesOf,
   callKeyOf,
   framesOf,
-  partColumnsOf,
-  partSectionsOf,
-  usingPagesOf,
   holdersOf,
   isGroupOpen,
   isSectionOpen,
@@ -427,9 +423,6 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
           <ethlete-design-canvas
             #partCanvas
             [frames]="notedFrames()"
-            [arrangement]="arrangement()"
-            [columns]="partColumns()"
-            [sections]="partSections()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             [pins]="partPins()"
@@ -440,7 +433,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [notes]="notesShown() ? partNotes() : []"
             [noteTemplate]="noteBody"
             (cameraChange)="rememberCamera($event)"
-            (pointPick)="noteStore.active() ? startNote($event) : startComment(frames(), $event)"
+            (pointPick)="noteStore.active() ? startNote($event) : startComment(placeableFrames(), $event)"
             class="min-h-0"
           >
             @if (noteStore.draft()) {
@@ -874,28 +867,7 @@ export class SystemViewComponent {
     return key ? (this.cameras()[key] ?? null) : null;
   });
 
-  protected arrangement = computed(() => {
-    const part = this.part();
-
-    return part ? arrangementOf(part.listed) : 'sheet';
-  });
-
-  private usingPages = computed(() => {
-    const product = this.product();
-    const part = this.part();
-
-    return product && part && arrangementOf(part.listed) === 'matrix' ? usingPagesOf(product, part.listed) : [];
-  });
-
-  protected partColumns = computed(() => {
-    const part = this.part();
-
-    return part ? partColumnsOf(part.listed, this.usingPages()) : [];
-  });
-
-  protected partSections = computed(() => partSectionsOf(this.usingPages()));
-
-  protected frames = computed(() => {
+  public frames = computed(() => {
     const port = this.port();
     const product = this.product();
     const part = this.part();
@@ -949,8 +921,9 @@ export class SystemViewComponent {
     ]);
   });
 
-  protected partPins = computed(() => pinsOf(this.frames(), this.commentStore.comments()));
-  protected partNotes = computed(() => partNotesOf(this.frames(), this.noteStore.notes()));
+  protected placeableFrames = computed(() => placeableFramesOf(this.frames()));
+  protected partPins = computed(() => pinsOf(this.placeableFrames(), this.commentStore.comments()));
+  protected partNotes = computed(() => partNotesOf(this.placeableFrames(), this.noteStore.notes()));
   protected notedFrames = computed(() =>
     withOtherSizeNotes(this.frames(), {
       comments: this.commentStore.comments(),
@@ -1001,7 +974,7 @@ export class SystemViewComponent {
   }
 
   protected startNote(pick: FramePoint) {
-    const draft = commentDraftOf(this.frames(), pick);
+    const draft = commentDraftOf(this.placeableFrames(), pick);
 
     if (draft) this.noteStore.start(draft);
   }
@@ -1157,7 +1130,7 @@ export class SystemViewComponent {
     if (sketchView) return sketchView.jumpTo(comment);
     if (!canvas) return;
 
-    const frame = otherSizeFrameOf(this.frames(), comment);
+    const frame = otherSizeFrameOf(this.placeableFrames(), comment);
 
     if (this.partPins().some((pin) => pin.id === comment.id)) canvas.openPin(comment.id);
     else if (frame) canvas.focusFrame(frame);
