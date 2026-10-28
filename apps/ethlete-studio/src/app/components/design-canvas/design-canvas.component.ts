@@ -22,6 +22,7 @@ import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame, placeableFramesOf } from './canvas-frame';
 import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
+import { CameraScene, CameraTarget, cameraAfterWheel, cameraFor, shortcutTarget } from './canvas-camera';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
@@ -29,7 +30,6 @@ import {
   Rect,
   Size,
   boundingRect,
-  fitRect,
   focusRect,
   layoutGrid,
   layoutMatrix,
@@ -39,7 +39,6 @@ import {
   rectsIntersect,
   screenToWorld,
   visibleWorldRect,
-  wheelZoomFactor,
   zoomAtPoint,
 } from './canvas-math';
 import { CanvasLine, flowCurveOf, flowLabelRoomOf, layoutFlow } from './flow-layout';
@@ -727,20 +726,7 @@ export class DesignCanvasComponent {
 
   protected moveCameraByWheel(event: WheelEvent) {
     event.preventDefault();
-
-    const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : 1;
-    const deltaX = event.deltaX * scale;
-    const deltaY = event.deltaY * scale;
-
-    if (event.ctrlKey || event.metaKey) {
-      const zoom = this.camera().zoom * wheelZoomFactor(deltaY);
-
-      this.moveCamera(zoomAtPoint({ camera: this.camera(), point: this.pointerPosition(event), zoom }));
-    } else if (event.shiftKey) {
-      this.moveCamera(panCamera(this.camera(), { x: -(deltaX || deltaY), y: 0 }));
-    } else {
-      this.moveCamera(panCamera(this.camera(), { x: -deltaX, y: -deltaY }));
-    }
+    this.moveCamera(cameraAfterWheel({ camera: this.camera(), wheel: event, point: this.pointerPosition(event) }));
   }
 
   protected handleShortcut(event: KeyboardEvent) {
@@ -761,19 +747,12 @@ export class DesignCanvasComponent {
       return;
     }
 
-    if (!event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+    const target = shortcutTarget(event);
 
-    const shortcuts: Record<string, () => void> = {
-      Digit1: () => this.fitAll(),
-      Digit2: () => this.fitSelection(),
-      Digit0: () => this.zoomTo(1),
-    };
-    const shortcut = shortcuts[event.code];
-
-    if (!shortcut) return;
+    if (!target) return;
 
     event.preventDefault();
-    shortcut();
+    this.show(target);
   }
 
   protected releaseSpace(event: KeyboardEvent) {
@@ -790,12 +769,23 @@ export class DesignCanvasComponent {
   }
 
   public fitSelection() {
-    const selected = this.placedFrames().find((placed) => placed.selected);
-
-    if (selected) this.moveCamera(fitRect({ rect: selected, viewport: this.viewport(), padding: FIT_PADDING }), true);
+    this.show({ kind: 'focused' });
   }
 
-  protected zoomTo(zoom: number) {
+  /** Moves the camera to every frame, the selected frame, or the frame nearest the top of the view at a zoom. */
+  public show(target: CameraTarget) {
+    if (target.kind === 'all') {
+      this.fitAll();
+
+      return;
+    }
+
+    const camera = cameraFor(target, this.scene(this.bounds(), this.viewport()));
+
+    if (camera) this.moveCamera(camera, true);
+  }
+
+  public zoomTo(zoom: number) {
     const { width, height } = this.viewport();
 
     this.moveCamera(zoomAtPoint({ camera: this.camera(), point: { x: width / 2, y: height / 2 }, zoom }), true);
@@ -816,17 +806,25 @@ export class DesignCanvasComponent {
   }
 
   private fitted(bounds: Rect, viewport: Size): Camera {
-    const gutter = this.layout().rows.length + this.layout().rowHeads.length > 0 ? ROW_LABEL_GUTTER : 0;
-    const headRoom =
-      (this.layout().heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (this.layout().groups.length > 0 ? GROUP_HEAD_ROOM : 0);
-    const camera = fitRect({
-      rect: bounds,
-      viewport: { width: viewport.width - gutter, height: viewport.height - headRoom },
-      padding: FIT_PADDING,
-      maxZoom: 1,
-    });
+    return cameraFor({ kind: 'all' }, this.scene(bounds, viewport)) ?? this.camera();
+  }
 
-    return { ...camera, x: camera.x + gutter, y: camera.y + headRoom };
+  private scene(bounds: Rect | null, viewport: Size): CameraScene {
+    const layout = this.layout();
+    const frames = this.placedFrames();
+
+    return {
+      camera: this.camera(),
+      viewport,
+      frames,
+      focused: frames.find((placed) => placed.selected) ?? null,
+      bounds,
+      padding: FIT_PADDING,
+      inset: {
+        left: layout.rows.length + layout.rowHeads.length > 0 ? ROW_LABEL_GUTTER : 0,
+        top: (layout.heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (layout.groups.length > 0 ? GROUP_HEAD_ROOM : 0),
+      },
+    };
   }
 
   private moveCamera(camera: Camera, smooth = false) {

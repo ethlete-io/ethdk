@@ -29,7 +29,7 @@ import {
 } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
-import { canvasSetup } from './canvas-setup';
+import { mountCanvasViewport } from 'ethlete-studio/canvas';
 
 const openSketches = {
   layers: [
@@ -117,6 +117,41 @@ const renderPageSketch = async () => {
     body: shell.body,
     setup: canvasSetup,
     styles: shell.styles + side.styles + open.styles + discard.styles + pick.styles + kit + styles,
+  });
+};
+
+const HEAD_INSET = 3;
+const HEAD_MIN_WIDTH = 180;
+
+const canvasSetup = (root: HTMLElement) => {
+  const viewport = root.querySelector<HTMLElement>('.sk-viewport');
+  const world = root.querySelector<HTMLElement>('.sk-world');
+  const heads = [...(root.querySelector('.sk-fixed-heads')?.children ?? [])] as HTMLElement[];
+
+  if (!viewport || !world) return;
+
+  mountCanvasViewport({
+    viewport,
+    world,
+    frameSelector: '.sk-frame',
+    padding: HEAD_INSET,
+    outline: 1,
+    chip: {
+      fit: root.querySelector('[data-camera-fit]'),
+      reset: root.querySelector('[data-camera-reset]'),
+      label: root.querySelector('[data-camera-reset] button'),
+    },
+    onPaint: (camera, frames) =>
+      heads.forEach((head, index) => {
+        const column = frames[index];
+        const start = camera.x + (column?.x ?? 0) * camera.zoom;
+        const left = Math.max(HEAD_INSET, start);
+        const right = Math.min(viewport.clientWidth - HEAD_INSET, start + (column?.width ?? 0) * camera.zoom);
+
+        head.hidden = right - left < HEAD_MIN_WIDTH;
+        head.style.left = `${left}px`;
+        head.style.width = `${Math.max(0, right - left)}px`;
+      }),
   });
 };
 

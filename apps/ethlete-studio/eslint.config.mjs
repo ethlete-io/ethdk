@@ -34,6 +34,16 @@ export default [
       '@angular-eslint/no-output-on-prefix': 'error',
     },
   },
+  {
+    files: ['src/app/components/design-canvas/canvas-viewport.ts'],
+    rules: {
+      'ethlete/no-dom-query': 'off',
+      'ethlete/no-direct-dom-manipulation': 'off',
+      'ethlete/prefer-rxjs-timer': 'off',
+      'ethlete/no-native-observers': 'off',
+      'no-restricted-globals': 'off',
+    },
+  },
   ethlete.configs.recommendedTemplate,
   ethlete.configs.recommendedSpec,
 ];
