@@ -34,7 +34,7 @@ export const SKETCH_USAGE = [
 
 const WRITES = new Set(['new', 'variant', 'report', 'ready', 'rebase', 'merge', 'discard']);
 
-type Context = { target: string; config: DesignConfig; args: Args };
+type Context = { target: string; config: DesignConfig; args: Args; noSketchHint?: string };
 
 const fail = (message: string) => {
   console.error(message);
@@ -54,7 +54,7 @@ const productAndSketchOf = (context: Context): { product: ResolvedProduct; sketc
 
   const sketch = findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
 
-  if (sketch === null) return `NO SKETCH on ${partKeyOf(parsed)} in ${product.name}`;
+  if (sketch === null) return `NO SKETCH on ${partKeyOf(parsed)} in ${product.name}${context.noSketchHint ?? ''}`;
   if (typeof sketch === 'string') return sketch;
 
   return { product, sketch };
@@ -97,46 +97,54 @@ const VARIANT_USAGE =
   'usage: sketch variant <layer>/<name> <variant> --from <variant> [--round <title> --note <why the running round lost>]';
 
 const varied = (context: Context) =>
-  withSketch(context, ({ sketch }) => {
-    const { positional, values } = context.args;
-    const variant = positional[1];
-    const from = values['--from'];
-    const title = values['--round'];
-    const lostNote = values['--note'];
+  withSketch(
+    {
+      ...context,
+      noSketchHint: ` - start one with: sketch new ${context.args.positional[0] ?? '<layer>/<name>'} --variants a,b,c --round "<title>"`,
+    },
+    ({ sketch }) => {
+      const { positional, values } = context.args;
+      const variant = positional[1];
+      const from = values['--from'];
+      const title = values['--round'];
+      const lostNote = values['--note'];
 
-    if (positional.length !== 2 || !variant || !from || (title === undefined) !== (lostNote === undefined))
-      return fail(VARIANT_USAGE);
+      if (positional.length !== 2 || !variant || !from || (title === undefined) !== (lostNote === undefined))
+        return fail(VARIANT_USAGE);
 
-    const added = addVariant({
-      sketch,
-      variant,
-      from,
-      author: authorOf(context.args) ?? undefined,
-      ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote } } : {}),
-    });
+      const added = addVariant({
+        sketch,
+        variant,
+        from,
+        author: authorOf(context.args) ?? undefined,
+        ...(title !== undefined && lostNote !== undefined ? { round: { title, lostNote } } : {}),
+      });
 
-    if (typeof added === 'string') return fail(added);
+      if (typeof added === 'string') return fail(added);
 
-    const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
+      const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
 
-    console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
+      console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
 
-    if (title === undefined) return 0;
+      if (title === undefined) return 0;
 
-    const closed = closeSketchComments({
-      sketch,
-      variant: from,
-      reason: 'round',
-      author: authorOf(context.args) ?? undefined,
-      note: lostNote,
-      round: round?.key,
-    });
+      const closed = closeSketchComments({
+        sketch,
+        variant: from,
+        reason: 'round',
+        author: authorOf(context.args) ?? undefined,
+        note: lostNote,
+        round: round?.key,
+      });
 
-    if (closed.length > 0)
-      console.log(`resolved ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`);
+      if (closed.length > 0)
+        console.log(
+          `resolved ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`,
+        );
 
-    return 0;
-  });
+      return 0;
+    },
+  );
 
 const listed = (context: Context) => {
   const names = productNamesOf({ config: context.config, asked: context.args.values['--product'] });

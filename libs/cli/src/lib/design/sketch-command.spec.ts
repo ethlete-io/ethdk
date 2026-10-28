@@ -102,6 +102,15 @@ describe('designSketch', () => {
     });
   });
 
+  it('names the start command when sketch variant finds no open sketch', () => {
+    const lines = output();
+
+    expect(write(acme(), 'variant', 'components/button', 'c', '--from', 'a', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      'NO SKETCH on components/button in acme - start one with: sketch new components/button --variants a,b,c --round "<title>"',
+    );
+  });
+
   it('stores the note sketch new takes as the note of the first round', () => {
     const target = acme();
     const lines = output();
