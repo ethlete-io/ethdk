@@ -408,6 +408,8 @@ Open points, each with a recommendation:
   QC pass or Claude's reply reaches anyone else; there is no server.
 - A thread is mostly a human writing for the AI. The one human-to-human case is a QC pass: a
   teammate comments many parts, pushes, and someone else works the comments off or answers.
+- Open: a comment file has no author, and a reply has only `by: 'user' | 'agent'`. A QC pass needs
+  the person, as the inbox page draws it. Candidate: the git user name at write time.
 
 ### Sketch matrix cell and spacing decisions (2026-10-27)
 
