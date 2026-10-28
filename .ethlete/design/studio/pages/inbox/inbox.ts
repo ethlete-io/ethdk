@@ -36,8 +36,8 @@ const COMMENTS: Comment[] = [
   },
   {
     id: 'c2',
-    author: 'Claude',
-    initials: 'C',
+    author: 'Codex',
+    initials: 'CX',
     ai: true,
     when: 'vor 20 Min',
     part: 'button',
@@ -80,8 +80,8 @@ const COMMENTS: Comment[] = [
   },
   {
     id: 'c6',
-    author: 'Claude',
-    initials: 'C',
+    author: 'Gemini',
+    initials: 'G',
     ai: true,
     when: 'Mo',
     part: 'system',
@@ -102,8 +102,8 @@ const COMMENTS: Comment[] = [
   },
   {
     id: 'c8',
-    author: 'Claude',
-    initials: 'C',
+    author: 'Codex',
+    initials: 'CX',
     ai: true,
     when: 'Do',
     part: 'button',
@@ -172,7 +172,7 @@ export const activeClear: Props = { showResolved: false, openOn: 'others' };
 export const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
   madeBy: ['claude-opus-5-5'],
   states: { open, 'with-resolved': withResolved, 'active-clear': activeClear, 'all-clear': allClear },
   render: async ({ showResolved, openOn }) => {
