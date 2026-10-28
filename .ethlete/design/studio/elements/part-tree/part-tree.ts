@@ -38,7 +38,7 @@ export const componentsOpen: Props = {
       parts: [
         {
           name: 'button',
-          states: [{ name: 'primary', selected: true }, { name: 'secondary' }, { name: 'disabled', inert: true }],
+          states: [{ name: 'filled', selected: true }, { name: 'outline' }, { name: 'tonal' }],
         },
         { name: 'form-field' },
         { name: 'select', warns: true },
