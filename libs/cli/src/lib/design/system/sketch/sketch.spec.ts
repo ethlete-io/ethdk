@@ -89,7 +89,8 @@ describe('createSketch', () => {
       'utf8',
     );
 
-    expect(stub).toContain('definePart');
+    expect(stub).toContain('export default definePart({');
+    expect(stub).toContain('render: (props: Props) =>');
     expect(stub).toContain("import styles from './header.css?inline';");
   });
 
