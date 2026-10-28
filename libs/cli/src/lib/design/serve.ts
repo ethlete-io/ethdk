@@ -65,7 +65,7 @@ import {
   SystemModules,
 } from './system/system-modules';
 import { KIT_SPECIFIER } from './system/kit';
-import { DESIGN_SYSTEM_SPECIFIER } from './system/system-tsconfig';
+import { DESIGN_SYSTEM_SPECIFIER, writeEditorTsconfig } from './system/system-tsconfig';
 import { SKETCH_FILE } from './system/sketch/sketch';
 import { createThumbnailer, send, THUMB_PATH } from './thumb';
 import {
@@ -530,6 +530,15 @@ export const createDesignServer = async (options: {
   const { default: tailwind } = await import('@tailwindcss/postcss');
   const here = assetRoot();
   const system = createSystemModules({ target, config });
+
+  if (listen) {
+    for (const name of system.products()) {
+      const product = system.productOf(name);
+
+      if (product) writeEditorTsconfig({ target, product });
+    }
+  }
+
   const baseDirs = system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []);
 
   const server = await createServer({

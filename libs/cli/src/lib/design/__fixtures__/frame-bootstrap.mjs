@@ -19,6 +19,7 @@ const context = createContext({
   URLSearchParams,
   innerWidth: 800,
   innerHeight: 600,
+  frameElement: null,
   parent: { postMessage: (message) => messages.push(message) },
   addEventListener: () => undefined,
   ResizeObserver: class {
@@ -33,13 +34,14 @@ const context = createContext({
   },
 });
 const modules = {
-  '@design-explore': {
+  '../define-call': {
     mountDrawing: (root, drawn) => {
       root.innerHTML = drawn.body;
       return null;
     },
     placeOverlays: () => undefined,
   },
+  '../embed-page': { fitEmbed: () => undefined },
   'virtual:design-explore': { calls: {} },
   'virtual:design-explore/env': { loadEnv: () => ready, loadProductEnv: () => ready },
   'virtual:design-explore/system': {

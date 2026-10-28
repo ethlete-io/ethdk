@@ -1,4 +1,4 @@
-import { Drawing, mountDrawing, placeOverlays } from '../define-call';
+import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-call';
 import { fitEmbed } from '../embed-page';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
@@ -72,7 +72,7 @@ const drawCall = async (): Promise<Drawing | null> => {
   const call = calls[slug];
   if (!call) return fail(`design-explore: no call "${slug}"`);
 
-  const variant = (await call()).default.variants.find((o) => o.key === key);
+  const variant: CallVariant | undefined = (await call()).default.variants.find((o) => o.key === key);
   if (!variant) return fail(`design-explore: call "${slug}" has no variant "${key}"`);
 
   return variant.load().then(

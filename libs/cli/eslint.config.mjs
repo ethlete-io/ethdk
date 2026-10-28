@@ -17,6 +17,7 @@ export default [
           ignoredFiles: [
             '{projectRoot}/eslint.config.{js,cjs,mjs,ts,cts,mts}',
             '{projectRoot}/src/**/*.spec.ts',
+            '{projectRoot}/src/**/__fixtures__/**',
             '{projectRoot}/vitest.config.{js,ts,mts}',
           ],
         },
@@ -58,6 +59,11 @@ export default [
       'ethlete/prefer-viewport-size': 'off',
       'ethlete/prefer-rxjs-timer': 'off',
     },
+  },
+  // An ambient module may not import by relative path, so the declarations name `@design-explore` as a type import.
+  {
+    files: ['design/web/env.d.ts'],
+    rules: { '@nx/enforce-module-boundaries': 'off', 'ethlete/no-type-only-import': 'off' },
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)
   ethlete.configs.recommendedSpec,
