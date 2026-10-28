@@ -23,55 +23,20 @@ import {
   fromEvent,
   map,
   merge,
-  of,
   share,
-  startWith,
   switchMap,
-  take,
   takeUntil,
   tap,
-  timer,
 } from 'rxjs';
 import { CanvasFrame, FrameMessage, MeasuredSide, followedSizes, frameMessageOf } from '../canvas-frame';
 import { Rect, Size } from '../canvas-math';
+import { paintedFrame$ } from '../frame-paint';
 import { RenderSlotState, injectFrameRenderQueue } from '../frame-render-queue';
 import { CanvasFrameGridComponent } from './canvas-frame-grid.component';
-
-const UNREPORTED_PAINT_MS = 1000;
 
 type HeightMessage = Extract<FrameMessage, { type: 'height' }>;
 
 type Wanted = { kind: 'page' | 'shot'; src: string };
-
-const nextPaint$ = (view: Window) =>
-  new Observable<void>((subscriber) => {
-    let frame = view.requestAnimationFrame(() => {
-      frame = view.requestAnimationFrame(() => {
-        subscriber.next();
-        subscriber.complete();
-      });
-    });
-
-    return () => view.cancelAnimationFrame(frame);
-  });
-
-const painted$ = (iframe: HTMLIFrameElement) => {
-  const host = iframe.ownerDocument.defaultView;
-
-  if (!host) return of(true);
-
-  const reported$ = fromEvent<MessageEvent>(host, 'message').pipe(
-    filter((event) => event.source === iframe.contentWindow && frameMessageOf(event.data)?.type === 'height'),
-  );
-  const loadedSilently$ = fromEvent(iframe, 'load').pipe(switchMap(() => timer(UNREPORTED_PAINT_MS)));
-
-  return merge(reported$, loadedSilently$).pipe(
-    take(1),
-    switchMap(() => nextPaint$(host)),
-    map(() => true),
-    startWith(false),
-  );
-};
 
 @Component({
   selector: 'ethlete-canvas-frame',
@@ -313,7 +278,7 @@ export class CanvasFrameComponent {
           const src = iframe && this.sources().at(-1)?.src;
 
           return iframe && src
-            ? painted$(iframe).pipe(
+            ? paintedFrame$(iframe).pipe(
                 filter(Boolean),
                 map(() => src),
               )

@@ -169,3 +169,67 @@ and plain “Variante g/h/i” instead of boxed letters. Both states inspected a
 Type/lint, render, camera interaction and dedicated contour/round-gap assertions pass. The
 first contour guard required one more header pixel; checks were repeated after that correction.
 Findings and possible fixes recorded in `design-system.md`. Native pinch remains unresolved.
+
+## Scope correction after e merge (Tom, 2026-10-28)
+
+Accepted e baseline committed as `04f9337e2`. Tom keeps zoom composition open: hard inner
+clipping and stretched variant heads feel wrong. He also explicitly calls out that the agent
+went too deep into implementing a complete camera during design. Record this as a process
+failure, not just a technical missing-reuse issue. Next proposal should draw overview/detail
+zoom states to settle composition; do not extend `canvas-setup.ts` or implement another zoom
+feature. Actual Studio bugs remain separate findings with possible fixes. Pages still lead
+the later component/element inventory.
+
+## Second UI hang interrupts the next visual round (2026-10-28)
+
+Before a new sketch was created, Tom reported another 100% UI hang. Sample of WebContent PID
+21017 at `/private/tmp/studio-webkit-hang-2.txt` matches the first: JS microtasks, module loader,
+URL parser. It happened after a full native restart, so restart is recovery only. Stopped
+native PID 20884 and restarted with `NX_NO_CLOUD=true yarn studio`. Further diagnosis and
+possible fixes are recorded in `design-system.md`. No new camera code or next sketch was
+created; scope correction to static overview/detail visual states still applies.
+
+## New zoom composition after e (2026-10-28)
+
+Sketch `pages/sketches`, variant a, four drawn states: `open`, `element-detail`, `page-sketch`,
+`page-detail`. Full shell canvas behind floating chrome, compact grouped heads; partial
+neighbor heads omitted in detail views. No `canvas-setup.ts` or gesture listeners in the
+variant. Own screenshot review and geometry checks cover the composition only. Possible
+fixes/tradeoffs are in `design-system.md`; do not revive camera implementation in this round.
+
+## Latest a rejected; restore comparative exploration (Tom, 2026-10-28)
+
+Tom rejects the new a's appearance and alignment and calls the four-screen, one-variant round
+a waste of time. “One scalable behavior” does not mean one design alternative. Record this
+misinterpretation and failed visual judgment in `design-system.md`. Next: three different
+answers at one identical zoomed-page geometry, one screen each, with costs. Do not expand
+one unchosen treatment into multiple states or add camera logic. Keep rejected a as reference.
+
+## Comparative replacement ready: b/c/d (2026-10-28)
+
+One `zoomed-page` screen each, same page content/60% camera. b: compact head attached to frame.
+c: fixed comparison strip, a/b labels on frames. d: selected-variant inspector. All three
+screens inspected side by side; world geometry identical. Type/lint/render checks pass.
+Recommendation b; tradeoffs recorded in `design-system.md`. a remains rejected reference.
+No camera logic added. Do not expand states before Tom chooses a direction.
+
+## Tooling inventory reminder (Tom, 2026-10-28)
+
+Temporary `.mjs` screenshot/audit helpers are candidates for Studio CLI capabilities. Their
+paths, demonstrated needs, possible extraction and limits are recorded in `design-system.md`.
+Prioritize reusable batch variant/state shots and comparison geometry over prototype-specific
+camera assertions. Keep this in the inventory; no CLI implementation during page exploration.
+
+
+## WebKit fix and immediate push (2026-10-28)
+
+User explicitly requests immediate commit/push. Root cause reproduced in visible system
+WKWebView: removing iframe during top-level await hangs module evaluation at 100% CPU.
+CLI bootstrap now starts async work after synchronous ESM evaluation. Native 40-cycle repro
+passes; pending-environment module-evaluation and paint-protocol regression tests pass.
+Loading message prevents Studio's one-second fallback from showing a still-blank frame.
+Optional native test: `tools/scripts/verify-webkit-frame-reloads.swift <full frame URL> ...`.
+100-cycle test and full CLI/Studio verification were in flight at commit time; no claim of
+full CI success. The user's Studio still needs a full restart to load the updated frozen
+runtime assets. Design sketches b/c/d are open alternatives, one identical 60% screen each;
+a is rejected. No further design changes before the user's pick. Pinch IPC failure is separate.

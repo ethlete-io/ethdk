@@ -25,8 +25,6 @@ const reportError = () => {
 addEventListener('error', reportError);
 addEventListener('unhandledrejection', reportError);
 
-await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
-
 const root = document.querySelector('#root') as HTMLElement;
 const surface = params.get('surface');
 const color = params.get('color');
@@ -102,8 +100,6 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
   }
 };
 
-const loaded = await (product ? drawPart(product) : drawCall());
-
 const partRootOf = (container: HTMLElement) =>
   [...container.children].find((child) => !['STYLE', 'SCRIPT', 'LINK'].includes(child.tagName)) ?? null;
 
@@ -124,26 +120,6 @@ const forced = async (css: string) => {
   return response?.ok ? response.text() : css;
 };
 
-if (loaded) {
-  const style = document.createElement('style');
-
-  style.textContent = await forced(loaded.styles);
-  document.head.append(style);
-  const error = mountDrawing(root, loaded);
-  const partRoot = partRootOf(root);
-
-  if (interaction && partRoot) force(partRoot, interaction);
-
-  if (error)
-    showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
-}
-
-const place = () => placeOverlays(root);
-
-new MutationObserver(place).observe(root, { childList: true, subtree: true });
-new ResizeObserver(place).observe(root);
-place();
-
 const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
   const width = fit ? { width: Math.ceil(root.getBoundingClientRect().width) } : {};
@@ -162,19 +138,52 @@ const report = () => {
   );
 };
 
-const reported = new ResizeObserver(report);
+// macOS WebKit can loop in module evaluation when a frame with top-level await is removed.
+const drawFrame = async () => {
+  parent.postMessage({ type: 'design-explore:loading' }, '*');
+  await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
+  const loaded = await (product ? drawPart(product) : drawCall());
 
-reported.observe(document.documentElement);
-if (fit) reported.observe(root);
-reporting = true;
-report();
+  if (loaded) {
+    const style = document.createElement('style');
 
-addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') parent.postMessage({ type: 'design-explore:escape', variant: key }, '*');
+    style.textContent = await forced(loaded.styles);
+    document.head.append(style);
+    const error = mountDrawing(root, loaded);
+    const partRoot = partRootOf(root);
+
+    if (interaction && partRoot) force(partRoot, interaction);
+
+    if (error)
+      showSetupError(`design-explore: setup of ${product ? 'state' : 'variant'} "${key}" failed\n${messageOf(error)}`);
+  }
+
+  const place = () => placeOverlays(root);
+
+  new MutationObserver(place).observe(root, { childList: true, subtree: true });
+  new ResizeObserver(place).observe(root);
+  place();
+
+  const reported = new ResizeObserver(report);
+
+  reported.observe(document.documentElement);
+  if (fit) reported.observe(root);
+  reporting = true;
+  report();
+
+  addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') parent.postMessage({ type: 'design-explore:escape', variant: key }, '*');
+  });
+
+  addEventListener(
+    'scroll',
+    () => parent.postMessage({ type: 'design-explore:scroll', variant: key, y: Math.round(scrollY) }, '*'),
+    { passive: true },
+  );
+};
+
+void drawFrame().catch((error: unknown) => {
+  fail(`design-explore: frame failed\n${messageOf(error)}`);
+  reporting = true;
+  report();
 });
-
-addEventListener(
-  'scroll',
-  () => parent.postMessage({ type: 'design-explore:scroll', variant: key, y: Math.round(scrollY) }, '*'),
-  { passive: true },
-);

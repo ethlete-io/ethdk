@@ -1,0 +1,111 @@
+@layer components {
+  .zc-page {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .zc-head {
+    position: absolute;
+    z-index: 2;
+    top: 20px;
+    left: 280px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .zc-gap {
+    flex: 1;
+  }
+  .zc-round {
+    position: absolute;
+    z-index: 2;
+    top: 68px;
+    left: 280px;
+    display: flex;
+    gap: var(--space-2);
+    align-items: baseline;
+  }
+  .zc-world {
+    position: absolute;
+    top: 190px;
+    left: -573.2px;
+    display: grid;
+    grid-template-columns: repeat(3, 1456px);
+    gap: 16px;
+    transform: scale(0.6);
+    transform-origin: 0 0;
+  }
+  .zc-frame {
+    display: flex;
+    margin: 0;
+  }
+  .zc-world .sk-shot {
+    --sk-shot-scale: 1;
+    cursor: default;
+  }
+  .zc-world .sk-shot-open {
+    display: none;
+  }
+  .zc-frame[data-selected] {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  .zc-inline {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .zc-name {
+    font-family: var(--font-code);
+    font-size: var(--text-sm);
+    color: var(--text);
+  }
+  .zc-note {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+  }
+  .zc-frame-id {
+    position: absolute;
+    top: 165px;
+    left: 310px;
+    font-family: var(--font-code);
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .zc-frame-id[data-next] {
+    left: 1193.2px;
+  }
+  .zc-page > .st-canvas-zoom {
+    z-index: 3;
+  }
+  .zc-page > .st-canvas-zoom .et-button {
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+  }
+}
+
+@layer components {
+  .zc-attached {
+    position: absolute;
+    top: 124px;
+    left: 310px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .zc-attached .et-button {
+    margin-left: var(--space-2);
+  }
+}
+
+@layer components {
+  .zc-page[data-treatment='attached'] .zc-frame-id {
+    top: 132px;
+  }
+}

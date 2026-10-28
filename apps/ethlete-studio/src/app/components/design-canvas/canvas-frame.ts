@@ -71,6 +71,7 @@ export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>
 
 /** A `height` message names the frame page's `href`, and is `errored` when the page failed to draw or threw since it loaded. */
 export type FrameMessage =
+  | { type: 'loading' }
   | {
       type: 'height';
       height: number;
@@ -98,6 +99,7 @@ const viewportOf = (data: object) => {
 export const frameMessageOf = (data: unknown): FrameMessage | null => {
   if (typeof data !== 'object' || data === null || !('type' in data)) return null;
   if (data.type === 'design-explore:escape') return { type: 'escape' };
+  if (data.type === 'design-explore:loading') return { type: 'loading' };
   if (data.type !== 'design-explore:height' || !('height' in data) || typeof data.height !== 'number') return null;
 
   const viewport = viewportOf(data);

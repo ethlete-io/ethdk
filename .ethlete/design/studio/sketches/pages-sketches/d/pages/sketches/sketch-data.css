@@ -1,0 +1,409 @@
+@layer components {
+  .sk-type[data-type='g'] .st-tree {
+    font-size: 1rem;
+    line-height: 1.3rem;
+  }
+
+  .sk-type[data-type='g'] .st-tree-row {
+    height: 1.8rem;
+  }
+
+  .sk-type[data-type='h'] .st-tree {
+    font-size: 1rem;
+    line-height: 1.3rem;
+  }
+
+  .sk-type[data-type='i'] .st-tree {
+    font-size: 0.95rem;
+    line-height: 1.2rem;
+  }
+
+  .sk-type[data-type='i'] .st-tree-row {
+    height: 1.7rem;
+  }
+
+  .sk-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    height: 100%;
+    box-sizing: border-box;
+    padding: var(--space-5) var(--space-5) var(--space-5) calc(var(--st-shell-inset-left, 0px) + var(--space-5));
+    overflow: hidden;
+  }
+
+  .sk-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .sk-head-title {
+    font-size: var(--text-lg);
+    line-height: var(--text-lg-line);
+    font-weight: var(--weight-strong);
+  }
+
+  .sk-status {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--accent-subtle);
+    color: var(--accent-text);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+  }
+
+  .sk-head-gap {
+    flex: 1;
+  }
+
+  .sk-round-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    white-space: nowrap;
+  }
+
+  .sk-round-key {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+  }
+
+  .sk-round-title {
+    font-weight: var(--weight-medium);
+  }
+
+  .sk-round-letters {
+    color: var(--text-muted);
+    font-family: var(--font-code);
+    font-size: var(--text-xs);
+  }
+
+  .sk-fold {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    height: var(--control-sm);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-control-md);
+    box-shadow: inset 0 0 0 1px var(--surface-border);
+    background: var(--surface);
+    white-space: nowrap;
+  }
+
+  .sk-fold-chevron {
+    flex: none;
+    color: var(--text-muted);
+  }
+
+  .sk-fold .sk-round-title {
+    flex: none;
+    font-size: var(--text-sm);
+  }
+
+  .sk-fold-note {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .sk-variant-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--control-md);
+    white-space: nowrap;
+  }
+
+  .sk-letter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 var(--space-1);
+    box-sizing: border-box;
+    border-radius: var(--radius-control-sm);
+    background: var(--surface-overlay);
+    font-family: var(--font-code);
+    font-size: var(--text-xs);
+  }
+
+  .sk-letter[data-current] {
+    font-family: var(--font-ui);
+  }
+
+  .sk-author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .sk-logo {
+    flex: none;
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .sk-variant-head .et-button {
+    margin-left: auto;
+  }
+
+  .sk-current-tag {
+    margin-left: auto;
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .sk-variant-note {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+    white-space: nowrap;
+  }
+
+  .sk-frame {
+    position: relative;
+    box-sizing: border-box;
+    padding: var(--space-2);
+    border-radius: var(--radius-control-md);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--surface-border);
+  }
+
+  .sk-frame-caption {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+    white-space: nowrap;
+  }
+
+  .sk-dim {
+    opacity: 0.35;
+  }
+
+  .sk-drawing {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    margin-left: auto;
+    padding: 0 var(--space-2);
+    height: var(--control-sm);
+    border-radius: var(--radius-pill);
+    background: var(--surface-overlay);
+    box-shadow: 0 0 0 1px var(--surface-border);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+
+  .sk-pin {
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .sk-pin-face {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50% 50% 50% 0;
+    background: var(--surface-overlay);
+    box-shadow: 0 0 0 1px var(--surface-border);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-strong);
+  }
+
+  .sk-pin[data-selected] .sk-pin-face {
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 4px var(--accent-subtle);
+  }
+
+  .sk-pin-count {
+    padding: 0 0.4rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+  }
+
+  .sk-avatar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--surface-overlay);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-strong);
+  }
+
+  .sk-thread {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-control-md);
+    background: var(--surface-raised);
+    box-shadow:
+      0 0 0 1px var(--surface-border),
+      0 12px 32px var(--surface-shadow);
+  }
+
+  .sk-thread-row {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .sk-thread-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+  }
+
+  .sk-thread-meta {
+    display: flex;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+  }
+
+  .sk-thread-author {
+    color: var(--text);
+    font-weight: var(--weight-medium);
+  }
+
+  .sk-thread-text {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+  }
+
+  .sk-band-title {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+    white-space: nowrap;
+  }
+
+  .sk-crop {
+    --sk-crop-scale: 0.5;
+    width: 100%;
+    height: var(--sk-crop-height, 12rem);
+    overflow: hidden;
+    border-radius: var(--radius-control-md);
+    box-shadow: 0 0 0 1px var(--surface-border);
+  }
+
+  .sk-crop-page {
+    width: 1440px;
+    height: 900px;
+    transform: scale(var(--sk-crop-scale));
+    transform-origin: 0 0;
+  }
+
+  .sk-side-title {
+    padding: var(--space-2) var(--space-1) var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+  }
+}
+
+@layer components {
+  .sk-shot {
+    --sk-shot-scale: 0.22;
+    position: relative;
+    width: calc(1440px * var(--sk-shot-scale));
+    height: calc(900px * var(--sk-shot-scale));
+    overflow: hidden;
+    border-radius: var(--radius-control-md);
+    box-shadow: 0 0 0 1px var(--surface-border);
+    cursor: zoom-in;
+  }
+
+  .sk-shot:hover {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .sk-shot-page {
+    width: 1440px;
+    height: 900px;
+    transform: scale(var(--sk-shot-scale));
+    transform-origin: 0 0;
+  }
+
+  .sk-shot[data-page='b'] .st-shell-stage .st-shell-side {
+    width: 200px;
+  }
+
+  .sk-shot-open {
+    position: absolute;
+    right: var(--space-1);
+    bottom: var(--space-1);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0.2rem var(--space-2);
+    border-radius: var(--radius-pill);
+    background: var(--surface-overlay);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-line);
+    box-shadow: 0 0 0 1px var(--surface-border);
+  }
+
+  .sk-shot .sk-pin {
+    top: var(--space-1);
+    right: var(--space-1);
+  }
+
+  .sk-no-context {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--text-sm-line);
+  }
+}
+
+/* foundations/tokens sets the SDK colour channels to the SDK default blue; the Studio app maps them to its accent in
+   apps/ethlete-studio/src/styles/sdk-token-map.css. Unlayered, so it beats the foundation's @layer base. */
+:root,
+.et-color--default {
+  --et-color-primary: from var(--accent) r g b;
+  --et-color-primary-hover: from var(--accent-hover) r g b;
+  --et-color-primary-focus: from var(--focus-ring) r g b;
+  --et-color-primary-active: from var(--accent) r g b;
+  --et-color-primary-disabled: from color-mix(in oklab, var(--accent) 40%, var(--surface)) r g b;
+
+  --et-color-on-primary: from var(--on-accent) r g b;
+  --et-color-on-primary-hover: from var(--on-accent) r g b;
+  --et-color-on-primary-focus: from var(--on-accent) r g b;
+  --et-color-on-primary-active: from var(--on-accent) r g b;
+  --et-color-on-primary-disabled: from color-mix(in oklab, var(--on-accent) 60%, var(--surface)) r g b;
+
+  --et-color-primary-ink: from var(--accent-text) r g b;
+  --et-color-primary-ink-hover: from var(--accent-text) r g b;
+  --et-color-primary-ink-focus: from var(--accent-text) r g b;
+  --et-color-primary-ink-active: from var(--accent-text) r g b;
+  --et-color-primary-ink-disabled: from color-mix(in oklab, var(--accent-text) 40%, var(--surface)) r g b;
+}

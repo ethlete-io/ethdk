@@ -2936,3 +2936,161 @@ or element extraction is implied by this page exploration.
 Process finding: column-edge and visibility checks passed e, but neither catches an awkward
 composition. The next visual review must include the intermediate zoom screenshot, not only
 fit and commands' geometric correctness. Preserve the accepted e baseline for comparison.
+
+### Design exploration became a parallel canvas implementation — confirmed process failure
+
+Tom explicitly asks to record this on 2026-10-28. The open design question is how a single
+canvas composition scales from small components to full pages. The agent implemented a
+second camera in drawing-local `canvas-setup.ts`, then refined wheel input, pointer capture,
+frame targeting, fit bounds, viewport overlays and interaction assertions across rounds.
+That is too much implementation depth for the current page-discovery stage. The accepted
+visual baseline does not mean this prototype logic should become production implementation.
+
+The zoom concept itself is in scope. A small interactive prototype can be useful evidence,
+but creating and maintaining a parallel camera introduced its own bugs and consumed the
+rounds with fixes to the prototype. Visual design decisions and underlying Studio defects
+were mixed together, making the workflow harder to assess.
+
+Possible process fix: name the visual question and the smallest useful artifact before
+building. For the next zoom-composition round, draw overview and detail-zoom as states of
+one proposal at the same application geometry. Compare canvas boundaries, compact variant
+heads and chrome placement there. Reuse the existing canvas when behavior is essential;
+otherwise leave camera behavior to implementation after the composition is settled. Do not
+extend the sketch-local camera to solve the next visual question.
+
+Continue recording actual Studio bugs independently (the native WebKit pinch termination is
+one), with evidence and possible fixes. This does not make every discovered defect an immediate
+implementation task or require extracting components/elements during page exploration.
+
+### Second 100% WebKit hang after a full native restart — reproduced (2026-10-28)
+
+- Observed: Tom reports another completely unresponsive UI. Studio native PID 20884 remains
+  alive; its WebContent PID 21017 measures 98.8% CPU, about 16 minutes after its launch.
+  This content process started with the earlier full native restart, not the targeted
+  WebContent replacement. A restart therefore does not resolve the recurring hang.
+- Evidence: second three-second sample at `/private/tmp/studio-webkit-hang-2.txt` repeats the
+  first sample's main-thread pattern: JavaScript microtask checkpoint → moduleLoaderEvaluate
+  → ScriptModuleLoader::evaluate → URLParser. The source module and triggering URL remain
+  unidentified. This is not evidence that the camera event handlers are the cause.
+- Recovery: stopped the whole native app after saving the sample and relaunched through
+  `NX_NO_CLOUD=true yarn studio`; verification of the new session follows below.
+- Possible next diagnostic fix: instrument module import/reload addresses and retain bounded
+  logs of the selected product/part/variant, frame lifecycle and recent file updates. Reproduce
+  repeated frame loads in an isolated WKWebView and compare to Chromium. Capture the exact
+  import chain before attempting a source-level fix. Keep the earlier GestureEventReply
+  termination as a separate signature until evidence connects the failures.
+- Workflow: suspend design iteration while recovering the user's tool. Do not respond by
+  expanding the drawing's zoom implementation. Static overview/detail design states remain
+  the intended next artifact once the tool is usable.
+
+Second recovery observation: new native PID 23442, WebContent PID 23502, design server listening
+on 4402. Around 20 seconds after launch, WebContent measured 7% CPU rather than 98.8%.
+This confirms a new running session, not a fix or user-verified long-term responsiveness.
+
+### Next zoom-composition sketch: drawn states, not another camera (2026-10-28)
+
+Open `studio / pages/sketches`, variant a, on top of the accepted e baseline. Four states:
+`open` and `page-sketch` are overviews; `element-detail` and `page-detail` show the same design
+at a fixed closer zoom. No camera setup or gesture listener is included in this proposal.
+The accepted part retains its earlier prototype; the new variant removes that helper.
+
+The canvas fills the whole shell stage behind floating chrome. The navigation panel occludes
+it; clipping occurs at the application boundary instead of at an inner content rectangle.
+Variant identity, author, action and note form a compact screen-size head, capped at 304 px
+in detail views. This is the visual proposal to settle before implementing the behavior.
+
+Own static review found the neighboring partial column's head itself clipped at the window
+edge. The detail states now omit that partial neighbor head while leaving the continuing
+frame visible. This is an open tradeoff: a neighbor's controls require panning until its head
+has room. Possible later fix: agree a minimal visible-width treatment or a deliberate focus
+navigation, rather than stretching every head or silently clipping its action. This round
+draws the treatment; it does not implement the visibility algorithm.
+
+Verification scope: type/lint and render checks, plus independent screenshots of all four
+states. Layout assertions confirm canvas bounds equal the shell stage and head width stays
+compact without text overflow. These are composition checks, not evidence that actual zoom,
+pinch or the native WebKit stability issues are fixed.
+
+Static zoom-composition verification completed: all four states compile and pass the render
+check. Independent Chromium screenshots were inspected, including both revised detail states.
+Assertions confirm the drawing surface matches the 1376×900 shell stage and the grouped heads
+stay at 252 px in overview and 304 px in detail, with no internal text overflow. No live zoom
+interaction was implemented or claimed in this round. The user decides the composition.
+
+### Single proposal multiplied into four screens — rejected exploration (Tom, 2026-10-28)
+
+Tom rejects the latest `pages/sketches` variant a: it looks bad, alignment is wrong, and four
+screens consumed time without providing a real design choice. His “one behavior that scales
+with zoom” meant one coherent product behavior, not a request to stop drawing alternatives.
+The agent misread that intent and repeatedly treated single-variant rounds as sufficient.
+
+The four overview/detail states of a are not four competing answers. A single-variant sketch
+is appropriate for a deterministic correction with nothing to choose, not this unresolved
+visual question. Static geometry assertions passed, yet the alignment and composition were
+not good. The agent's visual check did not provide adequate design judgment.
+
+Rejected: the latest a's floating grouped chrome, its alignment, and expanding one unchosen
+idea to four screens before comparing alternatives. Preserve a as rejected reference; do not
+merge or polish it as though the direction were accepted.
+
+Possible process fix: pick one representative zoomed page geometry and draw three genuinely
+different answers side by side, one screen each. Keep the same data, scale and camera position
+so differences belong to the proposed chrome/label/boundary treatment. Name each tradeoff and
+recommend a proposal only after all alternatives are visible. Extend the chosen direction to
+other states only after Tom chooses. Do not add camera implementation during this comparison.
+
+Comparative replacement round (b/c/d): each has exactly one `zoomed-page` screen. Same 60%
+scale, world origin, selected variant a and page content in all three. Own screenshots were
+inspected side by side; a browser assertion confirms identical world bounds. Type/lint and
+render checks pass. b attaches a compact identity/author/action group to the frame; c keeps
+all actions in a fixed comparison strip with a/b markers; d puts only the selected variant's
+action in a small inspector. Costs respectively: pan to reach neighbor actions; letter-based
+rather than spatial control mapping; selection plus inspector occlusion. Proposal: b for
+its direct frame association and smallest addition to the canvas. Tom decides.
+
+The visual pass also caught b's neighboring label sitting on a different baseline from the
+active head; its label position was corrected before handoff. These three drawings are
+alternatives for one question, not implementations of camera behavior or additional states.
+
+### Scratch verification helpers are CLI candidates — keep in the tooling inventory
+
+Tom asks on 2026-10-28 to keep the temporary `.mjs` helpers in mind as possible Studio CLI
+features. Repeated ad hoc browser scripts are evidence of missing tooling as well as useful
+checks. Record their purpose and limits; do not automatically promote each script or interrupt
+the page exploration with a CLI implementation.
+
+| Scratch helper (outside the repo)             | Demonstrated need                                                                        | Possible CLI capability / limits                                                                                                                                                                            |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/private/tmp/studio-three-options.mjs`       | Capture several variants at the same state and viewport; assert matching drawing bounds. | Batch variant shots or a comparison sheet using the existing shot core. Matching camera geometry must be declared, not guessed from arbitrary markup.                                                       |
+| `/private/tmp/studio-zoom-composition.mjs`    | Capture named states and inspect surface/head geometry.                                  | Batch state shots plus optional layout measurements; drawing-specific selectors belong in an explicit request, not hardcoded CLI rules.                                                                     |
+| `/private/tmp/studio-sketch-audit.mjs`        | Inspect fit/zoom/100% views, head/frame bounds and pins.                                 | A bounded diagnostic report or scripted interaction capture on real supported canvas behavior. This script targets the rejected drawing-local camera and is not reusable unchanged.                         |
+| `/private/tmp/studio-sketch-edges.mjs`        | Check painted contour clearance, pending placeholders and content spacing.               | Extend render diagnostics to painted/focus bounds where feasible; preserve intentional clipping exceptions and distinguish design preferences from errors.                                                  |
+| `/private/tmp/studio-sketch-interactions.mjs` | Exercise pointer zoom, pan, Fit, reset and frame/context focus.                          | Reusable canvas interaction verification against the actual Studio implementation. Prefer a stable test harness over arbitrary script execution; it does not verify native macOS pinch or WebKit stability. |
+
+Possible process fix: when a scratch helper repeats across rounds, add it to this inventory
+with the input, output, existing CLI overlap and what judgment still requires a person.
+Reuse the current shot/render-check/browser core when extracting a capability. Evaluate the
+batch-shot/comparison need first; avoid turning prototype-specific selectors and assertions
+into a public CLI contract. Keep temporary images, process samples and client data outside git.
+
+
+### WebKit freeze fix (2026-10-28)
+
+A visible standalone macOS WKWebView reproduced the 100% CPU freeze after two rapid iframe
+replacements; its sample (`/private/tmp/studio-native-repro-baseline.txt`) matches Studio's
+moduleLoaderEvaluate/URLParser loop. The invisible initial diagnostic was susceptible to
+background suspension, so only the visible run plus CPU/sample is the confirmed reproducer.
+
+`libs/cli/design/web/frame.ts` now completes ESM evaluation synchronously and starts async
+environment/drawing work in `drawFrame()`, avoiding top-level await during iframe removal.
+The same native 40-replacement test completes. A Node module-evaluation regression verifies
+that the old source remains unevaluated with a pending environment, while the fix evaluates
+and subsequently draws or reports an error. Both regression cases pass.
+
+The frame announces `design-explore:loading`; Studio waits for its height/error report rather
+than revealing it after the external-frame one-second fallback. Three paint-protocol tests
+cover pending rendering, external fallback and unrelated-frame messages. The optional native
+reproducer is `tools/scripts/verify-webkit-frame-reloads.swift`, accepting full frame URLs;
+`WEBKIT_RELOAD_ITERATIONS` controls the count. A 100-cycle run and broader checks were started
+before the user's immediate commit/push request. Record their result when available. The
+separate native GestureEventReply/pinch failure is not claimed fixed by this change.

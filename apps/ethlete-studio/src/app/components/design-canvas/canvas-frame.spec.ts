@@ -22,6 +22,10 @@ const followAPage = (contentAt: (viewport: number) => number, viewport: number) 
 };
 
 describe('frameMessageOf', () => {
+  it('reads that the frame will render asynchronously', () => {
+    expect(frameMessageOf({ type: 'design-explore:loading' })).toEqual({ type: 'loading' });
+  });
+
   it('reads the height the frame page reports', () => {
     expect(frameMessageOf({ type: 'design-explore:height', variant: 'default', height: 412 })).toEqual({
       type: 'height',
