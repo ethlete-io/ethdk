@@ -6,6 +6,7 @@ import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
 import { serveDesign } from './serve';
+import { designShot, SHOT_USAGE } from './shot-command';
 import { designSketch, SKETCH_USAGE } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
@@ -72,6 +73,11 @@ const helpOf = (invocation: string) =>
     '',
     `${invocation} sketch rebase <layer>/<name> --by <model id>`,
     '  After bringing each variant up to date with the product, record the product as it is now for the merge.',
+    '',
+    `${invocation} ${SHOT_USAGE}`,
+    '  Draw every state of a part, and with --variants every variant of its open sketch, into one contact sheet',
+    '  PNG with a label per cell, and print its path. Without --state, --variants alone draws the first state.',
+    '  Without --preset or --width, a page draws at its first product preset and any other part fitted.',
     '',
     `${invocation} inbox [--json] | inbox done <id> --note <text> --by <model id>`,
     "  List comment threads where the user has the last word, the user's pick and discard decisions and the sketches",
@@ -188,6 +194,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
     const { target, rest } = splitCheckout(argv.slice(1), root);
 
     return designSketch({ target, argv: rest, invocation });
+  }
+
+  if (argv[0] === 'shot') {
+    const { target, rest } = splitCheckout(argv.slice(1), root);
+
+    return designShot({ target, argv: rest, invocation });
   }
 
   if (argv[0] === 'inbox') {

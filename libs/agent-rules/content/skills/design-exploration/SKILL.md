@@ -42,7 +42,10 @@ finished while the user is still talking about it.
 - Nothing else. No next step, no second finding.
 
 **Do not send a screenshot.** The user keeps the call open. Screenshot only for your own
-check that a variant renders.
+check that a variant renders. In a repository with `et design`, take it with
+`et design shot <layer>/<name> --states [--variants]`: one contact sheet of every state, and
+every variant of the open sketch, with a label per cell. It prints the PNG path. It draws
+undimmed, whatever Studio shows. Do not write a scratch script for batch shots.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.
 
