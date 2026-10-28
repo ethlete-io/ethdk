@@ -402,6 +402,8 @@ export type SketchTarget = {
   widths?: number[];
   /** Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
+  /** The states this variant draws as the part is now. Missing from an `@ethlete/cli` older than folded states. */
+  unchanged?: string[];
   error?: string;
 };
 

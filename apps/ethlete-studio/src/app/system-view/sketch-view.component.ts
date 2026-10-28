@@ -55,6 +55,7 @@ import {
   roundColumnKeyOf,
   sketchMatrixOf,
   openRoundsOf,
+  stateRowKeyOf,
   sketchRoundsOf,
 } from './system-tree';
 
@@ -352,9 +353,11 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [pointing]="commentStore.active()"
       [draft]="commentStore.draft()"
       [pinPopover]="pinThread"
+      [rowHeads]="showing() === 'merge' ? [] : matrix().rowHeads"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
       (columnToggle)="toggleRound($event)"
+      (rowToggle)="toggleState($event)"
       class="min-h-0 flex-1"
       arrangement="matrix"
     >
@@ -437,6 +440,8 @@ export class SketchViewComponent {
 
   private openRounds = linkedSignal(() => this.remembered().rounds ?? {});
 
+  private openStates = linkedSignal(() => this.remembered().states ?? {});
+
   private shownMode = linkedSignal<Shown>(() => (this.remembered().merge ? 'merge' : 'matrix'));
 
   private reportExpiry = computed(() => reportExpiryOf(this.sketch().report));
@@ -463,6 +468,7 @@ export class SketchViewComponent {
     size: this.size(),
     interaction: this.interaction(),
     openRounds: this.openRounds(),
+    openStates: this.openStates(),
     epoch: this.epoch(),
     revision: this.revision(),
     surface: this.surface(),
@@ -602,13 +608,25 @@ export class SketchViewComponent {
     this.remember({ rounds });
   }
 
+  protected toggleState(key: string) {
+    const head = this.matrix().rowHeads.find((candidate) => candidate.key === key);
+    const state = this.part()?.states.find((name) => stateRowKeyOf(name) === key);
+
+    if (!head || state === undefined) return;
+
+    const states = { ...this.openStates(), [state]: !head.open };
+
+    this.openStates.set(states);
+    this.remember({ states });
+  }
+
   protected startComment(pick: FramePoint) {
     const draft = commentDraftOf(this.canvas().frames, pick);
 
     if (draft) this.commentStore.start(draft);
   }
 
-  /** Moves the camera to a comment: back to the matrix, into its round, and to its size and interaction first, when the matrix offers them; `ALL` stays. */
+  /** Moves the camera to a comment: back to the matrix, into its round and its folded state, and to its size and interaction first, when the matrix offers them; `ALL` stays. */
   public jumpTo(comment: NumberedComment) {
     const size = String(comment.size);
     const interaction = comment.interaction ?? REST;
@@ -621,18 +639,22 @@ export class SketchViewComponent {
     const shown = sketchRoundsOf(this.sketch(), this.openRounds());
     const folded = shown.find((round) => !round.open && round.variants.includes(comment.sketch?.variant ?? ''));
     const rounds = folded ? { ...openRoundsOf(shown), [folded.key]: true } : null;
+    const unfold = this.matrix().rowHeads.some((head) => !head.open && head.key === stateRowKeyOf(comment.state));
+    const states = unfold ? { ...this.openStates(), [comment.state]: true } : null;
 
     if (resize) this.size.set(size);
     if (reinteract) this.interaction.set(interaction);
     if (leaveMerge) this.shownMode.set('matrix');
     if (rounds) this.openRounds.set(rounds);
+    if (states) this.openStates.set(states);
     this.remember({
       ...(resize && { size }),
       ...(reinteract && { interaction }),
       ...(leaveMerge && { merge: false }),
       ...(rounds && { rounds }),
+      ...(states && { states }),
     });
-    if (resize || reinteract || leaveMerge || rounds)
+    if (resize || reinteract || leaveMerge || rounds || states)
       afterNextRender(() => this.focusComment(comment), { injector: this.injector });
     else this.focusComment(comment);
   }

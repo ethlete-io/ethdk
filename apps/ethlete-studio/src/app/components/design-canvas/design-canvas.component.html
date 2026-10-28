@@ -13,6 +13,31 @@
     >
   }
 
+  @for (head of placedRowHeads(); track head.key) {
+    <div
+      [style.top.px]="head.y"
+      [style.width.px]="head.width"
+      [style.height.px]="head.height"
+      class="absolute left-0 rounded-[0.8rem] border border-dashed border-surface-border"
+      data-row-head
+    ></div>
+    <button
+      [style.top.px]="head.y"
+      [style.transform]="'translateX(-4rem) scale(' + labelScale() + ')'"
+      [title]="head.title ?? head.label"
+      [attr.aria-expanded]="head.open"
+      (click)="toggleRow(head.key, $event)"
+      class="absolute right-0 origin-top-right whitespace-nowrap"
+      et-button
+      type="button"
+      variant="outline"
+      color="surface"
+      size="sm"
+    >
+      {{ head.label }}
+    </button>
+  }
+
   @for (group of groupHeads(); track group.key) {
     <div
       [style.left.px]="group.x"

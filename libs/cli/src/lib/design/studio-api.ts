@@ -35,6 +35,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import { overlaySketch } from './system/sketch/overlay';
 import { decideSketch, findSketch, listSketches, parseTarget, readSketchReport, Sketch } from './system/sketch/sketch';
 import { partKeyOf } from './system/resolve-product';
+import { unchangedStatesOf } from './system/sketch/unchanged-states';
 import { SketchVariant } from './system/system-modules';
 
 export const SKETCHES_PATH = '/__design/sketches';
@@ -191,6 +192,7 @@ const targetsOf = async ({
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
+        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load }),
         ...(problem ? { error: problem } : {}),
       };
     }),
@@ -198,7 +200,8 @@ const targetsOf = async ({
 
 /**
  * The open sketches of `?product=`, each with its variants, status, decision, the rule problems of every
- * variant, the states, widths and interactions of the target as each variant draws it (`targets`), and the live report
+ * variant, the states, widths and interactions of the target as each variant draws it (`targets`), with the states it
+ * draws the same as the product now (`unchanged`), and the live report
  * of the agent (`report`, `null` when none runs).
  */
 export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {

@@ -13,6 +13,7 @@ import {
   partShotUrl,
 } from '../../host/design';
 import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
+import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
 
@@ -350,6 +351,8 @@ export type SketchFramesSource = Omit<FramesSource, 'part'> & {
   interaction?: string | null;
   /** Whether the user opened (`true`) or folded (`false`) a round, by round key. */
   openRounds?: Record<string, boolean>;
+  /** Whether the user opened (`true`) or folded (`false`) a state no shown variant changes, by state. */
+  openStates?: Record<string, boolean>;
   /** The time in ms the agent's report is judged against; without it, a report never expires. */
   now?: number;
 };
@@ -404,6 +407,9 @@ export const roundColumnKeyOf = (round: string) => `round ${round}`;
 export const openRoundsOf = (rounds: ShownRound[]): Record<string, boolean> =>
   Object.fromEntries(rounds.map((round) => [round.key, round.open]));
 
+/** The canvas row head key of a state no shown variant changes. */
+export const stateRowKeyOf = (state: string) => `unchanged ${state}`;
+
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
 const FOLDED_MIN_WIDTH = 240;
@@ -423,6 +429,8 @@ export type SketchMatrix = {
   interactions: string[];
   /** A single interaction, or `ALL`. */
   interaction: string;
+  /** One per state that every shown variant draws as the part is now: folded to its head unless the user opened it. */
+  rowHeads: CanvasRowHead[];
 };
 
 const CURRENT = 'current';
@@ -500,6 +508,7 @@ export const sketchMatrixOf = ({
   size: picked = null,
   interaction: pickedInteraction = null,
   openRounds = {},
+  openStates = {},
   now,
   epoch,
   revision,
@@ -590,10 +599,17 @@ export const sketchMatrixOf = ({
     ...roundColumns.flatMap((column) => (column.folded ? [] : [variantColumnOf(column.key)])),
   ];
   const states = [...new Set(columns.flatMap((column) => column.states))];
+  const variantColumns = columns.filter((column) => column.key !== CURRENT);
+  const unchanged = (state: string) =>
+    variantColumns.length > 0 &&
+    variantColumns.every((column) => targetOf(column.key)?.unchanged?.includes(state) ?? false);
+  const kept = (part?.states ?? []).filter(unchanged);
+  const ordered = [...states.filter((state) => !kept.includes(state)), ...kept];
+  const rowStates = ordered.filter((state) => !kept.includes(state) || openStates[state] === true);
   const rows: MatrixRow[] =
     states.length === 0
       ? [{ state: undefined, interaction: shownInteractions[0] ?? REST, key: undefined }]
-      : states.flatMap((state) =>
+      : rowStates.flatMap((state) =>
           shownInteractions.map((shown, index): MatrixRow =>
             grouped
               ? {
@@ -698,6 +714,18 @@ export const sketchMatrixOf = ({
     ...(folded === undefined ? {} : { folded }),
   });
 
+  const rowHeads = kept.map((state): CanvasRowHead => {
+    const open = openStates[state] === true;
+
+    return {
+      key: stateRowKeyOf(state),
+      label: `${state} · unchanged in ${variantColumns.map((column) => column.key).join(' ')}`,
+      title: `${open ? 'Fold' : 'Open'} ${state}: every shown variant draws it as current does`,
+      open,
+      before: grouped ? `${state} · ${shownInteractions[0] ?? REST}` : state,
+    };
+  });
+
   return {
     columns: [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf),
     frames,
@@ -705,6 +733,7 @@ export const sketchMatrixOf = ({
     size,
     interactions,
     interaction,
+    rowHeads,
   };
 };
 
@@ -788,7 +817,7 @@ export const mergePreviewOf = ({
     );
   });
 
-  return { columns, frames, sizes: [], size: null, interactions: [REST], interaction: REST };
+  return { columns, frames, sizes: [], size: null, interactions: [REST], interaction: REST, rowHeads: [] };
 };
 
 /** Whether the user may pick a variant: the sketch is ready and the variant breaks no rule. */

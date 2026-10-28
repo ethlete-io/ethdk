@@ -13,6 +13,7 @@ import {
   sketchMatrixOf,
   openRoundsOf,
   sketchRoundsOf,
+  stateRowKeyOf,
   treeOf,
 } from './system-tree';
 import { CompareRow, mergeOutlinesOf, unchangedLinesOf } from './merge-preview';
@@ -547,6 +548,67 @@ describe('sketchMatrixOf', () => {
       { key: 'a', label: 'a', drawing: false },
       { key: 'b', label: 'b', drawing: false },
     ]);
+  });
+
+  describe('unchanged states', () => {
+    const shell = part({ states: ['system', 'hidden'] });
+    const unchanging = sketch({
+      variants: ['a', 'b'],
+      targets: [
+        { variant: 'a', states: ['system', 'hidden'], unchanged: ['system'] },
+        { variant: 'b', states: ['system', 'hidden', 'inbox'], unchanged: ['system'] },
+      ],
+    });
+    const rowsOf = (matrix: ReturnType<typeof sketchMatrixOf>) => [...new Set(matrix.frames.map((frame) => frame.row))];
+
+    it('folds a state every variant draws as current does into a head without frames, below the changed rows', () => {
+      const matrix = sketchMatrixOf({ ...source, part: shell, sketch: unchanging });
+
+      expect(rowsOf(matrix)).toEqual(['hidden', 'inbox']);
+      expect(matrix.rowHeads).toEqual([
+        {
+          key: stateRowKeyOf('system'),
+          label: 'system · unchanged in a b',
+          title: 'Open system: every shown variant draws it as current does',
+          open: false,
+          before: 'system',
+        },
+      ]);
+    });
+
+    it('draws an opened state below the changed rows, under its head', () => {
+      const matrix = sketchMatrixOf({ ...source, part: shell, sketch: unchanging, openStates: { system: true } });
+
+      expect(rowsOf(matrix)).toEqual(['hidden', 'inbox', 'system']);
+      expect(matrix.rowHeads.map((head) => [head.open, head.before])).toEqual([[true, 'system']]);
+    });
+
+    it('keeps a state one variant changes, and folds nothing for a cli without unchanged states', () => {
+      const changedInB = sketch({
+        variants: ['a', 'b'],
+        targets: [
+          { variant: 'a', states: ['system', 'hidden'], unchanged: ['system'] },
+          { variant: 'b', states: ['system', 'hidden'], unchanged: [] },
+        ],
+      });
+      const older = sketch({ variants: ['a'], targets: [{ variant: 'a', states: ['system', 'hidden'] }] });
+
+      expect(rowsOf(sketchMatrixOf({ ...source, part: shell, sketch: changedInB }))).toEqual(['system', 'hidden']);
+      expect(sketchMatrixOf({ ...source, part: shell, sketch: changedInB }).rowHeads).toEqual([]);
+      expect(sketchMatrixOf({ ...source, part: shell, sketch: older }).rowHeads).toEqual([]);
+    });
+
+    it('heads the first interaction row of a folded state when every interaction shows', () => {
+      const matrix = sketchMatrixOf({
+        ...source,
+        part: { ...shell, interactions: ['hover'] },
+        sketch: unchanging,
+        openStates: { system: true },
+      });
+
+      expect(matrix.rowHeads[0]?.before).toBe('system · rest');
+      expect(rowsOf(matrix).slice(-2)).toEqual(['system · rest', 'system · hover']);
+    });
   });
 
   describe('rounds', () => {

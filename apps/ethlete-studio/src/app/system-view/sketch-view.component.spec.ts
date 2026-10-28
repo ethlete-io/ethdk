@@ -116,6 +116,59 @@ describe('SketchViewComponent merge preview', () => {
 
     expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'No report for 30 min' });
   });
+
+  it('opens and folds a state no variant changes on a click on its row head, and remembers it', async () => {
+    vi.stubGlobal('fetch', (url: string) =>
+      url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
+    );
+
+    const fixture = TestBed.createComponent(SketchViewComponent);
+    const card: ListedPart = {
+      layer: 'components',
+      name: 'card',
+      origin: 'product',
+      note: null,
+      states: ['default', 'empty'],
+      problems: [],
+    };
+
+    fixture.componentRef.setInput('port', 4402);
+    fixture.componentRef.setInput('product', PRODUCT);
+    fixture.componentRef.setInput('sketch', {
+      ...SKETCH,
+      targets: [
+        { variant: 'a', states: ['default', 'empty'], unchanged: ['default'] },
+        { variant: 'b', states: ['default', 'empty'], unchanged: ['default'] },
+      ],
+    });
+    fixture.componentRef.setInput('part', card);
+    fixture.componentRef.setInput('cameraKey', 'web sketch:components/card');
+    fixture.autoDetectChanges();
+    await settle(fixture);
+
+    const rows = () => [...new Set(fixture.componentInstance.canvas().frames.map((frame) => frame.row))];
+    const head = () =>
+      [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].find(
+        (button) => button.textContent?.includes('default · unchanged in a b'),
+      );
+
+    expect(rows()).toEqual(['empty']);
+    expect(head()?.getAttribute('aria-expanded')).toBe('false');
+
+    head()?.click();
+    await settle(fixture);
+
+    expect(rows()).toEqual(['empty', 'default']);
+    expect(head()?.getAttribute('aria-expanded')).toBe('true');
+    expect(JSON.parse(localStorage.getItem('ethlete-studio.call-view') ?? '{}').sketchViews).toEqual({
+      'web sketch:components/card': { states: { default: true } },
+    });
+
+    head()?.click();
+    await settle(fixture);
+
+    expect(rows()).toEqual(['empty']);
+  });
 });
 
 describe('SketchViewComponent merge without a note', () => {

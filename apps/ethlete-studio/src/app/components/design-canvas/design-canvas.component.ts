@@ -60,6 +60,8 @@ const FIT_PADDING = 64;
 const ROW_LABEL_GUTTER = 160;
 const COLUMN_HEAD_ROOM = 64;
 const GROUP_HEAD_ROOM = 48;
+const ROW_HEAD_HEIGHT = 48;
+const ROW_HEAD_GAP = 24;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const LABEL_MIN_ZOOM = 0.25;
@@ -80,6 +82,12 @@ export type CanvasColumn = {
   /** A column without frames, `width` wide, with `note` below its head; its head is a button that emits `columnToggle`. */
   folded?: { width: number; note?: string };
 };
+
+/**
+ * A thin row of a `matrix` without frames, whose label is a button that emits `rowToggle`: above the frame
+ * row `before` names while `open`, else below every frame row.
+ */
+export type CanvasRowHead = { key: string; label: string; title?: string; open: boolean; before?: string };
 
 type ColumnGroupHead = CanvasColumnGroup & { x: number; width: number };
 
@@ -125,6 +133,8 @@ export class DesignCanvasComponent {
   /** The columns of a `matrix`, in order. A column without frames still gets its head. */
   public columns = input<CanvasColumn[]>([]);
 
+  public rowHeads = input<CanvasRowHead[]>([]);
+
   /** Names what the canvas shows. A new key fits the camera again, or restores `restoredCamera`. */
   public cameraKey = input<string | null>(null);
 
@@ -162,6 +172,9 @@ export class DesignCanvasComponent {
 
   /** The key of a folded column or of a column group whose head the user clicked. */
   public columnToggle = output<string>();
+
+  /** The key of a row head the user clicked. */
+  public rowToggle = output<string>();
 
   private noteCards = viewChildren<ElementRef<HTMLElement>>('noteCard');
   private noteColumns = viewChildren<ElementRef<HTMLElement>>('noteColumn');
@@ -230,7 +243,18 @@ export class DesignCanvasComponent {
         ? layoutMatrix({
             frames: sized,
             columns: columns.map((column) => column.key),
-            spacing: { ...SPACING, rowGap, groupGap: rowGap * GROUP_GAP_FACTOR, emptyColumnWidth: FALLBACK_WIDTH },
+            spacing: {
+              ...SPACING,
+              rowGap,
+              groupGap: rowGap * GROUP_GAP_FACTOR,
+              headGap: ROW_HEAD_GAP,
+              emptyColumnWidth: FALLBACK_WIDTH,
+            },
+            heads: this.rowHeads().map((head) => ({
+              name: head.key,
+              height: ROW_HEAD_HEIGHT,
+              ...(head.open && head.before !== undefined ? { before: head.before } : {}),
+            })),
             emptyWidths: Object.fromEntries(
               columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
             ),
@@ -269,10 +293,18 @@ export class DesignCanvasComponent {
       return [...placed, { ...head.group, x: head.x, width: head.width }];
     }, []);
 
+    const rowHeads = this.rowHeads();
+    const right = Math.max(0, ...heads.map((head) => head.x + head.width));
+
     return {
       heads,
       groups,
-      rows: sheet.rows.filter((row) => row.name !== ''),
+      rows: sheet.rows.filter((row) => row.name !== '' && !row.head),
+      rowHeads: sheet.rows.flatMap((row) => {
+        const head = row.head ? rowHeads.find((candidate) => candidate.key === row.name) : undefined;
+
+        return head ? [{ ...head, y: row.y, width: right, height: ROW_HEAD_HEIGHT }] : [];
+      }),
       frames: sheet.frames.flatMap((placed) => {
         const frame = byId.get(placed.id);
 
@@ -282,6 +314,8 @@ export class DesignCanvasComponent {
   });
 
   protected rows = computed(() => this.layout().rows);
+
+  protected placedRowHeads = computed(() => this.layout().rowHeads);
 
   protected columnHeads = computed(() => this.layout().heads);
 
@@ -308,12 +342,13 @@ export class DesignCanvasComponent {
   });
 
   private bounds = computed(() => {
-    const { frames, heads } = this.layout();
+    const { frames, heads, rowHeads } = this.layout();
+    const thin = rowHeads.map((head) => ({ x: 0, y: head.y, width: head.width, height: head.height }));
     const middles = this.placedLines().map(({ middle }) => ({ ...middle, width: 1, height: 1 }));
     const notes = this.notes().flatMap((note) => (note.at ? [{ ...note.at, width: 1, height: 1 }] : []));
 
     return (
-      boundingRect([...frames, ...middles, ...notes]) ??
+      boundingRect([...frames, ...thin, ...middles, ...notes]) ??
       boundingRect(heads.map((head) => ({ x: head.x, y: 0, width: head.width, height: 1 })))
     );
   });
@@ -555,6 +590,11 @@ export class DesignCanvasComponent {
     this.pointPick.emit({ frameId: frame.id, point: null });
   }
 
+  protected toggleRow(key: string, event: MouseEvent) {
+    event.stopPropagation();
+    this.rowToggle.emit(key);
+  }
+
   protected toggleColumn(key: string, event: MouseEvent) {
     event.stopPropagation();
     this.columnToggle.emit(key);
@@ -716,7 +756,7 @@ export class DesignCanvasComponent {
   }
 
   private fitted(bounds: Rect, viewport: Size): Camera {
-    const gutter = this.layout().rows.length > 0 ? ROW_LABEL_GUTTER : 0;
+    const gutter = this.layout().rows.length + this.layout().rowHeads.length > 0 ? ROW_LABEL_GUTTER : 0;
     const headRoom =
       (this.layout().heads.length > 0 ? COLUMN_HEAD_ROOM : 0) + (this.layout().groups.length > 0 ? GROUP_HEAD_ROOM : 0);
     const camera = fitRect({

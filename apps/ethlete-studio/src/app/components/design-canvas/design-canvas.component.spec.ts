@@ -338,6 +338,46 @@ describe('DesignCanvasComponent', () => {
     expect(gapBelow(hover, outline)).toBe(96);
   });
 
+  it('draws a folded row head below the frame rows and an open one above its row, and emits its key on a click', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+    const cell = (row: string): CanvasFrame => ({ ...FITTED, id: row, row, column: 'a', width: 200, height: 100 });
+    const toggled: string[] = [];
+
+    fixture.componentInstance.rowToggle.subscribe((key) => toggled.push(key));
+    fixture.componentRef.setInput('frames', [cell('hidden'), cell('inbox')]);
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [{ key: 'a', label: 'a' }]);
+    fixture.componentRef.setInput('rowHeads', [
+      { key: 'unchanged inbox', label: 'inbox · unchanged in a', open: true, before: 'inbox' },
+      { key: 'unchanged system', label: 'system · unchanged in a', open: false, before: 'system' },
+    ]);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const heads = [...host.querySelectorAll<HTMLButtonElement>('button[aria-expanded]')].filter((button) =>
+      button.textContent?.includes('unchanged'),
+    );
+    const [, inbox] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((frame) => frame.nativeElement as HTMLElement);
+    const topOf = (element: HTMLElement | undefined) => parseFloat(element?.style.top ?? '');
+
+    expect(heads.map((head) => [head.textContent?.trim(), head.getAttribute('aria-expanded')])).toEqual([
+      ['inbox · unchanged in a', 'true'],
+      ['system · unchanged in a', 'false'],
+    ]);
+    expect(topOf(inbox) - topOf(heads[0])).toBe(48 + 24);
+    expect(topOf(heads[1])).toBeGreaterThan(topOf(inbox));
+
+    heads[1]?.click();
+
+    expect(toggled).toEqual(['unchanged system']);
+  });
+
   it('lowers the next matrix row below the note column of a frame', async () => {
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
       return this.dataset['noteFrame'] === undefined ? 0 : 200;

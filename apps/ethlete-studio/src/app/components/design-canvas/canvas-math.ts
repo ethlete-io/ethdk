@@ -104,7 +104,7 @@ export const boundingRect = (rects: Rect[]): Rect | null => {
 
 export type SheetFrame = { id: string; width: number; height: number; row: string };
 
-export type SheetRow = { name: string; y: number; label?: string };
+export type SheetRow = { name: string; y: number; label?: string; head?: boolean };
 
 export type SheetLayout = { frames: (SheetFrame & Rect)[]; rows: SheetRow[] };
 
@@ -176,7 +176,10 @@ export type MatrixColumnPlace = { name: string; x: number; width: number };
 
 export type MatrixLayout = SheetLayout & { columns: MatrixColumnPlace[] };
 
-export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?: number };
+export type MatrixSpacing = SheetSpacing & { emptyColumnWidth: number; groupGap?: number; headGap?: number };
+
+/** A row without frames, `height` tall: above the frame row `before` names, else below every frame row. */
+export type MatrixHeadRow = { name: string; height: number; before?: string };
 
 /**
  * Places each frame at its row and its column: a column is as wide as its widest frame (an empty one
@@ -190,6 +193,7 @@ export const layoutMatrix = ({
   spacing,
   emptyWidths = {},
   below = {},
+  heads = [],
 }: {
   frames: MatrixFrame[];
   columns: string[];
@@ -197,8 +201,14 @@ export const layoutMatrix = ({
   emptyWidths?: Record<string, number>;
   /** By frame id, how far content hangs below the frame; the next row starts below it. */
   below?: Record<string, number>;
+  heads?: MatrixHeadRow[];
 }): MatrixLayout => {
-  const rowNames = [...new Set(frames.map((frame) => frame.row))];
+  const frameRows = [...new Set(frames.map((frame) => frame.row))];
+  const headsBefore = (row: string | undefined) =>
+    heads.filter(
+      (head) => (head.before !== undefined && frameRows.includes(head.before) ? head.before : undefined) === row,
+    );
+  const rowNames = [...frameRows.flatMap((row) => [...headsBefore(row), row]), ...headsBefore(undefined)];
   const placedColumns: MatrixColumnPlace[] = [];
   let x = 0;
 
@@ -217,12 +227,26 @@ export const layoutMatrix = ({
 
   let group: string | undefined;
 
-  for (const [index, name] of rowNames.entries()) {
+  let afterHead = false;
+
+  for (const [index, entry] of rowNames.entries()) {
+    if (typeof entry !== 'string') {
+      if (index > 0 && !afterHead && group !== undefined) y += (spacing.groupGap ?? spacing.rowGap) - spacing.rowGap;
+      group = undefined;
+      afterHead = true;
+      rows.push({ name: entry.name, y, head: true });
+      y += entry.height + (spacing.headGap ?? spacing.rowGap);
+      continue;
+    }
+
+    const name = entry;
     const members = frames.filter((frame) => frame.row === name);
     const first = members[0];
 
-    if (index > 0 && first?.rowGroup !== group) y += (spacing.groupGap ?? spacing.rowGap) - spacing.rowGap;
+    if (index > 0 && !afterHead && first?.rowGroup !== group)
+      y += (spacing.groupGap ?? spacing.rowGap) - spacing.rowGap;
     group = first?.rowGroup;
+    afterHead = false;
     rows.push({ name, y, ...(first?.rowLabel === undefined ? {} : { label: first.rowLabel }) });
 
     for (const frame of members) {
