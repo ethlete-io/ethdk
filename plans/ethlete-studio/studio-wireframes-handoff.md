@@ -78,14 +78,23 @@ All four slices are built (CLI fixes 0ab2a8d18..57f1604f7, Studio rows de482bcee
 3. Studio sketch view: in-progress state on frames; each round its own row.
 4. Element in context: an element sketch shows each variant inside the pages that use it.
 
-## In progress (2026-10-28, builder)
+## Built, second batch (2026-10-28, builder)
 
-Tom picked the next items, in order: skill rules (done, 9a501e071); build isolation (the design
-server keeps its own build, so an agent's `nx build cli` does not change :4402); a render check in
-`design check` (overflow, clipping, wrap, taller than the frame); Studio tree children from frames
-and one frame with all interactions for a small part.
+Skill rules 9a501e071; server snapshot b88ca124a (Tom restarts :4402 to get it); render check
+8aacee251 8f05298d5 a335e65dd (OVERFLOW, CLIPPED, WRAP, ZERO-SIZE, RENDER; opt-out
+`definePart({ checks: { skip: [...] } })`; about 3 s on `studio`; a merge does not run it);
+Studio small-part grid 4dbfb0f4b and tree from frames 4f5bf7811.
 
 ## Open, wait for Tom
+
+- Render check finds `OVERFLOW` on `components/select` (sdk, shown in studio) at 320 px, all
+  three states: content 321 px in a 320 px frame, at `button.et-input-picker-trigger` (scroll
+  width 30 against 16). Probably a pseudo-element of the real SDK select; not investigated.
+- Remaining findings not built: CLI sketch commands (`variant d,e,f --from b`, `--round` shows
+  earlier notes, per-variant `sketch check` lines, note-equals-base check, merge keeps `madeBy`,
+  `--like`, per-sketch `shared/`), wireframe kit (divider, `align`, `fill` at 100%, tabs
+  `line: false`, `navList`, round icon), `design shot --out` and a tiled shot, eslint on
+  `libs/cli/design/`, a repo helper for the `__TAURI_INTERNALS__` stub.
 
 - Done: `UNDEFINED-TOKEN` caught wrong token names in `foundations/logo`; fixed in 83accd941.
 
