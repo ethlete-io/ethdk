@@ -69,6 +69,24 @@
     padding: var(--space-2);
   }
 
+  .ib-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-2) var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .ib-group:not(:first-child) {
+    margin-top: var(--space-2);
+    border-top: 1px solid var(--surface-border);
+  }
+
+  .ib-group-title {
+    font-family: var(--font-code);
+  }
+
   .ib-row {
     display: flex;
     gap: var(--space-2);

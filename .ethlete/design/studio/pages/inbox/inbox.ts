@@ -115,6 +115,7 @@ const COMMENTS: Comment[] = [
 ];
 
 const SELECTED = 'c1';
+const ACTIVE_PART = 'button';
 
 const icon = (paths: string, cls: string) =>
   `<svg class="${cls}" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -142,6 +143,11 @@ const row = (c: Comment) =>
     </div>
   </div>`;
 
+const group = (title: string, comments: Comment[]) =>
+  comments.length === 0
+    ? ''
+    : `<div class="ib-group"><span class="ib-group-title">${title}</span><span class="ib-group-count">${comments.length}</span></div>${comments.map(row).join('')}`;
+
 const pinned = (body: string, comments: Comment[]) => {
   let index = -1;
   return body.replace(/<div class="st-canvas-cell">/gu, (match) => {
@@ -156,7 +162,7 @@ export const open: Props = { showResolved: false };
 export const withResolved: Props = { showResolved: true };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every thread of the product in one list, newest first, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin.',
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin.',
   madeBy: ['claude-opus-5-5'],
   states: { open, 'with-resolved': withResolved },
   render: async ({ showResolved }) => {
@@ -168,7 +174,15 @@ export default definePart<Props>({
         <span class="ib-bar-title">${unresolved} offen</span>
         <label class="ib-toggle">Erledigte zeigen ${toggle(showResolved)}</label>
       </div>
-      <div class="ib-list">${visible.map(row).join('')}</div>
+      <div class="ib-list">
+        ${group(
+          ACTIVE_PART,
+          visible.filter((c) => c.part === ACTIVE_PART),
+        )}${group(
+          'Andere',
+          visible.filter((c) => c.part !== ACTIVE_PART),
+        )}
+      </div>
     </div>`;
     const shell = await shellMain.render({
       section: 'Inbox',
