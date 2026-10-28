@@ -921,6 +921,22 @@ step. Each finding names what happened and the fix it needs.
     lists frames, not states. A part drawn in one frame is a leaf (`button`); the frame's captions
     are the navigation, and no row caption is marked selected. Prevent: Studio builds the tree
     children from the part's frames, so a one-frame part never shows children.
+  - Inbox page sketch round (`pages/inbox`, a flat list, b grouped by part, c cards with the first
+    reply), friction from the subagent:
+    - Only `side` is open to a page, so a "show resolved" switch in the panel header or foot is a
+      bar drawn inside `side`, with negative margins. Prevent: `shell-main` slots `sideHead`,
+      `sideFoot`.
+    - `canvas-frames` takes no overlays, so the page places comment pins by a regex on
+      `st-canvas-cell`; a class rename breaks it silently. Prevent: an `annotations` prop
+      (state x interaction to markup).
+    - `sketch new pages/<x>` scaffolds an empty `definePart<Record<string, never>>`, though every
+      page composes the shell. Prevent: `sketch new --like pages/system`.
+    - A variant cannot import a sibling variant, so a, b and c copy the same comment data, switch
+      and pin code. Prevent: a per-sketch `shared/` folder.
+    - The checks print only `ok`; the agent opened every PNG and tiled states with PIL itself.
+      Prevent: a shot option that tiles all states of a variant into one image.
+    - `sketch new --help` prints a "needs --by" error, then the usage of every `sketch`
+      subcommand. Prevent: per-subcommand `--help` without the error line.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
