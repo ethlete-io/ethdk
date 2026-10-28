@@ -1,4 +1,5 @@
 import type { Drawing } from './define-call';
+import { forceBody } from './mark-part';
 
 export { css, drawing, html, ng } from './define-call';
 export type { Drawing } from './define-call';
@@ -14,14 +15,41 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
  */
-export type Part<P> = {
+export type Part<P, S extends string = string> = {
   note: string;
   madeBy?: string[];
-  states: Record<string, P>;
+  states: Record<S, P>;
   widths?: number[];
   interactions?: Interaction[];
+  render: (props: P, options?: RenderOptions) => Drawing | Promise<Drawing>;
+};
+
+/** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
+export type RenderOptions = { interaction?: Interaction };
+
+type PartSource<P, S extends string> = Omit<Part<P, S>, 'states' | 'render'> & {
+  states: Record<S, NoInfer<P>>;
   render: (props: P) => Drawing | Promise<Drawing>;
 };
 
-/** Types a part where it is written. A part file default-exports the result. */
-export const definePart = <P>(part: Part<P>): Part<P> => part;
+const forced = (drawn: Drawing, interaction: Interaction): Drawing => ({
+  ...drawn,
+  body: forceBody(drawn.body, interaction),
+});
+
+/**
+ * Types a part where it is written. A part file default-exports the result. Without type
+ * arguments, `P` comes from the props `render` takes and the state names stay in the type, so
+ * `part.states['open']` is `P` and an unknown name does not compile.
+ */
+export const definePart = <P, const S extends string = string>(part: PartSource<P, S>): Part<P, S> => ({
+  ...part,
+  render: (props, options) => {
+    const drawn = part.render(props);
+    const interaction = options?.interaction;
+
+    if (!interaction) return drawn;
+
+    return drawn instanceof Promise ? drawn.then((done) => forced(done, interaction)) : forced(drawn, interaction);
+  },
+});

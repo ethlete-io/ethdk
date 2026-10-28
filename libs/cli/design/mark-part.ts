@@ -1,22 +1,27 @@
 import type { Drawing } from './define-call';
-import type { Part } from './define-part';
+import type { Interaction, Part, RenderOptions } from './define-part';
 
 const SKIPPED = /^(?:\s+|<!--[\s\S]*?-->|<(style|script)\b[\s\S]*?<\/\1\s*>|<link\b[^>]*>)/i;
 const TAG = /^<[a-zA-Z][\w:-]*/;
 const ATTRIBUTES = /^(?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*/;
 const MARK = /(\sdata-et-part=")([^"]*)"/;
 
-/** Adds `key` to `data-et-part` on the first element of `body`, after any leading styles, scripts, links and comments. */
-export const markBody = (body: string, key: string) => {
+const attributesAtOf = (body: string) => {
   let at = 0;
 
   for (let skipped = SKIPPED.exec(body); skipped; skipped = SKIPPED.exec(body.slice(at))) at += skipped[0].length;
 
   const tag = TAG.exec(body.slice(at));
 
-  if (!tag) return body;
+  return tag ? at + tag[0].length : null;
+};
 
-  const attributesAt = at + tag[0].length;
+/** Adds `key` to `data-et-part` on the first element of `body`, after any leading styles, scripts, links and comments. */
+export const markBody = (body: string, key: string) => {
+  const attributesAt = attributesAtOf(body);
+
+  if (attributesAt === null) return body;
+
   const attributes = ATTRIBUTES.exec(body.slice(attributesAt))?.[0] ?? '';
   const marked = MARK.exec(attributes);
 
@@ -27,19 +32,30 @@ export const markBody = (body: string, key: string) => {
   return `${body.slice(0, valueEnd)} ${key}${body.slice(valueEnd)}`;
 };
 
+/** Forces `interaction` on the first element of `body` the way a frame forces it on the root of a part. */
+export const forceBody = (body: string, interaction: Interaction) => {
+  const attributesAt = attributesAtOf(body);
+
+  if (attributesAt === null) return body;
+
+  const forced = interaction === 'disabled' ? ' disabled aria-disabled="true"' : ` data-et-force="${interaction}"`;
+
+  return `${body.slice(0, attributesAt)}${forced}${body.slice(attributesAt)}`;
+};
+
 const markDrawing = (drawn: Drawing, key: string): Drawing =>
   typeof drawn?.body === 'string' ? { ...drawn, body: markBody(drawn.body, key) } : drawn;
 
 /** The part with a `render` that marks the first element of each drawing as the root of the part `key`. */
-export const markPart = <P>(part: Part<P>, key: string): Part<P> => {
+export const markPart = <P, S extends string>(part: Part<P, S>, key: string): Part<P, S> => {
   if (typeof part?.render !== 'function') return part;
 
   const render = part.render;
 
   return {
     ...part,
-    render: (props) => {
-      const drawn = render.call(part, props);
+    render: (props: P, options?: RenderOptions) => {
+      const drawn = render.call(part, props, options);
 
       return drawn instanceof Promise ? drawn.then((done) => markDrawing(done, key)) : markDrawing(drawn, key);
     },
