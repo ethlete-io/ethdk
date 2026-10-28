@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -14,6 +14,9 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
   'components/cut-on-purpose': {
     body: '<div style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div>',
     extra: "checks: { skip: ['CLIPPED'] },",
+  },
+  'components/cut-element': {
+    body: '<div><div data-et-skip="CLIPPED" style="width: 100px; overflow: hidden"><div style="width: 300px">Wide</div></div></div>',
   },
   'components/label': {
     body: '<div style="width: 120px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">A label that is cut with dots</div>',
@@ -98,4 +101,36 @@ describe('renderIssuesOf', () => {
       }),
     ).resolves.toEqual({ unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' });
   });
+
+  it('keeps the skips of each sketch variant apart', async (context) => {
+    const target = checkout();
+    const dir = join(target, DESIGN_DIR, 'shop', 'sketches', 'components-cut');
+    const cut = readFileSync(join(target, DESIGN_DIR, 'shop', 'components', 'cut', 'cut.ts'), 'utf8');
+
+    mkdirSync(join(dir, 'a', 'components', 'cut'), { recursive: true });
+    mkdirSync(join(dir, 'b', 'components', 'cut'), { recursive: true });
+    writeFileSync(
+      join(dir, 'sketch.json'),
+      JSON.stringify({ target: 'components/cut', status: 'ready', createdAt: '2026-01-01T00:00:00.000Z' }),
+    );
+    writeFileSync(join(dir, 'a', 'components', 'cut', 'cut.ts'), cut);
+    writeFileSync(
+      join(dir, 'b', 'components', 'cut', 'cut.ts'),
+      cut.replace('states: { default: {} },', "states: { default: {} }, checks: { skip: ['CLIPPED'] },"),
+    );
+
+    const rendered = await renderIssuesOf({
+      target,
+      config: readConfig(target) ?? {},
+      jobs: ['a', 'b'].map((variant) => ({
+        product: 'shop',
+        sketch: { target: 'components/cut', variant },
+        parts: ['components/cut'],
+      })),
+    });
+
+    if ('unavailable' in rendered) return context.skip(rendered.unavailable);
+
+    expect(rendered.issues.map((issue) => `${issue.rule} ${issue.sketch?.variant}`)).toEqual(['CLIPPED a']);
+  }, 120_000);
 });

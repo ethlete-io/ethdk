@@ -153,7 +153,7 @@ export const drawingLabel = (variant: Variant) =>
 export const typed = (variant: VariantKey, body: string) => `<div class="sk-type" data-type="${variant}">${body}</div>`;
 
 export const contextCrop = (variant: VariantKey, page: string) =>
-  `<figure class="sk-frame sk-context-frame"><figcaption class="sk-frame-caption">pages/system · desktop</figcaption><div class="sk-crop">${typed(variant, `<div class="sk-crop-page">${page}</div>`)}</div></figure>`;
+  `<figure class="sk-frame sk-context-frame"><figcaption class="sk-frame-caption">pages/system · desktop</figcaption><div class="sk-crop" data-et-skip="CLIPPED">${typed(variant, `<div class="sk-crop-page">${page}</div>`)}</div></figure>`;
 
 export const roundHead = (round: Round, index: number, total: number) =>
   html`<div class="sk-round-head">

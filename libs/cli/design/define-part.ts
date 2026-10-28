@@ -1,4 +1,4 @@
-import type { Drawing } from './define-call';
+import { Drawing } from './define-call';
 import { forceBody } from './mark-part';
 
 export { css, drawing, html, ng } from './define-call';
@@ -15,7 +15,8 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
- * `CLIPPED` for a part that cuts its content.
+ * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
+ * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
  */
 export type Part<P, S extends string = string> = {
   note: string;

@@ -31,6 +31,7 @@ type Frame = {
   viewport: { width: number; height: number };
   fixed: boolean;
   fit: boolean;
+  skips: Record<string, string[]>;
 };
 
 type PartModule = { default?: { states?: unknown; widths?: unknown; checks?: { skip?: unknown } } };
@@ -55,9 +56,11 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
   const seen = new Set();
   const skipsOf = (element) => {
     const skipped = new Set();
-    for (let at = element; at && at !== root; at = at.parentElement)
+    for (let at = element; at && at !== root; at = at.parentElement) {
+      for (const rule of (at.getAttribute('data-et-skip') ?? '').split(' ')) skipped.add(rule);
       for (const key of (at.getAttribute('data-et-part') ?? '').split(' '))
         for (const rule of options.skips[key] ?? []) skipped.add(rule);
+    }
     return skipped;
   };
   const nameOf = (element) => {
@@ -165,13 +168,8 @@ const widthsOf = (value: unknown) =>
     ? value.filter((width): width is number => typeof width === 'number' && Number.isInteger(width) && width > 0)
     : [];
 
-const inspect = async (options: {
-  browser: Browser;
-  base: string;
-  frames: Frame[];
-  skips: Record<string, string[]>;
-}) => {
-  const { browser, base, frames, skips } = options;
+const inspect = async (options: { browser: Browser; base: string; frames: Frame[] }) => {
+  const { browser, base, frames } = options;
   const context = await browser.newContext();
   const issues: RenderIssue[] = [];
 
@@ -183,7 +181,9 @@ const inspect = async (options: {
       await openFrame(page, `${base}/frame.html?${frame.search}`);
       await page.evaluate(settled);
 
-      const found = (await page.evaluate(inspectFrame({ fixed: frame.fixed, fit: frame.fit, skips }))) as Found[];
+      const found = (await page.evaluate(
+        inspectFrame({ fixed: frame.fixed, fit: frame.fit, skips: frame.skips }),
+      )) as Found[];
       const { product, part, state, sketch } = frame.address;
 
       issues.push(...found.map((issue) => ({ ...issue, product, part, state, sketch, size: frame.size })));
@@ -225,9 +225,9 @@ export const renderIssuesOf = async (options: {
     const system = createSystemModules({ target, config });
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
-    const skips: Record<string, string[]> = {};
-
     for (const { product, sketch, parts } of jobs) {
+      const skips: Record<string, string[]> = {};
+
       const drawn = system.drawnOf(product, sketch);
 
       if (!drawn) continue;
@@ -285,13 +285,14 @@ export const renderIssuesOf = async (options: {
               viewport: viewportOf(frame.size),
               fixed: frame.size?.height !== undefined,
               fit: frame.size === null,
+              skips,
             });
           }
         }
       }
     }
 
-    issues.push(...(await queue.run((browser) => inspect({ browser, base, frames, skips }))));
+    issues.push(...(await queue.run((browser) => inspect({ browser, base, frames }))));
 
     return { issues };
   } catch (error) {
