@@ -146,18 +146,19 @@ export const authorMark = (variant: Variant) =>
     : '';
 
 export const drawingLabel = (variant: Variant) =>
-  variant.drawing && variant.author ? `<span class="sk-drawing">Agent zeichnet noch</span>` : '';
+  variant.drawing && variant.author
+    ? `<span class="sk-drawing" role="status" title="Agent zeichnet noch"><span aria-hidden="true">●</span> Zeichnet</span>`
+    : '';
 
 export const typed = (variant: VariantKey, body: string) => `<div class="sk-type" data-type="${variant}">${body}</div>`;
 
 export const contextCrop = (variant: VariantKey, page: string) =>
-  `<div class="sk-crop">${typed(variant, `<div class="sk-crop-page">${page}</div>`)}</div>`;
+  `<figure class="sk-frame sk-context-frame"><figcaption class="sk-frame-caption">pages/system · desktop</figcaption><div class="sk-crop">${typed(variant, `<div class="sk-crop-page">${page}</div>`)}</div></figure>`;
 
 export const roundHead = (round: Round, index: number, total: number) =>
   html`<div class="sk-round-head">
     <span class="sk-round-key">Runde ${total - index}</span>
     <span class="sk-round-title">${round.title}</span>
-    <span class="sk-round-letters">${round.variants.join(' · ')}</span>
   </div>`;
 
 export const foldedRound = (round: Round, index: number, total: number) =>
@@ -192,13 +193,10 @@ export const PAGE_PIN: Pin = {
   thread: [{ author: 'Tom Bornholdt', initials: 'TB', when: 'vor 5 Min', text: 'Ohne Panel fehlt mir der Baum.' }],
 };
 
-const expand =
-  '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 2.5h4v4M6.5 13.5h-4v-4M13.5 2.5 9 7M2.5 13.5 7 9"/></svg>';
-
 export const pageShot = (variant: PageVariant['key'], page: string, pin = '') =>
-  html`<div class="sk-shot" data-page="${variant}" title="In voller Größe öffnen">
+  html`<div class="sk-shot" data-page="${variant}" title="Doppelklick zum Einpassen">
     <div class="sk-shot-page">${page}</div>
-    <span class="sk-shot-open">${expand}1440 × 900</span>
+    <span class="sk-shot-open">1440 × 900</span>
     ${pin}
   </div>`;
 

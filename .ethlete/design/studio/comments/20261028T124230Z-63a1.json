@@ -1,0 +1,23 @@
+{
+  "part": "pages/sketches",
+  "state": "page-sketch",
+  "size": "desktop",
+  "text": "merkwürdiger whitespace",
+  "point": {
+    "x": 951,
+    "y": 236
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "a"
+  },
+  "createdAt": "2026-10-28T12:42:30.912Z",
+  "resolved": {
+    "by": "agent",
+    "author": "gpt-6",
+    "reason": "round",
+    "resolvedAt": "2026-10-28T12:44:48.721Z",
+    "note": "Tom markiert unklaren Weißraum in beiden Zuständen, eine zu lange Zeichnet-noch-Badge, doppelte Variantenbuchstaben im Rundentitel und ein zu langes Wort im Variantenkopf.",
+    "round": "r2"
+  }
+}

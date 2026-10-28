@@ -1,0 +1,23 @@
+{
+  "part": "pages/sketches",
+  "state": "page-sketch",
+  "size": "desktop",
+  "text": "vertical alignment passt nicht",
+  "point": {
+    "x": 353,
+    "y": 145
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "b"
+  },
+  "createdAt": "2026-10-28T12:49:30.149Z",
+  "resolved": {
+    "by": "agent",
+    "author": "gpt-6",
+    "reason": "round",
+    "resolvedAt": "2026-10-28T12:52:15.159Z",
+    "note": "Tom markiert die fehlende Ausrichtung der Kopf- und Frame-Spalten, verbleibenden Leerraum und fragt nach direktem Zoom in den Kontext. Kopf und Frames verwenden jetzt dieselbe Kamerageometrie; Kontextseiten werden vollständig statt beschnitten gezeigt.",
+    "round": "r3"
+  }
+}

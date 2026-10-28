@@ -10,7 +10,6 @@ import {
   drawingLabel,
   foldedRound,
   foldedStates,
-  NO_CONTEXT,
   NOTES,
   PAGE_PIN,
   PAGE_ROUND,
@@ -30,6 +29,7 @@ import {
 } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
+import { canvasSetup } from './canvas-setup';
 
 const openSketches = {
   layers: [
@@ -44,7 +44,7 @@ const pickButton = async (variant: Variant) =>
     ? { body: '<span class="sk-current-tag">Gemergt</span>', styles: '' }
     : variant.drawing
       ? { body: drawingLabel(variant), styles: '' }
-      : button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
+      : button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
 
 const systemPage = async (panel?: 'hidden') => {
   const tree = await partTree.render(partTree.states['components-open']);
@@ -69,7 +69,7 @@ const openPageSketch = {
 const renderPageSketch = async () => {
   const side = await partTree.render(openPageSketch);
   const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm' });
-  const pick = await button.render({ label: 'Übernehmen', variant: 'outline', size: 'sm' });
+  const pick = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
   const open = await systemPage();
   const hidden = await systemPage('hidden');
   const pages = { current: open.body, a: hidden.body, b: open.body };
@@ -78,7 +78,9 @@ const renderPageSketch = async () => {
     (variant) =>
       html`<div class="sk-a-col-head">
         <div class="sk-variant-head">
-          <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}>${variant.label}</span>
+          <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}
+            >${variant.key === 'current' ? variant.label : 'Variante ' + variant.label}</span
+          >
           ${pageAuthor(variant)}
           ${variant.key === 'current' ? '<span class="sk-current-tag">Gemergt</span>' : pick.body}
         </div>
@@ -102,25 +104,37 @@ const renderPageSketch = async () => {
       ${discard.body}
     </header>
     ${roundHead(PAGE_ROUND, 0, 1)}
-    <section class="sk-a-grid" data-page-sketch>
-      ${heads} ${shots}
-      <div class="sk-a-span sk-no-context">${NO_CONTEXT}</div>
-    </section>
+    <div class="sk-fixed-heads">${heads}</div>
+    ${canvasTools}
+    <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
+      <section class="sk-a-grid sk-world" data-page-sketch>${shots}</section>
+    </div>
   </div>`;
 
   const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
 
   return drawing({
     body: shell.body,
+    setup: canvasSetup,
     styles: shell.styles + side.styles + open.styles + discard.styles + pick.styles + kit + styles,
   });
 };
 
-const dimmed = (variant: Variant, body: string) => (variant.drawing ? `<div class="sk-dim">${body}</div>` : body);
+const fitControl = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
+const resetControl = await button.render({ label: '100%', variant: 'transparent', size: 'sm' });
+const canvasTools = html`<div class="st-canvas-zoom">
+  <span data-camera-fit>${fitControl.body}</span>
+  <span class="st-canvas-zoom-value" data-camera-reset>${resetControl.body}</span>
+</div>`;
+
+const dimmed = (variant: Variant, body: string) =>
+  variant.drawing
+    ? `<figure class="sk-frame sk-pending" aria-label="Variante ${variant.label} wird gezeichnet"><span>Wird gezeichnet</span></figure>`
+    : body;
 
 export default definePart<{ sketch: 'element' | 'page' }>({
-  note: 'Every round is a row on one long canvas, newest on top: the variants of the newest round stand side by side next to current, one frame per changed state, with the unchanged states folded below and an In context band that crops pages/system per variant. Older rounds fold to one thin row with their note. The SDK buttons take the Studio accent through the colour tokens. A sketch on a page (page-sketch) draws each 1440x900 frame scaled to a fifth side by side, a click opens it at full size, and the In context band drops out. Costs: the newest round owns the canvas, so an older round must be unfolded in place to compare it; a round with many states pushes the In context band below the fold; page frames at a fifth are an overview only, so any detail costs a click.',
-  madeBy: ['claude-opus-5-5'],
+  note: 'One continuous canvas for components and pages, top-aligned after fit with no extra camera inset. Screen-size variant heads stay within the visible portion of their column; a sliver under 180px hides its head. The header has a stable height before fitting. 100% reveals the nearest frame from its top-left. Double-click focuses state and full-context frames. Pending variants show quiet outlined placeholders instead of unfinished drawings. Earlier rounds follow context content within the canvas, with no fixed footer. Plain Variante labels replace boxed letters. Fit and header geometry reserve space for outlines. Context pages are complete miniature frames that can be zoomed into on the same canvas, not clipped crops. Round titles omit duplicate variant letters, Merge keeps the action compact, and drawing status is quiet inline text beside its author. Native-size frames share one pan/zoom behavior; the initial camera fits the newest round. Variant identities and decision buttons stay at screen size above the canvas. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available. Cost: the overview of large pages cannot show detail until zoomed in; the fixed variant bar consumes space.',
+  madeBy: ['claude-opus-5-5', 'gpt-6'],
   states: { open: { sketch: 'element' }, 'page-sketch': { sketch: 'page' } },
   checks: { skip: ['CLIPPED'] },
   render: async ({ sketch }) => {
@@ -141,7 +155,9 @@ export default definePart<{ sketch: 'element' | 'page' }>({
       (variant, index) =>
         html`<div class="sk-a-col-head">
           <div class="sk-variant-head">
-            <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}>${variant.label}</span>
+            <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}
+              >${variant.key === 'current' ? variant.label : 'Variante ' + variant.label}</span
+            >
             ${authorMark(variant)} ${picks[index]?.body ?? ''}
           </div>
           <span class="sk-variant-note">${NOTES[variant.key]}</span>
@@ -162,7 +178,7 @@ export default definePart<{ sketch: 'element' | 'page' }>({
       )
       .join('');
 
-    const crops = VARIANTS.map((variant) => dimmed(variant, contextCrop(variant.key, page.body))).join('');
+    const contextFrames = VARIANTS.map((variant) => dimmed(variant, contextCrop(variant.key, page.body))).join('');
 
     const content = html`<div class="sk-page">
       <header class="sk-head">
@@ -172,14 +188,18 @@ export default definePart<{ sketch: 'element' | 'page' }>({
         ${discard.body}
       </header>
       ${newest ? roundHead(newest, 0, ROUNDS.length) : ''}
-      <section class="sk-a-grid">
-        ${heads} ${stateRows}
-        <div class="sk-a-span">${foldedStates(UNCHANGED_STATES)}</div>
-        <div class="sk-a-span sk-band-title">Im Kontext · pages/system</div>
-        ${crops}
-      </section>
-      <div class="sk-a-older">
-        ${older.map((round, index) => foldedRound(round, index + 1, ROUNDS.length)).join('')}
+      <div class="sk-fixed-heads">${heads}</div>
+      ${canvasTools}
+      <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
+        <section class="sk-a-grid sk-world">
+          ${stateRows}
+          <div class="sk-a-span">${foldedStates(UNCHANGED_STATES)}</div>
+          <div class="sk-a-span sk-band-title">Im Kontext · pages/system</div>
+          ${contextFrames}
+          <div class="sk-a-span sk-a-older">
+            ${older.map((round, index) => foldedRound(round, index + 1, ROUNDS.length)).join('')}
+          </div>
+        </section>
       </div>
     </div>`;
 
@@ -187,6 +207,7 @@ export default definePart<{ sketch: 'element' | 'page' }>({
 
     return drawing({
       body: shell.body,
+      setup: canvasSetup,
       styles:
         shell.styles +
         side.styles +

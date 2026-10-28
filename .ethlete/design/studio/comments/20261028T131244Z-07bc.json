@@ -1,0 +1,23 @@
+{
+  "part": "pages/sketches",
+  "state": "open",
+  "size": "desktop",
+  "text": "auch hier abgeschnitten",
+  "point": {
+    "x": 347,
+    "y": 670
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "d"
+  },
+  "createdAt": "2026-10-28T13:12:44.144Z",
+  "resolved": {
+    "by": "agent",
+    "author": "gpt-6",
+    "reason": "round",
+    "resolvedAt": "2026-10-28T13:15:09.839Z",
+    "note": "Tom markiert abgeschnittene Button- und Frame-Konturen, am Bildschirmboden klebende frühere Runden, fehlende Platzhalter und die kleinen Variantenkästchen. Runde e nimmt Konturen in die Geometrie auf und führt frühere Runden im Canvas weiter.",
+    "round": "r5"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "part": "pages/sketches",
+  "state": "open",
+  "size": "desktop",
+  "text": "hier sollte irgendwie schon ein platzhalter sichtbar sein",
+  "point": {
+    "x": 1263,
+    "y": 196
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "d"
+  },
+  "createdAt": "2026-10-28T13:13:45.696Z",
+  "resolved": {
+    "by": "agent",
+    "author": "gpt-6",
+    "reason": "round",
+    "resolvedAt": "2026-10-28T13:15:09.839Z",
+    "note": "Tom markiert abgeschnittene Button- und Frame-Konturen, am Bildschirmboden klebende frühere Runden, fehlende Platzhalter und die kleinen Variantenkästchen. Runde e nimmt Konturen in die Geometrie auf und führt frühere Runden im Canvas weiter.",
+    "round": "r5"
+  }
+}

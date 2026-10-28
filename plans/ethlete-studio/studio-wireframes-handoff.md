@@ -111,3 +111,61 @@ page through a sketch. Then the Flows page and merge compare.
   key types.
 - `libs/cli/.../system/comments/comment.spec.ts` "lists oldest first" is flaky (same timestamp ids
   sort randomly), from 15bb60c99. Fix with a stable tiebreak on id.
+
+## Sketches canvas round (2026-10-28)
+
+Tom reopens `pages/sketches`: large designs should use the canvas and zoom instead of a
+separate page-thumbnail/open treatment. One behavior should scale from components to pages.
+Open sketch `studio / pages/sketches`, variant a, proposes native-size page frames, fit-to-round
+initial camera, pointer-centered Ctrl/wheel zoom, wheel/drag pan and double-click frame fit.
+The same viewport wraps the element state. Variant identities and decision buttons stay at
+screen size above the viewport. This is a prototype for review, not a merged design or app change.
+The previous page-specific 22% preview is the comparison baseline. Open: validate this camera
+model with Tom before refining context frames and older-round navigation.
+
+## Exploration order clarification (Tom, 2026-10-28)
+
+Current work draws pages to discover the later component/element inventory. Do not interrupt
+page exploration with immediate extraction work. Record roadblocks and possible fixes in
+`design-system.md`; shared canvas is a candidate to assess across pages, not a decided next task.
+The process is provisional, and Tom explicitly invites grounded disagreement.
+
+## Sketches feedback round b (2026-10-28)
+
+Tom left five comments on a: whitespace in both states, long drawing badge, duplicate round
+letters and a long action label. Round b proposes top-aligned camera fit, inline drawing
+status, no duplicate round letters and “Merge”. Findings and possible fixes, including the
+CLI resolving source comments when a feedback round starts, are in `design-system.md`.
+
+## Sketches feedback round c (2026-10-28)
+
+Four comments on b: misaligned page columns, remaining whitespace, direct zoom into context.
+Round c derives screen-size head columns from camera geometry, removes the extra viewport
+inset, reduces header gaps and shows complete context pages. Canvas zoom allows up to 800%.
+Type/lint and sketch checks pass; both states inspected via read-only Studio shots. High-zoom
+interaction was not exercised; offscreen variant navigation remains a design question.
+Roadblocks, causes and possible fixes are recorded in `design-system.md`.
+
+## Own verification round d (2026-10-28)
+
+Tom requested independent screen verification and documentation. Browser audit reproduced
+empty content after 100%, disappearing head actions, clipped initial pin, stale fit geometry
+and absent context focus in c. Variant d corrects these; real-pointer assertions caught and
+fixed a further pointer-capture/double-click failure. Both states now pass pointer zoom, drag,
+Fit, frame focus and visible-content-at-100% checks; context focus also passes. Fit, zoom,
+100% and focus screenshots were inspected. Type/lint and sketch checks pass. WebKit stability
+and touch remain unverified. All findings, causes and possible fixes are in `design-system.md`.
+
+Tom also questioned CSS instead of Tailwind. The app uses Tailwind, drawings inherited CSS.
+The design server has Tailwind's pipeline, but Studio's stylesheet source scope excludes the
+product drawing tree. Registering drawing sources and using token-backed utilities for page
+layout is a proposed workflow fix, not implemented during this camera correction.
+
+## Feedback round e (2026-10-28)
+
+Six comments on d addressed in e: painted-contour gutters for header buttons and frames,
+older rounds moved into canvas flow directly after context, three visible pending placeholders,
+and plain “Variante g/h/i” instead of boxed letters. Both states inspected at fit/zoom/100%/focus.
+Type/lint, render, camera interaction and dedicated contour/round-gap assertions pass. The
+first contour guard required one more header pixel; checks were repeated after that correction.
+Findings and possible fixes recorded in `design-system.md`. Native pinch remains unresolved.
