@@ -81,3 +81,7 @@ playwright-report
 
 # Design-call drawings a tool writes next to a plan.
 *.dc.html
+
+# Generated editor tsconfigs of the design tool
+.ethlete/design/tsconfig.json
+.ethlete/design/*/tsconfig.json

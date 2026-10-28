@@ -1,12 +1,9 @@
 import ethlete from '@ethlete/eslint-plugin';
+import globals from 'globals';
 import baseConfig from '../../eslint.config.mjs';
 
 export default [
   ...baseConfig,
-
-  // The design frame page is browser code Vite serves from source, not library code this project
-  // compiles. The Angular-flavoured rules of the styleguide do not apply to it.
-  { ignores: ['design/**'] },
 
   {
     files: ['**/*.json'],
@@ -44,6 +41,22 @@ export default [
       // script legitimately awaits child processes and the registry.
       'no-restricted-syntax': 'off',
       'ethlete/no-async-await': 'off',
+    },
+  },
+  // `design/` is browser code Vite serves from source into the frame page. Browser globals are
+  // available there; the Angular-library rules about injecting the DOM, CSP and viewport do not apply.
+  {
+    files: ['design/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser } },
+    rules: {
+      'no-restricted-globals': 'off',
+      'ethlete/no-csp-unsafe': 'off',
+      'ethlete/no-direct-dom-manipulation': 'off',
+      'ethlete/no-dom-query': 'off',
+      'ethlete/no-window-location': 'off',
+      'ethlete/no-native-observers': 'off',
+      'ethlete/prefer-viewport-size': 'off',
+      'ethlete/prefer-rxjs-timer': 'off',
     },
   },
   // Relaxed rules for spec files (non-null assertions are common and intentional in tests)

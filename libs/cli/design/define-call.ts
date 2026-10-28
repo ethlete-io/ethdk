@@ -9,8 +9,13 @@ const flatten = (value: unknown): string => {
   return String(value);
 };
 
-const join = (strings: TemplateStringsArray, values: unknown[]) =>
-  strings.reduce((out, part, index) => out + flatten(values[index - 1]) + part);
+const join = (strings: TemplateStringsArray, values: unknown[]) => {
+  let out = strings[0] ?? '';
+
+  for (let index = 1; index < strings.length; index++) out += flatten(values[index - 1]) + strings[index];
+
+  return out;
+};
 
 /**
  * Marks a template literal as HTML, so Prettier formats it and an editor highlights it. It escapes
@@ -72,14 +77,14 @@ export const ng = async (template: string, options: NgOptions = {}) => {
 };
 
 /** A click on an element that matches `click` inside the drawing shows the state `go`. */
-export type StateRule<S extends string> = { click: string; go: S };
+export type StateRule<TState extends string> = { click: string; go: TState };
 
 /**
  * Swaps the content of the drawing's state host for `states[rule.go]` when a click matches a rule.
  * The first matching rule wins. The swap runs in a View Transition where the browser has one.
  */
 export const switchStates =
-  <S extends string>(states: Record<S, string>, rules: StateRule<S>[]) =>
+  <TState extends string>(states: Record<TState, string>, rules: StateRule<TState>[]) =>
   (root: HTMLElement) => {
     const host = root.querySelector<HTMLElement>('[data-de-states]');
 
@@ -109,11 +114,11 @@ export const switchStates =
  * Renders each named template with `ng()` and resolves with a `body` that shows the first state,
  * and `on(rules)`, a `setup` that swaps states on a click. Every state's styles load up front.
  */
-export const ngStates = async <S extends string>(templates: Record<S, string>, options: NgOptions = {}) => {
-  const names = Object.keys(templates) as S[];
+export const ngStates = async <TState extends string>(templates: Record<TState, string>, options: NgOptions = {}) => {
+  const names = Object.keys(templates) as TState[];
   const rendered = await Promise.all(names.map((name) => render(templates[name], options)));
   const states = Object.fromEntries(names.map((name, index) => [name, rendered[index]?.markup ?? ''])) as Record<
-    S,
+    TState,
     string
   >;
   const first = names[0];
@@ -126,7 +131,7 @@ export const ngStates = async <S extends string>(templates: Record<S, string>, o
         rendered.flatMap((entry) => entry.styles),
         emitted,
       ) + `<div data-de-states="${first}" style="display: contents">${states[first]}</div>`,
-    on: (rules: StateRule<S>[]) => switchStates(states, rules),
+    on: (rules: StateRule<TState>[]) => switchStates(states, rules),
   };
 };
 

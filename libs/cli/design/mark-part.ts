@@ -1,5 +1,5 @@
-import type { Drawing } from './define-call';
-import type { Interaction, Part, RenderOptions } from './define-part';
+import { Drawing } from './define-call';
+import { Interaction, Part, RenderOptions } from './define-part';
 
 const SKIPPED = /^(?:\s+|<!--[\s\S]*?-->|<(style|script)\b[\s\S]*?<\/\1\s*>|<link\b[^>]*>)/i;
 const TAG = /^<[a-zA-Z][\w:-]*/;
@@ -47,14 +47,17 @@ const markDrawing = (drawn: Drawing, key: string): Drawing =>
   typeof drawn?.body === 'string' ? { ...drawn, body: markBody(drawn.body, key) } : drawn;
 
 /** The part with a `render` that marks the first element of each drawing as the root of the part `key`. */
-export const markPart = <P, S extends string>(part: Part<P, S>, key: string): Part<P, S> => {
+export const markPart = <TProps, TState extends string>(
+  part: Part<TProps, TState>,
+  key: string,
+): Part<TProps, TState> => {
   if (typeof part?.render !== 'function') return part;
 
   const render = part.render;
 
   return {
     ...part,
-    render: (props: P, options?: RenderOptions) => {
+    render: (props: TProps, options?: RenderOptions) => {
       const drawn = render.call(part, props, options);
 
       return drawn instanceof Promise ? drawn.then((done) => markDrawing(done, key)) : markDrawing(drawn, key);

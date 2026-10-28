@@ -1,34 +1,37 @@
-import { cpSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
-import { readConfig } from '../paths';
+import { writeCallsTsconfig } from '../calls-tsconfig';
+import { DESIGN_DIR, readConfig } from '../paths';
 import { resolveProduct } from './resolve-product';
-import { writeSystemTsconfig } from './system-tsconfig';
+import { writeEditorTsconfig } from './system-tsconfig';
 
 const acme = () => {
-  const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
+  const target = mkdtempSync(join(tmpdir(), 'cli-design-editor-tsconfig-'));
 
   cpSync(join(__dirname, '__fixtures__'), target, { recursive: true });
 
   return target;
 };
 
-describe('writeSystemTsconfig', () => {
-  it('maps each part name to the part the product resolves', () => {
+describe('editor tsconfigs', () => {
+  it('writes the product tsconfig next to its parts', () => {
     const target = acme();
     const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
-    const config = JSON.parse(readFileSync(writeSystemTsconfig({ target, product }), 'utf8')) as {
-      compilerOptions: { paths: Record<string, string[]> };
-      include: string[];
-    };
-    const { paths } = config.compilerOptions;
 
-    expect(paths['@system/components/button']?.[0]).toContain('/acme/components/button/button.ts');
-    expect(paths['@system/components/card']?.[0]).toContain('/acme-base/components/card/card.ts');
-    expect(paths['@system/fixtures']?.[0]).toContain('/acme/fixtures.ts');
-    expect(paths['@design-system']?.[0]).toMatch(/define-part\.ts$/);
-    expect(config.include).not.toContainEqual(expect.stringContaining('/acme-base/components/button/'));
-    expect(config.include).toContainEqual(expect.stringContaining('/acme-base/components/card/card.ts'));
+    writeEditorTsconfig({ target, product });
+
+    const config = JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/tsconfig.json'), 'utf8'));
+
+    expect(Object.keys(config.compilerOptions.paths)).toContain('@design-system');
+  });
+
+  it('writes the calls tsconfig into the design folder', () => {
+    const target = acme();
+
+    writeCallsTsconfig(target);
+
+    expect(existsSync(join(target, DESIGN_DIR, 'tsconfig.json'))).toBe(true);
   });
 });

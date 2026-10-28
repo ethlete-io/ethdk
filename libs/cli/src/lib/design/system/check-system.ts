@@ -1,6 +1,5 @@
 import { relative } from 'path';
 import { DesignConfig } from '../paths';
-import { typecheck } from '../typecheck';
 import { importProblemsOf } from './imports';
 import { Problem } from './problem';
 import { resolveProduct, ResolvedProduct } from './resolve-product';
@@ -15,7 +14,7 @@ import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badWidthsOf } from './rules/widths';
-import { writeSystemTsconfig } from './system-tsconfig';
+import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 
 const RULES = [
   importProblemsOf,
@@ -65,7 +64,9 @@ const reportSystem = (options: CheckOptions) => {
 
     ruleProblemsOf(product).forEach(report);
 
-    const result = typecheck({ target, tsconfig: writeSystemTsconfig({ target, product }) });
+    writeEditorTsconfig({ target, product });
+
+    const result = typecheckProduct({ target, product });
 
     if (result.kind === 'unavailable') {
       console.error(result.message);

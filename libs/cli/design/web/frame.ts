@@ -1,4 +1,4 @@
-import { Drawing, mountDrawing, placeOverlays } from '@design-explore';
+import { Drawing, mountDrawing, placeOverlays } from '../define-call';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
 import { parts, sketchParts } from 'virtual:design-explore/system';
@@ -38,7 +38,7 @@ if (fit) {
   root.style.padding = '16px';
 }
 
-const fail = (message: string): null => {
+const fail = (message: string) => {
   errored = true;
 
   const text = document.createElement('pre');

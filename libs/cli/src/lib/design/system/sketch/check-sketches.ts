@@ -1,8 +1,8 @@
-import { typecheck, TypecheckResult } from '../../typecheck';
+import { TypecheckResult } from '../../typecheck';
 import { ruleProblemsOf } from '../check-system';
 import { Problem } from '../problem';
 import { ResolvedProduct } from '../resolve-product';
-import { writeSystemTsconfig } from '../system-tsconfig';
+import { typecheckProduct } from '../system-tsconfig';
 import { overlaySketch } from './overlay';
 import { listSketches, Sketch, sketchFolderOf } from './sketch';
 
@@ -40,10 +40,9 @@ export const typecheckVariant = (options: {
 }): TypecheckResult => {
   const { target, product, sketch, variant } = options;
   const overlaid = overlaySketch({ product, sketch, variant });
-  const tsconfig = writeSystemTsconfig({
+
+  return typecheckProduct({
     target,
     product: { ...overlaid, name: `${product.name}.sketch.${sketchFolderOf(sketch)}.${variant}` },
   });
-
-  return typecheck({ target, tsconfig });
 };
