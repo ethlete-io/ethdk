@@ -265,7 +265,7 @@ A dialog without its own URL is an element that a page state shows ("login open"
 ### Check a product
 
 ```bash
-et design check --product <name>   # layer dependencies, hard-coded colours, undefined tokens, copied components, scripted motion, tsc
+et design check --product <name>   # layer dependencies, hard-coded colours, undefined tokens, copied components, scripted motion, tsc, render
 et design system --json            # each part's origin, note, states, presets and problems
 ```
 
@@ -273,6 +273,22 @@ Without `--product`, `check` covers every product. A part may only use its own l
 layers below it (see "The order of a design"). Rule `FLOW` reports a misshaped flow file, a frame
 naming a part or state that exists neither in the product nor in an open sketch of that part, a duplicate state, and a line to a state that is not a frame of
 the flow. Rule `WIREFRAME-KIT` reports a component or foundation importing the kit. Pass the changed files to the check below as before.
+
+Once the other rules pass, the check draws every state in a headless Chromium on a server of its own
+(pages at each preset, a part with `widths` at each width, any other part fitted), and
+`sketch check` does the same for the open variants and the pages they show in. Each line names
+product, part, state, size and a selector path:
+
+- `OVERFLOW` - the frame scrolls: content wider than the frame, or taller than a preset height.
+- `CLIPPED` - an element with `overflow: hidden|clip` cuts its content, unless it sets
+  `text-overflow: ellipsis` or a line clamp.
+- `WRAP` - text in a button, tab, badge, chip or `white-space: nowrap` box runs onto a second line.
+- `ZERO-SIZE` - the part root has no width or no height.
+- `RENDER` - the frame refused to draw, or the part did not load.
+
+A part that breaks a rule on purpose names it: `definePart({ checks: { skip: ['CLIPPED'] }, … })`;
+the skip covers the part wherever it is drawn. Without Playwright Chromium the check prints
+`RENDER CHECK SKIPPED` and passes on the other rules.
 
 A project's `config.json` entry can name `themes`, `{ "surface": [...], "color": [...] }`; a
 frame asked for a theme gets the `et-surface--<name>` and `et-color--<name>` classes on its root,
