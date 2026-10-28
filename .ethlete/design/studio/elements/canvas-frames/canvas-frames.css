@@ -46,10 +46,6 @@
     padding-right: var(--space-4);
   }
 
-  .st-canvas-row-caption[data-selected] {
-    color: var(--accent-text);
-  }
-
   .st-canvas-cell {
     display: flex;
     align-items: center;

@@ -3,7 +3,7 @@ import button from '@system/components/button';
 import tokens from '@system/foundations/tokens.css?inline';
 import styles from './canvas-frames.css?inline';
 
-type Props = { part: string; states: string[]; selected: string; zoom: string };
+type Props = { part: string; states: string[]; zoom: string };
 
 const buttonStates = {
   filled: { label: 'Save', variant: 'filled' },
@@ -24,7 +24,6 @@ const forced = (markup: string, interaction: (typeof interactions)[number]) => {
 export const defaultFrames: Props = {
   part: 'button',
   states: ['filled', 'outline', 'tonal'],
-  selected: 'filled',
   zoom: '100%',
 };
 
@@ -35,7 +34,7 @@ export default definePart<Props>({
   states: {
     default: defaultFrames,
   },
-  render: async ({ part, states, selected, zoom }) => {
+  render: async ({ part, states, zoom }) => {
     const rows = await Promise.all(
       states.map(async (state) => {
         const base = buttonStates[state as keyof typeof buttonStates];
@@ -59,7 +58,7 @@ export default definePart<Props>({
             ${rows
               .map(
                 ({ state, cells }) =>
-                  `<span class="st-canvas-caption st-canvas-row-caption"${state === selected ? ' data-selected' : ''}>${state}</span>` +
+                  `<span class="st-canvas-caption st-canvas-row-caption">${state}</span>` +
                   cells
                     .map(
                       ({ interaction, drawn }) =>

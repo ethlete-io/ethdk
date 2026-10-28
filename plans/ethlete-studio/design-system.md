@@ -916,6 +916,11 @@ step. Each finding names what happened and the fix it needs.
   - One-frame grid (194b8280c): `var(--space-8)` does not exist (the scale ends at `--space-7`),
     and the padding silently became nothing; only the shot showed it. Prevent: `design check`
     flags a `var(--token)` that no tokens file defines and that has no fallback.
+  - Tom on the tree after the one-frame grid: "die filled,outline,tonal in der sidebar, machen die
+    jetzt noch sinn? hilft das?" They did not: all three opened the same frame. Tom chose: the tree
+    lists frames, not states. A part drawn in one frame is a leaf (`button`); the frame's captions
+    are the navigation, and no row caption is marked selected. Prevent: Studio builds the tree
+    children from the part's frames, so a one-frame part never shows children.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list

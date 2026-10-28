@@ -3,7 +3,7 @@ import tokens from '@system/foundations/tokens.css?inline';
 import styles from './part-tree.css?inline';
 
 type TreeState = { name: string; inert?: boolean; selected?: boolean };
-type TreePart = { name: string; warns?: boolean; states?: TreeState[] };
+type TreePart = { name: string; warns?: boolean; leaf?: boolean; selected?: boolean; states?: TreeState[] };
 type TreeLayer = { title: string; open: boolean; parts: TreePart[] };
 
 type Props = { layers: TreeLayer[] };
@@ -22,7 +22,13 @@ const row = (depth: number, lead: string, label: string, extra = '', selected = 
 const dot = (inert: boolean) => `<span class="st-tree-dot"${inert ? ' data-inert' : ''}></span>`;
 
 const partRows = (part: TreePart) => [
-  row(1, chevron(part.states !== undefined), part.name, part.warns ? warning : ''),
+  row(
+    1,
+    part.leaf === true ? dot(false) : chevron(part.states !== undefined),
+    part.name,
+    part.warns ? warning : '',
+    part.selected === true,
+  ),
   ...(part.states ?? []).map((state) => row(2, dot(state.inert === true), state.name, '', state.selected === true)),
 ];
 
@@ -35,21 +41,14 @@ export const componentsOpen: Props = {
     {
       title: 'Components',
       open: true,
-      parts: [
-        {
-          name: 'button',
-          states: [{ name: 'filled', selected: true }, { name: 'outline' }, { name: 'tonal' }],
-        },
-        { name: 'form-field' },
-        { name: 'select', warns: true },
-      ],
+      parts: [{ name: 'button', leaf: true, selected: true }, { name: 'form-field' }, { name: 'select', warns: true }],
     },
     { title: 'Pages', open: false, parts: [] },
   ],
 };
 
 export default definePart<Props>({
-  note: 'A dense, quiet tree of the product parts: layers, then parts, then the states of an open part, with a warning mark on a part that needs a look and no counts anywhere.',
+  note: 'A dense, quiet tree of the product parts: layers, then parts, then the frames of an open part (a part drawn in one frame is a leaf), with a warning mark on a part that needs a look and no counts anywhere.',
   madeBy: ['claude-opus-5-5'],
   widths: [232],
   states: { 'components-open': componentsOpen },
