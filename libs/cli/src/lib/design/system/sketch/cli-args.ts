@@ -59,7 +59,10 @@ export const oneProductOf = (options: {
   const declared = declaredOf(config);
   const name = asked ?? (declared.length === 1 ? declared[0] : undefined);
 
-  if (name === undefined) return `pass --product <name> - config.json declares ${declared.join(', ') || 'none'}.`;
+  if (name === undefined)
+    return declared.length > 1
+      ? `more than one product - pass --product <name>; config.json declares ${declared.join(', ')}.`
+      : `pass --product <name> - config.json declares none.`;
 
   const entry = config.products?.[name];
 

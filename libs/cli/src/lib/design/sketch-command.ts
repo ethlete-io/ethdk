@@ -11,6 +11,7 @@ import { mergePreviewOf } from './system/sketch/merge-preview';
 import {
   addVariant,
   createSketch,
+  editRound,
   findSketch,
   listSketches,
   markSketchReady,
@@ -23,6 +24,7 @@ import {
 export const SKETCH_USAGE = [
   'sketch new <layer>/<name> --variants a,b --by <model id> [--round <title>] [--note <text>] [--product <name>]',
   'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
+  'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
@@ -33,7 +35,7 @@ export const SKETCH_USAGE = [
   'sketch discard <layer>/<name> --by <model id> [--product <name>]',
 ];
 
-const WRITES = new Set(['new', 'variant', 'report', 'ready', 'rebase', 'merge', 'discard']);
+const WRITES = new Set(['new', 'variant', 'round', 'report', 'ready', 'rebase', 'merge', 'discard']);
 
 type Context = { target: string; config: DesignConfig; args: Args; noSketchHint?: string };
 
@@ -125,6 +127,10 @@ const varied = (context: Context) =>
 
       const round = added.rounds.find((entry) => entry.key === added.variantInfo[variant]?.round);
 
+      const previous = title === undefined ? undefined : added.rounds[added.rounds.length - 2];
+
+      if (previous) console.log(`notes of round ${previous.key} ${previous.title}: ${previous.note}`);
+
       console.log(`${added.target} in progress: variant ${variant} from ${from} in round ${round?.key ?? ''}`);
 
       if (title === undefined) return 0;
@@ -177,6 +183,14 @@ const listed = (context: Context) => {
         : '';
 
       console.log(`${sketch.product}  ${sketch.target}  ${sketch.status}  ${sketch.variants.join(', ')}${decided}`);
+
+      for (const round of sketch.rounds) {
+        const variants = sketch.variants.filter((variant) => sketch.variantInfo[variant]?.round === round.key);
+
+        console.log(
+          `  ${round.key}  ${round.title}  ${variants.join(', ')}${round.note === '' ? '' : `  - ${round.note}`}`,
+        );
+      }
     }
 
     if (open.length === 0) console.log('no open sketch');
@@ -192,11 +206,33 @@ const reported = (context: Context) =>
     const author = authorOf(context.args);
 
     if (message === '' || !variant || !author)
-      return fail(`usage: sketch report <layer>/<name> --variant <key> --by <model id> <text>`);
+      return fail(
+        `usage: sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>] - --product is needed when config.json declares more than one product`,
+      );
 
     const reported = reportSketch({ checkout: context.target, sketch, variant, author, message });
 
     return typeof reported === 'string' ? fail(reported) : 0;
+  });
+
+const ROUND_USAGE = 'usage: sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id>';
+
+const roundEdited = (context: Context) =>
+  withSketch(context, ({ sketch }) => {
+    const { positional, values } = context.args;
+    const round = positional[1];
+
+    if (positional.length !== 2 || !round) return fail(ROUND_USAGE);
+
+    const edited = editRound({ sketch, round, title: values['--title'], note: values['--note'] });
+
+    if (typeof edited === 'string') return fail(edited);
+
+    const entry = edited.rounds.find((candidate) => candidate.key === round);
+
+    console.log(`${edited.target} round ${round}: ${entry?.title ?? ''}${entry?.note ? ` - ${entry.note}` : ''}`);
+
+    return 0;
   });
 
 const readied = (context: Context) =>
@@ -341,6 +377,7 @@ const discarded = (context: Context) =>
 const COMMANDS: Record<string, (context: Context) => number | Promise<number>> = {
   new: created,
   variant: varied,
+  round: roundEdited,
   list: listed,
   report: reported,
   ready: readied,
@@ -356,11 +393,12 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by', '--from', '--round']);
+  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by', '--from', '--round', '--title']);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
   if (!run || typeof args === 'string' || unauthored) {
     if (typeof args === 'string') console.error(args);
+    if (!run) console.error(`unknown sketch command "${command}"`);
     if (unauthored) console.error(`sketch ${command} ${NEEDS_AUTHOR}`);
 
     console.error(SKETCH_USAGE.map((line) => `usage: ${invocation} ${line}`).join('\n'));

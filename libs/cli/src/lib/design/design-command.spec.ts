@@ -15,6 +15,16 @@ describe('designCommand', () => {
     log.mockRestore();
   });
 
+  it('errors on an unknown command and prints the usage', async () => {
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(designCommand({ root: '/repo', argv: ['nope'], invocation: 'et design' })).resolves.toBe(2);
+    expect(error.mock.calls.flat().join('\n')).toContain('unknown command or checkout "nope"');
+    log.mockRestore();
+    error.mockRestore();
+  });
+
   it('prints the usage of the one subcommand --help follows, and skips its checks', async () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);

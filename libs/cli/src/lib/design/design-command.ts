@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { checkDesign } from './check';
 import { designComment, designInbox } from './inbox-command';
@@ -57,11 +58,11 @@ const helpOf = (invocation: string) =>
     `${invocation} sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>]`,
     '  Add a variant to the open sketch, as a copy of another, in the running round or a new one.',
     '',
-    `${invocation} sketch report <layer>/<name> --variant <key> --by <model id> <text> | sketch ready <layer>/<name> --by <model id>`,
+    `${invocation} sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>] | sketch ready <layer>/<name> --by <model id>`,
     '  Tell Studio what you build on a variant now ("phone, outline state"), which also records you as one of its',
     '  authors, then mark the sketch ready for the user to pick.',
     '',
-    `${invocation} sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
+    `${invocation} sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id> | sketch list [--json] | sketch check [<layer>/<name>] | sketch preview <layer>/<name> <variant> [--json]`,
     '  List open sketches, check each variant laid over the product, and list the elements and pages a merge changes.',
     '',
     `${invocation} sketch merge <layer>/<name> [--note <reason>] --by <model id> | sketch discard <layer>/<name> --by <model id>`,
@@ -209,6 +210,13 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
 
   const { target, rest } = splitCheckout(argv, root);
   const positional = rest[0];
+
+  if (positional && !existsSync(resolve(root, positional))) {
+    console.error(`unknown command or checkout "${positional}"`);
+    console.error(helpOf(invocation));
+
+    return 2;
+  }
 
   return serveDesign({ target: positional ? resolve(root, positional) : target });
 };

@@ -32,8 +32,11 @@ const runnerFor = (manifest: Manifest) => {
   return declared ? RUNNERS.find((runner) => declared.startsWith(runner.name)) : undefined;
 };
 
-const scriptFor = (manifest: Manifest, command: string) =>
-  Object.entries(manifest.scripts ?? {}).find(([, value]) => value.trim() === command)?.[0];
+const scriptFor = (manifest: Manifest, subcommand: string) => {
+  const runsIt = new RegExp(`(^|&&\\s*)(et|node\\s+\\S*cli/src/index\\.js)\\s+${subcommand}$`, 'u');
+
+  return Object.entries(manifest.scripts ?? {}).find(([, value]) => runsIt.test(value.trim()))?.[0];
+};
 
 /**
  * What the reader of a message can type to reach `et <subcommand>` in this repo, because `et` itself
@@ -47,7 +50,7 @@ export const repoInvocation = (options: { root: string; subcommand: string }) =>
 
   if (!runner) return `et ${subcommand}`;
 
-  const script = scriptFor(manifest, `et ${subcommand}`);
+  const script = scriptFor(manifest, subcommand);
 
   return script ? `${runner.script} ${script}` : `${runner.binary} ${subcommand}`;
 };

@@ -205,7 +205,7 @@ const stubOf = (name: string) =>
     'export default definePart({',
     "  note: '',",
     '  states: { default: {} },',
-    `  render: (props: Props) => drawing({ body: html\`<div class="${name}"></div>\`, styles }),`,
+    `  render: (props: Props) => drawing({ body: html\`<div class="${name}">${name}</div>\`, styles }),`,
     '});',
     '',
   ].join('\n');
@@ -462,4 +462,30 @@ export const addVariant = (options: {
   writeSketchFile(added);
 
   return added;
+};
+
+/** Changes the title and the note of the round with key `round`; a field left out stays as it is. */
+export const editRound = (options: {
+  sketch: Sketch;
+  round: string;
+  title?: string;
+  note?: string;
+}): Sketch | string => {
+  const { sketch, round, title, note } = options;
+
+  if (!sketch.rounds.some((entry) => entry.key === round))
+    return `${sketch.target} has no round "${round}" - it has ${sketch.rounds.map((entry) => entry.key).join(', ')}`;
+  if (title === undefined && note === undefined) return 'pass --title <text> or --note <text>';
+  if (title !== undefined && title.trim() === '') return 'a round needs a title';
+
+  const edited: Sketch = {
+    ...sketch,
+    rounds: sketch.rounds.map((entry) =>
+      entry.key === round ? { ...entry, title: title?.trim() ?? entry.title, note: note?.trim() ?? entry.note } : entry,
+    ),
+  };
+
+  writeSketchFile(edited);
+
+  return edited;
 };

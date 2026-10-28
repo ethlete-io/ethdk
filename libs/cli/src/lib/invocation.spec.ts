@@ -25,6 +25,18 @@ describe('repoInvocation', () => {
     expect(repoInvocation({ root, subcommand: 'api' })).toBe('yarn api');
   });
 
+  it('names the script that builds and runs the cli binary', () => {
+    const root = makeRoot({
+      packageManager: 'yarn@4.18.0',
+      scripts: {
+        design: 'nx build cli && node dist/libs/cli/src/index.js design',
+        'design:check': 'nx build cli && node dist/libs/cli/src/index.js design check',
+      },
+    });
+
+    expect(repoInvocation({ root, subcommand: 'design' })).toBe('yarn design');
+  });
+
   it('names the binary the package manager way when no script wraps it', () => {
     const root = makeRoot({ packageManager: 'npm@10.9.0' });
 
