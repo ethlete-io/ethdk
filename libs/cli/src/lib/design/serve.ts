@@ -299,7 +299,7 @@ const designExplore = ({
     const callsRoot = callsRootOf(target);
     const designRoot = resolve(target, DESIGN_DIR);
     const stamp = buildStampOf();
-    const base = `http://localhost:${portOf(config)}`;
+    const base = () => `http://localhost:${portOf(config)}`;
     const thumbs = createThumbnailer({ target, base });
     const shots = createPartShooter({ target, base, system });
     const baseDirs = [...new Set(system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []))].filter(
@@ -359,11 +359,17 @@ const designExplore = ({
       redraw(ALL_PARTS);
     };
 
+    const reloadFlows = () => {
+      thumbs.clear();
+      shots.clear();
+      events.signal('flows');
+    };
+
     const refresh = (file: string) => {
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
       if (isNoteFile(file)) return events.signal('notes');
-      if (isFlowFile(file)) return events.signal('flows');
+      if (isFlowFile(file)) return reloadFlows();
 
       forgetCalls(file);
 
@@ -381,7 +387,7 @@ const designExplore = ({
       if (resolve(file) === configPath) return reloadConfig();
       if (isCommentFile(file)) return events.signal('comments');
       if (isNoteFile(file)) return events.signal('notes');
-      if (isFlowFile(file)) return events.signal('flows');
+      if (isFlowFile(file)) return reloadFlows();
 
       forgetCalls(file);
       const dependents = dependentIdsOf(vite.moduleGraph.getModulesByFile(file) ?? []);
@@ -526,7 +532,7 @@ export const createDesignServer = async (options: {
   const system = createSystemModules({ target, config });
   const baseDirs = system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []);
 
-  return createServer({
+  const server = await createServer({
     configFile: false,
     root: resolve(here, 'web'),
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
@@ -558,6 +564,21 @@ export const createDesignServer = async (options: {
       fs: { allow: [target, here, ...baseDirs] },
     },
   });
+  const listening = server.listen.bind(server);
+
+  server.listen = (...args: Parameters<typeof listening>) =>
+    listening(...args).catch((error: unknown) => {
+      const code = (error as NodeJS.ErrnoException | null)?.code;
+
+      if (code !== 'EPERM' && code !== 'EACCES') throw error;
+
+      throw new Error(
+        `design-explore: cannot open a local port (${code}) - the environment forbids listening, so nothing was drawn. This is a permission failure, not a drawing failure: run outside the sandbox.`,
+        { cause: error },
+      );
+    });
+
+  return server;
 };
 
 const exitWhenStdinCloses = (server: { close: () => Promise<void> }) => {

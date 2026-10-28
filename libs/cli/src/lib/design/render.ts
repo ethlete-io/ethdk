@@ -43,11 +43,12 @@ export type RenderAsk = {
  */
 export const createRenderer = (options: { target: string; config: DesignConfig }) => {
   const { target, config } = options;
-  const workerData: RenderWorkerData = {
+  const workerDataOf = (): RenderWorkerData => ({
     target,
     packages: config.render?.packages ?? {},
     modules: config.render?.modules ?? DEFAULT_RENDER_MODULES,
-  };
+  });
+  let startedWith = '';
   const pending = new Map<number, (result: RenderResult) => void>();
   let worker: Worker | null = null;
   let watched: Record<string, number> = {};
@@ -59,6 +60,10 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   };
 
   const start = () => {
+    const workerData = workerDataOf();
+
+    startedWith = JSON.stringify(workerData);
+
     const started = new Worker(packageFileOf(resolve(__dirname, 'render-worker.js')), { workerData });
 
     started.on('message', (response: RenderResponse) => {
@@ -79,7 +84,7 @@ export const createRenderer = (options: { target: string; config: DesignConfig }
   };
 
   return (ask: RenderAsk) => {
-    if (worker && isStale(watched)) {
+    if (worker && (isStale(watched) || startedWith !== JSON.stringify(workerDataOf()))) {
       void worker.terminate();
       worker = null;
     }

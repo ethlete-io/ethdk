@@ -17,6 +17,7 @@ const boundingBox = vi.fn<() => Promise<{ width: number; height: number } | null
   width: 200,
   height: 80,
 }));
+let overlayCount = 0;
 const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
 const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
   script.includes('data-et-part') ? marks : true,
@@ -26,7 +27,13 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
     goto,
     screenshot,
     evaluate,
-    locator: () => ({ first: () => ({ waitFor: async () => undefined }), screenshot: rootScreenshot, boundingBox }),
+    locator: (selector: string) => ({
+      count: async () => (selector === 'vite-error-overlay' ? overlayCount : 0),
+      locator: () => ({ innerText: async () => '  Failed to resolve import "./nope"  ' }),
+      first: () => ({ waitFor: async () => undefined }),
+      screenshot: rootScreenshot,
+      boundingBox,
+    }),
   }),
   close: async () => undefined,
 }));
@@ -36,7 +43,10 @@ const withBrowser = async () => ({ chromium, from: 'playwright' });
 const cwd = process.cwd();
 const closing: (() => Promise<void>)[] = [];
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  overlayCount = 0;
+});
 
 afterEach(async () => {
   await Promise.all(closing.splice(0).map((close) => close()));
@@ -232,6 +242,33 @@ describe('createPartShooter', () => {
       status: 422,
       body: expect.stringContaining('Timeout 15000ms exceeded'),
     });
+  });
+});
+
+describe('createPartShooter broken shots', () => {
+  it('answers 504 when the draw times out', async () => {
+    const { shots } = acme();
+
+    screenshot.mockRejectedValueOnce(Object.assign(new Error('Timeout 15000ms exceeded'), { name: 'TimeoutError' }));
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 504,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('timed out'),
+    });
+  });
+
+  it('answers an error with the build message, never the overlay, when the frame has a build error', async () => {
+    const { shots } = acme();
+
+    overlayCount = 1;
+
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 422,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('Failed to resolve import "./nope"'),
+    });
+    expect(screenshot).not.toHaveBeenCalled();
   });
 });
 

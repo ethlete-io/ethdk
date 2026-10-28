@@ -23,12 +23,19 @@ type ServerOptions = {
 };
 
 const created: ServerOptions[] = [];
+let listenFailure: Error | null = null;
 
 vi.mock('vite', () => ({
   createServer: async (options: ServerOptions) => {
     created.push(options);
 
-    return { listen: async () => undefined, printUrls: () => undefined, close: async () => undefined };
+    return {
+      listen: async () => {
+        if (listenFailure) throw listenFailure;
+      },
+      printUrls: () => undefined,
+      close: async () => undefined,
+    };
   },
 }));
 
@@ -39,6 +46,7 @@ const cwd = process.cwd();
 afterEach(() => {
   process.chdir(cwd);
   created.length = 0;
+  listenFailure = null;
   vi.restoreAllMocks();
 });
 
@@ -66,6 +74,20 @@ describe('serveDesign', () => {
     expect(await serveDesign({ target: makeTarget() })).toBe(1);
     expect(error).toHaveBeenCalledWith(expect.stringContaining('no config'));
     expect(created).toHaveLength(0);
+  });
+
+  it('reports a forbidden port as a permission failure, not a drawing failure', async () => {
+    const target = makeTarget({ port: 4999 });
+    const { createDesignServer } = await import('./serve');
+    const server = await createDesignServer({ target, config: readConfig(target) ?? {}, listen: true, port: 0 });
+
+    listenFailure = Object.assign(new Error('listen EPERM: operation not permitted ::1:5173'), { code: 'EPERM' });
+
+    await expect(server.listen()).rejects.toThrow(/cannot open a local port \(EPERM\).*permission failure/);
+
+    listenFailure = Object.assign(new Error('in use'), { code: 'EADDRINUSE' });
+
+    await expect(server.listen()).rejects.toThrow('in use');
   });
 
   it('exits when stdin closes, only if asked to', async () => {

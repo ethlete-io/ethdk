@@ -21,6 +21,8 @@ export class ThumbMissingError extends Error {}
 
 export class ShotUnprocessableError extends Error {}
 
+export class ShotTimeoutError extends Error {}
+
 const frameWidthOf = (slug: string) => `(async (slug) => {
   const { calls } = await import('/@id/__x00__virtual:design-explore');
   if (!calls[slug]) return null;
@@ -101,7 +103,9 @@ export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
               ? 404
               : error instanceof ShotUnprocessableError
                 ? 422
-                : 500,
+                : error instanceof ShotTimeoutError
+                  ? 504
+                  : 500,
         type: 'text/plain; charset=utf-8',
         body: error instanceof Error ? error.message : String(error),
       }),
@@ -124,8 +128,12 @@ export const callDrawsFrom = ({ slug, file }: { slug: string; file: string }) =>
  * Draws variants into PNGs in the shared Chromium of a draw queue. Each finished picture is kept per
  * query until its call is drawn again.
  */
-export const createThumbnailer = (options: { target: string; base: string; chromiumOf?: typeof chromiumOf }) => {
-  const { base } = options;
+export const createThumbnailer = (options: {
+  target: string;
+  base: string | (() => string);
+  chromiumOf?: typeof chromiumOf;
+}) => {
+  const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
   const cache = new Map<string, { slug: string; shot: Promise<Buffer> }>();
 
@@ -135,7 +143,7 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
     try {
       const page = await context.newPage();
 
-      await openFrame(page, `${base}/frame.html${search}`);
+      await openFrame(page, `${baseOf()}/frame.html${search}`);
 
       const width = (await page.evaluate(frameWidthOf(slug))) as number | null;
 
@@ -195,6 +203,7 @@ export const createThumbnailer = (options: { target: string; base: string; chrom
         if (callDrawsFrom({ slug: entry.slug, file })) cache.delete(key);
       }
     },
+    clear: () => cache.clear(),
     close: async () => {
       cache.clear();
       await drawQueue.close();

@@ -12,6 +12,7 @@ import {
   send,
   sendShot,
   settled,
+  ShotTimeoutError,
   ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
@@ -122,11 +123,12 @@ export const partFrameOf = (options: PartAddress & { system: SystemModules }) =>
  */
 export const createPartShooter = (options: {
   target: string;
-  base: string;
+  base: string | (() => string);
   system: SystemModules;
   chromiumOf?: typeof chromiumOf;
 }) => {
-  const { base, system } = options;
+  const { system } = options;
+  const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
 
@@ -136,8 +138,19 @@ export const createPartShooter = (options: {
     try {
       const page = await context.newPage();
 
-      await openFrame(page, `${base}/frame.html?${frame.search}`);
+      await openFrame(page, `${baseOf()}/frame.html?${frame.search}`);
       await page.evaluate(settled);
+
+      const overlay = page.locator('vite-error-overlay');
+
+      if ((await overlay.count()) > 0) {
+        const message = await overlay
+          .locator('.message-body')
+          .innerText()
+          .catch(() => 'the overlay text is unreadable');
+
+        throw new ShotUnprocessableError(`design-explore: the frame has a build error\n${message.trim()}`);
+      }
 
       const marks: unknown = await page.evaluate(marksIn(frame.clip));
       const root = page.locator('#root');
@@ -156,9 +169,14 @@ export const createPartShooter = (options: {
           ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
           : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
       ).catch((error: unknown) => {
-        throw new ShotUnprocessableError(
-          `design-explore: the screenshot failed: ${error instanceof Error ? error.message : String(error)}`,
-        );
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (error instanceof Error && error.name === 'TimeoutError')
+          throw new ShotTimeoutError(
+            `design-explore: the screenshot timed out after ${DRAW_TIMEOUT_MS} ms: ${message}`,
+          );
+
+        throw new ShotUnprocessableError(`design-explore: the screenshot failed: ${message}`);
       });
 
       return { png, marks: Array.isArray(marks) ? (marks as PartMark[]) : [] };
