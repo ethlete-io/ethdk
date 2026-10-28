@@ -33,6 +33,7 @@ import {
   focusRect,
   layoutGrid,
   layoutMatrix,
+  layoutMatrixSections,
   layoutSheet,
   panCamera,
   rectsIntersect,
@@ -53,6 +54,7 @@ const sameTops = (a: Record<string, number>, b: Record<string, number>) =>
 let canvasCount = 0;
 const FITTED_ROW_GAP = 48;
 const GROUP_GAP_FACTOR = 2;
+const SECTION_GAP_FACTOR = 4;
 const GRID_SPACING = { columnGap: 40, lineWidth: 1600 };
 const FALLBACK_WIDTH = 320;
 const FALLBACK_HEIGHT = 600;
@@ -81,15 +83,27 @@ export type CanvasColumn = {
   group?: CanvasColumnGroup;
   /** A column without frames, `width` wide, with `note` below its head; its head is a button that emits `columnToggle`. */
   folded?: { width: number; note?: string };
+  /** The entry of `sections` the column sits in. */
+  section?: string;
 };
 
 /**
  * A thin row of a `matrix` without frames, whose label is a button that emits `rowToggle`: above the frame
  * row `before` names while `open`, else below every frame row.
  */
-export type CanvasRowHead = { key: string; label: string; title?: string; open: boolean; before?: string };
+export type CanvasRowHead = {
+  key: string;
+  label: string;
+  title?: string;
+  /** A muted line inside the row. */
+  note?: string;
+  open: boolean;
+  before?: string;
+  /** The entry of `sections` the row sits in. */
+  section?: string;
+};
 
-type ColumnGroupHead = CanvasColumnGroup & { x: number; width: number };
+type ColumnGroupHead = CanvasColumnGroup & { x: number; y: number; width: number };
 
 type PlacedFrame = Rect & { frame: CanvasFrame; unsized: boolean; live: boolean; active: boolean; selected: boolean };
 
@@ -134,6 +148,9 @@ export class DesignCanvasComponent {
   public columns = input<CanvasColumn[]>([]);
 
   public rowHeads = input<CanvasRowHead[]>([]);
+
+  /** Stacks a `matrix` into bands top to bottom, one per key, each with its own column heads; empty for one band. */
+  public sections = input<string[]>([]);
 
   /** Names what the canvas shows. A new key fits the camera again, or restores `restoredCamera`. */
   public cameraKey = input<string | null>(null);
@@ -238,31 +255,50 @@ export class DesignCanvasComponent {
     const arrangement = this.arrangement();
     const columns = this.columns();
     const rowGap = frames.every((frame) => frame.width === undefined) ? FITTED_ROW_GAP : SPACING.rowGap;
+    const spacing = {
+      ...SPACING,
+      rowGap,
+      groupGap: rowGap * GROUP_GAP_FACTOR,
+      headGap: ROW_HEAD_GAP,
+      emptyColumnWidth: FALLBACK_WIDTH,
+    };
+    const headOf = (head: CanvasRowHead) => ({
+      name: head.key,
+      height: ROW_HEAD_HEIGHT,
+      ...(head.open && head.before !== undefined ? { before: head.before } : {}),
+    });
+    const emptyWidths = Object.fromEntries(
+      columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
+    );
+    const below = Object.fromEntries(
+      Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height]),
+    );
+    const sections = this.sections();
     const matrix =
-      arrangement === 'matrix'
-        ? layoutMatrix({
-            frames: sized,
-            columns: columns.map((column) => column.key),
-            spacing: {
-              ...SPACING,
-              rowGap,
-              groupGap: rowGap * GROUP_GAP_FACTOR,
-              headGap: ROW_HEAD_GAP,
-              emptyColumnWidth: FALLBACK_WIDTH,
-            },
-            heads: this.rowHeads().map((head) => ({
-              name: head.key,
-              height: ROW_HEAD_HEIGHT,
-              ...(head.open && head.before !== undefined ? { before: head.before } : {}),
-            })),
-            emptyWidths: Object.fromEntries(
-              columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
-            ),
-            below: Object.fromEntries(
-              Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height]),
-            ),
-          })
-        : null;
+      arrangement !== 'matrix'
+        ? null
+        : sections.length > 0
+          ? layoutMatrixSections({
+              frames: sized,
+              sections: sections.map((section) => ({
+                columns: columns.filter((column) => column.section === section).map((column) => column.key),
+                heads: this.rowHeads()
+                  .filter((head) => head.section === section)
+                  .map(headOf),
+              })),
+              spacing,
+              sectionGap: rowGap * SECTION_GAP_FACTOR,
+              emptyWidths,
+              below,
+            })
+          : layoutMatrix({
+              frames: sized,
+              columns: columns.map((column) => column.key),
+              spacing,
+              heads: this.rowHeads().map(headOf),
+              emptyWidths,
+              below,
+            });
     const flow =
       arrangement === 'flow'
         ? {
@@ -280,7 +316,7 @@ export class DesignCanvasComponent {
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
-      return column ? [{ ...column, x: placed.x, width: placed.width }] : [];
+      return column ? [{ ...column, x: placed.x, y: placed.y ?? 0, width: placed.width }] : [];
     });
 
     const groups = heads.reduce<ColumnGroupHead[]>((placed, head) => {
@@ -290,7 +326,7 @@ export class DesignCanvasComponent {
       if (last?.key === head.group.key)
         return [...placed.slice(0, -1), { ...last, width: head.x + head.width - last.x }];
 
-      return [...placed, { ...head.group, x: head.x, width: head.width }];
+      return [...placed, { ...head.group, x: head.x, y: head.y, width: head.width }];
     }, []);
 
     const rowHeads = this.rowHeads();

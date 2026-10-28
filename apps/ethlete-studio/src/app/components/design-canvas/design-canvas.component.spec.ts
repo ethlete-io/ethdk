@@ -378,6 +378,51 @@ describe('DesignCanvasComponent', () => {
     expect(toggled).toEqual(['unchanged system']);
   });
 
+  it('stacks matrix sections as bands with their own column heads', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
+    });
+
+    const fixture = TestBed.createComponent(DesignCanvasComponent);
+    const cell = (column: string, row: string): CanvasFrame => ({
+      ...FITTED,
+      id: `${column} ${row}`,
+      row,
+      column,
+      width: 200,
+      height: 100,
+    });
+
+    fixture.componentRef.setInput('frames', [cell('c', 'new default'), cell('a', 'old default')]);
+    fixture.componentRef.setInput('arrangement', 'matrix');
+    fixture.componentRef.setInput('columns', [
+      { key: 'c', label: 'c', section: 'new', group: { key: 'new', label: 'r2' } },
+      { key: 'a', label: 'a', section: 'old', group: { key: 'old', label: 'r1' } },
+    ]);
+    fixture.componentRef.setInput('rowHeads', [
+      { key: 'older', label: 'r0 · x', note: 'Too loud', open: false, section: 'older' },
+    ]);
+    fixture.componentRef.setInput('sections', ['new', 'old', 'older']);
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    const [drawn, older] = fixture.debugElement
+      .queryAll(By.directive(CanvasFrameComponent))
+      .map((frame) => frame.nativeElement as HTMLElement);
+    const groups = [...host.querySelectorAll<HTMLButtonElement>('button[aria-expanded="true"]')];
+    const head = host.querySelector<HTMLElement>('[data-row-head]');
+
+    expect(drawn?.style.left).toBe('0px');
+    expect(older?.style.left).toBe('0px');
+    expect(parseFloat(older?.style.top ?? '')).toBeGreaterThan(100);
+    expect(groups.map((group) => [group.textContent?.trim(), group.parentElement?.style.marginTop])).toEqual([
+      ['r2', '0px'],
+      ['r1', older?.style.top],
+    ]);
+    expect(parseFloat(head?.style.top ?? '')).toBeGreaterThan(parseFloat(older?.style.top ?? ''));
+    expect(head?.textContent?.trim()).toBe('Too loud');
+  });
+
   it('lowers the next matrix row below the note column of a frame', async () => {
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
       return this.dataset['noteFrame'] === undefined ? 0 : 200;

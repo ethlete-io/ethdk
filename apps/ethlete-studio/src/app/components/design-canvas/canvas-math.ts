@@ -172,7 +172,7 @@ export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLay
 
 export type MatrixFrame = SheetFrame & { column: string; rowLabel?: string; rowGroup?: string; fitted?: boolean };
 
-export type MatrixColumnPlace = { name: string; x: number; width: number };
+export type MatrixColumnPlace = { name: string; x: number; width: number; y?: number };
 
 export type MatrixLayout = SheetLayout & { columns: MatrixColumnPlace[] };
 
@@ -267,4 +267,53 @@ export const layoutMatrix = ({
   }
 
   return { frames: placed, rows, columns: placedColumns };
+};
+
+/** The columns and head rows of one band of a sectioned matrix. */
+export type MatrixSection = { columns: string[]; heads?: MatrixHeadRow[] };
+
+/**
+ * Stacks matrices top to bottom, one per section in order, each laid out by `layoutMatrix` from the frames of
+ * its own columns; the next section starts `sectionGap` below the lowest frame or head row of the one above.
+ * Each column place carries the `y` its section starts at. A section without columns and head rows takes no room.
+ */
+export const layoutMatrixSections = ({
+  frames,
+  sections,
+  spacing,
+  sectionGap,
+  emptyWidths = {},
+  below = {},
+}: {
+  frames: MatrixFrame[];
+  sections: MatrixSection[];
+  spacing: MatrixSpacing;
+  sectionGap: number;
+  emptyWidths?: Record<string, number>;
+  below?: Record<string, number>;
+}): MatrixLayout => {
+  const layout: MatrixLayout = { frames: [], rows: [], columns: [] };
+  let y = 0;
+
+  for (const section of sections) {
+    const own = frames.filter((frame) => section.columns.includes(frame.column));
+    const heads = section.heads ?? [];
+
+    if (section.columns.length === 0 && heads.length === 0) continue;
+
+    const placed = layoutMatrix({ frames: own, columns: section.columns, spacing, emptyWidths, below, heads });
+    const headHeights = new Map(heads.map((head) => [head.name, head.height]));
+    const bottom = Math.max(
+      0,
+      ...placed.frames.map((frame) => frame.y + frame.height + (below[frame.id] ?? 0)),
+      ...placed.rows.flatMap((row) => (row.head ? [row.y + (headHeights.get(row.name) ?? 0)] : [])),
+    );
+
+    layout.frames.push(...placed.frames.map((frame) => ({ ...frame, y: frame.y + y })));
+    layout.rows.push(...placed.rows.map((row) => ({ ...row, y: row.y + y })));
+    layout.columns.push(...placed.columns.map((column) => ({ ...column, y })));
+    y += bottom + sectionGap;
+  }
+
+  return layout;
 };

@@ -18,9 +18,18 @@
       [style.top.px]="head.y"
       [style.width.px]="head.width"
       [style.height.px]="head.height"
-      class="absolute left-0 rounded-[0.8rem] border border-dashed border-surface-border"
+      class="absolute left-0 flex items-center overflow-hidden rounded-[0.8rem] border border-dashed border-surface-border px-[calc(1.6rem_*_var(--et-design-canvas-label-scale))]"
       data-row-head
-    ></div>
+    >
+      @if (head.note) {
+        <span
+          [title]="head.note"
+          class="truncate text-[length:calc(1.3rem_*_var(--et-design-canvas-label-scale))] text-text-muted"
+          data-row-head-note
+          >{{ head.note }}</span
+        >
+      }
+    </div>
     <button
       [style.top.px]="head.y"
       [style.transform]="'translateX(-4rem) scale(' + labelScale() + ')'"
@@ -41,6 +50,7 @@
   @for (group of groupHeads(); track group.key) {
     <div
       [style.left.px]="group.x"
+      [style.margin-top.px]="group.y"
       [style.width.px]="group.width / labelScale()"
       [style.transform]="'scale(' + labelScale() + ') translateY(-100%)'"
       class="absolute top-[calc(-6rem_*_var(--et-design-canvas-label-scale))] flex origin-top-left items-center gap-[0.8rem] text-[1.3rem] whitespace-nowrap"
@@ -70,6 +80,7 @@
     @if (column.folded; as folded) {
       <div
         [style.left.px]="column.x"
+        [style.margin-top.px]="column.y"
         [style.width.px]="column.width / labelScale()"
         [style.transform]="'scale(' + labelScale() + ')'"
         class="absolute top-[calc(-6rem_*_var(--et-design-canvas-label-scale))] flex origin-top-left flex-col gap-[1.2rem] text-[1.3rem] leading-[1.4]"
@@ -94,6 +105,7 @@
     } @else {
       <span
         [style.left.px]="column.x"
+        [style.margin-top.px]="column.y"
         [style.max-width.px]="column.width"
         [class]="column.muted ? 'italic text-text-muted' : 'text-text'"
         [title]="column.title ?? column.label"

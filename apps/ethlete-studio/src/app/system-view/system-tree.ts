@@ -376,7 +376,7 @@ export type MatrixColumn = {
   title?: string;
   note?: string;
   group?: { key: string; label: string; note?: string; title?: string };
-  folded?: { width: number; note?: string };
+  section?: string;
 };
 
 export type ShownRound = SketchRound & { variants: string[]; open: boolean };
@@ -412,9 +412,6 @@ export const stateRowKeyOf = (state: string) => `unchanged ${state}`;
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
-const FOLDED_MIN_WIDTH = 240;
-const FOLDED_FALLBACK_WIDTH = 320;
-
 /** The first author and "+N" for the rest, or `null` without authors. */
 export const authorsLabelOf = (authors: string[]) =>
   authors.length === 0 ? null : authors.length === 1 ? authors[0] : `${authors[0]} +${authors.length - 1}`;
@@ -429,8 +426,10 @@ export type SketchMatrix = {
   interactions: string[];
   /** A single interaction, or `ALL`. */
   interaction: string;
-  /** One per state that every shown variant draws as the part is now: folded to its head unless the user opened it. */
+  /** One per folded round, and one per state that every shown variant draws as the part is now: folded to its head unless the user opened it. */
   rowHeads: CanvasRowHead[];
+  /** The canvas bands top to bottom when rounds are shown, one per round, newest first; empty for one band. */
+  sections: string[];
 };
 
 const CURRENT = 'current';
@@ -490,10 +489,13 @@ type MatrixRow = {
   group?: string;
 };
 
+const rowKeyIn = (section: string | undefined, key: string) => (section === undefined ? key : `${section} ${key}`);
+
 /**
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
- * several rounds or a titled one, the variant columns of an open round share a round group, and a folded
- * round is one narrow column without frames. With
+ * several rounds or a titled one, each round is its own band, newest on top: an open round has its variant
+ * columns under a round group, with the current column in the topmost open band, and a folded round is one
+ * row head without frames. With
  * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
  * row per state in the picked interaction; the current states come first, then any state only a variant
  * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
@@ -535,7 +537,12 @@ export const sketchMatrixOf = ({
     [column, state ?? '', ...(shown === REST ? [] : [shown])].join(' ');
   const targetOf = (variant: string) => sketch.targets?.find((target) => target.variant === variant);
   const roundsGrouped = rounds.length > 1 || rounds.some((round) => round.title !== '');
-  const foldedWidth = Math.max(FOLDED_MIN_WIDTH, Math.round((cell.width ?? FOLDED_FALLBACK_WIDTH) / 2));
+  const newestFirst = [...rounds].reverse().filter((round) => round.variants.length > 0);
+  const firstOpen = newestFirst.find((round) => round.open);
+  const currentSection = !roundsGrouped ? undefined : firstOpen ? roundColumnKeyOf(firstOpen.key) : CURRENT;
+  const sections = !roundsGrouped
+    ? []
+    : [...(firstOpen ? [] : [CURRENT]), ...newestFirst.map((round) => roundColumnKeyOf(round.key))];
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
     const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
@@ -554,35 +561,40 @@ export const sketchMatrixOf = ({
       error: [target?.error, loadErrorOf(problems)].filter(Boolean).join('\n') || undefined,
     };
   };
-  const roundColumns = rounds.flatMap((round): MatrixColumn[] => {
+  const roundHeads: CanvasRowHead[] = [];
+  const roundColumns = (roundsGrouped ? newestFirst : rounds).flatMap((round): MatrixColumn[] => {
     const name = roundNameOf(round);
     const note = round.note === '' ? {} : { note: round.note };
+    const section = roundColumnKeyOf(round.key);
 
     if (round.variants.length === 0) return [];
     if (!roundsGrouped) return round.variants.map(variantColumnOf);
     if (!round.open) {
       const label = [name, round.variants.join(' ')].join(' · ');
 
-      return [
-        {
-          key: roundColumnKeyOf(round.key),
-          label,
-          title: [`Open ${label}`, round.note].filter(Boolean).join('\n\n'),
-          drawing: false,
-          folded: { width: foldedWidth, ...note },
-        },
-      ];
+      roundHeads.push({
+        key: section,
+        label,
+        title: [`Open ${label}`, round.note].filter(Boolean).join('\n\n'),
+        open: false,
+        section,
+        ...note,
+      });
+
+      return [];
     }
 
     const group = {
-      key: roundColumnKeyOf(round.key),
+      key: section,
       label: name,
       title: [`Fold ${name}`, round.note].filter(Boolean).join('\n\n'),
       ...note,
     };
 
-    return round.variants.map((variant) => ({ ...variantColumnOf(variant), group }));
+    return round.variants.map((variant) => ({ ...variantColumnOf(variant), group, section }));
   });
+  const sectionOf = (column: string) =>
+    column === CURRENT ? currentSection : roundColumns.find((candidate) => candidate.key === column)?.section;
   const columns: (MatrixColumn & { states: string[]; interactions: string[]; error?: string })[] = [
     ...(part
       ? [
@@ -596,7 +608,7 @@ export const sketchMatrixOf = ({
           },
         ]
       : []),
-    ...roundColumns.flatMap((column) => (column.folded ? [] : [variantColumnOf(column.key)])),
+    ...roundColumns.map((column) => variantColumnOf(column.key)),
   ];
   const states = [...new Set(columns.flatMap((column) => column.states))];
   const variantColumns = columns.filter((column) => column.key !== CURRENT);
@@ -622,11 +634,16 @@ export const sketchMatrixOf = ({
               : { state, interaction: shown, key: state },
           ),
         );
-  const rowOf = (row: MatrixRow) => ({
-    row: row.key,
-    ...(row.label === undefined ? {} : { rowLabel: row.label }),
-    ...(row.group === undefined ? {} : { rowGroup: row.group }),
-  });
+  const rowOf = (row: MatrixRow, column: string) => {
+    const section = sectionOf(column);
+    const label = section === undefined || row.key === undefined ? row.label : (row.label ?? row.key);
+
+    return {
+      row: row.key === undefined ? undefined : rowKeyIn(section, row.key),
+      ...(label === undefined ? {} : { rowLabel: label }),
+      ...(row.group === undefined ? {} : { rowGroup: row.group }),
+    };
+  };
 
   const frameOf = (column: (typeof columns)[number], row: MatrixRow): CanvasFrame => {
     const { state, interaction: shown } = row;
@@ -650,7 +667,7 @@ export const sketchMatrixOf = ({
       ...(cell.width ? { width: cell.width } : {}),
       ...(cell.height ? { height: cell.height } : {}),
       label: cell.label,
-      ...rowOf(row),
+      ...rowOf(row, column.key),
       column: column.key,
       screenshot: partShotUrl({
         ...address,
@@ -696,7 +713,7 @@ export const sketchMatrixOf = ({
           ...(cell.width ? { width: cell.width } : {}),
           ...(cell.height ? { height: cell.height } : {}),
           label: cell.label,
-          ...rowOf(row),
+          ...rowOf(row, column.key),
           column: column.key,
           empty: column.key === CURRENT ? 'new in this sketch' : missing,
         },
@@ -704,15 +721,19 @@ export const sketchMatrixOf = ({
     });
   });
 
-  const headOf = ({ key, label, title, note, drawing: isDrawing, group, folded }: MatrixColumn): MatrixColumn => ({
-    key,
-    label,
-    drawing: isDrawing,
-    ...(title === undefined ? {} : { title }),
-    ...(note === undefined ? {} : { note }),
-    ...(group === undefined ? {} : { group }),
-    ...(folded === undefined ? {} : { folded }),
-  });
+  const headOf = ({ key, label, title, note, drawing: isDrawing, group }: MatrixColumn): MatrixColumn => {
+    const section = sectionOf(key);
+
+    return {
+      key,
+      label,
+      drawing: isDrawing,
+      ...(title === undefined ? {} : { title }),
+      ...(note === undefined ? {} : { note }),
+      ...(group === undefined ? {} : { group }),
+      ...(section === undefined ? {} : { section }),
+    };
+  };
 
   const rowHeads = kept.map((state): CanvasRowHead => {
     const open = openStates[state] === true;
@@ -722,7 +743,8 @@ export const sketchMatrixOf = ({
       label: `${state} · unchanged in ${variantColumns.map((column) => column.key).join(' ')}`,
       title: `${open ? 'Fold' : 'Open'} ${state}: every shown variant draws it as current does`,
       open,
-      before: grouped ? `${state} · ${shownInteractions[0] ?? REST}` : state,
+      before: rowKeyIn(currentSection, grouped ? `${state} · ${shownInteractions[0] ?? REST}` : state),
+      ...(currentSection === undefined ? {} : { section: currentSection }),
     };
   });
 
@@ -733,7 +755,8 @@ export const sketchMatrixOf = ({
     size,
     interactions,
     interaction,
-    rowHeads,
+    rowHeads: [...roundHeads, ...rowHeads],
+    sections,
   };
 };
 
@@ -817,7 +840,16 @@ export const mergePreviewOf = ({
     );
   });
 
-  return { columns, frames, sizes: [], size: null, interactions: [REST], interaction: REST, rowHeads: [] };
+  return {
+    columns,
+    frames,
+    sizes: [],
+    size: null,
+    interactions: [REST],
+    interaction: REST,
+    rowHeads: [],
+    sections: [],
+  };
 };
 
 /** Whether the user may pick a variant: the sketch is ready and the variant breaks no rule. */

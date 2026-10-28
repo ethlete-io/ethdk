@@ -354,6 +354,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [draft]="commentStore.draft()"
       [pinPopover]="pinThread"
       [rowHeads]="showing() === 'merge' ? [] : matrix().rowHeads"
+      [sections]="showing() === 'merge' ? [] : matrix().sections"
       (cameraChange)="rememberCamera($event)"
       (pointPick)="startComment($event)"
       (columnToggle)="toggleRound($event)"
@@ -609,6 +610,12 @@ export class SketchViewComponent {
   }
 
   protected toggleState(key: string) {
+    if (sketchRoundsOf(this.sketch()).some((round) => roundColumnKeyOf(round.key) === key)) {
+      this.toggleRound(key);
+
+      return;
+    }
+
     const head = this.matrix().rowHeads.find((candidate) => candidate.key === key);
     const state = this.part()?.states.find((name) => stateRowKeyOf(name) === key);
 

@@ -7,6 +7,7 @@ import {
   focusRect,
   layoutGrid,
   layoutMatrix,
+  layoutMatrixSections,
   layoutSheet,
   rectsIntersect,
   screenToWorld,
@@ -279,6 +280,40 @@ describe('canvas math', () => {
     expect(layout.columns).toEqual([
       { name: 'narrow', x: 0, width: 120 },
       { name: 'x', x: 160, width: 300 },
+    ]);
+  });
+
+  it('stacks matrix sections top to bottom, each with its own columns, and gives a head-only section its own band', () => {
+    const layout = layoutMatrixSections({
+      frames: [
+        { id: 'now-a', width: 200, height: 50, row: 'new a', column: 'now' },
+        { id: 'c-a', width: 300, height: 90, row: 'new a', column: 'c' },
+        { id: 'a-a', width: 100, height: 40, row: 'old a', column: 'a' },
+      ],
+      sections: [
+        { columns: ['now', 'c'] },
+        { columns: [], heads: [{ name: 'folded', height: 48 }] },
+        { columns: ['a'] },
+        { columns: [] },
+      ],
+      spacing: { columnGap: 40, rowGap: 60, emptyColumnWidth: 320 },
+      sectionGap: 200,
+    });
+
+    expect(layout.columns).toEqual([
+      { name: 'now', x: 0, width: 200, y: 0 },
+      { name: 'c', x: 240, width: 300, y: 0 },
+      { name: 'a', x: 0, width: 100, y: 538 },
+    ]);
+    expect(layout.rows).toEqual([
+      { name: 'new a', y: 0 },
+      { name: 'folded', y: 290, head: true },
+      { name: 'old a', y: 538 },
+    ]);
+    expect(layout.frames.map(({ id, x, y }) => [id, x, y])).toEqual([
+      ['now-a', 0, 0],
+      ['c-a', 240, 0],
+      ['a-a', 0, 538],
     ]);
   });
 });

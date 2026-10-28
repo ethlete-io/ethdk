@@ -622,26 +622,60 @@ describe('sketchMatrixOf', () => {
       variantInfo: { a: { round: 'r1' }, b: { round: 'r1', authors: ['gpt-5.6-sol'] }, c: { round: 'r2' } },
     });
 
-    it('folds an older round into one column with its title, note and variants, and groups the newest', () => {
+    it('shows each round as its own band, newest on top, and folds an older round into a row head with its title, note and variants', () => {
       const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded });
 
+      expect(matrix.sections).toEqual(['round r2', 'round r1']);
       expect(matrix.columns).toEqual([
-        { key: 'current', label: 'current', drawing: false },
-        {
-          key: 'round r1',
-          label: 'r1 · Pill or square · a b',
-          title: 'Open r1 · Pill or square · a b\n\nToo round',
-          drawing: false,
-          folded: { width: 240, note: 'Too round' },
-        },
+        { key: 'current', label: 'current', drawing: false, section: 'round r2' },
         {
           key: 'c',
           label: 'c',
           drawing: false,
           group: { key: 'round r2', label: 'r2 · Combined', title: 'Fold r2 · Combined' },
+          section: 'round r2',
+        },
+      ]);
+      expect(matrix.rowHeads).toEqual([
+        {
+          key: 'round r1',
+          label: 'r1 · Pill or square · a b',
+          title: 'Open r1 · Pill or square · a b\n\nToo round',
+          note: 'Too round',
+          open: false,
+          section: 'round r1',
         },
       ]);
       expect([...new Set(matrix.frames.map((frame) => frame.column))]).toEqual(['current', 'c']);
+    });
+
+    it('gives every open band its own rows, labelled by state', () => {
+      const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: true } });
+
+      expect(matrix.columns.map((column) => [column.key, column.section])).toEqual([
+        ['current', 'round r2'],
+        ['c', 'round r2'],
+        ['a', 'round r1'],
+        ['b', 'round r1'],
+      ]);
+      expect(matrix.frames.map((frame) => [frame.column, frame.row, frame.rowLabel])).toEqual([
+        ['current', 'round r2 default', 'default'],
+        ['current', 'round r2 disabled', 'disabled'],
+        ['c', 'round r2 default', 'default'],
+        ['c', 'round r2 disabled', 'disabled'],
+        ['a', 'round r1 default', 'default'],
+        ['a', 'round r1 disabled', 'disabled'],
+        ['b', 'round r1 default', 'default'],
+        ['b', 'round r1 disabled', 'disabled'],
+      ]);
+    });
+
+    it('puts the current column in a band of its own while every round is folded', () => {
+      const matrix = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: false, r2: false } });
+
+      expect(matrix.sections).toEqual(['current', 'round r2', 'round r1']);
+      expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false, section: 'current' }]);
+      expect(matrix.rowHeads.map((head) => head.key)).toEqual(['round r2', 'round r1']);
     });
 
     it('offers only the interactions of the part and of open rounds', () => {
@@ -664,8 +698,9 @@ describe('sketchMatrixOf', () => {
         ['current', undefined, undefined],
         ['a', 'r1 · Pill or square', 'Too round'],
         ['b', 'r1 · Pill or square', 'Too round'],
-        ['round r2', undefined, undefined],
       ]);
+      expect(matrix.rowHeads.map((head) => [head.key, head.open])).toEqual([['round r2', false]]);
+      expect(matrix.sections).toEqual(['round r2', 'round r1']);
       expect(matrix.columns[2]?.label).toBe('b · gpt-5.6-sol');
       expect(sketchRoundsOf(rounded, { r1: false }).map((round) => round.open)).toEqual([false, true]);
     });
