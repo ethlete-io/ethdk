@@ -151,9 +151,13 @@
     font-weight: var(--weight-strong);
   }
 
-  .ib-avatar[data-ai] {
-    background: var(--accent-subtle);
-    color: var(--accent-text);
+  .ib-avatar[data-agent] {
+    background: var(--surface-overlay);
+  }
+
+  .ib-logo {
+    width: 1.2rem;
+    height: 1.2rem;
   }
 
   .ib-row-body {
@@ -254,5 +258,12 @@
       0 0 0 2px var(--surface),
       0 0 0 4px var(--accent-subtle);
     color: var(--on-accent);
+  }
+
+  .ib-pin[data-selected]:has(.ib-logo) {
+    background: var(--surface-overlay);
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 4px var(--accent-subtle);
   }
 }

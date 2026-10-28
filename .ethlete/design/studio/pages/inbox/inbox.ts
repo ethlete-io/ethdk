@@ -1,15 +1,16 @@
 import { definePart, drawing, html } from '@design-system';
 import canvasFrames, { defaultFrames } from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
+import { type Agent, agentLogo } from './agent-logos';
 import styles from './inbox.css?inline';
 
-type Props = { showResolved: boolean; openOn: 'all' | 'others' | 'none' };
+type Props = { showResolved: boolean; openOn: 'all' | 'active' | 'others' | 'none' };
 
 type Comment = {
   id: string;
   author: string;
   initials: string;
-  ai?: boolean;
+  agent?: Agent;
   when: string;
   part: string;
   state: string;
@@ -25,7 +26,7 @@ const COMMENTS: Comment[] = [
     id: 'c1',
     author: 'Claude',
     initials: 'C',
-    ai: true,
+    agent: 'claude',
     when: 'vor 3 Min',
     part: 'button',
     state: 'filled · hover',
@@ -38,7 +39,7 @@ const COMMENTS: Comment[] = [
     id: 'c2',
     author: 'Codex',
     initials: 'CX',
-    ai: true,
+    agent: 'codex',
     when: 'vor 20 Min',
     part: 'button',
     state: 'outline · disabled',
@@ -82,7 +83,7 @@ const COMMENTS: Comment[] = [
     id: 'c6',
     author: 'Gemini',
     initials: 'G',
-    ai: true,
+    agent: 'gemini',
     when: 'Mo',
     part: 'system',
     state: 'part',
@@ -104,7 +105,7 @@ const COMMENTS: Comment[] = [
     id: 'c8',
     author: 'Codex',
     initials: 'CX',
-    ai: true,
+    agent: 'codex',
     when: 'Do',
     part: 'button',
     state: 'filled',
@@ -128,7 +129,9 @@ const toggle = (on: boolean) =>
 
 const row = (c: Comment) =>
   html`<div class="ib-row" ${c.id === SELECTED ? ' data-selected' : ''}${c.resolved ? ' data-resolved' : ''}>
-    <span class="ib-avatar" ${c.ai ? ' data-ai' : ''}>${c.initials}</span>
+    <span class="ib-avatar" ${c.agent ? ' data-agent' : ''}
+      >${c.agent ? agentLogo(c.agent, 'ib-logo') : c.initials}</span
+    >
     <div class="ib-row-body">
       <div class="ib-row-meta">
         <span class="ib-author">${c.author}</span>
@@ -162,22 +165,33 @@ const pinned = (body: string, comments: Comment[]) => {
     index += 1;
     const c = comments.find((comment) => comment.cell === index);
     if (!c) return match;
-    return `<div class="st-canvas-cell ib-pinned"><span class="ib-pin"${c.id === SELECTED ? ' data-selected' : ''}>${c.initials}</span>`;
+    return `<div class="st-canvas-cell ib-pinned"><span class="ib-pin"${c.id === SELECTED ? ' data-selected' : ''}>${c.agent ? agentLogo(c.agent, 'ib-logo') : c.initials}</span>`;
   });
 };
 
 export const open: Props = { showResolved: false, openOn: 'all' };
 export const withResolved: Props = { showResolved: true, openOn: 'all' };
+export const activeOnly: Props = { showResolved: false, openOn: 'active' };
 export const activeClear: Props = { showResolved: false, openOn: 'others' };
 export const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude, Codex and Gemini in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover open comments only on the active part, an active part with no open comments, and no open comments at all.',
   madeBy: ['claude-opus-5-5'],
-  states: { open, 'with-resolved': withResolved, 'active-clear': activeClear, 'all-clear': allClear },
+  states: {
+    open,
+    'with-resolved': withResolved,
+    'active-only': activeOnly,
+    'active-clear': activeClear,
+    'all-clear': allClear,
+  },
   render: async ({ showResolved, openOn }) => {
     const comments = COMMENTS.filter(
-      (c) => c.resolved || openOn === 'all' || (openOn === 'others' && c.part !== ACTIVE_PART),
+      (c) =>
+        c.resolved ||
+        openOn === 'all' ||
+        (openOn === 'active' && c.part === ACTIVE_PART) ||
+        (openOn === 'others' && c.part !== ACTIVE_PART),
     );
     const visible = comments.filter((c) => showResolved || !c.resolved);
     const unresolved = comments.filter((c) => !c.resolved).length;

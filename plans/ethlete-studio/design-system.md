@@ -413,6 +413,10 @@ Open points, each with a recommendation:
   needs its name too (the `--by` model id), since the AI is not always Claude.
 - Studio is agent-agnostic. Tom: "der user muss nicht unbedingt claude nutzen". UI copy says
   "Agent", never "Claude"; an agent's name only comes from the data.
+- An agent's avatar is its provider logo, in the brand colour on a neutral circle. The drawing
+  takes the paths from simple-icons (`pages/inbox/agent-logos.ts`): Claude and Gemini from
+  16.36.0, OpenAI from 13.0.0, because later versions dropped it at OpenAI's request. The real
+  app must check the brand terms before it ships these logos.
 
 ### Sketch matrix cell and spacing decisions (2026-10-27)
 
