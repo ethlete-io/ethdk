@@ -962,6 +962,13 @@ step. Each finding names what happened and the fix it needs.
     comment or inbox drawing states this model, and sample data follows it.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
+- Building the findings with parallel subagents (2026-10-28), friction:
+  - `git commit -- <paths>` refuses an untracked file, so each new changeset needed `git add -N`
+    against the "never git add" brief. Prevent: the commit rules say how to commit a new file
+    (`git add -N <file>` for that one path, then `git commit -- <paths>`).
+  - The Studio subagent fed `git diff --name-only` to prettier and `eslint --fix`, and so touched
+    the CLI subagent's `check.ts` in the shared checkout. Prevent: a tool run names the paths it
+    changed, never a list from git.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
