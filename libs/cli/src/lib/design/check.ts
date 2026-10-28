@@ -5,6 +5,9 @@ import { DEFAULT_PORT, portOf, readConfig } from './paths';
 import { buildStampOf, serverProblemOf } from './stamp';
 import { holdStatus, writeStatus } from './status';
 import { checkSystem } from './system/check-system';
+import { resolveProduct } from './system/resolve-product';
+import { typecheckVariant } from './system/sketch/check-sketches';
+import { listSketches, Sketch } from './system/sketch/sketch';
 import { inventoryWarningOf, stageProblemOf, systemWarningOf } from './system-use';
 import { binaryOf, outputOf, trim, typecheck } from './typecheck';
 
@@ -206,6 +209,29 @@ const checkPage = async (options: {
   return 0;
 };
 
+const typecheckSketchVariants = (target: string, fails: Fails) => {
+  let code = 0;
+
+  for (const [name, entry] of Object.entries(readConfig(target)?.products ?? {})) {
+    const product = resolveProduct({ target, name, config: entry });
+    const sketches = listSketches({ productDir: product.dir, product: name }).filter(
+      (sketch): sketch is Sketch => typeof sketch !== 'string',
+    );
+
+    for (const sketch of sketches) {
+      for (const variant of sketch.variants) {
+        const result = typecheckVariant({ target, product, sketch, variant });
+
+        if (result.kind === 'unavailable') return fails.unavailable(result.message);
+        if (result.kind === 'failed')
+          code = fails.fail(`TYPE ERROR in ${name} sketch ${sketch.target} variant ${variant}\n${result.output}`);
+      }
+    }
+  }
+
+  return code;
+};
+
 const runChecks = async (options: {
   target: string;
   flags: Flags;
@@ -242,6 +268,10 @@ const runChecks = async (options: {
 
     if (result.kind === 'unavailable') return unavailable(result.message);
     if (result.kind === 'failed') return fail(`TYPE ERROR\n${result.output}`);
+
+    const sketchCode = typecheckSketchVariants(target, fails);
+
+    if (sketchCode !== 0) return sketchCode;
   }
 
   if (!slug) {

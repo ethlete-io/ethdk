@@ -1,9 +1,12 @@
-import { existsSync, mkdtempSync, readFileSync } from 'fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from './check';
+import { readConfig } from './paths';
 import { statusPath, writeStatus } from './status';
+import { resolveProduct } from './system/resolve-product';
+import { createSketch, Sketch } from './system/sketch/sketch';
 
 const close = vi.fn(async () => undefined);
 const goto = vi.fn(async (): Promise<void> => undefined);
@@ -91,4 +94,34 @@ describe('checkDesign', () => {
     expect(launch).not.toHaveBeenCalled();
     expect(statusOf(target)?.state).toBe('drawing');
   });
+});
+
+describe('checkDesign --tsconfig', () => {
+  it('types each variant of an open sketch and prints the tsc output of the one that fails', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-check-sketch-'));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    writeFileSync(
+      join(sketch.dir, 'b/elements/hero/hero.ts'),
+      "import { definePart } from '@design-system';\nexport default definePart<{ a: string }>({ note: '', states: { default: { a: 1 } }, render: () => ({ body: '', styles: '' }) });\n",
+    );
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(checkDesign({ target, argv: ['--tsconfig'], invocation: 'et design' })).resolves.toBe(1);
+
+    const text = errors.mock.calls.flat().join('\n');
+    expect(text).toContain('TYPE ERROR in acme sketch elements/hero variant b');
+    expect(text).toContain('hero.ts');
+    expect(text).not.toContain('variant a');
+    errors.mockRestore();
+  }, 120_000);
 });

@@ -410,7 +410,8 @@ With `et design`, run the checker from the checkout it draws:
 et design check --lint <changed files> --tsconfig
 ```
 
-`--tsconfig` with no path types every call of the checkout. `--checkout <path>` names another
+`--tsconfig` with no path types every call of the checkout. `--tsconfig` also types each variant of
+an open sketch and prints the tsc output of a failing one. `--checkout <path>` names another
 one.
 
 With a Storybook, copy `check-story.mjs` (bundled next to this skill) to the **repository root** first:
