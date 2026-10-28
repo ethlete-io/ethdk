@@ -165,7 +165,9 @@ one, the part keeps the `note` the picked variant file holds, so write that note
 
 ### Read the inbox
 
-The user comments on a state of a part in Studio, at a point, or on a sketch variant.
+The user comments on a state of a part in Studio, at a point, or on a sketch variant. The sketch of
+an element also shows each page that uses it, with each variant swapped in: a comment there names
+the page as its part and the element's sketch variant, so change the variant, not the page.
 
 ```bash
 et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first

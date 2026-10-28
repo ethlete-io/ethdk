@@ -2,6 +2,8 @@ import { ListedCall, ListedPart, ListedProduct, ListedSketch } from '../../host/
 import {
   arrangementOf,
   partColumnsOf,
+  partSectionsOf,
+  usingPagesOf,
   callFramesOf,
   canPick,
   holdersOf,
@@ -357,6 +359,70 @@ describe('sketches in the tree', () => {
       ['sketch:components/button', 'button', 'components/button', ['in progress']],
       ['sketch:elements/header', 'header', 'elements/header', ['ready', 'error']],
     ]);
+  });
+});
+
+describe('pages that use a part', () => {
+  const tree = part({
+    layer: 'elements',
+    name: 'tree',
+    usedIn: [
+      { product: 'acme', part: 'pages/system' },
+      { product: 'other', part: 'pages/x' },
+    ],
+  });
+  const system = part({ layer: 'pages', name: 'system', states: ['open', 'empty'] });
+  const shop = product([tree, system]);
+
+  it('adds a used in row to the part view with the first state of each page of its product at the first preset', () => {
+    const used = framesOf({ port: 4400, product: shop, part: tree }).filter((frame) => frame.row === 'used in');
+
+    expect(usingPagesOf(shop, tree)).toEqual([system]);
+    expect(used).toMatchObject([
+      {
+        id: 'used in pages/system',
+        width: 390,
+        height: 844,
+        column: 'used in pages/system',
+        place: { part: 'pages/system', state: 'open', size: 'phone' },
+      },
+    ]);
+    expect(used[0]?.screenshot).toContain('part=pages%2Fsystem');
+    expect(partSectionsOf([system])).toEqual(['part', 'used in']);
+    expect(partColumnsOf(tree, [system]).map((column) => [column.key, column.section])).toEqual([
+      ['rest', 'part'],
+      ['used in pages/system', 'used in'],
+    ]);
+  });
+
+  it('adds an in context band to an element sketch: each page with each variant swapped in, commentable', () => {
+    const matrix = sketchMatrixOf({
+      port: 4400,
+      product: shop,
+      part: tree,
+      sketch: sketch({ target: 'elements/tree', layer: 'elements', name: 'tree', status: 'ready' }),
+    });
+    const context = matrix.frames.filter((frame) => frame.row === 'in context pages/system');
+
+    expect(matrix.sections).toEqual(['sketch', 'in context']);
+    expect(context.map((frame) => [frame.column, frame.place])).toEqual([
+      ['in context current', { part: 'pages/system', state: 'open', size: 'phone' }],
+      [
+        'in context a',
+        { part: 'pages/system', state: 'open', size: 'phone', sketch: { target: 'elements/tree', variant: 'a' } },
+      ],
+      [
+        'in context b',
+        { part: 'pages/system', state: 'open', size: 'phone', sketch: { target: 'elements/tree', variant: 'b' } },
+      ],
+    ]);
+    expect(context[1]?.screenshot).toMatch(/part=pages%2Fsystem.*sketch=elements%2Ftree&variant=a/);
+    expect(matrix.columns.filter((column) => column.section === 'in context').map((column) => column.key)).toEqual([
+      'in context current',
+      'in context a',
+      'in context b',
+    ]);
+    expect(matrix.columns.every((column) => column.section !== undefined)).toBe(true);
   });
 });
 

@@ -246,9 +246,78 @@ const statesOf = (part: ListedPart, error: string | undefined): (string | undefi
 /** Rest, then each interaction the part declares, in its order. */
 export const interactionsOf = (part: ListedPart): string[] => [REST, ...(part.interactions ?? [])];
 
-/** The columns of a fitted part's table: rest, then each interaction the part declares. */
-export const partColumnsOf = (part: ListedPart): { key: string; label: string }[] =>
-  interactionsOf(part).map((key) => ({ key, label: key }));
+/** The pages of its own product that use a part, in the order the server lists them. */
+export const usingPagesOf = (product: ListedProduct, part: ListedPart | null): ListedPart[] =>
+  (part?.usedIn ?? []).flatMap((use) =>
+    use.product === product.name ? product.parts.filter((page) => partKeyOf(page) === use.part) : [],
+  );
+
+const PART_SECTION = 'part';
+const USED_IN = 'used in';
+const usedInColumnKeyOf = (page: string) => `${USED_IN} ${page}`;
+
+/**
+ * The columns of a fitted part's table: rest, then each interaction the part declares. With `pages`, the
+ * table is one band and the pages that use the part a second band below it, one column per page.
+ */
+export const partColumnsOf = (
+  part: ListedPart,
+  pages: ListedPart[] = [],
+): { key: string; label: string; section?: string }[] => {
+  const own = interactionsOf(part).map((key) => ({ key, label: key }));
+
+  if (pages.length === 0) return own;
+
+  return [
+    ...own.map((column) => ({ ...column, section: PART_SECTION })),
+    ...pages.map((page) => ({ key: usedInColumnKeyOf(partKeyOf(page)), label: partKeyOf(page), section: USED_IN })),
+  ];
+};
+
+/** The canvas bands of a fitted part's table: none for one band, else the table and the pages that use it. */
+export const partSectionsOf = (pages: ListedPart[]) => (pages.length === 0 ? [] : [PART_SECTION, USED_IN]);
+
+/** The first state of a page at the product's first preset, or fitted when the product has none, to show a part inside it. */
+const pageFrameOf = (options: {
+  port: number;
+  product: ListedProduct;
+  page: ListedPart;
+  sketch?: { target: string; variant: string };
+  epoch?: number;
+  revision?: number;
+  surface?: string;
+  color?: string;
+}) => {
+  const { port, product, page, sketch, epoch, revision, surface, color } = options;
+  const state = page.states[0];
+
+  if (state === undefined) return null;
+
+  const [preset] = Object.keys(product.presets);
+  const size = preset === undefined ? undefined : product.presets[preset];
+  const key = partKeyOf(page);
+  const address: PartAddress = {
+    port,
+    product: product.name,
+    part: key,
+    state,
+    epoch,
+    revision,
+    surface,
+    color,
+    ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
+    ...(preset === undefined ? { fit: true } : {}),
+  };
+
+  return {
+    src: partFrameUrl(address),
+    ...(size ? { width: size.width, ...(size.height === undefined ? {} : { height: size.height }) } : {}),
+    label: [key, state, preset].filter(Boolean).join(' · '),
+    screenshot: partShotUrl({ ...address, preset, revision }),
+    error: loadErrorOf(page.problems),
+    place: { part: key, state, size: preset ?? FITTED, ...(sketch ? { sketch } : {}) },
+  };
+};
 
 const sizeLabelOf = (size: string, interaction: string) => (interaction === REST ? size : `${size} · ${interaction}`);
 
@@ -273,7 +342,7 @@ export const arrangementOf = (part: ListedPart): FrameArrangement =>
  * product, a part with `widths` at each width, any other part fitted to its content. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
  * one that does not load lists no states.
  */
-export const framesOf = (source: FramesSource): CanvasFrame[] => {
+const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
   const { port, product, part, epoch, revision, surface, color } = source;
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
@@ -339,6 +408,35 @@ export const framesOf = (source: FramesSource): CanvasFrame[] => {
     error,
     ...placeOf(cell, FITTED),
   }));
+};
+
+/**
+ * Every state of a part as `ownFramesOf` draws it, then a `used in` row with the first state of each page
+ * of the product that uses the part; in a fitted part's table, that row is a band of its own.
+ */
+export const framesOf = (source: FramesSource): CanvasFrame[] => {
+  const pages = usingPagesOf(source.product, source.part);
+  const matrix = arrangementOf(source.part) === 'matrix';
+
+  return [
+    ...ownFramesOf(source),
+    ...pages.flatMap((page): CanvasFrame[] => {
+      const frame = pageFrameOf({ ...source, page });
+      const key = partKeyOf(page);
+
+      return frame
+        ? [
+            {
+              ...frame,
+              id: `${USED_IN} ${key}`,
+              row: USED_IN,
+              rowLabel: USED_IN,
+              ...(matrix ? { column: usedInColumnKeyOf(key) } : {}),
+            },
+          ]
+        : [];
+    }),
+  ];
 };
 
 export type SketchFramesSource = Omit<FramesSource, 'part'> & {
@@ -436,6 +534,9 @@ export type SketchMatrix = {
 };
 
 const CURRENT = 'current';
+const SKETCH_SECTION = 'sketch';
+const IN_CONTEXT = 'in context';
+const contextColumnKeyOf = (column: string) => `${IN_CONTEXT} ${column}`;
 
 type CellSize = { preset?: string; width?: number; height?: number; label: string };
 
@@ -504,7 +605,8 @@ const rowKeyIn = (section: string | undefined, key: string) => (section === unde
  * row per state in the picked interaction; the current states come first, then any state only a variant
  * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
  * cell there. A variant the agent reports drawing while the sketch is in progress gets a column without
- * frames, until the report is 30 minutes old: then it draws, and its head notes that no report came.
+ * frames, until the report is 30 minutes old: then it draws, and its head notes that no report came. Below
+ * it all, an `in context` band has a row per page that uses the target: that page with each column swapped in.
  */
 export const sketchMatrixOf = ({
   port,
@@ -754,15 +856,71 @@ export const sketchMatrixOf = ({
     };
   });
 
+  const heads = [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf);
+  const pages = usingPagesOf(product, part);
+  const contextFrames = pages.flatMap((page) =>
+    columns.flatMap((column): CanvasFrame[] => {
+      const frame = column.drawing
+        ? null
+        : pageFrameOf({
+            port,
+            product,
+            page,
+            epoch,
+            revision,
+            surface,
+            color,
+            ...(column.key === CURRENT ? {} : { sketch: { target: sketch.target, variant: column.key } }),
+          });
+      const key = partKeyOf(page);
+
+      return frame
+        ? [
+            {
+              ...frame,
+              id: `${IN_CONTEXT} ${column.key} ${key}`,
+              row: `${IN_CONTEXT} ${key}`,
+              rowLabel: `in ${key}`,
+              column: contextColumnKeyOf(column.key),
+              ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
+            },
+          ]
+        : [];
+    }),
+  );
+
+  if (contextFrames.length === 0)
+    return {
+      columns: heads,
+      frames,
+      sizes,
+      size,
+      interactions,
+      interaction,
+      rowHeads: [...roundHeads, ...rowHeads],
+      sections,
+    };
+
+  const inBand = <T extends { section?: string }>(entry: T) =>
+    sections.length > 0 ? entry : { ...entry, section: SKETCH_SECTION };
+
   return {
-    columns: [...columns.slice(0, part ? 1 : 0), ...roundColumns].map(headOf),
-    frames,
+    columns: [
+      ...heads.map(inBand),
+      ...heads.map(({ key, label, drawing: isDrawing }) => ({
+        key: contextColumnKeyOf(key),
+        label,
+        drawing: isDrawing,
+        section: IN_CONTEXT,
+      })),
+    ],
+    frames: [...frames, ...contextFrames],
     sizes,
     size,
     interactions,
     interaction,
-    rowHeads: [...roundHeads, ...rowHeads],
-    sections,
+    rowHeads: [...roundHeads, ...rowHeads].map(inBand),
+    sections: [...(sections.length > 0 ? sections : [SKETCH_SECTION]), IN_CONTEXT],
   };
 };
 

@@ -243,6 +243,8 @@ export type ListedPart = {
   madeBy?: string[];
   /** The wireframe kit calls in a page's source. Missing from an `@ethlete/cli` older than the kit. */
   kitUses?: number;
+  /** The pages that use the part, in its product and in products built on it. Missing from an `@ethlete/cli` older than page uses. */
+  usedIn?: { product: string; part: string }[];
   problems: SystemProblem[];
 };
 

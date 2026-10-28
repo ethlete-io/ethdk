@@ -53,6 +53,8 @@ import {
   callKeyOf,
   framesOf,
   partColumnsOf,
+  partSectionsOf,
+  usingPagesOf,
   holdersOf,
   isGroupOpen,
   isSectionOpen,
@@ -427,6 +429,7 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
             [frames]="notedFrames()"
             [arrangement]="arrangement()"
             [columns]="partColumns()"
+            [sections]="partSections()"
             [cameraKey]="cameraKey()"
             [restoredCamera]="restoredCamera()"
             [pins]="partPins()"
@@ -877,11 +880,20 @@ export class SystemViewComponent {
     return part ? arrangementOf(part.listed) : 'sheet';
   });
 
+  private usingPages = computed(() => {
+    const product = this.product();
+    const part = this.part();
+
+    return product && part && arrangementOf(part.listed) === 'matrix' ? usingPagesOf(product, part.listed) : [];
+  });
+
   protected partColumns = computed(() => {
     const part = this.part();
 
-    return part ? partColumnsOf(part.listed) : [];
+    return part ? partColumnsOf(part.listed, this.usingPages()) : [];
   });
+
+  protected partSections = computed(() => partSectionsOf(this.usingPages()));
 
   protected frames = computed(() => {
     const port = this.port();

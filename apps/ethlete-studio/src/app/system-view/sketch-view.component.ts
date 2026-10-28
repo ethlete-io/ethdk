@@ -57,6 +57,8 @@ import {
   openRoundsOf,
   stateRowKeyOf,
   sketchRoundsOf,
+  partKeyOf,
+  usingPagesOf,
 } from './system-tree';
 
 type Busy = 'pick' | 'merge' | 'discard';
@@ -556,7 +558,11 @@ export class SketchViewComponent {
       (!!this.picked() && (this.previewReading()?.preview?.affected.length ?? 0) > 0),
   );
 
-  private sketchComments = computed(() => this.commentStore.comments().filter((comment) => !!comment.sketch));
+  private contextPages = computed(() => new Set(usingPagesOf(this.product(), this.part()).map(partKeyOf)));
+
+  private sketchComments = computed(() =>
+    this.commentStore.comments().filter((comment) => !!comment.sketch || this.contextPages().has(comment.part)),
+  );
 
   protected pins = computed(() => pinsOf(this.canvas().frames, this.sketchComments()));
 
