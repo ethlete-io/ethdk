@@ -1,5 +1,3 @@
 ---
-'ethlete-studio': patch
+'ethlete-studio': none
 ---
-
-The checkouts popover shadow reads its colour from `--et-shadow-color-rgb`, like the rest of Studio.

@@ -1,5 +1,3 @@
 ---
-'ethlete-studio': patch
+'ethlete-studio': none
 ---
-
-Use the SDK input and select components for the note, product and checkout fields.

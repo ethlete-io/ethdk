@@ -1,5 +1,3 @@
 ---
-'ethlete-studio': patch
+'ethlete-studio': none
 ---
-
-Withdrawing a comment calls the design server's new `comment-withdraw` endpoint.

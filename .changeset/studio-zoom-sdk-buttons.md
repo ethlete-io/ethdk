@@ -1,5 +1,3 @@
 ---
-'ethlete-studio': patch
+'ethlete-studio': none
 ---
-
-Use the SDK buttons for the design canvas zoom control.
