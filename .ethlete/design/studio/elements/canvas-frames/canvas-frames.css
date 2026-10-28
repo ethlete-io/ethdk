@@ -10,15 +10,13 @@
   }
 
   .st-canvas-frames {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--space-6);
+    display: grid;
+    grid-template-columns: auto repeat(var(--st-cols), 130px);
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .st-canvas-frame {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
     margin: 0;
   }
 
@@ -26,15 +24,20 @@
     color: var(--text-muted);
     font-size: var(--text-sm);
     line-height: var(--text-sm-line);
+    text-align: center;
   }
 
-  .st-canvas-frame[data-selected] .st-canvas-caption {
+  .st-canvas-row-caption {
+    text-align: right;
+    padding-right: var(--space-2);
+  }
+
+  .st-canvas-row-caption[data-selected] {
     color: var(--accent-text);
   }
 
   .st-canvas-stage {
-    width: 240px;
-    height: 160px;
+    height: 88px;
     display: flex;
     align-items: center;
     justify-content: center;
