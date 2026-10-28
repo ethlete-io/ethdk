@@ -25,4 +25,9 @@ Commits are **lean** and follow {%commitRuleSource%}:
 - **Stage only what belongs to the change.** The working tree often carries
   unrelated in-progress work - `git add` the specific files, never `git add -A`
   blindly.
+- **In a checkout that other sessions share**, commit with
+  `git commit -- <paths>`, so their staged files stay out. `git commit -- <path>`
+  refuses an untracked file: run `git add -N <that file>` for that one path
+  first. Pass a formatter or `eslint --fix` the exact paths you changed, never a
+  list from `git diff` or `git status` - that list holds other sessions' files.
 - Don't push unless asked.

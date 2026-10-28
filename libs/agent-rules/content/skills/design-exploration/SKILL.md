@@ -19,7 +19,9 @@ or loses only against the other variants of its question.
 
 1. **One open call at a time.** Take one question. Draw its variants. Stop.
 2. **Put the variants in the call, then name your pick.** Two to four variants, drawn for
-   real, side by side, labelled, with what each one costs. Your pick is a proposal.
+   real, side by side, labelled, with what each one costs. Your pick is a proposal. Never ask
+   a yes/no question about content, and never ask the user what they want: deliver strong
+   variants, and the user picks.
 3. **Commit only when the user says commit.** A merge the user makes in Ethlete Studio counts as
    that word for the merged part: commit the part, not the open sketches.
 4. **A clear rejection starts the next call.** Settle and record the rejected call, then draw
@@ -95,6 +97,14 @@ et design sketch report <layer>/<name> --variant b --by <model id> "phone"      
 et design sketch check [<layer>/<name>]                                            # each variant laid over the product
 et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
 ```
+
+Variants are alternatives. A variant never stands for a state of another variant: a hidden or
+collapsed mode of variant d is a further state of d, not a variant e. Before you draw a new control,
+look for a control that already does the job (an active rail button that toggles its panel), and
+draw that first.
+
+A section of an app is a page under `pages/`, never a state of the shell. An element holds its
+own chrome only. A sketch on an element adds no state whose difference is page content in a slot.
 
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
