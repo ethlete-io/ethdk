@@ -1,0 +1,23 @@
+{
+  "part": "pages/sketches",
+  "state": "open",
+  "size": "desktop",
+  "text": "wrong color too",
+  "point": {
+    "x": 1364,
+    "y": 35
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "a"
+  },
+  "createdAt": "2026-10-28T09:24:06.647Z",
+  "resolved": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "resolvedAt": "2026-10-28T09:26:57.120Z",
+    "note": "Runde 1: Buttons in SDK-Blau; Page-Sketches fehlten",
+    "round": "r2"
+  }
+}

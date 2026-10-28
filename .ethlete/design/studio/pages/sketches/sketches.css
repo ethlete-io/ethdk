@@ -1,0 +1,45 @@
+@layer components {
+  .sk-a-grid {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
+  }
+
+  .sk-a-col-head {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .sk-a-frame {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+  }
+
+  .sk-a-span {
+    grid-column: 1 / -1;
+  }
+
+  .sk-a-span.sk-band-title {
+    margin-top: var(--space-2);
+  }
+
+  .sk-a-older {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .sk-a-grid .sk-crop {
+    --sk-crop-height: 13rem;
+  }
+}
+
+@layer components {
+  .sk-a-grid[data-page-sketch] {
+    grid-template-columns: repeat(3, max-content);
+  }
+}
