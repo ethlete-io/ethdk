@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { listSystem } from './list-system';
+import { resolveProduct } from './resolve-product';
+import { createSketch, variantDirOf } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
 
 const cwd = process.cwd();
@@ -65,6 +67,20 @@ describe('listSystem', () => {
       'Pill shape, because Acme rounds every action.',
     );
     expect(product?.parts.every((part) => part.problems.length === 0)).toBe(true);
+  });
+
+  it('lists the pages that use a part through the import graph, also in a product that draws it as its base part', async () => {
+    const [base, product] = await list(acme(), ['acme-base', 'acme']);
+    const usedIn = (listed: typeof product, key: string) =>
+      listed?.parts.find((part) => `${part.layer}/${part.name}` === key)?.usedIn;
+    const home = [{ product: 'acme', part: 'pages/home' }];
+
+    expect(usedIn(product, 'elements/hero')).toEqual(home);
+    expect(usedIn(product, 'components/button')).toEqual(home);
+    expect(usedIn(product, 'foundations/palette')).toEqual([]);
+    expect(usedIn(product, 'pages/home')).toEqual([]);
+    expect(usedIn(base, 'components/card')).toEqual(home);
+    expect(usedIn(base, 'components/button')).toEqual([]);
   });
 
   it("lists each product's own theme names, not its base's", async () => {
@@ -187,6 +203,39 @@ export default definePart({ note: '', states: { rest: {} }, render: () => drawin
 
     expect(await drawCard('acme')).toContain('border-radius: 999px');
     expect(await drawCard('acme-base')).not.toContain('border-radius');
+  });
+
+  it('draws a page with the element a sketch variant holds in place of the merged element', async () => {
+    const target = acme();
+    const config = readConfig(target) ?? {};
+    const created = createSketch({
+      product: resolveProduct({ target, name: 'acme', config: config.products?.['acme'] ?? {} }),
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a'],
+    });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const hero = join(variantDirOf(created, 'a'), 'elements/hero/hero.ts');
+
+    writeFileSync(hero, readFileSync(hero, 'utf8').replace('<h1>', '<h1 class="variant-a">'));
+
+    const vite = await createDesignServer({ target, config, listen: false });
+
+    closing.push(() => vite.close());
+
+    const system = createSystemModules({ target, config });
+    const drawHome = async (sketch: { target: string; variant: string } | null) => {
+      const file = system.partOf({ product: 'acme', part: 'pages/home', sketch })?.file ?? '';
+      const loaded = (await vite.ssrLoadModule(productModuleIdOf({ file, product: 'acme', sketch }))) as {
+        default: { render: (props: { films: [] }) => Promise<{ body: string }> };
+      };
+
+      return (await loaded.default.render({ films: [] })).body;
+    };
+
+    expect(await drawHome({ target: 'elements/hero', variant: 'a' })).toContain('<h1 class="variant-a">');
+    expect(await drawHome(null)).not.toContain('variant-a');
   });
 
   it('serves the CSS a part imports with its interactions forceable', async () => {

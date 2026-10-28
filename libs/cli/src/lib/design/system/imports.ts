@@ -69,3 +69,24 @@ export const importProblemsOf = (product: ResolvedProduct): Problem[] => {
     }),
   );
 };
+
+/** The parts `from` imports, directly or through another part, as the product resolves them. */
+export const partsReachedFrom = (options: { product: ResolvedProduct; from: ResolvedPart }): ResolvedPart[] => {
+  const parts = new Map(options.product.parts.map((part) => [partKeyOf(part), part]));
+  const reached = new Map<string, ResolvedPart>();
+  const queue = [options.from];
+
+  for (let part = queue.shift(); part !== undefined; part = queue.shift()) {
+    for (const dependency of partDependenciesOf(part)) {
+      const key = partKeyOf(dependency);
+      const found = parts.get(key);
+
+      if (!found || reached.has(key)) continue;
+
+      reached.set(key, found);
+      queue.push(found);
+    }
+  }
+
+  return [...reached.values()];
+};
