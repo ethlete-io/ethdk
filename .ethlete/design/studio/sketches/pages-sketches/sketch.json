@@ -30,27 +30,19 @@
   ],
   "variantInfo": {
     "a": {
-      "authors": [
-        "gpt-6"
-      ],
+      "authors": ["gpt-6"],
       "round": "r1"
     },
     "b": {
-      "authors": [
-        "gpt-6"
-      ],
+      "authors": ["gpt-6"],
       "round": "r2"
     },
     "c": {
-      "authors": [
-        "gpt-6"
-      ],
+      "authors": ["gpt-6"],
       "round": "r2"
     },
     "d": {
-      "authors": [
-        "gpt-6"
-      ],
+      "authors": ["gpt-6"],
       "round": "r2"
     }
   }

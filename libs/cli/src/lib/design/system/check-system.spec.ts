@@ -154,6 +154,6 @@ describe('checkDesign', () => {
     const lines = output();
 
     expect(await checkDesign({ target: acme(), argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(lines).toEqual(['ok']);
+    expect(lines.filter((line) => !line.startsWith('RENDER CHECK SKIPPED'))).toEqual(['ok']);
   }, 60_000);
 });

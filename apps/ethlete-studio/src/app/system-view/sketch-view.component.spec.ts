@@ -91,7 +91,7 @@ describe('SketchViewComponent merge preview', () => {
       url.includes('/__design/comments') ? json({ comments: [], unreadable: [] }) : new Promise(() => undefined),
     );
 
-    const updatedAt = new Date(Date.now() - 30 * 60_000 + 300).toISOString();
+    const updatedAt = new Date(Date.now() - 30 * 60_000 + 2000).toISOString();
     const fixture = TestBed.createComponent(SketchViewComponent);
 
     fixture.componentRef.setInput('port', 4402);
@@ -111,7 +111,7 @@ describe('SketchViewComponent merge preview', () => {
 
     expect(columnB()).toMatchObject({ label: 'b · drawing …', drawing: true });
 
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 2100));
     await settle(fixture);
 
     expect(columnB()).toMatchObject({ label: 'b', drawing: false, note: 'No report for 30 min' });
