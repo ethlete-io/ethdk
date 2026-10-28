@@ -7,8 +7,8 @@ type Props = { part: string; states: string[]; selected: string; zoom: string };
 
 const buttonStates = {
   filled: { label: 'Save', variant: 'filled' },
-  outline: { label: 'Cancel', variant: 'outline' },
-  tonal: { label: 'Filter', variant: 'tonal' },
+  outline: { label: 'Save', variant: 'outline' },
+  tonal: { label: 'Save', variant: 'tonal' },
 } as const;
 
 const interactions = ['rest', 'hover', 'active', 'focus-visible', 'pressed', 'disabled'] as const;
