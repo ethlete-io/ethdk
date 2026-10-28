@@ -103,6 +103,9 @@
       content: '';
       position: absolute;
       inset: -14px;
+      inset-inline-end: calc(
+        -1 * min(14px, var(--et-form-field-control-padding-inline) + var(--et-form-field-control-border-width))
+      );
     }
 
     .et-icon {
