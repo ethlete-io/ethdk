@@ -983,6 +983,15 @@ step. Each finding names what happened and the fix it needs.
   - `design serve` reads `serve` as a checkout path (serving is plain `design`), and
     `sketch discard` needs `--by` while `sketch new` does not. Prevent: one rule for `--by`, and
     an unknown subcommand is an error.
+  - Small-part grid (4dbfb0f4b) and tree from frames (4f5bf7811): the server has no frame page
+    that draws many cells, so Studio loads one `frame.html` iframe per cell. Prevent: a grid
+    frame page on the server, if the iframe count gets slow.
+  - The `sdk` button failed to load on a cold server: a 60 s Vite `fetchModule` timeout on
+    `libs/components/design/button.ts`. Not reproduced on a warm server; watch for it.
+  - The `__TAURI_INTERNALS__` stub for headless Studio checks lives only in memory notes, so each
+    agent writes it again. Prevent: a stub helper in the repo, next to the Studio e2e setup.
+  - tsc on `tsconfig.app.json` does not check Angular templates; only the dev server caught a
+    template type error. `nx serve` beside Tom's serve needs `NX_WORKSPACE_DATA_DIRECTORY`.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
