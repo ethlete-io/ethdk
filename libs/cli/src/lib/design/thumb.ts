@@ -9,7 +9,7 @@ export const THUMB_PIXEL_WIDTH = 360;
 
 const THUMB_ASPECT = 9 / 16;
 
-const DRAW_TIMEOUT_MS = 15000;
+export const DRAW_TIMEOUT_MS = 15000;
 
 export type Browser = Awaited<ReturnType<Chromium['launch']>>;
 
@@ -18,6 +18,8 @@ type Shot = { status: number; type: string; body: Buffer | string };
 export class ThumbUnavailableError extends Error {}
 
 export class ThumbMissingError extends Error {}
+
+export class ShotUnprocessableError extends Error {}
 
 const frameWidthOf = (slug: string) => `(async (slug) => {
   const { calls } = await import('/@id/__x00__virtual:design-explore');
@@ -92,7 +94,14 @@ export const sendShot = (response: ServerResponse, shot: Promise<Buffer>) =>
     (body) => send(response, { status: 200, type: 'image/png', body }),
     (error: unknown) =>
       send(response, {
-        status: error instanceof ThumbUnavailableError ? 503 : error instanceof ThumbMissingError ? 404 : 500,
+        status:
+          error instanceof ThumbUnavailableError
+            ? 503
+            : error instanceof ThumbMissingError
+              ? 404
+              : error instanceof ShotUnprocessableError
+                ? 422
+                : 500,
         type: 'text/plain; charset=utf-8',
         body: error instanceof Error ? error.message : String(error),
       }),

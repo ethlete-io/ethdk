@@ -7,10 +7,12 @@ import {
   Browser,
   callDrawsFrom,
   createDrawQueue,
+  DRAW_TIMEOUT_MS,
   openFrame,
   send,
   sendShot,
   settled,
+  ShotUnprocessableError,
   ThumbMissingError,
 } from './thumb';
 
@@ -93,9 +95,26 @@ export const createPartShooter = (options: {
       await page.evaluate(settled);
 
       const marks: unknown = await page.evaluate(marksIn(frame.clip));
-      const png = frame.clip
-        ? await page.locator('#root').screenshot({ type: 'png' })
-        : await page.screenshot({ fullPage: true, type: 'png' });
+      const root = page.locator('#root');
+
+      if (frame.clip) {
+        const box = await root.boundingBox();
+
+        if (!box || box.width === 0 || box.height === 0)
+          throw new ShotUnprocessableError(
+            'design-explore: part root has zero size - give an element that fills its container a min-height',
+          );
+      }
+
+      const png = await (
+        frame.clip
+          ? root.screenshot({ type: 'png', timeout: DRAW_TIMEOUT_MS })
+          : page.screenshot({ fullPage: true, type: 'png', timeout: DRAW_TIMEOUT_MS })
+      ).catch((error: unknown) => {
+        throw new ShotUnprocessableError(
+          `design-explore: the screenshot failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
 
       return { png, marks: Array.isArray(marks) ? (marks as PartMark[]) : [] };
     } finally {

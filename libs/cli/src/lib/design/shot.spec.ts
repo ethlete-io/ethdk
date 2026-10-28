@@ -13,6 +13,10 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 const goto = vi.fn<(url: string, options?: unknown) => Promise<void>>(async () => undefined);
 const screenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('png'));
 const rootScreenshot = vi.fn<(options: unknown) => Promise<Buffer>>(async () => Buffer.from('fitted'));
+const boundingBox = vi.fn<() => Promise<{ width: number; height: number } | null>>(async () => ({
+  width: 200,
+  height: 80,
+}));
 const marks = [{ parts: ['components/card'], x: 0, y: 4, width: 200, height: 80 }];
 const evaluate = vi.fn<(script: string) => Promise<unknown>>(async (script) =>
   script.includes('data-et-part') ? marks : true,
@@ -22,7 +26,7 @@ const newContext = vi.fn<(options: unknown) => Promise<unknown>>(async () => ({
     goto,
     screenshot,
     evaluate,
-    locator: () => ({ first: () => ({ waitFor: async () => undefined }), screenshot: rootScreenshot }),
+    locator: () => ({ first: () => ({ waitFor: async () => undefined }), screenshot: rootScreenshot, boundingBox }),
   }),
   close: async () => undefined,
 }));
@@ -75,7 +79,7 @@ describe('createPartShooter', () => {
     expect(goto.mock.calls[0]?.[0]).toBe(
       'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&surface=dark',
     );
-    expect(screenshot).toHaveBeenCalledWith({ fullPage: true, type: 'png' });
+    expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
   });
 
   it('keeps one picture per part, state, preset and theme', async () => {
@@ -159,7 +163,7 @@ describe('createPartShooter', () => {
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 480, height: 800 } });
     expect(new URL(goto.mock.calls[0]?.[0] ?? '').searchParams.has('fit')).toBe(false);
-    expect(rootScreenshot).toHaveBeenCalledWith({ type: 'png' });
+    expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
     expect(screenshot).not.toHaveBeenCalled();
   });
 
@@ -169,7 +173,7 @@ describe('createPartShooter', () => {
 
     expect(shot).toMatchObject({ status: 200, body: Buffer.from('fitted') });
     expect(new URL(goto.mock.calls[0]?.[0] ?? '').search).toBe('?product=acme&part=components%2Fcard&state=long&fit=');
-    expect(rootScreenshot).toHaveBeenCalledWith({ type: 'png' });
+    expect(rootScreenshot).toHaveBeenCalledWith(expect.objectContaining({ type: 'png' }));
     expect(screenshot).not.toHaveBeenCalled();
   });
 
@@ -211,6 +215,24 @@ describe('createPartShooter', () => {
     expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=tv')).status).toBe(404);
     expect(screenshot).not.toHaveBeenCalled();
   });
+
+  it('answers 422 with a reason, never a png, when the part root has zero size or the screenshot fails', async () => {
+    const { shots } = acme();
+
+    boundingBox.mockResolvedValueOnce({ width: 320, height: 0 });
+    expect(await ask(shots, 'product=acme&part=components/card&state=long')).toMatchObject({
+      status: 422,
+      type: 'text/plain; charset=utf-8',
+      body: expect.stringContaining('part root has zero size'),
+    });
+    expect(rootScreenshot).not.toHaveBeenCalled();
+
+    screenshot.mockRejectedValueOnce(new Error('Timeout 15000ms exceeded'));
+    expect(await ask(shots, 'product=acme&part=components/card&state=long&preset=phone')).toMatchObject({
+      status: 422,
+      body: expect.stringContaining('Timeout 15000ms exceeded'),
+    });
+  });
 });
 
 describe('createPartShooter pictures', () => {
@@ -245,7 +267,7 @@ describe('createPartShooter for a call', () => {
     expect(shot).toMatchObject({ status: 200, type: 'image/png' });
     expect(newContext).toHaveBeenCalledWith({ viewport: { width: 1280, height: 800 } });
     expect(goto.mock.calls[0]?.[0]).toBe('http://localhost:1/frame.html?call=acme%2Flogin&variant=a&color=brand');
-    expect(screenshot).toHaveBeenCalledWith({ fullPage: true, type: 'png' });
+    expect(screenshot).toHaveBeenCalledWith(expect.objectContaining({ fullPage: true, type: 'png' }));
   });
 
   it('keeps one picture per variant, width and theme until a file of its call changes', async () => {
