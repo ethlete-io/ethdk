@@ -11,6 +11,7 @@ import { unknownInteractionsOf } from './rules/interactions';
 import { kitOutsidePagesOf } from './rules/kit-outside-pages';
 import { scriptedMotionOf } from './rules/motion';
 import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
+import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badWidthsOf } from './rules/widths';
 import { writeSystemTsconfig } from './system-tsconfig';
@@ -19,6 +20,7 @@ const RULES = [
   importProblemsOf,
   upwardDependenciesOf,
   hardCodedColoursOf,
+  undefinedTokensOf,
   componentCopiesOf,
   scriptedMotionOf,
   staleCommentsOf,
