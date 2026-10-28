@@ -102,6 +102,28 @@ describe('designSketch', () => {
     });
   });
 
+  it('stores the note sketch new takes as the note of the first round', () => {
+    const target = acme();
+    const lines = output();
+
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a,b',
+      '--round',
+      'Pill',
+      '--note',
+      'pill or square',
+      '--product',
+      'acme',
+    );
+
+    expect(run(target, 'list', '--json')).toBe(0);
+    expect(JSON.parse(lines.pop() ?? '')[0].rounds).toEqual([{ key: 'r1', title: 'Pill', note: 'pill or square' }]);
+  });
+
   it('adds a variant from another, in the running round or a new one', () => {
     const target = acme();
     const lines = output();

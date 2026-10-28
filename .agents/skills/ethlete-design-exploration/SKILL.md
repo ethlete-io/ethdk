@@ -129,7 +129,7 @@ goes on the running round: what it showed and why its variants lost. Older varia
 Letters continue across rounds (r1: a, b; r2: c, d). A new round answers the comments on the
 `--from` variant and resolves them; a variant without `--round` leaves them open. Draw the combined
 variant and mark the sketch `ready` again. `sketch new --round <title>` names
-round 1.
+round 1, and `--note <text>` sets its note.
 
 ### Your model id: `--by`
 

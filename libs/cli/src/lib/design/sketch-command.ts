@@ -20,7 +20,7 @@ import {
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b --by <model id> [--round <title>] [--product <name>]',
+  'sketch new <layer>/<name> --variants a,b --by <model id> [--round <title>] [--note <text>] [--product <name>]',
   'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>]',
@@ -82,6 +82,7 @@ const created = (context: Context) => {
     sketch: parsed,
     variants,
     roundTitle: args.values['--round'],
+    roundNote: args.values['--note'],
     author: authorOf(args) ?? undefined,
   });
 

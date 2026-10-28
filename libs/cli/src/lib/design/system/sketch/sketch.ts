@@ -107,7 +107,7 @@ const isRounds = (value: unknown): value is SketchRound[] =>
 
 const FIRST_ROUND = 'r1';
 
-const firstRoundOf = (title = ''): SketchRound => ({ key: FIRST_ROUND, title, note: '' });
+const firstRoundOf = (title = '', note = ''): SketchRound => ({ key: FIRST_ROUND, title, note: note.trim() });
 
 const nextRoundKeyOf = (rounds: SketchRound[]) =>
   `r${Math.max(0, ...rounds.map((round) => Number(/^r(\d+)$/u.exec(round.key)?.[1] ?? 0))) + 1}`;
@@ -221,9 +221,10 @@ export const createSketch = (options: {
   sketch: SketchTarget;
   variants: string[];
   roundTitle?: string;
+  roundNote?: string;
   author?: string;
 }): Sketch | string => {
-  const { product, sketch, variants, roundTitle, author } = options;
+  const { product, sketch, variants, roundTitle, roundNote, author } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
 
@@ -255,7 +256,7 @@ export const createSketch = (options: {
     status: 'in progress',
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
-    rounds: [firstRoundOf(roundTitle)],
+    rounds: [firstRoundOf(roundTitle, roundNote)],
     variantInfo: Object.fromEntries(variants.map((variant) => [variant, variantInfoOf(FIRST_ROUND, author)])),
     product: product.name,
     layer: sketch.layer,
