@@ -5,7 +5,7 @@ import { markLegacy } from './legacy';
 import { newCall } from './new-call';
 import { designProduct } from './product-command';
 import { serveDesign } from './serve';
-import { designSketch } from './sketch-command';
+import { designSketch, SKETCH_USAGE } from './sketch-command';
 import { buildStampOf } from './stamp';
 import { CALL_STATES, designStatus } from './status';
 import { designSystem } from './system/system-command';
@@ -50,8 +50,11 @@ const helpOf = (invocation: string) =>
     `${invocation} status <slug> <${CALL_STATES.join('|')}>`,
     '  Record the state of a call for Ethlete Studio. new and check --call record theirs on their own.',
     '',
-    `${invocation} sketch new <layer>/<name> --variants a,b --by <model id> [--product <name>]`,
+    `${invocation} sketch new <layer>/<name> --variants a,b --by <model id> [--round <title> [--note <text>]] [--product <name>]`,
     '  Open a sketch on a part, new or existing, in progress. Each variant starts as a copy of the part.',
+    '',
+    `${invocation} sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>]`,
+    '  Add a variant to the open sketch, as a copy of another, in the running round or a new one.',
     '',
     `${invocation} sketch report <layer>/<name> --variant <key> --by <model id> <text> | sketch ready <layer>/<name> --by <model id>`,
     '  Tell Studio what you build on a variant now ("phone, outline state"), which also records you as one of its',
@@ -91,6 +94,38 @@ const helpOf = (invocation: string) =>
     '',
   ].join('\n');
 
+const HELP_FLAGS = new Set(['--help', '-h']);
+
+const alternativesOf = (block: string[], invocation: string) =>
+  (block[0] ?? '').split(' | ').map((usage) => usage.replace(`${invocation} `, ''));
+
+const matchingBlocksOf = (invocation: string, words: string[]) => {
+  const blocks = helpOf(invocation)
+    .split('\n\n')
+    .map((block) => block.split('\n'));
+  const command = words.join(' ');
+
+  return blocks.filter((block) =>
+    alternativesOf(block, invocation).some((usage) => usage === command || usage.startsWith(`${command} `)),
+  );
+};
+
+/** The usage of the one subcommand `argv` names, for `et design <command> [<subcommand>] … --help`. */
+const subcommandHelpOf = (invocation: string, argv: string[]) => {
+  const [command = '', subcommand = ''] = argv;
+
+  if (command === 'sketch') {
+    const lines = SKETCH_USAGE.filter((line) => line.startsWith(`sketch ${subcommand} `));
+
+    return (lines.length > 0 ? lines : SKETCH_USAGE).map((line) => `usage: ${invocation} ${line}`).join('\n');
+  }
+
+  const precise = subcommand.startsWith('-') ? [] : matchingBlocksOf(invocation, [command, subcommand]);
+  const blocks = precise.length > 0 ? precise : matchingBlocksOf(invocation, [command]);
+
+  return blocks.length > 0 ? blocks.map((block) => block.join('\n')).join('\n\n') : helpOf(invocation);
+};
+
 /**
  * `et design [checkout]` serves the variant frames of a checkout, and `et design check …` says why
  * a call does not render. Both work on any checkout that keeps a `.ethlete/design` folder, so a
@@ -101,6 +136,12 @@ export const designCommand = async (options: { root: string; argv: string[]; inv
 
   if (argv[0] === '--help' || argv[0] === '-h' || argv[0] === 'help') {
     console.log(helpOf(invocation));
+
+    return 0;
+  }
+
+  if (argv.slice(1).some((arg) => HELP_FLAGS.has(arg))) {
+    console.log(subcommandHelpOf(invocation, argv));
 
     return 0;
   }
