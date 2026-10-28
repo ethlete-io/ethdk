@@ -901,6 +901,12 @@ step. Each finding names what happened and the fix it needs.
     an element shows each variant also inside those pages ("in context" rows: `pages/system` with
     the variant swapped in), commentable like any frame. The part view offers the same "used in"
     row for the merged element.
+  - Canvas grid of button states x interactions (60ba860f7): a part's `Props` has no `disabled`
+    and no `data-et-force`, so `elements/canvas-frames` patches the first tag of the rendered
+    markup with a regex to force an interaction. Prevent: `render` takes an optional interaction
+    and applies it the way the shot's frame does. The base button's `pressed` swaps the fill
+    (filled looks outline, outline and tonal look filled): that is the toggle look of the mock,
+    to settle in the components phase.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
