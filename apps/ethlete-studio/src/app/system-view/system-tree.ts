@@ -57,7 +57,17 @@ const commentBadgesOf = (key: string, { commented, questioned, answered }: Comme
 };
 
 /** `count` is the number of wireframe kit parts a wireframe page uses. */
-export type TreeEntry = { key: string; name: string; title?: string; badges: PartBadge[]; count?: number };
+export type TreeFrame = { key: string; name: string; part: string; frame: string };
+
+/** A part drawn in more than one frame lists them as `frames`; a part drawn in one is a leaf. */
+export type TreeEntry = {
+  key: string;
+  name: string;
+  title?: string;
+  badges: PartBadge[];
+  count?: number;
+  frames?: TreeFrame[];
+};
 
 export type TreeSection = { key: string; label: string; entries: TreeEntry[] };
 
@@ -174,7 +184,10 @@ export const treeOf = (
     sketches = [],
     comments = [],
     merging = null,
+    product = null,
   }: {
+    /** The product the parts belong to, to list each part's frames. */
+    product?: ListedProduct | null;
     calls?: ListedCall[];
     sketches?: ListedSketch[];
     comments?: (CommentPlace & Pick<ListedComment, 'threadState'>)[];
@@ -213,12 +226,17 @@ export const treeOf = (
       {
         key,
         label,
-        entries: parts.filter(holds).map((part) => ({
-          key: partKeyOf(part),
-          name: part.name,
-          badges: badgesOf(part, { sketched, marks: partMarks }),
-          ...(isWireframe(part) ? { count: part.kitUses } : {}),
-        })),
+        entries: parts.filter(holds).map((part) => {
+          const frames = product ? treeFramesOf(product, part) : [];
+
+          return {
+            key: partKeyOf(part),
+            name: part.name,
+            badges: badgesOf(part, { sketched, marks: partMarks }),
+            ...(isWireframe(part) ? { count: part.kitUses } : {}),
+            ...(frames.length > 1 ? { frames } : {}),
+          };
+        }),
       },
     ];
   }).filter((group) => group.entries.length > 0 || (group.sections?.length ?? 0) > 0);
@@ -397,6 +415,17 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
     },
   ];
 };
+
+export const frameKeyOf = (part: string, frame: string) => `frame:${part} ${frame}`;
+
+/** The frames a part draws on its own, as tree rows that open the part on that frame. */
+const treeFramesOf = (product: ListedProduct, part: ListedPart): TreeFrame[] =>
+  ownFramesOf({ port: 0, product, part }).map((frame) => ({
+    key: frameKeyOf(partKeyOf(part), frame.id),
+    name: frame.label,
+    part: partKeyOf(part),
+    frame: frame.id,
+  }));
 
 /**
  * Every state of a part as `ownFramesOf` draws it, then a `used in` row with the first state of each page

@@ -45,6 +45,7 @@ import { Camera } from '../components/design-canvas/canvas-math';
 import {
   OpenContext,
   TreeEntry,
+  TreeFrame,
   TreeGroup,
   TreeSection,
   authorsLabelOf,
@@ -651,6 +652,7 @@ export class SystemViewComponent {
   private tree = computed(() =>
     withFlowGroup(
       treeOf(this.product()?.parts ?? [], {
+        product: this.product(),
         calls: this.calls(),
         sketches: this.sketches(),
         comments: this.commentStore.comments(),
@@ -791,10 +793,22 @@ export class SystemViewComponent {
     const entries = new Map<string, TreeEntry>();
     const counts = new Map<string, number>();
     const children = new Map<string | null, TreeNode<string>[]>();
+    const frames = new Map<string, TreeFrame>();
     const leaf = (entry: TreeEntry): TreeNode<string> => {
       entries.set(entry.key, entry);
 
-      return { value: entry.key, label: entry.name, isLeaf: true };
+      if (!entry.frames) return { value: entry.key, label: entry.name, isLeaf: true };
+
+      children.set(
+        entry.key,
+        entry.frames.map((frame) => {
+          frames.set(frame.key, frame);
+
+          return leaf({ key: frame.key, name: frame.name, badges: [] });
+        }),
+      );
+
+      return { value: entry.key, label: entry.name };
     };
     const branch = (node: TreeGroup | TreeSection): TreeNode<string> => {
       const sections = 'sections' in node ? (node.sections ?? []) : [];
@@ -813,7 +827,7 @@ export class SystemViewComponent {
 
     children.set(null, this.tree().map(branch));
 
-    return { entries, counts, children };
+    return { entries, counts, children, frames };
   });
 
   /** True while the remembered entry may still be a call or a sketch whose list has not arrived. */
@@ -914,10 +928,16 @@ export class SystemViewComponent {
   protected expandedValues = computed(() => {
     const context = this.openContext();
     const open = (node: TreeGroup | TreeSection, isOpen: boolean) => (isOpen ? [node.key] : []);
+    const openParts = (node: TreeGroup | TreeSection) =>
+      node.entries.flatMap((entry) => (entry.frames && context.remembered[entry.key] ? [entry.key] : []));
 
     return this.tree().flatMap((group) => [
       ...open(group, isGroupOpen(group, context)),
-      ...(group.sections ?? []).flatMap((section) => open(section, isSectionOpen(section, context))),
+      ...openParts(group),
+      ...(group.sections ?? []).flatMap((section) => [
+        ...open(section, isSectionOpen(section, context)),
+        ...openParts(section),
+      ]),
     ]);
   });
 
@@ -1031,6 +1051,9 @@ export class SystemViewComponent {
   }
 
   protected activate(key: string) {
+    const frame = this.nodes().frames.get(key);
+
+    if (frame) return this.openFrame(frame);
     if (!this.nodes().entries.has(key)) return;
 
     this.creating.set(false);
@@ -1121,6 +1144,13 @@ export class SystemViewComponent {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+  }
+
+  private openFrame({ part, frame }: TreeFrame) {
+    if (part === this.selectedKey()) return this.partCanvas()?.focusFrame(frame);
+
+    this.activate(part);
+    afterNextRender(() => this.partCanvas()?.focusFrame(frame), { injector: this.injector });
   }
 
   private focusComment(comment: NumberedComment) {

@@ -327,6 +327,20 @@ describe('framesOf', () => {
   });
 });
 
+describe('frames in the tree', () => {
+  it('lists the frames of a part drawn in several, and leaves a part drawn in one grid frame without children', () => {
+    const button = part({ interactions: ['hover'] });
+    const home = part({ layer: 'pages', name: 'home', states: ['default'] });
+    const [components, pages] = treeOf([button, home], { product: product([button, home]) });
+
+    expect(components?.entries.map((entry) => [entry.key, entry.frames])).toEqual([['components/button', undefined]]);
+    expect(pages?.entries[0]?.frames?.map((frame) => [frame.key, frame.name, frame.part, frame.frame])).toEqual([
+      ['frame:pages/home default phone', 'default · phone', 'pages/home', 'default phone'],
+      ['frame:pages/home default desktop', 'default · desktop', 'pages/home', 'default desktop'],
+    ]);
+  });
+});
+
 const sketch = (overrides: Partial<ListedSketch> = {}): ListedSketch => ({
   target: 'components/button',
   status: 'in progress',
