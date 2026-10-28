@@ -79,10 +79,7 @@ Tom picked all plan findings to build, as four slices, one fresh subagent each:
 
 ## Open, wait for Tom
 
-- `UNDEFINED-TOKEN` (73ba7409a) fails `design check --product studio`: `foundations/logo/logo.css`
-  uses `--font-sans`, `--font-mono`, `--radius-sm/md/lg`; the studio tokens are `--font-ui`,
-  `--font-code`, `--radius-control-*`. A merged part, so the fix is a one-variant sketch once Tom
-  allows design work again.
+- Done: `UNDEFINED-TOKEN` caught wrong token names in `foundations/logo`; fixed in 83accd941.
 
 - Plan findings to build (Tom picks): element sketch shown "in context" inside its pages; Studio
   in-progress state on frames; rounds as rows; `sketch new --note`; `design check --tsconfig` on
