@@ -154,7 +154,7 @@ const activeGroup = (comments: Comment[]) =>
     ? `${groupHead(ACTIVE_PART, 0)}<p class="ib-group-empty">Keine offenen Kommentare zu ${ACTIVE_PART}.</p>`
     : group(ACTIVE_PART, comments);
 
-const empty = `<div class="ib-empty">${icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-empty-icon')}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, Claude und dem Team erscheinen hier.</p></div>`;
+const empty = `<div class="ib-empty">${icon('<path d="m3.5 8.5 3 3 6-7"/>', 'ib-empty-icon')}<p class="ib-empty-title">Keine offenen Kommentare</p><p class="ib-empty-text">Kommentare von dir, deinem Agenten und dem Team erscheinen hier.</p></div>`;
 
 const pinned = (body: string, comments: Comment[]) => {
   let index = -1;
@@ -172,7 +172,7 @@ export const activeClear: Props = { showResolved: false, openOn: 'others' };
 export const allClear: Props = { showResolved: false, openOn: 'none' };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
+  note: 'Inbox, flat: every thread of the product, newest first, in two groups: the part on the canvas on top, all others below, showing its latest message: mostly the exchange between the user and their AI agent (Claude in this sample), plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin. States cover an active part with no open comments, and no open comments at all.',
   madeBy: ['claude-opus-5-5'],
   states: { open, 'with-resolved': withResolved, 'active-clear': activeClear, 'all-clear': allClear },
   render: async ({ showResolved, openOn }) => {

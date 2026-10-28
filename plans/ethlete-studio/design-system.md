@@ -409,7 +409,10 @@ Open points, each with a recommendation:
 - A thread is mostly a human writing for the AI. The one human-to-human case is a QC pass: a
   teammate comments many parts, pushes, and someone else works the comments off or answers.
 - Open: a comment file has no author, and a reply has only `by: 'user' | 'agent'`. A QC pass needs
-  the person, as the inbox page draws it. Candidate: the git user name at write time.
+  the person, as the inbox page draws it. Candidate: the git user name at write time. The agent
+  needs its name too (the `--by` model id), since the AI is not always Claude.
+- Studio is agent-agnostic. Tom: "der user muss nicht unbedingt claude nutzen". UI copy says
+  "Agent", never "Claude"; an agent's name only comes from the data.
 
 ### Sketch matrix cell and spacing decisions (2026-10-27)
 
