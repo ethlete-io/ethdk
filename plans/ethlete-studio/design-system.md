@@ -913,6 +913,9 @@ step. Each finding names what happened and the fix it needs.
     puts all 18 buttons in one frame. Prevent: Studio's own part matrix does the same for small
     parts: one frame per part (or per state) with the interactions laid out inside it, captions as
     a header row and a first column; separate frames only for parts that fill a page width.
+  - One-frame grid (194b8280c): `var(--space-8)` does not exist (the scale ends at `--space-7`),
+    and the padding silently became nothing; only the shot showed it. Prevent: `design check`
+    flags a `var(--token)` that no tokens file defines and that has no fallback.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
