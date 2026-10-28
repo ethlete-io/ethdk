@@ -87,9 +87,9 @@ Studio small-part grid 4dbfb0f4b and tree from frames 4f5bf7811.
 
 ## Open, wait for Tom
 
-- Render check finds `OVERFLOW` on `components/select` (sdk, shown in studio) at 320 px, all
-  three states: content 321 px in a 320 px frame, at `button.et-input-picker-trigger` (scroll
-  width 30 against 16). Probably a pseudo-element of the real SDK select; not investigated.
+- Done: the render check's `OVERFLOW` on `components/select` was a real SDK bug, the picker
+  trigger hit area reached 1 px past the field; fixed in 5ed875567. The check draws from
+  `dist/libs/components`, so a component fix shows there only after a components build.
 - Remaining findings not built: CLI sketch commands (`variant d,e,f --from b`, `--round` shows
   earlier notes, per-variant `sketch check` lines, note-equals-base check, merge keeps `madeBy`,
   `--like`, per-sketch `shared/`), wireframe kit (divider, `align`, `fill` at 100%, tabs
