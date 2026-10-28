@@ -7,12 +7,13 @@ import {
   createComment,
   deleteComment,
   DesignComment,
+  isOpenComment,
   listComments,
   replyToComment,
+  resolveComment,
   threadStateOf,
   staleReasonOf,
 } from './system/comments/comment';
-import { completeComment } from './system/comments/complete';
 import { addFlowNote, changeFlowNote, deleteFlowNote, FlowNote, FlowNoteChange, listFlows } from './system/flows/flow';
 import {
   changeNote,
@@ -153,7 +154,7 @@ const commentOf = ({
   return {
     ...rest,
     file: relative(target, file),
-    stale: comment.resolved ? null : staleReasonOf({ product, comment }),
+    stale: isOpenComment(comment) ? staleReasonOf({ product, comment }) : null,
     threadState: threadStateOf(comment),
   };
 };
@@ -324,7 +325,7 @@ export const sketchDiscardAnswer = withSketch('POST', ({ asked, sketch }) => {
  */
 export const commentsAnswer = withProduct('GET', ({ asked, product }) => {
   const part = asked.url.searchParams.get('part');
-  const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name, withResolved: true });
+  const { comments, unreadable } = listComments({ productDir: product.dir, product: product.name, all: true });
 
   return {
     status: 200,
@@ -362,15 +363,18 @@ export const commentAnswer = withProduct('POST', async ({ asked, product }) => {
     : { status: 200, body: commentOf({ comment: created, target: asked.target, product }) };
 });
 
-/** POST `?product=`, body `{ id, note }`: replaces the note of the part the comment is about and resolves the comment, as `et design inbox done` does. */
+/** POST `?product=`, body `{ id, note? }`: the user resolves an open or addressed comment in Studio. */
 export const commentDoneAnswer = withProduct('POST', async ({ asked, product }) => {
   const body = await bodyOf(asked.request);
   const id = textOf(body?.['id']);
-  const note = textOf(body?.['note']);
 
-  if (!id || !note) return failure(400, 'the body must be { id, note }');
+  if (!id) return failure(400, 'the body must be { id, note? }');
 
-  const done = completeComment({ products: [product], id, note });
+  const done = resolveComment({
+    products: [{ name: product.name, dir: product.dir }],
+    id,
+    note: textOf(body?.['note']),
+  });
 
   return typeof done === 'string'
     ? failure(done.startsWith('no open comment') ? 404 : 422, done)

@@ -9,6 +9,7 @@ const host = vi.hoisted(() => ({
   list: vi.fn<(address: ProductAddress) => Observable<ListedComments>>(),
   write: vi.fn<(address: ProductAddress, comment: CommentPlace & { text: string }) => Observable<unknown>>(),
   done: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
+  resolve: vi.fn<(address: ProductAddress, id: string) => Observable<void>>(),
   changes: vi.fn<(port: number) => Observable<void>>(),
   reply: vi.fn<(address: ProductAddress, reply: { id: string; text: string }) => Observable<unknown>>(),
 }));
@@ -17,6 +18,7 @@ vi.mock('../../host/design', () => ({
   listedComments$: host.list,
   writeComment$: host.write,
   withdrawComment$: host.done,
+  resolveComment$: host.resolve,
   commentChanges$: host.changes,
   replyToComment$: host.reply,
 }));
@@ -94,7 +96,7 @@ describe('CommentStore', () => {
       ...stored,
       {
         ...listed('c', '2026-10-27T10:00:00Z'),
-        resolved: { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', resolvedAt: '2026-10-28T09:00:00Z' },
+        resolved: { by: 'user', resolvedAt: '2026-10-28T09:00:00Z' },
       },
     ];
 
@@ -162,6 +164,18 @@ describe('CommentStore', () => {
     store.end();
     expect(store.active()).toBe(false);
     expect(store.draft()).toBeNull();
+  });
+
+  it('resolves a thread for the user through comment-done and reloads the comments', () => {
+    host.resolve.mockReturnValue(of(undefined));
+    const { store } = setup();
+    const reads = host.list.mock.calls.length;
+
+    store.resolve('a');
+    TestBed.tick();
+
+    expect(host.resolve).toHaveBeenCalledWith(ADDRESS, 'a');
+    expect(host.list.mock.calls.length).toBeGreaterThan(reads);
   });
 
   it('posts a trimmed reply, reloads the thread, and counts the send; only an agent question counts', () => {

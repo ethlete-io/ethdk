@@ -1,4 +1,4 @@
-import { CommentPlace, CommentReply, CommentResolution, ListedComment } from '../../host/design';
+import { CommentAddressed, CommentPlace, CommentReply, CommentResolution, ListedComment } from '../../host/design';
 import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasPin, FramePoint } from '../components/design-canvas/canvas-pin';
 
@@ -31,16 +31,22 @@ export const resolvedCommentsOf = (comments: ListedComment[]): ResolvedComment[]
     .filter((comment): comment is ResolvedComment => !!comment.resolved)
     .sort((a, b) => b.resolved.resolvedAt.localeCompare(a.resolved.resolvedAt) || a.id.localeCompare(b.id));
 
-const RESOLVE_LABELS: Record<CommentResolution['reason'], string> = {
-  done: 'done',
-  round: 'new round',
-  merge: 'merged',
-  discard: 'discarded',
+const ADDRESS_LABELS: Record<Exclude<CommentAddressed['reason'], 'round'>, string> = {
+  done: 'Addressed',
+  merge: 'Addressed by the merge',
+  discard: 'Addressed by the discard',
 };
 
-/** Why and by whom a thread was resolved, e.g. `merged by you` or `new round r2 by claude-opus-5-5`. */
-export const resolvedByOf = ({ resolved }: ResolvedComment) =>
-  `${RESOLVE_LABELS[resolved.reason]}${resolved.round ? ` ${resolved.round}` : ''} by ${resolved.author ?? (resolved.by === 'user' ? 'you' : 'the agent')}`;
+/** What answered a thread, e.g. `Addressed in round r2` or `Addressed by the merge`. */
+export const addressedLabelOf = ({ reason, round }: CommentAddressed) =>
+  reason === 'round' ? `Addressed in ${round ? `round ${round}` : 'a new round'}` : ADDRESS_LABELS[reason];
+
+/** Who answered a thread: the agent's model id, `you` or `the agent`. */
+export const addressedByOf = ({ by, author }: CommentAddressed) => author ?? (by === 'user' ? 'you' : 'the agent');
+
+/** What answered a resolved thread, if anything did, then `resolved by you`. */
+export const resolvedByOf = ({ addressed }: ResolvedComment) =>
+  `${addressed ? `${addressedLabelOf(addressed).toLowerCase()} by ${addressedByOf(addressed)}, ` : ''}resolved by you`;
 
 const interactionOf = (place: { interaction?: string }) => place.interaction ?? REST;
 

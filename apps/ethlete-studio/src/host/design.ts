@@ -515,17 +515,20 @@ export type CommentPlace = {
 export type CommentReply = { by: 'user' | 'agent'; author?: string; text: string; createdAt: string; question?: true };
 
 /**
- * How a thread was closed: by `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch.
- * `author` is the model id of the agent; `round` is the key of the round a `round` resolution started.
+ * How a thread was answered: by `inbox done`, a new sketch round from its variant, or the merge or discard of its sketch.
+ * `author` is the model id of the agent; `round` is the key of the round a `round` answer started.
  */
-export type CommentResolution = {
+export type CommentAddressed = {
   by: 'user' | 'agent';
   author?: string;
   reason: 'done' | 'round' | 'merge' | 'discard';
-  resolvedAt: string;
+  addressedAt: string;
   note?: string;
   round?: string;
 };
+
+/** How the user closed a thread. */
+export type CommentResolution = { by: 'user'; resolvedAt: string; note?: string };
 
 /** Who a thread waits for: the agent, the user to answer a question, or the user to close an answered thread. */
 export type ThreadState = 'agent' | 'question' | 'answered';
@@ -539,7 +542,9 @@ export type ListedComment = CommentPlace & {
   threadState: ThreadState;
   /** Why the comment points at nothing any more, or `null`. */
   stale: string | null;
-  /** Set once the thread is closed; an open thread has none. */
+  /** Set once the agent or a sketch round, merge or discard answered the thread; a reply by the user clears it. */
+  addressed?: CommentAddressed;
+  /** Set once the user closed the thread. */
   resolved?: CommentResolution;
 };
 
@@ -576,6 +581,10 @@ export const commentChanges$ = (port: number): Observable<void> =>
 /** Deletes a comment without a note, through `comment-withdraw`. */
 export const withdrawComment$ = (address: ProductAddress, id: string): Observable<void> =>
   designAnswer$<unknown>(productUrl(address, 'comment-withdraw'), postJson({ id })).pipe(map(() => undefined));
+
+/** Resolves an open or addressed comment thread for the user, through `comment-done`. */
+export const resolveComment$ = (address: ProductAddress, id: string): Observable<void> =>
+  designAnswer$<unknown>(productUrl(address, 'comment-done'), postJson({ id })).pipe(map(() => undefined));
 
 /** Adds a reply by the user to a comment thread, through `comment-reply`. */
 export const replyToComment$ = (

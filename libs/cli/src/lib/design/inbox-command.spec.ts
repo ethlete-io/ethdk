@@ -104,12 +104,13 @@ describe('designComment and designInbox', () => {
       "note: 'A title over a list.'",
     );
     expect(JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/comments', `${id}.json`), 'utf8'))).toMatchObject({
-      resolved: { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', note: 'A title over a list.' },
+      addressed: { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', note: 'A title over a list.' },
     });
     expect(designInbox({ target, argv: [], invocation })).toBe(0);
     expect(lines.pop()).toBe('inbox empty');
-    expect(designComment({ target, argv: ['reply', id, '--by', 'gpt-5.6-sol', 'More?'], invocation })).toBe(1);
-    expect(lines.pop()).toBe(`comment "${id}" is resolved (done) - it takes no reply and no done`);
+    expect(designComment({ target, argv: ['reply', id, '--by', 'gpt-5.6-sol', 'Set the title.'], invocation })).toBe(0);
+    expect(designInbox({ target, argv: [], invocation })).toBe(0);
+    expect(lines.pop()).toBe('inbox empty');
   });
 
   it('stores the id of inbox done in the madeBy of the part, once', () => {

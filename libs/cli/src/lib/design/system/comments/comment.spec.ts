@@ -6,6 +6,7 @@ import { DESIGN_DIR, readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, Sketch } from '../sketch/sketch';
 import {
+  addressComment,
   commentsOnSketch,
   createComment,
   deleteComment,
@@ -140,38 +141,108 @@ describe('listComments and deleteComment', () => {
   });
 });
 
-describe('resolveComment', () => {
-  it('keeps the file, marks it resolved, leaves it out of the open comments and refuses a reply or a second resolve', () => {
+describe('addressComment and resolveComment', () => {
+  it('keeps an addressed thread out of the open comments but takes a reply, and a reply by the user opens it again', () => {
     const target = acme();
     const product = resolveAcme(target);
     const comment = createComment({ product, comment: on }) as DesignComment;
     const products = [{ name: 'acme', dir: product.dir }];
 
-    expect(
-      resolveComment({ products, id: comment.id, reason: 'done', author: 'gpt-5.6-sol', note: 'Empty, said why.' }),
-    ).toEqual(expect.objectContaining({ id: comment.id, resolved: expect.objectContaining({ reason: 'done' }) }));
+    expect(addressComment({ products, id: comment.id, author: 'gpt-5.6-sol', note: 'Empty, said why.' })).toEqual(
+      expect.objectContaining({ id: comment.id, addressed: expect.objectContaining({ reason: 'done' }) }),
+    );
     expect(JSON.parse(readFileSync(comment.file, 'utf8'))).toEqual({
       ...on,
       createdAt: comment.createdAt,
-      resolved: {
+      addressed: {
         by: 'agent',
         author: 'gpt-5.6-sol',
         reason: 'done',
-        resolvedAt: expect.any(String),
+        addressedAt: expect.any(String),
         note: 'Empty, said why.',
       },
     });
     expect(listComments({ productDir: product.dir, product: 'acme' }).comments).toEqual([]);
-    expect(listComments({ productDir: product.dir, product: 'acme', withResolved: true }).comments).toEqual([
-      expect.objectContaining({ id: comment.id, resolved: expect.objectContaining({ by: 'agent' }) }),
+
+    const replied = replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: 'Changed.' });
+
+    expect(replied).toEqual(expect.objectContaining({ addressed: expect.objectContaining({ reason: 'done' }) }));
+    expect(listComments({ productDir: product.dir, product: 'acme' }).comments).toEqual([]);
+
+    replyToComment({ products, id: comment.id, by: 'user', text: 'Not yet.' });
+
+    const [reopened, ...others] = listComments({ productDir: product.dir, product: 'acme' }).comments;
+
+    expect(others).toEqual([]);
+    expect(reopened?.id).toBe(comment.id);
+    expect(reopened?.addressed).toBeUndefined();
+    expect(JSON.parse(readFileSync(comment.file, 'utf8'))).not.toHaveProperty('addressed');
+  });
+
+  it('resolves for the user, keeps the file and refuses a reply, a second resolve or a withdraw', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const comment = createComment({ product, comment: on }) as DesignComment;
+    const products = [{ name: 'acme', dir: product.dir }];
+
+    addressComment({ products, id: comment.id, author: 'gpt-5.6-sol' });
+
+    expect(resolveComment({ products, id: comment.id, note: 'Good.' })).toEqual(
+      expect.objectContaining({
+        id: comment.id,
+        resolved: { by: 'user', resolvedAt: expect.any(String), note: 'Good.' },
+      }),
+    );
+    expect(listComments({ productDir: product.dir, product: 'acme' }).comments).toEqual([]);
+    expect(listComments({ productDir: product.dir, product: 'acme', all: true }).comments).toEqual([
+      expect.objectContaining({ id: comment.id, addressed: expect.objectContaining({ reason: 'done' }) }),
     ]);
 
-    const refusal = `comment "${comment.id}" is resolved (done) - it takes no reply and no done`;
+    const refusal = `comment "${comment.id}" is resolved - it takes no reply and no done`;
 
-    expect(replyToComment({ products, id: comment.id, by: 'user', text: 'More.' })).toBe(refusal);
-    expect(resolveComment({ products, id: comment.id, reason: 'done' })).toBe(refusal);
+    expect(replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: 'More.' })).toBe(
+      refusal,
+    );
+    expect(resolveComment({ products, id: comment.id })).toBe(refusal);
     expect(deleteComment({ products, id: comment.id })).toBe(refusal);
     expect(existsSync(comment.file)).toBe(true);
+  });
+
+  it('reads a thread an older version resolved for a round, merge, discard or the agent as addressed', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const products = [{ name: 'acme', dir: product.dir }];
+    const resolvedAt = '2026-10-01T10:00:00.000Z';
+    const [round, merged, done, byUser] = [
+      { by: 'agent', author: 'gpt-5.6-sol', reason: 'round', round: 'r2', resolvedAt },
+      { by: 'user', reason: 'merge', resolvedAt },
+      { by: 'agent', author: 'gpt-5.6-sol', reason: 'done', note: 'Said why.', resolvedAt },
+      { by: 'user', reason: 'done', resolvedAt },
+    ].map((resolved) => {
+      const comment = createComment({ product, comment: on }) as DesignComment;
+
+      writeFileSync(comment.file, JSON.stringify({ ...on, createdAt: comment.createdAt, resolved }));
+
+      return comment.id;
+    });
+    const listed = listComments({ productDir: product.dir, product: 'acme', all: true }).comments;
+    const byId = (id: string | undefined) => listed.find((comment) => comment.id === id);
+
+    expect(byId(round)).toMatchObject({
+      addressed: { by: 'agent', author: 'gpt-5.6-sol', reason: 'round', round: 'r2', addressedAt: resolvedAt },
+    });
+    expect(byId(round)?.resolved).toBeUndefined();
+    expect(byId(merged)).toMatchObject({ addressed: { by: 'user', reason: 'merge' } });
+    expect(byId(done)).toMatchObject({ addressed: { reason: 'done', note: 'Said why.' } });
+    expect(byId(byUser)?.resolved).toEqual({ by: 'user', resolvedAt });
+    expect(byId(byUser)?.addressed).toBeUndefined();
+
+    replyToComment({ products, id: round ?? '', by: 'agent', author: 'gpt-5.6-sol', text: 'Done in r2.' });
+
+    const stored = JSON.parse(readFileSync(byId(round)?.file ?? '', 'utf8'));
+
+    expect(stored.resolved).toBeUndefined();
+    expect(stored.addressed).toMatchObject({ reason: 'round', round: 'r2' });
   });
 });
 

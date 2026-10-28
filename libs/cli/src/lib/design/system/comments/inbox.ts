@@ -23,15 +23,15 @@ export type InboxRebase = { kind: 'rebase'; product: string; target: string; cha
 export type InboxItem = InboxComment | InboxDecision | InboxRebase;
 
 /**
- * Everything that waits for the agent, across the named products, oldest first: each comment thread whose
- * last word is the user's, each pick or discard the user decided on a sketch, and each sketch that needs a rebase. `waiting` holds the threads
- * whose last word is the agent's. `unreadable` names the files that could not be read.
+ * Everything that waits for the agent, across the named products, oldest first: each open comment thread whose
+ * last word is the user's and each sketch that needs a rebase. `waiting` holds the open threads whose last word is
+ * the agent's and the pick or discard decisions, which the user carries out in Studio. `unreadable` names the files that could not be read.
  */
 export const inboxOf = (options: { target: string; config: DesignConfig; products?: string[] }) => {
   const { target, config } = options;
   const products = options.products ?? Object.keys(config.products ?? {});
   const items: InboxItem[] = [];
-  const waiting: InboxComment[] = [];
+  const waiting: (InboxComment | InboxDecision)[] = [];
   const unreadable: string[] = [];
 
   for (const product of products) {
@@ -75,7 +75,7 @@ export const inboxOf = (options: { target: string; config: DesignConfig; product
         ...(decision.comment ? { comment: decision.comment } : {}),
       };
 
-      items.push(
+      waiting.push(
         decision.kind === 'pick' ? { ...on, kind: 'pick', variant: decision.variant } : { ...on, kind: 'discard' },
       );
     }
@@ -127,18 +127,14 @@ const lineOf = (item: InboxItem, invocation: string) => {
     return [
       `${when}  ${item.product}  pick ${item.target} variant ${item.variant}`,
       ...said,
-      `    run: ${invocation} sketch merge ${item.target} --product ${item.product} --note ${quoted('…')} --by <model id>`,
+      '    the user merges it in Studio - do not run sketch merge',
     ];
 
-  return [
-    `${when}  ${item.product}  discard ${item.target}`,
-    ...said,
-    `    run: ${invocation} sketch discard ${item.target} --product ${item.product} --by <model id>`,
-  ];
+  return [`${when}  ${item.product}  discard ${item.target}`, ...said, '    the user discards it in Studio'];
 };
 
-/** The inbox as text, one block per item with the command that settles it, then the threads waiting for the user. */
-export const inboxText = (inbox: { items: InboxItem[]; waiting: InboxComment[] }, invocation: string) => {
+/** The inbox as text, one block per item with the command that settles it, then what waits for the user. */
+export const inboxText = (inbox: { items: InboxItem[]; waiting: InboxItem[] }, invocation: string) => {
   const work = inbox.items.length === 0 ? ['inbox empty'] : inbox.items.flatMap((item) => lineOf(item, invocation));
   const waiting =
     inbox.waiting.length === 0

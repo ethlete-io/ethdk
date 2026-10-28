@@ -189,7 +189,7 @@ describe('designSketch', () => {
     });
   });
 
-  it('resolves the open comments on the variant a new round starts from', () => {
+  it('marks the open comments on the variant a new round starts from addressed in that round', () => {
     const target = acme();
     const lines = output();
     const comments = join(target, DESIGN_DIR, 'acme/comments');
@@ -236,12 +236,12 @@ describe('designSketch', () => {
         'acme',
       ),
     ).toBe(0);
-    expect(lines.pop()).toBe('resolved 1 comment(s) on variant a: on-a');
+    expect(lines.pop()).toBe('addressed 1 comment(s) on variant a in round r2: on-a');
     expect(JSON.parse(readFileSync(onA, 'utf8'))).toMatchObject({
-      resolved: { by: 'agent', author: 'claude-opus-5-5', reason: 'round', round: 'r2', note: 'too square' },
+      addressed: { by: 'agent', author: 'claude-opus-5-5', reason: 'round', round: 'r2', note: 'too square' },
     });
-    expect(JSON.parse(readFileSync(onB, 'utf8'))).not.toHaveProperty('resolved');
-    expect(JSON.parse(readFileSync(onPart, 'utf8'))).not.toHaveProperty('resolved');
+    expect(JSON.parse(readFileSync(onB, 'utf8'))).not.toHaveProperty('addressed');
+    expect(JSON.parse(readFileSync(onPart, 'utf8'))).not.toHaveProperty('addressed');
   });
 
   it('opens, lists, previews, readies and discards a sketch', () => {

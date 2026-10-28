@@ -158,7 +158,7 @@ pick; it refuses while the decision is a discard (the user picks a variant first
 goes on the running round: what it showed and why its variants lost. Older variants stay pickable.
 The command prints the notes of the previous round. Fix a round's title or note later with `sketch round <layer>/<name> <round> --title … --note … --by <model id>`; `sketch list` shows each sketch's rounds.
 Letters continue across rounds (r1: a, b; r2: c, d). A new round answers the comments on the
-`--from` variant and resolves them; a variant without `--round` leaves them open. Draw the combined
+`--from` variant and marks them "addressed in round" with the new round's key; a variant without `--round` leaves them open. Draw the combined
 variant and mark the sketch `ready` again. `sketch new --round <title>` names
 round 1, and `--note <text>` sets its note.
 
@@ -175,8 +175,8 @@ know your own exact id, ask the coordinator or the user before you write.
 ### The user decides, Studio merges
 
 The user picks a variant, or discards the sketch, in Studio. **Studio merges on the user's click.
-Never run `sketch merge` or `sketch discard` yourself, and never pick a variant.** Both resolve
-the open comments on the sketch's variants: the user's click answers them. Comments on the
+Never run `sketch merge` or `sketch discard` yourself, and never pick a variant.** Both mark
+the open comments on the sketch's variants addressed: the user's click answers them. Comments on the
 product's parts stay. If a part the variant replaces changed
 in the product since the sketch was created, the merge refuses: bring each variant up to date, run
 `et design sketch rebase <layer>/<name>`, and mark it `ready` again. `sketch preview <layer>/<name>
@@ -191,22 +191,25 @@ an element also shows each page that uses it, with each variant swapped in: a co
 the page as its part and the element's sketch variant, so change the variant, not the page.
 
 ```bash
-et design inbox [--json] [--product <p>]   # open comments and pick/discard decisions, oldest first
-et design inbox done <id> --note <text> --by <model id>   # set the part note, resolve the comment thread
+et design inbox [--json] [--product <p>]   # open comments and rebases, then what waits for the user
+et design inbox done <id> --note <text> --by <model id>   # set the part note, mark the thread addressed
 et design comment reply <id> --by <model id> <text> [--question]   # answer a comment thread (takes --product)
 ```
 
 Read the inbox at the start of a session and after each sketch you mark `ready`. Answer a comment
-by changing the sketch or the part, then `inbox done <id> --note "…"`. The note replaces the `note` of the part the comment was made on (for a sketch variant, the product's part), so write it to explain the whole shape of the part, and pass the old note unchanged when it still holds. `done` fails without `--note`; only the user withdraws a comment without one, in Studio. `done` also stores your `--by` where the comment sat: in the authors of the sketch variant, or in the `madeBy` of the part. A pick or discard decision is the user's
-cue, not yours to act on beyond what Studio already did.
+by changing the sketch or the part, then `inbox done <id> --note "…"`. The note replaces the `note` of the part the comment was made on (for a sketch variant, the product's part), so write it to explain the whole shape of the part, and pass the old note unchanged when it still holds. `done` fails without `--note`; only the user withdraws a comment without one, in Studio. `done` also stores your `--by` where the comment sat: in the authors of the sketch variant, or in the `madeBy` of the part. A pick or discard decision is listed as waiting
+for the user: Studio merges or discards on the user's click, so never run `sketch merge` after a pick.
 
 A comment is a thread: the user and you both reply. When a comment is unclear, ask with
 `comment reply --question` instead of guessing. The thread then moves to the "waiting for the user" group
 (`waitingForUser` in `--json`) and returns to the inbox when the user answers. A thread there is
 not work for you.
 
-A resolved thread stays in its file with `resolved` (who, when, why), so the user can look back at it in
-Studio. It leaves the inbox and the check, and a reply or `done` on it fails.
+A thread has three states. **Open** waits for an answer. **Addressed** (`addressed`: who, when, why,
+the round) means `inbox done`, a new round, a merge or a discard answered it: it leaves the inbox and
+the check, Studio shows it with an "addressed" badge, and you may still `comment reply` on it to say
+what you changed. A reply by the user opens it again. **Resolved** means the user closed it in Studio -
+only the user resolves. The file stays so the user can look back at it; a reply or `done` on it fails.
 
 Pass `--question` only when you cannot go on without the user's answer. Studio lists only those
 threads under "Questions for you". A report of what you did is no question: reply without the

@@ -2,7 +2,7 @@ import { Component, ViewEncapsulation, computed, input, linkedSignal } from '@an
 import { BUTTON_IMPORTS, FORM_FIELD_IMPORTS, TEXTAREA_IMPORTS } from '@ethlete/components';
 import { ProvideColorDirective, injectSemanticColorTheme } from '@ethlete/core';
 import { CommentReply } from '../../host/design';
-import { SENDER_LABELS, ageOf, draftKeyOf } from './comment-pins';
+import { SENDER_LABELS, addressedByOf, addressedLabelOf, ageOf, draftKeyOf } from './comment-pins';
 import { injectCommentStore } from './comment-store';
 
 @Component({
@@ -24,6 +24,14 @@ import { injectCommentStore } from './comment-store';
           </li>
         }
       </ol>
+      @if (comment.addressed; as addressed) {
+        <span
+          [title]="addressed.note ?? ''"
+          class="rounded-full border border-surface-border px-2 text-[1.1rem]"
+          data-comment-addressed
+          >{{ ADDRESSED_LABEL_OF(addressed) }} · {{ ADDRESSED_BY_OF(addressed) }}</span
+        >
+      }
       <et-form-field class="w-full" appearance="box">
         <et-textarea
           [(value)]="text"
@@ -51,16 +59,30 @@ import { injectCommentStore } from './comment-store';
         >
           Withdraw
         </button>
-        <button
-          [disabled]="store.busy() || text().trim() === ''"
-          (click)="send()"
-          et-button
-          type="button"
-          variant="filled"
-          size="xs"
-        >
-          Reply
-        </button>
+        <span class="flex gap-2">
+          <button
+            [disabled]="store.busy()"
+            (click)="store.resolve(comment.id)"
+            et-button
+            type="button"
+            variant="outline"
+            color="surface"
+            size="xs"
+            data-comment-resolve
+          >
+            Resolve
+          </button>
+          <button
+            [disabled]="store.busy() || text().trim() === ''"
+            (click)="send()"
+            et-button
+            type="button"
+            variant="filled"
+            size="xs"
+          >
+            Reply
+          </button>
+        </span>
       </div>
     }
   `,
@@ -92,6 +114,8 @@ export class CommentThreadComponent {
 
   protected readonly AGE_OF = ageOf;
   protected readonly SENDER_LABELS = SENDER_LABELS;
+  protected readonly ADDRESSED_LABEL_OF = addressedLabelOf;
+  protected readonly ADDRESSED_BY_OF = addressedByOf;
 
   protected send() {
     this.store.reply(this.commentId(), this.text());

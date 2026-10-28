@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, decideSketch, markSketchReady, Sketch } from '../sketch/sketch';
-import { createComment, DesignComment, replyToComment, resolveComment } from './comment';
+import { addressComment, createComment, DesignComment, replyToComment, resolveComment } from './comment';
 import { inboxOf, inboxText } from './inbox';
 
 const acme = () => {
@@ -57,24 +57,27 @@ const setup = () => {
 describe('inboxOf', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('leaves a resolved comment thread out', () => {
+  it('leaves an addressed and a resolved comment thread out', () => {
     const { target, comment } = setup();
+    const products = [{ name: 'acme', dir: dirname(dirname(comment.file)) }];
+    const comments = () => {
+      const { items, waiting } = inboxOf({ target, config: readConfig(target) ?? {} });
 
-    resolveComment({
-      products: [{ name: 'acme', dir: dirname(dirname(comment.file)) }],
-      id: comment.id,
-      reason: 'done',
-    });
+      return [...items, ...waiting].filter((item) => item.kind === 'comment');
+    };
 
-    const { items, waiting } = inboxOf({ target, config: readConfig(target) ?? {} });
+    addressComment({ products, id: comment.id, author: 'gpt-5.6-sol' });
 
-    expect(items.filter((item) => item.kind === 'comment')).toEqual([]);
-    expect(waiting).toEqual([]);
+    expect(comments()).toEqual([]);
+
+    resolveComment({ products, id: comment.id });
+
+    expect(comments()).toEqual([]);
   });
 
-  it('lists open comments and open decisions of all products, oldest first', () => {
+  it('lists open comments of all products, and the decisions as waiting for the user, oldest first', () => {
     const { target, comment } = setup();
-    const { items, unreadable } = inboxOf({ target, config: readConfig(target) ?? {} });
+    const { items, waiting, unreadable } = inboxOf({ target, config: readConfig(target) ?? {} });
 
     expect(unreadable).toEqual([]);
     expect(items).toEqual([
@@ -84,6 +87,8 @@ describe('inboxOf', () => {
         product: 'acme',
         file: `.ethlete/design/acme/comments/${comment.id}.json`,
       }),
+    ]);
+    expect(waiting).toEqual([
       {
         kind: 'pick',
         product: 'acme',
@@ -94,7 +99,7 @@ describe('inboxOf', () => {
       },
       { kind: 'discard', product: 'acme-base', target: 'components/card', at: '2026-10-27T11:00:00.000Z' },
     ]);
-    expect(inboxOf({ target, config: readConfig(target) ?? {}, products: ['acme-base'] }).items).toHaveLength(1);
+    expect(inboxOf({ target, config: readConfig(target) ?? {}, products: ['acme-base'] }).waiting).toHaveLength(1);
   });
 
   it('prints each item with the command that settles it', () => {
@@ -106,11 +111,13 @@ describe('inboxOf', () => {
       '    Say why.',
       `    reply: et design comment reply ${comment.id} --product acme --by <model id> "…"`,
       `    done: et design inbox done ${comment.id} --note "…" --by <model id>`,
+      '',
+      'waiting for the user:',
       '2026-10-27 10:00  acme  pick elements/hero variant b',
       '    Calmer.',
-      '    run: et design sketch merge elements/hero --product acme --note "…" --by <model id>',
+      '    the user merges it in Studio - do not run sketch merge',
       '2026-10-27 11:00  acme-base  discard components/card',
-      '    run: et design sketch discard components/card --product acme-base --by <model id>',
+      '    the user discards it in Studio',
     ]);
     expect(inboxText({ items: [], waiting: [] }, 'et design')).toBe('inbox empty');
   });
@@ -152,8 +159,8 @@ describe('inboxOf', () => {
     vi.setSystemTime('2026-10-27T12:00:00Z');
     replyToComment({ products, id: comment.id, by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?' });
 
-    expect(inbox().items.map((item) => item.kind)).toEqual(['pick', 'discard']);
-    expect(inbox().waiting).toEqual([
+    expect(inbox().items).toEqual([]);
+    expect(inbox().waiting.filter((item) => item.kind === 'comment')).toEqual([
       expect.objectContaining({
         id: comment.id,
         at: '2026-10-27T12:00:00.000Z',
@@ -161,9 +168,7 @@ describe('inboxOf', () => {
         replies: [{ by: 'agent', author: 'gpt-5.6-sol', text: 'Which part?', createdAt: '2026-10-27T12:00:00.000Z' }],
       }),
     ]);
-    expect(inboxText(inbox(), 'et design').split('\n').slice(-8)).toEqual([
-      '',
-      'waiting for the user:',
+    expect(inboxText(inbox(), 'et design').split('\n').slice(-6)).toEqual([
       `2026-10-27 12:00  acme  comment ${comment.id} (answered)  pages/home · empty · phone · at 12,30`,
       '    Say why.',
       '    agent gpt-5.6-sol:',
@@ -175,8 +180,8 @@ describe('inboxOf', () => {
     vi.setSystemTime('2026-10-27T13:00:00Z');
     replyToComment({ products, id: comment.id, by: 'user', text: 'The title.' });
 
-    expect(inbox().waiting).toEqual([]);
-    expect(inbox().items[2]).toEqual(
+    expect(inbox().waiting.map((item) => item.kind)).toEqual(['pick', 'discard']);
+    expect(inbox().items[0]).toEqual(
       expect.objectContaining({ id: comment.id, at: '2026-10-27T13:00:00.000Z', threadState: 'agent' }),
     );
   });
@@ -197,7 +202,9 @@ describe('inboxOf', () => {
 
     const inbox = inboxOf({ target, config: readConfig(target) ?? {} });
 
-    expect(inbox.waiting).toEqual([expect.objectContaining({ id: comment.id, threadState: 'question' })]);
+    expect(inbox.waiting.filter((item) => item.kind === 'comment')).toEqual([
+      expect.objectContaining({ id: comment.id, threadState: 'question' }),
+    ]);
     expect(inboxText(inbox, 'et design').split('\n').slice(-6, -3)).toEqual([
       `2026-10-27 12:00  acme  comment ${comment.id} (question)  pages/home · empty · phone · at 12,30`,
       '    Say why.',

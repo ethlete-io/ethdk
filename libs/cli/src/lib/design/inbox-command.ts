@@ -31,9 +31,9 @@ const unauthored = (options: { invocation: string; command: string; lines: strin
   );
 
 /**
- * `et design inbox` lists what waits for the agent - comment threads whose last word is the user's and the
- * user's pick and discard decisions and the sketches that need a rebase, oldest first - then the threads waiting for the user.
- * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about and resolves the thread.
+ * `et design inbox` lists what waits for the agent - open comment threads whose last word is the user's and the sketches
+ * that need a rebase, oldest first - then the threads and the pick and discard decisions waiting for the user.
+ * `et design inbox done <id> --note <text>` replaces the note of the part the thread is about and marks the thread addressed.
  */
 export const designInbox = (options: { target: string; argv: string[]; invocation: string }) => {
   const { target, argv, invocation } = options;
@@ -72,11 +72,11 @@ export const designInbox = (options: { target: string; argv: string[]; invocatio
       products.push(product);
     }
 
-    const resolved = completeComment({ products, id, note, author: authorOf(args) ?? undefined });
+    const addressed = completeComment({ products, id, note, author: authorOf(args) ?? undefined });
 
-    if (typeof resolved === 'string') return fail(resolved);
+    if (typeof addressed === 'string') return fail(addressed);
 
-    console.log(`resolved: ${relative(target, resolved.file)}`);
+    console.log(`addressed: ${relative(target, addressed.file)}`);
 
     return 0;
   }

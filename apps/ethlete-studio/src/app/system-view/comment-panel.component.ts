@@ -5,6 +5,7 @@ import {
   NumberedComment,
   ResolvedComment,
   SENDER_LABELS,
+  addressedLabelOf,
   ageOf,
   commentGroupsOf,
   commentWhereOf,
@@ -65,7 +66,11 @@ import {
           <span class="flex gap-2 text-[1.1rem] text-[var(--et-surface-color-subtle-solid)]" data-comment-meta>
             <span class="min-w-0 truncate">{{ WHERE_OF(comment) }}</span>
             <span class="shrink-0">{{ SENDER_LABELS[LAST_SENDER_OF(comment)] }}</span>
-            @if (IS_ANSWERED(comment)) {
+            @if (comment.addressed; as addressed) {
+              <span class="shrink-0 rounded-full border border-surface-border px-1.5" data-comment-addressed>{{
+                ADDRESSED_LABEL_OF(addressed)
+              }}</span>
+            } @else if (IS_ANSWERED(comment)) {
               <span class="shrink-0" data-comment-answered>answered</span>
             }
             @if (comment.replies.length) {
@@ -118,7 +123,7 @@ import {
                   {{ reply.text }}</span
                 >
               }
-              @if (comment.resolved.note; as note) {
+              @if (comment.resolved.note ?? comment.addressed?.note; as note) {
                 <span
                   [textContent]="note"
                   class="text-[1.2rem] whitespace-pre-wrap italic"
@@ -181,4 +186,5 @@ export class CommentPanelComponent {
   protected readonly IS_ANSWERED = isAnswered;
   protected readonly SENDER_LABELS = SENDER_LABELS;
   protected readonly RESOLVED_BY_OF = resolvedByOf;
+  protected readonly ADDRESSED_LABEL_OF = addressedLabelOf;
 }

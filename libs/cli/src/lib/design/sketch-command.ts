@@ -1,6 +1,6 @@
 import { relative } from 'path';
 import { DesignConfig } from './paths';
-import { closeSketchComments } from './system/comments/comment';
+import { addressSketchComments } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { openSketchProblemsOf, typecheckVariant } from './system/sketch/check-sketches';
@@ -142,7 +142,7 @@ const varied = (context: Context) =>
 
       if (title === undefined) return 0;
 
-      const closed = closeSketchComments({
+      const addressed = addressSketchComments({
         sketch,
         variant: from,
         reason: 'round',
@@ -151,9 +151,9 @@ const varied = (context: Context) =>
         round: round?.key,
       });
 
-      if (closed.length > 0)
+      if (addressed.length > 0)
         console.log(
-          `resolved ${closed.length} comment(s) on variant ${from}: ${closed.map(({ id }) => id).join(', ')}`,
+          `addressed ${addressed.length} comment(s) on variant ${from} in round ${round?.key ?? ''}: ${addressed.map(({ id }) => id).join(', ')}`,
         );
 
       return 0;

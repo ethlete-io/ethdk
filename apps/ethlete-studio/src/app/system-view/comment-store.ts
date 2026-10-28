@@ -9,6 +9,7 @@ import {
   withdrawComment$,
   listedComments$,
   replyToComment$,
+  resolveComment$,
   writeComment$,
 } from '../../host/design';
 import { rememberView, rememberedView } from '../studio-view/remembered';
@@ -157,6 +158,15 @@ export class CommentStore {
     this.run(
       replyToComment$(address, { id, text: trimmed }).pipe(tap(() => this.repliesSent.update((count) => count + 1))),
     );
+  }
+
+  /** Resolves a thread for the user through `comment-done`. */
+  public resolve(id: string) {
+    const address = this.address();
+
+    if (!address || this.busy()) return;
+
+    this.run(resolveComment$(address, id));
   }
 
   /** Deletes a comment through `comment-withdraw`. */

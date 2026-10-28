@@ -52,7 +52,8 @@ const mergeResult = (target: string, found: { product: ReturnType<typeof resolve
 const merge = (target: string, found: { product: ReturnType<typeof resolveAcme>; sketch: Sketch }) =>
   reasonOf(mergeResult(target, found));
 
-const resolvedOf = (comment: DesignComment) => (JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile).resolved;
+const addressedOf = (comment: DesignComment) =>
+  (JSON.parse(readFileSync(comment.file, 'utf8')) as CommentFile).addressed;
 
 const commentOn = (product: ReturnType<typeof resolveAcme>, sketch?: { target: string; variant: string }) =>
   createComment({
@@ -248,7 +249,7 @@ describe('mergeSketch', () => {
     expect(resolveAcme(target).parts.find((part) => part.name === 'card')?.origin).toBe('overridden');
   }, 120_000);
 
-  it('resolves the open comments on the sketch and keeps those on the product part open', () => {
+  it('marks the open comments on the sketch addressed and keeps those on the product part open', () => {
     const target = acme();
     const found = readySketch(target);
     const onSketch = commentOn(found.product, { target: 'elements/hero', variant: 'a' });
@@ -263,8 +264,8 @@ describe('mergeSketch', () => {
     });
 
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
-    expect(resolvedOf(onSketch)).toMatchObject({ by: 'user', reason: 'merge' });
-    expect(resolvedOf(onPart)).toBeUndefined();
+    expect(addressedOf(onSketch)).toMatchObject({ by: 'user', reason: 'merge' });
+    expect(addressedOf(onPart)).toBeUndefined();
     expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: 'elements/hero' })).toEqual([]);
   }, 120_000);
 });
@@ -323,7 +324,7 @@ describe('discardSketch', () => {
     expect(existsSync(join(heroOf(target), 'hero.ts'))).toBe(true);
   });
 
-  it('resolves the open comments on the sketch and keeps those on the product part open', () => {
+  it('marks the open comments on the sketch addressed and keeps those on the product part open', () => {
     const target = acme();
     const { product, sketch } = readySketch(target);
     const onSketch = commentOn(product, { target: 'elements/hero', variant: 'b' });
@@ -331,7 +332,7 @@ describe('discardSketch', () => {
 
     expect(discardSketch({ target, sketch, author: 'gpt-5.6-sol' })).toBeNull();
     expect(existsSync(sketch.dir)).toBe(false);
-    expect(resolvedOf(onSketch)).toMatchObject({ by: 'agent', author: 'gpt-5.6-sol', reason: 'discard' });
-    expect(resolvedOf(onPart)).toBeUndefined();
+    expect(addressedOf(onSketch)).toMatchObject({ by: 'agent', author: 'gpt-5.6-sol', reason: 'discard' });
+    expect(addressedOf(onPart)).toBeUndefined();
   });
 });
