@@ -539,6 +539,7 @@ export const COMPONENTS_CLASSES: readonly string[] = [
   'et-overlay--right-sheet',
   'et-overlay--select',
   'et-overlay--select-content-width',
+  'et-overlay--stacked',
   'et-overlay--toggletip',
   'et-overlay--tooltip',
   'et-overlay--top-sheet',
