@@ -65,6 +65,18 @@ Tom in German.
 PAUSED. Tom on 2026-10-28: "keine weiteren designs nun mehr bitte". Start no new sketch until Tom
 asks. When he does: Sketches page (variant matrix), Flows page, merge compare.
 
+## In progress (2026-10-28, builder)
+
+Tom picked all plan findings to build, as four slices, one fresh subagent each:
+
+1. CLI fixes: `--help` per command without the `--by` check; `sketch new --note`; `sketch variant`
+   error names `sketch new`; shot error status on a zero-size root; `design check` flags an
+   unknown `var(--token)`; `design check --tsconfig` covers sketch variants; stable sort in
+   `comment.spec.ts`.
+2. Part API types: `definePart` keeps state keys; `render` takes an optional interaction.
+3. Studio sketch view: in-progress state on frames; each round its own row.
+4. Element in context: an element sketch shows each variant inside the pages that use it.
+
 ## Open, wait for Tom
 
 - Plan findings to build (Tom picks): element sketch shown "in context" inside its pages; Studio
