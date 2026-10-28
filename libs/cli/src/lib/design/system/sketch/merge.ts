@@ -8,6 +8,7 @@ import { fixturesOf, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { carryShared, sharedPlanOf } from './merge-shared';
+import { recordMerged } from './merged-parts';
 import { madeByOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
 
@@ -131,6 +132,7 @@ const mergeOrReason = (options: {
   }
 
   swapped.drop();
+  recordMerged({ productDir: product.dir, parts: [...new Set([sketch.target, ...parts.map(partKeyOf)])] });
   addressSketchComments({ sketch, reason: 'merge', author, note });
   rmSync(sketch.dir, { recursive: true, force: true });
   clearSketchReport({ checkout: target, sketch });
@@ -141,7 +143,7 @@ const mergeOrReason = (options: {
 /**
  * Merges the variant the user picked in a ready sketch into the product: copies each part it holds
  * over the product's, sets `note` (when given) and `madeBy` (the file's own plus the variant's authors) on the target, runs the check
- * and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
+ * records each merged part's hash in `merged.json` and deletes the sketch. A target the product only takes from its base is copied into the product first. When the check fails, the
  * product's old files come back and the sketch stays. The sketch's `shared/` folder goes into the target's folder when the
  * target imports it, with its `@shared/` imports made relative; any other part that imports it stops the merge. Otherwise the open comments on its variants are addressed, by `author` or the user. Refuses without a
  * pick, and when a part the variant replaces changed in the product since the sketch's baseline. Answers with the merged part keys, or with why nothing was merged - and, when a rebase

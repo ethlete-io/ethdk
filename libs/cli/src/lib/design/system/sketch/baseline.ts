@@ -23,7 +23,7 @@ const hashOf = (paths: { root: string; files: string[] }) => {
   return hash.digest('hex').slice(0, 16);
 };
 
-const folderHashOf = (dir: string) => hashOf({ root: dir, files: filesBelow(dir) });
+export const folderHashOf = (dir: string) => hashOf({ root: dir, files: filesBelow(dir) });
 
 /**
  * The content hash of each part folder the product resolves, and of its fixture set, under the part

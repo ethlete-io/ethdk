@@ -6,6 +6,7 @@ import { DESIGN_DIR, readConfig } from '../../paths';
 import { commentsOnSketch, CommentFile, createComment, DesignComment, replyToComment } from '../comments/comment';
 import { resolveProduct } from '../resolve-product';
 import { discardSketch, mergeSketch } from './merge';
+import { changedOutsideSketchOf, readMerged } from './merged-parts';
 import {
   createSketch,
   decideSketch,
@@ -65,6 +66,21 @@ const heroOf = (target: string) => join(target, DESIGN_DIR, 'acme/elements/hero'
 
 describe('mergeSketch', () => {
   afterEach(() => vi.restoreAllMocks());
+
+  it('records the merged parts, so a later change outside a sketch shows', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const ready = readySketch(target);
+
+    expect(merge(target, { ...ready, sketch: picked(ready.sketch) })).toEqual(['elements/hero']);
+    expect(Object.keys(readMerged(join(target, DESIGN_DIR, 'acme')))).toEqual(['elements/hero']);
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+
+    writeFileSync(join(heroOf(target), 'hero.css'), '.acme-hero { padding: 0; }');
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
+  });
 
   it('copies the variant over the product, sets the note, checks and deletes the sketch', () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);

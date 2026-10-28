@@ -132,7 +132,8 @@ does, so move that code into the part.
 Every change to a merged part goes through a sketch, also a small one: new copy, sample data, an
 added state. When there is nothing to choose, the sketch has one variant (`--variants a`), and the
 user merges it or comments on it. Never edit a merged part directly, or the user cannot compare or
-comment on the change in Studio.
+comment on the change in Studio. `design check` warns, and Studio marks the part "changed", when a
+merged part changed outside a sketch; only a merged sketch on that part clears it.
 
 A sketch on a foundations part such as `foundations/tokens` keeps the part's overview drawing: the
 variant adds its token group as a state, or extends that group's state. It never replaces the

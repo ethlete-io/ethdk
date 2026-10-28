@@ -90,6 +90,8 @@ const BADGE =
 const BADGE_ACCENT =
   'shrink-0 whitespace-nowrap rounded-full border border-[var(--et-theme-color-primary-solid)] px-1.5 py-px text-[1rem] text-[var(--et-theme-color-primary-solid)]';
 
+const CHANGED_OUTSIDE_SKETCH = 'changed outside a sketch';
+
 /** Never a product name: a product is a directory, and a directory name holds no slash. */
 const NEW_PRODUCT = '/new';
 
@@ -168,6 +170,8 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
                   <span [class]="BADGE_ACCENT" data-tree-question>question</span>
                 } @else if (badge === 'merging') {
                   <span [class]="BADGE_ACCENT" data-tree-merging>merging</span>
+                } @else if (badge === 'changed') {
+                  <span [class]="BADGE" [title]="CHANGED_OUTSIDE_SKETCH" data-tree-changed>changed</span>
                 } @else {
                   <span [class]="BADGE">{{ badge }}</span>
                 }
@@ -407,6 +411,11 @@ const failsToLoad = (problems: { rule: string }[]) => problems.some((problem) =>
         } @else if (awaitingPicked()) {
         } @else if (part(); as partShown) {
           <div class="absolute top-3 right-4 z-1 flex gap-2">
+            @if (partShown.listed.changedOutsideSketch) {
+              <span [class]="BADGE + ' self-center'" [title]="CHANGED_OUTSIDE_SKETCH" data-changed-outside-sketch>
+                changed
+              </span>
+            }
             @let madeBy = partShown.listed.madeBy ?? [];
             @if (madeBy.length > 0) {
               <span
@@ -504,6 +513,7 @@ export class SystemViewComponent {
   private sketchView = viewChild<SketchViewComponent>('sketchView');
   private flowView = viewChild<FlowViewComponent>('flowView');
   protected readonly BADGE = BADGE;
+  protected readonly CHANGED_OUTSIDE_SKETCH = CHANGED_OUTSIDE_SKETCH;
 
   protected readonly BADGE_ACCENT = BADGE_ACCENT;
 

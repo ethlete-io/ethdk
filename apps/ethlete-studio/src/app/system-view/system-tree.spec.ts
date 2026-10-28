@@ -82,6 +82,12 @@ describe('treeOf', () => {
 
     expect(group?.entries.map((entry) => entry.badges)).toEqual([['from base'], ['overridden', 'error'], []]);
   });
+
+  it('badges a part changed outside a sketch', () => {
+    const [group] = treeOf([part({ name: 'a', changedOutsideSketch: true }), part({ name: 'b' })]);
+
+    expect(group?.entries.map((entry) => entry.badges)).toEqual([['changed'], []]);
+  });
 });
 
 const call = (overrides: Partial<Extract<ListedCall, { headline: string }>> = {}): ListedCall => ({

@@ -6,6 +6,7 @@ import { partsReachedFrom } from './imports';
 import { kitUsesOf } from './kit';
 import { Problem } from './problem';
 import { partKeyOf, PartOrigin, ResolvedPart } from './resolve-product';
+import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { SystemModules } from './system-modules';
 
 export const SYSTEM_PATH = '/__design/system';
@@ -26,6 +27,8 @@ export type ListedPart = {
   kitUses: number;
   /** The pages that import the part, directly or through another part: of its own product, and of each product that draws it as its base part. */
   usedIn: PageUse[];
+  /** Whether the part changed since its last sketch merge while no open sketch holds it. */
+  changedOutsideSketch: boolean;
   problems: Problem[];
 };
 
@@ -144,6 +147,7 @@ export const listSystem = async (options: {
       if (!product) return [];
 
       const problems = ruleProblemsOf(product);
+      const changedOutsideSketch = new Set(changedOutsideSketchOf(product));
 
       return [
         (async (): Promise<ListedProduct> => ({
@@ -171,6 +175,7 @@ export const listSystem = async (options: {
                 interactions,
                 kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                 usedIn: usedInOf(part),
+                changedOutsideSketch: changedOutsideSketch.has(partKeyOf(part)),
                 problems: [...own, ...(problem ? [{ rule: 'LOAD', file: part.file, message: problem }] : [])].map(
                   relativeTo,
                 ),

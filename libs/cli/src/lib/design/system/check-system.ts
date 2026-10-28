@@ -14,6 +14,7 @@ import { staleCommentsOf, staleNotesOf } from './rules/stale-comment';
 import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badWidthsOf } from './rules/widths';
+import { changedOutsideSketchOf } from './sketch/merged-parts';
 import { typecheckProduct, writeEditorTsconfig } from './system-tsconfig';
 
 const RULES = [
@@ -42,7 +43,14 @@ const lineOf = (target: string, problem: Problem) =>
 
 type CheckOptions = { target: string; config: DesignConfig; products: string[] };
 
-const reportSystem = (options: CheckOptions) => {
+const warnChangedOutsideSketch = (product: ResolvedProduct) => {
+  for (const part of changedOutsideSketchOf(product))
+    console.warn(
+      `WARNING ${product.name} ${part} changed outside a sketch - every change to a merged part goes through a sketch, with one variant when there is no choice`,
+    );
+};
+
+const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
   const { target, config, products } = options;
   const declared = config.products ?? {};
   let failed = false;
@@ -61,6 +69,8 @@ const reportSystem = (options: CheckOptions) => {
     }
 
     const product = resolveProduct({ target, name, config: entry });
+
+    if (options.warn) warnChangedOutsideSketch(product);
 
     ruleProblemsOf(product).forEach(report);
 
@@ -94,10 +104,10 @@ export const checkSystem = (options: CheckOptions) => {
 
 /**
  * Checks as `checkSystem` does, then draws every state in a headless browser and prints one line per
- * render rule a drawing breaks. Without a browser it prints one skip line and passes on the other checks.
+ * render rule a drawing breaks, and warns of each merged part that changed outside a sketch. Without a browser it prints one skip line and passes on the other checks.
  */
 export const checkSystemRendered = async (options: CheckOptions) => {
-  const code = reportSystem(options);
+  const code = reportSystem({ ...options, warn: true });
 
   if (code !== 0) return code;
 

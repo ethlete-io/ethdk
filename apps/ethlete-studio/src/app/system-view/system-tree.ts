@@ -37,6 +37,7 @@ export const SYSTEM_GROUPS: readonly { key: SystemGroupKey; label: string; holds
 export type PartBadge =
   | 'from base'
   | 'overridden'
+  | 'changed'
   | 'error'
   | 'transferred'
   | 'sketch open'
@@ -81,6 +82,7 @@ const badgesOf = (
 ): PartBadge[] => [
   ...(part.origin === 'base' ? (['from base'] as const) : []),
   ...(part.origin === 'overridden' ? (['overridden'] as const) : []),
+  ...(part.changedOutsideSketch ? (['changed'] as const) : []),
   ...(sketched.has(partKeyOf(part)) ? (['sketch open'] as const) : []),
   ...commentBadgesOf(partKeyOf(part), marks),
   ...(part.problems.length > 0 ? (['error'] as const) : []),

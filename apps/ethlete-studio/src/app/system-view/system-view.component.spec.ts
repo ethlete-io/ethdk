@@ -334,6 +334,23 @@ describe('SystemViewComponent on a merge', () => {
 
     expect(root.querySelector('[data-tree-kit-count]')?.textContent?.trim()).toBe('6');
   });
+
+  it('marks a part changed outside a sketch in the tree and above its frame', async () => {
+    vi.stubGlobal('fetch', (url: string) => {
+      if (url.includes('/__design/system'))
+        return json([{ ...PRODUCT, parts: [{ ...part('elements', 'rating'), changedOutsideSketch: true }] }]);
+      if (url.includes('/__design/calls')) return json([]);
+      if (url.includes('/__design/comments')) return json({ comments: [], unreadable: [] });
+
+      return new Promise(() => undefined);
+    });
+
+    const fixture = await mount({ systemProduct: 'web', systemEntry: 'elements/rating' });
+    const root: HTMLElement = fixture.nativeElement;
+
+    expect(root.querySelector('[data-tree-changed]')?.getAttribute('title')).toBe('changed outside a sketch');
+    expect(root.querySelector('[data-changed-outside-sketch]')?.getAttribute('title')).toBe('changed outside a sketch');
+  });
 });
 
 describe('SystemViewComponent on a flow', () => {

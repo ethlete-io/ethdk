@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { checkDesign } from '../check';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { checkSystem } from './check-system';
+import { recordMerged } from './sketch/merged-parts';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-system-'));
@@ -133,6 +134,20 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: [], invocation: 'et design' })).toBe(1);
     expect(lines).toEqual([expect.stringMatching(/^HARD-CODED-COLOUR .*hero\.css: #fff/)]);
+  }, 60_000);
+
+  it('warns of a merged part that changed outside a sketch, and passes', async () => {
+    const target = acme();
+    const lines = output();
+    const warnings: string[] = [];
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    recordMerged({ productDir: join(target, DESIGN_DIR, 'acme'), parts: ['elements/hero'] });
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(warnings).toEqual([expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/)]);
+    expect(lines.at(-1)).toBe('ok');
   }, 60_000);
 
   it('checks one product with --product', async () => {
