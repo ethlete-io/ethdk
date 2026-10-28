@@ -937,6 +937,12 @@ step. Each finding names what happened and the fix it needs.
       Prevent: a shot option that tiles all states of a variant into one image.
     - `sketch new --help` prints a "needs --by" error, then the usage of every `sketch`
       subcommand. Prevent: per-subcommand `--help` without the error line.
+  - Tom merged variant a, then on its data: designers commenting at each other ("32 px abgleichen
+    bitte") is unrealistic. Studio replaces Figma; a thread is an exchange between a human and
+    the AI, and the human writes for the AI. The one human-to-human case is a teammate QC pass:
+    many comments pushed at once, for someone else to work off or answer. The page data now shows
+    Claude's replies, Tom's instructions and a QC pass. Prevent: the briefing for any
+    comment or inbox drawing states this model, and sample data follows it.
   - Each element's CSS imports the tokens, so a page carries them once per child. Harmless now;
     the render could de-duplicate identical style blocks.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list

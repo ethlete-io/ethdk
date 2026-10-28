@@ -98,6 +98,11 @@
     font-weight: var(--weight-strong);
   }
 
+  .ib-avatar[data-ai] {
+    background: var(--accent-subtle);
+    color: var(--accent-text);
+  }
+
   .ib-row-body {
     display: flex;
     flex: 1;

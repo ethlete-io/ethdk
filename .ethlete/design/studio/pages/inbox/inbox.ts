@@ -9,6 +9,7 @@ type Comment = {
   id: string;
   author: string;
   initials: string;
+  ai?: boolean;
   when: string;
   part: string;
   state: string;
@@ -22,37 +23,39 @@ type Comment = {
 const COMMENTS: Comment[] = [
   {
     id: 'c1',
-    author: 'Lena Krüger',
-    initials: 'LK',
-    when: 'vor 12 Min',
+    author: 'Claude',
+    initials: 'C',
+    ai: true,
+    when: 'vor 3 Min',
     part: 'button',
     state: 'filled · hover',
-    text: 'Der Hover-Ton ist kaum vom Ruhezustand zu unterscheiden. Bitte eine Stufe heller, sonst merkt man den Zeiger nicht.',
-    replies: 1,
+    text: 'Hover ist jetzt eine Stufe heller, ich nehme accent-hover statt der Mischung. Reicht dir der Abstand zu active noch?',
+    replies: 3,
     unread: true,
     cell: 1,
   },
   {
     id: 'c2',
-    author: 'Lena Krüger',
-    initials: 'LK',
-    when: 'vor 40 Min',
+    author: 'Claude',
+    initials: 'C',
+    ai: true,
+    when: 'vor 20 Min',
     part: 'button',
     state: 'outline · disabled',
-    text: 'Outline im disabled-Zustand liegt unter 3:1 Kontrast. Das liest sich wie ein Platzhalter, nicht wie ein Button.',
-    replies: 0,
+    text: 'Ich habe zwei Wege skizziert: den Rand auf 3:1 heben oder eine leise Fläche statt Rand. Beide liegen als Runde 2 unter Sketches.',
+    replies: 1,
     unread: true,
     cell: 11,
   },
   {
     id: 'c3',
-    author: 'Jonas Weber',
-    initials: 'JW',
-    when: 'vor 2 Std',
+    author: 'Tom Bornholdt',
+    initials: 'TB',
+    when: 'vor 1 Std',
     part: 'button',
     state: 'tonal · rest',
-    text: '32 px Höhe wirkt neben dem Form-Field zu klein. Können wir auf 36 gehen?',
-    replies: 2,
+    text: 'Tonal wirkt neben filled zu blass. Zieh die Fläche an, der Text bleibt wie er ist.',
+    replies: 0,
     cell: 12,
   },
   {
@@ -62,48 +65,50 @@ const COMMENTS: Comment[] = [
     when: 'gestern',
     part: 'form-field',
     state: 'default',
-    text: 'Zwischen Label und Feld sind es 4 px, überall sonst 6 px. Bitte angleichen.',
-    replies: 1,
+    text: 'QC: Label und Feld sitzen hier enger als bei select. Gewollt oder Drift?',
+    replies: 0,
   },
   {
     id: 'c5',
-    author: 'Jonas Weber',
-    initials: 'JW',
+    author: 'Lena Krüger',
+    initials: 'LK',
     when: 'gestern',
     part: 'select',
     state: 'open',
-    text: 'Die offene Liste überdeckt den Hilfetext. 4 px Abstand nach oben würden reichen.',
+    text: 'QC: Die offene Liste deckt den Hilfetext ab. Bitte nachziehen, bevor wir das Formular bauen.',
     replies: 0,
   },
   {
     id: 'c6',
-    author: 'Lena Krüger',
-    initials: 'LK',
+    author: 'Claude',
+    initials: 'C',
+    ai: true,
     when: 'Mo',
     part: 'system',
     state: 'part',
-    text: 'Die Baumzeilen sind mit 20 px sehr eng, am Touchpad treffe ich sie schwer.',
-    replies: 3,
+    text: 'Die Baumzeilen sind jetzt 24 px hoch. Die Schrift bleibt dicht, nur die Trefferfläche wächst. Runde 3 zeigt beide Höhen nebeneinander.',
+    replies: 4,
   },
   {
     id: 'c7',
-    author: 'Jonas Weber',
-    initials: 'JW',
+    author: 'Tom Bornholdt',
+    initials: 'TB',
     when: 'Fr',
     part: 'button',
     state: 'filled · focus-visible',
-    text: 'Fokusring verschwindet auf dunkler Fläche komplett.',
+    text: 'Der Fokusring verschwindet auf der dunklen Fläche. Mach ihn sichtbar.',
     replies: 2,
     resolved: true,
   },
   {
     id: 'c8',
-    author: 'Lena Krüger',
-    initials: 'LK',
+    author: 'Claude',
+    initials: 'C',
+    ai: true,
     when: 'Do',
     part: 'button',
     state: 'filled',
-    text: 'Label bitte überall „Save“, nicht mal „Speichern“, mal „Save“.',
+    text: 'Alle Labels lesen jetzt „Save“. Ich habe auch die Shots der Varianten neu erzeugt.',
     replies: 1,
     resolved: true,
   },
@@ -122,7 +127,7 @@ const toggle = (on: boolean) =>
 
 const row = (c: Comment) =>
   html`<div class="ib-row" ${c.id === SELECTED ? ' data-selected' : ''}${c.resolved ? ' data-resolved' : ''}>
-    <span class="ib-avatar">${c.initials}</span>
+    <span class="ib-avatar" ${c.ai ? ' data-ai' : ''}>${c.initials}</span>
     <div class="ib-row-body">
       <div class="ib-row-meta">
         <span class="ib-author">${c.author}</span>
@@ -151,7 +156,7 @@ export const open: Props = { showResolved: false };
 export const withResolved: Props = { showResolved: true };
 
 export default definePart<Props>({
-  note: 'Inbox, flat: every comment of the product in one list, newest first, with the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin.',
+  note: 'Inbox, flat: every thread of the product in one list, newest first, showing its latest message: mostly the exchange between the user and Claude, plus a teammate QC pass. Each row has the author, the part and state it sits on, and a reply count. The canvas shows the frame of the selected comment with its pin.',
   madeBy: ['claude-opus-5-5'],
   states: { open, 'with-resolved': withResolved },
   render: async ({ showResolved }) => {
