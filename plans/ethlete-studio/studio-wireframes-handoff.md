@@ -220,7 +220,6 @@ paths, demonstrated needs, possible extraction and limits are recorded in `desig
 Prioritize reusable batch variant/state shots and comparison geometry over prototype-specific
 camera assertions. Keep this in the inventory; no CLI implementation during page exploration.
 
-
 ## WebKit fix and immediate push (2026-10-28)
 
 User explicitly requests immediate commit/push. Root cause reproduced in visible system

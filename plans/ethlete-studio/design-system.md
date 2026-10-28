@@ -3073,7 +3073,6 @@ Reuse the current shot/render-check/browser core when extracting a capability. E
 batch-shot/comparison need first; avoid turning prototype-specific selectors and assertions
 into a public CLI contract. Keep temporary images, process samples and client data outside git.
 
-
 ### WebKit freeze fix (2026-10-28)
 
 A visible standalone macOS WKWebView reproduced the 100% CPU freeze after two rapid iframe
