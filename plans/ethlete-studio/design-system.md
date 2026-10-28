@@ -401,6 +401,14 @@ Open points, each with a recommendation:
 - A toolbar button of its own toggles the sidebar, and Studio remembers the state. A click on the
   question count opens it. Comment mode does not open it, and it never opens by itself.
 
+### Comments live in git (2026-10-28)
+
+- Comment files under `.ethlete/design/<product>/comments/` are committed and pushed like the
+  parts. Tom: "wie sonst soll dieses system hier funktionieren?" Git is the only way a teammate's
+  QC pass or Claude's reply reaches anyone else; there is no server.
+- A thread is mostly a human writing for the AI. The one human-to-human case is a QC pass: a
+  teammate comments many parts, pushes, and someone else works the comments off or answers.
+
 ### Sketch matrix cell and spacing decisions (2026-10-27)
 
 - A cell whose variant lacks the row's state is a dashed empty cell at the size of the other cells
