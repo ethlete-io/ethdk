@@ -24,6 +24,12 @@ const VIEWPORT_HEIGHT = 800;
 
 const FIT_VIEWPORT_WIDTH = 1280;
 
+/** The viewport a frame of this size is drawn in. */
+export const viewportOf = (size: Size | null) => ({
+  width: size?.width ?? FIT_VIEWPORT_WIDTH,
+  height: size?.height ?? VIEWPORT_HEIGHT,
+});
+
 type Drawn = { part: DrawnPart } | { slug: string };
 
 type Size = Pick<DesignPreset, 'width' | 'height'>;
@@ -68,6 +74,47 @@ export const dependentIdsOf = (modules: Iterable<GraphModule>) => {
   return [...seen].flatMap((module) => (module.id ? [module.id] : []));
 };
 
+/** One state of a part as a frame draws it: at a product preset, at a container width, or fitted to its content. */
+export type PartAddress = {
+  product: string;
+  part: string;
+  state: string;
+  preset: string | null;
+  width: number | null;
+  sketch: SketchVariant | null;
+  interaction: string | null;
+};
+
+/** The frame query, viewport and cache key that draw one state of a part, or why the part cannot be drawn. */
+export const partFrameOf = (options: PartAddress & { system: SystemModules }) => {
+  const { system, product, part, state, preset, width, sketch, interaction } = options;
+  const file = system.partOf({ product, part, sketch })?.file;
+  const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
+
+  if (!file)
+    return new ThumbMissingError(
+      sketch
+        ? `design-explore: variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product}" has no part "${part}"`
+        : `design-explore: product "${product}" has no part "${part}"`,
+    );
+  if (preset && !size) return new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`);
+
+  return {
+    key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant, interaction] as unknown[],
+    drawn: { part: { product, part, sketch } } as Drawn,
+    search: new URLSearchParams({
+      product,
+      part,
+      state,
+      ...(size ? {} : { fit: '' }),
+      ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
+      ...(interaction ? { interaction } : {}),
+    }),
+    size: size ?? null,
+    clip: !preset,
+  };
+};
+
 /**
  * Draws one state of a part at one preset, at one container width, or fitted to its content, or one
  * variant of a call at a given width, at full height, into a PNG. Each picture is kept per frame, size
@@ -84,9 +131,7 @@ export const createPartShooter = (options: {
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
 
   const draw = async (browser: Browser, frame: Frame): Promise<Picture> => {
-    const context = await browser.newContext({
-      viewport: { width: frame.size?.width ?? FIT_VIEWPORT_WIDTH, height: frame.size?.height ?? VIEWPORT_HEIGHT },
-    });
+    const context = await browser.newContext({ viewport: viewportOf(frame.size) });
 
     try {
       const page = await context.newPage();
@@ -152,46 +197,12 @@ export const createPartShooter = (options: {
     return shot;
   };
 
-  const partShotOf = (options: {
-    product: string;
-    part: string;
-    state: string;
-    preset: string | null;
-    width: number | null;
-    sketch: SketchVariant | null;
-    interaction: string | null;
-    params: URLSearchParams;
-  }) => {
-    const { product, part, state, preset, width, sketch, interaction, params } = options;
-    const file = system.partOf({ product, part, sketch })?.file;
-    const size = preset ? system.productOf(product)?.presets[preset] : width ? { width } : null;
+  const partShotOf = (options: PartAddress & { params: URLSearchParams }) => {
+    const frame = partFrameOf({ system, ...options });
 
-    if (!file)
-      return Promise.reject(
-        new ThumbMissingError(
-          sketch
-            ? `design-explore: variant "${sketch.variant}" of the sketch on ${sketch.target} in product "${product}" has no part "${part}"`
-            : `design-explore: product "${product}" has no part "${part}"`,
-        ),
-      );
-    if (preset && !size)
-      return Promise.reject(new ThumbMissingError(`design-explore: product "${product}" has no preset "${preset}"`));
+    if (frame instanceof ThumbMissingError) return Promise.reject(frame);
 
-    return cached({
-      key: ['part', product, part, state, preset, width, sketch?.target, sketch?.variant, interaction],
-      drawn: { part: { product, part, sketch } },
-      search: new URLSearchParams({
-        product,
-        part,
-        state,
-        ...(size ? {} : { fit: '' }),
-        ...(sketch ? { sketch: sketch.target, variant: sketch.variant } : {}),
-        ...(interaction ? { interaction } : {}),
-      }),
-      params,
-      size: size ?? null,
-      clip: !preset,
-    });
+    return cached({ ...frame, params: options.params });
   };
 
   const callShotOf = (options: { slug: string; variant: string; width: number; params: URLSearchParams }) => {

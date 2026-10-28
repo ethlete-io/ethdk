@@ -501,10 +501,18 @@ const designExplore = ({
 
 /**
  * The Vite server that draws a checkout: listening on the configured port to serve the frames, or in
- * middleware mode only to load design modules for a command.
+ * middleware mode only to load design modules for a command. With `port`, it listens there instead
+ * (0 picks a free one), quiet, unwatched and with a dependency cache of its own, so a command can draw
+ * while the user's server runs.
  */
-export const createDesignServer = async (options: { target: string; config: DesignConfig; listen: boolean }) => {
-  const { target, config, listen } = options;
+export const createDesignServer = async (options: {
+  target: string;
+  config: DesignConfig;
+  listen: boolean;
+  port?: number;
+}) => {
+  const { target, config, listen, port } = options;
+  const own = listen && port !== undefined;
 
   writeCallsTsconfig(target);
 
@@ -524,7 +532,7 @@ export const createDesignServer = async (options: { target: string; config: Desi
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
     // own pipeline so no checkout's postcss config reaches a drawing.
     css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin()] } },
-    cacheDir: resolve(workRootOf(target), 'vite'),
+    cacheDir: resolve(workRootOf(target), own ? 'vite-check' : 'vite'),
     resolve: {
       alias: [
         { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
@@ -537,12 +545,13 @@ export const createDesignServer = async (options: { target: string; config: Desi
     // can not load.
     optimizeDeps: { exclude: ['@ethlete/components', '@ethlete/core'] },
     plugins: [designExplore({ target, config, system })],
-    ...(listen ? {} : { appType: 'custom' as const, logLevel: 'error' as const }),
+    ...(listen ? {} : { appType: 'custom' as const }),
+    ...(listen && !own ? {} : { logLevel: 'error' as const }),
     server: {
       // Studio swaps a frame for a fresh one once it has painted; a Vite reload would blank every frame at once.
       hmr: false,
       ...(listen
-        ? { port: portOf(config), strictPort: true }
+        ? { port: port ?? portOf(config), strictPort: true, ...(own ? { watch: null } : {}) }
         : { middlewareMode: true, ws: false as const, watch: null }),
       // The frame page lives inside this package, which is outside the checkout it draws. Vite
       // serves neither root unless both are allowed.
