@@ -99,6 +99,11 @@ A variant mirrors the product layout and holds only the parts it changes. Draw t
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. Use `sketch list` to see the open ones.
 
+Every change to a merged part goes through a sketch, also a small one: new copy, sample data, an
+added state. When there is nothing to choose, the sketch has one variant (`--variants a`), and the
+user merges it or comments on it. Never edit a merged part directly, or the user cannot compare or
+comment on the change in Studio.
+
 A sketch on a foundations part such as `foundations/tokens` keeps the part's overview drawing: the
 variant adds its token group as a state, or extends that group's state. It never replaces the
 drawing with a demo scene, since the merge would drop every other group. A demo may be an extra state.

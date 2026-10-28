@@ -39,6 +39,8 @@ Tom in German.
   `curl "http://localhost:4402/__design/shot?product=studio&part=<layer>/<name>&state=<s>&width=1440&sketch=<layer>/<name>&variant=<v>"`
   (pages: `&preset=desktop`), no `sketch ready`, no commit, no stash, no git add, no zsh command
   in a variable. It reports friction; you write it into the plan and commit.
+- Every change to a merged part is a sketch, also a small one; with nothing to choose, one variant
+  (`--variants a`). Never edit a merged part directly (Tom, 2026-10-28).
 - You look at the shots yourself, then `design sketch ready <part> --product studio --by ...`.
 - After Tom merges: `design check --product studio`, prettier on the part files, commit at once.
 - CLI: `node dist/libs/cli/src/index.js design ...`; build `NX_NO_CLOUD=true npx nx build cli`.

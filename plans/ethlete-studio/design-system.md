@@ -2439,6 +2439,13 @@ handoff for this work is `studio-wireframes-handoff.md` next to this file.
 - Inbox data follows the comment model: a human writes for an AI agent, and the agent answers. The
   one human-to-human case is a teammate QC pass. Agents are mixed (Claude, Codex, Gemini) and show
   their provider logo (`pages/inbox/agent-logos.ts`).
+- Every edit after the inbox merge (tree leaf, data, groups, three states, agent mix, logos) went
+  straight into merged parts, without a sketch. Tom: "das wir hier nun so viel ohne sketches
+  gemacht haben geht eigentlich auch irgendwie gegens system". The cause: a round asks for two to
+  four alternatives, and a small fix has none, so the agent skipped the round. Decided (Tom, A):
+  every change to a merged part is a sketch; with nothing to choose, it has one variant. The
+  `ethlete-design-exploration` skill says so. Prevent: Studio flags a merged part whose files
+  changed outside a sketch merge.
 - Next pages, paused by Tom on 2026-10-28: Sketches (variant matrix), Flows, merge compare. Then
   components, then page states, then the build into the real app.
 
