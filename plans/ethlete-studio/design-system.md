@@ -975,6 +975,14 @@ step. Each finding names what happened and the fix it needs.
   - The design assets under `libs/cli/design/` are excluded from eslint. Prevent: lint them too.
   - Tom's design server on :4402 runs from `dist`, so an agent's `nx build cli` changes what Tom
     sees mid-session. Prevent: agents build into their own out dir, or the server pins its build.
+  - Element in context (00f21b83e, ae2b82f62): the newest round stays dimmed while the sketch is
+    in progress, so an agent cannot judge its own variant in context before `sketch ready`.
+    Prevent: dim only in Studio, never in the agent's shot, or a Studio toggle to look anyway.
+  - "Used in" and the context band show only pages of the same product, though `usedIn` also
+    names pages of products built on it.
+  - `design serve` reads `serve` as a checkout path (serving is plain `design`), and
+    `sketch discard` needs `--by` while `sketch new` does not. Prevent: one rule for `--by`, and
+    an unknown subcommand is an error.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;

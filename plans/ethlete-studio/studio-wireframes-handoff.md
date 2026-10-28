@@ -65,9 +65,10 @@ Tom in German.
 PAUSED. Tom on 2026-10-28: "keine weiteren designs nun mehr bitte". Start no new sketch until Tom
 asks. When he does: Sketches page (variant matrix), Flows page, merge compare.
 
-## In progress (2026-10-28, builder)
+## Built (2026-10-28, builder)
 
-Tom picked all plan findings to build, as four slices, one fresh subagent each:
+All four slices are built (CLI fixes 0ab2a8d18..57f1604f7, Studio rows de482bcee and in-progress
+880283244, part API 1c3ef2d71 34c905611, in context 00f21b83e f4b32bb20 ae2b82f62):
 
 1. CLI fixes: `--help` per command without the `--by` check; `sketch new --note`; `sketch variant`
    error names `sketch new`; shot error status on a zero-size root; `design check` flags an
@@ -76,6 +77,13 @@ Tom picked all plan findings to build, as four slices, one fresh subagent each:
 2. Part API types: `definePart` keeps state keys; `render` takes an optional interaction.
 3. Studio sketch view: in-progress state on frames; each round its own row.
 4. Element in context: an element sketch shows each variant inside the pages that use it.
+
+## In progress (2026-10-28, builder)
+
+Tom picked the next items, in order: skill rules (done, 9a501e071); build isolation (the design
+server keeps its own build, so an agent's `nx build cli` does not change :4402); a render check in
+`design check` (overflow, clipping, wrap, taller than the frame); Studio tree children from frames
+and one frame with all interactions for a small part.
 
 ## Open, wait for Tom
 
