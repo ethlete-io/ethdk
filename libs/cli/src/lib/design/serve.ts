@@ -574,7 +574,6 @@ export const createDesignServer = async (options: {
 
       throw new Error(
         `design-explore: cannot open a local port (${code}) - the environment forbids listening, so nothing was drawn. This is a permission failure, not a drawing failure: run outside the sandbox.`,
-        { cause: error },
       );
     });
 
