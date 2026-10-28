@@ -969,6 +969,12 @@ step. Each finding names what happened and the fix it needs.
   - The Studio subagent fed `git diff --name-only` to prettier and `eslint --fix`, and so touched
     the CLI subagent's `check.ts` in the shared checkout. Prevent: a tool run names the paths it
     changed, never a list from git.
+  - Typed state names (1c3ef2d71) hold only for `definePart({ states, render: (props: Props) => … })`;
+    a `definePart<Props>(…)` part compiles but keeps the loose `states`, because TypeScript infers
+    no partial type arguments. Prevent: a lint or check that flags the explicit type argument.
+  - The design assets under `libs/cli/design/` are excluded from eslint. Prevent: lint them too.
+  - Tom's design server on :4402 runs from `dist`, so an agent's `nx build cli` changes what Tom
+    sees mid-session. Prevent: agents build into their own out dir, or the server pins its build.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
