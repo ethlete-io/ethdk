@@ -1,5 +1,5 @@
 import { definePart, drawing } from '@design-system';
-import canvasFrames, { buttonStates } from '@system/elements/canvas-frames';
+import canvasFrames, { defaultFrames } from '@system/elements/canvas-frames';
 import partTree, { componentsOpen } from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 
@@ -9,7 +9,7 @@ export default definePart({
   states: { part: {} },
   render: async () => {
     const tree = await partTree.render(componentsOpen);
-    const frames = await canvasFrames.render(buttonStates);
+    const frames = await canvasFrames.render(defaultFrames);
     const shell = await shellMain.render({
       section: 'System',
       product: 'studio',
