@@ -1003,6 +1003,15 @@ step. Each finding names what happened and the fix it needs.
   - The scaffold's empty `default` state reports ZERO-SIZE, and `sketch report` prints nothing.
   - The base SDK button draws in SDK blue inside the Studio chrome, so the pick buttons look off
     the Studio palette.
+    Cause: `foundations/tokens` sets `--et-color-primary*` to SDK blue and lacks the accent
+    mapping of `apps/ethlete-studio/src/styles/sdk-token-map.css`. Round 2 carries the mapping in
+    each variant's `sketch-data.css`; the merged `foundations/tokens` needs it through a sketch.
+  - Round 2: `design check --tsconfig` said ok while `sketch check` found TS2322 in all three
+    variants, so 3b56750ec does not cover this case. Prevent: one typecheck path for both.
+  - `sketch variant --round` resolves the comments on the `--from` variant, and then
+    `comment reply` refuses them, so the agent cannot say what it changed. Prevent: allow a reply
+    on a resolved comment, or `sketch variant --reply`.
+  - `sketch report` without `--product` fails. Prevent: take the product of the open sketch.
 - Side tree sketch round (`pages-system`, variants a flat grouped list, b collapsible tree, c list
   with status columns), friction:
   - `design check --lint <files> --tsconfig` printed `ok` on variant files with TS2322 errors;
