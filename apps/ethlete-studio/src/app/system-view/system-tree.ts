@@ -412,6 +412,9 @@ export const stateRowKeyOf = (state: string) => `unchanged ${state}`;
 
 const roundNameOf = ({ key, title }: SketchRound) => [key, title].filter(Boolean).join(' · ');
 
+/** The label over each frame of a variant the agent may still change. */
+export const PENDING_LABEL = 'Agent still drawing';
+
 /** The first author and "+N" for the rest, or `null` without authors. */
 export const authorsLabelOf = (authors: string[]) =>
   authors.length === 0 ? null : authors.length === 1 ? authors[0] : `${authors[0]} +${authors.length - 1}`;
@@ -495,7 +498,8 @@ const rowKeyIn = (section: string | undefined, key: string) => (section === unde
  * The sketch as a matrix: one column for the part as it is now (when it exists) and one per variant. With
  * several rounds or a titled one, each round is its own band, newest on top: an open round has its variant
  * columns under a round group, with the current column in the topmost open band, and a folded round is one
- * row head without frames. With
+ * row head without frames. While the sketch is in progress, every frame of a variant in the newest round is
+ * pending. With
  * `ALL` interactions, one row per state and interaction - state by state, each in Studio order - else one
  * row per state in the picked interaction; the current states come first, then any state only a variant
  * has. Every cell has the one picked size. A column that lacks a row's state or interaction gets an empty
@@ -543,6 +547,7 @@ export const sketchMatrixOf = ({
   const sections = !roundsGrouped
     ? []
     : [...(firstOpen ? [] : [CURRENT]), ...newestFirst.map((round) => roundColumnKeyOf(round.key))];
+  const pending = new Set(sketch.status === 'in progress' ? (rounds.at(-1)?.variants ?? []) : []);
   const variantColumnOf = (variant: string) => {
     const target = targetOf(variant);
     const problems = sketch.problems.find((entry) => entry.variant === variant)?.problems ?? [];
@@ -669,6 +674,7 @@ export const sketchMatrixOf = ({
       label: cell.label,
       ...rowOf(row, column.key),
       column: column.key,
+      ...(pending.has(column.key) ? { pending: PENDING_LABEL } : {}),
       screenshot: partShotUrl({
         ...address,
         preset: cell.preset,

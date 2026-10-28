@@ -157,6 +157,19 @@ const painted$ = (iframe: HTMLIFrameElement) => {
         }
       }
     }
+    @if (frame().pending; as pending) {
+      <div
+        class="pointer-events-none absolute inset-0 flex items-start justify-center bg-surface/70 p-[calc(2.4rem_*_var(--et-design-canvas-label-scale))]"
+        data-frame-pending
+      >
+        <span
+          class="flex items-center gap-[0.6em] rounded-full border border-surface-border bg-surface px-[0.8em] py-[0.3em] text-[length:calc(1.4rem_*_var(--et-design-canvas-label-scale))] font-semibold whitespace-nowrap text-text shadow-md"
+        >
+          <span class="size-[0.6em] shrink-0 animate-pulse rounded-full bg-accent"></span>
+          {{ pending }}
+        </span>
+      </div>
+    }
     @if (!active()) {
       <div class="absolute inset-0 size-full border-0"></div>
     }
@@ -175,6 +188,7 @@ const painted$ = (iframe: HTMLIFrameElement) => {
     '[attr.data-selected]': 'selected() || null',
     '[attr.data-active]': 'active() || null',
     '[attr.data-empty]': 'frame().empty !== undefined || null',
+    '[attr.data-pending]': 'frame().pending !== undefined || null',
     '[attr.data-fitted]': 'frame().width === undefined || null',
     '[attr.data-frame-id]': 'frame().id',
     '[attr.data-live]': 'live()',

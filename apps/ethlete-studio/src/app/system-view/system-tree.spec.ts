@@ -10,6 +10,7 @@ import {
   framesOf,
   pickedVariantOf,
   mergePreviewOf,
+  PENDING_LABEL,
   sketchMatrixOf,
   openRoundsOf,
   sketchRoundsOf,
@@ -676,6 +677,28 @@ describe('sketchMatrixOf', () => {
       expect(matrix.sections).toEqual(['current', 'round r2', 'round r1']);
       expect(matrix.columns).toEqual([{ key: 'current', label: 'current', drawing: false, section: 'current' }]);
       expect(matrix.rowHeads.map((head) => head.key)).toEqual(['round r2', 'round r1']);
+    });
+
+    it('marks every frame of the newest round pending until the sketch is ready', () => {
+      const drawing = sketchMatrixOf({
+        ...source,
+        part: part(),
+        sketch: { ...rounded, status: 'in progress' },
+        openRounds: { r1: true, r2: true },
+      });
+      const ready = sketchMatrixOf({ ...source, part: part(), sketch: rounded, openRounds: { r1: true, r2: true } });
+
+      expect(drawing.frames.map((frame) => [frame.column, frame.pending])).toEqual([
+        ['current', undefined],
+        ['current', undefined],
+        ['c', PENDING_LABEL],
+        ['c', PENDING_LABEL],
+        ['a', undefined],
+        ['a', undefined],
+        ['b', undefined],
+        ['b', undefined],
+      ]);
+      expect(ready.frames.some((frame) => frame.pending !== undefined)).toBe(false);
     });
 
     it('offers only the interactions of the part and of open rounds', () => {

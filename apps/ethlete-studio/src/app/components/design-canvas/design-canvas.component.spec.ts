@@ -378,22 +378,23 @@ describe('DesignCanvasComponent', () => {
     expect(toggled).toEqual(['unchanged system']);
   });
 
-  it('stacks matrix sections as bands with their own column heads', async () => {
+  it('stacks matrix sections as bands with their own column heads, and dims a pending frame under its label', async () => {
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), ...provideColorThemesWithTailwind4(THEMES)],
     });
 
     const fixture = TestBed.createComponent(DesignCanvasComponent);
-    const cell = (column: string, row: string): CanvasFrame => ({
+    const cell = (column: string, row: string, pending?: string): CanvasFrame => ({
       ...FITTED,
       id: `${column} ${row}`,
       row,
       column,
       width: 200,
       height: 100,
+      ...(pending ? { pending } : {}),
     });
 
-    fixture.componentRef.setInput('frames', [cell('c', 'new default'), cell('a', 'old default')]);
+    fixture.componentRef.setInput('frames', [cell('c', 'new default', 'Still drawing'), cell('a', 'old default')]);
     fixture.componentRef.setInput('arrangement', 'matrix');
     fixture.componentRef.setInput('columns', [
       { key: 'c', label: 'c', section: 'new', group: { key: 'new', label: 'r2' } },
@@ -421,6 +422,9 @@ describe('DesignCanvasComponent', () => {
     ]);
     expect(parseFloat(head?.style.top ?? '')).toBeGreaterThan(parseFloat(older?.style.top ?? ''));
     expect(head?.textContent?.trim()).toBe('Too loud');
+    expect(drawn?.hasAttribute('data-pending')).toBe(true);
+    expect(drawn?.querySelector('[data-frame-pending]')?.textContent?.trim()).toBe('Still drawing');
+    expect(older?.querySelector('[data-frame-pending]')).toBeNull();
   });
 
   it('lowers the next matrix row below the note column of a frame', async () => {
