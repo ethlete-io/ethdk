@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -19,6 +19,7 @@ import {
   reportSketch,
   Sketch,
   sketchReportPath,
+  sketchSourceOf,
 } from './sketch';
 import { baselineOf } from './baseline';
 
@@ -351,5 +352,82 @@ describe('addVariant', () => {
     );
 
     expect(readSketch({ product: 'acme', dir })).toContain('variant a names round "r9"');
+  });
+});
+
+describe('the shared folder of a sketch', () => {
+  it('is no variant, and no variant may be called shared', () => {
+    const target = acme();
+    const sketch = open(target, 'elements/hero');
+
+    mkdirSync(join(sketch.dir, 'shared'));
+    writeFileSync(join(sketch.dir, 'shared/data.ts'), 'export const data = 1;\n');
+
+    expect((readSketch({ product: 'acme', dir: sketch.dir }) as Sketch).variants).toEqual(['a', 'b']);
+    expect(addVariant({ sketch, variant: 'shared', from: 'a' })).toContain('not "shared"');
+    expect(
+      createSketch({ product: resolveAcme(target), sketch: { layer: 'pages', name: 'x' }, variants: ['shared'] }),
+    ).toContain('not "shared"');
+  });
+});
+
+describe('sketch new --like', () => {
+  it('starts each variant as a copy of the named part, renamed to the target and without madeBy', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const heroFile = join(target, DESIGN_DIR, 'acme/elements/hero/hero.ts');
+
+    writeFileSync(heroFile, readFileSync(heroFile, 'utf8').replace("note: '", "madeBy: ['claude-x'],\n  note: '"));
+
+    const like = sketchSourceOf({ product: resolveAcme(target), like: 'elements/hero' });
+
+    if (typeof like === 'string') throw new Error(like);
+
+    const created = createSketch({ product, sketch: { layer: 'elements', name: 'banner' }, variants: ['a'], like });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    const folder = join(created.dir, 'a/elements/banner');
+    const source = readFileSync(join(folder, 'banner.ts'), 'utf8');
+
+    expect(existsSync(join(folder, 'banner.css'))).toBe(true);
+    expect(existsSync(join(folder, 'hero.ts'))).toBe(false);
+    expect(source).toContain("from './banner.css?inline'");
+    expect(source).toContain('One featured film');
+    expect(source).not.toContain('madeBy');
+  });
+
+  it("copies a variant of an open sketch with the sketch's shared folder", () => {
+    const target = acme();
+    const source = open(target, 'elements/hero');
+
+    mkdirSync(join(source.dir, 'shared'));
+    writeFileSync(join(source.dir, 'shared/data.ts'), 'export const data = 1;\n');
+    writeFileSync(join(source.dir, 'b/elements/hero/hero.css'), '.b {}\n');
+
+    const product = resolveAcme(target);
+    const like = sketchSourceOf({ product, like: 'elements/hero:b' });
+
+    if (typeof like === 'string') throw new Error(like);
+
+    const created = createSketch({ product, sketch: { layer: 'elements', name: 'banner' }, variants: ['a'], like });
+
+    if (typeof created === 'string') throw new Error(created);
+
+    expect(readFileSync(join(created.dir, 'a/elements/banner/banner.css'), 'utf8')).toBe('.b {}\n');
+    expect(readFileSync(join(created.dir, 'shared/data.ts'), 'utf8')).toContain('data = 1');
+    expect(created.variants).toEqual(['a']);
+  });
+
+  it('answers why a source is unknown', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+
+    open(target, 'elements/hero');
+
+    expect(sketchSourceOf({ product, like: 'elements/nope' })).toContain('has no part elements/nope');
+    expect(sketchSourceOf({ product, like: 'pages/home:a' })).toContain('has no open sketch');
+    expect(sketchSourceOf({ product, like: 'elements/hero:z' })).toContain('has no variant "z"');
+    expect(sketchSourceOf({ product, like: 'hero' })).toContain('names no part');
   });
 });

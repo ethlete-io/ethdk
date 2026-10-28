@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { writeCallsTsconfig } from '../calls-tsconfig';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { resolveProduct } from './resolve-product';
-import { writeEditorTsconfig } from './system-tsconfig';
+import { writeEditorTsconfig, writeSystemTsconfig } from './system-tsconfig';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-editor-tsconfig-'));
@@ -25,6 +25,18 @@ describe('editor tsconfigs', () => {
     const config = JSON.parse(readFileSync(join(target, DESIGN_DIR, 'acme/tsconfig.json'), 'utf8'));
 
     expect(Object.keys(config.compilerOptions.paths)).toContain('@design-system');
+  });
+
+  it("maps @shared/* to a sketch's shared folder and includes its files", () => {
+    const target = acme();
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sharedDir = join(target, 'sketch/shared');
+    const config = JSON.parse(
+      readFileSync(writeSystemTsconfig({ target, product: { ...product, sharedDir } }), 'utf8'),
+    );
+
+    expect(config.compilerOptions.paths['@shared/*']).toEqual([join(sharedDir, '*')]);
+    expect(config.include).toContain(join(sharedDir, '**/*.ts'));
   });
 
   it('writes the calls tsconfig into the design folder', () => {

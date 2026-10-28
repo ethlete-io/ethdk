@@ -51,6 +51,22 @@ describe('importProblemsOf', () => {
     expect(importProblemsOf(resolveAcme(acme()))).toEqual([]);
   });
 
+  it('flags @shared/ outside a sketch variant and passes it inside one', () => {
+    const target = acme();
+
+    write(target, 'acme/elements/hero/hero.ts', part("import { data } from '@shared/data';"));
+
+    expect(importProblemsOf(resolveAcme(target))).toEqual([
+      expect.objectContaining({ rule: 'IMPORT', message: expect.stringContaining('only a part in a sketch variant') }),
+    ]);
+    expect(importProblemsOf({ ...resolveAcme(target), sharedDir: join(target, 'shared') })).toEqual([]);
+    expect(classifyImport('@shared/data/list')).toEqual({
+      kind: 'shared',
+      path: 'data/list',
+      specifier: '@shared/data/list',
+    });
+  });
+
   it('flags a relative import into another part', () => {
     const target = acme();
 

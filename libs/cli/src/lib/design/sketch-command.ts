@@ -19,10 +19,11 @@ import {
   rebaseSketch,
   reportSketch,
   Sketch,
+  sketchSourceOf,
 } from './system/sketch/sketch';
 
 export const SKETCH_USAGE = [
-  'sketch new <layer>/<name> --variants a,b --by <model id> [--round <title>] [--note <text>] [--product <name>]',
+  'sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>[:<variant>]] [--round <title>] [--note <text>] [--product <name>]',
   'sketch variant <layer>/<name> <variant> --from <variant> --by <model id> [--round <title> --note <why the running round lost>] [--product <name>]',
   'sketch round <layer>/<name> <round> [--title <text>] [--note <text>] --by <model id> [--product <name>]',
   'sketch list [--product <name>] [--json]',
@@ -80,6 +81,11 @@ const created = (context: Context) => {
   if (typeof parsed === 'string') return fail(parsed);
 
   const variants = (args.values['--variants'] ?? '').split(',').filter((variant) => variant !== '');
+  const asked = args.values['--like'];
+  const like = asked === undefined ? undefined : sketchSourceOf({ product, like: asked });
+
+  if (typeof like === 'string') return fail(like);
+
   const sketch = createSketch({
     product,
     sketch: parsed,
@@ -87,6 +93,7 @@ const created = (context: Context) => {
     roundTitle: args.values['--round'],
     roundNote: args.values['--note'],
     author: authorOf(args) ?? undefined,
+    like,
   });
 
   if (typeof sketch === 'string') return fail(sketch);
@@ -393,7 +400,17 @@ export const designSketch = (options: { target: string; argv: string[]; invocati
   const { target, argv, invocation } = options;
   const [command = '', ...rest] = argv;
   const run = COMMANDS[command];
-  const args = argsOf(rest, ['--product', '--variants', '--note', '--variant', '--by', '--from', '--round', '--title']);
+  const args = argsOf(rest, [
+    '--product',
+    '--variants',
+    '--note',
+    '--variant',
+    '--by',
+    '--from',
+    '--round',
+    '--title',
+    '--like',
+  ]);
   const unauthored = typeof args !== 'string' && WRITES.has(command) && authorOf(args) === null;
 
   if (!run || typeof args === 'string' || unauthored) {

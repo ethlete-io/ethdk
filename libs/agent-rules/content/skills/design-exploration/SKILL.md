@@ -99,7 +99,7 @@ A change to a part, or a new part, is a **sketch**: the question is the part, th
 answers. Variants are drawn at the same geometry, and one variant wins only against the others.
 
 ```bash
-et design sketch new <layer>/<name> --variants a,b --by <model id> [--product <p>]   # each variant starts as a copy of the part
+et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--product <p>]   # each variant starts as a copy of the part
 et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
 et design sketch check [<layer>/<name>]                                            # each variant laid over the product
 et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
@@ -116,6 +116,19 @@ own chrome only. A sketch on an element adds no state whose difference is page c
 A variant mirrors the product layout and holds only the parts it changes. Draw two to four
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. Use `sketch list` to see the open ones.
+
+Start a new part from a close one with `--like`: `sketch new pages/inbox --like pages/system`
+copies the product's `pages/system` into each variant, renamed to the target and without its
+`madeBy`; `--like pages/system:b` copies variant b of the open sketch on it, with that sketch's
+`shared/` folder.
+
+Code the variants of one sketch have in common (sample data, a switch, a helper) goes in the
+sketch's `shared/` folder, next to the variant folders, never into copies per variant. A part in a
+variant imports it as `@shared/<path>`, and a shared file may import `@system/...` and
+`@shared/...`. A part outside a sketch may not import `@shared/`. On a merge, `shared/` moves into
+the target's folder as `shared/` with its imports made relative; when no part imports it, it is
+dropped. Only the target may import it: a merge refuses while another part of the picked variant
+does, so move that code into the part.
 
 Every change to a merged part goes through a sketch, also a small one: new copy, sample data, an
 added state. When there is nothing to choose, the sketch has one variant (`--variants a`), and the
@@ -244,6 +257,13 @@ rules are strict:
 - **Draw it yourself.** A wireframe round is small work: no subagent, no friction report.
 - **Stop early.** When the regions of the main screens are settled, the stage ends. Comments on
   the look of a wireframe belong to the next stage, not to a new wireframe round.
+
+A page may not import another page. To show a page inside a page ("in context"), embed it:
+`embedPage('pages/system', { state, width, height, scale })` from `@design-system` answers a
+drawing whose `body` is a frame of that page, drawn in the same product, sketch variant and theme
+as the embedding frame. `width` and `height` are the viewport the page is drawn at (default
+1280 x 800; `height: 'auto'` fits its content), `scale` shrinks the frame. Never rebuild a page
+from its elements to show it.
 
 A page that has no parts yet draws grey stand-ins from the wireframe kit; pages and elements may
 import it, components and foundations may not:

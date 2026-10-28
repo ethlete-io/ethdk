@@ -3,9 +3,9 @@ import { LAYER_USES, LAYERS } from '../layers';
 import { fixturesOf, partFilesOf } from '../product';
 import { Problem } from '../problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from '../resolve-product';
-import { Sketch, variantDirOf } from './sketch';
+import { Sketch, sharedDirOf, variantDirOf } from './sketch';
 
-export type SketchedProduct = ResolvedProduct & { sketched: string[] };
+export type SketchedProduct = ResolvedProduct & { sketched: string[]; sharedDir: string };
 
 const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name: string }) =>
   partKeyOf(part) === sketch.target || part.layer === sketch.layer || LAYER_USES[sketch.layer].includes(part.layer);
@@ -13,7 +13,7 @@ const mayChange = (sketch: Sketch, part: { layer: (typeof LAYERS)[number]; name:
 /**
  * The product as one variant of a sketch draws it: each part the variant holds replaces the part the
  * product resolves under the same name, or joins it when the product has none. `sketched` names the
- * parts the variant holds.
+ * parts the variant holds, and `sharedDir` the sketch's `shared/` folder its parts import as `@shared/...`.
  */
 export const overlaySketch = (options: {
   product: ResolvedProduct;
@@ -48,5 +48,6 @@ export const overlaySketch = (options: {
     fixtures: fixturesOf(dir) ?? product.fixtures,
     problems: [...product.problems, ...own.problems, ...outside],
     sketched: [...keys],
+    sharedDir: sharedDirOf(sketch),
   };
 };

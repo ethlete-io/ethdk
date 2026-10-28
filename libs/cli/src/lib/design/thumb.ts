@@ -39,6 +39,11 @@ export const openFrame = async (page: Page, url: string) => {
     .first()
     .waitFor({ state: 'attached', timeout: DRAW_TIMEOUT_MS })
     .catch(() => undefined);
+  await page
+    .locator('iframe[data-et-embed]:not([data-et-embed-drawn])')
+    .first()
+    .waitFor({ state: 'detached', timeout: DRAW_TIMEOUT_MS })
+    .catch(() => undefined);
 };
 
 export const settled = `new Promise((done) => document.fonts.ready.then(() =>

@@ -1,9 +1,20 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'fs';
 import { dirname, resolve } from 'path';
 import { statusPath } from '../../status';
 import { isLayer, Layer } from '../layers';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { baselineOf } from './baseline';
+import { withMadeBy } from './part-definition';
 
 export const SKETCH_STATUSES = ['in progress', 'ready'] as const;
 
@@ -57,6 +68,11 @@ export const sketchDirOf = (options: { productDir: string; sketch: SketchTarget 
 
 export const variantDirOf = (sketch: Sketch, variant: string) => resolve(sketch.dir, variant);
 
+/** The folder of a sketch that holds no variant: code every variant imports as `@shared/<path>`. */
+export const SHARED_FOLDER = 'shared';
+
+export const sharedDirOf = (sketch: Pick<Sketch, 'dir'>) => resolve(sketch.dir, SHARED_FOLDER);
+
 /** Reads `<layer>/<name>` as a sketch target, or answers with why it is not one. */
 export const parseTarget = (value: string | undefined): SketchTarget | string => {
   const [layer = '', name = '', ...rest] = (value ?? '').split('/');
@@ -67,7 +83,7 @@ export const parseTarget = (value: string | undefined): SketchTarget | string =>
   return { layer, name };
 };
 
-export const isVariantName = (name: string) => NAME.test(name);
+export const isVariantName = (name: string) => NAME.test(name) && name !== SHARED_FOLDER;
 
 const foldersOf = (dir: string) =>
   existsSync(dir)
@@ -146,7 +162,7 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
 
   const rounds = parsed.rounds ?? [firstRoundOf()];
   const running = runningRoundOf({ rounds }).key;
-  const variants = foldersOf(dir);
+  const variants = foldersOf(dir).filter((folder) => folder !== SHARED_FOLDER);
   const variantInfo = { ...parsed.variantInfo };
 
   for (const variant of variants)
@@ -210,13 +226,71 @@ const stubOf = (name: string) =>
     '',
   ].join('\n');
 
+/** Where `sketch new --like` copies from: a part folder, its part name, and the `shared/` folder of the sketch it comes from. */
+export type SketchSource = { folder: string; name: string; shared: string | null };
+
+/**
+ * Reads `--like`: `<layer>/<name>` is the part the product resolves under that key, `<layer>/<name>:<variant>` that
+ * part in a variant of the open sketch on it, together with the sketch's `shared/` folder.
+ */
+export const sketchSourceOf = (options: { product: ResolvedProduct; like: string }): SketchSource | string => {
+  const { product, like } = options;
+  const [key = '', variant, ...rest] = like.split(':');
+  const parsed = parseTarget(key);
+
+  if (typeof parsed === 'string' || rest.length > 0)
+    return `--like "${like}" names no part - pass <layer>/<name> or <layer>/<name>:<variant>`;
+
+  const resolved = product.parts.find((part) => partKeyOf(part) === key);
+
+  if (variant === undefined)
+    return resolved
+      ? { folder: dirname(resolved.file), name: parsed.name, shared: null }
+      : `--like: ${product.name} has no part ${key}`;
+
+  const sketch = findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+
+  if (sketch === null) return `--like: ${key} has no open sketch`;
+  if (typeof sketch === 'string') return sketch;
+  if (!sketch.variants.includes(variant))
+    return `--like: the sketch on ${key} has no variant "${variant}" - it has ${sketch.variants.join(', ')}`;
+
+  const own = resolve(variantDirOf(sketch, variant), parsed.layer, parsed.name);
+  const folder = existsSync(own) ? own : resolved ? dirname(resolved.file) : null;
+
+  if (folder === null) return `--like: variant "${variant}" of ${key} holds no ${key}`;
+
+  return { folder, name: parsed.name, shared: existsSync(sharedDirOf(sketch)) ? sharedDirOf(sketch) : null };
+};
+
+const copyPartAs = (options: { from: SketchSource; to: string; name: string }) => {
+  const { from, to, name } = options;
+
+  cpSync(from.folder, to, { recursive: true });
+
+  for (const extension of ['ts', 'css']) {
+    const old = resolve(to, `${from.name}.${extension}`);
+
+    if (from.name !== name && existsSync(old)) renameSync(old, resolve(to, `${name}.${extension}`));
+  }
+
+  const file = resolve(to, `${name}.ts`);
+
+  if (!existsSync(file)) return;
+
+  const source = readFileSync(file, 'utf8').split(`./${from.name}.css`).join(`./${name}.css`);
+
+  writeFileSync(file, withMadeBy(source, []) ?? source);
+};
+
 const variantInfoOf = (round: string, author: string | undefined): SketchVariantInfo =>
   author ? { authors: [author], round } : { round };
 
 /**
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
- * author. Each variant starts from the part the product resolves for the target, or from an empty part when the target
- * is new. A target holds one open sketch at a time.
+ * author. Each variant starts from `like` when given - renamed to the target, without its `madeBy`, and with its
+ * sketch's `shared/` folder - else from the part the product resolves for the target, or from an empty part when the
+ * target is new. A target holds one open sketch at a time.
  */
 export const createSketch = (options: {
   product: ResolvedProduct;
@@ -225,8 +299,9 @@ export const createSketch = (options: {
   roundTitle?: string;
   roundNote?: string;
   author?: string;
+  like?: SketchSource;
 }): Sketch | string => {
-  const { product, sketch, variants, roundTitle, roundNote, author } = options;
+  const { product, sketch, variants, roundTitle, roundNote, author, like } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
 
@@ -235,7 +310,8 @@ export const createSketch = (options: {
 
   const invalid = variants.find((variant) => !isVariantName(variant));
 
-  if (invalid !== undefined) return `"${invalid}" is no variant name - use lower case letters, digits and dashes`;
+  if (invalid !== undefined)
+    return `"${invalid}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
   if (new Set(variants).size !== variants.length) return 'each variant name must be unique';
 
   const existing = product.parts.find((part) => partKeyOf(part) === key);
@@ -245,13 +321,17 @@ export const createSketch = (options: {
 
     mkdirSync(folder, { recursive: true });
 
-    if (existing) {
+    if (like) {
+      copyPartAs({ from: like, to: folder, name: sketch.name });
+    } else if (existing) {
       cpSync(resolve(existing.file, '..'), folder, { recursive: true });
     } else {
       writeFileSync(resolve(folder, `${sketch.name}.ts`), stubOf(sketch.name));
       writeFileSync(resolve(folder, `${sketch.name}.css`), '');
     }
   }
+
+  if (like?.shared) cpSync(like.shared, resolve(dir, SHARED_FOLDER), { recursive: true });
 
   const created: Sketch = {
     target: key,
@@ -435,7 +515,8 @@ export const addVariant = (options: {
     return `The user decided to discard ${sketch.target}. The user must pick a variant first to go on.`;
   if (!sketch.variants.includes(from))
     return `${sketch.target} has no variant "${from}" - it has ${sketch.variants.join(', ') || 'none'}`;
-  if (!isVariantName(variant)) return `"${variant}" is no variant name - use lower case letters, digits and dashes`;
+  if (!isVariantName(variant))
+    return `"${variant}" is no variant name - use lower case letters, digits and dashes, and not "shared"`;
   if (sketch.variants.includes(variant)) return `${sketch.target} already has a variant "${variant}"`;
   if (round && round.lostNote.trim() === '')
     return 'a new round needs a note on the running round: what it showed and why its variants lost';

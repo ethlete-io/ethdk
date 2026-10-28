@@ -5,10 +5,12 @@ import { importsOf } from './ts-source';
 
 const SYSTEM = '@system/';
 export const FIXTURES_SPECIFIER = '@system/fixtures';
+export const SHARED_PREFIX = '@shared/';
 
 export type PartImport =
   | { kind: 'part'; layer: string; name: string; specifier: string; stylesheet?: true }
   | { kind: 'fixtures'; specifier: string }
+  | { kind: 'shared'; path: string; specifier: string }
   | { kind: 'relative'; specifier: string }
   | { kind: 'other'; specifier: string };
 
@@ -29,6 +31,8 @@ export const classifyImport = (specifier: string): PartImport => {
       : { kind: 'part', layer, name, specifier };
   }
 
+  if (specifier.startsWith(SHARED_PREFIX))
+    return { kind: 'shared', path: specifier.slice(SHARED_PREFIX.length), specifier };
   if (specifier.startsWith('.')) return { kind: 'relative', specifier };
 
   return { kind: 'other', specifier };
@@ -46,8 +50,11 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
   return path.startsWith('..') || isAbsolute(path);
 };
 
-/** Imports that name no part or fixture set, and relative imports that reach into another part. */
-export const importProblemsOf = (product: ResolvedProduct): Problem[] => {
+/**
+ * Imports that name no part or fixture set, `@shared/` imports outside a sketch variant (`sharedDir` is the
+ * sketch's `shared/` folder), and relative imports that reach into another part.
+ */
+export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string }): Problem[] => {
   const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
 
   return product.parts.flatMap((part) =>
@@ -60,6 +67,10 @@ export const importProblemsOf = (product: ResolvedProduct): Problem[] => {
         return problem(`${imported.specifier} resolves to a part without ${imported.name}.css`);
       if (imported.kind === 'fixtures' && !product.fixtures)
         return problem(`${FIXTURES_SPECIFIER} resolves to no fixtures.ts`);
+      if (imported.kind === 'shared' && !product.sharedDir)
+        return problem(
+          `${imported.specifier} - only a part in a sketch variant may import the sketch's ${SHARED_PREFIX}`,
+        );
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))
         return problem(
           `"${imported.specifier}" leaves the part's folder - import another part as @system/<layer>/<name>`,

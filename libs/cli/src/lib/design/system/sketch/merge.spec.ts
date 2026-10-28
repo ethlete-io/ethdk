@@ -269,6 +269,50 @@ describe('mergeSketch', () => {
   }, 120_000);
 });
 
+describe('mergeSketch with a shared folder', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const withShared = (target: string) => {
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+    const hero = join(found.sketch.dir, 'b/elements/hero/hero.ts');
+
+    mkdirSync(join(found.sketch.dir, 'shared'));
+    writeFileSync(join(found.sketch.dir, 'shared/data.ts'), "export { more as data } from '@shared/more';\n");
+    writeFileSync(join(found.sketch.dir, 'shared/more.ts'), 'export const more = 1;\n');
+    writeFileSync(
+      hero,
+      `import { data } from '@shared/data';\n${readFileSync(hero, 'utf8')}\nexport const shared = data;\n`,
+    );
+
+    return found;
+  };
+
+  it("moves the sketch's shared folder into the target and makes its imports relative", () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+
+    expect(merge(target, withShared(target))).toEqual(['elements/hero']);
+    expect(readFileSync(join(heroOf(target), 'hero.ts'), 'utf8')).toContain("from './shared/data'");
+    expect(readFileSync(join(heroOf(target), 'shared/data.ts'), 'utf8')).toContain("from './more'");
+    expect(existsSync(join(heroOf(target), 'shared/more.ts'))).toBe(true);
+  }, 120_000);
+
+  it('refuses when a part other than the target imports @shared/', () => {
+    const target = acme();
+    const found = withShared(target);
+    const card = join(found.sketch.dir, 'b/components/card');
+
+    cpSync(join(target, DESIGN_DIR, 'acme-base/components/card'), card, { recursive: true });
+    writeFileSync(join(card, 'card.ts'), `import '@shared/more';\n${readFileSync(join(card, 'card.ts'), 'utf8')}`);
+
+    expect(merge(target, found)).toContain('components/card import @shared/');
+    expect(existsSync(join(heroOf(target), 'shared'))).toBe(false);
+    expect(existsSync(found.sketch.dir)).toBe(true);
+  });
+});
+
 describe('discardSketch', () => {
   it('deletes the sketch with its variants', () => {
     const target = acme();

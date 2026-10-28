@@ -1,8 +1,10 @@
+import { dirname, resolve } from 'path';
 import { DesignConfig } from '../paths';
+import { sourceFileOf } from '../vite-paths';
 import { classifyImport } from './imports';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
-import { findSketch, listSketches, parseTarget, Sketch } from './sketch/sketch';
+import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch } from './sketch/sketch';
 
 const PRODUCT_QUERY = 'design-product';
 const SKETCH_QUERY = 'design-sketch';
@@ -40,8 +42,10 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
 
 /**
  * The products of a workspace, resolved on first use and kept until `forget`, and the resolution
- * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet) and
- * `@system/fixtures` inside a module of one product.
+ * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet),
+ * `@system/fixtures` and a sketch's `@shared/<path>` inside a module of one product. A relative
+ * import of a source file stays in the importer's product and sketch, so a helper file next to a
+ * part resolves `@system/...` as the part does.
  */
 export const createSystemModules = (options: { target: string; config: DesignConfig }) => {
   const { target, config } = options;
@@ -96,13 +100,38 @@ export const createSystemModules = (options: { target: string; config: DesignCon
   const partOf = (options: { product: string; part: string; sketch?: SketchVariant | null }) =>
     drawnOf(options.product, options.sketch)?.parts.find((part) => partKeyOf(part) === options.part) ?? null;
 
+  const sharedFileOf = (options: { product: string; sketch: SketchVariant | null; path: string }) => {
+    const { product, sketch, path } = options;
+    const target = sketch ? parseTarget(sketch.target) : null;
+    const productDir = productOf(product)?.dir;
+
+    if (!target || typeof target === 'string' || !productDir) return null;
+
+    const found = findSketch({ productDir, product, sketch: target });
+
+    return found && typeof found !== 'string' ? sourceFileOf(resolve(sharedDirOf(found), path)) : null;
+  };
+
   const resolveId = (specifier: string, importer: string | undefined) => {
     const name = productOfModuleId(importer);
     const imported = classifyImport(specifier);
 
-    if (!name || (imported.kind !== 'part' && imported.kind !== 'fixtures')) return null;
+    if (!name || !importer) return null;
 
     const sketch = sketchOfModuleId(importer);
+
+    if (imported.kind === 'relative' || imported.kind === 'shared') {
+      const file =
+        imported.kind === 'shared'
+          ? sharedFileOf({ product: name, sketch, path: imported.path })
+          : specifier.includes('?')
+            ? null
+            : sourceFileOf(resolve(dirname(fileOfModuleId(importer)), specifier));
+
+      return file ? productModuleIdOf({ file, product: name, sketch }) : null;
+    }
+
+    if (imported.kind !== 'part' && imported.kind !== 'fixtures') return null;
 
     if (imported.kind === 'part' && imported.stylesheet) {
       const css = partOf({ product: name, part: partKeyOf(imported), sketch })?.css;

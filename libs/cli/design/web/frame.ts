@@ -1,4 +1,5 @@
 import { Drawing, mountDrawing, placeOverlays } from '../define-call';
+import { fitEmbed } from '../embed-page';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
 import { parts, sketchParts } from 'virtual:design-explore/system';
@@ -123,6 +124,8 @@ const forced = async (css: string) => {
 const report = () => {
   const height = Math.ceil(document.documentElement.getBoundingClientRect().height);
   const width = fit ? { width: Math.ceil(root.getBoundingClientRect().width) } : {};
+
+  fitEmbed(frameElement, height);
 
   parent.postMessage(
     {

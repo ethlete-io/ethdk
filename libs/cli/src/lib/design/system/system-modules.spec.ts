@@ -77,6 +77,45 @@ describe('createSystemModules', () => {
     expect(sketchOfModuleId(productModuleIdOf({ file: 'x.ts', product: 'acme' }))).toBeNull();
   });
 
+  it("resolves @shared/ inside a sketch variant to the sketch's shared folder, and keeps a relative helper in the product", () => {
+    const { target, system } = acme();
+    const product = system.productOf('acme');
+    const parsed = parseTarget('elements/hero');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+
+    const design = join(target, DESIGN_DIR);
+    const sketchDir = join(design, 'acme/sketches/elements-hero');
+    const sketch = { target: 'elements/hero', variant: 'a' };
+    const hero = productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/hero.ts'), product: 'acme', sketch });
+
+    mkdirSync(join(sketchDir, 'shared/data'), { recursive: true });
+    writeFileSync(join(sketchDir, 'shared/comments.ts'), 'export const comments = [];\n');
+    writeFileSync(join(sketchDir, 'shared/data/index.ts'), 'export const data = 1;\n');
+    writeFileSync(join(sketchDir, 'a/elements/hero/helper.ts'), 'export const helper = 1;\n');
+
+    expect(system.resolveId('@shared/comments', hero)).toBe(
+      productModuleIdOf({ file: join(sketchDir, 'shared/comments.ts'), product: 'acme', sketch }),
+    );
+    expect(system.resolveId('@shared/data', hero)).toBe(
+      productModuleIdOf({ file: join(sketchDir, 'shared/data/index.ts'), product: 'acme', sketch }),
+    );
+    expect(system.resolveId('@shared/missing', hero)).toBeNull();
+    expect(
+      system.resolveId(
+        '@shared/comments',
+        productModuleIdOf({ file: join(design, 'acme/elements/hero/hero.ts'), product: 'acme' }),
+      ),
+    ).toBeNull();
+    expect(system.resolveId('./helper', hero)).toBe(
+      productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/helper.ts'), product: 'acme', sketch }),
+    );
+    expect(system.resolveId('./helper.ts?raw', hero)).toBeNull();
+    expect(system.resolveId('./hero.css', hero)).toBeNull();
+  });
+
   it("resolves a part's stylesheet import inside a base part to the product's override, and to a sketch's", () => {
     const { target, system } = acme();
     const design = join(target, DESIGN_DIR);
