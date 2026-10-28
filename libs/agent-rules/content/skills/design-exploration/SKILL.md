@@ -86,6 +86,10 @@ A part that uses tokens imports them with
 Never list a `tokens.css` in config `styles`. A product's own `foundations/tokens`, or a sketch of
 it, then replaces the base's tokens in every part.
 
+A product whose app uses Tailwind lists one stylesheet in config `styles` that imports the app's styles and
+registers the drawing folders with `@source './'`. Sketches then use the app's utilities; plain CSS stays for what
+utilities cannot express, such as camera geometry.
+
 ### Propose a change as a sketch
 
 A change to a part, or a new part, is a **sketch**: the question is the part, the variants are the
