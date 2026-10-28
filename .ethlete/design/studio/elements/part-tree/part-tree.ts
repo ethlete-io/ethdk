@@ -34,7 +34,7 @@ const partRows = (part: TreePart) => [
 
 const layerRows = (layer: TreeLayer) => [row(0, chevron(layer.open), layer.title), ...layer.parts.flatMap(partRows)];
 
-export const componentsOpen: Props = {
+const componentsOpen: Props = {
   layers: [
     { title: 'Foundations', open: false, parts: [] },
     { title: 'Elements', open: false, parts: [] },
@@ -47,12 +47,12 @@ export const componentsOpen: Props = {
   ],
 };
 
-export default definePart<Props>({
+export default definePart({
   note: 'A dense, quiet tree of the product parts: layers, then parts, then the frames of an open part (a part drawn in one frame is a leaf), with a warning mark on a part that needs a look and no counts anywhere.',
   madeBy: ['claude-opus-5-5'],
   widths: [232],
   states: { 'components-open': componentsOpen },
-  render: ({ layers }) =>
+  render: ({ layers }: Props) =>
     drawing({
       body: html`<div class="st-tree">${layers.flatMap(layerRows).join('')}</div>`,
       styles: tokens + styles,

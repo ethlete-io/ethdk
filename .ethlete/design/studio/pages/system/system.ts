@@ -1,6 +1,6 @@
 import { definePart, drawing } from '@design-system';
-import canvasFrames, { defaultFrames } from '@system/elements/canvas-frames';
-import partTree, { componentsOpen } from '@system/elements/part-tree';
+import canvasFrames from '@system/elements/canvas-frames';
+import partTree from '@system/elements/part-tree';
 import shellMain from '@system/elements/shell-main';
 
 export default definePart({
@@ -8,8 +8,8 @@ export default definePart({
   madeBy: ['claude-opus-5-5'],
   states: { part: {} },
   render: async () => {
-    const tree = await partTree.render(componentsOpen);
-    const frames = await canvasFrames.render(defaultFrames);
+    const tree = await partTree.render(partTree.states['components-open']);
+    const frames = await canvasFrames.render(canvasFrames.states.default);
     const shell = await shellMain.render({
       section: 'System',
       product: 'studio',

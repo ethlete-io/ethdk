@@ -1,5 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
-import canvasFrames, { defaultFrames } from '@system/elements/canvas-frames';
+import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
 import { type Agent, agentLogo } from './agent-logos';
 import styles from './inbox.css?inline';
@@ -195,7 +195,7 @@ export default definePart<Props>({
     );
     const visible = comments.filter((c) => showResolved || !c.resolved);
     const unresolved = comments.filter((c) => !c.resolved).length;
-    const frames = await canvasFrames.render(defaultFrames);
+    const frames = await canvasFrames.render(canvasFrames.states.default);
     const side = html`<div class="ib">
       <div class="ib-bar">
         <span class="ib-bar-title">${unresolved} offen</span>
