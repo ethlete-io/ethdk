@@ -154,6 +154,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Where:** `contact-sheet.ts` in `libs/cli/src/lib/design`.
 - **Fix option:** scale diff cells to the width of the state cell above them.
 
+### 4.10 `design shot` keeps the pixel diff result inside the PNG - open
+
+- **Pain:** `shot --states --variants` prints only the PNG path. The agent must open the image to
+  learn "no pixel change" or "N px changed".
+- **Fix option:** print one line per diff cell, for example `a / sizes: no pixel change`.
+
+### 4.11 No standalone render of an asset - open
+
+- **Pain:** to check `studio-mark.svg` outside Studio, the agent wrote a Playwright script. Its
+  first try returned no image and no error (`setContent` on `about:blank` cannot load `file://`).
+  To find hex fallbacks for oklch tokens, it wrote a second script.
+- **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
+<name> --hex` that prints the resolved colour.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -161,6 +175,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+### 5.16 `sketch new` prints the assets folder but does not create it - open
+
+- **Pain:** both sketch agents of 2026-10-29 had to `mkdir` `<variant>/assets/`.
+- **Fix option:** create the folder, or print "(create it when needed)".
 
 ## 6. Agent process
 
