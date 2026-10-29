@@ -175,6 +175,21 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
+### 4.39 GRID-COVERAGE warns on a grid that follows the per-axis rule - open
+
+- **Pain:** the 4.37 rule (`16c34193b`) warns on `components/tree-row`: `leaf` and `selected` fill
+  all interaction columns, the other rows only `rest`. That is Tom's rule (2026-10-29): states per
+  axis, not every combination; `pages/system` `many-states` even groups "Rest only" rows.
+- **Fix options:** 1. warn only when a row fills some but not all interaction columns
+  (recommended). 2. drop the rule.
+
+### 4.40 New UNDEFINED-CLASS hits on merged studio parts - open
+
+- **Pain:** 5.27 (`a0912de97`) finds classes no CSS defines: `tree-row` `st-trow-chevron`,
+  `st-trow-mark`; `shell-main` `st-shell-mark`, `st-shell-icon`; `pages/inbox` `ib-group-count`;
+  `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
+- **Fix option:** one-variant cleanup sketches per part (drop the class or style it).
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
