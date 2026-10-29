@@ -1008,3 +1008,11 @@ sketch` until the next merge of the part.
 - **Fix options:** 1. `sketch new --round` asks for `--note` up front (recommended). 2. `sketch
 check` warns early.
 - **Fix done (783b9c5d7):** `sketch new --round <title>` fails without `--note`; the skill says so.
+
+### 3.34 `sketch check` reports FORMAT but does not fix it - fixed (21209110a)
+
+- **Pain:** `foundations/tokens` "Warning colour": a variant file patched by script failed FORMAT;
+  the agent ran Prettier by hand.
+- **Fix options:** 1. `sketch check --fix` runs Prettier on the variant files (recommended). 2. one
+  Prettier command for all variants in the output.
+- **Fix done (21209110a):** `sketch check --fix` runs Prettier on the variants, `shared/` and `sketch.json` before the check; the FORMAT message names it.

@@ -111,13 +111,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.34 `sketch check` reports FORMAT but does not fix it - open
-
-- **Pain:** `foundations/tokens` "Warning colour": a variant file patched by script failed FORMAT;
-  the agent ran Prettier by hand.
-- **Fix options:** 1. `sketch check --fix` runs Prettier on the variant files (recommended). 2. one
-  Prettier command for all variants in the output.
-
 ### 3.36 `--variant-note` overwrites the part's merged note - open
 
 - **Pain:** `foundations/tokens` "Error colour": the variant note replaced the settled tokens note
