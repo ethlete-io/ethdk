@@ -124,6 +124,10 @@ A variant mirrors the product layout and holds only the parts it changes. Draw t
 variants, each with what it costs, and run `sketch check` before `ready`. A variant with problems
 cannot be picked. A part in a variant keeps every state the part has in the product: `sketch check`
 and `sketch ready` fail on a dropped state, and warn when two stylesheets of one part define the same class. Use `sketch list` to see the open ones.
+`sketch check` also runs tsc over each variant with its `@shared/` and `@system/` imports, so never write a
+tsconfig of your own. It warns of a variant stylesheet that restyles a class of `shared/`, and of a
+variant file nothing imports. To delete a file of a part, delete it in the variant: a merge deletes the
+product file the picked variant no longer holds.
 
 Each variant's note, what it is and what it costs, goes in the `definePart({ note })` of its part file;
 a merge keeps the picked variant's note. `sketch new --variant-note a=<text>`, once per variant, writes it.

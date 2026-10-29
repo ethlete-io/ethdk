@@ -15,7 +15,7 @@ const bareClassesOf = (css: string) =>
       .flatMap(classesOf),
   );
 
-const stylesheetsOf = (options: { product: SketchedProduct; part: ResolvedPart }) => {
+export const stylesheetsOf = (options: { product: SketchedProduct; part: ResolvedPart }) => {
   const { product, part } = options;
   const files = new Set<string>(part.css ? [part.css] : []);
 

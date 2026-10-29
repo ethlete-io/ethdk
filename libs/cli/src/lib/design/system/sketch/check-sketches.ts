@@ -6,6 +6,8 @@ import { goneSketchCommentWarningsOf } from '../rules/stale-comment';
 import { typecheckProduct } from '../system-tsconfig';
 import { duplicateClassWarningsOf } from './duplicate-class';
 import { overlaySketch, SketchedProduct } from './overlay';
+import { sharedClassWarningsOf } from './shared-class';
+import { unusedFileWarningsOf } from './unused-files';
 import { stateNamesOf } from './part-definition';
 import { listSketches, Sketch, sketchFolderOf } from './sketch';
 
@@ -57,16 +59,22 @@ export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: S
     };
   });
 
-/** Warnings that do not fail a variant: a class two stylesheets of one part both define. */
+/** Warnings that do not fail a variant: a class two stylesheets of one part both define, a class of `shared/` the variant restyles, a file nothing imports. */
 export const variantWarningsOf = (options: {
   target: string;
   product: ResolvedProduct;
   sketch: Sketch;
   variant: string;
-}): string[] => [
-  ...duplicateClassWarningsOf({ target: options.target, product: overlaySketch(options) }),
-  ...goneSketchCommentWarningsOf(options.product),
-];
+}): string[] => {
+  const overlaid = overlaySketch(options);
+
+  return [
+    ...duplicateClassWarningsOf({ target: options.target, product: overlaid }),
+    ...sharedClassWarningsOf({ target: options.target, product: overlaid }),
+    ...unusedFileWarningsOf(options),
+    ...goneSketchCommentWarningsOf(options.product),
+  ];
+};
 
 /**
  * The rule problems of every variant of every open sketch of a product. A sketch folder that

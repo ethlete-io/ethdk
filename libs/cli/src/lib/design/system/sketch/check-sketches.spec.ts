@@ -168,6 +168,37 @@ describe('typecheckVariant', () => {
     });
   }, 120_000);
 
+  it("types a variant's @shared/ imports, so a type error there fails the variant", () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    mkdirSync(join(sketch.dir, 'shared'), { recursive: true });
+    writeFileSync(join(sketch.dir, 'shared/data.ts'), 'export const count: number = 3;\n');
+
+    for (const [variant, type] of [
+      ['a', 'number'],
+      ['b', 'string'],
+    ]) {
+      const ts = join(sketch.dir, variant ?? '', 'elements/hero/hero.ts');
+
+      writeFileSync(
+        ts,
+        `import { count } from '@shared/data';\nexport const label: ${type} = count;\n${readFileSync(ts, 'utf8')}`,
+      );
+    }
+
+    expect(typecheckVariant({ target, product, sketch, variant: 'a' })).toEqual({ kind: 'ok' });
+    expect(typecheckVariant({ target, product, sketch, variant: 'b' })).toEqual({
+      kind: 'failed',
+      output: expect.stringContaining("Type 'number' is not assignable to type 'string'"),
+    });
+  }, 120_000);
+
   it("types a page that imports a named helper of the variant's own foundation", () => {
     const target = acme();
     const product = resolveAcme(target);
@@ -221,6 +252,55 @@ describe('variantWarningsOf', () => {
     expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([]);
     expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([
       expect.stringMatching(/^WARNING elements\/hero: \.sk-head is defined in .*hero\.css and .*shared\/data\.css/),
+    ]);
+  });
+
+  it("warns when a variant restyles a class of the sketch's shared/ stylesheets", () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+
+    mkdirSync(join(sketch.dir, 'shared'), { recursive: true });
+    writeFileSync(join(sketch.dir, 'shared/frame.css'), '.sk-frame { padding: 0; }');
+    writeFileSync(join(sketch.dir, 'a/elements/hero/hero.css'), '.sk-frame .hero-label { gap: 0; }');
+    writeFileSync(join(sketch.dir, 'b/elements/hero/hero.css'), '.hero:has(.x) .sk-frame:has(.hero-label) { gap: 0; }');
+
+    expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([]);
+    expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([
+      expect.stringMatching(
+        /^WARNING elements\/hero: .*b\/elements\/hero\/hero\.css restyles \.sk-frame of .*shared\/frame\.css/,
+      ),
+    ]);
+  });
+
+  it('warns of a file in a variant that nothing imports', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const ts = join(sketch.dir, 'b/elements/hero/hero.ts');
+
+    for (const variant of ['a', 'b']) {
+      writeFileSync(join(sketch.dir, variant, 'elements/hero/grid.ts'), 'export const grid = 1;\n');
+      writeFileSync(join(sketch.dir, variant, 'elements/hero/grid.css'), '.grid { gap: 0; }\n');
+    }
+
+    writeFileSync(
+      ts,
+      `import { grid } from './grid';\nimport css from './grid.css?inline';\nvoid grid; void css;\n${readFileSync(ts, 'utf8')}`,
+    );
+
+    expect(variantWarningsOf({ target, product, sketch, variant: 'b' })).toEqual([]);
+    expect(variantWarningsOf({ target, product, sketch, variant: 'a' })).toEqual([
+      expect.stringMatching(/^WARNING .*a\/elements\/hero\/grid\.css: nothing in variant a imports it/),
+      expect.stringMatching(/^WARNING .*a\/elements\/hero\/grid\.ts: nothing in variant a imports it/),
     ]);
   });
 });
