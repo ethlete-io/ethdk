@@ -175,6 +175,13 @@ const dimmed = (variant: Variant, body: string) =>
     ? `<figure class="sk-frame sk-pending" aria-label="Variante ${variant.label} wird gezeichnet"><span>Wird gezeichnet</span></figure>`
     : body;
 
+const zoomedRoundPicker = () =>
+  formField({
+    id: 'zoomed-round-picker',
+    size: 'sm',
+    control: select({ options: [{ value: 'r1', label: 'Runde 1 · Mehr Platz für die Leinwand' }], value: 'r1' }),
+  });
+
 const renderZoomedPage = async () => {
   const side = await partTree.render({
     layers: [
@@ -198,16 +205,13 @@ const renderZoomedPage = async () => {
     panel: 'hidden',
   });
   const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
-  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm' });
+  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
   const fit = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
   const content = html`<div class="zc-page" data-treatment="attached" data-et-skip="CLIPPED">
     <header class="zc-head">
-      <span class="sk-head-title">pages/system</span><span class="sk-status">In Arbeit</span
-      ><span class="zc-gap"></span>${discard.body}
+      <span class="sk-head-title">pages/system</span><span class="zc-gap"></span>${discard.body}
     </header>
-    <div class="zc-round">
-      <span class="sk-round-key">Runde 1</span><span class="sk-round-title">Mehr Platz für die Leinwand</span>
-    </div>
+    <div class="zc-round zb-round"><div class="zr-picker">${zoomedRoundPicker()}</div></div>
     <section class="zc-world" aria-label="Varianten bei 60 Prozent Zoom">
       <figure class="sk-frame zc-frame">${pageShot('current', open.body)}</figure>
       <figure class="sk-frame zc-frame" data-selected>${pageShot('a', hidden.body, pinMark(PAGE_PIN))}</figure>
@@ -226,7 +230,17 @@ const renderZoomedPage = async () => {
   const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
   return drawing({
     body: shell.body,
-    styles: shell.styles + side.styles + tree.styles + frames.styles + merge.styles + discard.styles + kit + styles,
+    styles:
+      shell.styles +
+      side.styles +
+      tree.styles +
+      frames.styles +
+      merge.styles +
+      discard.styles +
+      selectStyles +
+      kit +
+      styles +
+      below,
   });
 };
 
