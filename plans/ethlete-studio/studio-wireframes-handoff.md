@@ -78,15 +78,18 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    its copy. `elements/shell-main` keeps its own glyph (Tom, 2026-10-29).
 2. Asset question (5.13 in `design-system-actions.md`): Tom asked how we handle assets in general.
    Draw up the options with a recommendation and ask him; no build before his pick.
-3. Finding 1.2 is reopened: 1 hang in 10 x 100 runs, stack in the 1.2 entry. Next step there:
-   the same runs against `localhost` (SSH tunnel, or now `yarn design --host 0.0.0.0`), then pick
-   repro or workaround with Tom.
+3. Finding 1.2: `localhost` gave 0 hangs in 10 x 100 (Result 3, `9e109eead`), but only with an
+   unthrottled probe copy on the Mac (`/tmp/wk-probe/unlocked.swift`; the Mac screen is locked and
+   WebKit suspends hidden pages, so the repo probe stops at batch 12). Next: repeat the LAN IPv4 run
+   with that probe so both compare; consider putting the unthrottle switches into
+   `tools/scripts/verify-webkit-frame-reloads.swift`. Mac cleaned 2026-10-29: five stale claude-at
+   tmux sessions and an orphaned `nx tauri:dev ethlete-studio` (Tom approved) are stopped.
 4. Done 2026-10-29: live checks moved 1.4, 2.1, 2.3, 3.1-3.7, 5.1, 5.2 to fixed (`eccdfdeba`); new
    friction 3.18-3.21 is open. Built and moved: 1.3, 3.17, 4.12, 5.12 (`293caba5c`). Still open:
    2.2, 2.6, 7.x Rust side (needs the Tauri host). The real `foundations/logo` sketch was already
    `ready`, so the new auto-merge does not apply to it; Tom merges it.
 5. Built 2026-10-29: 3.18, 3.21 and assets 5.13 (`5b73392d9`, fonts and icons included), moved to
-   fixed in `3270f820c`. Free to build next: 5.14 (recommendation option 1), 3.19. After Tom merges
+   fixed in `3270f820c`. 5.14 built (`3c89d65bf`). Free to build next: 3.19. After Tom merges
    `foundations/logo`: a one-variant sketch that moves the mark to `assets/studio-mark.svg` and
    keeps `studioMark(size)` as the wrapper, then `pages/start` imports it.
 6. Merge compare page, then components, then page states, then the real app.
