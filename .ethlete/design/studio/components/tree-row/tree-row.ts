@@ -13,7 +13,12 @@ export default definePart({
     columns: ['rest', 'hover', 'active', 'focus-visible'],
     rows: {
       leaf: { rest: 'leaf', hover: 'hover', active: 'active', 'focus-visible': 'focus-visible' },
-      selected: { rest: 'selected', hover: 'selected-hover', 'focus-visible': 'selected-focus-visible' },
+      selected: {
+        rest: 'selected',
+        hover: 'selected-hover',
+        active: 'selected-active',
+        'focus-visible': 'selected-focus-visible',
+      },
       'leaf-flat': { rest: 'leaf-flat' },
       'group-closed': { rest: 'group-closed' },
       'group-open': { rest: 'group-open' },

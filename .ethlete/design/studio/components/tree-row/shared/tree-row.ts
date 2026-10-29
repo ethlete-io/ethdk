@@ -89,6 +89,7 @@ export const states = {
   'focus-visible': one({ ...button, interaction: 'focus-visible' }),
   selected: one({ ...button, selected: true }),
   'selected-hover': one({ ...button, selected: true, interaction: 'hover' }),
+  'selected-active': one({ ...button, selected: true, interaction: 'active' }),
   'selected-focus-visible': one({ ...button, selected: true, interaction: 'focus-visible' }),
   'selected-marks': one({ ...button, label: 'part-tree', selected: true, status: 'ready', comments: 3 }),
   inert: one({ label: 'filled', depth: 2, kind: 'leaf', inert: true }),

@@ -104,6 +104,12 @@
     background: color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
   }
 
+  .st-trow[data-selected]:active {
+    background:
+      linear-gradient(var(--accent-subtle), var(--accent-subtle)),
+      color-mix(in oklch, var(--surface-raised), var(--surface-sunken) 30%);
+  }
+
   .st-trow:focus-visible {
     box-shadow: inset 0 0 0 1.5px var(--focus-ring);
   }
