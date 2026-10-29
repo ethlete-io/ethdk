@@ -24,20 +24,19 @@ type Plan = { label: string; address: PartAddress };
 /**
  * The sheet with a row after each variant row that marks, per state, the pixels the variant changes from the merged
  * row; headed by a note that the part is new when there is no merged row. A cell of `props` at the place of a variant
- * cell is the merged part drawn with that variant's state props, and replaces the merged cell in the comparison.
+ * cell is the merged part drawn with that variant's state props, and replaces the merged cell in the comparison. A row
+ * with a grid in `grids` is laid out by it, each grid row followed by its diff row.
  */
 export const withDiffRows = (options: {
   rows: Axis[];
   plan: Plan[][];
   sheet: SheetCell[][];
   props?: SheetCell[][];
+  grids?: (ListedGrid | undefined)[];
 }): SheetCell[][] => {
-  const { rows, plan, sheet, props } = options;
+  const { rows, plan, sheet, props, grids } = options;
   const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
-
-  if (mergedIndex === -1) return [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...sheet];
-  if (rows.length < 2) return sheet;
-
+  const compares = mergedIndex !== -1 && rows.length > 1;
   const mergedStates = new Set((plan[mergedIndex] ?? []).map((entry) => entry.address.state));
   const merged = new Map(
     (plan[mergedIndex] ?? []).flatMap((entry, index) => {
@@ -47,43 +46,60 @@ export const withDiffRows = (options: {
     }),
   );
 
-  return sheet.flatMap((row, rowIndex) => {
-    if (rowIndex === mergedIndex) return [row];
+  const diffOf = (rowIndex: number, index: number): SheetCell | null => {
+    const cell = sheet[rowIndex]?.[index];
+    const state = plan[rowIndex]?.[index]?.address.state ?? '';
+    const before = merged.get(state);
 
-    const diffs = row.flatMap((cell, index): SheetCell[] => {
-      const state = plan[rowIndex]?.[index]?.address.state ?? '';
-      const before = merged.get(state);
+    if (!cell || !('png' in cell)) return null;
+    if (!mergedStates.has(state)) return { label: `${cell.label} vs merged`, note: 'new state' };
 
-      if (!('png' in cell)) return [];
-      if (!mergedStates.has(state)) return [{ label: `${cell.label} vs merged`, note: 'new state' }];
+    const own = props?.[rowIndex]?.[index];
 
-      const own = props?.[rowIndex]?.[index];
+    if (own) {
+      const label = `${cell.label} vs merged with its props`;
 
-      if (own) {
-        const label = `${cell.label} vs merged with its props`;
+      if ('png' in own) return { label, before: own.png, after: cell.png, over: cell.label };
 
-        if ('png' in own) return [{ label, before: own.png, after: cell.png, over: cell.label }];
+      return { label, note: 'error' in own ? own.error : 'not drawn' };
+    }
 
-        return [{ label, note: 'error' in own ? own.error : 'not drawn' }];
-      }
+    if (!before) return null;
 
-      if (!before) return [];
+    const markupDiffers = before.markup !== undefined && cell.markup !== undefined && before.markup !== cell.markup;
 
-      const markupDiffers = before.markup !== undefined && cell.markup !== undefined && before.markup !== cell.markup;
+    return {
+      label: `${cell.label} vs merged`,
+      before: before.png,
+      after: cell.png,
+      over: cell.label,
+      ...(markupDiffers ? { markupDiffers } : {}),
+    };
+  };
 
-      return [
-        {
-          label: `${cell.label} vs merged`,
-          before: before.png,
-          after: cell.png,
-          over: cell.label,
-          ...(markupDiffers ? { markupDiffers } : {}),
-        },
-      ];
+  const laidOut = sheet.flatMap((row, rowIndex) => {
+    const grid = grids?.[rowIndex];
+    const cells = plan[rowIndex] ?? [];
+    const groups = grid
+      ? gridRowsOf(cells, grid).map((group) => group.map((cell) => cells.indexOf(cell)))
+      : [row.map((_, index) => index)];
+
+    return groups.flatMap((group) => {
+      const drawn = group.flatMap((index) => (row[index] ? [row[index]] : []));
+      const diffs =
+        compares && rowIndex !== mergedIndex
+          ? group.flatMap((index) => {
+              const diff = diffOf(rowIndex, index);
+
+              return diff ? [diff] : [];
+            })
+          : [];
+
+      return diffs.length > 0 ? [drawn, diffs] : [drawn];
     });
-
-    return diffs.length > 0 ? [row, diffs] : [row];
   });
+
+  return mergedIndex === -1 ? [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...laidOut] : laidOut;
 };
 
 /**
@@ -315,7 +331,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     const { port } = server.httpServer?.address() as AddressInfo;
     const loaded = new Map<Axis, string[]>();
     const widths = new Map<Axis, number>();
-    let grid: ListedGrid | undefined;
+    const grids = new Map<Axis, ListedGrid | undefined>();
 
     for (const axis of rows) {
       const found = system.partOf({ product, part, sketch: axis.sketch });
@@ -331,7 +347,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       loaded.set(axis, names);
       if (typeof first === 'number' && Number.isInteger(first) && first > 0) widths.set(axis, first);
-      if (!variants) grid = gridOf(module.default?.grid, names).grid;
+      grids.set(axis, gridOf(module.default?.grid, names).grid);
     }
 
     const known = [...new Set([...loaded.values()].flat())];
@@ -363,8 +379,6 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       state: asked[0] ?? null,
       only: states && asked.length > 0 ? asked : undefined,
     });
-    const shownGrid = states ? grid : undefined;
-    const drawn = shownGrid ? plan.flatMap((cells) => gridRowsOf(cells, shownGrid)) : plan;
     const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
 
     try {
@@ -375,7 +389,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         );
       const sheet: SheetCell[][] = [];
 
-      for (const row of drawn) {
+      for (const row of plan) {
         const cells: SheetCell[] = [];
 
         for (const { label, address } of row) cells.push(await shoot(label, address));
@@ -408,7 +422,13 @@ export const designShot = async (options: { target: string; argv: string[]; invo
         return 1;
       }
 
-      const shown = variants ? withDiffRows({ rows, plan, sheet, props: diffProps ? props : undefined }) : sheet;
+      const shown = withDiffRows({
+        rows,
+        plan,
+        sheet,
+        props: diffProps ? props : undefined,
+        grids: rows.map((axis) => (states ? grids.get(axis) : undefined)),
+      });
       const { png, diffs } = await queue.run((browser) => contactSheetOf({ browser, rows: shown }));
       const out = resolve(
         target,

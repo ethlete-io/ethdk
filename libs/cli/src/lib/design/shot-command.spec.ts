@@ -317,6 +317,31 @@ describe('withDiffRows', () => {
     ]);
   });
 
+  it('lays out each row by the grid of its own axis, a diff row after each grid row', () => {
+    const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: true });
+    const plan = planOf({ base, rows, statesOf: () => ['tree', 'leaf', 'hover'], states: true, state: null });
+    const png = Buffer.from('m');
+    const sheet = plan.map((row) => row.map(({ label }) => ({ label, png })));
+    const grid = {
+      columns: ['rest', 'hover'],
+      rows: ['leaf'],
+      cells: [
+        { row: 'leaf', column: 'rest', state: 'leaf' },
+        { row: 'leaf', column: 'hover', state: 'hover' },
+      ],
+    };
+
+    expect(
+      withDiffRows({ rows, plan, sheet, grids: [undefined, grid] }).map((row) => row.map((cell) => cell.label)),
+    ).toEqual([
+      ['merged / tree', 'merged / leaf', 'merged / hover'],
+      ['a / tree'],
+      ['a / tree vs merged'],
+      ['a / leaf', 'a / hover'],
+      ['a / leaf vs merged', 'a / hover vs merged'],
+    ]);
+  });
+
   it('heads a sheet without a merged row with a note that the part is new', () => {
     const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: false });
     const plan = planOf({ base, rows, statesOf: () => ['rest'], states: true, state: null });
