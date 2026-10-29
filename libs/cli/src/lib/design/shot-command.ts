@@ -109,6 +109,8 @@ export const rowsOf = (options: { part: string; variants: string[] | null; merge
   ];
 };
 
+export const shotReportOf = (options: { out: string; diffs: string[] }) => [...options.diffs, options.out];
+
 const stringsOf = (states: unknown) => (states && typeof states === 'object' ? Object.keys(states) : []);
 
 /**
@@ -292,9 +294,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, png);
-      console.log(out);
-
-      for (const line of diffs) console.log(line);
+      for (const line of shotReportOf({ out, diffs })) console.log(line);
 
       return 0;
     } finally {

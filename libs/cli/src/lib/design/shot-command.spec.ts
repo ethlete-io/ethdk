@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { designShot, gridRowsOf, planOf, rowsOf, withDiffRows } from './shot-command';
+import { designShot, gridRowsOf, planOf, rowsOf, shotReportOf, withDiffRows } from './shot-command';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
 
@@ -111,6 +111,16 @@ describe('designShot', () => {
 
     expect(code).toBe(1);
     expect(text).toContain('no config at');
+  });
+});
+
+describe('shotReportOf', () => {
+  it('prints the PNG path after the diff lines', () => {
+    expect(shotReportOf({ out: '/tmp/sheet.png', diffs: ['a vs merged: 3 px', 'b vs merged: 0 px'] })).toEqual([
+      'a vs merged: 3 px',
+      'b vs merged: 0 px',
+      '/tmp/sheet.png',
+    ]);
   });
 });
 
