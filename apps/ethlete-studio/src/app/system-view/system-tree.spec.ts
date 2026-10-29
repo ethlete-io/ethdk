@@ -427,6 +427,21 @@ describe('pages that use a part', () => {
     expect(used[0]?.screenshot).toContain('part=pages%2Fsystem');
   });
 
+  it('draws one label instead of frames when every page of the product uses the part', () => {
+    const all = part({
+      layer: 'elements',
+      name: 'all',
+      usedIn: [
+        { product: 'acme', part: 'pages/system' },
+        { product: 'acme', part: 'pages/start' },
+      ],
+    });
+    const both = product([all, system, part({ layer: 'pages', name: 'start', states: ['open'] })]);
+    const used = framesOf({ port: 4400, product: both, part: all }).filter((frame) => frame.row === 'used in');
+
+    expect(used).toMatchObject([{ rowLabel: 'used in all 2 pages', empty: expect.any(String) }]);
+  });
+
   it('adds an in context band to an element sketch: each page with each variant swapped in, commentable', () => {
     const matrix = sketchMatrixOf({
       port: 4400,

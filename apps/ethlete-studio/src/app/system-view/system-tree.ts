@@ -438,10 +438,27 @@ const treeFramesOf = (product: ListedProduct, part: ListedPart): TreeFrame[] =>
 
 /**
  * Every state of a part as `ownFramesOf` draws it, then a `used in` row with the first state of each page
- * of the product that uses the part.
+ * of the product that uses the part. When every page of a product with several uses it, the row is one empty cell
+ * labelled `used in all N pages` instead.
  */
 export const framesOf = (source: FramesSource): CanvasFrame[] => {
   const pages = usingPagesOf(source.product, source.part);
+  const total = source.product.parts.filter((part) => part.layer === 'pages').length;
+
+  if (total > 1 && pages.length === total)
+    return [
+      ...ownFramesOf(source),
+      {
+        id: USED_IN,
+        src: '',
+        width: 390,
+        height: 120,
+        label: USED_IN,
+        row: USED_IN,
+        rowLabel: `${USED_IN} all ${total} pages`,
+        empty: 'every page of the product uses it',
+      },
+    ];
 
   return [
     ...ownFramesOf(source),
