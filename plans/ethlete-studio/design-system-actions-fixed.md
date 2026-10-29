@@ -1331,3 +1331,13 @@ check` warns early.
 - **Fix option:** a render check rule that reports a class in a part's markup that no loaded
   stylesheet and no utility defines.
 - **Fix done (a0912de97):** The option, scoped to the product prefix: the render check collects the prefixes (`st-`, `ib-`, `mg-`, ..., never the SDK's `et-`) of the classes the product's part CSS defines, and in each frame warns `WARNING UNDEFINED-CLASS` for a class with such a prefix that no stylesheet of the frame defines; once per class, at the first part that draws it, and the check still passes. Tailwind utilities never match. On studio (the `st-tree-*` classes are already gone from `pages/flows`): `components/tree-row` `st-trow-chevron`, `st-trow-mark`; `elements/shell-main` `st-shell-mark`, `st-shell-icon`; `pages/inbox` `ib-group-count`; `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
+
+### 3.38 A product error outside the sketch blocks `sketch ready` - fixed (bee3d509a)
+
+- **Pain:** `pages/merge` imports `@system/pages/system` (UPWARD-DEPENDENCY, visible since 5.40).
+  Four pure refactor sketches (`agent-logos`, `comment-pin`, `tree-row`, `flows`), each with no
+  pixel change, failed `sketch ready` with "has problems - fix them before ready". The error is in
+  a part none of them touches. `sketch check` shows it in every sketch too.
+- **Fix options:** 1. report errors the merged product already had as a note ("was there
+  before"), as the merge does; block only on new errors (recommended). 2. a `--force` flag.
+- **Fix done (bee3d509a):** Option 1: `variantProblemsOf` splits each variant's rule problems into the ones it brings in and the ones the product already has (`before`, matched by rule, part-relative file and message). `sketch check` and `sketch ready` fail only on the first and print the rest as `NOTE (was there before)`, as the merge does. On studio, `sketch check components/tree-row` passes with the note for `UPWARD-DEPENDENCY pages/merge/merge.ts`.

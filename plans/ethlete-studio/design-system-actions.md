@@ -138,15 +138,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.38 A product error outside the sketch blocks `sketch ready` - open
-
-- **Pain:** `pages/merge` imports `@system/pages/system` (UPWARD-DEPENDENCY, visible since 5.40).
-  Four pure refactor sketches (`agent-logos`, `comment-pin`, `tree-row`, `flows`), each with no
-  pixel change, failed `sketch ready` with "has problems - fix them before ready". The error is in
-  a part none of them touches. `sketch check` shows it in every sketch too.
-- **Fix options:** 1. report errors the merged product already had as a note ("was there
-  before"), as the merge does; block only on new errors (recommended). 2. a `--force` flag.
-
 ### 3.39 A rename across layers needs three merges - open
 
 - **Pain:** moving `comment-pin` hosts from `commentPinStyles` to `commentPin.styles` needs: add
