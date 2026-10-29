@@ -72,14 +72,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
 
-### 2.12 `foundations/tokens` is one very tall sheet - open
+### 2.13 A removed product part comes back as the base part - open
 
-- **Pain:** Tom: "echt unschön, dass tokens so ein langer Block ist". All groups (surfaces, accent,
-  warning, type, spacing) stack in one sheet; at fit zoom (36 %) nothing is readable, and the
-  error group makes it longer.
-- **Fix options:** 1. split into parts `foundations/colors`, `foundations/type`,
-  `foundations/spacing`, one tree entry each (recommended; a sketch after the error colour merge). 2. Studio lays out the groups of one part in columns that fit the viewport. 3. one tree leaf per
-  group inside `tokens`.
+- **Pain:** after `design part remove foundations/tokens` on studio, the tree shows `tokens` "from
+  base": the sdk part. On :4402 its frames failed. Studio has no own tokens part any more.
+- **Fix options:** 1. a product config key that hides named base parts (recommended). 2. accept it.
 
 ## 3. Feedback, rounds and merge
 
@@ -111,6 +108,11 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the
   skip line, so the agent sees noise.
 
+### 3.42 `sketch ready` on a new part reads like a regression - open
+
+- **Pain:** a new part prints "auto-merge skipped: variant a changes surfaces, accent ...".
+- **Fix option:** print "auto-merge skipped: new part, the user merges".
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -133,6 +135,21 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 ### 4.7 Fitted `vh` parts have no true height - known limit (L2264)
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
+
+### 4.41 Tom's server serves outdated dependency links after a part removal - open
+
+- **Pain:** after the tokens split, :4402 answered 504 "Outdated Optimize Dep" for
+  `@design-system.js`, so every frame of `foundations/colors` and the base `tokens` failed with
+  "Failed to fetch dynamically imported module". A fresh server (`design check`) was fine.
+- **Fix options:** 1. the server does a full reload of its frames after a dependency re-optimize
+  (recommended). 2. pre-bundle `@design-system` once, so a part change never re-optimizes it.
+
+### 4.42 A token part's CSS can hold class rules that leak into every frame - open
+
+- **Pain:** a listed `tokens` part's stylesheet loads globally, and nothing warns about class rules
+  in it.
+- **Fix option:** `design check` warns about selectors other than `:root`, `html`, `body` and
+  `.et-*` in a token part's CSS (recommended).
 
 ## 5. Drawing parts and pages
 
@@ -251,6 +268,20 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
+
+### 5.57 No way to split a part - open
+
+- **Pain:** the tokens split cut `tokens.css` by line numbers and copied the sheet layout (root,
+  title, panel, row) into three new parts; new sibling sketches cannot share a helper.
+- **Fix options:** 1. a merged `foundations/sheet` helper (`tokenSheet({ title, sample, names })`)
+  that the foundations import (recommended). 2. `sketch new <part> --from <part> --take <states>`.
+
+### 5.58 `part remove` does not see an app import of the part's files - open
+
+- **Pain:** `apps/ethlete-studio/src/styles.css` imported `foundations/tokens/tokens.css`; after the
+  removal every frame failed to load until the import named the three new files.
+- **Fix option:** `part remove` greps the repo for the part's path and refuses or lists the hits
+  (recommended).
 
 ## 6. Agent process
 

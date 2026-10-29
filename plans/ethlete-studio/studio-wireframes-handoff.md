@@ -211,6 +211,13 @@ remove` exists now).
     part. Then three sketches `foundations/colors`, `/type`, `/spacing` go `ready` for Tom's merge,
     then `design part remove foundations/tokens`, drop it from the list, check, commit. That is the
     last sketch for today (Tom).
+    Update 22:00: tokens split done. CLI list `e74f21315`; Tom merged colors, type, spacing;
+    `foundations/tokens` removed, app imports the three sheets (`8c1671e23`). CI unit-test timeout
+    fixed in `5b0677eea` (check the next CI run). Tom's :4402 serves 504 "Outdated Optimize Dep"
+    after the split (4.41): Tom restarts it, then check `foundations/colors` (Tom saw overlapping
+    cells, probably from the failed frames). Open from tonight: 2.13 (sdk `tokens` shows "from
+    base" in studio), 3.42, 4.41, 4.42, 5.57, 5.58. Next: these findings, then switch and project
+    switcher (list every host first, 5.24).
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 

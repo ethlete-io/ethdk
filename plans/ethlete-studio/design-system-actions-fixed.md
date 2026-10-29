@@ -1436,3 +1436,13 @@ check` warns early.
   `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
 - **Fix option:** one-variant cleanup sketches per part (drop the class or style it).
 - **Fix done (798fe4cc3):** One-variant sketches on `components/tree-row`, `elements/shell-main`, `pages/inbox`, `pages/merge` and `foundations/logo` drop the classes. `.lg-mark` had only `display: block`, and every parent is a flex container, so the rule and the class on `assets/studio-mark.svg` went too. All five merged with no visible change; `design check --product studio` shows no UNDEFINED-CLASS now.
+
+### 2.12 `foundations/tokens` is one very tall sheet - fixed (8c1671e23)
+
+- **Pain:** Tom: "echt unschön, dass tokens so ein langer Block ist". All groups (surfaces, accent,
+  warning, type, spacing) stack in one sheet; at fit zoom (36 %) nothing is readable, and the
+  error group makes it longer.
+- **Fix options:** 1. split into parts `foundations/colors`, `foundations/type`,
+  `foundations/spacing`, one tree entry each (recommended; a sketch after the error colour merge). 2. Studio lays out the groups of one part in columns that fit the viewport. 3. one tree leaf per
+  group inside `tokens`.
+- **Fix done (e74f21315, 8c1671e23):** Option 1. The CLI loads token CSS from a per-product list `tokens` in `.ethlete/design/config.json` (default `foundations/tokens`). Studio lists `foundations/colors`, `/type`, `/spacing`; Tom merged the three sketches, `foundations/tokens` is removed, and the Studio app imports the three stylesheets. Open: 2.13 (the base tokens part shows again), 5.57.
