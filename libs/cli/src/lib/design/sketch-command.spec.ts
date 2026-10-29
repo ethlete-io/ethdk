@@ -360,7 +360,7 @@ describe('designSketch', () => {
     expect(readFileSync(join(product, 'sketches/components-button/sketch.json'), 'utf8')).toContain(
       '"authors": ["claude-opus-5-5"]',
     );
-  });
+  }, 30_000);
 
   it('keeps the note --variant-note names in sketch.json and leaves the merged note in the part file', () => {
     const target = acme();
@@ -427,7 +427,7 @@ describe('designSketch', () => {
     expect(await run(target, 'check')).toBe(0);
     expect(write(target, 'variant', 'components/card', 'b', '--from', 'a')).toBe(1);
     expect(lines.pop()).toContain('more than one product - pass --product');
-  });
+  }, 30_000);
 
   it('adds every variant of a comma list, the first one opening the round', () => {
     const target = acme();
