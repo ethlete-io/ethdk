@@ -293,14 +293,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   but the count rows filled only "rest". Nothing flagged that a count could break on focus.
 - **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
 
-### 4.38 `sketch check` does not flag an undefined token - open
-
-- **Pain:** the `foundations/agent-logos` agent used `--radius-md` and `--space-8`, which Studio
-  does not define. `sketch check` passed; the agent found it by eye. `design check` has
-  UNDEFINED-TOKEN (83accd941), the sketch check does not.
-- **Fix option:** run the UNDEFINED-TOKEN check in `sketch check` on the variant files
-  (recommended).
-
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open

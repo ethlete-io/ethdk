@@ -1016,3 +1016,12 @@ check` warns early.
 - **Fix options:** 1. `sketch check --fix` runs Prettier on the variant files (recommended). 2. one
   Prettier command for all variants in the output.
 - **Fix done (21209110a):** `sketch check --fix` runs Prettier on the variants, `shared/` and `sketch.json` before the check; the FORMAT message names it.
+
+### 4.38 `sketch check` does not flag an undefined token - fixed (4b70acafc)
+
+- **Pain:** the `foundations/agent-logos` agent used `--radius-md` and `--space-8`, which Studio
+  does not define. `sketch check` passed; the agent found it by eye. `design check` has
+  UNDEFINED-TOKEN (83accd941), the sketch check does not.
+- **Fix option:** run the UNDEFINED-TOKEN check in `sketch check` on the variant files
+  (recommended).
+- **Fix done (4b70acafc):** Cause: `sketch check` already ran UNDEFINED-TOKEN, but only on the main `<part>.css`; a token in a second stylesheet the part imports went unseen. The rule now reads every relative `.css` import of the part, and takes tokens set in any `.ts`/`.css` file of the part folder as defined (inline `style="--x: …"` in a data file).
