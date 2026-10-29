@@ -119,6 +119,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   agent had to run `sketch round <part> r2 --note` as an extra step.
 - **Fix option:** a `--round-note` flag on `sketch variant --round`.
 
+### 3.27 `sketch new` writes a `sketch.json` that Prettier rejects - open
+
+- **Pain:** the agent formatted the new `sketch.json` of `components/tree-row` by hand.
+- **Fix option:** write CLI JSON through Prettier, as the part files are.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -181,6 +186,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `shot.spec.ts`.
 - **Fix option:** add `--interaction <name>` and name it in `--help`.
 
+### 4.22 The diff row is all red when a variant changes its state props - open
+
+- **Pain:** tree-row r1 b and c add rows to the `tree` state, so every row moved and the diff said
+  "22944 px changed". The agent checked by eye that rows a already drew look the same.
+- **Fix option:** `shot --diff-props <variant>` draws the merged part with the variant's state
+  props, so the diff shows only the visual change.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -218,6 +230,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `sketch new` on a component lists the parts whose markup it will replace, and
   the brief says to draw every case they draw (recommended, a skill rule). 2. a CLI check that
   compares the classes a host uses with the component's states.
+
+### 5.25 Studio has no warning colour theme - open
+
+- **Pain:** tree-row's warning mark needs a semantic warning colour. Studio's tokens have only the
+  accent theme and `danger`; the SDK `--et-theme-color-*` aliases resolve to SDK blue. Both
+  variants used `--accent-text`.
+- **Fix option:** a sketch on Studio's foundations that adds a theme of type `warning`.
 
 ## 6. Agent process
 
