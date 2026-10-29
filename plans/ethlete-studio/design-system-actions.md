@@ -344,12 +344,6 @@ section without a page.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
 
-### 6.3 `yarn design` rebuilds the CLI on every call - open
-
-- **Pain:** about 2.4 s per call; noticeable in a check-and-shot loop. Agents switch to
-  `node dist/libs/cli/src/index.js design` on their own.
-- **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
-
 ## 7. Open checks
 
 These fixes are built, but nobody checked them in the real Studio.

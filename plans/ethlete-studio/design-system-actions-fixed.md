@@ -1287,3 +1287,10 @@ check` warns early.
 - **Fix options:** 1. build to a temp dir and rename it into place (recommended). 2. the skill
   says to retry once.
 - **Fix done (b2142f3c1):** Option 1, per file: `cli:compile` (the old `@nx/js:tsc` target) writes `tmp/cli-build`; `cli:build` runs `libs/cli/scripts/move-into-place.mts`, which renames each file over its twin in `dist/libs/cli` and then drops files the new build lacks, so the folders stay and `src/index.js` never vanishes (a plain folder swap still missed it 4 times in 1.1M probes; this one 0). A cached build now takes about 0.1 s.
+
+### 6.3 `yarn design` rebuilds the CLI on every call - fixed (d761dcc89)
+
+- **Pain:** about 2.4 s per call; noticeable in a check-and-shot loop. Agents switch to
+  `node dist/libs/cli/src/index.js design` on their own.
+- **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
+- **Fix done (d761dcc89):** Option 1: the design-exploration skill names `node dist/libs/cli/src/index.js design` for check-and-shot loops. With 6.4 the build is cached as `cli:compile`, so `yarn design` itself dropped to about 1.2 s (the direct call: 0.13 s).
