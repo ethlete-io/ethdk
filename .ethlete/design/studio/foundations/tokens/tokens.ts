@@ -1,11 +1,12 @@
 import { definePart, drawing, html } from '@design-system';
 import tokens from './tokens.css?inline';
 
-type Group = 'surfaces' | 'accent' | 'type' | 'spacing';
+type Group = 'surfaces' | 'accent' | 'warning' | 'type' | 'spacing';
 
 const groups: Record<Group, { title: string; owns: (name: string) => boolean }> = {
   surfaces: { title: 'Surfaces and text', owns: (name) => /^surface(-|$)/.test(name) || /^text(-muted)?$/.test(name) },
   accent: { title: 'Accent', owns: (name) => /^(accent|on-accent|focus-ring)/.test(name) },
+  warning: { title: 'Warning', owns: (name) => /^(on-)?warning/.test(name) },
   type: { title: 'Type scale', owns: (name) => /^(font-|weight-|text-(xs|sm|md|lg|xl))/.test(name) },
   spacing: { title: 'Spacing, radius and heights', owns: (name) => /^(space-|radius-|control-|row$)/.test(name) },
 };
@@ -22,7 +23,8 @@ const sampleOf = (name: string) => {
   if (name === 'surface-shadow') return html`<span class="tk-shadow"></span>`;
   if (name === 'focus-ring') return html`<span class="tk-ring">Focus</span>`;
   if (name === 'on-accent') return html`<span class="tk-fill">Merge</span>`;
-  if (groups.surfaces.owns(name) || groups.accent.owns(name))
+  if (name === 'on-warning') return html`<span class="tk-fill tk-fill--warning">Check again</span>`;
+  if (groups.surfaces.owns(name) || groups.accent.owns(name) || groups.warning.owns(name))
     return html`<span class="tk-swatch" style="background: var(--${name})"></span>`;
   if (name.startsWith('font-')) return html`<span style="font-family: var(--${name})">Aa 0123 {}</span>`;
   if (name.startsWith('weight-')) return html`<span style="font-weight: var(--${name})">Merge sketch</span>`;
@@ -60,6 +62,45 @@ const accentCard = (surface: string) =>
     <span class="tk-ring">Focused</span>
   </div>`;
 
+const mark = (paths: string) =>
+  html`<svg
+    width="12"
+    height="12"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    ${paths}
+  </svg>`;
+
+const marks = {
+  ready: mark('<path d="m3.5 8.5 3 3 6-7"/>'),
+  error: mark('<circle cx="8" cy="8" r="5.5"/><path d="m6 6 4 4m0-4-4 4"/>'),
+  warning: mark('<path d="M8 2.5 14 13H2z"/><path d="M8 6.5v3"/><path d="M8 11.25v.01"/>'),
+};
+
+const markRow = (label: string, kind: keyof typeof marks) =>
+  html`<span class="tk-trow"
+    ><span class="tk-trow-label">${label}</span><span class="tk-mark tk-mark--${kind}">${marks[kind]}</span></span
+  >`;
+
+const warningCard = (surface: string) =>
+  html`<div class="tk-surface" style="background: var(--${surface})">
+    <span class="tk-surface-name">${surface}</span>
+    <span class="tk-trows">
+      ${markRow('button', 'ready')}${markRow('select', 'warning')}${markRow('dialog', 'error')}
+    </span>
+    <span class="tk-warning-ink">Render check: 1 warning</span>
+    <span class="tk-warning-note"
+      ><span class="tk-mark tk-mark--warning">${marks.warning}</span>The base product changed since this sketch
+      started.</span
+    >
+  </div>`;
+
 const typeSample = (step: string) =>
   html`<div class="tk-type">
     <span class="tk-name">--text-${step}</span
@@ -84,6 +125,7 @@ const spacingSample = html`<div class="tk-cluster tk-cluster--end">
 const samples: Record<Group, string> = {
   surfaces: html`<div class="tk-grid">${surfaces.map(surfaceCard).join('')}</div>`,
   accent: html`<div class="tk-grid">${surfaces.map(accentCard).join('')}</div>`,
+  warning: html`<div class="tk-grid">${surfaces.map(warningCard).join('')}</div>`,
   type: html`<div class="tk-stack">${steps.map(typeSample).join('')}</div>`,
   spacing: spacingSample,
 };
@@ -106,10 +148,12 @@ const fillValues = (root: HTMLElement) => {
 };
 
 export default definePart<{ group: Group }>({
-  note: 'The settled Studio tokens, one state per group: neutral grey surfaces, teal accent, compact type, balanced 4 px spacing. Each value is read from the CSS at runtime.',
+  note: 'The settled Studio tokens, one state per group: neutral grey surfaces, teal accent, amber warning, compact type, balanced 4 px spacing. Each value is read from the CSS at runtime.',
+  madeBy: ['claude-opus-5-5'],
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
+    warning: { group: 'warning' },
     type: { group: 'type' },
     spacing: { group: 'spacing' },
   },
@@ -145,6 +189,16 @@ export default definePart<{ group: Group }>({
         .tk-muted { color: var(--text-muted); }
         .tk-fill { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border-radius: var(--radius-control-md); background: var(--accent); color: var(--on-accent); font-weight: var(--weight-medium); }
         .tk-fill--hover { background: var(--accent-hover); }
+        .tk-fill--warning { background: var(--warning); color: var(--on-warning); }
+        .tk-trows { align-self: stretch; display: flex; flex-direction: column; }
+        .tk-trow { display: flex; align-items: center; gap: var(--space-2); height: var(--row); padding: 0 var(--space-2); }
+        .tk-trow-label { flex: 1; }
+        .tk-mark { display: flex; flex: none; }
+        .tk-mark--ready { color: var(--accent); }
+        .tk-mark--error { color: var(--color-et-danger); }
+        .tk-mark--warning { color: var(--warning); }
+        .tk-warning-ink { color: var(--warning-text); font-weight: var(--weight-medium); }
+        .tk-warning-note { align-self: stretch; display: flex; align-items: center; gap: var(--space-2); min-height: var(--row); padding: var(--space-1) var(--space-2); border-radius: var(--radius-control-sm); background: var(--warning-subtle); }
         .tk-ink { color: var(--accent-text); font-weight: var(--weight-medium); }
         .tk-subtle { align-self: stretch; display: flex; align-items: center; height: var(--row); padding: 0 var(--space-2); border-radius: var(--radius-control-sm); background: var(--accent-subtle); }
         .tk-ring { display: inline-flex; align-items: center; height: var(--control-md); padding: 0 var(--space-3); border: 1px solid var(--surface-border); border-radius: var(--radius-control-md); background: var(--surface-raised); outline: 2px solid var(--focus-ring); outline-offset: 2px; }

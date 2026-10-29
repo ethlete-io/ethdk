@@ -274,6 +274,25 @@
   --color-et-danger-ink-active: rgb(153 27 27);
   --color-et-danger-ink-disabled: rgb(100 116 139);
 
+  /* warning theme */
+  --color-et-warning: rgb(239 168 49);
+  --color-et-warning-hover: rgb(255 184 70);
+  --color-et-warning-focus: rgb(255 184 70);
+  --color-et-warning-active: rgb(218 149 11);
+  --color-et-warning-disabled: rgb(100 116 139);
+
+  --color-et-on-warning: rgb(32 19 1);
+  --color-et-on-warning-hover: rgb(32 19 1);
+  --color-et-on-warning-focus: rgb(32 19 1);
+  --color-et-on-warning-active: rgb(32 19 1);
+  --color-et-on-warning-disabled: rgb(226 232 240);
+
+  --color-et-warning-ink: rgb(245 198 109);
+  --color-et-warning-ink-hover: rgb(245 198 109);
+  --color-et-warning-ink-focus: rgb(245 198 109);
+  --color-et-warning-ink-active: rgb(245 198 109);
+  --color-et-warning-ink-disabled: rgb(100 116 139);
+
   /* Dynamic theme colors (references runtime CSS variables) */
   --color-et-theme: rgb(var(--et-color-primary));
   --color-et-theme-hover: rgb(var(--et-color-primary-hover));
@@ -335,6 +354,26 @@
     --et-color-primary-ink-focus: 220 38 38;
     --et-color-primary-ink-active: 220 38 38;
     --et-color-primary-ink-disabled: 220 38 38;
+  }
+
+  .et-color--warning {
+    --et-color-primary: 239 168 49;
+    --et-color-primary-hover: 255 184 70;
+    --et-color-primary-focus: 255 184 70;
+    --et-color-primary-active: 218 149 11;
+    --et-color-primary-disabled: 100 116 139;
+
+    --et-color-on-primary: 32 19 1;
+    --et-color-on-primary-hover: 32 19 1;
+    --et-color-on-primary-focus: 32 19 1;
+    --et-color-on-primary-active: 32 19 1;
+    --et-color-on-primary-disabled: 226 232 240;
+
+    --et-color-primary-ink: 245 198 109;
+    --et-color-primary-ink-hover: 245 198 109;
+    --et-color-primary-ink-focus: 245 198 109;
+    --et-color-primary-ink-active: 245 198 109;
+    --et-color-primary-ink-disabled: 245 198 109;
   }
 }
 
@@ -415,6 +454,15 @@ body {
   --on-accent: oklch(0.17 0.02 190);
   --accent-subtle: oklch(0.68 0.11 190 / 0.2);
   --focus-ring: oklch(0.76 0.11 190);
+}
+
+/* Studio warning, variant A: amber */
+:root {
+  --warning: oklch(0.78 0.15 75);
+  --warning-hover: oklch(0.83 0.15 75);
+  --warning-text: oklch(0.85 0.12 82);
+  --on-warning: oklch(0.2 0.04 75);
+  --warning-subtle: oklch(0.78 0.15 75 / 0.16);
 }
 
 /* Studio type scale, variant B: compact */
