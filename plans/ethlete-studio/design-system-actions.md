@@ -391,6 +391,18 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   draws every row x column combination of a grid in a scratch pass and flags cells that look like
   another row.
 
+### 5.40 `sketch check` misses a page that uses a part through a plain module - open
+
+- **Pain:** "One grid look" on `elements/canvas-frames`: `pages/merge` uses it through
+  `merge-data.ts`, which is no part; `sketch check` did not list `pages/merge`, so the agent shot
+  it by hand.
+- **Fix option:** follow imports through non-part modules when the check collects dependants.
+
+### 5.41 `/__design/shot` without `state=` returns a bare 400 - open
+
+- **Pain:** for `pages/merge` the agent got a 400 with no body.
+- **Fix option:** default to the first state, or name the valid states in the body.
+
 ### 5.35 Sketch commands need `--product` although only one product has the sketch - open
 
 - **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
