@@ -94,6 +94,21 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
   const partRoot = root.querySelector('[data-et-part]') ?? root.querySelector(':scope > :not(style)');
   if (!partRoot) return found;
 
+  const sheets = [...document.styleSheets].map((sheet) => {
+    try {
+      return [...sheet.cssRules].map((rule) => rule.cssText).join('\\n');
+    } catch {
+      return '';
+    }
+  }).join('\\n');
+  const themes = new Set([...sheets.matchAll(/\\.et-color--([\\w-]+)/g)].map((match) => match[1]));
+  for (const element of root.querySelectorAll('[class*="et-color--"]'))
+    for (const name of element.classList) {
+      const theme = name.startsWith('et-color--') ? name.slice(10) : '';
+      // the SDK's runtime marker for keeping the parent colour, not a theme
+      if (theme && theme !== 'inherited' && !themes.has(theme)) report('UNKNOWN-THEME', element, 'colour theme "' + theme + '" is defined by no stylesheet of the frame, so it draws in the fallback colour');
+    }
+
   const box = partRoot.getBoundingClientRect();
   if (box.width === 0 || box.height === 0) {
     report('ZERO-SIZE', partRoot, 'drawn at ' + Math.round(box.width) + 'x' + Math.round(box.height));

@@ -742,3 +742,13 @@ sketch` until the next merge of the part.
   per image in Chromium, so WASM would save little after the `Uint32` loop.
 - **Fix option:** a `Uint32Array` fast path when both images have the same size; no WASM.
 - **Fix done:** `diffPixelsOf` compares and writes 32-bit words. Same output as before (checked on three size pairs); 9, 35 and 135 ms instead of 29, 134 and 525 ms in Node.
+
+### 5.18 An unknown colour theme name draws without a warning - fixed
+
+- **Pain (4.10 agent, 2026-10-29):** the agent set `color: 'success'` on an sdk button variant. The
+  sdk tokens define only `accent` and `danger`, so the button drew in the fallback colour, and no
+  check said why.
+- **Fix option:** `design check` (or the render check) flags a theme name the product tokens do
+  not define.
+- **Fix done:** the render check reports `UNKNOWN-THEME` when an element carries an `et-color--<name>` class that no stylesheet of the frame defines (`inherited` is exempt, it is the SDK runtime marker). Runs under `design check`, `sketch check` and `sketch ready`.
+- **Open:** `sketch check` prints each problem twice (state line and rule line).

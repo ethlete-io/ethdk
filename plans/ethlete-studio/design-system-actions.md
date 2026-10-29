@@ -140,14 +140,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.18 An unknown colour theme name draws without a warning - open
-
-- **Pain (4.10 agent, 2026-10-29):** the agent set `color: 'success'` on an sdk button variant. The
-  sdk tokens define only `accent` and `danger`, so the button drew in the fallback colour, and no
-  check said why.
-- **Fix option:** `design check` (or the render check) flags a theme name the product tokens do
-  not define.
-
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.

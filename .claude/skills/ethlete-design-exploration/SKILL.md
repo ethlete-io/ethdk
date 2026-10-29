@@ -342,6 +342,7 @@ product, part, state, size and a selector path:
   `text-overflow: ellipsis` or a line clamp.
 - `WRAP` - text in a button, tab, badge, chip or `white-space: nowrap` box runs onto a second line.
 - `ZERO-SIZE` - the part root has no width or no height.
+- `UNKNOWN-THEME` - a `et-color--<name>` class names a colour theme no stylesheet of the frame defines, so it draws in the fallback colour.
 - `RENDER` - the frame refused to draw, or the part did not load.
 
 A part that breaks a rule on purpose names it: `definePart({ checks: { skip: ['CLIPPED'] }, … })`;

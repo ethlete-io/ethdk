@@ -28,6 +28,9 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
     body: '<div data-et-embed-box style="overflow: hidden; width: 288px; height: 100px"><iframe style="display: block; border: 0; width: 1440px; height: 900px; transform: scale(0.2); transform-origin: 0 0"></iframe></div>',
   },
   'components/wrapped': { body: '<button style="width: 60px">Save the draft now</button>' },
+  'components/themed': {
+    body: '<style>.et-color--known { color: red }</style><div class="et-color--known et-color--inherited"><p class="et-color--ghost" style="margin: 0">Themed</p></div>',
+  },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
@@ -88,6 +91,7 @@ describe('renderIssuesOf', () => {
       'CLIPPED components/cut fitted',
       'CLIPPED components/embed-cut fitted',
       'OVERFLOW pages/tall desktop',
+      'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
       'ZERO-SIZE components/empty fitted',
     ]);
