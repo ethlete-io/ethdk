@@ -1,0 +1,24 @@
+{
+  "part": "elements/canvas-frames",
+  "state": "default",
+  "size": 1440,
+  "text": "ein wenig platz zum atmen brauchts vertikal",
+  "point": {
+    "x": 635,
+    "y": 119
+  },
+  "sketch": {
+    "target": "elements/canvas-frames",
+    "variant": "a",
+    "createdAt": "2026-10-29T17:53:34.422Z"
+  },
+  "createdAt": "2026-10-29T17:55:36.749Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T17:55:58.528Z",
+    "note": "Cells were too tight vertically (Tom).",
+    "round": "r2"
+  }
+}
