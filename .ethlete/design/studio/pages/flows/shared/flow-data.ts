@@ -6,24 +6,13 @@ import treeRow from '@system/components/tree-row';
 
 export type FlowProps = { flow: 'open' | 'none' };
 
-export type Step = { page: `pages/${string}`; state: string; title: string; via?: string };
+type Step = { page: `pages/${string}`; state: string; title: string; via?: string };
 
 export const FLOW_NAME = 'Sketch prüfen';
 
-export const STEPS: Step[] = [
-  { page: 'pages/inbox', state: 'open', title: 'Inbox · open' },
-  {
-    page: 'pages/sketches',
-    state: 'page-sketch',
-    title: 'Sketches · page-sketch',
-    via: "Nutzer klickt 'Sketches' in der Leiste",
-  },
-  { page: 'pages/system', state: 'part', title: 'System · part', via: "Nutzer klickt 'Merge'" },
-];
+const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
 
-export const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
-
-export const shot = (step: Step, scale: number) =>
+const shot = (step: Step, scale: number) =>
   embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
 
 export const presetPicker = () =>
@@ -33,15 +22,7 @@ export const presetPicker = () =>
     control: select({ options: [{ value: 'desktop', label: 'Desktop · 1440 × 900' }], value: 'desktop' }),
   });
 
-const ARROW = {
-  right:
-    '<svg class="block w-full h-3 text-text-muted" viewBox="0 0 100 12" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M0 6h96" vector-effect="non-scaling-stroke"/><path d="m90 1 6 5-6 5" vector-effect="non-scaling-stroke"/></svg>',
-  down: '<svg class="block w-3 h-10 text-text-muted" viewBox="0 0 12 40" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M6 0v36"/><path d="m1 30 5 6 5-6"/></svg>',
-};
-
-export const arrow = (direction: 'right' | 'down') => ARROW[direction];
-
-export const caption = (text: string) => html`<span class="text-text-muted text-ui-sm">${text}</span>`;
+const caption = (text: string) => html`<span class="text-text-muted text-ui-sm">${text}</span>`;
 
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 

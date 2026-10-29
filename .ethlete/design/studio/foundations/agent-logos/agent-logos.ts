@@ -12,7 +12,7 @@ const logos: Record<Agent, string> = { claude, codex, gemini };
 
 /** The brand mark of an agent as inline SVG, 1.2rem by default; `cls` lets a host size it in its own CSS. */
 export const agentLogo = (agent: Agent, cls = '') =>
-  svgAsset(logos[agent], { size: '1.2rem' }).replace('<svg', `<svg class="${cls}" aria-hidden="true"`);
+  svgAsset(logos[agent], { size: '1.2rem', class: cls, attrs: { 'aria-hidden': 'true' } });
 
 type View = 'hosts' | 'detail';
 

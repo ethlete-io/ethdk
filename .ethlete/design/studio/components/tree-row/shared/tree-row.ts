@@ -1,4 +1,6 @@
-export type RowInteraction = 'hover' | 'focus-visible' | 'active';
+import { forceInteraction } from '@design-system';
+
+type RowInteraction = 'hover' | 'focus-visible' | 'active';
 
 export type Row = {
   label: string;
@@ -38,13 +40,12 @@ const statusTitle = { 'in-progress': 'Sketch in progress', ready: 'Sketch ready'
 const lead = ({ kind, expanded, inert }: Row) =>
   kind === 'leaf' ? `<span class="st-trow-dot"${inert ? ' data-inert' : ''}></span>` : chevron(expanded === true);
 
-export const row = (r: Row) =>
+const rowMarkup = (r: Row) =>
   `<div
         class="st-trow"
         style="--depth: ${r.depth}"
         tabindex="0"
         data-kind="${r.kind}"
-        ${r.interaction ? `data-et-force="${r.interaction}"` : ''}
         ${r.selected ? 'data-selected' : ''}
       >
         <span class="st-trow-lead">${lead(r)}</span>
@@ -53,6 +54,8 @@ export const row = (r: Row) =>
         ${r.status ? `<span class="st-trow-status" data-status="${r.status}" title="${statusTitle[r.status]}">${statusIcon[r.status]}</span>` : ''}
         ${r.comments ? `<span class="st-trow-comments" title="${r.comments} open comments">${bubble}</span>` : ''}
       </div>`;
+
+export const row = (r: Row) => (r.interaction ? forceInteraction(rowMarkup(r), r.interaction) : rowMarkup(r));
 
 const tree: Row[] = [
   { label: 'Foundations', depth: 0, kind: 'group', expanded: false },
