@@ -298,6 +298,17 @@ sketch` until the next merge of the part.
   2. The sketch names the states of its question (`sketch new --states empty`). Studio draws those
      first and puts the rest behind a toggle.
 
+### 3.16 A sketch on a merged part copies its `shared/` into each variant - open
+
+- **Pain:** the empty-state sketch on `pages/flows` got `a/pages/flows/shared/flow-data.ts` and
+  `b/pages/flows/shared/flow-data.ts`, two copies. A change to common code had to go into both.
+- **Cause:** a merge moves the sketch's `shared/` into the part folder (`pages/flows/shared/`, imported
+  relatively). `sketch new` then copies the whole part folder into each variant.
+- **Now:** this breaks the rule "common code goes in the sketch's `shared/`, never into copies per
+  variant".
+- **Fix option:** `sketch new` moves the part's `shared/` back into the sketch's `shared/` and rewrites
+  the imports to `@shared/`, the reverse of the merge.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
@@ -348,6 +359,15 @@ sketch` until the next merge of the part.
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
+### 4.8 A scaled `embedPage` fails the CLIPPED rule - open
+
+- **Pain:** every Flows variant shows pages through `embedPage(..., { scale })`. The check reported
+  `CLIPPED ... content 1440x900 in 288x180` on the embed box, so each variant needs
+  `checks: { skip: ['CLIPPED'] }`. That skip also hides a real clip anywhere else in the page.
+- **Cause:** `embedPage` wraps a scaled iframe in `[data-et-embed-box]` with `overflow: hidden`, and
+  the rule measures the unscaled iframe.
+- **Fix option:** the CLIPPED rule ignores `[data-et-embed-box]`, or measures the scaled size.
+
 ## 5. Drawing parts and pages
 
 ### 5.1 Page sketches cannot use Tailwind - unverified (L2797)
@@ -387,6 +407,12 @@ sketch` until the next merge of the part.
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+### 5.6 `design sketch report` fails outside the repository root - open
+
+- **Pain:** a report from inside a sketch folder failed with `no config at
+<cwd>/.ethlete/design/config.json`. The report did not land.
+- **Fix option:** look for `.ethlete/design/config.json` in the parent folders, as git does.
 
 ## 6. Agent process
 
