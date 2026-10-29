@@ -180,12 +180,12 @@ AGENT_PROFILES = {
         "recommend": (
             "first apply the handoff skill's save test yourself; if it calls for a file, "
             "recommend the user run /{handoff} to save state and start a fresh session, "
-            "otherwise recommend /clear and say nothing is left to hand off"
+            "otherwise recommend /clear and say nothing is left to hand off, with a prompt to copy into the fresh session"
         ),
         "suggest": (
             "first apply the handoff skill's save test yourself; if it calls for a file, "
             "suggest the user run /{handoff} to save state and start a fresh session, "
-            "otherwise suggest /clear and say nothing is left to hand off"
+            "otherwise suggest /clear and say nothing is left to hand off, with a prompt to copy into the fresh session"
         ),
         "save_now": (
             "run the handoff skill's save mode right now - finish only an in-flight atomic "
@@ -224,7 +224,7 @@ AGENT_PROFILES = {
         "suggest": (
             "first apply the save test in .agents/skills/{handoff}/SKILL.md yourself; if it "
             "calls for a file, suggest saving a handoff and continuing in a fresh session, "
-            "otherwise suggest a fresh session and say nothing is left to hand off"
+            "otherwise suggest a fresh session and say nothing is left to hand off, with a prompt to copy into the fresh session"
         ),
         "save_now": (
             "follow .agents/skills/{handoff}/SKILL.md and save a handoff right now - finish "

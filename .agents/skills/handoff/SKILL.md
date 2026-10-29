@@ -83,6 +83,10 @@ If none of them holds, write no file. Tell the user in two or three lines what l
 the commits, and say a fresh session needs nothing from this one. A handoff nobody resumes is
 noise, and it costs the next session the tokens to read it.
 
+Then give a prompt the user can copy into the fresh session, in a code block: the next task, the
+plan file or finding it lives in, and any rule of this session that the repo does not record. Keep
+it to a few lines. When no next task is known, say so instead.
+
 Write `.claude/handoffs/<slug>.md` where `<slug>` is a short kebab-case name for
 the task (use the user-provided slug if they gave one, e.g.
 `handoff menu-focus-trap`). If the file exists, overwrite it - a handoff always
