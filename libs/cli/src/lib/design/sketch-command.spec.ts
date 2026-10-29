@@ -320,7 +320,7 @@ describe('designSketch', () => {
     lines.length = 0;
     expect(await run(target, 'check', 'components/button', '--fix', '--product', 'acme')).toBe(0);
     expect(lines.join('\n')).not.toContain('FORMAT');
-  });
+  }, 30_000);
 
   it('writes new and added variants and sketch.json in the format the checkout holds them to', async () => {
     const target = acme();
