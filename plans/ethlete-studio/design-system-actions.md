@@ -171,6 +171,23 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
   had a folded round.
 
+### 3.8 A variant stylesheet edit marks every state as changed - open
+
+- **Pain:** a variant of `pages/sketches` changed the part's `sketches.css` for one new state.
+  Studio then showed every state of every variant as changed, 16 screens. Tom: "totally
+  overwhelming".
+- **Cause:** all states of a part share one stylesheet. The change check compares a state's render
+  inputs, so a stylesheet edit counts as a change in every state.
+- **Now:** a workaround by convention. A variant puts its CSS in its own file (`below.css`) and
+  imports it only in the render function of the state under discussion. Check with
+  `curl -s "http://localhost:4402/__design/sketches?product=studio"`: each variant must list the
+  other states under `unchanged`.
+- **Fix options:**
+  1. Compare the rendered shot of each state, not its inputs. A stylesheet edit without visible
+     effect then changes nothing.
+  2. `sketch check` warns when a variant edits a stylesheet that more states than the round's
+     state use.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
