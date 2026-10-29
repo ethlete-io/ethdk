@@ -67,6 +67,36 @@ describe('importProblemsOf', () => {
     });
   });
 
+  it('flags an @assets/ import or stylesheet url() with no file, and finds one in the base or the variant', () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/elements/hero/hero.ts',
+      part("import mark from '@assets/mark.png';\nimport dot from '@assets/icons/dot.svg?raw';"),
+    );
+    write(target, 'acme/elements/hero/hero.css', ".acme-hero { background: url('@assets/hero.webp'); }");
+
+    expect(importProblemsOf(resolveAcme(target)).map((problem) => problem.message)).toEqual([
+      'url(@assets/hero.webp) resolves to no file in an assets/ folder',
+      '@assets/mark.png resolves to no file in an assets/ folder',
+      '@assets/icons/dot.svg?raw resolves to no file in an assets/ folder',
+    ]);
+
+    write(target, 'acme-base/assets/mark.png', 'png');
+    write(target, 'acme/assets/icons/dot.svg', '<svg/>');
+    write(target, 'variant/assets/hero.webp', 'webp');
+
+    expect(importProblemsOf({ ...resolveAcme(target), assetsDir: join(target, DESIGN_DIR, 'variant/assets') })).toEqual(
+      [],
+    );
+    expect(classifyImport('@assets/icons/dot.svg?raw')).toEqual({
+      kind: 'asset',
+      path: 'icons/dot.svg',
+      specifier: '@assets/icons/dot.svg?raw',
+    });
+  });
+
   it('flags a relative import into another part', () => {
     const target = acme();
 

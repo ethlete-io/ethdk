@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
@@ -27,7 +27,7 @@ describe('changedOutsideSketchOf', () => {
   it('names a merged part whose files changed since its merge, and only that one', () => {
     const target = acme();
 
-    recordMerged({ productDir: productDir(target), parts: ['elements/hero', 'pages/home'] });
+    recordMerged({ product: { dir: productDir(target), base: null }, parts: ['elements/hero', 'pages/home'] });
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
 
@@ -37,10 +37,28 @@ describe('changedOutsideSketchOf', () => {
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
   });
 
+  it('names a merged part when only an asset it imports changed', () => {
+    const target = acme();
+
+    mkdirSync(join(productDir(target), 'assets'), { recursive: true });
+    writeFileSync(join(productDir(target), 'assets/mark.png'), 'one');
+    writeFileSync(
+      join(productDir(target), 'elements/hero/hero.ts'),
+      "import mark from '@assets/mark.png';\nexport default mark;\n",
+    );
+    recordMerged({ product: resolveAcme(target), parts: ['elements/hero'] });
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+
+    writeFileSync(join(productDir(target), 'assets/mark.png'), 'two');
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
+  });
+
   it('skips a part an open sketch holds', () => {
     const target = acme();
 
-    recordMerged({ productDir: productDir(target), parts: ['elements/hero'] });
+    recordMerged({ product: { dir: productDir(target), base: null }, parts: ['elements/hero'] });
     changeHero(target);
     createSketch({ product: resolveAcme(target), sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] });
 
@@ -50,9 +68,9 @@ describe('changedOutsideSketchOf', () => {
   it('clears once the part is recorded again, and keeps the other records', () => {
     const target = acme();
 
-    recordMerged({ productDir: productDir(target), parts: ['elements/hero', 'pages/home'] });
+    recordMerged({ product: { dir: productDir(target), base: null }, parts: ['elements/hero', 'pages/home'] });
     changeHero(target);
-    recordMerged({ productDir: productDir(target), parts: ['elements/hero'] });
+    recordMerged({ product: { dir: productDir(target), base: null }, parts: ['elements/hero'] });
 
     expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
     expect(Object.keys(readMerged(productDir(target)))).toEqual(['elements/hero', 'pages/home']);

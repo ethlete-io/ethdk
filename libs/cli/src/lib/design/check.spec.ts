@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -122,6 +122,28 @@ describe('checkDesign --tsconfig', () => {
     expect(text).toContain('TYPE ERROR in acme sketch elements/hero variant b');
     expect(text).toContain('hero.ts');
     expect(text).not.toContain('variant a');
+    errors.mockRestore();
+  }, 120_000);
+
+  it('types an @assets/ URL import and an ?raw import as strings', async () => {
+    const target = mkdtempSync(join(tmpdir(), 'cli-design-check-assets-'));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'hero' }, variants: ['a'] }) as Sketch;
+
+    mkdirSync(join(sketch.dir, 'a/assets/icons'), { recursive: true });
+    writeFileSync(join(sketch.dir, 'a/assets/mark.png'), 'png');
+    writeFileSync(join(sketch.dir, 'a/assets/icons/dot.svg'), '<svg/>');
+    writeFileSync(
+      join(sketch.dir, 'a/elements/hero/hero.ts'),
+      "import { definePart } from '@design-system';\nimport mark from '@assets/mark.png';\nimport dot from '@assets/icons/dot.svg?raw';\nconst body: string = `<img src=\"${mark}\">${dot.trim()}`;\nexport default definePart({ note: '', states: { default: {} }, render: () => ({ body, styles: '' }) });\n",
+    );
+
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(checkDesign({ target, argv: ['--tsconfig'], invocation: 'et design' })).resolves.toBe(0);
     errors.mockRestore();
   }, 120_000);
 });

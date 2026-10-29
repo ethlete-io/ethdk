@@ -167,7 +167,7 @@ describe('checkDesign', () => {
     const warnings: string[] = [];
 
     vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
-    recordMerged({ productDir: join(target, DESIGN_DIR, 'acme'), parts: ['elements/hero'] });
+    recordMerged({ product: { dir: join(target, DESIGN_DIR, 'acme'), base: null }, parts: ['elements/hero'] });
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);

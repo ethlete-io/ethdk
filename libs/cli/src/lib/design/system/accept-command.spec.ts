@@ -23,7 +23,7 @@ const editedHero = () => {
   const target = acme();
   const productDir = join(target, DESIGN_DIR, 'acme');
 
-  recordMerged({ productDir, parts: ['elements/hero'] });
+  recordMerged({ product: { dir: productDir, base: null }, parts: ['elements/hero'] });
   writeFileSync(join(productDir, 'elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
   return { target, productDir };
@@ -55,7 +55,7 @@ describe('designAccept', () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');
 
-    recordMerged({ productDir, parts: ['elements/hero'] });
+    recordMerged({ product: { dir: productDir, base: null }, parts: ['elements/hero'] });
 
     expect(accept(target, FULL)).toBe(1);
     expect(existsSync(join(productDir, ACCEPTED_FILE))).toBe(false);

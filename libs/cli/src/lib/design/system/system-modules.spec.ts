@@ -44,7 +44,7 @@ describe('createSystemModules', () => {
     const hero = productModuleIdOf({ file, product: 'acme' });
 
     expect(system.resolveId('@system/components/missing', hero)).toBeNull();
-    expect(system.resolveId('./hero.css?inline', hero)).toBeNull();
+    expect(system.resolveId('./missing.css?inline', hero)).toBeNull();
     expect(system.resolveId('@system/components/button', join(target, 'other.ts'))).toBeNull();
     expect(system.resolveId('@system/components/button', productModuleIdOf({ file, product: 'nope' }))).toBeNull();
   });
@@ -113,7 +113,9 @@ describe('createSystemModules', () => {
       productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/helper.ts'), product: 'acme', sketch }),
     );
     expect(system.resolveId('./helper.ts?raw', hero)).toBeNull();
-    expect(system.resolveId('./hero.css', hero)).toBeNull();
+    expect(system.resolveId('./hero.css', hero)).toBe(
+      productModuleIdOf({ file: join(sketchDir, 'a/elements/hero/hero.css'), product: 'acme', sketch }),
+    );
   });
 
   it("resolves a part's stylesheet import inside a base part to the product's override, and to a sketch's", () => {
@@ -130,10 +132,10 @@ describe('createSystemModules', () => {
       productModuleIdOf({ file: button, product, sketch });
 
     expect(system.resolveId('@system/foundations/tokens.css?inline', inProduct('acme'))).toBe(
-      `${join(own, 'tokens.css')}?inline`,
+      `${join(own, 'tokens.css')}?inline&design-product=acme`,
     );
     expect(system.resolveId('@system/foundations/tokens.css', inProduct('acme-base'))).toBe(
-      join(design, 'acme-base/foundations/tokens/tokens.css'),
+      `${join(design, 'acme-base/foundations/tokens/tokens.css')}?design-product=acme-base`,
     );
     expect(system.resolveId('@system/pages/home.css?inline', inProduct('acme'))).toBeNull();
 
@@ -149,7 +151,66 @@ describe('createSystemModules', () => {
         '@system/foundations/tokens.css?inline',
         inProduct('acme', { target: 'foundations/tokens', variant: 'a' }),
       ),
-    ).toBe(`${join(design, 'acme/sketches/foundations-tokens/a/foundations/tokens/tokens.css')}?inline`);
+    ).toBe(
+      `${join(design, 'acme/sketches/foundations-tokens/a/foundations/tokens/tokens.css')}?inline&design-product=acme&design-sketch=foundations%2Ftokens&design-variant=a`,
+    );
+  });
+
+  it('resolves @assets/ to the product, then its base, with a sketch variant first, and rewrites url(@assets/) in a stylesheet', () => {
+    const { target, system } = acme();
+    const design = join(target, DESIGN_DIR);
+    const write = (path: string) => {
+      mkdirSync(join(design, path, '..'), { recursive: true });
+      writeFileSync(join(design, path), path);
+    };
+
+    write('acme/assets/mark.png');
+    write('acme/assets/icons/dot.svg');
+    write('acme-base/assets/mark.png');
+    write('acme-base/assets/base.webp');
+
+    const card = join(design, 'acme-base/components/card/card.ts');
+    const inAcme = productModuleIdOf({ file: card, product: 'acme' });
+
+    expect(system.resolveId('@assets/mark.png', inAcme)).toBe(`${join(design, 'acme/assets/mark.png')}?url`);
+    expect(system.resolveId('@assets/icons/dot.svg?raw', inAcme)).toBe(
+      `${join(design, 'acme/assets/icons/dot.svg')}?raw`,
+    );
+    expect(system.resolveId('@assets/base.webp', inAcme)).toBe(`${join(design, 'acme-base/assets/base.webp')}?url`);
+    expect(system.resolveId('@assets/mark.png', productModuleIdOf({ file: card, product: 'acme-base' }))).toBe(
+      `${join(design, 'acme-base/assets/mark.png')}?url`,
+    );
+    expect(system.resolveId('@assets/missing.png', inAcme)).toBeNull();
+    expect(system.resolveId('@assets/../config.json', inAcme)).toBeNull();
+
+    const product = system.productOf('acme');
+    const parsed = parseTarget('elements/hero');
+
+    if (!product || typeof parsed === 'string') throw new Error('no acme');
+
+    createSketch({ product, sketch: parsed, variants: ['a'] });
+    write('acme/sketches/elements-hero/a/assets/mark.png');
+
+    const sketch = { target: 'elements/hero', variant: 'a' };
+    const inVariant = productModuleIdOf({ file: card, product: 'acme', sketch });
+
+    expect(system.resolveId('@assets/mark.png', inVariant)).toBe(
+      `${join(design, 'acme/sketches/elements-hero/a/assets/mark.png')}?url`,
+    );
+    expect(system.resolveId('@assets/base.webp', inVariant)).toBe(`${join(design, 'acme-base/assets/base.webp')}?url`);
+
+    const css = ".a { background: url('@assets/mark.png'); } .b { src: url(@assets/missing.woff2); }";
+    const stylesheet = (sketched?: typeof sketch) =>
+      join(design, 'acme/elements/hero/hero.css') +
+      productModuleIdOf({ file: '', product: 'acme', sketch: sketched }).replace('?', '?inline&');
+
+    expect(system.withAssetUrls(css, stylesheet())).toBe(
+      `.a { background: url("/@fs${join(design, 'acme/assets/mark.png')}"); } .b { src: url(@assets/missing.woff2); }`,
+    );
+    expect(system.withAssetUrls(css, stylesheet(sketch))).toContain(
+      `url("/@fs${join(design, 'acme/sketches/elements-hero/a/assets/mark.png')}")`,
+    );
+    expect(system.withAssetUrls(css, join(design, 'acme/elements/hero/hero.css'))).toBeNull();
   });
 
   it('keeps a resolved product until forget', () => {

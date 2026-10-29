@@ -1,36 +1,40 @@
 import { createHash } from 'crypto';
-import { readdirSync, readFileSync, statSync } from 'fs';
+import { readFileSync } from 'fs';
 import { dirname, relative, resolve } from 'path';
+import { ASSETS_PREFIX, filesBelow, importedAssetsOf } from '../assets';
 import { fixturesOf, PartFile, partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
 
 export const FIXTURES_KEY = 'fixtures.ts';
 
-const filesBelow = (dir: string): string[] =>
-  readdirSync(dir)
-    .sort()
-    .flatMap((name) => {
-      const path = resolve(dir, name);
-
-      return statSync(path).isDirectory() ? filesBelow(path) : [path];
-    });
-
-const hashOf = (paths: { root: string; files: string[] }) => {
+const hashOf = (paths: { root: string; files: string[]; assets?: { path: string; file: string }[] }) => {
   const hash = createHash('sha256');
 
   for (const file of paths.files) hash.update(`${relative(paths.root, file)}\0`).update(readFileSync(file));
+  for (const asset of paths.assets ?? [])
+    hash.update(`${ASSETS_PREFIX}${asset.path}\0`).update(readFileSync(asset.file));
 
   return hash.digest('hex').slice(0, 16);
 };
 
-export const folderHashOf = (dir: string) => hashOf({ root: dir, files: filesBelow(dir) });
+/**
+ * The content hash of a part folder together with the bytes of each `@assets/` file it imports, as `product` resolves
+ * them. A part that imports no asset hashes as its folder alone.
+ */
+export const partHashOf = (options: { product: Pick<ResolvedProduct, 'dir' | 'base'>; dir: string }) => {
+  const files = filesBelow(options.dir);
+
+  return hashOf({ root: options.dir, files, assets: importedAssetsOf({ product: options.product, files }) });
+};
 
 /**
- * The content hash of each part folder the product resolves, and of its fixture set, under the part
- * key and `fixtures.ts`. A sketch keeps it to tell when a part it replaces changed in the product.
+ * The content hash of each part the product resolves (its folder and the assets it imports), and of its fixture set,
+ * under the part key and `fixtures.ts`. A sketch keeps it to tell when a part it replaces changed in the product.
  */
 export const baselineOf = (product: ResolvedProduct): Record<string, string> => ({
-  ...Object.fromEntries(product.parts.map((part) => [partKeyOf(part), folderHashOf(dirname(part.file))])),
+  ...Object.fromEntries(
+    product.parts.map((part) => [partKeyOf(part), partHashOf({ product, dir: dirname(part.file) })]),
+  ),
   ...(product.fixtures
     ? { [FIXTURES_KEY]: hashOf({ root: dirname(product.fixtures), files: [product.fixtures] }) }
     : {}),

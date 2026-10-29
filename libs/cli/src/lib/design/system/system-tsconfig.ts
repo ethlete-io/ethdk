@@ -47,6 +47,7 @@ const systemTsconfigText = (options: { target: string; product: ResolvedProduct 
   const defineCall = resolve(installedAssetRoot(), 'define-call.ts');
   const definePart = resolve(installedAssetRoot(), 'define-part.ts');
   const inlineCss = resolve(installedAssetRoot(), 'css-inline.d.ts');
+  const assets = resolve(installedAssetRoot(), 'assets.d.ts');
   const kit = resolve(installedAssetRoot(), 'wireframe-kit.ts');
   const typePaths = typePathsOf({ packages: readConfig(target)?.render?.packages ?? {}, target });
   const partPaths = Object.fromEntries(product.parts.map((part) => [partSpecifierOf(part), [part.file]]));
@@ -73,6 +74,7 @@ const systemTsconfigText = (options: { target: string; product: ResolvedProduct 
       kit,
       defineCall,
       inlineCss,
+      assets,
     ],
   };
 

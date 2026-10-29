@@ -2,14 +2,14 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { partFilesOf } from '../product';
 import { partKeyOf, ResolvedProduct } from '../resolve-product';
-import { folderHashOf } from './baseline';
+import { partHashOf } from './baseline';
 import { listSketches, variantDirOf } from './sketch';
 
 export const MERGED_FILE = 'merged.json';
 
 const mergedFileOf = (productDir: string) => resolve(productDir, MERGED_FILE);
 
-/** The content hash of each part folder as its last sketch merge left it, under the part key. */
+/** The content hash of each part, its folder and the assets it imports, as its last sketch merge left it, under the part key. */
 export const readMerged = (productDir: string): Record<string, string> => {
   const file = mergedFileOf(productDir);
 
@@ -28,12 +28,15 @@ export const readMerged = (productDir: string): Record<string, string> => {
   }
 };
 
-/** Records the current content hash of each named part folder of the product as merged. */
-export const recordMerged = (options: { productDir: string; parts: string[] }) => {
-  const { productDir, parts } = options;
+type HashedProduct = Pick<ResolvedProduct, 'dir' | 'base'>;
+
+/** Records the current content hash of each named part of the product as merged. */
+export const recordMerged = (options: { product: HashedProduct; parts: string[] }) => {
+  const { product, parts } = options;
+  const productDir = product.dir;
   const merged = readMerged(productDir);
 
-  for (const part of parts) merged[part] = folderHashOf(resolve(productDir, part));
+  for (const part of parts) merged[part] = partHashOf({ product, dir: resolve(productDir, part) });
 
   const sorted = Object.fromEntries(Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)));
 
@@ -61,7 +64,11 @@ export const changedOutsideSketchOf = (product: ResolvedProduct): string[] => {
   const changed = product.parts.filter((part) => {
     const key = partKeyOf(part);
 
-    return part.origin !== 'base' && merged[key] !== undefined && folderHashOf(dirname(part.file)) !== merged[key];
+    return (
+      part.origin !== 'base' &&
+      merged[key] !== undefined &&
+      partHashOf({ product, dir: dirname(part.file) }) !== merged[key]
+    );
   });
 
   if (changed.length === 0) return [];
@@ -96,14 +103,14 @@ const logAcceptance = (productDir: string, entry: Acceptance) =>
   );
 
 /** Logs a sketch merged by itself because no state showed a visible change, as an `auto` entry in `accepted.json`. */
-export const recordAutoMerge = (options: { productDir: string; part: string; by: string }) => {
-  const { productDir, part, by } = options;
+export const recordAutoMerge = (options: { product: HashedProduct; part: string; by: string }) => {
+  const { product, part, by } = options;
 
-  logAcceptance(productDir, {
+  logAcceptance(product.dir, {
     part,
     by,
     note: 'merged automatically: no visible change in any state',
-    hash: folderHashOf(resolve(productDir, part)),
+    hash: partHashOf({ product, dir: resolve(product.dir, part) }),
     at: new Date().toISOString(),
     auto: true,
   });
@@ -129,7 +136,7 @@ export const acceptPart = (options: {
   if (!changedOutsideSketchOf(product).includes(part))
     return `${part} has no change outside a sketch - nothing to accept`;
 
-  recordMerged({ productDir: product.dir, parts: [part] });
+  recordMerged({ product, parts: [part] });
 
   const hash = readMerged(product.dir)[part] ?? '';
   const entry: Acceptance = { part, by, note, hash, at: new Date().toISOString() };

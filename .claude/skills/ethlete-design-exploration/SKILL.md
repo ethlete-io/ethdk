@@ -135,6 +135,16 @@ the target's folder as `shared/` with its imports made relative; when no part im
 dropped. Only the target may import it: a merge refuses while another part of the picked variant
 does, so move that code into the part.
 
+An asset (a mark, logo, icon, picture or font) is one file in `.ethlete/design/<product>/assets/`,
+never a copy inlined into parts. A part imports it as `@assets/<file>`: the default import is a URL
+for `<img src>`; an SVG that must follow tokens (`currentColor`, `var(--accent)`) imports with
+`?raw` and goes inline, for example `@assets/icons/<name>.svg?raw`. A stylesheet, the product's
+`styles.css` or a part's, uses `url('@assets/<file>')`, for example in an `@font-face`. A foundation
+part may wrap an asset in a named export. A product finds its base product's assets too. A sketch
+variant adds or changes an asset in its own `assets/` folder, and a merge copies it into the
+product's. The part hash behind `design check` and "changed outside a sketch" counts the bytes of
+the assets a part uses.
+
 Every change to a merged part goes through a sketch, also a small one: new copy, sample data, an
 added state. When there is nothing to choose, the sketch has one variant (`--variants a`), and the
 user merges it or comments on it. Never edit a merged part directly, or the user cannot compare or

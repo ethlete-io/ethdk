@@ -1,6 +1,8 @@
+import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { DesignConfig } from '../paths';
-import { sourceFileOf } from '../vite-paths';
+import { fsUrl, sourceFileOf } from '../vite-paths';
+import { ASSET_URL, assetFileOf, ASSETS_PREFIX } from './assets';
 import { classifyImport } from './imports';
 import { partKeyOf, resolveProduct, ResolvedProduct } from './resolve-product';
 import { overlaySketch } from './sketch/overlay';
@@ -9,6 +11,7 @@ import { findSketch, listSketches, parseTarget, sharedDirOf, Sketch } from './sk
 const PRODUCT_QUERY = 'design-product';
 const SKETCH_QUERY = 'design-sketch';
 const VARIANT_QUERY = 'design-variant';
+const STYLESHEET_FILE = /\.css$/u;
 
 /** One variant of the sketch on `target` (`<layer>/<name>`). */
 export type SketchVariant = { target: string; variant: string };
@@ -23,6 +26,19 @@ export const productModuleIdOf = (options: { file: string; product: string; sket
   (options.sketch
     ? `&${SKETCH_QUERY}=${encodeURIComponent(options.sketch.target)}&${VARIANT_QUERY}=${encodeURIComponent(options.sketch.variant)}`
     : '');
+
+/** The module id of a stylesheet as one product, or one sketch variant, draws it, its own query (`inline`) kept. */
+export const stylesheetModuleIdOf = (options: {
+  file: string;
+  query: string | undefined;
+  product: string;
+  sketch: SketchVariant | null;
+}) => {
+  const { file, query, product, sketch } = options;
+  const id = productModuleIdOf({ file, product, sketch });
+
+  return query ? id.replace('?', `?${query}&`) : id;
+};
 
 export const productOfModuleId = (id: string | null | undefined) => {
   const query = id?.split('?')[1];
@@ -43,9 +59,9 @@ export const fileOfModuleId = (id: string) => id.split('?')[0] ?? id;
 /**
  * The products of a workspace, resolved on first use and kept until `forget`, and the resolution
  * of `@system/<layer>/<name>`, `@system/<layer>/<name>.css?inline` (the part's stylesheet),
- * `@system/fixtures` and a sketch's `@shared/<path>` inside a module of one product. A relative
- * import of a source file stays in the importer's product and sketch, so a helper file next to a
- * part resolves `@system/...` as the part does.
+ * `@system/fixtures`, a sketch's `@shared/<path>` and `@assets/<file>` (a URL, or the text with `?raw`)
+ * inside a module of one product. A relative import of a source file stays in the importer's product
+ * and sketch, so a helper file next to a part resolves `@system/...` as the part does.
  */
 export const createSystemModules = (options: { target: string; config: DesignConfig }) => {
   const { target, config } = options;
@@ -120,6 +136,21 @@ export const createSystemModules = (options: { target: string; config: DesignCon
 
     const sketch = sketchOfModuleId(importer);
 
+    if (imported.kind === 'asset') {
+      const drawn = drawnOf(name, sketch);
+      const file = drawn ? assetFileOf({ product: drawn, path: imported.path }) : null;
+
+      return file ? `${file}?${specifier.split('?')[1] ?? 'url'}` : null;
+    }
+
+    if (imported.kind === 'relative' && STYLESHEET_FILE.test(fileOfModuleId(specifier))) {
+      const file = resolve(dirname(fileOfModuleId(importer)), fileOfModuleId(specifier));
+
+      return existsSync(file)
+        ? stylesheetModuleIdOf({ file, query: specifier.split('?')[1], product: name, sketch })
+        : null;
+    }
+
     if (imported.kind === 'relative' || imported.kind === 'shared') {
       const file =
         imported.kind === 'shared'
@@ -137,7 +168,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
       const css = partOf({ product: name, part: partKeyOf(imported), sketch })?.css;
       const query = specifier.split('?')[1];
 
-      return css ? (query === undefined ? css : `${css}?${query}`) : null;
+      return css ? stylesheetModuleIdOf({ file: css, query, product: name, sketch }) : null;
     }
 
     const file =
@@ -148,6 +179,23 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     return file ? productModuleIdOf({ file, product: name, sketch }) : null;
   };
 
+  /** A product's stylesheet with each `url(@assets/<file>)` turned into the URL of the file the product resolves. */
+  const withAssetUrls = (code: string, id: string) => {
+    const name = productOfModuleId(id);
+
+    if (!name || !STYLESHEET_FILE.test(fileOfModuleId(id)) || !code.includes(ASSETS_PREFIX)) return null;
+
+    const drawn = drawnOf(name, sketchOfModuleId(id));
+
+    return drawn
+      ? code.replace(ASSET_URL, (...[whole = '', , path = '']: string[]) => {
+          const file = assetFileOf({ product: drawn, path });
+
+          return file ? `url("${fsUrl(file)}")` : whole;
+        })
+      : null;
+  };
+
   return {
     products: () => Object.keys(config.products ?? {}),
     productOf,
@@ -155,6 +203,7 @@ export const createSystemModules = (options: { target: string; config: DesignCon
     drawnOf,
     partOf,
     resolveId,
+    withAssetUrls,
     forget: () => {
       resolved.clear();
       sketched.clear();

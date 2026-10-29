@@ -295,6 +295,44 @@ describe('mergeSketch', () => {
   }, 120_000);
 });
 
+describe('mergeSketch with assets', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("copies the variant's assets into the product's, keeps the others and records the hash with them", () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const assets = join(target, DESIGN_DIR, 'acme/assets');
+
+    mkdirSync(assets);
+    writeFileSync(join(assets, 'mark.png'), 'old');
+    writeFileSync(join(assets, 'keep.png'), 'keep');
+
+    const ready = readySketch(target);
+    const found = { ...ready, sketch: picked(ready.sketch) };
+    const variant = join(found.sketch.dir, 'b');
+    const hero = join(variant, 'elements/hero/hero.ts');
+
+    mkdirSync(join(variant, 'assets/icons'), { recursive: true });
+    writeFileSync(join(variant, 'assets/mark.png'), 'new');
+    writeFileSync(join(variant, 'assets/icons/dot.svg'), '<svg/>');
+    writeFileSync(
+      hero,
+      `import mark from '@assets/mark.png';\n${readFileSync(hero, 'utf8')}\nexport const url = mark;\n`,
+    );
+
+    expect(merge(target, found)).toEqual(['elements/hero']);
+    expect(readFileSync(join(assets, 'mark.png'), 'utf8')).toBe('new');
+    expect(readFileSync(join(assets, 'icons/dot.svg'), 'utf8')).toBe('<svg/>');
+    expect(readFileSync(join(assets, 'keep.png'), 'utf8')).toBe('keep');
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual([]);
+
+    writeFileSync(join(assets, 'mark.png'), 'newer');
+
+    expect(changedOutsideSketchOf(resolveAcme(target))).toEqual(['elements/hero']);
+  }, 120_000);
+});
+
 describe('mergeSketch with a shared folder', () => {
   afterEach(() => vi.restoreAllMocks());
 

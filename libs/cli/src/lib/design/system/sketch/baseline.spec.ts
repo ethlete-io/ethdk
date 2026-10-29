@@ -35,6 +35,34 @@ describe('baselineOf', () => {
     ]);
     expect(baseline['elements/hero']).toMatch(/^[0-9a-f]{16}$/u);
   });
+
+  it("changes a part's hash when an asset it imports or its stylesheet uses changes, and no other part's", () => {
+    const target = acme();
+    const design = join(target, DESIGN_DIR);
+
+    mkdirSync(join(design, 'acme-base/assets/icons'), { recursive: true });
+    writeFileSync(join(design, 'acme-base/assets/icons/dot.svg'), '<svg/>');
+    writeFileSync(join(design, 'acme-base/assets/hero.png'), 'one');
+    writeFileSync(
+      join(productDir(target), 'elements/hero/hero.ts'),
+      "import dot from '@assets/icons/dot.svg?raw';\nexport default dot;\n",
+    );
+    writeFileSync(join(productDir(target), 'elements/hero/hero.css'), ".h { background: url('@assets/hero.png'); }");
+
+    const before = baselineOf(resolveAcme(target));
+
+    writeFileSync(join(design, 'acme-base/assets/icons/dot.svg'), '<svg></svg>');
+
+    const svgChanged = baselineOf(resolveAcme(target));
+
+    expect(svgChanged['elements/hero']).not.toBe(before['elements/hero']);
+    expect(svgChanged['pages/home']).toBe(before['pages/home']);
+
+    mkdirSync(join(productDir(target), 'assets'), { recursive: true });
+    writeFileSync(join(productDir(target), 'assets/hero.png'), 'two');
+
+    expect(baselineOf(resolveAcme(target))['elements/hero']).not.toBe(svgChanged['elements/hero']);
+  });
 });
 
 describe('conflictsOf', () => {

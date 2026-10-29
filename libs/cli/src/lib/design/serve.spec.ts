@@ -364,7 +364,7 @@ describe('the design server for a design system', () => {
       /"acme": \{[^}]*"components\/card": \(\) => import\("\/@fs\/[^"]*acme-base\/components\/card\/card\.ts\?design-product=acme"\)/,
     );
     expect(env).toMatch(
-      /productEnvs = \{\n {2}"acme-base": \(\) => Promise.resolve\(\),\n {2}"acme": \(\) => Promise.resolve\(\)\.then\(\(\) => import\("[^"]*acme\.css"\)\)\.then\(\(\) => import\("[^"]*acme-tokens\.css"\)\),/,
+      /productEnvs = \{\n {2}"acme-base": \(\) => Promise.resolve\(\),\n {2}"acme": \(\) => Promise.resolve\(\)\.then\(\(\) => import\("[^"]*acme\.css\?design-product=acme"\)\)\.then\(\(\) => import\("[^"]*acme-tokens\.css\?design-product=acme"\)\),/,
     );
     expect(html('/frame.html?product=acme&part=components/card&state=default')).toBe(
       '<link rel="icon" href="acme.svg">',

@@ -326,7 +326,7 @@ const autoMerged = async (options: { context: Context; product: ResolvedProduct;
     return 0;
   }
 
-  recordAutoMerge({ productDir: product.dir, part: sketch.target, by: author ?? 'user' });
+  recordAutoMerge({ product, part: sketch.target, by: author ?? 'user' });
   console.log(`No visible change in any state: merged ${sketch.target} automatically.`);
 
   return 0;

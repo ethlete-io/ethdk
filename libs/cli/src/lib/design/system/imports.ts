@@ -1,4 +1,5 @@
 import { dirname, isAbsolute, relative, resolve } from 'path';
+import { assetFileOf, assetPathOf, ASSETS_PREFIX, cssAssetPathsOf } from './assets';
 import { Problem } from './problem';
 import { partKeyOf, ResolvedPart, ResolvedProduct } from './resolve-product';
 import { importsOf } from './ts-source';
@@ -11,6 +12,7 @@ export type PartImport =
   | { kind: 'part'; layer: string; name: string; specifier: string; stylesheet?: true }
   | { kind: 'fixtures'; specifier: string }
   | { kind: 'shared'; path: string; specifier: string }
+  | { kind: 'asset'; path: string; specifier: string }
   | { kind: 'relative'; specifier: string }
   | { kind: 'other'; specifier: string };
 
@@ -31,6 +33,9 @@ export const classifyImport = (specifier: string): PartImport => {
       : { kind: 'part', layer, name, specifier };
   }
 
+  const asset = assetPathOf(specifier);
+
+  if (asset !== null) return { kind: 'asset', path: asset, specifier };
   if (specifier.startsWith(SHARED_PREFIX))
     return { kind: 'shared', path: specifier.slice(SHARED_PREFIX.length), specifier };
   if (specifier.startsWith('.')) return { kind: 'relative', specifier };
@@ -51,14 +56,24 @@ const leavesFolder = (part: ResolvedPart, specifier: string) => {
 };
 
 /**
- * Imports that name no part or fixture set, `@shared/` imports outside a sketch variant (`sharedDir` is the
- * sketch's `shared/` folder), and relative imports that reach into another part.
+ * Imports and stylesheet `url(@assets/...)` that name no part, fixture set or asset file, `@shared/` imports outside a sketch variant (`sharedDir` is the
+ * sketch's `shared/` folder, `assetsDir` the variant's `assets/`), and relative imports that reach into another part.
  */
-export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string }): Problem[] => {
+export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string; assetsDir?: string }): Problem[] => {
   const parts = new Map(product.parts.map((part) => [partKeyOf(part), part]));
 
-  return product.parts.flatMap((part) =>
-    importsOfPart(part).flatMap((imported): Problem[] => {
+  const missingCssAssets = (part: ResolvedPart): Problem[] =>
+    cssAssetPathsOf(part.cssSource ?? '')
+      .filter((path) => !assetFileOf({ product, path }))
+      .map((path) => ({
+        rule: 'IMPORT',
+        file: part.css ?? part.file,
+        message: `url(${ASSETS_PREFIX}${path}) resolves to no file in an assets/ folder`,
+      }));
+
+  return product.parts.flatMap((part) => [
+    ...missingCssAssets(part),
+    ...importsOfPart(part).flatMap((imported): Problem[] => {
       const problem = (message: string) => [{ rule: 'IMPORT', file: part.file, message }];
 
       if (imported.kind === 'part' && !parts.has(partKeyOf(imported)))
@@ -71,6 +86,8 @@ export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string
         return problem(
           `${imported.specifier} - only a part in a sketch variant may import the sketch's ${SHARED_PREFIX}`,
         );
+      if (imported.kind === 'asset' && !assetFileOf({ product, path: imported.path }))
+        return problem(`${imported.specifier} resolves to no file in an assets/ folder`);
       if (imported.kind === 'relative' && leavesFolder(part, imported.specifier))
         return problem(
           `"${imported.specifier}" leaves the part's folder - import another part as @system/<layer>/<name>`,
@@ -78,7 +95,7 @@ export const importProblemsOf = (product: ResolvedProduct & { sharedDir?: string
 
       return [];
     }),
-  );
+  ]);
 };
 
 /** The parts `from` imports, directly or through another part, as the product resolves them. */

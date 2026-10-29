@@ -124,12 +124,14 @@ const workspaceAliases = (target: string) => {
 
 // Sequential on purpose: Vite appends a sheet's <style> when its import settles, so parallel
 // imports let the head order, and with it the winning rule, change from load to load.
-const settingsLoaders = (target: string, settings: Record<string, DesignProject>) =>
-  `{\n${Object.entries(settings)
+const settingsLoaders = (options: { target: string; settings: Record<string, DesignProject>; products?: true }) =>
+  `{\n${Object.entries(options.settings)
     .map(
       ([name, entry]) =>
         `  ${JSON.stringify(name)}: () => Promise.resolve()${(entry.styles ?? [])
-          .map((style) => `.then(() => import(${JSON.stringify(fsUrl(resolve(target, style)))}))`)
+          .map((style) => resolve(options.target, style))
+          .map((file) => (options.products ? productModuleIdOf({ file, product: name }) : file))
+          .map((file) => `.then(() => import(${JSON.stringify(fsUrl(file))}))`)
           .join('')},`,
     )
     .join('\n')}\n}`;
@@ -154,11 +156,11 @@ const env = (target: string, config: DesignConfig) => {
   const products = config.products ?? {};
 
   return (
-    `const envs = ${settingsLoaders(target, projects)};\n` +
+    `const envs = ${settingsLoaders({ target, settings: projects })};\n` +
     `export const loadEnv = (project) => (envs[project] ?? (() => Promise.resolve()))();\n` +
     `const themes = ${themesOfSettings(projects)};\n` +
     `export const themesOf = (project) => themes[project] ?? { surface: [], color: [] };\n` +
-    `const productEnvs = ${settingsLoaders(target, products)};\n` +
+    `const productEnvs = ${settingsLoaders({ target, settings: products, products: true })};\n` +
     `export const loadProductEnv = (product) => (productEnvs[product] ?? (() => Promise.resolve()))();\n`
   );
 };
@@ -252,6 +254,12 @@ const isInside = (folder: string, file: string) => file.startsWith(`${folder}${s
  * to the frame page, resolves `@system/...` per product, and renders the Angular templates a drawing
  * asks for with `ng()`.
  */
+const withAssetUrls = (system: SystemModules) => {
+  const marks = partMarksTransform(system);
+
+  return (code: string, id: string) => system.withAssetUrls(code, id) ?? marks(code, id);
+};
+
 const designExplore = ({
   target,
   config,
@@ -278,7 +286,7 @@ const designExplore = ({
 
     return null;
   },
-  transform: partMarksTransform(system),
+  transform: withAssetUrls(system),
   transformIndexHtml: {
     order: 'pre' as const,
     handler: (html: string, ctx: { path: string; originalUrl?: string }) => {
