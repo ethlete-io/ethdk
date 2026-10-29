@@ -263,12 +263,11 @@ const stubOf = (name: string) =>
     '',
   ].join('\n');
 
-const pageStubOf = (options: { name: string; tokens: boolean; madeBy?: string; widths: number[] }) => {
-  const { name, tokens, madeBy, widths } = options;
+const pageStubOf = (options: { name: string; madeBy?: string; widths: number[] }) => {
+  const { name, madeBy, widths } = options;
 
   return [
     "import { definePart, drawing, html } from '@design-system';",
-    ...(tokens ? ["import tokens from '@system/foundations/tokens.css?inline';"] : []),
     '',
     'type Props = Record<string, never>;',
     '',
@@ -277,7 +276,7 @@ const pageStubOf = (options: { name: string; tokens: boolean; madeBy?: string; w
     ...(madeBy ? [`  madeBy: ['${madeBy}'],`] : []),
     ...(widths.length > 0 ? [`  widths: [${widths.join(', ')}],`] : []),
     '  states: { default: {} },',
-    `  render: (props: Props) => drawing({ body: html\`<main>${name}</main>\`${tokens ? ', styles: tokens' : ''} }),`,
+    `  render: (props: Props) => drawing({ body: html\`<main>${name}</main>\` }),`,
     '});',
     '',
   ].join('\n');
@@ -388,12 +387,7 @@ export const createSketch = (options: {
     } else {
       if (sketch.layer === 'pages') {
         const widths = [...new Set(Object.values(product.presets).map((preset) => preset.width))].sort((a, b) => a - b);
-        const tokens = product.parts.some((part) => partKeyOf(part) === 'foundations/tokens');
-
-        writeFileSync(
-          resolve(folder, `${sketch.name}.ts`),
-          pageStubOf({ name: sketch.name, tokens, madeBy: author, widths }),
-        );
+        writeFileSync(resolve(folder, `${sketch.name}.ts`), pageStubOf({ name: sketch.name, madeBy: author, widths }));
       } else {
         writeFileSync(resolve(folder, `${sketch.name}.ts`), stubOf(sketch.name));
         writeFileSync(resolve(folder, `${sketch.name}.css`), '');

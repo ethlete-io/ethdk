@@ -1,7 +1,7 @@
 import { relative, resolve, sep } from 'path';
 import { DesignConfig } from './paths';
 import { isLayer } from './system/layers';
-import { partKeyOf } from './system/resolve-product';
+import { partKeyOf, TOKENS_PART } from './system/resolve-product';
 import {
   fileOfModuleId,
   productOfModuleId,
@@ -28,18 +28,33 @@ const drawnKeyOf = (drawn: DrawnPart) =>
 export const redraws = (change: PartsChange, drawn: DrawnPart) =>
   change.all || change.parts.some((part) => drawnKeyOf(part) === drawnKeyOf(drawn));
 
-const everyPartOf = (system: SystemModules, product: string): DrawnPart[] => [
-  ...(system.productOf(product)?.parts ?? []).map((part) => ({ product, part: partKeyOf(part), sketch: null })),
-  ...system.sketchesOf(product).flatMap(({ target, variants }) =>
-    variants.flatMap((variant) =>
-      (system.drawnOf(product, { target, variant })?.parts ?? []).map((part) => ({
-        product,
-        part: partKeyOf(part),
-        sketch: { target, variant },
-      })),
-    ),
-  ),
+const drawnSystemsOf = (system: SystemModules, product: string): (SketchVariant | null)[] => [
+  null,
+  ...system.sketchesOf(product).flatMap(({ target, variants }) => variants.map((variant) => ({ target, variant }))),
 ];
+
+const partsDrawnIn = (options: { system: SystemModules; product: string; sketch: SketchVariant | null }) =>
+  (options.system.drawnOf(options.product, options.sketch)?.parts ?? []).map((part): DrawnPart => ({
+    product: options.product,
+    part: partKeyOf(part),
+    sketch: options.sketch,
+  }));
+
+const everyPartOf = (system: SystemModules, product: string): DrawnPart[] =>
+  drawnSystemsOf(system, product).flatMap((sketch) => partsDrawnIn({ system, product, sketch }));
+
+/** Every part a frame draws under `file` as its tokens stylesheet, in any product or sketch variant. */
+const partsUnderTokens = (options: { system: SystemModules; products: string[]; file: string }): DrawnPart[] => {
+  const { system, products, file } = options;
+
+  return products.flatMap((product) =>
+    drawnSystemsOf(system, product).flatMap((sketch) => {
+      const css = system.partOf({ product, part: TOKENS_PART, sketch })?.css;
+
+      return css && resolve(css) === resolve(file) ? partsDrawnIn({ system, product, sketch }) : [];
+    }),
+  );
+};
 
 const partOfModuleId = (system: SystemModules, id: string): DrawnPart | null => {
   const product = productOfModuleId(id);
@@ -55,6 +70,7 @@ const partOfModuleId = (system: SystemModules, id: string): DrawnPart | null => 
 
 /**
  * The parts a change to `file` redraws: every part of a product whose `styles` the file is or feeds,
+ * every part drawn under the file as its tokens stylesheet,
  * and every part among the modules that import the file, directly or not (`dependents`, which holds
  * the file's own modules too).
  */
@@ -74,6 +90,7 @@ export const changedPartsOf = (options: {
 
   for (const drawn of [
     ...styled.flatMap((product) => everyPartOf(system, product)),
+    ...partsUnderTokens({ system, products: Object.keys(config.products ?? {}), file }),
     ...dependents.flatMap((id) => partOfModuleId(system, id) ?? []),
   ]) {
     parts.set(drawnKeyOf(drawn), drawn);

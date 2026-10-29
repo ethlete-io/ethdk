@@ -25,4 +25,8 @@ declare module 'virtual:design-explore/system' {
     string,
     Record<string, Record<string, Record<string, () => Promise<{ default: Part }>>>>
   >;
+  /** The tokens stylesheet each product draws under, for the products that have one. */
+  export const tokens: Record<string, () => Promise<{ default: string }>>;
+  /** The tokens stylesheet each sketch variant draws under, by product, sketch target and variant. */
+  export const sketchTokens: Record<string, Record<string, Record<string, () => Promise<{ default: string }>>>>;
 }

@@ -83,6 +83,15 @@ describe('listSystem', () => {
     expect(usedIn(base, 'components/button')).toEqual([]);
   });
 
+  it('lists the tokens part as used by every page of each product that draws under it, though no page imports it', async () => {
+    const [base, product] = await list(acme(), ['acme-base', 'acme']);
+    const tokens = (listed: typeof product) =>
+      listed?.parts.find((part) => `${part.layer}/${part.name}` === 'foundations/tokens')?.usedIn;
+
+    expect(tokens(product)).toEqual([{ product: 'acme', part: 'pages/home' }]);
+    expect(tokens(base)).toEqual([{ product: 'acme', part: 'pages/home' }]);
+  });
+
   it("lists each product's own theme names, not its base's", async () => {
     const target = acme();
     const file = join(target, DESIGN_DIR, 'config.json');

@@ -122,6 +122,16 @@ describe('the parts event of the design server', () => {
     expect(keysOf(changes()[0])).toEqual(['acme components/card a', 'acme pages/home a']);
   });
 
+  it('redraws every part drawn under a tokens stylesheet when it changes, though no part imports it', async () => {
+    const { emit, changes, keysOf } = await serveAcme();
+
+    emit('change', 'acme-base/foundations/tokens/tokens.css');
+
+    expect(keysOf(changes()[0])).toEqual(
+      expect.arrayContaining(['acme pages/home ', 'acme pages/home a', 'acme-base components/card ']),
+    );
+  });
+
   it('redraws only the importers of the fixtures', async () => {
     const { draw, emit, changes, keysOf } = await serveAcme();
 

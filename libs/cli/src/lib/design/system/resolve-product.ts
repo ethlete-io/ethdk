@@ -17,6 +17,8 @@ export type ResolvedProduct = ProductSource & {
   problems: Problem[];
 };
 
+export const TOKENS_PART = 'foundations/tokens';
+
 export const partKeyOf = (part: { layer: string; name: string }) => `${part.layer}/${part.name}`;
 
 const read = (file: PartFile, origin: PartOrigin): ResolvedPart => ({

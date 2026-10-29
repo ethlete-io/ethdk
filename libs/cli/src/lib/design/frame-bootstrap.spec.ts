@@ -6,10 +6,11 @@ type Result = {
   initial: { evaluated: boolean; body: string; messages: { type: string }[] };
   body: string;
   error: string | null;
+  styles: string[];
   messages: { type: string; errored?: boolean }[];
 };
 
-const bootstrap = (outcome: 'resolve' | 'reject'): Result => {
+const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens'): Result => {
   const result = spawnSync(
     process.execPath,
     [
@@ -17,6 +18,7 @@ const bootstrap = (outcome: 'resolve' | 'reject'): Result => {
       resolve(__dirname, '__fixtures__/frame-bootstrap.mjs'),
       resolve(__dirname, '../../../design/web/frame.ts'),
       outcome,
+      ...(tokens ? [tokens] : []),
     ],
     { encoding: 'utf8', timeout: 10000 },
   );
@@ -42,5 +44,13 @@ describe('design frame bootstrap', () => {
     expect(result.body).toContain('Environment failed');
     expect(result.error).toContain('Environment failed');
     expect(result.messages.at(-1)).toMatchObject({ type: 'design-explore:height', errored: true });
+  });
+
+  it("loads the product's tokens once, before the part's own styles", () => {
+    expect(bootstrap('resolve', 'tokens').styles).toEqual([':root{--token:1}', '.part{}']);
+  });
+
+  it('adds only the part styles when the product has no tokens', () => {
+    expect(bootstrap('resolve').styles).toEqual(['.part{}']);
   });
 });

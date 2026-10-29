@@ -62,7 +62,7 @@ describe('parseTarget', () => {
 });
 
 describe('createSketch', () => {
-  it('scaffolds a new page like its siblings: tokens, madeBy, the product widths and no stylesheet', () => {
+  it('scaffolds a new page with madeBy and the product widths, and no tokens import or stylesheet, since the frame loads the tokens', () => {
     const target = acme();
     const parsed = parseTarget('pages/start');
 
@@ -75,10 +75,9 @@ describe('createSketch', () => {
     const folder = join(target, DESIGN_DIR, 'acme/sketches/pages-start/a/pages/start');
     const source = readFileSync(join(folder, 'start.ts'), 'utf8');
 
-    expect(source).toContain("import tokens from '@system/foundations/tokens.css?inline';");
+    expect(source).not.toContain('tokens');
     expect(source).toContain("madeBy: ['model-x']");
     expect(source).toContain('widths: [390, 1280]');
-    expect(source).toContain('styles: tokens');
     expect(existsSync(join(folder, 'start.css'))).toBe(false);
   });
 

@@ -606,6 +606,33 @@ describe('the design server for sketches and comments', () => {
     );
   });
 
+  it("registers each product's tokens stylesheet as it resolves it, and each sketch variant's", async () => {
+    const target = acme();
+
+    readySketch(target);
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toMatch(
+      /export const tokens = \{\n {2}"acme-base": \(\) => import\("[^"]*acme-base\/foundations\/tokens\/tokens\.css\?inline&design-product=acme-base"\),\n {2}"acme": \(\) => import\("[^"]*acme-base\/foundations\/tokens\/tokens\.css\?inline&design-product=acme"\),\n\};/,
+    );
+    expect(system).toMatch(
+      /export const sketchTokens = \{[^;]*"b": \(\) => import\("[^"]*tokens\.css\?inline&design-product=acme&design-sketch=components%2Fcard&design-variant=b"\)/,
+    );
+  });
+
+  it('registers no tokens for a product whose system has no tokens part', async () => {
+    const target = acme();
+
+    rmSync(join(target, DESIGN_DIR, 'acme-base/foundations/tokens'), { recursive: true });
+
+    const { plugin } = await serveAcme(target);
+    const system = plugin?.load(plugin.resolveId('virtual:design-explore/system') ?? '') ?? '';
+
+    expect(system).toContain('export const tokens = {\n\n};');
+  });
+
   it('previews the merge of a variant, and 404 for a variant the sketch lacks', async () => {
     const target = acme();
 

@@ -57,12 +57,13 @@ import { createPartShooter, dependentIdsOf, SHOT_PATH } from './shot';
 import { ALL_PARTS, changedPartsOf, addedPartsOf, PartsChange } from './changed-parts';
 import { buildStampOf, STAMP_PATH } from './stamp';
 import { listSystem, SYSTEM_PATH } from './system/list-system';
-import { partKeyOf, ResolvedPart } from './system/resolve-product';
+import { partKeyOf, ResolvedPart, TOKENS_PART } from './system/resolve-product';
 import {
   createSystemModules,
   productModuleIdOf,
   productOfModuleId,
   SketchVariant,
+  stylesheetModuleIdOf,
   SystemModules,
 } from './system/system-modules';
 import { KIT_SPECIFIER } from './system/kit';
@@ -193,6 +194,44 @@ const sketchRegistry = (system: SystemModules, product: string) =>
     )
     .join('\n');
 
+/** The loader of the tokens stylesheet a product, or one sketch variant, draws under; `null` without one. */
+const tokensLoaderOf = (options: { system: SystemModules; product: string; sketch?: SketchVariant }) => {
+  const { system, product, sketch } = options;
+  const css = system.partOf({ product, part: TOKENS_PART, sketch })?.css;
+
+  return css && existsSync(css)
+    ? `() => import(${JSON.stringify(fsUrl(stylesheetModuleIdOf({ file: css, query: 'inline', product, sketch: sketch ?? null })))})`
+    : null;
+};
+
+const tokensRegistry = (system: SystemModules) =>
+  `export const tokens = {\n${system
+    .products()
+    .flatMap((product) => {
+      const loader = tokensLoaderOf({ system, product });
+
+      return loader ? [`  ${JSON.stringify(product)}: ${loader},`] : [];
+    })
+    .join('\n')}\n};\nexport const sketchTokens = {\n${system
+    .products()
+    .map(
+      (product) =>
+        `  ${JSON.stringify(product)}: {\n${system
+          .sketchesOf(product)
+          .map(
+            ({ target, variants }) =>
+              `    ${JSON.stringify(target)}: {\n${variants
+                .flatMap((variant) => {
+                  const loader = tokensLoaderOf({ system, product, sketch: { target, variant } });
+
+                  return loader ? [`      ${JSON.stringify(variant)}: ${loader},`] : [];
+                })
+                .join('\n')}\n    },`,
+          )
+          .join('\n')}\n  },`,
+    )
+    .join('\n')}\n};\n`;
+
 const systemRegistry = (system: SystemModules) =>
   `export const parts = {\n${system
     .products()
@@ -203,7 +242,7 @@ const systemRegistry = (system: SystemModules) =>
     .join('\n')}\n};\nexport const sketchParts = {\n${system
     .products()
     .map((product) => `  ${JSON.stringify(product)}: {\n${sketchRegistry(system, product)}\n  },`)
-    .join('\n')}\n};\n`;
+    .join('\n')}\n};\n${tokensRegistry(system)}`;
 
 const sendJson = (response: ServerResponse, answer: { status: number; body: unknown }) => {
   response.setHeader('access-control-allow-origin', '*');

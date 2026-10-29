@@ -85,10 +85,10 @@ replace its base's whole: a desktop-only app lists `desktop` alone and draws no 
 `styles`, `head`, `providers` and `themes` from an old project entry. Studio never writes
 `config.json`; the command does.
 
-A part that uses tokens imports them with
-`import tokens from '@system/foundations/tokens.css?inline'` and puts them first in its `styles`.
-Never list a `tokens.css` in config `styles`. A product's own `foundations/tokens`, or a sketch of
-it, then replaces the base's tokens in every part.
+Every frame loads the product's `foundations/tokens` stylesheet once, before the part's own
+`styles`, so a part never imports the tokens and never adds them to its `styles`. A product's own
+`foundations/tokens`, or a sketch of it, replaces the base's tokens in every frame. Never list a
+`tokens.css` in config `styles`.
 
 A part file default-exports its `definePart(...)` and may also export named helpers, such as a piece of its
 markup: `import { studioMark } from '@system/foundations/logo'`. Import a piece from the part that draws it;

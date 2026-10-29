@@ -48,11 +48,13 @@ const modules = {
     parts: {
       probe: {
         'components/slow': async () => ({
-          default: { states: { default: {} }, render: () => ({ body: '<b>Ready</b>', styles: '' }) },
+          default: { states: { default: {} }, render: () => ({ body: '<b>Ready</b>', styles: '.part{}' }) },
         }),
       },
     },
     sketchParts: {},
+    tokens: process.argv[4] === 'tokens' ? { probe: async () => ({ default: ':root{--token:1}' }) } : {},
+    sketchTokens: {},
   },
 };
 const source = ts.transpileModule(readFileSync(process.argv[2], 'utf8'), {
@@ -84,6 +86,7 @@ process.stdout.write(
     initial,
     body: dom.window.document.getElementById('root').innerHTML,
     error: dom.window.document.documentElement.getAttribute('data-et-error'),
+    styles: [...dom.window.document.head.querySelectorAll('style')].map((style) => style.textContent),
     messages,
   }),
 );

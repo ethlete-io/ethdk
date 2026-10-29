@@ -2,7 +2,7 @@ import { CallVariant, Drawing, mountDrawing, placeOverlays } from '../define-cal
 import { fitEmbed } from '../embed-page';
 import { calls } from 'virtual:design-explore';
 import { loadEnv, loadProductEnv } from 'virtual:design-explore/env';
-import { parts, sketchParts } from 'virtual:design-explore/system';
+import { parts, sketchParts, sketchTokens, tokens } from 'virtual:design-explore/system';
 
 const params = new URLSearchParams(location.search);
 const slug = params.get('call') ?? '';
@@ -106,6 +106,12 @@ const drawPart = async (name: string): Promise<Drawing | null> => {
   }
 };
 
+const tokensOf = async (name: string) => {
+  const load = sketch ? sketchTokens[name]?.[sketch]?.[sketchVariant] : tokens[name];
+
+  return load ? (await load()).default : null;
+};
+
 const partRootOf = (container: HTMLElement) =>
   [...container.children].find((child) => !['STYLE', 'SCRIPT', 'LINK'].includes(child.tagName)) ?? null;
 
@@ -150,9 +156,17 @@ const report = () => {
 const drawFrame = async () => {
   parent.postMessage({ type: 'design-explore:loading' }, '*');
   await (product ? loadProductEnv(product) : loadEnv(slug.split('/')[0] ?? ''));
+  const tokenStyles = product ? await tokensOf(product) : null;
   const loaded = await (product ? drawPart(product) : drawCall());
 
   if (loaded) {
+    if (tokenStyles !== null) {
+      const style = document.createElement('style');
+
+      style.textContent = tokenStyles;
+      document.head.append(style);
+    }
+
     const style = document.createElement('style');
 
     style.textContent = await forced(loaded.styles);
