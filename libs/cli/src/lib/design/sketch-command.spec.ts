@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -9,6 +9,7 @@ const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-command-'));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+  writeFileSync(join(target, '.prettierignore'), '*\n');
 
   return target;
 };
@@ -121,6 +122,21 @@ describe('designSketch', () => {
     expect(lines.pop()).toBe(
       'components/button b: STATES .ethlete/design/acme/sketches/components-button/b/components/button/button.ts: drops the state long that components/button has in acme - a variant keeps every state of the part\ncomponents/button has problems - fix them before ready',
     );
+  });
+
+  it('refuses ready and fails check while a variant is not formatted', async () => {
+    const target = acme();
+    const lines = output();
+    const css = join(target, DESIGN_DIR, 'acme/sketches/components-button/b/components/button/button.css');
+
+    rmSync(join(target, '.prettierignore'));
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    writeFileSync(css, `${readFileSync(css, 'utf8')}\n.acme-button   {   }\n`);
+
+    expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
+    expect(lines.join('\n')).toContain('FORMAT');
+    expect(lines.join('\n')).toContain('prettier --write');
+    expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
   });
 
   it('records the author of every variant that new, variant and ready write', () => {

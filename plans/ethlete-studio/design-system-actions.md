@@ -431,7 +431,7 @@ sketch` until the next merge of the part.
   product widths, and no CSS file.
 - **Now:** fixed in 8c71b5712; a page scaffold has the tokens import (when the product has `foundations/tokens`), `madeBy`, the preset widths and no CSS file.
 
-### 5.9 A Prettier run after a merge counts as a change outside a sketch - open
+### 5.9 A Prettier run after a merge counts as a change outside a sketch - fixed
 
 - **Pain:** `pages/start` merged unformatted, so `prettier --check` failed. After `prettier --write`,
   `design check` warns `pages/start changed outside a sketch`.
@@ -439,6 +439,8 @@ sketch` until the next merge of the part.
   the raw file text.
 - **Fix option:** format the variant files at `sketch ready` or at the merge, or hash the
   formatted text.
+- **Now:** `sketch check` and `sketch ready` run the checkout's own Prettier over each variant and fail
+  with `FORMAT` per unformatted file.
 
 ## 6. Agent process
 

@@ -3,6 +3,7 @@ import { DesignConfig } from './paths';
 import { addressSketchComments } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
+import { formatProblemsOf } from './system/sketch/check-format';
 import { openSketchProblemsOf, typecheckVariant, variantProblemsOf } from './system/sketch/check-sketches';
 import { Args, argsOf, authorOf, configOf, NEEDS_AUTHOR, oneProductOf, productNamesOf } from './system/sketch/cli-args';
 import { discardSketch, mergeSketch } from './system/sketch/merge';
@@ -257,7 +258,7 @@ const roundEdited = (context: Context) =>
 const readied = (context: Context) =>
   withSketch(context, ({ product, sketch }) => {
     const problems = variantProblemsOf({ product, sketch }).flatMap(({ variant, problems }) =>
-      problems.map(
+      [...problems, ...formatProblemsOf({ target: context.target, sketch, variant })].map(
         (problem) =>
           `${sketch.target} ${variant}: ${problem.rule} ${relative(context.target, problem.file)}: ${problem.message}`,
       ),
@@ -306,6 +307,7 @@ const checked = async (context: Context) => {
     const typed = typecheckVariant({ target, product, sketch, variant });
     const all = [
       ...problems,
+      ...formatProblemsOf({ target, sketch, variant }),
       ...(typed.kind === 'failed' ? [{ rule: 'TYPE-ERROR', file: sketch.dir, message: `\n${typed.output}` }] : []),
       ...(typed.kind === 'unavailable' ? [{ rule: 'TYPE-ERROR', file: sketch.dir, message: typed.message }] : []),
     ];
