@@ -23,6 +23,10 @@ means, and say "keep it brief" for a lookup. Two calls need no `model` of their 
 agent type carries the model and reasoning effort its own definition sets, and a fork always
 inherits the parent's model.
 
+A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
+and measured subagents cost as much as the sessions that spawn them. Do a lookup of a few tool
+calls yourself. Give each subagent one large slice, not several small ones.
+
 A subagent has the same context budget as the session, measured on its own transcript, and the
 context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
 slice of work, the files it needs named, and "keep your context small - no whole big files".

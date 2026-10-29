@@ -19,7 +19,8 @@ so let them do the work before correcting anything by hand:
 For judgment calls lint cannot enforce, load the repository's focused guidance for the
 code you are changing.
 
-Format every edited Prettier-supported source file before wrapping up. Do not send binary,
+Format every edited Prettier-supported source file before wrapping up, in one call over all of
+them, not one call per file. Do not send binary,
 generated, or unsupported files to this command:
 
 ```bash

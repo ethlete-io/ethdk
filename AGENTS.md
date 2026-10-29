@@ -36,21 +36,9 @@ reachable only through its own stories.
 
 ### query-devtools: why three entry points
 
-ng-packagr flattens a library into one FESM per entry point, which rewrites a `@defer`'s
-dynamic import into `Promise.resolve().then(...)` - so a deferred component in the _same_
-entry point can never be split out of a consumer's bundle. Only a cross-entry-point defer
-emits a real `import(...)`. Hence:
-
-- `@ethlete/query-devtools/toggle` - the floating button, the shortcut label and the
-  view-state key. A leaf: it must **never** import the other two, or ng-packagr fails the
-  build with a circular entry-point dependency.
-- `@ethlete/query-devtools` - the panel. Imports the toggle entry.
-- `@ethlete/query-devtools/lazy` - the shell an application mounts. Imports the toggle
-  entry statically and the panel entry only through its `@defer`.
-
-Measured: mounting the panel eagerly costs an app ~184 kB gz; through the shell, ~5 kB up
-front and the rest on first open. The `tools/treeshake` goldens `query-devtools-panel` and
-`query-devtools-lazy` guard both numbers.
+The panel is split so that the `@defer` in `/lazy` emits a real `import(...)`. `/toggle` must
+**never** import the other two entry points. `libs/query-devtools/AGENTS.md` has the reason and the
+bundle-size goldens.
 
 ### UI work: components vs cdk
 
@@ -77,38 +65,11 @@ Tailwind theme is trimmed (no default color palette, no `text-sm`-style scale), 
 read the **`storybook-styling`** skill (`.agents/skills/storybook-styling/`) before
 styling a story. An unknown utility emits nothing and fails silently.
 
-The cascade-layer wrap (`@layer components { … }` around every component CSS file),
-why it - and not `:where()` - is what lets a consumer override component styles, and
-the separate job `:where()` does for internal modifiers are all in the **Component
-styling** section of the generated block at the end of this file. The canonical
-`&:where([data-size='…'])` / `&:where([disabled])` pattern lives in
-`libs/components/src/lib/button/*.component.css`.
+The `@layer components` wrap and the `:where()` modifiers are in **Component styling** in the
+generated block. The canonical pattern is `libs/components/src/lib/button/*.component.css`.
 
-#### Splitting a large stylesheet: styles-only components
-
-A component's CSS is injected when that component is **first instantiated**, and a
-`@Component` with an empty template exists only to carry a stylesheet. Together those
-two facts are how a big sheet stops being a tax on every consumer:
-
-- **CSS that belongs to a stamped child** goes on that child (e.g. the table's expander
-  chrome lives on `table-expander-cell.component.css`) - a table without expansion never
-  creates the cell, so the rules never reach the document.
-- **CSS that belongs to an opt-in feature** goes in a styles-only component the _feature_
-  references, mounted with `injectStyleManager().mount(TheStylesComponent)` - see
-  `ButtonStylesDirective` / `ButtonPropertiesStylesComponent`, and
-  `etTableVirtualScroll` → `TableVirtualScrollStylesComponent`. Because only the feature
-  references it, an app that doesn't import the feature doesn't bundle its CSS either.
-- **CSS for a base capability that most tables don't use** (the table's detail-row
-  animation) can be mounted on demand from an `effect` when the capability turns on. That
-  saves injection and style recalculation, not bundle size - the reference is still static.
-
-The style manager de-duplicates per component type, so mounting from many instances
-injects one `<style>`. A mounted sheet stays in the document, but Angular removes a
-component's own `<style>` with its last instance and re-appends it after everything else,
-so a rule that overrides the base sheet must outweigh it
-(`.et-table-row.et-table-row--box`), never merely follow it. Reach for this when a sheet
-grows past a few hundred lines and an identifiable slice of it serves a minority of
-consumers - `form-field` is the next candidate.
+A sheet past a few hundred lines can be split into styles-only components:
+`libs/components/AGENTS.md` says how.
 
 Read the **`theming`** skill (`.agents/skills/theming/`) before touching any color,
 background, border, or interaction-state styling - the token systems, the DI-based
@@ -130,12 +91,9 @@ importing) - you **must**:
 
 ### Nx Cloud is temporarily off
 
-The self-hosted instance (`nx-cloud.braune-digital.com`) is unstable, so every workflow
-sets `NX_NO_CLOUD: 'true'`. Export the same locally - `export NX_NO_CLOUD=true` - to skip
-remote caching and the run-link lookup. Nothing else about `nx` changes. Re-enable by
-deleting the `env:` block from `.github/workflows/*.yml`; the token in `nx.json` was left
-in place. (`neverConnectToCloud` does **not** work here - it only blocks _new_ connections,
-and this workspace is already connected.)
+The self-hosted instance is unstable, so every workflow sets `NX_NO_CLOUD: 'true'`. Run
+`export NX_NO_CLOUD=true` locally too. To re-enable, delete the `env:` block from
+`.github/workflows/*.yml`. (`neverConnectToCloud` does **not** work: this workspace is already connected.)
 
 ## Releasing
 
@@ -147,37 +105,8 @@ interactive `npx changeset` CLI.
 
 Before a publish, run `yarn release:smoke`: it builds the SDK into fut-frontend and boots the app.
 
-`publish.yml` runs the vendored Changesets action in `tools/changesets-action` (upstream
-`changesets/action` v2 plus a Slack notification). Its README names the upstream commit.
-
-The two Tauri apps are versioned the same way, under the names `timetrack-app` and
-`ethlete-studio`. Each is a private workspace package, so `changeset version` bumps it but
-never publishes it, and `yarn versions:sync` copies the new version into `tauri.conf.json`,
-`Cargo.toml` and `Cargo.lock`. Those three files are generated - change the app's
-`package.json`, or write a changeset, and run `yarn versions:sync`. `yarn versions:check`
-fails CI on drift.
-
-When `publish.yml` finds an app version with no GitHub release, it builds the Linux (deb, rpm),
-macOS (dmg, Apple Silicon and Intel) and Windows (NSIS installer) bundles and publishes them as the release `<app>@<version>`. The Linux bundles carry CEF
-and are built by `@tauri-apps/cli-cef`, so they are deb and rpm only - a CEF AppImage is broken
-upstream (tauri-apps/tauri#16204). The macOS bundle is
-signed with a self-signed identity, so a keychain grant survives an update. It is not notarized, and
-the Windows installer is not signed. `tools/scripts/macos-release-identity.sh` makes the identity;
-running it again replaces it, and each keychain item then asks once more.
-
-The apps update themselves with `tauri-plugin-updater`. The same job signs each update bundle with the
-key in the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`, and writes
-`latest.json` into the fixed release `<app>-updates`, which the app reads at startup. The public key is
-`plugins.updater.pubkey` in `tauri.conf.json`. `tools/scripts/tauri-updater-key.sh` makes the key pair.
-Do not run it again: an installed app accepts only its own key, so a new key stops every update. Only a
-release build checks for updates, and `createUpdaterArtifacts` is on in CI only.
-
-On Linux, both apps run on Tauri's CEF (Chromium) runtime from its `feat/cef` branch, and macOS and
-Windows on wry. The branch's `tauri` has no runtime of its own, so `lib.rs` names one per platform, and
-a plugin whose crates.io release asks for tauri's `wry` feature is patched to plugins-workspace's
-`feat/cef` branch. Building needs the GTK 4
-headers (`sudo dnf install gtk4-devel`, `libgtk-4-dev` on Debian). The first build downloads CEF
-(~1.8 GB unpacked) into `src-tauri/target/cef`.
+The `publish.yml` workflow, the Tauri app bundles, signing, the updater key and the CEF runtime
+are in the **`app-releases`** skill. Read it before you touch any of them.
 
 ## Documentation
 
@@ -207,32 +136,8 @@ affected typecheck and lint) over the committed state of HEAD (in a throwaway cl
 
 ## Agent rules & skills for other repos
 
-`libs/agent-rules` publishes `@ethlete/agent-rules`: the portable slice of this repo's
-guidance, compiled into Claude Code, Codex, Cursor and Copilot formats. Content lives in
-`libs/agent-rules/content/`; what this repo itself consumes is configured in
-`ethlete-agents.config.json` (`profile: sdk`, so only `scope: both` content is emitted
-here). Never hand-edit the generated marker block at the end of this file or a generated
-`ethlete-*` skill - edit the content file in `libs/agent-rules/content/`, then:
-
-```bash
-npx prettier --write libs/agent-rules/content/<file>   # format first
-yarn agents:sync                                       # then regenerate
-```
-
-A few content files are vendored from another repository. Keep them as written upstream,
-apart from the generator's link syntax - `libs/agent-rules/THIRD-PARTY-LICENSES.md` names
-each one, its upstream commit and its license.
-
-`content/output-styles/` is the exception: a Claude Code output style is a machine-level
-file, so `sync` never emits it and `agents:check` never diffs it. It is installed on
-demand instead - `node dist/libs/agent-rules/src/index.js output-style` after a build here,
-`npx ethlete-agents output-style` in a consumer repo.
-
-Format **before** syncing. The generated copies under `.claude/` and `.agents/` are
-Prettier-ignored, so formatting the content afterwards silently leaves them stale, and
-`yarn agents:check` (which CI runs) fails. The `npx ethlete-agents sync` in the published
-README works in consumer repos only - here the package is the source, not a dependency,
-so `npx` would look it up on the registry and 404.
+Edit the content in `libs/agent-rules/content/`, format it, then run `yarn agents:sync`.
+`libs/agent-rules/AGENTS.md` has the details and the pitfalls.
 
 ## Verifying UI changes
 
@@ -334,7 +239,8 @@ npx nx lint <project>      # then re-run to see what needs a manual fix
 For judgment calls lint cannot enforce, load the repository's focused guidance for the
 code you are changing.
 
-Format every edited Prettier-supported source file before wrapping up. Do not send binary,
+Format every edited Prettier-supported source file before wrapping up, in one call over all of
+them, not one call per file. Do not send binary,
 generated, or unsupported files to this command:
 
 ```bash
@@ -397,6 +303,10 @@ Effort follows the prompt, not a parameter: scope the prompt to one question, na
 means, and say "keep it brief" for a lookup. Two calls need no `model` of their own - a named
 agent type carries the model and reasoning effort its own definition sets, and a fork always
 inherits the parent's model.
+
+A subagent starts cold: it loads the full start context (about 50k tokens) before its first step,
+and measured subagents cost as much as the sessions that spawn them. Do a lookup of a few tool
+calls yourself. Give each subagent one large slice, not several small ones.
 
 A subagent has the same context budget as the session, measured on its own transcript, and the
 context-warning hook tells it to hand back at the critical tier. Size each prompt to fit: one
