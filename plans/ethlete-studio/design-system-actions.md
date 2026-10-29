@@ -231,6 +231,21 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   flags. Show a comment only in the sketch it was made in. Comments without it stay hidden in a
   sketch.
 
+### 3.12 `inbox done --note` overwrites the part note in the product - open
+
+- **Pain:** an agent closed a comment on a sketch variant with
+  `design inbox done <id> --note "Variante c"`. The command replaced the whole `note` of the product
+  part `pages/sketches` with "Variante c". Studio then said the product changed since the sketch
+  was made, and asked for a rebase.
+- **Cause:** `done` writes `--note` into the part the thread is about. The thread was about a sketch
+  variant, but the command wrote into the product, not into the variant. The flag name reads like a
+  short closing remark, and `sketch round --note` and `sketch variant --note` use it that way.
+- **Now:** the agent restored the product note by hand.
+- **Fix options:**
+  1. For a thread on a sketch variant, write the note into that variant, never into the product.
+  2. Rename the flag to `--part-note`, and add a separate `--reason` for the closing remark.
+  3. Fail when the new note is much shorter than the old one, unless `--force` is given.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
