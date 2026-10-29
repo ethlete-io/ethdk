@@ -179,6 +179,9 @@ const created = (context: Context) => {
 
   if (typeof notes === 'string') return fail(notes);
 
+  if (args.values['--round'] !== undefined && (args.values['--note'] ?? '').trim() === '')
+    return fail(`--round needs --note "<what the round shows>" - sketch ready refuses a round without a note`);
+
   const asked = args.values['--like'];
   const like = asked === undefined ? undefined : sketchSourceOf({ product, like: asked });
 

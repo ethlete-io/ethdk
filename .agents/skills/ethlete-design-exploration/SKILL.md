@@ -200,8 +200,8 @@ The command prints the notes of the previous round. Fix a round's title or note 
 Letters continue across rounds (r1: a, b; r2: c, d). `sketch variant <layer>/<name> c,d --from a` adds
 several variants at once; with `--round` they all start the new round. A new round answers the comments on the
 `--from` variant and marks them "addressed in round" with the new round's key. A variant without `--round` fails while the sketch has open comments and lists them: a variant that answers a comment starts a new round. Draw the combined
-variant and mark the sketch `ready` again. `sketch new --round <title>` names
-round 1, and `--note <text>` sets its note. `sketch ready` refuses while the running round has no note; set it with `sketch round`.
+variant and mark the sketch `ready` again. `sketch new --round <title> --note <text>` names
+round 1 and sets its note; `--round` without `--note` fails. `sketch ready` refuses while the running round has no note; set it with `sketch round`.
 `sketch ready` also shoots every state of every variant and of the product's part: when not one pixel differs
 in any of them, it merges the sketch itself and logs it as an `auto` entry in the product's `accepted.json`
 ("No visible change in any state: merged automatically."). Any difference or failed shot leaves it `ready`.

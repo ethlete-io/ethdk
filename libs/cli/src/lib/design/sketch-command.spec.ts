@@ -132,7 +132,19 @@ describe('designSketch', () => {
     const lines = output();
     const round = (...argv: string[]) => write(target, 'round', 'components/button', ...argv, '--product', 'acme');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme');
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a,b',
+      '--round',
+      'Pill',
+      '--note',
+      'pill',
+      '--product',
+      'acme',
+    );
 
     expect(round('r1')).toBe(1);
     expect(lines.pop()).toBe('pass --title <text>, --note <text> or --drops <state,state>');
@@ -222,13 +234,17 @@ describe('designSketch', () => {
     expect(readSketchReport({ checkout: target, sketch })).toBeNull();
   });
 
-  it('opens a round without a note, and refuses ready until the round has one', async () => {
+  it('refuses a new round without a note, and ready until the round has one', async () => {
     const target = acme();
     const lines = output();
 
     expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme')).toBe(
-      0,
+      1,
     );
+    expect(lines.pop()).toBe(
+      '--round needs --note "<what the round shows>" - sketch ready refuses a round without a note',
+    );
+    expect(write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme')).toBe(0);
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toContain('round r1 has no note - set it with: sketch round components/button r1 --note');
     expect(write(target, 'round', 'components/button', 'r1', '--note', 'pill', '--product', 'acme')).toBe(0);
@@ -364,7 +380,19 @@ describe('designSketch', () => {
     const lines = output();
     const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill', '--product', 'acme');
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a,b',
+      '--round',
+      'Pill',
+      '--note',
+      'pill',
+      '--product',
+      'acme',
+    );
 
     expect(variant('d,a', '--from', 'a')).toBe(1);
     expect(lines.pop()).toBe('components/button already has a variant "a"');
@@ -452,7 +480,19 @@ describe('designSketch', () => {
     const lines = output();
     const variant = (...argv: string[]) => write(target, 'variant', 'components/button', ...argv, '--product', 'acme');
 
-    write(target, 'new', 'components/button', '--variants', 'a,b', '--round', 'Pill or square', '--product', 'acme');
+    write(
+      target,
+      'new',
+      'components/button',
+      '--variants',
+      'a,b',
+      '--round',
+      'Pill or square',
+      '--note',
+      'two shapes',
+      '--product',
+      'acme',
+    );
 
     expect(variant('c')).toBe(1);
     expect(lines.pop()).toContain('usage: sketch variant <layer>/<name> <variant>[,<variant>…] --from <variant>');
