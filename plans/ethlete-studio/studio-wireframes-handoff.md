@@ -79,13 +79,13 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
 2. Asset question (5.13 in `design-system-actions.md`): Tom asked how we handle assets in general.
    Draw up the options with a recommendation and ask him; no build before his pick.
 3. Finding 1.2 is reopened: 1 hang in 10 x 100 runs, stack in the 1.2 entry. Next step there:
-   the same runs against `localhost` (SSH tunnel), then pick repro or workaround with Tom.
-   Script fix 1.4 is in `2d3e44cae` (move 1.4 to the fixed doc).
-4. Canvas checks are in the 2.x entries (2.1 and 2.3 verified, move them; 2.6 still broken). The
-   run for 3.1, 3.2, 3.4, 3.6, 3.7, 5.1, 5.2, 7.1-7.4 may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
-   report-only, own servers on 4610-4629.
-5. Open findings that are free to build: 1.3 (`--host`), 4.12 (a test path uses fixed port 5173),
-   5.12, and 3.17 (auto-merge a sketch with no visible change; Tom's idea, recommendation option 1). Delegate each to a fresh sonnet subagent (Tom: "gebe die arbeit an sub agents").
+   the same runs against `localhost` (SSH tunnel, or now `yarn design --host 0.0.0.0`), then pick
+   repro or workaround with Tom.
+4. Done 2026-10-29: live checks moved 1.4, 2.1, 2.3, 3.1-3.7, 5.1, 5.2 to fixed (`eccdfdeba`); new
+   friction 3.18-3.21 is open. Built and moved: 1.3, 3.17, 4.12, 5.12 (`293caba5c`). Still open:
+   2.2, 2.6, 7.x Rust side (needs the Tauri host). The real `foundations/logo` sketch was already
+   `ready`, so the new auto-merge does not apply to it; Tom merges it.
+5. Free to build next: 3.18 (`sketch report` silent), 3.21 (`COMMENT` blocks `ready`), 3.19.
 6. Merge compare page, then components, then page states, then the real app.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
