@@ -433,6 +433,10 @@ sketch` until the next merge of the part.
   formatted text.
 - **Now:** `sketch check` and `sketch ready` run the checkout's own Prettier over each variant and fail
   with `FORMAT` per unformatted file.
+- **Seen again (2026-10-29):** the "Count alignment" merge on `components/comment-pin` passed
+  `FORMAT` at `sketch ready`, but Prettier still changed the merged files, so `design accept` was
+  needed. Not verified: the merge may rewrite `@shared/` imports and change line lengths. Fix
+  option: the merge formats the files it writes.
 
 ### 5.10 Two stylesheets of one part define the same class without a warning - fixed
 
