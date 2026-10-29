@@ -116,8 +116,14 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    open comments, no count); details go in tooltips (Tom). Rejected: accent or red diamond, dots
    mixed with icons, red underline. `elements/part-tree` draws its rows with it (merged
    2026-10-29). Rule (Tom, 2026-10-29): a component needs two hosts that draw the same case.
-   Next component: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches); the inbox row stays
-   in `pages/inbox` (one host). Then switch and project switcher. Before a component sketch, list every host that draws the case
+   States per axis, not every combination; an icon set is a foundation asset (skill, `de754be55`).
+   `tree-row` interaction states merged as variant a (`7e52fafb0`): hover, focus-visible, selected
+   and combos via `Row.interaction` -> `data-et-force` (finding 5.28). `pages/flows` draws its list
+   with `tree-row` (`5abfc6636`). A one-variant sketch "Pressed state" (`:active`) on `tree-row`
+   is the open step; Tom agreed. Click, select and expand stay out of drawings until the prototype
+   stage. Next component: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches; axes: avatar
+   or agent logo, with or without count, interaction); the inbox row stays in `pages/inbox` (one
+   host). Then switch and project switcher. Tom restarts :4402 to get `0e6bd90a1`. Before a component sketch, list every host that draws the case
    (5.24). Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
