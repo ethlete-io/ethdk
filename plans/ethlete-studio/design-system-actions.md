@@ -58,11 +58,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   (run the server on the Mac or tunnel over SSH), then decide between a minimal WebKit repro for
   upstream and a workaround (e.g. never remove a frame while its module evaluates).
 
-### 1.3 The design server listens on `[::1]` only - open
-
-- **Pain:** the Mac test needed a hand-made TCP forwarder to reach the design server over the LAN.
-- **Fix option:** a `--host` option (or `DE_HOST`) passed to Vite's `server.host`.
-
 ## 2. Review on the canvas
 
 ### 2.2 A new sketch adds controls that already exist - unverified (L2562)
@@ -82,16 +77,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
 
 ## 3. Feedback, rounds and merge
-
-### 3.17 A pure refactor sketch still waits for a manual merge - open
-
-- **Pain:** the `foundations/logo` sketch (export `studioMark`, no visible change) shows every state
-  as "unchanged in a" with empty dashed rows; Tom has nothing to judge but must still merge.
-- **Idea (Tom, 2026-10-29):** auto-accept such a sketch when there really is no visible change.
-- **Fix options:** (1) `sketch ready` compares the shots of every state of every variant with the
-  merged ones; with zero changed pixels on all of them it merges by itself and logs it as an
-  automatic merge; (2) the same, but Studio shows a one-click "Merge (no visible change)" instead of
-  the empty rows. Recommendation: option 1, with a pixel-exact check and the log entry.
 
 ### 3.18 `sketch report` prints nothing and exits 0 - open
 
@@ -150,16 +135,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.12 `design shot` fails on a busy port 5173 and writes nothing - open
-
-- **Pain:** `design shot pages/flows --states --variants` printed only `Port 5173 is already in use`
-  and exited without a sheet.
-- **Fix option:** take a free port, as the render check does.
-- **Not reproduced:** `design shot` starts its server on port 0 since `1902a2675`. A run with 5173
-  taken wrote the sheet. The message may come from a stale `dist`. Close if it does not return.
-- **Seen again:** `check-system.spec` "warns of a merged part..." fails with `Port 5173 is already in use`
-  when the whole `src/lib/design` folder runs, and passes alone. Some test path still uses a fixed port.
-
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -167,12 +142,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
-
-### 5.12 `sketch new` does not print the variant file path - open
-
-- **Pain:** the output ends at `... in progress: <dir> with a`; the agent listed the folder to find
-  `a/foundations/logo/logo.ts`.
-- **Fix option:** print the path of each variant's part file.
 
 ### 5.13 No rule for assets (marks, logos, icons, images) - open
 

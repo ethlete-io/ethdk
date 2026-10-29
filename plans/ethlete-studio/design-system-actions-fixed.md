@@ -463,3 +463,42 @@ sketch` until the next merge of the part.
 - **Fix done (`4927aeac8`):** all three. A sketch `shared/` folder imported as `@shared/...` (a
   merge copies it into the part), `sketch new --like`, and `embedPage()`.
 - **Checked 2026-10-29:** verified. An `@shared/` import renders, a merge copies `shared/` and rewrites the import, `sketch new --like` copies `shared/`, and `embedPage` renders.
+
+### 1.3 The design server listens on `[::1]` only - fixed
+
+- **Pain:** the Mac test needed a hand-made TCP forwarder to reach the design server over the LAN.
+- **Fix option:** a `--host` option (or `DE_HOST`) passed to Vite's `server.host`.
+- **Fix done (`104598751`):** `yarn design --host <address>` or `DE_HOST` goes to Vite `server.host`. The default is unchanged.
+- **Checked 2026-10-29:** the spec bites (it fails with the host line removed). `--help` shows the option.
+
+### 3.17 A pure refactor sketch still waits for a manual merge - fixed, open points
+
+- **Pain:** the `foundations/logo` sketch (export `studioMark`, no visible change) showed every state
+  as "unchanged in a" with empty dashed rows. Tom had nothing to judge but had to merge.
+- **Fix done (`f5ad82acd`):** option 1. `sketch ready` compares every state of every variant with the
+  product part. Same markup and styles count as unchanged. Same markup with other styles is compared
+  pixel-exact. Other markup is always a change. With no change, it merges the first variant through
+  the normal merge and writes an `auto: true` entry to the `accepted.json` of the product.
+- **Checked 2026-10-29:** real CLI on a scratch copy of the `foundations/logo` sketch. No change: "No visible
+  change in any state: merged foundations/logo automatically." and the `auto` entry. With `rx="8"`
+  changed to `rx="2"`, the sketch stays `ready`.
+- **Open points:**
+  - Only the states of the target part are compared, not the pages that use it.
+  - A pure markup refactor with equal pixels does not auto-merge.
+  - Studio does not show `auto` entries yet.
+
+### 4.12 `design shot` fails on a busy port 5173 and writes nothing - fixed
+
+- **Pain:** `design shot pages/flows --states --variants` printed only `Port 5173 is already in use`
+  and exited without a sheet. `check-system.spec` failed the same way in a full `src/lib/design` run.
+- **Root cause:** Vite treats `port: 0` as unset and falls back to 5173 with `strictPort`. The port-0
+  change of `1902a2675` never worked for the render check, `design shot` and the shots of `sketch ready`.
+- **Fix done (`f8d196b15`):** `serve.ts` probes a free port first.
+- **Checked 2026-10-29:** full `src/lib/design` run with 5173 held by another process: no port error.
+  Full run alone: 72 files, 460 tests pass.
+
+### 5.12 `sketch new` does not print the variant file path - fixed
+
+- **Pain:** the output ended at `... in progress: <dir> with a`. The agent listed the folder to find
+  `a/foundations/logo/logo.ts`.
+- **Fix done (`7666803d3`):** `sketch new` and `sketch variant` print one line per variant with the part file path.
