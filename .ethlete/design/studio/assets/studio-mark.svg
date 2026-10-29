@@ -1,9 +1,9 @@
-<svg class="lg-mark" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio">
-  <rect width="32" height="32" rx="8" fill="var(--accent)" />
+<svg xmlns="http://www.w3.org/2000/svg" class="lg-mark" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio">
+  <rect width="32" height="32" rx="8" fill="var(--accent, #25aea7)" />
   <path
     d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38"
     fill="none"
-    stroke="var(--on-accent)"
+    stroke="var(--on-accent, #051211)"
     stroke-width="4"
   />
 </svg>

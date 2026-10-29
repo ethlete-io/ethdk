@@ -113,6 +113,9 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Where:** the check after the auto merge (3.17) in `libs/cli/src/lib/design/system/sketch/`.
 - **Fix option:** block only on problems the merge adds. Compare the problem list before and after
   the merge, and print the old ones as a note.
+- **Also:** after the problem was fixed, a second `sketch ready pages/start` printed "ready, not
+  in progress" and did not try the auto merge again. Let `sketch ready` on a `ready` sketch run the
+  unchanged check again.
 
 ## 4. Render checks and shots
 

@@ -5,5 +5,13 @@
     "note": "Prettier format after the merge in 290fcc73e; Tom approved 2026-10-29",
     "hash": "14de5f6e2ff024a7",
     "at": "2026-10-29T12:33:51.807Z"
+  },
+  {
+    "part": "foundations/logo",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "67a60b2195e1f43d",
+    "at": "2026-10-29T14:39:56.489Z",
+    "auto": true
   }
 ]

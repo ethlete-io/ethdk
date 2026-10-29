@@ -1,11 +1,11 @@
-import { definePart, drawing, html } from '@design-system';
+import { definePart, drawing, html, svgAsset } from '@design-system';
 import tokens from '@system/foundations/tokens.css?inline';
 import mark from '@assets/studio-mark.svg?raw';
 import styles from './logo.css?inline';
 
 type View = 'sizes' | 'sidebar';
 
-export const studioMark = (size: number) => mark.replace('width="32" height="32"', `width="${size}" height="${size}"`);
+export const studioMark = (size: number) => svgAsset(mark, { size });
 
 const sizes = html`<div class="lg-root">
   <h2 class="lg-title">Mark at app-icon sizes</h2>
