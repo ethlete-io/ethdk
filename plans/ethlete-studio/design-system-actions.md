@@ -104,6 +104,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
+### 3.22 Other whitespace in the markup stops the auto merge - open
+
+- **Pain:** the sketch that moves the Studio mark into `assets/studio-mark.svg` draws the same
+  mark, but the SVG has other indentation. `sketch ready` (3.17) counts any markup difference as a
+  change and compares no pixels, so the sketch stays `ready` and waits for Tom.
+- **Where:** `unchangedStatesOf` in `libs/cli/src/lib/design/system/sketch/unchanged-states.ts`.
+- **Fix options:** (1) when the markup differs, compare the pixels too, as for equal markup with
+  other styles; (2) normalize whitespace between tags before the markup compare. Recommendation:
+  (1), because only pixels answer "no visible change".
+- **Also seen:** in the `sidebar` state the active nav item of variant a looked a little lighter
+  than merged in `design shot`, with unchanged CSS. Not checked; option 1 would show it.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -134,6 +146,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+
+### 5.15 Assets in a sketch: path, size and format - open
+
+- **Pain:** from the first asset sketch (`foundations/logo`, 2026-10-29):
+  - `sketch new` prints the part file path but not that the variant's assets go to
+    `<variant>/assets/`. The agent read `assets.ts` to find out.
+  - An SVG asset has no size input. `studioMark(size)` replaces `width="32" height="32"` as a
+    string, which breaks silently when the attributes change.
+  - Prettier has no SVG parser, so an SVG asset is not formatted and not checked.
+  - `design shot --states --variants` shows merged and variant rows, but no pixel diff.
+- **Fix options:** print `<variant>/assets/` in `sketch new` and name it in the skill; a small
+  `svgAsset(raw, { size })` helper that sets `width`/`height` on the root `<svg>`; an SVG format
+  check (or a prettier XML plugin); a diff row in `design shot` that marks changed pixels.
 
 ## 6. Agent process
 
