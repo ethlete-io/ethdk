@@ -356,20 +356,33 @@ sketch` until the next merge of the part.
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
 
-| Pain                                                                                                          | Rule                                                                                                   | Ref        |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
-| The agent said "visually checked" after static fit shots only                                                 | Define the check from the design claim first. Report exactly which states and actions ran.             | L2720      |
-| The exploration became a second canvas implementation                                                         | Name the visual question and the smallest artifact first. Reuse the real canvas.                       | L2940      |
-| One unchosen idea grew into four screens                                                                      | Draw about three different alternatives next to each other.                                            | L3020      |
-| The agent blamed the wrong cause for an alignment comment                                                     | Look at the real render before you name a cause.                                                       | L2659      |
-| A synthetic `dblclick` passed, a real double-click failed                                                     | Use real pointer sequences.                                                                            | L2818      |
-| The agent extended the sketch while the tool was broken                                                       | Stop the design work while a broken tool is repaired.                                                  | L2982      |
-| New controls duplicated accepted controls                                                                     | List the accepted controls before you draw. Name what you reuse.                                       | L2579      |
-| Shared elements were extracted too early                                                                      | Draw pages first. Record repeats as findings. Compare before you extract.                              | L2607      |
-| The agent changed a ready variant without a report; Tom saw it change while no one was drawing                | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.              | 2026-10-29 |
-| The agent guessed the direction of "spacing passt nicht" and drew one answer; it made the spacing worse       | If a comment does not say which way, draw both directions as variants, or ask.                         | 2026-10-29 |
-| The agent answered Tom's comments with a variant in the running round; `sketch variant` defaults to it        | An answer to comments opens a new round (`--round`, `--note`).                                         | 2026-10-29 |
-| A header decision went into one state; the sibling state kept the old header and Tom found it after the merge | Before `ready`, shoot every state that draws the changed chrome. Carry the decision into each, or ask. | 2026-10-29 |
+| Pain                                                                                                                                | Rule                                                                                                                        | Ref        |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| The agent said "visually checked" after static fit shots only                                                                       | Define the check from the design claim first. Report exactly which states and actions ran.                                  | L2720      |
+| The exploration became a second canvas implementation                                                                               | Name the visual question and the smallest artifact first. Reuse the real canvas.                                            | L2940      |
+| One unchosen idea grew into four screens                                                                                            | Draw about three different alternatives next to each other.                                                                 | L3020      |
+| The agent blamed the wrong cause for an alignment comment                                                                           | Look at the real render before you name a cause.                                                                            | L2659      |
+| A synthetic `dblclick` passed, a real double-click failed                                                                           | Use real pointer sequences.                                                                                                 | L2818      |
+| The agent extended the sketch while the tool was broken                                                                             | Stop the design work while a broken tool is repaired.                                                                       | L2982      |
+| New controls duplicated accepted controls                                                                                           | List the accepted controls before you draw. Name what you reuse.                                                            | L2579      |
+| Shared elements were extracted too early                                                                                            | Draw pages first. Record repeats as findings. Compare before you extract.                                                   | L2607      |
+| The agent changed a ready variant without a report; Tom saw it change while no one was drawing                                      | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.                                   | 2026-10-29 |
+| The agent guessed the direction of "spacing passt nicht" and drew one answer; it made the spacing worse                             | If a comment does not say which way, draw both directions as variants, or ask.                                              | 2026-10-29 |
+| The agent answered Tom's comments with a variant in the running round; `sketch variant` defaults to it                              | An answer to comments opens a new round (`--round`, `--note`).                                                              | 2026-10-29 |
+| A header decision went into one state; the sibling state kept the old header and Tom found it after the merge                       | Before `ready`, shoot every state that draws the changed chrome. Carry the decision into each, or ask.                      | 2026-10-29 |
+| After the zoom work the agent proposed more detail on `pages/sketches` (open points 5 to 8); that drifts from the base plan         | Before you propose the next step, read the agreed order: all pages first, then extract components (`design-system.md:905`). | 2026-10-29 |
+| The agent wrote new plain CSS files (`header.css`, `heads.css`) for a sketch, though sketches may use the Studio Tailwind utilities | Use utilities in sketch markup (`f27c66d0e`). Plain CSS only for what utilities cannot express.                             | 2026-10-29 |
+
+### Parked: open points on `pages/sketches` (2026-10-29)
+
+Parked until all pages exist and the components are extracted. Next is `pages/flows`, the only shell
+section without a page.
+
+- Several state rows per variant, with the head on the top frame.
+- Pending "Wird gezeichnet" placeholders.
+- The head of the "Aktuell" column.
+- Pins and comments at zoom. Recommendation: keep them at screen size.
+- Several screen sizes side by side.
 
 ## 7. Open checks
 
