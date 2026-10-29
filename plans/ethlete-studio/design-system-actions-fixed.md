@@ -1264,3 +1264,11 @@ check` warns early.
   frame. The render check reported nothing.
 - **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
 - **Fix done (f5ea90637):** The option, narrowed. `CLIPPED` also measures each element's outline (width plus offset, a transparent one skipped) and each crisp outer box shadow (offset plus spread; inset, transparent and blurred shadows skipped) against the nearest ancestor with overflow other than visible, or the frame, and reports `outline|box-shadow <n>px past <ancestor|the frame>` when the element box sits inside but the ring passes it. Blurred shadows are left out on purpose: with blur counted, the floating side panel of `elements/shell-main` (`0 12px 32px`, clipped by the 1440x900 shell) and the `components/select` overlay panel flagged on every studio page.
+
+### 4.23 The render check misses a clipped text decoration - fixed (fea807331)
+
+- **Pain:** in tree-row r4 i, the label's `overflow: hidden` cut off the red wavy underline. CLIPPED
+  did not fire; the agent saw it only in the shot.
+- **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
+  `overflow: hidden`).
+- **Fix done (fea807331):** Option 1, underlines only. For an element with an underline, `CLIPPED` finds each text line's baseline (canvas `fontBoundingBoxDescent`), adds `text-underline-offset` (auto: 0.1em), the thickness (auto: 1/16 em, at least 1px) and 3px for `wavy`, and reports `underline <n>px past <ancestor>` when that ink passes the nearest clipping ancestor, the element itself included, while the baseline is inside it. Overline and line-through are not measured.

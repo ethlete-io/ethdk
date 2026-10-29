@@ -173,13 +173,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.23 The render check misses a clipped text decoration - open
-
-- **Pain:** in tree-row r4 i, the label's `overflow: hidden` cut off the red wavy underline. CLIPPED
-  did not fire; the agent saw it only in the shot.
-- **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
-  `overflow: hidden`).
-
 ### 4.31 `sketch check` says nothing about a `grid` - open
 
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.
