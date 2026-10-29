@@ -2,7 +2,7 @@ import { formField } from '@ethlete/components/design/form-field';
 import { select } from '@ethlete/components/design/select';
 import { embedPage, html } from '@design-system';
 import button from '@system/components/button';
-import partTree from '@system/elements/part-tree';
+import treeRow from '@system/components/tree-row';
 
 export type FlowProps = { flow: 'open' | 'none' };
 
@@ -25,34 +25,6 @@ export const OTHER_FLOWS = ['Kommentar beantworten', 'Produkt anlegen'];
 
 export const shot = (step: Step, scale: number) =>
   embedPage(step.page, { state: step.state, width: 1440, height: 900, scale }).body;
-
-export const flowList = async () =>
-  partTree.render({
-    layers: [
-      {
-        title: 'Flows',
-        open: true,
-        parts: [{ name: FLOW_NAME, leaf: true, selected: true }, ...OTHER_FLOWS.map((name) => ({ name, leaf: true }))],
-      },
-    ],
-  });
-
-export const stepTree = async () =>
-  partTree.render({
-    layers: [
-      {
-        title: 'Flows',
-        open: true,
-        parts: [
-          {
-            name: FLOW_NAME,
-            states: STEPS.map((step, index) => ({ name: `${index + 1} ${step.title}`, selected: index === 1 })),
-          },
-          ...OTHER_FLOWS.map((name) => ({ name })),
-        ],
-      },
-    ],
-  });
 
 export const presetPicker = () =>
   formField({
@@ -97,19 +69,15 @@ export const emptyCanvas = html`<div class="h-full flex items-center justify-cen
 
 export const emptySide = html`<p class="px-space-3 py-space-2 text-text-muted text-ui-sm">Noch keine Flows.</p>`;
 
-const dot = '<span class="st-tree-lead"><span class="st-tree-dot"></span></span>';
-
-export const flatFlowList = async () => {
-  const tree = await partTree.render({ layers: [] });
-  const rows = [FLOW_NAME, ...OTHER_FLOWS]
-    .map(
-      (name) =>
-        `<div class="st-tree-row"${name === FLOW_NAME ? ' data-selected' : ''}>${dot}<span class="st-tree-label">${name}</span></div>`,
-    )
-    .join('');
-
-  return { body: `<div class="st-tree">${rows}</div>`, styles: tree.styles };
-};
+export const flatFlowList = () =>
+  treeRow.render({
+    rows: [FLOW_NAME, ...OTHER_FLOWS].map((label) => ({
+      label,
+      depth: 0,
+      kind: 'leaf',
+      selected: label === FLOW_NAME,
+    })),
+  });
 
 export const pageHeader = (title: string, end = '') =>
   html`<header class="flex flex-none items-center gap-space-3 h-(--control-md)">
