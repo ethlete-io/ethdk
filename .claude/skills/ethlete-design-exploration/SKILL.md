@@ -479,6 +479,10 @@ interaction (rest, hover, focus-visible, selected, inert), plus only the combina
 different. A smaller piece with no states of its own, such as an icon set, is a foundation asset,
 not a component.
 
+When each of several cases is drawn at rest and in the same interactions, build the states and their grid with
+`interactionRows(rows, { interactions: ['hover', 'active'], force: (props, interaction) => ({ ...props, interaction }) })`
+from `@design-system` and spread the result into `definePart`; never write those states and the grid by hand.
+
 ## Draw from the design system
 
 A call that invents its own button, field or row does not match the calls beside it. **Before

@@ -15,6 +15,7 @@
     "define-call.ts",
     "define-part.ts",
     "embed-page.ts",
+    "interaction-rows.ts",
     "mark-part.ts",
     "svg-asset.ts",
     "wireframe-kit.ts"
