@@ -1500,3 +1500,11 @@ check` warns early.
   that the foundations import (recommended). 2. `sketch new <part> --from <part> --take <states>`.
 
 - **Checked 2026-10-29:** Tom merged foundations/sheet. Colors, type and spacing now use tokenSheet, fillTokenValues and sheet.styles. All three adoption sketches passed type/render checks and showed no changed pixels in any state, so ready auto-merged them. Full Studio design check passes. Commits bbe2852a0 (sheet), 9807ff8a3 (colors), 083b839c9 (type), plus the spacing adoption commit.
+
+### 3.43 A ready sketch can still have a target the merger cannot annotate - fixed
+
+- **Pain (Tom, 2026-10-29):** choosing A in `pages/inbox` "Switch sizing" recorded the pick but failed to merge: `.ethlete/design/studio/sketches/pages-inbox/a/pages/inbox/inbox.ts holds no definePart({ note: '…' }) to set the note on`.
+- **Cause:** the variant default-exported `inbox(true)` from its shared factory. Rendering and type checks accepted it, but the merger's static note/author writer requires a writable `definePart({ note: '…' })` object in the target file.
+- **Fix:** sketch checking now preflights the target with the same metadata writers as the merger, so `check` and `ready` reject an unmergeable wrapper with an actionable message. Identifier exports and template-literal notes remain supported.
+- **Immediate repair:** both Inbox wrappers now use `definePart({ ...inbox(...), note: <literal>, madeBy: [...] })`. All five states in both variants pass; enlarged off/on comparisons before and after the repair are byte-identical PNGs. A remains picked; Tom must retry the failed merge in Studio.
+- **Checked:** regression for rejected factory exports and accepted identifier/template-note exports, focused CLI test, CLI lint and CLI build pass. This catches a mergeability failure before the designer makes a choice.

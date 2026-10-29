@@ -9,7 +9,7 @@ import { duplicateClassWarningsOf } from './duplicate-class';
 import { overlaySketch, SketchedProduct } from './overlay';
 import { sharedClassWarningsOf } from './shared-class';
 import { unusedFileWarningsOf } from './unused-files';
-import { stateNamesOf } from './part-definition';
+import { stateNamesOf, withMadeBy, withNote } from './part-definition';
 import { listSketches, Sketch, sketchFolderOf, variantDirOf } from './sketch';
 
 /** `problems` are the ones a variant brings in; `before` are the ones the product already has, which do not fail the variant. */
@@ -57,12 +57,24 @@ export const variantProblemsOf = (options: { product: ResolvedProduct; sketch: S
     const wasThere = (problem: Problem) =>
       had.has(keyOf(relative(variantDir, problem.file).startsWith('..') ? options.product.dir : variantDir, problem));
     const found = ruleProblemsOf(overlaid);
+    const target = overlaid.parts.find((part) => partKeyOf(part) === options.sketch.target);
+    const metadataProblem: Problem[] =
+      target && (withNote(target.source, '') === null || withMadeBy(target.source, ['author']) === null)
+        ? [
+            {
+              rule: 'SKETCH',
+              file: target.file,
+              message: `merge cannot write metadata to ${options.sketch.target} - define it with definePart({ ..., note: '...' }) in this file`,
+            },
+          ]
+        : [];
 
     return {
       sketch: options.sketch,
       variant,
       problems: [
         ...found.filter((problem) => !wasThere(problem)),
+        ...metadataProblem,
         ...droppedStatesOf({ product: options.product, overlaid, allowed: round?.drops ?? [] }),
       ],
       before: found.filter(wasThere),

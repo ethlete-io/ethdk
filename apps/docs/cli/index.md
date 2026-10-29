@@ -79,3 +79,14 @@ instead of the globally loaded token CSS.
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.
+
+`et design sketch check` and `sketch ready` also verify that the merger can write the target's
+note and authors. A variant that delegates to a shared factory keeps a `definePart` object with
+a literal `note` in its own target file:
+
+```ts
+export default definePart({
+  ...sharedPart(options),
+  note: 'Describe this part.',
+});
+```

@@ -133,6 +133,14 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
+### 4.43 Small changes disappear in a full-page sketch comparison - open
+
+- **Pain (Tom, 2026-10-29):** in `pages/inbox`, round "Switch sizing", the 32 × 18 and 40 × 22 SDK switches were hard to distinguish across full 1440 × 900 page frames. Nearly all of each frame was unchanged. The agent inspected enlarged crops, but Studio did not give Tom an equally focused comparison.
+- **Evidence:** Tom's screenshot shows Current, A and B as small full-page columns; the changed switch occupies only a few pixels in each column. Variant notes also crowd the round header.
+- **Now:** manual canvas zoom or the agent's `design shot --crop`. Neither makes the initial comparison self-explanatory for the designer.
+- **Fix options:** 1. derive a shared crop from the union of changed pixel bounds and show an enlarged Current/A/B comparison alongside the full-page context (recommended). Keep identical crop coordinates and scale for all variants. 2. a declared focus rectangle on a sketch, with a visible "Zoom to change" action. 3. zoom only the changed frame; this still makes side-by-side detail comparison difficult.
+- **Acceptance:** for the Inbox switch round, Tom can distinguish both off and on appearances at the initial comparison view without hunting for the changed control. Full-page context remains available.
+
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open

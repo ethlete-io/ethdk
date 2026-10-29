@@ -40,6 +40,35 @@ describe('openSketchProblemsOf', () => {
     ]);
   });
 
+  it('rejects a target whose factory export cannot receive merge metadata', () => {
+    const target = acme();
+    const product = resolveAcme(target);
+    const sketch = createSketch({
+      product,
+      sketch: { layer: 'elements', name: 'hero' },
+      variants: ['a', 'b'],
+    }) as Sketch;
+    const file = join(sketch.dir, 'a/elements/hero/hero.ts');
+
+    writeFileSync(file, "import { inbox } from '@shared/inbox';\nexport default inbox(true);\n");
+
+    const variants = openSketchProblemsOf(product).variants;
+
+    expect(variants.find(({ variant }) => variant === 'a')?.problems).toContainEqual({
+      rule: 'SKETCH',
+      file,
+      message:
+        "merge cannot write metadata to elements/hero - define it with definePart({ ..., note: '...' }) in this file",
+    });
+    expect(variants.find(({ variant }) => variant === 'b')?.problems).toEqual([]);
+
+    writeFileSync(
+      file,
+      "import { definePart } from '@design-system';\nconst part = definePart({ note: `hello` });\nexport default part;\n",
+    );
+    expect(openSketchProblemsOf(product).variants.find(({ variant }) => variant === 'a')?.problems).toEqual([]);
+  });
+
   it('keeps a problem the product already has apart from the ones a variant brings in', () => {
     const target = acme();
     const productDir = join(target, DESIGN_DIR, 'acme');
