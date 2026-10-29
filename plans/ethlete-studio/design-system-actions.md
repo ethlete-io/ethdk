@@ -143,17 +143,29 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.13 No rule for assets (marks, logos, icons, images) - open
+### 5.13 No rule for assets (marks, logos, icons, images) - decided, building
 
 - **Pain:** the Studio mark lives as inline SVG in `foundations/logo`, in `pages/start` and as a
   separate glyph in `elements/shell-main`; the app has a fourth copy in
   `apps/ethlete-studio/src/app/components/studio-mark.component.ts`. No rule says where an asset
   lives, how a part draws it, or how it reaches the real app.
-- **Decision (Tom, 2026-10-29):** the shell glyph stays its own design for now. Tom raised the general
-  asset question; it is open.
+- **Decision (Tom, 2026-10-29):** the shell glyph stays its own design for now.
 - **Fix options:** (1) assets are named exports of a foundation part (`studioMark`, 5.7); (2) an
-  `assets/` folder per product with SVG files, imported by parts and by the app; (3) the app's
-  component is the source and the design system embeds it.
+  `assets/` folder per product, imported by parts and by the app; (3) the app's component is the
+  source and the design system embeds it.
+- **Decision (Tom, 2026-10-29):** option 2 with (1) as a thin wrapper, but for every file type, not
+  only SVG. Example: a header picture as PNG.
+- **Rule:**
+  - An asset is a file in `.ethlete/design/<product>/assets/`: SVG, PNG, WebP, JPEG, or another
+    type. One file is the only source.
+  - A part imports it as `@assets/<file>`. The default import is a URL for `<img src>`. An SVG that
+    must follow tokens (`var(--accent)`, `currentColor`) imports with `?raw` and goes inline.
+  - A foundation part may wrap an asset in a named export, for example `studioMark(size)`.
+  - A product finds the assets of its base product too (`studio` finds `sdk` assets).
+  - A sketch variant can add or change an asset in its own `assets/`; a merge copies it.
+  - `design check` and the "changed outside a sketch" hash count the bytes of the assets a part
+    imports.
+  - The app gets the same files when a design goes into the real app; not part of this build.
 
 ## 6. Agent process
 
