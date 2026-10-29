@@ -239,6 +239,33 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. `design shot --state <a,b>` filter (recommended). 2.
   `design shot --compare <v>/<state> <v>/<state>` prints the pixel delta.
 
+### 4.28 A sketch that adds a `grid` never shows the grid before the merge - open
+
+- **Pain:** the `tree-row` "State grid" sketch: `design shot --states --variants` drew one flat
+  row of 19 cells for merged and for `a`; `shot-command.ts` reads the grid only without
+  `--variants`, and then only from the merged part. The Studio sketch compare also draws one row
+  per state (open point of 2.10).
+- **Fix option:** read the grid per axis (merged and each variant) and lay out each axis with its
+  own grid, in the shot and in the Studio sketch compare.
+
+### 4.29 The default shot draws a part with `widths` at content size - open
+
+- **Pain:** without `--width`, every `tree-row` cell is as wide as its content, so the end marks
+  sit right after the label. Only `--width 280` shows the real layout.
+- **Fix option:** a non-page part with `widths` is shot at `widths[0]` by default.
+
+### 4.30 `design shot` prints the PNG path before the diff lines - open
+
+- **Pain:** the path came before about 20 "vs merged" lines; the agent ran the shot again to
+  find it.
+- **Fix option:** print the path last.
+
+### 4.31 `sketch check` says nothing about a `grid` - open
+
+- **Pain:** no line confirmed that the grid was read or that each cell names a real state.
+  Unknown names fail typecheck, but repeated or dropped states pass silently.
+- **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
