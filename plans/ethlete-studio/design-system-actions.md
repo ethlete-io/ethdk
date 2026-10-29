@@ -116,6 +116,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   "8 x 4 px") and a click marks the area on the frame (recommended; the CLI diff exists, see 4.35). 2. the head lists the changed files of the variant. 3. a sketch whose diff is empty or tiny
   says "Refactor, no visible change" next to the round note.
 
+### 3.32 `sketch report --done` without an earlier report reads like an error - open
+
+- **Pain:** `foundations/agent-logos`: `--done` printed "variant a had no live report"; the agent
+  could not tell if `--done` was recorded.
+- **Fix option:** print "a marked done" and drop the warning when `--done` is passed.
+
+### 3.33 `sketch ready` fails on a round without a note - open
+
+- **Pain:** `foundations/agent-logos`: `sketch new --round` took no note, and `sketch ready` then
+  stopped with "round r1 has no note". The brief and `sketch new` did not say a note is needed.
+- **Fix options:** 1. `sketch new --round` asks for `--note` up front (recommended). 2. `sketch
+check` warns early.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -285,6 +298,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** the merged `components/comment-pin` grid had hover, pressed and focus cells for faces,
   but the count rows filled only "rest". Nothing flagged that a count could break on focus.
 - **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
+
+### 4.38 `sketch check` does not flag an undefined token - open
+
+- **Pain:** the `foundations/agent-logos` agent used `--radius-md` and `--space-8`, which Studio
+  does not define. `sketch check` passed; the agent found it by eye. `design check` has
+  UNDEFINED-TOKEN (83accd941), the sketch check does not.
+- **Fix option:** run the UNDEFINED-TOKEN check in `sketch check` on the variant files
+  (recommended).
 
 ## 5. Drawing parts and pages
 
@@ -461,6 +482,13 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   parameter to the shared `pin()`. It merges even when a or c wins.
 - **Fix option:** a variant may hold its own copy of a shared file, which wins over `shared/`.
 
+### 5.49 `svgAsset` cannot set a class or attributes - open
+
+- **Pain:** `foundations/agent-logos` needs a host class and `aria-hidden` on the SVG; the agent
+  patched them in with `.replace('<svg', ...)`.
+- **Fix options:** 1. `svgAsset(raw, { size, class?, attrs? })` (recommended). 2. `size: null`, and
+  CSS sizes the SVG.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
@@ -493,6 +521,12 @@ section without a page.
 - The head of the "Aktuell" column.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
+
+### 6.3 `yarn design` rebuilds the CLI on every call - open
+
+- **Pain:** about 2.4 s per call; noticeable in a check-and-shot loop. Agents switch to
+  `node dist/libs/cli/src/index.js design` on their own.
+- **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
 
 ## 7. Open checks
 
