@@ -1308,3 +1308,10 @@ check` warns early.
   for a and b and "is no longer drawing" for c.
 - **Fix option:** one consistent "a: done" line (with 3.32).
 - **Fix done (891bc68cd):** Already fixed by the 3.32 fix: `sketch report --done` prints `<target> variant <key> marked done` whether or not the variant held the live report, and no longer prints "had no live report" or "is no longer drawing" (neither string is left in the CLI). The spec "ends the live report of a variant with --done" covers a variant without and one with the live report.
+
+### 5.30 `design check` does not report an unused export in `shared/` - fixed (c825ebb97)
+
+- **Pain:** `flowList` and `stepTree` in `pages/flows/shared/flow-data.ts` had no importer. They
+  kept a dead `part-tree` import alive. Found by hand.
+- **Fix option:** `design check` warns about an export in a part's `shared/` that nothing imports.
+- **Fix done (c825ebb97):** The option: `rules/unused-shared-export.ts` reads each export of a part folder's `shared/` files (`exportedNamesOf` in `ts-source.ts`) and the names every file of the part takes from it (`importedNamesOf`: named, default, `import *`, re-exports, dynamic import); `design check` prints `WARNING UNUSED-EXPORT <file>: <name> is exported, but nothing imports it` and still passes. `sketch check` warns per variant of a sketch `shared/` export the variant does not import (`unused-files.ts`). On studio: 9 warnings - `pages/flows/shared/flow-data.ts` `Step`, `STEPS`, `OTHER_FLOWS`, `shot`, `arrow`, `caption`; `components/tree-row/shared/tree-row.ts` `RowInteraction`; `components/comment-pin/shared/comment-pin.ts` `PinInteraction`, `CountPlacement` (most are used inside their file and only need the `export` dropped; `arrow` is dead).

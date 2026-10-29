@@ -220,12 +220,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** a render check rule that reports a class in a part's markup that no loaded
   stylesheet and no utility defines.
 
-### 5.30 `design check` does not report an unused export in `shared/` - open
-
-- **Pain:** `flowList` and `stepTree` in `pages/flows/shared/flow-data.ts` had no importer. They
-  kept a dead `part-tree` import alive. Found by hand.
-- **Fix option:** `design check` warns about an export in a part's `shared/` that nothing imports.
-
 ### 5.31 Studio has no pressed surface token - open
 
 - **Pain:** `tree-row`'s `:active` fill is a `color-mix` of `--surface-raised` and
