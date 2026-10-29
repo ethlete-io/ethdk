@@ -1234,3 +1234,19 @@ check` warns early.
 - **Fix option:** `design part remove <layer>/<name>`. It refuses while a part imports it, and it
   resolves the part's comments.
 - **Fix done (d4b68de7e):** Option 1. `et design part remove <layer>/<name> --by <model id> [--product <p>]` deletes the folder and its `merged.json` entry, rewrites the product `tsconfig.json` paths, and resolves its comments (note `<part> removed by <model id>`). It refuses a part another part imports, a base part, and a part an open sketch targets. The design-exploration skill names it.
+
+### 4.16 `design check` passes while open sketches have type errors - fixed (a5b7715fe)
+
+- **Pain:** on the `pages/merge` round (2026-10-29), `design check --product studio` said "ok" while
+  all three variants had TypeScript errors. Only `design sketch check pages/merge` found them.
+- **Fix options:** 1. the product check also types open sketches (recommended). 2. it prints "N open
+  sketches not checked, run `sketch check`".
+- **Fix done (a5b7715fe):** Option 1. `design check` (the rendered product check) runs `typecheckVariant` over each variant of every open sketch and reports a `TYPE-ERROR <variant dir>` line with the tsc output, failing the check. The check a merge runs (`checkSystem`) still types only the product, so a broken sketch does not block merging another. 4.32 is the same fix.
+
+### 4.32 `design check` says ok while an open sketch has a type error - fixed (a5b7715fe)
+
+- **Pain:** `components/comment-pin`: `design check --product studio` said "ok" while every variant
+  had a TS error. Only `sketch check` found it.
+- **Fix options:** 1. `design check` also type-checks open sketches (recommended). 2. it prints that
+  it skips open sketches.
+- **Fix done (a5b7715fe):** Option 1. `design check` (the rendered product check) runs `typecheckVariant` over each variant of every open sketch and reports a `TYPE-ERROR <variant dir>` line with the tsc output, failing the check. The check a merge runs (`checkSystem`) still types only the product, so a broken sketch does not block merging another. 4.32 is the same fix.

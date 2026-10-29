@@ -173,13 +173,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.16 `design check` passes while open sketches have type errors - open
-
-- **Pain:** on the `pages/merge` round (2026-10-29), `design check --product studio` said "ok" while
-  all three variants had TypeScript errors. Only `design sketch check pages/merge` found them.
-- **Fix options:** 1. the product check also types open sketches (recommended). 2. it prints "N open
-  sketches not checked, run `sketch check`".
-
 ### 4.17 CLIPPED and WRAP do not name their escape - open
 
 - **Pain:** scaled thumbnail frames trip CLIPPED and WRAP by design. The agent found
@@ -204,13 +197,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.
   Unknown names fail typecheck, but repeated or dropped states pass silently.
 - **Fix option:** one line such as `grid 13 rows x 4 columns ok`, an error for a state named twice.
-
-### 4.32 `design check` says ok while an open sketch has a type error - open
-
-- **Pain:** `components/comment-pin`: `design check --product studio` said "ok" while every variant
-  had a TS error. Only `sketch check` found it.
-- **Fix options:** 1. `design check` also type-checks open sketches (recommended). 2. it prints that
-  it skips open sketches.
 
 ### 4.34 A page's replace on another part's markup can match nothing, silently - open
 
