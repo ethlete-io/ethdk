@@ -355,7 +355,23 @@ const designExplore = ({
       return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
     };
     const thumbs = createThumbnailer({ target, base });
-    const shots = createPartShooter({ target, base, system });
+    const shots = createPartShooter({
+      target,
+      base,
+      system,
+      statesOf: async ({ product, part, sketch }) => {
+        const file = system.partOf({ product, part, sketch })?.file;
+
+        if (!file) return null;
+
+        const module = (await vite.ssrLoadModule(productModuleIdOf({ file, product, sketch }))) as {
+          default?: { states?: unknown };
+        };
+        const states = module.default?.states;
+
+        return states && typeof states === 'object' ? Object.keys(states) : [];
+      },
+    });
     const baseDirs = [...new Set(system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []))].filter(
       (dir) => !isInside(designRoot, dir),
     );

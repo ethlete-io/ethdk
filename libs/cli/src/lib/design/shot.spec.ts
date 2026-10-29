@@ -55,14 +55,20 @@ afterEach(async () => {
   process.chdir(cwd);
 });
 
-const acme = () => {
+const acme = (statesOf?: Parameters<typeof createPartShooter>[0]['statesOf']) => {
   const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-')));
 
   cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
 
   const config = readConfig(target) ?? {};
   const system = createSystemModules({ target, config });
-  const shots = createPartShooter({ target, base: 'http://localhost:1', system, chromiumOf: withBrowser });
+  const shots = createPartShooter({
+    target,
+    base: 'http://localhost:1',
+    system,
+    chromiumOf: withBrowser,
+    statesOf,
+  });
 
   closing.push(() => shots.close());
 
@@ -286,6 +292,18 @@ describe('createPartShooter', () => {
 
     expect((await ask(shots, 'product=acme&part=components/nope&state=long&preset=phone')).status).toBe(404);
     expect((await ask(shots, 'product=acme&part=components/card&state=long&preset=tv')).status).toBe(404);
+    expect(screenshot).not.toHaveBeenCalled();
+  });
+
+  it('names the states of the part in the 400 without a state', async () => {
+    const { shots } = acme(async ({ sketch }) => (sketch ? ['short', 'long', 'new'] : ['short', 'long']));
+
+    const merged = await ask(shots, 'product=acme&part=components/card');
+    const variant = await ask(shots, 'product=acme&part=components/card&sketch=components/card&variant=a');
+
+    expect(merged.status).toBe(400);
+    expect(String(merged.body)).toContain('state=<one of: short, long>');
+    expect(String(variant.body)).toContain('state=<one of: short, long, new>');
     expect(screenshot).not.toHaveBeenCalled();
   });
 

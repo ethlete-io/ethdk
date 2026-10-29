@@ -132,8 +132,9 @@ export const createPartShooter = (options: {
   base: string | (() => string);
   system: SystemModules;
   chromiumOf?: typeof chromiumOf;
+  statesOf?: (address: Pick<PartAddress, 'product' | 'part' | 'sketch'>) => Promise<string[] | null>;
 }) => {
-  const { system } = options;
+  const { system, statesOf } = options;
   const baseOf = () => (typeof options.base === 'function' ? options.base() : options.base);
   const drawQueue = createDrawQueue(options);
   const cache = new Map<string, { drawn: Drawn; shot: Promise<Picture> }>();
@@ -297,6 +298,29 @@ export const createPartShooter = (options: {
       const pixels = width === null ? null : Number(width);
       const presetWidth = preset && product ? system.productOf(product)?.presets[preset]?.width : undefined;
 
+      const sketchVariant = sketch && variant ? { target: sketch, variant } : null;
+
+      if (product && part && !state && statesOf) {
+        void statesOf({ product, part, sketch: sketchVariant }).then(
+          (names) =>
+            send(response, {
+              status: 400,
+              type: 'text/plain; charset=utf-8',
+              body: names
+                ? `design-explore: pass state=<one of: ${names.join(', ')}>`
+                : `design-explore: product "${product}" has no part "${part}"`,
+            }),
+          (error: unknown) =>
+            send(response, {
+              status: 500,
+              type: 'text/plain; charset=utf-8',
+              body: error instanceof Error ? error.message : String(error),
+            }),
+        );
+
+        return;
+      }
+
       if (!product || !part || !state || (pixels !== null && !isPositiveWhole(pixels))) {
         send(response, {
           status: 400,
@@ -325,7 +349,7 @@ export const createPartShooter = (options: {
           state,
           preset: preset ?? null,
           width: preset ? null : pixels,
-          sketch: sketch && variant ? { target: sketch, variant } : null,
+          sketch: sketchVariant,
           interaction: params.get('interaction'),
           params,
           priority,
