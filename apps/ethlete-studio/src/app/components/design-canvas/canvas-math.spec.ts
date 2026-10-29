@@ -183,6 +183,32 @@ describe('canvas math', () => {
     ]);
   });
 
+  it('starts the next sheet row or grid line below the notes hanging under a frame', () => {
+    const sheet = layoutSheet(
+      [
+        { id: 'a', width: 375, height: 300, row: 'default' },
+        { id: 'b', width: 375, height: 100, row: 'hover' },
+      ],
+      { columnGap: 40, rowGap: 80, below: { a: 200 } },
+    );
+    const grid = layoutGrid(
+      [
+        { id: 'a', width: 500, height: 50, row: '' },
+        { id: 'b', width: 500, height: 50, row: '' },
+      ],
+      { columnGap: 40, rowGap: 60, lineWidth: 800, below: { a: 120 } },
+    );
+
+    expect(sheet.rows).toEqual([
+      { name: 'default', y: 0 },
+      { name: 'hover', y: 580 },
+    ]);
+    expect(grid.frames.map(({ id, y }) => [id, y])).toEqual([
+      ['a', 0],
+      ['b', 230],
+    ]);
+  });
+
   it('labels a matrix row by its row label, and opens a larger gap where the row group changes', () => {
     const row = (name: string, rowGroup: string, rowLabel?: string) => ({
       id: name,

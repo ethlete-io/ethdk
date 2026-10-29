@@ -117,7 +117,13 @@ export type SheetLayout = { frames: (SheetFrame & Rect)[]; rows: SheetRow[] };
 
 export type SheetSpacing = { columnGap: number; rowGap: number };
 
-export const layoutSheet = (frames: SheetFrame[], spacing: SheetSpacing): SheetLayout => {
+/** By frame id, how far content hangs below the frame; the next row starts below it. */
+export type HangingBelow = Record<string, number>;
+
+export const layoutSheet = (
+  frames: SheetFrame[],
+  { below = {}, ...spacing }: SheetSpacing & { below?: HangingBelow },
+): SheetLayout => {
   const order: string[] = [];
   const byRow = new Map<string, SheetFrame[]>();
 
@@ -147,7 +153,7 @@ export const layoutSheet = (frames: SheetFrame[], spacing: SheetSpacing): SheetL
       x += frame.width + spacing.columnGap;
     }
 
-    y += Math.max(...members.map((m) => m.height)) + spacing.rowGap;
+    y += Math.max(...members.map((m) => m.height + (below[m.id] ?? 0))) + spacing.rowGap;
   }
 
   return { frames: placed, rows };
@@ -156,7 +162,10 @@ export const layoutSheet = (frames: SheetFrame[], spacing: SheetSpacing): SheetL
 export type GridSpacing = SheetSpacing & { lineWidth: number };
 
 /** Places frames left to right and starts a new line once a frame would pass `lineWidth`. */
-export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLayout => {
+export const layoutGrid = (
+  frames: SheetFrame[],
+  { below = {}, ...spacing }: GridSpacing & { below?: HangingBelow },
+): SheetLayout => {
   const placed: SheetLayout['frames'] = [];
   let x = 0;
   let y = 0;
@@ -171,7 +180,7 @@ export const layoutGrid = (frames: SheetFrame[], spacing: GridSpacing): SheetLay
 
     placed.push({ ...frame, x, y });
     x += frame.width + spacing.columnGap;
-    lineHeight = Math.max(lineHeight, frame.height);
+    lineHeight = Math.max(lineHeight, frame.height + (below[frame.id] ?? 0));
   }
 
   return { frames: placed, rows: [] };

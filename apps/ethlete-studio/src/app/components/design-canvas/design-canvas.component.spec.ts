@@ -427,7 +427,7 @@ describe('DesignCanvasComponent', () => {
     expect(older?.querySelector('[data-frame-pending]')).toBeNull();
   });
 
-  it('lowers the next matrix row below the note column of a frame', async () => {
+  it('lowers the next matrix row below the note column of a frame at the largest scale the column takes', async () => {
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
       return this.dataset['noteFrame'] === undefined ? 0 : 200;
     });
@@ -450,7 +450,14 @@ describe('DesignCanvasComponent', () => {
 
     expect(
       parseFloat(hover?.style.top ?? '') - parseFloat(rest?.style.top ?? '') - parseFloat(rest?.style.height ?? ''),
-    ).toBe(16 + 200 + 48);
+    ).toBe(16 + 200 * 2 + 48);
+
+    fixture.componentInstance.camera.set({ x: 0, y: 0, zoom: 0.3 });
+    await fixture.whenStable();
+
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-note-frame="rest"]')?.style.transform,
+    ).toBe('scale(2)');
     vi.restoreAllMocks();
   });
 

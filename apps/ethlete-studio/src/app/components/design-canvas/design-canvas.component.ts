@@ -75,6 +75,7 @@ const MIN_FRAME_ROW_HEIGHT = 64;
 const LIVE_MARGIN = 400;
 const LIVE_MIN_ZOOM = 0.5;
 const LABEL_MIN_ZOOM = 0.25;
+const NOTE_MAX_SCALE = 2;
 const ZOOM_STEP = 1.5;
 const MEASURE_WRITE_MS = 500;
 
@@ -286,7 +287,7 @@ export class DesignCanvasComponent {
       columns.flatMap((column) => (column.folded ? [[column.key, column.folded.width]] : [])),
     );
     const below = Object.fromEntries(
-      Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height]),
+      Object.entries(this.noteColumnHeights()).map(([id, height]) => [id, NOTE_BELOW_GAP + height * NOTE_MAX_SCALE]),
     );
     const sections = this.sections();
     const matrix =
@@ -327,7 +328,9 @@ export class DesignCanvasComponent {
     const sheet =
       matrix ??
       flow ??
-      (arrangement === 'grid' ? layoutGrid(sized, { ...GRID_SPACING, rowGap }) : layoutSheet(sized, SPACING));
+      (arrangement === 'grid'
+        ? layoutGrid(sized, { ...GRID_SPACING, rowGap, below })
+        : layoutSheet(sized, { ...SPACING, below }));
     const heads = (matrix?.columns ?? []).flatMap((placed) => {
       const column = columns.find((candidate) => candidate.key === placed.name);
 
@@ -475,11 +478,19 @@ export class DesignCanvasComponent {
     });
   });
 
+  private layoutFramesById = computed(() => new Map(this.layout().frames.map((placed) => [placed.frame.id, placed])));
+
   protected placedNotes = computed(() =>
-    placeNotes(this.notes(), { frames: this.framesById(), bounds: boundingRect(this.layout().frames) }),
+    placeNotes(this.notes(), {
+      frames: this.framesById(),
+      owners: this.layoutFramesById(),
+      bounds: boundingRect(this.layout().frames),
+    }),
   );
 
-  protected noteMarkers = computed(() => placeNoteMarkers(this.notes(), this.framesById()));
+  protected noteMarkers = computed(() =>
+    placeNoteMarkers(this.notes(), { frames: this.framesById(), owners: this.layoutFramesById() }),
+  );
 
   protected noteNumbers = computed(() => new Map(this.noteMarkers().map((marker) => [marker.key, marker.number])));
 
@@ -510,13 +521,16 @@ export class DesignCanvasComponent {
 
   protected labelScale = computed(() => 1 / Math.max(this.camera().zoom, LABEL_MIN_ZOOM));
 
+  /** The scale of the note column below a frame; it stops growing at `NOTE_MAX_SCALE`, the room the layout keeps for it. */
+  protected noteScale = computed(() => Math.min(this.labelScale(), NOTE_MAX_SCALE));
+
   protected notesCompact = computed(() => this.camera().zoom < LABEL_MIN_ZOOM);
 
   protected noteConnectors = computed(() => {
     if (this.notesCompact()) return [];
 
     const tops = this.noteCardTops();
-    const scale = this.labelScale();
+    const scale = this.noteScale();
 
     return this.noteMarkers().flatMap((marker) => {
       const top = marker.key === this.hoveredNote() ? tops[marker.key] : undefined;

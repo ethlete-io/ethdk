@@ -37,12 +37,25 @@ const CONNECTOR_DROP = 16;
 
 const columnBelow = (frame: Rect): Point => ({ x: frame.x, y: frame.y + frame.height + NOTE_BELOW_GAP });
 
+/** A frame notes can sit on; a cell of a grid names the grid frame as its `owner`, and its notes hang below the grid. */
+export type NoteFrame = Rect & { owner?: string };
+
+const hangOf = ({ frameId, frame, owners }: { frameId: string; frame: NoteFrame; owners: Map<string, Rect> }) => {
+  const owner = frame.owner === undefined ? undefined : owners.get(frame.owner);
+
+  return owner && frame.owner !== undefined ? { id: frame.owner, rect: owner } : { id: frameId, rect: frame };
+};
+
 /** Puts each note on the canvas; a note on a frame the canvas does not show is left out. */
 export const placeNotes = (
   notes: CanvasNote[],
-  { frames, bounds }: { frames: Map<string, Rect>; bounds: Rect | null },
+  {
+    frames,
+    owners = new Map(),
+    bounds,
+  }: { frames: Map<string, NoteFrame>; owners?: Map<string, Rect>; bounds: Rect | null },
 ): PlacedNoteGroup[] => {
-  const below = new Map<string, CanvasNote[]>();
+  const below = new Map<string, { rect: Rect; notes: CanvasNote[] }>();
   const above: CanvasNote[] = [];
   const single: PlacedNoteGroup[] = [];
 
@@ -52,7 +65,9 @@ export const placeNotes = (
     if (note.frameId !== undefined && !frame) continue;
 
     if (frame && note.frameId !== undefined) {
-      below.set(note.frameId, [...(below.get(note.frameId) ?? []), note]);
+      const hang = hangOf({ frameId: note.frameId, frame, owners });
+
+      below.set(hang.id, { rect: hang.rect, notes: [...(below.get(hang.id)?.notes ?? []), note] });
     } else if (note.at) {
       single.push({ key: noteKeyOf(note), anchor: 'at', ...note.at, notes: [note] });
     } else {
@@ -61,13 +76,13 @@ export const placeNotes = (
   }
 
   return [
-    ...[...below].flatMap(([frameId, stacked]) => {
-      const frame = frames.get(frameId);
-
-      return frame
-        ? [{ key: `below ${frameId}`, anchor: 'below' as const, frameId, ...columnBelow(frame), notes: stacked }]
-        : [];
-    }),
+    ...[...below].map(([frameId, { rect, notes: stacked }]) => ({
+      key: `below ${frameId}`,
+      anchor: 'below' as const,
+      frameId,
+      ...columnBelow(rect),
+      notes: stacked,
+    })),
     ...single,
     ...(above.length > 0 && bounds
       ? [{ key: 'above', anchor: 'above' as const, x: bounds.x, y: bounds.y - ABOVE_GAP, notes: above }]
@@ -76,7 +91,10 @@ export const placeNotes = (
 };
 
 /** The markers of the pointed notes on frames the canvas shows. */
-export const placeNoteMarkers = (notes: CanvasNote[], frames: Map<string, Rect>): PlacedNoteMarker[] => {
+export const placeNoteMarkers = (
+  notes: CanvasNote[],
+  { frames, owners = new Map() }: { frames: Map<string, NoteFrame>; owners?: Map<string, Rect> },
+): PlacedNoteMarker[] => {
   const counts = new Map<string, number>();
 
   return notes.flatMap((note) => {
@@ -84,9 +102,10 @@ export const placeNoteMarkers = (notes: CanvasNote[], frames: Map<string, Rect>)
 
     if (!frame || !note.point || note.frameId === undefined) return [];
 
-    const number = (counts.get(note.frameId) ?? 0) + 1;
+    const hang = hangOf({ frameId: note.frameId, frame, owners });
+    const number = (counts.get(hang.id) ?? 0) + 1;
 
-    counts.set(note.frameId, number);
+    counts.set(hang.id, number);
 
     return [
       {
@@ -94,7 +113,7 @@ export const placeNoteMarkers = (notes: CanvasNote[], frames: Map<string, Rect>)
         number,
         x: frame.x + note.point.x,
         y: frame.y + note.point.y,
-        column: columnBelow(frame),
+        column: columnBelow(hang.rect),
       },
     ];
   });

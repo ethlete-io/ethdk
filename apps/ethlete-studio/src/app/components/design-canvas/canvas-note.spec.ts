@@ -29,14 +29,14 @@ describe('placeNotes', () => {
           { id: 'o', text: 'w', frameId: 'b', point: { x: 2, y: 3 } },
           { id: 'p', text: 'x', frameId: 'a', point: { x: 5, y: 6 } },
         ],
-        frames,
+        { frames },
       ).map(({ key, number }) => [key, number]),
     ).toEqual([
       ['n a', 1],
       ['o b', 1],
       ['p a', 2],
     ]);
-    expect(placeNoteMarkers([{ id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } }], frames)).toEqual([
+    expect(placeNoteMarkers([{ id: 'n', text: 't', frameId: 'a', point: { x: 40, y: 120 } }], { frames })).toEqual([
       { key: 'n a', number: 1, x: 140, y: 320, column: { x: 100, y: 1060 } },
     ]);
   });
@@ -70,6 +70,26 @@ describe('placeNotes', () => {
     expect(placed.map(({ key, anchor, x, y }) => ({ key, anchor, x, y }))).toEqual([
       { key: 'h ', anchor: 'at', x: 0, y: -160 },
       { key: 'above', anchor: 'above', x: 100, y: 176 },
+    ]);
+  });
+
+  it('hangs the notes of grid cells in one column below the grid, numbered per grid', () => {
+    const cells = new Map([
+      ['rest', { x: 150, y: 260, width: 80, height: 40, owner: 'grid' }],
+      ['hover', { x: 250, y: 260, width: 80, height: 40, owner: 'grid' }],
+    ]);
+    const owners = new Map([['grid', { x: 100, y: 200, width: 500, height: 300 }]]);
+    const notes = [
+      { id: 'n', text: 't', frameId: 'rest', point: { x: 4, y: 4 } },
+      { id: 'm', text: 'u', frameId: 'hover', point: { x: 4, y: 4 } },
+    ];
+
+    expect(placeNotes(notes, { frames: cells, owners, bounds })).toEqual([
+      { key: 'below grid', anchor: 'below', frameId: 'grid', x: 100, y: 516, notes },
+    ]);
+    expect(placeNoteMarkers(notes, { frames: cells, owners })).toEqual([
+      { key: 'n rest', number: 1, x: 154, y: 264, column: { x: 100, y: 516 } },
+      { key: 'm hover', number: 2, x: 254, y: 264, column: { x: 100, y: 516 } },
     ]);
   });
 
