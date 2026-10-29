@@ -157,7 +157,9 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`ed59b5f18`):** option 1 without the opt-out. `sketch check` and `sketch ready` fail
   with a `STATES` problem for each part of a variant that drops a state the product's part has. The
   problem also shows in Studio's sketch problems. A new part has nothing to compare.
-- **Open:** no way yet to drop a state on purpose. Check the problem in the running Studio.
+- **Opt-out done (`159eeeef3`):** `sketch round <part> <round> --drops <state,state>` names the states
+  a round removes on purpose. `STATES` then skips them for the variants of that round.
+- **Open:** check the problem in the running Studio.
 
 ### 3.7 A new sketch opens with its only round folded - fixed, unverified (`b7fa2c621`)
 
