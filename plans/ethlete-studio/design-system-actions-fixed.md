@@ -1069,3 +1069,10 @@ check` warns early.
   HTTP 500 with an error page as the picture.
 - **Fix option:** a 404 with "state not in the merged part", or a labelled empty cell.
 - **Fix done (8efaab1e2):** with the server's `statesOf` loader, a part shot of a state the merged part (or the asked variant) lacks rejects with a 404 `state "x" is not in the merged part <part> - it has: …` before any draw; `design shot` shows it as a labelled error cell.
+
+### 4.18 `shot --variants` on a new part gives no reason for the missing rows - fixed (65c4454ca)
+
+- **Pain:** a sketch on a part that does not exist yet draws no "now" row and no diff row, and the
+  sheet does not say why.
+- **Fix option:** one line in the sheet: "new part, nothing to compare with".
+- **Fix done (65c4454ca):** a variants sheet without a merged row starts with a `merged` cell "new part, nothing to compare with" (a new `note` cell kind in the contact sheet).

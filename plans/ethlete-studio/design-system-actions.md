@@ -200,12 +200,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
 - **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
 
-### 4.18 `shot --variants` on a new part gives no reason for the missing rows - open
-
-- **Pain:** a sketch on a part that does not exist yet draws no "now" row and no diff row, and the
-  sheet does not say why.
-- **Fix option:** one line in the sheet: "new part, nothing to compare with".
-
 ### 4.20 `design shot` ignores a component's `widths` - open
 
 - **Pain:** without `--width`, `design shot` shrink-wraps a component and ignores `widths` from
