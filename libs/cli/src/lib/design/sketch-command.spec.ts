@@ -321,7 +321,7 @@ describe('designSketch', () => {
     );
   });
 
-  it('writes the note --variant-note names into the part file of that variant', () => {
+  it('keeps the note --variant-note names in sketch.json and leaves the merged note in the part file', () => {
     const target = acme();
     const lines = output();
     const fileOf = (variant: string) =>
@@ -346,8 +346,18 @@ describe('designSketch', () => {
         'acme',
       ),
     ).toBe(0);
-    expect(readFileSync(fileOf('a'), 'utf8')).toContain("note: 'Pill shape'");
-    expect(readFileSync(fileOf('b'), 'utf8')).toContain("note: 'Square, it\\'s flat'");
+    expect(readFileSync(fileOf('a'), 'utf8')).toContain("note: 'Pill shape, because Acme rounds every action.'");
+    expect(readFileSync(fileOf('b'), 'utf8')).toContain("note: 'Pill shape, because Acme rounds every action.'");
+    const sketch = findSketch({
+      productDir: join(target, DESIGN_DIR, 'acme'),
+      product: 'acme',
+      sketch: { layer: 'components', name: 'button' },
+    }) as Sketch;
+
+    expect(sketch.variantInfo).toMatchObject({
+      a: { note: 'Pill shape' },
+      b: { note: "Square, it's flat" },
+    });
   });
 
   it('lists the shared files a page sketch moves out of the part', () => {

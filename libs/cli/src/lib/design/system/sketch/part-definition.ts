@@ -64,6 +64,14 @@ export const madeByOf = (source: string): string[] => {
   return current.elements.flatMap((element) => (ts.isStringLiteralLike(element) ? [element.text] : []));
 };
 
+/** The `note` literal of a part file's `definePart({ … })`; `null` when it holds none. */
+export const noteOf = (source: string): string | null => {
+  const { definition } = definitionOf(source);
+  const current = definition ? propertyOf(definition, 'note')?.initializer : undefined;
+
+  return current && (ts.isStringLiteral(current) || ts.isNoSubstitutionTemplateLiteral(current)) ? current.text : null;
+};
+
 const quoted = (text: string) => `'${text.replace(/\\/gu, '\\\\').replace(/'/gu, "\\'").replace(/\r?\n/gu, '\\n')}'`;
 
 /** The part file with its `note` replaced, or `null` when it holds no `definePart({ note: '…' })` literal. */

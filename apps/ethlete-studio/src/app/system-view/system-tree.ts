@@ -747,11 +747,14 @@ export const sketchMatrixOf = ({
 
     const authors = sketch.variantInfo?.[variant]?.authors ?? [];
     const named = [variant, authorsLabelOf(authors)].filter(Boolean).join(' · ');
+    const note = [sketch.variantInfo?.[variant]?.note, silent && variant === reported && 'No report for 30 min']
+      .filter(Boolean)
+      .join('\n\n');
 
     return {
       key: variant,
       label: variant === drawing ? `${named} · drawing …` : named,
-      ...(silent && variant === reported ? { note: 'No report for 30 min' } : {}),
+      ...(note === '' ? {} : { note }),
       ...(authors.length > 0 ? { title: `${variant} by ${authors.join(', ')}` } : {}),
       drawing: variant === drawing,
       states: target?.states ?? part?.states ?? [],

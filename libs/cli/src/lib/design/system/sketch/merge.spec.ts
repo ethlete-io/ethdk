@@ -169,6 +169,26 @@ describe('mergeSketch', () => {
     );
   }, 240_000);
 
+  it('gives a new part the picked variant note when the merge names none', () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    const target = acme();
+    const created = createSketch({
+      product: resolveAcme(target),
+      sketch: { layer: 'elements', name: 'badge' },
+      variants: ['a', 'b'],
+      variantNotes: new Map([['b', 'Round badge.']]),
+    }) as Sketch;
+    const sketch = picked(markSketchReady({ checkout: target, sketch: created }) as Sketch);
+
+    expect(
+      reasonOf(mergeSketch({ target, config: readConfig(target) ?? {}, product: resolveAcme(target), sketch })),
+    ).toEqual(['elements/badge']);
+    expect(readFileSync(join(target, DESIGN_DIR, 'acme/elements/badge/badge.ts'), 'utf8')).toContain(
+      "note: 'Round badge.'",
+    );
+  }, 240_000);
+
   it('merges past a problem the product already had and prints it as a note', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);

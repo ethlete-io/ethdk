@@ -136,8 +136,9 @@ tsconfig of your own. It warns of a variant stylesheet that restyles a class of 
 variant file nothing imports. To delete a file of a part, delete it in the variant: a merge deletes the
 product file the picked variant no longer holds.
 
-Each variant's note, what it is and what it costs, goes in the `definePart({ note })` of its part file;
-a merge keeps the picked variant's note. `sketch new --variant-note a=<text>`, once per variant, writes it.
+Each variant's note, what it is and what it costs, goes in with `sketch new --variant-note a=<text>`, once
+per variant: `sketch.json` keeps it apart from the part's `definePart({ note })`, and Studio shows it in the
+variant's head. A merge keeps the part's note, takes its `--note`, or gives a new part the picked variant's note.
 `sketch new` and `sketch variant` write their files in the checkout's Prettier format; after an edit,
 `sketch check --fix` formats the variants before it checks them. A sketch command
 without `--product` takes the product that holds the sketch.

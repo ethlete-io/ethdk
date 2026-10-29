@@ -737,6 +737,19 @@ describe('sketchMatrixOf', () => {
     ]);
   });
 
+  it('shows the note of a variant in its head', () => {
+    const matrix = sketchMatrixOf({
+      ...source,
+      part: part(),
+      sketch: sketch({ status: 'ready', variantInfo: { a: { note: 'Pill shape' }, b: {} } }),
+    });
+
+    expect(matrix.columns.slice(1)).toEqual([
+      { key: 'a', label: 'a', note: 'Pill shape', drawing: false },
+      { key: 'b', label: 'b', drawing: false },
+    ]);
+  });
+
   describe('unchanged states', () => {
     const shell = part({ states: ['system', 'hidden'] });
     const unchanging = sketch({

@@ -10,7 +10,7 @@ import { partKeyOf, ResolvedProduct } from '../resolve-product';
 import { conflictsOf } from './baseline';
 import { carryShared, sharedPlanOf } from './merge-shared';
 import { recordMerged, rerecordChangedMerged, unchangedMergedOf } from './merged-parts';
-import { madeByOf, withMadeBy, withNote } from './part-definition';
+import { madeByOf, noteOf, withMadeBy, withNote } from './part-definition';
 import { authorsOf, clearSketchReport, Sketch, variantDirOf } from './sketch';
 
 const swap = (entries: { from: string; to: string }[]) => {
@@ -110,7 +110,9 @@ const mergeOrReason = (options: {
     return `variant "${variant}" holds no ${sketch.target}, and the product has no ${sketch.target} to carry the note`;
 
   const source = readFileSync(held, 'utf8');
-  const withNewNote = note?.trim() ? withNote(source, note.trim()) : source;
+  const variantNote = sketch.variantInfo[variant]?.note;
+  const newNote = note?.trim() || (noteOf(source)?.trim() === '' ? variantNote : undefined);
+  const withNewNote = newNote ? withNote(source, newNote) : source;
   const madeBy = [...new Set([...madeByOf(source), ...authorsOf(sketch, variant)])];
   const noted = withNewNote === null || madeBy.length === 0 ? withNewNote : withMadeBy(withNewNote, madeBy);
 

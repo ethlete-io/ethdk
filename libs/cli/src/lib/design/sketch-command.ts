@@ -1,4 +1,3 @@
-import { readFileSync, writeFileSync } from 'fs';
 import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
 import { ASSETS_FOLDER } from './system/assets';
@@ -6,7 +5,6 @@ import { addressSketchComments, commentsOnSketch } from './system/comments/comme
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf, formatSketch } from './system/sketch/check-format';
-import { withNote } from './system/sketch/part-definition';
 import {
   openSketchProblemsOf,
   typecheckVariant,
@@ -55,7 +53,8 @@ export const SKETCH_USAGE = [
 
 const FLAG_HELP: Record<string, string> = {
   '--variants': 'the variant folders to open, a comma list: a,b,c',
-  '--variant-note': 'the note of one variant, written into its definePart({ note }); repeat it per variant: a=<text>',
+  '--variant-note':
+    "the note of one variant, kept in sketch.json apart from the part's merged note; repeat it per variant: a=<text>",
   '--by': 'the exact model id the coordinator gave you, e.g. claude-opus-5-5',
   '--like': 'start each variant from another part, or from a variant of the open sketch on it',
   '--round': 'the title of a new round',
@@ -196,18 +195,10 @@ const created = (context: Context) => {
     roundNote: args.values['--note'],
     author: authorOf(args) ?? undefined,
     like,
+    variantNotes: notes,
   });
 
   if (typeof sketch === 'string') return fail(sketch);
-
-  for (const [variant, note] of notes) {
-    const file = resolve(target, partFileOf({ root: target, sketch, variant }));
-    const noted = withNote(readFileSync(file, 'utf8'), note);
-
-    if (noted === null)
-      console.warn(`${relative(target, file)} holds no definePart({ note: '…' }) - write the note there`);
-    else writeFileSync(file, noted);
-  }
 
   formatSketch({ target, sketch, variants: sketch.variants });
   console.log(`${sketch.target} in progress: ${relative(target, sketch.dir)} with ${sketch.variants.join(', ')}`);

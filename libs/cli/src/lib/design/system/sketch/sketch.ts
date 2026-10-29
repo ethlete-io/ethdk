@@ -30,8 +30,11 @@ export type SketchDecision =
   | { kind: 'pick'; variant: string; comment?: string; decidedAt: string }
   | { kind: 'discard'; comment?: string; decidedAt: string };
 
-/** What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report, and the key of its round. */
-export type SketchVariantInfo = { authors?: string[]; round?: string };
+/**
+ * What `sketch.json` knows about one variant: the model ids that reported on it, in the order of their first report,
+ * the key of its round, and its note - what it is and what it costs - kept apart from the part's merged note.
+ */
+export type SketchVariantInfo = { authors?: string[]; round?: string; note?: string };
 
 /** One round of variants: its title, the note on what it shows, and why its variants lost once a newer round runs. */
 export type SketchRound = { key: string; title: string; note: string; lost?: string; drops?: string[] };
@@ -148,7 +151,8 @@ const isVariantInfo = (value: unknown): value is Record<string, SketchVariantInf
       typeof info === 'object' &&
       info !== null &&
       isAuthors((info as Partial<SketchVariantInfo>).authors) &&
-      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).round),
+      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).round) &&
+      ['undefined', 'string'].includes(typeof (info as Partial<SketchVariantInfo>).note),
   );
 
 const isRounds = (value: unknown): value is SketchRound[] =>
@@ -200,7 +204,7 @@ export const readSketch = (options: { product: string; dir: string }): Sketch | 
   if (typeof target === 'string') return `${file}: ${target}`;
   if (!isStatus(parsed.status)) return `${file}: status must be one of ${SKETCH_STATUSES.join(', ')}`;
   if (parsed.variantInfo !== undefined && !isVariantInfo(parsed.variantInfo))
-    return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string } }`;
+    return `${file}: variantInfo must be { <variant>: { authors?: string[], round?: string, note?: string } }`;
   if (parsed.rounds !== undefined && !isRounds(parsed.rounds))
     return `${file}: rounds must be a non-empty list of { key, title, note } with unique keys`;
 
@@ -346,8 +350,11 @@ const copyPartAs = (options: { from: SketchSource; to: string; name: string }) =
   writeFileSync(file, withMadeBy(source, []) ?? source);
 };
 
-const variantInfoOf = (round: string, author: string | undefined): SketchVariantInfo =>
-  author ? { authors: [author], round } : { round };
+const variantInfoOf = (options: { round: string; author?: string; note?: string }): SketchVariantInfo => ({
+  ...(options.author ? { authors: [options.author] } : {}),
+  round: options.round,
+  ...(options.note?.trim() ? { note: options.note.trim() } : {}),
+});
 
 /**
  * Opens a sketch on a target, in progress, with one folder per variant, all in round 1 and with `author` as their
@@ -364,8 +371,9 @@ export const createSketch = (options: {
   roundNote?: string;
   author?: string;
   like?: SketchSource;
+  variantNotes?: Map<string, string>;
 }): Sketch | string => {
-  const { product, sketch, variants, roundTitle, roundNote, author, like } = options;
+  const { product, sketch, variants, roundTitle, roundNote, author, like, variantNotes } = options;
   const dir = sketchDirOf({ productDir: product.dir, sketch });
   const key = partKeyOf(sketch);
 
@@ -411,7 +419,12 @@ export const createSketch = (options: {
     createdAt: new Date().toISOString(),
     baseline: baselineOf(product),
     rounds: [firstRoundOf(roundTitle, roundNote)],
-    variantInfo: Object.fromEntries(variants.map((variant) => [variant, variantInfoOf(FIRST_ROUND, author)])),
+    variantInfo: Object.fromEntries(
+      variants.map((variant) => [
+        variant,
+        variantInfoOf({ round: FIRST_ROUND, author, note: variantNotes?.get(variant) }),
+      ]),
+    ),
     product: product.name,
     layer: sketch.layer,
     name: sketch.name,
@@ -622,7 +635,7 @@ export const addVariant = (options: {
     ...undecided,
     status: 'in progress',
     rounds,
-    variantInfo: { ...sketch.variantInfo, [variant]: variantInfoOf(runningRoundOf({ rounds }).key, author) },
+    variantInfo: { ...sketch.variantInfo, [variant]: variantInfoOf({ round: runningRoundOf({ rounds }).key, author }) },
     variants: [...sketch.variants, variant].sort(),
   };
 
