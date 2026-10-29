@@ -414,6 +414,21 @@ sketch` until the next merge of the part.
 <cwd>/.ethlete/design/config.json`. The report did not land.
 - **Fix option:** look for `.ethlete/design/config.json` in the parent folders, as git does.
 
+### 5.7 A foundation cannot give its pieces to a page - open
+
+- **Pain:** `pages/start` needs the Studio mark. `foundations/logo` draws it, but only as the
+  `sizes` and `sidebar` states. The page copied the SVG, and `shell-main` holds a third copy.
+- **Cause:** a part exports one `render`; nothing exports a piece of a part.
+- **Fix option:** let a part file export named helpers that other parts may import, or extract
+  the mark into an element.
+
+### 5.8 `sketch new` for a page writes a bare scaffold - open
+
+- **Pain:** the scaffold for `pages/start` held a `start.css` with a `.start` class, no `madeBy`,
+  no `widths` and an empty `note`. Every page in studio uses Tailwind and the tokens instead.
+- **Fix option:** scaffold a page like its siblings: tokens import, `madeBy` from `--by`, the
+  product widths, and no CSS file.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
