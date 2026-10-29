@@ -95,23 +95,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Process side:** a small component sketch draws one composed state (a stack of rows), not one
   state per case times every interaction.
 
-### 2.10 A component with many small states needs a lot of scrolling - fixed (`f35d52a2b`, `144e2d843`)
-
-- **Pain (Tom, 2026-10-29):** `components/tree-row` has 19 states. Studio draws each one as its
-  own 280 px frame with its own head and a large gap, so one row of 20 px costs about 75 px of
-  height. The button already solved this with a frame grid (`elements/canvas-frames`; the tree
-  lists frames, not states).
-- **Fix options:** 1. a part declares its states as a grid of two axes (for `tree-row`: kind and
-  end mark as rows, interaction as columns), and Studio draws one dense frame (recommended). 2.
-  Studio packs small frames side by side when they fit.
-- **Design case:** after the fix, a sketch on `pages/system` adds a state such as `many-states`
-  that shows `tree-row` in the new look.
-- **Built (option 1, 2026-10-29):** `definePart({ grid: { columns, rows } })`, typed against the
-  state names; Studio draws the placed states as one frame `grid`, `design shot --states` one sheet
-  row per grid row. Open: cells draw in rest only (`interactions` apply to states outside the grid);
-  the sketch compare and merge preview still draw one row per state; the design-exploration skill
-  does not name `grid` yet; no runtime check for unknown or repeated grid states.
-
 ## 3. Feedback, rounds and merge
 
 ### 3.20 A product switch keeps the entry of the old product - triage
@@ -402,17 +385,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 
 - **Pain:** for `pages/merge` the agent got a 400 with no body.
 - **Fix option:** default to the first state, or name the valid states in the body.
-
-### 5.42 A Studio grid cell paints the product page fill, not the sheet surface - fixed (`144e2d843`)
-
-- **Pain:** Studio build of the "Many states" look (`f35d52a2b`): the `studio` product body paints
-  `--surface-sunken`, so each cell picture is darker than the 4 px `--surface` padding around it.
-  The drawing assumes the part sits on `--surface`. Component and chrome merge again.
-- **Fix options:** 1. a sheet cell loads its frame page with the sheet surface as page fill
-  (recommended; matches the merged drawing). 2. drop the cell padding (then the sheet is sunken,
-  like the frame body, and the split is gone). 3. a part declares the surface it lives on.
-- **Also owed:** the button frame grid in Studio still uses the old plain table; Tom wants one look
-  ("One grid look" sketch on `elements/canvas-frames`).
 
 ### 5.43 No documented way to delete a merged file in a variant - open
 
