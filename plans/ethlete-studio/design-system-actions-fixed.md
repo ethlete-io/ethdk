@@ -1025,3 +1025,12 @@ check` warns early.
 - **Fix option:** run the UNDEFINED-TOKEN check in `sketch check` on the variant files
   (recommended).
 - **Fix done (4b70acafc):** Cause: `sketch check` already ran UNDEFINED-TOKEN, but only on the main `<part>.css`; a token in a second stylesheet the part imports went unseen. The rule now reads every relative `.css` import of the part, and takes tokens set in any `.ts`/`.css` file of the part folder as defined (inline `style="--x: …"` in a data file).
+
+### 5.53 An `@shared/` import breaks silently when its file is deleted - fixed (e93b17cb2)
+
+- **Pain:** `components/comment-pin` "Use the agent logos asset": `sketch new` rewrote the import
+  to `@shared/agent-logos`; after the variant deleted that file, nothing flagged the dead import.
+  The agent fixed it by hand.
+- **Fix option:** `sketch check` reports an `@shared/...` import that resolves to nothing
+  (recommended).
+- **Fix done (e93b17cb2):** the IMPORT rule reports `@shared/<path>` that resolves to no `.ts`/`index.ts`/stylesheet in the sketch's `shared/` folder, so `sketch check` and `sketch ready` name it.
