@@ -57,6 +57,15 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   a LAN IPv4 URL; a run against `localhost` is not done. Next: repeat 10 x 100 on `localhost`
   (run the server on the Mac or tunnel over SSH), then decide between a minimal WebKit repro for
   upstream and a workaround (e.g. never remove a frame while its module evaluates).
+- **Result 3 (2026-10-29, `localhost` URL over an SSH tunnel, fresh `dist`):** 0 hangs in 10 runs
+  of 100. Each run passed batch 100 in about 16 s. No stack: no hang to sample. Load (1 min) 4.3 to
+  5.5 before the runs; the probe adds this load. The Mac screen was locked, so the probe in
+  `/tmp/wk-probe` turned off window occlusion and hidden-page timer throttling. Without this
+  change, all runs stopped at batch 12 or 13 with all processes idle; also with `127.0.0.1`. This
+  is page suspension, not finding 1.2. The orphaned `nx tauri:dev` (100% CPU) also loaded the Mac
+  in these invalid runs 1 to 4; it was stopped before the valid runs.
+- **Next:** the LAN IPv4 URL path is the suspect. Studio already uses `localhost`. To compare
+  equally, repeat the LAN run with the same unthrottled probe.
 
 ## 2. Review on the canvas
 
