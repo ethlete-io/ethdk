@@ -1,8 +1,8 @@
 ---
-'@ethlete/core': major
-'@ethlete/query': major
-'@ethlete/cdk': major
-'@ethlete/contentful': major
+'@ethlete/core': minor
+'@ethlete/query': minor
+'@ethlete/cdk': minor
+'@ethlete/contentful': minor
 '@ethlete/types': patch
 ---
 
