@@ -1,0 +1,24 @@
+{
+  "part": "components/tree-row",
+  "state": "tree",
+  "size": 280,
+  "text": "aber dann rot oder?",
+  "point": {
+    "x": 267,
+    "y": 137
+  },
+  "sketch": {
+    "target": "components/tree-row",
+    "variant": "c",
+    "createdAt": "2026-10-29T16:16:08.137Z"
+  },
+  "createdAt": "2026-10-29T16:18:32.133Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T16:18:49.831Z",
+    "note": "c lost only on the colour: Tom wants the warning diamond red.",
+    "round": "r2"
+  }
+}

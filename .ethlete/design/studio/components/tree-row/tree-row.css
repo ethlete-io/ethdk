@@ -3,7 +3,6 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
-    padding: var(--space-2);
   }
 
   .st-trow {
@@ -21,7 +20,7 @@
     cursor: default;
   }
 
-  .st-trow:where([data-group]) {
+  .st-trow:where([data-kind='group']) {
     color: var(--text-muted);
   }
 
@@ -57,10 +56,16 @@
   }
 
   .st-trow-dot {
+    box-sizing: border-box;
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: currentColor;
+  }
+
+  .st-trow-dot[data-inert] {
+    background: none;
+    border: 1.5px solid currentColor;
   }
 
   .st-trow-label {
@@ -70,20 +75,23 @@
     text-overflow: ellipsis;
   }
 
-  .st-trow-status {
-    box-sizing: border-box;
+  .st-trow-warning {
+    display: flex;
     flex: none;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+    color: var(--color-et-danger);
+  }
+
+  .st-trow-status {
+    display: flex;
+    flex: none;
   }
 
   .st-trow-status[data-status='in-progress'] {
-    border: 1.5px solid var(--text-muted);
+    color: var(--text-muted);
   }
 
   .st-trow-status[data-status='ready'] {
-    background: var(--accent);
+    color: var(--accent);
   }
 
   .st-trow-comments {
