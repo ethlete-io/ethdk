@@ -212,13 +212,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `design shot --states --variants` listed only the merged states, with no "new state" line.
 - **Fix option:** print "new state" for a state the merged part does not have.
 
-### 4.27 No way to compare two states or shoot only a few - open
-
-- **Pain:** to decide whether `selected-active` differs from `selected-hover`, the agent cropped a
-  3227 px contact sheet and sampled pixels with PIL.
-- **Fix options:** 1. `design shot --state <a,b>` filter (recommended). 2.
-  `design shot --compare <v>/<state> <v>/<state>` prints the pixel delta.
-
 ### 4.28 A sketch that adds a `grid` never shows the grid before the merge - open
 
 - **Pain:** the `tree-row` "State grid" sketch: `design shot --states --variants` drew one flat

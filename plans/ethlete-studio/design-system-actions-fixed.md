@@ -1134,3 +1134,11 @@ check` warns early.
   `shot.spec.ts`.
 - **Fix option:** add `--interaction <name>` and name it in `--help`.
 - **Fix done (f697a3151):** `design shot --interaction <hover|focus-visible|active|disabled>` forces the interaction on every cell; a bad name prints the usage, which lists the names. The design-exploration skill names it.
+
+### 4.27 No way to compare two states or shoot only a few - fixed (28d2c6a6f)
+
+- **Pain:** to decide whether `selected-active` differs from `selected-hover`, the agent cropped a
+  3227 px contact sheet and sampled pixels with PIL.
+- **Fix options:** 1. `design shot --state <a,b>` filter (recommended). 2.
+  `design shot --compare <v>/<state> <v>/<state>` prints the pixel delta.
+- **Fix done (28d2c6a6f):** `design shot <part> --state <a>,<b>` draws only the named states (implies `--states`; a part with a grid keeps its grid order), and a name the part lacks prints the states it has. The design-exploration skill names it.
