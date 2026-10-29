@@ -295,6 +295,28 @@ sketch` until the next merge of the part.
   had a folded round.
 - **Checked 2026-10-29:** verified. The folded round of another sketch is ignored, and a matching `roundsFor` folds.
 
+### 3.27 `sketch new` writes a `sketch.json` that Prettier rejects - fixed (e2a5a22f5)
+
+- **Pain:** the agent formatted the new `sketch.json` of `components/tree-row` by hand.
+- **Fix option:** write CLI JSON through Prettier, as the part files are.
+- **Seen again (2026-10-29):** `components/tree-row` "Interaction states": the variant `.ts`
+  files failed `sketch check` on FORMAT. Fix option: run Prettier inside `sketch new` and
+  `sketch variant`.
+- **Fix done (e2a5a22f5):** `sketch new` and `sketch variant` run the checkout's Prettier over the new variants, `shared/` and `sketch.json`; every `sketch.json` write uses the Prettier JSON layout.
+
+### 3.29 No clear place for a variant's note in `sketch new` - fixed (e2a5a22f5)
+
+- **Pain:** `components/comment-pin`: the skill does not say where each variant's note goes. The
+  agent put it in each variant's `definePart({ note })`.
+- **Fix option:** a `--variant-note <v>=<text>` option on `sketch new`, and one line in the skill.
+- **Fix done (e2a5a22f5):** `sketch new --variant-note <variant>=<text>`, once per variant, writes the variant's `definePart({ note })`; the skill says the note goes there.
+
+### 3.30 `sketch new --help` names no flag - fixed (e2a5a22f5)
+
+- **Pain:** "Count alignment" on `components/comment-pin`: `--help` printed only the usage line.
+- **Fix option:** one line per flag under the usage.
+- **Fix done (e2a5a22f5):** `sketch <command> --help` prints one line per flag under the usage.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
@@ -877,3 +899,37 @@ sketch` until the next merge of the part.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 - **Decision (Tom, 2026-10-29):** wireframes are on hold. Studio draws in the real look; a
   wireframe helps only when the designer has no picture of the result yet. The kit gets no more work.
+
+### 5.29 `sketch new` puts a page's `shared/` outside the variant - fixed (e2a5a22f5)
+
+- **Pain:** on `pages/flows` the list data lives in `pages/flows/shared/flow-data.ts`. `sketch new`
+  copied it to `sketches/pages-flows/shared/`, not into `a/`, so the brief "edit only inside the
+  variant folder" could not be followed. The agent found it by search.
+- **Fix option:** `sketch new` prints where it copied each `shared/` file; the brief allows the
+  sketch's `shared/`.
+- **Fix done (e2a5a22f5):** `sketch new` lists each file it puts in the sketch's `shared/`; the skill says to edit it there.
+
+### 5.35 Sketch commands need `--product` although only one product has the sketch - fixed (e2a5a22f5)
+
+- **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
+  `--product` failed with "more than one product - pass --product <name>".
+- **Fix option:** take the product that has an open sketch on the target, if there is one.
+- **Fix done (e2a5a22f5):** without `--product`, a sketch command takes the only product with an open sketch on the target (or with any open sketch, for `sketch check` without a target).
+
+### 5.36 `sketch variant` takes one variant only - fixed (e2a5a22f5)
+
+- **Pain:** the agent looped for d, e, f; only the first call can carry `--round` and `--note`.
+- **Fix option:** accept a comma list, as `sketch new --variants` does.
+- **Fix done (e2a5a22f5):** `sketch variant <target> d,e,f --from a` adds all three; with `--round` they all start the new round.
+
+### 6.2 No example of a sketch with `@shared/` - fixed (e2a5a22f5)
+
+- **Pain:** `components/comment-pin`: the agent found no sketch with `@shared/` to copy from.
+- **Fix option:** a short example in the design-exploration skill.
+- **Fix done (e2a5a22f5):** the design-exploration skill shows a `shared/` file and its `@shared/` import.
+
+### 5.20 Variants of one sketch cannot share files - fixed (4927aeac8)
+
+- **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
+- **Fix option:** a sketch-level `sketches/<name>/shared/` folder with an alias.
+- **Fix done (4927aeac8):** the sketch `shared/` folder, imported as `@shared/<path>` (see 3.16 and the fixed entry on `4927aeac8` in section 5).

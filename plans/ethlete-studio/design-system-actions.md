@@ -106,25 +106,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.27 `sketch new` writes a `sketch.json` that Prettier rejects - open
-
-- **Pain:** the agent formatted the new `sketch.json` of `components/tree-row` by hand.
-- **Fix option:** write CLI JSON through Prettier, as the part files are.
-- **Seen again (2026-10-29):** `components/tree-row` "Interaction states": the variant `.ts`
-  files failed `sketch check` on FORMAT. Fix option: run Prettier inside `sketch new` and
-  `sketch variant`.
-
-### 3.29 No clear place for a variant's note in `sketch new` - open
-
-- **Pain:** `components/comment-pin`: the skill does not say where each variant's note goes. The
-  agent put it in each variant's `definePart({ note })`.
-- **Fix option:** a `--variant-note <v>=<text>` option on `sketch new`, and one line in the skill.
-
-### 3.30 `sketch new --help` names no flag - open
-
-- **Pain:** "Count alignment" on `components/comment-pin`: `--help` printed only the usage line.
-- **Fix option:** one line per flag under the usage.
-
 ### 3.31 A refactor sketch looks like a copy of "current" in Studio - open
 
 - **Pain:** `pages/sketches` "Use the comment pin" (one variant, a code refactor) shows "current"
@@ -307,11 +288,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 5. Drawing parts and pages
 
-### 5.20 Variants of one sketch cannot share files - open
-
-- **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
-- **Fix option:** a sketch-level `sketches/<name>/shared/` folder with an alias.
-
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
 
 - **Pain:** the merge page needs `components/button` "after merging b". The agent faked the after
@@ -369,14 +345,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. a state carries an interaction, for example
   `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
   marks a forced element. Both: one paragraph in the skill.
-
-### 5.29 `sketch new` puts a page's `shared/` outside the variant - open
-
-- **Pain:** on `pages/flows` the list data lives in `pages/flows/shared/flow-data.ts`. `sketch new`
-  copied it to `sketches/pages-flows/shared/`, not into `a/`, so the brief "edit only inside the
-  variant folder" could not be followed. The agent found it by search.
-- **Fix option:** `sketch new` prints where it copied each `shared/` file; the brief allows the
-  sketch's `shared/`.
 
 ### 5.30 `design check` does not report an unused export in `shared/` - open
 
@@ -444,17 +412,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Verified:** a merge deletes a base file the variant removed (`pages/system`, 2026-10-29).
 - **Fix options:** document that a missing variant file deletes the base file on merge (verified
   first), or add `sketch rm`; `sketch check` lists unreferenced files.
-
-### 5.35 Sketch commands need `--product` although only one product has the sketch - open
-
-- **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
-  `--product` failed with "more than one product - pass --product <name>".
-- **Fix option:** take the product that has an open sketch on the target, if there is one.
-
-### 5.36 `sketch variant` takes one variant only - open
-
-- **Pain:** the agent looped for d, e, f; only the first call can carry `--round` and `--note`.
-- **Fix option:** accept a comma list, as `sketch new --variants` does.
 
 ### 5.37 The page shot is too small to judge hairlines - open
 
@@ -536,11 +493,6 @@ section without a page.
 - The head of the "Aktuell" column.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
-
-### 6.2 No example of a sketch with `@shared/` - open
-
-- **Pain:** `components/comment-pin`: the agent found no sketch with `@shared/` to copy from.
-- **Fix option:** a short example in the design-exploration skill.
 
 ## 7. Open checks
 
