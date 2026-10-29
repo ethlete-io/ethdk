@@ -381,6 +381,28 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.30 (shot path).
 
+### 5.35 Sketch commands need `--product` although only one product has the sketch - open
+
+- **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
+  `--product` failed with "more than one product - pass --product <name>".
+- **Fix option:** take the product that has an open sketch on the target, if there is one.
+
+### 5.36 `sketch variant` takes one variant only - open
+
+- **Pain:** the agent looped for d, e, f; only the first call can carry `--round` and `--note`.
+- **Fix option:** accept a comma list, as `sketch new --variants` does.
+
+### 5.37 The page shot is too small to judge hairlines - open
+
+- **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.
+- **Fix option:** a `clip=x,y,w,h` parameter on the shot endpoint and `--crop` on `design shot`.
+
+### 5.38 A variant can restyle a class of the sketch's `shared/` folder silently - open
+
+- **Pain:** variant f overrode `.st-many-frame` from `shared/` through `:has()`; after a merge
+  that is a hidden coupling.
+- **Fix option:** `sketch check` warns on a selector that targets a class from `@shared`.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
