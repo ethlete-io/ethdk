@@ -138,6 +138,29 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
+### 3.38 A product error outside the sketch blocks `sketch ready` - open
+
+- **Pain:** `pages/merge` imports `@system/pages/system` (UPWARD-DEPENDENCY, visible since 5.40).
+  Four pure refactor sketches (`agent-logos`, `comment-pin`, `tree-row`, `flows`), each with no
+  pixel change, failed `sketch ready` with "has problems - fix them before ready". The error is in
+  a part none of them touches. `sketch check` shows it in every sketch too.
+- **Fix options:** 1. report errors the merged product already had as a note ("was there
+  before"), as the merge does; block only on new errors (recommended). 2. a `--force` flag.
+
+### 3.39 A rename across layers needs three merges - open
+
+- **Pain:** moving `comment-pin` hosts from `commentPinStyles` to `commentPin.styles` needs: add
+  `styles`, then one page sketch per host, then drop the export. A component sketch may not edit a
+  page, and a page sketch reads the merged component.
+- **Fix options:** 1. let a component sketch carry host edits that only change an import
+  (recommended). 2. a page variant resolves a part from another open sketch (5.21).
+
+### 3.40 `sketch new` does not say if `report --done` is needed - open
+
+- **Pain:** the agent ran `sketch report --done` to be safe; the output of `sketch new` names no
+  next step.
+- **Fix option:** `sketch new` prints the next steps, including `report --done`.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -285,6 +308,12 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   aliases in `tokens.css`, plus the group regex of the tokens drawing.
 - **Fix options:** 1. `design tokens theme add <name> --type <type> --oklch ...` writes all blocks
   (recommended). 2. the skill names the places.
+
+### 5.54 `drawing()` still needs `styles` after `definePart({ styles })` - open
+
+- **Pain:** with the styles on `definePart`, `render` has nothing to return, but `drawing()`
+  requires `styles`, so the variant writes `styles: ''`.
+- **Fix option:** make `Drawing.styles` optional.
 
 ## 6. Agent process
 
