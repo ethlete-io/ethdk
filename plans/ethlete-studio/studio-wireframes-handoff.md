@@ -113,7 +113,9 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail
    section for merge, the drawings use `'Sketches'`. Its friction is 4.16-4.18, 5.19-5.21. Tom took c; round r2 (d: back link on top + hint under the
    note, e: Cancel next to Merge, f: close X + label on the button; agent recommends d) is `ready`,
-   friction 3.25, 3.26, 5.22.
+   friction 3.25, 3.26, 5.22. Tom took d and asked if the merge note is needed: no, it is optional
+   in the tool. Round r3 (g: no note field, h: quiet "Add a note"; recommendation g) is `ready`,
+   friction 4.19.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
 :4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and

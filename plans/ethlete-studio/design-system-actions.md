@@ -151,6 +151,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   sheet does not say why.
 - **Fix option:** one line in the sheet: "new part, nothing to compare with".
 
+### 4.19 `design shot` without `--product` does not infer the product - open
+
+- **Pain:** `design shot pages/merge --states --variants` only printed "More than one product -
+  pass --product <name>", though only `studio` has an open sketch on `pages/merge`.
+- **Fix option:** use the product of the open sketch or the only product with that part, as
+  `sketch` commands already do.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
