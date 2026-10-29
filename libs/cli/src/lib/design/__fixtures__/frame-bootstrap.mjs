@@ -15,7 +15,10 @@ const ready = new Promise((resolve, fail) => {
 });
 const context = createContext({
   document: dom.window.document,
-  location: { search: '?product=probe&part=components/slow&state=default', href: 'http://localhost/frame.html' },
+  location: {
+    search: `?product=probe&part=components/slow&state=default${process.env.FRAME_QUERY ?? ''}`,
+    href: 'http://localhost/frame.html',
+  },
   URLSearchParams,
   innerWidth: 800,
   innerHeight: 600,
@@ -86,6 +89,7 @@ process.stdout.write(
     initial,
     body: dom.window.document.getElementById('root').innerHTML,
     error: dom.window.document.documentElement.getAttribute('data-et-error'),
+    pageFill: dom.window.document.body.style.background,
     styles: [...dom.window.document.head.querySelectorAll('style')].map((style) => style.textContent),
     messages,
   }),

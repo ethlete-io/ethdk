@@ -62,7 +62,7 @@ describe('CanvasFrameGridComponent', () => {
   ];
 
   it('splits a sheet into the rows that use more than rest and the rest-only rows, packed a line per column count', async () => {
-    const host = await renderGrid({ columns, rows, cells, sheet: true });
+    const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
 
     expect(textsOf(host, '[data-grid-group]')).toEqual(['States by interaction', 'Rest only']);
     expect(textsOf(host, '[data-grid-column]')).toEqual(columns);
@@ -74,9 +74,36 @@ describe('CanvasFrameGridComponent', () => {
   });
 
   it('leaves out a group no row falls into', async () => {
-    const host = await renderGrid({ columns, rows: ['inert'], cells: [cellAt('inert', 'rest')], sheet: true });
+    const host = await renderGrid({ columns, rows: ['inert'], cells: [cellAt('inert', 'rest')], sheet: 'groups' });
 
     expect(textsOf(host, '[data-grid-group]')).toEqual(['Rest only']);
+  });
+
+  it('keeps every row of a table sheet in the interaction table, each cell centred', async () => {
+    const host = await renderGrid({ columns, rows, cells, sheet: 'table' });
+
+    expect(textsOf(host, '[data-grid-group]')).toEqual(['States by interaction']);
+    expect(textsOf(host, '[data-grid-row]')).toEqual(rows);
+    expect(host.querySelectorAll('[data-grid-cell]')).toHaveLength(rows.length * columns.length);
+    expect(host.querySelector('[data-grid-cell]')?.classList).toContain('place-items-center');
+  });
+
+  it('leaves out the group of a table sheet without rows', async () => {
+    const host = await renderGrid({ columns, rows: [], cells: [], sheet: 'table' });
+
+    expect(host.querySelector('[data-grid-sheet]')).not.toBeNull();
+    expect(host.querySelectorAll('[data-grid-group]')).toHaveLength(0);
+  });
+
+  it('pads a sheet cell more along the block axis than along the inline axis', async () => {
+    const host = await renderGrid({ columns, rows, cells, sheet: 'groups' });
+
+    expect(
+      [...host.querySelectorAll('[data-grid-cell]')].every(
+        (cell) => cell.classList.contains('py-space-2') && cell.classList.contains('px-space-1'),
+      ),
+    ).toBe(true);
+    expect(host.querySelector('[data-grid-cell]')?.classList).not.toContain('place-items-center');
   });
 
   it('draws a grid without sheet as the plain table', async () => {

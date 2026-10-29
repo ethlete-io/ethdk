@@ -97,8 +97,9 @@ export class CanvasFrameCellComponent {
 
 /**
  * The cells of a frame's grid under a header row of interactions, each row led by its state. A `sheet` grid draws its
- * cells as one sheet on a sunken body: the rows that use more than the first column as that table, the others packed
- * as many to a line as the grid has columns, each under its state.
+ * cells as one sheet on a sunken body: a `table` sheet every row in that table, each cell centred; a `groups` sheet the
+ * rows that use more than the first column as that table, the others packed as many to a line as the grid has columns,
+ * each under its state.
  */
 @Component({
   selector: 'ethlete-canvas-frame-grid',
@@ -123,7 +124,12 @@ export class CanvasFrameCellComponent {
           @for (row of sheet.interactive; track row) {
             <span class="self-center pr-[0.8rem] font-code" data-grid-row>{{ row }}</span>
             @for (column of grid().columns; track column) {
-              <div class="bg-surface p-space-1 ring-1 ring-surface-border" data-grid-cell>
+              <div
+                [class.grid]="sheet.centered"
+                [class.place-items-center]="sheet.centered"
+                class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border"
+                data-grid-cell
+              >
                 @if (cellOf(row, column); as cell) {
                   <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
                 }
@@ -147,7 +153,7 @@ export class CanvasFrameCellComponent {
             }
             <span></span>
             @for (row of line; track row) {
-              <div class="bg-surface p-space-1 ring-1 ring-surface-border" data-grid-cell>
+              <div class="bg-surface px-space-1 py-space-2 ring-1 ring-surface-border" data-grid-cell>
                 @if (cellOf(row, sheet.first); as cell) {
                   <ethlete-canvas-frame-cell #cell [cell]="cell" [live]="live()" />
                 }
@@ -212,12 +218,14 @@ export class CanvasFrameGridComponent {
     if (!sheet) return null;
 
     const [first = ''] = columns;
-    const restOnly = (row: string) => columns.slice(1).every((column) => !this.cellOf(row, column));
+    const restOnly = (row: string) =>
+      sheet === 'groups' && columns.slice(1).every((column) => !this.cellOf(row, column));
     const rest = rows.filter(restOnly);
     const perLine = Math.max(columns.length, 1);
 
     return {
       first,
+      centered: sheet === 'table',
       interactive: rows.filter((row) => !restOnly(row)),
       packed: Array.from({ length: Math.ceil(rest.length / perLine) }, (_, line) =>
         rest.slice(line * perLine, (line + 1) * perLine),

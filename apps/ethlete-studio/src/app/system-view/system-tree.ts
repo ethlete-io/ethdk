@@ -338,6 +338,8 @@ export const isSmallPart = (part: Pick<ListedPart, 'layer' | 'widths'>) =>
 
 const GRID = 'grid';
 
+const SHEET_FILL = 'surface';
+
 /** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
 const gridFrameOf = (options: {
   grid: NonNullable<ListedPart['grid']>;
@@ -354,7 +356,7 @@ const gridFrameOf = (options: {
     src: '',
     label: GRID,
     grid: {
-      sheet: true,
+      sheet: 'groups',
       columns: grid.columns,
       rows: grid.rows,
       cells: grid.cells.map(({ row, column, state }) => {
@@ -365,9 +367,9 @@ const gridFrameOf = (options: {
           row,
           column,
           label: state,
-          src: partFrameUrl({ ...addressOf(cell), ...(width === undefined ? { fit: true } : {}) }),
+          src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, ...(width === undefined ? { fit: true } : {}) }),
           ...(width === undefined ? {} : { width }),
-          screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+          screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, width, revision }),
           ...placeOf(cell, width ?? FITTED),
         };
       }),
@@ -455,6 +457,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
       src: '',
       label: key,
       grid: {
+        sheet: 'table',
         columns: interactions,
         rows: states.filter((state) => state !== undefined),
         cells: cells.map((cell) => ({
@@ -462,8 +465,8 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
           row: cell.state ?? '',
           column: cell.interaction,
           label: `${cell.state} · ${cell.interaction}`,
-          src: partFrameUrl({ ...addressOf(cell), fit: true }),
-          screenshot: partShotUrl({ ...addressOf(cell), revision }),
+          src: partFrameUrl({ ...addressOf(cell), fill: SHEET_FILL, fit: true }),
+          screenshot: partShotUrl({ ...addressOf(cell), fill: SHEET_FILL, revision }),
           ...placeOf(cell, FITTED),
         })),
       },

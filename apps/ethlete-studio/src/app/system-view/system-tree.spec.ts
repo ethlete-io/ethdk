@@ -240,14 +240,14 @@ describe('framesOf', () => {
     expect(frames.map((frame) => [frame.id, frame.label, frame.row, frame.width, frame.place])).toEqual([
       ['components/button', 'components/button', undefined, undefined, undefined],
     ]);
-    expect(frames[0]?.grid?.sheet).toBeUndefined();
+    expect(frames[0]?.grid?.sheet).toBe('table');
     expect(frames[0]?.grid?.columns).toEqual(['rest']);
     expect(frames[0]?.grid?.rows).toEqual(['default', 'disabled']);
     expect(frames[0]?.grid?.cells[0]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fit&epoch=2&revision=3',
+      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=default&fill=surface&fit&epoch=2&revision=3',
     );
     expect(frames[0]?.grid?.cells[0]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&epoch=2&revision=3&priority=low',
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=default&fill=surface&epoch=2&revision=3&priority=low',
     );
   });
 
@@ -275,10 +275,10 @@ describe('framesOf', () => {
       ['ghost disabled', { part: 'components/button', state: 'ghost', size: 'fitted', interaction: 'disabled' }],
     ]);
     expect(cells[1]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fit',
+      'http://localhost:4402/frame.html?product=acme&part=components%2Fbutton&state=solid&interaction=hover&fill=surface&fit',
     );
     expect(cells[2]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled&priority=low',
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Fbutton&state=solid&interaction=disabled&fill=surface&priority=low',
     );
   });
 
@@ -361,7 +361,7 @@ describe('a part with a grid', () => {
       ['tree 280 focus-visible', 'tree'],
       ['grid', undefined],
     ]);
-    expect(gridFrame?.grid?.sheet).toBe(true);
+    expect(gridFrame?.grid?.sheet).toBe('groups');
     expect(gridFrame?.grid?.columns).toEqual(['rest', 'hover']);
     expect(gridFrame?.grid?.rows).toEqual(['leaf', 'selected']);
     expect(gridFrame?.grid?.cells.map((cell) => [cell.id, cell.row, cell.column, cell.label, cell.width])).toEqual([
@@ -370,10 +370,10 @@ describe('a part with a grid', () => {
       ['selected 280', 'selected', 'rest', 'selected', 280],
     ]);
     expect(gridFrame?.grid?.cells[1]?.src).toBe(
-      'http://localhost:4402/frame.html?product=acme&part=components%2Ftree-row&state=leaf-hover&revision=3',
+      'http://localhost:4402/frame.html?product=acme&part=components%2Ftree-row&state=leaf-hover&fill=surface&revision=3',
     );
     expect(gridFrame?.grid?.cells[1]?.screenshot).toBe(
-      'http://localhost:4402/__design/shot?product=acme&part=components%2Ftree-row&state=leaf-hover&width=280&revision=3&priority=low',
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Ftree-row&state=leaf-hover&width=280&fill=surface&revision=3&priority=low',
     );
     expect(placeableFramesOf(gridFrame ? [gridFrame] : []).map((placed) => placed.place)).toEqual([
       { part: 'components/tree-row', state: 'leaf', size: 280 },

@@ -55,8 +55,11 @@ export type FrameCell = {
   place?: FramePlace;
 };
 
-/** `sheet` draws a part's declared grid: its cells as one sheet, rows past the first column apart from the rest. */
-export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[]; sheet?: true };
+/**
+ * `sheet` draws the cells as one sheet: `table` every row in the interaction table, `groups` the rows that use only
+ * the first column packed apart from it.
+ */
+export type FrameGrid = { columns: string[]; rows: string[]; cells: FrameCell[]; sheet?: 'table' | 'groups' };
 
 /** The frames that take comments: each cell of a grid in place of its frame. */
 export const placeableFramesOf = (frames: CanvasFrame[]): CanvasFrame[] =>

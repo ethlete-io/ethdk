@@ -300,6 +300,8 @@ export type PartAddress = {
   revision?: number;
   surface?: string;
   color?: string;
+  /** The token (without `--`) the page paints its background with, in place of the product's page fill. */
+  fill?: string;
   /** Draws the part at the size of its content instead of the size of the frame. */
   fit?: boolean;
   /** With `variant`, draws the part as that variant of the sketch of `sketch` (a `<layer>/<name>`) has it. */
@@ -309,8 +311,10 @@ export type PartAddress = {
   interaction?: string;
 };
 
-const themeQuery = ({ surface, color }: { surface?: string; color?: string }) =>
-  (surface ? `&surface=${encodeURIComponent(surface)}` : '') + (color ? `&color=${encodeURIComponent(color)}` : '');
+const themeQuery = ({ surface, color, fill }: { surface?: string; color?: string; fill?: string }) =>
+  (surface ? `&surface=${encodeURIComponent(surface)}` : '') +
+  (color ? `&color=${encodeURIComponent(color)}` : '') +
+  (fill ? `&fill=${encodeURIComponent(fill)}` : '');
 
 const partQuery = ({ product, part, state, sketch, variant, interaction }: PartAddress) =>
   `product=${encodeURIComponent(product)}&part=${encodeURIComponent(part)}&state=${encodeURIComponent(state)}` +

@@ -6,11 +6,12 @@ type Result = {
   initial: { evaluated: boolean; body: string; messages: { type: string }[] };
   body: string;
   error: string | null;
+  pageFill: string;
   styles: string[];
   messages: { type: string; errored?: boolean }[];
 };
 
-const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens'): Result => {
+const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens', query = ''): Result => {
   const result = spawnSync(
     process.execPath,
     [
@@ -20,7 +21,7 @@ const bootstrap = (outcome: 'resolve' | 'reject', tokens?: 'tokens'): Result => 
       outcome,
       ...(tokens ? [tokens] : []),
     ],
-    { encoding: 'utf8', timeout: 10000 },
+    { encoding: 'utf8', timeout: 10000, env: { ...process.env, FRAME_QUERY: query } },
   );
 
   expect(result.status, result.stderr).toBe(0);
@@ -52,5 +53,13 @@ describe('design frame bootstrap', () => {
 
   it('adds only the part styles when the product has no tokens', () => {
     expect(bootstrap('resolve').styles).toEqual(['.part{}']);
+  });
+
+  it('paints the page with the token `fill` names in place of the product fill', () => {
+    expect(bootstrap('resolve', undefined, '&fill=surface').pageFill).toBe('var(--surface)');
+  });
+
+  it('leaves the page fill to the product without `fill`', () => {
+    expect(bootstrap('resolve').pageFill).toBe('');
   });
 });

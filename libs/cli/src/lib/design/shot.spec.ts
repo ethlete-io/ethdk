@@ -105,6 +105,18 @@ describe('createPartShooter', () => {
     expect(screenshot).toHaveBeenCalledTimes(3);
   });
 
+  it('draws a state on the page fill it is asked for, as a picture of its own', async () => {
+    const { shots } = acme();
+
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone');
+    await ask(shots, 'product=acme&part=components/card&state=long&preset=phone&fill=surface');
+
+    expect(screenshot).toHaveBeenCalledTimes(2);
+    expect(goto.mock.calls[1]?.[0]).toBe(
+      'http://localhost:1/frame.html?product=acme&part=components%2Fcard&state=long&fill=surface',
+    );
+  });
+
   it('drops the pictures of every part above a changed file, in the product that drew it', async () => {
     const { target, config, shots } = acme();
     const vite = await createDesignServer({ target, config, listen: false });

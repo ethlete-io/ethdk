@@ -29,10 +29,12 @@ addEventListener('unhandledrejection', reportError);
 const root = document.querySelector('#root') as HTMLElement;
 const surface = params.get('surface');
 const color = params.get('color');
+const fill = params.get('fill');
 
 // On <html> a theme class ties with the `:root` defaults of the theme CSS, which come later and win.
 if (surface) root.classList.add(`et-surface--${surface}`);
 if (color) root.classList.add(`et-color--${color}`);
+if (fill) document.body.style.background = `var(--${fill})`;
 if (fit) {
   document.documentElement.style.overflow = 'hidden';
   root.style.width = 'max-content';

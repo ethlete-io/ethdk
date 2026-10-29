@@ -194,6 +194,7 @@ export const createPartShooter = (options: {
   const themeOf = (params: URLSearchParams) => ({
     surface: params.get('surface') ?? '',
     color: params.get('color') ?? '',
+    fill: params.get('fill') ?? '',
   });
 
   const cached = (options: {
@@ -206,7 +207,7 @@ export const createPartShooter = (options: {
     priority: DrawPriority;
   }) => {
     const theme = themeOf(options.params);
-    const key = JSON.stringify([...options.key, theme.surface, theme.color]);
+    const key = JSON.stringify([...options.key, theme.surface, theme.color, theme.fill]);
     const kept = cache.get(key);
 
     if (kept) {
@@ -217,6 +218,7 @@ export const createPartShooter = (options: {
 
     if (theme.surface) options.search.set('surface', theme.surface);
     if (theme.color) options.search.set('color', theme.color);
+    if (theme.fill) options.search.set('fill', theme.fill);
 
     const search = options.search.toString();
     const shot = drawQueue.run(
