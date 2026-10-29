@@ -403,6 +403,17 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** for `pages/merge` the agent got a 400 with no body.
 - **Fix option:** default to the first state, or name the valid states in the body.
 
+### 5.42 A Studio grid cell paints the product page fill, not the sheet surface - open
+
+- **Pain:** Studio build of the "Many states" look (`f35d52a2b`): the `studio` product body paints
+  `--surface-sunken`, so each cell picture is darker than the 4 px `--surface` padding around it.
+  The drawing assumes the part sits on `--surface`. Component and chrome merge again.
+- **Fix options:** 1. a sheet cell loads its frame page with the sheet surface as page fill
+  (recommended; matches the merged drawing). 2. drop the cell padding (then the sheet is sunken,
+  like the frame body, and the split is gone). 3. a part declares the surface it lives on.
+- **Also owed:** the button frame grid in Studio still uses the old plain table; Tom wants one look
+  ("One grid look" sketch on `elements/canvas-frames`).
+
 ### 5.35 Sketch commands need `--product` although only one product has the sketch - open
 
 - **Pain:** "Component vs chrome" round: every `sketch variant` and `sketch check` without
