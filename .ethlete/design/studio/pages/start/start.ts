@@ -1,5 +1,6 @@
 import { definePart, drawing, html } from '@design-system';
 import button from '@system/components/button';
+import { studioMark } from '@system/foundations/logo';
 import tokens from '@system/foundations/tokens.css?inline';
 
 type Props = { repo?: string };
@@ -8,19 +9,9 @@ const open = await button.render({ label: 'Repo öffnen', variant: 'filled' });
 const copy = await button.render({ label: 'Prompt kopieren', variant: 'outline', size: 'sm' });
 const other = await button.render({ label: 'Anderes Repo', variant: 'transparent', size: 'sm' });
 
-const mark = html`<svg width="24" height="24" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio">
-  <rect width="32" height="32" rx="8" fill="var(--accent)" />
-  <path
-    d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38"
-    fill="none"
-    stroke="var(--on-accent)"
-    stroke-width="4"
-  />
-</svg>`;
-
 const header = (repo?: string) =>
   html`<header class="flex items-center gap-space-3 p-space-4">
-    ${mark}
+    ${studioMark(24)}
     <span class="text-text font-ui-strong text-ui-md">Ethlete Studio</span>
     ${repo ? html`<span class="text-text-muted text-ui-sm">${repo}</span>${other.body}` : ''}
   </header>`;
