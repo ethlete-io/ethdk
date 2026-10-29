@@ -1,7 +1,7 @@
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { IncomingMessage, ServerResponse } from 'http';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR, installedAssetRoot, readConfig } from './paths';
 import { serveDesign } from './serve';
@@ -11,6 +11,7 @@ import { createSystemModules, productModuleIdOf } from './system/system-modules'
 
 type ServerOptions = {
   root: string;
+  cacheDir: string;
   server: { port: number; strictPort: boolean };
   resolve: { alias: { find: RegExp; replacement: string }[] };
   plugins: {
@@ -106,6 +107,23 @@ describe('serveDesign', () => {
     await new Promise((done) => setTimeout(done, 0));
     expect(exit).toHaveBeenCalledWith(0);
     vi.unstubAllEnvs();
+  });
+
+  it('gives each checkout its own Vite cache, stable across restarts', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const one = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    const two = makeTarget({ port: 4999, defaultCall: 'app/one' });
+    mkdirSync(join(one, 'node_modules'));
+    symlinkSync(join(one, 'node_modules'), join(two, 'node_modules'));
+
+    await serveDesign({ target: one });
+    await serveDesign({ target: two });
+    await serveDesign({ target: one });
+
+    const real = (dir?: string) => join(realpathSync(dirname(dir ?? '')), basename(dir ?? ''));
+
+    expect(real(created[0]?.cacheDir)).not.toBe(real(created[1]?.cacheDir));
+    expect(real(created[0]?.cacheDir)).toBe(real(created[2]?.cacheDir));
   });
 
   it('keeps serving the frame assets it started with when the package is rebuilt', async () => {

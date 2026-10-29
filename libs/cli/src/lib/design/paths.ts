@@ -1,4 +1,5 @@
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync } from 'fs';
+import { createHash } from 'crypto';
 import { dirname, relative, resolve } from 'path';
 
 /** Where every repository keeps its design work. The layout is convention, not configuration. */
@@ -128,6 +129,10 @@ export const callsRootOf = (target: string) => resolve(target, DESIGN_DIR, 'call
 
 /** Everything the tool writes for a checkout, so nothing generated lands in tracked files. */
 export const workRootOf = (target: string) => resolve(target, 'node_modules/.design-explore');
+
+/** A Vite cache folder of its own per checkout, so two servers sharing a symlinked `node_modules` never rewrite each other's deps. */
+export const viteCacheOf = (target: string, name: string) =>
+  resolve(workRootOf(target), `${name}-${createHash('sha1').update(resolve(target)).digest('hex').slice(0, 10)}`);
 
 export const readConfig = (target: string): DesignConfig | null => {
   const path = configPathOf(target);

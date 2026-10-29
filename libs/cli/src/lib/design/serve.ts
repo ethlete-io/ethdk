@@ -78,7 +78,7 @@ import {
   DesignProject,
   portOf,
   readConfig,
-  workRootOf,
+  viteCacheOf,
 } from './paths';
 
 type ViteDevServer = import('vite', { with: { 'resolution-mode': 'import' } }).ViteDevServer;
@@ -547,7 +547,7 @@ export const createDesignServer = async (options: {
     // Every drawing is ruled under Tailwind 4, whatever the checkout installs. The tool brings its
     // own pipeline so no checkout's postcss config reaches a drawing.
     css: { postcss: { plugins: [tailwind(), forceInteractionsPlugin()] } },
-    cacheDir: resolve(workRootOf(target), own ? 'vite-check' : 'vite'),
+    cacheDir: viteCacheOf(target, own ? 'vite-check' : 'vite'),
     resolve: {
       alias: [
         { find: /^@design-explore$/, replacement: resolve(here, 'define-call.ts') },
