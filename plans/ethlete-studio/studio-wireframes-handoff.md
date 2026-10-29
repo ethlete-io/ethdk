@@ -218,54 +218,32 @@ remove` exists now).
     cells, probably from the failed frames). Open from tonight: 2.13 (sdk `tokens` shows "from
     base" in studio), 3.42, 4.41, 4.42, 5.57, 5.58. Next: these findings, then switch and project
     switcher (list every host first, 5.24).
-    Resume update 2026-10-29: 2.13, 3.42, 4.42, 5.58 built and moved to fixed (appended).
-    4.41 built: Vite full-reload bridges to Studio parts SSE and clears image caches; regression
-    passes. Tom's existing :4402 still returns 504 for @design-system; restart requested, no reply
-    yet. Do not stop it. Isolated colors contact sheet: all four states render cleanly, no overlaps;
-    isolated `design check --product studio` passes. CLI build, typecheck, lint and the focused
-    regression suites pass (one cwd-dependent test corrected). Docs and changesets added.
-    5.57: NEW sketch `foundations/sheet`, a, is ready and needs Tom's merge. Helpers `tokenSheet`,
-    `fillTokenValues`; take styles from default part `.styles`. No merged design files changed.
-    After merge: check/format/commit the part; one-variant sketches on colors, type and spacing
-    adopt the helper, preserving all states/pixels. Then close 5.57; then switch and project switcher.
-    Host inventory started: switch exists only in pages/inbox (`ib-switch`, on/off via
-    showResolved). Project switcher exists in elements/shell-main (`st-shell-project`), inherited
-    by all composed pages. Check the two-host rule before extracting; don't invent a second host.
-    New native finding 1.5: Tom reports frequent nested Tokio runtime panic plus CEF/Mesa messages.
-    No concrete runtime caller found. Native lib.rs now captures a forced backtrace in its panic
-    hook, preserving the prior hook; requires native rebuild/restart and stderr log. Root cause
-    remains open; ask for triggering action/next full stack (already asked asynchronously).
-    User edits existed on resume: design-system.md modified; designer-workflow.md and
-    sdk-component-catalog.md untracked. Leave them alone.
-    Follow-up after Tom merged sheet: sheet committed bbe2852a0; colors 9807ff8a3;
-    type 083b839c9; spacing and findings 84f17bd6d. All three use the common helper;
-    every state is pixel-identical and auto-merged. Full product check passes. All four
-    colors states now also render correctly on Tom's restarted :4402, no overlap.
-    4.41 and 5.57 moved to fixed (appended); all six requested findings are done.
-    Next visual question is the Switch in its only current host pages/inbox, not a new
-    extracted component: variants a compact SDK 32x18, b standard SDK 40x22, round
-    "Switch sizing". READY, waits for Tom; root recommends a. Both retain all five page
-    states; type/lint/render checks and full/cropped off/on shots pass. Shared inbox.ts/css
-    owns the page, two variants call inbox(true/false). ng() returns HTML with embedded
-    styles, not a Drawing; embed that string directly. SDK switch has an explicit aria-label.
-    After Tom's choice, merge/check/
-    format/commit, then project switcher in its only current host elements/shell-main.
-    The native panic root cause (1.5) remains open; diagnostic backtrace only.
-    Latest: Tom picked Inbox switch a, but Studio merge FAILED (3.43) because its
-    target default-exported inbox(true) and the metadata writer needs definePart({note}).
-    A is still picked, sketch still ready. Both wrappers repaired with literal note/madeBy;
-    off/on crop images before/after repair are byte-identical and all 10 states pass.
-    Requested Tom retry the merge in Studio; do NOT merge it from CLI. Once it lands:
-    check, format all Inbox/shared files, commit merged.json and the full page folder.
-    Preventive CLI check (90f3b9b48) now rejects unwritable target metadata before ready;
-    41 sketch tests, lint, build pass. User feedback logged: 4.43 small changes hidden in
-    full-page comparisons (open; recommend same-region enlarged comparison), 3.43 fixed.
-    Project-picker sketch elements/shell-main a,b is READY; a popover above footer,
-    b beside sidebar over canvas. Same entries; all shell open/hidden states preserved,
-    project-picker is first. Root recommends a. SDK transparent sm button is reused for
-    the action; type/lint/render checks pass, including all host pages. Final crops inspected.
-    Shared base shell CSS duplication/token-discovery gap is recorded as 5.59 (open).
-    Leave user plan edits untouched.
+    Current resume state (after Tom merged both A variants): no open sketch, inbox empty.
+    All six requested findings 2.13, 3.42, 4.41, 4.42, 5.57, 5.58 are fixed.
+    Tool fixes cba51792e; shared sheet bbe2852a0; pixel-identical colors/type/spacing
+    adoption 9807ff8a3, 083b839c9, 84f17bd6d. All four colors states also render cleanly
+    on Tom's restarted :4402. Never stop that server.
+    Tom picked and merged compact SDK Switch A (32x18) in pages/inbox and Project Picker A
+    (above footer trigger) in elements/shell-main. Both remain in their sole independent host;
+    no extracted component until a second host exists. Shared helper code lives under each
+    part's shared/ after merge. Full Studio design check passes; merged files formatted.
+    Project picker adds the first state project-picker and optional projectPicker: 'open';
+    existing open/hidden shell states and all five Inbox states retained. Static design only.
+    ng() returns HTML with embedded styles, not a Drawing; embed the string directly.
+    Merge gotcha 3.43: target TS must contain a writable definePart({ note: <literal> });
+    default-exporting a shared factory result rendered but failed metadata writing. Repaired
+    wrappers preserve pixels; Tom retried successfully. Guard 90f3b9b48 rejects this before
+    ready; 41 sketch tests, lint and CLI build passed. Feedback and current plan kept in git.
+    New open findings: 4.43 (small changes hard to compare in full-page frames; recommend
+    identical enlarged changed-region comparison) and 5.59 (shared CSS token discovery gap).
+    Native 1.5 remains open: nested Tokio runtime panic plus CEF/Mesa output. No concrete
+    caller found; native panic hook captures a forced backtrace while preserving the prior
+    hook. Requires app rebuild/restart and stderr capture for the next panic and action.
+    Current requested design sequence is finished. Broader next stage: remaining page states
+    and then implementation, following Tom's original order; do not open a new sketch as
+    part of the commit/push request. Tom explicitly requested commit and push.
+    User edits to leave alone: design-system.md; untracked designer-workflow.md and
+    sdk-component-catalog.md. Concurrent docs commits on next are separate work.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 

@@ -1508,3 +1508,5 @@ check` warns early.
 - **Fix:** sketch checking now preflights the target with the same metadata writers as the merger, so `check` and `ready` reject an unmergeable wrapper with an actionable message. Identifier exports and template-literal notes remain supported.
 - **Immediate repair:** both Inbox wrappers now use `definePart({ ...inbox(...), note: <literal>, madeBy: [...] })`. All five states in both variants pass; enlarged off/on comparisons before and after the repair are byte-identical PNGs. A remains picked; Tom must retry the failed merge in Studio.
 - **Checked:** regression for rejected factory exports and accepted identifier/template-note exports, focused CLI test, CLI lint and CLI build pass. This catches a mergeability failure before the designer makes a choice.
+
+- **3.43 live follow-up:** Tom retried the repaired Inbox A merge successfully and merged Project Picker A too. No open sketches remain; full Studio type/render check passes after both merges.
