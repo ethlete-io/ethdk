@@ -45,6 +45,17 @@ export const planOf = (options: {
   });
 };
 
+export const rowsOf = (options: { part: string; variants: string[] | null; merged: boolean }): Axis[] => {
+  const { part, variants, merged } = options;
+
+  if (!variants) return [{ label: '', sketch: null }];
+
+  return [
+    ...(merged ? [{ label: 'merged', sketch: null }] : []),
+    ...variants.map((variant) => ({ label: variant, sketch: { target: part, variant } })),
+  ];
+};
+
 const stringsOf = (states: unknown) => (states && typeof states === 'object' ? Object.keys(states) : []);
 
 /**
@@ -99,11 +110,13 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const product = resolved.name;
   const system = createSystemModules({ target, config });
   const sketch = system.sketchesOf(product).find((found) => found.target === part);
-  const rows: Axis[] = variants
-    ? (sketch?.variants ?? []).map((variant) => ({ label: variant, sketch: { target: part, variant } }))
-    : [{ label: '', sketch: null }];
+  const rows = rowsOf({
+    part,
+    variants: variants ? (sketch?.variants ?? []) : null,
+    merged: Boolean(system.partOf({ product, part })),
+  });
 
-  if (variants && rows.length === 0) {
+  if (variants && !sketch?.variants.length) {
     console.error(`design-explore: ${part} has no open sketch in product "${product}"`);
 
     return 1;

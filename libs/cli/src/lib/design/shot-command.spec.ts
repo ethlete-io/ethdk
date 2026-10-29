@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { designShot, planOf } from './shot-command';
+import { designShot, planOf, rowsOf } from './shot-command';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
 
@@ -79,5 +79,18 @@ describe('designShot', () => {
 
     expect(code).toBe(1);
     expect(text).toContain('no config at');
+  });
+});
+
+describe('rowsOf', () => {
+  it('draws the merged state as the first row of a variants sheet', () => {
+    const rows = rowsOf({ part: 'pages/a', variants: ['one', 'two'], merged: true });
+
+    expect(rows.map((row) => row.label)).toEqual(['merged', 'one', 'two']);
+    expect(rows[0]?.sketch).toBeNull();
+  });
+
+  it('draws only the variants when the part is not merged yet', () => {
+    expect(rowsOf({ part: 'pages/a', variants: ['one'], merged: false }).map((row) => row.label)).toEqual(['one']);
   });
 });
