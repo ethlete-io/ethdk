@@ -206,6 +206,9 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Cause:** the rule "a variant changes only the state the question is about" protects Tom from a
   wall of changed screens. However, a decision about shared chrome, for example the header, applies
   to every state that draws it. Neither the agent nor the tool compared the sibling states.
+- **Repeat:** the agent then fixed only `zoomed-page`. `open` and `page-sketch` still had the badge,
+  the bold static round line and a teal "Verwerfen". Tom: "there are even more diffs between the
+  sketches views". The agent had compared two states, not all four.
 - **Now:** nothing. The mismatch shows only when Tom opens the other state.
 - **Fix options:**
   1. The merge preview in Studio shows each unchanged state next to the changed one, so a mismatch
