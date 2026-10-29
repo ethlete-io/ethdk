@@ -138,12 +138,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.37 `sketch report --done` answers differently for the same case - open
-
-- **Pain:** after a live text report on each of a, b and c, `--done` printed "had no live report"
-  for a and b and "is no longer drawing" for c.
-- **Fix option:** one consistent "a: done" line (with 3.32).
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)

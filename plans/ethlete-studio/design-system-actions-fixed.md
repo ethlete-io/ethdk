@@ -1301,3 +1301,10 @@ check` warns early.
   in every variant; a merge drops the old note.
 - **Fix options:** 1. store the variant note apart from `definePart({ note })` (recommended). 2. append it to the merged note.
 - **Fix done (203a72116):** Option 1: `sketch new --variant-note` writes `variantInfo.<variant>.note` in `sketch.json` and leaves the part file as copied; Studio shows the note in the variant column head. A merge keeps the part note, takes its `--note`, and gives a new part (empty note) the picked variant note.
+
+### 3.37 `sketch report --done` answers differently for the same case - fixed (891bc68cd)
+
+- **Pain:** after a live text report on each of a, b and c, `--done` printed "had no live report"
+  for a and b and "is no longer drawing" for c.
+- **Fix option:** one consistent "a: done" line (with 3.32).
+- **Fix done (891bc68cd):** Already fixed by the 3.32 fix: `sketch report --done` prints `<target> variant <key> marked done` whether or not the variant held the live report, and no longer prints "had no live report" or "is no longer drawing" (neither string is left in the CLI). The spec "ends the live report of a variant with --done" covers a variant without and one with the live report.
