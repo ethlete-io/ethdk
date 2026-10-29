@@ -269,6 +269,21 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   with PIL.
 - **Fix options:** 1. a `scale` parameter and a fit-to-content crop for small parts (recommended). 2. only the crop from 5.37.
 
+### 4.34 A page's replace on another part's markup can match nothing, silently - open
+
+- **Pain:** merge `a47a64158` renamed the canvas cell class from `st-canvas-cell` to `st-sgrid-cell`.
+  `pages/inbox` `pinned()` still replaces `<div class="st-canvas-cell">`, so the merged inbox shows
+  no pin in any state. No check noticed it; the "Use the comment pin" sketch found it.
+- **Fix options:** 1. `elements/canvas-frames` offers a typed per-cell slot, so pages stop
+  regex-ing its HTML (recommended). 2. `design check` warns when such a replace matches zero times.
+
+### 4.35 "No pixel change" when both sides miss the same content - open
+
+- **Pain:** on the inbox sketch the shot diff said "no pixel change" because merged and variant
+  both lacked the pin. It read like success.
+- **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
+  output says so.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -452,6 +467,21 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   in TS.
 - **Fix option:** the agent logos become a foundation asset: an icon set in `assets/` with a named
   export in a foundations part, then the pages and the pin import it (recommended, follows 5.13).
+
+### 5.46 A component's frame padding leaks into its hosts - open
+
+- **Pain:** `components/comment-pin` wraps its button in `.st-pin-stage` with `var(--space-2)`
+  padding, so the focus ring fits the frame. Both hosts get that padding too: on `pages/sketches` the
+  pin moved 4 px left; `pages/inbox` offsets it with `calc(-1.4rem - var(--space-2))`. `sketch check`
+  flags host placement on the component root as COMPONENT-COPY, so hosts need a wrapper span.
+- **Fix options:** 1. the stage lives in the part's `render` only, the markup a host embeds has
+  none (recommended). 2. hosts may set position, inset and z-index on a component root.
+
+### 5.47 A page gets a component's styles only through `render()` - open
+
+- **Pain:** the inbox sketch called `commentPin.render()` per pin and took `styles` from the first
+  result.
+- **Fix option:** the part's default export exposes `styles` statically.
 
 ## 6. Agent process
 
