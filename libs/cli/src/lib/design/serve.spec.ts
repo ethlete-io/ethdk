@@ -109,6 +109,21 @@ describe('serveDesign', () => {
     vi.unstubAllEnvs();
   });
 
+  it('takes a free port, not the configured one, unless the Studio host started it', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.stubEnv('DE_PORT', '');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '');
+    const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
+
+    expect(await serveDesign({ target })).toBe(0);
+
+    const port = created[0]?.server.port;
+
+    expect(port).toEqual(expect.any(Number));
+    expect(port).not.toBe(4999);
+    expect(created[0]?.server).toMatchObject({ strictPort: true });
+  });
+
   it('listens on the host it is given, or DE_HOST, and on Vite default otherwise', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
@@ -160,6 +175,8 @@ describe('serveDesign', () => {
   it('serves the call registry and workspace aliases on the configured port', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.stubEnv('DE_PORT', '');
+    vi.stubEnv('ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE', '1');
+    vi.spyOn(process.stdin, 'resume').mockImplementation(() => process.stdin);
 
     const target = makeTarget({ port: 4999, defaultCall: 'app/one' });
 

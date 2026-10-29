@@ -752,3 +752,18 @@ sketch` until the next merge of the part.
   not define.
 - **Fix done:** the render check reports `UNKNOWN-THEME` when an element carries an `et-color--<name>` class that no stylesheet of the frame defines (`inherited` is exempt, it is the SDK runtime marker). Runs under `design check`, `sketch check` and `sketch ready`.
 - **Open:** `sketch check` prints each problem twice (state line and rule line).
+
+### 3.24 A stray `design <checkout>` took the port of Tom's Studio - fixed
+
+- **Pain (4.11 agent, 2026-10-29):** the agent started `design /home/tom/dev/ethlete-sdk` while
+  it read the help. The server bound `[::1]:4402`, and Tom's Studio then used that server (the host
+  reuses any server on the port). The agent could not stop it, and Tom needs it alive.
+- **Why "bare `design` prints help" is not enough:** the Studio host itself starts
+  `design <checkout>` (`apps/ethlete-studio/src-tauri/src/design_server.rs:343`), and the stray
+  process had the same command line.
+- **Fix options:** (1) the host passes `design serve <checkout>` and the CLI serves only with
+  `serve`; needs a Tauri rebuild and keeps old hosts working only with a fallback. (2) A server not
+  started by the host (no host env marker) refuses the Studio port and picks a free one.
+  (3) Only a rule in the subagent brief. Recommendation: (2), no host change.
+- **Fix done:** option 2 (Tom, 2026-10-29). A server started without `ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE` (only the Studio host sets it) listens on a free port, prints it, and leaves the config port to Studio. Its thumbnails and shots draw from its own port. Real run: free port 44631, :4402 kept its pid.
+- **Open:** such a server shares the Vite `cacheDir` with Studio's server and logged a dependency re-optimization, which may disturb Studio's live server. `DE_URL`/`DE_PORT` tools still reach only the config port, and a deliberate `DE_PORT` is ignored without the marker.

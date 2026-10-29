@@ -347,7 +347,11 @@ const designExplore = ({
     const callsRoot = callsRootOf(target);
     const designRoot = resolve(target, DESIGN_DIR);
     const stamp = buildStampOf();
-    const base = () => `http://localhost:${portOf(config)}`;
+    const base = () => {
+      const address = vite.httpServer?.address();
+
+      return `http://localhost:${address && typeof address === 'object' ? address.port : portOf(config)}`;
+    };
     const thumbs = createThumbnailer({ target, base });
     const shots = createPartShooter({ target, base, system });
     const baseDirs = [...new Set(system.products().flatMap((name) => system.productOf(name)?.base?.dir ?? []))].filter(
@@ -576,13 +580,14 @@ export const createDesignServer = async (options: {
   config: DesignConfig;
   listen: boolean;
   port?: number;
+  listenOn?: number;
   host?: string;
   sketchesRoot?: string;
 }) => {
   const { target, config, listen, sketchesRoot } = options;
   const host = options.host || process.env['DE_HOST'] || undefined;
   const own = listen && options.port !== undefined;
-  const port = own ? await freePortOf() : options.port;
+  const port = own ? await freePortOf() : options.listenOn;
 
   writeCallsTsconfig(target);
 
@@ -682,13 +687,25 @@ export const serveDesign = async (options: { target: string; host?: string }): P
 
   snapshotPackage(target);
 
-  const server = await createDesignServer({ target, config, listen: true, host });
+  const ownedByStudio = process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1';
+  const server = await createDesignServer({
+    target,
+    config,
+    listen: true,
+    host,
+    listenOn: ownedByStudio ? undefined : await freePortOf(),
+  });
 
   await server.listen();
   console.log(`design-explore: drawing ${target}`);
+  if (!ownedByStudio) {
+    console.log(
+      `design-explore: not started by Studio, so it listens on a free port and leaves ${portOf(config)} to Studio`,
+    );
+  }
   server.printUrls();
 
-  if (process.env['ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE'] === '1') {
+  if (ownedByStudio) {
     exitWhenStdinCloses(server);
   }
 
