@@ -1,4 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
+import sheet, { tokenSheet, fillTokenValues } from '@system/foundations/sheet';
 import tokens from './colors.css?inline';
 
 type Group = 'surfaces' | 'accent' | 'warning' | 'error';
@@ -25,12 +26,6 @@ const sampleOf = (name: string) => {
 
   return html`<span class="co-swatch" style="background: var(--${name})"></span>`;
 };
-
-const tokenRow = (name: string) =>
-  html`<li class="co-row">
-    <span class="co-name">--${name}</span><span class="co-value" data-token="${name}"></span
-    ><span class="co-sample">${sampleOf(name)}</span>
-  </li>`;
 
 const surfaceCard = (surface: string) =>
   html`<div class="co-surface" style="background: var(--${surface})">
@@ -106,17 +101,9 @@ const cards: Record<Group, (surface: string) => string> = {
   error: errorCard,
 };
 
-const fillValues = (root: HTMLElement) => {
-  const style = getComputedStyle(root);
-
-  for (const cell of root.querySelectorAll<HTMLElement>('[data-token]')) {
-    cell.textContent = style.getPropertyValue(`--${cell.dataset['token']}`).trim();
-  }
-};
-
 export default definePart<{ group: Group }>({
   note: 'The Studio surfaces, accent, warning and error colours on their own sheet, split from foundations/tokens.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: {
     surfaces: { group: 'surfaces' },
     accent: { group: 'accent' },
@@ -125,23 +112,15 @@ export default definePart<{ group: Group }>({
   },
   render: ({ group }) =>
     drawing({
-      body: html`<div class="co-root">
-        <h2 class="co-title">${groups[group].title}</h2>
-        <section class="co-panel co-grid">${surfaces.map(cards[group]).join('')}</section>
-        <ul class="co-panel co-list">
-          ${namesOf(group).map(tokenRow).join('')}
-        </ul>
-      </div>`,
-      setup: fillValues,
-      styles: `${tokens}
-        .co-root { display: flex; flex-direction: column; gap: var(--space-4); width: 960px; padding: var(--space-6); box-sizing: border-box; background: var(--surface-sunken); color: var(--text); font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-md-line); }
-        .co-title { margin: 0; font-size: var(--text-xl); line-height: var(--text-xl-line); font-weight: var(--weight-strong); }
-        .co-panel { margin: 0; padding: var(--space-4); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-control-lg); }
-        .co-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-1); }
-        .co-row { display: grid; grid-template-columns: 200px 240px 1fr; align-items: center; gap: var(--space-3); min-height: var(--row); }
-        .co-name { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); color: var(--text-muted); }
-        .co-value { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); overflow-wrap: anywhere; }
-        .co-sample { display: flex; align-items: center; min-width: 0; }
+      body: tokenSheet({
+        title: groups[group].title,
+        sample: surfaces.map(cards[group]).join(''),
+        sampleClass: 'co-grid',
+        names: namesOf(group),
+        sampleOf,
+      }),
+      setup: (root) => fillTokenValues(root),
+      styles: `${sheet.styles}
         .co-swatch { width: 64px; height: var(--control-sm); border: 1px solid var(--surface-border); border-radius: var(--radius-control-sm); }
         .co-shadow { width: 64px; height: var(--control-sm); background: var(--surface-overlay); border-radius: var(--radius-control-sm); box-shadow: 0 8px 24px var(--surface-shadow); }
         .co-cluster { display: flex; flex-wrap: wrap; gap: var(--space-3); }
