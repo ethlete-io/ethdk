@@ -1,6 +1,6 @@
-import { relative } from 'path';
+import { relative, resolve } from 'path';
 import { DesignConfig } from './paths';
-import { addressSketchComments } from './system/comments/comment';
+import { addressSketchComments, commentsOnSketch } from './system/comments/comment';
 import { productDirOf } from './system/product';
 import { partKeyOf, ResolvedProduct } from './system/resolve-product';
 import { formatProblemsOf } from './system/sketch/check-format';
@@ -122,6 +122,21 @@ const varied = (context: Context) =>
 
       if (positional.length !== 2 || !variant || !from || (title === undefined) !== (lostNote === undefined))
         return fail(VARIANT_USAGE);
+
+      const open =
+        title === undefined
+          ? commentsOnSketch({ productDir: resolve(sketch.dir, '..', '..'), product: sketch.product, sketch })
+          : [];
+
+      if (open.length > 0)
+        return fail(
+          [
+            `${sketch.target} has ${open.length} open comment(s) - a variant that answers them starts a new round:`,
+            ...open.map((comment) => `  ${comment.id} on ${comment.sketch?.variant ?? ''}: ${comment.text}`),
+            `sketch variant ${sketch.target} ${variant} --from <variant> --round "<title>" --note "<why the running round lost>"`,
+            `if the variant answers none of them, close each first with: inbox done <id> --note <text>`,
+          ].join('\n'),
+        );
 
       const added = addVariant({
         sketch,

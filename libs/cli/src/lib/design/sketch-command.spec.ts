@@ -258,7 +258,17 @@ describe('designSketch', () => {
     const onB = comment('on-b', { target: 'components/button', variant: 'b', createdAt });
     const onPart = comment('on-part');
 
-    expect(write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(0);
+    expect(write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(1);
+    expect(lines.pop()).toBe(
+      [
+        'components/button has 2 open comment(s) - a variant that answers them starts a new round:',
+        '  on-a on a: Rounder.',
+        '  on-b on b: Rounder.',
+        'sketch variant components/button c --from <variant> --round "<title>" --note "<why the running round lost>"',
+        'if the variant answers none of them, close each first with: inbox done <id> --note <text>',
+      ].join('\n'),
+    );
+    expect(existsSync(join(target, DESIGN_DIR, 'acme/sketches/components-button/c'))).toBe(false);
     expect(existsSync(onB)).toBe(true);
     expect(
       write(

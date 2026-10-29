@@ -145,15 +145,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
   had a folded round.
 
-### 3.9 `sketch variant` adds an answer to comments to the running round - open
-
-- **Pain:** the agent answered two comments on g with variant h. The CLI put h into the running round
-  r4 without a question. Tom: "why is this not a new round?"
-- **Now:** a new round opens only with `--round`. Nothing tells the agent that comments arrived
-  since the last `sketch ready`.
-- **Fix option:** `sketch variant` fails without `--round` when comments on the sketch arrived after
-  the last `ready`. It names the comments.
-
 ### 3.10 A merge leaves sibling states with the old design - open
 
 - **Pain:** Tom merged variant i of `pages/sketches`. It gave the header of state `zoomed-below` no

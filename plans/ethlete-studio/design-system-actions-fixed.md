@@ -57,6 +57,16 @@ The fixed entries of `design-system-actions.md`, with their numbers kept. `Lnnn`
 - **Fixed by 3.15:** a state with the same body and other styles now folds when each frame draws the
   same pixels. The `below.css` convention is no longer needed.
 
+### 3.9 `sketch variant` adds an answer to comments to the running round - fixed
+
+- **Pain:** the agent answered two comments on g with variant h. The CLI put h into the running round
+  r4 without a question. Tom: "why is this not a new round?"
+- **Fix options:** fail on open comments / fail plus a `--same-round` opt-out / fail only on comments
+  after a stored `readyAt` / warn only. Tom chose the first.
+- **Fix done:** `sketch variant` without `--round` fails while the sketch has open comments. The error
+  lists each comment with its variant and text, and gives the `--round` command. A variant that
+  answers none of them closes them first with `inbox done`. The design-exploration skill says so.
+
 ### 3.11 A new sketch shows the comments of an old sketch - fixed
 
 - **Pain:** a new sketch on `pages/sketches` showed many old comments in its variant a. Tom: "there
