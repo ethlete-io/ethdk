@@ -1215,3 +1215,14 @@ check` warns early.
 - **Fix options:** 1. a typed `interactionRow(prefix)` helper in `@design-system` (recommended). 2.
   a shorter type error that names the state.
 - **Fix done (1e65f8c62):** `interactionRows(rows, { interactions, force })` from `@design-system` builds `states` (`<row>`, `<row>-<interaction>`) and a `grid` (`rest` plus each interaction) to spread into `definePart`, with the state names typed; the design-exploration skill names it. `components/comment-pin` still lists its 40 states and grid by hand (`shared/comment-pin.ts`) and should adopt it through a sketch.
+
+### 5.28 A state cannot force an interaction on one element - fixed (9dc18ce5e)
+
+- **Pain:** `definePart({ interactions })` forces only the part's root and draws every state times
+  every interaction; a named state cannot pass `RenderOptions`. `tree-row`'s root is the stack, so
+  the agent wrote `data-et-force` into the row markup by hand. The skill does not say how; the agent
+  read `define-part.ts`, `web/frame.ts` and `force-interactions.ts`.
+- **Fix options:** 1. a state carries an interaction, for example
+  `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
+  marks a forced element. Both: one paragraph in the skill.
+- **Fix done (9dc18ce5e):** Option 2, not the recommended 1: states hold props by type (the frame, diffs and `--diff-props` read them as props), and a state interaction would still force only the root, which is the pain. `forceInteraction(markup, interaction)` from `@design-system` forces one element (`data-et-force`, or `disabled` plus `aria-disabled`); the design-exploration skill has the paragraph. `components/tree-row` and `components/comment-pin` (both `shared/`) still write `data-et-force` by hand and should adopt it through a sketch.

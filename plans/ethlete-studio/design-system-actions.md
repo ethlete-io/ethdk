@@ -278,16 +278,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** a render check rule that reports a class in a part's markup that no loaded
   stylesheet and no utility defines.
 
-### 5.28 A state cannot force an interaction on one element - open
-
-- **Pain:** `definePart({ interactions })` forces only the part's root and draws every state times
-  every interaction; a named state cannot pass `RenderOptions`. `tree-row`'s root is the stack, so
-  the agent wrote `data-et-force` into the row markup by hand. The skill does not say how; the agent
-  read `define-part.ts`, `web/frame.ts` and `force-interactions.ts`.
-- **Fix options:** 1. a state carries an interaction, for example
-  `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
-  marks a forced element. Both: one paragraph in the skill.
-
 ### 5.30 `design check` does not report an unused export in `shared/` - open
 
 - **Pain:** `flowList` and `stepTree` in `pages/flows/shared/flow-data.ts` had no importer. They
