@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-page",
+  "size": "desktop",
+  "text": "hier sollten wir den canvas noch etwas faden wenn die sidebar offen ist",
+  "point": {
+    "x": 71,
+    "y": 437
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "b"
+  },
+  "createdAt": "2026-10-29T09:45:50.430Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T09:48:21.483Z",
+    "note": "r2 zeigte drei Antworten bei gleichem Zoom. Tom kommentiert b: die Leinwand soll etwas abblenden, solange die Sidebar offen ist.",
+    "round": "r3"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Runde 3: e blendet die Leinwand zur Sidebar hin aus (200px Verlauf), f dimmt die ganze Leinwand leicht ab. Köpfe bleiben voll sichtbar.",
+      "createdAt": "2026-10-29T09:49:06.077Z"
+    }
+  ]
+}
