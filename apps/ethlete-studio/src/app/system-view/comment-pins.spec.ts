@@ -8,6 +8,7 @@ import {
   commentPlaceOf,
   draftKeyOf,
   isCommentModeKey,
+  isInSketch,
   isQuestion,
   lastSenderOf,
   numberedCommentsOf,
@@ -156,6 +157,19 @@ describe('comment pins', () => {
     ).toEqual([undefined, undefined]);
     expect(otherSizeFrameOf([frame('f')], hoverComment)).toBe('f');
     expect(commentPlaceOf(hoverPlace, null)).toEqual(hoverPlace);
+  });
+
+  it('shows in a sketch only its own comments and those on the pages that use its target', () => {
+    const sketch = { createdAt: '2026-10-29T09:00:00.000Z' };
+    const pages = new Set(['pages/home']);
+    const onVariant = (createdAt?: string) =>
+      comment('4', { sketch: { target: 'components/card', variant: 'a', ...(createdAt && { createdAt }) } });
+
+    expect(isInSketch(onVariant(sketch.createdAt), { sketch, contextPages: pages })).toBe(true);
+    expect(isInSketch(onVariant('2026-10-28T09:00:00.000Z'), { sketch, contextPages: pages })).toBe(false);
+    expect(isInSketch(onVariant(), { sketch, contextPages: pages })).toBe(false);
+    expect(isInSketch(comment('5', { part: 'pages/home' }), { sketch, contextPages: pages })).toBe(true);
+    expect(isInSketch(comment('6', {}), { sketch, contextPages: pages })).toBe(false);
   });
 
   it('marks a commented part, and a sketch with a comment on a variant', () => {

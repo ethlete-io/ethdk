@@ -40,6 +40,7 @@ import {
   NumberedComment,
   commentDraftOf,
   commentsOfPart,
+  isInSketch,
   otherSizeFrameOf,
   pinsOf,
   withOtherSizeNotes,
@@ -563,7 +564,9 @@ export class SketchViewComponent {
   private contextPages = computed(() => new Set(usingPagesOf(this.product(), this.part()).map(partKeyOf)));
 
   private sketchComments = computed(() =>
-    this.commentStore.comments().filter((comment) => !!comment.sketch || this.contextPages().has(comment.part)),
+    this.commentStore
+      .comments()
+      .filter((comment) => isInSketch(comment, { sketch: this.sketch(), contextPages: this.contextPages() })),
   );
 
   protected pins = computed(() => pinsOf(this.canvas().frames, this.sketchComments()));

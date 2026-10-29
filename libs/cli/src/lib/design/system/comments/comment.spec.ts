@@ -81,7 +81,33 @@ describe('createComment', () => {
 
     const made = createComment({ product, comment: { ...comment, sketch: { target: sketch.target, variant: 'a' } } });
 
-    expect(commentsOnSketch({ productDir: product.dir, product: 'acme', sketch: 'elements/banner' })).toEqual([made]);
+    expect(commentsOnSketch({ productDir: product.dir, product: 'acme', sketch })).toEqual([made]);
+  });
+
+  it('keeps the comments of an earlier sketch on the same target out of a new sketch', () => {
+    const product = resolveAcme(acme());
+    const sketch = createSketch({ product, sketch: { layer: 'elements', name: 'banner' }, variants: ['a'] }) as Sketch;
+    const comment = { part: 'elements/banner', state: 'default', size: 'desktop', text: 'Taller.' };
+    const writeOld = (id: string, createdAt?: string) =>
+      writeFileSync(
+        join(product.dir, 'comments', `${id}.json`),
+        JSON.stringify({
+          ...comment,
+          sketch: { target: sketch.target, variant: 'a', ...(createdAt && { createdAt }) },
+          createdAt: '2026-10-28T09:00:00.000Z',
+        }),
+      );
+
+    const made = createComment({
+      product,
+      comment: { ...comment, sketch: { target: sketch.target, variant: 'a', createdAt: 'forged' } },
+    }) as DesignComment;
+
+    writeOld('20261028T090000Z-0001', '2026-10-28T08:00:00.000Z');
+    writeOld('20261028T090000Z-0002');
+
+    expect(made.sketch).toEqual({ target: sketch.target, variant: 'a', createdAt: sketch.createdAt });
+    expect(commentsOnSketch({ productDir: product.dir, product: 'acme', sketch })).toEqual([made]);
   });
 });
 

@@ -510,7 +510,8 @@ export type CommentPlace = {
   interaction?: string;
   /** CSS pixels from the frame's top left corner. */
   point?: { x: number; y: number };
-  sketch?: { target: string; variant: string };
+  /** `createdAt` is the sketch's own; a comment shows only in the sketch it was made in. */
+  sketch?: { target: string; variant: string; createdAt?: string };
 };
 
 /** One answer in a comment thread, by the user in Studio or by the agent through the CLI. */

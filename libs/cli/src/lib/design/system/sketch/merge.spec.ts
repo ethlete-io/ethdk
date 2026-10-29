@@ -282,7 +282,7 @@ describe('mergeSketch', () => {
     expect(merge(target, { ...found, sketch: picked(found.sketch) })).toEqual(['elements/hero']);
     expect(addressedOf(onSketch)).toMatchObject({ by: 'user', reason: 'merge' });
     expect(addressedOf(onPart)).toBeUndefined();
-    expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: 'elements/hero' })).toEqual([]);
+    expect(commentsOnSketch({ productDir: found.product.dir, product: 'acme', sketch: found.sketch })).toEqual([]);
   }, 120_000);
 });
 

@@ -59,6 +59,12 @@ export const isOnPlace = (comment: CommentPlace, place: FramePlace) =>
   comment.sketch?.target === place.sketch?.target &&
   comment.sketch?.variant === place.sketch?.variant;
 
+/** Whether the sketch view shows a comment: one made in this sketch, or one on a page the target is used in. */
+export const isInSketch = (
+  comment: CommentPlace,
+  { sketch, contextPages }: { sketch: { createdAt: string }; contextPages: ReadonlySet<string> },
+) => (comment.sketch ? comment.sketch.createdAt === sketch.createdAt : contextPages.has(comment.part));
+
 /** The frame a comment sits on, among the frames the canvas shows. */
 export const frameOfComment = (frames: CanvasFrame[], comment: CommentPlace) =>
   frames.find((frame) => frame.place && isOnPlace(comment, frame.place)) ?? null;

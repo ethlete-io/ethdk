@@ -199,7 +199,14 @@ export const treeOf = (
 ): TreeGroup[] => {
   const sketched = new Set(sketches.map((sketch) => sketch.target));
   const marksOf = (onSketch: boolean): CommentMarks => {
-    const own = comments.filter((comment) => !!comment.sketch === onSketch);
+    const own = comments.filter((comment) =>
+      comment.sketch
+        ? onSketch &&
+          sketches.some(
+            ({ target, createdAt }) => target === comment.sketch?.target && createdAt === comment.sketch.createdAt,
+          )
+        : !onSketch,
+    );
     const keyOf = (comment: CommentPlace) => comment.sketch?.target ?? comment.part;
 
     return {

@@ -220,7 +220,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   2. The round note names which states the decision applies to. `sketch ready` warns when a named
      state is unchanged.
 
-### 3.11 A new sketch shows the comments of an old sketch - open
+### 3.11 A new sketch shows the comments of an old sketch - fixed
 
 - **Pain:** a new sketch on `pages/sketches` showed many old comments in its variant a. Tom: "there
   are now many old comments in the sketch visible".
@@ -232,6 +232,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   sketch.
 - **Seen again (2026-10-29):** the empty-state sketch on `pages/flows` showed the three addressed
   round-2 comments (pins 32, 33, 34) of the merged flows sketch on its new variant a.
+- **Now:** the CLI stamps the sketch's `createdAt` into each new comment on a variant. Studio pins and
+  tree marks show a comment only in the sketch with that `createdAt`, so older comments stay hidden.
 
 ### 3.12 `inbox done --note` overwrites the part note in the product - open
 

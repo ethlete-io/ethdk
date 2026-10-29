@@ -382,6 +382,22 @@ describe('sketches in the tree', () => {
       ['sketch:elements/header', 'header', 'elements/header', ['ready', 'error']],
     ]);
   });
+
+  it('marks a sketch only with the comments made in it, not those of an earlier sketch on its target', () => {
+    const onVariant = (createdAt: string) => ({
+      part: 'components/button',
+      state: 'default',
+      size: 'phone',
+      sketch: { target: 'components/button', variant: 'a', createdAt },
+      threadState: 'agent' as const,
+    });
+    const badgesWith = (createdAt: string) =>
+      treeOf([part({ name: 'button' })], { sketches: [sketch()], comments: [onVariant(createdAt)] })[1]?.entries[0]
+        ?.badges;
+
+    expect(badgesWith('2026-10-27T10:00:00.000Z')).toContain('comment open');
+    expect(badgesWith('2026-10-26T10:00:00.000Z')).not.toContain('comment open');
+  });
 });
 
 describe('pages that use a part', () => {

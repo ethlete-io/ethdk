@@ -65,7 +65,8 @@ export type CommentFile = {
   /** `rest` or one of the part's interactions; a file without it is on `rest`. */
   interaction?: string;
   point?: CommentPoint;
-  sketch?: { target: string; variant: string };
+  /** `createdAt` is the sketch's own, so a later sketch on the same target shows none of its comments. */
+  sketch?: { target: string; variant: string; createdAt?: string };
   text: string;
   createdAt: string;
   replies?: CommentReply[];
@@ -152,9 +153,11 @@ const shapeProblemOf = (value: Partial<CommentFile>) => {
   if (value.point !== undefined && !isPoint(value.point)) return 'point must be { x, y } in CSS pixels, both >= 0';
   if (
     value.sketch !== undefined &&
-    (typeof value.sketch?.target !== 'string' || typeof value.sketch.variant !== 'string')
+    (typeof value.sketch?.target !== 'string' ||
+      typeof value.sketch.variant !== 'string' ||
+      (value.sketch.createdAt !== undefined && typeof value.sketch.createdAt !== 'string'))
   )
-    return 'sketch must be { target, variant }';
+    return 'sketch must be { target, variant, createdAt? }';
   if (value.replies !== undefined && !(Array.isArray(value.replies) && value.replies.every(isReply)))
     return 'replies must be [{ by: "user" | "agent", author?, text, createdAt, question?: true }], question only on an agent reply';
   if (value.addressed !== undefined && !isAddressed(value.addressed))
@@ -275,6 +278,14 @@ const goneInteractionOf = (options: { product: ResolvedProduct; part: string; in
     : null;
 };
 
+const openSketchOf = ({ product, target }: { product: ResolvedProduct; target: string }) => {
+  const parsed = parseTarget(target);
+  const sketch =
+    typeof parsed === 'string' ? null : findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+
+  return sketch && typeof sketch !== 'string' ? sketch : null;
+};
+
 /**
  * Why a comment no longer points at anything: its sketch variant, part, state, size or interaction is gone.
  * `null` when it still does. A part whose states are not an object literal keeps any state.
@@ -287,13 +298,10 @@ export const staleReasonOf = (options: {
   let drawn = product;
 
   if (comment.sketch) {
-    const parsed = parseTarget(comment.sketch.target);
-    const sketch =
-      typeof parsed === 'string'
-        ? null
-        : findSketch({ productDir: product.dir, product: product.name, sketch: parsed });
+    const sketch = openSketchOf({ product, target: comment.sketch.target });
 
-    if (!sketch || typeof sketch === 'string') return `the sketch on ${comment.sketch.target} no longer exists`;
+    if (!sketch || (comment.sketch.createdAt !== undefined && comment.sketch.createdAt !== sketch.createdAt))
+      return `the sketch on ${comment.sketch.target} no longer exists`;
     if (!sketch.variants.includes(comment.sketch.variant))
       return `the sketch on ${comment.sketch.target} has no variant "${comment.sketch.variant}"`;
 
@@ -329,9 +337,11 @@ export const createComment = (options: {
   comment: Omit<CommentFile, 'createdAt'>;
 }): DesignComment | string => {
   const { product } = options;
-  const { interaction, ...rest } = options.comment;
+  const { interaction, sketch, ...rest } = options.comment;
+  const createdAt = sketch && openSketchOf({ product, target: sketch.target })?.createdAt;
   const comment: CommentFile = {
     ...rest,
+    ...(sketch && { sketch: { target: sketch.target, variant: sketch.variant, ...(createdAt && { createdAt }) } }),
     ...(interaction === undefined || interaction === REST ? {} : { interaction }),
     createdAt: strictlyLaterNow(),
   };
@@ -484,9 +494,16 @@ export const resolveComment = (options: {
   return { ...found, resolved };
 };
 
-/** The open comments made on any variant of the sketch on a target. */
-export const commentsOnSketch = (options: { productDir: string; product: string; sketch: string }) =>
-  listComments(options).comments.filter((comment) => comment.sketch?.target === options.sketch);
+/** The open comments made on any variant of a sketch, matched by its target and its `createdAt`. */
+export const commentsOnSketch = (options: {
+  productDir: string;
+  product: string;
+  sketch: Pick<Sketch, 'target' | 'createdAt'>;
+}) =>
+  listComments(options).comments.filter(
+    (comment) =>
+      comment.sketch?.target === options.sketch.target && comment.sketch.createdAt === options.sketch.createdAt,
+  );
 
 /**
  * Marks the open comments on the variants of a sketch, or only those on `variant`, as addressed for `reason`. `round`
@@ -506,7 +523,7 @@ export const addressSketchComments = (options: {
   return commentsOnSketch({
     productDir: resolve(sketch.dir, '..', '..'),
     product: sketch.product,
-    sketch: sketch.target,
+    sketch,
   })
     .filter((comment) => variant === undefined || comment.sketch?.variant === variant)
     .map((comment) => withAddressed(comment, addressed));
