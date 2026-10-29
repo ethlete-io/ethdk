@@ -84,7 +84,7 @@
     "nx": "24.0.2",
     "postcss": "8.5.32",
     "postcss-import": "17.0.1",
-    "postcss-preset-env": "11.6.1",
+    "postcss-preset-env": "11.6.2",
     "postcss-url": "10.1.4",
     "prettier": "3.9.10",
     "prettier-plugin-organize-attributes": "1.0.0",
