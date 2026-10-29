@@ -125,6 +125,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** "Count alignment" on `components/comment-pin`: `--help` printed only the usage line.
 - **Fix option:** one line per flag under the usage.
 
+### 3.31 A refactor sketch looks like a copy of "current" in Studio - open
+
+- **Pain:** `pages/sketches` "Use the comment pin" (one variant, a code refactor) shows "current"
+  and a side by side with no visible change. Tom asked "was genau ist hier nun anders?". The agent
+  needed a shot diff to answer: 8 x 4 px at the pin tip in `zoomed-page`, 4 x 1 px in
+  `page-sketch`. Studio shows neither the pixel result nor the changed files. Tom: "komische UX".
+- **Fix options:** 1. each variant head shows the diff result per state ("no pixel change",
+  "8 x 4 px") and a click marks the area on the frame (recommended; the CLI diff exists, see 4.35). 2. the head lists the changed files of the variant. 3. a sketch whose diff is empty or tiny
+  says "Refactor, no visible change" next to the round note.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
