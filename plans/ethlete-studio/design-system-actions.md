@@ -95,6 +95,21 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Process side:** a small component sketch draws one composed state (a stack of rows), not one
   state per case times every interaction.
 
+### 2.11 The "used in" label of a foundation draws its two lines on top of each other - open
+
+- **Pain:** `foundations/tokens` (Tom's screen, 2026-10-29): "every page of the product uses it"
+  wraps in a small box and the two lines overlap. Label from `system-tree.ts:509` (finding 2.7).
+- **Fix option:** give the label a real line height and a width that fits one line (recommended).
+
+### 2.12 `foundations/tokens` is one very tall sheet - open
+
+- **Pain:** Tom: "echt unschön, dass tokens so ein langer Block ist". All groups (surfaces, accent,
+  warning, type, spacing) stack in one sheet; at fit zoom (36 %) nothing is readable, and the
+  error group makes it longer.
+- **Fix options:** 1. split into parts `foundations/colors`, `foundations/type`,
+  `foundations/spacing`, one tree entry each (recommended; a sketch after the error colour merge). 2. Studio lays out the groups of one part in columns that fit the viewport. 3. one tree leaf per
+  group inside `tokens`.
+
 ## 3. Feedback, rounds and merge
 
 ### 3.20 A product switch keeps the entry of the old product - triage
