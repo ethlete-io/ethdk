@@ -35,6 +35,36 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
      workaround.
 - Do not ship a fix on a guess. Log each crash of the content process, because the automatic
   reload hides it.
+- **Result (2026-10-29, ethlete-mac, macOS 15.7.7, WebKit 20621.3.11.11.3 = Safari 18.6):** cause
+  reproduced in a minimal WKWebView, `tools/scripts/verify-webkit-pinch.swift`.
+  - Synthetic pinches alone do not crash: 280 magnify, rotate and smart-magnify gestures (paced,
+    burst, mixed with scroll events, no end phase, iframes replaced mid-gesture) over chrome, a
+    live, an inactive (`pointer-events:none`) and a swapped cross-origin iframe: 0 terminations.
+    Each pinch reaches the page as `gesturestart/change/end` plus Ctrl+wheel events.
+  - The crash needs stale state: kill WebContent while gesture replies are pending (`--stale`:
+    block the page for 2 s, pinch, SIGKILL). After the automatic reload, each following pinch
+    kills the new content process, 4 terminations in 4 pinches, 3 of 3 runs. The unified log shows
+    Tom's signature exactly: `WebPageProxy.cpp 10644: Invalid message dispatched ...didReceiveEvent`,
+    `Received an invalid message 'EventDispatcher_GestureEventReply'`, `reason=Crash`. Control (the
+    same kill without a pending gesture): 0 terminations.
+  - Cause in WebKit: `WebPageProxy` keeps a queue of sent gesture events and checks each reply
+    against its head. A dead process never answers, and Safari 18 (branch `safari-7621`, also
+    `7622`, `7623`) does not clear the queue when WebContent exits. The stale head makes every
+    later reply a type mismatch, and a MESSAGE_CHECK kills the process. WebKit `main` and
+    `safari-7624` and later clear the queue in `resetStateAfterProcessExited`.
+  - Workaround proven in the harness: on a WebContent termination, create a new WKWebView instead
+    of reloading the old one (`--stale --recreate`): 0 terminations after the kill, 3 of 3 runs.
+  - Open: which first termination left the stale gesture in Studio. A candidate is finding 1.2: a
+    hang and a manual WebContent kill while a pinch waits. Not proven.
+- **Options now:** (a) Studio native: on `webViewWebContentProcessDidTerminate`, rebuild the
+  webview (or the window) instead of wry's reload; needs Tom's OK, Rust only. (b) Update Safari on
+  the Mac to a release from `safari-7624` or later, and retest with `--stale`. (c) Accept: a full
+  Studio restart clears it.
+- **Check (Tom, by hand on the real trackpad):** on ethlete-mac, with a design server running,
+  `swift tools/scripts/verify-webkit-pinch.swift "<frame-url>" --seconds 90`. Pinch, rotate and
+  double-tap with two fingers over each of the four columns (chrome, live iframe, inactive iframe,
+  swapping iframe). Expect no `CRASH` line; send the log if one shows. Then in Studio after a fresh
+  start: pinch 5 times, and note whether the crashes start only after a WebContent kill or a hang.
 
 ### 1.2 Studio freezes at 100% CPU during frame reloads - reopened (L2697, L2965, L3076)
 
@@ -64,8 +94,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   change, all runs stopped at batch 12 or 13 with all processes idle; also with `127.0.0.1`. This
   is page suspension, not finding 1.2. The orphaned `nx tauri:dev` (100% CPU) also loaded the Mac
   in these invalid runs 1 to 4; it was stopped before the valid runs.
-- **Next:** the LAN IPv4 URL path is the suspect. Studio already uses `localhost`. To compare
-  equally, repeat the LAN run with the same unthrottled probe.
+- **Result 4 (2026-10-29, LAN IPv4 URL `http://192.168.1.152:<port>`, the unthrottled probe of
+  Result 3, `dist` of 19:47):** 0 hangs in 30 runs of 100 cycles. Each run passed batch 100 in
+  16.3 to 16.4 s. Load (1 min) 2.4 to 5.1. No hang, so no sample. With Result 3: 0 hangs in 4000
+  cycles on both hosts. The LAN IPv4 path is not the trigger. Results 1 and 2 differ from 3 and 4
+  in two ways: the throttled probe, and an older `frame.ts` (later changes `43cec7ae9`,
+  `144e2d843`).
+- **Probe change:** `tools/scripts/verify-webkit-frame-reloads.swift` now always turns off window
+  occlusion and hidden-page timer throttling. The probe tests frame replacement, and a throttled
+  page only gives false stops at batch 12 or 13 on a locked or covered screen. Checked: 100 cycles
+  pass on the locked Mac.
+- **Recommendation:** close as not reproduced; no workaround and no upstream repro without a
+  reproducing case. Reopen with a `sample` of WebContent if Studio hangs again. A hang plus a
+  manual WebContent kill during a pinch can also cause finding 1.1.
 
 ## 2. Review on the canvas
 
@@ -267,12 +308,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   both lacked the pin. It read like success.
 - **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
   output says so.
-
-### 4.36 A shot of a state only the sketch has returns a 500 drawn as PNG - open
-
-- **Pain:** for the merged look of `count-12` (a state new in the sketch), `/__design/shot` returned
-  HTTP 500 with an error page as the picture.
-- **Fix option:** a 404 with "state not in the merged part", or a labelled empty cell.
 
 ### 4.37 No check sees grid rows that skip the interaction columns - open
 

@@ -1062,3 +1062,10 @@ check` warns early.
 - **Fix option:** use the product of the open sketch or the only product with that part, as
   `sketch` commands already do.
 - **Fix done (da143ee2f):** `shotProductOf`: without `--product`, `design shot` takes the only product with an open sketch on the part, else the only product with the part, else asks as before.
+
+### 4.36 A shot of a state only the sketch has returns a 500 drawn as PNG - fixed (8efaab1e2)
+
+- **Pain:** for the merged look of `count-12` (a state new in the sketch), `/__design/shot` returned
+  HTTP 500 with an error page as the picture.
+- **Fix option:** a 404 with "state not in the merged part", or a labelled empty cell.
+- **Fix done (8efaab1e2):** with the server's `statesOf` loader, a part shot of a state the merged part (or the asked variant) lacks rejects with a 404 `state "x" is not in the merged part <part> - it has: …` before any draw; `design shot` shows it as a labelled error cell.
