@@ -159,6 +159,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   problem also shows in Studio's sketch problems. A new part has nothing to compare.
 - **Open:** no way yet to drop a state on purpose. Check the problem in the running Studio.
 
+### 3.7 A new sketch opens with its only round folded - fixed, unverified (`b7fa2c621`)
+
+- **Pain:** a new sketch on `pages/sketches` opened with its only round folded. The user saw only
+  the current column and no variants. Studio had remembered the open and folded rounds of the
+  sketch before it on the same part, which had a folded `r1`.
+- **Where:** Studio remembers the round flags by part, not by sketch. A new sketch starts at `r1`
+  again and found the old `r1: false`.
+- **Now:** the flags are stored with the time the sketch was created and used only for that sketch.
+  Flags stored without it are ignored.
+- **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
+  had a folded round.
+
 ## 4. Render checks and shots
 
 ### 4.1 The render check fails in the sandbox - fixed (L2586)
