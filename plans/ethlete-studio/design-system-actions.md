@@ -408,11 +408,12 @@ sketch` until the next merge of the part.
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.6 `design sketch report` fails outside the repository root - open
+### 5.6 `design sketch report` fails outside the repository root - fixed
 
 - **Pain:** a report from inside a sketch folder failed with `no config at
 <cwd>/.ethlete/design/config.json`. The report did not land.
 - **Fix option:** look for `.ethlete/design/config.json` in the parent folders, as git does.
+- **Now:** fixed in 7f42e56f3; every command walks up to the nearest `.ethlete/design/config.json`.
 
 ### 5.7 A foundation cannot give its pieces to a page - open
 
@@ -422,12 +423,13 @@ sketch` until the next merge of the part.
 - **Fix option:** let a part file export named helpers that other parts may import, or extract
   the mark into an element.
 
-### 5.8 `sketch new` for a page writes a bare scaffold - open
+### 5.8 `sketch new` for a page writes a bare scaffold - fixed
 
 - **Pain:** the scaffold for `pages/start` held a `start.css` with a `.start` class, no `madeBy`,
   no `widths` and an empty `note`. Every page in studio uses Tailwind and the tokens instead.
 - **Fix option:** scaffold a page like its siblings: tokens import, `madeBy` from `--by`, the
   product widths, and no CSS file.
+- **Now:** fixed in 8c71b5712; a page scaffold has the tokens import (when the product has `foundations/tokens`), `madeBy`, the preset widths and no CSS file.
 
 ### 5.9 A Prettier run after a merge counts as a change outside a sketch - open
 
