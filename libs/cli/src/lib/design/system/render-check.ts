@@ -210,6 +210,31 @@ const inspectFrame = (options: { fixed: boolean; fit: boolean; skips: Record<str
     else if (shadowPast > 1) report('CLIPPED', element, 'box-shadow ' + Math.round(shadowPast) + 'px past ' + clip.name);
   }
 
+  const metrics = document.createElement('canvas').getContext('2d');
+  for (const element of root.querySelectorAll('*')) {
+    const style = getComputedStyle(element);
+    if (!style.textDecorationLine.includes('underline') || invisible(style.textDecorationColor)) continue;
+    const fontSize = px(style.fontSize);
+    const thickness = /px$/.test(style.textDecorationThickness) ? px(style.textDecorationThickness) : Math.max(1, fontSize / 16);
+    const offset = /px$/.test(style.textUnderlineOffset) ? px(style.textUnderlineOffset) : fontSize / 10;
+    const below = offset + thickness + (style.textDecorationStyle === 'wavy' ? 3 : 0);
+    const clip = clipOf(element);
+    let most = 0;
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.textContent.trim()) continue;
+      metrics.font = getComputedStyle(node.parentElement).font;
+      const descent = metrics.measureText(node.textContent).fontBoundingBoxDescent;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const rect of range.getClientRects()) {
+        const baseline = rect.bottom - descent;
+        if (rect.width > 0 && baseline <= clip.box.bottom) most = Math.max(most, baseline + below - clip.box.bottom);
+      }
+    }
+    if (most > 1) report('CLIPPED', element, 'underline ' + Math.round(most) + 'px past ' + clip.name);
+  }
+
   const singleLine = (element) => {
     for (let at = element; at && at !== root; at = at.parentElement)
       if (at.matches(${JSON.stringify(SINGLE_LINE)}) || [...at.classList].some((name) => /(^|[-_])(badge|chip|pill|tab)$/.test(name)))

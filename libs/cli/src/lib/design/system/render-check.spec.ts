@@ -41,6 +41,12 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
   'components/ring-room': {
     body: '<div style="overflow: hidden; padding: 8px"><button style="display: block; outline: 3px solid; box-shadow: 0 0 0 9px transparent, 0 8px 24px currentColor, inset 0 0 0 20px currentColor">Go</button></div>',
   },
+  'components/underline-cut': {
+    body: '<p style="margin: 0; width: 80px; overflow: hidden; font-size: 16px; line-height: 16px"><span style="text-decoration: underline wavy; text-underline-offset: 3px">Spelt</span></p>',
+  },
+  'components/underline-room': {
+    body: '<p style="margin: 0; width: 80px; overflow: hidden; padding-bottom: 12px; font-size: 16px; line-height: 16px; text-decoration: underline wavy; text-underline-offset: 3px">Spelt</p>',
+  },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
@@ -103,6 +109,7 @@ describe('renderIssuesOf', () => {
       'CLIPPED components/ring-cut fitted',
       'CLIPPED components/ring-frame fitted',
       'CLIPPED components/shadow-cut fitted',
+      'CLIPPED components/underline-cut fitted',
       'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
@@ -121,6 +128,9 @@ describe('renderIssuesOf', () => {
       'outline 3px past div[data-et-part=components/ring-cut]',
       'outline 6px past the frame',
     ]);
+    expect(rendered.issues.find((issue) => issue.part === 'components/underline-cut')?.detail).toMatch(
+      /^underline \d+px past p\[data-et-part=components\/underline-cut\];/,
+    );
     expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
       'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
     );
