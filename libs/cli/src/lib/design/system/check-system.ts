@@ -14,6 +14,7 @@ import { goneSketchCommentWarningsOf, staleCommentsOf, staleNotesOf } from './ru
 import { undefinedTokensOf } from './rules/undefined-token';
 import { upwardDependenciesOf } from './rules/upward-dependency';
 import { badSvgAssetsOf } from './rules/svg-asset';
+import { unusedSharedExportsOf } from './rules/unused-shared-export';
 import { badWidthsOf } from './rules/widths';
 import { typecheckVariant } from './sketch/check-sketches';
 import { changedOutsideSketchOf } from './sketch/merged-parts';
@@ -107,6 +108,7 @@ const reportSystem = (options: CheckOptions & { warn?: boolean }) => {
     if (options.warn) warnChangedOutsideSketch(product);
 
     goneSketchCommentWarningsOf(product).forEach((warning) => console.warn(warning));
+    unusedSharedExportsOf(product).forEach((problem) => console.warn(`WARNING ${lineOf(target, problem)}`));
 
     ruleProblemsOf(product).forEach(report);
 

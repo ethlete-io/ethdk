@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -174,6 +174,24 @@ describe('checkDesign', () => {
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
     expect(warnings).toEqual([expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/)]);
+    expect(lines.at(-1)).toBe('ok');
+  }, 60_000);
+
+  it("warns of an export in a part's shared/ that nothing imports, and passes", async () => {
+    const target = acme();
+    const lines = output();
+    const warnings: string[] = [];
+
+    vi.spyOn(console, 'warn').mockImplementation((line: unknown) => void warnings.push(String(line)));
+    mkdirSync(join(target, DESIGN_DIR, 'acme/elements/hero/shared'));
+    writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/shared/data.ts'), 'export const rows = [];\n');
+
+    expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
+    expect(warnings).toEqual([
+      expect.stringMatching(
+        /^WARNING UNUSED-EXPORT .*hero\/shared\/data\.ts: rows is exported, but nothing imports it/,
+      ),
+    ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
 

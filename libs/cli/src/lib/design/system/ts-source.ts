@@ -42,3 +42,84 @@ export const calledNamesOf = (source: string) =>
 
     return [];
   });
+
+const hasExportKeyword = (node: ts.Node) =>
+  ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+
+const hasDefaultKeyword = (node: ts.Node) =>
+  ts.canHaveModifiers(node) && (ts.getModifiers(node) ?? []).some((m) => m.kind === ts.SyntaxKind.DefaultKeyword);
+
+const declaredNamesOf = (statement: ts.Statement): string[] => {
+  if (ts.isVariableStatement(statement))
+    return statement.declarationList.declarations.flatMap((declaration) =>
+      ts.isIdentifier(declaration.name) ? [declaration.name.text] : [],
+    );
+  if (hasDefaultKeyword(statement)) return ['default'];
+  if (
+    (ts.isFunctionDeclaration(statement) ||
+      ts.isClassDeclaration(statement) ||
+      ts.isInterfaceDeclaration(statement) ||
+      ts.isTypeAliasDeclaration(statement) ||
+      ts.isEnumDeclaration(statement)) &&
+    statement.name
+  )
+    return [statement.name.text];
+
+  return [];
+};
+
+/** The names a TS module exports, `default` for its default export; a bare `export *` adds none. */
+export const exportedNamesOf = (source: string): string[] =>
+  sourceFileOf(source).statements.flatMap((statement) => {
+    if (ts.isExportAssignment(statement)) return ['default'];
+    if (ts.isExportDeclaration(statement))
+      return statement.exportClause && ts.isNamedExports(statement.exportClause)
+        ? statement.exportClause.elements.map((element) => element.name.text)
+        : [];
+
+    return hasExportKeyword(statement) ? declaredNamesOf(statement) : [];
+  });
+
+/**
+ * The names a TS module takes from each module it imports or re-exports from, by specifier; `'*'` when it takes the
+ * whole module (`import * as`, `export *`, a dynamic `import()`).
+ */
+export const importedNamesOf = (source: string): Map<string, Set<string>> => {
+  const taken = new Map<string, Set<string>>();
+  const take = (specifier: ts.Expression | undefined, names: string[]) => {
+    if (!specifier || !ts.isStringLiteralLike(specifier)) return;
+
+    const known = taken.get(specifier.text) ?? new Set<string>();
+
+    names.forEach((name) => known.add(name));
+    taken.set(specifier.text, known);
+  };
+
+  for (const node of nodesOf(source)) {
+    if (ts.isImportDeclaration(node)) {
+      const clause = node.importClause;
+      const bindings = clause?.namedBindings;
+
+      take(node.moduleSpecifier, [
+        ...(clause?.name ? ['default'] : []),
+        ...(bindings && ts.isNamespaceImport(bindings) ? ['*'] : []),
+        ...(bindings && ts.isNamedImports(bindings)
+          ? bindings.elements.map((element) => (element.propertyName ?? element.name).text)
+          : []),
+      ]);
+    } else if (ts.isExportDeclaration(node)) {
+      const clause = node.exportClause;
+
+      take(
+        node.moduleSpecifier,
+        clause && ts.isNamedExports(clause)
+          ? clause.elements.map((element) => (element.propertyName ?? element.name).text)
+          : ['*'],
+      );
+    } else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      take(node.arguments[0], ['*']);
+    }
+  }
+
+  return taken;
+};
