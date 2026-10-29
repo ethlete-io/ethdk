@@ -81,8 +81,8 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
 3. Finding 1.2 is reopened: 1 hang in 10 x 100 runs, stack in the 1.2 entry. Next step there:
    the same runs against `localhost` (SSH tunnel), then pick repro or workaround with Tom.
    Script fix 1.4 is in `2d3e44cae` (move 1.4 to the fixed doc).
-4. Two verification runs (3.1, 3.2, 3.4, 3.6, 3.7, 5.1, 5.2, 7.1-7.4; and 2.1, 2.2, 2.3, 2.6, 7.6)
-   may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
+4. Canvas checks are in the 2.x entries (2.1 and 2.3 verified, move them; 2.6 still broken). The
+   run for 3.1, 3.2, 3.4, 3.6, 3.7, 5.1, 5.2, 7.1-7.4 may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
    report-only, own servers on 4610-4629.
 5. Open findings that are free to build: 1.3 (`--host`), 4.12 (a test path uses fixed port 5173),
    5.12, and 3.17 (auto-merge a sketch with no visible change; Tom's idea, recommendation option 1). Delegate each to a fresh sonnet subagent (Tom: "gebe die arbeit an sub agents").

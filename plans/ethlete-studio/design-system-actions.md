@@ -83,12 +83,17 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   System view visually or the wheel zoom on a real trackpad.
 - **Decide (Tom):** which chip both use (`− | 100 % | + | Fit` or `Fit | 100%`), and the 100%
   composition (frame 64 px from the top-left).
+- **Check (2026-10-29, headless Chromium):** verified on the app canvas and the sketch drawing. Two
+  differences: a plain drag pans only in the drawing; double-click activates a frame in the app but
+  zooms it in the drawing. Trackpad and the real Tauri window not checked. Move to fixed.
 
 ### 2.2 A new sketch adds controls that already exist - unverified (L2562)
 
 - **Pain:** the sketch added a zoom toolbar. The accepted `canvas-frames` chip already does this.
 - **Now:** the sketch reuses the chip.
 - **Fix done:** the shared canvas element (2.1). No check for repeated markup.
+- **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
+  `Fit | 24%`. Tom still decides which chip both use.
 
 ### 2.3 Zoom breaks the sketch layout - unverified (L2737, L2748, L2763, L2921)
 
@@ -97,11 +102,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Now:** round d anchors the focused frame and clamps the heads. Round e reopened the heads.
 - **Fix done (`b9ebae71d`):** camera targets `all`, `focused` and `visible`. The viewport fits
   again after the layout is stable. In the app, 100% now anchors a frame at the top-left.
+- **Check (2026-10-29):** verified at fit, 100%, 296% and 800% on `page-sketch`; `zoomed-page` not
+  run. Move to fixed.
 
 ### 2.6 Note cards overlap the next row - open (L1140)
 
 - **Pain:** between 25% and 100% zoom, note cards reach into the next row of the matrix.
 - **Fix:** reserve note room at the fitted zoom / accept it.
+- **Check (2026-10-29):** still broken. On `components/button` the cards cover outline-row frames
+  from 67% to about 233% (up to 24,000 px²), also at zoom 1 and above, so "reserve room at zoom 1"
+  does not hold. A click on the covered frame opens the note form. Free from 44% down and 349% up.
 
 ## 3. Feedback, rounds and merge
 
