@@ -96,7 +96,11 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    next: 3.22 (recommendation option 1), 5.15, 3.19. After Tom merges
    `foundations/logo`: a one-variant sketch that moves the mark to `assets/studio-mark.svg` and
    keeps `studioMark(size)` as the wrapper, then `pages/start` imports it.
-6. Merge compare page, then components, then page states, then the real app.
+6. Done 2026-10-29 evening: 3.22 (`4a9e89913`), 5.15 (`34e1f6185`), 3.23 (`d3726201c`), 3.19
+   (`9614c830d`), 2.7 (`f57d27266`). `foundations/logo` is a valid standalone SVG with
+   `studioMark = svgAsset(...)` (`b39f15b06`); `pages/start` imports `studioMark(24)` (`121c26650`).
+   Open, free to build: 4.10, 4.11, 4.12, 5.16, 5.17, 6.1, and 4.8, 4.9.
+7. Merge compare page, then components, then page states, then the real app.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's
 :4402 (4.13, fixed in `5eb5fff4c`); `design shot <part> --states --variants` draws merged and
