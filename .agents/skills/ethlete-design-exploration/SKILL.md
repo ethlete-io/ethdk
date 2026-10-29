@@ -56,6 +56,8 @@ The exploration's plan file names the tool. Two shapes exist.
 **A repository with a `.ethlete/design` folder** keeps one design system per **product**, and the
 user reads and decides in Ethlete Studio. The tool is `et design`, from `@ethlete/cli`; run
 `et design --help` for every command, `et design <command> [<subcommand>] --help` for one.
+In the SDK checkout, `yarn design` builds the CLI before each call; in a check-and-shot loop,
+build once and call `node dist/libs/cli/src/index.js design` instead.
 
 ```
 .ethlete/design/
