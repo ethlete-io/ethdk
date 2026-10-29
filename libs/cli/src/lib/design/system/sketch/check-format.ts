@@ -1,6 +1,6 @@
 import { spawnSync } from 'child_process';
 import { existsSync, readdirSync } from 'fs';
-import { join, relative, resolve } from 'path';
+import { join, resolve } from 'path';
 import { binaryOf } from '../../typecheck';
 import { Problem } from '../problem';
 import { sharedDirOf, Sketch, SKETCH_FILE, variantDirOf } from './sketch';
@@ -42,7 +42,7 @@ export const formatProblemsOf = (options: { target: string; sketch: Sketch; vari
       return {
         rule: 'FORMAT',
         file,
-        message: `is not formatted - run prettier --write ${relative(target, file)}`,
+        message: `is not formatted - run sketch check ${sketch.target} --fix`,
       };
     });
 };

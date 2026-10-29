@@ -46,7 +46,7 @@ export const SKETCH_USAGE = [
   'sketch list [--product <name>] [--json]',
   'sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>]',
   'sketch ready <layer>/<name> --by <model id> [--product <name>]',
-  'sketch check [<layer>/<name>] [--product <name>]',
+  'sketch check [<layer>/<name>] [--fix] [--product <name>]',
   'sketch preview <layer>/<name> <variant> [--product <name>] [--json]',
   'sketch rebase <layer>/<name> --by <model id> [--product <name>]',
   'sketch merge <layer>/<name> [--note <reason>] --by <model id> [--product <name>]',
@@ -67,6 +67,7 @@ const FLAG_HELP: Record<string, string> = {
   '--done': 'end the live report of the variant',
   '--product': 'the product; needed only when config.json declares more than one and no other product has the sketch',
   '--json': 'print JSON',
+  '--fix': "write the variants in the checkout's Prettier format first",
 };
 
 const NOTE_HELP: Record<string, string> = {
@@ -550,6 +551,11 @@ const checked = async (context: Context) => {
   const chosen = asked === undefined ? variants : variants.filter((entry) => entry.sketch.target === asked);
 
   if (asked !== undefined && chosen.length === 0) return fail(`NO SKETCH on ${asked} in ${product.name}`);
+
+  if (args.flags.has('--fix'))
+    new Set(chosen.map((entry) => entry.sketch)).forEach((sketch) =>
+      formatSketch({ target, sketch, variants: sketch.variants }),
+    );
 
   let failed = asked === undefined && unreadable.length > 0;
 

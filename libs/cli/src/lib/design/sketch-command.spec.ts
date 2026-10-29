@@ -297,8 +297,11 @@ describe('designSketch', () => {
 
     expect(write(target, 'ready', 'components/button', '--product', 'acme')).toBe(1);
     expect(lines.join('\n')).toContain('FORMAT');
-    expect(lines.join('\n')).toContain('prettier --write');
+    expect(lines.join('\n')).toContain('sketch check components/button --fix');
     expect(await run(target, 'check', 'components/button', '--product', 'acme')).toBe(1);
+    lines.length = 0;
+    expect(await run(target, 'check', 'components/button', '--fix', '--product', 'acme')).toBe(0);
+    expect(lines.join('\n')).not.toContain('FORMAT');
   });
 
   it('writes new and added variants and sketch.json in the format the checkout holds them to', async () => {

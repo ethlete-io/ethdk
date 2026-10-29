@@ -107,7 +107,7 @@ answers. Variants are drawn at the same geometry, and one variant wins only agai
 et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--variant-note a=<text>]… [--product <p>]   # each variant starts as a copy of the part
 et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
 et design sketch report <layer>/<name> --variant b --by <model id> --done         # you stopped drawing b; Studio shows its frames
-et design sketch check [<layer>/<name>]                                            # each variant laid over the product
+et design sketch check [<layer>/<name>] [--fix]                                    # each variant laid over the product
 et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
 ```
 
@@ -130,7 +130,8 @@ product file the picked variant no longer holds.
 
 Each variant's note, what it is and what it costs, goes in the `definePart({ note })` of its part file;
 a merge keeps the picked variant's note. `sketch new --variant-note a=<text>`, once per variant, writes it.
-`sketch new` and `sketch variant` write their files in the checkout's Prettier format. A sketch command
+`sketch new` and `sketch variant` write their files in the checkout's Prettier format; after an edit,
+`sketch check --fix` formats the variants before it checks them. A sketch command
 without `--product` takes the product that holds the sketch.
 
 Start a new part from a close one with `--like`: `sketch new pages/inbox --like pages/system`
