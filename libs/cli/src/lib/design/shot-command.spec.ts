@@ -1,5 +1,11 @@
+import { cpSync, mkdtempSync, realpathSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
-import { designShot, gridRowsOf, planOf, rowsOf, shotReportOf, withDiffRows } from './shot-command';
+import { readConfig } from './paths';
+import { designShot, gridRowsOf, planOf, rowsOf, shotProductOf, shotReportOf, withDiffRows } from './shot-command';
+import { createSketch, parseTarget } from './system/sketch/sketch';
+import { createSystemModules } from './system/system-modules';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
 
@@ -111,6 +117,36 @@ describe('designShot', () => {
 
     expect(code).toBe(1);
     expect(text).toContain('no config at');
+  });
+});
+
+describe('shotProductOf', () => {
+  const acme = () => {
+    const target = realpathSync(mkdtempSync(join(tmpdir(), 'cli-design-shot-product-')));
+
+    cpSync(join(__dirname, 'system/__fixtures__'), target, { recursive: true });
+
+    return { target, config: readConfig(target) ?? {} };
+  };
+  const nameOf = (resolved: ReturnType<typeof shotProductOf>) =>
+    typeof resolved === 'string' ? resolved : resolved.name;
+
+  it('takes the only product with an open sketch on the part, else the only product with the part', () => {
+    const { target, config } = acme();
+    const base = createSystemModules({ target, config }).productOf('acme-base');
+    const card = parseTarget('components/card');
+
+    if (!base || typeof card === 'string') throw new Error('no acme-base');
+
+    expect(nameOf(shotProductOf({ target, config, asked: undefined, part: 'elements/hero' }))).toBe('acme');
+    expect(nameOf(shotProductOf({ target, config, asked: undefined, part: 'components/card' }))).toContain(
+      'more than one product',
+    );
+
+    createSketch({ product: base, sketch: card, variants: ['a'] });
+
+    expect(nameOf(shotProductOf({ target, config, asked: undefined, part: 'components/card' }))).toBe('acme-base');
+    expect(nameOf(shotProductOf({ target, config, asked: 'acme', part: 'components/card' }))).toBe('acme');
   });
 });
 

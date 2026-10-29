@@ -4,9 +4,11 @@ import { dirname, resolve } from 'path';
 import { contactSheetOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
-import { workRootOf } from './paths';
+import { DesignConfig, workRootOf } from './paths';
 import { extractSketchAt } from './sketch-at';
-import { parseTarget } from './system/sketch/sketch';
+import { productDirOf } from './system/product';
+import { ResolvedProduct } from './system/resolve-product';
+import { findSketch, parseTarget } from './system/sketch/sketch';
 import { createPartShooter, PartAddress } from './shot';
 import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
@@ -111,6 +113,32 @@ export const rowsOf = (options: { part: string; variants: string[] | null; merge
 
 export const shotReportOf = (options: { out: string; diffs: string[] }) => [...options.diffs, options.out];
 
+/**
+ * The product a shot draws: the one `--product` names or the only one the config declares, else the only product
+ * with an open sketch on the part, else the only product with the part.
+ */
+export const shotProductOf = (options: {
+  target: string;
+  config: DesignConfig;
+  asked: string | undefined;
+  part: string;
+}): ResolvedProduct | string => {
+  const { target, config, asked, part } = options;
+  const declared = Object.keys(config.products ?? {});
+  const parsed = parseTarget(part);
+
+  if (asked !== undefined || declared.length < 2 || typeof parsed === 'string')
+    return oneProductOf({ target, config, asked });
+
+  const sketched = declared.filter(
+    (product) => findSketch({ productDir: productDirOf({ target, product }), product, sketch: parsed }) !== null,
+  );
+  const system = createSystemModules({ target, config });
+  const holders = sketched.length > 0 ? sketched : declared.filter((product) => system.partOf({ product, part }));
+
+  return oneProductOf({ target, config, asked: holders.length === 1 ? holders[0] : undefined });
+};
+
 const stringsOf = (states: unknown) => (states && typeof states === 'object' ? Object.keys(states) : []);
 
 /**
@@ -155,7 +183,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     return 1;
   }
 
-  const resolved = oneProductOf({ target, config, asked: args.values['--product'] });
+  const resolved = shotProductOf({ target, config, asked: args.values['--product'], part });
 
   if (typeof resolved === 'string') {
     console.error(resolved);
