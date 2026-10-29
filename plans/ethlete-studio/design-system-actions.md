@@ -120,6 +120,11 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   agent put it in each variant's `definePart({ note })`.
 - **Fix option:** a `--variant-note <v>=<text>` option on `sketch new`, and one line in the skill.
 
+### 3.30 `sketch new --help` names no flag - open
+
+- **Pain:** "Count alignment" on `components/comment-pin`: `--help` printed only the usage line.
+- **Fix option:** one line per flag under the usage.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -277,6 +282,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   both lacked the pin. It read like success.
 - **Fix option:** when the markup of variant and merged part differ but the pixels match, the shot
   output says so.
+
+### 4.36 A shot of a state only the sketch has returns a 500 drawn as PNG - open
+
+- **Pain:** for the merged look of `count-12` (a state new in the sketch), `/__design/shot` returned
+  HTTP 500 with an error page as the picture.
+- **Fix option:** a 404 with "state not in the merged part", or a labelled empty cell.
+
+### 4.37 No check sees grid rows that skip the interaction columns - open
+
+- **Pain:** the merged `components/comment-pin` grid had hover, pressed and focus cells for faces,
+  but the count rows filled only "rest". Nothing flagged that a count could break on focus.
+- **Fix option:** `sketch check` warns when some grid rows fill every column and others only one.
 
 ## 5. Drawing parts and pages
 
@@ -476,6 +493,12 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** the inbox sketch called `commentPin.render()` per pin and took `styles` from the first
   result.
 - **Fix option:** the part's default export exposes `styles` statically.
+
+### 5.48 A variant cannot change a file in `shared/` - open
+
+- **Pain:** "Count alignment" variant b needed other markup, so the agent added a `placement`
+  parameter to the shared `pin()`. It merges even when a or c wins.
+- **Fix option:** a variant may hold its own copy of a shared file, which wins over `shared/`.
 
 ## 6. Agent process
 
