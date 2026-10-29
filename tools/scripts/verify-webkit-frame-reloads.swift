@@ -16,6 +16,15 @@ final class ReloadProbe: NSObject, WKScriptMessageHandler {
     var lastBatch = "none"
 
     func start() {
+        // A locked or covered screen suspends the page and stops the probe at batch 12 or 13 with
+        // every process idle. These WebKit SPIs keep it running; `nil` passes `false`.
+        if web.responds(to: NSSelectorFromString("_setWindowOcclusionDetectionEnabled:")) {
+            web.perform(NSSelectorFromString("_setWindowOcclusionDetectionEnabled:"), with: nil)
+        }
+        for name in ["_setHiddenPageDOMTimerThrottlingEnabled:", "_setPageVisibilityBasedProcessSuppressionEnabled:"]
+        where web.configuration.preferences.responds(to: NSSelectorFromString(name)) {
+            web.configuration.preferences.perform(NSSelectorFromString(name), with: nil)
+        }
         web.configuration.userContentController.add(self, name: "reloadProbe")
         let script = """
         addEventListener('load', () => {
