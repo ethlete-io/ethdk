@@ -265,16 +265,17 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
 
-| Pain                                                          | Rule                                                                                       | Ref   |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----- |
-| The agent said "visually checked" after static fit shots only | Define the check from the design claim first. Report exactly which states and actions ran. | L2720 |
-| The exploration became a second canvas implementation         | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940 |
-| One unchosen idea grew into four screens                      | Draw about three different alternatives next to each other.                                | L3020 |
-| The agent blamed the wrong cause for an alignment comment     | Look at the real render before you name a cause.                                           | L2659 |
-| A synthetic `dblclick` passed, a real double-click failed     | Use real pointer sequences.                                                                | L2818 |
-| The agent extended the sketch while the tool was broken       | Stop the design work while a broken tool is repaired.                                      | L2982 |
-| New controls duplicated accepted controls                     | List the accepted controls before you draw. Name what you reuse.                           | L2579 |
-| Shared elements were extracted too early                      | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607 |
+| Pain                                                                                           | Rule                                                                                       | Ref        |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
+| The agent said "visually checked" after static fit shots only                                  | Define the check from the design claim first. Report exactly which states and actions ran. | L2720      |
+| The exploration became a second canvas implementation                                          | Name the visual question and the smallest artifact first. Reuse the real canvas.           | L2940      |
+| One unchosen idea grew into four screens                                                       | Draw about three different alternatives next to each other.                                | L3020      |
+| The agent blamed the wrong cause for an alignment comment                                      | Look at the real render before you name a cause.                                           | L2659      |
+| A synthetic `dblclick` passed, a real double-click failed                                      | Use real pointer sequences.                                                                | L2818      |
+| The agent extended the sketch while the tool was broken                                        | Stop the design work while a broken tool is repaired.                                      | L2982      |
+| New controls duplicated accepted controls                                                      | List the accepted controls before you draw. Name what you reuse.                           | L2579      |
+| Shared elements were extracted too early                                                       | Draw pages first. Record repeats as findings. Compare before you extract.                  | L2607      |
+| The agent changed a ready variant without a report; Tom saw it change while no one was drawing | Run `sketch report --variant <x>` before any edit to a variant, also a fix after `ready`.  | 2026-10-29 |
 
 ## 7. Open checks
 
