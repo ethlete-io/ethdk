@@ -63,29 +63,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** the Mac test needed a hand-made TCP forwarder to reach the design server over the LAN.
 - **Fix option:** a `--host` option (or `DE_HOST`) passed to Vite's `server.host`.
 
-### 1.4 The WebKit reload script cannot narrow a hang - open
-
-- **Pain:** `verify-webkit-frame-reloads.swift` prints only every tenth batch, without time, and the
-  FAIL line does not name the last batch.
-- **Fix option:** print each batch with a timestamp, and name the last batch in the FAIL line.
-
 ## 2. Review on the canvas
-
-### 2.1 Each sketch builds its own camera - unverified (L2595, L2940)
-
-- **Pain:** the Sketches page sketch needed real zoom and pan. The agent wrote a local camera in
-  `canvas-setup.ts`. That camera has fixed column widths and different behavior from the real
-  canvas. Most bugs in rounds c and d came from this copy.
-- **Fix done (`b9ebae71d`):** `canvas-camera.ts` holds the camera for the Studio canvas and the
-  sketch. `canvas-viewport.ts` is the shared element, imported as `ethlete-studio/canvas`. The
-  local camera is deleted.
-- **Open:** the Angular canvas uses the camera module, not the shared element. Nobody checked the
-  System view visually or the wheel zoom on a real trackpad.
-- **Decide (Tom):** which chip both use (`− | 100 % | + | Fit` or `Fit | 100%`), and the 100%
-  composition (frame 64 px from the top-left).
-- **Check (2026-10-29, headless Chromium):** verified on the app canvas and the sketch drawing. Two
-  differences: a plain drag pans only in the drawing; double-click activates a frame in the app but
-  zooms it in the drawing. Trackpad and the real Tauri window not checked. Move to fixed.
 
 ### 2.2 A new sketch adds controls that already exist - unverified (L2562)
 
@@ -94,16 +72,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done:** the shared canvas element (2.1). No check for repeated markup.
 - **Check (2026-10-29):** works, but the chip is drawn twice: app `− | 100 % | + | Fit`, drawing
   `Fit | 24%`. Tom still decides which chip both use.
-
-### 2.3 Zoom breaks the sketch layout - unverified (L2737, L2748, L2763, L2921)
-
-- **Pain:** at 100% the full drawing was offscreen. At high zoom the variant heads stretched past
-  the viewport. The first fit measured a header that was not stable yet.
-- **Now:** round d anchors the focused frame and clamps the heads. Round e reopened the heads.
-- **Fix done (`b9ebae71d`):** camera targets `all`, `focused` and `visible`. The viewport fits
-  again after the layout is stable. In the app, 100% now anchors a frame at the top-left.
-- **Check (2026-10-29):** verified at fit, 100%, 296% and 800% on `page-sketch`; `zoomed-page` not
-  run. Move to fixed.
 
 ### 2.6 Note cards overlap the next row - open (L1140)
 
@@ -115,68 +83,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 3. Feedback, rounds and merge
 
-### 3.1 A new round resolves the comments too early - unverified (L2648)
-
-- **Pain:** when a feedback round starts, the source comments resolve before the new round exists.
-  Tom cannot see which comments are really done.
-- **Fix done (`3504d8352`):** a round, merge, discard or `inbox done` marks a comment "addressed".
-  Only Tom resolves it in Studio. Old files read as addressed.
-- **Open:** check the badge and the Resolve button in the running app. Decide (Tom) if the pins of
-  addressed comments look different.
-
-### 3.2 Tom withdraws his own comments before a merge - unverified (L1047, L1011)
-
-- **Pain:** open comments block the merge, and the pick does not close them. The agent cannot
-  reply to a resolved comment to say what it changed.
-- **Fix done (`3504d8352`):** comments do not block a merge. The agent can reply to an addressed
-  comment. A reply by Tom opens it again.
-
-### 3.4 A merged part changes without a sketch - unverified (L2493, L2497, L763)
-
-- **Pain:** the agent changed an accepted part directly. Tom saw it only later.
-- **Now:** the rule says each change to a merged part is a sketch, with one variant if there is no
-  choice. The skill has the rule.
-- **Fix done (`e554d1297`):** a merge records the folder hash in `<product>/merged.json`. The
-  command `design check` warns, and Studio shows a "changed" badge, when the hash differs and no
-  open sketch holds the part. The next merge of a sketch clears the flag.
-- **Limit:** parts merged before this change have no record until their next merge.
-- **Open:** check the badge in the running app. Decide (Tom) on its look.
-
-### 3.6 A merge silently drops states of the part - fixed option 1, unverified (`e26e219ca`)
-
-- **Pain:** Tom merged variant g of `pages/sketches`. The page lost its states `open` and
-  `page-sketch`, and the live canvas camera (`mountCanvasViewport`). Only `zoomed-page` is left.
-  Neither Studio nor the CLI warned before the merge.
-- **Cause:** a merge copies the variant folder over the part, as designed. The variants of this
-  sketch held only the state under discussion. Their `sketches.ts` was a new mock, not the product
-  page with one state changed. A variant cannot change one state and keep the others.
-- **Now:** nothing. The loss shows only after the merge.
-- **Fix options:**
-  1. `sketch check` and `sketch ready` fail when a variant has fewer states than the part, unless
-     the round says it removes them.
-  2. The merge preview in Studio lists states that the merge removes, and asks before it merges.
-  3. A variant can change one state of a part and inherit the other states from the product.
-- **Fix done (`ed59b5f18`):** option 1 without the opt-out. `sketch check` and `sketch ready` fail
-  with a `STATES` problem for each part of a variant that drops a state the product's part has. The
-  problem also shows in Studio's sketch problems. A new part has nothing to compare.
-- **Opt-out done (`159eeeef3`):** `sketch round <part> <round> --drops <state,state>` names the states
-  a round removes on purpose. `STATES` then skips them for the variants of that round.
-- **Used (`6f6032799`):** round r3 of `pages/sketches` dropped `open` and `zoomed-below` with
-  `--drops`. Check passed, and Tom merged it in Studio without a problem.
-- **Open:** check the problem in the running Studio.
-
-### 3.7 A new sketch opens with its only round folded - fixed, unverified (`b7fa2c621`)
-
-- **Pain:** a new sketch on `pages/sketches` opened with its only round folded. The user saw only
-  the current column and no variants. Studio had remembered the open and folded rounds of the
-  sketch before it on the same part, which had a folded `r1`.
-- **Where:** Studio remembers the round flags by part, not by sketch. A new sketch starts at `r1`
-  again and found the old `r1: false`.
-- **Now:** the flags are stored with the time the sketch was created and used only for that sketch.
-  Flags stored without it are ignored.
-- **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
-  had a folded round.
-
 ### 3.17 A pure refactor sketch still waits for a manual merge - open
 
 - **Pain:** the `foundations/logo` sketch (export `studioMark`, no visible change) shows every state
@@ -186,6 +92,40 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   merged ones; with zero changed pixels on all of them it merges by itself and logs it as an
   automatic merge; (2) the same, but Studio shows a one-click "Merge (no visible change)" instead of
   the empty rows. Recommendation: option 1, with a pixel-exact check and the log entry.
+
+### 3.18 `sketch report` prints nothing and exits 0 - open
+
+- **Pain:** `sketch report` prints nothing and exits 0, also on a `ready` sketch. There it records a
+  report that Studio never shows.
+- **Where:** `reported` in `libs/cli/src/lib/design/sketch-command.ts`, and `reportSketch` in
+  `libs/cli/src/lib/design/system/sketch/sketch.ts`.
+- **Fix option:** print "reported", and warn when the sketch is not in progress.
+
+### 3.19 The merge preview compare grid is unreadable and slow - open
+
+- **Pain:** the compare grid of the merge preview fits at 3-4% zoom, and the text is not readable.
+  "Comparing…" ran over 25 s on a sketch whose change touches five parts.
+- **Where:** the merge preview in `sketch-view.component.ts` (`apps/ethlete-studio`).
+- **Fix option:** fit to the first changed row, not to the whole column. Show progress while it
+  compares.
+
+### 3.20 A product switch keeps the entry of the old product - triage
+
+- **Pain:** after a switch from studio-lab to studio, with a sketch of the old product open, the
+  sidebar showed the sketches of studio-lab in the list of studio. The old sketch view stayed. A
+  click on "Merge b" ran against the wrong product, and Studio refused it.
+- **Where:** the product switch in the System view. Seen one time, from a script race. Not
+  reproduced.
+- **Fix option:** reset the selected entry when the product changes.
+
+### 3.21 `sketch check` blocks `ready` for a comment of a merged sketch - open
+
+- **Pain:** a reply by the user reopens a comment on a merged sketch. Then `sketch check` raises
+  `COMMENT ... the sketch on pages/start no longer exists - answer or drop the comment`. This blocks
+  `ready` on a new sketch of the same part until the user resolves the comment.
+- **Where:** the `COMMENT` rule in `sketch check`.
+- **Fix option:** name the action in the message (reply, or the user resolves the comment). Do not
+  block `ready` for a comment whose sketch was merged.
 
 ## 4. Render checks and shots
 
@@ -221,23 +161,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   when the whole `src/lib/design` folder runs, and passes alone. Some test path still uses a fixed port.
 
 ## 5. Drawing parts and pages
-
-### 5.1 Page sketches cannot use Tailwind - unverified (L2797)
-
-- **Pain:** the app uses Tailwind, but the sketches use plain CSS. The design server has a
-  Tailwind 4 pipeline, but `styles.css` uses `source('../')`, so it does not scan the sketch
-  folder.
-- **Fix done (`f27c66d0e`):** `.ethlete/design/studio/styles.css` imports the app styles and
-  registers the folders with `@source`. A spec checks that a utility compiles.
-- **Open:** check a utility in a live sketch frame, and that the app `styles.css` loads one time.
-
-### 5.2 Sketches cannot share code - unverified (L949, L998, L996)
-
-- **Pain:** a variant cannot import a sibling, and a page cannot import a page. The agent copies
-  data between variants.
-- **Fix done (`4927aeac8`):** all three. A sketch `shared/` folder imported as `@shared/...` (a
-  merge copies it into the part), `sketch new --like`, and `embedPage()`.
-- **Open:** nobody ran them on a live design server.
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
 
@@ -299,9 +222,7 @@ section without a page.
 
 These fixes are built, but nobody checked them in the real Studio.
 
-1. Merge preview, after a restart that rebuilds the CLI (L1464).
-2. The status-watch reload with `et design sketch report` (L1918).
-3. The `stale` footer (L1980).
-4. The merge and rebase UI, headless (L363).
-5. Shot size against live size on Tom's HiDPI window (L1214).
-6. Round d on macOS WebKit, at 800%, and on touch (L2792).
+1. The status-watch reload with `et design sketch report` (L1918): the Studio side is verified headless. The Rust side (the watcher) needs the Tauri host and is still unchecked.
+2. The `stale` footer (L1980): the Studio side is verified headless. The Rust side (`is_stale`) needs the Tauri host and is still unchecked.
+3. Shot size against live size on Tom's HiDPI window (L1214).
+4. Round d on macOS WebKit, at 800%, and on touch (L2792).
