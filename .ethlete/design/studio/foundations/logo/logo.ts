@@ -1,19 +1,11 @@
 import { definePart, drawing, html } from '@design-system';
 import tokens from '@system/foundations/tokens.css?inline';
+import mark from '@assets/studio-mark.svg?raw';
 import styles from './logo.css?inline';
 
 type View = 'sizes' | 'sidebar';
 
-export const studioMark = (size: number) =>
-  html`<svg class="lg-mark" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio">
-    <rect width="32" height="32" rx="8" fill="var(--accent)" />
-    <path
-      d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38"
-      fill="none"
-      stroke="var(--on-accent)"
-      stroke-width="4"
-    />
-  </svg>`;
+export const studioMark = (size: number) => mark.replace('width="32" height="32"', `width="${size}" height="${size}"`);
 
 const sizes = html`<div class="lg-root">
   <h2 class="lg-title">Mark at app-icon sizes</h2>
