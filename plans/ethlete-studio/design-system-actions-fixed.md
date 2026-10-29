@@ -1428,3 +1428,11 @@ check` warns early.
 - **Fix options:** 1. warn only when a row fills some but not all interaction columns
   (recommended). 2. drop the rule.
 - **Fix done (ee9b8ad8d):** Option 1. `coverageWarningsOf` in `libs/cli/src/lib/design/system/list-system.ts` warns only about a row that fills at least one interaction column besides `rest` and still leaves one out. A rest-only row is the per-axis rule and stays quiet. `design check --product studio` shows no GRID-COVERAGE now.
+
+### 4.40 New UNDEFINED-CLASS hits on merged studio parts - fixed (798fe4cc3)
+
+- **Pain:** 5.27 (`a0912de97`) finds classes no CSS defines: `tree-row` `st-trow-chevron`,
+  `st-trow-mark`; `shell-main` `st-shell-mark`, `st-shell-icon`; `pages/inbox` `ib-group-count`;
+  `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
+- **Fix option:** one-variant cleanup sketches per part (drop the class or style it).
+- **Fix done (798fe4cc3):** One-variant sketches on `components/tree-row`, `elements/shell-main`, `pages/inbox`, `pages/merge` and `foundations/logo` drop the classes. `.lg-mark` had only `display: block`, and every parent is a flex container, so the rule and the class on `assets/studio-mark.svg` went too. All five merged with no visible change; `design check --product studio` shows no UNDEFINED-CLASS now.

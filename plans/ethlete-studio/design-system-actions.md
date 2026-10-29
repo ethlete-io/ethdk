@@ -100,6 +100,17 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. let a component sketch carry host edits that only change an import
   (recommended). 2. a page variant resolves a part from another open sketch (5.21).
 
+### 3.41 A `sketch ready` run skipped the auto-merge on a markup-only change - open
+
+- **Pain:** five cleanup sketches (4.40) went `ready` one after the other. Four merged at once;
+  `pages/merge` printed `auto-merge skipped: variant a changes open`. `design shot pages/merge
+  --states --variants` then said "no pixel change, but the markup differs", and a second `sketch
+  ready` merged it. The first shot probably ran against a base that the merges just before had
+  changed (`elements/shell-main`, `components/tree-row`), so the result is flaky.
+- **Fix options:** 1. `autoMerged` draws the merged side fresh after a base change since the
+  sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the
+  skip line, so the agent sees noise.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -122,13 +133,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 ### 4.7 Fitted `vh` parts have no true height - known limit (L2264)
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
-
-### 4.40 New UNDEFINED-CLASS hits on merged studio parts - open
-
-- **Pain:** 5.27 (`a0912de97`) finds classes no CSS defines: `tree-row` `st-trow-chevron`,
-  `st-trow-mark`; `shell-main` `st-shell-mark`, `st-shell-icon`; `pages/inbox` `ib-group-count`;
-  `pages/merge` `mg-c-sub`; `pages/start` `lg-mark`.
-- **Fix option:** one-variant cleanup sketches per part (drop the class or style it).
 
 ## 5. Drawing parts and pages
 
