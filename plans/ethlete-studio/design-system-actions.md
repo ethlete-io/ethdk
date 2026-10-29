@@ -365,13 +365,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   result.
 - **Fix option:** the part's default export exposes `styles` statically.
 
-### 5.49 `svgAsset` cannot set a class or attributes - open
-
-- **Pain:** `foundations/agent-logos` needs a host class and `aria-hidden` on the SVG; the agent
-  patched them in with `.replace('<svg', ...)`.
-- **Fix options:** 1. `svgAsset(raw, { size, class?, attrs? })` (recommended). 2. `size: null`, and
-  CSS sizes the SVG.
-
 ### 5.50 Studio's danger colour fails contrast on its dark surfaces - open
 
 - **Pain:** `--color-et-danger` is rgb(220 38 38): 3.96:1 on `--surface-sunken`, 2.92:1 on

@@ -1181,3 +1181,11 @@ check` warns early.
 - **Pain:** the agent cropped the 75 % `/__design/shot` image with PIL to see 1 px edges.
 - **Fix option:** a `clip=x,y,w,h` parameter on the shot endpoint and `--crop` on `design shot`.
 - **Fix done (5cf9a2076):** `/__design/shot?clip=x,y,width,height` (CSS pixels from the part root of a fitted shot, from the page top left of a preset shot; 400 for a malformed clip) and `design shot --crop x,y,width,height` cut each picture to that box; with `--scale 4` a 1 px edge is 4 px. The design-exploration skill names it.
+
+### 5.49 `svgAsset` cannot set a class or attributes - fixed (6d28e7c7d)
+
+- **Pain:** `foundations/agent-logos` needs a host class and `aria-hidden` on the SVG; the agent
+  patched them in with `.replace('<svg', ...)`.
+- **Fix options:** 1. `svgAsset(raw, { size, class?, attrs? })` (recommended). 2. `size: null`, and
+  CSS sizes the SVG.
+- **Fix done (6d28e7c7d):** `svgAsset(raw, { size, class?, attrs? })` sets the class and attributes on the root `<svg>`, replacing the asset's own, values escaped; the design-exploration skill names it. `foundations/agent-logos` still patches with `.replace('<svg', ...)` and should adopt it through a sketch.
