@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "das dann ggf noch einfach als text only + chevron select direkt unter dem header?",
+  "point": {
+    "x": 646,
+    "y": 34
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "f"
+  },
+  "createdAt": "2026-10-29T10:26:44.458Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-sonnet-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T10:27:56.284Z",
+    "note": "r3 zeigte f: Auswahl und Pfeile in der Kopfzeile, ohne Chip. Tom: Badge weg, Pfeile weg, Runde als Text mit Chevron direkt unter der Kopfzeile, Verwerfen als danger.",
+    "round": "r4"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-sonnet-5-5",
+      "text": "g zeigt die Runde als reinen Text mit Chevron direkt unter der Kopfzeile.",
+      "createdAt": "2026-10-29T10:29:39.525Z"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "denke der button kan dann doch weg",
+  "point": {
+    "x": 576,
+    "y": 30
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "f"
+  },
+  "createdAt": "2026-10-29T10:26:56.379Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-sonnet-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T10:27:56.284Z",
+    "note": "r3 zeigte f: Auswahl und Pfeile in der Kopfzeile, ohne Chip. Tom: Badge weg, Pfeile weg, Runde als Text mit Chevron direkt unter der Kopfzeile, Verwerfen als danger.",
+    "round": "r4"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-sonnet-5-5",
+      "text": "g hat keine Pfeil-Buttons mehr.",
+      "createdAt": "2026-10-29T10:29:39.676Z"
+    }
+  ]
+}

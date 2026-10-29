@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "hier vielleicht einfach eine round select hin + ggf. noch prev next pfeile? die button lösung hier wird unschön wenns mehr runden werden",
+  "point": {
+    "x": 490,
+    "y": 37
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "b"
+  },
+  "createdAt": "2026-10-29T10:20:10.561Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T10:21:33.677Z",
+    "note": "r1 zeigte a (alles auf der Leinwand), b (Knöpfe auf der Rundenzeile), c (Umschalter). Tom zu b: eine Runden-Auswahl, ggf. mit Pfeilen; Knöpfe werden bei vielen Runden unschön.",
+    "round": "r2"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Runde 2 zeigt d mit einer Runden-Auswahl statt der Knöpfe und e mit derselben Auswahl plus Pfeilen für vorige und nächste Runde.",
+      "createdAt": "2026-10-29T10:23:30.083Z"
+    }
+  ]
+}

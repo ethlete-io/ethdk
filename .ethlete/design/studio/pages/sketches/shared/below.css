@@ -1,0 +1,44 @@
+@layer components {
+  .zb-round {
+    right: 20px;
+    align-items: center;
+  }
+  .zb-head {
+    top: 116px;
+  }
+  .zb-viewport {
+    position: absolute;
+    inset: 176px 0 0 0;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, transparent, var(--text) var(--space-4));
+  }
+  .zb-world {
+    transform-origin: 0 0;
+  }
+  .zb-mark {
+    height: 0;
+  }
+  .zb-spacer {
+    min-height: var(--text-sm-line);
+    margin-top: var(--space-2);
+  }
+  .zb-label {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .zb-label .sk-fold {
+    width: 100%;
+    height: auto;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .zb-head[hidden],
+  .zb-label[hidden] {
+    display: none;
+  }
+}

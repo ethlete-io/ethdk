@@ -1,0 +1,22 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "text zu hell",
+  "point": {
+    "x": 463,
+    "y": 68
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "g"
+  },
+  "createdAt": "2026-10-29T10:32:05.245Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-29T10:33:30.973Z",
+    "note": "Variante h: Rundentext und Chevron in --text-muted"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "braucht es die badge? wenn es ein sketch ist kan es doch eig nur in arbeit sein?",
+  "point": {
+    "x": 509,
+    "y": 32
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "f"
+  },
+  "createdAt": "2026-10-29T10:25:53.349Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-sonnet-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T10:27:56.284Z",
+    "note": "r3 zeigte f: Auswahl und Pfeile in der Kopfzeile, ohne Chip. Tom: Badge weg, Pfeile weg, Runde als Text mit Chevron direkt unter der Kopfzeile, Verwerfen als danger.",
+    "round": "r4"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-sonnet-5-5",
+      "text": "g zeigt kein Status-Badge mehr.",
+      "createdAt": "2026-10-29T10:29:39.383Z"
+    }
+  ]
+}

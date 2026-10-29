@@ -1,0 +1,22 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-below",
+  "size": "desktop",
+  "text": "spacing passt nicht",
+  "point": {
+    "x": 365,
+    "y": 52
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "g"
+  },
+  "createdAt": "2026-10-29T10:29:49.724Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-29T10:33:30.794Z",
+    "note": "Variante h: Rundenzeile mittig zwischen Titel und Variantenköpfen (top 68px wie im Zoom-Zustand)"
+  }
+}
