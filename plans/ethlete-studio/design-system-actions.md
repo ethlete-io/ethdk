@@ -160,50 +160,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
   had a folded round.
 
-### 3.10 A merge leaves sibling states with the old design - open
-
-- **Pain:** Tom merged variant i of `pages/sketches`. It gave the header of state `zoomed-below` no
-  status badge and a muted round select close under the title. State `zoomed-page` of the same page
-  kept the old header, with the badge and the round line at 68 px. Tom found it after the merge:
-  "this now has weird spacing". A second sketch was needed.
-- **Cause:** the rule "a variant changes only the state the question is about" protects Tom from a
-  wall of changed screens. However, a decision about shared chrome, for example the header, applies
-  to every state that draws it. Neither the agent nor the tool compared the sibling states.
-- **Repeat:** the agent then fixed only `zoomed-page`. `open` and `page-sketch` still had the badge,
-  the bold static round line and a teal "Verwerfen". Tom: "there are even more diffs between the
-  sketches views". The agent had compared two states, not all four.
-- **Now:** nothing. The mismatch shows only when Tom opens the other state.
-- **Fix options:**
-  1. The merge preview in Studio shows each unchanged state next to the changed one, so a mismatch
-     is visible before the merge.
-  2. The round note names which states the decision applies to. `sketch ready` warns when a named
-     state is unchanged.
-- **Decision (Tom, 2026-10-29):** solved through 3.14 option 1.
-
-### 3.14 The states of a page drift apart - open
-
-- **Pain:** the states of `pages/sketches` showed the same chrome in different ways. The variant
-  heads had other font sizes, another Merge position and a "Gemergt" label in one state only. In
-  `zoomed-page` the head of variant b had no agent and no subline. Tom found each difference by eye,
-  one sketch at a time.
-- **Cause:** each state draws its own markup. `page-sketch` builds its heads from `PAGE_VARIANTS`
-  with `sk-variant-head`; `zoomed-page` writes them by hand with `zc-attached`. The workflow makes it
-  worse: a round changes only the state of its question (the rule against a wall of changed screens),
-  so a decision lands in one copy and the other copies keep the old look. 3.10 is one case of this.
-- **Now:** nothing finds it. Only Tom's eye compares the states.
-- **Fix options:**
-  1. A state is data, not markup: every state of a page calls the same render with other props, so
-     shared chrome exists once.
-  2. Shared chrome that more states draw becomes an element of its own early, before the page has
-     more than one state. This conflicts with "draw pages first, extract later" (section 6) and needs
-     Tom's decision.
-  3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
-     and warns when its computed styles differ between states.
-- **Decision (Tom, 2026-10-29):** option 1. Every state calls the same render with other props.
-- **In progress:** one-variant sketch on `pages/sketches` is ready for Tom. The audit found the other
-  pages clean. Copies across pages remain: the empty-state card (system, flows, start), the page
-  title, and `agent-logos.ts` (inbox, sketches).
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
