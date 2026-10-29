@@ -49,6 +49,8 @@ export type FrameCell = {
   column: string;
   label: string;
   src: string;
+  /** Without one the cell takes the width its content reports. */
+  width?: number;
   screenshot?: string;
   place?: FramePlace;
 };

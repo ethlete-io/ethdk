@@ -40,7 +40,7 @@ const cellKeyOf = (row: string, column: string) => JSON.stringify([row, column])
   encapsulation: ViewEncapsulation.None,
   host: {
     class: 'relative block',
-    '[style.width.px]': 'size()?.width ?? 0',
+    '[style.width.px]': 'cell().width ?? size()?.width ?? 0',
     '[style.height.px]': 'size()?.height ?? 0',
     '[attr.data-cell-id]': 'cell().id',
   },

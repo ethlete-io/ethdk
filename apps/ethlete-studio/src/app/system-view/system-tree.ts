@@ -12,7 +12,7 @@ import {
   partFrameUrl,
   partShotUrl,
 } from '../../host/design';
-import { CanvasFrame, REST } from '../components/design-canvas/canvas-frame';
+import { CanvasFrame, FramePlace, REST } from '../components/design-canvas/canvas-frame';
 import { CanvasRowHead } from '../components/design-canvas/design-canvas.component';
 import { isAnswered, isQuestion } from './comment-pins';
 import { CompareRow, MERGE_COLUMNS, mergeFrameIdOf } from './merge-preview';
@@ -336,17 +336,58 @@ type Cell = { state: string | undefined; interaction: string };
 export const isSmallPart = (part: Pick<ListedPart, 'layer' | 'widths'>) =>
   part.layer !== 'pages' && (part.widths?.length ?? 0) === 0;
 
+const GRID = 'grid';
+
+/** The states a part's `grid` places, in one frame of cells in rest, each at `width` or fitted without one. */
+const gridFrameOf = (options: {
+  grid: NonNullable<ListedPart['grid']>;
+  width: number | undefined;
+  addressOf: (cell: Cell) => PartAddress;
+  placeOf: (cell: Cell, size: string | number) => { place?: FramePlace };
+  idOf: (cell: Cell, size?: string | number) => string;
+  revision?: number;
+}): CanvasFrame => {
+  const { grid, width, addressOf, placeOf, idOf, revision } = options;
+
+  return {
+    id: GRID,
+    src: '',
+    label: GRID,
+    grid: {
+      columns: grid.columns,
+      rows: grid.rows,
+      cells: grid.cells.map(({ row, column, state }) => {
+        const cell = { state, interaction: REST };
+
+        return {
+          id: idOf(cell, width),
+          row,
+          column,
+          label: state,
+          src: partFrameUrl({ ...addressOf(cell), ...(width === undefined ? { fit: true } : {}) }),
+          ...(width === undefined ? {} : { width }),
+          screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+          ...placeOf(cell, width ?? FITTED),
+        };
+      }),
+    },
+  };
+};
+
 /**
  * Every state of a part in rest and in each interaction it declares: a page at every preset of the
  * product, a part with `widths` at each width, any other part in one frame of fitted cells, a row per state
- * and a column per interaction. Only a `LOAD` problem fails the frames: a part that breaks a rule still renders, and
- * one that does not load lists no states.
+ * and a column per interaction. A part's `grid` draws the states it places in one more frame, in rest, each cell
+ * at the part's first width or fitted. Only a `LOAD` problem fails the frames: a part that breaks a rule still
+ * renders, and one that does not load lists no states.
  */
 const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
   const { port, product, part, epoch, revision, surface, color } = source;
   const key = partKeyOf(part);
   const error = loadErrorOf(part.problems);
-  const states = statesOf(part, error);
+  const grid = part.layer === 'pages' || error ? undefined : part.grid;
+  const gridded = new Set(grid?.cells.map((cell) => cell.state));
+  const states = statesOf(part, error).filter((state) => state === undefined || !gridded.has(state));
   const interactions = interactionsOf(part);
   const cells = states.flatMap((state) => interactions.map((interaction) => ({ state, interaction })));
   const addressOf = ({ state, interaction }: Cell) => ({
@@ -382,25 +423,29 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
   }
 
   const widths = part.widths ?? [];
+  const gridFrames = grid ? [gridFrameOf({ grid, width: widths[0], addressOf, placeOf, idOf, revision })] : [];
 
   if (widths.length > 0) {
-    return cells.flatMap((cell) =>
-      widths.map((width) => ({
-        id: idOf(cell, width),
-        src: partFrameUrl(addressOf(cell)),
-        width,
-        label: stateSizeLabelOf(cell, 'width'),
-        row: cell.state,
-        screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
-        error,
-        ...placeOf(cell, width),
-      })),
-    );
+    return [
+      ...cells.flatMap((cell) =>
+        widths.map((width) => ({
+          id: idOf(cell, width),
+          src: partFrameUrl(addressOf(cell)),
+          width,
+          label: stateSizeLabelOf(cell, 'width'),
+          row: cell.state,
+          screenshot: partShotUrl({ ...addressOf(cell), width, revision }),
+          error,
+          ...placeOf(cell, width),
+        })),
+      ),
+      ...gridFrames,
+    ];
   }
 
   const [first] = cells;
 
-  if (!first) return [];
+  if (!first) return gridFrames;
   if (error) return [{ id: key, src: partFrameUrl({ ...addressOf(first), fit: true }), label: key, error }];
 
   return [
@@ -422,6 +467,7 @@ const ownFramesOf = (source: FramesSource): CanvasFrame[] => {
         })),
       },
     },
+    ...gridFrames,
   ];
 };
 

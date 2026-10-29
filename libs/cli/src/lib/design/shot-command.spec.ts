@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { designShot, planOf, rowsOf, withDiffRows } from './shot-command';
+import { designShot, gridRowsOf, planOf, rowsOf, withDiffRows } from './shot-command';
 
 const base = { product: 'app', part: 'components/button', preset: null, width: null, interaction: null };
 
@@ -48,6 +48,34 @@ describe('planOf', () => {
 
     expect(plan[0]?.map((cell) => cell.label)).toEqual(['a / rest', 'a / busy']);
     expect(plan[1]?.map((cell) => cell.label)).toEqual(['b / rest']);
+  });
+});
+
+describe('gridRowsOf', () => {
+  it("draws a row per row of the part's grid in its column order, after the states the grid leaves out", () => {
+    const [row = []] = planOf({
+      base,
+      rows: [{ label: '', sketch: null }],
+      statesOf: () => ['tree', 'leaf', 'hover', 'selected', 'selected-hover'],
+      states: true,
+      state: null,
+    });
+    const rows = gridRowsOf(row, {
+      columns: ['rest', 'hover'],
+      rows: ['leaf', 'selected'],
+      cells: [
+        { row: 'selected', column: 'hover', state: 'selected-hover' },
+        { row: 'leaf', column: 'hover', state: 'hover' },
+        { row: 'leaf', column: 'rest', state: 'leaf' },
+        { row: 'selected', column: 'rest', state: 'selected' },
+      ],
+    });
+
+    expect(rows.map((cells) => cells.map((cell) => cell.address.state))).toEqual([
+      ['tree'],
+      ['leaf', 'hover'],
+      ['selected', 'selected-hover'],
+    ]);
   });
 });
 

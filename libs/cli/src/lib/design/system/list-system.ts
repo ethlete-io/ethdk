@@ -23,6 +23,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions the part is drawn in besides rest, in the order it declares them. */
   interactions: Interaction[];
+  /** The states the part draws as one table in rest, when it declares a `grid` that places any. */
+  grid?: ListedGrid;
   /** The calls of wireframe kit parts in a page's source; a page with any is a wireframe. */
   kitUses: number;
   /** The pages that import the part, directly or through another part: of its own product, and of each product that draws it as its base part. */
@@ -31,6 +33,8 @@ export type ListedPart = {
   changedOutsideSketch: boolean;
   problems: Problem[];
 };
+
+export type ListedGrid = { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
 
 export type PageUse = { product: string; part: string };
 
@@ -47,7 +51,14 @@ export type ListedProduct = {
 export type PartLoader = (options: { file: string; product: string }) => Promise<unknown>;
 
 type PartModule = {
-  default?: { note?: unknown; madeBy?: unknown; states?: unknown; widths?: unknown; interactions?: unknown };
+  default?: {
+    note?: unknown;
+    madeBy?: unknown;
+    states?: unknown;
+    widths?: unknown;
+    interactions?: unknown;
+    grid?: unknown;
+  };
 };
 
 const madeByOf = (madeBy: unknown) =>
@@ -64,6 +75,33 @@ const isInteraction = (name: unknown): name is Interaction => INTERACTIONS.some(
 
 const interactionsOf = (interactions: unknown): Interaction[] =>
   Array.isArray(interactions) ? [...new Set(interactions.filter(isInteraction))] : [];
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/** The cells of a declared grid that name a listed column and a known state, each state in its first cell only. */
+export const gridOf = (grid: unknown, states: string[]): Pick<ListedPart, 'grid'> => {
+  if (!isRecord(grid) || !Array.isArray(grid['columns']) || !isRecord(grid['rows'])) return {};
+
+  const columns = [...new Set(grid['columns'].filter((column): column is string => typeof column === 'string'))];
+  const placed = new Set<string>();
+  const cells = Object.entries(grid['rows']).flatMap(([row, cellsOfRow]) =>
+    isRecord(cellsOfRow)
+      ? columns.flatMap((column) => {
+          const state = cellsOfRow[column];
+
+          if (typeof state !== 'string' || !states.includes(state) || placed.has(state)) return [];
+
+          placed.add(state);
+
+          return [{ row, column, state }];
+        })
+      : [],
+  );
+
+  if (cells.length === 0) return {};
+
+  return { grid: { columns, rows: [...new Set(cells.map((cell) => cell.row))], cells } };
+};
 
 const pageReachOf = (system: SystemModules) =>
   system.products().flatMap((name) => {
@@ -86,7 +124,7 @@ const pageReachOf = (system: SystemModules) =>
 const belongsTo = (part: ResolvedPart, problem: Problem) =>
   problem.file === part.file || problem.file.startsWith(`${dirname(part.file)}${sep}`);
 
-/** The note, state names, widths and interactions a part module declares, or the problem that kept it from loading. */
+/** The note, state names, widths, interactions and grid a part module declares, or the problem that kept it from loading. */
 export const readPartModule = async (options: {
   part: Pick<ResolvedPart, 'file'>;
   product: string;
@@ -108,12 +146,15 @@ export const readPartModule = async (options: {
       };
     }
 
+    const names = Object.keys(states);
+
     return {
       note: typeof loaded.note === 'string' ? loaded.note : null,
       madeBy: madeByOf(loaded.madeBy),
-      states: Object.keys(states),
+      states: names,
       ...widthsOf(loaded.widths),
       interactions: interactionsOf(loaded.interactions),
+      ...gridOf(loaded.grid, names),
       problem: null,
     };
   } catch (error) {
@@ -161,7 +202,7 @@ export const listSystem = async (options: {
           themes: { surface: product.config.themes?.surface ?? [], color: product.config.themes?.color ?? [] },
           parts: await Promise.all(
             product.parts.map(async (part) => {
-              const { note, madeBy, states, interactions, problem, ...widths } = await readPartModule({
+              const { note, madeBy, states, interactions, problem, ...layout } = await readPartModule({
                 part,
                 product: name,
                 load,
@@ -175,7 +216,7 @@ export const listSystem = async (options: {
                 note,
                 madeBy,
                 states,
-                ...widths,
+                ...layout,
                 interactions,
                 kitUses: part.layer === 'pages' ? kitUsesOf(part.source) : 0,
                 usedIn: usedInOf(part),

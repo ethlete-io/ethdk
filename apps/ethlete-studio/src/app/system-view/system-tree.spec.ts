@@ -333,6 +333,77 @@ describe('framesOf', () => {
   });
 });
 
+describe('a part with a grid', () => {
+  const grid = {
+    columns: ['rest', 'hover'],
+    rows: ['leaf', 'selected'],
+    cells: [
+      { row: 'leaf', column: 'rest', state: 'leaf' },
+      { row: 'leaf', column: 'hover', state: 'leaf-hover' },
+      { row: 'selected', column: 'rest', state: 'selected' },
+    ],
+  };
+  const row = part({
+    name: 'tree-row',
+    states: ['tree', 'leaf', 'leaf-hover', 'selected'],
+    widths: [280],
+    interactions: ['focus-visible'],
+    grid,
+  });
+
+  it('draws the states its grid places in one frame of cells in rest at its first width, the others as before', () => {
+    const frames = framesOf({ port: 4402, product: product(), part: row, revision: 3 });
+    const gridFrame = frames.find((frame) => frame.grid);
+
+    expect(frames.map((frame) => [frame.id, frame.row])).toEqual([
+      ['tree 280', 'tree'],
+      ['tree 280 focus-visible', 'tree'],
+      ['grid', undefined],
+    ]);
+    expect(gridFrame?.grid?.columns).toEqual(['rest', 'hover']);
+    expect(gridFrame?.grid?.rows).toEqual(['leaf', 'selected']);
+    expect(gridFrame?.grid?.cells.map((cell) => [cell.id, cell.row, cell.column, cell.label, cell.width])).toEqual([
+      ['leaf 280', 'leaf', 'rest', 'leaf', 280],
+      ['leaf-hover 280', 'leaf', 'hover', 'leaf-hover', 280],
+      ['selected 280', 'selected', 'rest', 'selected', 280],
+    ]);
+    expect(gridFrame?.grid?.cells[1]?.src).toBe(
+      'http://localhost:4402/frame.html?product=acme&part=components%2Ftree-row&state=leaf-hover&revision=3',
+    );
+    expect(gridFrame?.grid?.cells[1]?.screenshot).toBe(
+      'http://localhost:4402/__design/shot?product=acme&part=components%2Ftree-row&state=leaf-hover&width=280&revision=3&priority=low',
+    );
+    expect(placeableFramesOf(gridFrame ? [gridFrame] : []).map((placed) => placed.place)).toEqual([
+      { part: 'components/tree-row', state: 'leaf', size: 280 },
+      { part: 'components/tree-row', state: 'leaf-hover', size: 280 },
+      { part: 'components/tree-row', state: 'selected', size: 280 },
+    ]);
+  });
+
+  it('fits each grid cell of a part without widths, next to the frame of its other states', () => {
+    const small = { ...row, widths: undefined, interactions: [] };
+    const frames = framesOf({ port: 4402, product: product(), part: small });
+
+    expect(frames.map((frame) => [frame.id, frame.grid?.rows])).toEqual([
+      ['components/tree-row', ['tree']],
+      ['grid', ['leaf', 'selected']],
+    ]);
+    expect(frames[1]?.grid?.cells[0]?.src).toContain('&fit');
+    expect(frames[1]?.grid?.cells[0]).not.toHaveProperty('width');
+    expect(frames[1]?.grid?.cells[0]?.place?.size).toBe('fitted');
+  });
+
+  it('lists the grid as one frame in the tree', () => {
+    const [components] = treeOf([row], { product: product([row]) });
+
+    expect(components?.entries[0]?.frames?.map((frame) => [frame.key, frame.name, frame.frame])).toEqual([
+      ['frame:components/tree-row tree 280', 'tree · width', 'tree 280'],
+      ['frame:components/tree-row tree 280 focus-visible', 'tree · width · focus-visible', 'tree 280 focus-visible'],
+      ['frame:components/tree-row grid', 'grid', 'grid'],
+    ]);
+  });
+});
+
 describe('frames in the tree', () => {
   it('lists the frames of a part drawn in several, and leaves a part drawn in one grid frame without children', () => {
     const button = part({ interactions: ['hover'] });

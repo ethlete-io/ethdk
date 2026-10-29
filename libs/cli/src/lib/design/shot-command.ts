@@ -8,6 +8,7 @@ import { workRootOf } from './paths';
 import { extractSketchAt } from './sketch-at';
 import { parseTarget } from './system/sketch/sketch';
 import { createPartShooter, PartAddress } from './shot';
+import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
@@ -78,6 +79,23 @@ export const planOf = (options: {
       ];
     });
   });
+};
+
+/** One sheet row per row of the part's grid, after a row of the states the grid leaves out. */
+export const gridRowsOf = (row: Plan[], grid: ListedGrid): Plan[][] => {
+  const byState = new Map(row.map((cell) => [cell.address.state, cell]));
+  const gridded = new Set(grid.cells.map((cell) => cell.state));
+  const rest = row.filter((cell) => !gridded.has(cell.address.state));
+  const rows = grid.rows.map((name) =>
+    grid.columns.flatMap((column) => {
+      const state = grid.cells.find((cell) => cell.row === name && cell.column === column)?.state;
+      const cell = state === undefined ? undefined : byState.get(state);
+
+      return cell ? [cell] : [];
+    }),
+  );
+
+  return [rest, ...rows].filter((cells) => cells.length > 0);
 };
 
 export const rowsOf = (options: { part: string; variants: string[] | null; merged: boolean }): Axis[] => {
@@ -202,6 +220,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
     const { port } = server.httpServer?.address() as AddressInfo;
     const loaded = new Map<Axis, string[]>();
+    let grid: ListedGrid | undefined;
 
     for (const axis of rows) {
       const found = system.partOf({ product, part, sketch: axis.sketch });
@@ -210,9 +229,11 @@ export const designShot = async (options: { target: string; argv: string[]; invo
 
       const module = (await server.ssrLoadModule(
         productModuleIdOf({ file: found.file, product, sketch: axis.sketch }),
-      )) as { default?: { states?: unknown } };
+      )) as { default?: { states?: unknown; grid?: unknown } };
+      const names = stringsOf(module.default?.states);
 
-      loaded.set(axis, stringsOf(module.default?.states));
+      loaded.set(axis, names);
+      if (!variants) grid = gridOf(module.default?.grid, names).grid;
     }
 
     const isPage = part.startsWith('pages/');
@@ -233,12 +254,14 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       states,
       state: args.values['--state'] ?? null,
     });
+    const shownGrid = states ? grid : undefined;
+    const drawn = shownGrid ? plan.flatMap((cells) => gridRowsOf(cells, shownGrid)) : plan;
     const shooter = createPartShooter({ target, base: `http://localhost:${port}`, system });
 
     try {
       const sheet: SheetCell[][] = [];
 
-      for (const row of plan) {
+      for (const row of drawn) {
         const cells: SheetCell[] = [];
 
         for (const { label, address } of row) {

@@ -18,6 +18,7 @@ export type Interaction = 'hover' | 'focus-visible' | 'active' | 'disabled';
  * A part that responds to its width lists the container `widths` it is drawn at; without them a
  * component or element is drawn at the size of its content, and a page at every viewport preset.
  * `interactions` lists the interactions each state is also drawn in; without it only rest is drawn.
+ * `grid` draws the states it names as one table in rest, see `StateGrid`.
  * `checks.skip` names the render checks of `design check` the part breaks on purpose, such as
  * `CLIPPED` for a part that cuts its content. To skip a check for one element only, put
  * `data-et-skip="CLIPPED"` on it; the check then ignores that element and everything inside it.
@@ -28,8 +29,18 @@ export type Part<TProps, TState extends string = string> = {
   states: Record<TState, TProps>;
   widths?: number[];
   interactions?: Interaction[];
+  grid?: StateGrid<TState>;
   checks?: { skip?: RenderCheck[] };
   render: (props: TProps, options?: RenderOptions) => Drawing | Promise<Drawing>;
+};
+
+/**
+ * Small states laid out as one table instead of a frame each: `rows` maps a row label to the state drawn under
+ * each of the `columns`, and a missing column leaves its cell empty. States it leaves out are drawn as before.
+ */
+export type StateGrid<TState extends string = string, TColumn extends string = string> = {
+  columns: readonly TColumn[];
+  rows: Record<string, Partial<Record<TColumn, TState>>>;
 };
 
 /** A rule of the render check: content larger than its frame, cut off, wrapped onto a second line, or drawn at zero size. */
@@ -38,8 +49,12 @@ export type RenderCheck = 'OVERFLOW' | 'CLIPPED' | 'WRAP' | 'ZERO-SIZE';
 /** How a composing part draws another one: `interaction` forces it on the root, as a frame does. */
 export type RenderOptions = { interaction?: Interaction };
 
-type PartSource<TProps, TState extends string> = Omit<Part<TProps, TState>, 'states' | 'render'> & {
+type PartSource<TProps, TState extends string, TColumn extends string> = Omit<
+  Part<TProps, TState>,
+  'states' | 'grid' | 'render'
+> & {
   states: Record<TState, NoInfer<TProps>>;
+  grid?: { columns: readonly TColumn[]; rows: Record<string, Partial<Record<NoInfer<TColumn>, NoInfer<TState>>>> };
   render: (props: TProps) => Drawing | Promise<Drawing>;
 };
 
@@ -54,8 +69,8 @@ const forced = (drawn: Drawing, interaction: Interaction): Drawing => ({
  * arguments, `TProps` comes from the props `render` takes and the state names stay in the type, so
  * `part.states['open']` is `TProps` and an unknown name does not compile.
  */
-export const definePart = <TProps, const TState extends string = string>(
-  part: PartSource<TProps, TState>,
+export const definePart = <TProps, const TState extends string = string, const TColumn extends string = string>(
+  part: PartSource<TProps, TState, TColumn>,
 ): Part<TProps, TState> => ({
   ...part,
   render: (props, options) => {

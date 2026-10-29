@@ -4,11 +4,13 @@ import { markPart } from '../../../design/mark-part';
 
 type Props = { label: string };
 
-const button = definePart({
+const source = {
   note: 'n',
   states: { filled: { label: 'Save' }, 'outline-wide': { label: 'Go' } },
   render: ({ label }: Props) => ({ body: `<button class="b">${label}</button>`, styles: 's' }),
-});
+};
+
+const button = definePart(source);
 
 describe('definePart', () => {
   it('keeps the state names in the type of states', () => {
@@ -17,6 +19,25 @@ describe('definePart', () => {
     // @ts-expect-error a state the part does not have
     expect(button.states['pressed']).toBeUndefined();
     expect(outline).toEqual({ label: 'Go' });
+  });
+
+  it('types a grid against the state names and its own columns, and keeps it on the part', () => {
+    const grid = { columns: ['rest', 'hover'], rows: { leaf: { rest: 'filled', hover: 'outline-wide' } } } as const;
+    const gridded = definePart({ ...source, grid });
+
+    definePart({
+      ...source,
+      // @ts-expect-error a state the part does not have
+      grid: { columns: ['rest'], rows: { leaf: { rest: 'pressed' } } },
+    });
+    definePart({
+      ...source,
+      // @ts-expect-error a column the grid does not list
+      grid: { columns: ['rest'], rows: { leaf: { hover: 'filled' } } },
+    });
+
+    expect(gridded.grid).toBe(grid);
+    expect(button.grid).toBeUndefined();
   });
 
   it('forces an interaction on the root of the drawing, as a frame does', async () => {

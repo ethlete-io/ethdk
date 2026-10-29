@@ -242,6 +242,8 @@ export type ListedPart = {
   widths?: number[];
   /** The interactions each state is also drawn in besides rest. Missing from an `@ethlete/cli` older than interactions. */
   interactions?: string[];
+  /** The states drawn as one table in rest, a row and a column label for each. Missing without a `grid` or from an `@ethlete/cli` older than grids. */
+  grid?: { columns: string[]; rows: string[]; cells: { row: string; column: string; state: string }[] };
   /** The model ids that drew the part, empty when unknown. Missing from an `@ethlete/cli` older than agent authors. */
   madeBy?: string[];
   /** The wireframe kit calls in a page's source. Missing from an `@ethlete/cli` older than the kit. */

@@ -172,6 +172,41 @@ describe('listSystem', () => {
     expect(partOf('hero')?.problems).toEqual([expect.objectContaining({ rule: 'INTERACTIONS' })]);
   });
 
+  it("lists the cells of a part's grid that name a known state, each state once, and no grid without one", async () => {
+    const target = acme();
+
+    write(
+      target,
+      'acme/components/row/row.ts',
+      `import { definePart, drawing } from '@design-system';
+export default definePart({
+  note: '',
+  states: { leaf: {}, hover: {}, selected: {}, tree: {} },
+  grid: {
+    columns: ['rest', 'hover'],
+    rows: { leaf: { rest: 'leaf', hover: 'hover' }, selected: { rest: 'selected', hover: 'leaf' }, gone: { rest: 'missing' as 'leaf' } },
+  },
+  render: () => drawing({ body: '<div>row</div>', styles: '' }),
+});
+`,
+    );
+
+    const [product] = await list(target, ['acme']);
+    const partOf = (name: string) => product?.parts.find((part) => part.name === name);
+
+    expect(partOf('row')?.grid).toEqual({
+      columns: ['rest', 'hover'],
+      rows: ['leaf', 'selected'],
+      cells: [
+        { row: 'leaf', column: 'rest', state: 'leaf' },
+        { row: 'leaf', column: 'hover', state: 'hover' },
+        { row: 'selected', column: 'rest', state: 'selected' },
+      ],
+    });
+    expect(partOf('row')?.problems).toEqual([]);
+    expect(partOf('button')).not.toHaveProperty('grid');
+  });
+
   it('counts the wireframe kit calls of a page and loads the page through the kit', async () => {
     const target = acme();
 
