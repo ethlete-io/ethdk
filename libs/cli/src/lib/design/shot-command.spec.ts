@@ -139,6 +139,15 @@ describe('designShot', () => {
     expect((await run(['components/button', '--states', '--scale', '2'])).text).toContain('no config at');
   });
 
+  it('takes an interaction a part can declare, named in the usage', async () => {
+    expect((await run(['components/button', '--states', '--interaction', 'hover'])).text).toContain('no config at');
+
+    const { code, text } = await run(['components/button', '--states', '--interaction', 'wiggle']);
+
+    expect(code).toBe(2);
+    expect(text).toContain('--interaction <hover|focus-visible|active|disabled>');
+  });
+
   it('says so when the checkout has no design config', async () => {
     const { code, text } = await run(['components/button', '--states']);
 

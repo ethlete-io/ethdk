@@ -5,6 +5,7 @@ import { contactSheetOf, SheetCell } from './contact-sheet';
 import { configOf, argsOf, oneProductOf } from './system/sketch/cli-args';
 import { createDesignServer } from './serve';
 import { DesignConfig, workRootOf } from './paths';
+import { INTERACTIONS } from './force-interactions';
 import { extractSketchAt } from './sketch-at';
 import { productDirOf } from './system/product';
 import { ResolvedProduct } from './system/resolve-product';
@@ -14,8 +15,7 @@ import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
-export const SHOT_USAGE =
-  'shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]';
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -157,6 +157,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     '--product',
     '--at',
     '--state',
+    '--interaction',
     '--preset',
     '--width',
     '--scale',
@@ -178,6 +179,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   const width = args.values['--width'] === undefined ? null : Number(args.values['--width']);
   const preset = args.values['--preset'] ?? null;
   const scale = Number(args.values['--scale'] ?? 1);
+  const interaction = args.values['--interaction'] ?? null;
 
   if (
     !part ||
@@ -186,7 +188,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     (args.values['--at'] !== undefined && !variants) ||
     (width !== null && !(Number.isInteger(width) && width > 0)) ||
     (preset && width) ||
-    !(Number.isInteger(scale) && scale >= 1 && scale <= 4)
+    !(Number.isInteger(scale) && scale >= 1 && scale <= 4) ||
+    (interaction !== null && !(INTERACTIONS as readonly string[]).includes(interaction))
   ) {
     console.error(usage);
 
@@ -300,7 +303,7 @@ export const designShot = async (options: { target: string; argv: string[]; invo
     }
 
     const plan = planOf({
-      base: { product, part, preset: chosenPreset, width, interaction: null },
+      base: { product, part, preset: chosenPreset, width, interaction },
       rows,
       statesOf: (axis) => loaded.get(axis) ?? [],
       widthOf: (axis) => (isPage ? null : (widths.get(axis) ?? null)),
