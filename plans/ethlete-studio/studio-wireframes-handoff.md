@@ -89,7 +89,11 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    2.2, 2.6, 7.x Rust side (needs the Tauri host). The real `foundations/logo` sketch was already
    `ready`, so the new auto-merge does not apply to it; Tom merges it.
 5. Built 2026-10-29: 3.18, 3.21 and assets 5.13 (`5b73392d9`, fonts and icons included), moved to
-   fixed in `3270f820c`. 5.14 built (`3c89d65bf`). Free to build next: 3.19. After Tom merges
+   fixed in `3270f820c`. 5.14 built (`3c89d65bf`). `foundations/logo` export merged (`be36d76d7`).
+   The asset sketch on `foundations/logo` (mark in `a/assets/studio-mark.svg`) is `ready` and
+   waits for Tom; it did not auto-merge because of 3.22. After the merge: `design check`, prettier,
+   commit, then a one-variant sketch on `pages/start` that imports `studioMark(24)`. Free to build
+   next: 3.22 (recommendation option 1), 5.15, 3.19. After Tom merges
    `foundations/logo`: a one-variant sketch that moves the mark to `assets/studio-mark.svg` and
    keeps `studioMark(size)` as the wrapper, then `pages/start` imports it.
 6. Merge compare page, then components, then page states, then the real app.
