@@ -152,8 +152,8 @@ export const unchangedStatesOf = async (options: {
     [...after.states].map(async ([state, markup]) => {
       const before = now.states.get(state);
 
-      if (!markup || !before || markup.body !== before.body) return false;
-      if (markup.styles === before.styles) return true;
+      if (!markup || !before) return false;
+      if (markup.body === before.body && markup.styles === before.styles) return true;
 
       return pictureOf
         ? drawsTheSame({

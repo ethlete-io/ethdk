@@ -32,7 +32,10 @@ const counting = () => {
         states: source.includes('fresh:')
           ? { default: { title: 'Dune' }, fresh: { title: 'New' } }
           : { default: { title: 'Dune' } },
-        render: ({ title }: { title: string }) => ({ body: `<h1>${title}</h1>`, styles }),
+        render: ({ title }: { title: string }) => ({
+          body: source.includes('spaced') ? `<h1>  ${title}</h1>` : `<h1>${title}</h1>`,
+          styles,
+        }),
       },
     };
   };
@@ -90,6 +93,54 @@ describe('unchangedStatesOf', () => {
         pictureOf: pictureOf((variant) => variant ?? 'now'),
       }),
     ).toEqual([]);
+  });
+
+  describe('when only the markup differs', () => {
+    const spaced = () => {
+      const made = acme();
+      const file = resolve(made.hero, 'hero.ts');
+
+      writeFileSync(file, `${readFileSync(file, 'utf8')}\n// spaced\n`);
+
+      return made;
+    };
+    const pictureOf =
+      (pixels: (variant: string | null) => string): PictureOf =>
+      async ({ sketch: on }) => ({ png: Buffer.from(pixels(on?.variant ?? null)), marks: [] });
+
+    it('names a state when every frame draws the same pixels', async () => {
+      const { product, sketch } = spaced();
+
+      expect(
+        await unchangedStatesOf({
+          product,
+          sketch,
+          variant: 'a',
+          load: counting().load,
+          pictureOf: pictureOf(() => 'x'),
+        }),
+      ).toEqual(['default']);
+    });
+
+    it('leaves out a state when a frame draws other pixels', async () => {
+      const { product, sketch } = spaced();
+
+      expect(
+        await unchangedStatesOf({
+          product,
+          sketch,
+          variant: 'a',
+          load: counting().load,
+          pictureOf: pictureOf((variant) => variant ?? 'now'),
+        }),
+      ).toEqual([]);
+    });
+
+    it('leaves out a state without a pixel compare', async () => {
+      const { product, sketch } = spaced();
+
+      expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual([]);
+    });
   });
 
   it('leaves out a state that is new in the variant', async () => {

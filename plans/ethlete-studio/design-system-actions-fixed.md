@@ -585,3 +585,14 @@ sketch` until the next merge of the part.
   - `url(@assets)` in a CSS `@import`-ed sheet is not rewritten.
   - A query or fragment after a CSS asset URL (`#iefix`) is dropped.
   - Assets used only by `styles.css` are in no part hash.
+
+### 3.22 Other whitespace in the markup stops the auto merge - fixed
+
+- **Pain:** the sketch that moves the Studio mark into `assets/studio-mark.svg` draws the same
+  mark, but the SVG has other indentation. `sketch ready` (3.17) counts any markup difference as a
+  change and compares no pixels, so the sketch stays `ready` and waits for Tom.
+- **Where:** `unchangedStatesOf` in `libs/cli/src/lib/design/system/sketch/unchanged-states.ts`.
+- **Fix done:** option 1. A markup difference now goes to the pixel compare, the same as a style
+  difference. Only body and styles both equal skip the pixels.
+- **Also seen:** in the `sidebar` state the active nav item of variant a looked a little lighter
+  than merged in `design shot`, with unchanged CSS. Not checked; option 1 would show it.

@@ -104,18 +104,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.22 Other whitespace in the markup stops the auto merge - open
-
-- **Pain:** the sketch that moves the Studio mark into `assets/studio-mark.svg` draws the same
-  mark, but the SVG has other indentation. `sketch ready` (3.17) counts any markup difference as a
-  change and compares no pixels, so the sketch stays `ready` and waits for Tom.
-- **Where:** `unchangedStatesOf` in `libs/cli/src/lib/design/system/sketch/unchanged-states.ts`.
-- **Fix options:** (1) when the markup differs, compare the pixels too, as for equal markup with
-  other styles; (2) normalize whitespace between tags before the markup compare. Recommendation:
-  (1), because only pixels answer "no visible change".
-- **Also seen:** in the `sidebar` state the active nav item of variant a looked a little lighter
-  than merged in `design shot`, with unchanged CSS. Not checked; option 1 would show it.
-
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
