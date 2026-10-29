@@ -1,0 +1,36 @@
+{
+  "part": "pages/flows",
+  "state": "flow",
+  "size": "desktop",
+  "text": "this size picker looks pretty lost",
+  "point": {
+    "x": 1285,
+    "y": 27
+  },
+  "sketch": {
+    "target": "pages/flows",
+    "variant": "a"
+  },
+  "createdAt": "2026-10-29T11:19:20.646Z",
+  "replies": [
+    {
+      "by": "user",
+      "text": "gefúhlt ist das so eine control für eine neue sidebar a la storybook controls",
+      "createdAt": "2026-10-29T11:22:02.271Z"
+    },
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Runde 2: d setzt die Größe rechts in den Header. e legt sie in ein Ansicht-Panel rechts, wie Storybook Controls. Beide zeigen jetzt auch einen Flow mit Verzweigung.",
+      "createdAt": "2026-10-29T11:23:58.570Z"
+    }
+  ],
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T11:22:47.331Z",
+    "note": "r1 zeigte Leinwand (a), Storyboard (b), ein Schritt groß (c). Kommentare zu a: die Gruppe Flows klappt unnötig, ein Header wie bei Sketches fehlt, der Größen-Picker wirkt verloren.",
+    "round": "r2"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "part": "pages/flows",
+  "state": "flow",
+  "size": "desktop",
+  "text": "wieso flows als collapsable wenn es hier doch nur flows geben kann?",
+  "point": {
+    "x": 110,
+    "y": 75
+  },
+  "sketch": {
+    "target": "pages/flows",
+    "variant": "a"
+  },
+  "createdAt": "2026-10-29T11:20:06.575Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T11:22:47.331Z",
+    "note": "r1 zeigte Leinwand (a), Storyboard (b), ein Schritt groß (c). Kommentare zu a: die Gruppe Flows klappt unnötig, ein Header wie bei Sketches fehlt, der Größen-Picker wirkt verloren.",
+    "round": "r2"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Runde 2 (d, e): die Liste ist flach, ohne Gruppe Flows.",
+      "createdAt": "2026-10-29T11:23:58.186Z"
+    }
+  ]
+}

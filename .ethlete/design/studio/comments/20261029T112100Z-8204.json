@@ -1,0 +1,31 @@
+{
+  "part": "pages/flows",
+  "state": "flow",
+  "size": "desktop",
+  "text": "sketches hat einen header, das hier nicht?",
+  "point": {
+    "x": 392,
+    "y": 29
+  },
+  "sketch": {
+    "target": "pages/flows",
+    "variant": "a"
+  },
+  "createdAt": "2026-10-29T11:21:00.134Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T11:22:47.331Z",
+    "note": "r1 zeigte Leinwand (a), Storyboard (b), ein Schritt groß (c). Kommentare zu a: die Gruppe Flows klappt unnötig, ein Header wie bei Sketches fehlt, der Größen-Picker wirkt verloren.",
+    "round": "r2"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Runde 2 (d, e): Header wie bei Sketches, mit dem Namen des Flows als Titel.",
+      "createdAt": "2026-10-29T11:23:58.370Z"
+    }
+  ]
+}
