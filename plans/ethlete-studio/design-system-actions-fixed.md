@@ -557,6 +557,21 @@ sketch` until the next merge of the part.
     product. The default import is a URL (any file type). `?raw` is text.
   - CSS `url('@assets/...')` works in part stylesheets and in the product `styles.css`.
   - `libs/cli/design/assets.d.ts` types the imports.
+
+### 5.14 A merge can mark unedited parts as "changed outside a sketch" - fixed
+
+- **Pain:** when a merge changes an asset that other merged parts also use, those parts can show
+  "changed outside a sketch" although nobody edited them.
+- **Where:** `partHashOf` and the "changed outside a sketch" check in `libs/cli/src/lib/design`.
+- **Fix options:** (1) a merge re-records the hash of every merged part that uses a changed asset and
+  lists them in the merge output; (2) the sketch baseline lists dependent parts, and Studio shows them
+  in the merge preview (as for element-in-context). Recommendation: (1) with the list in the output.
+- **Fix done (`3c89d65bf`):** option 1. A merge that changes an asset re-records the `merged.json` hash
+  of every other merged part that uses it, if that hash matched before the merge, and prints
+  `Asset change also updates: <parts>`. A part with a foreign edit still shows "changed outside a
+  sketch".
+- **Checked 2026-10-29:** the new spec failed against the old `merge.ts` and passes now; 470 design
+  specs pass.
   - `design check` flags a missing asset (IMPORT).
   - A merge copies the `assets/` of the variant.
   - `partHashOf` counts the bytes of the assets a part uses. Parts without assets hash as before.

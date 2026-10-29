@@ -135,15 +135,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.14 A merge can mark unedited parts as "changed outside a sketch" - open
-
-- **Pain:** when a merge changes an asset that other merged parts also use, those parts can show
-  "changed outside a sketch" although nobody edited them.
-- **Where:** `partHashOf` and the "changed outside a sketch" check in `libs/cli/src/lib/design`.
-- **Fix options:** (1) a merge re-records the hash of every merged part that uses a changed asset and
-  lists them in the merge output; (2) the sketch baseline lists dependent parts, and Studio shows them
-  in the merge preview (as for element-in-context). Recommendation: (1) with the list in the output.
-
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
