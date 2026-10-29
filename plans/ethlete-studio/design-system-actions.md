@@ -46,6 +46,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Open:** a 100-cycle run started, but nobody recorded the result. Run it again.
 - **Options not taken:** a bounded log of module-load failures with the active frame; a native
   menu item that creates the webview again.
+- **Decision (Tom, 2026-10-29):** run the 100-cycle test over SSH on ethlete-mac when it is on.
 
 ## 2. Review on the canvas
 
@@ -163,6 +164,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
      is visible before the merge.
   2. The round note names which states the decision applies to. `sketch ready` warns when a named
      state is unchanged.
+- **Decision (Tom, 2026-10-29):** solved through 3.14 option 1.
 
 ### 3.13 No way to accept a direct edit the user approved - open
 
@@ -179,6 +181,7 @@ sketch` until the next merge of the part.
      direct edit.
   2. `sketch new --from-tree`: open a one-variant sketch from the working tree and restore the
      product, so the normal merge path covers the edit.
+- **Decision (Tom, 2026-10-29):** option 1, `design accept`.
 
 ### 3.14 The states of a page drift apart - open
 
@@ -199,6 +202,7 @@ sketch` until the next merge of the part.
      Tom's decision.
   3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
      and warns when its computed styles differ between states.
+- **Decision (Tom, 2026-10-29):** option 1. Every state calls the same render with other props.
 
 ## 4. Render checks and shots
 
@@ -255,6 +259,7 @@ sketch` until the next merge of the part.
 - **Cause:** a part exports one `render`; nothing exports a piece of a part.
 - **Fix option:** let a part file export named helpers that other parts may import, or extract
   the mark into an element.
+- **Decision (Tom, 2026-10-29):** a part file may export named helpers that other parts import.
 
 ## 6. Agent process
 
