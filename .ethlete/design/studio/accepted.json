@@ -61,5 +61,13 @@
     "hash": "8dc6c08771859439",
     "at": "2026-10-29T15:04:57.556Z",
     "auto": true
+  },
+  {
+    "part": "components/tree-row",
+    "by": "claude-opus-5-5",
+    "note": "merged automatically: no visible change in any state",
+    "hash": "63a749a482c4987f",
+    "at": "2026-10-29T17:23:36.167Z",
+    "auto": true
   }
 ]
