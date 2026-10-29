@@ -25,21 +25,18 @@ ng-packagr publishes **partial** Angular declarations. Bundling the published FE
 esbuild/Rollup measures nothing: every class stays pinned by `ɵɵngDeclare*(…)` calls, and at
 `target: es2022` the `ɵcmp`/`ɵfac` statics live in class `static {}` blocks that no bundler drops. So
 these scripts reproduce exactly what an Angular application build does before bundling (see
-`node_modules/@angular/build/src/tools/esbuild/javascript-transformer-worker.js`):
+`node_modules/@angular/build/src/tools/javascript-transformer/javascript-transformer-worker.js`):
 
-1. **`@angular/compiler-cli/linker/babel`** - link the partial declarations into real ones.
-2. **`@angular/build`'s babel optimizer passes**, in the same order and with the same options used
-   for a `sideEffects: false`, non-`@angular` package:
-   - `markTopLevelPure { topLevelSafeMode: true }`
-   - `elideAngularMetadata`
-   - `adjustTypeScriptEnums`
-   - `adjustStaticMembers { wrapDecorators: true }` - this is what wraps each class in a
-     `/*#__PURE__*/` IIFE so a bundler can drop it.
-3. **A `package.json` shim** with `sideEffects: false` written next to each processed FESM in the
+1. **`@angular/build`'s oxc transform** (`src/tools/oxc/oxc-transform.js`), one pass with the
+   options used for a `sideEffects: false`, non-`@angular` package: `link: true` links the partial
+   declarations into real ones, and `advancedOptimizations` with `topLevelSafeMode: true` marks
+   top-level calls pure, elides Angular metadata, wraps TypeScript enums, and wraps each class with
+   static members in a `/*#__PURE__*/` IIFE so a bundler can drop it.
+2. **A `package.json` shim** with `sideEffects: false` written next to each processed FESM in the
    cache dir. esbuild only drops unused top-level statements of a module whose _nearest_
    `package.json` says so. Without the shim the `@ethlete/components` floor measures ~293 kB gz
    instead of ~90 kB.
-4. **esbuild** - `bundle`, `format: esm`, `target: es2022`, `minify`, `treeShaking`,
+3. **esbuild** - `bundle`, `format: esm`, `target: es2022`, `minify`, `treeShaking`,
    `define: ngDevMode=false ngJitMode=false ngI18nClosureMode=false NODE_ENV=production` → **gzip
    level 9** → bytes.
 
@@ -83,7 +80,7 @@ pipeline rather than leaving them to the consumer.
 
 | script                  | purpose                                                                                                                                                                                                                                                                                                            |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `harness.mjs`           | shared plumbing: repo root detection, the babel pipeline, the FESM cache, the esbuild base options, the "never write into the repo" guard. Not run directly.                                                                                                                                                       |
+| `harness.mjs`           | shared plumbing: repo root detection, the oxc link + optimize pass, the FESM cache, the esbuild base options, the "never write into the repo" guard. Not run directly.                                                                                                                                             |
 | `measure-bundle.mjs`    | **how many bytes.** Bundles each entry in an entries JSON as a consumer app and reports minified + gzipped size.                                                                                                                                                                                                   |
 | `decompose.mjs`         | **whose bytes.** Keeps the sourcemap alive through the whole pipeline and attributes every output byte back to the original `.ts`/`.html`, rolled up per file and per domain. Also prints the esbuild metafile.                                                                                                    |
 | `dump-bundle.mjs`       | writes an unminified, externalized bundle for one entry, to grep for retained identifiers and to feed `retention.mjs`.                                                                                                                                                                                             |
