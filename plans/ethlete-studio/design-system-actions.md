@@ -209,6 +209,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix options:** 1. the contact sheet uses the part's `widths` (recommended). 2. `--scale 2` on
   `shot`.
 
+### 4.26 A new state gets no line in the "vs merged" row - open
+
+- **Pain:** the `tree-row` "Pressed state" sketch added `active`. The diff row of
+  `design shot --states --variants` listed only the merged states, with no "new state" line.
+- **Fix option:** print "new state" for a state the merged part does not have.
+
+### 4.27 No way to compare two states or shoot only a few - open
+
+- **Pain:** to decide whether `selected-active` differs from `selected-hover`, the agent cropped a
+  3227 px contact sheet and sampled pixels with PIL.
+- **Fix options:** 1. `design shot --state <a,b>` filter (recommended). 2.
+  `design shot --compare <v>/<state> <v>/<state>` prints the pixel delta.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -293,6 +306,13 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Pain:** `flowList` and `stepTree` in `pages/flows/shared/flow-data.ts` had no importer. They
   kept a dead `part-tree` import alive. Found by hand.
 - **Fix option:** `design check` warns about an export in a part's `shared/` that nothing imports.
+
+### 5.31 Studio has no pressed surface token - open
+
+- **Pain:** `tree-row`'s `:active` fill is a `color-mix` of `--surface-raised` and
+  `--surface-sunken`, written in the component.
+- **Fix option:** a `foundations/tokens` sketch that adds a pressed surface, once a second control
+  needs a pressed state.
 
 ## 6. Agent process
 
