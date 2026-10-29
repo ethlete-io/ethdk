@@ -47,6 +47,10 @@ const PARTS: Record<string, { body: string; extra?: string }> = {
   'components/underline-room': {
     body: '<p style="margin: 0; width: 80px; overflow: hidden; padding-bottom: 12px; font-size: 16px; line-height: 16px; text-decoration: underline wavy; text-underline-offset: 3px">Spelt</p>',
   },
+  'components/gridded': {
+    body: '<p style="margin: 0">Grid</p>',
+    extra: "grid: { columns: ['x', 'y'], rows: { r1: { x: 'default', y: 'default' } } },",
+  },
   'components/empty': { body: '<div></div>' },
   'components/clean': { body: '<p style="margin: 0">Fine</p>' },
 };
@@ -110,6 +114,7 @@ describe('renderIssuesOf', () => {
       'CLIPPED components/ring-frame fitted',
       'CLIPPED components/shadow-cut fitted',
       'CLIPPED components/underline-cut fitted',
+      'GRID components/gridded -',
       'OVERFLOW pages/tall desktop',
       'UNKNOWN-THEME components/themed fitted',
       'WRAP components/wrapped fitted',
@@ -131,6 +136,12 @@ describe('renderIssuesOf', () => {
     expect(rendered.issues.find((issue) => issue.part === 'components/underline-cut')?.detail).toMatch(
       /^underline \d+px past p\[data-et-part=components\/underline-cut\];/,
     );
+    expect(rendered.issues.find((issue) => issue.rule === 'GRID')?.detail).toBe(
+      'grid names the state default twice (r1 x, r1 y)',
+    );
+    expect(rendered.grids).toEqual([
+      { product: 'shop', part: 'components/gridded', sketch: null, line: 'grid 1 row x 2 columns ok' },
+    ]);
     expect(rendered.issues.find((issue) => issue.part === 'components/cut')?.detail).toBe(
       'content 300x18 in 100x18; on purpose: data-et-skip="CLIPPED" on the element, or definePart({ checks: { skip: [\'CLIPPED\'] } })',
     );

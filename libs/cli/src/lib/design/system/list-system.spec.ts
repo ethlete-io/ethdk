@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { DESIGN_DIR, readConfig } from '../paths';
 import { createDesignServer } from '../serve';
-import { listSystem } from './list-system';
+import { gridReportOf, listSystem } from './list-system';
 import { resolveProduct } from './resolve-product';
 import { createSketch, variantDirOf } from './sketch/sketch';
 import { createSystemModules, productModuleIdOf } from './system-modules';
@@ -301,5 +301,25 @@ export default definePart({ note: '', states: { rest: {} }, render: () => drawin
     };
 
     expect(loaded.default.render({ label: 'x' }).styles).toContain('.acme-button:is(:hover, [data-et-force~="hover"])');
+  });
+});
+
+describe('gridReportOf', () => {
+  it('sums up a grid, names a state it leaves out, and fails a state named twice or no state at all', () => {
+    const states = ['a', 'b', 'c', 'd'];
+
+    expect(gridReportOf(undefined, states)).toBeNull();
+    expect(
+      gridReportOf({ columns: ['x', 'y'], rows: { r1: { x: 'a', y: 'b' }, r2: { x: 'c', y: 'd' } } }, states),
+    ).toEqual({
+      line: 'grid 2 rows x 2 columns ok',
+      problems: [],
+    });
+    expect(
+      gridReportOf({ columns: ['x', 'y'], rows: { r1: { x: 'a', y: 'a' }, r2: { x: 'b', y: 'gone' } } }, states),
+    ).toEqual({
+      line: 'grid 2 rows x 2 columns, leaves out c, d',
+      problems: ['grid names the state a twice (r1 x, r1 y)', 'grid cell r2 y names gone, which is no state'],
+    });
   });
 });

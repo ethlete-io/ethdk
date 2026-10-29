@@ -103,6 +103,45 @@ export const gridOf = (grid: unknown, states: string[]): Pick<ListedPart, 'grid'
   return { grid: { columns, rows: [...new Set(cells.map((cell) => cell.row))], cells } };
 };
 
+const countOf = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+/**
+ * The summary line of a part's `grid` and the problems that fail it: a state in two cells, a cell
+ * naming no state. `null` when the part declares no grid.
+ */
+export const gridReportOf = (grid: unknown, states: string[]): { line: string; problems: string[] } | null => {
+  if (!isRecord(grid) || !Array.isArray(grid['columns']) || !isRecord(grid['rows'])) return null;
+
+  const columns = grid['columns'].filter((column): column is string => typeof column === 'string');
+  const rows = Object.entries(grid['rows']);
+  const cellsOf = new Map<string, string[]>();
+  const problems: string[] = [];
+
+  for (const [row, cells] of rows)
+    for (const column of columns) {
+      const state = isRecord(cells) ? cells[column] : undefined;
+
+      if (typeof state !== 'string') continue;
+      if (!states.includes(state)) problems.push(`grid cell ${row} ${column} names ${state}, which is no state`);
+      else cellsOf.set(state, [...(cellsOf.get(state) ?? []), `${row} ${column}`]);
+    }
+
+  const twice = [...cellsOf].flatMap(([state, cells]) =>
+    cells.length > 1
+      ? [
+          `grid names the state ${state} ${cells.length === 2 ? 'twice' : `${cells.length} times`} (${cells.join(', ')})`,
+        ]
+      : [],
+  );
+  const left = states.filter((state) => !cellsOf.has(state));
+  const size = `grid ${countOf(rows.length, 'row')} x ${countOf(columns.length, 'column')}`;
+
+  return {
+    line: left.length === 0 ? `${size} ok` : `${size}, leaves out ${left.join(', ')}`,
+    problems: [...twice, ...problems],
+  };
+};
+
 const pageReachOf = (system: SystemModules) =>
   system.products().flatMap((name) => {
     const product = system.productOf(name);

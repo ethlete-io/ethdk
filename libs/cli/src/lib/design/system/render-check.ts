@@ -4,6 +4,7 @@ import { DesignConfig } from '../paths';
 import { createDesignServer } from '../serve';
 import { PartAddress, partFrameOf, viewportOf } from '../shot';
 import { Browser, createDrawQueue, openFrame, settled, ThumbUnavailableError } from '../thumb';
+import { gridReportOf } from './list-system';
 import { partKeyOf } from './resolve-product';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system-modules';
 
@@ -37,7 +38,10 @@ type Frame = {
   skips: Record<string, string[]>;
 };
 
-type PartModule = { default?: { states?: unknown; widths?: unknown; checks?: { skip?: unknown } } };
+type PartModule = { default?: { states?: unknown; widths?: unknown; grid?: unknown; checks?: { skip?: unknown } } };
+
+/** The summary line of the `grid` of a drawn part. */
+export type RenderedGrid = Pick<RenderIssue, 'product' | 'part' | 'sketch'> & { line: string };
 
 export const renderIssueLineOf = (issue: RenderIssue) =>
   `${issue.rule} ${issue.product} ${issue.part} ${issue.state} at ${issue.size}: ${issue.path} - ${issue.detail}`;
@@ -317,11 +321,11 @@ export const renderIssuesOf = async (options: {
   config: DesignConfig;
   jobs: RenderJob[];
   chromiumOf?: typeof chromiumOf;
-}): Promise<{ issues: RenderIssue[]; drawn: RenderedState[] } | { unavailable: string }> => {
+}): Promise<{ issues: RenderIssue[]; grids: RenderedGrid[]; drawn: RenderedState[] } | { unavailable: string }> => {
   const { target, config, jobs } = options;
   const resolveChromium = options.chromiumOf ?? chromiumOf;
 
-  if (jobs.length === 0) return { issues: [], drawn: [] };
+  if (jobs.length === 0) return { issues: [], grids: [], drawn: [] };
 
   if (!(await resolveChromium(target)))
     return { unavailable: 'neither the checkout nor this package resolves playwright or playwright-core' };
@@ -337,6 +341,7 @@ export const renderIssuesOf = async (options: {
     const system = createSystemModules({ target, config });
     const frames: Frame[] = [];
     const issues: RenderIssue[] = [];
+    const grids: RenderedGrid[] = [];
     for (const { product, sketch, parts } of jobs) {
       const skips: Record<string, string[]> = {};
 
@@ -375,6 +380,15 @@ export const renderIssuesOf = async (options: {
 
         const states =
           definition?.states && typeof definition.states === 'object' ? Object.keys(definition.states) : [];
+        const grid = gridReportOf(definition?.grid, states);
+
+        if (grid) {
+          grids.push({ product, part: key, sketch, line: grid.line });
+          grid.problems.forEach((detail) =>
+            issues.push({ rule: 'GRID', product, part: key, state: '-', size: '-', path: '-', detail, sketch }),
+          );
+        }
+
         const widths = widthsOf(definition?.widths);
         const sizes: { preset: string | null; width: number | null }[] =
           part.layer === 'pages'
@@ -408,6 +422,7 @@ export const renderIssuesOf = async (options: {
 
     return {
       issues,
+      grids,
       drawn: frames.map(({ address }) => ({
         product: address.product,
         part: address.part,

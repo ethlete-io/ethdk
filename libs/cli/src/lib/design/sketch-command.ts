@@ -626,6 +626,9 @@ const checked = async (context: Context) => {
       );
     }
 
+    rendered.grids.forEach(({ sketch, part, line }) =>
+      console.log(`${sketch?.target ?? ''} ${sketch?.variant ?? ''}: ${part} ${line}`),
+    );
     rendered.issues.forEach((issue) =>
       console.error(`${issue.sketch?.target ?? ''} ${issue.sketch?.variant ?? ''}: ${renderIssueLineOf(issue)}`),
     );
