@@ -1076,3 +1076,26 @@ check` warns early.
   sheet does not say why.
 - **Fix option:** one line in the sheet: "new part, nothing to compare with".
 - **Fix done (65c4454ca):** a variants sheet without a merged row starts with a `merged` cell "new part, nothing to compare with" (a new `note` cell kind in the contact sheet).
+
+### 4.20 `design shot` ignores a component's `widths` - fixed (f1046cfef)
+
+- **Pain:** without `--width`, `design shot` shrink-wraps a component and ignores `widths` from
+  `definePart`. On `components/tree-row` the flex row collapsed and the end marks sat right after
+  the label.
+- **Fix option:** draw a component at its first `widths` entry by default.
+- **Fix done (f1046cfef):** without `--width` or `--preset`, `design shot` draws each row of a non-page part at the first entry of that row's `widths` (merged or variant); `components/tree-row` now draws every state at 280 px.
+
+### 4.29 The default shot draws a part with `widths` at content size - fixed (f1046cfef)
+
+- **Pain:** without `--width`, every `tree-row` cell is as wide as its content, so the end marks
+  sit right after the label. Only `--width 280` shows the real layout.
+- **Fix option:** a non-page part with `widths` is shot at `widths[0]` by default.
+- **Fix done (f1046cfef):** same fix as 4.20: a non-page part with `widths` is shot at `widths[0]` by default.
+
+### 4.25 Single-row states are tiny and of different widths in shots - fixed (f1046cfef)
+
+- **Pain:** `design shot --states --variants` draws each `tree-row` state at its content width,
+  though the part sets `widths: [280]`. A `/__design/shot` of one row is 280 x 20 px.
+- **Fix options:** 1. the contact sheet uses the part's `widths` (recommended). 2. `--scale 2` on
+  `shot`.
+- **Fix done (f1046cfef):** the contact sheet draws each state at the part's first `widths` entry (fix of 4.20), so single-row states share one width. Their small size in pixels is 4.33.

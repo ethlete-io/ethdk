@@ -200,13 +200,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
 - **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
 
-### 4.20 `design shot` ignores a component's `widths` - open
-
-- **Pain:** without `--width`, `design shot` shrink-wraps a component and ignores `widths` from
-  `definePart`. On `components/tree-row` the flex row collapsed and the end marks sat right after
-  the label.
-- **Fix option:** draw a component at its first `widths` entry by default.
-
 ### 4.21 `design shot` has no `--interaction` flag - open
 
 - **Pain:** the agent found the `interaction=` query parameter of `/__design/shot` only in
@@ -233,13 +226,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frame. The render check reported nothing.
 - **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
 
-### 4.25 Single-row states are tiny and of different widths in shots - open
-
-- **Pain:** `design shot --states --variants` draws each `tree-row` state at its content width,
-  though the part sets `widths: [280]`. A `/__design/shot` of one row is 280 x 20 px.
-- **Fix options:** 1. the contact sheet uses the part's `widths` (recommended). 2. `--scale 2` on
-  `shot`.
-
 ### 4.26 A new state gets no line in the "vs merged" row - open
 
 - **Pain:** the `tree-row` "Pressed state" sketch added `active`. The diff row of
@@ -261,12 +247,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   per state (open point of 2.10).
 - **Fix option:** read the grid per axis (merged and each variant) and lay out each axis with its
   own grid, in the shot and in the Studio sketch compare.
-
-### 4.29 The default shot draws a part with `widths` at content size - open
-
-- **Pain:** without `--width`, every `tree-row` cell is as wide as its content, so the end marks
-  sit right after the label. Only `--width 280` shows the real layout.
-- **Fix option:** a non-page part with `widths` is shot at `widths[0]` by default.
 
 ### 4.31 `sketch check` says nothing about a `grid` - open
 
