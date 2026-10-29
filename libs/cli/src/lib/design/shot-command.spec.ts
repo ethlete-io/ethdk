@@ -55,6 +55,19 @@ describe('planOf', () => {
     expect(plan[0]?.map((cell) => cell.label)).toEqual(['a / rest', 'a / busy']);
     expect(plan[1]?.map((cell) => cell.label)).toEqual(['b / rest']);
   });
+
+  it('draws only the states asked for, in the order asked', () => {
+    const plan = planOf({
+      base,
+      rows: [{ label: '', sketch: null }],
+      statesOf: () => ['rest', 'hover', 'busy'],
+      states: true,
+      state: null,
+      only: ['busy', 'rest'],
+    });
+
+    expect(plan[0]?.map((cell) => cell.label)).toEqual(['busy', 'rest']);
+  });
 });
 
 describe('planOf widths', () => {
@@ -146,6 +159,10 @@ describe('designShot', () => {
 
     expect(code).toBe(2);
     expect(text).toContain('--interaction <hover|focus-visible|active|disabled>');
+  });
+
+  it('takes a list of states without --states', async () => {
+    expect((await run(['components/button', '--state', 'rest,busy'])).text).toContain('no config at');
   });
 
   it('says so when the checkout has no design config', async () => {

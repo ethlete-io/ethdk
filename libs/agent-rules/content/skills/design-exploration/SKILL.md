@@ -45,7 +45,7 @@ finished while the user is still talking about it.
 check that a variant renders. In a repository with `et design`, take it with
 `et design shot <layer>/<name> --states [--variants]`: one contact sheet of every state, and
 every variant of the open sketch, with a label per cell; below each variant row, a diff row marks
-the pixels that differ from the merged state in red, or says "no pixel change". It prints the PNG path last. `--scale 2` enlarges a small part. `--interaction hover` forces an interaction on every cell. It draws
+the pixels that differ from the merged state in red, or says "no pixel change". It prints the PNG path last. `--scale 2` enlarges a small part. `--interaction hover` forces an interaction on every cell. `--state a,b` draws only those states, to compare them side by side. It draws
 undimmed, whatever Studio shows. Do not write a scratch script for batch shots.
 
 If a second defect appears, add it to the open list and give it one line. Do not draw it.

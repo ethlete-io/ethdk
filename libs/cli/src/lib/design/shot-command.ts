@@ -15,7 +15,7 @@ import { gridOf, ListedGrid } from './system/list-system';
 import { createSystemModules, productModuleIdOf, SketchVariant } from './system/system-modules';
 import { createDrawQueue, ThumbUnavailableError } from './thumb';
 
-export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
+export const SHOT_USAGE = `shot <layer>/<name> --states [--variants [--at <commit>]] [--state <name>[,<name>...]] [--interaction <${INTERACTIONS.join('|')}>] [--preset <preset> | --width <px>] [--scale <1-4>] [--product <name>] [--surface <name>] [--color <name>] [--out <file>]`;
 
 type Axis = { label: string; sketch: SketchVariant | null };
 
@@ -56,7 +56,8 @@ export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: She
 };
 
 /**
- * Rows of cells: one row per variant when `variants` is set, else one row; one column per state when `states` is set.
+ * Rows of cells: one row per variant when `variants` is set, else one row; one column per state when `states` is set,
+ * or per state of `only` in its order.
  * Without a width or a preset in `base`, a row is drawn at the width `widthOf` gives for it.
  */
 export const planOf = (options: {
@@ -66,9 +67,11 @@ export const planOf = (options: {
   widthOf?: (axis: Axis) => number | null;
   states: boolean;
   state: string | null;
+  only?: string[];
 }): Plan[][] => {
-  const { base, rows, statesOf, widthOf, states, state } = options;
-  const columns = states ? [...new Set(rows.flatMap(statesOf))] : [state ?? ''];
+  const { base, rows, statesOf, widthOf, states, state, only } = options;
+  const all = [...new Set(rows.flatMap(statesOf))];
+  const columns = states ? (only ? only.filter((name) => all.includes(name)) : all) : [state ?? ''];
 
   return rows.map((axis) => {
     const own = statesOf(axis);
@@ -174,7 +177,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
   }
 
   const [part, ...extra] = args.positional;
-  const states = args.flags.has('--states');
+  const asked = args.values['--state']?.split(',').filter(Boolean) ?? [];
+  const states = args.flags.has('--states') || asked.length > 1;
   const variants = args.flags.has('--variants');
   const width = args.values['--width'] === undefined ? null : Number(args.values['--width']);
   const preset = args.values['--preset'] ?? null;
@@ -291,6 +295,15 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       if (!variants) grid = gridOf(module.default?.grid, names).grid;
     }
 
+    const known = [...new Set([...loaded.values()].flat())];
+    const unknown = asked.filter((name) => !known.includes(name));
+
+    if (unknown.length > 0) {
+      console.error(`design-explore: ${part} has no state ${unknown.join(', ')} (states: ${known.join(', ')})`);
+
+      return 1;
+    }
+
     const isPage = part.startsWith('pages/');
     const presets = system.productOf(product)?.presets ?? {};
     const chosenPreset = preset ?? (isPage ? (Object.keys(presets)[0] ?? null) : null);
@@ -308,7 +321,8 @@ export const designShot = async (options: { target: string; argv: string[]; invo
       statesOf: (axis) => loaded.get(axis) ?? [],
       widthOf: (axis) => (isPage ? null : (widths.get(axis) ?? null)),
       states,
-      state: args.values['--state'] ?? null,
+      state: asked[0] ?? null,
+      only: states && asked.length > 0 ? asked : undefined,
     });
     const shownGrid = states ? grid : undefined;
     const drawn = shownGrid ? plan.flatMap((cells) => gridRowsOf(cells, shownGrid)) : plan;
