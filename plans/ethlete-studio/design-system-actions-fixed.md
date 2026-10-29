@@ -869,3 +869,11 @@ sketch` until the next merge of the part.
 - **Seen again (2026-10-29):** Tom saw `pages/sketches` "still drawing" after its agent had finished.
 - **Built:** `sketch report <part> --variant <key> --by <model id> --done` ends the report when it
   belongs to that variant. The skill names it.
+
+### 5.5 Wireframe kit gaps - closed, wireframes on hold (L742-L1036)
+
+- **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
+  dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
+- **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
+- **Decision (Tom, 2026-10-29):** wireframes are on hold. Studio draws in the real look; a
+  wireframe helps only when the designer has no picture of the result yet. The kit gets no more work.

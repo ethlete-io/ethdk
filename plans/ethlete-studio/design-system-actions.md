@@ -307,12 +307,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 5. Drawing parts and pages
 
-### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
-
-- **Pain:** drawing agents fought the kit more than the structure questions (L805). Missing:
-  dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
-- **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
-
 ### 5.20 Variants of one sketch cannot share files - open
 
 - **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
