@@ -159,6 +159,8 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   problem also shows in Studio's sketch problems. A new part has nothing to compare.
 - **Opt-out done (`159eeeef3`):** `sketch round <part> <round> --drops <state,state>` names the states
   a round removes on purpose. `STATES` then skips them for the variants of that round.
+- **Used (`6f6032799`):** round r3 of `pages/sketches` dropped `open` and `zoomed-below` with
+  `--drops`. Check passed, and Tom merged it in Studio without a problem.
 - **Open:** check the problem in the running Studio.
 
 ### 3.7 A new sketch opens with its only round folded - fixed, unverified (`b7fa2c621`)
