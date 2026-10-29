@@ -1,14 +1,13 @@
-import { html } from '@design-system';
+import { embedPage, html } from '@design-system';
 import canvasFrames from '@system/elements/canvas-frames';
 import partTree from '@system/elements/part-tree';
-import system from '@system/pages/system';
 
 export type Row = { part: string; state: string; instances: number; width: number; height: number; body: string };
 
 export const TARGET = { part: 'components/button', name: 'button', variant: 'b', note: 'Pill radius on every size' };
 
 const frames = await canvasFrames.render(canvasFrames.states.default);
-const emptySystem = await system.render({ empty: true });
+const emptySystem = embedPage('pages/system', { state: 'empty', width: 1440, height: 900 });
 
 export const CHANGED: Row[] = [
   { part: 'elements/canvas-frames', state: 'default', instances: 18, width: 1440, height: 560, body: frames.body },
@@ -19,7 +18,7 @@ export const UNCHANGED = { part: 'pages/inbox', states: ['all', 'none'] };
 
 export const unchangedLabel = `${UNCHANGED.states.length} states of ${UNCHANGED.part} without visible change`;
 
-export const rowStyles = frames.styles + emptySystem.styles;
+export const rowStyles = frames.styles;
 
 export const buttonTree = await partTree.render({
   layers: [
