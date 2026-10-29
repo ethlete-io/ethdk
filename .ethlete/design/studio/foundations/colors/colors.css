@@ -1,19 +1,16 @@
 :root {
-  /* light surface */
   --color-et-surface-light-bg: rgb(255 255 255);
   --color-et-surface-light: rgb(23 23 23);
   --color-et-surface-light-muted: rgb(82 82 82);
   --color-et-surface-light-subtle: rgb(163 163 163);
   --color-et-surface-light-border: rgb(229 229 229);
 
-  /* dark surface */
   --color-et-surface-dark-bg: rgb(23 23 23);
   --color-et-surface-dark: rgb(245 245 245);
   --color-et-surface-dark-muted: rgb(163 163 163);
   --color-et-surface-dark-subtle: rgb(115 115 115);
   --color-et-surface-dark-border: rgb(64 64 64);
 
-  /* Dynamic surface colors (references runtime CSS variables) */
   --color-et-surface-bg: rgb(var(--et-surface-background));
   --color-et-surface: rgb(var(--et-surface-color));
   --color-et-surface-muted: rgb(var(--et-surface-color-muted));
@@ -110,7 +107,6 @@
   }
 }
 
-/* Convenience aliases (rgb + solid variants) */
 @layer base {
   :root,
   :where([class*='et-surface--']) {
@@ -176,7 +172,6 @@
   }
 }
 
-/* The reserved `surface` color: resolves the color tokens from the ambient surface's neutral swatch. */
 @layer base {
   .et-color--surface {
     --et-color-primary: var(--et-surface-interaction, var(--et-surface-color));
@@ -236,7 +231,6 @@
 }
 
 :root {
-  /* accent theme */
   --color-et-accent: rgb(37 99 235);
   --color-et-accent-hover: rgb(29 78 216);
   --color-et-accent-focus: rgb(29 78 216);
@@ -255,7 +249,6 @@
   --color-et-accent-ink-active: rgb(30 64 175);
   --color-et-accent-ink-disabled: rgb(100 116 139);
 
-  /* danger theme */
   --color-et-danger: rgb(247 93 89);
   --color-et-danger-hover: rgb(252 122 115);
   --color-et-danger-focus: rgb(252 122 115);
@@ -274,7 +267,6 @@
   --color-et-danger-ink-active: rgb(249 158 155);
   --color-et-danger-ink-disabled: rgb(100 116 139);
 
-  /* warning theme */
   --color-et-warning: rgb(239 168 49);
   --color-et-warning-hover: rgb(255 184 70);
   --color-et-warning-focus: rgb(255 184 70);
@@ -293,7 +285,6 @@
   --color-et-warning-ink-active: rgb(245 198 109);
   --color-et-warning-ink-disabled: rgb(100 116 139);
 
-  /* Dynamic theme colors (references runtime CSS variables) */
   --color-et-theme: rgb(var(--et-color-primary));
   --color-et-theme-hover: rgb(var(--et-color-primary-hover));
   --color-et-theme-focus: rgb(var(--et-color-primary-focus));
@@ -377,7 +368,6 @@
   }
 }
 
-/* Convenience aliases (rgb + solid + opacity variants) */
 @layer base {
   :root,
   :where([class*='et-color--']) {
@@ -421,20 +411,12 @@
   }
 }
 
-:root {
-  font-size: 62.5%;
-}
-
 body {
   margin: 0;
-  font-family: var(--font-ui);
-  font-size: var(--text-md);
-  line-height: var(--text-md-line);
   background: var(--surface-sunken);
   color: var(--text);
 }
 
-/* Studio dark surfaces, variant A: neutral grey */
 :root {
   --surface-sunken: oklch(0.17 0 0);
   --surface: oklch(0.205 0 0);
@@ -446,7 +428,6 @@ body {
   --text-muted: oklch(0.72 0 0);
 }
 
-/* Studio accent, variant C: teal */
 :root {
   --accent: oklch(0.68 0.11 190);
   --accent-hover: oklch(0.74 0.11 190);
@@ -456,7 +437,6 @@ body {
   --focus-ring: oklch(0.76 0.11 190);
 }
 
-/* Studio warning, variant A: amber */
 :root {
   --warning: oklch(0.78 0.15 75);
   --warning-hover: oklch(0.83 0.15 75);
@@ -465,48 +445,10 @@ body {
   --warning-subtle: oklch(0.78 0.15 75 / 0.16);
 }
 
-/* Studio danger, variant A: signal red */
 :root {
   --danger: oklch(0.68 0.19 25);
   --danger-hover: oklch(0.73 0.16 25);
   --danger-text: oklch(0.79 0.11 22);
   --on-danger: oklch(0.18 0.04 25);
   --danger-subtle: oklch(0.68 0.19 25 / 0.16);
-}
-
-/* Studio type scale, variant B: compact */
-:root {
-  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-code: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --text-xs: 1rem;
-  --text-xs-line: 1.4rem;
-  --text-sm: 1.15rem;
-  --text-sm-line: 1.6rem;
-  --text-md: 1.3rem;
-  --text-md-line: 1.8rem;
-  --text-lg: 1.5rem;
-  --text-lg-line: 2rem;
-  --text-xl: 1.7rem;
-  --text-xl-line: 2.2rem;
-  --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-strong: 600;
-}
-
-/* Studio spacing and radius, variant B: balanced */
-:root {
-  --space-1: 0.4rem;
-  --space-2: 0.8rem;
-  --space-3: 1.2rem;
-  --space-4: 1.6rem;
-  --space-5: 2rem;
-  --space-6: 2.4rem;
-  --space-7: 3.2rem;
-  --radius-control-sm: 0.4rem;
-  --radius-control-md: 0.6rem;
-  --radius-control-lg: 1rem;
-  --radius-pill: 999px;
-  --control-sm: 2.4rem;
-  --control-md: 2.8rem;
-  --row: 2.4rem;
 }

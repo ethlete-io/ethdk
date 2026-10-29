@@ -3,7 +3,9 @@
 @import 'tailwindcss' source('../');
 
 /* Keep this layer lowest: its sdk part redefines the SDK themes and the body rule, which Studio's own must beat. */
-@import '../../../.ethlete/design/studio/foundations/tokens/tokens.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/colors/colors.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/type/type.css' layer(studio-tokens);
+@import '../../../.ethlete/design/studio/foundations/spacing/spacing.css' layer(studio-tokens);
 
 @import './styles/themes.css';
 @import './styles/surface-themes.css';
