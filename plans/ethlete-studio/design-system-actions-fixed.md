@@ -780,3 +780,22 @@ sketch` until the next merge of the part.
   servers with the right flags; listen on both `::1` and `127.0.0.1`.
 - **Fix done:** `yarn studio:verify [--path /x] [--out f.png]` (`tools/scripts/verify-studio-headless.mjs`, also `withStudio(...)` to import) builds Studio with `--excludeTaskDependencies`, starts its own design and static servers on free ports, stubs the Tauri host and opens headless Chromium with `LocalNetworkAccessChecks` off. Node reaches the server at `[::1]`, not `localhost`; no new listener. Documented in the `verify-in-storybook` skill.
 - **Open:** the stubbed host makes the status bar show "Check failed · retry". The one-off `MODULE_NOT_FOUND` of `sketch new` was not reproduced.
+
+### 5.19 The Studio `button` part has no `disabled` prop - fixed
+
+- **Pain:** `{ disabled: true }` gave TS2353. A disabled button only comes from the second
+  argument, `button.render(props, { interaction: 'disabled' })`, found by reading `canvas-frames.ts`.
+- **Fix options:** 1. the part accepts `disabled` (recommended, a page state needs it). 2. the part
+  note names the interaction argument.
+
+- **Fix done:** option 1 in `16869af08`. The sdk part `components/button` takes all of `ButtonMockOptions`, so `{ disabled: true }` works. One-variant sketch, no pixel change, merged automatically.
+
+### 5.22 The system button part takes no `class` or icon - fixed, one gap
+
+- **Pain:** a full-width Merge and an icon-only close X need descendant CSS on `.et-button` in the
+  sketch stylesheet. The X's accessible name sits on the SVG, not on the button.
+- **Fix option:** pass `class` and `icon` through `@system/components/button` from
+  `ButtonMockOptions`.
+
+- **Fix done:** in `16869af08`, the part passes `class`, `style`, `icon`, `iconAlignment` and `tag` through.
+- **Open:** the mock has no `aria-label`, so an icon-only button still has no accessible name. Fix option: an `ariaLabel` option in `libs/components/design/button.ts`.

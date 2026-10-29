@@ -166,13 +166,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   dividers, alignment, per-side padding, list rows, avatars, some glyphs. `fill` uses `100vh`.
 - **Fix:** add the missing pieces / decide if wireframes are worth the cost (L805).
 
-### 5.19 The Studio `button` part has no `disabled` prop - open
-
-- **Pain:** `{ disabled: true }` gave TS2353. A disabled button only comes from the second
-  argument, `button.render(props, { interaction: 'disabled' })`, found by reading `canvas-frames.ts`.
-- **Fix options:** 1. the part accepts `disabled` (recommended, a page state needs it). 2. the part
-  note names the interaction argument.
-
 ### 5.20 Variants of one sketch cannot share files - open
 
 - **Pain:** `pages/merge` copies `merge-data.ts` and `merge-kit.css` into a, b and c.
@@ -184,13 +177,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   frames with a CSS override of the radius.
 - **Fix option:** an alias such as `@sketch/components/button:b`. Low priority: only drawings of
   Studio itself need it.
-
-### 5.22 The system button part takes no `class` or icon - open
-
-- **Pain:** a full-width Merge and an icon-only close X need descendant CSS on `.et-button` in the
-  sketch stylesheet. The X's accessible name sits on the SVG, not on the button.
-- **Fix option:** pass `class` and `icon` through `@system/components/button` from
-  `ButtonMockOptions`.
 
 ## 6. Agent process
 
