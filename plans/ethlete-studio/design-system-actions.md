@@ -114,12 +114,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   files failed `sketch check` on FORMAT. Fix option: run Prettier inside `sketch new` and
   `sketch variant`.
 
-### 3.28 A finished variant still shows as "being drawn" - open
-
-- **Pain:** after the last `sketch report --variant c` on `components/tree-row`, Studio kept c
-  marked as in progress and hid its frames. Only `sketch ready` clears the mark.
-- **Fix option:** `sketch report --done` clears the drawing mark of that variant.
-
 ### 3.29 No clear place for a variant's note in `sketch new` - open
 
 - **Pain:** `components/comment-pin`: the skill does not say where each variant's note goes. The

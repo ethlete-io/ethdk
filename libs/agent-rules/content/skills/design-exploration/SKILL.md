@@ -107,6 +107,7 @@ answers. Variants are drawn at the same geometry, and one variant wins only agai
 ```bash
 et design sketch new <layer>/<name> --variants a,b --by <model id> [--like <layer>/<name>] [--product <p>]   # each variant starts as a copy of the part
 et design sketch report <layer>/<name> --variant b --by <model id> "phone"         # tell Studio what you build now
+et design sketch report <layer>/<name> --variant b --by <model id> --done         # you stopped drawing b; Studio shows its frames
 et design sketch check [<layer>/<name>]                                            # each variant laid over the product
 et design sketch ready <layer>/<name> --by <model id>                              # now the user can pick
 ```

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
 import { shotsShowNoChange } from './ready-shots';
 import { designSketch } from './sketch-command';
-import { findSketch, Sketch } from './system/sketch/sketch';
+import { findSketch, readSketchReport, Sketch } from './system/sketch/sketch';
 
 vi.mock('./ready-shots', () => ({ shotsShowNoChange: vi.fn(async () => false) }));
 
@@ -182,7 +182,9 @@ describe('designSketch', () => {
     write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
 
     expect(write(target, 'report', 'components/button', 'variant', 'b', '--product', 'acme')).toBe(1);
-    expect(lines.pop()).toContain('usage: sketch report <layer>/<name> --variant <key> --by <model id> <text>');
+    expect(lines.pop()).toContain(
+      'usage: sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done)',
+    );
     expect(write(target, 'report', 'components/button', '--variant', 'c', 'phone', '--product', 'acme')).toBe(1);
     expect(lines.pop()).toBe('components/button has no variant "c" - it has a, b');
     expect(
@@ -194,6 +196,28 @@ describe('designSketch', () => {
       a: { authors: ['claude-opus-5-5'], round: 'r1' },
       b: { authors: ['claude-opus-5-5', 'gpt-5.6-sol'], round: 'r1' },
     });
+  });
+
+  it('ends the live report of a variant with --done', () => {
+    const target = acme();
+    const lines = output();
+
+    write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
+    write(target, 'report', 'components/button', '--variant', 'b', 'phone', '--product', 'acme');
+
+    const sketch = findSketch({
+      productDir: join(target, DESIGN_DIR, 'acme'),
+      product: 'acme',
+      sketch: { layer: 'components', name: 'button' },
+    }) as Sketch;
+
+    expect(write(target, 'report', 'components/button', '--variant', 'a', '--done', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('components/button variant a had no live report');
+    expect(readSketchReport({ checkout: target, sketch })?.variant).toBe('b');
+
+    expect(write(target, 'report', 'components/button', '--variant', 'b', '--done', '--product', 'acme')).toBe(0);
+    expect(lines.pop()).toBe('components/button variant b is no longer drawing');
+    expect(readSketchReport({ checkout: target, sketch })).toBeNull();
   });
 
   it('opens a round without a note, and refuses ready until the round has one', async () => {

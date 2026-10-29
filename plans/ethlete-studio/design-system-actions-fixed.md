@@ -855,3 +855,13 @@ sketch` until the next merge of the part.
   like the frame body, and the split is gone). 3. a part declares the surface it lives on.
 - **Also owed:** the button frame grid in Studio still uses the old plain table; Tom wants one look
   ("One grid look" sketch on `elements/canvas-frames`).
+
+### 3.28 A finished variant still shows as "being drawn" - fixed
+
+- **Pain:** after the last `sketch report --variant c` on `components/tree-row`, Studio kept c
+  marked as in progress and hid its frames. Only `sketch ready` clears the mark.
+- **Fix option:** `sketch report --done` clears the drawing mark of that variant.
+
+- **Seen again (2026-10-29):** Tom saw `pages/sketches` "still drawing" after its agent had finished.
+- **Built:** `sketch report <part> --variant <key> --by <model id> --done` ends the report when it
+  belongs to that variant. The skill names it.

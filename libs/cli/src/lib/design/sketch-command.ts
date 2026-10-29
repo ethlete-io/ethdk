@@ -23,6 +23,7 @@ import {
   decideSketch,
   editRound,
   findSketch,
+  finishSketchReport,
   listSketches,
   markSketchReady,
   parseTarget,
@@ -265,11 +266,24 @@ const reported = (context: Context) =>
     const message = context.args.positional.slice(1).join(' ');
     const variant = context.args.values['--variant'];
     const author = authorOf(context.args);
+    const done = context.args.flags.has('--done');
 
-    if (message === '' || !variant || !author)
+    if ((message === '' && !done) || !variant || !author)
       return fail(
-        `usage: sketch report <layer>/<name> --variant <key> --by <model id> <text> [--product <name>] - --product is needed when config.json declares more than one product`,
+        `usage: sketch report <layer>/<name> --variant <key> --by <model id> (<text> | --done) [--product <name>] - --product is needed when config.json declares more than one product`,
       );
+
+    if (done) {
+      const cleared = finishSketchReport({ checkout: context.target, sketch, variant });
+
+      console.log(
+        cleared
+          ? `${sketch.target} variant ${variant} is no longer drawing`
+          : `${sketch.target} variant ${variant} had no live report`,
+      );
+
+      return 0;
+    }
 
     const reported = reportSketch({ checkout: context.target, sketch, variant, author, message });
 

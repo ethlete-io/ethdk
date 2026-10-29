@@ -511,6 +511,17 @@ export const readSketchReport = (options: { checkout: string; sketch: Sketch }):
 export const clearSketchReport = (options: { checkout: string; sketch: Sketch }) =>
   rmSync(sketchReportPath(options), { force: true });
 
+/** Ends the live report on a sketch when it belongs to `variant`, and says whether there was one to end. */
+export const finishSketchReport = (options: { checkout: string; sketch: Sketch; variant: string }) => {
+  const report = readSketchReport(options);
+
+  if (!report || (report.variant !== null && report.variant !== options.variant)) return false;
+
+  clearSketchReport(options);
+
+  return true;
+};
+
 /**
  * Marks an in-progress sketch ready for the user to pick, ends its live report, and records `author` on each variant
  * that has no author yet.
