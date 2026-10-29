@@ -969,6 +969,14 @@ sketch` until the next merge of the part.
 - **Fix options:** 1. find the cause; `sketch ready` names why it did not auto-merge (recommended). 2. always say "auto-merge skipped: <reason>".
 - **Fix done (1ceb1ca77):** `sketch ready` prints `auto-merge skipped: <reason>` (the changed states, a failed shot with its message, a variant holding another part). Cause: a rerun of the `pages/inbox` check now passes all five states, so the miss was transient; the old code swallowed every shot error as a change, most likely one of the three parallel `ready` runs failed a shot while the others merged.
 
+### 3.32 `sketch report --done` without an earlier report reads like an error - fixed (891bc68cd)
+
+- **Pain:** `foundations/agent-logos`: `--done` printed "variant a had no live report"; the agent
+  could not tell if `--done` was recorded.
+- **Fix option:** print "a marked done" and drop the warning when `--done` is passed.
+- **Seen again:** `foundations/tokens` "Warning colour", same message.
+- **Fix done (891bc68cd):** `sketch report --done` always prints "<target> variant <key> marked done", with no warning when no live report existed.
+
 ### 2.8 Labels and badges overlap very short frames in the sketch matrix - fixed (49cb0ea40)
 
 - **Pain:** the `components/tree-row` sketch (8 states, 3 interactions, 3 variants, rows about 10 px
@@ -992,3 +1000,11 @@ sketch` until the next merge of the part.
   says "Refactor, no visible change" next to the round note.
 
 - **Fix:** option 1. Under each variant the sketch view says "N of M states differ in pixels"; a click lists each changed state with its box ("default · 8 × 4 px"), and a click on a line outlines the box on the frame. The design server answers `/__design/sketch-diff`, cached per pair of pictures. Open: the outline does not move the camera to the frame.
+
+### 3.33 `sketch ready` fails on a round without a note - fixed (783b9c5d7)
+
+- **Pain:** `foundations/agent-logos`: `sketch new --round` took no note, and `sketch ready` then
+  stopped with "round r1 has no note". The brief and `sketch new` did not say a note is needed.
+- **Fix options:** 1. `sketch new --round` asks for `--note` up front (recommended). 2. `sketch
+check` warns early.
+- **Fix done (783b9c5d7):** `sketch new --round <title>` fails without `--note`; the skill says so.

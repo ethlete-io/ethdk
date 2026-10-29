@@ -111,20 +111,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.32 `sketch report --done` without an earlier report reads like an error - open
-
-- **Pain:** `foundations/agent-logos`: `--done` printed "variant a had no live report"; the agent
-  could not tell if `--done` was recorded.
-- **Fix option:** print "a marked done" and drop the warning when `--done` is passed.
-- **Seen again:** `foundations/tokens` "Warning colour", same message.
-
-### 3.33 `sketch ready` fails on a round without a note - open
-
-- **Pain:** `foundations/agent-logos`: `sketch new --round` took no note, and `sketch ready` then
-  stopped with "round r1 has no note". The brief and `sketch new` did not say a note is needed.
-- **Fix options:** 1. `sketch new --round` asks for `--note` up front (recommended). 2. `sketch
-check` warns early.
-
 ### 3.34 `sketch check` reports FORMAT but does not fix it - open
 
 - **Pain:** `foundations/tokens` "Warning colour": a variant file patched by script failed FORMAT;
