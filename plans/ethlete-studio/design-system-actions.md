@@ -110,6 +110,15 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 - **Pain:** the agent formatted the new `sketch.json` of `components/tree-row` by hand.
 - **Fix option:** write CLI JSON through Prettier, as the part files are.
+- **Seen again (2026-10-29):** `components/tree-row` "Interaction states": the variant `.ts`
+  files failed `sketch check` on FORMAT. Fix option: run Prettier inside `sketch new` and
+  `sketch variant`.
+
+### 3.28 A finished variant still shows as "being drawn" - open
+
+- **Pain:** after the last `sketch report --variant c` on `components/tree-row`, Studio kept c
+  marked as in progress and hid its frames. Only `sketch ready` clears the mark.
+- **Fix option:** `sketch report --done` clears the drawing mark of that variant.
 
 ## 4. Render checks and shots
 
@@ -187,6 +196,19 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
   `overflow: hidden`).
 
+### 4.24 CLIPPED does not see a clipped outline or box shadow - open
+
+- **Pain:** a focus ring drawn as an outside outline on `components/tree-row` c was clipped by the
+  frame. The render check reported nothing.
+- **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
+
+### 4.25 Single-row states are tiny and of different widths in shots - open
+
+- **Pain:** `design shot --states --variants` draws each `tree-row` state at its content width,
+  though the part sets `widths: [280]`. A `/__design/shot` of one row is 280 x 20 px.
+- **Fix options:** 1. the contact sheet uses the part's `widths` (recommended). 2. `--scale 2` on
+  `shot`.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -247,6 +269,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   Since `part-tree` draws with `tree-row` (`561cbea6c`), no CSS defines them. No check reported it.
 - **Fix option:** a render check rule that reports a class in a part's markup that no loaded
   stylesheet and no utility defines.
+
+### 5.28 A state cannot force an interaction on one element - open
+
+- **Pain:** `definePart({ interactions })` forces only the part's root and draws every state times
+  every interaction; a named state cannot pass `RenderOptions`. `tree-row`'s root is the stack, so
+  the agent wrote `data-et-force` into the row markup by hand. The skill does not say how; the agent
+  read `define-part.ts`, `web/frame.ts` and `force-interactions.ts`.
+- **Fix options:** 1. a state carries an interaction, for example
+  `states: { hover: { props, interaction: 'hover' } }` (recommended). 2. an exported helper that
+  marks a forced element. Both: one paragraph in the skill.
 
 ## 6. Agent process
 
