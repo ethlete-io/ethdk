@@ -1,4 +1,11 @@
-import { CameraScene, cameraAfterWheel, cameraFor, shortcutTarget, visibleFrame } from './canvas-camera';
+import {
+  CameraScene,
+  cameraAfterWheel,
+  cameraFor,
+  firstRowBounds,
+  shortcutTarget,
+  visibleFrame,
+} from './canvas-camera';
 
 const left = { x: 0, y: 0, width: 300, height: 200 };
 const right = { x: 400, y: 0, width: 300, height: 200 };
@@ -82,5 +89,28 @@ describe('shortcutTarget', () => {
     expect(shortcutTarget(key('Digit2'))).toEqual({ kind: 'focused' });
     expect(shortcutTarget(key('Digit0'))).toEqual({ kind: 'visible', zoom: 1 });
     expect(shortcutTarget(key('Digit0', false))).toBeNull();
+  });
+});
+
+describe('firstRowBounds', () => {
+  const rows = ['pages/start', 'pages/library', 'pages/settings', 'components/card', 'components/list'].flatMap(
+    (row, index) => [
+      { row, x: 0, y: index * 1000, width: 1440, height: 900 },
+      { row, x: 1540, y: index * 1000, width: 1440, height: 900 },
+    ],
+  );
+
+  it('bounds the frames of the row placed highest, whatever order they come in', () => {
+    expect(firstRowBounds([...rows].reverse())).toEqual({ x: 0, y: 0, width: 2980, height: 900 });
+    expect(firstRowBounds([])).toBeNull();
+  });
+
+  it('fits a merge preview of five pages to its first row at a zoom that keeps text readable', () => {
+    const camera = cameraFor(
+      { kind: 'all' },
+      scene({ viewport: { width: 1200, height: 800 }, frames: rows, bounds: firstRowBounds(rows), padding: 24 }),
+    );
+
+    expect(camera?.zoom).toBeCloseTo(1152 / 2980);
   });
 });

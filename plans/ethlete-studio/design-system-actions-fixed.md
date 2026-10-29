@@ -15,3 +15,16 @@
   unchanged check again.
 - **Open:** the merge failure message does not name the problem. `sketch check` and `sketch ready`
   have no `--root`, so a scratch copy of `.ethlete/design` cannot be tested.
+
+### 3.19 The merge preview compare grid is unreadable and slow - fixed, one open point
+
+- **Pain:** the compare grid of the merge preview fits at 3-4% zoom, and the text is not readable.
+  "Comparing…" ran over 25 s on a sketch whose change touches five parts.
+- **Where:** the merge preview in `sketch-view.component.ts` (`apps/ethlete-studio`).
+- **Fix done:** the preview opens fitted to its first changed row (`fitTo` on the design canvas);
+  Fit still shows the whole column. While it compares, Studio shows the part count and the seconds so far.
+- **Cause of the 25 s:** not the compare. One shared Chromium draws all shots in one serial queue
+  (`createDrawQueue` in `libs/cli/src/lib/design/thumb.ts`). 22 cold pictures took 3.5 s; behind 42
+  queued shots, 9.9 s. See 4.12.
+- **Was:** fit to the first changed row, not to the whole column. Show progress while it
+  compares.

@@ -82,7 +82,7 @@ describe('SketchViewComponent merge preview', () => {
     const root: HTMLElement = fixture.nativeElement;
     const preview = root.querySelector('[data-merge-preview]');
 
-    expect(preview?.textContent).toContain('Comparing now and after the merge');
+    expect(preview?.textContent).toContain('Comparing 1 part now and after the merge');
     expect(preview?.querySelector('[data-merge-compare-rendering]')).not.toBeNull();
   });
 

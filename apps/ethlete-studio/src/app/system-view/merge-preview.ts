@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, connect, interval, map, merge, startWith, takeUntil } from 'rxjs';
 import { SketchAddress, designAnswer$ } from '../../host/design';
 import { FrameOutline } from '../components/design-canvas/canvas-pin';
 
@@ -45,6 +45,26 @@ const sketchCompareUrl = ({ port, product, sketch, variant, size, surface, color
 /** Compares every state that shows the sketch target before and after merging `variant`; one answer once all are drawn. */
 export const sketchCompare$ = (address: SketchCompareAddress): Observable<SketchCompare> =>
   designAnswer$<SketchCompare>(sketchCompareUrl(address));
+
+/** Emits `pending(seconds)` at once and every second after, until `answer$` emits; then what `answer$` emits. */
+export const whileWaiting$ = <T>(answer$: Observable<T>, pending: (seconds: number) => T): Observable<T> =>
+  answer$.pipe(
+    connect((answered$) =>
+      merge(
+        interval(1000).pipe(
+          map((tick) => tick + 1),
+          startWith(0),
+          map(pending),
+          takeUntil(answered$),
+        ),
+        answered$,
+      ),
+    ),
+  );
+
+/** For example "Comparing 5 parts now and after the merge… 12 s"; the seconds show from the first one. */
+export const comparingTextOf = ({ parts, seconds }: { parts: number; seconds: number }) =>
+  `Comparing ${parts} ${parts === 1 ? 'part' : 'parts'} now and after the merge…${seconds > 0 ? ` ${seconds} s` : ''}`;
 
 /** One line per part, for example "2 states of pages/library without visible change". */
 export const unchangedLinesOf = (rows: CompareRow[]): UnchangedLine[] => {

@@ -46,7 +46,15 @@ import {
   withOtherSizeNotes,
 } from './comment-pins';
 import { injectCommentStore } from './comment-store';
-import { SketchCompare, mergeOutlinesOf, partNameOf, sketchCompare$, unchangedLinesOf } from './merge-preview';
+import {
+  SketchCompare,
+  comparingTextOf,
+  mergeOutlinesOf,
+  partNameOf,
+  sketchCompare$,
+  unchangedLinesOf,
+  whileWaiting$,
+} from './merge-preview';
 import {
   ALL,
   canPick,
@@ -68,7 +76,7 @@ type Shown = 'matrix' | 'merge';
 
 type PreviewReading = { preview: MergePreview | null; error: string | null };
 
-type CompareReading = { compare: SketchCompare | null; error: string | null };
+type CompareReading = { compare: SketchCompare | null; error: string | null; seconds?: number };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -339,7 +347,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
                 data-merge-compare-rendering
                 title="Rendering"
               ></span>
-              Comparing now and after the merge…
+              {{ comparingText() }}
             </p>
           }
         }
@@ -351,6 +359,7 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
       [columns]="canvasColumns()"
       [cameraKey]="showing() === 'merge' ? cameraKey() + ' merge' : cameraKey()"
       [restoredCamera]="showing() === 'merge' ? null : restoredCamera()"
+      [fitTo]="showing() === 'merge' ? 'first row' : 'all'"
       [pins]="pins()"
       [outlines]="outlines()"
       [pointing]="commentStore.active()"
@@ -517,15 +526,24 @@ export class SketchViewComponent {
     ).pipe(
       switchMap(({ address, variant, on, size, surface, color }) =>
         variant && on
-          ? sketchCompare$({ ...address, variant, size, surface, color }).pipe(
-              map((compare): CompareReading => ({ compare, error: null })),
-              catchError((error: unknown) => of<CompareReading>({ compare: null, error: messageOf(error) })),
-              startWith<CompareReading>({ compare: null, error: null }),
+          ? whileWaiting$(
+              sketchCompare$({ ...address, variant, size, surface, color }).pipe(
+                map((compare): CompareReading => ({ compare, error: null })),
+                catchError((error: unknown) => of<CompareReading>({ compare: null, error: messageOf(error) })),
+              ),
+              (seconds): CompareReading => ({ compare: null, error: null, seconds }),
             )
           : of(null),
       ),
     ),
     { initialValue: null },
+  );
+
+  protected comparingText = computed(() =>
+    comparingTextOf({
+      parts: this.previewReading()?.preview?.affected.length ?? 0,
+      seconds: this.compareReading()?.seconds ?? 0,
+    }),
   );
 
   private shownRows = computed(() => {

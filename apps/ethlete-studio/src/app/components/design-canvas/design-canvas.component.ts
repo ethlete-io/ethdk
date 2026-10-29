@@ -22,7 +22,14 @@ import { Subject, buffer, debounceTime, exhaustMap, tap } from 'rxjs';
 import { frameSizesOf, frameSizesWith, rememberView, rememberedView, FrameSize } from '../../studio-view/remembered';
 import { CanvasFrame, placeableFramesOf } from './canvas-frame';
 import { CanvasNote, NOTE_BELOW_GAP, noteConnectorPath, noteKeyOf, placeNoteMarkers, placeNotes } from './canvas-note';
-import { CameraScene, CameraTarget, cameraAfterWheel, cameraFor, shortcutTarget } from './canvas-camera';
+import {
+  CameraScene,
+  CameraTarget,
+  cameraAfterWheel,
+  cameraFor,
+  firstRowBounds,
+  shortcutTarget,
+} from './canvas-camera';
 import { CanvasPin, FrameOutline, FramePoint } from './canvas-pin';
 import {
   Camera,
@@ -156,6 +163,9 @@ export class DesignCanvasComponent {
 
   /** The camera to show instead of a fit, read when `cameraKey` changes. */
   public restoredCamera = input<Camera | null>(null);
+
+  /** What the camera fits when `cameraKey` changes: every frame, or the frames of the top row. */
+  public fitTo = input<'all' | 'first row'>('all');
 
   public pins = input<CanvasPin[]>([]);
 
@@ -519,7 +529,7 @@ export class DesignCanvasComponent {
 
   private fittedFor: string | null | undefined = undefined;
 
-  private following = false;
+  private following: 'all' | 'start' | null = null;
 
   protected readonly ZOOM_STEP = ZOOM_STEP;
 
@@ -560,10 +570,8 @@ export class DesignCanvasComponent {
       if (!bounds || viewport.width === 0 || viewport.height === 0) return;
 
       untracked(() => {
-        const fitted = this.fitted(bounds, viewport);
-
         if (this.fittedFor === key) {
-          if (this.following) this.camera.set(fitted);
+          if (this.following) this.camera.set(this.fitted({ bounds, viewport, fit: this.following }));
 
           return;
         }
@@ -571,8 +579,8 @@ export class DesignCanvasComponent {
         const restored = this.restoredCamera();
 
         this.fittedFor = key;
-        this.following = restored === null;
-        this.camera.set(restored ?? fitted);
+        this.following = restored === null ? 'start' : null;
+        this.camera.set(restored ?? this.fitted({ bounds, viewport, fit: 'start' }));
       });
     });
 
@@ -763,8 +771,8 @@ export class DesignCanvasComponent {
   public fitAll() {
     const bounds = this.bounds();
 
-    if (bounds) this.moveCamera(this.fitted(bounds, this.viewport()), true);
-    this.following = true;
+    if (bounds) this.moveCamera(this.fitted({ bounds, viewport: this.viewport(), fit: 'all' }), true);
+    this.following = 'all';
     this.userCamera$.next(null);
   }
 
@@ -805,8 +813,15 @@ export class DesignCanvasComponent {
     if (key !== null) this.measure$.next({ cameraKey: key, frameId: id, size });
   }
 
-  private fitted(bounds: Rect, viewport: Size): Camera {
-    return cameraFor({ kind: 'all' }, this.scene(bounds, viewport)) ?? this.camera();
+  private fitted({ bounds, viewport, fit }: { bounds: Rect; viewport: Size; fit: 'all' | 'start' }): Camera {
+    const firstRow =
+      fit === 'start' && this.fitTo() === 'first row'
+        ? firstRowBounds(
+            this.layout().frames.map(({ x, y, width, height, frame }) => ({ x, y, width, height, row: frame.row })),
+          )
+        : null;
+
+    return cameraFor({ kind: 'all' }, this.scene(firstRow ?? bounds, viewport)) ?? this.camera();
   }
 
   private scene(bounds: Rect | null, viewport: Size): CameraScene {
@@ -828,7 +843,7 @@ export class DesignCanvasComponent {
   }
 
   private moveCamera(camera: Camera, smooth = false) {
-    this.following = false;
+    this.following = null;
     this.smooth.set(smooth);
     this.camera.set(camera);
     this.userCamera$.next(camera);

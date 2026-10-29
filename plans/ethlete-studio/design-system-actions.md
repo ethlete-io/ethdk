@@ -97,14 +97,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 
 ## 3. Feedback, rounds and merge
 
-### 3.19 The merge preview compare grid is unreadable and slow - open
-
-- **Pain:** the compare grid of the merge preview fits at 3-4% zoom, and the text is not readable.
-  "Comparing…" ran over 25 s on a sketch whose change touches five parts.
-- **Where:** the merge preview in `sketch-view.component.ts` (`apps/ethlete-studio`).
-- **Fix option:** fit to the first changed row, not to the whole column. Show progress while it
-  compares.
-
 ### 3.20 A product switch keeps the entry of the old product - triage
 
 - **Pain:** after a switch from studio-lab to studio, with a sketch of the old product open, the
@@ -165,6 +157,14 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** `design shot --asset <file>` that draws the file as an image; a `design token
 <name> --hex` that prints the resolved colour.
 
+### 4.12 One serial draw queue for every shot - open
+
+- **Pain:** the merge compare, canvas shots and thumbnails share one Chromium and one queue
+  (`createDrawQueue` in `libs/cli/src/lib/design/thumb.ts`). A compare waits behind every queued
+  thumbnail, so "Comparing…" can run 25 s for 3.5 s of work.
+- **Fix options:** a priority lane for the compare; or two or three pages in parallel; or drop
+  queued thumbnails that are no longer on screen.
+
 ## 5. Drawing parts and pages
 
 ### 5.5 Wireframe kit gaps - partly fixed, decision open (L742-L1036)
@@ -218,6 +218,17 @@ section without a page.
 - The head of the "Aktuell" column.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
+
+### 6.1 Headless verification of Studio has traps - open
+
+- **Pain (3.19 agent, 2026-10-29):** `nx build ethlete-studio --outputPath=...` also rebuilt
+  `dist/libs/*` in the development config, which the design server draws from. Headless Chromium
+  blocks page fetches to the design server on localhost unless
+  `--disable-features=LocalNetworkAccessChecks` is set. The design server listens only on `::1`,
+  so `fetch('http://127.0.0.1:…')` is refused. One `design sketch new` printed `MODULE_NOT_FOUND`
+  and worked on the second run; cause not found.
+- **Fix options:** a `studio verify` script that builds without dependencies and starts its own
+  servers with the right flags; listen on both `::1` and `127.0.0.1`.
 
 ## 7. Open checks
 

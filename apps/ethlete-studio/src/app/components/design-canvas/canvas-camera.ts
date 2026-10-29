@@ -57,6 +57,16 @@ export const visibleFrame = ({ camera, viewport, frames, focused }: CameraScene)
   );
 };
 
+/** The bounds of every frame in the row of the frame placed highest, or `null` without frames. */
+export const firstRowBounds = (frames: (Rect & { row?: string })[]): Rect | null => {
+  const top = frames.reduce<(Rect & { row?: string }) | null>(
+    (highest, frame) => (highest && highest.y <= frame.y ? highest : frame),
+    null,
+  );
+
+  return top ? boundingRect(frames.filter((frame) => frame.row === top.row)) : null;
+};
+
 /** The camera that shows `target`, or `null` when there is nothing to show. */
 export const cameraFor = (target: CameraTarget, scene: CameraScene): Camera | null => {
   if (target.kind === 'all') {
