@@ -41,9 +41,6 @@
     border-radius: var(--radius-control-md);
     background: var(--text);
   }
-  .lg-mark {
-    display: block;
-  }
   .lg-sidebar {
     display: flex;
     flex-direction: column;

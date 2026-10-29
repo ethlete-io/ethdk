@@ -24,14 +24,14 @@ const ICONS: Record<Section, string> = {
 };
 
 const icon = (paths: string, size = 20) =>
-  `<svg class="st-shell-icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 const ALL = '<circle cx="5.5" cy="12" r="1.25"/><circle cx="12" cy="12" r="1.25"/><circle cx="18.5" cy="12" r="1.25"/>';
 const UP_DOWN = '<path d="m8 9 4-4 4 4"/><path d="m8 15 4 4 4-4"/>';
 const PANEL = '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>';
 
 const mark = (size: number) =>
-  `<svg class="st-shell-mark" width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio"><path d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>`;
+  `<svg width="${size}" height="${size}" viewBox="0 0 32 32" role="img" aria-label="Ethlete Studio"><path d="M21.17 8.62 A5.5 5.5 0 1 0 16 16 A5.5 5.5 0 1 1 10.83 23.38" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/></svg>`;
 
 const slot = (inner: string, label: string, active: boolean, kind: string) =>
   `<div class="st-shell-slot" data-kind="${kind}"${active ? ' data-active' : ''}><span class="st-shell-bubble" title="${label}">${inner}</span></div>`;

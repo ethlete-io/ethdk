@@ -17,14 +17,14 @@ export type Row = {
 
 export type Props = { rows: Row[] };
 
-const icon = (paths: string, cls: string) =>
-  `<svg class="${cls}" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const icon = (paths: string) =>
+  `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 const chevron = (open: boolean) =>
-  icon(open ? '<path d="m4.5 6.5 3.5 3.5 3.5-3.5"/>' : '<path d="m6.5 4.5 3.5 3.5-3.5 3.5"/>', 'st-trow-chevron');
+  icon(open ? '<path d="m4.5 6.5 3.5 3.5 3.5-3.5"/>' : '<path d="m6.5 4.5 3.5 3.5-3.5 3.5"/>');
 
 const mark = (paths: string) =>
-  `<svg class="st-trow-mark" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  `<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
 const bubble = mark('<path d="M3 4.5h10v6H7.5L5 12.5v-2H3z"/>');
 

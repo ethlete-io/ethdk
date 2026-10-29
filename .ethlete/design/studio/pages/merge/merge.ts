@@ -56,7 +56,7 @@ export default definePart<Props>({
       ? html`<div class="mg-c-page">
           <header class="mg-c-head">
             <span class="mg-c-heading">Where ${TARGET.name} is used</span>
-            <span class="mg-c-sub">${rowCaption(row)}</span>
+            <span>${rowCaption(row)}</span>
           </header>
           <div class="mg-c-pair">
             <figure class="mg-c-frame">

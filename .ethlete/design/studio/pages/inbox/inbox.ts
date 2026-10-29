@@ -148,7 +148,7 @@ const row = (c: Comment) =>
   </div>`;
 
 const groupHead = (title: string, count: number) =>
-  `<div class="ib-group"><span class="ib-group-title">${title}</span><span class="ib-group-count">${count}</span></div>`;
+  `<div class="ib-group"><span class="ib-group-title">${title}</span><span>${count}</span></div>`;
 
 const group = (title: string, comments: Comment[]) =>
   comments.length === 0 ? '' : groupHead(title, comments.length) + comments.map(row).join('');
