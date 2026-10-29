@@ -1257,3 +1257,10 @@ check` warns early.
   `data-et-skip="CLIPPED"` only by reading `pages/sketches`.
 - **Fix option:** each message names `data-et-skip="<CHECK>"` for an element that clips on purpose.
 - **Fix done (184611356):** Each `CLIPPED` and `WRAP` line ends with `; on purpose: data-et-skip="<RULE>" on the element, or definePart({ checks: { skip: ['<RULE>'] } })`.
+
+### 4.24 CLIPPED does not see a clipped outline or box shadow - fixed (f5ea90637)
+
+- **Pain:** a focus ring drawn as an outside outline on `components/tree-row` c was clipped by the
+  frame. The render check reported nothing.
+- **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
+- **Fix done (f5ea90637):** The option, narrowed. `CLIPPED` also measures each element's outline (width plus offset, a transparent one skipped) and each crisp outer box shadow (offset plus spread; inset, transparent and blurred shadows skipped) against the nearest ancestor with overflow other than visible, or the frame, and reports `outline|box-shadow <n>px past <ancestor|the frame>` when the element box sits inside but the ring passes it. Blurred shadows are left out on purpose: with blur counted, the floating side panel of `elements/shell-main` (`0 12px 32px`, clipped by the 1440x900 shell) and the `components/select` overlay panel flagged on every studio page.

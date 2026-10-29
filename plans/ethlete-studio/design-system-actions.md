@@ -180,12 +180,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** CLIPPED also measures `text-decoration` ink (or warns on a decoration inside
   `overflow: hidden`).
 
-### 4.24 CLIPPED does not see a clipped outline or box shadow - open
-
-- **Pain:** a focus ring drawn as an outside outline on `components/tree-row` c was clipped by the
-  frame. The render check reported nothing.
-- **Fix option:** count `outline` and `box-shadow` extents in the CLIPPED check.
-
 ### 4.31 `sketch check` says nothing about a `grid` - open
 
 - **Pain:** no line confirmed that the grid was read or that each cell names a real state.
