@@ -514,6 +514,14 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Fix options:** 1. `design tokens theme add <name> --type <type> --oklch ...` writes all blocks
   (recommended). 2. the skill names the places.
 
+### 5.53 An `@shared/` import breaks silently when its file is deleted - open
+
+- **Pain:** `components/comment-pin` "Use the agent logos asset": `sketch new` rewrote the import
+  to `@shared/agent-logos`; after the variant deleted that file, nothing flagged the dead import.
+  The agent fixed it by hand.
+- **Fix option:** `sketch check` reports an `@shared/...` import that resolves to nothing
+  (recommended).
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
