@@ -124,8 +124,22 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    stage. Next component: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches; axes: avatar
    or agent logo, with or without count, interaction); the inbox row stays in `pages/inbox` (one
    host). Then switch and project switcher. Tom restarts :4402 to get `0e6bd90a1`. "Pressed state" on `tree-row` merged
-   (`2a39a5c7d`). Tom picked finding 2.10 (state grid option 1, system first, then a `pages/system`
-   state `many-states`), then the comment pin. 2.10 system part is in progress (subagent). Before a component sketch, list every host that draws the case
+   (`2a39a5c7d`).
+8. Done 2026-10-29 night, finding 2.10: `definePart({ grid })` (`688870301`, see
+   `git log --oneline -12`); `tree-row` declares a grid (`832ec675b`) plus new state
+   `selected-active`, which fixed a lost accent on a pressed selected row (`109ed0dc6`, finding
+   5.39). Tom's grid look: `pages/system` `many-states` variant e (sunken frame body, cells as one
+   `--surface` sheet with 1 px hairlines, groups "States by interaction" and "Rest only"). Tom: the
+   old button table is obsolete, one look for all grids: `elements/canvas-frames` owns it
+   (`stateGrid`, `canvasFrame`, `canvasView`; 8 px block cell padding, `a47a64158`);
+   `pages/system` imports it (`20db1e618`). Studio builds it (`f35d52a2b`, `144e2d843`): every
+   grid is a sheet, cells load with `fill=surface` (new frame query param in `libs/cli`). Tom
+   restarts Studio to see it. A merge deletes base files a variant removed (verified).
+   Owed: move the fixed entries 2.10 and 5.42 to `design-system-actions-fixed.md` (append, never
+   rewrite). Open findings from tonight: 4.28-4.31, 5.32-5.43 (5.32 answered by the
+   canvas-frames export). Next: the comment pin (`ib-pin` in inbox, `sk-pin` in sketches; axes:
+   avatar or agent logo, with or without count, interaction); list every host first (5.24); it
+   can use the new grid. Then switch and project switcher. Before a component sketch, list every host that draws the case
    (5.24). Sketch `pages/merge`
    (a: two-column table, b: wipe frame + bottom bar, c: side panel review + 200 % crops; agent
    recommends c) is `ready` and waits for Tom's pick. Open design point: `shell-main` has no rail

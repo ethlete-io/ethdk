@@ -95,7 +95,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Process side:** a small component sketch draws one composed state (a stack of rows), not one
   state per case times every interaction.
 
-### 2.10 A component with many small states needs a lot of scrolling - open
+### 2.10 A component with many small states needs a lot of scrolling - fixed (`f35d52a2b`, `144e2d843`)
 
 - **Pain (Tom, 2026-10-29):** `components/tree-row` has 19 states. Studio draws each one as its
   own 280 px frame with its own head and a large gap, so one row of 20 px costs about 75 px of
@@ -403,7 +403,7 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** for `pages/merge` the agent got a 400 with no body.
 - **Fix option:** default to the first state, or name the valid states in the body.
 
-### 5.42 A Studio grid cell paints the product page fill, not the sheet surface - open
+### 5.42 A Studio grid cell paints the product page fill, not the sheet surface - fixed (`144e2d843`)
 
 - **Pain:** Studio build of the "Many states" look (`f35d52a2b`): the `studio` product body paints
   `--surface-sunken`, so each cell picture is darker than the 4 px `--surface` padding around it.
