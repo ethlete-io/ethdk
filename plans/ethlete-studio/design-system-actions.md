@@ -419,7 +419,8 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** "Use the canvas frames grid" on `pages/system`: the agent `rm`-ed
   `state-grid.{ts,css}` in the variant; it is unclear whether the merge deletes the base file.
   `sketch check` lists no unreferenced file left in a sketch folder.
-- **Fix options:** document that a missing variant file deletes the base file on merge (verify
+- **Verified:** a merge deletes a base file the variant removed (`pages/system`, 2026-10-29).
+- **Fix options:** document that a missing variant file deletes the base file on merge (verified
   first), or add `sketch rm`; `sketch check` lists unreferenced files.
 
 ### 5.35 Sketch commands need `--product` although only one product has the sketch - open
