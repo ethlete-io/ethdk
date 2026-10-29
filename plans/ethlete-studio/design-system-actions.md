@@ -358,6 +358,29 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix option:** a `foundations/tokens` sketch that adds a pressed surface, once a second control
   needs a pressed state.
 
+### 5.32 A page cannot reuse the canvas frame chrome - open
+
+- **Pain:** `pages/system` "Many states": `elements/canvas-frames` exports only the fixed button
+  frames, so the agent copied the frame head, frame box and zoom chip CSS into the sketch's
+  `shared/`.
+- **Fix option:** a sketch on `elements/canvas-frames` that exports frame head, frame box and zoom
+  chip as named parts.
+
+### 5.33 The agent wrote its own tsconfig to typecheck sketch variants - open
+
+- **Pain:** `pages/system` "Many states": the product `tsconfig.json` leaves out sketch files and
+  the `@shared/*` path, so the agent wrote a temporary tsconfig. `design check --tsconfig` exists
+  but the agent did not find it.
+- **Fix option:** `sketch check` runs the typecheck over the variants itself.
+
+### 5.34 `StateGrid` has no row groups - open
+
+- **Pain:** variant c of "Many states" groups rows ("States by interaction", "Rest only") by
+  inference; a grouping by kind and end mark cannot be declared.
+- **Fix option:** optional `groups` on `StateGrid`, only if Tom picks a grouped look.
+
+Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.30 (shot path).
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
