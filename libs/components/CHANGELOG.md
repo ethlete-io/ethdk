@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-next.76
+
+### Minor Changes
+
+- A bottom sheet that opens over another bottom sheet now stacks like on iOS: the lower sheet scales down, moves up and shows its top edge above the new one.
+
+### Patch Changes
+
+- Components compile in an app that narrows its registered theme names, since color options now use the registered theme name type instead of `string`.
+- The picker trigger's hit area no longer reaches past the form field's border, so a field that fills a narrow scroll container no longer scrolls it sideways by a pixel.
+- A tap on a form field's clear button fades the button out again instead of removing it at once.
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+- Update dependencies (Angular 22.2, Nx 23.3, Vitest 4.1.12 and others) and keep the `max-params` lint exceptions in the bracket layout types on the line ESLint 10.13 reports.
+
 ## 1.0.0-next.75
 
 ### Patch Changes

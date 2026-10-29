@@ -1,5 +1,12 @@
 # timetrack-app
 
+## 0.2.0-next.16
+
+### Patch Changes
+
+- Timetrack: prevent delayed Linux crashes when Chromium collects memory statistics above 2 GiB of heap space.
+- Update all dependencies to their latest versions (Nx 24, Vitest 5, jsdom 30, ts-morph 28, @types/node 26 and others). The optional `@nx/devkit` peer dependency now requires `^24.0.0`, and the optional `ts-morph` peer of `@ethlete/core` requires `^28.0.0`.
+
 ## 0.2.0-next.15
 
 ### Minor Changes

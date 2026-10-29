@@ -1,5 +1,96 @@
 # @ethlete/agent-rules
 
+## 0.1.0-next.27
+
+### Minor Changes
+
+- The design-exploration skill says every `et design` write takes `--by <model id>`, that `sketch report` names its variant with `--variant`, and that the coordinator writes the exact model id into each sub-agent prompt; an agent never guesses it.
+- The design-exploration skill says a flow may name a page that exists only as an open sketch, and Studio draws its first variant.
+- The design-exploration skill says elements may draw with the wireframe kit, and a rough shell is a kit element each page imports.
+- The design render check warns of grid rows that leave out interaction columns other rows fill (`GRID-COVERAGE`).
+- `design check` warns of a `.replace` on markup that neither the part nor a part it uses draws (`STALE-REPLACE`).
+- The design render check warns of a class with a product prefix that no stylesheet of the frame defines (`UNDEFINED-CLASS`).
+
+### Patch Changes
+
+- The design-exploration skill explains the open, addressed and resolved comment states, and that the agent never merges after a pick.
+- The design-exploration skill says when to pass `--question` to `et design comment reply`.
+- The design-exploration skill covers `et design comment reply` and the inbox group "waiting for the user".
+- The design-exploration skill says to call `node dist/libs/cli/src/index.js design` in a check-and-shot loop instead of `yarn design`, which builds the CLI first.
+- The design-exploration skill now forbids `vh`, `dvh` and `svh` in parts, and requires every flow line to carry a label naming an element visible in the frame before it.
+- Document product flows, the wireframe kit and the FLOW and WIREFRAME-KIT checks in the design-exploration skill.
+- The design exploration skill explains comments on an element variant inside a page.
+- The design-exploration skill says a product's own `presets` replace its base's, so a desktop-only app lists `desktop` alone.
+- Tell design agents that a Tailwind product registers its drawing folders in a stylesheet, so sketches use the app's utilities.
+- Explain a sketch's `shared/` folder, `sketch new --like` and `embedPage()` in the design-exploration skill.
+- Teach the design-exploration skill the product and sketch workflow of Ethlete Studio: `et design product new`, sketches, the inbox, and Studio-side merge.
+- The design exploration skill describes the product config `tokens` list.
+- The design-exploration skill says how a part imports the product's tokens through `@system/foundations/tokens.css?inline`.
+- The design and git-commit skills add rules for variants, pages and commits in a shared checkout.
+- The design-exploration skill draws wireframes first, then foundations, logo and CI, components, elements and pages.
+- The design-exploration skill says a part with `definePart({ styles })` may draw `drawing({ body })` without styles.
+- The design-exploration skill says `et design inbox done` needs `--note`, which replaces the part's note.
+- The design-exploration skill says a part may export named helpers, and that another part imports a piece instead of copying its markup.
+- The design-exploration skill says `sketch check` and `sketch ready` note a problem the product already had instead of failing on it.
+- The design-exploration skill says `sketch new` starts no report, so `report --done` follows only a report of your own.
+- The design-exploration skill says to start each `et design sketch report` message with `variant <name>`, so Studio can mark that variant as drawing.
+- The design-exploration skill names `sketch round` and says `sketch list` shows the rounds.
+- The design-exploration skill tells agents to answer a combine comment with `et design sketch variant --from` in a new round, noting why the old round lost.
+- The design-exploration skill makes wireframes strict: keep what the app already has, one sketch per screen, regions and names only, no polish, no subagent, and stop the stage early.
+- The design-exploration skill lists the wireframe kit's new controls (`select`, `tabs`, `segmented`, `checkbox`, `badge`, `dot`), an icon `glyph` and a box `fill`, and says to draw a control as its type.
+- The design-exploration skill teaches the wireframe kit's `heading`, `image` `ratio` and row `stackBelow` instead of fixed sizes.
+- The delegation rule says a subagent starts with the full start context, so a small lookup stays in the session. The format rule asks for one Prettier call over all edited files.
+- The design-exploration skill says the auto merge blocks only on problems it adds, and that `sketch ready` can be re-run on a ready sketch.
+- The design-exploration skill says that `design check` warns of a merged part changed outside a sketch.
+- Design parts and stylesheets load product assets as `@assets/<file>`.
+- `et design check --tsconfig` also typechecks each variant of an open sketch and prints the tsc output of a failing one.
+- `et design sketch new` takes `--note <text>`, the note of the first round.
+- `et design <command> [<subcommand>] --help` prints the usage of that one command and skips its checks.
+- `et design check` reports a `var(--token)` without a fallback that no part or stylesheet of the product or its base defines.
+- `et design shot --crop x,y,width,height` and `/__design/shot?clip=x,y,width,height` cut a picture to a box in CSS pixels, so a hairline can be judged with `--scale`.
+- `et design shot --variants --diff-props` compares each variant with the merged part drawn with the variant's state props, so changed props no longer paint the whole diff red.
+- `et design shot --interaction <hover|focus-visible|active|disabled>` forces an interaction on every cell, and `--help` names it. The design-exploration skill names it.
+- The diff row of `et design shot --variants` says "no pixel change, but the markup differs" when a variant draws other markup to the same pixels.
+- `et design shot --scale <1-4>` and `/__design/shot?scale=` draw a part at a device scale, so a small part is legible. The design-exploration skill names it.
+- `et design shot --state <a>,<b>` draws only the named states, side by side, and names the states of the part when one does not exist. The design-exploration skill names it.
+- `et design sketch check --fix` writes the variants in the checkout's Prettier format before it checks them; a FORMAT problem points to it.
+- `et design sketch check` warns of a variant that restyles a class of the sketch's `shared/` folder and of a variant file nothing imports.
+- `et design sketch new --round` requires `--note`, so `sketch ready` no longer stops on a round without a note.
+- `et design sketch new` takes `--variant-note`, `sketch variant` takes several variants, and sketch commands format their output, explain each flag and infer `--product`.
+- `et design sketch variant` refuses a sketch the user discarded and asks for a variant pick first; a pick is still cleared.
+- `design check` warns of an export in a part's `shared/` that nothing imports, and `sketch check` of a sketch `shared/` export a variant does not import.
+- `sketch new --variant-note` keeps each variant's note in `sketch.json` instead of overwriting the part's merged note; Studio shows it in the variant's head, and a merge gives it to a new part.
+- A sketch variant may hold its own copy of a shared file at `<variant>/shared/<path>`: `@shared/<path>` resolves to it first in rendering, typechecks and checks, and a merge of that variant carries it.
+- The context-warning hook now tells the agent to apply the handoff save test before it suggests a handoff. When nothing is left to hand off, the agent suggests a fresh session instead.
+- The design-exploration skill says when to run `design accept`.
+- `et design check` also type-checks each variant of an open sketch and fails with a `TYPE-ERROR` line per broken variant. A merge's own check still types only the product.
+- The design-exploration skill lists the render rules of `design check` and how a part opts out of one.
+- The design exploration skill documents component states per axis, and treats an icon set as a foundation asset.
+- The design exploration skill extracts a component only when two hosts draw the same case.
+- `forceInteraction` from `@design-system` forces an interaction on one element of a part's markup, not only its root.
+- The design-exploration skill says the frame loads a product's tokens, so parts stop importing them.
+- The render check reads each drawn part's `grid`: `sketch check` prints `grid <rows> x <columns> ok` or the states it leaves out, and a state in two cells or a cell naming no state fails as `GRID`.
+- `interactionRows` from `@design-system` builds a part's states and grid from one props object per row and a list of interactions.
+- `et design part remove <layer>/<name>` deletes a merged part with its `merged.json` entry and tsconfig path, and resolves its comments. It refuses a part another part imports, a base part, and a part with an open sketch.
+- `definePart({ styles })` exposes a part's stylesheet on its default export and adds it to every drawing of the part.
+- Tell the design-exploration skill to take its own check shots with `et design shot` instead of a scratch script.
+- The design exploration skill now sends every change to a merged part through a sketch. When there is nothing to choose, the sketch has one variant.
+- The design-exploration skill keeps a component's frame-only wrapper in `render` and out of the markup a host embeds.
+- The design-exploration skill mentions the duplicate-class warning of `sketch check`.
+- `svgAsset` sets a `class` and `attrs` on the root `<svg>` of an asset.
+- Add `svgAsset(raw, { size })` to `@design-system`, fail `design check` on an SVG asset without a root `<svg>` or the SVG namespace, print each variant's `assets/` folder, and add a pixel diff row to `design shot --variants`.
+- The design render check reports `UNKNOWN-THEME` when a drawing uses a colour theme that no stylesheet of its frame defines.
+- The grilling skill now asks for questions that read alone: plain words, no chains of question or ADR numbers, a short reminder when a new topic starts, facts checked before a recommendation, and a confirmed summary at the end.
+- When the handoff save test finds nothing to hand off, the handoff skill and the context-warning hook now ask the agent for a prompt the user can copy into the fresh session.
+- The design-exploration skill says the merge note is optional and which sketch commands record a variant's authors.
+- Document design notes in the design-exploration skill: the note file format, the size a pointed note needs, free flow notes, and when to write a note instead of a comment.
+- The design exploration skill says a closed comment thread is resolved, not deleted.
+- The design exploration skill says a merge, discard or new round closes the sketch's open comments.
+- `et design sketch check` and `sketch ready` fail when a variant drops a state the product's part has.
+- `et design sketch ready` merges a sketch by itself when no state of any variant differs by a pixel from the product, and logs it as `auto` in `accepted.json`.
+- `sketch report --variant <key> --done` ends the live "drawing" report of that variant, so Studio shows its frames before `sketch ready`. The design exploration skill names the command.
+- The design-exploration skill says that `sketch variant` without `--round` fails while the sketch has open comments.
+
 ## 0.1.0-next.26
 
 ### Patch Changes
