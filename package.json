@@ -17,7 +17,7 @@
   },
   "resolutions": {
     "@jridgewell/sourcemap-codec": "1.6.0",
-    "webpack": "5.101.2"
+    "webpack": "5.112.2"
   },
   "dependencies": {
     "@angular/animations": "22.2.3",
