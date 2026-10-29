@@ -81,3 +81,7 @@ that's specifically about touch behavior, mobile viewport/layout, or a
 Safari/Chrome-mobile quirk, drive the story on an iOS Simulator or Android
 emulator instead - see the **`verify-in-mobile-emulator`** skill (it detects
 whether the tooling is installed and documents setup if not).
+
+## Ethlete Studio (headless)
+
+`yarn studio:verify --path <url path> --out <png>` builds Studio into a scratch folder without rebuilding `dist/libs/*`, starts its own design server and static server on free ports, stubs the Tauri host, and screenshots the page. Import `withStudio` from `tools/scripts/verify-studio-headless.mjs` to drive the page yourself. Every address is `[::1]` because the design server listens there only; never touch :4221, :4402 or :4492.

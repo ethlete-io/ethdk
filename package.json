@@ -32,6 +32,7 @@
     "release:smoke": "node ./tools/release-smoke/smoke.mjs",
     "storybook": "nx run storybook:storybook:network",
     "studio": "nx tauri:dev ethlete-studio",
+    "studio:verify": "node tools/scripts/verify-studio-headless.mjs",
     "timetrack": "nx tauri:dev timetrack-app",
     "timetrack:build": "nx tauri:build timetrack-app",
     "update-nx": "rm -f migrations.json && yarn dlx nx migrate latest && yarn dlx nx migrate --run-migrations --if-exists",

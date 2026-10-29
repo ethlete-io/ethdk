@@ -159,17 +159,6 @@ section without a page.
 - Pins and comments at zoom. Recommendation: keep them at screen size.
 - Several screen sizes side by side.
 
-### 6.1 Headless verification of Studio has traps - open
-
-- **Pain (3.19 agent, 2026-10-29):** `nx build ethlete-studio --outputPath=...` also rebuilt
-  `dist/libs/*` in the development config, which the design server draws from. Headless Chromium
-  blocks page fetches to the design server on localhost unless
-  `--disable-features=LocalNetworkAccessChecks` is set. The design server listens only on `::1`,
-  so `fetch('http://127.0.0.1:…')` is refused. One `design sketch new` printed `MODULE_NOT_FOUND`
-  and worked on the second run; cause not found.
-- **Fix options:** a `studio verify` script that builds without dependencies and starts its own
-  servers with the right flags; listen on both `::1` and `127.0.0.1`.
-
 ## 7. Open checks
 
 These fixes are built, but nobody checked them in the real Studio.

@@ -767,3 +767,16 @@ sketch` until the next merge of the part.
   (3) Only a rule in the subagent brief. Recommendation: (2), no host change.
 - **Fix done:** option 2 (Tom, 2026-10-29). A server started without `ETHLETE_DESIGN_EXIT_ON_STDIN_CLOSE` (only the Studio host sets it) listens on a free port, prints it, and leaves the config port to Studio. Its thumbnails and shots draw from its own port. Real run: free port 44631, :4402 kept its pid.
 - **Open:** such a server shares the Vite `cacheDir` with Studio's server and logged a dependency re-optimization, which may disturb Studio's live server. `DE_URL`/`DE_PORT` tools still reach only the config port, and a deliberate `DE_PORT` is ignored without the marker.
+
+### 6.1 Headless verification of Studio has traps - fixed
+
+- **Pain (3.19 agent, 2026-10-29):** `nx build ethlete-studio --outputPath=...` also rebuilt
+  `dist/libs/*` in the development config, which the design server draws from. Headless Chromium
+  blocks page fetches to the design server on localhost unless
+  `--disable-features=LocalNetworkAccessChecks` is set. The design server listens only on `::1`,
+  so `fetch('http://127.0.0.1:…')` is refused. One `design sketch new` printed `MODULE_NOT_FOUND`
+  and worked on the second run; cause not found.
+- **Fix options:** a `studio verify` script that builds without dependencies and starts its own
+  servers with the right flags; listen on both `::1` and `127.0.0.1`.
+- **Fix done:** `yarn studio:verify [--path /x] [--out f.png]` (`tools/scripts/verify-studio-headless.mjs`, also `withStudio(...)` to import) builds Studio with `--excludeTaskDependencies`, starts its own design and static servers on free ports, stubs the Tauri host and opens headless Chromium with `LocalNetworkAccessChecks` off. Node reaches the server at `[::1]`, not `localhost`; no new listener. Documented in the `verify-in-storybook` skill.
+- **Open:** the stubbed host makes the status bar show "Check failed · retry". The one-off `MODULE_NOT_FOUND` of `sketch new` was not reproduced.
