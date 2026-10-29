@@ -253,13 +253,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
   draws every row x column combination of a grid in a scratch pass and flags cells that look like
   another row.
 
-### 5.40 `sketch check` misses a page that uses a part through a plain module - open
-
-- **Pain:** "One grid look" on `elements/canvas-frames`: `pages/merge` uses it through
-  `merge-data.ts`, which is no part; `sketch check` did not list `pages/merge`, so the agent shot
-  it by hand.
-- **Fix option:** follow imports through non-part modules when the check collects dependants.
-
 ### 5.45 Agent logos exist in three copies - open
 
 - **Pain:** a component cannot import from a page, so the `components/comment-pin` sketch holds a

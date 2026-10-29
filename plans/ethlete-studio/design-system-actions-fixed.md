@@ -1315,3 +1315,11 @@ check` warns early.
   kept a dead `part-tree` import alive. Found by hand.
 - **Fix option:** `design check` warns about an export in a part's `shared/` that nothing imports.
 - **Fix done (c825ebb97):** The option: `rules/unused-shared-export.ts` reads each export of a part folder's `shared/` files (`exportedNamesOf` in `ts-source.ts`) and the names every file of the part takes from it (`importedNamesOf`: named, default, `import *`, re-exports, dynamic import); `design check` prints `WARNING UNUSED-EXPORT <file>: <name> is exported, but nothing imports it` and still passes. `sketch check` warns per variant of a sketch `shared/` export the variant does not import (`unused-files.ts`). On studio: 9 warnings - `pages/flows/shared/flow-data.ts` `Step`, `STEPS`, `OTHER_FLOWS`, `shot`, `arrow`, `caption`; `components/tree-row/shared/tree-row.ts` `RowInteraction`; `components/comment-pin/shared/comment-pin.ts` `PinInteraction`, `CountPlacement` (most are used inside their file and only need the `export` dropped; `arrow` is dead).
+
+### 5.40 `sketch check` misses a page that uses a part through a plain module - fixed (358d2417f)
+
+- **Pain:** "One grid look" on `elements/canvas-frames`: `pages/merge` uses it through
+  `merge-data.ts`, which is no part; `sketch check` did not list `pages/merge`, so the agent shot
+  it by hand.
+- **Fix option:** follow imports through non-part modules when the check collects dependants.
+- **Fix done (358d2417f):** The option, at the root: `partDependenciesOf` in `imports.ts` also reads every plain `.ts` module of the part's own folder that the part file reaches by relative import, so `mergePreviewOf` (the `sketch check` list), `partsReachedFrom`, `part remove` and the rules all see a part used through such a module. On studio this surfaces a real problem: `UPWARD-DEPENDENCY pages/merge/merge.ts: ... not @system/pages/system` (the import sits in `pages/merge/merge-data.ts`), so `design check --product studio` fails until that page stops importing `pages/system`.
