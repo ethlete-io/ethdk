@@ -36,7 +36,7 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - Do not ship a fix on a guess. Log each crash of the content process, because the automatic
   reload hides it.
 
-### 1.2 Studio freezes at 100% CPU during frame reloads - fixed, one check open (L2697, L2965, L3076)
+### 1.2 Studio freezes at 100% CPU during frame reloads - reopened (L2697, L2965, L3076)
 
 - **Pain:** Studio hung two times. Cmd+R and SIGTERM did not help. Only a kill of the WebContent
   process helped.
@@ -47,6 +47,20 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Options not taken:** a bounded log of module-load failures with the active frame; a native
   menu item that creates the webview again.
 - **Decision (Tom, 2026-10-29):** run the 100-cycle test over SSH on ethlete-mac when it is on.
+- **Result (2026-10-29, ethlete-mac, macOS 15.7.7):** 100 cycles with 3 frames: 1 hang in 4 runs
+  (after batch 80, WebContent at 100% CPU until the watchdog). 40 cycles passed. Other sessions
+  loaded the Mac at the time. Next: 10 runs of 100 on an idle Mac after a fresh `nx build cli`.
+
+### 1.3 The design server listens on `[::1]` only - open
+
+- **Pain:** the Mac test needed a hand-made TCP forwarder to reach the design server over the LAN.
+- **Fix option:** a `--host` option (or `DE_HOST`) passed to Vite's `server.host`.
+
+### 1.4 The WebKit reload script cannot narrow a hang - open
+
+- **Pain:** `verify-webkit-frame-reloads.swift` prints only every tenth batch, without time, and the
+  FAIL line does not name the last batch.
+- **Fix option:** print each batch with a timestamp, and name the last batch in the FAIL line.
 
 ## 2. Review on the canvas
 
