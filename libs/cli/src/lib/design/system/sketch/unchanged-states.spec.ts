@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { readConfig } from '../../paths';
 import { resolveProduct } from '../resolve-product';
 import { createSketch, Sketch, variantDirOf } from './sketch';
+import { PictureOf } from '../../merge-compare';
 import { SketchPartLoader, unchangedStatesOf } from './unchanged-states';
 
 const acme = () => {
@@ -52,6 +53,43 @@ describe('unchangedStatesOf', () => {
     writeFileSync(resolve(hero, 'hero.css'), '.acme-hero { color: red; }');
 
     expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual([]);
+  });
+
+  it('names a state whose styles changed when every frame draws the same pixels', async () => {
+    const { product, sketch, hero } = acme();
+    const drawn: string[] = [];
+    const pictureOf =
+      (pixels: (variant: string | null) => string): PictureOf =>
+      async ({ sketch: on, state }) => {
+        drawn.push(`${state} ${on?.variant ?? 'now'}`);
+
+        return { png: Buffer.from(pixels(on?.variant ?? null)), marks: [] };
+      };
+
+    writeFileSync(resolve(hero, 'hero.css'), '.acme-hero-empty { color: red; }');
+
+    expect(
+      await unchangedStatesOf({
+        product,
+        sketch,
+        variant: 'a',
+        load: counting().load,
+        pictureOf: pictureOf(() => 'x'),
+      }),
+    ).toEqual(['default']);
+    expect(drawn.sort()).toEqual(['default a', 'default now']);
+
+    writeFileSync(resolve(hero, 'hero.css'), '.acme-hero { color: red; }');
+
+    expect(
+      await unchangedStatesOf({
+        product,
+        sketch,
+        variant: 'a',
+        load: counting().load,
+        pictureOf: pictureOf((variant) => variant ?? 'now'),
+      }),
+    ).toEqual([]);
   });
 
   it('leaves out a state that is new in the variant', async () => {

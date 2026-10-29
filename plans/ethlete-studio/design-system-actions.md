@@ -286,7 +286,7 @@ sketch` until the next merge of the part.
   3. `design check` compares a region that more states mark as shared (for example `data-shared="head"`)
      and warns when its computed styles differ between states.
 
-### 3.15 A sketch shows the states it does not change - open
+### 3.15 A sketch shows the states it does not change - fixed
 
 - **Pain:** the sketch "Leerer Flows-Bereich mit Anleitung" changes only the `empty` state of
   `pages/flows`. Studio also draws the `flow` state in current, a and b, three identical frames.
@@ -299,6 +299,9 @@ sketch` until the next merge of the part.
      collapsed row, "flow: unchanged in a, b".
   2. The sketch names the states of its question (`sketch new --states empty`). Studio draws those
      first and puts the rest behind a toggle.
+- **Now:** option 1 existed, but it compared the styles of the whole part, and the variant added
+  `emptyStyles` to every state. A state with the same body and other styles now folds when each frame
+  draws the same pixels in the default theme.
 
 ### 3.16 A sketch on a merged part copies its `shared/` into each variant - open
 

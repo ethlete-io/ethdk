@@ -163,10 +163,12 @@ const targetsOf = async ({
   product,
   sketch,
   load,
+  pictureOf,
 }: {
   product: ResolvedProduct;
   sketch: Sketch;
   load?: VariantPartLoader;
+  pictureOf?: PictureOf;
 }) =>
   Promise.all(
     sketch.variants.map(async (variant) => {
@@ -193,7 +195,7 @@ const targetsOf = async ({
         states,
         ...('widths' in widths ? { widths: widths.widths } : {}),
         interactions,
-        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load }),
+        unchanged: problem ? [] : await unchangedStatesOf({ product, sketch, variant, load, pictureOf }),
         ...(problem ? { error: problem } : {}),
       };
     }),
@@ -224,7 +226,7 @@ export const sketchesAnswer = withProduct('GET', async ({ asked, product }) => {
               variant: entry.variant,
               problems: entry.problems.map((p) => problemOf({ target, problem: p })),
             })),
-          targets: await targetsOf({ product, sketch, load: asked.load }),
+          targets: await targetsOf({ product, sketch, load: asked.load, pictureOf: asked.pictureOf }),
           report: readSketchReport({ checkout: target, sketch }),
         })),
       ),

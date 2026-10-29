@@ -4,6 +4,7 @@ import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DESIGN_DIR } from './paths';
 import { designSketch } from './sketch-command';
+import { findSketch, Sketch } from './system/sketch/sketch';
 
 const acme = () => {
   const target = mkdtempSync(join(tmpdir(), 'cli-design-sketch-command-'));
@@ -227,7 +228,7 @@ describe('designSketch', () => {
     const target = acme();
     const lines = output();
     const comments = join(target, DESIGN_DIR, 'acme/comments');
-    const comment = (id: string, sketch?: { target: string; variant: string }) => {
+    const comment = (id: string, sketch?: { target: string; variant: string; createdAt: string }) => {
       const file = join(comments, `${id}.json`);
 
       writeFileSync(
@@ -248,8 +249,13 @@ describe('designSketch', () => {
     write(target, 'new', 'components/button', '--variants', 'a,b', '--product', 'acme');
     mkdirSync(comments, { recursive: true });
 
-    const onA = comment('on-a', { target: 'components/button', variant: 'a' });
-    const onB = comment('on-b', { target: 'components/button', variant: 'b' });
+    const { createdAt } = findSketch({
+      productDir: join(target, DESIGN_DIR, 'acme'),
+      product: 'acme',
+      sketch: { layer: 'components', name: 'button' },
+    }) as Sketch;
+    const onA = comment('on-a', { target: 'components/button', variant: 'a', createdAt });
+    const onB = comment('on-b', { target: 'components/button', variant: 'b', createdAt });
     const onPart = comment('on-part');
 
     expect(write(target, 'variant', 'components/button', 'c', '--from', 'b', '--product', 'acme')).toBe(0);
