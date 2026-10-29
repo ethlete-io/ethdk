@@ -234,8 +234,11 @@ remove` exists now).
     default-exporting a shared factory result rendered but failed metadata writing. Repaired
     wrappers preserve pixels; Tom retried successfully. Guard 90f3b9b48 rejects this before
     ready; 41 sketch tests, lint and CLI build passed. Feedback and current plan kept in git.
-    New open findings: 4.43 (small changes hard to compare in full-page frames; recommend
-    identical enlarged changed-region comparison) and 5.59 (shared CSS token discovery gap).
+    Open: 4.43 (small changes hard to compare in full-page frames; recommend identical
+    enlarged changed-region comparison). 5.59 is now fixed: reachable shared CSS and variant
+    overrides participate in token validation. Also fixed 3.44: screenshot comparisons bypass
+    source-only result caching, preventing stale failures or matches in later requests.
+    3.41 remains open for the original intermittent first-run image mismatch.
     Native 1.5 remains open: nested Tokio runtime panic plus CEF/Mesa output. No concrete
     caller found; native panic hook captures a forced backtrace while preserving the prior
     hook. Requires app rebuild/restart and stderr capture for the next panic and action.

@@ -72,4 +72,73 @@ describe('undefinedTokensOf', () => {
 
     expect(messagesOf(target, { ...readConfig(target)?.products?.['acme'], styles: ['app/styles.css'] })).toEqual([]);
   });
+
+  it('checks reachable shared styles through nested modules and resolves variant overrides', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+    const shared = join(target, 'shared');
+    const variant = join(target, 'variant-shared');
+
+    write(target, `${hero}/hero.ts`, `import '@shared/shell';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`);
+    write(target, 'shared/shell.ts', "import './nested'; import '@shared/tokens.css';");
+    write(target, 'shared/nested.ts', "import './shell'; import './shell.css';");
+    write(
+      target,
+      'shared/shell.css',
+      '.shell { gap: var(--variant-token); color: var(--missing); width: var(--unused); }',
+    );
+    write(target, 'shared/tokens.css', ':root { --base-token: 1px; }');
+    write(target, 'variant-shared/tokens.css', ':root { --variant-token: 1px; }');
+    write(target, 'shared/unused.css', ':root { --unused: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+    const problems = undefinedTokensOf({ ...product, sharedDir: shared, variantSharedDir: variant });
+
+    expect(problems.map((problem) => problem.message)).toEqual([
+      'var(--missing) has no fallback, and no stylesheet of the product or its base defines --missing',
+      'var(--unused) has no fallback, and no stylesheet of the product or its base defines --unused',
+    ]);
+    expect(problems.every((problem) => problem.file === join(shared, 'shell.css'))).toBe(true);
+  });
+
+  it('does not use definitions from a shared stylesheet replaced by a variant', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(
+      target,
+      `${hero}/hero.ts`,
+      `import '@shared/tokens.css';\n${readFileSync(join(target, hero, 'hero.ts'), 'utf8')}`,
+    );
+    write(target, `${hero}/hero.css`, '.hero { gap: var(--base-only); }');
+    write(target, 'shared/tokens.css', ':root { --base-only: 1px; }');
+    write(target, 'variant-shared/tokens.css', ':root { --variant-only: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(
+      undefinedTokensOf({
+        ...product,
+        sharedDir: join(target, 'shared'),
+        variantSharedDir: join(target, 'variant-shared'),
+      }).map((problem) => problem.message),
+    ).toEqual(['var(--base-only) has no fallback, and no stylesheet of the product or its base defines --base-only']);
+  });
+
+  it('follows CSS imports without treating commented imports as loaded styles', () => {
+    const target = acme();
+    const hero = `${DESIGN_DIR}/acme/elements/hero`;
+
+    write(target, `${hero}/hero.ts`, `import '@shared/shell.css';`);
+    write(
+      target,
+      'shared/shell.css',
+      `@import url(./tokens.css); /* @import './unused.css'; */ .shell { gap: var(--loaded); color: var(--not-loaded); }`,
+    );
+    write(target, 'shared/tokens.css', ':root { --loaded: 1px; }');
+    write(target, 'shared/unused.css', ':root { --not-loaded: 1px; }');
+    const product = resolveProduct({ target, name: 'acme', config: readConfig(target)?.products?.['acme'] ?? {} });
+
+    expect(
+      undefinedTokensOf({ ...product, sharedDir: join(target, 'shared') }).map((problem) => problem.message),
+    ).toEqual(['var(--not-loaded) has no fallback, and no stylesheet of the product or its base defines --not-loaded']);
+  });
 });

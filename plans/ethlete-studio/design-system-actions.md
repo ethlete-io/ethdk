@@ -110,6 +110,8 @@ ready` merged it. The first shot probably ran against a base that the merges jus
   sketch opened, or retries once on a diff (recommended). 2. print the changed pixel count with the
   skip line, so the agent sees noise.
 
+- **Related fix 3.44:** pixel-comparison results no longer survive into later screenshot requests. Regression reproduces a transient screenshot failure remaining cached, and a stale match hiding a later difference. This removes a confirmed cache hazard; the original first-run visual mismatch is still not independently reproduced.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
@@ -258,14 +260,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
-
-### 5.59 Token discovery misses CSS reached through a sketch shared helper - open
-
-- **Pain:** the project-picker sketch keeps identical base `shell-main.css` copies in A and B, despite shared drawing code. Moving the stylesheet into sketch `shared/` prevented custom shell tokens from being discovered.
-- **Where:** `elements/shell-main`, round "Project picker placement". The shared helper imports the common picker CSS, while the target variant imports its base shell CSS directly.
-- **Cause:** `rules/undefined-token.ts` follows relative CSS imports from the target TS and scans its folder. A sketch-level `@shared/` dependency is outside that folder and is not traversed.
-- **Now:** keep the existing base CSS in each variant; shared picker markup and CSS stay in shared/.
-- **Fix options:** 1. collect token definitions over the same resolved relative/@shared/@system stylesheet dependency closure used by rendering (recommended). 2. explicitly scan sketch shared/ as a narrower first step, accounting for variant overrides.
 
 ## 6. Agent process
 

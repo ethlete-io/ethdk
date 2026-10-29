@@ -1510,3 +1510,19 @@ check` warns early.
 - **Checked:** regression for rejected factory exports and accepted identifier/template-note exports, focused CLI test, CLI lint and CLI build pass. This catches a mergeability failure before the designer makes a choice.
 
 - **3.43 live follow-up:** Tom retried the repaired Inbox A merge successfully and merged Project Picker A too. No open sketches remain; full Studio type/render check passes after both merges.
+
+### 5.59 Token discovery misses CSS reached through a sketch shared helper - fixed
+
+- **Pain:** the project-picker sketch keeps identical base `shell-main.css` copies in A and B, despite shared drawing code. Moving the stylesheet into sketch `shared/` prevented custom shell tokens from being discovered.
+- **Where:** `elements/shell-main`, round "Project picker placement". The shared helper imports the common picker CSS, while the target variant imports its base shell CSS directly.
+- **Cause:** `rules/undefined-token.ts` follows relative CSS imports from the target TS and scans its folder. A sketch-level `@shared/` dependency is outside that folder and is not traversed.
+- **Now:** keep the existing base CSS in each variant; shared picker markup and CSS stay in shared/.
+- **Fix options:** 1. collect token definitions over the same resolved relative/@shared/@system stylesheet dependency closure used by rendering (recommended). 2. explicitly scan sketch shared/ as a narrower first step, accounting for variant overrides.
+
+- **Checked:** token validation follows reachable TS/CSS imports, including relative, @shared and @system references, with variant-first resolution and cycle protection. It checks undefined uses in shared CSS too; unused shared files do not define tokens. Regression cases cover overrides, nested helpers, cycles and commented CSS imports. No merged drawing changes were needed.
+
+### 3.44 Pixel comparison results survive into later screenshot requests - fixed
+
+- **Pain:** unchangedStatesOf cached screenshot equality using source hashes and only a boolean for the screenshot provider. A transient failure or a match from one rendering request could determine a later comparison without taking new screenshots.
+- **Fix:** source-based markup comparisons remain cached; requests that use screenshot comparison bypass that result cache. Failed pictures are retried on the next request, and a later visual difference cannot inherit an earlier match.
+- **Checked:** regressions cover failure then success without source edits, and equal pictures followed by different pictures from a new provider. Existing source-only caching remains covered. Finding 3.41 stays open for its original intermittent first-run mismatch.

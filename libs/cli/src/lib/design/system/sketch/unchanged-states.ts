@@ -116,8 +116,8 @@ const drawsTheSame = async (options: {
  * The states of the sketch's target that `variant` renders to the same markup and styles as the product
  * does now, with the same widths and interactions, so every frame of them matches. With `pictureOf`, a state
  * with the same markup but other styles is unchanged when every frame draws the same pixels in the default
- * theme. A state the product lacks, or one that fails to render on either side, is never unchanged. Cached by
- * the content hashes of the part folders and fixtures on both sides, the variant folder and the sketch's `shared/`.
+ * theme. A state the product lacks, or one that fails to render on either side, is never unchanged. Markup-only
+ * comparisons are cached by source hashes; pixel comparisons run again for each screenshot session.
  */
 export const unchangedStatesOf = async (options: {
   product: ResolvedProduct;
@@ -146,7 +146,7 @@ export const unchangedStatesOf = async (options: {
       !!pictureOf,
     ]),
   );
-  const known = cache.get(key);
+  const known = pictureOf ? undefined : cache.get(key);
 
   if (known) return known;
 
@@ -156,7 +156,7 @@ export const unchangedStatesOf = async (options: {
   ]);
 
   if (!now || !after) return [];
-  if (now.frames !== after.frames) return remember(key, []);
+  if (now.frames !== after.frames) return pictureOf ? [] : remember(key, []);
 
   const presets = current?.layer === 'pages' ? Object.keys(product.presets) : null;
   const same = await Promise.all(
@@ -179,8 +179,7 @@ export const unchangedStatesOf = async (options: {
     }),
   );
 
-  return remember(
-    key,
-    [...after.states.keys()].filter((_, index) => same[index]),
-  );
+  const unchanged = [...after.states.keys()].filter((_, index) => same[index]);
+
+  return pictureOf ? unchanged : remember(key, unchanged);
 };

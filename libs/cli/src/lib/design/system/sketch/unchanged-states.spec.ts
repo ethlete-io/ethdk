@@ -141,6 +141,32 @@ describe('unchangedStatesOf', () => {
 
       expect(await unchangedStatesOf({ product, sketch, variant: 'a', load: counting().load })).toEqual([]);
     });
+
+    it('checks fresh screenshots after a transient failure without a source edit', async () => {
+      const { product, sketch } = spaced();
+      let failed = true;
+      let shots = 0;
+      const pictureOf: PictureOf = async () => {
+        shots++;
+        if (failed) throw new Error('temporary screenshot failure');
+
+        return { png: Buffer.from('same'), marks: [] };
+      };
+      const options = { product, sketch, variant: 'a', load: counting().load, pictureOf };
+
+      expect(await unchangedStatesOf(options)).toEqual([]);
+      failed = false;
+      expect(await unchangedStatesOf(options)).toEqual(['default']);
+      expect(shots).toBe(4);
+    });
+
+    it('does not reuse a matching image result for a later screenshot session', async () => {
+      const { product, sketch } = spaced();
+      const options = { product, sketch, variant: 'a', load: counting().load };
+
+      expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf(() => 'same') })).toEqual(['default']);
+      expect(await unchangedStatesOf({ ...options, pictureOf: pictureOf((variant) => variant ?? 'now') })).toEqual([]);
+    });
   });
 
   it('leaves out a state that is new in the variant', async () => {

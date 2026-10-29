@@ -76,6 +76,11 @@ every frame loads, in order; omitted, it defaults to `["foundations/tokens"]`.
 outside `:root`, `html`, `body` or an SDK `.et-*` scope. Keep preview layout styles in the drawing
 instead of the globally loaded token CSS.
 
+Token validation follows relative, `@shared/` and `@system/` imports through helpers and CSS
+imports. A variant's `shared/` overrides take precedence; unused sketch-shared files do not supply
+token definitions. Pixel comparisons for sketches use fresh rendering results on each request,
+so an earlier failed or matching screenshot does not determine a later comparison.
+
 `et design part remove <layer>/<name> --product <product> --by <model>` refuses removal while
 application source imports files under that part, and reports each importing file and line.
 Remove or update those imports first.
