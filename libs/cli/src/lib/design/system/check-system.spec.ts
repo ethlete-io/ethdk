@@ -173,7 +173,10 @@ describe('checkDesign', () => {
     writeFileSync(join(target, DESIGN_DIR, 'acme/elements/hero/hero.css'), '.acme-hero { padding: 0; }');
 
     expect(await checkDesign({ target, argv: ['--product', 'acme'], invocation: 'et design' })).toBe(0);
-    expect(warnings).toEqual([expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/)]);
+    expect(warnings).toEqual([
+      expect.stringMatching(/^WARNING acme elements\/hero changed outside a sketch/),
+      expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
+    ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);
 
@@ -191,6 +194,7 @@ describe('checkDesign', () => {
       expect.stringMatching(
         /^WARNING UNUSED-EXPORT .*hero\/shared\/data\.ts: rows is exported, but nothing imports it/,
       ),
+      expect.stringMatching(/^WARNING TOKEN-SELECTOR .*tokens\.css: \.acme-token /),
     ]);
     expect(lines.at(-1)).toBe('ok');
   }, 60_000);

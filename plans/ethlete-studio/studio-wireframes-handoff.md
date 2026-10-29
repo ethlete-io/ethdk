@@ -242,8 +242,9 @@ remove` exists now).
     Current requested design sequence is finished. Broader next stage: remaining page states
     and then implementation, following Tom's original order; do not open a new sketch as
     part of the commit/push request. Tom explicitly requested commit and push.
-    User edits to leave alone: design-system.md; untracked designer-workflow.md and
-    sdk-component-catalog.md. Concurrent docs commits on next are separate work.
+    Tom also explicitly requested the remaining plan files be committed and pushed:
+    design-system.md, designer-workflow.md and sdk-component-catalog.md are committed
+    in 083646c31. The initial merge commit 03f19acba is already on origin/next.
     Commits here carry no Co-Authored-By trailer (hook). New files: `git add -N <file>`, then
     `git commit -- <paths>`. Hook rejects scope `ethlete-studio`; use `repo`.
 
