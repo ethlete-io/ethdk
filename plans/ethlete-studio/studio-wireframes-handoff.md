@@ -85,7 +85,7 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
    may not have reported. If 1.x/2.x/3.x/5.x entries still say "unverified", run them again,
    report-only, own servers on 4610-4629.
 5. Open findings that are free to build: 1.3 (`--host`), 4.12 (a test path uses fixed port 5173),
-   5.12. Delegate each to a fresh sonnet subagent (Tom: "gebe die arbeit an sub agents").
+   5.12, and 3.17 (auto-merge a sketch with no visible change; Tom's idea, recommendation option 1). Delegate each to a fresh sonnet subagent (Tom: "gebe die arbeit an sub agents").
 6. Merge compare page, then components, then page states, then the real app.
 
 Rules from 2026-10-29: delegate to subagents; never share `node_modules/.design-explore` with Tom's

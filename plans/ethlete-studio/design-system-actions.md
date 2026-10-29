@@ -160,6 +160,16 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
 - **Fix done (`b7fa2c621`):** fixed, unverified. Check it with a new sketch on a part whose last sketch
   had a folded round.
 
+### 3.17 A pure refactor sketch still waits for a manual merge - open
+
+- **Pain:** the `foundations/logo` sketch (export `studioMark`, no visible change) shows every state
+  as "unchanged in a" with empty dashed rows; Tom has nothing to judge but must still merge.
+- **Idea (Tom, 2026-10-29):** auto-accept such a sketch when there really is no visible change.
+- **Fix options:** (1) `sketch ready` compares the shots of every state of every variant with the
+  merged ones; with zero changed pixels on all of them it merges by itself and logs it as an
+  automatic merge; (2) the same, but Studio shows a one-click "Merge (no visible change)" instead of
+  the empty rows. Recommendation: option 1, with a pixel-exact check and the log entry.
+
 ## 4. Render checks and shots
 
 ### 4.5 Stale results until a restart - fixed, one limit (L1415, L532, L1820)
