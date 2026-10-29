@@ -5,12 +5,17 @@ import button from '@system/components/button';
 import partTree from '@system/elements/part-tree';
 import canvasFrames from '@system/elements/canvas-frames';
 import shellMain from '@system/elements/shell-main';
-import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, pageAuthor, pageShot, pinMark } from './sketch-data';
+import { PAGE_PIN, PAGE_SKETCH, PAGE_VARIANTS, type PageVariant, pageAuthor, pageShot, pinMark } from './sketch-data';
 import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
-import { mountCanvasViewport } from 'ethlete-studio/canvas';
-import { agentLogo } from './agent-logos';
+import { mountCanvasViewport, type Camera, type Rect } from 'ethlete-studio/canvas';
+
+type Props = { camera: 'fit' | Camera; selected?: PageVariant['key'] };
+
+const HEAD_INSET = 3;
+const HEAD_MIN_WIDTH = 180;
+const HEAD_GAP = 18;
 
 const systemPage = async (panel?: 'hidden') => {
   const tree = await partTree.render(partTree.states['components-open']);
@@ -25,75 +30,84 @@ const systemPage = async (panel?: 'hidden') => {
   return { body: shell.body, styles: frames.styles };
 };
 
-const openPageSketch = {
+const side = await partTree.render({
   layers: [
     { title: 'Elements', open: true, parts: [{ name: 'part-tree', leaf: true }] },
     { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true, selected: true }] },
   ],
-};
+});
+const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
+const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
+const fit = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
+const reset = await button.render({ label: '100%', variant: 'transparent', size: 'sm' });
+const open = await systemPage();
+const hidden = await systemPage('hidden');
+const pages: Record<PageVariant['key'], string> = { current: open.body, a: hidden.body, b: open.body };
 
-const renderPageSketch = async () => {
-  const side = await partTree.render(openPageSketch);
-  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
-  const pick = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
-  const open = await systemPage();
-  const hidden = await systemPage('hidden');
-  const pages = { current: open.body, a: hidden.body, b: open.body };
+const roundPicker = formField({
+  id: 'zoomed-round-picker',
+  size: 'sm',
+  control: select({ options: [{ value: 'r1', label: 'Runde 1 · Mehr Platz für die Leinwand' }], value: 'r1' }),
+});
 
-  const heads = PAGE_VARIANTS.map(
-    (variant) =>
-      html`<div class="sk-a-col-head pe-(--space-6)">
-        <div class="sk-variant-head">
-          <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}
-            >${variant.key === 'current' ? variant.label : 'Variante ' + variant.label}</span
-          >
-          ${pageAuthor(variant)} ${variant.key === 'current' ? '' : pick.body}
-        </div>
-        <span class="sk-variant-note">${variant.note}</span>
-      </div>`,
-  ).join('');
-
-  const shots = PAGE_VARIANTS.map(
-    (variant) =>
-      html`<figure class="sk-frame sk-a-frame">
-        <figcaption class="sk-frame-caption">${PAGE_SKETCH.state}</figcaption>
-        ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? pinMark(PAGE_PIN) : '')}
-      </figure>`,
-  ).join('');
-
-  const content = html`<div class="sk-page">
-    <header class="sk-head">
-      <span class="sk-head-title">${PAGE_SKETCH.part}</span>
-      <span class="sk-head-gap"></span>
-      ${discard.body}
-    </header>
-    <div class="zr-picker self-start mt-[-11px]">${zoomedRoundPicker()}</div>
-    <div class="sk-fixed-heads">${heads}</div>
-    ${canvasTools}
-    <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
-      <section class="sk-a-grid sk-world" data-page-sketch>${shots}</section>
+const variantHead = (variant: PageVariant) =>
+  html`<div class="sk-col-head absolute z-2 flex flex-col gap-space-1 overflow-hidden" hidden>
+    <div class="flex items-center gap-space-2 whitespace-nowrap [&>*]:flex-none [&_.et-button]:ms-space-2">
+      ${
+        variant.key === 'current'
+          ? html`<span class="font-ui font-ui-medium text-ui-sm text-text">${variant.label}</span>`
+          : html`<span class="font-code text-ui-sm text-text">Variante ${variant.label}</span>`
+      }
+      ${pageAuthor(variant)} ${variant.key === 'current' ? '' : merge.body}
     </div>
+    <span class="text-text-muted text-ui-xs whitespace-nowrap overflow-hidden text-ellipsis">${variant.note}</span>
   </div>`;
 
-  const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
+const frame = (variant: PageVariant, selected: boolean) =>
+  html`<figure class="sk-frame flex m-0" ${selected ? ' data-selected' : ''}>
+    ${pageShot(variant.key, pages[variant.key], variant.key === 'a' ? pinMark(PAGE_PIN) : '')}
+  </figure>`;
 
-  return drawing({
-    body: shell.body,
-    setup: canvasSetup,
-    styles:
-      shell.styles + side.styles + open.styles + discard.styles + pick.styles + selectStyles + kit + styles + below,
+const placeHeads = (page: HTMLElement, viewport: HTMLElement, camera: Camera, frames: Rect[]) => {
+  const heads = [...page.querySelectorAll<HTMLElement>('.sk-col-head')];
+  const bound = viewport.offsetLeft + HEAD_INSET;
+
+  heads.forEach((head, index) => {
+    const column = frames[index];
+    if (!column) return;
+    const start = viewport.offsetLeft + camera.x + column.x * camera.zoom;
+    const left = Math.max(bound, start);
+    const right = Math.min(page.clientWidth, start + column.width * camera.zoom);
+    const top = viewport.offsetTop + camera.y + column.y * camera.zoom - HEAD_GAP;
+
+    head.hidden = right - left < HEAD_MIN_WIDTH;
+    head.style.left = `${left}px`;
+    head.style.top = `${top}px`;
+    head.style.width = `${Math.max(0, right - left)}px`;
   });
 };
 
-const HEAD_INSET = 3;
-const HEAD_MIN_WIDTH = 180;
-
-const canvasSetup = (root: HTMLElement) => {
+const setupFor = (camera: Props['camera']) => (root: HTMLElement) => {
+  const page = root.querySelector<HTMLElement>('.sk-page');
   const viewport = root.querySelector<HTMLElement>('.sk-viewport');
   const world = root.querySelector<HTMLElement>('.sk-world');
-  const heads = [...(root.querySelector('.sk-fixed-heads')?.children ?? [])] as HTMLElement[];
+  const label = root.querySelector('[data-camera-reset] button');
 
-  if (!viewport || !world) return;
+  if (!page || !viewport || !world) return;
+
+  if (camera !== 'fit') {
+    const frames = [...world.querySelectorAll<HTMLElement>('.sk-frame')].map((element) => ({
+      x: element.offsetLeft,
+      y: element.offsetTop,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    }));
+
+    world.style.transform = `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})`;
+    if (label) label.textContent = `${Math.round(camera.zoom * 100)}%`;
+    placeHeads(page, viewport, camera, frames);
+    return;
+  }
 
   mountCanvasViewport({
     viewport,
@@ -101,115 +115,61 @@ const canvasSetup = (root: HTMLElement) => {
     frameSelector: '.sk-frame',
     padding: HEAD_INSET,
     outline: 1,
-    chip: {
-      fit: root.querySelector('[data-camera-fit]'),
-      reset: root.querySelector('[data-camera-reset]'),
-      label: root.querySelector('[data-camera-reset] button'),
-    },
-    onPaint: (camera, frames) =>
-      heads.forEach((head, index) => {
-        const column = frames[index];
-        const start = camera.x + (column?.x ?? 0) * camera.zoom;
-        const left = Math.max(HEAD_INSET, start);
-        const right = Math.min(viewport.clientWidth - HEAD_INSET, start + (column?.width ?? 0) * camera.zoom);
-
-        head.hidden = right - left < HEAD_MIN_WIDTH;
-        head.style.left = `${left}px`;
-        head.style.width = `${Math.max(0, right - left)}px`;
-      }),
+    chip: { fit: root.querySelector('[data-camera-fit]'), reset: root.querySelector('[data-camera-reset]'), label },
+    onPaint: (next, frames) => placeHeads(page, viewport, next, frames),
   });
 };
 
-const fitControl = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
-const resetControl = await button.render({ label: '100%', variant: 'transparent', size: 'sm' });
-const canvasTools = html`<div class="st-canvas-zoom">
-  <span data-camera-fit>${fitControl.body}</span>
-  <span class="st-canvas-zoom-value" data-camera-reset>${resetControl.body}</span>
-</div>`;
-
-const zoomedRoundPicker = () =>
-  formField({
-    id: 'zoomed-round-picker',
-    size: 'sm',
-    control: select({ options: [{ value: 'r1', label: 'Runde 1 · Mehr Platz für die Leinwand' }], value: 'r1' }),
-  });
-
-const renderZoomedPage = async () => {
-  const side = await partTree.render({
-    layers: [
-      { title: 'Elements', open: true, parts: [{ name: 'part-tree', leaf: true }] },
-      { title: 'Pages', open: true, parts: [{ name: 'system', leaf: true, selected: true }] },
-    ],
-  });
-  const tree = await partTree.render(partTree.states['components-open']);
-  const frames = await canvasFrames.render(canvasFrames.states.default);
-  const open = await shellMain.render({
-    section: 'System',
-    product: 'studio',
-    side: tree.body,
-    content: frames.body,
-  });
-  const hidden = await shellMain.render({
-    section: 'System',
-    product: 'studio',
-    side: tree.body,
-    content: frames.body,
-    panel: 'hidden',
-  });
-  const merge = await button.render({ label: 'Merge', variant: 'outline', size: 'sm' });
-  const discard = await button.render({ label: 'Verwerfen', variant: 'transparent', size: 'sm', color: 'danger' });
-  const fit = await button.render({ label: 'Fit', variant: 'transparent', size: 'sm' });
-  const content = html`<div class="zc-page" data-treatment="attached" data-et-skip="CLIPPED">
-    <header class="zc-head">
-      <span class="sk-head-title">pages/system</span><span class="zc-gap"></span>${discard.body}
-    </header>
-    <div class="zc-round zb-round"><div class="zr-picker">${zoomedRoundPicker()}</div></div>
-    <section class="zc-world" aria-label="Varianten bei 60 Prozent Zoom">
-      <figure class="sk-frame zc-frame">${pageShot('current', open.body)}</figure>
-      <figure class="sk-frame zc-frame" data-selected>${pageShot('a', hidden.body, pinMark(PAGE_PIN))}</figure>
-      <figure class="sk-frame zc-frame">${pageShot('b', open.body)}</figure>
-    </section>
-    <div class="zc-attached">
-      <div class="zc-inline">
-        <span class="zc-name">Variante a</span
-        ><span class="sk-author">${agentLogo('claude', 'sk-logo')}Claude</span>${merge.body}
-      </div>
-      <span class="zc-note">Panel ausgeblendet</span>
-    </div>
-    <div class="zc-attached left-[1193.2px] right-0 overflow-hidden">
-      <div class="zc-inline [&>*]:flex-none [&>*]:whitespace-nowrap">
-        <span class="zc-name">Variante b</span
-        ><span class="sk-author">${agentLogo('codex', 'sk-logo')}Codex</span>${merge.body}
-      </div>
-      <span class="zc-note">Panel 200 px</span>
-    </div>
-    <div class="st-canvas-zoom">${fit.body}<span class="st-canvas-zoom-value">60%</span></div>
-  </div>`;
-  const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
-  return drawing({
-    body: shell.body,
-    styles:
-      shell.styles +
-      side.styles +
-      tree.styles +
-      frames.styles +
-      merge.styles +
-      discard.styles +
-      selectStyles +
-      kit +
-      styles +
-      below,
-  });
-};
-
-export default definePart<{ sketch: 'page' | 'zoomed' }>({
-  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Screen-size variant heads stay within the visible portion of their column; a sliver under 180px hides its head. The header has a stable height before fitting. 100% reveals the nearest frame from its top-left. Double-click focuses a frame. Plain Variante labels replace boxed letters. Fit and header geometry reserve space for outlines. Merge keeps the action compact. Native-size frames share one pan/zoom behavior. Variant identities and decision buttons stay at screen size above the canvas. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available. State zoomed-page draws the agreed zoom composition: attached heads above the frame, the canvas behind navigation, and the canvas strip under the open side panel dimmed to 40 percent. In zoomed-page every visible frame gets the full head, clipped at the viewport edge.',
+export default definePart<Props>({
+  note: 'One continuous canvas for pages, top-aligned after fit with no extra camera inset. Every state draws through one render: a state only sets the camera (fit or a fixed zoom and position) and the selected frame, so the header, the round picker, the variant heads and the zoom chip exist once. The canvas runs behind the navigation and the strip under the open side panel is dimmed. Each visible frame gets a screen-size head attached above it, kept within the visible part of its column and clipped at the canvas edge; a sliver under 180px hides its head. Plain Variante labels replace boxed letters. Merge keeps the action compact. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available.',
   madeBy: ['claude-opus-5-5', 'gpt-6'],
   states: {
-    'page-sketch': { sketch: 'page' },
-    'zoomed-page': { sketch: 'zoomed' },
+    'page-sketch': { camera: 'fit' },
+    'zoomed-page': { camera: { zoom: 0.6, x: -853.2, y: 44 }, selected: 'a' },
   },
-  render: async ({ sketch }) => {
-    return sketch === 'page' ? renderPageSketch() : renderZoomedPage();
+  render: async ({ camera, selected }) => {
+    const content = html`<div
+      class="sk-page relative h-full overflow-hidden isolate"
+      ${camera === 'fit' ? '' : ' data-et-skip="CLIPPED"'}
+    >
+      <header
+        class="absolute z-2 top-space-5 left-[calc(var(--st-shell-inset-left)+var(--space-5))] right-space-5 flex items-center gap-space-3"
+      >
+        <span class="text-ui-lg font-ui-strong">${PAGE_SKETCH.part}</span>
+        <span class="flex-1"></span>
+        ${discard.body}
+      </header>
+      <div class="zr-picker absolute z-2 top-[44px] left-[calc(var(--st-shell-inset-left)+var(--space-5))]">
+        ${roundPicker}
+      </div>
+      <div class="sk-viewport" tabindex="0" aria-label="Design Canvas">
+        <section class="sk-world grid gap-x-space-4 gap-y-space-3 grid-cols-[repeat(3,1456px)]">
+          ${PAGE_VARIANTS.map((variant) => frame(variant, variant.key === selected)).join('')}
+        </section>
+      </div>
+      ${PAGE_VARIANTS.map(variantHead).join('')}
+      <div class="st-canvas-zoom z-3">
+        <span data-camera-fit>${fit.body}</span>
+        <span class="st-canvas-zoom-value" data-camera-reset>${reset.body}</span>
+      </div>
+    </div>`;
+
+    const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
+
+    return drawing({
+      body: shell.body,
+      setup: setupFor(camera),
+      styles:
+        shell.styles +
+        side.styles +
+        open.styles +
+        discard.styles +
+        merge.styles +
+        fit.styles +
+        selectStyles +
+        kit +
+        styles +
+        below,
+    });
   },
 });

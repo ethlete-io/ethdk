@@ -1,8 +1,4 @@
 @layer components {
-  .zc-round.zb-round {
-    top: 44px;
-    right: auto;
-  }
   .zr-picker .et-form-field {
     inline-size: auto;
     margin-inline-start: calc(

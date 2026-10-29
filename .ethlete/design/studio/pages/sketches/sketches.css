@@ -1,67 +1,18 @@
 @layer components {
-  .sk-page {
-    position: relative;
-    gap: var(--space-2);
-  }
-  .sk-a-grid {
-    display: grid;
-    flex: none;
-    grid-template-columns: repeat(4, 300px);
-    gap: var(--space-3) var(--space-4);
-  }
-  .sk-a-frame {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    margin: 0;
-  }
-  .sk-a-col-head {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .sk-fixed-heads {
-    position: relative;
-    flex: none;
-    height: calc(var(--control-md) + var(--text-xs-line) + 8px);
-    overflow: hidden;
-  }
-  .sk-fixed-heads > .sk-a-col-head {
+  .sk-page::after {
+    content: '';
     position: absolute;
-    top: 4px;
+    inset: 0 auto 0 0;
+    z-index: 1;
+    pointer-events: none;
+    width: var(--st-shell-inset-left);
+    background: color-mix(in srgb, var(--surface-sunken) 60%, transparent);
   }
-  .sk-fixed-heads > [hidden] {
+  .sk-col-head {
+    translate: 0 -100%;
+  }
+  .sk-col-head[hidden] {
     display: none;
-  }
-  .sk-fixed-heads .sk-variant-head .et-button {
-    margin-left: var(--space-2);
-  }
-  .sk-fixed-heads .sk-variant-head {
-    height: var(--control-md);
-    padding-right: 2px;
-  }
-  .sk-fixed-heads .sk-letter {
-    min-width: 0;
-    height: auto;
-    padding: 0;
-    border-radius: 0;
-    background: none;
-    color: var(--text-muted);
-    font-family: var(--font-code);
-    font-size: var(--text-xs);
-  }
-  .sk-fixed-heads .sk-letter[data-current] {
-    color: var(--text);
-    font-family: var(--font-ui);
-    font-weight: var(--weight-medium);
-  }
-  .sk-fixed-heads .sk-variant-note {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .sk-page > .st-canvas-zoom {
-    z-index: 2;
   }
   .sk-page > .st-canvas-zoom .et-button {
     min-height: 0;
@@ -71,10 +22,11 @@
     font: inherit;
   }
   .sk-viewport {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    position: absolute;
+    top: 146px;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    left: calc(var(--st-shell-inset-left) + var(--space-5));
     cursor: grab;
     touch-action: none;
   }
@@ -89,9 +41,6 @@
     transform-origin: 0 0;
     user-select: none;
   }
-  .sk-world[data-page-sketch] {
-    grid-template-columns: repeat(3, 1456px);
-  }
   .sk-world .sk-shot {
     --sk-shot-scale: 1;
     cursor: inherit;
@@ -102,121 +51,7 @@
   .sk-world .sk-shot-open {
     display: none;
   }
-  .sk-world .sk-frame > .sk-pin {
-    top: var(--space-1);
-    right: var(--space-1);
-  }
-}
-
-@layer components {
-  .zc-page {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    isolation: isolate;
-  }
-  .zc-head {
-    position: absolute;
-    z-index: 2;
-    top: 20px;
-    left: 280px;
-    right: 20px;
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-  }
-  .zc-gap {
-    flex: 1;
-  }
-  .zc-round {
-    position: absolute;
-    z-index: 2;
-    top: 68px;
-    left: 280px;
-    display: flex;
-    gap: var(--space-2);
-    align-items: baseline;
-  }
-  .zc-world {
-    position: absolute;
-    top: 190px;
-    left: -573.2px;
-    display: grid;
-    grid-template-columns: repeat(3, 1456px);
-    gap: 16px;
-    transform: scale(0.6);
-    transform-origin: 0 0;
-  }
-  .zc-frame {
-    display: flex;
-    margin: 0;
-  }
-  .zc-world .sk-shot {
-    --sk-shot-scale: 1;
-    cursor: default;
-  }
-  .zc-world .sk-shot-open {
-    display: none;
-  }
-  .zc-frame[data-selected] {
+  .sk-world .sk-frame[data-selected] {
     box-shadow: 0 0 0 2px var(--accent);
-  }
-  .zc-inline {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-  .zc-name {
-    font-family: var(--font-code);
-    font-size: var(--text-sm);
-    color: var(--text);
-  }
-  .zc-note {
-    color: var(--text-muted);
-    font-size: var(--text-xs);
-    line-height: var(--text-xs-line);
-  }
-  .zc-page > .st-canvas-zoom {
-    z-index: 3;
-  }
-  .zc-page > .st-canvas-zoom .et-button {
-    min-height: 0;
-    height: auto;
-    padding: 0;
-    color: inherit;
-    font: inherit;
-  }
-}
-
-@layer components {
-  .zc-attached {
-    position: absolute;
-    top: 124px;
-    left: 310px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-  .zc-attached .et-button {
-    margin-left: var(--space-2);
-  }
-}
-
-@layer components {
-}
-
-@layer components {
-  .zc-page::after {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    z-index: 1;
-    pointer-events: none;
-    width: var(--st-shell-inset-left);
-    background: color-mix(in srgb, var(--surface-sunken) 60%, transparent);
-  }
-  .zc-attached {
-    z-index: 2;
   }
 }
