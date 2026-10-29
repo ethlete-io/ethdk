@@ -133,16 +133,6 @@ ready` merged it. The first shot probably ran against a base that the merges jus
 
 - **Pain:** the frame settles about 32 px taller. Live and shot heights can differ.
 
-### 4.41 Tom's server serves outdated dependency links after a part removal - unverified
-
-- **Pain:** after the tokens split, :4402 answered 504 "Outdated Optimize Dep" for
-  `@design-system.js`, so every frame of `foundations/colors` and the base `tokens` failed with
-  "Failed to fetch dynamically imported module". A fresh server (`design check`) was fine.
-- **Fix options:** 1. the server does a full reload of its frames after a dependency re-optimize
-  (recommended). 2. pre-bundle `@design-system` once, so a part change never re-optimizes it.
-
-- **Built 2026-10-29:** The server forwards Vite client full-reload messages through Studio's parts event stream and clears shot/thumbnail caches. Regression verifies the full refresh with HMR disabled. Live :4402 still needs Tom's restart to load this fix; its current dependency URL returns 504.
-
 ## 5. Drawing parts and pages
 
 ### 5.21 A sketch cannot draw another part at a sketch variant - open
@@ -260,15 +250,6 @@ Also seen again in "Many states": 3.27 (`sketch.json` not Prettier-clean) and 4.
 - **Pain:** `pages/merge` already scales the row by `--mg-scale`; a `scale` on `embedPage` too
   shrinks the page twice. Nothing warns.
 - **Fix option:** the skill says to use one or the other; a check warns when both are set.
-
-### 5.57 No way to split a part - open
-
-- **Pain:** the tokens split cut `tokens.css` by line numbers and copied the sheet layout (root,
-  title, panel, row) into three new parts; new sibling sketches cannot share a helper.
-- **Fix options:** 1. a merged `foundations/sheet` helper (`tokenSheet({ title, sample, names })`)
-  that the foundations import (recommended). 2. `sketch new <part> --from <part> --take <states>`.
-
-- **Built 2026-10-29:** `foundations/sheet`, variant a, is ready. Exports `tokenSheet`, `fillTokenValues`, and its stylesheet through the default part's `styles`. Own overview inspected; sketch type/render check passes. Tom merges the new part; then three one-variant host sketches adopt it without changing the token pages. Finding remains open until those adoptions merge.
 
 ## 6. Agent process
 

@@ -1479,3 +1479,24 @@ check` warns early.
   (recommended).
 
 - **Checked 2026-10-29:** `part remove` scans repository TS/JS/CSS/SCSS source imports before deleting a part, refuses on hits and reports file:line. The app stylesheet regression passes and confirms the folder remains.
+
+### 4.41 Tom's server serves outdated dependency links after a part removal - fixed
+
+- **Pain:** after the tokens split, :4402 answered 504 "Outdated Optimize Dep" for
+  `@design-system.js`, so every frame of `foundations/colors` and the base `tokens` failed with
+  "Failed to fetch dynamically imported module". A fresh server (`design check`) was fine.
+- **Fix options:** 1. the server does a full reload of its frames after a dependency re-optimize
+  (recommended). 2. pre-bundle `@design-system` once, so a part change never re-optimizes it.
+
+- **Built 2026-10-29:** The server forwards Vite client full-reload messages through Studio's parts event stream and clears shot/thumbnail caches. Regression verifies the full refresh with HMR disabled. Live :4402 still needs Tom's restart to load this fix; its current dependency URL returns 504.
+
+- **Checked 2026-10-29:** Live recheck after restart: all four colors states on Tom's :4402 render successfully and have no overlapping cells. The invalidation/recovery event path is covered by the server regression; no forced re-optimization was performed on Tom's server.
+
+### 5.57 No way to split a part - fixed
+
+- **Pain:** the tokens split cut `tokens.css` by line numbers and copied the sheet layout (root,
+  title, panel, row) into three new parts; new sibling sketches cannot share a helper.
+- **Fix options:** 1. a merged `foundations/sheet` helper (`tokenSheet({ title, sample, names })`)
+  that the foundations import (recommended). 2. `sketch new <part> --from <part> --take <states>`.
+
+- **Checked 2026-10-29:** Tom merged foundations/sheet. Colors, type and spacing now use tokenSheet, fillTokenValues and sheet.styles. All three adoption sketches passed type/render checks and showed no changed pixels in any state, so ready auto-merged them. Full Studio design check passes. Commits bbe2852a0 (sheet), 9807ff8a3 (colors), 083b839c9 (type), plus the spacing adoption commit.

@@ -1,4 +1,5 @@
 import { definePart, drawing, html } from '@design-system';
+import sheet, { tokenSheet, fillTokenValues } from '@system/foundations/sheet';
 import tokens from './spacing.css?inline';
 
 const names = [...tokens.matchAll(/^\s*--([\w-]+):/gm)].map(([, name]) => name ?? '');
@@ -10,12 +11,6 @@ const sampleOf = (name: string) => {
   return html`<span class="sp-height" style="height: var(--${name})">${name}</span>`;
 };
 
-const tokenRow = (name: string) =>
-  html`<li class="sp-row">
-    <span class="sp-name">--${name}</span><span class="sp-value" data-token="${name}"></span
-    ><span class="sp-sample">${sampleOf(name)}</span>
-  </li>`;
-
 const sample = html`<div class="sp-cluster">
   <span class="sp-height" style="height: var(--control-sm)">control-sm</span>
   <span class="sp-height" style="height: var(--control-md)">control-md</span>
@@ -26,47 +21,15 @@ const sample = html`<div class="sp-cluster">
   </span>
 </div>`;
 
-const fillValues = (root: HTMLElement) => {
-  const style = getComputedStyle(root);
-  const probe = root.querySelector<HTMLElement>('.sp-probe');
-
-  for (const cell of root.querySelectorAll<HTMLElement>('[data-token]')) {
-    const value = style.getPropertyValue(`--${cell.dataset['token']}`).trim();
-    let pixels = '';
-
-    if (probe && /^[\d.]+rem$/.test(value)) {
-      probe.style.width = value;
-      pixels = ` · ${Math.round(probe.getBoundingClientRect().width * 10) / 10}px`;
-    }
-
-    cell.textContent = value + pixels;
-  }
-};
-
 export default definePart({
   note: 'The Studio spacing, radius and control heights on their own sheet, split from foundations/tokens.',
-  madeBy: ['claude-opus-5-5'],
+  madeBy: ['claude-opus-5-5', 'gpt-6.1-terra'],
   states: { scale: {} },
   render: () =>
     drawing({
-      body: html`<div class="sp-root">
-        <h2 class="sp-title">Spacing, radius and heights</h2>
-        <section class="sp-panel">${sample}</section>
-        <ul class="sp-panel sp-list">
-          ${names.map(tokenRow).join('')}
-        </ul>
-        <span class="sp-probe"></span>
-      </div>`,
-      setup: fillValues,
-      styles: `${tokens}
-        .sp-root { position: relative; display: flex; flex-direction: column; gap: var(--space-4); width: 960px; padding: var(--space-6); box-sizing: border-box; background: var(--surface-sunken); color: var(--text); font-family: var(--font-ui); font-size: var(--text-md); line-height: var(--text-md-line); }
-        .sp-title { margin: 0; font-size: var(--text-xl); line-height: var(--text-xl-line); font-weight: var(--weight-strong); }
-        .sp-panel { margin: 0; padding: var(--space-4); background: var(--surface); border: 1px solid var(--surface-border); border-radius: var(--radius-control-lg); }
-        .sp-list { list-style: none; display: flex; flex-direction: column; gap: var(--space-1); }
-        .sp-row { display: grid; grid-template-columns: 200px 240px 1fr; align-items: center; gap: var(--space-3); min-height: var(--row); }
-        .sp-name { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); color: var(--text-muted); }
-        .sp-value { font-family: var(--font-code); font-size: var(--text-sm); line-height: var(--text-sm-line); overflow-wrap: anywhere; }
-        .sp-sample { display: flex; align-items: center; min-width: 0; }
+      body: tokenSheet({ title: 'Spacing, radius and heights', sample, names, sampleOf }),
+      setup: (root) => fillTokenValues(root, true),
+      styles: `${sheet.styles}
         .sp-cluster { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-5); }
         .sp-stack { display: flex; flex-direction: column; gap: var(--space-3); }
         .sp-bar { display: block; height: var(--space-2); background: var(--accent); border-radius: 2px; }
@@ -75,7 +38,6 @@ export default definePart({
         .sp-height--row { min-width: 200px; background: var(--accent-subtle); color: var(--text); }
         .sp-gap { display: flex; align-items: center; font-family: var(--font-code); font-size: var(--text-xs); line-height: var(--text-xs-line); color: var(--text-muted); }
         .sp-gap i { width: var(--space-4); height: var(--space-4); background: var(--accent); border-radius: 2px; }
-        .sp-probe { position: absolute; left: 0; top: 0; height: 0; visibility: hidden; }
       `,
     }),
 });
