@@ -224,6 +224,18 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   `a/foundations/logo/logo.ts`.
 - **Fix option:** print the path of each variant's part file.
 
+### 5.13 No rule for assets (marks, logos, icons, images) - open
+
+- **Pain:** the Studio mark lives as inline SVG in `foundations/logo`, in `pages/start` and as a
+  separate glyph in `elements/shell-main`; the app has a fourth copy in
+  `apps/ethlete-studio/src/app/components/studio-mark.component.ts`. No rule says where an asset
+  lives, how a part draws it, or how it reaches the real app.
+- **Decision (Tom, 2026-10-29):** the shell glyph stays its own design for now. Tom raised the general
+  asset question; it is open.
+- **Fix options:** (1) assets are named exports of a foundation part (`studioMark`, 5.7); (2) an
+  `assets/` folder per product with SVG files, imported by parts and by the app; (3) the app's
+  component is the source and the design system embeds it.
+
 ## 6. Agent process
 
 These pains came from how the agent worked, not from the tool. Each one has a rule now.
