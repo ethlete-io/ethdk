@@ -33,6 +33,7 @@ import kit from './sketch-data.css?inline';
 import styles from './sketches.css?inline';
 import below from './below.css?inline';
 import header from './header.css?inline';
+import headStyles from './heads.css?inline';
 import { mountCanvasViewport } from 'ethlete-studio/canvas';
 import { agentLogo } from './agent-logos';
 import { belowDrawing, belowRows } from './shared/below';
@@ -89,8 +90,7 @@ const renderPageSketch = async () => {
           <span class="sk-letter" ${variant.key === 'current' ? ' data-current' : ''}
             >${variant.key === 'current' ? variant.label : 'Variante ' + variant.label}</span
           >
-          ${pageAuthor(variant)}
-          ${variant.key === 'current' ? '<span class="sk-current-tag">Gemergt</span>' : pick.body}
+          ${pageAuthor(variant)} ${variant.key === 'current' ? '' : pick.body}
         </div>
         <span class="sk-variant-note">${variant.note}</span>
       </div>`,
@@ -133,7 +133,8 @@ const renderPageSketch = async () => {
       kit +
       styles +
       below +
-      header,
+      header +
+      headStyles,
   });
 };
 
@@ -233,7 +234,13 @@ const renderZoomedPage = async () => {
       </div>
       <span class="zc-note">Panel ausgeblendet</span>
     </div>
-    <span class="zc-frame-id" data-next>Variante b</span>
+    <div class="zc-attached" data-next>
+      <div class="zc-inline">
+        <span class="zc-name">Variante b</span
+        ><span class="sk-author">${agentLogo('codex', 'sk-logo')}Codex</span>${merge.body}
+      </div>
+      <span class="zc-note">Panel 200 px</span>
+    </div>
     <div class="st-canvas-zoom">${fit.body}<span class="st-canvas-zoom-value">60%</span></div>
   </div>`;
   const shell = await shellMain.render({ section: 'Sketches', product: 'studio', side: side.body, content });
@@ -249,7 +256,8 @@ const renderZoomedPage = async () => {
       selectStyles +
       kit +
       styles +
-      below,
+      below +
+      headStyles,
   });
 };
 
@@ -283,7 +291,7 @@ const renderBelow = async () => {
 };
 
 export default definePart<{ sketch: 'element' | 'page' | 'zoomed' | 'below' }>({
-  note: 'One continuous canvas for components and pages, top-aligned after fit with no extra camera inset. Screen-size variant heads stay within the visible portion of their column; a sliver under 180px hides its head. The header has a stable height before fitting. 100% reveals the nearest frame from its top-left. Double-click focuses state and full-context frames. Pending variants show quiet outlined placeholders instead of unfinished drawings. Earlier rounds follow context content within the canvas, with no fixed footer. Plain Variante labels replace boxed letters. Fit and header geometry reserve space for outlines. Context pages are complete miniature frames that can be zoomed into on the same canvas, not clipped crops. Round titles omit duplicate variant letters, Merge keeps the action compact, and drawing status is quiet inline text beside its author. Native-size frames share one pan/zoom behavior; the initial camera fits the newest round. Variant identities and decision buttons stay at screen size above the canvas. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available. State zoomed-page draws the agreed zoom composition: attached heads above the frame, the canvas behind navigation, and the canvas strip under the open side panel dimmed to 40 percent. State zoomed-below pans a 150% camera below the variant rows: the header holds only the part name and a danger Verwerfen button, with no status badge because a sketch is always in progress and no arrow buttons; the round line sits directly under the header as quiet text, the round name (Runde 3 · Kleinere Baumschrift) with a chevron and no field box, and opens the round select; the variant heads follow directly under it; only the Im Kontext band stays on the canvas, under a screen-size band label aligned to the first visible frame edge, and its frame captions scale with the frames. Cost: the round line takes its own row again under the header, stepping through rounds in order is gone so a far round always needs the select, and comparing rounds side by side on the canvas is gone.',
+  note: 'One continuous canvas for components and pages, top-aligned after fit with no extra camera inset. Screen-size variant heads stay within the visible portion of their column; a sliver under 180px hides its head. The header has a stable height before fitting. 100% reveals the nearest frame from its top-left. Double-click focuses state and full-context frames. Pending variants show quiet outlined placeholders instead of unfinished drawings. Earlier rounds follow context content within the canvas, with no fixed footer. Plain Variante labels replace boxed letters. Fit and header geometry reserve space for outlines. Context pages are complete miniature frames that can be zoomed into on the same canvas, not clipped crops. Round titles omit duplicate variant letters, Merge keeps the action compact, and drawing status is quiet inline text beside its author. Native-size frames share one pan/zoom behavior; the initial camera fits the newest round. Variant identities and decision buttons stay at screen size above the canvas. Wheel pans, Ctrl/wheel zooms at the pointer, drag pans, double-click fits a frame. Fit and 100% remain available. State zoomed-page draws the agreed zoom composition: attached heads above the frame, the canvas behind navigation, and the canvas strip under the open side panel dimmed to 40 percent. State zoomed-below pans a 150% camera below the variant rows: the header holds only the part name and a danger Verwerfen button, with no status badge because a sketch is always in progress and no arrow buttons; the round line sits directly under the header as quiet text, the round name (Runde 3 · Kleinere Baumschrift) with a chevron and no field box, and opens the round select; the variant heads follow directly under it; only the Im Kontext band stays on the canvas, under a screen-size band label aligned to the first visible frame edge, and its frame captions scale with the frames. Cost: the round line takes its own row again under the header, stepping through rounds in order is gone so a far round always needs the select, and comparing rounds side by side on the canvas is gone. Variant heads have no right side: Merge follows the author inline, the Aktuell head carries no Gemergt label because the current column is always the merged state, and each head ends 24px before the next column. In zoomed-page every visible frame gets the full head, clipped at the viewport edge.',
   madeBy: ['claude-opus-5-5', 'gpt-6'],
   states: {
     'page-sketch': { sketch: 'page' },

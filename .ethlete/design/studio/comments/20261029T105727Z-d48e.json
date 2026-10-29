@@ -1,0 +1,30 @@
+{
+  "part": "pages/sketches",
+  "state": "page-sketch",
+  "size": "desktop",
+  "text": "ich glaub gemergt kann weg. wenns aktuell ist ist es das doch eh",
+  "point": {
+    "x": 424,
+    "y": 99
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "b"
+  },
+  "createdAt": "2026-10-29T10:57:27.631Z",
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "done",
+    "addressedAt": "2026-10-29T10:57:53.697Z",
+    "note": "Variante c"
+  },
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Stimmt. Variante c (Runde 2) zeigt den Aktuell-Kopf ohne Gemergt.",
+      "createdAt": "2026-10-29T10:57:53.527Z"
+    }
+  ]
+}

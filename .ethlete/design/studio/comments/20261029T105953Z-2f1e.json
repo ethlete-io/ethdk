@@ -1,0 +1,31 @@
+{
+  "part": "pages/sketches",
+  "state": "zoomed-page",
+  "size": "desktop",
+  "text": "warum wird der abgecuttet",
+  "point": {
+    "x": 1425,
+    "y": 140
+  },
+  "sketch": {
+    "target": "pages/sketches",
+    "variant": "c"
+  },
+  "createdAt": "2026-10-29T10:59:53.985Z",
+  "replies": [
+    {
+      "by": "agent",
+      "author": "claude-opus-5-5",
+      "text": "Bei 60 % sind von Spalte b nur ~170px sichtbar, der volle Kopf braucht ~230px. Die Leinwand schneidet Köpfe am Rand der sichtbaren Spalte ab. Vorschlag: Kopf wird schmaler statt abgeschnitten - erst fällt der Agent weg (Variante b + Merge), passt auch das nicht, verschwindet der Kopf ganz. Soll ich das als Variante d zeichnen?",
+      "createdAt": "2026-10-29T11:00:15.407Z"
+    }
+  ],
+  "addressed": {
+    "by": "agent",
+    "author": "claude-opus-5-5",
+    "reason": "round",
+    "addressedAt": "2026-10-29T11:01:02.297Z",
+    "note": "c schnitt den Kopf von b 12px vor dem Fensterrand ab.",
+    "round": "r3"
+  }
+}
