@@ -1000,6 +1000,7 @@ sketch` until the next merge of the part.
   says "Refactor, no visible change" next to the round note.
 
 - **Fix:** option 1. Under each variant the sketch view says "N of M states differ in pixels"; a click lists each changed state with its box ("default · 8 × 4 px"), and a click on a line outlines the box on the frame. The design server answers `/__design/sketch-diff`, cached per pair of pictures. Open: the outline does not move the camera to the frame.
+- **Decision (Tom, 2026-10-29):** the diff line stays under the Pick button; a click on a changed state also moves the camera to that variant's frame and zooms to it, so the outlined box is visible; only the rest interaction is compared. Done in `04b2e863a`: the click switches the matrix to rest (and out of the merge preview, a folded round or state) and zooms to the frame.
 
 ### 3.33 `sketch ready` fails on a round without a note - fixed (783b9c5d7)
 
