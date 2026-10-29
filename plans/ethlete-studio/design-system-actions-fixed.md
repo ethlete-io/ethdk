@@ -1294,3 +1294,10 @@ check` warns early.
   `node dist/libs/cli/src/index.js design` on their own.
 - **Fix options:** 1. the skill names the direct `node dist/...` call for loops (recommended). 2. nx skips the build on a cache hit.
 - **Fix done (d761dcc89):** Option 1: the design-exploration skill names `node dist/libs/cli/src/index.js design` for check-and-shot loops. With 6.4 the build is cached as `cli:compile`, so `yarn design` itself dropped to about 1.2 s (the direct call: 0.13 s).
+
+### 3.36 `--variant-note` overwrites the part's merged note - fixed (203a72116)
+
+- **Pain:** `foundations/tokens` "Error colour": the variant note replaced the settled tokens note
+  in every variant; a merge drops the old note.
+- **Fix options:** 1. store the variant note apart from `definePart({ note })` (recommended). 2. append it to the merged note.
+- **Fix done (203a72116):** Option 1: `sketch new --variant-note` writes `variantInfo.<variant>.note` in `sketch.json` and leaves the part file as copied; Studio shows the note in the variant column head. A merge keeps the part note, takes its `--note`, and gives a new part (empty note) the picked variant note.

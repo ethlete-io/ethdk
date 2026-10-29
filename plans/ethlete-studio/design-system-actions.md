@@ -138,12 +138,6 @@ composition of the Sketches page, L3020). Those choices go to Studio as sketches
   reproduced.
 - **Fix option:** reset the selected entry when the product changes.
 
-### 3.36 `--variant-note` overwrites the part's merged note - open
-
-- **Pain:** `foundations/tokens` "Error colour": the variant note replaced the settled tokens note
-  in every variant; a merge drops the old note.
-- **Fix options:** 1. store the variant note apart from `definePart({ note })` (recommended). 2. append it to the merged note.
-
 ### 3.37 `sketch report --done` answers differently for the same case - open
 
 - **Pain:** after a live text report on each of a, b and c, `--done` printed "had no live report"
