@@ -23,13 +23,14 @@ type Plan = { label: string; address: PartAddress };
 
 /**
  * The sheet with a row after each variant row that marks, per state, the pixels the variant changes from the merged
- * row; unchanged when there is no merged row.
+ * row; headed by a note that the part is new when there is no merged row.
  */
 export const withDiffRows = (options: { rows: Axis[]; plan: Plan[][]; sheet: SheetCell[][] }): SheetCell[][] => {
   const { rows, plan, sheet } = options;
   const mergedIndex = rows.findIndex((axis) => axis.sketch === null);
 
-  if (mergedIndex === -1 || rows.length < 2) return sheet;
+  if (mergedIndex === -1) return [[{ label: 'merged', note: 'new part, nothing to compare with' }], ...sheet];
+  if (rows.length < 2) return sheet;
 
   const merged = new Map(
     (plan[mergedIndex] ?? []).flatMap((entry, index) => {

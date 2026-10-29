@@ -201,11 +201,14 @@ describe('withDiffRows', () => {
     ]);
   });
 
-  it('leaves a sheet without a merged row as it is', () => {
+  it('heads a sheet without a merged row with a note that the part is new', () => {
     const rows = rowsOf({ part: 'components/button', variants: ['a'], merged: false });
     const plan = planOf({ base, rows, statesOf: () => ['rest'], states: true, state: null });
     const sheet = [[{ label: 'a / rest', png: Buffer.from('a') }]];
 
-    expect(withDiffRows({ rows, plan, sheet })).toBe(sheet);
+    expect(withDiffRows({ rows, plan, sheet })).toEqual([
+      [{ label: 'merged', note: 'new part, nothing to compare with' }],
+      ...sheet,
+    ]);
   });
 });

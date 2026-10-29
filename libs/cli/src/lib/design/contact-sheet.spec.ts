@@ -8,6 +8,7 @@ describe('contactSheetHtml', () => {
       [
         { label: 'rest', png: Buffer.from('a') },
         { label: '<hover>', error: 'boom & more' },
+        { label: 'merged', note: 'new & empty' },
       ],
       [{ label: 'a / rest', png: Buffer.from('b') }],
     ]);
@@ -17,6 +18,7 @@ describe('contactSheetHtml', () => {
     expect(html).toContain('<figcaption>&lt;hover&gt;</figcaption>');
     expect(html).toContain('data:image/png;base64,YQ==');
     expect(html).toContain('<pre>boom &amp; more</pre>');
+    expect(html).toContain('<pre class="note">new &amp; empty</pre>');
   });
 
   it('marks a diff of equal PNGs as no pixel change, and draws one of different PNGs into a canvas', () => {

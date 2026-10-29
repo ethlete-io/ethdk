@@ -1,12 +1,13 @@
 import { Browser } from './thumb';
 
 /**
- * One picture on a contact sheet: its label, and the PNG, the reason it could not be drawn, or two PNGs whose
+ * One picture on a contact sheet: its label, and the PNG, the reason it could not be drawn, a note, or two PNGs whose
  * changed pixels it marks.
  */
 export type SheetCell =
   | { label: string; png: Buffer }
   | { label: string; error: string }
+  | { label: string; note: string }
   | { label: string; before: Buffer; after: Buffer; over?: string };
 
 type Pixels = { width: number; height: number; data: Uint8ClampedArray };
@@ -147,9 +148,11 @@ export const contactSheetHtml = (rows: SheetCell[][]) => {
       ? `<img alt="" src="${dataUrlOf(entry.png)}">`
       : 'error' in entry
         ? `<pre>${escapeHtml(entry.error)}</pre>`
-        : entry.before.equals(entry.after)
-          ? `<pre class="same">no pixel change</pre>`
-          : `<canvas data-before="${dataUrlOf(entry.before)}" data-after="${dataUrlOf(entry.after)}"></canvas>`;
+        : 'note' in entry
+          ? `<pre class="note">${escapeHtml(entry.note)}</pre>`
+          : entry.before.equals(entry.after)
+            ? `<pre class="same">no pixel change</pre>`
+            : `<canvas data-before="${dataUrlOf(entry.before)}" data-after="${dataUrlOf(entry.after)}"></canvas>`;
   const cell = (entry: SheetCell) =>
     `<figure${'before' in entry ? ` data-diff data-over="${escapeHtml(entry.over ?? '')}"` : ''}><figcaption>${escapeHtml(entry.label)}</figcaption>${pictureOf(entry)}</figure>`;
 
@@ -159,7 +162,7 @@ body{margin:0;padding:16px;width:max-content;background:#d4d4d8;font:600 13px/1.
 figure{margin:0}figcaption{margin-bottom:6px}
 img,canvas{display:block;background:#fff}canvas{height:auto}
 pre{margin:0;max-width:420px;padding:8px;background:#fee2e2;color:#7f1d1d;font:12px/1.4 ui-monospace,monospace;white-space:pre-wrap}
-.same{background:#dcfce7;color:#14532d}
+.same{background:#dcfce7;color:#14532d}.note{background:#e4e4e7;color:#3f3f46}
 </style>${rows.map((row) => `<div class="row">${row.map(cell).join('')}</div>`).join('')}`;
 };
 
