@@ -1,0 +1,101 @@
+@layer components {
+  .st-trow-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: var(--space-2);
+  }
+
+  .st-trow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 2rem;
+    padding: 0 var(--space-2) 0 calc(var(--space-1) + var(--depth, 0) * 1.6rem);
+    border-radius: var(--radius-control-sm);
+    color: var(--text);
+    font-size: 1.1rem;
+    line-height: 1.4rem;
+    white-space: nowrap;
+    outline: none;
+    cursor: default;
+  }
+
+  .st-trow:where([data-group]) {
+    color: var(--text-muted);
+  }
+
+  .st-trow:where([data-selected]) {
+    background: var(--accent-subtle);
+    color: var(--accent-text);
+  }
+
+  .st-trow:is(:hover, [data-hover]) {
+    background: var(--surface-raised);
+  }
+
+  .st-trow[data-selected]:is(:hover, [data-hover]) {
+    background: var(--accent-subtle);
+  }
+
+  .st-trow:focus-visible {
+    box-shadow: inset 0 0 0 1.5px var(--focus-ring);
+  }
+
+  .st-trow-lead {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--text-muted);
+  }
+
+  .st-trow[data-selected] .st-trow-lead {
+    color: var(--accent-text);
+  }
+
+  .st-trow-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .st-trow-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .st-trow-status {
+    box-sizing: border-box;
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .st-trow-status[data-status='in-progress'] {
+    border: 1.5px solid var(--text-muted);
+  }
+
+  .st-trow-status[data-status='ready'] {
+    background: var(--accent);
+  }
+
+  .st-trow-comments {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+  }
+
+  .st-trow[data-selected] .st-trow-comments {
+    color: var(--accent-text);
+  }
+}
