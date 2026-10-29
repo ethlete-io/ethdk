@@ -170,7 +170,8 @@ Next, in this order (state 2026-10-29 evening, after `c9e7f8273`):
     3.37, 4.38, 5.53, 5.48, 5.26, checks 4.16/4.32/4.17/4.31/4.34/4.37/5.27/5.30/5.40); Studio UI
     (3.31 zoom-to-frame, 2.11, 2.6, 2.8 on screen); Mac over SSH (1.2 LAN rerun with unthrottled
     probe, 1.1 synthetic pinch; the Mac is free to use, Tom said); sketch `components/tree-row`
-    "Status colours" (warning mark to `--warning`), then `sketch ready`.
+    "Status colours" (warning mark to `--warning`) is `ready`, waits for Tom's merge; then
+    `design check`, Prettier, commit.
     Still to build, not yet started: shot slice 4.18-4.30, 4.33, 4.35, 4.36, 5.37, 5.41; part API
     slice 5.21, 5.28, 5.34, 5.44, 5.46, 5.47, 5.49; 3.36, 3.37 if the CLI slice did not reach them;
     5.51, 5.52, 6.3, 6.4. Blocked: 5.31 waits for the switch (Tom). Next design step after the
